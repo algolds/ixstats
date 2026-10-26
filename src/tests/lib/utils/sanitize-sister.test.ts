@@ -345,11 +345,12 @@ describe("sanitizeSisterHtml: embeds and reader pages", () => {
     expect(reader("")).toBe("");
   });
 
-  it("leaves IxWiki's article sanitizer as it was: an off-host image and a fixed style stay there", () => {
+  it("leaves IxWiki's article sanitizer its own rules: an off-host image stays, a fixed position does not", () => {
     const html =
-      '<img src="https://upload.wikimedia.org/a.png"><div style="position: fixed">x</div>';
+      '<img src="https://upload.wikimedia.org/a.png"><div style="position: fixed; color: red">x</div>';
     const out = sanitizeWikiArticleHtml(html);
     expect(out).toContain('src="https://upload.wikimedia.org/a.png"');
-    expect(out).toContain("position: fixed");
+    expect(out).not.toContain("fixed");
+    expect(out).toContain("color: red");
   });
 });

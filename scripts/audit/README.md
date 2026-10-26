@@ -21,7 +21,6 @@ Automation under `scripts/audit` provides fast confidence in architecture bounda
 | `wikios-corpus-diff.ts` | `bun scripts/audit/wikios-corpus-diff.ts --old=<old checkout> --corpus=<dir>` | The same text functions as the fuzz, run in an old checkout and in this tree on every page of a corpus dumped from a clone (JSON lines; read-only SELECTs), answers compared with `isDeepStrictEqual`; prints the differing count per function |
 | `verify-country-links.ts` | `bun run audit:country-links` | User ↔ country linkage integrity |
 | `validate-schema-alignment.ts` | `bun run validate:schemas` | Prisma model fields vs Zod input schemas |
-| `validate-migration-safety.ts` | `bun run validate:migrations` | Migration safety and schema drift |
 | `validate-script-targets.ts` | `bun run validate:script-targets` | `package.json` / tsconfig / CI script targets exist; no banned package managers (CI) |
 
 URL and flag audits live one level up: `scripts/audit-production-urls.ts` (`bun run audit:urls`, route resolution under the base path) and `scripts/audit-flag-urls.ts` (`bun run audit:flags`, flag asset resolution).

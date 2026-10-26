@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { resolveDisplayName } from "~/server/shared/display-names";
+import { getThinkPagesBroadcaster } from "~/server/websocket-server";
 import { getRealmBoardAccess, isRealmBoard } from "./realm-board";
 
 interface JoinContext {
@@ -264,6 +265,16 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
             data: { isActive: false, leftAt: new Date() },
           })
           .catch(() => {});
+      }
+      // The caller's open sockets stop receiving the group's posts and chat.
+      const sockets = getThinkPagesBroadcaster();
+      sockets.evictFromRoom({ type: "room:evict", clerkUserId: userId, groupId: input.groupId });
+      if (updatedGroup.conversationId) {
+        sockets.evictFromRoom({
+          type: "room:evict",
+          clerkUserId: userId,
+          conversationId: updatedGroup.conversationId,
+        });
       }
 
       // Notify group admins about member leaving

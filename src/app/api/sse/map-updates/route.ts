@@ -6,11 +6,15 @@
  * happened in so a map open on another realm can ignore it.
  *
  * Usage: new EventSource('/api/sse/map-updates')
+ *
+ * Public, so open streams are capped (connection-limit.ts): past the per-process cap a new one gets 503, past the
+ * per-client cap 429.
  */
 
 import { mapUpdateBus } from "~/lib/maps/map-update-bus";
 import { resolveEventRealm } from "~/server/modules/maps/map-event-realm";
 import { db } from "~/server/db";
+import { mapUpdateStreams } from "./connection-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,9 +23,17 @@ export const revalidate = 0;
 const KEEPALIVE_INTERVAL = 15_000; // 15 seconds
 
 export async function GET(request: Request) {
+  const slot = mapUpdateStreams.acquire(request.headers);
+  if (!slot.ok) {
+    return Response.json(
+      { error: slot.error },
+      { status: slot.status, headers: { "Retry-After": "30", "Cache-Control": "no-store" } }
+    );
+  }
   const signal = request.signal;
   const encoder = new TextEncoder();
   let closed = false;
+  let cleanup = slot.release;
 
   const stream = new ReadableStream({
     start(controller) {
@@ -49,9 +61,10 @@ export async function GET(request: Request) {
       }, KEEPALIVE_INTERVAL);
 
       // Cleanup on close
-      const cleanup = () => {
+      cleanup = () => {
         if (closed) return;
         closed = true;
+        slot.release();
         clearInterval(keepalive);
         unsubscribe();
         try {
@@ -64,6 +77,11 @@ export async function GET(request: Request) {
       // Store cleanup on the stream for abort signal
       // Handle client disconnect
       signal.addEventListener("abort", cleanup, { once: true });
+      if (signal.aborted) cleanup();
+    },
+    // The reader went away without an abort (the response was cancelled)
+    cancel() {
+      cleanup();
     },
   });
 

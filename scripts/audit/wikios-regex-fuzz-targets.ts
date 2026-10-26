@@ -1078,6 +1078,10 @@ export const TARGETS: readonly Target[] = [
     const m = await import("~/lib/wiki-os/adapters/mediawiki/bridge/dispatchers");
     return (s) => m.extractIntroFromWikitext(s);
   }),
+  wikitext("adapters/mediawiki/bridge/dispatchers#extractSectionsFromWikitext", async () => {
+    const m = await import("~/lib/wiki-os/adapters/mediawiki/bridge/dispatchers");
+    return (s) => m.extractSectionsFromWikitext(s);
+  }),
 ];
 
 // ---------------------------------------------------------------------------------------------------
@@ -1304,6 +1308,15 @@ const THEN_SPACES: readonly Family[] = [
   name: `${head}␠×N}}`,
   build: (size: number) => `${head}${" ".repeat(Math.max(0, size - head.length - 2))}}}`,
 }));
+
+/**
+ * A heading opener, then only blanks, then a character that does not close it: what a heading expression
+ * whose blank runs and title overlap (`/^(={2,6})\s*(.+?)\s*\1$/`) reads cubically many times over.
+ */
+const HEADING_THEN_SPACES: Family = {
+  name: "==␠×Na",
+  build: (size) => `==${" ".repeat(Math.max(0, size - 3))}a`,
+};
 
 /** What an SVG document is made of (the driver wraps the text in `<svg xmlns="http://www.w3.org/2000/svg">`). */
 const SVG_UNITS: ReadonlyArray<readonly [name: string, unit: string]> = [
@@ -1539,6 +1552,7 @@ export const FAMILIES: readonly Family[] = [
   })),
   CATEGORY_THEN_SPACES,
   ...THEN_SPACES,
+  HEADING_THEN_SPACES,
   nested("{{a|…}}", "{{a|", "}}"),
   nested("[[…]]", "[[", "]]"),
   // a literal `<!--` that never closes (in a nowiki, say), and links after it that all close

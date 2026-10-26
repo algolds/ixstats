@@ -41,7 +41,22 @@ echo "✓ Static assets synced."
 # Ensure local database schema is aligned with the codebase (Prisma 6 CLI doesn't autoload env with config files)
 echo "🚀 Syncing database schema with codebase..."
 # The production dump still has procedural_worlds rows, which db push refuses to drop: the idempotent Atlas Studio SQL
-# creates the preset tables and drops the dead models first (as scripts/deploy-production.sh does)
+# creates the preset tables and drops the dead models first (as scripts/deploy-production.sh does). Before it, as in the
+# deploy: the additive schema changes the SQL reads, the Realms drop of world_configs, and the forum migrations.
+bun scripts/deployment/apply-additive-schema.ts --apply
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realms/drop-world-configs.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261008120000_thinkpages_forum/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261009120000_thinkpages_forum_realms/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261010030000_uploaded_assets/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261010120000_thinkpages_forum_moderation/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261011120000_thinkpages_forum_import/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261012120000_thinkpages_forum_followups/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261013120000_thinkpages_forum_foundation/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261014120000_thinkpages_realm_board/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261015120000_thinkpages_forum_engagement/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261016120000_thinkpages_forum_reactions/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261017120000_action_link_rewards/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261018120000_thinkpages_realm_adverts/migration.sql
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261023120000_atlas_studio/migration.sql
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261024120000_vault_hub/migration.sql
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120000_drop_forum_readers/migration.sql

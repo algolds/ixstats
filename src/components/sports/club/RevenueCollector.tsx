@@ -8,6 +8,7 @@ import {
   StatUp as TrendingUp,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { MAX_TICKET_PRICE } from "~/lib/sports/match-revenue";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
@@ -43,7 +44,9 @@ export function RevenueCollector({
     },
   });
 
-  const perHomeMatch = Math.round(stadiumCapacity * ticketPrice * 0.6 * (popularity / 100));
+  const perHomeMatch = Math.round(
+    stadiumCapacity * Math.min(Math.max(ticketPrice, 0), MAX_TICKET_PRICE) * 0.6 * (popularity / 100)
+  );
   const ticketRevenue = pending?.ticketRevenue ?? 0;
   const sponsorIncome = (pending?.sponsorFees ?? 0) + (pending?.winBonuses ?? 0);
   const total = pending?.total ?? 0;

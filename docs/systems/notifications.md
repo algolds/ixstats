@@ -24,6 +24,7 @@ count. A separate client-only path shows toasts.
 | `Notification` | One notification. `userId` set: for that user. `countryId` set: for that country's players. Both null: global. Also `title`, `message`, `description`, `href`, `type`, `category`, `priority` (default `medium`), `severity` (default `informational`), `source`, `actionable`, `deliveryMethod`, `metadata` (JSON string), `read`, `dismissed` |
 | `NotificationEventConfig` | Admin on/off switch per event key (`eventKey`, `enabled`, `category`, `source`, `triggerType`). Rows are created by `seedEvents` |
 | `UserPreferences` | Per-user preference row, keyed by Clerk id: `economicAlerts`, `crisisAlerts`, `diplomaticAlerts`, `systemAlerts`, `notificationLevel` (read when notifying; see §3), `emailNotifications` with `emailEnabledAt` (email consent, set when the user turns email on), `emailDigest` and `lastEmailDigestAt`, `pushNotifications` (see §4), plus the wiki preferences |
+| `NotificationReceipt` | One user's read and dismiss state on a shared (global or country-wide) notification: `notificationId`, `userId`, `readAt`, `dismissedAt`, unique per notification and user, deleted with the notification |
 | `PushSubscription` | One browser's Web Push subscription: `endpoint` (unique), `p256dh`, `auth`, `userId` (Clerk id), `userAgent`, `lastUsedAt` |
 | `IntelligenceAlertThreshold` | Admin-set metric thresholds per country (`prisma/schema/intelligence.prisma`) |
 
@@ -31,12 +32,19 @@ count. A separate client-only path shows toasts.
 
 `visibleNotificationFilters` (`user.ts`) gives a user:
 
-- rows where `userId` is the caller's Clerk id;
+- rows where `userId` is the caller's Clerk id or internal `User.id` (sports results use the internal id);
 - global rows (`userId` and `countryId` both null);
-- rows for the caller's country (`countryId` = `User.countryId`).
+- country-wide rows for the caller's country (`userId` null, `countryId` = `User.countryId`). A row addressed to one
+  user that also names a country is that user's alone.
 
-`getUnreadCount` and `markAllAsRead` use `visibleNotificationFiltersById`, which also matches the internal `User.id`.
-The list query and single-row `markAsRead` / `dismissNotification` do not (see [Known gaps](#8-known-gaps)).
+The tray list, the unread count and the read and dismiss mutations all use it.
+
+**Read and dismiss state.** A personal row keeps its own `read` and `dismissed` columns. A global or country-wide row is
+one shared row, so each user's marks on it live in `NotificationReceipt`, and one player's "Read all" or dismissal no
+longer changes anyone else's tray. The shared row's own `read` and `dismissed` columns are frozen: a mark from before
+receipts applied to everyone, so a shared row with either set stays read (or dismissed) for every viewer, and nothing
+writes them any more. Clearing history (Settings, privacy) deletes the user's personal notifications but keeps their
+receipts and the shared rows, so notices they dismissed don't come back.
 
 ## 2. Categories and events
 
@@ -155,8 +163,9 @@ stay in-app only, by design. Each channel is off until its environment variables
   2. "enhanced" entries from `useNotificationStore` (browser memory; added by `notifyFromStore({ persistent: true })`);
   3. "executive" entries from `ExecutiveNotificationContext` (nothing sets these today).
 - Entries are grouped into Recent (< 1 h), Earlier today, This week and Earlier.
-- Clicking an entry marks it read and opens its `href`. Dismiss calls `dismissNotification`, which sets
-  `dismissed` and `read`. **Read all** marks notifications and messages read.
+- Clicking an entry marks it read and opens its `href`. Dismiss calls `dismissNotification`, which marks it
+  dismissed and read (the row's columns for a personal notification, the caller's receipt for a shared one).
+  **Read all** marks notifications and messages read.
 - Mutations invalidate `getUserNotifications` and `getUnreadCount`.
 
 **Badge.** `useNotificationBadge` (`src/hooks/useLiveNotifications.ts`, mounted in `GameProviders`) polls
@@ -199,10 +208,6 @@ Otherwise notifications are written by the code paths above, including cron jobs
   `notificationAPI`, the admin single-user notice and sports club results. The admin `createNotification` writes rows
   directly, so it is neither filtered nor delivered.
 - **Preferences cover single-user notifications only**, and only those written through `notificationAPI` (see §3).
-- **List and badge disagree for rows keyed by internal user id.** `getUserNotifications` and single-row
-  `markAsRead`/`dismissNotification` match `userId` against the Clerk id only, while `getUnreadCount` and
-  `markAllAsRead` also match `User.id`. Sports club results (`club-notify.ts`) are written with
-  `SportTeam.ownerUserId` (an internal id), so they raise the badge but never appear in the tray list.
 - The tray loads 8 rows; there is no full notification history page.
 - `deliveryMethod` and `severity` are stored but the tray ignores them.
 - "Executive" notifications have no producer, and "enhanced" (client) entries are lost on reload.

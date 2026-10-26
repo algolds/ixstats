@@ -289,7 +289,7 @@ describe("presence", () => {
 describe("clearOwnHistory", () => {
   beforeEach(() => resetPresenceForTests());
 
-  it("deletes personal notifications, read receipts and the heartbeat, nothing shared", async () => {
+  it("deletes personal notifications, read receipts, shared-notice marks and the heartbeat, nothing shared", async () => {
     const db = createMockPrisma();
     db.notification.deleteMany.mockReturnValue(Promise.resolve({ count: 3 }));
     db.messageReadReceipt.deleteMany.mockReturnValue(Promise.resolve({ count: 5 }));
@@ -306,6 +306,8 @@ describe("clearOwnHistory", () => {
     expect(db.messageReadReceipt.deleteMany).toHaveBeenCalledWith({
       where: { userId: "clerk_1" },
     });
+    // Marks on shared notices stay, or every dismissed notice would come back unread
+    expect(db.notificationReceipt.deleteMany).not.toHaveBeenCalled();
     expect((await visibleOnlineUserIds(dbWithConfigs({}) as never, ["clerk_1"])).size).toBe(0);
   });
 });

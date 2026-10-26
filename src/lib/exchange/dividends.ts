@@ -11,7 +11,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 import { ExchangeError, earnSovereignsTx, isUniqueViolation } from "~/lib/vault/exchange-service";
-import { refreshFairValue, requireOwnedCompany } from "./companies";
+import { assertNoOpenPrimaryIssue, refreshFairValue, requireOwnedCompany } from "./companies";
 import { assertExchangeOpen, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
 import { fromCents, holdersOf, lockCompany, splitProRata, toCents } from "./ownership";
@@ -56,6 +56,7 @@ export async function declareDividend(
       if (input.amount > company.capital) {
         throw new ExchangeError("INSUFFICIENT_SOVEREIGNS", "The company doesn't hold that much");
       }
+      await assertNoOpenPrimaryIssue(tx, company.id);
       const holders = await holdersOf(tx, company.id);
       const split = splitProRata(toCents(input.amount), holders);
       if (split.paidCents === 0) {

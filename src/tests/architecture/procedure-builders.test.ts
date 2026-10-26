@@ -13,9 +13,9 @@ import path from "path";
 const ROUTERS = path.resolve(__dirname, "../../server/api/routers");
 
 /** Directories not yet converted, with the reason. Shrink-only. */
-const ALLOWLIST: Record<string, string> = {
-  wikios: "Rewritten by the open WikiOS v1 PR (#52); convert when it lands (roadmap D20).",
-};
+// Router directories still allowed bare mutations, each with its reason. Empty since WikiOS's personal writes
+// (annotations, watchlist, stash) took rate-limited builders.
+const ALLOWLIST: Record<string, string> = {};
 
 function walk(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -49,12 +49,14 @@ describe("signed-in mutations are rate-limited", () => {
     expect(offenders).toEqual([]);
   });
 
-  it.each(Object.keys(ALLOWLIST))(
-    "allowlisted %s still needs converting (remove it once it does not)",
-    (dir) => {
-      expect(walk(path.join(ROUTERS, dir)).flatMap(unlimitedMutations).length).toBeGreaterThan(0);
-    }
-  );
+  if (Object.keys(ALLOWLIST).length > 0) {
+    it.each(Object.keys(ALLOWLIST))(
+      "allowlisted %s still needs converting (remove it once it does not)",
+      (dir) => {
+        expect(walk(path.join(ROUTERS, dir)).flatMap(unlimitedMutations).length).toBeGreaterThan(0);
+      }
+    );
+  }
 });
 
 describe("card admin procedures", () => {

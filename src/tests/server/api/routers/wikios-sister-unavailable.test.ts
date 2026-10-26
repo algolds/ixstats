@@ -146,7 +146,6 @@ describe("a sister wiki that cannot be reached is unavailable to the client", ()
   it.each([
     ["getArticleHtml", { title: "Bashan html", wikiSource: "iiwiki" }],
     ["getWikitext", { title: "Bashan source", wikiSource: "iiwiki" }],
-    ["getSectionContent", { title: "Bashan section", section: "History", source: "althistory" }],
     ["getPageImages", { title: "Bashan images", wiki: "iiwiki" }],
     ["getInfobox", { title: "Bashan infobox", wiki: "althistory" }],
   ] as const)("%s of an unreachable wiki is SERVICE_UNAVAILABLE", async (path, input) => {

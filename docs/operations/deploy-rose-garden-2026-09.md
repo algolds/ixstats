@@ -1,7 +1,11 @@
 # Deploying `rose-garden` to production (September 2026 plan wave)
 
-> **One-off runbook.** It retires to [docs/history/](../history/README.md) once 1.4 is released; the standing
-> procedure is the [release guide](release-guide.md).
+> **Superseded as an order: follow the [release guide](release-guide.md), Part B.** 1.4 never completed on production,
+> so its steps ship with 1.5, and the release guide now gives their order around the new deploy script (the additive
+> schema step, the SQL it runs before `db push`, the post-deploy SQL). This runbook keeps the detail the release guide
+> links to: the environment, `next.config.js`, the WikiRevision dedupe, the Realms collisions, relief, the Vault hub
+> backfills, Eurth, the cron order and the data fixes. Where a step below runs SQL or `db push` by hand that the deploy
+> script now runs, the step says so. It retires to [docs/history/](../history/README.md) once 1.5 is released.
 
 **For:** whoever deploys IxStats on the prod host (`ssh ixwiki`, root). **Written:** 2026-09-27.
 Read it end to end once before starting. Every command here is meant to be run by hand.
@@ -65,7 +69,7 @@ Read it end to end once before starting. Every command here is meant to be run b
   - WikiOS v1 (2026-10-06, D20): the wiki tables and columns of PR #52 (`wiki_mirror_jobs`, `wiki_user_groups`,
     `wiki_restrictions`, `wiki_blocks`, `wiki_bot_passwords`, `wiki_api_sessions`, `wiki_template_links`,
     `wiki_image_links`, new `wiki_articles` / `wiki_revisions` / `wiki_logs` / `wiki_assets` / `wiki_account_links`
-    columns) and five unique constraints that `db push` asks to confirm (see 5a)
+    columns) and five unique constraints, which the cutover runbook's step 1 SQL creates before the deploy (see 5a)
   - privacy and notification delivery (2026-10-06, additive, SL-4/SL-5): `ConversationParticipant.requestStatus`
     (default `none`) and a `(userId, requestStatus)` index; `UserPreferences.emailEnabledAt`, `emailDigest` (default
     false) and `lastEmailDigestAt`; a `PushSubscription` table. `db push` applies them with no data-loss prompt
@@ -76,19 +80,19 @@ Read it end to end once before starting. Every command here is meant to be run b
   - Atlas Release 0 (2026-10-21, additive): `Realm.mapVersion` (default 0), which versioned map layer and tile URLs
     carry, and the PostGIS pieces `db push` cannot create: a `Country` trigger that fills `geom_postgis` from
     `geometry`, a backfill of the countries missing it, and the function `atlas_country_union`
-    (`prisma/migrations/20261021120000_atlas_r0/migration.sql`, idempotent). **Apply that file before the new code
-    serves a request** (step 5a); the deploy script runs it again after its own push
+    (`prisma/migrations/20261021120000_atlas_r0/migration.sql`, idempotent). The deploy script applies it right after
+    its push, before the build, so it is in place before the new code serves a request
   - Atlas Release A (2026-10-22, additive): `Country.worldgen` (default false) and `Country.claimable` (default true),
     which world generation and the claim flow read (`prisma/migrations/20261022120000_atlas_ra/migration.sql`,
-    idempotent; `db push` adds the same two columns). Apply that file with the Release 0 one (step 5a), and build
+    idempotent; `db push` adds the same two columns). The deploy script applies it with the Release 0 one; build
     Ixnay's and Eurth's relief once after the deploy (step 5c)
   - Atlas and World Studio (2026-10-23, **drops data**): new `world_presets` and `world_preset_versions` tables (the
     built-in presets are seeded on first read, no rows are inserted), and the models `ProceduralWorld`
     (`procedural_worlds`, 38 rows on the local clone), `WorldTemplate` (`world_templates`) and `Realm.templateId` are
     gone from the schema. `prisma/migrations/20261023120000_atlas_studio/migration.sql` (idempotent) creates the new
-    tables and drops the old ones. **Apply it BEFORE `db:push:force`** (step 5a): `db push` without
-    `--accept-data-loss` refuses to drop the non-empty `procedural_worlds` and would stop the deploy. The deploy
-    script, `start-development.sh`, `scripts/refresh-local-db.sh` and the dev bootstrap run it before their push too
+    tables and drops the old ones. It must run **before** `db:push:force`: `db push` without `--accept-data-loss`
+    refuses to drop the non-empty `procedural_worlds` and would stop the deploy. The deploy script,
+    `start-development.sh`, `scripts/refresh-local-db.sh` and the dev bootstrap run it before their push
   - map import snapshots read every row (2026-10-23, code only, no schema change): `captureMapSnapshot`, the world
     import diff and the other import, apply and rollback reads took at most 1,000 rows per layer. A snapshot taken by
     the older code for a layer with more rows than that is missing the rest, so rolling back an import made before this
@@ -96,10 +100,10 @@ Read it end to end once before starting. Every command here is meant to be run b
     (Ixnay's altitudes have 4,068 rows) needs the new code
   - Vault collectathon hub (migration `20261024120000`, **drops one column**): adds `Country.ownedSince`, `cards.lorewardEntryId` and
     `cards.lorewardEdition` (unique together), drops `national_issues.ixCreditsAwarded`, and deletes the stored
-    `showCardsTab` setting (`prisma/migrations/20261024120000_vault_hub/migration.sql`, idempotent). **Apply it BEFORE
-    `db:push:force`** (step 5a), after the Atlas and World Studio file: `db push` without `--accept-data-loss` refuses
+    `showCardsTab` setting (`prisma/migrations/20261024120000_vault_hub/migration.sql`, idempotent). It must run
+    **before** `db:push:force`, after the Atlas and World Studio file: `db push` without `--accept-data-loss` refuses
     the column drop. The deploy script, `start-development.sh`, `scripts/refresh-local-db.sh` and the dev bootstrap run
-    it before their push too. The rest of the hub is steps 5a (cron swap), 5d and 7
+    it before their push. The rest of the hub is steps 5a (cron swap), 5d and 7
 - **Profile URLs:** `/@user` becomes the canonical profile URL.
 - **WikiOS v1 ships switched off.** `WIKIOS_V1_ENABLED` is unset, so WikiOS reads but takes no edits (MediaWiki's
   `readonly` error; people edit on classic MediaWiki), `/w/api.php` answers `readonly`, and the mirror and background
@@ -117,11 +121,13 @@ Read it end to end once before starting. Every command here is meant to be run b
 - **Env:** `.env.production` / `.env.production.local` define `CLERK_SECRET_KEY` but none of
   `WIKI_SYNC_WEBHOOK_SECRET`, `IXTIME_BOT_SECRET`, `WS_ALLOWED_ORIGINS`, `NEXT_PUBLIC_APP_URL`, `REDIS_ENABLED` or
   `CRON_ENABLED_JOBS`.
-- **Deploy script:** `scripts/deploy-production.sh` fetches the checkout's current branch from the remote named
-  `master` and hard-resets to it. It then runs `bun install --frozen-lockfile`, `db:generate`, takes a backup, applies
-  the Atlas and World Studio SQL, and runs **`prisma db push` against the prod database**, builds, reloads PM2 and runs `start-production.sh`. `db push`
-  applies the schema changes above by itself. It aborts the deploy if a change would lose data, which is what the
-  dedupe step below prevents.
+- **Deploy script (as it is now):** `scripts/deploy-production.sh` fetches the checkout's current branch from the
+  remote named `master` and hard-resets to it, runs `bun install --frozen-lockfile` and `db:generate`, takes a backup,
+  applies the additive schema step, checks the WikiOS proof, runs the hand-written SQL (the Realms drop, the forum, Atlas
+  Studio, Vault hub, cards, IxnayID, WikiOS and 2026-10 files), then **`prisma db push` against the prod database**,
+  builds, deploys IxWorld, reloads PM2 and starts the web app ([release guide A4](release-guide.md#a4-build-and-deploy)).
+  The push aborts the deploy, with the live build untouched, if a change would lose data; the dedupe step below
+  prevents one such stop.
 
 ## 1. Before you start
 
@@ -232,13 +238,18 @@ The ThinkPages forum follow-ups add two hand-written, idempotent files, in this 
 
 1. `prisma/migrations/20261027120000_drop_forum_readers/migration.sql` **drops `forum_readers`** ("Mark all read" is
    gone, and nothing reads or writes the table). It runs **before** the push: the schema no longer has the table, and
-   `db push` stops on a non-empty one. Step 5a runs it after the Vault hub SQL, and `./scripts/deploy-production.sh`
-   runs it again before its own push (so do `start-development.sh` and `scripts/refresh-local-db.sh`).
+   `db push` stops on a non-empty one. `./scripts/deploy-production.sh` runs it after the Vault hub SQL, before its own
+   push (so do `start-development.sh` and `scripts/refresh-local-db.sh`); nothing to run by hand.
 2. `prisma/migrations/20261028120000_rewrite_legacy_notification_links/migration.sql` rewrites the stored notification
-   links (`"Notification"."href"`) that point at legacy URLs whose redirects this release deletes. It runs **after**
-   the new code is live, in step 5e. It leaves the bridge's XenForo thread, post, node and member links
-   (`/forum/thread/<id>` and the rest) to the forum import, which points them at native pages (runbook step 6; the
-   import tooling was retired on 2026-10-21, see step 5e).
+   links (`"Notification"."href"`) that point at legacy URLs whose redirects this release deletes. It must run **after**
+   the new code is live, and the deploy script runs it itself once the new server answers (a failure only warns); step
+   5e checks it. It leaves the bridge's XenForo thread, post, node and member links (`/forum/thread/<id>` and the rest)
+   to the forum import, which points them at native pages (runbook step 6; the import tooling was retired on
+   2026-10-21, see step 5e).
+
+The other 2026-10 migration files the deploy script does not name (`20261020120000_realm_content_terms`,
+`20261025120000_mycountry_first_steps`, `20261026120000_national_animal`) need no step: the additive step and the push
+create everything in them.
 
 ## 5. Deploy
 
@@ -253,42 +264,33 @@ git checkout -B master master/master     # the deploy script deploys the checkou
 
 ### 5a. Realms schema + ownership backfill (before the deploy script)
 
-`rose-garden` includes the Realms work (`docs/architecture/realms-framework-spec.md`). Its schema change **drops**
-`world_configs` (1 row) and `territory_claims` (0 rows) and adds two unique constraints, so the deploy script's own
-`db push` would stop on the data-loss warning. Apply it by hand first, then the one-off ownership backfill. The
-Atlas and World Studio SQL goes **before** that push, for the same reason: it creates `world_presets` and
-`world_preset_versions` and **drops `procedural_worlds`, `world_templates` and `realms."templateId"`** (the schema no
-longer has them, and `db push` stops on the non-empty `procedural_worlds`). The Vault hub SQL follows it, also before the
-push: it **drops `national_issues."ixCreditsAwarded"`**. The forum readers SQL comes last, also before the push: it
-**drops `forum_readers`** (step 4). The step 1 backup covers the dropped rows:
+`rose-garden` includes the Realms work (`docs/architecture/realms-framework-spec.md`). Its schema **drops**
+`world_configs` (1 row) and `territory_claims` (0 rows) and adds two unique constraints. Nothing here pushes the schema
+by hand any more: a hand push before the deploy would add `wiki_revisions.origin` before the WikiOS data-safety SQL
+labels it ([wikios-v1-cutover.md](wikios-v1-cutover.md), "The data-safety SQL runs before the push"), and would drop
+or re-add what the deploy's SQL still converts. The deploy script now does what this step used to do by hand:
+
+- **The additive step** (`scripts/deployment/apply-additive-schema.ts --apply`) adds the new tables and nullable or
+  defaulted columns, `Country."ownerUserId"` included, before any SQL.
+- **`scripts/migrations/2026-10-realms/drop-world-configs.sql`** drops `world_configs` and `territory_claims` (owner
+  approved; the deploy's backup keeps the row), so the push no longer stops on them.
+- **The Atlas and World Studio, Vault hub and forum readers SQL** run before its push, in that order, as above.
+- **The Atlas Release 0 and Release A SQL** (`20261021120000_atlas_r0`, `20261022120000_atlas_ra`) run right after its
+  push, before the build, so they are in place before any new code serves a request.
+
+What stays by hand is the ownership backfill, and it has to run **before** the deploy script: the deploy's MyCountry
+`f-defense.sql` ends every proposed PvP challenge whose defender has no owner, and the realm-time starter-force reset
+gives a nation with no owner an NPC's policy. The column it fills only exists after the additive step, so run the
+additive step by hand first, as in the [release guide](release-guide.md#b3-the-window-the-app-stopped) (steps 4 and 8),
+which also says what to do when `--apply` meets a column only the deploy's SQL adds:
 
 ```bash
-bun install --frozen-lockfile && bun run db:generate        # new dependency: potrace (since removed: the dependency and the code that used it are gone)
+bun scripts/deployment/apply-additive-schema.ts --apply        # the deploy runs it again and finds nothing to do
 docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
   "SELECT count(*) FROM map_layers WHERE \"worldId\" IS NULL; SELECT id, slug, \"ownerId\" FROM realms;"
 #   expect: a count (compare with the backfill's map-layer line) and the row  default|default|system
-docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
-  < prisma/migrations/20261023120000_atlas_studio/migration.sql      # BEFORE db:push:force; idempotent
-docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
-  "SELECT to_regclass('world_presets') IS NOT NULL, to_regclass('world_preset_versions') IS NOT NULL, to_regclass('procedural_worlds') IS NULL, to_regclass('world_templates') IS NULL, NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'realms' AND column_name = 'templateId');"
-#   expect: t|t|t|t|t
-docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
-  < prisma/migrations/20261024120000_vault_hub/migration.sql         # Vault hub: BEFORE db:push:force; idempotent
-docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
-  "SELECT (SELECT count(*) FROM information_schema.columns WHERE (table_name, column_name) IN (('Country','ownedSince'),('cards','lorewardEntryId'),('cards','lorewardEdition'))), NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'national_issues' AND column_name = 'ixCreditsAwarded'), NOT EXISTS (SELECT 1 FROM \"SystemConfig\" WHERE key = 'showCardsTab');"
-#   expect: 3|t|t
-docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
-  < prisma/migrations/20261027120000_drop_forum_readers/migration.sql  # forum readers: BEFORE db:push:force; idempotent
-docker exec ixstats-postgres psql -U postgres -d ixstats -tAc "SELECT to_regclass('forum_readers') IS NULL;"
-#   expect: t
-bun run db:push:force        # answer yes: the world_configs drop, the two Realms unique constraints and WikiOS v1's five are expected
-bun scripts/realms/backfill-foundation.ts                  # dry run
+bun scripts/realms/backfill-foundation.ts                      # dry run
 ```
-
-WikiOS v1's five unique constraints are `wiki_articles (source, pageId)`, `wiki_revisions (source, revId)`,
-`wiki_logs.logId`, `wiki_logs.mwLogId` and `lore_stash_items (stashId, contentType, pageTitle)` (in place of
-`(stashId, pageTitle)`). None can fail: the four columns are new and empty, and the stash key is weaker than the old one.
-Do not run WikiOS's manual SQL (`prisma/manual-migrations/*wikios*`) here; it is step 1 of the cutover runbook.
 
 The dry run prints `owners: N to assign, M collisions`. A **collision** is a country that two or more ordinary
 users point at; the script never guesses. For each `COLLISION <countryId>: users <a>, <b>`, decide the owner and
@@ -305,9 +307,6 @@ When the dry run shows `0 collisions` and no `BLOCKS --apply` line:
 bun scripts/realms/backfill-foundation.ts --apply
 bun scripts/realms/backfill-foundation.ts                  # expect: owners: 0 to assign, 0 collisions
 ```
-
-(One `ixwiki links … skip` line is normal when two accounts share a legacy wiki username: the first keeps it, the other
-verifies in Settings.)
 
 The backfill never makes a system owner a nation's owner, so a nation that both a system owner's sign-in account and an
 older duplicate account point at goes to the duplicate. That is the case for Caphiria: the owner signs in as
@@ -326,36 +325,6 @@ SQL
 # expect: UPDATE 1 twice (UPDATE 0 when already applied)
 ```
 
-Then apply the Atlas Release 0 SQL by hand, **before any new code runs**. `db push` adds `Realm.mapVersion` and
-`Country.geom_postgis` but cannot create the `Country` trigger or the `atlas_country_union` function, and it does not
-backfill. Without the function, the code now notices (one check per process, logged as a warning) and keeps nations'
-cached outlines, so nothing aborts; without the backfill, every country's geography panel (`getCountryGeoProfile`)
-answers "Country has no usable map outline" until `"Country".geom_postgis` is filled. The deploy script applies the same
-idempotent file after its own push, so this step is for the order: SQL first, code second.
-
-```bash
-docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
-  < prisma/migrations/20261021120000_atlas_r0/migration.sql
-docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
-  "SELECT to_regprocedure('atlas_country_union(text,text)') IS NOT NULL, (SELECT count(*) FROM \"Country\" WHERE geometry IS NOT NULL AND geom_postgis IS NULL);"
-#   expect: t|0, or t and a count of only countries whose stored outline is invalid (the run printed a WARNING naming each)
-```
-
-(The Atlas and World Studio SQL ran above, before the push. `./scripts/deploy-production.sh` runs it again before its own
-`db:push:force`, and so do `start-development.sh`, `scripts/refresh-local-db.sh` and the dev bootstrap, which a local
-database that still has `procedural_worlds` rows needs: without it dev startup aborts like the deploy would.)
-
-Then the Atlas Release A file the same way: two `ADD COLUMN IF NOT EXISTS` on `"Country"` (`worldgen`, `claimable`).
-`db push` adds them too and the deploy script runs the file after its push, so this too is only for the order, SQL first:
-
-```bash
-docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
-  < prisma/migrations/20261022120000_atlas_ra/migration.sql
-docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
-  "SELECT count(*) FROM information_schema.columns WHERE table_name = 'Country' AND column_name IN ('worldgen', 'claimable');"
-#   expect: 2
-```
-
 Then swap the cron job **before** the deploy script, because the script reloads `ixstats-cron` at its end and
 `cron-runner.mjs` exits 1 on an unknown job name. The `passive-income` job no longer exists. In `CRON_ENABLED_JOBS` in
 `ecosystem.config.cjs`, **replace `passive-income` with `vault-dividend`** (midnight UTC, the nightly Vault dividend);
@@ -364,26 +333,40 @@ restart yet. An admin cron override saved under `cronSchedule_passiveIncome` is 
 schedule in Admin, which stores it under `cronSchedule_vaultDividend`. The first run records the start day in the
 SystemConfig row `vault_dividend_started_on` and pays only the day just ended; it never settles an earlier day.
 
-Then run the deploy script — its `db push` is now a no-op:
+Then run the deploy script:
 
 ```bash
 ./scripts/deploy-production.sh
 ```
 
-The script installs dependencies; the new ones are `@clerk/backend` and `jsdom`, and `bun.lock` is updated. It then
-generates the Prisma client, runs `db push`, builds (plus `scripts/deploy-ixworld.sh`), reloads PM2 with `--update-env`, and starts the app.
-If `db push` reports possible data loss, **stop and read the message**. It means a schema change would drop data,
-and you should not add `--accept-data-loss` blindly.
+It installs dependencies, generates the Prisma client, backs up, runs the additive step, the WikiOS proof check, its SQL
+and `db push`, builds (plus `scripts/deploy-ixworld.sh`), reloads PM2 with `--update-env`, and starts the app
+([release guide A4](release-guide.md#a4-build-and-deploy)). If `db push` reports possible data loss, **stop and read the
+message**: it means a schema change would drop data, and you should not add `--accept-data-loss` blindly. The expected
+unique-constraint warnings, and how to get past them once the deploy's SQL has run, are in the release guide (B3 step
+10). WikiOS v1's five unique constraints are `wiki_articles (source, pageId)`, `wiki_revisions (source, revId)`,
+`wiki_logs.logId`, `wiki_logs.mwLogId` and `lore_stash_items (stashId, contentType, pageTitle)` (in place of
+`(stashId, pageTitle)`). None can fail: the four columns are new and empty, and the stash key is weaker than the old one.
+WikiOS's manual SQL (`prisma/manual-migrations/*wikios*`, step 1 of the cutover runbook) now runs **before** this
+deploy, `2026-09-30-wikios-api.sql` at least (see the cutover runbook's "The data-safety SQL runs before the push"). It
+creates all five (`2026-09-30-wikios-api.sql` the first three, `2026-09-30-wikios-sync-v1.sql` the `mwLogId` one,
+`2026-09-30-wikios-stash-key.sql` the stash key), so with the whole of step 1 applied the push asks about none of them.
 
-After it finishes, confirm the processes picked up production mode:
+After it finishes, check the schema steps and that the processes picked up production mode:
 
 ```bash
+docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
+  "SELECT to_regclass('world_presets') IS NOT NULL, to_regclass('procedural_worlds') IS NULL, to_regclass('forum_readers') IS NULL, to_regprocedure('atlas_country_union(text,text)') IS NOT NULL, (SELECT count(*) FROM \"Country\" WHERE geometry IS NOT NULL AND geom_postgis IS NULL);"
+#   expect: t|t|t|t|0, or a last count of only countries whose stored outline is invalid
 pm2 jlist | python3 -c "import sys,json;[print(p['name'],p['pm2_env'].get('NODE_ENV')) for p in json.load(sys.stdin) if p['name'].startswith('ixstats')]"
 pm2 logs ixstats-cron --lines 30 --nostream     # expect "CRON_ENABLED_JOBS is empty — no jobs scheduled" and no import errors
 pm2 logs ixstats-ws --lines 30 --nostream       # expect "[WS] ✓ ThinkPages WebSocket initialized" and no "[ThinkPagesBridge] Redis disabled" warning
 ```
 
 `ixstats-ixtwitter` already points at `scripts/run-ixtwitter-sync.ts`. `server.mjs` no longer schedules any jobs.
+
+(One `ixwiki links … skip` line from an older backfill was normal when two accounts shared a legacy wiki username; the
+link step is gone since IxnayID, which converts those names into claims.)
 
 ### 5b. Map geometry triggers (after the deploy script)
 
@@ -442,7 +425,8 @@ the realm's settings) answers 200, not 404. Repeat with a test realm's first app
 
 ### 5d. Vault hub: backfills and restart (after the deploy script)
 
-Do these in this order. The hub's SQL (step 5a) and the cron swap (before the deploy script, step 5a) are already done.
+Do these in this order. The hub's SQL (run by the deploy script) and the cron swap (before the deploy script, step 5a)
+are already done.
 
 1. **`ownedSince` backfill**, then 2. **trophy card backfill.** Both need the new columns and the new code, so they run
    after the deploy script. Both are dry runs by default, idempotent, and print what they would do before you add
@@ -478,16 +462,15 @@ included, for the days since.
 
 Old notifications store links to pages whose redirects this release deletes (`/thinkpages/forum`,
 `/thinkpages/profile/<user>`, `/achievements`, `/vault/market`, `/profile`, the old basePath `/projects/ixstats`,
-and others). Once the new code is live, rewrite them to the current pages. The file only updates
-`"Notification"."href"`, one statement per legacy form, and a second run changes nothing:
+and others). The file `20261028120000_rewrite_legacy_notification_links` rewrites them to the current pages. It only
+updates `"Notification"."href"`, one statement per legacy form, and a second run changes nothing. The deploy script
+runs it itself once the new server answers (a failure there only warns), so this step is a check: run it again and
+expect nothing left to change.
 
 ```bash
 docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
   < prisma/migrations/20261028120000_rewrite_legacy_notification_links/migration.sql
-#   expect: 34 lines of UPDATE <n>
-docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
-  < prisma/migrations/20261028120000_rewrite_legacy_notification_links/migration.sql
-#   expect: UPDATE 0 on all 34 lines
+#   expect: UPDATE 0 on all 34 lines (34 lines of UPDATE <n> means the deploy's run failed: this run did the work)
 ```
 
 The file does not touch the bridge's XenForo links (`/forum/thread/<id>[#post-<id>]`, `/forum/post/<id>`,
@@ -639,7 +622,7 @@ lake tiles of Ixnay and every published realm whose current map version has no `
 realm), so the first visitor after a map change finds them cached, and deletes tile folders of versions a newer one
 outlived a day ago. Without it nothing is pre-rendered: the first visitor pays the render, and the web process removes
 a realm's outlived folders itself (at most once an hour per realm) so the disk cannot fill. Leave it out until the
-Atlas SQL of step 5a has been applied and `MAP_TILE_DIR` is shared:
+Atlas SQL (run by the deploy script) is in place and `MAP_TILE_DIR` is shared:
 
 ```
 CRON_ENABLED_JOBS=...,map-tiles
@@ -708,26 +691,15 @@ bun run wiki:backfill:blurhash -- --apply         # every PNG/JPEG/GIF/WebP asse
 - **CSP (plan 335 Step 6, PL-2):** nginx or a Cloudflare transform rule replaces the app's `Content-Security-Policy`
   header. The app's nonce now reaches the page, so once this release is live: remove that override, then load the
   pages in section 6 with the browser console open and check for "Refused to execute inline script" (see
-  [the release guide](release-guide.md#b7-csp-remove-the-nginx-override)).
+  [the release guide](release-guide.md#b6-csp-remove-the-nginx-override)).
 - **Unused tables:** see plan 347 and branch `chore/drop-unused-prisma-models` (commit `d262df35`). It is kept off `rose-garden` on
   purpose, because `db push` would drop empty tables on the next deploy without review.
 - **Rotate** the PostgreSQL credential (plan 325).
 
 ## Rollback
 
-The deploy script re-fetches the checked-out branch from the remote and hard-resets to it, so roll back by pushing a
-branch at the commit noted in step 1 (for example `rollback-2026-09`) and deploying it with the non-master override:
-
-```bash
-cd /ixwiki/public/projects/ixstats
-git fetch master rollback-2026-09
-git checkout -B rollback-2026-09 master/rollback-2026-09
-ALLOW_NON_MASTER_DEPLOY=1 ./scripts/deploy-production.sh
-```
-
-Then revert or fix on `master` and deploy `master` again.
-
-The schema changes are additive, so old code runs against them, except the `WikiRevision` dedupe, which removed
-duplicate rows, and the Realms push, which **dropped** `world_configs` and `territory_claims` (old code's admin
-world-config pages break; everything else runs). To undo that, restore from the step 1 dump:
-`docker exec -i ixstats-postgres pg_restore -U postgres -d ixstats --clean < /root/ixstats-<stamp>.dump`.
+Follow the [release guide's rollback](release-guide.md#rollback): `scripts/deployment/rollback-deployment.sh` runs
+this release's deploy script against the old commit with `SKIP_SCHEMA_SYNC=1`, so the older schema is never pushed.
+Rolling back past this release needs the pre-deploy dump (`--restore`): the deploy drops `world_configs`,
+`territory_claims`, `procedural_worlds`, `world_templates` and `forum_readers`, the `WikiRevision` dedupe removed
+duplicate rows, and the 1.5 SQL that ships with it converts and drops more (cards, realm time, IxnayID).

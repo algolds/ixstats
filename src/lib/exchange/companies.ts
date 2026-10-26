@@ -254,6 +254,23 @@ export async function depositToCompany(db: PrismaClient, input: CapitalMoveInput
 }
 
 /**
+ * Refuse while the company's own new shares are on sale: their price was set from its capital,
+ * so capital leaving now (a withdrawal, a dividend) would sell them at a price it no longer backs.
+ * Call it under the company lock, which issuing shares also takes.
+ */
+export async function assertNoOpenPrimaryIssue(tx: Db, companyId: string): Promise<void> {
+  const primaryOnSale = await tx.shareListing.count({
+    where: { companyId, status: "OPEN", sellerUserId: null },
+  });
+  if (primaryOnSale > 0) {
+    throw new ExchangeError(
+      "CONFLICT",
+      "New shares are on sale at a price set from this capital: cancel the issue first"
+    );
+  }
+}
+
+/**
  * Move ₷ from the company's capital back to the founder's wallet. Refused once anyone else
  * holds shares: capital they part own leaves only pro rata (dividends, dissolution).
  */
@@ -278,15 +295,7 @@ export async function withdrawFromCompany(db: PrismaClient, input: CapitalMoveIn
           "Other players own shares in this company: pay a dividend instead of withdrawing"
         );
       }
-      const primaryOnSale = await tx.shareListing.count({
-        where: { companyId: input.companyId, status: "OPEN", sellerUserId: null },
-      });
-      if (primaryOnSale > 0) {
-        throw new ExchangeError(
-          "CONFLICT",
-          "New shares are on sale at a price set from this capital: cancel the issue first"
-        );
-      }
+      await assertNoOpenPrimaryIssue(tx, input.companyId);
 
       const { count } = await tx.company.updateMany({
         where: { id: input.companyId, status: "ACTIVE", capital: { gte: input.amount } },

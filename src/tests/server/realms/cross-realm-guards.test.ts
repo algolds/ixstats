@@ -61,17 +61,20 @@ const REALM_OF: Record<string, string> = {
 const refused = { code: "BAD_REQUEST", message: SAME_REALM_MESSAGE };
 
 /** Country lookups answer each nation's realm; `db` adds the delegates the procedure under test needs. */
-function realmContext(db: Record<string, object>) {
-  return createIdorContext({
-    country: {
-      findUnique: jest.fn(async ({ where }: { where: { id: string } }) =>
-        where.id in REALM_OF
-          ? { id: where.id, name: where.id, flag: null, realmId: REALM_OF[where.id] }
-          : null
-      ),
+function realmContext(db: Record<string, object>, role: "member" | "admin" = "member") {
+  return createIdorContext(
+    {
+      country: {
+        findUnique: jest.fn(async ({ where }: { where: { id: string } }) =>
+          where.id in REALM_OF
+            ? { id: where.id, name: where.id, flag: null, realmId: REALM_OF[where.id] }
+            : null
+        ),
+      },
+      ...db,
     },
-    ...db,
-  });
+    role
+  );
 }
 
 beforeEach(() => {
@@ -352,11 +355,13 @@ describe("relations, scenarios and summits", () => {
 
   it("let an admin write no scenario between nations of two realms", async () => {
     const create = jest.fn();
-    const ctx = realmContext({
-      culturalScenario: { create },
-      auditLog: { create: jest.fn().mockResolvedValue({}) },
-    });
-    ctx.user!.role = { ...ctx.user!.role!, name: "admin" };
+    const ctx = realmContext(
+      {
+        culturalScenario: { create },
+        auditLog: { create: jest.fn().mockResolvedValue({}) },
+      },
+      "admin"
+    );
     await expect(
       createCallerFactory(diplomaticScenariosRouter)(ctx as never).createScenario({
         type: "festival",

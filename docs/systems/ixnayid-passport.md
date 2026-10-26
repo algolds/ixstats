@@ -211,8 +211,8 @@ only read.
    way back. `"User"."wikiUsername"`, `"wikiUserId"` and `"lastWikiSync"` stay for this release: the old app reads every
    User column while the new one builds, and the new schema keeps them as `@ignore` fields it never reads.
 
-   Then check that both partial unique indexes survived the push; if either is missing, re-apply the claims SQL
-   (idempotent):
+   Then check that both partial unique indexes are there. Prisma 6.19's push never reads partial indexes, so it leaves
+   them alone; if either is missing anyway, re-apply the claims SQL (idempotent):
 
    ```bash
    docker exec -i ixstats-postgres psql -U postgres -d ixstats -c '\d wiki_name_claims'
@@ -343,8 +343,9 @@ release is checked out on the server (plan A's step 1; the running app is not to
    list from step 2 (if it did not,
    `( cd /ixwiki/public/projects/ixstats && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save`, not a restart by name, which keeps the old list; read it back with
    `pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`). The OOL backfill runs hourly at
-   `20 * * * *` (the current year's OOL page, then it settles what it wrote); the full sync runs at 06:00 UTC. An old
-   name left in the list is only reported as unknown.
+   `20 * * * *` (the current year's OOL page, then it settles what it wrote); the full sync runs at 06:00 UTC. The
+   runner exits on any unknown name left in the list (`[Cron] FATAL: unknown job name(s)`), so check
+   `pm2 logs ixstats-cron` after the restart.
 
 6. **Skipped weeks.** Run the merge's dry run again: the old app, until the restart, could still write a date-keyed
    weekly (the old webhook, or the OOL read inside a page view), so apply again if it plans any merge. Then settle each

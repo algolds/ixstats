@@ -13,6 +13,7 @@ import type { ThinkPagesMessageEvent } from "~/lib/websocket/thinkpages-websocke
 import {
   THINKPAGES_BROADCAST_CHANNEL,
   publishBoardEvent,
+  publishRoomEviction,
   startThinkPagesBroadcastSubscriber,
   type BroadcastPublisher,
   type BroadcastSubscriber,
@@ -32,14 +33,23 @@ jest.mock("@clerk/backend", () => ({
   }),
 }));
 
-// conversation "conv1" has only user_a as an active participant
+// conversation "conv1" has only user_a as an active participant (until a test makes them leave)
+const mockConv1Members = new Set<string>();
 jest.mock("~/server/db", () => ({
   db: {
     conversationParticipant: {
       findFirst: jest.fn(async (args: { where: { conversationId: string; userId: string } }) =>
-        args.where.conversationId === "conv1" && args.where.userId === "user_a"
+        args.where.conversationId === "conv1" && mockConv1Members.has(args.where.userId)
           ? { id: "p1" }
           : null
+      ),
+      findMany: jest.fn(
+        async (args: { where: { conversationId: string; userId: { in: string[] } } }) =>
+          args.where.conversationId === "conv1"
+            ? args.where.userId.in
+                .filter((id) => mockConv1Members.has(id))
+                .map((userId) => ({ userId }))
+            : []
       ),
     },
     thinktankMember: { findFirst: jest.fn(async () => null) },
@@ -112,6 +122,8 @@ beforeEach(async () => {
   jest.spyOn(console, "error").mockImplementation(() => {});
   env.NODE_ENV = "test";
   env.CLERK_SECRET_KEY = "sk_test_secret";
+  mockConv1Members.clear();
+  mockConv1Members.add("user_a");
   httpServer = createServer();
   canJoinRealmBoard.mockClear();
   boardTypingName.mockClear();
@@ -210,6 +222,66 @@ describe("ThinkPagesWebSocketServer rooms", () => {
     expect((await update).data.content).toBe("hello");
   });
 });
+describe("ThinkPagesWebSocketServer evictions", () => {
+  const message: ThinkPagesMessageEvent = {
+    type: "message:new",
+    conversationId: "conv1",
+    messageId: "m2",
+    accountId: "user_b",
+    content: "after you left",
+    timestamp: Date.now(),
+  };
+  /** user_a's socket, once it has joined conv1. */
+  async function joinedMember() {
+    const member = connect("token-a");
+    await connected(member);
+    member.emit("subscribe", { channel: "conversation:conv1" });
+    const rooms = (
+      wsServer as never as { io: { sockets: { adapter: { rooms: Map<string, Set<string>> } } } }
+    ).io.sockets.adapter.rooms;
+    for (let i = 0; i < 100 && !rooms.get("conversation:conv1")?.size; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    return member;
+  }
+
+  it("takes a user who left out of the room, so its messages stop", async () => {
+    const member = await joinedMember();
+    const revoked = nextEvent<{ channel: string }>(member, "subscribe:revoked");
+    wsServer.evictFromRoom({ type: "room:evict", clerkUserId: "user_a", conversationId: "conv1" });
+    expect(await revoked).toEqual({ channel: "conversation:conv1" });
+
+    const silent = silentFor(member, "message:update", 200);
+    await wsServer.broadcastMessage(message);
+    expect(await silent).toBe(true);
+  });
+
+  it("delivers a room's broadcasts in the order they were sent, though the first waits on the re-check", async () => {
+    const member = await joinedMember();
+    const received: string[] = [];
+    member.on("message:update", (payload: { data: ThinkPagesMessageEvent }) =>
+      received.push(payload.data.type)
+    );
+    const sent = wsServer.broadcastMessage(message);
+    void wsServer.broadcastMessage({ ...message, type: "message:deleted" });
+    await sent;
+    for (let i = 0; i < 100 && received.length < 2; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    expect(received).toEqual(["message:new", "message:deleted"]);
+  });
+
+  it("re-checks membership before delivering, in case an eviction was missed", async () => {
+    const member = await joinedMember();
+    mockConv1Members.delete("user_a");
+    const revoked = nextEvent<{ channel: string }>(member, "subscribe:revoked");
+    const silent = silentFor(member, "message:update", 200);
+    await wsServer.broadcastMessage(message);
+    expect(await revoked).toEqual({ channel: "conversation:conv1" });
+    expect(await silent).toBe(true);
+  });
+});
+
 describe("ThinkPagesWebSocketServer anonymous readers", () => {
   it("refuses a realm the check refuses (a draft or hidden realm)", async () => {
     const reader = connect();
@@ -411,8 +483,9 @@ describe("the broadcast bridge between processes", () => {
   function fakeServer(): MessageBroadcaster & {
     broadcastMessage: jest.Mock;
     broadcastBoard: jest.Mock;
+    evictFromRoom: jest.Mock;
   } {
-    return { broadcastMessage: jest.fn(), broadcastBoard: jest.fn() };
+    return { broadcastMessage: jest.fn(), broadcastBoard: jest.fn(), evictFromRoom: jest.fn() };
   }
   const event: ThinkPagesMessageEvent = {
     type: "message:new",
@@ -439,6 +512,20 @@ describe("the broadcast bridge between processes", () => {
       redis.deliver(THINKPAGES_BROADCAST_CHANNEL, "{not json");
       redis.deliver(THINKPAGES_BROADCAST_CHANNEL, JSON.stringify({ type: "notification:new" }));
 
+      expect(server.broadcastMessage).not.toHaveBeenCalled();
+    });
+
+    it("round trips a room eviction to evictFromRoom, and drops one naming no room", () => {
+      const redis = createFakeRedis();
+      const server = fakeServer();
+      startThinkPagesBroadcastSubscriber(server, redis.subscriber);
+      const eviction = { type: "room:evict" as const, clerkUserId: "user_a", groupId: "g1" };
+
+      publishRoomEviction(eviction, redis.publisher);
+      publishRoomEviction({ type: "room:evict", clerkUserId: "user_a" }, redis.publisher);
+
+      expect(server.evictFromRoom).toHaveBeenCalledTimes(1);
+      expect(server.evictFromRoom).toHaveBeenCalledWith(eviction);
       expect(server.broadcastMessage).not.toHaveBeenCalled();
     });
 

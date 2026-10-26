@@ -44,7 +44,7 @@ export const sisterWikiProcedure = publicProcedure.use(
  * upstream-guard.ts). The rule: a limit times the most upstream calls one request makes stays at a quarter of that
  * budget or less. A search sends one opensearch per sister host ("all" included): 30. An intro, a hover preview,
  * reads one page's wikitext: 60. An embed reads the wikitext and its parse on a miss: 30 (2 calls each, so 60), and a
- * page holds at most 10 embeds.
+ * page holds at most 10 embeds; a visitor's embed reads are held lower still, to 20 (`EMBED_READS_PER_MINUTE`, sister.ts).
  */
 export const SISTER_CALLER_LIMITS = {
   search: { max: 30, windowMs: 60_000, namespace: "sistersearch" },

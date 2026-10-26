@@ -1,8 +1,9 @@
 # Deploy runbook: MyCountry fixes (2026-10)
 
-The single ordered runbook for the MyCountry fix plan (`plans/mycountry-audit/fix-plan.md`). It runs inside the
-rose-garden deploy ([deploy-rose-garden-2026-09.md](deploy-rose-garden-2026-09.md)), which still owns the environment,
-realms, Vault, cards and WikiOS steps. Where the two meet, this one names the rose-garden step to run.
+The single ordered runbook for the MyCountry fix plan (`plans/mycountry-audit/fix-plan.md`). It runs inside the 1.5
+release, whose order is the [release guide](release-guide.md#part-b--this-release-15-lobster-crosby-the-rose-garden-rc)'s
+Part B; the environment, realms, Vault, cards and WikiOS steps belong to their own runbooks, which Part B links. Where
+they meet, this one names the step to run.
 
 What production looks like (read-only review, 2026-10-25):
 
@@ -58,16 +59,21 @@ bunx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma
 grep -nE '^(ALTER TABLE|CREATE|DROP)' /tmp/prod-schema-diff.sql
 ```
 
-Keep only the additive statements on MyCountry tables (`ADD COLUMN`, `CREATE TABLE`, `CREATE INDEX`,
-`ADD CONSTRAINT` on Country, GovernmentStructure, CabinetMeeting, MeetingAgendaItem, intents, policies, national
-issues, intelligence, diplomacy and military tables), save them to a file and run it with `run_sql`. Never run a
-`DROP` or enum change from it: those belong to the cards, IxnayID and WikiOS migrations, which the deploy script runs in
-order. On the clone the MyCountry part of the diff was only what steps 3.1 and 3.2 already do
-(`GovernmentStructure."componentMetricsSnapshot"`, the `politicalStability` default of 50, `Country."baselineDate"`
-without a default). The deploy script's `db push` (step 4) adds any additive column left; running them here first
-only shortens the time the old build errors.
+Do not pick statements out of it by hand. `bun scripts/deployment/apply-additive-schema.ts` (a dry run) lists the
+additive part the deploy applies first, and `--apply` applies it in one transaction; it leaves every `DROP`, enum change
+and conversion to the SQL files and `db push`, which the deploy script runs in order. The deploy runs that step itself
+(step 4); running it here first, with the old build stopped, only shortens the time the old build errors, and it is what
+the hand SQL of step 3 needs on a database that lacks the columns those files read (`f-defense.sql` reads
+`Country."ownerUserId"`, which the Realms schema adds). On the clone the MyCountry part of the diff was only what steps
+3.1 and 3.2 already do (`GovernmentStructure."componentMetricsSnapshot"`, the `politicalStability` default of 50,
+`Country."baselineDate"` without a default).
 
 ## 3. Data fixes, in order
+
+The deploy script runs every file below, in this order, right before its `db push` (step 4), so running them by hand
+first is optional; each is a no-op once applied. Run them by hand only after the additive step (step 2) and the Realms
+ownership backfill ([release guide B3](release-guide.md#b3-the-window-the-app-stopped), step 8): `f-defense.sql` ends every
+proposed PvP challenge whose defender has no owner, and before the backfill no nation has one.
 
 1. **a1, engine effects** (`a1-storyteller-effects.sql`). Before the new code starts: it adds
    `GovernmentStructure."componentMetricsSnapshot"`, which the code reads. It retires StorytellerEffect (`DmInputs`)
@@ -118,9 +124,12 @@ only shortens the time the old build errors.
 
 ## 4. Code deploy and the IxWorld rebuild
 
-Run rose-garden step 5 (`./scripts/deploy-production.sh`). Since the realm-time merge into rose-garden, the deploy script also re-runs this runbook's data SQL (and the other 2026-10 runbook's) right before its `db push`; each file is a no-op once applied, so running the steps above by hand first, as written, is still the order to follow. It runs the migration SQL files, `db push` (stop and read
-the message if it reports data loss), `db:generate`, the build, `scripts/deploy-ixworld.sh`, and finally
-`pm2 startOrReload ecosystem.config.cjs --update-env` (which starts the new `cron-runner.mjs` with no jobs).
+Run the deploy script, `./scripts/deploy-production.sh` ([release guide A4](release-guide.md#a4-build-and-deploy)). It
+runs this runbook's data SQL (and the realm-time runbook's) right before its `db push`; each file is a no-op once
+applied, so steps run by hand above change nothing there. In order it runs `db:generate`, the backup, the additive schema
+step, the WikiOS proof check, the migration SQL files, `db push` (stop and read the message if it reports data loss), the
+build, `scripts/deploy-ixworld.sh`, `pm2 startOrReload ecosystem.config.cjs --update-env` (which starts the new
+`cron-runner.mjs` with no jobs), and the web app.
 
 The live app is IxWorld, so the fixes reach players only when IxWorld is rebuilt. Check that it was:
 
@@ -251,6 +260,8 @@ If every row is already 2041 or later, skip the remap.
 ## Rollback
 
 Restore the step 1 backup if a data step went wrong (the a1/a2 conversions are not reversible in place). The schema
-step is additive and can stay. To stop a job, remove its name from `CRON_ENABLED_JOBS`, run
+step is additive and can stay. Going back to the old code takes `scripts/deployment/rollback-deployment.sh` with
+`--restore` ([release guide](release-guide.md#rollback)), never the old commit's own deploy script, which would push the
+older schema. To stop a job, remove its name from `CRON_ENABLED_JOBS`, run
 `( cd /ixwiki/public/projects/ixstats && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save` (not a restart by name, which
 keeps the old list) and read the list back with `pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`.

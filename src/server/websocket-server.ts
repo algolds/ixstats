@@ -12,6 +12,11 @@ import {
 let thinkPagesServer: ThinkPagesWebSocketServer | null = null;
 let broadcastSubscriber: BroadcastSubscriber | null = null;
 
+/**
+ * Starts the ThinkPages Socket.IO server on `httpServer`. A failure is logged and rethrown, so the caller reports it
+ * (ws-backend.mjs exits non-zero for PM2 to restart it; server.mjs carries on without the socket). The caller calls
+ * shutdownWebSocketServer() on SIGTERM / SIGINT.
+ */
 export async function initializeWebSocketServer(httpServer: HTTPServer): Promise<void> {
   if (thinkPagesServer) {
     console.warn("WebSocket server already initialized");
@@ -39,11 +44,12 @@ export async function initializeWebSocketServer(httpServer: HTTPServer): Promise
     broadcastSubscriber = startThinkPagesBroadcastSubscriber(thinkPagesServer);
 
     console.log("WebSocket Server initialized successfully");
-
-    process.on("SIGTERM", handleShutdown);
-    process.on("SIGINT", handleShutdown);
   } catch (error) {
     console.error("Failed to initialize WebSocket server:", error);
+    // Not closed: closing Socket.IO would close the caller's HTTP server too. Broadcasts fall back to Redis.
+    thinkPagesServer = null;
+    broadcastSubscriber = null;
+    throw error;
   }
 }
 
@@ -52,7 +58,12 @@ export function getThinkPagesBroadcaster(): MessageBroadcaster {
   return thinkPagesServer ?? redisThinkPagesBroadcaster;
 }
 
-async function handleShutdown(): Promise<void> {
+/**
+ * Closes the broadcast subscriber and the Socket.IO server (which also starts closing the HTTP server it is attached
+ * to). A no-op when nothing runs, so calling it twice is safe.
+ */
+export async function shutdownWebSocketServer(): Promise<void> {
+  if (!broadcastSubscriber && !thinkPagesServer) return;
   console.log("Shutting down WebSocket services...");
 
   if (broadcastSubscriber) {

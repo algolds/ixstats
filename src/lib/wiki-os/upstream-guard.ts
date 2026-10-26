@@ -27,7 +27,8 @@
 // JSON API calls only. A non-JSON 2xx is a failure (that is how a challenge page is caught), so file bytes or
 // `action=raw` routed through here would trip the breaker on healthy wikis. A 2xx body is read inside the call (it
 // holds its in-flight slot until then), so a body that does not parse is a failure too, never a success the caller
-// then cannot read.
+// then cannot read. It is read up to `MAX_SISTER_RESPONSE_BYTES` (16 MB) and no further: a longer answer is cancelled and
+// throws SisterResponseTooLargeError (unavailable to the reader, not a failure of the breaker: the wiki answered).
 //
 // State is per process, in memory, and costs no timer: time is read from the clock when a call arrives, so nothing
 // keeps the process alive and nothing leaks between tests. Production runs the Next server and server.mjs's cron jobs;
@@ -66,6 +67,51 @@ export class WikiUnavailableError extends AppError {
       { wiki, reason }
     );
   }
+}
+
+/**
+ * The most bytes of an answer read from another wiki: far more than a page at MediaWiki's 2 MB limit takes as JSON
+ * wikitext or as parsed HTML, so only a broken or hostile upstream reaches it.
+ */
+export const MAX_SISTER_RESPONSE_BYTES = 16 * 1024 * 1024;
+
+/**
+ * A wiki's answer was longer than `MAX_SISTER_RESPONSE_BYTES` and was not read to the end. To a reader it is the wiki
+ * giving no usable answer (`unreachable`); a render turns it into SisterRenderError. The wiki did answer, so it is not
+ * a failure of the host's breaker.
+ */
+export class SisterResponseTooLargeError extends WikiUnavailableError {
+  constructor(wiki: string) {
+    super(wiki, "unreachable");
+    this.name = "SisterResponseTooLargeError";
+  }
+}
+
+/**
+ * The body of `response` as text, or null (the body cancelled) once it is longer than `limit` bytes: by its
+ * Content-Length before reading, else as it streams in, so an answer that never ends is never buffered.
+ */
+export async function readCappedText(response: Response, limit: number): Promise<string | null> {
+  if (Number(response.headers.get("content-length")) > limit) {
+    await response.body?.cancel().catch(() => undefined);
+    return null;
+  }
+  const reader = response.body?.getReader();
+  if (!reader) return "";
+  const decoder = new TextDecoder();
+  let total = 0;
+  let text = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+  return text + decoder.decode();
 }
 
 export interface HostGuardOptions {
@@ -202,10 +248,17 @@ function verdictOf(response: Response): "ok" | "unreachable" | "busy" {
   return wikiAnswered ? "ok" : "unreachable";
 }
 
-/** A 2xx answer read whole: the same answer, still readable, when its body parses as JSON; else `unreachable`. */
-async function parsedAnswer(response: Response): Promise<Response | "unreachable"> {
+/** An answer over `MAX_SISTER_RESPONSE_BYTES`, read no further. */
+type TooLarge = "too-large";
+
+/**
+ * A 2xx answer read whole, up to `MAX_SISTER_RESPONSE_BYTES`: the same answer, still readable, when its body parses as
+ * JSON; `too-large` past the cap (the body cancelled); else `unreachable`.
+ */
+async function parsedAnswer(response: Response): Promise<Response | "unreachable" | TooLarge> {
   try {
-    const text = await response.text();
+    const text = await readCappedText(response, MAX_SISTER_RESPONSE_BYTES);
+    if (text === null) return "too-large";
     JSON.parse(text);
     const { status, statusText, headers } = response;
     return new Response(text, { status, statusText, headers });
@@ -216,7 +269,10 @@ async function parsedAnswer(response: Response): Promise<Response | "unreachable
 }
 
 /** The wiki's answer, or why there is none. */
-async function send(url: string, request: GuardedRequest): Promise<Response | UnavailableReason> {
+async function send(
+  url: string,
+  request: GuardedRequest
+): Promise<Response | UnavailableReason | TooLarge> {
   const userAgent = request.userAgent ?? DEFAULT_USER_AGENT;
   const signal = AbortSignal.timeout(timeoutOf(request.timeoutMs));
   let response: Response;
@@ -281,9 +337,10 @@ export class HostGuard {
     ticket: Ticket
   ): Promise<Response> {
     const outcome = await send(url, request);
-    if (outcome instanceof Response) {
+    if (outcome instanceof Response || outcome === "too-large") {
       if (circuit.succeed(ticket))
         console.warn(`[upstream-guard] ${wiki} (${host}): circuit closed; requests resume.`);
+      if (outcome === "too-large") throw new SisterResponseTooLargeError(wiki);
       return outcome;
     }
     const cooldown = circuit.fail(ticket, this.now());

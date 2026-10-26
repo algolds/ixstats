@@ -60,17 +60,49 @@ const CSP_TEMPLATE_APP = buildCSPTemplate(false);
 const CSP_TEMPLATE_STANDALONE = buildCSPTemplate(true);
 
 /**
- * Paths that should be embeddable via iframe from any origin:
- * - /maps — map pages with ?embed=true
- * - /wiki/ — WikiOS article pages
- * - /countries/ — country detail pages
+ * Who may frame a page (clickjacking):
+ * - `*`: the chromeless, read-only map viewer (`/maps?embed=true`), which IxWiki, WikiOS (wiki-embed-shared.ts,
+ *   ArticlePlaceholders) and other sites embed;
+ * - IxWiki's origins: on the maps.ixwiki.com host, every page but the signed-in tools. IxWiki (ixwiki.com, another
+ *   origin) frames maps-host pages and root-level nation slugs without `embed=true`. No third-party site may frame
+ *   them, so the host header (trusted from `x-forwarded-host`) can widen this only to IxWiki itself;
+ * - `'self'` (X-Frame-Options SAMEORIGIN): on the app host, the rest of the map viewer, WikiOS articles and country
+ *   pages, which IxWiki shares an origin with;
+ * - `'none'` (DENY): everything else, the signed-in tools (/admin, /settings, /mycountry, the map editors) included.
  */
-function isEmbeddablePathFn(pathname: string): boolean {
-  return (
-    pathname.startsWith("/maps") ||
-    pathname.startsWith("/wiki/") ||
-    pathname.startsWith("/countries/")
+const IXWIKI_FRAME_ANCESTORS = "'self' https://ixwiki.com https://*.ixwiki.com";
+type FrameAncestors = "*" | typeof IXWIKI_FRAME_ANCESTORS | "'self'" | "'none'";
+
+/** Signed-in tools no other page may frame, whatever the host. */
+const SIGNED_IN_PREFIXES = [
+  "/admin",
+  "/settings",
+  "/mycountry",
+  "/dashboard",
+  "/builder",
+  "/vault",
+  "/messages",
+  "/setup",
+  "/sign-in",
+  "/sign-up",
+  "/stashes",
+  "/myclub",
+  "/myleague",
+];
+
+function frameAncestorsFor(req: NextRequest): FrameAncestors {
+  const { pathname, searchParams } = req.nextUrl;
+  const isMapViewer = pathname === "/maps" || pathname === "/maps/";
+  if (isMapViewer && searchParams.get("embed") === "true") return "*";
+  const signedInTool = SIGNED_IN_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
+  if (signedInTool) return "'none'";
+  if (isStandaloneRequest(req.headers)) return IXWIKI_FRAME_ANCESTORS;
+  if (isMapViewer || pathname.startsWith("/wiki/") || pathname.startsWith("/countries/")) {
+    return "'self'";
+  }
+  return "'none'";
 }
 
 /**
@@ -87,13 +119,11 @@ function nextWithSecurityHeaders(req: NextRequest): NextResponse {
   const nonce = Buffer.from(requestId).toString("base64");
 
   // Content Security Policy — select template by hostname, inject nonce
-  const isEmbeddablePath =
-    isEmbeddablePathFn(req.nextUrl.pathname) || isStandaloneRequest(req.headers);
+  const frameAncestors = frameAncestorsFor(req);
   const cspTemplate = isStandaloneRequest(req.headers) ? CSP_TEMPLATE_STANDALONE : CSP_TEMPLATE_APP;
   let csp = renderCsp(cspTemplate, nonce);
-  if (isEmbeddablePath) {
-    // Allow iframe embedding from any origin for maps, wiki articles, and country pages
-    csp = csp.replace("frame-ancestors 'none'", "frame-ancestors *");
+  if (frameAncestors !== "'none'") {
+    csp = csp.replace("frame-ancestors 'none'", `frame-ancestors ${frameAncestors}`);
   }
 
   const requestHeaders = new Headers(req.headers);
@@ -106,8 +136,9 @@ function nextWithSecurityHeaders(req: NextRequest): NextResponse {
 
   // Security headers
   response.headers.set("X-Content-Type-Options", "nosniff");
-  if (!isEmbeddablePath) {
-    response.headers.set("X-Frame-Options", "DENY");
+  // X-Frame-Options can't name IxWiki's origins, so those pages rely on frame-ancestors alone
+  if (frameAncestors === "'self'" || frameAncestors === "'none'") {
+    response.headers.set("X-Frame-Options", frameAncestors === "'self'" ? "SAMEORIGIN" : "DENY");
   }
   response.headers.set("X-XSS-Protection", "1; mode=block");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");

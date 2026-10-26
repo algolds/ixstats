@@ -49,24 +49,16 @@ export async function resolveEquipmentImage(equipmentId: string): Promise<Wikime
       return failure("database", "Equipment not found");
     }
 
-    // 2. Check if we have a valid cached URL (updated within 7 days)
-    if (equipment.imageUrl && equipment.updatedAt) {
-      const daysSinceUpdate = (Date.now() - equipment.updatedAt.getTime()) / (1000 * 60 * 60 * 24);
-
-      if (daysSinceUpdate < CACHE_DURATION_DAYS) {
-        // Validate that URL is accessible
-        const isValid = await validateImageUrl(equipment.imageUrl);
-
-        if (isValid) {
-          return {
-            success: true,
-            imageUrl: equipment.imageUrl,
-            cached: true,
-            source: "database",
-            timestamp: equipment.updatedAt,
-          };
-        }
-      }
+    // 2. Keep the stored URL while it still loads, however old: it may be curated, and a Wikimedia search's top hit
+    //    only replaces an image that is missing or broken
+    if (equipment.imageUrl && (await validateImageUrl(equipment.imageUrl))) {
+      return {
+        success: true,
+        imageUrl: equipment.imageUrl,
+        cached: true,
+        source: "database",
+        timestamp: equipment.updatedAt,
+      };
     }
 
     // 3. Try to resolve from Wikimedia by exact name

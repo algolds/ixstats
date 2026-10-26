@@ -19,6 +19,53 @@ export function canViewPost(
   return !!viewerClerkUserId && post.account?.clerkUserId === viewerClerkUserId;
 }
 
+/** The IxTwitter sync's `[DiscordMsg:<id>]` marker, in any case and with or without an id. */
+const DISCORD_MARKER = /\s*\[DiscordMsg:[^\]]*\]/gi;
+
+/**
+ * Removes any `[DiscordMsg:<id>]` marker from user-supplied post content. Only the IxTwitter sync
+ * may set one (edit, delete and reactions act on the Discord message it names), so a forged
+ * marker would let a post act on someone else's Discord message.
+ */
+export function stripDiscordMarker(content: string): string {
+  return content.replace(DISCORD_MARKER, "");
+}
+
+/**
+ * The post with its embedded parent and repost dropped when the viewer couldn't read them on
+ * their own (a public reply to, or repost of, a private post).
+ */
+export function withVisibleEmbeds<
+  T extends { parentPost?: unknown; repostOf?: unknown } | null | undefined,
+>(post: T, viewerClerkUserId?: string | null): T {
+  if (!post) return post;
+  const visible = (p: any) => (p && canViewPost(p, viewerClerkUserId) ? p : null);
+  return { ...post, parentPost: visible(post.parentPost), repostOf: visible(post.repostOf) };
+}
+
+/** A persona as other players see it: the owner's Clerk id stays on the server. */
+function withoutOwnerId(account: any) {
+  if (!account || typeof account !== "object") return account;
+  const { clerkUserId: _owner, ...rest } = account;
+  return rest;
+}
+
+/**
+ * A post whose personas (its own, its parent's and its original's) carry no owner Clerk id.
+ * canViewPost reads that id, so it runs before this.
+ */
+export function withoutOwnerIds<T>(post: T): T {
+  if (!post || typeof post !== "object") return post;
+  const p = post as any;
+  const embed = (e: any) => (e ? { ...e, account: withoutOwnerId(e.account) } : e);
+  return {
+    ...p,
+    account: withoutOwnerId(p.account),
+    parentPost: embed(p.parentPost),
+    repostOf: embed(p.repostOf),
+  };
+}
+
 /**
  * Reaction tally for a post.
  *
@@ -102,7 +149,7 @@ export const pollInclude = {
   },
 };
 
-/** Persona fields shown next to a post or comment. */
+/** Persona fields shown next to a post or comment; `clerkUserId` is for canViewPost and never sent (transformPost drops it). */
 const accountSelect = {
   id: true,
   username: true,
@@ -134,13 +181,16 @@ export const postInclude = {
   _count: { select: { replies: true, reposts: true } },
 };
 
-/** Post as the client reads it: parsed hashtags and reaction counts, formatted poll and a display timestamp. */
+/**
+ * Post as the client reads it: parsed hashtags and reaction counts, formatted poll and a display
+ * timestamp, and no owner Clerk ids on its personas.
+ */
 export function transformPost(p: any) {
   if (!p) return p;
   const reactionCounts = resolveReactionCounts(p.reactionCounts, p.reactions);
 
   return {
-    ...p,
+    ...withoutOwnerIds(p),
     poll: formatPollForClient(p.poll),
     hashtags: p.hashtags
       ? typeof p.hashtags === "string"
@@ -166,7 +216,7 @@ export async function invalidateFeeds() {
 }
 
 /**
- * Loads a post (with its account) for an edit or delete. The owner may always act; a moderator
+ * Loads a post (with its account) for an edit, delete or pin. The owner may always act; a moderator
  * may when their role level is 10 or lower, or 20 or lower and not below the post owner's.
  */
 export async function loadPostForModeration(
@@ -174,7 +224,7 @@ export async function loadPostForModeration(
   clerkUserId: string | null | undefined,
   roleLevel: number | null | undefined,
   postId: string,
-  action: "update" | "delete"
+  action: "update" | "delete" | "pin"
 ) {
   if (!clerkUserId) {
     throw new TRPCError({

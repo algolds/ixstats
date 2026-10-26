@@ -276,7 +276,12 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
         orderBy: [{ verified: "desc" }, { followerCount: "desc" }, { createdAt: "asc" }],
       });
 
-      return accounts;
+      // Public: the owner's Clerk id stays on the server; `isMine` says whether the viewer owns it.
+      const viewer = ctx.auth?.userId;
+      return accounts.map(({ clerkUserId, ...account }) => ({
+        ...account,
+        isMine: !!viewer && clerkUserId === viewer,
+      }));
     }),
 
   // How many feed accounts one user may create (Admin → ThinkPages)

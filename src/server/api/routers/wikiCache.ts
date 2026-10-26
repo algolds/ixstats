@@ -6,18 +6,19 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import { adminProcedure, createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { wikiCacheService } from "~/lib/wiki-os/adapters/ixstates/cache-service";
 
 export const wikiCacheRouter = createTRPCRouter({
   /**
    * Get full country profile (batched)
-   * This is the main endpoint that replaces multiple API calls in WikiIntelligenceTab
+   * This is the main endpoint that replaces multiple API calls in WikiIntelligenceTab. Public, so rate limited: a
+   * name the wiki has no page for reaches WikiBridge (then is remembered missing for a while).
    */
-  getCountryProfile: publicProcedure
+  getCountryProfile: rateLimitedPublicProcedure
     .input(
       z.object({
-        countryName: z.string().min(1),
+        countryName: z.string().min(1).max(255),
         wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
       })
     )
@@ -32,9 +33,9 @@ export const wikiCacheRouter = createTRPCRouter({
     }),
 
   /**
-   * Refresh country cache (authenticated users only)
+   * Refresh country cache (administrators only: nothing in the app offers it, and it drops what every reader shares)
    */
-  refreshCountryCache: rateLimitedMutationProcedure
+  refreshCountryCache: adminProcedure
     .input(
       z.object({
         countryName: z.string().min(1),

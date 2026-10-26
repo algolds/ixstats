@@ -23,6 +23,8 @@ IxWorld (port 3002) is untouched.
 **Order matters.** Run the launch steps by hand, one at a time, in this order:
 
 - 0, then 0b (owner-approved: it moves the checkout to the release, whose files steps 1, 1b and 4 run), then 1, 1b, 1c.
+  All of them come before step 2's deploy: step 1's `2026-09-30-wikios-api.sql` above all (see "The data-safety
+  SQL runs before the push"), and step 1b's `verifiedById` fix-up while the IxnayID identity deploy has not run.
 - Before step 2's deploy: step 4's loopback server and its env line, step 6a's app URL check and the `ixstats-cron`
   job list (step 2 says why).
 - 2, then 2a.
@@ -45,21 +47,25 @@ Every step has a rollback line that names the backup it restores.
 
 ## Before the launch
 
-The WikiOS v1 code reaches production in an ordinary IxStates release (`scripts/deploy-production.sh`: `prisma db push`,
-build, PM2 reload). That deploy runs none of the steps below: no manual SQL, no environment variables, no MediaWiki
-configuration, no nginx takeover. The code is safe without them because of one switch, **`WIKIOS_V1_ENABLED`, off
-unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
+The WikiOS v1 code reaches production in an ordinary IxStates release (`scripts/deploy-production.sh`: the additive
+schema step, its SQL files, `prisma db push`, build, PM2 reload; [release guide A4](release-guide.md#a4-build-and-deploy)).
+That deploy runs none of the steps below: no manual SQL from `prisma/manual-migrations/`, no environment variables, no
+MediaWiki configuration, no nginx takeover. The code is safe without them because of one switch,
+**`WIKIOS_V1_ENABLED`, off unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on. One of them is
+not optional for the deploy itself: step 1's `2026-09-30-wikios-api.sql` must run before it (below).
 
 **Safe while the switch is off (the state after an ordinary deploy):**
 
-- **Schema.** Every table and column WikiOS v1 reads is in the Prisma schema, so `db push` creates them. The push asks to
-  confirm five unique constraints: `wiki_articles (source, pageId)`, `wiki_revisions (source, revId)`, `wiki_logs.logId`,
-  `wiki_logs.mwLogId`, and `lore_stash_items (stashId, contentType, pageTitle)` in place of `(stashId, pageTitle)`. None can
-  fail: the four columns are new and empty (NULLs are never duplicates), and the stash key is weaker than the old one. Run
-  `bun run db:push:force` by hand first and answer yes, as for the Realms push in the rose-garden runbook (5a); the deploy
-  script's own push then has nothing to do. Pushed alone, a deploy script stops at that prompt without changing anything.
-  Before any hand push of a release with the data-safety plan in it, read "The data-safety SQL runs before the push"
-  below: three files must run first.
+- **Schema.** Every table and column WikiOS v1 reads is in the Prisma schema, so the deploy's additive step and `db push`
+  create them. Five unique constraints would make the push ask for confirmation: `wiki_articles (source, pageId)`,
+  `wiki_revisions (source, revId)`, `wiki_logs.logId`, `wiki_logs.mwLogId`, and
+  `lore_stash_items (stashId, contentType, pageTitle)` in place of `(stashId, pageTitle)`. None can fail: the four columns
+  are new and empty (NULLs are never duplicates), and the stash key is weaker than the old one. Step 1's files create all
+  five (`2026-09-30-wikios-api.sql`, `2026-09-30-wikios-sync-v1.sql`, `2026-09-30-wikios-stash-key.sql`), and step 1 runs
+  before the deploy, so the push has none of them to ask. **Never push the schema by hand before the deploy**: a push
+  before the deploy has run `20261105120000_wikios_conflicts` creates `wiki_revisions.origin` itself and skips its
+  labelling (below). If the deploy's own push stops on a warning, the data-safety SQL has already run, so a hand push is
+  safe then (step 2).
 - **Reading.** Articles, history, diffs, categories, Special pages and search work. Full-text search uses the old query,
   because the search vector stays empty until step 1's `search-indexes.sql`.
 - **No writes, unless an administrator turns editing on.** With the switch off, WikiOS writes follow a second switch,
@@ -78,10 +84,10 @@ unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
 
 - With no background render, WikiOS fills its link, template and image tables only for pages someone opens. "What links
   here" and page images stay incomplete until step 7b; feed cards then fall back to the picture in the article's intro.
-- The manual SQL of step 1 is not run: integer ids for api.php (`pageId`, `revId`, `logId` sequences, triggers and
-  backfills), the generated search vector and its GIN and trigram indexes, the redirect backfill and the default
-  protections. Every file is idempotent and safe to apply before the switch; `2026-09-30-wikios-stash-key.sql` can run at
-  any time.
+- Until step 1's manual SQL runs (before the deploy), these are missing: integer ids for api.php (`pageId`, `revId`,
+  `logId` sequences, triggers and backfills), the generated search vector and its GIN and trigram indexes, the redirect
+  backfill and the default protections. Every file is idempotent and safe to apply before the switch;
+  `2026-09-30-wikios-stash-key.sql` can run at any time.
 
 **Unsafe before the launch steps:**
 
@@ -130,11 +136,18 @@ order, and all before `db push`:
 A wrong label does not lose text, but every revision wrongly marked `wikios` makes later classic edits to its page look
 like collisions: conflict rows and notices for edits that did not conflict.
 
-How `scripts/deploy-production.sh` really runs them: after its database backup it runs a fixed list of migration files
-with `bunx prisma db execute` (Atlas Studio, Vault hub, the forum readers drop, the cards phases, IxnayID), then
-`20261105120000_wikios_conflicts`, then `20261105120001_wikios_sync_dead_letters`, then `bun run db:push:force`. So inside
-the deploy, files 2 and 3 run before the push, in that order. The deploy runs nothing from `prisma/manual-migrations/`, so
-file 1 is yours to run first (step 1), and no hand push may run before the deploy has run file 2.
+How `scripts/deploy-production.sh` really runs them: after its database backup it runs the additive schema step
+(`scripts/deployment/apply-additive-schema.ts --apply`), then a fixed list of migration files with
+`bunx prisma db execute` (the Realms drop, the forum, Atlas Studio, Vault hub, the forum readers drop, the cards phases,
+IxnayID, native lore), then `20261105120000_wikios_conflicts`, then `20261105120001_wikios_sync_dead_letters`, then the
+2026-10 MyCountry and realm-time files, then `bun run db:push:force`. So inside the deploy, files 2 and 3 run before the
+push, in that order. The additive step never adds `wiki_revisions.origin` (it is excluded by name, so file 2 always
+adds it and labels), but it does add `revId` when the database lacks it: nullable and empty, which is exactly the case
+where every row would stay `wikios`. The deploy runs nothing from `prisma/manual-migrations/`, so **file 1 is yours to run
+before the deploy** (step 1; it fills `revId` whether or not the column already exists), and no hand push may run before
+the deploy has run file 2. The [release guide](release-guide.md#b3-the-window-the-app-stopped) puts these in order for
+1.5. If file 1 stops on a column it reads that the database does not have yet, run the additive step by hand first
+(`bun scripts/deployment/apply-additive-schema.ts --apply`; the deploy runs it again and finds nothing), then file 1.
 
 Check before that deploy (read-only):
 
@@ -147,13 +160,12 @@ docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
   "select column_name from information_schema.columns where table_name = 'wiki_revisions' and column_name = 'origin'"
 ```
 
-If you need the hand push for the unique-constraint prompt (above), run files 2 and 3 by hand first, after file 1, then
-push:
+If the deploy's push stops on a warning, files 2 and 3 have already run, so a hand `bun run db:push:force` is safe then
+(step 2). Running files 2 and 3 by hand, after file 1, is also safe:
 
 ```bash
 docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 < "$IX/prisma/migrations/20261105120000_wikios_conflicts/migration.sql"
 docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 < "$IX/prisma/migrations/20261105120001_wikios_sync_dead_letters/migration.sql"
-( cd "$IX" && bun run db:push:force )
 ```
 
 Both files are idempotent, so the deploy running them again changes nothing. Both are additive (new tables, a new
@@ -301,10 +313,11 @@ The baseline is for comparing the server a day after the launch: run the same bl
 Steps 1, 1b and 4 run files from `$IX` that only the release has (step 1's SQL, step 1b's rights import, step 4's
 nginx file), but only step 2's deploy moves the checkout. So the checkout moves to the release here, as the deploy
 moves it (`scripts/deploy-production.sh`: fetch, `reset --hard`, `bun install --frozen-lockfile`, `bun run db:generate`),
-with nothing else the deploy does: no `bun run clean`, no build, no migration, no PM2 reload. Ask the owner before
+with nothing else the deploy does: no backup, no additive schema step, no build, no migration, no PM2 reload. Ask the owner before
 running it: from here to step 2 the checkout holds code that is not running.
 
-- **IxStates keeps running its old build.** `.next` is not touched (only the deploy's `bun run clean` removes it), and
+- **IxStates keeps running its old build.** `.next` is not touched (only the deploy moves it aside, when its build
+  starts), and
   what the app has loaded stays loaded, though a module it loads for the first time comes from the new `node_modules`.
   Keep the time from here to step 2 to one sitting. The other apps of `ecosystem.config.cjs` (websockets, sync) keep the
   code they loaded at start, unless PM2 restarts one (a crash, a memory restart): it would then start on the release's
@@ -481,6 +494,9 @@ get `sessionsecretmissing` again and nothing else changes.
 
 ## 2. Deploy IxStates as usual
 
+**Before this deploy:** step 1 (at least `2026-09-30-wikios-api.sql`, see "The data-safety SQL runs before the push"),
+and step 1b's `verifiedById` fix-up if the IxnayID identity deploy has not run (the deploy's conversion reads it).
+
 **Before this deploy (launch time), when the release carries the integration and hosts work (plan 2026-10-25):**
 
 1. Step 4's loopback server and its `WIKIOS_MEDIAWIKI_INTERNAL_URL` line. They use plan 417's files, which the checkout
@@ -507,18 +523,20 @@ get `sessionsecretmissing` again and nothing else changes.
    **Rollback:** `sudo cp -a "$BK/ecosystem.config.cjs.2" "$IX/ecosystem.config.cjs"`, then restart `ixstats-cron` from
    the file (Conventions).
 
-**The WikiOS proof check (launch time).** The deploy runs `bun scripts/audit/wikios-proof.ts predeploy` right after
-`db:generate`, before its database backup and before any migration or `db push`
-([the proof's README](../audits/wikios-proof/README.md)). It takes the `wikios-proof` job lease, checks that
-`docs/audits/wikios-proof/latest.json` is a clean, passing proof of this release's WikiOS files (its tree key), and runs
-the editor round trip over every page of the production database (about 15 seconds). It prints one line per check,
-`ok   <check>: ...` or `FAIL <check>: ... Fix: ...`, and the deploy stops on any `FAIL`. A refused deploy changes no
-data: the check runs before the backup and every migration, reads only, and gives its lease back. It has changed the
-checkout, though: by then the deploy has reset it to the release (`reset --hard`, `clean -fd`), removed the previous
-build (`bun run clean` deletes `.next`), installed the release's dependencies and generated its Prisma client. With
-`.next` gone, IxStates is effectively down from the refusal on: the running server sends pages whose scripts and styles
-(`/_next/static/…`) no longer exist, and any route it had not loaded fails. Recover at once (below), and never restart
-it on the half-installed checkout. Its reports
+**The WikiOS proof check (launch time).** The deploy runs `bun scripts/audit/wikios-proof.ts predeploy` after its
+database backup and its additive schema step, before its SQL files and `db push`
+([the proof's README](../audits/wikios-proof/README.md)). It takes the `wikios-proof` job lease (the additive step
+creates `job_leases` on a database that lacks it, and a check that still finds no such table takes no lease, since no
+weekly proof can hold one), checks that `docs/audits/wikios-proof/latest.json` is a clean, passing proof of this
+release's WikiOS files (its tree key), and runs the editor round trip over every page of the production database (about
+15 seconds). It prints one line per check, `ok   <check>: ...` or `FAIL <check>: ... Fix: ...`, and the deploy stops on
+any `FAIL`. A refused deploy changes no rows, reads only and gives its lease back, and it leaves the live build in place:
+the deploy no longer deletes `.next` (it moves it aside only when the build starts, after the check). What stays done:
+the checkout is reset to the release (`reset --hard`, `clean -fd`), its dependencies are installed and its Prisma client
+generated, the database is backed up and the additive schema changes are applied (new types, tables and nullable or
+defaulted columns only). A server still running keeps serving the old build, but IxStates is stopped for this launch
+(release guide B3 step 1), and a stopped server must not be started on that checkout: its `node_modules` are the
+release's, not the old build's. So IxStates stays down until a deploy builds; recover at once (below). Its reports
 are `predeploy-<stamp>.json` and `.txt`, in `$IX/.bench-out/proof` until step 7e sets `WIKIOS_PROOF_DIR`, and in
 `/ixwiki/private/logs/wikios-proof` after.
 
@@ -534,7 +552,7 @@ git -C "$IX" show FETCH_HEAD:scripts/audit/wikios-proof-thresholds.json | jq '.r
 docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
   "select count(id) as pages, count(*) filter (where namespace = 0) as articles, count(wikitext) as with_text
      from wiki_articles where source = 'ixwiki' and title is not null"
-# the table the check's lease lives in: job_leases, or empty when production predates it (2026-10-05)
+# the table the check's lease lives in: job_leases, or empty when production predates it (2026-10-05; the additive step creates it)
 docker exec -i ixstats-postgres psql -U postgres -d ixstats -c "select to_regclass('public.job_leases')"
 ```
 
@@ -543,17 +561,19 @@ docker exec -i ixstats-postgres psql -U postgres -d ixstats -c "select to_regcla
   compares the tree key itself.
 - **The query prints counts, `pages` is at or above the floor and `to_regclass` prints `job_leases`:** deploy as usual
   (below).
-- **The query errors with `column "..." does not exist`, or `to_regclass` prints an empty value:** production's database
-  is older than this release's schema. The 2026-09-03 `wiki_articles` lacks a column the round trip reads, and a database
-  from before 2026-10-05 (commit `57c2feb14`) has no `job_leases` table, so the check cannot take its lease; the deploy's
-  own `db push` adds both only after the check. This is the one case for the override, and only for this first launch
-  deploy: `( cd "$IX" && WIKIOS_PROOF_OVERRIDE=1 bun run deploy:prod )`. Every failing line then starts
-  `WIKIOS PROOF OVERRIDDEN:`. The expected ones: `proof.lease` saying `could not take the lease` and that `job_leases`
-  does not exist, when `to_regclass` was empty; `harness.roundtrip` and `roundTrip.*`, when the query errored. Any other
-  overridden line (`proof.committed`, or a `proof.lease` that says something else) went past a check this case does not
-  explain: tell the owner at once. After the deploy, run the query and `to_regclass` again: they must print counts and `job_leases` now. Step 7e's
-  launch proof then runs the full round trip on the pushed database. Never set the override because a deploy was
-  refused without first reading which check failed.
+- **`to_regclass` prints an empty value:** nothing to do. The deploy's additive step creates `job_leases` before the
+  check, and a check that finds none takes no lease (no weekly proof can hold one).
+- **The query errors with `column "..." does not exist`:** production's `wiki_articles` (2026-09-03) is older than this
+  release's schema. The additive step, which runs before the check (and by hand in release guide B3 step 4), adds a
+  missing column that is nullable or has a default; one that is required with no default waits for `db push`, after the
+  check, and then the round trip cannot read it. Look for the column in the additive dry run
+  (`( cd "$IX" && bun scripts/deployment/apply-additive-schema.ts )`, release guide A1): if it is there, apply the step
+  (B3 step 4) and run the query again. If it is not, this is the one case for the override, and only for this first
+  launch deploy: `( cd "$IX" && WIKIOS_PROOF_OVERRIDE=1 bun run deploy:prod )`. Every failing line then starts
+  `WIKIOS PROOF OVERRIDDEN:`. The expected ones are `harness.roundtrip` and `roundTrip.*`. Any other overridden line
+  (`proof.committed`, or `proof.lease`) went past a check this case does not explain: tell the owner at once. After the
+  deploy, run the query again: it must print counts now. Step 7e's launch proof then runs the full round trip on the
+  pushed database. Never set the override because a deploy was refused without first reading which check failed.
 - **`pages` is below the floor:** every deploy and every weekly run would fail `roundTrip.pages`. Stop and ask the
   owner; do not override.
 
@@ -570,15 +590,18 @@ If the deploy refuses:
   change saved text. Stop and give the owner the `predeploy-<stamp>.json` in the reports directory above. Do not
   override.
 
-Whatever the refusal, IxStates stays down until a deploy builds again, so recover within minutes, one of two ways:
+Whatever the refusal, IxStates (stopped for the window) stays down until a deploy builds again, so recover within
+minutes, one of two ways:
 
-- **The refusal is an expected override case** (the read-first block above says when, for example `proof.lease` with no
-  `job_leases` table): run the deploy again with `WIKIOS_PROOF_OVERRIDE=1`. It builds and reloads as usual.
+- **The refusal is an expected override case** (the read-first block above says when: `roundTrip.*` on a column only
+  the push adds): run the deploy again with `WIKIOS_PROOF_OVERRIDE=1`. It builds and reloads as usual.
 - **Anything else** (do not override): roll back to the release that was running. The owner pushes a branch at
   `$BK/previous-release.sha` to the server's `master` remote
   (`git push origin "$(cat "$BK/previous-release.sha")":refs/heads/rollback-<date>`, from a checkout that has that
   commit), then run `( cd "$IX" && ./scripts/deployment/rollback-deployment.sh rollback-<date> )`, which deploys
-  and rebuilds it. If that deploy stops on a proof check, the old release has no committed proof: run it again with
+  and rebuilds it with `SKIP_SCHEMA_SYNC=1` (no schema change; the refused deploy's SQL never ran, and the old code
+  ignores the additive step's tables and columns). A release older than the proof CLI skips the proof check, and the
+  script says so; if an older release that has it stops on a proof check, it has no committed proof: run it again with
   `WIKIOS_PROOF_OVERRIDE=1`. Then hand the owner the `predeploy-<stamp>.json`.
 
 A deploy that dies after the check leaves the lease to lapse within 2 hours (a weekly run in that window is recorded
@@ -600,7 +623,9 @@ pm2 logs "$IXAPP" --lines 2000 --nostream | grep -c 'WIKIOS_MEDIAWIKI_INTERNAL_U
 A hit means a process started without the variable: fix the env file (step 4) and restart that process.
 
 The release arrives with `WIKIOS_V1_ENABLED` off (see "Before the launch"); leave it off until step 6b. If `db push`
-stops on the unique-constraint prompt, run `bun run db:push:force` by hand and answer yes, then run the deploy again.
+stops on a unique-constraint warning, the deploy has already run its SQL, the data-safety files included, and left the
+live build untouched: read every line, run `bun run db:push:force` by hand and answer yes only if each is an expected
+unique constraint on a new column, then run the deploy again.
 
 `ixstats-cron`, stopped since step 0b, is started again by the deploy's PM2 reload. Check it (read-only):
 `pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.status'` prints `online`; if it prints `stopped`,
@@ -611,7 +636,9 @@ well, and every later IxStates release carries its WikiOS code the same way.
 
 **Rollback:** the usual IxStates rollback: `./scripts/deployment/rollback-deployment.sh <remote-branch>` (what
 `bun run deploy:rollback` runs), with the branch at `$BK/previous-release.sha` pushed as in "If the deploy refuses"
-above. The proof check has none of its own: it reads only, and its lease is given back on a refusal and released after
+above. Once the deploy's SQL has run, add `--restore` with the dump the deploy took (the last line of
+`backups/deploy-history.log`): this release's SQL converts data the old code reads
+([release guide, Rollback](release-guide.md#rollback)). The proof check has none of its own: it reads only, and its lease is given back on a refusal and released after
 the PM2 reload.
 
 ## 2a. Fonts under the base path, uploads at the site root (read-only, after step 2)

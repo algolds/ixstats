@@ -2,6 +2,12 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 
+/**
+ * Arbitrary constant; identifies the per-(poll, voter) ballot locks in pg_locks. Its own key
+ * space (intent.ts uses 51001); nothing else is locked while it is held.
+ */
+const POLL_VOTE_LOCK_NAMESPACE = 51002;
+
 export const pollsVotingRouter = createTRPCRouter({
   // Register user vote
   vote: rateLimitedMutationProcedure
@@ -62,61 +68,71 @@ export const pollsVotingRouter = createTRPCRouter({
         }
       }
 
-      // Handle voting based on pollType
-      if (poll.pollType === "feature-voting") {
-        // Feature voting allows toggling upvotes (one option toggled at a time)
-        const optionId = input.optionIds[0];
-        if (!optionId) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "No option specified" });
-        }
+      // One ballot per (poll, voter) at a time: the "already voted?" read and the write below
+      // can't interleave with a parallel request, so a single-choice poll can't take two options.
+      // $executeRaw, not $queryRaw: Prisma cannot deserialize the void pg_advisory_xact_lock returns
+      return db.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${POLL_VOTE_LOCK_NAMESPACE}::int, hashtext(${`${poll.id}:${userId}`}))`;
 
-        const existingVote = await db.pollVote.findFirst({
-          where: { pollId: poll.id, optionId, userId },
-        });
+        // Handle voting based on pollType
+        if (poll.pollType === "feature-voting") {
+          // Feature voting allows toggling upvotes (one option toggled at a time)
+          const optionId = input.optionIds[0];
+          if (!optionId) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "No option specified" });
+          }
 
-        if (existingVote) {
-          // Unvote (toggle off)
-          await db.pollVote.delete({
-            where: { id: existingVote.id },
+          const existingVote = await tx.pollVote.findFirst({
+            where: { pollId: poll.id, optionId, userId },
           });
-          return { success: true, action: "unvote" };
+
+          if (existingVote) {
+            // Unvote (toggle off)
+            await tx.pollVote.delete({
+              where: { id: existingVote.id },
+            });
+            return { success: true, action: "unvote" };
+          } else {
+            // Vote (toggle on)
+            await tx.pollVote.create({
+              data: { pollId: poll.id, optionId, userId },
+            });
+            return { success: true, action: "vote" };
+          }
         } else {
-          // Vote (toggle on)
-          await db.pollVote.create({
-            data: { pollId: poll.id, optionId, userId },
+          // Choice poll or Feature poll (standard single/multiple ballot submission)
+          // Check if user has already voted on this poll at all
+          const existingVote = await tx.pollVote.findFirst({
+            where: { pollId: poll.id, userId },
           });
+
+          if (existingVote) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "You have already voted on this poll",
+            });
+          }
+
+          // The same option twice is one choice
+          const optionIds = [...new Set(input.optionIds)];
+
+          // Enforce single-choice restriction if not multiple choice
+          if (!poll.multiple && optionIds.length > 1) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Only single choice is allowed" });
+          }
+
+          // Create votes
+          await tx.pollVote.createMany({
+            data: optionIds.map((optionId) => ({
+              pollId: poll.id,
+              optionId,
+              userId,
+            })),
+          });
+
           return { success: true, action: "vote" };
         }
-      } else {
-        // Choice poll or Feature poll (standard single/multiple ballot submission)
-        // Check if user has already voted on this poll at all
-        const existingVote = await db.pollVote.findFirst({
-          where: { pollId: poll.id, userId },
-        });
-
-        if (existingVote) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "You have already voted on this poll",
-          });
-        }
-
-        // Enforce single-choice restriction if not multiple choice
-        if (!poll.multiple && input.optionIds.length > 1) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Only single choice is allowed" });
-        }
-
-        // Create votes
-        await db.pollVote.createMany({
-          data: input.optionIds.map((optionId) => ({
-            pollId: poll.id,
-            optionId,
-            userId,
-          })),
-        });
-
-        return { success: true, action: "vote" };
-      }
+      });
     }),
 
   // Get status of a poll for the current user

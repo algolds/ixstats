@@ -37,6 +37,8 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
+    /* Test fixtures, including the audit-arch fake source trees that are broken on purpose. The tests stay included for the editor. */
+    "src/tests/fixtures",
     "**/node_modules",
     "**/.*",
     "public",

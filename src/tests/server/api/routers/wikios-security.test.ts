@@ -445,8 +445,8 @@ describe("S7: template preview is signed-in, bounded, sanitised and SHA-256 keye
     const first = previewCacheKey("T", { a: "Aa" });
     const second = previewCacheKey("T", { a: "BB" });
 
-    expect(first).toMatch(/^tplprev:v2:[0-9a-f]{64}$/);
-    expect(second).toMatch(/^tplprev:v2:[0-9a-f]{64}$/);
+    expect(first).toMatch(/^tplprev:v3:[0-9a-f]{64}$/);
+    expect(second).toMatch(/^tplprev:v3:[0-9a-f]{64}$/);
     expect(first).not.toBe(second);
     expect(previewCacheKey("T", { a: "1", b: "2" })).toBe(previewCacheKey("T", { b: "2", a: "1" }));
   });
@@ -555,14 +555,17 @@ describe("S7: unbounded title and query inputs are capped", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
-  it("caps page-content titles and sections at 512 characters", async () => {
+  it("caps page-content titles at 512 characters", async () => {
     const caller = createCallerFactory(wikiosPageContentRouter)(ctx());
-    await expect(
-      caller.getSectionContent({ title: "t".repeat(513), section: "s" })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(
-      caller.getSectionContent({ title: "t", section: "s".repeat(513) })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(caller.getPageImages({ title: "t".repeat(513) })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+  });
+
+  it("no longer serves getSectionContent (a public per-line heading regex was a ReDoS)", () => {
+    expect(
+      (wikiosPageContentRouter._def.procedures as Record<string, unknown>).getSectionContent
+    ).toBeUndefined();
   });
 
   it("caps search queries at 256 characters and fileTypes at 20 entries", async () => {

@@ -3,6 +3,7 @@
 import { SystemRestart as Loader2, Gym as Dumbbell, Group as Users } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { usePaidActionRequestId } from "~/components/sports/core/usePaidActionRequestId";
 
 interface TeamTrainingButtonProps {
   teamId: string;
@@ -11,15 +12,17 @@ interface TeamTrainingButtonProps {
 }
 
 export function TeamTrainingButton({ teamId, playerCount, onTrained }: TeamTrainingButtonProps) {
+  const trainingRequest = usePaidActionRequestId();
   const teamTraining = api.sports.teamTraining.useMutation({
     onSuccess: () => {
+      trainingRequest.done();
       onTrained?.();
     },
   });
 
   return (
     <Button
-      onClick={() => teamTraining.mutate({ teamId })}
+      onClick={() => teamTraining.mutate({ teamId, requestId: trainingRequest.idFor(teamId) })}
       disabled={teamTraining.isPending || playerCount === 0}
       variant="secondary"
       className="w-full"

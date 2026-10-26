@@ -125,6 +125,30 @@ export async function canJoinConversation(
   return participant !== null;
 }
 
+/**
+ * Which of `clerkUserIds` are still active members of a conversation or ThinkTank group, in one
+ * query: a room's sockets are re-checked with it before a message is delivered.
+ */
+export async function activeRoomMembers(
+  kind: "conversation" | "group",
+  id: string,
+  clerkUserIds: string[]
+): Promise<Set<string>> {
+  if (clerkUserIds.length === 0) return new Set();
+  const where = { userId: { in: clerkUserIds }, isActive: true };
+  const rows =
+    kind === "conversation"
+      ? await db.conversationParticipant.findMany({
+          where: { ...where, conversationId: id },
+          select: { userId: true },
+        })
+      : await db.thinktankMember.findMany({
+          where: { ...where, groupId: id },
+          select: { userId: true },
+        });
+  return new Set(rows.map((row) => row.userId));
+}
+
 export async function canJoinThinktankGroup(
   clerkUserId: string,
   groupId: string

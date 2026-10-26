@@ -9,7 +9,13 @@
 // wrap their call in `unlessUnavailable`.
 
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
-import { upstreamGuard, WikiUnavailableError, wikiNameForUrl } from "~/lib/wiki-os/upstream-guard";
+import {
+  MAX_SISTER_RESPONSE_BYTES,
+  readCappedText,
+  upstreamGuard,
+  WikiUnavailableError,
+  wikiNameForUrl,
+} from "~/lib/wiki-os/upstream-guard";
 import {
   type PageImage,
   type SisterWikiSource,
@@ -41,7 +47,8 @@ function apiErrorCode(answer: ApiAnswer | null): string | null {
 /**
  * The parsed JSON answer to `url`, a sister wiki's API call, through the upstream guard. Throws WikiUnavailableError
  * when there is no usable answer: the guard's failures (a timeout, a network error, HTTP 403, 429 or 5xx, a 2xx that
- * is not JSON or does not parse, a circuit at rest), a status that is not OK (api.php answers 200, even for a missing
+ * is not JSON or does not parse, a circuit at rest, SisterResponseTooLargeError for a body over
+ * `MAX_SISTER_RESPONSE_BYTES`), a status that is not OK (api.php answers 200, even for a missing
  * page), or an API error in the 200 (`busy` for `ratelimited` and `maxlag`), so a refusal is never read as a missing
  * page or an empty list. Only the codes in `pageErrors` (by default a bad title or category name) are the page's own
  * answer, handed back for the caller to read.
@@ -413,7 +420,9 @@ export async function fetchMediaWikiImageBatch(
       });
 
       if (!resp.ok) continue;
-      const data = (await resp.json()) as {
+      const body = await readCappedText(resp, MAX_SISTER_RESPONSE_BYTES);
+      if (body === null) continue;
+      const data = JSON.parse(body) as {
         query?: {
           pages?: Array<{
             title?: string;

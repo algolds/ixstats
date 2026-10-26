@@ -11,14 +11,17 @@
  * drops `oldid` parses an empty page called "API") is refused. The answer is transformed for the
  * reader and sanitized by `sanitizeSisterHtml`, the trust boundary for another wiki's HTML (images only through its
  * media proxy, no off-host `url()` or fixed positioning, external links inert), and cached
- * per `(source, title, revision)` for ten minutes, 200 pages: a page that changes has a new revision, so it is never
- * served stale, and a reader who opens a sister page twice does not render it twice.
+ * per `(source, title, revision)` for ten minutes in an LRU bounded in bytes (`RENDER_CACHE_BYTES`, 64 MB, each render
+ * counted at two bytes a character): a page that changes has a new revision, so it is never served stale, and a reader
+ * who opens a sister page twice does not render it twice. An answer over the guard's byte cap
+ * (`MAX_SISTER_RESPONSE_BYTES`) is a page the wiki cannot render for us: SisterRenderError.
  */
 import { sanitizeSisterHtml, SISTER_ID_PREFIX } from "~/lib/utils/sanitize-sister-html";
-import { Cache } from "~/lib/cache";
+import { ByteBoundedCache } from "~/lib/cache/byte-bounded-cache";
 import { readSisterJson } from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
 import type { SisterWikiSource, WikiArticle } from "~/lib/wiki-os/adapters/mediawiki/bridge/types";
 import { getMediaWikiApiUrl } from "~/lib/wiki-os/config";
+import { SisterResponseTooLargeError } from "~/lib/wiki-os/upstream-guard";
 import {
   stripConflictingStyles,
   transformArticleHtml,
@@ -60,7 +63,21 @@ const PAGE_REFUSALS: ReadonlySet<string> = new Set([
   "pagecannotexist",
 ]);
 
-const renders = new Cache<SisterRender>({ maxSize: 200, defaultTtlMs: 10 * 60 * 1000 });
+/** What the render cache may hold, in bytes (as `renderBytes` counts them). */
+const RENDER_CACHE_BYTES = 64 * 1024 * 1024;
+const renders = new ByteBoundedCache<SisterRender>({
+  maxBytes: RENDER_CACHE_BYTES,
+  defaultTtlMs: 10 * 60 * 1000,
+});
+/** What a render takes: two bytes a character (UTF-16) of its HTML, its contents and its key, plus a fixed overhead. */
+const renderBytes = (key: string, render: SisterRender): number =>
+  (render.contentHtml.length +
+    (render.infoboxHtml?.length ?? 0) +
+    (render.noticesHtml?.length ?? 0) +
+    JSON.stringify(render.toc).length +
+    key.length) *
+    2 +
+  256;
 /** Renders under way, so two readers of the same revision at once cost one request. */
 const inFlight = new Map<string, Promise<SisterRender>>();
 
@@ -93,7 +110,12 @@ async function renderOnItsWiki(
     parseUrl(source, article),
     RENDER_TIMEOUT_MS,
     PAGE_REFUSALS
-  );
+  ).catch((error: Error) => {
+    if (error instanceof SisterResponseTooLargeError) {
+      throw new SisterRenderError(source, "the rendered page is too large");
+    }
+    throw error;
+  });
   const html = answer?.parse?.text;
   if (!html) throw new SisterRenderError(source, answer?.error?.info ?? "no parse result");
   if (answer.parse?.title !== article.title) {
@@ -131,7 +153,7 @@ export async function renderSisterArticle(
 
   const rendering = renderOnItsWiki(source, article)
     .then((render) => {
-      renders.set(key, render);
+      renders.set(key, render, renderBytes(key, render));
       return render;
     })
     .finally(() => inFlight.delete(key));

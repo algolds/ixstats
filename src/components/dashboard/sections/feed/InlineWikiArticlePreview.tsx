@@ -5,7 +5,7 @@ import Link from "next/link";
 import { OpenNewWindow as ExternalLink } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
-import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
+import { parseWikitextToPreviewHtml } from "~/lib/wiki-os/transformers/wikitext-preview";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { Button } from "~/components/ui/button";
 import { WikiArticleActions } from "./WikiArticleActions";
@@ -31,7 +31,7 @@ export function InlineWikiArticlePreview({
   const formattedHtml = useMemo(() => {
     const raw = intro?.text || intro?.intro || "";
     if (!raw) return "";
-    return parseWikitextToHtml(raw, wiki);
+    return parseWikitextToPreviewHtml(raw, wiki);
   }, [intro?.text, intro?.intro, wiki]);
 
   const leadImage = useWikiLeadImage(cleanTitle, intro?.text || intro?.intro || "", wiki);

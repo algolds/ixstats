@@ -141,16 +141,40 @@ found several that are partly built, read-only, or broken, so each row now carri
 
 ## Known blockers on `rose-garden`
 
-- **M0 follow-ups (code audit 2026-09-30).** The exploit and authorization fixes are merged ([#36](https://github.com/algolds/ixstats/pull/36), [#37](https://github.com/algolds/ixstats/pull/37), [#38](https://github.com/algolds/ixstats/pull/38), [#39](https://github.com/algolds/ixstats/pull/39)).
-  Still open: rate limits on the remaining protected mutations, removing the nginx CSP override (the nonce itself is
-  fixed), and
-  these ops steps (besides the password rotation below): run `db:backup` and test a restore; run
-  `db:mark-match-revenue-collected` right after the schema push; run the budget-year remap (`db:remap-budget-years`, retired 2026-10-21: restore it from git first, see the release guide's B4);
-  review `audit:vault-exploits` and run `audit:vault-exploits:apply`; review `audit:forum-links`; enable `db-backup`,
-  `log-retention` and `budget-year-rollover` in `CRON_ENABLED_JOBS`; set `DISCORD_GUILD_ID`. Plan: [ROADMAP M0](../roadmap/ROADMAP.md#m0--integrity-security--economy-exploits).
-- **`audit:arch` is still non-blocking in CI, and fails.** Its baseline was rebuilt on 2026-10-05 with real line
-  counts (38 files), so the size ratchet now fires. On 2026-10-05 it reports 14 violations: 8 files over their ceiling
-  and not in the baseline (largest `routers/wikios/templates.ts`, 1,295 lines), `auction-service.ts` grown past its
-  baseline, and 5 cross-router imports. Fix them or add files to `RELAXED_FILES`, then make it blocking.
+Updated 2026-10-26, after the pre-production audit fixes (`claude/preprod-audit-fixes`).
+
+**Fixed on this branch:**
+
+- **The architecture guard is green and blocking again.** The oversized files were split (`intent.ts`,
+  `security/conflicts.ts`, `EventWizard.tsx`, `IssueDetailBrief.tsx`, `ixtime/core.ts` and three components grown past
+  their baseline), and `bun run audit:arch` passes. In CI it is an ordinary blocking step.
+- **CI runs every gate.** The job used to stop at the first red step, so lint, the typechecks and the docs check had not
+  run for seven pushes. Every gate after the unit tests now runs whenever setup succeeded, and the job fails if any of
+  them fails. A new step typechecks `tsconfig.json`, the config `next build` checks, so a build-breaking type error the
+  partitioned configs miss cannot land unseen.
+- **The deploy.** A failed deploy keeps the live site serving: nothing touches `.next` before the build, the build
+  moves it to `.next.prev` and puts it back on failure, and `bun run clean` is gone. An additive schema step breaks the
+  cycle between the hand SQL and `db push`; the Realms drop and all twelve forum files run before the push; IxWorld,
+  cron and the websockets run the commit the web app was built from; the web app can run under PM2 (`ixstats-web`);
+  old servers get `SIGTERM`, then `SIGKILL` after 30 seconds; `f-defense.sql` survives D2a; the legacy notification
+  links are rewritten once the new server answers; a rollback never pushes an older schema. See the
+  [release guide](../operations/release-guide.md#a4-build-and-deploy).
+
+**Still open, code:** rate limits on the remaining protected mutations, and removing the nginx CSP override (the nonce
+itself is fixed; [release guide B6](../operations/release-guide.md#b6-csp-remove-the-nginx-override)). Plan:
+[ROADMAP M0](../roadmap/ROADMAP.md#m0--integrity-security--economy-exploits).
+
+**Still open, ops work** (owner; the [release guide's Part B](../operations/release-guide.md#b5-ops-prerequisites-still-open)
+puts each in the 1.5 order):
+
 - **Rotate the `ixstats_readonly` Postgres password** (plan 325): the old one is in git history since 2026-05-31.
   The script no longer contains it.
+- **Run `db:backup` and test a restore** into a scratch database.
+- **Review `audit:vault-exploits`, then run `audit:vault-exploits:apply`.**
+- **Review `audit:forum-links`.**
+- **Enable `db-backup`, `log-retention` and `budget-year-rollover` in `CRON_ENABLED_JOBS`** (`budget-year-rollover`
+  only after the remap below).
+- **Set `DISCORD_GUILD_ID`.**
+- **Run `db:mark-match-revenue-collected`** right after the schema push.
+- **Run the budget-year remap.** Its tool `db:remap-budget-years` was retired on 2026-10-21; restore it from
+  `65fd9dcdc^` first ([MyCountry runbook, step 8](../operations/deploy-mycountry-2026-10.md#8-turn-the-jobs-on)).

@@ -165,10 +165,6 @@ const READS: Array<[string, (role: string | null, title: string) => Promise<unkn
   ["getArticleAuthors", (r, title) => content(r).getArticleAuthors({ title })],
   ["getIntro", (r, title) => content(r).getIntro({ title })],
   ["getInfobox", (r, title) => content(r).getInfobox({ title })],
-  [
-    "getSectionContent",
-    (r, title) => content(r).getSectionContent({ title, section: "Geography" }),
-  ],
   ["getPageImages", (r, title) => content(r).getPageImages({ title })],
   ["getHistory", (r, title) => history(r).getHistory({ title })],
   ["getPageInfo", (r, title) => pageViews(r).getPageInfo({ title })],

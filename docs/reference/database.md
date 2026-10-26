@@ -3,7 +3,7 @@
 **Last updated:** 2026-10-21
 
 Prisma schema: `prisma/schema/*.prisma` (<!-- BEGIN_DOCS:COUNT:schemaFiles -->25<!-- END_DOCS:COUNT:schemaFiles --> files, incl. `base.prisma` for datasource/generator and `enums.prisma`)
-Models: **<!-- BEGIN_DOCS:COUNT:models -->382<!-- END_DOCS:COUNT:models -->** (plus <!-- BEGIN_DOCS:COUNT:enums -->48<!-- END_DOCS:COUNT:enums --> enums)
+Models: **<!-- BEGIN_DOCS:COUNT:models -->383<!-- END_DOCS:COUNT:models -->** (plus <!-- BEGIN_DOCS:COUNT:enums -->48<!-- END_DOCS:COUNT:enums --> enums)
 
 ## Domain Groupings
 | Domain | Representative Models |

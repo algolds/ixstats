@@ -15,7 +15,7 @@ import {
 import { api } from "~/trpc/react";
 import { WikiLinkPreview, WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { cardSourceLabel, parseCardWikiSource } from "~/lib/cards/card-sources";
-import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
+import { parseWikitextToPreviewHtml } from "~/lib/wiki-os/transformers/wikitext-preview";
 
 interface LoreWikiExcerptProps {
   card: {
@@ -53,7 +53,7 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
 
   // Compiled for the card's own wiki: its files through that wiki's proxy, and an infobox only where it can be drawn.
   const parsedHtml = useMemo(
-    () => parseWikitextToHtml(excerptText, source, { images: !artHidden }),
+    () => parseWikitextToPreviewHtml(excerptText, source, { images: !artHidden }),
     [excerptText, source, artHidden]
   );
 

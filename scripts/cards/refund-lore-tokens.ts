@@ -13,6 +13,7 @@
  */
 import { PrismaClient } from "@prisma/client";
 import { round2 } from "~/lib/exchange/amounts";
+import { isRevokedPurchase } from "~/lib/vault/store-purchases";
 import {
   LORE_TOKEN_ITEM_IDS,
   planLoreTokenRefunds,
@@ -50,6 +51,8 @@ async function tokenPurchases(perItem: ReadonlyMap<string, number>): Promise<Tok
     },
   });
   return rows.flatMap((row) => {
+    // An admin-revoked purchase no longer grants its tokens, so it has none to refund.
+    if (isRevokedPurchase(row.metadata)) return [];
     const itemId = ledgerMetadata(row.metadata).itemId;
     if (typeof itemId !== "string") return [];
     const tokens = perItem.get(itemId) ?? 0;

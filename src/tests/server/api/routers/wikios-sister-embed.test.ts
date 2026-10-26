@@ -121,7 +121,7 @@ describe("wikios.sisterEmbed", () => {
     });
   });
 
-  it("each caller has a bucket of its own for its reads from the wiki: sisterembed, 30 a minute; a cache hit is free", async () => {
+  it("each caller has a bucket of its own for its reads from the wiki: sisterembed, 20 a minute for a visitor; a cache hit is free", async () => {
     const { rateLimiter } = await import("~/lib/cache");
     jest.spyOn(rateLimiter, "isEnabled").mockReturnValue(true);
     const check = jest
@@ -138,7 +138,7 @@ describe("wikios.sisterEmbed", () => {
       await caller().sisterEmbed({ wiki: "iiwiki", title: "Caphiria" });
       expect(check).toHaveBeenCalledTimes(1);
       expect(check).toHaveBeenCalledWith(expect.anything(), "sisterembed", {
-        maxRequests: 30,
+        maxRequests: 20,
         windowMs: 60_000,
       });
     } finally {

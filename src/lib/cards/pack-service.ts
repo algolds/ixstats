@@ -131,6 +131,13 @@ function packRarityOdds(pack: PackOdds): RarityOdds {
   };
 }
 
+/**
+ * Arbitrary constant; identifies the per-pack purchase locks in pg_locks (7331 is the serial
+ * lock, 7334 capacity, 7340 category suggestions). Taken first in a purchase, before the
+ * ledger's vault row lock; nothing else takes it.
+ */
+const PACK_PURCHASE_LOCK_NAMESPACE = 7341;
+
 const cannotOpen = (rarities: string) =>
   `This pack can't be opened right now: it has no ${rarities} cards to give. It stays unopened; try again later.`;
 const notOnSale = (rarities: string) =>
@@ -149,6 +156,16 @@ export async function purchasePack(db: PrismaClient, userId: string, packId: str
 
     if (!pack) {
       throw new PackError("NOT_FOUND", "Pack not found");
+    }
+
+    // Serialise only what the counts below need: every purchase of a limited-stock pack (the sold
+    // count), else one buyer's purchases of a per-user-limited pack (their count). Unlimited packs
+    // take no lock, so a busy drop doesn't queue every buyer behind one another.
+    // $executeRaw, not $queryRaw: Prisma cannot deserialize the void pg_advisory_xact_lock returns
+    const hasStock = pack.limitedQuantity !== null && pack.limitedQuantity !== undefined;
+    if (hasStock || pack.purchaseLimit) {
+      const lockKey = hasStock ? packId : `${packId}:${userId}`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${PACK_PURCHASE_LOCK_NAMESPACE}::int, hashtext(${lockKey}))`;
     }
 
     // 2. Validate availability

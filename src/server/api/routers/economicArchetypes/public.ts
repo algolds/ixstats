@@ -5,7 +5,8 @@
 // when the table can't be read.
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import { globalCache } from "~/lib/cache";
 import type { EconomicArchetype as PrismaArchetype, PrismaClient } from "@prisma/client";
 import type { EconomicArchetype } from "~/lib/economy/archetypes/types";
 import { parseArchetypeFields } from "./serializer";
@@ -15,6 +16,17 @@ import {
   builtinArchetypes,
   type ArchetypeEra,
 } from "~/lib/economy/archetypes/seed";
+
+/**
+ * Whether `userId` already counted the archetype `id` today. A pick counts once a day per player, so nobody can inflate the
+ * popularity counters by calling the mutation over and over.
+ */
+async function countedToday(userId: string, id: string): Promise<boolean> {
+  const key = `usage:economic-archetype:${userId}:${id}:${new Date().toISOString().slice(0, 10)}`;
+  if (await globalCache.get(key)) return true;
+  await globalCache.set(key, true, { ttl: 86_400 });
+  return false;
+}
 
 /** An archetype as the API serves it: `id` is the row id, `key` the stable archetype id. */
 type CatalogArchetype = EconomicArchetype & {
@@ -148,12 +160,14 @@ export const economicArchetypesPublicRouter = createTRPCRouter({
 
   /**
    * Increment archetype usage count
-   * Called when user selects an archetype; accepts the row id or the archetype key
+   * Called when user selects an archetype; accepts the row id or the archetype key. Signed in, once a day per
+   * player and archetype.
    */
-  incrementArchetypeUsage: rateLimitedPublicProcedure
+  incrementArchetypeUsage: rateLimitedMutationProcedure
     .input(z.object({ archetypeId: z.string().min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
       try {
+        if (await countedToday(ctx.user.id, input.archetypeId)) return { count: 0 };
         const { count } = await ctx.db.economicArchetype.updateMany({
           where: { OR: [{ id: input.archetypeId }, { key: input.archetypeId }] },
           data: { usageCount: { increment: 1 } },

@@ -8,6 +8,10 @@
 import type { PrismaClient } from "@prisma/client";
 
 export const DEFAULT_USER_MESSAGE_CAP = 1000;
+/** Most people a group conversation holds, its creator included (creating and adding). */
+export const MAX_GROUP_PARTICIPANTS = 50;
+/** Longest message body, the same as a ThinkPages post. */
+export const MAX_MESSAGE_LENGTH = 10_000;
 
 export type MessageSource = "thinkshare" | "thinktank" | "diplomatic" | "wiki" | "forum" | "system";
 
@@ -58,6 +62,8 @@ export interface NotificationCollaborator {
 export interface WebSocketCollaborator {
   broadcastMessage?(payload: any): void;
   broadcastToUsers?(userIds: string[], event: string, payload: any): void;
+  /** Takes a user's sockets out of a conversation room they left or declined. */
+  evictFromRoom?(event: { type: "room:evict"; clerkUserId: string; conversationId: string }): void;
 }
 
 export interface BridgeCollaborator {

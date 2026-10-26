@@ -4,6 +4,7 @@ import { Server as SocketIOServer, Socket } from "socket.io";
 import { RealmBoardRooms, type ThinkPagesServerOptions } from "./realm-board-room";
 import type { BoardLiveEvent } from "~/lib/thinkpages-forum/board-live";
 import {
+  activeRoomMembers,
   canJoinConversation,
   canJoinThinktankGroup,
   createSocketAuthMiddleware,
@@ -50,6 +51,17 @@ export interface ThinkPagesMessageEvent {
   timestamp: number;
 }
 
+/**
+ * A user is out of a conversation or ThinkTank group room (they left it, declined it or were
+ * removed): their sockets leave the room so its messages stop reaching them.
+ */
+export interface RoomEvictionEvent {
+  type: "room:evict";
+  clerkUserId: string;
+  conversationId?: string;
+  groupId?: string;
+}
+
 interface ThinkPagesReadReceiptEvent {
   type: "read:receipt";
   conversationId?: string;
@@ -59,6 +71,8 @@ interface ThinkPagesReadReceiptEvent {
   timestamp: number;
 }
 
+/** How often a member room's membership is re-checked before a broadcast. */
+const RECHECK_MS = 30_000;
 export class ThinkPagesWebSocketServer {
   private io: SocketIOServer;
   private clients = new Map<
@@ -66,6 +80,10 @@ export class ThinkPagesWebSocketServer {
     { socket: Socket; accountId?: string; subscriptions: Set<string>; lastSeen: number }
   >();
   private boardRooms: RealmBoardRooms;
+  /** Each member room's broadcasts, chained so they go out in the order they were sent. */
+  private roomQueues = new Map<string, Promise<void>>();
+  /** When each member room's membership was last re-checked (at most once per RECHECK_MS). */
+  private lastRecheck = new Map<string, number>();
 
   constructor(server: HTTPServer, options: ThinkPagesServerOptions = {}) {
     this.io = new SocketIOServer(server, {
@@ -203,9 +221,67 @@ export class ThinkPagesWebSocketServer {
     this.boardRooms.broadcast(event);
   }
 
-  public broadcastMessage(event: ThinkPagesMessageEvent) {
+  /** Takes a user's sockets out of a room they no longer belong to (see RoomEvictionEvent). */
+  public evictFromRoom(event: RoomEvictionEvent) {
     const channel = channelFor(event);
     if (!channel) return;
+    for (const [socketId, client] of this.clients) {
+      if (client.accountId === event.clerkUserId) this.evictSocket(socketId, channel);
+    }
+  }
+
+  private evictSocket(socketId: string, channel: string) {
+    const client = this.clients.get(socketId);
+    if (!client || !client.socket.rooms.has(channel)) return;
+    void client.socket.leave(channel);
+    client.subscriptions.delete(channel);
+    client.socket.emit("subscribe:revoked", { channel });
+  }
+
+  /**
+   * Re-checks a member room's sockets before a message goes out (one query, at most once per
+   * RECHECK_MS a room): a socket whose user left since subscribing is evicted, in case its
+   * eviction event was missed.
+   */
+  private async evictDeparted(channel: string) {
+    const now = Date.now();
+    if (now - (this.lastRecheck.get(channel) ?? 0) < RECHECK_MS) return;
+    this.lastRecheck.set(channel, now);
+    const room = parseChannel(channel);
+    const socketIds = [...(this.io.sockets.adapter.rooms.get(channel) ?? [])];
+    if (!room || room.kind === "realm-board" || socketIds.length === 0) return;
+    const accountIds = socketIds.map((id) => this.clients.get(id)?.accountId);
+    const members = await activeRoomMembers(room.kind, room.id, [
+      ...new Set(accountIds.filter((id): id is string => !!id)),
+    ]);
+    socketIds.forEach((socketId, i) => {
+      const accountId = accountIds[i];
+      if (!accountId || !members.has(accountId)) this.evictSocket(socketId, channel);
+    });
+  }
+
+  public broadcastMessage(event: ThinkPagesMessageEvent): Promise<void> {
+    const channel = channelFor(event);
+    if (!channel) return Promise.resolve();
+    // Chained per room: the re-check is async, so without the chain a delete could overtake the
+    // message it deletes.
+    const delivered = (this.roomQueues.get(channel) ?? Promise.resolve()).then(() =>
+      this.deliver(channel, event)
+    );
+    this.roomQueues.set(channel, delivered);
+    void delivered.finally(() => {
+      if (this.roomQueues.get(channel) === delivered) this.roomQueues.delete(channel);
+    });
+    return delivered;
+  }
+
+  private async deliver(channel: string, event: ThinkPagesMessageEvent) {
+    try {
+      await this.evictDeparted(channel);
+    } catch (error) {
+      // A failed re-check still delivers to the room as joined (each join was checked).
+      console.error("[ThinkPagesWS] membership re-check failed:", error);
+    }
     this.io.to(channel).emit("message:update", {
       type: "message:update",
       data: event,

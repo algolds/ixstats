@@ -421,12 +421,12 @@ describe("bot passwords", () => {
 describe("the country-profile cache", () => {
   const createCaller = createCallerFactory(wikiCacheRouter);
 
-  function callerAs(id: string | null) {
+  function callerAs(id: string | null, role: { name: string; level: number } | null = null) {
     return createCaller(
       createMockRouterContext({
         db: createMockPrisma(),
         auth: id ? { userId: `clerk_${id}` } : null,
-        user: id ? { id, clerkUserId: `clerk_${id}` } : null,
+        user: id ? { id, clerkUserId: `clerk_${id}`, role } : null,
         rateLimitIdentifier: `${id}_${Math.random()}`,
       }) as never
     );
@@ -444,16 +444,27 @@ describe("the country-profile cache", () => {
       });
     });
 
-    it("needs a signed-in user to refresh a country's cache", async () => {
+    it("needs an administrator to refresh a country's cache", async () => {
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
       await expect(callerAs(null).refreshCountryCache({ countryName: "Caphiria" })).rejects.toThrow(
         /Authentication required/
       );
+      await expect(
+        callerAs("u1", { name: "user", level: 100 }).refreshCountryCache({
+          countryName: "Caphiria",
+        })
+      ).rejects.toThrow(/Admin privileges required/);
       expect(wikiCacheService.clearCountryCache).not.toHaveBeenCalled();
+      warn.mockRestore();
 
-      await callerAs("u1").refreshCountryCache({ countryName: "Caphiria" });
+      const admin = { name: "admin", level: 10 };
+      await callerAs("a1", admin).refreshCountryCache({ countryName: "Caphiria" });
       expect(wikiCacheService.clearCountryCache).toHaveBeenCalledWith("Caphiria", "ixwiki");
 
-      await callerAs("u1").refreshCountryCache({ countryName: "Afropa", wikiSource: "iiwiki" });
+      await callerAs("a1", admin).refreshCountryCache({
+        countryName: "Afropa",
+        wikiSource: "iiwiki",
+      });
       expect(wikiCacheService.clearCountryCache).toHaveBeenCalledWith("Afropa", "iiwiki");
     });
   });

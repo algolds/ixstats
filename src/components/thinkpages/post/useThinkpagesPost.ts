@@ -90,12 +90,12 @@ function usePostPermissions(post: any, currentUserAccountId: string) {
 
   const isOwnPost = currentUserAccountId === post.account?.id;
   const isCurrentUserStaff = currentUserRoleLevel === 20;
-  const targetUserClerkUserId = post.account?.clerkUserId;
+  const targetAccountId: string | undefined = post.account?.id;
 
   const targetUserQuery = api.users.getUserWithRole.useQuery(
-    { clerkUserId: targetUserClerkUserId || "" },
+    { thinkpagesAccountId: targetAccountId || "" },
     {
-      enabled: isCurrentUserStaff && !isOwnPost && !!targetUserClerkUserId,
+      enabled: isCurrentUserStaff && !isOwnPost && !!targetAccountId,
       staleTime: 5 * 60_000,
     }
   );
@@ -184,11 +184,8 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
       void utils.activities.getGlobalFeed.invalidate();
       void utils.activities.getFollowingFeed.invalidate();
     }
-    if (post.account?.clerkUserId) {
-      void utils.thinkpages.getPostsByClerkUserId.invalidate({
-        clerkUserId: post.account.clerkUserId,
-      });
-    }
+    // Posts carry no owner Clerk id, so every author's list is refreshed.
+    void utils.thinkpages.getPostsByClerkUserId.invalidate();
     if (parent && post.parentPostId) {
       void utils.thinkpages.getPost.invalidate({ postId: post.parentPostId });
     }

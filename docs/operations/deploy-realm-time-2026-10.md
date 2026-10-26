@@ -68,16 +68,30 @@ run_sql() { docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ER
 
    Before step 4 it lists the D2a and D1 changes (`DROP TABLE "DefenseBudget"`, `ALTER TABLE "MilitaryBranch" DROP
    COLUMN "branchType"`, `CREATE TABLE "DefensePolicy"`, and so on) plus whatever the rose-garden and MyCountry
-   migrations still owe. Run nothing from it for the military or security tables: `db push` refuses to drop a
-   non-empty table or column without `--accept-data-loss`, which is why D2a and D1 run as SQL in step 4, before the
-   push. Additive statements on other tables may be saved and run with `run_sql`, as the MyCountry runbook's step 2
-   describes; the push adds any left.
+   migrations still owe. Run nothing from it by hand: `db push` refuses to drop a non-empty table or column without
+   `--accept-data-loss`, which is why D2a and D1 run as SQL in step 4, before the push. The additive part of the diff
+   is the deploy's additive step (`bun scripts/deployment/apply-additive-schema.ts`, a dry run; `--apply` writes it),
+   which leaves the defense tables to D2a and D1.
 
 ## 4. The deploy window (old build stopped)
 
 Stop every process that serves or writes with the old code: `pm2 stop ixworld` (maps.ixwiki.com, the live app), and
-`ixstats` and `ixstats-ws` where they run. The site is down from here until step 5 reloads IxWorld (the build takes
-several minutes): announce the window. `ixstats-cron` is already stopped (step 2).
+the web app on port 3550 (`ixstats-web`, or its `start-production.sh` session) and `ixstats-ws` where they run. The site
+is down from here until step 5's deploy reloads IxWorld and the web app answers (the builds take several minutes):
+announce the window. `ixstats-cron` is already stopped (step 2).
+
+The deploy script runs every SQL file of this step itself, in this order, right before its `db push` (step 5), after its
+additive schema step; running them by hand first, as below, changes nothing there (each is idempotent). By hand, they
+need two things first, as in the [release guide](release-guide.md#b3-the-window-the-app-stopped) (steps 4 and 8):
+
+- **The additive step** (`bun scripts/deployment/apply-additive-schema.ts --apply`), when production lacks columns these
+  files read: T3 converts `exchange_contracts."closedIxTime"`, and MyCountry's `f-defense.sql` reads
+  `Country."ownerUserId"`.
+- **The Realms ownership backfill**, when `Country."ownerUserId"` is new: the starter-force reset gives a nation with no
+  owner an NPC's forces and policy, and `f-defense.sql` ends every proposed PvP challenge whose defender has no owner.
+
+This order (D2a by hand, then the deploy re-running the MyCountry files before D2a) works since `f-defense.sql` became
+guarded: it clamps `MilitaryUnit.readiness` only while the column exists, and D2a drops it.
 
 1. **T3, platform systems on real time.** `run_sql scripts/migrations/2026-10-realm-time/t3-platform-real-time.sql`.
    It converts the exchange and sports `*IxTime` / `ixTime` Float columns from IxTime to real epoch-ms (the inverse of
@@ -108,11 +122,15 @@ several minutes): announce the window. `ixstats-cron` is already stopped (step 2
    `MilitaryOperation` an intervention's orders, hash, commit time, seed, snapshot and band. No data moves. Optional:
    set `COMBAT_SEED_SECRET` in `.env.production.local` (without it seeds use `CRON_SECRET`); changing either later only
    changes seeds of battles committed after.
-5. **Starter forces**, from the new checkout, after D2a and D3:
+5. **Starter forces**, from the new checkout (with `bun run db:generate` done), after D2a and D3:
 
    ```bash
    bun scripts/defense/reset-starter-forces.ts --apply --i-know ixstats
    ```
+
+   The script reads through the Prisma client generated from the new schema, so it can stop here on a column only the
+   deploy's later SQL or push adds. Then run it right after step 5 instead: the result is the same, because a nation the
+   new build reads first gets the same starter force, and the reset skips nations that already have a policy.
 
    The script refuses a database that is not a known clone unless `--i-know` names the database it is connected to.
    Every nation without a `DefensePolicy` gets its starter force: the equilibrium of its defense budget
@@ -145,10 +163,13 @@ several minutes): announce the window. `ixstats-cron` is already stopped (step 2
 
 ## 5. The code deploy
 
-Run the deploy script (rose-garden step 5): `./scripts/deploy-production.sh`. Since the realm-time merge into rose-garden, the deploy script also re-runs this runbook's data SQL (and the other 2026-10 runbook's) right before its `db push`; each file is a no-op once applied, so running the steps above by hand first, as written, is still the order to follow. It backs up, runs the rose-garden SQL,
-`db push` (stop and read the message if it reports data loss: a realm-time step was skipped), `db:generate`, the
-build, `scripts/deploy-ixworld.sh` (which reloads PM2 `ixworld`, ending the window) and
-`pm2 startOrReload ecosystem.config.cjs --update-env` (the cron runner starts with no jobs). Then check the rebuild:
+Run the deploy script: `./scripts/deploy-production.sh` ([release guide A4](release-guide.md#a4-build-and-deploy)). It
+runs this runbook's SQL (and the MyCountry runbook's) right before its `db push`; each file is a no-op once applied, so
+the steps run by hand above change nothing there. In order it runs `db:generate`, the backup, the additive schema step,
+the WikiOS proof check, the rose-garden, cards, IxnayID and WikiOS SQL, the 2026-10 SQL, `db push` (stop and read the
+message if it reports data loss: a realm-time step was skipped), the build, `scripts/deploy-ixworld.sh` (which reloads
+PM2 `ixworld`), `pm2 startOrReload ecosystem.config.cjs --update-env` (the cron runner starts with no jobs) and the web
+app; the window ends when the web app answers. Then check the rebuild:
 
 ```bash
 ls -l /ixwiki/public/maps/ixworld/.next/BUILD_ID                    # dated today
@@ -242,9 +263,11 @@ cooldowns. To read the clocks: `SELECT id, slug, settings->'clock' FROM realms;`
 - **Before step 4:** nothing to undo. T1 is harmless to the old build (it reads only the realm header); leave it.
 - **From step 4 on:** T3 converts timestamps in place, D2a drops columns and deletes free assets, and D1 drops
   tables, so the way back is the step 2 dump plus the previous build: stop `ixworld`, `ixstats-cron` and `ixstats-ws`,
-  restore the dump into an emptied `ixstats` database (`psql` for a plain dump, `pg_restore` for a custom-format one),
-  check out the pre-realm-time commit and run the deploy script again. A partial window (some of step 4 applied, no
-  code deploy) is restored the same way.
+  then `./scripts/deployment/rollback-deployment.sh <rollback-branch> --restore <the step 2 dump>`
+  ([release guide](release-guide.md#rollback)). It restores the dump, then deploys the old commit with this release's
+  deploy script and `SKIP_SCHEMA_SYNC=1`; never run the old commit's own deploy script, which would push its schema. A
+  partial window (some of step 4 applied, no code deploy) is restored with `bun run db:restore` alone
+  ([deployment.md](deployment.md#backups-and-restore)).
 - **After the code, a job misbehaves:** remove its name from `CRON_ENABLED_JOBS`, run
   `( cd /ixwiki/public/projects/ixstats && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save` (not a restart by name,
   which keeps the old list) and read the list back with `pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`. A realm clock set wrong is fixed in Manage → Time (its speed, or a jump),

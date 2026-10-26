@@ -40,7 +40,7 @@ export const wikiosStashRouter = createTRPCRouter({
   }),
 
   /** Create a new stash. Max 25 per user. */
-  createStash: protectedProcedure
+  createStash: rateLimitedMutationProcedure
     .input(
       z.object({
         name: z.string().min(1).max(100),
@@ -67,7 +67,7 @@ export const wikiosStashRouter = createTRPCRouter({
     }),
 
   /** Update a stash's name, color, or icon. */
-  updateStash: protectedProcedure
+  updateStash: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string().max(64),
@@ -88,7 +88,7 @@ export const wikiosStashRouter = createTRPCRouter({
     }),
 
   /** Delete a stash (cannot delete default). */
-  deleteStash: protectedProcedure
+  deleteStash: rateLimitedMutationProcedure
     .input(z.object({ id: z.string().max(64) }))
     .mutation(async ({ input, ctx }) => {
       const userIds = requireWikiUserIds(ctx);
@@ -151,7 +151,7 @@ export const wikiosStashRouter = createTRPCRouter({
    * removed — the one named by `contentType`, else the one the title's prefix implies — so unstashing
    * the article "Rome" leaves an Onoma name "Rome" alone.
    */
-  unstashPage: protectedProcedure
+  unstashPage: rateLimitedMutationProcedure
     .input(
       z.object({
         pageTitle: z.string().min(1).max(500),

@@ -17,7 +17,8 @@
  * (`headingKey`) is one entry. A wiki that cannot be reached throws WikiUnavailableError, which is never cached. The
  * cache is an LRU bounded in bytes (`EMBED_CACHE_BYTES`, 32 MB, each entry counted at two bytes a character of its
  * JSON and key plus 256), and an HTML part holds at most `MAX_EMBED_HTML_CHARS`. The page cap (`MAX_SISTER_EMBEDS`) is the reader's: this server cannot tell which page
- * asks, so a client that skips it is bounded by its own rate limit per caller (30 a minute), this cache and
+ * asks, so a client that skips it is bounded by its own rate limit per caller on the embeds that are not cached
+ * (`beforeRead`, the router's: 20 a minute for a visitor, 30 signed in; cache hits are free), this cache and
  * single flight per embed, and the per-host guard (8 in flight, 240 a minute) on everything that leaves for the wiki.
  *
  * Server only: it calls the sister wikis.
@@ -127,11 +128,15 @@ export async function getSisterEmbed(
   const request = { ...asked, title: canonicalOrTrimmedTitle(asked.title, asked.wiki) };
   const section = headingKey(request.section ?? "") ?? "";
   const key = [request.wiki, request.title, request.mode, section].join("\u0000");
-  const cached = embeds.get(key);
+  const shared = () => embeds.get(key) ?? inFlight.get(key);
+  const cached = shared();
   if (cached) return cached;
-  if (!inFlight.has(key)) await beforeRead?.();
-  const pending = inFlight.get(key);
-  if (pending) return pending;
+  if (beforeRead) {
+    await beforeRead();
+    // another reader may have started (or finished) the read meanwhile
+    const meanwhile = shared();
+    if (meanwhile) return meanwhile;
+  }
 
   const reading = readEmbed(request)
     .then((embed) => {

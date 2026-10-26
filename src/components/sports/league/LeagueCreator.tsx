@@ -16,6 +16,7 @@ import {
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { usePaidMutateAsync } from "~/components/sports/core/usePaidActionRequestId";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -32,6 +33,12 @@ import { useLeagueCoverImage } from "~/hooks/useLeagueCoverImage";
 import { springSmooth } from "~/lib/design/motion";
 import type { ArchetypeType } from "~/lib/sports";
 import { DEFAULT_MATCH_INTERVAL_DAYS } from "~/lib/sports/scheduler";
+import {
+  archetypeLabels,
+  cardVariants,
+  intervalLabel,
+  stepVariants,
+} from "./league-creator-config";
 
 const MediaSearchModal = dynamic(
   () =>
@@ -39,38 +46,11 @@ const MediaSearchModal = dynamic(
   { ssr: false }
 );
 
-const archetypeLabels: Record<ArchetypeType, string> = {
-  league: "League",
-  division_conference: "Division / Conference",
-  bracket: "Bracket",
-  circuit: "Circuit",
-};
-
 interface LeagueCreatorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: (leagueId: string) => void;
   isCanonical?: boolean;
-}
-
-// Animation variants
-
-const stepVariants = {
-  enter: { opacity: 0, x: 40, scale: 0.98 },
-  center: { opacity: 1, x: 0, scale: 1 },
-  exit: { opacity: 0, x: -40, scale: 0.98 },
-};
-
-const cardVariants = {
-  rest: { scale: 1 },
-  hover: { scale: 1 },
-  tap: { scale: 0.98 },
-};
-
-/** "12 hours", "1 day", "3.5 days". */
-function intervalLabel(days: number): string {
-  if (days < 1) return `${Math.round(days * 24)} hours`;
-  return `${days} day${days === 1 ? "" : "s"}`;
 }
 
 export function LeagueCreator({
@@ -81,14 +61,13 @@ export function LeagueCreator({
 }: LeagueCreatorProps) {
   const notify = useNotify();
 
-  // Presets query
   const { data: presets, isLoading: presetsLoading } = api.sports.getSportPresets.useQuery(
     undefined,
     { enabled: open }
   );
 
-  // Create league mutation
   const createMutation = api.sports.createLeague.useMutation();
+  const charter = usePaidMutateAsync(createMutation.mutateAsync); // one charge per press
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState(1);
@@ -196,7 +175,7 @@ export function LeagueCreator({
     settings.matchIntervalDays = matchIntervalDays;
 
     try {
-      const result = await createMutation.mutateAsync({
+      const result = await charter({
         name: leagueName.trim(),
         sportPreset: selectedPreset.key,
         teamCount,
@@ -224,7 +203,7 @@ export function LeagueCreator({
     isDivisionConference,
     isBoxing,
     isCircuit,
-    createMutation,
+    charter,
     notify,
     onCreated,
     coverImage,

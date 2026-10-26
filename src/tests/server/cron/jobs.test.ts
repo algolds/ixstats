@@ -160,6 +160,35 @@ describe("matchesCron", () => {
     expect(isValidCronPattern("every day")).toBe(false);
     expect(isValidCronPattern("* * * *")).toBe(false);
   });
+
+  it("refuses a value outside its field's bounds, in a value, range, step or list", () => {
+    for (const pattern of [
+      "99 * * * *",
+      "60 * * * *",
+      "0 24 * * *",
+      "0 0 0 * *",
+      "0 0 32 * *",
+      "0 0 * 0 *",
+      "0 0 * 13 *",
+      "0 0 * * 8",
+      "0-60 * * * *",
+      "0 22-25 * * *",
+      "10-5 * * * *",
+      "*/0 * * * *",
+      "0,15,61 * * * *",
+      "0 0 * * 1-8",
+      "-1 * * * *",
+    ])
+      expect([pattern, isValidCronPattern(pattern)]).toEqual([pattern, false]);
+    for (const pattern of ["59 23 31 12 7", "0 0 1 1 0", "0-59/15 0-23 1-31 1-12 0-7", "5/10 * * * 1,3,5"])
+      expect([pattern, isValidCronPattern(pattern)]).toEqual([pattern, true]);
+  });
+
+  it("matches Sunday as day 7 as well as 0", () => {
+    expect(matchesCron("0 0 * * 7", at("2026-09-27T00:00:00"))).toBe(true); // Sunday
+    expect(matchesCron("0 0 * * 5-7", at("2026-09-27T00:00:00"))).toBe(true);
+    expect(matchesCron("0 0 * * 7", at("2026-09-28T00:00:00"))).toBe(false); // Monday
+  });
 });
 
 /** Drives startScheduler with a fake clock and a manually fired timer. */
