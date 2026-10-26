@@ -39,7 +39,11 @@ function callerAs(signedIn: boolean) {
       return null;
     }
   };
-  return Object.assign(caller, { refusal });
+  return {
+    sisterEmbed: (input: { wiki: "iiwiki" | "althistory"; title: string }) =>
+      caller.sisterEmbed(input),
+    refusal,
+  };
 }
 
 /** A title nobody asked for before in this file, so it is never cached. */
