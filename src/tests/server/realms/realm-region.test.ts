@@ -704,6 +704,33 @@ describe("the realm clock", () => {
       ).region;
       expect((await anyone.contextClock({ realm: "eurth" })).clock).toBeNull();
     });
+
+    it("gives an unpublished realm's clock to its founder, staff and its own nations, not to others", async () => {
+      const { db, row } = makeDb();
+      await caller(FOUNDER, db).startClock(START);
+      row.status = "draft";
+      db.country.findUnique.mockImplementation(async ({ where }: any) =>
+        where.id === "own-nation" ? { realmId: "eurth" } : { realmId: "default" }
+      );
+      const viewer = (clerkUserId: string, countryId: string | null) =>
+        realmsRouter.createCaller(
+          createMockRouterContext({
+            db,
+            auth: { userId: clerkUserId },
+            user: { id: `db_${clerkUserId}`, clerkUserId, role: null, countryId },
+          }) as never
+        ).region;
+      const clockFor = async (region: ReturnType<typeof viewer>) =>
+        (await region.contextClock({ realmId: "eurth" })).clock;
+      expect(await clockFor(viewer(PLAYER, "own-nation"))).toMatchObject({ era: "AE" });
+      expect(await clockFor(viewer(FOUNDER, null))).toMatchObject({ era: "AE" });
+      expect(await clockFor(caller(ADMIN, db))).toMatchObject({ era: "AE" });
+      expect(await clockFor(viewer(PLAYER, "ixnay-nation"))).toBeNull();
+      expect(await clockFor(viewer(OFFICER, null))).toBeNull();
+      expect((await viewer(PLAYER, "ixnay-nation").contextClock({ realmId: "eurth" })).realmId).toBe(
+        "default"
+      );
+    });
   });
 });
 

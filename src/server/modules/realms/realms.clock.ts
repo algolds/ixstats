@@ -24,7 +24,7 @@ import {
 import { DAY_MS } from "~/lib/realms/realm-calendar";
 import { DEFAULT_REALM_ID, realmSlugWhere } from "~/lib/realms/realm-ids";
 import { invalidateRealmClock, ixnayClock, storedRealmClock } from "~/server/shared/realm-time";
-import { isRealmPublished, isSiteAdmin, type RealmActor } from "./realms.access";
+import { canModerateRealm, isRealmPublished, isSiteAdmin, type RealmActor } from "./realms.access";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
 import { withRealmClock } from "./realms.settings";
 
@@ -174,24 +174,49 @@ async function contextRealmWhere(
   return country ? { id: country.realmId } : null;
 }
 
+/** Who asks for a context clock: anyone; a signed-in viewer brings their active nation and, for staff, their role. */
+export type ClockViewer = { countryId?: string | null } & Partial<RealmActor>;
+
 /**
- * The clock that applies in a context. `clock` null reads Ixnay's clock (IxTime): Ixnay, nothing to resolve, a
- * realm only its staff may see (`realmId` is then Ixnay's, so nothing leaks), or a realm missing its clock (logged).
+ * Whether `viewer` may read an unpublished realm's clock: its staff (the founder and site admins), and a viewer whose
+ * active nation is in it, whose MyCountry runs on that clock.
+ */
+async function readsUnpublishedClock(
+  db: ClockDb,
+  realm: { id: string; ownerId: string },
+  viewer: ClockViewer | null
+): Promise<boolean> {
+  if (!viewer) return false;
+  const { id, clerkUserId, role } = viewer;
+  if (id && clerkUserId && canModerateRealm({ id, clerkUserId, role }, realm)) return true;
+  if (!viewer.countryId) return false;
+  const own = await db.country.findUnique({
+    where: { id: viewer.countryId },
+    select: { realmId: true },
+  });
+  return own?.realmId === realm.id;
+}
+
+/**
+ * The clock that applies in a context. `clock` null reads Ixnay's clock (IxTime): Ixnay, nothing to resolve, an
+ * unpublished realm the viewer may not see (`realmId` is then Ixnay's, so nothing leaks; its staff and its own
+ * nations' owners read it), or a realm missing its clock (logged).
  */
 export async function realmContextClock(
   db: ClockDb,
   input: { realmId?: string; realm?: string; country?: string; active?: boolean },
-  viewer: { countryId?: string | null } | null
+  viewer: ClockViewer | null
 ): Promise<{ realmId: string; clock: RealmClock | null }> {
   const ixnay = { realmId: DEFAULT_REALM_ID, clock: null };
   const where = await contextRealmWhere(db, input, viewer);
   if (!where) return ixnay;
   const realm = await db.realm.findUnique({
     where,
-    select: { id: true, status: true, settings: true },
+    select: { id: true, status: true, settings: true, ownerId: true },
   });
-  // An unpublished realm stays private (its slug, era and speed), as everywhere else outside its staff.
-  if (!realm || realm.id === DEFAULT_REALM_ID || !isRealmPublished(realm.id, realm.status))
+  if (!realm || realm.id === DEFAULT_REALM_ID) return ixnay;
+  // An unpublished realm stays private (its slug, era and speed) outside its staff and its own nations.
+  if (!isRealmPublished(realm.id, realm.status) && !(await readsUnpublishedClock(db, realm, viewer)))
     return ixnay;
   const clock = storedRealmClock(realm.settings);
   if (!clock) console.error(`[realm-time] Realm ${realm.id} has no clock; showing Ixnay's`);
