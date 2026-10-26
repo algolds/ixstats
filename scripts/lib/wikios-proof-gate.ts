@@ -462,7 +462,8 @@ export function evaluateBench(
 /**
  * The WikiOS product code a proof covers: the WikiOS directories, then the modules outside them that the render,
  * sanitize, serialize and view-bundle code imports and whose change changes what it outputs (base-path links, the
- * template placeholders, the forum quote block, the sister sanitizer and its class stripping), and the lockfile
+ * template placeholders and the formatting and realm ids they use, the forum quote block and its post ids, the sister
+ * sanitizer and its class stripping), and the lockfile
  * (DOMPurify, jsdom and the parsers are dependencies). Tests and the harness scripts are left out on purpose.
  */
 export const WIKIOS_PROOF_PATHS: readonly string[] = [
@@ -476,10 +477,13 @@ export const WIKIOS_PROOF_PATHS: readonly string[] = [
   "src/lib/utils/sanitize-html.ts",
   "src/lib/utils/scope-template-styles.ts",
   "src/lib/utils/sanitize-sister-html.ts",
+  "src/lib/utils/format-utils.ts",
   "src/lib/thinkpages-forum/strip-positioning.ts",
   "src/lib/thinkpages-forum/forum-quote.ts",
+  "src/lib/thinkpages-forum/post-html.ts",
   "src/lib/base-path.ts",
   "src/server/shared/wiki-placeholders.ts",
+  "src/lib/realms/realm-ids.ts",
   "src/server/shared/ixstats-template-provider.ts",
   "scripts/ops/mediawiki",
   "prisma/schema/wiki.prisma",

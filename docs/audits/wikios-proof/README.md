@@ -173,8 +173,9 @@ overridden. After the PM2 reload the deploy runs
 `src/lib/utils/scope-template-styles.ts`, `scripts/ops/mediawiki` and `prisma/schema/wiki.prisma`; the modules outside
 those that the render, sanitize, serialize and view-bundle code imports and that change what it outputs
 (`src/lib/utils/sanitize-sister-html.ts` and the `src/lib/thinkpages-forum/strip-positioning.ts` it runs,
-`src/lib/thinkpages-forum/forum-quote.ts`, `src/lib/base-path.ts`, `src/server/shared/wiki-placeholders.ts`,
-`src/server/shared/ixstats-template-provider.ts`); and `bun.lock`, since DOMPurify, jsdom and the parsers are
+`src/lib/thinkpages-forum/forum-quote.ts` and the `src/lib/thinkpages-forum/post-html.ts` it reads post ids with,
+`src/lib/base-path.ts`, `src/server/shared/wiki-placeholders.ts` and the `src/lib/utils/format-utils.ts` and
+`src/lib/realms/realm-ids.ts` it formats and resolves with, `src/server/shared/ixstats-template-provider.ts`); and `bun.lock`, since DOMPurify, jsdom and the parsers are
 dependencies. A new import of that kind belongs in the list too. Tests and the harness scripts are left out on purpose.
 
 ## Where the reports live
