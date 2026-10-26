@@ -469,8 +469,8 @@ Do A3 first (the checkout does not touch the running servers), load the producti
     Revenue" pays its whole match history (SL-14). Run it once; never add it to routine deploys.
 
     **If the push stops on a warning,** the live build is untouched and every SQL file before it has run (the WikiOS
-    labelling included). Read every line. If they are only the expected unique constraints on new columns (for
-    example `wiki_logs.mwLogId`, or WikiOS's `lore_stash_items` key if the stash-key file has not run), run
+    labelling included). Read every line. If they are only the expected unique constraints on new columns (the two
+    Realms ones, or a WikiOS one whose cutover step 1 file has not run), run
     `bun run db:push:force` by hand, answer yes, and run the deploy again: each file is then a no-op and the push has
     nothing left. Anything that drops a column or table with data means a step was skipped: stop.
 
