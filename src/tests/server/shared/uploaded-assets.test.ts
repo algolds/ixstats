@@ -179,12 +179,52 @@ describe("the upload route", () => {
   it("refuses an SVG it cannot sanitise, writing and recording nothing", async () => {
     const before = await fs.readdir(dir);
     const res = await upload(
-      new File(["<script>alert(1)</script>"], "x.svg", { type: "image/svg+xml" })
+      new File(["<!-- <svg> --><html><script>alert(1)</script></html>"], "x.svg", {
+        type: "image/svg+xml",
+      })
     );
     expect(res.status).toBe(400);
     expect(((await res.json()) as { error: string }).error).toBe("SVG could not be sanitised");
     expect(await fs.readdir(dir)).toEqual(before);
     expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["<script>alert(1)</script>", "x.svg", "image/svg+xml"],
+    ["<html><body>hi</body></html>", "x.html", "image/png"],
+    ["%PDF-1.7\n", "x.png", "image/png"],
+  ])("refuses %s whatever it is called or declared, writing nothing", async (body, name, type) => {
+    const before = await fs.readdir(dir);
+    const res = await upload(new File([body], name, { type }));
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { error: string }).error).toMatch(/^Invalid file type/);
+    expect(await fs.readdir(dir)).toEqual(before);
+    expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it("sanitises an SVG declared as a PNG and stores it as .svg", async () => {
+    const res = await upload(
+      new File(['<svg xmlns="http://www.w3.org/2000/svg" onload="x()"><rect/></svg>'], "x.png", {
+        type: "image/png",
+      })
+    );
+    expect(res.status).toBe(200);
+    const { url, fileType } = (await res.json()) as { url: string; fileType: string };
+    expect(url).toMatch(/_x\.svg$/);
+    expect(fileType).toBe("image/svg+xml");
+    const stored = await fs.readFile(path.join(dir, path.basename(url)), "utf8");
+    expect(stored).not.toContain("onload");
+  });
+
+  it("names a PNG by its bytes, not the client's .html name or MIME type", async () => {
+    const res = await upload(
+      new File([await fs.readFile(pngPath)], "page.html", { type: "text/html" })
+    );
+    expect(res.status).toBe(200);
+    const { url } = (await res.json()) as { url: string };
+    expect(url).toMatch(/_page\.png$/);
+    const args = mockUpsert.mock.calls[0]![0] as { create: Record<string, unknown> };
+    expect(args.create).toMatchObject({ mimeType: "image/png" });
   });
 
   it("stores a sanitised SVG and records it as the uploader's", async () => {
