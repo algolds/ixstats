@@ -7,13 +7,14 @@ import { useState } from "react";
 import { act, renderHook } from "@testing-library/react";
 import {
   WIKI_DIALOG_SEARCH_DELAY,
+  useSportsMentionSearch,
   useWikiDialogQueries,
   useWikiMentionSearch,
 } from "~/components/shared/editor/useWikiDialogQueries";
 import type { WikiSource } from "~/lib/wiki-os/config";
 
 interface Call {
-  procedure: "search" | "getIntro" | "getPageImages";
+  procedure: "search" | "getIntro" | "getPageImages" | "searchSportsEntities";
   input: { query?: string; title?: string; wiki?: string; limit?: number; wikiSource?: string };
   enabled: boolean;
 }
@@ -34,6 +35,7 @@ jest.mock("~/trpc/react", () => {
         getIntro: procedure("getIntro", () => undefined),
         getPageImages: procedure("getPageImages", () => mockImages),
       },
+      sports: { searchSportsEntities: procedure("searchSportsEntities", () => undefined) },
     },
   };
 });
@@ -271,5 +273,48 @@ describe("useWikiMentionSearch: the @ menu's wiki rows", () => {
     const { wait } = mention("Gallambria", false);
     wait(300);
     expect(sent("search")).toEqual([]);
+  });
+});
+
+describe("useSportsMentionSearch: the @ menu's sports rows", () => {
+  function mention(initial: string, enabled = true) {
+    const hook = renderHook(
+      ({ query, on }: { query: string; on: boolean }) => useSportsMentionSearch(query, on),
+      { initialProps: { query: initial, on: enabled } }
+    );
+    const type = (query: string) => hook.rerender({ query, on: enabled });
+    const wait = (ms: number) => act(() => jest.advanceTimersByTime(ms));
+    return { type, wait };
+  }
+
+  it("asks only once typing pauses for 300 ms, never per keystroke", () => {
+    const { type, wait } = mention("");
+    for (const typed of ["F", "FC", "FC ", "FC A"]) {
+      type(typed);
+      wait(100);
+    }
+    expect(sent("searchSportsEntities")).toEqual([]);
+    wait(200);
+    expect(sent("searchSportsEntities")).toEqual(["FC A"]);
+    expect(lastOf("searchSportsEntities").input).toEqual({ query: "FC A" });
+  });
+
+  it("trims, clamps to 200 characters, and sends nothing for one character", () => {
+    const { type, wait } = mention("");
+    type(" FC ");
+    wait(300);
+    expect(lastOf("searchSportsEntities").input.query).toBe("FC");
+    type("x".repeat(300));
+    wait(300);
+    expect(lastOf("searchSportsEntities").input.query).toBe("x".repeat(200));
+    type("F");
+    wait(300);
+    expect(lastOf("searchSportsEntities").enabled).toBe(false);
+  });
+
+  it("sends nothing when a mention source replaces the sports rows", () => {
+    const { wait } = mention("Rovers", false);
+    wait(300);
+    expect(sent("searchSportsEntities")).toEqual([]);
   });
 });

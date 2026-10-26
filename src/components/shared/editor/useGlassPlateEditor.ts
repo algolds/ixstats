@@ -27,7 +27,11 @@ import {
 } from "./SlateSerializer";
 import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
 import { userMentionItems, type MentionSource } from "./mention-source";
-import { useWikiDialogQueries, useWikiMentionSearch } from "./useWikiDialogQueries";
+import {
+  useSportsMentionSearch,
+  useWikiDialogQueries,
+  useWikiMentionSearch,
+} from "./useWikiDialogQueries";
 
 function getMentionItemIcon(name: string, type: "league" | "club") {
   const lower = name.toLowerCase();
@@ -136,10 +140,7 @@ export function useGlassPlateEditor({
 
   const wikiSearchForMention = useWikiMentionSearch(mentionQuery, !mentionSource);
 
-  const sportsMentionSearch = api.sports.searchSportsEntities.useQuery(
-    { query: mentionQuery },
-    { enabled: !mentionSource && mentionQuery.trim().length > 1, staleTime: 10_000 }
-  );
+  const sportsMentionSearch = useSportsMentionSearch(mentionQuery, !mentionSource);
 
   const mentionResults = useMemo(() => {
     const results: Array<{

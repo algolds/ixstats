@@ -1,7 +1,7 @@
 "use client";
 // src/components/shared/editor/useWikiDialogQueries.ts
 // What the composer asks the wikis: the wiki dialog's search across every wiki and its embed preview, and the @ menu's
-// wiki rows, each once typing pauses; and picking a dialog search result.
+// wiki and sports rows, each once typing pauses; and picking a dialog search result.
 
 import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "~/hooks/useDebounce";
@@ -81,18 +81,29 @@ export function useWikiDialogQueries({
   return { search, selectResult, title, intro, images };
 }
 
+/** The name typed after the `@`, trimmed and clamped to the search's limit, once typing pauses. */
+function useSettledMentionQuery(mentionQuery: string): string {
+  return useDebounce(mentionQuery.trim(), WIKI_DIALOG_SEARCH_DELAY).slice(0, MAX_QUERY_LENGTH);
+}
+
 /**
  * The @ menu's wiki rows: a search across every wiki for the name typed after the `@`, trimmed and clamped to the
  * search's limit, once typing pauses (`WIKI_DIALOG_SEARCH_DELAY`), never for one character, and not at all unless
  * `enabled` (a forum's own mention source replaces these rows).
  */
 export function useWikiMentionSearch(mentionQuery: string, enabled: boolean) {
-  const query = useDebounce(mentionQuery.trim(), WIKI_DIALOG_SEARCH_DELAY).slice(
-    0,
-    MAX_QUERY_LENGTH
-  );
+  const query = useSettledMentionQuery(mentionQuery);
   return api.wikios.search.useQuery(
     { query, limit: 3, wikiSource: "all" },
+    { enabled: enabled && query.length > 1, staleTime: 10_000 }
+  );
+}
+
+/** The @ menu's sports rows (leagues and clubs), asked on the same settled name as its wiki rows. */
+export function useSportsMentionSearch(mentionQuery: string, enabled: boolean) {
+  const query = useSettledMentionQuery(mentionQuery);
+  return api.sports.searchSportsEntities.useQuery(
+    { query },
     { enabled: enabled && query.length > 1, staleTime: 10_000 }
   );
 }
