@@ -23,22 +23,37 @@ import type { WikiSource } from "~/lib/wiki-os/config";
 import { isWikiOutage, unreachableText } from "~/lib/wiki-os/wiki-outage";
 import { countryRows, WIKI_SOURCE_OPTIONS, type CountriesData } from "./types";
 
-/** What testing a link found: the page (with its intro), no such page, or a wiki that did not answer. */
+/**
+ * What testing a link found: the page (with its intro), no such page, a wiki that did not answer, or a check that
+ * failed some other way (which says nothing about the page).
+ */
 type TestResult =
   | { status: "found"; intro: string }
   | { status: "missing" }
-  | { status: "unreachable"; wiki: WikiSource };
+  | { status: "unreachable"; wiki: WikiSource }
+  | { status: "unchecked" };
 
 interface IntroRead {
   data?: { intro: string; missing: boolean } | null;
   error?: { data?: { code?: string } | null } | null;
 }
 
-/** An outage is not "not found": the page may well exist. A page the wiki does not have is (`missing`). */
+/**
+ * Only a real "missing" answer (or NOT_FOUND) is "not found". An outage is not: the page may well exist. Nor is any
+ * other failure, which only says the link could not be checked.
+ */
 function testResultOf(read: IntroRead, wiki: WikiSource): TestResult {
   if (read.data)
     return read.data.missing ? { status: "missing" } : { status: "found", intro: read.data.intro };
-  return isWikiOutage(read.error) ? { status: "unreachable", wiki } : { status: "missing" };
+  if (isWikiOutage(read.error)) return { status: "unreachable", wiki };
+  return read.error?.data?.code === "NOT_FOUND" ? { status: "missing" } : { status: "unchecked" };
+}
+
+/** What a failed test says. */
+function failureText(result: Exclude<TestResult, { status: "found" }>): string {
+  if (result.status === "unreachable") return `${unreachableText(result.wiki)} Try again.`;
+  if (result.status === "unchecked") return "The link could not be checked. Try again.";
+  return "Article not found. Check the title and source.";
 }
 
 export function ManualLinkEditorSection({ countriesData }: { countriesData: CountriesData }) {
@@ -81,7 +96,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: Coun
     try {
       setTestResult(testResultOf(await wikiIntroQuery.refetch(), wikiSource));
     } catch {
-      setTestResult({ status: "missing" });
+      setTestResult({ status: "unchecked" });
     } finally {
       setIsTesting(false);
     }
@@ -216,9 +231,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: Coun
             ) : (
               <div className="flex items-center gap-2">
                 <XCircle className="h-4 w-4" />
-                {testResult.status === "unreachable"
-                  ? `${unreachableText(testResult.wiki)} Try again.`
-                  : "Article not found. Check the title and source."}
+                {failureText(testResult)}
               </div>
             )}
           </div>

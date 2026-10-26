@@ -66,6 +66,11 @@ function isBusyError(error: { data?: { code?: string } | null }): boolean {
   return error.data?.code === "TOO_MANY_REQUESTS";
 }
 
+/** Another wiki answered but could not render the page (BAD_GATEWAY): not an outage, so not worth a retry. */
+function isRefusedRender(error: { data?: { code?: string } | null }): boolean {
+  return error.data?.code === "BAD_GATEWAY";
+}
+
 /** Only a missing page is "not found"; a busy WikiOS or a wiki that failed to answer gets "try again". */
 function isNotFoundError(error: { data?: { code?: string } | null }): boolean {
   return error.data?.code === "NOT_FOUND";
@@ -158,6 +163,7 @@ export default function ArticlePageClient({
   const article = leanUnresolved ? undefined : data;
   const notFound = error !== null && isNotFoundError(error);
   const busy = error !== null && !isNotFoundError(error);
+  const refused = error !== null && isRefusedRender(error);
   // An IxWiki redirect is followed by the route; another wiki's is followed by the server's read of it.
   const shownRedirectFrom = redirectedFrom ?? (isIxWiki ? null : (article?.resolvedFrom ?? null));
 
@@ -269,6 +275,7 @@ export default function ArticlePageClient({
               <ArticleBusy
                 title={title}
                 onRetry={() => void refetch()}
+                refused={refused}
                 external={
                   isIxWiki
                     ? undefined

@@ -179,6 +179,10 @@ describe("ArticleRenderer for another wiki's page is read-only (ruling E-l)", ()
     const rule = /\.wikios-sister-article \{([^}]*)\}/.exec(css)?.[1] ?? "";
     expect(rule).toMatch(/contain: layout paint;/);
     expect(rule).toMatch(/isolation: isolate;/);
+    // which clips: a wide table (not an infobox or a notice) scrolls inside its own box instead
+    const table = /\.wikios-sister-article table:not\(([^)]*)\) \{([^}]*)\}/.exec(css);
+    expect(table?.[1]).toBe(".infobox, .infobox table, .wikios-infobox table, .ambox");
+    expect(table?.[2]).toMatch(/display: block;\s*max-width: 100%;\s*overflow-x: auto;/);
   });
 
   it("the margin hotkey does nothing", () => {

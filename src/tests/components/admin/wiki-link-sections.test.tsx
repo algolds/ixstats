@@ -209,6 +209,27 @@ describe("the manual link editor", () => {
     expect(screen.queryByText(/could not be reached/)).not.toBeInTheDocument();
   });
 
+  const failedWith = (code: string) => () =>
+    mockRefetch.mockResolvedValue({ data: undefined, error: outage(code) });
+
+  it.each([
+    ["an internal error", failedWith("INTERNAL_SERVER_ERROR")],
+    ["a refused input", failedWith("BAD_REQUEST")],
+    ["a refetch that throws", () => mockRefetch.mockRejectedValue(new Error("network"))],
+  ])(
+    "any other failure (%s) says the link could not be checked, never not found",
+    async (_case, fail) => {
+      fail();
+      render(<ManualLinkEditorSection countriesData={{ countries: [] }} />);
+      await testLink("iiwiki", "Caphiria");
+
+      expect(
+        await screen.findByText("The link could not be checked. Try again.")
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/article not found/i)).not.toBeInTheDocument();
+    }
+  );
+
   it("a page the wiki reports missing is not found, not article found", async () => {
     mockRefetch.mockResolvedValue({
       data: { title: "Nowhere", intro: "", text: "", source: "iiwiki", missing: true },
