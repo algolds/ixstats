@@ -682,7 +682,7 @@ describe("the embassy mission sweep", () => {
     };
     const missionDb = {
       ...tables,
-      $transaction: jest.fn(<T,>(work: (tx: typeof tables) => Promise<T>) => work(tables)),
+      $transaction: jest.fn(<T>(work: (tx: typeof tables) => Promise<T>) => work(tables)),
     };
     expect(await closeDueEmbassyMissions(missionDb as never, now)).toEqual({
       missionsCompleted: 1,

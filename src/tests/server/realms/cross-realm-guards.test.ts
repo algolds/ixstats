@@ -241,9 +241,9 @@ describe("cultural exchanges", () => {
     await expect(
       near.joinCulturalExchange({ exchangeId: "ex1", countryId: CALLER_COUNTRY, countryName: "T" })
     ).resolves.toMatchObject({ id: "p1" });
-    await expect(near.voteOnExchange({ exchangeId: "ex1", vote: "support" })).resolves.toMatchObject(
-      { success: true }
-    );
+    await expect(
+      near.voteOnExchange({ exchangeId: "ex1", vote: "support" })
+    ).resolves.toMatchObject({ success: true });
   });
 
   it("measure no impact on a participant of another realm", async () => {

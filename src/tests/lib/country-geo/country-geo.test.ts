@@ -205,7 +205,10 @@ describe("national figures and city demographics", () => {
         totalWorkforce: 600_000,
         landArea: 1_000,
       }),
-      update: jest.fn(async ({ data }: { data: Record<string, number | Date> }) => ({ id: "c1", ...data })),
+      update: jest.fn(async ({ data }: { data: Record<string, number | Date> }) => ({
+        id: "c1",
+        ...data,
+      })),
     },
     subdivision: {
       aggregate: jest

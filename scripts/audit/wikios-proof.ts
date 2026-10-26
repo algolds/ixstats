@@ -216,7 +216,9 @@ function corpusPages(): Promise<Array<{ title: string; revid: number | null }>> 
  * schema step creates the table before this check, so this only matters when the check runs on its own.
  */
 const isMissingLeaseTable = (error: unknown): boolean =>
-  error instanceof Error && /job_leases/.test(error.message) && /does not exist/.test(error.message);
+  error instanceof Error &&
+  /job_leases/.test(error.message) &&
+  /does not exist/.test(error.message);
 
 /** Takes the proof's lease for the deploy, first dropping a failed deploy's leftover hold. */
 async function takeDeployLease(): Promise<DeployLease> {
@@ -236,7 +238,9 @@ async function takeDeployLease(): Promise<DeployLease> {
     });
   } catch (error) {
     if (isMissingLeaseTable(error)) {
-      console.log("No job_leases table yet: no weekly proof can be running, so there is no lease to take");
+      console.log(
+        "No job_leases table yet: no weekly proof can be running, so there is no lease to take"
+      );
       return { state: "taken" };
     }
     return { state: "error", message: errorText(error instanceof Error ? error : String(error)) };

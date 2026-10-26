@@ -15,7 +15,10 @@ const overviewState: { owner: OwnerDefense | null; redacted: RedactedDefense | n
   redacted: null,
 };
 
-jest.mock("next/navigation", () => ({ useSearchParams: () => null, useRouter: () => ({ push: jest.fn() }) }));
+jest.mock("next/navigation", () => ({
+  useSearchParams: () => null,
+  useRouter: () => ({ push: jest.fn() }),
+}));
 jest.mock("next/dynamic", () => ({
   __esModule: true,
   default: () => () => <div data-testid="defense-tab" />,
@@ -44,7 +47,10 @@ import { PremiumPreviewFrame } from "~/components/mycountry/shared/primitives/Pr
 import { DefenseCommandPanel } from "~/components/mycountry/domains/defense/DefenseCommandPanel";
 import { PolicyPanel } from "~/components/mycountry/domains/defense/PolicyPanel";
 import { DefenseOverview } from "~/components/mycountry/domains/defense/overview/DefenseOverview";
-import { BranchCard, type BranchActions } from "~/components/mycountry/domains/defense/branches/BranchCard";
+import {
+  BranchCard,
+  type BranchActions,
+} from "~/components/mycountry/domains/defense/branches/BranchCard";
 import type { ForceBranch } from "~/components/mycountry/domains/defense/forces/force-fields";
 
 /** The owner's row: the full branch with its model state (others get the redacted variant). */
@@ -101,7 +107,11 @@ describe("the owner's free preview", () => {
     overviewState.owner = ownerDefense({ warnings: ["readinessFalling"] });
     render(
       <PremiumPreviewFrame feature="defense" locked>
-        <DefenseOverview overview={overviewState.owner} reader={sixTimesReader()} nowClockMs={overviewState.owner.clockMs} />
+        <DefenseOverview
+          overview={overviewState.owner}
+          reader={sixTimesReader()}
+          nowClockMs={overviewState.owner.clockMs}
+        />
         <PolicyPanel countryId="c1" />
       </PremiumPreviewFrame>
     );
@@ -186,7 +196,17 @@ describe("a branch card", () => {
 
   it("names its C-level and weakest area, and scraps an asset after asking", () => {
     const a = actions();
-    render(<BranchCard row={row} state={ownerBranch()} effortOfTotal={0.6} expanded canEdit pending={false} actions={a} />);
+    render(
+      <BranchCard
+        row={row}
+        state={ownerBranch()}
+        effortOfTotal={0.6}
+        expanded
+        canEdit
+        pending={false}
+        actions={a}
+      />
+    );
     expect(screen.getByText("C-2 · Mostly ready")).toBeTruthy();
     const worst = document.querySelector("[data-worst]");
     expect(worst?.textContent).toMatch(/Equipment condition.*weakest/);
@@ -199,16 +219,40 @@ describe("a branch card", () => {
 
   it("saves a plan with an effort weight and a strength cap", () => {
     const a = actions();
-    render(<BranchCard row={row} state={ownerBranch()} effortOfTotal={0.6} expanded canEdit pending={false} actions={a} />);
+    render(
+      <BranchCard
+        row={row}
+        state={ownerBranch()}
+        effortOfTotal={0.6}
+        expanded
+        canEdit
+        pending={false}
+        actions={a}
+      />
+    );
     fireEvent.change(screen.getByLabelText("Share of effort (%)"), { target: { value: "70" } });
-    fireEvent.change(screen.getByLabelText("Strength cap (optional)"), { target: { value: "100000" } });
+    fireEvent.change(screen.getByLabelText("Strength cap (optional)"), {
+      target: { value: "100000" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Save plan" }));
-    expect(a.savePlan).toHaveBeenCalledWith({ id: "b-land", effortShare: 0.7, targetActive: 100_000 });
+    expect(a.savePlan).toHaveBeenCalledWith({
+      id: "b-land",
+      effortShare: 0.7,
+      targetActive: 100_000,
+    });
   });
 
   it("has no levers in the preview", () => {
     render(
-      <BranchCard row={row} state={ownerBranch()} effortOfTotal={0.6} expanded canEdit={false} pending={false} actions={actions()} />
+      <BranchCard
+        row={row}
+        state={ownerBranch()}
+        effortOfTotal={0.6}
+        expanded
+        canEdit={false}
+        pending={false}
+        actions={actions()}
+      />
     );
     const names = screen.getAllByRole("button").map((b) => b.getAttribute("aria-label"));
     expect(names).toEqual(["Collapse Royal Army"]);

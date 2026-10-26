@@ -23,12 +23,18 @@ describe("budget split", () => {
   });
 
   it("normalises shares and falls back to the defaults when all are zero", () => {
-    const shares = normaliseShares({ personnel: 2, om: 1, procurement: 1, rd: 0, infrastructure: -3 });
+    const shares = normaliseShares({
+      personnel: 2,
+      om: 1,
+      procurement: 1,
+      rd: 0,
+      infrastructure: -3,
+    });
     expect(shares.personnel).toBeCloseTo(0.5);
     expect(shares.infrastructure).toBe(0);
-    expect(normaliseShares({ personnel: 0, om: 0, procurement: 0, rd: 0, infrastructure: 0 })).toEqual(
-      DEFAULT_SHARES
-    );
+    expect(
+      normaliseShares({ personnel: 0, om: 0, procurement: 0, rd: 0, infrastructure: 0 })
+    ).toEqual(DEFAULT_SHARES);
   });
 
   it("splits a month of the budget (B = D / 12)", () => {
@@ -52,10 +58,12 @@ describe("defenseLinesTotal (D2 sums every Defense line; D1 took the largest)", 
   });
 
   it("sums an army ministry and an admiralty", () => {
-    expect(defenseLinesTotal([line("Defense", 6), line("Health", 20), line("Defense", 4)])).toEqual({
-      amount: 10e9,
-      percent: 10,
-    });
+    expect(defenseLinesTotal([line("Defense", 6), line("Health", 20), line("Defense", 4)])).toEqual(
+      {
+        amount: 10e9,
+        percent: 10,
+      }
+    );
   });
 
   it("is null without a Defense line", () => {
@@ -74,36 +82,50 @@ describe("resolveDefenseBudget fallback chain", () => {
   };
 
   it("takes the Defense department line first", () => {
-    expect(resolveDefenseBudget({ ...base, defenseLine: { amount: 30e9, percent: 10 }, builderDefense: 5e9 })).toEqual({
+    expect(
+      resolveDefenseBudget({
+        ...base,
+        defenseLine: { amount: 30e9, percent: 10 },
+        builderDefense: 5e9,
+      })
+    ).toEqual({
       amount: 30e9,
       source: "defenseDepartment",
     });
   });
 
   it("respects a deliberate 0% Defense line", () => {
-    expect(resolveDefenseBudget({ ...base, defenseLine: { amount: 0, percent: 0 }, builderDefense: 5e9 })).toEqual({
+    expect(
+      resolveDefenseBudget({ ...base, defenseLine: { amount: 0, percent: 0 }, builderDefense: 5e9 })
+    ).toEqual({
       amount: 0,
       source: "defenseDepartment",
     });
   });
 
   it("skips a line with a share but no money (a budget without a total) and implausible figures", () => {
-    expect(resolveDefenseBudget({ ...base, defenseLine: { amount: 0, percent: 10 }, builderDefense: 5e9 }).source).toBe(
-      "builder"
-    );
+    expect(
+      resolveDefenseBudget({
+        ...base,
+        defenseLine: { amount: 0, percent: 10 },
+        builderDefense: 5e9,
+      }).source
+    ).toBe("builder");
     expect(resolveDefenseBudget({ ...base, builderDefense: 0.9e12 }).source).toBe("estimate");
   });
 
   it("then the government form's default share × spending (recorded or 20% of GDP)", () => {
-    expect(resolveDefenseBudget({ ...base, formDefenseShare: 0.1, governmentSpending: 400e9 })).toEqual({
+    expect(
+      resolveDefenseBudget({ ...base, formDefenseShare: 0.1, governmentSpending: 400e9 })
+    ).toEqual({
       amount: 40e9,
       source: "governmentForm",
     });
     expect(resolveDefenseBudget({ ...base, formDefenseShare: 0.1 }).amount).toBeCloseTo(20e9);
     // An unscaled structure budget (under 5% of GDP) reads as unknown spending.
-    expect(resolveDefenseBudget({ ...base, formDefenseShare: 0.1, governmentSpending: 1e9 }).amount).toBeCloseTo(
-      20e9
-    );
+    expect(
+      resolveDefenseBudget({ ...base, formDefenseShare: 0.1, governmentSpending: 1e9 }).amount
+    ).toBeCloseTo(20e9);
   });
 
   it("then 2% of GDP, and nothing without a GDP", () => {
