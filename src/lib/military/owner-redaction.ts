@@ -1,12 +1,39 @@
 /**
  * Defense figures only a nation's owner (or a privileged role) may read. Branches, operations and conflicts stay
- * public; their internals do not: a branch's capital, readiness sub-scores, mobilisation and allocation (others see
- * the public order of battle, and D3's intelligence estimates), an operation's personnel, daily cost, cost so far
- * and GDP drain, and a conflict's casualties and economic damage (shown to its parties).
+ * public; their internals do not: a branch's exact headcounts, capital, readiness sub-scores, mobilisation,
+ * allocation, units and equipment (others see its name, domain and a strength band, and D3's intelligence
+ * estimates), an operation's personnel, daily cost, cost so far and GDP drain, and a conflict's casualties and
+ * economic damage (shown to its parties).
+ *
+ * Strength bands: a headcount is shown as the 1-2-5 band it falls in (1,000 to 2,000; 2,000 to 5,000; 5,000 to
+ * 10,000; …), a fixed grid, so no exact figure can be read back from it. A band spans ×2 to ×2.5, about the width
+ * of the odds screen's default intel range (×1.4 either side of the estimate).
  */
 
 type OperationCostField = "personnelDeployed" | "dailyCost" | "totalCostSoFar" | "gdpDrain";
 type ConflictCostField = "initiatorCasualties" | "defenderCasualties" | "economicDamage";
+/** A headcount as the band an outsider sees. */
+export interface StrengthBand {
+  low: number;
+  high: number;
+}
+
+/** The 1-2-5 band `n` falls in ({0, 0} under one person). */
+export function strengthBand(n: number): StrengthBand {
+  if (!(n >= 1)) return { low: 0, high: 0 };
+  let decade = 10 ** Math.floor(Math.log10(n));
+  if (10 * decade <= n) decade *= 10; // log10 can land just under a power of ten
+  if (n < 2 * decade) return { low: decade, high: 2 * decade };
+  if (n < 5 * decade) return { low: 2 * decade, high: 5 * decade };
+  return { low: 5 * decade, high: 10 * decade };
+}
+
+/** "10,000 to 20,000", or "None". */
+export function formatStrengthBand(band: StrengthBand): string {
+  if (band.high === 0) return "None";
+  return `${band.low.toLocaleString("en-US")} to ${band.high.toLocaleString("en-US")}`;
+}
+
 /** A branch row's model internals. */
 interface BranchInternals {
   capital: number;
@@ -54,10 +81,24 @@ export function redactConflictCosts<T extends Record<ConflictCostField, number>>
   return rest as Redacted<T, ConflictCostField>;
 }
 
-/** A branch as the public order of battle: identity and rounded headcounts, no model internals. */
+/** A branch row's exact figures, hidden from outsiders as well as its internals. */
+type BranchExactField = BranchInternalField | "activeDuty" | "reserves" | "civilianStaff";
+
+/**
+ * A branch as the public order of battle: its identity and strength bands; no exact headcounts, no model internals,
+ * and no units or equipment (the lists come back empty, typed as the owner's).
+ */
 export function redactBranchInternals<
-  T extends BranchInternals & { activeDuty: number; reserves: number },
->(branch: T): Redacted<T, BranchInternalField> {
+  T extends BranchInternals & {
+    activeDuty: number;
+    reserves: number;
+    civilianStaff: number;
+    units: readonly unknown[];
+    assets: readonly unknown[];
+  },
+>(
+  branch: T
+): Redacted<T, BranchExactField> & { strength: StrengthBand; reserveStrength: StrengthBand } {
   const {
     capital: _capital,
     readinessPersonnel: _readinessPersonnel,
@@ -71,11 +112,16 @@ export function redactBranchInternals<
     effortShare: _effortShare,
     targetActive: _targetActive,
     lastTickClockMs: _lastTickClockMs,
+    activeDuty: _activeDuty,
+    reserves: _reserves,
+    civilianStaff: _civilianStaff,
     ...rest
   } = branch;
   return {
     ...rest,
-    activeDuty: Math.round(branch.activeDuty),
-    reserves: Math.round(branch.reserves),
-  } as Redacted<T, BranchInternalField>;
+    units: [],
+    assets: [],
+    strength: strengthBand(branch.activeDuty),
+    reserveStrength: strengthBand(branch.reserves),
+  } as Redacted<T, BranchExactField> & { strength: StrengthBand; reserveStrength: StrengthBand };
 }

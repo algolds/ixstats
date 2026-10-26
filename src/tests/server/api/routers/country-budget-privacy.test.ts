@@ -221,8 +221,9 @@ function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
           effortShare: 0.55,
           targetActive: null,
           lastTickClockMs: 2e12,
-          units: [],
-          assets: [],
+          civilianStaff: 1_234,
+          units: [{ id: "u1", name: "1st Armoured", personnel: 4_321 }],
+          assets: [{ id: "a1", name: "Leopard 2", quantity: 77 }],
         },
       ]),
     },
@@ -549,17 +550,42 @@ describe("isBudgetLedgerRow", () => {
 describe("security.getMilitaryBranches", () => {
   const read = (ctx: never) => military(ctx).getMilitaryBranches({ countryId: COUNTRY });
 
-  it.each(VISITORS)("serves %s the public order of battle, no internals", async (_who, ctxFor) => {
+  it.each(VISITORS)("serves %s the public order of battle: strength bands, no exact numbers or internals", async (_who, ctxFor) => {
     const [branch] = (await read(ctxFor(makeDb()))) as Array<Record<string, unknown>>;
-    expect(branch).toMatchObject({ name: "Army", activeDuty: 51_235, reserves: 10_000, derived: null });
-    for (const field of ["capital", "readinessCondition", "readinessTraining", "effortShare", "mobilised"]) {
+    expect(branch).toMatchObject({
+      name: "Army",
+      strength: { low: 50_000, high: 100_000 },
+      reserveStrength: { low: 10_000, high: 20_000 },
+      units: [],
+      assets: [],
+      derived: null,
+    });
+    for (const field of [
+      "activeDuty",
+      "reserves",
+      "civilianStaff",
+      "capital",
+      "readinessCondition",
+      "readinessTraining",
+      "effortShare",
+      "mobilised",
+    ]) {
       expect(branch).not.toHaveProperty(field);
+    }
+    const json = JSON.stringify(branch);
+    for (const exact of ["51234", "51235", "1234", "4321", "Leopard", "1st Armoured"]) {
+      expect(json).not.toContain(exact);
     }
   });
 
   it.each(OWNERS)("serves %s the branch internals and derived state", async (_who, ctxFor) => {
     const [branch] = (await read(ctxFor(makeDb()))) as Array<Record<string, unknown>>;
-    expect(branch).toMatchObject({ capital: 9e9, derived: { cLevel: "C-2", combatPower: 42_000 } });
+    expect(branch).toMatchObject({
+      capital: 9e9,
+      activeDuty: 51_234.6,
+      units: [{ name: "1st Armoured" }],
+      derived: { cLevel: "C-2", combatPower: 42_000 },
+    });
   });
 });
 

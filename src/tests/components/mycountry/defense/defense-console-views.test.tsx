@@ -60,12 +60,21 @@ describe("another nation's Defense page", () => {
       redacted: true,
       doctrine: "defensive",
       alertInEffect: "elevated",
-      branches: [{ id: "x", domain: "sea", name: "Grand Fleet", active: 41_000, reserves: 12_000 }],
+      branches: [
+        {
+          id: "x",
+          domain: "sea",
+          name: "Grand Fleet",
+          strength: { low: 20_000, high: 50_000 },
+          reserveStrength: { low: 10_000, high: 20_000 },
+        },
+      ],
     };
     render(<DefenseCommandPanel countryId="c2" />);
     expect(screen.getByText("Public order of battle")).toBeTruthy();
     expect(screen.getByText("Grand Fleet")).toBeTruthy();
-    expect(screen.getByText("41,000")).toBeTruthy();
+    expect(screen.getByText("20,000 to 50,000")).toBeTruthy();
+    expect(screen.getByText("10,000 to 20,000")).toBeTruthy();
     expect(screen.getByText("Defensive")).toBeTruthy();
     expect(screen.getByText("Elevated")).toBeTruthy();
     expect(screen.queryByRole("tablist")).toBeNull();

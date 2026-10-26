@@ -11,6 +11,7 @@ import {
   type BranchView,
   type BudgetWarning,
 } from "~/lib/military/model";
+import { strengthBand } from "~/lib/military/owner-redaction";
 import type { DefenseSnapshot } from "./defense.sync";
 
 function warnings(snapshot: DefenseSnapshot): BudgetWarning[] {
@@ -97,7 +98,10 @@ export function defenseOverview(snapshot: DefenseSnapshot) {
 
 export type DefenseOverview = ReturnType<typeof defenseOverview>;
 
-/** What another nation sees: the public order of battle and the visible posture, no internals. */
+/**
+ * What another nation sees: the public order of battle (each branch's name, domain and strength bands, never exact
+ * headcounts) and the visible posture, no internals.
+ */
 export function publicDefenseOverview(snapshot: DefenseSnapshot) {
   return {
     countryId: snapshot.country.id,
@@ -110,8 +114,8 @@ export function publicDefenseOverview(snapshot: DefenseSnapshot) {
         id: b.id,
         domain: b.domain,
         name: row?.name ?? b.domain,
-        active: Math.round(b.active),
-        reserves: Math.round(b.reserves),
+        strength: strengthBand(b.active),
+        reserveStrength: strengthBand(b.reserves),
       };
     }),
   };

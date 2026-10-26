@@ -33,6 +33,7 @@ import {
   demobiliseReserves,
   mobiliseReserves,
   orderProcurement,
+  publicDefenseOverview,
   scrapAsset,
   seedStarterBranches,
   setAlertLevel,
@@ -174,6 +175,21 @@ describe("procurement", () => {
     await expect(cancelProcurementOrder(D(), { countryId: "c1", orderId: order.id })).rejects.toThrow(
       /Only an open order/
     );
+  });
+});
+
+describe("another nation's view", () => {
+  it("shows each branch's strength as a band, never its exact headcount", async () => {
+    const snapshot = await syncDefense(D(), "c1");
+    const view = publicDefenseOverview(snapshot);
+    const exact = snapshot.view.branches.map((b) => Math.round(b.active));
+    for (const [i, branch] of view.branches.entries()) {
+      expect(Object.keys(branch).sort()).toEqual(["domain", "id", "name", "reserveStrength", "strength"]);
+      expect(branch.strength.low).toBeLessThanOrEqual(snapshot.view.branches[i]!.active);
+      expect(branch.strength.high).toBeGreaterThan(snapshot.view.branches[i]!.active);
+    }
+    const json = JSON.stringify(view);
+    for (const n of exact) expect(json).not.toContain(String(n));
   });
 });
 
