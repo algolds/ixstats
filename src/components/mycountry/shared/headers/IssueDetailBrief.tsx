@@ -31,10 +31,10 @@ import { Card } from "~/components/ui/card";
 import type { RealmClockReader } from "~/lib/realms/realm-clock";
 import {
   deadlineBadgeOf,
-  formatReveal,
   parseOptions,
   reconArrivalOf,
   type ReconOptionItem,
+  type ReconRevealItem,
   type ResponseOption,
 } from "~/lib/national-issues/issue-brief";
 
@@ -60,6 +60,13 @@ interface IssueDetailBriefProps {
 
 type Issue = NonNullable<RouterOutputs["nationalIssues"]["getIssue"]>;
 type ReconData = NonNullable<RouterOutputs["nationalIssues"]["getReconReveal"]>;
+
+function formatReveal(r: ReconRevealItem): string {
+  if (r.value == null) return "—";
+  if (r.operation === "multiply") return `×${r.value}`;
+  if (r.operation === "set") return `=${r.value}`;
+  return `${r.operation === "subtract" ? "-" : "+"}${Math.abs(r.value)}`;
+}
 
 const REVEAL_TONE: Record<string, string> = {
   greyed: "text-label-tertiary",

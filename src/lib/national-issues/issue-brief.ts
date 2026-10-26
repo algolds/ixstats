@@ -1,6 +1,6 @@
 /**
- * The national issue brief's pure parts: the stored response options, a recon reveal's label, and
- * the deadline and recon-arrival lines on the nation's clock (IssueDetailBrief renders them).
+ * The national issue brief's pure parts: the stored response options and the deadline and
+ * recon-arrival lines on the nation's clock (IssueDetailBrief renders them).
  */
 import { CLOCK_PENDING, realMsUntil } from "~/lib/realms/nation-time";
 import type { RealmClockReader } from "~/lib/realms/realm-clock";
@@ -47,13 +47,6 @@ export function parseOptions(raw: string | null | undefined): ResponseOption[] {
   } catch {
     return [];
   }
-}
-
-export function formatReveal(r: ReconRevealItem): string {
-  if (r.value == null) return "—";
-  if (r.operation === "multiply") return `×${r.value}`;
-  if (r.operation === "set") return `=${r.value}`;
-  return `${r.operation === "subtract" ? "-" : "+"}${Math.abs(r.value)}`;
 }
 
 /** A deadline is urgent with a day and a half of real time left at the realm's speed (three in-world days on ×2). */

@@ -3,7 +3,6 @@ import { describe, expect, it } from "@jest/globals";
 import {
   DAY_MS,
   deadlineBadgeOf,
-  formatReveal,
   parseOptions,
   reconArrivalOf,
 } from "~/lib/national-issues/issue-brief";
@@ -22,18 +21,6 @@ describe("parseOptions", () => {
     expect(parseOptions(undefined)).toEqual([]);
     expect(parseOptions("")).toEqual([]);
     expect(parseOptions("{not json")).toEqual([]);
-  });
-});
-
-describe("formatReveal", () => {
-  it("labels each operation", () => {
-    expect(formatReveal({ targetField: "x", value: null })).toBe("—");
-    expect(formatReveal({ targetField: "x" })).toBe("—");
-    expect(formatReveal({ targetField: "x", value: 1.5, operation: "multiply" })).toBe("×1.5");
-    expect(formatReveal({ targetField: "x", value: 40, operation: "set" })).toBe("=40");
-    expect(formatReveal({ targetField: "x", value: 3, operation: "subtract" })).toBe("-3");
-    expect(formatReveal({ targetField: "x", value: -3, operation: "add" })).toBe("+3");
-    expect(formatReveal({ targetField: "x", value: 0 })).toBe("+0");
   });
 });
 

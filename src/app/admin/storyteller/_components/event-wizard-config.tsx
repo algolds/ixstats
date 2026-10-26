@@ -1,4 +1,4 @@
-// src/app/admin/storyteller/_components/event-wizard-config.ts
+// src/app/admin/storyteller/_components/event-wizard-config.tsx
 // The world event wizard's event types, steps and form state.
 
 import {
