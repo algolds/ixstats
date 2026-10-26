@@ -69,7 +69,12 @@ export type RoundTripReport = z.infer<typeof roundTripReportSchema>;
 
 export const parityReportSchema = z.object({
   /** `settleMs` is absent from reports written before the settle retries, which recorded no render state. */
-  meta: z.object({ titles: z.array(z.string()), settleMs: z.number().optional() }),
+  meta: z.object({
+    titles: z.array(z.string()),
+    settleMs: z.number().optional(),
+    /** Pages parsed at the revision WikiOS holds; absent from reports written before parity compared revisions. */
+    comparedByRevision: z.number().int().optional(),
+  }),
   pages: z.array(
     z.object({
       title: z.string(),
@@ -222,8 +227,11 @@ export function evaluateRoundTrip(report: RoundTripReport, t: ProofThresholds): 
   ];
 }
 
-/** MediaWiki's missing-page error: the `missingtitle` code, or its info text in older reports. */
-const MISSING_ON_MEDIAWIKI = /\bmissingtitle\b|\bdoes(?:n't| not) exist\b/i;
+/**
+ * MediaWiki's missing-page error: the `missingtitle` code, or its info text in older reports; or `nosuchrevid`, the
+ * parity script's error for a revision WikiOS holds that MediaWiki has deleted or hidden since.
+ */
+const MISSING_ON_MEDIAWIKI = /\bmissingtitle\b|\bnosuchrevid\b|\bdoes(?:n't| not) exist\b/i;
 
 /** The side a page failed on. Older reports carry only the error prefix; an unattributable error counts on WikiOS. */
 function failedSide(page: ParityPage): "mediawiki" | "wikios" | null {
@@ -658,6 +666,8 @@ export type PageCount = number | "all";
 export interface ProfileConfig {
   outDir: string;
   corpusFile: string;
+  /** `{ title: rev id }`, the MediaWiki revision WikiOS holds of each corpus page: parity parses that revision. */
+  revisionsFile: string;
   benchPagesFile: string;
   /** The api.php parity compares against. */
   mwApi: string;
@@ -675,7 +685,7 @@ export interface ProfileConfig {
   benchIntervalMs: number;
 }
 
-export type ProfileDefaults = Omit<ProfileConfig, "outDir" | "corpusFile" | "benchPagesFile">;
+export type ProfileDefaults = Omit<ProfileConfig, "outDir" | "corpusFile" | "revisionsFile" | "benchPagesFile">;
 
 export type RunOverrides = Partial<
   Pick<
@@ -852,6 +862,8 @@ export function profileCommands(cfg: ProfileConfig): HarnessCommand[] {
         cfg.wikios,
         "--pages",
         cfg.corpusFile,
+        "--revisions",
+        cfg.revisionsFile,
         ...sample,
         "--interval-ms",
         String(cfg.parityIntervalMs),
@@ -902,8 +914,14 @@ export function resolveRunConfig(
     wikiosPublic: parseHttpUrl(merged.wikiosPublic, "--wikios-public"),
     outDir,
     corpusFile: join(outDir, "corpus-titles.json"),
+    revisionsFile: join(outDir, "corpus-revisions.json"),
     benchPagesFile: join(outDir, "bench-pages.json"),
   };
+}
+
+/** The revisions file parity reads: each page's held rev id; a page with none is parsed as the current page. */
+export function corpusRevisions(pages: ReadonlyArray<{ title: string; revid: number | null }>): Record<string, number> {
+  return Object.fromEntries(pages.flatMap((page) => (page.revid === null ? [] : [[page.title, page.revid]])));
 }
 
 /** The bench's pages: the defaults first, then an even sample of the rest of the corpus, up to `pages`. */
@@ -1190,6 +1208,21 @@ function settleCheck(report: ParityReport): Check {
   };
 }
 
+/** A parity report that parsed the current page scores every edit on classic since WikiOS's copy as a difference. */
+function revisionCheck(report: ParityReport): Check {
+  const { comparedByRevision, titles } = report.meta;
+  return {
+    name: "parity.byRevision",
+    passed: comparedByRevision !== undefined && comparedByRevision > 0,
+    skipped: null,
+    measured:
+      comparedByRevision === undefined
+        ? "not recorded (a report from before parity compared revisions)"
+        : `${comparedByRevision} of ${titles.length} pages`,
+    threshold: "the revision WikiOS holds",
+  };
+}
+
 function roundTripChecks(
   report: RoundTripReport | null,
   t: ProofThresholds,
@@ -1210,7 +1243,9 @@ export function evaluateProof(
   return [
     ...harnessChecks(exits),
     ...roundTripChecks(reports.roundTrip, t, PROVING_PROFILES.has(profile)),
-    ...(parity ? [settleCheck(parity), ...evaluateParity(parity, t)] : [missingReport("parity")]),
+    ...(parity
+      ? [settleCheck(parity), revisionCheck(parity), ...evaluateParity(parity, t)]
+      : [missingReport("parity")]),
     ...evaluateBench(reports.bench, t, profile),
   ];
 }

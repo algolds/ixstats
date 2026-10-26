@@ -38,6 +38,7 @@ import {
   assertProfileEnvironment,
   benchPageList,
   benchReportSchema,
+  corpusRevisions,
   buildSummary,
   checkCommittedProof,
   corpusCounts,
@@ -188,19 +189,21 @@ async function withPrisma<T>(fn: (prisma: PrismaClient) => Promise<T>): Promise<
   }
 }
 
-/** Published IxWiki articles with text that are not redirects, by title. Read only, enforced by Postgres. */
-function corpusTitles(): Promise<string[]> {
-  return withPrisma(async (prisma) => {
-    const rows = await prisma.$transaction(async (tx) => {
+/**
+ * Published IxWiki articles with text that are not redirects, by title, each with the MediaWiki revision WikiOS
+ * holds (`mwLatestRevId`, null when unknown). Read only, enforced by Postgres.
+ */
+function corpusPages(): Promise<Array<{ title: string; revid: number | null }>> {
+  return withPrisma(async (prisma) =>
+    prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SET TRANSACTION READ ONLY`;
-      return tx.$queryRaw<Array<{ title: string }>>`
-        SELECT "title" FROM "wiki_articles"
+      return tx.$queryRaw<Array<{ title: string; revid: number | null }>>`
+        SELECT "title", "mwLatestRevId" AS "revid" FROM "wiki_articles"
         WHERE "source" = 'ixwiki' AND "status" = 'PUBLISHED' AND "namespace" = 0
           AND btrim("wikitext") <> '' AND "wikitext" !~* '^\\s*#redirect'
         ORDER BY "title"`;
-    });
-    return rows.map((row) => row.title);
-  });
+    })
+  );
 }
 
 /** Takes the proof's lease for the deploy, first dropping a failed deploy's leftover hold. */
@@ -269,8 +272,10 @@ async function run(command: Extract<CliCommand, { command: "run" }>): Promise<nu
   const tree = currentTree();
   mkdirSync(dirname(outDir), { recursive: true });
   mkdirSync(outDir); // a second run into the same directory refuses rather than mixing reports
-  const corpus = await corpusTitles();
+  const pages = await corpusPages();
+  const corpus = pages.map((page) => page.title);
   writeJson(cfg.corpusFile, corpus);
+  writeJson(cfg.revisionsFile, corpusRevisions(pages));
   writeJson(
     cfg.benchPagesFile,
     benchPageList(loadPageList(DEFAULT_BENCH_PAGES), corpus, cfg.benchPages)

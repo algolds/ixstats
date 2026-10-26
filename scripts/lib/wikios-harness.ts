@@ -450,6 +450,91 @@ export function loadPageList(path: string): string[] {
   return parsePageList(readFileSync(path, "utf8"));
 }
 
+// ---------------------------------------------------------------------------
+// Parity by revision
+// ---------------------------------------------------------------------------
+
+/** A revisions file: `{ "<title>": <MediaWiki rev id WikiOS holds> }` (the proof CLI writes it from Postgres). */
+const revisionMapSchema = z.record(z.string(), z.number().int().positive());
+
+export function parseRevisionMap(json: string): Map<string, number> {
+  return new Map(Object.entries(revisionMapSchema.parse(JSON.parse(json))));
+}
+
+/**
+ * The `action=parse` query for MediaWiki's side of a page: the revision WikiOS holds (`oldid`) when it is known, so
+ * an edit on classic since WikiOS's copy is not scored as a render difference; else the current page, with redirects
+ * followed as WikiOS does.
+ */
+export function mediaWikiParseQuery(title: string, revid: number | undefined): Record<string, string> {
+  const target: Record<string, string> =
+    revid === undefined ? { page: title, redirects: "1" } : { oldid: String(revid) };
+  return {
+    action: "parse",
+    ...target,
+    prop: "text|categories|templates|images|displaytitle",
+    formatversion: "2",
+    format: "json",
+    disableeditsection: "1",
+  };
+}
+
+/** Errors that mean MediaWiki no longer has the revision WikiOS holds to show: deleted, or its text hidden. */
+const REVISION_GONE_CODES: ReadonlySet<string> = new Set(["nosuchrevid", "missingtitle", "permissiondenied"]);
+
+/**
+ * The report's error for a failed parse. A revision MediaWiki refuses is corpus drift, so it carries the
+ * `nosuchrevid` code the proof gate counts as drift, never as a parity failure.
+ */
+export function mediaWikiParseError(code: string, info: string, revid: number | undefined): string {
+  if (revid !== undefined && REVISION_GONE_CODES.has(code)) {
+    return `MediaWiki: nosuchrevid: revision ${revid} is gone or hidden (${code}: ${info})`;
+  }
+  return `MediaWiki: ${code}: ${info}`;
+}
+
+const revisionModelsSchema = z.object({
+  query: z
+    .object({
+      pages: z
+        .array(
+          z.object({
+            revisions: z
+              .array(
+                z.object({
+                  revid: z.number(),
+                  slots: z.object({ main: z.object({ contentmodel: z.string() }) }).optional(),
+                  contentmodel: z.string().optional(),
+                })
+              )
+              .default([]),
+          })
+        )
+        .default([]),
+    })
+    .default({ pages: [] }),
+});
+
+/**
+ * The content model of each revision in an `action=query&prop=revisions&revids=…&rvprop=ids|contentmodel&rvslots=main`
+ * answer, by rev id. A revision the answer leaves out (deleted, hidden) is not in the map.
+ */
+export function revisionContentModels(json: string): Map<number, string> {
+  const models = new Map<number, string>();
+  for (const page of revisionModelsSchema.parse(JSON.parse(json)).query.pages) {
+    for (const revision of page.revisions) {
+      const model = revision.slots?.main.contentmodel ?? revision.contentmodel;
+      if (model) models.set(revision.revid, model);
+    }
+  }
+  return models;
+}
+
+/** `items` in slices of `size` (the API takes at most 50 rev ids a request). */
+export function chunked<T>(items: readonly T[], size: number): T[][] {
+  return Array.from({ length: Math.ceil(items.length / size) }, (_, i) => items.slice(i * size, (i + 1) * size));
+}
+
 /** `count` titles spread evenly over the list (all of it when `count` is not smaller than the list). */
 export function samplePages(titles: readonly string[], count: number): string[] {
   if (count >= titles.length) return [...titles];

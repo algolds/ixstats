@@ -482,6 +482,21 @@ describe("evaluateParity", () => {
     ).toBe("0.0%");
   });
 
+  it("a revision MediaWiki deleted or hid since WikiOS's copy (nosuchrevid) is drift, not a parity failure", () => {
+    const pages: ParityPage[] = [
+      ...perfectPages(200),
+      {
+        title: "Gone",
+        error: "MediaWiki: nosuchrevid: revision 42 is gone or hidden (permissiondenied: hidden)",
+        failedOn: "mediawiki" as const,
+        templates: [],
+      },
+    ];
+    const checks = evaluateParity(parityReport(pages), thresholds());
+    expect(byName(checks, "parity.mediawikiMissing").measured).toBe("0.5%");
+    expect(byName(checks, "parity.below70").passed).toBe(true);
+  });
+
   it("an older report without failedOn attributes failures by their prefix", () => {
     const pages: ParityPage[] = [
       ...perfectPages(200),

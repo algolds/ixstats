@@ -11,9 +11,14 @@ import { join, resolve } from "node:path";
 import {
   fetchUntilSettled,
   isLocalDatabaseUrl,
+  chunked,
+  mediaWikiParseError,
+  mediaWikiParseQuery,
   needsSettling,
   normalizeHtml,
   parseNamespaces,
+  parseRevisionMap,
+  revisionContentModels,
   similarity,
   throttledFetch,
   type Parsed,
@@ -223,5 +228,63 @@ describe("normalizing rendered text", () => {
     const doc = normalizeHtml("<h2>History</h2><p>Laid down<br>June 1933</p>");
     expect(doc.text).toBe("History Laid down June 1933");
     expect(doc.headings).toEqual(["History"]);
+  });
+});
+
+describe("parity by revision", () => {
+  it("parses the revision WikiOS holds when it is known, else the current page with redirects followed", () => {
+    expect(mediaWikiParseQuery("Kagazi", 114395)).toMatchObject({ action: "parse", oldid: "114395" });
+    expect(mediaWikiParseQuery("Kagazi", 114395)).not.toHaveProperty("page");
+    expect(mediaWikiParseQuery("Kagazi", 114395)).not.toHaveProperty("redirects");
+    expect(mediaWikiParseQuery("Kagazi", undefined)).toMatchObject({ page: "Kagazi", redirects: "1" });
+    expect(mediaWikiParseQuery("Kagazi", undefined)).not.toHaveProperty("oldid");
+    expect(mediaWikiParseQuery("Kagazi", 1).prop).toBe("text|categories|templates|images|displaytitle");
+  });
+
+  it("a revision MediaWiki refuses is drift (nosuchrevid); other errors, and a page asked by title, keep their codes", () => {
+    for (const code of ["nosuchrevid", "missingtitle", "permissiondenied"]) {
+      expect(mediaWikiParseError(code, "gone", 42)).toBe(
+        `MediaWiki: nosuchrevid: revision 42 is gone or hidden (${code}: gone)`
+      );
+    }
+    expect(mediaWikiParseError("internal_api_error_Error", "boom", 42)).toBe(
+      "MediaWiki: internal_api_error_Error: boom"
+    );
+    expect(mediaWikiParseError("missingtitle", "gone", undefined)).toBe("MediaWiki: missingtitle: gone");
+  });
+
+  it("reads the revisions file, and refuses one that is not titles to rev ids", () => {
+    expect(parseRevisionMap('{"A": 7, "B C": 9}')).toEqual(new Map([["A", 7], ["B C", 9]]));
+    expect(() => parseRevisionMap('{"A": "7"}')).toThrow();
+    expect(() => parseRevisionMap('{"A": 0}')).toThrow();
+  });
+
+  it("reads each revision's content model from the main slot, and leaves out a revision the answer omits", () => {
+    const answer = JSON.stringify({
+      query: {
+        pages: [
+          {
+            title: "Infobox/styles.css",
+            revisions: [{ revid: 92495, slots: { main: { contentmodel: "sanitized-css" } } }],
+          },
+          { title: "Kagazi", revisions: [{ revid: 114395, slots: { main: { contentmodel: "wikitext" } } }] },
+          { title: "Old", revisions: [{ revid: 5, contentmodel: "wikitext" }] },
+          { title: "Hidden", missing: true },
+        ],
+      },
+    });
+    expect(revisionContentModels(answer)).toEqual(
+      new Map([
+        [92495, "sanitized-css"],
+        [114395, "wikitext"],
+        [5, "wikitext"],
+      ])
+    );
+    expect(revisionContentModels(JSON.stringify({ batchcomplete: true }))).toEqual(new Map());
+  });
+
+  it("slices rev ids for the API's 50 a request", () => {
+    expect(chunked([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
+    expect(chunked([], 50)).toEqual([]);
   });
 });

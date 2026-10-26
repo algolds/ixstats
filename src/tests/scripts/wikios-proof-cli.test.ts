@@ -13,6 +13,7 @@ import {
   HARNESS_SCRIPTS,
   assertProfileEnvironment,
   benchPageList,
+  corpusRevisions,
   evaluateBench,
   evaluatePredeploy,
   evaluateProof,
@@ -106,6 +107,8 @@ describe("profileCommands", () => {
       "http://localhost:3200",
       "--pages",
       `${dir}/corpus-titles.json`,
+      "--revisions",
+      `${dir}/corpus-revisions.json`,
       "--sample",
       "500",
       "--interval-ms",
@@ -661,7 +664,10 @@ function parity(count: number, settled = true): ParityReport {
     templates: [],
   }));
   const titles = pages.map((p) => p.title);
-  return { meta: settled ? { titles, settleMs: 8000 } : { titles }, pages };
+  return {
+    meta: settled ? { titles, settleMs: 8000, comparedByRevision: count } : { titles, comparedByRevision: count },
+    pages,
+  };
 }
 
 describe("evaluateProof", () => {
@@ -677,6 +683,22 @@ describe("evaluateProof", () => {
     expect(failing(checks)).toEqual([]);
     expect(byName(checks, "roundTrip.namespaces").passed).toBe(true);
     expect(byName(checks, "parity.settleMs").measured).toBe("8000 ms");
+    expect(byName(checks, "parity.byRevision").measured).toBe(`${t.parity.minPages} of ${t.parity.minPages} pages`);
+  });
+
+  it("a parity report that parsed the current page, not the revision WikiOS holds, is refused", () => {
+    const current = parity(t.parity.minPages);
+    const unrecorded = { ...current, meta: { titles: current.meta.titles, settleMs: 8000 } };
+    const none = { ...current, meta: { ...current.meta, comparedByRevision: 0 } };
+    expect(failing(evaluateProof("local", { ...good, parity: unrecorded }, t, []))).toEqual(["parity.byRevision"]);
+    expect(failing(evaluateProof("recurring", { ...good, parity: none }, t, []))).toContain("parity.byRevision");
+  });
+
+  it("the revisions file holds each corpus page's rev id, and leaves out a page with none", () => {
+    expect(corpusRevisions([{ title: "A", revid: 7 }, { title: "B", revid: null }, { title: "C", revid: 9 }])).toEqual({
+      A: 7,
+      C: 9,
+    });
   });
 
   it("a parity report without meta.settleMs is refused: it has no render state", () => {

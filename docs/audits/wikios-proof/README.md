@@ -20,9 +20,13 @@ The CLI is [`scripts/audit/wikios-proof.ts`](../../../scripts/audit/wikios-proof
   over every page of every namespace in the database. It reads Postgres only, and refuses any database that is not on
   localhost or that is on port 15433 (the SSH tunnel to production).
 - **Render parity** ([`scripts/audit/wikios-render-parity.ts`](../../../scripts/audit/wikios-render-parity.ts)). For each
-  page it fetches MediaWiki's render (`action=parse`) and WikiOS's (`wikios.getArticleHtml`), reduces both to text, links,
-  images, headings and structure, and scores the pair from 0 to 100 (text 50, links 20, images 15, headings 10, tables
-  and infobox 5; a part empty on both sides is left out). A WikiOS view that is still a fallback or a stale render is
+  page it fetches MediaWiki's render and WikiOS's (`wikios.getArticleHtml`), reduces both to text (with a break at each
+  cell, row and block, as a reader sees it), links, images, headings and structure, and scores the pair from 0 to 100
+  (text 50, links 20, images 15, headings 10, tables and infobox 5; a part empty on both sides is left out). MediaWiki
+  renders the revision WikiOS holds (`action=parse&oldid=`, from the corpus's revisions file), so an edit on classic
+  since WikiOS's copy is not scored as a difference; a revision MediaWiki has deleted or hidden since counts as corpus
+  drift. A page whose revision is not wikitext (a `sanitized-css` page in the main namespace, say) is left out of the
+  sample by its content model: it is not an article. A WikiOS view that is still a fallback or a stale render is
   fetched again after a wait, up to three times. A page that fails records which side failed.
 - **Bench** ([`scripts/bench/wikios-bench.ts`](../../../scripts/bench/wikios-bench.ts)). For each page it times the
   MediaWiki article page, the WikiOS article page and its data call, title search on both, and history on both. The
@@ -51,7 +55,8 @@ failing checks through the cron failure alert.
 
 Each line is one check. The bench checks apply to the server profiles only; a `local` run lists them as skipped. Besides
 these, each harness must exit cleanly, a proving round trip must cover every namespace (`roundTrip.namespaces`), and a
-parity report must record its settle wait (`parity.settleMs`).
+parity report must record its settle wait (`parity.settleMs`) and have parsed the revision WikiOS holds
+(`parity.byRevision`).
 
 - `roundTrip.pages`: at least 11,000 pages measured, so an empty or wrong corpus cannot pass.
 - `roundTrip.nonIdentical`: 0 pages whose output differs from their input by any byte.
@@ -60,7 +65,8 @@ parity report must record its settle wait (`parity.settleMs`).
 - `parity.pages`: at least 200 pages answered (scored, or missing on MediaWiki), and every requested page in the report.
 - `parity.wikiosFailures`: 0 pages WikiOS failed to serve.
 - `parity.fallbackRenders`: 0 scored pages still a fallback or stale render after the settle retries.
-- `parity.mediawikiMissing`: at most 2% of requested pages missing on MediaWiki (corpus drift between the two copies).
+- `parity.mediawikiMissing`: at most 2% of requested pages missing on MediaWiki, or whose held revision MediaWiki has
+  deleted or hidden (corpus drift between the two copies).
 - `parity.atLeast98`: at least 95% of scored pages score 98 or more.
 - `parity.meanScore`: a mean score of at least 97.
 - `parity.below70`: 0 pages below 70, except pages listed in `knownLowPages` with a reason.

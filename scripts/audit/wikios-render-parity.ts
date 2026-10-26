@@ -1,7 +1,7 @@
 /**
  * scripts/audit/wikios-render-parity.ts — does WikiOS render a page like MediaWiki does?
  *
- * For every page it fetches MediaWiki's parse output (`action=parse&page=`) and WikiOS's
+ * For every page it fetches MediaWiki's parse output and WikiOS's
  * `wikios.getArticleHtml` (notices + infobox + content HTML), reduces both to text, headings, links, images,
  * tables, infobox and references (see `normalizeHtml`) and scores the pair 0-100 (see `similarity`).
  * It reports per-page scores with the first differences in each direction, the aggregate (mean score and the
@@ -14,10 +14,18 @@
  * aggregate counts the scored pages still unsettled as `fallbackRenders`. A page that could not be scored has
  * an `error` and `failedOn` ("mediawiki" or "wikios"), the side that failed.
  *
+ * With `--revisions <file>` (`{ "<title>": <rev id> }`, the MediaWiki revision WikiOS holds; the proof CLI writes it)
+ * MediaWiki renders that revision (`action=parse&oldid=`), not the current page, so an edit on classic since WikiOS's
+ * copy is not scored as a render difference. A revision MediaWiki refuses (deleted, or its text hidden) is corpus
+ * drift: its error carries `nosuchrevid`. Before scoring, one batched `prop=revisions` request per 50 pages reads
+ * each revision's content model, and a page whose revision is not wikitext (a `sanitized-css` page in the main
+ * namespace, say) is left out of the sample: it is not an article. Without the file, the current page is parsed
+ * (`action=parse&page=…&redirects=1`) and every page is scored.
+ *
  * Usage:
  *   bun scripts/audit/wikios-render-parity.ts --mw-api <MediaWiki api.php URL> [--wikios http://localhost:3000] \
  *     [--pages scripts/bench/pages.default.json] [--sample N] [--out .bench-out/parity.json] [--interval-ms 1000] \
- *     [--settle-ms 8000] [--settle-tries 3]
+ *     [--settle-ms 8000] [--settle-tries 3] [--revisions corpus-revisions.json]
  *
  * `--mw-api` is required (there is no production default). Requests are throttled (>= 1 s per host,
  * IxStats-Builder User-Agent for ixwiki.com). The exit code is 0 unless the arguments or the page list are
@@ -25,21 +33,26 @@
  * not be scored counts as < 70) and over the scored pages only.
  */
 
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import {
+  chunked,
   ensureParentDir,
   exitWithError,
   fetchUntilSettled,
   loadPageList,
   mean,
+  mediaWikiParseError,
+  mediaWikiParseQuery,
   missingFrom,
   needsSettling,
   normalizeHtml,
   parseHttpUrl,
+  parseRevisionMap,
   parseTrpcData,
+  revisionContentModels,
   samplePages,
   similarity,
   throttledFetch,
@@ -58,6 +71,7 @@ interface Config {
   intervalMs: number;
   settleMs: number;
   settleTries: number;
+  revisions: string | null;
 }
 
 interface Differences {
@@ -136,7 +150,7 @@ const articleSchema = z.object({
 });
 
 const USAGE =
-  "Usage: bun scripts/audit/wikios-render-parity.ts --mw-api <api.php url> [--wikios <url>] [--pages file] [--sample n] [--out file] [--interval-ms n] [--settle-ms n] [--settle-tries n]";
+  "Usage: bun scripts/audit/wikios-render-parity.ts --mw-api <api.php url> [--wikios <url>] [--pages file] [--sample n] [--out file] [--interval-ms n] [--settle-ms n] [--settle-tries n] [--revisions file]";
 
 /** A non-negative integer option, or its default when it is absent. */
 function nonNegativeInt(value: string | undefined, fallback: number, flag: string): number {
@@ -157,6 +171,7 @@ function parseConfig(argv: string[]): Config {
       "interval-ms": { type: "string" },
       "settle-ms": { type: "string" },
       "settle-tries": { type: "string" },
+      revisions: { type: "string" },
     },
   });
   const sample = values.sample === undefined ? null : Number.parseInt(values.sample, 10);
@@ -173,6 +188,7 @@ function parseConfig(argv: string[]): Config {
     intervalMs,
     settleMs: nonNegativeInt(values["settle-ms"], 8000, "--settle-ms"),
     settleTries: nonNegativeInt(values["settle-tries"], 3, "--settle-tries"),
+    revisions: values.revisions ?? null,
   };
 }
 
@@ -193,17 +209,9 @@ interface WikiOsView {
   stale?: boolean;
 }
 
-/** MediaWiki's rendering of a page. `redirects=1` follows redirect pages, as WikiOS does when it resolves a title. */
-async function fetchMediaWiki(title: string, config: Config): Promise<Fetched<RenderedPage>> {
-  const params = new URLSearchParams({
-    action: "parse",
-    page: title,
-    prop: "text|categories|templates|images|displaytitle",
-    formatversion: "2",
-    format: "json",
-    disableeditsection: "1",
-    redirects: "1",
-  });
+/** MediaWiki's rendering of the revision WikiOS holds, else of the current page (see `mediaWikiParseQuery`). */
+async function fetchMediaWiki(title: string, revid: number | undefined, config: Config): Promise<Fetched<RenderedPage>> {
+  const params = new URLSearchParams(mediaWikiParseQuery(title, revid));
   const result = await throttledFetch(
     `${config.mwApi}?${params.toString()}`,
     { headers: { accept: "application/json" } },
@@ -224,7 +232,50 @@ async function fetchMediaWiki(title: string, config: Config): Promise<Fetched<Re
   if (!failure.success) return { ok: false, error: "MediaWiki: unexpected parse response" };
   // The code (e.g. "missingtitle") names a page missing on MediaWiki, whose info says "doesn't exist".
   const { code, info } = failure.data.error;
-  return { ok: false, error: `MediaWiki: ${code}: ${info}` };
+  return { ok: false, error: mediaWikiParseError(code, info, revid) };
+}
+
+/** Rev ids per `prop=revisions` request (the API's limit for a client without apihighlimits). */
+const REVIDS_PER_REQUEST = 50;
+
+/**
+ * The titles whose held revision is not wikitext, with its content model. A batch MediaWiki does not answer leaves
+ * its pages in (they are scored, and a revision it refuses shows up then as drift).
+ */
+async function nonWikitextPages(
+  titles: readonly string[],
+  revisions: ReadonlyMap<string, number>,
+  config: Config
+): Promise<Map<string, string>> {
+  const byRevid = new Map(
+    titles.flatMap((title) => {
+      const revid = revisions.get(title);
+      return revid === undefined ? [] : [[revid, title] as const];
+    })
+  );
+  const leftOut = new Map<string, string>();
+  for (const batch of chunked([...byRevid.keys()], REVIDS_PER_REQUEST)) {
+    const params = new URLSearchParams({
+      action: "query",
+      prop: "revisions",
+      revids: batch.join("|"),
+      rvprop: "ids|contentmodel",
+      rvslots: "main",
+      formatversion: "2",
+      format: "json",
+    });
+    const result = await throttledFetch(
+      `${config.mwApi}?${params.toString()}`,
+      { headers: { accept: "application/json" } },
+      { minIntervalMs: config.intervalMs }
+    );
+    if (result.status !== 200) continue;
+    for (const [revid, model] of revisionContentModels(result.body)) {
+      const title = byRevid.get(revid);
+      if (title !== undefined && model !== "wikitext") leftOut.set(title, model);
+    }
+  }
+  return leftOut;
 }
 
 /** One `wikios.getArticleHtml` call: notices, infobox and content HTML in page order, with the render state. */
@@ -263,8 +314,8 @@ function differences(mediawiki: NormalizedDoc, wikios: NormalizedDoc): Differenc
   };
 }
 
-async function scorePage(title: string, config: Config): Promise<PageResult> {
-  const mediawiki = await fetchMediaWiki(title, config);
+async function scorePage(title: string, revid: number | undefined, config: Config): Promise<PageResult> {
+  const mediawiki = await fetchMediaWiki(title, revid, config);
   if (!mediawiki.ok) return { title, error: mediawiki.error, failedOn: "mediawiki", templates: [] };
   const wikios = await fetchWikiOs(title, config);
   if (!wikios.ok) return { title, error: wikios.error, failedOn: "wikios", templates: mediawiki.value.templates };
@@ -396,22 +447,37 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   const all = loadPageList(config.pages);
-  const titles = config.sample === null ? all : samplePages(all, config.sample);
+  const sampled = config.sample === null ? all : samplePages(all, config.sample);
+  const revisions =
+    config.revisions === null ? new Map<string, number>() : parseRevisionMap(readFileSync(config.revisions, "utf8"));
+  const leftOut = revisions.size > 0 ? await nonWikitextPages(sampled, revisions, config) : new Map<string, string>();
+  const titles = sampled.filter((title) => !leftOut.has(title));
+  const comparedByRevision = titles.filter((title) => revisions.has(title)).length;
   const results: PageResult[] = [];
   for (const [index, title] of titles.entries()) {
     console.error(`[${index + 1}/${titles.length}] ${title}`);
-    results.push(await scorePage(title, config));
+    results.push(await scorePage(title, revisions.get(title), config));
   }
+  const notArticles = [...leftOut].map(([title, contentModel]) => ({ title, contentModel }));
   ensureParentDir(config.out);
   writeFileSync(
     config.out,
     JSON.stringify(
-      { meta: { ...config, titles, generatedAt: new Date().toISOString() }, pages: results, aggregate: aggregate(results) },
+      {
+        meta: { ...config, titles, comparedByRevision, leftOut: notArticles, generatedAt: new Date().toISOString() },
+        pages: results,
+        aggregate: aggregate(results),
+      },
       null,
       2
     )
   );
   console.log(renderReport(results, config));
+  console.log(`\nCompared by revision (the one WikiOS holds): ${comparedByRevision} of ${titles.length} pages`);
+  const drift = results.filter((page) => page.error?.includes("nosuchrevid")).length;
+  console.log(`Drift (the revision is gone or hidden on MediaWiki): ${drift}`);
+  console.log(`Left out, not wikitext: ${notArticles.length}`);
+  for (const page of notArticles) console.log(`  ${page.title} (${page.contentModel})`);
   console.log(`\nFull results written to ${config.out}`);
 }
 
