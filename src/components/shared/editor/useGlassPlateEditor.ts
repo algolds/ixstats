@@ -27,6 +27,7 @@ import {
 } from "./SlateSerializer";
 import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
 import { userMentionItems, type MentionSource } from "./mention-source";
+import { useWikiDialogSearch } from "./useWikiDialogSearch";
 
 function getMentionItemIcon(name: string, type: "league" | "club") {
   const lower = name.toLowerCase();
@@ -95,11 +96,13 @@ export function useGlassPlateEditor({
 
   const [isEmojiOpen, setIsEmojiOpen] = useState(false);
 
-  // Wiki search: what is typed in the dialog's title field, across every wiki (a result carries its wiki).
-  const wikiSearch = api.wikios.search.useQuery(
-    { query: wikiTarget, limit: 5, wikiSource: "all" },
-    { enabled: isWikiOpen && wikiTarget.trim().length > 1, staleTime: 10_000 }
-  );
+  // Wiki search: what is typed in the dialog's title field, across every wiki, once typing pauses.
+  const { search: wikiSearch, selectResult: selectWikiResult } = useWikiDialogSearch({
+    target: wikiTarget,
+    open: isWikiOpen,
+    setTarget: setWikiTarget,
+    setSource: setSelectedWikiSource,
+  });
 
   const wikiIntroQuery = api.wikios.getIntro.useQuery(
     { title: wikiTarget, wiki: selectedWikiSource },
@@ -571,6 +574,7 @@ export function useGlassPlateEditor({
     selectedWikiImageUrl,
     setSelectedWikiImageUrl,
     wikiSearch,
+    selectWikiResult,
     wikiIntroQuery,
     wikiImagesQuery,
     insertWikiLink,

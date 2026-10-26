@@ -11,6 +11,7 @@ import {
   wikiLinkElement,
   type WikiLinkElement,
 } from "~/components/shared/editor/SlateSerializer";
+import { publicArticleUrl } from "~/lib/wiki-os/config";
 
 const KEYS = ["NEXT_PUBLIC_BASE_PATH", "BASE_PATH", "NEXT_PUBLIC_IXWORLD_STANDALONE"] as const;
 const env = process.env as Record<string, string | undefined>;
@@ -111,23 +112,53 @@ describe("composer wiki links carry the source", () => {
     ]);
   });
 
-  it.each([
-    ["User talk:Kir", "iiwiki"],
-    ["Module:Infobox", undefined],
-    ["MediaWiki:Common.css", "althistory"],
-    ["File:Flag.svg", undefined],
-  ] as const)(
-    "a link to %s (a namespace the reader does not read as an article) reads back as a plain link to the same href",
-    (target, source) => {
-      const html = slateNodesToHtml(paragraph(link(target, source)));
-      const href = /href="([^"]+)"/.exec(html)?.[1] ?? "";
-      expect(href.startsWith("/wiki/")).toBe(true);
-      const [node] = readBack(html);
+  const EXCLUDED = [
+    "Talk:Foo",
+    "User talk:Kir",
+    "User:Kir",
+    "File:Flag.svg",
+    "Special:Random",
+    "Category:Nations",
+    "Template:Infobox",
+    "Module:Infobox",
+    "MediaWiki:Common.css",
+    "Alternate History talk:Foo",
+  ];
+  const WIKIS = ["ixwiki", "iiwiki", "althistory"] as const;
+
+  it.each(EXCLUDED.flatMap((target) => WIKIS.map((wiki) => [target, wiki] as const)))(
+    "a link to %s on %s (a page the reader does not read as an article) is written as a plain link to that wiki's own page, and saves the same every time",
+    (target, wiki) => {
+      const first = slateNodesToHtml(paragraph(link(target, wiki)));
+      const href = publicArticleUrl(target, wiki);
+      expect(first).toBe(
+        `<p><a href="${href}" target="_blank" rel="noopener noreferrer">${target}</a></p>`
+      );
+      const [node] = readBack(first);
       expect(node).toEqual({ type: "link", url: href, children: [{ text: target }] });
-      // and stays where it points on the next save
-      expect(slateNodesToHtml(paragraph(node!))).toContain(`href="${href}"`);
+      const second = slateNodesToHtml(paragraph(node!));
+      expect(second).toBe(first);
+      expect(slateNodesToHtml(parsoidHtmlToSlate(second))).toBe(first);
     }
   );
+
+  it("an excluded page's title is read as the reader reads it: padding trimmed, underscores as spaces", () => {
+    expect(slateNodesToHtml(paragraph(link(" User_talk:Kir ", "iiwiki", "t")))).toContain(
+      `href="${publicArticleUrl("User talk:Kir", "iiwiki")}"`
+    );
+  });
+
+  it("an excluded page's BBCode links to its own wiki too", () => {
+    expect(slateNodesToBbcode(paragraph(link("User talk:Kir", "iiwiki", "talk")))).toBe(
+      `[URL=${publicArticleUrl("User talk:Kir", "iiwiki")}]talk[/URL]`
+    );
+  });
+
+  it("an article (not excluded) writes the same HTML on every save", () => {
+    const first = slateNodesToHtml(paragraph(link("Portal:Nations", "iiwiki", "P")));
+    expect(first).toBe('<p><a href="/wiki/Portal%3ANations?source=iiwiki">P</a></p>');
+    expect(slateNodesToHtml(parsoidHtmlToSlate(first))).toBe(first);
+  });
 
   it.each([
     [".."],
@@ -164,6 +195,26 @@ describe("BBCode links carry the source", () => {
     expect(slateNodesToBbcode(paragraph(link("Port of Ixnay")))).toBe(
       "[URL=/wiki/Port_of_Ixnay]Port of Ixnay[/URL]"
     );
+  });
+
+  it.each([
+    ["the link text", "x", "x]y[/URL]z [B]b[/B]"],
+    ["the title shown when there is no text", "x]y[/URL]z", ""],
+  ])("%s cannot end the URL tag early or open another", (_label, target, text) => {
+    const bbcode = slateNodesToBbcode(paragraph(link(target, "iiwiki", text)));
+    expect(bbcode.match(/\[\/URL\]/g)).toHaveLength(1);
+    expect(bbcode.endsWith("[/URL]")).toBe(true);
+    expect(bbcode).not.toContain("[B]");
+    expect(bbcode.replaceAll("\u200B", "")).toContain("x]y[/URL]z");
+  });
+
+  it("marks inside a wiki link keep their text in BBCode", () => {
+    const node = {
+      type: "wikilink",
+      target: "Foo",
+      children: [{ text: "bold", bold: true }, { text: " plain" }],
+    };
+    expect(slateNodesToBbcode(paragraph(node))).toBe("[URL=/wiki/Foo]bold plain[/URL]");
   });
 
   it("a BBCode link with no text shows its title", () => {

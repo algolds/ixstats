@@ -140,11 +140,11 @@ describe("WikiHtmlContent wiki embed cards", () => {
     expect(card.querySelector("img")).toBeNull();
   });
 
-  it("an IxWiki embed card says Wiki article, links the bare path and keeps its image", async () => {
+  it("an IxWiki embed card says From IxWiki, links the bare path and keeps its image", async () => {
     const card = await mountedCard(embedHtml("ixwiki", "https://ixwiki.com/images/a/ab/Port.png"));
     expect(card.getAttribute("href")).toBe("/wiki/Pax_Atomica");
-    expect(card.textContent).toContain("Wiki article");
-    expect(card.textContent).not.toContain("From");
+    expect(card.textContent).toContain("From IxWiki");
+    expect(card.textContent).not.toContain("WikiOS");
     expect(card.querySelector("img")?.getAttribute("src")).toBe(
       "https://ixwiki.com/images/a/ab/Port.png"
     );
@@ -174,7 +174,7 @@ describe("WikiHtmlContent wiki embed cards", () => {
   it("an embed whose source the reader does not know renders as IxWiki's", async () => {
     const card = await mountedCard(embedHtml("evil", ""));
     expect(card.getAttribute("href")).toBe("/wiki/Pax_Atomica");
-    expect(card.textContent).toContain("Wiki article");
+    expect(card.textContent).toContain("From IxWiki");
     expect(card.querySelector("img")).toBeNull();
   });
 });

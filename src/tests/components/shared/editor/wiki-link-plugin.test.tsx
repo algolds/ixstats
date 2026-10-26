@@ -9,6 +9,7 @@ jest.mock("platejs/react", () => ({ createPlatePlugin: <T,>(config: T): T => con
 
 import { WikiLinkPlugin } from "~/components/shared/editor/EditorPlugins";
 import type { WikiLinkElement } from "~/components/shared/editor/SlateSerializer";
+import { publicArticleUrl } from "~/lib/wiki-os/config";
 
 type RenderNode = (props: {
   attributes: React.AnchorHTMLAttributes<HTMLAnchorElement>;
@@ -41,6 +42,23 @@ describe("WikiLinkPlugin", () => {
   it("links an IxWiki page by its bare path", () => {
     const a = renderLink({ type: "wikilink", target: "Port of Ixnay", children: [{ text: "P" }] });
     expect(a.getAttribute("href")).toBe("/wiki/Port_of_Ixnay");
+  });
+
+  it("links a page the reader does not read as an article to that wiki's own page, in a new tab", () => {
+    const a = renderLink({
+      type: "wikilink",
+      target: "User talk:Kir",
+      source: "iiwiki",
+      children: [{ text: "talk" }],
+    });
+    expect(a.getAttribute("href")).toBe(publicArticleUrl("User talk:Kir", "iiwiki"));
+    expect(a.getAttribute("target")).toBe("_blank");
+    expect(a.getAttribute("rel")).toBe("noopener noreferrer");
+  });
+
+  it("a reader link opens in place", () => {
+    const a = renderLink({ type: "wikilink", target: "Foo", children: [{ text: "F" }] });
+    expect(a.hasAttribute("target")).toBe(false);
   });
 
   it("gives a title that would climb out of /wiki/ no href", () => {

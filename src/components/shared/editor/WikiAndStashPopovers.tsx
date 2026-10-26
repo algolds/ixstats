@@ -2,7 +2,7 @@
 // src/components/shared/editor/WikiAndStashPopovers.tsx
 // Search and insertion popovers for MediaWiki articles and Lore Stash assets.
 
-import { Eye, Bookmark, SystemRestart as Loader2, Plus } from "iconoir-react";
+import { Bookmark, SystemRestart as Loader2, Plus } from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -10,20 +10,13 @@ import { Label } from "~/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { EmojiPicker } from "~/components/thinkpages/EmojiPicker";
 import { cn } from "~/lib/utils";
-import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
+import type { WikiSource } from "~/lib/wiki-os/config";
+import { wikiName } from "~/lib/wiki-os/wiki-name";
+import type { WikiSearchResult } from "./useWikiDialogSearch";
+import { WikiEmbedPreview, type WikiEmbedPreviewProps } from "./WikiEmbedPreview";
 
-/** The wikis the dialog links and embeds from, as its selector names them. */
-const WIKI_SOURCE_OPTIONS: ReadonlyArray<{ source: WikiSource; label: string }> = [
-  { source: "ixwiki", label: "Wiki" },
-  { source: "iiwiki", label: "IIWiki" },
-  { source: "althistory", label: "AltHistory" },
-];
-
-/** A search result across every wiki: the article and the wiki it is on. */
-export interface WikiSearchResult {
-  title: string;
-  source: WikiSource;
-}
+/** The wikis the dialog links and embeds from, in the selector's order. */
+const WIKI_SOURCE_OPTIONS: readonly WikiSource[] = ["ixwiki", "iiwiki", "althistory"];
 
 interface WikiAndStashPopoversProps {
   disabled?: boolean;
@@ -33,14 +26,16 @@ interface WikiAndStashPopoversProps {
   setWikiInsertMode: (mode: "link" | "embed") => void;
   wikiSource: WikiSource;
   setWikiSource: (source: WikiSource) => void;
+  /** Picks a search result: its title and its own wiki. */
+  selectWikiResult: (result: WikiSearchResult) => void;
   wikiTarget: string;
   setWikiTarget: (target: string) => void;
   wikiLabel: string;
   setWikiLabel: (label: string) => void;
   wikiSearchResults: readonly WikiSearchResult[];
   isSearchingWiki: boolean;
-  wikiIntroQuery: any;
-  wikiImagesQuery: any;
+  wikiIntroQuery: WikiEmbedPreviewProps["introQuery"];
+  wikiImagesQuery: WikiEmbedPreviewProps["imagesQuery"];
   selectedWikiImageUrl: string;
   setSelectedWikiImageUrl: (url: string) => void;
   insertWikiLink: () => void;
@@ -68,6 +63,7 @@ export function WikiAndStashPopovers({
   setWikiInsertMode,
   wikiSource,
   setWikiSource,
+  selectWikiResult,
   wikiTarget,
   setWikiTarget,
   wikiLabel,
@@ -151,7 +147,7 @@ export function WikiAndStashPopovers({
 
             {/* Source selector */}
             <div className="flex gap-1" role="group" aria-label="Wiki">
-              {WIKI_SOURCE_OPTIONS.map(({ source, label }) => (
+              {WIKI_SOURCE_OPTIONS.map((source) => (
                 <button
                   key={source}
                   type="button"
@@ -164,7 +160,7 @@ export function WikiAndStashPopovers({
                       : "border-border text-muted-foreground hover:bg-muted"
                   )}
                 >
-                  {label}
+                  {wikiName(source)}
                 </button>
               ))}
             </div>
@@ -190,17 +186,12 @@ export function WikiAndStashPopovers({
                     <button
                       key={`${res.source}:${res.title}`}
                       type="button"
-                      onClick={() => {
-                        // A result from any wiki is inserted from its own wiki, whatever the selector says.
-                        setWikiTarget(res.title);
-                        setWikiSource(res.source);
-                      }}
-                      className="flex w-full items-baseline gap-2 rounded px-1.5 py-1 text-left text-xs hover:bg-neutral-200/50 dark:hover:bg-white/10"
+                      // A result from any wiki is inserted from its own wiki, whatever the selector says.
+                      onClick={() => selectWikiResult(res)}
+                      className="hover:bg-muted flex w-full items-baseline gap-2 rounded px-1.5 py-1 text-left text-xs"
                     >
                       <span className="min-w-0 flex-1 truncate">{res.title}</span>
-                      <span className="text-muted-foreground shrink-0">
-                        {WIKI_SOURCES[res.source].name}
-                      </span>
+                      <span className="text-muted-foreground shrink-0">{wikiName(res.source)}</span>
                     </button>
                   ))}
                 </div>
@@ -222,44 +213,13 @@ export function WikiAndStashPopovers({
             )}
 
             {wikiInsertMode === "embed" && (
-              <div className="border-border/60 bg-muted/30 space-y-2 rounded-lg border p-2">
-                <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
-                  <Eye className="h-3 w-3" /> Live Embed Preview
-                </div>
-                {wikiIntroQuery.isLoading ? (
-                  <div className="py-2 text-center text-xs text-neutral-400">
-                    Loading article preview...
-                  </div>
-                ) : wikiIntroQuery.data ? (
-                  <div className="space-y-1.5">
-                    <p className="line-clamp-2 text-xs text-neutral-600 dark:text-slate-300">
-                      {wikiIntroQuery.data.extract || "No intro text available."}
-                    </p>
-                    {wikiImagesQuery.data?.images && wikiImagesQuery.data.images.length > 0 && (
-                      <div className="flex gap-1 overflow-x-auto py-1">
-                        {wikiImagesQuery.data.images.slice(0, 4).map((img: string) => (
-                          <img
-                            key={img}
-                            src={img}
-                            alt=""
-                            onClick={() =>
-                              setSelectedWikiImageUrl(img === selectedWikiImageUrl ? "" : img)
-                            }
-                            className={cn(
-                              "h-10 w-10 cursor-pointer rounded border object-cover transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                              selectedWikiImageUrl === img
-                                ? "border-wiki ring-wiki/50 ring-2"
-                                : "border-transparent opacity-60 hover:opacity-100"
-                            )}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-xs text-neutral-400">Type an exact title to preview.</p>
-                )}
-              </div>
+              <WikiEmbedPreview
+                source={wikiSource}
+                introQuery={wikiIntroQuery}
+                imagesQuery={wikiImagesQuery}
+                selectedImageUrl={selectedWikiImageUrl}
+                onSelectImage={setSelectedWikiImageUrl}
+              />
             )}
 
             <Button

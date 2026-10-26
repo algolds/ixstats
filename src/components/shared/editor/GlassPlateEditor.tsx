@@ -120,6 +120,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       selectedWikiImageUrl,
       setSelectedWikiImageUrl,
       wikiSearch,
+      selectWikiResult,
       wikiIntroQuery,
       wikiImagesQuery,
       insertWikiLink,
@@ -333,6 +334,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
                   setWikiInsertMode={setWikiInsertMode}
                   wikiSource={selectedWikiSource}
                   setWikiSource={setSelectedWikiSource}
+                  selectWikiResult={selectWikiResult}
                   wikiTarget={wikiTarget}
                   setWikiTarget={setWikiTarget}
                   wikiLabel={wikiText}

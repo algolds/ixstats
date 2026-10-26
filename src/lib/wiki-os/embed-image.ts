@@ -6,7 +6,8 @@
  *    `/data/` on IxWiki's own host (or `www.`), loaded from its origin; or a same-origin upload, root-relative
  *    (`/images/uploads/…`, WikiOS's staged files under `/api/wiki/file/…`), under the deployment's base path.
  *
- * Anything else (another host, `data:`, `javascript:`, a path that climbs out of the files) gives null: no image.
+ * Anything else (another host, `data:`, `javascript:`, a path that climbs out of the files, an escaped `/` or `\` in
+ * the path) gives null: no image.
  * Every URL is read the way a browser resolves it. Client-safe: pure, no environment read but the base path and the
  * wiki's configured host.
  */
@@ -18,6 +19,8 @@ import { sisterMediaPath } from "./sister-media";
 const LOCAL_BASE = "https://embed-image.invalid";
 /** Root-relative paths the app itself serves images from (uploads, WikiOS's staged files). */
 const UPLOAD_PREFIXES = ["/images/uploads/", STAGED_FILE_PATH] as const;
+/** An escaped `/` or `\`: a path segment the server may decode into a climb (`..%2F`), in any case. */
+const ESCAPED_SEPARATOR = /%2f|%5c/i;
 /** Paths of IxWiki's own host that are its files. */
 const WIKI_FILE_PREFIXES = ["/images/", "/data/"] as const;
 
@@ -30,6 +33,7 @@ function parse(url: string): URL | null {
 }
 
 const under = (path: string, prefixes: readonly string[]) =>
+  !ESCAPED_SEPARATOR.test(path) &&
   prefixes.some((prefix) => path.startsWith(prefix) && path.length > prefix.length);
 
 /** A root-relative upload path (with or without the base path), under the base path; else null. */

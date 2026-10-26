@@ -4,10 +4,8 @@
  */
 import React, { useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-import {
-  WikiAndStashPopovers,
-  type WikiSearchResult,
-} from "~/components/shared/editor/WikiAndStashPopovers";
+import { WikiAndStashPopovers } from "~/components/shared/editor/WikiAndStashPopovers";
+import type { WikiSearchResult } from "~/components/shared/editor/useWikiDialogSearch";
 import type { WikiSource } from "~/lib/wiki-os/config";
 
 jest.mock("~/components/thinkpages/EmojiPicker", () => ({ EmojiPicker: () => null }));
@@ -19,11 +17,17 @@ const RESULTS: WikiSearchResult[] = [
 ];
 
 /** The dialog with the editor's state for the wiki and title, recording what each insert would use. */
-function Harness({ onInsert }: { onInsert: (target: string, source: WikiSource) => void }) {
+function Harness({
+  onInsert,
+  onSelect = () => undefined,
+}: {
+  onInsert: (target: string, source: WikiSource) => void;
+  onSelect?: (result: WikiSearchResult) => void;
+}) {
   const [source, setSource] = useState<WikiSource>("ixwiki");
   const [target, setTarget] = useState("");
   const noop = () => undefined;
-  const idle = { isLoading: false, data: undefined };
+  const idle = { isLoading: false, data: undefined, error: null };
   return (
     <WikiAndStashPopovers
       isWikiOpen
@@ -34,6 +38,11 @@ function Harness({ onInsert }: { onInsert: (target: string, source: WikiSource) 
       setWikiSource={setSource}
       wikiTarget={target}
       setWikiTarget={setTarget}
+      selectWikiResult={(result) => {
+        onSelect(result);
+        setTarget(result.title);
+        setSource(result.source);
+      }}
       wikiLabel=""
       setWikiLabel={noop}
       wikiSearchResults={RESULTS}
@@ -63,42 +72,47 @@ const pressed = () =>
   screen
     .getAllByRole("button", { pressed: true })
     .map((button) => button.textContent)
-    .filter((text) => ["Wiki", "IIWiki", "AltHistory"].includes(text ?? ""));
+    .filter((text) => ["IxWiki", "IIWiki", "AltHistory Wiki"].includes(text ?? ""));
 
 describe("the composer's wiki dialog", () => {
-  it("offers all three wikis, AltHistory included", () => {
+  it("offers all three wikis by their names, AltHistory included", () => {
     const onInsert = jest.fn();
     render(<Harness onInsert={onInsert} />);
     const group = screen.getByRole("group", { name: "Wiki" });
     expect(Array.from(group.querySelectorAll("button")).map((b) => b.textContent)).toEqual([
-      "Wiki",
+      "IxWiki",
       "IIWiki",
-      "AltHistory",
+      "AltHistory Wiki",
     ]);
-    expect(pressed()).toEqual(["Wiki"]);
-    fireEvent.click(screen.getByRole("button", { name: "AltHistory" }));
-    expect(pressed()).toEqual(["AltHistory"]);
+    expect(pressed()).toEqual(["IxWiki"]);
+    fireEvent.click(screen.getByRole("button", { name: "AltHistory Wiki" }));
+    expect(pressed()).toEqual(["AltHistory Wiki"]);
   });
 
   it.each([
     ["Gallambria Republic", "iiwiki", "IIWiki"],
     ["Pax Atomica", "althistory", "AltHistory Wiki"],
   ] as const)(
-    "clicking %s in a search of all wikis inserts it from %s, though the selector said Wiki",
+    "clicking %s in a search of all wikis picks it from %s, though the selector said IxWiki",
     (title, source, name) => {
       const onInsert = jest.fn();
-      render(<Harness onInsert={onInsert} />);
+      const onSelect = jest.fn();
+      render(<Harness onInsert={onInsert} onSelect={onSelect} />);
       const result = screen.getByRole("button", { name: new RegExp(`^${title}`) });
       expect(result.textContent).toBe(`${title}${name}`);
       fireEvent.click(result);
+      expect(onSelect).toHaveBeenCalledWith({ title, source });
       fireEvent.click(screen.getByRole("button", { name: "Insert Link" }));
       expect(onInsert).toHaveBeenCalledWith(title, source);
     }
   );
 
-  it("an IxWiki result switches a sister selector back to IxWiki", () => {
+  it("an IxWiki result is labelled IxWiki and switches a sister selector back to IxWiki", () => {
     const onInsert = jest.fn();
     render(<Harness onInsert={onInsert} />);
+    expect(screen.getByRole("button", { name: /^Port of Ixnay/ }).textContent).toBe(
+      "Port of IxnayIxWiki"
+    );
     fireEvent.click(screen.getByRole("button", { name: "IIWiki" }));
     fireEvent.click(screen.getByRole("button", { name: /^Port of Ixnay/ }));
     fireEvent.click(screen.getByRole("button", { name: "Insert Link" }));

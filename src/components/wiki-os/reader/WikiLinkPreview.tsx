@@ -7,8 +7,9 @@ import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { cn } from "~/lib/utils";
 import { currentProfileHref } from "~/lib/wiki-os/legacy-profile-links";
 import { entityKinds, mentionQueries } from "~/lib/wiki-os/mention-target";
-import { WIKI_SOURCES, parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
+import { parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
 import { embedImageSrc } from "~/lib/wiki-os/embed-image";
+import { wikiName } from "~/lib/wiki-os/wiki-name";
 import { readerLinkPath } from "~/lib/wiki-os/wiki-link-target";
 import {
   HoverCard,
@@ -147,9 +148,7 @@ function renderWikiEmbed(element: HTMLElement, index: number): React.ReactNode {
       <div className="min-w-0 flex-1 text-left">
         <div className="mb-1 flex items-center gap-2">
           <WikiOSLogomark className="text-tint h-3.5 w-3.5 shrink-0" />
-          <span className="text-footnote text-label-secondary">
-            {source === "ixwiki" ? "Wiki article" : `From ${WIKI_SOURCES[source].name}`}
-          </span>
+          <span className="text-footnote text-label-secondary">From {wikiName(source)}</span>
         </div>
         <h4 className="text-headline text-label truncate leading-snug">{title}</h4>
         <p className="text-footnote text-label-secondary mt-0.5 line-clamp-2 leading-normal">

@@ -7,7 +7,8 @@
 
 import { DOMParser, type Element as XmlElement, type Node as XmlNode } from "@xmldom/xmldom";
 import { appUrl } from "~/lib/app-url";
-import { WIKI_SOURCES, parseWikiSource } from "~/lib/wiki-os/config";
+import { parseWikiSource } from "~/lib/wiki-os/config";
+import { wikiName } from "~/lib/wiki-os/wiki-name";
 import { readerLinkPath } from "~/lib/wiki-os/wiki-link-target";
 
 function decodeHtmlEntities(str: string): string {
@@ -102,7 +103,7 @@ const wikiEmbedMarkdown = (title: string, summary: string, source: string) => {
   const path = readerLinkPath(title, wiki);
   const url = path && appUrl(path).replaceAll("(", "%28").replaceAll(")", "%29");
   const name = url ? `[${escapeMarkdown(title)}](${url})` : escapeMarkdown(title);
-  return `\n**Wiki Embed: ${name}**\n*Source: ${WIKI_SOURCES[wiki].name}*\n> ${summary}\n`;
+  return `\n**Wiki Embed: ${name}**\n*Source: ${wikiName(wiki)}*\n> ${summary}\n`;
 };
 
 /** Markdown wrapping per element; tags not listed pass their children through. */

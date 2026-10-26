@@ -3,7 +3,7 @@
 
 import { Editor, Transforms, type Descendant } from "slate";
 import { getBasePath } from "~/lib/base-path";
-import { parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
+import { parseWikiSource, publicArticleUrl, type WikiSource } from "~/lib/wiki-os/config";
 import {
   readerLinkPath,
   wikiLinkTarget,
@@ -39,6 +39,55 @@ function composerWikiLink(href: string): WikiLinkTarget | null {
   return path && (href === path || href === `${basePath}${path}`) ? target : null;
 }
 
+/** Where a composer wiki link points: `href`, and whether that is the reader (else the page on its wiki's own site). */
+export interface ComposerLinkHref {
+  href: string;
+  reader: boolean;
+}
+
+/**
+ * Where a composer wiki link to `target` on `source` points, written so that reading it back gives what was written:
+ *  - the reader path, when `composerWikiLink` reads it back as this wiki link;
+ *  - otherwise (a page the reader does not read as an article: talk, user, file, special, category, template, module
+ *    or interface pages) that page on its wiki's own site, written as a plain link, which reads back as one;
+ *  - null for a title no link may name (`readerLinkPath`): only the text is kept.
+ */
+export function composerLinkHref(
+  target: string,
+  source: string | undefined
+): ComposerLinkHref | null {
+  const path = readerLinkPath(target, source);
+  if (!path) return null;
+  if (composerWikiLink(path)) return { href: path, reader: true };
+  const title = target.replace(/_/g, " ").trim();
+  return { href: publicArticleUrl(title, parseWikiSource(source)), reader: false };
+}
+
+/** A plain link, as a `link` node is written (a new tab, no referrer). */
+function plainLinkHtml(url: string, children: string): string {
+  return `<a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer">${children}</a>`;
+}
+
+/** A node as far as its text goes: a leaf's text, or an element's children. */
+interface TextTree {
+  text?: string;
+  children?: TextTree[];
+}
+
+/** The text of a node and its children, marks dropped. */
+function plainText(node: TextTree): string {
+  if (typeof node.text === "string") return node.text;
+  return (node.children ?? []).map(plainText).join("");
+}
+
+/**
+ * Text for inside a BBCode tag: a zero-width space after each `[`, so no text (`x]y[/URL]z`, `[B]`) can close the
+ * tag early or open another; it reads the same.
+ */
+function bbcodeText(text: string): string {
+  return text.replaceAll("[", "[\u200B");
+}
+
 function escapeAttr(str: string): string {
   return str
     .replace(/&/g, "&amp;")
@@ -70,11 +119,14 @@ function serializeNode(node: any): string {
     case "wikiembed":
       return `<div data-wikiembed="true" data-title="${escapeAttr(node.title || "")}" data-summary="${escapeAttr(node.summary || "")}" data-imageurl="${escapeAttr(node.imageUrl || "")}" data-source="${parseWikiSource(node.source)}"></div>`;
     case "wikilink": {
-      const href = readerLinkPath(node.target || "", node.source);
-      return href ? `<a href="${escapeAttr(href)}">${children}</a>` : children;
+      const link = composerLinkHref(node.target || "", node.source);
+      if (!link) return children;
+      return link.reader
+        ? `<a href="${escapeAttr(link.href)}">${children}</a>`
+        : plainLinkHtml(link.href, children);
     }
     case "link":
-      return `<a href="${escapeAttr(node.url || "")}" target="_blank" rel="noopener noreferrer">${children}</a>`;
+      return plainLinkHtml(node.url || "", children);
     case "img":
       return `<img src="${escapeAttr(node.src || "")}" alt="${escapeAttr(node.alt || "")}" />`;
     case "ul":
@@ -111,8 +163,9 @@ function serializeNodeToBbcode(node: any): string {
       return `\n[QUOTE="${node.title || "Wiki"}"]${node.summary || ""}\n${node.imageUrl ? `[IMG]${node.imageUrl}[/IMG]\n` : ""}${read ? `[URL=${read}]Read on Wiki[/URL]` : ""}[/QUOTE]\n`;
     }
     case "wikilink": {
-      const href = readerLinkPath(node.target || "", node.source);
-      return href ? `[URL=${href}]${children || node.target}[/URL]` : children;
+      const link = composerLinkHref(node.target || "", node.source);
+      const text = plainText(node) || node.target || "";
+      return link ? `[URL=${link.href}]${bbcodeText(text)}[/URL]` : children;
     }
     case "link":
       return `[URL=${node.url || ""}]${children || node.url}[/URL]`;

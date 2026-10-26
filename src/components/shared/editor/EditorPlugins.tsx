@@ -6,8 +6,7 @@ import React from "react";
 import { createPlatePlugin } from "platejs/react";
 import { assetUrl } from "~/lib/base-path";
 import { createUrl } from "~/lib/utils/url-utils";
-import { readerLinkPath } from "~/lib/wiki-os/wiki-link-target";
-import type { WikiLinkElement } from "./SlateSerializer";
+import { composerLinkHref, type WikiLinkElement } from "./SlateSerializer";
 
 export const BoldPlugin = createPlatePlugin({
   key: "bold",
@@ -87,17 +86,24 @@ interface WikiLinkRenderProps {
   element: WikiLinkElement;
 }
 
-/** A wiki link in the composer: a plain `<a>` to the article in the reader on its wiki, under the base path. */
+/**
+ * A wiki link in the composer, where it will point once saved (`composerLinkHref`): a plain `<a>` to the article in the
+ * reader on its wiki, under the base path, or (a page the reader does not read as an article) to that page on its
+ * wiki's own site, in a new tab.
+ */
 export const WikiLinkPlugin = createPlatePlugin({
   key: "wikilink",
   node: { isElement: true, isInline: true },
   render: {
     node: ({ children, element, attributes }: WikiLinkRenderProps) => {
-      const href = readerLinkPath(element.target, element.source);
+      const link = composerLinkHref(element.target, element.source);
+      const external = link !== null && !link.reader;
       return (
         <a
           {...attributes}
-          href={href ? createUrl(href) : undefined}
+          href={link ? (link.reader ? createUrl(link.href) : link.href) : undefined}
+          target={external ? "_blank" : undefined}
+          rel={external ? "noopener noreferrer" : undefined}
           className="text-wiki font-semibold underline transition-colors hover:opacity-80"
         >
           {children}
