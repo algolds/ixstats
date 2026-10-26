@@ -168,3 +168,36 @@ describe("deadlines on the nation's clock", () => {
     expect(screen.getByText(/Findings arrive in –/)).toBeInTheDocument();
   });
 });
+
+it("labels each recon finding by its operation", () => {
+  mockData["nationalIssues.getReconReveal"] = {
+    status: "ready",
+    options: [
+      {
+        optionId: "a",
+        label: "Option a",
+        reveals: [
+          { targetField: "alpha", value: null },
+          { targetField: "bravo" },
+          { targetField: "charlie", value: 1.5, operation: "multiply" },
+          { targetField: "delta", value: 40, operation: "set" },
+          { targetField: "echo", value: 3, operation: "subtract" },
+          { targetField: "foxtrot", value: -3, operation: "add" },
+          { targetField: "golf", value: 0, state: "questioned" },
+        ],
+      },
+    ],
+  };
+  render(<IssueDetailBrief issueId="n-1" />);
+  for (const label of [
+    "Alpha: —",
+    "Bravo: —",
+    "Charlie: ×1.5",
+    "Delta: =40",
+    "Echo: -3",
+    "Foxtrot: +3",
+    "Golf: +0 ?",
+  ]) {
+    expect(screen.getByText(label)).toBeInTheDocument();
+  }
+});
