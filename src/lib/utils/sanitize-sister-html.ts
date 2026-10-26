@@ -28,6 +28,41 @@ const IN_FLOW_POSITIONS = new Set([
   "revert",
 ]);
 const POSITION_PROPERTY = /^(?:-[a-z]+-)?position$/;
+/** Position keywords that take an element out of the article: a custom property holding one is dropped too. */
+const OUT_OF_FLOW_POSITIONS = new Set(["fixed", "sticky", "-webkit-sticky"]);
+/** The prefix of every id of a sister reader page, so none can collide with (or clobber) an id of the app. */
+export const SISTER_ID_PREFIX = "sister-";
+/** Attributes whose value is a list of ids: they name the prefixed ids too. */
+const ID_REFERENCE_ATTRIBUTES = new Set([
+  "headers",
+  "aria-labelledby",
+  "aria-describedby",
+  "aria-controls",
+  "aria-owns",
+  "aria-flowto",
+  "aria-activedescendant",
+  "aria-details",
+  "aria-errormessage",
+]);
+/** The data attributes a sister page keeps: TemplateStyles' marker (the style filter reads it) and table sorting. */
+const KEPT_DATA_ATTRIBUTES = new Set(["data-mw-deduplicate", "data-sort-value", "data-sort-type"]);
+/**
+ * Class namespaces the app styles (WikiOS, Facet, Clerk, the forum, MapLibre, Lorewards, the map): a sister page
+ * naming one would borrow the app's own fixed popovers, sheets and overlays.
+ */
+const APP_CLASS_PREFIXES = [
+  "wikios-",
+  "facet-",
+  "cl-",
+  "forum-",
+  "maplibregl-",
+  "loreward-",
+  "ixmap-",
+];
+/** The app classes WikiOS's own transform adds to a page (red links, edit sections): harmless, and styled for it. */
+const TRANSFORM_CLASSES = new Set(["wikios-redlink", "wikios-edit-section"]);
+/** Tailwind utilities sized by the viewport (`h-screen`, `w-dvw`, `min-h-svh`, `size-lvh`, ...). */
+const VIEWPORT_UTILITY = /^(?:min-|max-)?(?:h|w|size)-(?:screen|[dls]v[hw])$/;
 const EXTERNAL_LINK_REL = "noopener noreferrer nofollow";
 /** Relative links resolve against this; one that comes out on any other origin leaves IxStates. */
 const LINK_BASE = "https://ixstates.invalid";
@@ -41,10 +76,44 @@ const LINK_BASE = "https://ixstates.invalid";
 function sisterStylePolicy(wiki: SisterReaderId): StylePolicy {
   return {
     allowsUrl: (target) => isSisterMediaPath(target, wiki),
-    allowsDeclaration: (property, value) =>
-      !POSITION_PROPERTY.test(property) ||
-      IN_FLOW_POSITIONS.has((value.split("!")[0] ?? "").trim()),
+    allowsDeclaration: (property, value) => {
+      const keyword = (value.split("!")[0] ?? "").trim();
+      if (POSITION_PROPERTY.test(property)) return IN_FLOW_POSITIONS.has(keyword);
+      return !(property.startsWith("--") && OUT_OF_FLOW_POSITIONS.has(keyword));
+    },
   };
+}
+
+/** Whether a class token is the app's: one of its namespaces (but the transform's own), or a viewport-sized utility. */
+function isAppClass(token: string): boolean {
+  if (TRANSFORM_CLASSES.has(token)) return false;
+  const utility = (token.split(":").pop() ?? token).replace(/^!/, "");
+  return (
+    APP_CLASS_PREFIXES.some((prefix) => utility.startsWith(prefix)) ||
+    VIEWPORT_UTILITY.test(utility)
+  );
+}
+
+/** A sister page's classes without those that position an element (`stripClassTokens`) and without the app's own. */
+function sisterClasses(value: string): string | null {
+  const kept = stripClassTokens(value)
+    .split(" ")
+    .filter((token) => token !== "" && !isAppClass(token));
+  return kept.length > 0 ? kept.join(" ") : null;
+}
+
+/** An id, an id reference or an in-page link of a reader page, prefixed (see SISTER_ID_PREFIX); null when `name` is none. */
+function prefixedIdValue(name: string, value: string): string | null {
+  if (name === "id") return `${SISTER_ID_PREFIX}${value}`;
+  if (name === "href")
+    return value.startsWith("#") && value.length > 1
+      ? `#${SISTER_ID_PREFIX}${value.slice(1)}`
+      : value;
+  if (!ID_REFERENCE_ATTRIBUTES.has(name)) return null;
+  return value
+    .split(/\s+/)
+    .map((id) => `${SISTER_ID_PREFIX}${id}`)
+    .join(" ");
 }
 
 /** Whether `href` leaves IxStates: it resolves, as a browser reads it, on another origin. */
@@ -66,7 +135,10 @@ function useLazySource(img: Element): void {
   if (lazySrcset && !img.hasAttribute("srcset")) img.setAttribute("srcset", lazySrcset);
 }
 
-/** An attribute of a sister page, rewritten or dropped: what loads goes through the media proxy or goes. */
+/**
+ * An attribute of a sister page, rewritten or dropped: what loads goes through the media proxy or goes, classes and
+ * data attributes lose what the app's own CSS reacts to, and ids are prefixed.
+ */
 function sisterAttributeValue(
   name: string,
   value: string,
@@ -78,15 +150,13 @@ function sisterAttributeValue(
       return sisterMediaPath(value, wiki);
     case "srcset":
       return filterSrcset(value, (url) => sisterMediaPath(url, wiki)) || null;
-    case "data-src":
-    case "data-srcset":
-      return null;
     case "style":
       return cleanStyleDeclarations(value, policy) || null;
     case "class":
-      return stripClassTokens(value) || null;
+      return sisterClasses(value);
     default:
-      return value;
+      if (name.startsWith("data-")) return KEPT_DATA_ATTRIBUTES.has(name) ? value : null;
+      return prefixedIdValue(name, value) ?? value;
   }
 }
 
@@ -136,9 +206,13 @@ const SISTER_EMBED_SANITIZE_CONFIG: Config = {
  *  - images only through that wiki's media proxy (`sisterMediaPath`; a lazy image's `data-src` first); any other image
  *    goes, `srcset` keeps only the candidates that map, `data-src`/`data-srcset` never stay;
  *  - styles without an off-proxy `url()`, `expression()`, `behavior`, `-moz-binding`, `image-set()` or a `fixed`/`sticky`
- *    position, in `style` attributes and TemplateStyles alike, and classes without the app's positioning utilities;
+ *    position, in `style` attributes and TemplateStyles alike;
+ *  - no class the app styles (its namespaces, its positioning and viewport utilities) and no data attribute but
+ *    TemplateStyles' marker and table sorting, so nothing in the page switches on the app's own fixed or page-wide CSS;
+ *  - ids prefixed `sister-` (with the in-page links and id references that name them), so none collides with the app's;
  *  - external links `rel="noopener noreferrer nofollow"` with no `target`.
- * An embed (`embed: true`) also has no `<style>` and no `id`: it sits inside another page.
+ * An embed (`embed: true`) also has no `<style>` and no `id`: it sits inside another page. The reader also contains a
+ * sister page in a box of its own (`.wikios-sister-article`: layout and paint containment, isolation).
  */
 export function sanitizeSisterHtml(
   html: string,

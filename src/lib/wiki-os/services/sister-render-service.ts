@@ -14,7 +14,7 @@
  * per `(source, title, revision)` for ten minutes, 200 pages: a page that changes has a new revision, so it is never
  * served stale, and a reader who opens a sister page twice does not render it twice.
  */
-import { sanitizeSisterHtml } from "~/lib/utils/sanitize-sister-html";
+import { sanitizeSisterHtml, SISTER_ID_PREFIX } from "~/lib/utils/sanitize-sister-html";
 import { Cache } from "~/lib/cache";
 import { readSisterJson } from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
 import type { SisterWikiSource, WikiArticle } from "~/lib/wiki-os/adapters/mediawiki/bridge/types";
@@ -93,7 +93,8 @@ async function renderOnItsWiki(
     contentHtml: sanitize(transformed.contentHtml),
     infoboxHtml: transformed.infoboxHtml ? sanitize(transformed.infoboxHtml) : null,
     noticesHtml: transformed.noticesHtml ? sanitize(transformed.noticesHtml) : null,
-    toc: transformed.toc,
+    // the sanitizer prefixes every id: the contents name the headings as the page now does
+    toc: transformed.toc.map((entry) => ({ ...entry, id: `${SISTER_ID_PREFIX}${entry.id}` })),
   };
 }
 

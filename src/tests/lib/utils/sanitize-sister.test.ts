@@ -202,10 +202,16 @@ describe("sanitizeSisterHtml: styles", () => {
         '<div style="background: \\75 rl(//evil.test/a.png); color: red">e</div>' +
         '<div style="position:/**/fixed; color: red">f</div>' +
         '<div style="POSITION: FIXED !important; color: red">g</div>' +
-        '<div style="--p: fixed; position: var(--p); color: red">h</div>'
+        '<div style="--p: fixed; position: var(--p); color: red">h</div>' +
+        '<div style="--q: STICKY !important; --r: -webkit-sticky; --c: blue; color: red">i</div>' +
+        '<div style="table-layout: fixed; color: red">j</div>'
     );
-    // `--p: fixed` may stay: a custom property positions nothing, and every position that reads it is dropped
-    expect(out).not.toMatch(/evil|behavior|binding|image-set|@import|position|var\(|\\75/i);
+    // a property that is not a position keeps a value that happens to read `fixed`
+    expect(out).toContain("table-layout: fixed");
+    expect(out.replace("table-layout: fixed", "")).not.toMatch(
+      /evil|behavior|binding|image-set|@import|position|var\(|\\75|fixed|sticky|--[pqr]/i
+    );
+    expect(out).toMatch(/--c: ?blue/);
     for (const div of Array.from(dom(out).querySelectorAll("div"))) {
       expect(div.getAttribute("style")).toMatch(/color: ?red/);
     }
@@ -221,6 +227,40 @@ describe("sanitizeSisterHtml: styles", () => {
   it("the classes that position an element over the page are removed; the wiki's own stay", () => {
     const out = reader('<div class="infobox fixed inset-0 z-50 sticky md:fixed wikitable">x</div>');
     expect(dom(out).querySelector("div")?.getAttribute("class")).toBe("infobox wikitable");
+  });
+
+  it("the app's own classes are removed: a sister page cannot borrow a fixed popover or a viewport-sized utility", () => {
+    const out = reader(
+      '<div class="wikios-annotation-popover hover:facet-glow" style="top:0;left:0;width:100vw;height:100vh;z-index:99999">o</div>' +
+        '<div class="facet-sheet h-screen w-screen md:w-dvw !h-dvh min-h-screen max-h-svh size-lvh cl-modal forum-post navbox">n</div>' +
+        '<a class="new wikios-redlink" href="/wiki/X?source=iiwiki">r</a>' +
+        '<span class="mw-editsection wikios-edit-section">e</span>' +
+        '<div class="infobox thumb tright gallery mw-file-element wikitable sortable hlist flagicon">k</div>' +
+        '<div class="fixed inset-0">f</div>'
+    );
+    const [popover, utilities] = Array.from(dom(out).querySelectorAll("div"));
+    expect(popover!.hasAttribute("class")).toBe(false);
+    expect(utilities!.getAttribute("class")).toBe("navbox");
+    expect(dom(out).querySelector("a")?.getAttribute("class")).toBe("new wikios-redlink");
+    expect(dom(out).querySelector("span")?.getAttribute("class")).toBe(
+      "mw-editsection wikios-edit-section"
+    );
+    expect(dom(out).querySelectorAll("div")[3]!.hasAttribute("class")).toBe(false);
+    expect(dom(out).querySelectorAll("div")[2]!.getAttribute("class")).toBe(
+      "infobox thumb tright gallery mw-file-element wikitable sortable hlist flagicon"
+    );
+  });
+
+  it("only the wiki's own data attributes stay: none can switch on the app's page-wide styles", () => {
+    const out = reader(
+      '<div data-maps-page="1" data-shell-page-header data-slot="sidebar" data-app="maps" data-theme="dark">a</div>' +
+        '<span data-wikiembed="1" data-source="iiwiki" data-title="X" data-image-name="A.png" data-image-key="A.png" data-relevant="1">b</span>' +
+        '<table class="sortable"><tr><td data-sort-value="10" data-sort-type="number">ten</td></tr></table>'
+    );
+    expect(out).not.toMatch(/data-(?!sort-)/);
+    const cell = dom(out).querySelector("td");
+    expect(cell?.getAttribute("data-sort-value")).toBe("10");
+    expect(cell?.getAttribute("data-sort-type")).toBe("number");
   });
 
   it("a TemplateStyles block keeps no off-host url() and no fixed position", () => {
@@ -259,6 +299,25 @@ describe("sanitizeSisterHtml: links", () => {
   });
 });
 
+describe("sanitizeSisterHtml: ids", () => {
+  it("a reader page's ids are prefixed, and the fragment links and id references that name them follow", () => {
+    const out = reader(
+      '<div id="__next"><h2 id="History">History</h2><sup><a href="#cite_note-1">[1]</a></sup>' +
+        '<table><tr><th id="h1">H</th><td headers="h1 h2" aria-describedby="cite_note-1">c</td></tr></table>' +
+        '<a href="/wiki/Eurth?source=iiwiki#History">elsewhere</a><a href="#">top</a></div>'
+    );
+    const root = dom(out);
+    expect(root.querySelector("#__next")).toBeNull();
+    expect(root.querySelector("div")?.id).toBe("sister-__next");
+    expect(root.querySelector("h2")?.id).toBe("sister-History");
+    const links = Array.from(root.querySelectorAll("a")).map((a) => a.getAttribute("href"));
+    expect(links).toEqual(["#sister-cite_note-1", "/wiki/Eurth?source=iiwiki#History", "#"]);
+    const cell = root.querySelector("td");
+    expect(cell?.getAttribute("headers")).toBe("sister-h1 sister-h2");
+    expect(cell?.getAttribute("aria-describedby")).toBe("sister-cite_note-1");
+  });
+});
+
 describe("sanitizeSisterHtml: embeds and reader pages", () => {
   const STYLED =
     '<style data-mw-deduplicate="TemplateStyles:r9">.box{color:red}</style>' +
@@ -272,7 +331,7 @@ describe("sanitizeSisterHtml: embeds and reader pages", () => {
 
     const page = dom(reader(STYLED));
     expect(page.querySelector("style")?.textContent).toBe(".mw-parser-output .box{color:red}");
-    expect(page.querySelector("h2")?.id).toBe("History");
+    expect(page.querySelector("h2")?.id).toBe("sister-History");
   });
 
   it("nesting past the ceiling is shown as its escaped source, as for an article", () => {

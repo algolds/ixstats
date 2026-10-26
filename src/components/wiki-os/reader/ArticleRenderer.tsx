@@ -146,6 +146,7 @@ export function ArticleRenderer({
   // Another wiki's page (ruling E-l) is read-only here: no section edits, no margin, no IxWiki history.
   const source = parseWikiSource(wikiSource);
   const readOnly = source !== "ixwiki";
+  const contained = readOnly ? " wikios-sister-article" : ""; // another wiki's HTML: boxed in (content.css)
   const marginOpen = isMarginOpen && !readOnly;
   const marginEnabled = !!title && !readOnly;
   // The Inspector sheet below 1280px, opened by the header's Contents button.
@@ -520,14 +521,14 @@ export function ArticleRenderer({
         {noticesHtml && (
           <div
             id={leanToken ? leanElementId(leanToken, "notices") : undefined}
-            className={`wikios-notices ${ARTICLE_STYLE_ROOT_CLASS}`}
+            className={`wikios-notices ${ARTICLE_STYLE_ROOT_CLASS}${contained}`}
             dangerouslySetInnerHTML={noticesMarkup}
           />
         )}
 
         {/* Content layout */}
         <div className="wikios-article-main" ref={contentRef}>
-          <div className="wikios-article-body wikios-article-content">
+          <div className={`wikios-article-body wikios-article-content${contained}`}>
             {processedInfoboxHtml && (
               <InfoboxWithMap
                 infoboxHtml={processedInfoboxHtml}

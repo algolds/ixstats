@@ -174,6 +174,17 @@ describe("renderSisterArticle: the answer", () => {
     expect(out.contentHtml).not.toContain("srcset");
   });
 
+  it("its table of contents names the headings by their prefixed ids", async () => {
+    fetchSpy.mockImplementation(async () =>
+      answer('<div class="mw-parser-output"><h2 id="History">History</h2><p>x</p></div>')
+    );
+
+    const out = await renderSisterArticle("iiwiki", article());
+
+    expect(out.contentHtml).toContain('id="sister-History"');
+    expect(out.toc).toEqual([expect.objectContaining({ id: "sister-History", text: "History" })]);
+  });
+
   it("a Fandom CDN image of an AltHistory page loads its file through the proxy", async () => {
     fetchSpy.mockImplementation(async () =>
       answer(

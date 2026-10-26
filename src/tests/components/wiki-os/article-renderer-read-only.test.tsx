@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { ComponentProps } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
@@ -152,6 +154,23 @@ describe("ArticleRenderer for another wiki's page is read-only (ruling E-l)", ()
       "href",
       "https://iiwiki.com/wiki/Portal%3AEurth"
     );
+  });
+
+  it("contains another wiki's notices and body in a box of their own; an IxWiki page has none", () => {
+    const notices = '<div class="hatnote">Note</div>';
+    const sister = renderArticle("iiwiki", { noticesHtml: notices }).container;
+    expect(sister.querySelector(".wikios-notices")).toHaveClass("wikios-sister-article");
+    expect(sister.querySelector(".wikios-article-body")).toHaveClass("wikios-sister-article");
+
+    const own = renderArticle("ixwiki", { noticesHtml: notices }).container;
+    expect(own.querySelector(".wikios-notices")).not.toBeNull();
+    expect(own.querySelector(".wikios-sister-article")).toBeNull();
+
+    // the box: layout and paint containment and isolation, as a forum post has
+    const css = readFileSync(join(process.cwd(), "src/styles/wiki-os/content.css"), "utf8");
+    const rule = /\.wikios-sister-article \{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(rule).toMatch(/contain: layout paint;/);
+    expect(rule).toMatch(/isolation: isolate;/);
   });
 
   it("the margin hotkey does nothing", () => {

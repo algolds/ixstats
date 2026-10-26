@@ -23,6 +23,16 @@
     position: relative;
   }
 
+  /* Another wiki's page (ArticleRenderer, source other than IxWiki): its HTML is sanitized (sanitize-sister-html.ts),
+     and the box contains whatever a style still lets through, as a forum post does (thinkpages-forum.css): layout and
+     paint containment make it the containing block of any fixed or absolute descendant and clip it to the box, and
+     isolation keeps any z-index inside its own stacking context. Never on IxWiki's own article body, whose infobox
+     and map overlays reach past it. */
+  .wikios-sister-article {
+    contain: layout paint;
+    isolation: isolate;
+  }
+
   /* Infobox (right sidebar — floated within article content) */
 
   .wikios-infobox {
