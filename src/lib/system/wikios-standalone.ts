@@ -15,7 +15,7 @@ export class WikiStandaloneConfigError extends Error {
   constructor() {
     super(
       "NEXT_PUBLIC_IXSTATES_URL is not set: the WikiOS standalone build needs the IxStates URL " +
-        "that works on the server (there is no default; see docs/operations/wikios-v1-cutover.md)"
+        "that works on the server (there is no default; see deferred step T5 of docs/operations/wikios-v1-cutover.md)"
     );
     this.name = "WikiStandaloneConfigError";
   }

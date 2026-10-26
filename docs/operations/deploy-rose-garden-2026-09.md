@@ -103,8 +103,8 @@ Read it end to end once before starting. Every command here is meant to be run b
 - **Profile URLs:** `/@user` becomes the canonical profile URL.
 - **WikiOS v1 ships switched off.** `WIKIOS_V1_ENABLED` is unset, so WikiOS reads but takes no edits (MediaWiki's
   `readonly` error; people edit on classic MediaWiki), `/w/api.php` answers `readonly`, and the mirror and background
-  renders do nothing. The cutover is its own runbook, [wikios-v1-cutover.md](wikios-v1-cutover.md); its section
-  "Before the cutover" lists what is safe meanwhile. Do not set `WIKIOS_V1_ENABLED` in this deploy.
+  renders do nothing. The WikiOS launch is its own runbook, [wikios-v1-cutover.md](wikios-v1-cutover.md); its section
+  "Before the launch" lists what is safe meanwhile. Do not set `WIKIOS_V1_ENABLED` in this deploy.
 
 ## What prod looked like on 2026-09-27 (read-only check)
 

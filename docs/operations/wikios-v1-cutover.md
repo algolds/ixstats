@@ -1,39 +1,47 @@
-# WikiOS v1 cutover runbook
+# WikiOS launch runbook (launch without takeover)
 
-**Status:** nothing in this runbook has been applied. It is written for a human operator on the production server
-(`ssh ixwiki`). Plan 417, September 30, 2026. It replaces the superseded
+**Status:** nothing in this runbook has been run. Every command in it is for the launch deploy on the production server
+(`ssh ixwiki`), run step by step with the owner (the no-touch exception of 2026-10-24): read-only checks and dry runs
+first, and stop at anything unexpected. Plan 417 (September 30, 2026) wrote it as the takeover runbook, and the owner's
+launch shape of 2026-10-24 made it this one. It replaces the superseded
 [Stage 3 config plan](../systems/wikios/wikios-stage3-config-plan.md).
 
-**This launch (owner, 2026-10-24).** WikiOS runs inside IxStates only (`ixwiki.com/projects/ixstates/wiki/*`, port
-3550), and ixwiki.com stays classic: public, editable and canonical. Classic's saves reach IxStates through the webhook
-(step 6), and bots move to IxStates' `/w/api.php` (step 6c). The separate `wikios` process and the nginx takeover
-described in the next paragraph are deferred: their steps are listed under "Order matters" and are not run at this
-launch.
+**What changes.**
 
-**What changes (deferred takeover).** WikiOS runs as its own Next.js process (`pm2` app `wikios`, `127.0.0.1:3560`, like IxWorld at
-maps.ixwiki.com) and takes over `ixwiki.com/wiki/*`. Classic MediaWiki stays editable at
-`ixwiki.com/classic/*` and `index.php?...action=edit`. MediaWiki also becomes a private render engine on
-`127.0.0.1:8081` (`action=parse&text=`), and every saved MediaWiki page is announced to WikiOS by a webhook.
-IxStates (port 3550) and IxWorld (port 3002) are untouched, apart from the brief degradation during the WikiOS
-build described in step 5.
+- WikiOS serves the wiki inside IxStates, at `https://ixwiki.com/projects/ixstates/wiki/…` (port 3550, under IxStates'
+  base path).
+- Classic MediaWiki stays public and editable at `ixwiki.com/wiki/*`, and canonical links stay on classic.
+- MediaWiki also becomes WikiOS's private render engine on `127.0.0.1:8081` (`action=parse&text=`, step 4).
+- Classic's saves reach IxStates through the webhook (`WIKIOS_WEBHOOK_URL`, step 6), and WikiOS's edits are mirrored to
+  classic (step 6b).
+- Bots move to IxStates' `/w/api.php` (step 6c).
+- There is no `wikios` process, no nginx takeover and no `/classic/` article path. Those belong to the takeover, which
+  the owner deferred: they are the last section, "Deferred: the ixwiki.com takeover (do not run)".
 
-**Order matters.** Every production command in this runbook is launch-time: run by hand, step by step, in this order.
-None has been run yet.
+IxWorld (port 3002) is untouched.
 
-- **Launch steps (this launch):** 0, 1, 1b, 1c, 2, 2a, 3 (3a to 3d, and 3e, the sister interwiki prefixes), 4, 4b, 4c
-  (the sister wikis answer the server), 5b, 6, 6a, 6b, 6c, 6d, 7b, and the IxStates rows of 10 with 10d. Two parts of
-  them run before step 2's deploy: step 4's loopback server with its env line, and step 6a's app URL check (step 2 says
-  why). Few of these steps change what the public sees on ixwiki.com: loading the snippet in step 3 changes neither
-  classic's article path nor its canonical link, though it lets every uploader on classic upload SVG and PDF files (3a);
-  step 3e lets classic's editors write `[[iiwiki:...]]` and `[[althistory:...]]` links; and step 6d only adds IxStates'
-  rules to classic's `robots.txt`. Step 6b lets the wiki inside IxStates take edits, and step 6c moves the bots to it.
-- **Deferred takeover steps (not run at this launch):** 5 (the separate `wikios` process on `127.0.0.1:3560`), 7 (its
-  checks), 8 (the cutover: nginx first, then one `LocalSettings.php` line), 9, 9a, 10a and 10b (they prepare step 8),
-  11 and 12 (the full rollback). Every `:3560` line in this runbook belongs to them.
+**Order matters.** Run the launch steps by hand, one at a time, in this order:
+
+- 0, 1, 1b, 1c.
+- Before step 2's deploy: step 4's loopback server and its env line, and step 6a's app URL check (step 2 says why).
+- 2, then 2a.
+- 3 (3a to 3e), then step 4's bot-login check, which needs 3c.
+- 4b, 4c (its proxy check waits for 6b), 4d.
+- 5b (optional, any time after step 2). 5c is a reference: use it only when an import or the upload limit needs it.
+- 6, 6a, the `/images/` headers of 7c, then 10b. All of them come before 6b.
+- 6b, then 6c and 6d.
+- 7b, then 7c's upload check.
+- 10 (monitor), with 10c and 10d as references.
+
+Few of these steps change what the public sees on ixwiki.com: loading the snippet in step 3 changes neither classic's
+article path nor its canonical link, though it lets every uploader on classic upload SVG and PDF files (3a); step 3e
+lets classic's editors write `[[iiwiki:...]]` and `[[althistory:...]]` links; step 7c makes nginx send uploaded PDF and
+SVG files under `/images/` as downloads; and step 6d only adds IxStates' rules to classic's `robots.txt`. Step 6b lets
+the wiki inside IxStates take edits, and step 6c moves the bots to it.
 
 Every step has a rollback line that names the backup it restores.
 
-## Before the cutover
+## Before the launch
 
 The WikiOS v1 code reaches production in an ordinary IxStates release (`scripts/deploy-production.sh`: `prisma db push`,
 build, PM2 reload). That deploy runs none of the steps below: no manual SQL, no environment variables, no MediaWiki
@@ -64,7 +72,7 @@ unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
 - **Other readers of IxWiki.** The lore-card generator and the Lorewards sync read IxWiki pages from MediaWiki, as they did
   before WikiOS v1.
 
-**Incomplete until the cutover (nothing breaks):**
+**Incomplete until the launch steps run (nothing breaks):**
 
 - With no background render, WikiOS fills its link, template and image tables only for pages someone opens. "What links
   here" and page images stay incomplete until step 7b; feed cards then fall back to the picture in the article's intro.
@@ -73,7 +81,7 @@ unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
   protections. Every file is idempotent and safe to apply before the switch; `2026-09-30-wikios-stash-key.sql` can run at
   any time.
 
-**Unsafe before the cutover:**
+**Unsafe before the launch steps:**
 
 - Turning `WIKIOS_V1_ENABLED` on before steps 1, 3 and 4. Writes would queue in an outbox with no mirror account, api.php
   would hand out pages without ids, and background renders would have no render engine (in production they refuse the
@@ -81,7 +89,8 @@ unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
   below, but the renders do not.)
 - Steps 1 and 1b are mandatory before any WikiOS write. Until step 1b's `--yes` run has written the protections marker,
   WikiOS refuses every write in both modes, `WIKIOS_V1_ENABLED` included, and the editing toggle refuses to turn on.
-- `NEXT_PUBLIC_WIKIOS_STANDALONE` in any env file (see step 5).
+- `NEXT_PUBLIC_WIKIOS_STANDALONE` in any env file, at any time: it would turn the IxStates build into the deferred
+  takeover's standalone WikiOS (deferred step T5 explains).
 
 **What the release with the integration and hosts work needs at its deploy (plan 2026-10-25):**
 
@@ -164,11 +173,11 @@ docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 -
       and not exists (select 1 from wiki_mirror_jobs j where j.kind = 'revision' and j.\"revisionId\" = r.id)"
 ```
 
-**The editing toggle (before the cutover):**
+**The editing toggle (before step 6b):**
 
 - **Where.** `/admin/wikios-settings`, Editing section; stored as the SystemConfig row `wikios_editing_enabled`
-  (`src/lib/wiki-os/editing-switch.ts`). Every process (IxStates, `ixstats-cron`, `wikios`) reads the row at most every
-  15 seconds, so a flip reaches all of them within 15 seconds. Each flip is written to the admin audit log and DMed to
+  (`src/lib/wiki-os/editing-switch.ts`). Both processes (IxStates and `ixstats-cron`) read the row at most every 15
+  seconds, so a flip reaches both within 15 seconds. Each flip is written to the admin audit log and DMed to
   the admin on Discord. `WIKIOS_V1_ENABLED=true` forces it on and locks the switch.
 - **What it unlocks.** On, WikiOS takes edits (and `/w/api.php` stops answering `readonly`), and each edit is queued for
   the mirror, which copies it to classic MediaWiki. Inbound sync, background renders, search and the other readers stay
@@ -186,22 +195,19 @@ docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 -
   failed before any read of it succeeded. A switch row already on shows as "On, waiting for the protections import" and
   can still be turned off (written and audited as usual).
 - **Turning it off.** New WikiOS edits are refused; jobs already in the outbox keep draining to MediaWiki. To make them
-  wait instead, set `SKIP_MEDIAWIKI_SYNC=true` (restart `ixstats-cron`, `wikios` and IxStates) or drop `wiki-mirror` from
-  `CRON_ENABLED_JOBS`.
+  wait instead, set `SKIP_MEDIAWIKI_SYNC=true` (then `pm2 restart ixstats-cron --update-env` and
+  `pm2 restart "$IXAPP" --update-env`) or drop `wiki-mirror` from `CRON_ENABLED_JOBS`.
 
-Files shipped by plan 417 (all in the IxStats checkout, `/ixwiki/public/projects/ixstats/`):
+Files the launch installs (all in the IxStats checkout, `/ixwiki/public/projects/ixstats/`, which step 2 deploys):
 
-| File | Installed as |
-|------|--------------|
-| `scripts/deploy-wikios.sh` | run in place |
-| `deploy/wikios/ecosystem.wikios.config.cjs.example` | `/ixwiki/public/wikios/ecosystem.wikios.config.cjs` |
-| `deploy/wikios/next-config-snippet.md` | edits to `next.config.js` (tracked in git) for the deferred takeover build |
-| `scripts/ops/nginx/wikios-render-internal.conf` | `/etc/nginx/conf.d/wikios-render-internal.conf` |
-| `scripts/ops/nginx/wikios-upstream.conf` | `/etc/nginx/conf.d/wikios-upstream.conf` |
-| `scripts/ops/nginx/wikios-proxy-params.conf` | `/etc/nginx/snippets/wikios-proxy-params.conf` |
-| `scripts/ops/nginx/wikios-takeover.conf` | `/etc/nginx/snippets/wikios-takeover.conf` |
-| `scripts/ops/mediawiki/wikios-localsettings.php` | `/ixwiki/config/wikios-localsettings.php` |
-| `scripts/ops/verify-wikios-takeover.ts` | run in place with `bun` |
+| File | Installed as | Step |
+|------|--------------|------|
+| `scripts/ops/mediawiki/wikios-localsettings.php` | `/ixwiki/config/wikios-localsettings.php` | 3a |
+| `scripts/ops/mediawiki/Template-Sister.wikitext` | the text of `Template:Sister` on classic | 3d |
+| `scripts/ops/nginx/wikios-render-internal.conf` | `/etc/nginx/conf.d/wikios-render-internal.conf` | 4 |
+
+The rest of plan 417's kit (the standalone build, its PM2 file, the nginx takeover snippets and the takeover verifier)
+serves only the deferred takeover. Its table is in the deferred section.
 
 ## Conventions (read once)
 
@@ -210,10 +216,10 @@ Files shipped by plan 417 (all in the IxStats checkout, `/ixwiki/public/projects
 
   ```bash
   IX=/ixwiki/public/projects/ixstats                          # the IxStats checkout
-  WK=/ixwiki/public/wikios                                    # the WikiOS deploy directory
   MW=/ixwiki/mediawiki/releases/1.45.1                        # the MediaWiki install (adjust if it differs)
   BK=$(cat /ixwiki/private/backups/wikios-cutover.latest)     # the backup directory created in step 0
-  IXSTATES_URL=$(sed -n 's/^NEXT_PUBLIC_IXSTATES_URL=//p' "$WK/.env.wikios-build" 2>/dev/null)   # empty until step 5
+  IXSTATES_URL=https://ixwiki.com/projects/ixstates           # the public IxStates URL that answers (see below)
+  IXAPP=ixstates                                              # the IxStates web app's PM2 name (see below)
   # MediaWiki maintenance scripts run as the web user and read the production settings file:
   mwmaint() { sudo -u www-data env MW_CONFIG_FILE=/ixwiki/config/LocalSettings.php php "$MW/maintenance/run.php" "$@"; }
   # keep a copy of a file in $BK under a given name before editing it:  bk <file> <name>
@@ -221,6 +227,31 @@ Files shipped by plan 417 (all in the IxStats checkout, `/ixwiki/public/projects
   ```
 
   Step 0 creates `$BK`, so it skips the `BK=` line (it fails on the first run) and sets `BK` itself.
+- **The IxStates URL (read-only, once).** Production nginx proxies `location ^~ /projects/ixstats` to port 3550, but the
+  repo's `next.config.js` and deploy scripts use the base path `/projects/ixstates`. Only one of the two answers:
+
+  ```bash
+  curl -sI -o /dev/null -w '/projects/ixstats/  -> %{http_code}\n' https://ixwiki.com/projects/ixstats/
+  curl -sI -o /dev/null -w '/projects/ixstates/ -> %{http_code}\n' https://ixwiki.com/projects/ixstates/
+  ```
+
+  The working one answers 200 or a redirect (307/308) to a page; the other answers 404 from MediaWiki. Put the working
+  one, with no trailing slash, in the `IXSTATES_URL=` line above. If neither answers because IxStates is not running,
+  keep the default and run the check again after step 2.
+- **The IxStates process (read-only, once).** List the PM2 apps:
+
+  ```bash
+  pm2 jlist | jq -r '.[].name'
+  pm2 jlist | jq -r '.[] | "\(.name) \(.pm2_env.status) \(.pm2_env.pm_cwd // "")"'     # the same, with status and directory
+  ```
+
+  Put the IxStates web app's name in the `IXAPP=` line above. The 2026-10-24 check saw `ixstates`, stopped;
+  `ixstats-cron` is the cron runner, not the web app. If no PM2 app runs IxStates from `$IX`, stop and ask the owner how
+  IxStates is started: every restart and log line below assumes PM2. If the app is listed as stopped, ask the owner
+  before the first restart, because a restart starts it.
+- **Restarting IxStates** is always `pm2 restart "$IXAPP" --update-env`, so it reads its env files again. `ixstats-cron`
+  restarts the same way: `pm2 restart ixstats-cron --update-env`.
+- **IxStates' logs** are read with `pm2 logs "$IXAPP" --lines <n> --nostream`, piped to `grep`.
 - **Backups.** Every file a step edits is copied into `$BK` first (`bk <file> <name>`), and the step's rollback line
   restores from there. `$BK` is mode 0700 because it holds copies of env files.
 - **Secrets.** Never `echo` or paste a secret. Generate into a variable or a 0600 file inside a subshell with its own
@@ -254,7 +285,8 @@ mkdir -p /ixwiki/private/logs/wikios-cutover
 } | tee /ixwiki/private/logs/wikios-cutover/baseline.txt
 ```
 
-The baseline is for step 11. **Rollback:** nothing changed.
+The baseline is for comparing the server a day after the launch: run the same block again into `after.txt` and
+`diff` the two. **Rollback:** nothing changed.
 
 ## 1. Apply the WikiOS SQL migrations
 
@@ -369,11 +401,11 @@ WikiOS serves a MediaWiki-compatible `api.php` at `/w/api.php` for bots (Pywikib
 sessions, login tokens and CSRF tokens are HMACs under one key, **`WIKIOS_API_SESSION_SECRET`**:
 
 - **Needed for bots to log in, not for the app to start.** `src/env.ts` treats it as optional, so deploying IxStates
-  or WikiOS before it is set takes nothing down. Without it, api.php answers `action=login`, a login token
+  before it is set takes nothing down. Without it, api.php answers `action=login`, a login token
   (`meta=tokens&type=login`) and any request that carries a session cookie with the MediaWiki error
   `sessionsecretmissing`; it never signs or accepts a session with a fallback key, in development either. Anonymous
   reads (`meta=siteinfo`, `list=allpages`, `action=parse&page=`, ...) keep working, and one warning is logged the first
-  time the missing key is needed. Set it before the cutover so bots can log in (step 9's login-token row fails until then).
+  time the missing key is needed. Set it before step 6c so bots can log in (step 6c's bot login fails until then).
 - **At least 32 characters to be used.** The environment check accepts any value, so a typo never stops a process
   from starting; api.php treats an empty or shorter value as missing (the same `sessionsecretmissing` answers and
   one warning in the log).
@@ -387,8 +419,8 @@ ls -l "$IX/.env.production.local"                                          # sam
 ```
 
 **Changing it later** ends every bot session and invalidates every outstanding token (bots log in again; nothing is
-stored that cannot be recreated): rotate it if it may have leaked, then restart IxStates (its usual restart) and
-WikiOS (`pm2 restart wikios --update-env`). Bot passwords themselves are not affected: users create them on
+stored that cannot be recreated): rotate it if it may have leaked, then restart IxStates
+(`pm2 restart "$IXAPP" --update-env`). Bot passwords themselves are not affected: users create them on
 `Special:BotPasswords` in WikiOS, and each is stored as a salted scrypt hash.
 
 **Rate limits.** api.php counts requests per client in the buckets `wiki_api`, `wiki_api_write`, `wiki_api_login` and
@@ -397,7 +429,7 @@ configure, but a bot that is throttled sees MediaWiki's `ratelimited` error, and
 `Throttled`. The same file lists the other WikiOS buckets (`wiki_upload`, `wiki_media`, `wiki_export`, `wiki_raw`,
 `wiki_read`, `wiki_proxy` and the two webhook ones).
 
-**Rollback:** `sudo cp -a "$BK/env.production.local.1c" "$IX/.env.production.local"` and restart the two processes: bots
+**Rollback:** `sudo cp -a "$BK/env.production.local.1c" "$IX/.env.production.local"` and restart IxStates (`pm2 restart "$IXAPP" --update-env`): bots
 get `sessionsecretmissing` again and nothing else changes.
 
 ## 2. Deploy IxStates as usual
@@ -407,7 +439,7 @@ get `sessionsecretmissing` again and nothing else changes.
 1. Step 4's loopback server and its `WIKIOS_MEDIAWIKI_INTERNAL_URL` line. They use plan 417's files, which the checkout
    already holds (step 0). Step 4's bot-login check needs step 3c, so run that check after step 3. Without the variable,
    production renders nothing through MediaWiki: forum posts, template previews and revision views are compiled locally
-   until it is set ("Before the cutover" above).
+   until it is set ("Before the launch" above).
 2. Step 6a's app URL check. `NEXT_PUBLIC_APP_URL` is written into the build, so a value fixed after the build needs
    this deploy again, not only a restart.
 
@@ -420,19 +452,16 @@ time it would have rendered without `WIKIOS_MEDIAWIKI_INTERNAL_URL`:
 
 ```bash
 pm2 logs ixstats-cron --lines 2000 --nostream | grep -c 'WIKIOS_MEDIAWIKI_INTERNAL_URL is not set'     # 0
-# and IxStates' own output, wherever its usual start writes it (docs/operations/monitoring.md, Logging strategy): no
-# "[WikiOS:render] WIKIOS_MEDIAWIKI_INTERNAL_URL is not set" line
+pm2 logs "$IXAPP" --lines 2000 --nostream | grep -c 'WIKIOS_MEDIAWIKI_INTERNAL_URL is not set'        # 0
 ```
 
 A hit means a process started without the variable: fix the env file (step 4) and restart that process.
 
-The release arrives with `WIKIOS_V1_ENABLED` off (see "Before the cutover"); leave it off until step 6b. If `db push`
+The release arrives with `WIKIOS_V1_ENABLED` off (see "Before the launch"); leave it off until step 6b. If `db push`
 stops on the unique-constraint prompt, run `bun run db:push:force` by hand and answer yes, then run the deploy again.
 
-This also runs `deploy-ixworld.sh`. It does **not** deploy WikiOS: the `wikios` process built in step 5 keeps
-serving the code it was built from until `scripts/deploy-wikios.sh` runs again, so run that script after every
-IxStates release that touches WikiOS code. `deploy-production.sh` has no lock: never run it while
-`deploy-wikios.sh` runs (the WikiOS script refuses to start while `deploy-production.sh` is running).
+This also runs `deploy-ixworld.sh`. WikiOS is part of IxStates at this launch, so this deploy is WikiOS's deploy as
+well, and every later IxStates release carries its WikiOS code the same way.
 
 **Rollback:** the usual IxStates rollback (`bun run deploy:rollback`).
 
@@ -504,7 +533,7 @@ require_once '/ixwiki/config/wikios-localsettings.php';
 
 The snippet changes neither the article path nor the canonical URL unless `WIKIOS_TAKEOVER` is defined as `true` before
 the `require_once` (`define( 'WIKIOS_TAKEOVER', false )` leaves it off), and this launch never defines it (only the
-deferred step 8b does). By default it adds the `wikios-mirror` group, the bot-password grants and the file types, and
+deferred step T8b does). By default it adds the `wikios-mirror` group, the bot-password grants and the file types, and
 the save webhook, which sends nothing until step 6
 gives PHP-FPM both its secret and its URL. Until then, each web save on classic may write one line to MediaWiki's
 `wikios` debug log ("sync-webhook not sent: ... not set"), when `$wgDebugLogGroups['wikios']` is configured; that is
@@ -607,7 +636,7 @@ protection, for the page-operation mirror jobs of plan 407).
 `Template:` and `Module:` admin-only, and `MediaWiki:` pages are classic-only for everyone, administrators included (spec
 A8). WikiOS refuses every save, move, delete and protect of a `MediaWiki:` page, and a `MediaWiki:` page in a web XML
 import (`/util/import`), with "MediaWiki: pages are edited on classic ixwiki.com, and WikiOS takes them from there."
-Classic's versions come over through the inbound sync and the command-line import of classic's dump (step 5). The
+Classic's versions come over through the inbound sync and the command-line import of classic's dump (step 5c). The
 mirror account never writes one either.
 
 `WIKI_SYNC_WEBHOOK_SECRET` (at least 32 characters) already exists in that file; step 6 gives MediaWiki the same value.
@@ -682,7 +711,7 @@ curl -s 'https://ixwiki.com/api.php?action=query&meta=siteinfo&siprop=extensions
   "forward" and "transclude" unticked, and the wiki ID empty. The form clears the interwiki cache itself, so go
   straight to the verification below. (The form keeps its own log, and you take no dump.)
 - **Otherwise** (no extension, or nobody holds the right), insert the rows through the wiki's database client. Do not
-  grant the right in `LocalSettings.php` for this. The commands below use `mysql ixwiki`, as step 7 does: the database
+  grant the right in `LocalSettings.php` for this. The commands below use `mysql ixwiki`: the database
   name is the `DBname` printed above, and if `DBprefix` is not empty, put it in front of `interwiki`. The client takes
   its credentials from your `~/.my.cnf` (or use `sudo mysql` with socket authentication); never pass `-p<password>`.
 
@@ -783,14 +812,13 @@ it up first: `bk "$IX/.env.production.local" env.production.local.step4`):
 WIKIOS_MEDIAWIKI_INTERNAL_URL=http://127.0.0.1:8081/api.php
 ```
 
-(IxStates reads it too and starts rendering through loopback after its next restart; the `wikios` ecosystem file sets
-it as well. The mirror's writes and the inbound sync's reads use it too, since every server-side call to IxWiki's MediaWiki
-does (plan 415), unless `WIKIOS_MEDIAWIKI_API` names another `api.php` for the mirror; before, they went to the public host,
-which after the takeover is WikiOS's own `/api.php`.)
+(IxStates and `ixstats-cron` both read this file, and start rendering through loopback after their next restart. The
+mirror's writes and the inbound sync's reads use it too, since every server-side call to IxWiki's MediaWiki does (plan
+415), unless `WIKIOS_MEDIAWIKI_API` names another `api.php` for the mirror; before, they went to the public host.)
 
 Run the first block of this step and the env line before step 2's deploy (step 2 says why); the bot-login check above
 waits for step 3c. If step 2 has already run, restart `ixstats-cron` (`pm2 restart ixstats-cron --update-env`) and
-IxStates (its usual restart) now, so both read the line.
+IxStates (`pm2 restart "$IXAPP" --update-env`) now, so both read the line.
 
 **`WIKIOS_MEDIAWIKI_API` in production must be a loopback or private host.** Check it (read-only):
 
@@ -941,8 +969,8 @@ that names `Origin`: a success is cached for five minutes and never handed to an
 - **`429`** with `Cache-Control: no-store` and a `Retry-After`: the wiki said busy, or the proxy's own limit refused the
   call. Wait the seconds it names and try once more.
 
-Then open one iiwiki page in the reader, `$IXSTATES_URL/wiki/<an iiwiki title>?source=iiwiki` (step 6a says how to set
-`IXSTATES_URL`): it renders. A title that does not exist on iiwiki says not found. Neither says "could not be reached".
+Then open one iiwiki page in the reader, `$IXSTATES_URL/wiki/<an iiwiki title>?source=iiwiki` (`IXSTATES_URL` is set in
+Conventions): it renders. A title that does not exist on iiwiki says not found. Neither says "could not be reached".
 
 **Rollback:** nothing to roll back (read-only).
 
@@ -954,89 +982,66 @@ carry `rvlimit` or `rvdir`, so the relay drops them, and an iiwiki page's author
 latest revision. Production reads iiwiki directly and is not affected. Fixing it in development means adding both to
 `ALLOWED_API_PARAMS` (`src/app/api/mediawiki/_config.ts`) in a later release and deploying IxWorld; the owner decides.
 
-## 5. Build and start the WikiOS process
+## 4d. The uploads directory (plan 411, before step 6b)
 
-**Deferred takeover step: not run at this launch** (see "Order matters").
+WikiOS keeps an uploaded file in `WIKIOS_UPLOAD_DIR` until the mirror's `upload` job has put it in MediaWiki, and serves
+it from there meanwhile. Without the variable it uses `.wikios-uploads` inside the checkout, which a deploy can replace.
+IxStates takes the uploads and `ixstats-cron` runs the mirror, so both must use the same directory: it goes into
+`.env.production.local`, which both read. Pick a directory outside the checkout that the server's backups cover: it is
+the only copy of a file until MediaWiki holds it. Everything here is launch-time.
 
-**IxStates is degraded while `deploy-wikios.sh` builds.** Like `deploy-ixworld.sh`, it moves the IxStates `.next`
-aside for the length of the build (several minutes) and restores it afterwards: routes IxStates has not served since
-its last start fail and its static chunks 404 meanwhile. Run it off-peak. (Building elsewhere needs a separate copy
-of the checkout and `node_modules`; that was judged not worth the risk of an untested build layout.)
-
-**Find the IxStates URL that works.** Production nginx proxies `location ^~ /projects/ixstats` to port 3550, but the
-repo's `next.config.js` and deploy scripts use the base path `/projects/ixstates`. Only one of the two answers:
+The directory must belong to the user PM2 runs IxStates and `ixstats-cron` as. Check that it is you (read-only):
 
 ```bash
-curl -sI -o /dev/null -w '/projects/ixstats/  -> %{http_code}\n' https://ixwiki.com/projects/ixstats/
-curl -sI -o /dev/null -w '/projects/ixstates/ -> %{http_code}\n' https://ixwiki.com/projects/ixstates/
+ps -o user= -p "$(pm2 pid ixstats-cron)"; whoami      # the same name twice; otherwise use that user in the chown below
 ```
-
-The working one answers 200 or a redirect (307/308) to a page; the other answers 404 from MediaWiki. Use the working
-one as `IXSTATES_URL` below; the WikiOS build has no default and refuses to start a redirect without it.
 
 ```bash
-IXSTATES_URL=https://ixwiki.com/projects/ixstates       # <- the one that worked above, no trailing slash
+sudo mkdir -p /ixwiki/shared/wikios-uploads && sudo chown "$USER": /ixwiki/shared/wikios-uploads && chmod 750 /ixwiki/shared/wikios-uploads
+bk "$IX/.env.production.local" env.production.local.uploads
+grep -q '^WIKIOS_UPLOAD_DIR=' "$IX/.env.production.local" || ( umask 077; printf '\nWIKIOS_UPLOAD_DIR=/ixwiki/shared/wikios-uploads\n' >> "$IX/.env.production.local" )
+grep -c '^WIKIOS_UPLOAD_DIR=' "$IX/.env.production.local"          # 1
 ```
 
-`next.config.js` is tracked in git, and it does not carry the WikiOS edits yet: make the edits of
-`deploy/wikios/next-config-snippet.md` (WikiOS branch in `resolveBasePath()`, early `return []` in `rewrites()`) in a
-commit that this release carries. Do not edit the server's copy by hand: `deploy-production.sh` runs `git reset --hard`
-and `git clean -fd` in `$IX`, so the next IxStates deploy would undo it. Check the file, then install the PM2 file, the
-runtime env and the **build** env, and deploy.
-
-**Two more prerequisites of this build.** Both are tracked in git now (`next.config.js`, and the font since 2026-10-06),
-so check that the checkout has them:
-
-1. **`optimizePackageImports` (plan 413).** In the same `next.config.js`, add `"iconoir-react"` and `"motion/react"` to the
-   `experimental.optimizePackageImports` array. Every WikiOS page imports icons from `iconoir-react` (plan 413 measured about
-   7 MB of dev chunks from it on the wiki route without the entry), and the root layout imports `motion` on every page.
-   The entry is `"motion/react"`, not `"motion"`: every import in the code is `from "motion/react"`, and Next matches the
-   specifier exactly, so a bare `"motion"` entry would do nothing. The file is the one the IxStates build reads too: the
-   entries are harmless there, and the next IxStates deploy picks them up. Check:
-
-   ```bash
-   grep -n '"iconoir-react"\|"motion/react"' "$IX/next.config.js"   # expect two lines, both inside optimizePackageImports
-   ```
-
-2. **The brand font.** `public/fonts/HostGrotesk/HostGrotesk[wght].ttf` must exist in `$IX`. The `(wiki-os)` layout loads it
-   with `next/font/local`, which resolves the file at build time and **fails the build** when it is missing. The checkout
-   carries it; if it is missing, the checkout is older than the font commit:
-
-   ```bash
-   ls -l "$IX/public/fonts/HostGrotesk/HostGrotesk[wght].ttf"      # must list the file (the quotes keep the shell from globbing the brackets)
-   ```
+The upload size must also get through nginx. Read the limits (read-only):
 
 ```bash
-bk "$IX/next.config.js" next.config.js
-git -C "$IX" status --short next.config.js      # nothing: the file is the committed one, with the edits above
-( cd "$IX" && NODE_ENV=production NEXT_PUBLIC_WIKIOS_STANDALONE=true node --input-type=module -e \
-    'const { default: c } = await import("./next.config.js"); console.log(JSON.stringify(c.basePath), c.assetPrefix)' )
-# expect:  "" undefined
-
-sudo mkdir -p "$WK" && sudo chown "$USER": "$WK"
-cp "$IX/deploy/wikios/ecosystem.wikios.config.cjs.example" "$WK/ecosystem.wikios.config.cjs"
-ln -sfn "$IX/.env.production.local" "$WK/.env.production.local"           # runtime secrets, shared with IxStates
-( umask 077; printf 'NEXT_PUBLIC_IXSTATES_URL=%s\n' "$IXSTATES_URL" > "$WK/.env.wikios-build" )   # build-time, WikiOS only
-ls -l "$WK"
-
-# Uploads (plan 411): WIKIOS_UPLOAD_DIR is set at launch, in step 6a. This process reads the same env file (linked above),
-# so it uses the same directory as IxStates: check it is there.
-grep -c '^WIKIOS_UPLOAD_DIR=' "$IX/.env.production.local"          # 1 (step 6a)
-
-"$IX/scripts/deploy-wikios.sh"      # builds (several GB of RAM), rsyncs, pm2 startOrReload --update-env, health probe
-pm2 status wikios
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3560/wiki/Main_Page
+sudo nginx -T 2>/dev/null | grep -nE 'server_name|location \^~ /projects/ixstat|client_max_body_size'
 ```
 
-> **Warning: never put `NEXT_PUBLIC_WIKIOS_STANDALONE` into `.env.production` or `.env.production.local`.**
-> `deploy-production.sh` exports those files into the IxStates build, which would turn IxStates itself into a WikiOS
-> that redirects everything else. The flag is set by `deploy-wikios.sh` (build) and the ecosystem file (runtime)
-> only, and the script refuses to run if it finds the flag in an env file. `NEXT_PUBLIC_IXSTATES_URL` lives in
-> `$WK/.env.wikios-build`, read by that script only.
+The IxStates location (`location ^~ /projects/ixstats` or `/projects/ixstates`) must show no `client_max_body_size` of
+its own, so it inherits the `ixwiki.com` server block's (16m or more after step 3a), or one of 11m or more. A smaller
+value refuses uploads near the 10 MB limit with a bare 413: stop and ask the owner (5c lists what moves together).
 
-The script saves and restores the IxStats `.next` and, on a failed health probe, rolls back to the previous release;
-on the **first** deploy there is none, so it says so and leaves the new release in place for inspection (`pm2 logs
-wikios`). Private and loopback only: `HOSTNAME=127.0.0.1` in the ecosystem file, nothing public points at port 3560 yet.
+If you cannot see that the backups include `/ixwiki/shared/wikios-uploads`, ask the owner before step 6b. IxStates and
+`ixstats-cron` read the line on the restarts of step 6b. No migration is needed: an upload is refused until WikiOS
+editing is on (step 6b), so no file can be waiting in another directory. Step 7c checks one upload end to end.
+
+**Rollback:** `sudo cp -a "$BK/env.production.local.uploads" "$IX/.env.production.local"` before step 6b (the empty
+directory can stay).
+
+## 5b. Lead-image paths (plan 418, optional, after step 2)
+
+Run it any time after step 2's deploy.
+
+`2026-09-30-wikios-lead-image-canonical-path.sql` rewrites the stored `wiki_articles."leadImageUrl"` values to the canonical
+`/images/<shard>/<File>` path. Its header says to run it once **after the code is deployed**, which is why step 1 leaves it
+out; it is optional (the code reads both forms, so nothing breaks if it is never run). Preview what it would change (changes
+nothing), then apply it:
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
+  "SELECT \"title\", \"leadImageUrl\" FROM wiki_articles WHERE \"leadImageUrl\" ~ '/images/[0-9a-f]/[0-9a-f]{2}/' AND \"leadImageUrl\" NOT LIKE '/images/%' LIMIT 50"
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 < "$IX/prisma/manual-migrations/2026-09-30-wikios-lead-image-canonical-path.sql"
+```
+
+**Rollback:** restore the dump taken in step 1 (`pg_restore` into a scratch database first); the rewrite is idempotent, so a
+second run changes nothing.
+
+## 5c. XML imports and the upload limit (reference)
+
+Nothing here is needed for the launch itself. Use it when an administrator imports a dump, or when the owner wants
+bigger imports or uploads than the defaults. Every command is for the server, launch-time or later, with the owner.
 
 ### Before a full XML import: the dump must be classic's (spec A8)
 
@@ -1062,17 +1067,20 @@ raw request body and streams it into the importer. It accepts **up to 10 MB** (t
 and says so; anything larger is imported from the command line, which has no limit and streams the file:
 
 ```bash
-bun scripts/wikios-import-xml.ts /tmp/ixwiki.xml.gz --dry-run       # read only: what would happen
-bun scripts/wikios-import-xml.ts /tmp/ixwiki.xml.gz --yes           # writes to the database in DATABASE_URL
+( cd "$IX" && bun scripts/wikios-import-xml.ts /tmp/ixwiki.xml.gz --dry-run )     # read only: what would happen
+( cd "$IX" && bun scripts/wikios-import-xml.ts /tmp/ixwiki.xml.gz --yes )         # writes to the database in DATABASE_URL
 ```
 
 The limit is 9.5 MiB, not 10, because Next.js clones every request body for its proxy and caps the clone at
 `experimental.proxyClientMaxBodySize` (**10 MiB by default**): a body above that arrives silently truncated, which the
 route could not tell from a cut-off dump. Staying under the cap keeps "too large" a clear HTTP 413.
 
-Raising it is an **optional operator step** (skip it unless admins really need bigger uploads in the browser):
+Raising it is an **optional** change (skip it unless admins really need bigger uploads in the browser), made in this
+order:
 
-1. In `next.config.js` (the file edited above, in a commit), set the Next.js cap to the new size, e.g. 50 MiB:
+1. `next.config.js` is tracked in git, so the Next.js cap is a code change, not a server edit: set it in a commit that a
+   release carries (for example 50 MiB), and step 2's deploy ships it. Never edit the server's copy:
+   `deploy-production.sh` runs `git reset --hard` and `git clean -fd` in `$IX`, so the next deploy would undo it.
 
    ```js
    experimental: {
@@ -1081,16 +1089,18 @@ Raising it is an **optional operator step** (skip it unless admins really need b
    },
    ```
 
-2. Set the route's own limit **below** it (by at least 0.5 MiB: the default is 9.5 against 10), in
-   the runtime env of the WikiOS process (`$WK/.env.production.local` is shared with IxStates, so put it in the
-   `env` block of `$WK/ecosystem.wikios.config.cjs`):
+2. Set the route's own limit **below** it (by at least 0.5 MiB: the default is 9.5 against 10) in
+   `$IX/.env.production.local`, which IxStates reads (launch-time or later):
 
-   ```js
-   WIKIOS_IMPORT_MAX_BYTES: String(49.5 * 1024 * 1024),   // 51904512; unset = 9.5 MiB
+   ```bash
+   bk "$IX/.env.production.local" env.production.local.5c
+   grep -c '^WIKIOS_IMPORT_MAX_BYTES=' "$IX/.env.production.local"      # 0 = not set yet; 1 = change that line by hand instead
+   ( umask 077; printf '\nWIKIOS_IMPORT_MAX_BYTES=51904512\n' >> "$IX/.env.production.local" )   # 49.5 MiB; unset = 9.5 MiB
    ```
 
-3. `pm2 startOrReload "$WK/ecosystem.wikios.config.cjs" --update-env`, then rebuild (`next.config.js` changed) with
-   `"$IX/scripts/deploy-wikios.sh"`. The import page reads the limit from the server, so it states the new number.
+3. The deploy that carries the `next.config.js` commit restarts IxStates, which then reads the new line; if the line
+   was added after that deploy, `pm2 restart "$IXAPP" --update-env`. The import page reads the limit from the server, so
+   it states the new number. nginx must let the bigger body through as well (the upload limit below, item 2).
 
 Both numbers must move together: a route limit at or above the Next.js cap reintroduces silent truncation. A gzipped
 dump is bounded twice, by the bytes sent (this limit) and by what it expands to (256 MiB, fixed in the route).
@@ -1103,35 +1113,18 @@ of **at most 10,000,000 bytes** (`MAX_UPLOAD_BYTES` in `src/lib/wiki-os/config.t
 streams. **Raising the limit means raising these, in this order, before the code constant:** (1) the Next.js
 `experimental.proxyClientMaxBodySize` in `next.config.js` (above: Next clones the body for its proxy and
 truncates the clone at that size, which no route can tell from a cut-off file); (2) nginx `client_max_body_size` for
-`/api/wiki/upload` and `/w/` (`wikios-takeover.conf`: 11m now) and for MediaWiki's own `api.php` (the mirror sends the same
-bytes); (3) PHP `upload_max_filesize` and `post_max_size` (16M now) and MediaWiki's `$wgMaxUploadSize`; only then the
+the `ixwiki.com` vhost's IxStates location (`location ^~ /projects/ixstats` or `/projects/ixstates`, whichever the server
+uses: `/api/wiki/upload` and `/w/api.php` are under it; step 4d reads it) and for MediaWiki's own `api.php` (the mirror
+sends the same bytes); (3) PHP `upload_max_filesize` and `post_max_size` (16M now) and MediaWiki's `$wgMaxUploadSize`; only then the
 constant. A raster of more than 12.5 megapixels is refused as too large (MediaWiki's `$wgMaxImageArea` default: it cannot thumbnail
-a bigger one); if the wiki's `LocalSettings.php` raised `$wgMaxImageArea`, set `WIKIOS_MAX_IMAGE_AREA` (pixels) in the same
-env file to the same number, or WikiOS refuses what MediaWiki would take. An SVG is refused above 5,000,000 bytes (the scan that proves it safe costs about a second at 10 MB; MediaWiki
-deployments commonly cap SVGs at a few megabytes): set `WIKIOS_MAX_SVG_BYTES` (bytes) in the same env file to change it. It cannot
-go above the 10,000,000-byte upload limit, which holds first. The upload directory is `WIKIOS_UPLOAD_DIR` (step 6a); the admin panel's mirror section says how many uploaded
+a bigger one); if the wiki's `LocalSettings.php` raised `$wgMaxImageArea`, set `WIKIOS_MAX_IMAGE_AREA` (pixels) in
+`$IX/.env.production.local` to the same number, or WikiOS refuses what MediaWiki would take. An SVG is refused above 5,000,000 bytes (the scan that proves it safe costs about a second at 10 MB; MediaWiki
+deployments commonly cap SVGs at a few megabytes): set `WIKIOS_MAX_SVG_BYTES` (bytes) in `$IX/.env.production.local` to change it. It cannot
+go above the 10,000,000-byte upload limit, which holds first. The upload directory is `WIKIOS_UPLOAD_DIR` (step 4d); the admin panel's mirror section says how many uploaded
 files MediaWiki does not hold yet, and until it says none, that directory is the only copy of them. Once an hour the mirror worker deletes files in it that are older than 24 hours and that no asset is served from and no unfinished upload job (a dead one included) names: the leftovers of a crash between staging and the database commit.
 
-**Rollback:** `pm2 delete wikios && pm2 save`. The `next.config.js` edits do not affect the IxStates build; to take them
-out, revert their commit (the copy in `$BK/next.config.js` shows the file as it was).
-
-## 5b. Lead-image paths (plan 418, optional, after the code is deployed)
-
-At this launch that is after step 2's deploy; step 5 is not run.
-
-`2026-09-30-wikios-lead-image-canonical-path.sql` rewrites the stored `wiki_articles."leadImageUrl"` values to the canonical
-`/images/<shard>/<File>` path. Its header says to run it once **after the code is deployed**, which is why step 1 leaves it
-out; it is optional (the code reads both forms, so nothing breaks if it is never run). Preview what it would change (changes
-nothing), then apply it:
-
-```bash
-docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
-  "SELECT \"title\", \"leadImageUrl\" FROM wiki_articles WHERE \"leadImageUrl\" ~ '/images/[0-9a-f]/[0-9a-f]{2}/' AND \"leadImageUrl\" NOT LIKE '/images/%' LIMIT 50"
-docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 < "$IX/prisma/manual-migrations/2026-09-30-wikios-lead-image-canonical-path.sql"
-```
-
-**Rollback:** restore the dump taken in step 1 (`pg_restore` into a scratch database first); the rewrite is idempotent, so a
-second run changes nothing.
+**Rollback:** restore `"$BK/env.production.local.5c"` over `$IX/.env.production.local` and restart IxStates; revert the
+`next.config.js` commit in a later release. The two numbers go back together.
 
 ## 6. Give MediaWiki the webhook secret and URL
 
@@ -1155,7 +1148,7 @@ done
 
 401 means the route answers (it refuses the request because no secret was sent): that is the base path. 404 means the
 other one. A 503 means IxStates has no `WIKI_SYNC_WEBHOOK_SECRET`: stop, generate one into `$IX/.env.production.local` the way
-step 1c generates its key (at least 32 characters, never typed or printed), and restart IxStates before going on. Then edit the pool file by hand, never echoing the secret:
+step 1c generates its key (at least 32 characters, never typed or printed), and restart IxStates (`pm2 restart "$IXAPP" --update-env`) before going on. Then edit the pool file by hand, never echoing the secret:
 
 ```bash
 bk /etc/php/8.4/fpm/pool.d/www.conf www.conf
@@ -1218,10 +1211,9 @@ grep -n '^NEXT_PUBLIC_APP_URL=\|^APP_URL=\|^BASE_PATH=\|^NEXT_PUBLIC_BASE_PATH='
 To fix a line, back the file up (`bk "$IX/.env.production.local" env.production.local.6a`, or `bk "$IX/.env.production"
 env.production.6a`) and change it by hand in an editor; none of these values is a secret. `NEXT_PUBLIC_APP_URL` and the
 base path are written into the build, so a fix to them needs step 2's deploy (again, if it has already run). A fix to
-`APP_URL` alone needs only IxStates' usual restart and `pm2 restart ixstats-cron --update-env`.
+`APP_URL` alone needs only `pm2 restart "$IXAPP" --update-env` and `pm2 restart ixstats-cron --update-env`.
 
-Check after step 6b (`IXSTATES_URL` is empty unless step 5 ran: set it with step 5's read-only "Find the IxStates URL
-that works" check):
+Check after step 6b (`IXSTATES_URL` is set in Conventions):
 
 ```bash
 curl -s "$IXSTATES_URL/api/wiki/feed/recent-changes" | grep -o '<link href="[^"]*"' | head -3
@@ -1249,7 +1241,7 @@ grep -n 'RATE_LIMIT_ENABLED' "$IX/ecosystem.config.cjs"                         
 ```
 
 If a line says anything else, change it to `RATE_LIMIT_ENABLED=true` (back the file up with `bk` first). Then restart
-`ixstats-cron` (`pm2 restart ixstats-cron --update-env`) and IxStates (its usual restart).
+`ixstats-cron` (`pm2 restart ixstats-cron --update-env`) and IxStates (`pm2 restart "$IXAPP" --update-env`).
 
 **Story chains aimed at a `MediaWiki:` page.** An approved story chain whose wiki section is not written yet
 (`wikiSyncedAt` is null) is retried by the story-chain cron job. A chain whose page is a `MediaWiki:` page is now skipped:
@@ -1271,32 +1263,16 @@ Expect no rows. For each row, change its `wikiPageTitle` before launch (or accep
 harmless, and removing them is a code change for a later release. Ask the owner whether to keep them (matching
 MediaWiki's own group table) or remove them. Do not change anything on the server for this.
 
-**The upload directory (plan 411), before step 6b.** WikiOS keeps an uploaded file in `WIKIOS_UPLOAD_DIR` until the
-mirror's `upload` job has put it in MediaWiki, and serves it from there meanwhile. Without the variable it uses
-`.wikios-uploads` inside the checkout, which a deploy can replace. IxStates (which takes the uploads) and `ixstats-cron`
-(which runs the mirror) must use the same directory, so it goes into the env file both read. Pick a directory outside
-the checkout that the server's backups cover: it is the only copy of a file until MediaWiki holds it.
-
-```bash
-sudo mkdir -p /ixwiki/shared/wikios-uploads && sudo chown "$USER": /ixwiki/shared/wikios-uploads && chmod 750 /ixwiki/shared/wikios-uploads
-bk "$IX/.env.production.local" env.production.local.uploads
-grep -q '^WIKIOS_UPLOAD_DIR=' "$IX/.env.production.local" || ( umask 077; printf '\nWIKIOS_UPLOAD_DIR=/ixwiki/shared/wikios-uploads\n' >> "$IX/.env.production.local" )
-grep -c '^WIKIOS_UPLOAD_DIR=' "$IX/.env.production.local"          # 1
-```
-
-If you cannot see that the backups include `/ixwiki/shared/wikios-uploads`, ask the owner before step 6b. IxStates and
-`ixstats-cron` read the line on the restarts of step 6b. No migration is needed: an upload is refused until WikiOS
-editing is on (step 6b), so no file can be waiting in another directory.
-
-**Rollback:** `sudo cp -a "$BK/env.production.local.uploads" "$IX/.env.production.local"` before step 6b (the empty
-directory can stay).
+**The upload directory** is step 4d. Check it is set before step 6b (read-only):
+`grep -c '^WIKIOS_UPLOAD_DIR=' "$IX/.env.production.local"` prints 1.
 
 **`Template:Sister`** must exist on classic (step 3d).
 
 ## 6b. Switch WikiOS v1 on
 
 Only after steps 1 (SQL), 1b (rights import and its protections marker), 3 (mirror account), 4 (render engine), 4b
-(the server's own requests let through), 6 (webhook) and 6a. Without the marker the switch takes no writes: api.php keeps answering `readonly`. The switch goes into
+(the server's own requests let through), 4d (uploads directory), 6 (webhook), 6a, the `/images/` headers of 7c and
+10b (room for readers). Without the marker the switch takes no writes: api.php keeps answering `readonly`. The switch goes into
 the env file that IxStates and `ixstats-cron` both read, `$IX/.env.production.local`. This launch has no `wikios`
 process (no takeover), so nothing else needs it. From here on WikiOS takes edits inside IxStates, the mirror copies them
 to MediaWiki, and api.php answers. When WikiOS and classic both change a page, the later save stands on both wikis and
@@ -1307,7 +1283,7 @@ bk "$IX/.env.production.local" env.production.local.step6b
 grep -q '^WIKIOS_V1_ENABLED=' "$IX/.env.production.local" || ( umask 077; printf '\nWIKIOS_V1_ENABLED=true\n' >> "$IX/.env.production.local" )
 grep -c '^WIKIOS_V1_ENABLED=true$' "$IX/.env.production.local"          # expect 1
 pm2 restart ixstats-cron --update-env
-# and IxStates itself, its usual restart, so it reads the file again
+pm2 restart "$IXAPP" --update-env
 # IxStates' own api.php, on loopback under its base path (use /projects/ixstats instead if that is the one that answers):
 curl -s 'http://127.0.0.1:3550/projects/ixstates/w/api.php?action=query&meta=siteinfo&format=json' | jq -r '.error.code // "ok"'   # not "readonly"
 ```
@@ -1465,101 +1441,7 @@ removal tool (Google Search Console, Removals).
 
 **Rollback:** `sudo cp -a "$BK/robots.txt.6d" "$DOCROOT/robots.txt"`, and purge `https://ixwiki.com/robots.txt` again.
 
-## 7. Pre-cutover checks (nothing public yet)
-
-**Deferred takeover step: not run at this launch** (see "Order matters").
-
-Pick real examples for the gate rows (they must exist: a page and one of its revisions, a template subpage, a category,
-a file and an upload), using the private render engine:
-
-```bash
-IXSTATES_URL=$(sed -n 's/^NEXT_PUBLIC_IXSTATES_URL=//p' "$WK/.env.wikios-build")
-R='http://127.0.0.1:8081/api.php?format=json&action=query'
-curl -s "$R&prop=revisions&titles=Main_Page&rvprop=ids&rvlimit=1&rvdir=newer" | jq -r '.query.pages[].revisions[0].revid'   # -> REVID
-curl -s "$R&titles=Template:Infobox_country/doc%7CCategory:Countries" | jq -c '.query.pages[] | {title, missing: has("missing")}'
-find /ixwiki/shared/images -maxdepth 3 -type f -name '*.png' | head -3
-ls "$IX"/public/images/uploads | head -3      # an IxStates upload (a country's flag): the --upload row
-```
-
-```bash
-( cd "$IX" && bun scripts/ops/verify-wikios-takeover.ts --base http://127.0.0.1:3560 --ixstates "$IXSTATES_URL" \
-    --internal http://127.0.0.1:8081 --standalone --page Main_Page --revid <REVID> \
-    --subpage Template:Infobox_country/doc --category Category:Countries \
-    --upload /images/uploads/<a file of $IX/public/images/uploads> )
-```
-
-Every row must PASS: `/` (302 to `/wiki/Main_Page`), `/wiki/Main_Page`, `/robots.txt`, `/wiki-sitemap`, a template subpage, a
-category page, `Special:Search`, `?action=raw` (as `text/x-wiki`), `?oldid=`, the runtime requests WikiOS pages make that
-are not routes (`/api/ixtime/current`, `/maplibre/maplibre-gl-worker.mjs`, `/flags/...`, `/images/flags/placeholder.svg`, an IxStates upload under `/images/uploads/` (the `--upload` row),
-`/fonts/...`), `/maps?embed=true` (302 to the IxStates map that article map embeds load), the configured IxStates URL
-(not 404) and the loopback `action=parse`. The routes of plans 410 and 412 (robots, sitemap, subpages, raw, oldid,
-Special:Search) fail until those plans are deployed into the WikiOS build. Then open
-`http://127.0.0.1:3560/wiki/Main_Page` through an SSH tunnel (`ssh -L 3560:127.0.0.1:3560 ixwiki`) with the browser
-devtools network tab open: **no asset may 404 or redirect to IxStates** (the allowed prefixes are
-`WIKIOS_ALLOWED_PREFIXES` in `src/lib/system/wikios-standalone.ts`; `wikios-takeover.conf` routes the same set). A
-missing prefix must be added to both before step 8.
-
-**An upload (plan 411).** Sign in to the loopback WikiOS as a user with the upload right, upload a small PNG on
-`/util/upload` (through the SSH tunnel), and check, against the private MediaWiki, that the mirror's `upload` job
-put the same bytes there and that WikiOS now serves the file from MediaWiki's path (the asset's URL is its `/images/` path
-and the staged copy is gone):
-
-```bash
-ls -l /ixwiki/shared/wikios-uploads/                                       # the staged file, until the job has run (within a minute or so)
-curl -s 'http://127.0.0.1:8081/api.php?action=query&titles=File:<Name>&prop=imageinfo&iiprop=url|sha1&format=json' | jq -c '.query.pages[].imageinfo'
-sha1sum /ixwiki/shared/images/<a>/<ab>/<Name>                              # equals the imageinfo sha1
-```
-
-A job that ended dead (`permissiondenied`, `filetype-banned`, a PHP or nginx size refusal) shows in the admin panel's
-mirror section with MediaWiki's answer.
-
-**Uploaded files under `/images/` (plan 411; do this before uploads are opened to users).** Once the `upload` job has run, an
-uploaded file is served by nginx from MediaWiki's `/images/` tree on the wiki's origin, with the content type nginx guesses
-from the name. A PDF or an SVG opened there directly is a document on that origin, so make nginx say that it is a download
-and that its type is not to be guessed. An SVG used as `<img src>` still renders (`Content-Disposition` does not touch an
-image load). Add the map in `http` context and the two `add_header` lines in the vhost's existing `location` that serves
-`/images/` (an `add_header` in a `location` replaces the ones it would inherit, so put them with that location's own):
-
-```bash
-sudo tee /etc/nginx/conf.d/wikios-images-headers.conf >/dev/null <<'EOF'
-# plan 411: an uploaded PDF or SVG opened directly is a download; nothing under /images/ has its type guessed
-map $uri $wikios_image_disposition {
-    default           "";
-    ~*\.(?:pdf|svg)$  "attachment";
-}
-EOF
-sudoedit "$(readlink -f /etc/nginx/sites-enabled/ixwiki.com)"     # in the location that serves /images/, add:
-#     add_header X-Content-Type-Options "nosniff" always;
-#     add_header Content-Disposition $wikios_image_disposition always;    # an empty value adds no header
-sudo nginx -t && sudo systemctl reload nginx
-curl -sI "https://<the wiki host>/images/<a>/<ab>/<Name>.svg" | grep -iE '^(content-disposition|x-content-type-options)'   # attachment + nosniff
-curl -sI "https://<the wiki host>/images/<a>/<ab>/<Name>.png" | grep -iE '^(content-disposition|x-content-type-options)'   # nosniff only
-```
-
-**Rollback:** remove the two `add_header` lines and `sudo rm /etc/nginx/conf.d/wikios-images-headers.conf`, then
-`sudo nginx -t && sudo systemctl reload nginx`.
-
-**Shadowing checks.** nginx will send `/robots.txt`, `/sitemap*`, `/wiki-sitemap*`, `/images/flags/`, `/images/uploads/`, `= /maps`, `/sign-in`,
-`/sign-up` and `/sso-callback` to WikiOS, in front of anything MediaWiki served there. Check that nothing real is
-hidden by that (each command should report "No such file" or print nothing):
-
-```bash
-DOCROOT=<the root value printed in step 4>
-ls -l "$DOCROOT"/robots.txt "$DOCROOT"/sitemap* "$DOCROOT"/wiki-sitemap* 2>&1     # static files would be shadowed
-ls -ld /ixwiki/shared/images/flags /ixwiki/shared/images/uploads 2>&1             # an upload directory named "flags" or "uploads" would be shadowed
-mysql ixwiki -e "SELECT page_title FROM page WHERE page_namespace = 0 AND (page_title IN ('Maps','Sign-in','Sign-up','Sso-callback') OR page_title LIKE 'Sitemap%')"
-```
-
-(read-only, local database `ixwiki`, no table prefix; MediaWiki capitalises the first letter, so these are the
-lower-case paths' articles). Root-level short URLs such as `ixwiki.com/Foo` keep serving classic MediaWiki.
-
-Other links WikiOS pages render to IxStates-only routes (`/blurbs`, `/mycountry`, `/dashboard`, `/countries`,
-`/vault/achievements`, `/settings`, `/messages`) are root-relative in the standalone build and are **not** forwarded: on
-ixwiki.com they reach MediaWiki until they are prefixed with the IxStates URL in the app or forwarded in nginx.
-
-**Rollback:** not needed (nothing changed).
-
-## 7b. Render convergence after the deploy (finish it before step 8)
+## 7b. Render convergence (after step 6b)
 
 WikiOS shows an article from its **view bundle** (`wiki_articles."renderedView"`), built by sending the page's Postgres wikitext
 to the private MediaWiki. The same render also stores what MediaWiki reports about the page: **`wiki_links`,
@@ -1587,7 +1469,7 @@ through MediaWiki.
 **`wiki-render-stale` must be in `CRON_ENABLED_JOBS`.** Jobs run in the PM2 app `ixstats-cron` and only those named in
 `CRON_ENABLED_JOBS` (in its `env`, in `ecosystem.config.cjs`; empty means none) are scheduled. Without it nothing renders in
 the background: only the pages a reader opens or an editor saves render, and the link tables stay empty for the rest. The
-cutover also needs `wiki-mirror` (step 3's mirror account; the outbox of WikiOS writes) and `wiki-recentchanges` (step 7's
+launch also needs `wiki-mirror` (step 3's mirror account; the outbox of WikiOS writes) and `wiki-recentchanges` (the
 inbound sync) in the same list. The job runs inside `ixstats-cron`, so that process needs the render engine's URL
 (`WIKIOS_MEDIAWIKI_INTERNAL_URL`, step 4) in the env file it reads. Restart it after changing either:
 
@@ -1642,7 +1524,8 @@ select (select count(*) from wiki_links)          as links,
        (select count(*) from wiki_image_links)    as image_links;                    -- each must be above 0
 select count(distinct "sourceArticleId") as pages_with_links from wiki_links;       -- approaches published_with_text (a page with no links has no row)
 SQL
-# the two api.php lists that read them, against IxStates' api.php on loopback (each must list pages):
+# the two api.php lists that read them, against IxStates' api.php on loopback, http://127.0.0.1:3550<base path>/w/api.php
+# (the base path that answered in step 6; /projects/ixstates below). Each must list pages:
 curl -s 'http://127.0.0.1:3550/projects/ixstates/w/api.php?action=query&list=embeddedin&eititle=Template:Infobox_country&eilimit=5&format=json' | jq -c '.query.embeddedin | length'
 curl -s 'http://127.0.0.1:3550/projects/ixstates/w/api.php?action=query&list=imageusage&iutitle=File:<an existing file>&iulimit=5&format=json' | jq -c '.query.imageusage | length'
 ```
@@ -1650,217 +1533,142 @@ curl -s 'http://127.0.0.1:3550/projects/ixstates/w/api.php?action=query&list=ima
 **Rollback:** nothing to undo; stopping early only leaves some pages on their older bundle and without link data, which
 readers do not see (they get the bundle) and the four features above show as empty.
 
-## 8. Cut over
+## 7c. Uploads in practice
 
-**Deferred takeover step: not run at this launch** (see "Order matters").
+Uploads open with step 6b. Everything here is launch-time.
 
-Do step 10a (PHP-FPM watchdog) **before** this step. Then install the nginx takeover and, right after the nginx reload,
-flip the MediaWiki article path: nginx first, because `/classic/` and the WikiOS `/wiki/` must exist before MediaWiki
-starts generating `/classic/` links (until the flip it still emits `/wiki/` links, which now reach WikiOS: no broken
-window). Run 8a and 8b back to back.
+### Before step 6b: headers for uploaded files under `/images/` (plan 411)
 
-### 8a. nginx
-
-```bash
-bk "$(readlink -f /etc/nginx/sites-enabled/ixwiki.com)" ixwiki.com.nginx
-sudo cp "$IX/scripts/ops/nginx/wikios-upstream.conf"     /etc/nginx/conf.d/wikios-upstream.conf
-sudo cp "$IX/scripts/ops/nginx/wikios-proxy-params.conf" /etc/nginx/snippets/wikios-proxy-params.conf
-sudo cp "$IX/scripts/ops/nginx/wikios-takeover.conf"     /etc/nginx/snippets/wikios-takeover.conf
-#   step 10b: route the chatty locations to their own log (the sed on the copied snippet), before nginx -t
-sudoedit "$(readlink -f /etc/nginx/sites-enabled/ixwiki.com)"
-#   - add  `include snippets/wikios-takeover.conf;`  at the top of the ixwiki.com server block
-#     (it also holds `location ^~ /w/`, which sends WikiOS's api.php, /w/api.php, to WikiOS with a 5m body limit;
-#      classic MediaWiki does not use /w/ on this server, so nothing is replaced for it)
-#   - delete what the header of wikios-takeover.conf lists as replaced:
-#       * location ^~ /wiki/ { try_files $uri @mediawiki; }
-#       * the ^/wiki/(.*)$ rewrite line inside location @mediawiki  (keep the /search/ and /([^/]+) rewrites)
-#       * any existing `location = /`
-sudo nginx -t && sudo systemctl reload nginx     # duplicate-location errors mean one of the deletions above was missed
-```
-
-### 8b. MediaWiki article path, then caches
+Once the mirror's `upload` job has run, an uploaded file is served by nginx from classic MediaWiki's `/images/` tree on
+ixwiki.com, which the mirror fills, with the content type nginx guesses from the name. A PDF or an SVG opened there
+directly is a document on that origin, so make nginx say that it is a download
+and that its type is not to be guessed. An SVG used as `<img src>` still renders (`Content-Disposition` does not touch an
+image load). Add the map in `http` context and the two `add_header` lines in the vhost's existing `location` that serves
+`/images/` (an `add_header` in a `location` replaces the ones it would inherit, so put them with that location's own):
 
 ```bash
-bk /ixwiki/config/LocalSettings.php LocalSettings.php.step8
-sudoedit /ixwiki/config/LocalSettings.php
-#   add  define( 'WIKIOS_TAKEOVER', true );  on the line before  require_once '/ixwiki/config/wikios-localsettings.php';
-#   so the snippet sets $wgArticlePath = '/classic/$1' and its canonical hook
-php -l /ixwiki/config/LocalSettings.php && sudo php-fpm8.4 -t && sudo systemctl reload php8.4-fpm
+sudo tee /etc/nginx/conf.d/wikios-images-headers.conf >/dev/null <<'EOF'
+# plan 411: an uploaded PDF or SVG opened directly is a download; nothing under /images/ has its type guessed
+map $uri $wikios_image_disposition {
+    default           "";
+    ~*\.(?:pdf|svg)$  "attachment";
+}
+EOF
+bk "$(readlink -f /etc/nginx/sites-enabled/ixwiki.com)" ixwiki.com.nginx.7c
+sudoedit "$(readlink -f /etc/nginx/sites-enabled/ixwiki.com)"     # in the location that serves /images/, add:
+#     add_header X-Content-Type-Options "nosniff" always;
+#     add_header Content-Disposition $wikios_image_disposition always;    # an empty value adds no header
+sudo nginx -t && sudo systemctl reload nginx
+curl -sI "https://ixwiki.com/images/<a>/<ab>/<Name>.svg" | grep -iE '^(content-disposition|x-content-type-options)'   # attachment + nosniff
+curl -sI "https://ixwiki.com/images/<a>/<ab>/<Name>.png" | grep -iE '^(content-disposition|x-content-type-options)'   # nosniff only
 ```
 
-Cached HTML still carries `/wiki/` links. Editing `LocalSettings.php` invalidates it when
-`$wgInvalidateCacheOnLocalSettingsChange` is true (the default): check that the server has not turned it off, and free
-the parser cache rows either way (this only works when the parser cache is in the database):
+If classic holds no SVG file yet, check the SVG line after the first SVG upload.
+
+**Rollback:** `sudo cp -a "$BK/ixwiki.com.nginx.7c" "$(readlink -f /etc/nginx/sites-enabled/ixwiki.com)"` and
+`sudo rm /etc/nginx/conf.d/wikios-images-headers.conf`, then `sudo nginx -t && sudo systemctl reload nginx`.
+
+### After step 6b: one upload, end to end
+
+Sign in to IxStates in a browser as a user with the upload right, open `$IXSTATES_URL/util/upload`, upload a small
+PNG, and check (read-only), against the private MediaWiki, that the mirror's `upload` job put the same bytes there and
+that WikiOS now serves the file from MediaWiki's path (the asset's URL is its `/images/` path and the staged copy is
+gone):
 
 ```bash
-grep -n 'InvalidateCacheOnLocalSettingsChange\|CacheEpoch' /ixwiki/config/LocalSettings.php    # nothing, or "true"
-mwmaint purgeParserCache --age 0
+ls -l /ixwiki/shared/wikios-uploads/                                       # the staged file, until the job has run (within a minute or so)
+curl -s 'http://127.0.0.1:8081/api.php?action=query&titles=File:<Name>&prop=imageinfo&iiprop=url|sha1&format=json' | jq -c '.query.pages[].imageinfo'
+sha1sum /ixwiki/shared/images/<a>/<ab>/<Name>                              # equals the imageinfo sha1
 ```
 
-If the first command shows the setting as `false`, set `$wgCacheEpoch` to now (`date +%Y%m%d%H%M%S`) in
-`LocalSettings.php` and reload PHP-FPM instead. Then purge Cloudflare's cache for `/wiki/*` so stale MediaWiki HTML is
-not served at the new URLs: dashboard Caching, Configuration, Custom Purge (prefix `ixwiki.com/wiki/`, available on
-Enterprise) or Purge Everything. The API equivalent needs a token with the **Cache Purge** permission (the bot-defense
-token in `/etc/ixwiki-defense.conf` only has firewall/WAF rights; do not reuse it):
+A job that ended dead (`permissiondenied`, `filetype-banned`, a PHP or nginx size refusal) shows in the admin panel's
+mirror section with MediaWiki's answer.
 
-```bash
-curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
-  -H "Authorization: Bearer $CF_PURGE_TOKEN" -H "Content-Type: application/json" --data '{"purge_everything":true}'
-```
-
-**Rollback:** step 12 (it restores `$BK/ixwiki.com.nginx` and `$BK/LocalSettings.php.step8`).
-
-## 9. Verify the public site
-
-**Deferred takeover step: not run at this launch** (see "Order matters").
-
-```bash
-( cd "$IX" && bun scripts/ops/verify-wikios-takeover.ts --base https://ixwiki.com --ixstates "$IXSTATES_URL" \
-    --internal http://127.0.0.1:8081 --page Main_Page --revid <REVID> \
-    --subpage Template:Infobox_country/doc --category Category:Countries \
-    --file <ExistingFile.png> --image /images/<a>/<ab>/<ExistingFile.png> \
-    --upload /images/uploads/<a file of $IX/public/images/uploads> )
-```
-
-Every row must PASS (exit code 0). The public `/api.php` row still expects MediaWiki's `sitename`: `/api.php` stays
-MediaWiki's, and WikiOS's own api.php has two rows of its own at `/w/api.php` (siteinfo, and a login token, which
-answers `sessionsecretmissing` and so fails while `WIKIOS_API_SESSION_SECRET` is missing). A bot's smoke test: `curl -s
-'https://ixwiki.com/w/api.php?action=query&meta=siteinfo&format=json'` answers JSON with the site name, and a
-Pywikibot login with a bot password made on `Special:BotPasswords` succeeds. Also click through by hand: an article, an old revision
-(`/index.php?title=Foo&oldid=N` redirects to `/wiki/Foo?oldid=N`), `action=edit` on classic, a classic
-`Special:` page, an image, login, and one `?action=purge` (`/wiki/Foo?action=purge` is answered by classic MediaWiki).
-
-**Rollback:** step 12.
-
-## 9a. Lean flight (after step 9, optional but recommended)
-
-**Deferred takeover step: not run at this launch** (see "Order matters").
-
-A server-rendered article page carries its HTML twice: as DOM and again in the page data the browser hydrates from. In
-**lean flight** mode (`WIKIOS_LEAN_FLIGHT=1`, off in the code) the page data of an **anonymous page load** of a large article
-carries short markers instead, and the browser reads the article back from the DOM that was already sent. It was checked in a
-browser on a development build: the HTML of a long article (Pelaxia) fell from 804 KB to 479 KB raw and from 149 KB to 85 KB
-gzipped, soft navigation, back/forward and concurrent anonymous loads were correct, and there were no hydration errors. It
-only touches an anonymous `Accept: text/html` document request for an article of 20,000 or more characters of HTML
-(`LEAN_MIN_CHARS` in `src/app/(wiki-os)/wiki/[...slug]/_lib/lean-flight.ts`); signed-in readers and client-side navigations
-are served as before. The server hands the article to its own render through a per-process stash, so it needs the single
-`wikios` process the ecosystem file starts (`instances: 1`); do not turn it on behind more than one.
-
-The flag is read at run time: no rebuild, only a reload of the WikiOS process. Put it in the `env` block of
-`$WK/ecosystem.wikios.config.cjs` (the runtime env file `$WK/.env.production.local` is shared with IxStates):
-
-```bash
-bk "$WK/ecosystem.wikios.config.cjs" ecosystem.wikios.config.cjs.9a
-sudoedit "$WK/ecosystem.wikios.config.cjs"            # add to env:   WIKIOS_LEAN_FLIGHT: "1",
-pm2 startOrReload "$WK/ecosystem.wikios.config.cjs" --update-env
-```
-
-**Verify, and keep it only if it passes.** Pick a long article (the one you would open to show someone WikiOS) and one plain
-sentence from **deep in its body, not from the lead paragraph**: words only, no quotes, ampersands or links. The lead paragraph
-is also the page's meta description and its og and twitter text, and it is in the page data, so a lead sentence would be found
-on a page that has no article body at all. The row asks the loopback WikiOS for the article as an anonymous page load and
-requires the sentence inside the article element of the first HTML (meta tags, titles and scripts are ignored), which is exactly
-what an SSR stash miss (the page served with no article body) would lack; every other row would still call that page a 200:
-
-```bash
-( cd "$IX" && bun scripts/ops/verify-wikios-takeover.ts --base http://127.0.0.1:3560 --ixstates "$IXSTATES_URL" --standalone \
-    --article <Long_article> --article-text "<a plain sentence from deep in its body>" )
-curl -s -H 'Accept: text/html' "http://127.0.0.1:3560/wiki/<Long_article>" | grep -c 'id="wikios-lean-'     # 1 or more: the mode is on for this page
-```
-
-All rows must PASS and the `grep` must print 1 or more (0 means the mode is off, or the article is shorter than the
-threshold: pick a longer one). Then open the article in a browser, signed out, with the console open: **no hydration error**,
-and the article is there.
-
-**If the row fails, or the console shows a hydration error: unset the variable.** Remove the line from the ecosystem file
-(`sudo cp -a "$BK/ecosystem.wikios.config.cjs.9a" "$WK/ecosystem.wikios.config.cjs"`) and `pm2 startOrReload
-"$WK/ecosystem.wikios.config.cjs" --update-env`; nothing else changed, and every page is served as before.
+**Rollback:** the test file can stay. To remove it, delete it in WikiOS; the mirror repeats the deletion on classic.
 
 ## 10. Monitor (first 24 hours)
 
 | Watch | How |
 |-------|-----|
-| WikiOS process | `pm2 logs wikios`, `pm2 status wikios` (restarts column), `pm2 jlist` RSS |
-| nginx | `tail -f /var/log/nginx/error.log`; 5xx on `/wiki/`: `awk '$9>=500 && $7 ~ "^/wiki/"' /var/log/nginx/access.log \| tail` |
+| IxStates | `pm2 logs "$IXAPP" --lines 200 --nostream`, `pm2 status "$IXAPP"` (restarts column), `pm2 jlist` RSS |
+| `ixstats-cron` | `pm2 logs ixstats-cron --lines 500 --nostream \| grep -iE 'wiki-(mirror\|render-stale\|recentchanges)\|WikiOS:render'`; a job that throws is recorded in `CronRun` and alerted to the admin webhook |
+| nginx | `tail -f /var/log/nginx/error.log`; 5xx under IxStates: `awk '$9>=500 && $7 ~ "^/projects/ixstat"' /var/log/nginx/access.log \| tail` |
 | Bot defense, fail2ban | step 10b; afterwards `/usr/local/bin/ixwiki-bot-defense.sh status`, `tail -f /var/log/ixwiki-bot-defense.log`, `fail2ban-client status ixwiki-bots` |
-| PHP-FPM watchdog | step 10a; afterwards `tail -f /ixwiki/private/logs/php-fpm-watchdog.log` |
-| Webhook | IxStates' own log (its usual start, see `docs/operations/monitoring.md`): `[wiki/sync-webhook]` lines; classic's `wikios` debug log (`sync-webhook failed for ...`) when configured. 401 means the two secrets differ, 503 means IxStates has none, 429 means more than 600 a minute |
+| PHP-FPM watchdog | `tail -f /ixwiki/private/logs/php-fpm-watchdog.log` (it still probes classic's `/wiki/Main_Page`, which stays MediaWiki) |
+| Webhook | `pm2 logs "$IXAPP" --lines 500 --nostream \| grep 'wiki/sync-webhook'`; classic's `wikios` debug log (`sync-webhook failed for ...`) when configured. 401 means the two secrets differ, 503 means IxStates has none, 429 means more than 600 a minute |
 | Discord DMs | disk alert, PHP-FPM watchdog and bot-defense alerts reach the admin through `ixwiki-notify.sh` |
-| Disk | `df -h /` (WikiOS logs go to `/var/log/pm2/`, rotated at 50M x 5; nginx logs rotate through `/etc/logrotate.d/nginx`) |
+| Disk | `df -h /` (the PM2 logs of IxStates and `ixstats-cron` go to `/var/log/pm2/`, rotated at 50M x 5; nginx logs rotate through `/etc/logrotate.d/nginx`) |
 | Conflicts and queues | `/admin/wikios-settings`: Conflict log, Inbound sync quarantine and MediaWiki Mirror Outbox (step 10d) |
-| Sister wikis | IxStates' own log (as for the webhook) and `pm2 logs ixstats-cron --lines 500 --nostream`, through `grep -iE 'circuit (open\|closed)\|could not be reached'`. `[upstream-guard] <Wiki> (<host>): circuit open after N failures in a row` and `... circuit closed; requests resume.` cover WikiOS's reads and the `api.php` proxy alike; a search across all wikis also warns `<Wiki> could not be reached`, at most once a minute per wiki. A breaker that opens and never closes means that wiki, or the server's route to it, is down: repeat step 4c's server check |
+| Sister wikis | `pm2 logs "$IXAPP" --lines 500 --nostream` and `pm2 logs ixstats-cron --lines 500 --nostream`, through `grep -iE 'circuit (open\|closed)\|could not be reached'`. `[upstream-guard] <Wiki> (<host>): circuit open after N failures in a row` and `... circuit closed; requests resume.` cover WikiOS's reads and the `api.php` proxy alike; a search across all wikis also warns `<Wiki> could not be reached`, at most once a minute per wiki. A breaker that opens and never closes means that wiki, or the server's route to it, is down: repeat step 4c's server check |
 
-### 10a. PHP-FPM watchdog: make it probe MediaWiki, not WikiOS (before step 8)
-
-**Deferred takeover step: not run at this launch** (see "Order matters").
-
-The watchdog (`/ixwiki/private/scripts/php-fpm-watchdog.sh`, service `php-fpm-watchdog`) restarts PHP-FPM when the
-wiki answers HTTP 500. After the cutover `/wiki/*` is WikiOS, so a probe of `/wiki/Main_Page` would restart PHP-FPM
-(and DM the admin) for WikiOS errors PHP-FPM cannot fix, and would stop noticing real MediaWiki failures. Its other
-trigger, more than 50 `upstream prematurely closed` lines in 60 seconds of `/var/log/nginx/error.log`, stays valid.
-
-```bash
-grep -nE 'curl|https?://|Main_Page|/wiki/' /ixwiki/private/scripts/php-fpm-watchdog.sh     # find the probe URL
-bk /ixwiki/private/scripts/php-fpm-watchdog.sh php-fpm-watchdog.sh
-sudoedit /ixwiki/private/scripts/php-fpm-watchdog.sh
-```
-
-Replace the probe URL the `grep` showed with the private render engine (up since step 4, always MediaWiki, not
-subject to Cloudflare or the public rate limits):
-
-```
-http://127.0.0.1:8081/api.php?action=query&meta=siteinfo&format=json
-```
-
-If the script also greps the response body for a string from the old page, use `sitename`. Acceptable alternative
-once step 8 is done: `https://ixwiki.com/classic/Main_Page`. Do **not** use the public `https://ixwiki.com/api.php`:
-it moves to WikiOS when WikiOS serves its own `api.php` subset.
-
-```bash
-curl -s -o /dev/null -w '%{http_code}\n' 'http://127.0.0.1:8081/api.php?action=query&meta=siteinfo&format=json'   # 200
-sudo bash -n /ixwiki/private/scripts/php-fpm-watchdog.sh
-sudo systemctl restart php-fpm-watchdog
-systemctl status php-fpm-watchdog --no-pager | head -5
-tail -n 20 /ixwiki/private/logs/php-fpm-watchdog.log        # no restart entry after the edit
-```
-
-**Rollback:** `sudo cp -a "$BK/php-fpm-watchdog.sh" /ixwiki/private/scripts/php-fpm-watchdog.sh && sudo systemctl restart php-fpm-watchdog`.
-
-### 10b. Bot defense and fail2ban: do not count WikiOS' chatty requests (before step 8)
-
-**Deferred takeover step: not run at this launch** (see "Order matters").
+### 10b. Bot defense and fail2ban: room for IxStates' readers (before step 6b)
 
 The bot-defense daemon (`/usr/local/bin/ixwiki-bot-defense.sh`, 60 requests per minute per IP, set in
 `/etc/ixwiki-defense.conf`) and the fail2ban jail `ixwiki-bots` (more than 60 requests per minute, one-hour ban) both
-read `/var/log/nginx/access.log`. One cold WikiOS page load is a document plus dozens of `/_next/static/` chunks, fonts
-and flag files, and every page then sends tRPC batches (`/api/trpc/`) and an IxTime refresh (`/api/ixtime/current`). Two
-article views in a minute can cross 60, and a real reader would be blocked at the Cloudflare edge. Two changes, both
-default:
+read `/var/log/nginx/access.log`. One cold load of a wiki page inside IxStates is a document plus dozens of `_next`
+chunks, fonts and flag files, and every page then sends tRPC batches (`api/trpc`) and an IxTime refresh
+(`api/ixtime/current`), all under IxStates' base path. A reader who opens a few articles in a minute can cross 60 and be
+blocked at the Cloudflare edge. Everything here is launch-time. Run it before step 6b, so it is in place when the wiki
+takes edits and the bots move.
 
-**1. Keep the chatty locations out of the counted log.** They are still logged, in their own file, which the daemon and
-fail2ban do not read and Debian's nginx logrotate already rotates (`/var/log/nginx/*.log`). Run this on the copy of the
-snippet in step 8a, before `nginx -t`:
+Step 4b already edited the same two files (its IP and user-agent whitelists, and `ignoreip`) under the backup names
+`ixwiki-defense.conf.4b` and `ixwiki-bots.jail.conf.4b`. This step backs them up again under names of its own, so each
+rollback restores its own step: restoring this step's copies keeps 4b's edits.
+
+Change 2 always runs. Change 1 runs only when its measurement says so.
+
+**1. Keep the chatty locations out of the counted log (only if a reader crosses the limit).** First measure (read-only):
+the busiest minutes per IP under IxStates' `_next`, `api/trpc` and `api/ixtime` paths in the current log.
+
+```bash
+sudo awk '$7 ~ "^/projects/ixstat(e)?s/(_next|api/trpc|api/ixtime)" { split($4, t, ":"); n[$1 " " t[1] ":" t[2] ":" t[3]]++ }
+  END { for (k in n) print n[k], k }' /var/log/nginx/access.log | sort -rn | head -10
+#   each line: requests, IP, [day:hour:minute
+```
+
+If no reader's minute comes near the limit change 2 sets (240), skip the rest of change 1. IxStates may have had little
+traffic before the launch, so measure again a day after step 6b. Only when a real reader (not a bot) crosses the limit,
+send those paths to their own log, which the daemon and fail2ban do not read and Debian's nginx logrotate already
+rotates (`/var/log/nginx/*.log`). Read the IxStates location in full first:
 
 ```bash
 grep -n 'var/log/nginx' /etc/logrotate.d/nginx              # expect the /var/log/nginx/*.log glob: the new file rotates too
-sudo sed -i -E '/^location (\^~|=) \/(_next|fonts|flags|maplibre|images\/flags|images\/wikios|wikios-|favicon-wikios|api\/trpc|api\/ixtime\/current)[^ ]* \{$/a\    access_log /var/log/nginx/wikios-quiet.log;' /etc/nginx/snippets/wikios-takeover.conf
-grep -c 'wikios-quiet.log' /etc/nginx/snippets/wikios-takeover.conf     # must print 10 (run the sed once only)
+sudo nginx -T 2>/dev/null | grep -n -A40 'location \^~ /projects/ixstat'    # the IxStates location and every line in it
+bk "$(readlink -f /etc/nginx/sites-enabled/ixwiki.com)" ixwiki.com.nginx.10b
+sudoedit "$(readlink -f /etc/nginx/sites-enabled/ixwiki.com)"
+#   inside the IxStates location, using its own prefix (shown here as /projects/ixstates), add two nested blocks:
+#     location ^~ /projects/ixstates/_next/ {
+#         access_log /var/log/nginx/wikios-quiet.log;
+#         <every line of the parent block, repeated exactly: proxy_pass, proxy_set_header, include, timeouts>
+#     }
+#     location ^~ /projects/ixstates/api/trpc/ {
+#         access_log /var/log/nginx/wikios-quiet.log;
+#         <the same lines>
+#     }
+sudo nginx -t && sudo systemctl reload nginx
+curl -s -o /dev/null -w '%{http_code}\n' "$IXSTATES_URL/wiki/Main_Page"     # still 200
+sudo tail -3 /var/log/nginx/wikios-quiet.log                                 # that page's chunks and tRPC calls land here
 ```
 
-**2. Raise the per-IP limits.** Dynamic `/wiki/` views still count, and a reader who opens several articles quickly
-must not be banned:
+nginx does not carry `proxy_pass` into a nested location, so each nested block repeats the parent's lines exactly. If
+the parent block holds anything that cannot be repeated exactly (a `proxy_pass` with a variable, `if` blocks, nested
+locations of its own), stop and ask the owner. The trade-off: a flood of requests to those paths is no longer seen by
+the daemon and fail2ban (Cloudflare still sees it, and `wikios-quiet.log` has it).
+
+**2. Raise the per-IP limits.** Dynamic page views still count, and a reader who opens several articles quickly must not
+be banned:
 
 ```bash
-bk /etc/ixwiki-defense.conf ixwiki-defense.conf
-bk /etc/fail2ban/jail.d/ixwiki-bots.conf ixwiki-bots.jail.conf
+bk /etc/ixwiki-defense.conf ixwiki-defense.conf.10b
+bk /etc/fail2ban/jail.d/ixwiki-bots.conf ixwiki-bots.jail.conf.10b
 grep -niE 'ip|per' /etc/ixwiki-defense.conf                 # the per-IP requests-per-minute value (default 60)
 sudoedit /etc/ixwiki-defense.conf                           # set it to 240
 sudoedit /etc/fail2ban/jail.d/ixwiki-bots.conf              # multiply the ixwiki-bots maxretry by 4 (same findtime)
 sudo systemctl restart ixwiki-bot-defense && sudo fail2ban-client reload
 ```
 
-Check after the cutover, from a browser with a cold cache: open `https://ixwiki.com/wiki/Main_Page` and three more
-articles within a minute, then
+Check after step 6b, from a browser with a cold cache: open `$IXSTATES_URL/wiki/Main_Page` and three more articles within
+a minute, then
 
 ```bash
 /usr/local/bin/ixwiki-bot-defense.sh status               # your IP must not be listed as blocked
@@ -1868,11 +1676,10 @@ fail2ban-client status ixwiki-bots                        # your IP must not be 
 ```
 
 If a reader is blocked: `sudo fail2ban-client set ixwiki-bots unbanip <ip>`, and remove the IP under Cloudflare,
-Security, WAF, Tools (IP Access Rules). Trade-off of change 1: a flood of requests to the quiet locations is no longer
-seen by the daemon and fail2ban (Cloudflare still sees it, and `wikios-quiet.log` has it).
+Security, WAF, Tools (IP Access Rules).
 
-**Rollback:** `sudo cp -a "$BK/ixwiki-defense.conf" /etc/ixwiki-defense.conf && sudo cp -a "$BK/ixwiki-bots.jail.conf" /etc/fail2ban/jail.d/ixwiki-bots.conf && sudo systemctl restart ixwiki-bot-defense && sudo fail2ban-client reload`;
-for change 1, re-copy the snippet from the checkout (step 8a) and `sudo nginx -t && sudo systemctl reload nginx`.
+**Rollback:** change 2: `sudo cp -a "$BK/ixwiki-defense.conf.10b" /etc/ixwiki-defense.conf && sudo cp -a "$BK/ixwiki-bots.jail.conf.10b" /etc/fail2ban/jail.d/ixwiki-bots.conf && sudo systemctl restart ixwiki-bot-defense && sudo fail2ban-client reload`.
+Change 1, if it ran: `sudo cp -a "$BK/ixwiki.com.nginx.10b" "$(readlink -f /etc/nginx/sites-enabled/ixwiki.com)" && sudo nginx -t && sudo systemctl reload nginx`.
 
 ### 10c. Emergency lever: turn TemplateStyles off
 
@@ -1885,11 +1692,12 @@ with TemplateStyles then render unstyled, which is ugly but safe). The lever **f
 `true`, `on` and `yes` (any case) leave TemplateStyles on; every other value, `0` and `off` and a typo alike, turns it off.
 
 ```bash
-bk "$IX/.env.production.local" env.production.local
+bk "$IX/.env.production.local" env.production.local.10c
 ( umask 077; printf '\nWIKIOS_TEMPLATESTYLES=0\n' >> "$IX/.env.production.local" )
 ls -l "$IX/.env.production.local"                      # same mode as before (-rw-------)
-# the setting is read once at start by config.ts: restart IxStates (its usual restart) and WikiOS
-pm2 restart wikios --update-env
+# the setting is read once at start by config.ts: restart IxStates and ixstats-cron
+pm2 restart "$IXAPP" --update-env
+pm2 restart ixstats-cron --update-env
 ```
 
 The setting is part of the sanitizer fingerprint that every stored article bundle carries (`RENDERER_VERSION`), so no
@@ -1900,11 +1708,11 @@ go with the restart). Check an article whose
 templates use TemplateStyles (`<Title>` below; it printed 1 or more before):
 
 ```bash
-curl -s "https://ixwiki.com/wiki/<Title>" | grep -c 'data-mw-deduplicate'     # 0 once the lever is pulled
+curl -s "$IXSTATES_URL/wiki/<Title>" | grep -c 'data-mw-deduplicate'     # 0 once the lever is pulled
 ```
 
 **Turning it back on** (after the scoper is fixed and `bun run audit:template-styles` reports 0 violations and 0
-non-idempotent outputs): restore the file (`sudo cp -a "$BK/env.production.local" "$IX/.env.production.local"`) or delete the
+non-idempotent outputs): restore the file (`sudo cp -a "$BK/env.production.local.10c" "$IX/.env.production.local"`) or delete the
 `WIKIOS_TEMPLATESTYLES` line (or set it to `1`), and restart both processes as above; the outdated bundles are re-rendered in the background and the styles come back as they are. A misspelt
 value (`ture`, `enabled`) keeps it **off**: check with the `curl` above that the styles are back.
 
@@ -1957,9 +1765,347 @@ What the operator does:
 - **Every outbox and quarantine action is audited.** Requeue, discard (one job or in bulk), retry, dismiss and resync
   each write an admin audit log row naming who did it and which ids or how many.
 
-## 11. Footprint measurement
+## Server-local files the launch edits
 
-**Deferred takeover step: not run at this launch** (see "Order matters").
+Every one of them is copied into `$BK` before its first edit (classic's database rows are dumped first).
+
+| File | Edit | Step |
+|------|------|------|
+| `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN` (3c); `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`; `WIKIOS_MEDIAWIKI_API` absent or private, 4); `WIKIOS_UPLOAD_DIR` (plan 411, 4d); `WIKIOS_IMPORT_MAX_BYTES`, only when raised (5c); `NEXT_PUBLIC_APP_URL` / `APP_URL` `https://ixwiki.com`, base path absent or `/projects/ixstates`, the same in `.env.production` (6a); `RATE_LIMIT_ENABLED` unset or `true` (6a); `WIKIOS_V1_ENABLED=true` (6b); `WIKIOS_TEMPLATESTYLES=0`, only when the lever is pulled (10c) | 1c, 3c, 4, 4d, 5c, 6a, 6b, 10c |
+| `/ixwiki/shared/wikios-uploads/` | new directory (750): the staging directory of uploads waiting for the mirror; in the backups until none is waiting | 4d |
+| `/ixwiki/public/projects/ixstats/ecosystem.config.cjs` | `CRON_ENABLED_JOBS` for `ixstats-cron` names `wiki-render-stale`, `wiki-mirror` and `wiki-recentchanges` (then `pm2 restart ixstats-cron --update-env`) | 6b, 7b |
+| `/ixwiki/config/LocalSettings.php` | `require_once` of the snippet; never a `WIKIOS_TAKEOVER` define | 3a |
+| `/ixwiki/config/wikios-localsettings.php` | new, copy of the tracked snippet (mode 644) | 3a |
+| `/etc/php/8.4/fpm/conf.d/99-wikios-import.ini` | new: `upload_max_filesize` and `post_max_size` 16M | 3a |
+| `/etc/nginx/conf.d/wikios-render-internal.conf` | new | 4 |
+| `/etc/nginx/conf.d/wikios-images-headers.conf` | new: the `/images/` download map | 7c |
+| target of `/etc/nginx/sites-enabled/ixwiki.com` | two `add_header` lines in the location that serves `/images/` (7c); nested quiet-log locations in the IxStates location, only when 10b's measurement calls for them (10b) | 7c, 10b |
+| `/etc/php/8.4/fpm/pool.d/www.conf` | `env[WIKIOS_WEBHOOK_SECRET]`, `env[WIKIOS_WEBHOOK_URL]`; mode 0640 root:root | 6 |
+| `/etc/ixwiki-defense.conf` | IP whitelist (127.0.0.1, ::1, the egress addresses) and user-agent whitelist (`IxStats-Builder`) (4b); per-IP limit 240 (10b) | 4b, 10b |
+| `/etc/fail2ban/jail.d/ixwiki-bots.conf` | `ignoreip` in the three ixwiki jails (4b); `ixwiki-bots` `maxretry` x 4 (10b) | 4b, 10b |
+| `/ixwiki/shared/bots/discord/.env` | MediaWiki API URL on IxStates' loopback `/w/api.php`; the new bot password | 6c |
+| classic's page `Template:Sister` (a wiki page, not a file) | created from `scripts/ops/mediawiki/Template-Sister.wikitext` | 3d |
+| classic's database, table `interwiki` (not a file; dumped to `$BK/interwiki.3e.sql` first) | rows for `iiwiki` and `althistory`, when they are not added on `Special:Interwiki` | 3e |
+| classic's `robots.txt` (`$DOCROOT/robots.txt`) | IxStates' 13 `Allow` / `Disallow` lines in its `User-agent: *` group and each named crawler group that does not block the whole site | 6d |
+
+## Deferred: the ixwiki.com takeover (do not run)
+
+**Do not run anything in this section.** The owner deferred the takeover on 2026-10-24. Nothing in the launch defines
+`WIKIOS_TAKEOVER` (launch hardening B1), so the snippet of step 3a cannot move classic's article path or its canonical
+link. The steps below assume a standalone `wikios` process on `127.0.0.1:3560` that the launch does not build, and they
+were written against the code of September 2026. Running any of them needs a new decision by the owner and a rewrite
+against the code of that day. They stay here as the record of what the takeover needs. Where a T-step uses `$WK`, it
+means `WK=/ixwiki/public/wikios`, which the launch's shell setup does not set.
+
+Files plan 417 shipped for the takeover (in the IxStats checkout, `/ixwiki/public/projects/ixstats/`):
+
+| File | Installed as |
+|------|--------------|
+| `scripts/deploy-wikios.sh` | run in place |
+| `deploy/wikios/ecosystem.wikios.config.cjs.example` | `/ixwiki/public/wikios/ecosystem.wikios.config.cjs` |
+| `deploy/wikios/next-config-snippet.md` | edits to `next.config.js` (tracked in git) for the takeover build |
+| `scripts/ops/nginx/wikios-upstream.conf` | `/etc/nginx/conf.d/wikios-upstream.conf` |
+| `scripts/ops/nginx/wikios-proxy-params.conf` | `/etc/nginx/snippets/wikios-proxy-params.conf` |
+| `scripts/ops/nginx/wikios-takeover.conf` | `/etc/nginx/snippets/wikios-takeover.conf` |
+| `scripts/ops/verify-wikios-takeover.ts` | run in place with `bun` |
+
+## T5. Build and start the WikiOS process
+
+**IxStates is degraded while `deploy-wikios.sh` builds.** Like `deploy-ixworld.sh`, it moves the IxStates `.next`
+aside for the length of the build (several minutes) and restores it afterwards: routes IxStates has not served since
+its last start fail and its static chunks 404 meanwhile. Run it off-peak. (Building elsewhere needs a separate copy
+of the checkout and `node_modules`; that was judged not worth the risk of an untested build layout.)
+
+**The IxStates URL.** Use the one the launch found (Conventions, "The IxStates URL") as `IXSTATES_URL`; the WikiOS
+build has no default and refuses to start a redirect without it.
+
+`next.config.js` is tracked in git, and it does not carry the WikiOS edits yet: make the edits of
+`deploy/wikios/next-config-snippet.md` (WikiOS branch in `resolveBasePath()`, early `return []` in `rewrites()`) in a
+commit that this release carries. Do not edit the server's copy by hand: `deploy-production.sh` runs `git reset --hard`
+and `git clean -fd` in `$IX`, so the next IxStates deploy would undo it. Check the file, then install the PM2 file, the
+runtime env and the **build** env, and deploy.
+
+**Two more prerequisites of this build.** Both are tracked in git now (`next.config.js`, and the font since 2026-10-06),
+so check that the checkout has them:
+
+1. **`optimizePackageImports` (plan 413).** In the same `next.config.js`, add `"iconoir-react"` and `"motion/react"` to the
+   `experimental.optimizePackageImports` array. Every WikiOS page imports icons from `iconoir-react` (plan 413 measured about
+   7 MB of dev chunks from it on the wiki route without the entry), and the root layout imports `motion` on every page.
+   The entry is `"motion/react"`, not `"motion"`: every import in the code is `from "motion/react"`, and Next matches the
+   specifier exactly, so a bare `"motion"` entry would do nothing. The file is the one the IxStates build reads too: the
+   entries are harmless there, and the next IxStates deploy picks them up. Check:
+
+   ```bash
+   grep -n '"iconoir-react"\|"motion/react"' "$IX/next.config.js"   # expect two lines, both inside optimizePackageImports
+   ```
+
+2. **The brand font.** `public/fonts/HostGrotesk/HostGrotesk[wght].ttf` must exist in `$IX`. The `(wiki-os)` layout loads it
+   with `next/font/local`, which resolves the file at build time and **fails the build** when it is missing. The checkout
+   carries it; if it is missing, the checkout is older than the font commit:
+
+   ```bash
+   ls -l "$IX/public/fonts/HostGrotesk/HostGrotesk[wght].ttf"      # must list the file (the quotes keep the shell from globbing the brackets)
+   ```
+
+```bash
+WK=/ixwiki/public/wikios
+bk "$IX/next.config.js" next.config.js
+git -C "$IX" status --short next.config.js      # nothing: the file is the committed one, with the edits above
+( cd "$IX" && NODE_ENV=production NEXT_PUBLIC_WIKIOS_STANDALONE=true node --input-type=module -e \
+    'const { default: c } = await import("./next.config.js"); console.log(JSON.stringify(c.basePath), c.assetPrefix)' )
+# expect:  "" undefined
+
+sudo mkdir -p "$WK" && sudo chown "$USER": "$WK"
+cp "$IX/deploy/wikios/ecosystem.wikios.config.cjs.example" "$WK/ecosystem.wikios.config.cjs"
+ln -sfn "$IX/.env.production.local" "$WK/.env.production.local"           # runtime secrets, shared with IxStates
+( umask 077; printf 'NEXT_PUBLIC_IXSTATES_URL=%s\n' "$IXSTATES_URL" > "$WK/.env.wikios-build" )   # build-time, WikiOS only
+ls -l "$WK"
+
+# Uploads (plan 411): WIKIOS_UPLOAD_DIR is set at launch, in step 4d. This process reads the same env file (linked above),
+# so it uses the same directory as IxStates: check it is there.
+grep -c '^WIKIOS_UPLOAD_DIR=' "$IX/.env.production.local"          # 1 (step 4d)
+
+"$IX/scripts/deploy-wikios.sh"      # builds (several GB of RAM), rsyncs, pm2 startOrReload --update-env, health probe
+pm2 status wikios
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3560/wiki/Main_Page
+```
+
+> **Warning: never put `NEXT_PUBLIC_WIKIOS_STANDALONE` into `.env.production` or `.env.production.local`.**
+> `deploy-production.sh` exports those files into the IxStates build, which would turn IxStates itself into a WikiOS
+> that redirects everything else. The flag is set by `deploy-wikios.sh` (build) and the ecosystem file (runtime)
+> only, and the script refuses to run if it finds the flag in an env file. `NEXT_PUBLIC_IXSTATES_URL` lives in
+> `$WK/.env.wikios-build`, read by that script only.
+
+The script saves and restores the IxStats `.next` and, on a failed health probe, rolls back to the previous release;
+on the **first** deploy there is none, so it says so and leaves the new release in place for inspection (`pm2 logs
+wikios`). Private and loopback only: `HOSTNAME=127.0.0.1` in the ecosystem file, nothing public points at port 3560 yet.
+
+The `wikios` process keeps serving the code it was built from until `scripts/deploy-wikios.sh` runs again, so that
+script runs after every IxStates release that touches WikiOS code. `deploy-production.sh` has no lock: never run it
+while `deploy-wikios.sh` runs (the WikiOS script refuses to start while `deploy-production.sh` is running).
+
+Imports and the upload limit are launch step 5c. For this process, `WIKIOS_IMPORT_MAX_BYTES` goes in the `env` block of
+`$WK/ecosystem.wikios.config.cjs` instead (its `.env.production.local` is the link to IxStates' file), a raised
+`next.config.js` cap needs `"$IX/scripts/deploy-wikios.sh"` again, and the nginx body limits are the ones in
+`wikios-takeover.conf`.
+
+**Rollback:** `pm2 delete wikios && pm2 save`. The `next.config.js` edits do not affect the IxStates build; to take them
+out, revert their commit (the copy in `$BK/next.config.js` shows the file as it was).
+
+## T7. Pre-takeover checks (nothing public yet)
+
+Pick real examples for the gate rows (they must exist: a page and one of its revisions, a template subpage, a category,
+a file and an upload), using the private render engine:
+
+```bash
+IXSTATES_URL=$(sed -n 's/^NEXT_PUBLIC_IXSTATES_URL=//p' "$WK/.env.wikios-build")
+R='http://127.0.0.1:8081/api.php?format=json&action=query'
+curl -s "$R&prop=revisions&titles=Main_Page&rvprop=ids&rvlimit=1&rvdir=newer" | jq -r '.query.pages[].revisions[0].revid'   # -> REVID
+curl -s "$R&titles=Template:Infobox_country/doc%7CCategory:Countries" | jq -c '.query.pages[] | {title, missing: has("missing")}'
+find /ixwiki/shared/images -maxdepth 3 -type f -name '*.png' | head -3
+ls "$IX"/public/images/uploads | head -3      # an IxStates upload (a country's flag): the --upload row
+```
+
+```bash
+( cd "$IX" && bun scripts/ops/verify-wikios-takeover.ts --base http://127.0.0.1:3560 --ixstates "$IXSTATES_URL" \
+    --internal http://127.0.0.1:8081 --standalone --page Main_Page --revid <REVID> \
+    --subpage Template:Infobox_country/doc --category Category:Countries \
+    --upload /images/uploads/<a file of $IX/public/images/uploads> )
+```
+
+Every row must PASS: `/` (302 to `/wiki/Main_Page`), `/wiki/Main_Page`, `/robots.txt`, `/wiki-sitemap`, a template subpage, a
+category page, `Special:Search`, `?action=raw` (as `text/x-wiki`), `?oldid=`, the runtime requests WikiOS pages make that
+are not routes (`/api/ixtime/current`, `/maplibre/maplibre-gl-worker.mjs`, `/flags/...`, `/images/flags/placeholder.svg`, an IxStates upload under `/images/uploads/` (the `--upload` row),
+`/fonts/...`), `/maps?embed=true` (302 to the IxStates map that article map embeds load), the configured IxStates URL
+(not 404) and the loopback `action=parse`. The routes of plans 410 and 412 (robots, sitemap, subpages, raw, oldid,
+Special:Search) fail until those plans are deployed into the WikiOS build. Then open
+`http://127.0.0.1:3560/wiki/Main_Page` through an SSH tunnel (`ssh -L 3560:127.0.0.1:3560 ixwiki`) with the browser
+devtools network tab open: **no asset may 404 or redirect to IxStates** (the allowed prefixes are
+`WIKIOS_ALLOWED_PREFIXES` in `src/lib/system/wikios-standalone.ts`; `wikios-takeover.conf` routes the same set). A
+missing prefix must be added to both before step T8.
+
+The upload check and the `/images/` headers that were part of this step are launch step 7c. For the takeover, repeat
+7c's upload check on the loopback WikiOS through the SSH tunnel.
+
+**Shadowing checks.** nginx will send `/robots.txt`, `/sitemap*`, `/wiki-sitemap*`, `/images/flags/`, `/images/uploads/`, `= /maps`, `/sign-in`,
+`/sign-up` and `/sso-callback` to WikiOS, in front of anything MediaWiki served there. Check that nothing real is
+hidden by that (each command should report "No such file" or print nothing):
+
+```bash
+DOCROOT=<the root value printed in step 4>
+ls -l "$DOCROOT"/robots.txt "$DOCROOT"/sitemap* "$DOCROOT"/wiki-sitemap* 2>&1     # static files would be shadowed
+ls -ld /ixwiki/shared/images/flags /ixwiki/shared/images/uploads 2>&1             # an upload directory named "flags" or "uploads" would be shadowed
+mysql ixwiki -e "SELECT page_title FROM page WHERE page_namespace = 0 AND (page_title IN ('Maps','Sign-in','Sign-up','Sso-callback') OR page_title LIKE 'Sitemap%')"
+```
+
+(read-only, local database `ixwiki`, no table prefix; MediaWiki capitalises the first letter, so these are the
+lower-case paths' articles). Root-level short URLs such as `ixwiki.com/Foo` keep serving classic MediaWiki.
+
+Other links WikiOS pages render to IxStates-only routes (`/blurbs`, `/mycountry`, `/dashboard`, `/countries`,
+`/vault/achievements`, `/settings`, `/messages`) are root-relative in the standalone build and are **not** forwarded: on
+ixwiki.com they reach MediaWiki until they are prefixed with the IxStates URL in the app or forwarded in nginx.
+
+**Rollback:** not needed (nothing changed).
+
+## T8. Cut over
+
+Do step T10a (PHP-FPM watchdog) **before** this step. Then install the nginx takeover and, right after the nginx reload,
+flip the MediaWiki article path: nginx first, because `/classic/` and the WikiOS `/wiki/` must exist before MediaWiki
+starts generating `/classic/` links (until the flip it still emits `/wiki/` links, which now reach WikiOS: no broken
+window). Run T8a and T8b back to back.
+
+### T8a. nginx
+
+```bash
+bk "$(readlink -f /etc/nginx/sites-enabled/ixwiki.com)" ixwiki.com.nginx
+sudo cp "$IX/scripts/ops/nginx/wikios-upstream.conf"     /etc/nginx/conf.d/wikios-upstream.conf
+sudo cp "$IX/scripts/ops/nginx/wikios-proxy-params.conf" /etc/nginx/snippets/wikios-proxy-params.conf
+sudo cp "$IX/scripts/ops/nginx/wikios-takeover.conf"     /etc/nginx/snippets/wikios-takeover.conf
+#   the takeover's quiet log (launch step 10b covers only IxStates' location): before nginx -t, send the chatty
+#   locations of the copied snippet to their own log
+grep -n 'var/log/nginx' /etc/logrotate.d/nginx              # expect the /var/log/nginx/*.log glob: the new file rotates too
+sudo sed -i -E '/^location (\^~|=) \/(_next|fonts|flags|maplibre|images\/flags|images\/wikios|wikios-|favicon-wikios|api\/trpc|api\/ixtime\/current)[^ ]* \{$/a\    access_log /var/log/nginx/wikios-quiet.log;' /etc/nginx/snippets/wikios-takeover.conf
+grep -c 'wikios-quiet.log' /etc/nginx/snippets/wikios-takeover.conf     # must print 10 (run the sed once only)
+sudoedit "$(readlink -f /etc/nginx/sites-enabled/ixwiki.com)"
+#   - add  `include snippets/wikios-takeover.conf;`  at the top of the ixwiki.com server block
+#     (it also holds `location ^~ /w/`, which sends WikiOS's api.php, /w/api.php, to WikiOS with a 5m body limit;
+#      classic MediaWiki does not use /w/ on this server, so nothing is replaced for it)
+#   - delete what the header of wikios-takeover.conf lists as replaced:
+#       * location ^~ /wiki/ { try_files $uri @mediawiki; }
+#       * the ^/wiki/(.*)$ rewrite line inside location @mediawiki  (keep the /search/ and /([^/]+) rewrites)
+#       * any existing `location = /`
+sudo nginx -t && sudo systemctl reload nginx     # duplicate-location errors mean one of the deletions above was missed
+```
+
+### T8b. MediaWiki article path, then caches
+
+```bash
+bk /ixwiki/config/LocalSettings.php LocalSettings.php.step8
+sudoedit /ixwiki/config/LocalSettings.php
+#   add  define( 'WIKIOS_TAKEOVER', true );  on the line before  require_once '/ixwiki/config/wikios-localsettings.php';
+#   so the snippet sets $wgArticlePath = '/classic/$1' and its canonical hook
+php -l /ixwiki/config/LocalSettings.php && sudo php-fpm8.4 -t && sudo systemctl reload php8.4-fpm
+```
+
+Cached HTML still carries `/wiki/` links. Editing `LocalSettings.php` invalidates it when
+`$wgInvalidateCacheOnLocalSettingsChange` is true (the default): check that the server has not turned it off, and free
+the parser cache rows either way (this only works when the parser cache is in the database):
+
+```bash
+grep -n 'InvalidateCacheOnLocalSettingsChange\|CacheEpoch' /ixwiki/config/LocalSettings.php    # nothing, or "true"
+mwmaint purgeParserCache --age 0
+```
+
+If the first command shows the setting as `false`, set `$wgCacheEpoch` to now (`date +%Y%m%d%H%M%S`) in
+`LocalSettings.php` and reload PHP-FPM instead. Then purge Cloudflare's cache for `/wiki/*` so stale MediaWiki HTML is
+not served at the new URLs: dashboard Caching, Configuration, Custom Purge (prefix `ixwiki.com/wiki/`, available on
+Enterprise) or Purge Everything. The API equivalent needs a token with the **Cache Purge** permission (the bot-defense
+token in `/etc/ixwiki-defense.conf` only has firewall/WAF rights; do not reuse it):
+
+```bash
+curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
+  -H "Authorization: Bearer $CF_PURGE_TOKEN" -H "Content-Type: application/json" --data '{"purge_everything":true}'
+```
+
+**Rollback:** step T12 (it restores `$BK/ixwiki.com.nginx` and `$BK/LocalSettings.php.step8`).
+
+## T9. Verify the public site
+
+```bash
+( cd "$IX" && bun scripts/ops/verify-wikios-takeover.ts --base https://ixwiki.com --ixstates "$IXSTATES_URL" \
+    --internal http://127.0.0.1:8081 --page Main_Page --revid <REVID> \
+    --subpage Template:Infobox_country/doc --category Category:Countries \
+    --file <ExistingFile.png> --image /images/<a>/<ab>/<ExistingFile.png> \
+    --upload /images/uploads/<a file of $IX/public/images/uploads> )
+```
+
+Every row must PASS (exit code 0). The public `/api.php` row still expects MediaWiki's `sitename`: `/api.php` stays
+MediaWiki's, and WikiOS's own api.php has two rows of its own at `/w/api.php` (siteinfo, and a login token, which
+answers `sessionsecretmissing` and so fails while `WIKIOS_API_SESSION_SECRET` is missing). A bot's smoke test: `curl -s
+'https://ixwiki.com/w/api.php?action=query&meta=siteinfo&format=json'` answers JSON with the site name, and a
+Pywikibot login with a bot password made on `Special:BotPasswords` succeeds. Also click through by hand: an article, an old revision
+(`/index.php?title=Foo&oldid=N` redirects to `/wiki/Foo?oldid=N`), `action=edit` on classic, a classic
+`Special:` page, an image, login, and one `?action=purge` (`/wiki/Foo?action=purge` is answered by classic MediaWiki).
+
+**Rollback:** step T12.
+
+## T9a. Lean flight (after step T9, optional but recommended)
+
+A server-rendered article page carries its HTML twice: as DOM and again in the page data the browser hydrates from. In
+**lean flight** mode (`WIKIOS_LEAN_FLIGHT=1`, off in the code) the page data of an **anonymous page load** of a large article
+carries short markers instead, and the browser reads the article back from the DOM that was already sent. It was checked in a
+browser on a development build: the HTML of a long article (Pelaxia) fell from 804 KB to 479 KB raw and from 149 KB to 85 KB
+gzipped, soft navigation, back/forward and concurrent anonymous loads were correct, and there were no hydration errors. It
+only touches an anonymous `Accept: text/html` document request for an article of 20,000 or more characters of HTML
+(`LEAN_MIN_CHARS` in `src/app/(wiki-os)/wiki/[...slug]/_lib/lean-flight.ts`); signed-in readers and client-side navigations
+are served as before. The server hands the article to its own render through a per-process stash, so it needs the single
+`wikios` process the ecosystem file starts (`instances: 1`); do not turn it on behind more than one.
+
+The flag is read at run time: no rebuild, only a reload of the WikiOS process. Put it in the `env` block of
+`$WK/ecosystem.wikios.config.cjs` (the runtime env file `$WK/.env.production.local` is shared with IxStates):
+
+```bash
+bk "$WK/ecosystem.wikios.config.cjs" ecosystem.wikios.config.cjs.9a
+sudoedit "$WK/ecosystem.wikios.config.cjs"            # add to env:   WIKIOS_LEAN_FLIGHT: "1",
+pm2 startOrReload "$WK/ecosystem.wikios.config.cjs" --update-env
+```
+
+**Verify, and keep it only if it passes.** Pick a long article (the one you would open to show someone WikiOS) and one plain
+sentence from **deep in its body, not from the lead paragraph**: words only, no quotes, ampersands or links. The lead paragraph
+is also the page's meta description and its og and twitter text, and it is in the page data, so a lead sentence would be found
+on a page that has no article body at all. The row asks the loopback WikiOS for the article as an anonymous page load and
+requires the sentence inside the article element of the first HTML (meta tags, titles and scripts are ignored), which is exactly
+what an SSR stash miss (the page served with no article body) would lack; every other row would still call that page a 200:
+
+```bash
+( cd "$IX" && bun scripts/ops/verify-wikios-takeover.ts --base http://127.0.0.1:3560 --ixstates "$IXSTATES_URL" --standalone \
+    --article <Long_article> --article-text "<a plain sentence from deep in its body>" )
+curl -s -H 'Accept: text/html' "http://127.0.0.1:3560/wiki/<Long_article>" | grep -c 'id="wikios-lean-'     # 1 or more: the mode is on for this page
+```
+
+All rows must PASS and the `grep` must print 1 or more (0 means the mode is off, or the article is shorter than the
+threshold: pick a longer one). Then open the article in a browser, signed out, with the console open: **no hydration error**,
+and the article is there.
+
+**If the row fails, or the console shows a hydration error: unset the variable.** Remove the line from the ecosystem file
+(`sudo cp -a "$BK/ecosystem.wikios.config.cjs.9a" "$WK/ecosystem.wikios.config.cjs"`) and `pm2 startOrReload
+"$WK/ecosystem.wikios.config.cjs" --update-env`; nothing else changed, and every page is served as before.
+
+## T10a. PHP-FPM watchdog: make it probe MediaWiki, not WikiOS (before step T8)
+
+The watchdog (`/ixwiki/private/scripts/php-fpm-watchdog.sh`, service `php-fpm-watchdog`) restarts PHP-FPM when the
+wiki answers HTTP 500. After the cutover `/wiki/*` is WikiOS, so a probe of `/wiki/Main_Page` would restart PHP-FPM
+(and DM the admin) for WikiOS errors PHP-FPM cannot fix, and would stop noticing real MediaWiki failures. Its other
+trigger, more than 50 `upstream prematurely closed` lines in 60 seconds of `/var/log/nginx/error.log`, stays valid.
+
+```bash
+grep -nE 'curl|https?://|Main_Page|/wiki/' /ixwiki/private/scripts/php-fpm-watchdog.sh     # find the probe URL
+bk /ixwiki/private/scripts/php-fpm-watchdog.sh php-fpm-watchdog.sh
+sudoedit /ixwiki/private/scripts/php-fpm-watchdog.sh
+```
+
+Replace the probe URL the `grep` showed with the private render engine (up since step 4, always MediaWiki, not
+subject to Cloudflare or the public rate limits):
+
+```
+http://127.0.0.1:8081/api.php?action=query&meta=siteinfo&format=json
+```
+
+If the script also greps the response body for a string from the old page, use `sitename`. Acceptable alternative
+once step T8 is done: `https://ixwiki.com/classic/Main_Page`. Do **not** use the public `https://ixwiki.com/api.php`:
+it moves to WikiOS when WikiOS serves its own `api.php` subset.
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' 'http://127.0.0.1:8081/api.php?action=query&meta=siteinfo&format=json'   # 200
+sudo bash -n /ixwiki/private/scripts/php-fpm-watchdog.sh
+sudo systemctl restart php-fpm-watchdog
+systemctl status php-fpm-watchdog --no-pager | head -5
+tail -n 20 /ixwiki/private/logs/php-fpm-watchdog.log        # no restart entry after the edit
+```
+
+**Rollback:** `sudo cp -a "$BK/php-fpm-watchdog.sh" /ixwiki/private/scripts/php-fpm-watchdog.sh && sudo systemctl restart php-fpm-watchdog`.
+
+## T11. Footprint measurement
 
 Compare with `baseline.txt` from step 0 (run once traffic has settled, then again a day later):
 
@@ -1980,11 +2126,9 @@ diff /ixwiki/private/logs/wikios-cutover/baseline.txt /ixwiki/private/logs/wikio
 Expectations: the `wikios` RSS stays below the 1400 MB PM2 restart limit of the example ecosystem file (Node heap
 limit 1536 MB), the PHP-FPM pool RSS drops because `/wiki/*` views no longer run PHP, and the page time does not get worse.
 
-## 12. Rollback (full)
+## T12. Rollback (full)
 
-**Deferred takeover step: not run at this launch** (see "Order matters").
-
-Reverses step 8 only; WikiOS keeps running harmlessly on loopback. Undo in the opposite order of step 8, MediaWiki
+Reverses step T8 only; WikiOS keeps running harmlessly on loopback. Undo in the opposite order of step T8, MediaWiki
 first (so MediaWiki stops emitting `/classic/` links before `/classic/` disappears):
 
 ```bash
@@ -1993,47 +2137,33 @@ php -l /ixwiki/config/LocalSettings.php && sudo php-fpm8.4 -t && sudo systemctl 
 sudo cp -a "$BK/ixwiki.com.nginx" "$(readlink -f /etc/nginx/sites-enabled/ixwiki.com)"
 sudo nginx -t && sudo systemctl reload nginx
 mwmaint purgeParserCache --age 0                                                 # /classic/ links out of cached HTML
-# then purge the Cloudflare cache for /wiki/* again (step 8b)
+# then purge the Cloudflare cache for /wiki/* again (step T8b)
 curl -s -o /dev/null -w '%{http_code}\n' https://ixwiki.com/wiki/Main_Page      # MediaWiki again
 ```
 
 To stop WikiOS taking edits as well, turn the switch off (step 6b's rollback line).
 
 (The files in `/etc/nginx/conf.d/` and `/etc/nginx/snippets/` are inert without the `include`; the `wikios-upstream.conf`
-`map`s and `upstream` are harmless.) Undo steps 10a and 10b from their own rollback lines if the watchers misbehave.
+`map`s and `upstream` are harmless.) Undo step T10a from its own rollback line if the watchdog misbehaves (launch step 10b stays).
 To also stop WikiOS: `pm2 delete wikios && pm2 save`.
 
-## Server-local files this cutover edits
-
-Every one of them is copied into `$BK` before its first edit. The first two rows are tracked in git now: their changes
-arrive in a commit, never as a hand edit on the server (`deploy-production.sh` resets the checkout).
+### Server-local files the takeover would edit
 
 | File | Edit | Step |
 |------|------|------|
-| `/ixwiki/public/projects/ixstats/next.config.js` | tracked: `resolveBasePath()` WikiOS branch; `rewrites()` early return; `"iconoir-react"` and `"motion/react"` added to `experimental.optimizePackageImports` (deferred takeover build) | 5 |
-| `/ixwiki/public/projects/ixstats/public/fonts/HostGrotesk/HostGrotesk[wght].ttf` | tracked since 2026-10-06; must exist: `next/font/local` fails the build without it | 5 |
-| `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN`, `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`; `WIKIOS_MEDIAWIKI_API` absent or private, 4); `WIKIOS_UPLOAD_DIR` (plan 411, 6a); `NEXT_PUBLIC_APP_URL` / `APP_URL` `https://ixwiki.com`, base path absent or `/projects/ixstates`, the same in `.env.production` (6a); `RATE_LIMIT_ENABLED` unset or `true` (6a); `WIKIOS_V1_ENABLED=true` (6b) | 1c, 3c, 4, 5, 6a, 6b |
-| `/ixwiki/shared/wikios-uploads/` | new directory (750): the staging directory of uploads waiting for the mirror; in the backups until none is waiting | 5 |
-| `/ixwiki/public/projects/ixstats/ecosystem.config.cjs` | `CRON_ENABLED_JOBS` for `ixstats-cron` names `wiki-render-stale`, `wiki-mirror` and `wiki-recentchanges` (then `pm2 restart ixstats-cron --update-env`) | 7b |
-| `/ixwiki/public/wikios/ecosystem.wikios.config.cjs` | new, from the `.example`; `WIKIOS_LEAN_FLIGHT: "1"` added to `env` in 9a | 5, 9a |
-| `/ixwiki/public/wikios/.env.wikios-build` | new: `NEXT_PUBLIC_IXSTATES_URL` (build-time, WikiOS only) | 5 |
-| `/etc/nginx/conf.d/wikios-render-internal.conf`, `wikios-upstream.conf` | new | 4, 8 |
-| `/etc/nginx/snippets/wikios-proxy-params.conf`, `wikios-takeover.conf` | new | 8 |
-| target of `/etc/nginx/sites-enabled/ixwiki.com` | `include` added; `/wiki/` location, `@mediawiki` `/wiki/` rewrite and any `location = /` removed | 8 |
-| `/ixwiki/config/LocalSettings.php` | `require_once` of the snippet (3a); `define( 'WIKIOS_TAKEOVER', true );` added before the require only in the deferred 8b | 3a, 8b |
-| `/ixwiki/config/wikios-localsettings.php` | new, copy of the tracked snippet (mode 644) | 3a |
-| `/etc/php/8.4/fpm/pool.d/www.conf` | `env[WIKIOS_WEBHOOK_SECRET]`, `env[WIKIOS_WEBHOOK_URL]`; mode 0640 root:root | 6 |
-| `/ixwiki/private/scripts/php-fpm-watchdog.sh` | probe URL `http://127.0.0.1:8081/api.php?...` | 10a |
-| `/etc/ixwiki-defense.conf` | IP whitelist (127.0.0.1, ::1, the egress addresses) and user-agent whitelist (`IxStats-Builder`) | 4b |
-| `/etc/fail2ban/jail.d/ixwiki-bots.conf` | `ignoreip` in the three ixwiki jails | 4b |
-| `/etc/ixwiki-defense.conf`, `/etc/fail2ban/jail.d/ixwiki-bots.conf` | per-IP limit 240; `maxretry` x 4 | 10b |
-| `/ixwiki/shared/bots/discord/.env` | MediaWiki API URL on IxStates' loopback `/w/api.php`; the new bot password | 6c |
-| classic's database, table `interwiki` (not a file; dumped to `$BK/interwiki.3e.sql` first) | rows for `iiwiki` and `althistory`, when they are not added on `Special:Interwiki` | 3e |
-| classic's `robots.txt` (`$DOCROOT/robots.txt`) | IxStates' 13 `Allow` / `Disallow` lines in its `User-agent: *` group and each named crawler group that does not block the whole site | 6d |
+| `/ixwiki/public/projects/ixstats/next.config.js` | tracked: `resolveBasePath()` WikiOS branch; `rewrites()` early return; `"iconoir-react"` and `"motion/react"` in `experimental.optimizePackageImports` | T5 |
+| `/ixwiki/public/projects/ixstats/public/fonts/HostGrotesk/HostGrotesk[wght].ttf` | tracked since 2026-10-06; must exist: `next/font/local` fails the build without it | T5 |
+| `/ixwiki/public/wikios/ecosystem.wikios.config.cjs` | new, from the `.example`; `WIKIOS_LEAN_FLIGHT: "1"` added to `env` in T9a | T5, T9a |
+| `/ixwiki/public/wikios/.env.wikios-build` | new: `NEXT_PUBLIC_IXSTATES_URL` (build-time, WikiOS only) | T5 |
+| `/etc/nginx/conf.d/wikios-upstream.conf` | new | T8 |
+| `/etc/nginx/snippets/wikios-proxy-params.conf`, `wikios-takeover.conf` | new (the quiet-log `sed` runs on the copy) | T8 |
+| target of `/etc/nginx/sites-enabled/ixwiki.com` | `include` added; `/wiki/` location, `@mediawiki` `/wiki/` rewrite and any `location = /` removed | T8 |
+| `/ixwiki/config/LocalSettings.php` | `define( 'WIKIOS_TAKEOVER', true );` before the `require_once` | T8b |
+| `/ixwiki/private/scripts/php-fpm-watchdog.sh` | probe URL `http://127.0.0.1:8081/api.php?...` | T10a |
 
-## Later
+### Later (with the takeover)
 
 IxStates moves to ixstates.com (owner decision D11): then `NEXT_PUBLIC_IXSTATES_URL` in `$WK/.env.wikios-build`
 changes, the WikiOS build is redeployed, and classic MediaWiki moves to `classic.ixwiki.com`. WikiOS's api.php already
-answers at `/w/api.php` (step 8a); when bots have moved to it, `/api.php` can join the WikiOS locations in
+answers at `/w/api.php` (step T8a); when bots have moved to it, `/api.php` can join the WikiOS locations in
 `wikios-takeover.conf` and the matching row of `verify-wikios-takeover.ts` changes.
