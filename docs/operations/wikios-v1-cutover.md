@@ -1617,16 +1617,17 @@ only once every page has rendered; how fast that happens depends on which kind o
 | Page is | Served meanwhile | Rendered by | Rate |
 |---------|------------------|-------------|------|
 | **never rendered**, or stale (`"htmlSyncedAt"` NULL; step 1's `rendered-view.sql` marks every row without a bundle so) | the reader waits up to 6 s for its render, else a locally compiled fallback marked stale | the first reader, a save, or the `wiki-render-stale` job (every minute, oldest first) | **20 per minute** |
-| **outdated**: its bundle was built by another renderer version (`RENDERER_VERSION` = transform version + sanitizer fingerprint; this release changes it, and so does any later sanitizer change or the `WIKIOS_TEMPLATESTYLES` lever, step 10c); or, on a read only, its render a day or more ago could not show a file (below) | at once, the old bundle re-sanitized by the current rules and marked stale; a reader's visit also queues its background render | `wiki-render-stale` (one scan per process finds the backlog, at the first batch with room, so a minute or so after `ixstats-cron` starts) and readers' background renders | up to **60 per minute** when no never-rendered page is waiting; otherwise what is left of the 20 |
+| **outdated**: its bundle was built by another renderer version (`RENDERER_VERSION` = transform version + sanitizer fingerprint; this release changes it, and so does any later sanitizer change or the `WIKIOS_TEMPLATESTYLES` lever, step 10c); or, on a read only, its render could not show a file and is due again (a day after a first render, a week after a later one; below) | at once, the old bundle re-sanitized by the current rules and marked stale; a reader's visit also queues its background render | `wiki-render-stale` (one scan per process finds the backlog, at the first batch with room, so a minute or so after `ixstats-cron` starts) and readers' background renders | up to **60 per minute** when no never-rendered page is waiting; otherwise what is left of the 20 |
 
-**A render that could not show a file** (`mw:Error` on a media element: a missing-file link to `Special:Upload` with
-`wpDestFile=`, or "Error creating thumbnail") is outdated too once it is a day old, but only when a reader opens the
-page: it is served at once, marked stale, while a background render replaces it. Classic's own lookup of a Commons file
-can fail for one render and work for the next, and this heals the pages whose images came out broken. Neither
-`wiki-render-stale`'s scan nor the SQL below sees these pages (both compare renderer versions only), so they never count
-in `outdated`. A file that is really missing costs one render a day per page read, never a loop. A page that quotes
-such a link (a `wpDestFile=` URL in a code sample, say) or whose markup carries `mw:Error` matches too, with the same
-bound: one extra render a day when read.
+**A render that could not show a file** (`mw:Error` in a media element's `typeof`: a missing-file link whose `href` goes
+to `Special:Upload` with `wpDestFile=`, or "Error creating thumbnail") is outdated too once it is due, but only when a
+reader opens the page: it is served at once, marked stale, while a background render replaces it. A first render (made
+within a day of the page's current revision) is due a day after it was made; a later render that still could not show
+the file, or one whose revision time is unknown, a week after. Classic's own lookup of a Commons file can fail for one
+render and work for the next, and this heals the pages whose images came out broken. Neither `wiki-render-stale`'s scan
+nor the SQL below sees these pages (both compare renderer versions only), so they never count in `outdated`. A file that
+is really missing costs one render a week per page read, never a loop. Only markup matches: page text that quotes
+`wpDestFile=` or `mw:Error` (a code sample, say) never does.
 
 Renders run two at a time at background priority (a reader's or an editor's render goes first), a batch starts none after 45
 seconds, and a page MediaWiki fails to render is left alone for a while (doubling up to an hour) so it never holds up the

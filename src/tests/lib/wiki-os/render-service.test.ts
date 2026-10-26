@@ -55,7 +55,7 @@ jest.mock("~/lib/utils/sanitize-html", () => {
 
 import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { buildViewBundle, enqueueRender, ensureRendered, invalidateDependents, loadViewBundle, renderArticle, RENDERER_VERSION, renderFallbackView, renderInBackground, renderStaleBatch } from "~/lib/wiki-os/services/render-service";
-import { MEDIA_ERROR_RERENDER_MS, mediaErrorRerenderDue } from "~/lib/wiki-os/services/view-bundle";
+import { MEDIA_ERROR_BACKOFF_MS, MEDIA_ERROR_RERENDER_MS, mediaErrorRerenderDue } from "~/lib/wiki-os/services/view-bundle";
 import { wikiArticleSanitizerFingerprint } from "~/lib/utils/sanitize-html";
 
 interface Deferred<T> {
@@ -387,14 +387,14 @@ describe("loadViewBundle", () => {
   ])("is null for %s", async (_name, renderedView) => {
     mockFindUnique.mockResolvedValue({ renderedView, htmlSyncedAt: syncedAt });
 
-    await expect(loadViewBundle("a")).resolves.toBeNull();
+    await expect(loadViewBundle("a", null)).resolves.toBeNull();
   });
   it("is tied to the sanitizer: another sanitizer fingerprint is another renderer version", async () => {
     expect(RENDERER_VERSION).toBe(`6:${wikiArticleSanitizerFingerprint()}`);
     const bundle = { ...buildViewBundle(PARSED), rendererVersion: "3:0123456789abc" };
     mockFindUnique.mockResolvedValue({ renderedView: bundle, htmlSyncedAt: syncedAt });
 
-    await expect(loadViewBundle("a")).resolves.toMatchObject({ outdated: true });
+    await expect(loadViewBundle("a", null)).resolves.toMatchObject({ outdated: true });
   });
 
   describe("a render that could not show a file", () => {
@@ -406,25 +406,55 @@ describe("loadViewBundle", () => {
       '<div class="mw-parser-output"><span typeof="mw:Error mw:File"><a href="/wiki/File:Kit_body.png">' +
       "<span>Error creating thumbnail: </span></a></span></div>";
     const now = new Date("2026-10-26T12:00:00Z").getTime();
-    const dayOld = new Date(now - MEDIA_ERROR_RERENDER_MS);
-    const hourOld = new Date(now - 60 * 60 * 1000);
+    const ago = (ms: number) => new Date(now - ms);
+    const HOUR = 60 * 60 * 1000;
+    const dayOld = ago(MEDIA_ERROR_RERENDER_MS);
+    const hourOld = ago(HOUR);
+    /** A revision saved an hour before `renderedAt`: the render is the revision's first. */
+    const savedBefore = (renderedAt: Date) => new Date(renderedAt.getTime() - HOUR);
 
-    it("is due another render once its render is a day old: a missing file or a failed thumbnail", () => {
-      expect(mediaErrorRerenderDue(buildViewBundle(missingFile), dayOld, now)).toBe(true);
-      expect(mediaErrorRerenderDue(buildViewBundle(thumbnailError), dayOld, now)).toBe(true);
+    it("a first render (within a day of its revision) is due once it is a day old: a missing file or a failed thumbnail", () => {
+      expect(mediaErrorRerenderDue(buildViewBundle(missingFile), dayOld, savedBefore(dayOld), now)).toBe(true);
+      expect(mediaErrorRerenderDue(buildViewBundle(thumbnailError), dayOld, savedBefore(dayOld), now)).toBe(true);
+    });
+
+    it("a later render that still could not show the file waits a week, as one whose revision time is unknown does", () => {
+      const sixDays = ago(6 * MEDIA_ERROR_RERENDER_MS);
+      const week = ago(MEDIA_ERROR_BACKOFF_MS);
+      expect(MEDIA_ERROR_BACKOFF_MS).toBe(7 * MEDIA_ERROR_RERENDER_MS);
+      for (const revisionAt of [ago(30 * MEDIA_ERROR_RERENDER_MS), null]) {
+        expect(mediaErrorRerenderDue(buildViewBundle(missingFile), dayOld, revisionAt, now)).toBe(false);
+        expect(mediaErrorRerenderDue(buildViewBundle(missingFile), sixDays, revisionAt, now)).toBe(false);
+        expect(mediaErrorRerenderDue(buildViewBundle(missingFile), week, revisionAt, now)).toBe(true);
+      }
     });
 
     it("is not due within a day of its render, nor when it is unsynced; a clean render never is", () => {
-      expect(mediaErrorRerenderDue(buildViewBundle(missingFile), hourOld, now)).toBe(false);
-      expect(mediaErrorRerenderDue(buildViewBundle(missingFile), null, now)).toBe(false);
-      expect(mediaErrorRerenderDue(buildViewBundle(PARSED), new Date(0), now)).toBe(false);
+      expect(mediaErrorRerenderDue(buildViewBundle(missingFile), hourOld, savedBefore(hourOld), now)).toBe(false);
+      expect(mediaErrorRerenderDue(buildViewBundle(missingFile), null, null, now)).toBe(false);
+      expect(mediaErrorRerenderDue(buildViewBundle(PARSED), new Date(0), null, now)).toBe(false);
+    });
+
+    it("reads markup only: page text that quotes wpDestFile= or mw:Error is not a media error", () => {
+      const quoted =
+        "<div class=\"mw-parser-output\"><p>Link to <code>Special:Upload&amp;wpDestFile=Foo.png</code> or " +
+        "?wpDestFile=Bar.png, and the typeof=\"mw:Error\" and href=\"/x?wpDestFile=Baz.png\" attributes.</p>" +
+        '<p><a href="/wiki/Upload" title="mw:Error ?wpDestFile=x">upload</a></p></div>';
+      expect(mediaErrorRerenderDue(buildViewBundle(quoted), new Date(0), null, now)).toBe(false);
     });
 
     it("is loaded outdated, so the reader is served it stale while a background render replaces it", async () => {
       mockFindUnique.mockResolvedValue({ renderedView: buildViewBundle(missingFile), htmlSyncedAt: new Date(0) });
-      await expect(loadViewBundle("a")).resolves.toMatchObject({ outdated: true });
+      await expect(loadViewBundle("a", null)).resolves.toMatchObject({ outdated: true });
       mockFindUnique.mockResolvedValue({ renderedView: buildViewBundle(missingFile), htmlSyncedAt: new Date() });
-      await expect(loadViewBundle("a")).resolves.toMatchObject({ outdated: false });
+      await expect(loadViewBundle("a", null)).resolves.toMatchObject({ outdated: false });
+    });
+
+    it("is loaded outdated a day after a first render, not a day after a later one", async () => {
+      const renderedAt = new Date(Date.now() - MEDIA_ERROR_RERENDER_MS - HOUR);
+      mockFindUnique.mockResolvedValue({ renderedView: buildViewBundle(missingFile), htmlSyncedAt: renderedAt });
+      await expect(loadViewBundle("a", savedBefore(renderedAt))).resolves.toMatchObject({ outdated: true });
+      await expect(loadViewBundle("a", new Date(0))).resolves.toMatchObject({ outdated: false });
     });
   });
 
@@ -439,7 +469,7 @@ describe("loadViewBundle", () => {
     it("is re-sanitized by the current sanitizer: body, infobox and notices", async () => {
       mockFindUnique.mockResolvedValue({ renderedView: hostile, htmlSyncedAt: syncedAt });
 
-      const { bundle } = (await loadViewBundle("a"))!;
+      const { bundle } = (await loadViewBundle("a", null))!;
 
       for (const html of [bundle.bodyHtml, bundle.infoboxHtml, bundle.noticesHtml]) {
         expect(html).not.toMatch(/<script|onerror|onclick|alert\(/i);
@@ -460,7 +490,7 @@ describe("loadViewBundle", () => {
         htmlSyncedAt: syncedAt,
       });
 
-      const { bundle } = (await loadViewBundle("a"))!;
+      const { bundle } = (await loadViewBundle("a", null))!;
 
       expect(bundle.bodyHtml).toBe(linkTo("/dashboard/profile/x"));
       expect(bundle.infoboxHtml).toBe(linkTo("/projects/ixstates/dashboard/profile/x"));
@@ -473,7 +503,7 @@ describe("loadViewBundle", () => {
       mockFindUnique.mockResolvedValue({ renderedView: hostile, htmlSyncedAt: syncedAt });
       const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
 
-      await expect(loadViewBundle("a")).resolves.toBeNull();
+      await expect(loadViewBundle("a", null)).resolves.toBeNull();
 
       expect(warn).toHaveBeenCalledWith(expect.stringContaining("a"), expect.any(Error));
       warn.mockRestore();
@@ -490,7 +520,7 @@ describe("loadViewBundle", () => {
       });
       const started = performance.now();
 
-      await expect(loadViewBundle("a")).resolves.toBeNull();
+      await expect(loadViewBundle("a", null)).resolves.toBeNull();
 
       expect(performance.now() - started).toBeLessThan(1_000 * TIMING_BUDGET_SCALE);
     });

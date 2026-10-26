@@ -158,12 +158,15 @@ ratchet rule:
   `| image =`, `| flag =`, `| coat_of_arms =`) in the stored wikitext (`extractLeadImageFromWikitext`).
   `isNoticeOrUtilityIcon` skips maintenance and construction badges, and URLs are normalised to `Special:FilePath`.
 - **Missing-file re-render** (`services/view-bundle.ts`, `mediaErrorRerenderDue`). A stored render in which MediaWiki
-  could not show a file (`mw:Error` on a media element: a missing-file link to `Special:Upload&wpDestFile=`, or "Error
-  creating thumbnail") counts as outdated once it is a day old, so a reader gets it at once, marked stale, while a
-  background render replaces it. Classic's own lookup of a Commons file can fail for one render and work for the next.
-  It fires only on a read: `wiki-render-stale`'s scan compares renderer versions only and never finds these pages. A
-  file that is really missing costs one render a day per page read, never a loop; a page that quotes such a link (a
-  `wpDestFile=` URL in a code sample) or whose markup carries `mw:Error` matches too, with the same bound.
+  could not show a file (`mw:Error` in a media element's `typeof`: a missing-file link whose `href` goes to
+  `Special:Upload&wpDestFile=`, or "Error creating thumbnail") counts as outdated once it is due, so a reader gets it at
+  once, marked stale, while a background render replaces it. Classic's own lookup of a Commons file can fail for one
+  render and work for the next. A first render (made within a day of the revision it renders, the page's current
+  revision time) is due a day after it was made; a later render that still could not show the file, or one whose
+  revision time is unknown, is due a week after. It fires only on a read: `wiki-render-stale`'s scan compares renderer
+  versions only and never finds these pages. A file that is really missing costs one render a week per page read,
+  never a loop. Only markup matches (the two attributes inside a tag), so page text that quotes `wpDestFile=` or
+  `mw:Error` never does.
 - **Main page** (`components/wiki-os/reader/WikiOSMainPage.tsx`). Two header layouts, `editorial-masthead` and
   `sculpted-emblem`, a featured-image hero, a daily rotation of statistics articles from
   `Category:Bureau of International Statistics`, and a shuffled deck of featured countries.

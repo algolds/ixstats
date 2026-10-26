@@ -198,12 +198,12 @@ async function readSharedView(head: ArticleViewHead): Promise<SharedView | null>
   const cached = (freshKey && viewCache.get(freshKey)) || viewCache.get(pendingViewKey(head));
   if (cached) return cached;
 
-  let loaded = head.htmlSyncedAt ? await loadViewBundle(head.id) : null;
+  let loaded = head.htmlSyncedAt ? await loadViewBundle(head.id, head.lastModified) : null;
   if (loaded?.outdated) {
     renderInBackground(head.id);
   } else if (!loaded?.htmlSyncedAt) {
     await ensureRendered(head.id, { waitMs: RENDER_WAIT_MS });
-    loaded = await loadViewBundle(head.id);
+    loaded = await loadViewBundle(head.id, head.lastModified);
   }
 
   if (loaded?.htmlSyncedAt && !loaded.outdated) {
