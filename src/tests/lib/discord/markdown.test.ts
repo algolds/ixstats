@@ -96,6 +96,23 @@ describe("Discord wiki embeds carry the source", () => {
     expect(markdown).toContain(String.raw`**Wiki Embed: ../\*x\***`);
   });
 
+  it.each([
+    // the XML parser keeps a newline written as a character reference; the regex fallback sees the newline itself
+    ["the XML path", "", "&#10;"],
+    ["the regex fallback", BROKEN, "\n"],
+  ])(
+    "a summary of several lines stays inside its quote, on one line, escaped like the title (%s)",
+    (_label, prefix, newline) => {
+      jest.spyOn(console, "warn").mockImplementation(() => undefined);
+      const summary = ["A *peace*.", "", "# Not a heading", "[x](y)"].join(newline);
+      const markdown = htmlToDiscordMarkdown(prefix + embed("iiwiki").replace("A peace.", summary));
+      const quoted = markdown.split("\n").filter((line) => line.includes("peace"));
+      expect(quoted).toEqual([String.raw`> A \*peace\*. # Not a heading \[x\]\(y\)`]);
+      expect(markdown).not.toMatch(/^# Not a heading/m);
+      jest.restoreAllMocks();
+    }
+  );
+
   it("a composer link to a sister page keeps its ?source= on the app URL", () => {
     expect(
       htmlToDiscordMarkdown('<p><a href="/wiki/Gallambria?source=iiwiki">G</a></p>')

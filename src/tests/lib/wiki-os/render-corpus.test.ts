@@ -284,6 +284,21 @@ describe("another wiki's page", () => {
     expect(fandom).toContain('href="https://althistory.fandom.com/wiki/Special:Search?search=x" rel="noreferrer"');
     expect(fandom).not.toContain("redlink");
   });
+
+  it("opens Fandom's blog, wall, board, thread and forum pages on Fandom, never in the reader", () => {
+    const fandom = transformArticleHtml(
+      '<div class="mw-parser-output"><p><a href="/wiki/User_blog:Kir/Post">b</a> <a href="/wiki/Message_Wall:Kir">w</a> ' +
+        '<a href="/wiki/Board_Thread:General/1">t</a> <a href="/wiki/Forum:Index">f</a></p></div>',
+      "",
+      "althistory"
+    ).contentHtml;
+
+    expect(fandom).toContain('href="https://althistory.fandom.com/wiki/User_blog:Kir/Post" rel="noreferrer"');
+    expect(fandom).toContain('href="https://althistory.fandom.com/wiki/Message_Wall:Kir" rel="noreferrer"');
+    expect(fandom).toContain('href="https://althistory.fandom.com/wiki/Board_Thread:General/1" rel="noreferrer"');
+    expect(fandom).toContain('href="https://althistory.fandom.com/wiki/Forum:Index" rel="noreferrer"');
+    expect(fandom).not.toContain("source=");
+  });
 });
 
 // ---------------------------------------------------------------------------------------------------------------

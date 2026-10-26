@@ -39,14 +39,16 @@ export interface WikiLinkTarget {
 
 /**
  * Namespaces WikiOS does not read as articles: files (`Image:` and `Media:` are `File:`'s aliases), special pages,
- * user, category, template, module, help and interface (`MediaWiki:`) pages, and every talk namespace, its name of
- * one word or several (`Alternate History talk:`). A link to one opens on that wiki's own site and gets no preview.
+ * user, category, template, module, help and interface (`MediaWiki:`) pages, Fandom's social namespaces (`User blog:`
+ * and its comments, `Message Wall:` and its greetings, `Board:`, `Board Thread:`, `Thread:`, `Topic:`, `Forum:`), and
+ * every talk namespace, its name of one word or several (`Alternate History talk:`). A link to one opens on that
+ * wiki's own site and gets no preview.
  * Matches a title (`User talk:Kir`) and a link path as written (`User_talk%3AKir`). Portals and project pages
  * (`Project:`, `IxWiki:`) are not here: the reader reads them as articles. A namespace needs its colon, so
  * `Media/Press` is an article.
  */
 export const SITE_NAMESPACE =
-  /^(?:file|image|media|special|user|category|template|module|help|mediawiki|talk|[a-z][a-z _]*[ _]talk)(?::|%3a)/iu;
+  /^(?:file|image|media|special|user|category|template|module|help|mediawiki|talk|user[ _]blog(?:[ _]comment)?|message[ _]wall(?:[ _]greeting)?|board(?:[ _]thread)?|thread|topic|forum|[a-z][a-z _]*[ _]talk)(?::|%3a)/iu;
 
 /** A title MediaWiki refuses: `.` or `..` as a whole `/` segment (a link to it would climb out of `/wiki/`). */
 const DOT_SEGMENT = /(?:^|\/)\.\.?(?:\/|$)/u;

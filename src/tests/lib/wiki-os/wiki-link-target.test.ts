@@ -267,6 +267,24 @@ describe("absoluteReaderTarget", () => {
     expect(absoluteReaderTarget("https:\\\\iiwiki.com/wiki/Gallambria")).toEqual(gallambria);
   });
 
+  it("a Fandom blog, wall, board, thread or forum page on AltHistory is in a site namespace: no preview, not moved", () => {
+    for (const title of [
+      "User_blog:Kir/Post",
+      "User_blog_comment:Kir/Post",
+      "Message_Wall:Kir",
+      "Board:General",
+      "Board_Thread:General/1",
+      "Thread:1234",
+      "Topic:Alternate_history",
+      "Forum:Index",
+    ]) {
+      // absoluteReaderTarget leaves the namespace to its caller (html-links), which keeps a site namespace's link
+      const target = absoluteReaderTarget(`https://althistory.fandom.com/wiki/${title}`);
+      expect(target && SITE_NAMESPACE.test(target.title)).toBe(true);
+      expect(wikiLinkTarget(`https://althistory.fandom.com/wiki/${title}`, BASE)).toBeNull();
+    }
+  });
+
   it("an althistory article", () => {
     expect(absoluteReaderTarget("https://althistory.fandom.com/wiki/Napoleon%27s_World#Map")).toEqual({
       wiki: "althistory",
@@ -426,6 +444,18 @@ describe("SITE_NAMESPACE", () => {
       "Talk:Foo",
       "Alternate History talk:Foo",
       "Alternate_History_talk%3AFoo",
+      // Fandom's social namespaces
+      "User blog:Kir/Post",
+      "User_blog:Kir/Post",
+      "User blog comment:Kir/Post/@comment-1",
+      "Message Wall:Kir",
+      "Message_Wall_Greeting:Kir",
+      "Board:General",
+      "Board Thread:General/@comment-1",
+      "Thread:1234",
+      "Topic:Alternate history",
+      "Forum:Index",
+      "forum%3AIndex",
     ]) {
       expect(SITE_NAMESPACE.test(title)).toBe(true);
     }
@@ -441,6 +471,9 @@ describe("SITE_NAMESPACE", () => {
       "Project:About",
       "Talking points",
       "Small talks",
+      "Forums of Rome",
+      "Threads:A novel",
+      "Boardwalk:Atlantic City",
     ]) {
       expect(SITE_NAMESPACE.test(title)).toBe(false);
     }

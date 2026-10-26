@@ -95,14 +95,15 @@ const escapeMarkdown = (text: string) => text.replace(MARKDOWN_CHARACTER, "\\$&"
  * A wiki embed: the page in the WikiOS reader on the app URL (`appUrl(wikiReaderPath)`, `?source=` for a sister wiki),
  * naming its wiki. A title that would climb out of `/wiki/` (`readerLinkPath`) is named with no link. The title is
  * escaped, and the URL carries `(` and `)` percent-encoded (`encodeURIComponent` leaves them), so neither can end the
- * link early.
+ * link early. The summary is escaped too, its whitespace collapsed to one line, so the `> ` quote holds all of it.
  */
 const wikiEmbedMarkdown = (title: string, summary: string, source: string) => {
   const wiki = parseWikiSource(source);
   const path = readerLinkPath(title, wiki);
   const url = path && appUrl(path).replaceAll("(", "%28").replaceAll(")", "%29");
   const name = url ? `[${escapeMarkdown(title)}](${url})` : escapeMarkdown(title);
-  return `\n**Wiki Embed: ${name}**\n*Source: ${WIKI_SOURCES[wiki].name}*\n> ${summary}\n`;
+  const quote = escapeMarkdown(summary.replace(/\s+/g, " ").trim());
+  return `\n**Wiki Embed: ${name}**\n*Source: ${WIKI_SOURCES[wiki].name}*\n> ${quote}\n`;
 };
 
 /** Markdown wrapping per element; tags not listed pass their children through. */
