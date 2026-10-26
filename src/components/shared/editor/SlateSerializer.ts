@@ -1,5 +1,5 @@
 // src/components/shared/editor/SlateSerializer.ts
-// Serializer for Slate AST to HTML, Slate AST to BBCode, and Parsoid HTML to Slate.
+// Serializer for Slate AST to HTML, and Parsoid HTML to Slate.
 
 import { Editor, Transforms, type Descendant } from "slate";
 import { getBasePath } from "~/lib/base-path";
@@ -68,26 +68,6 @@ function plainLinkHtml(url: string, children: string): string {
   return `<a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer">${children}</a>`;
 }
 
-/** A node as far as its text goes: a leaf's text, or an element's children. */
-interface TextTree {
-  text?: string;
-  children?: TextTree[];
-}
-
-/** The text of a node and its children, marks dropped. */
-function plainText(node: TextTree): string {
-  if (typeof node.text === "string") return node.text;
-  return (node.children ?? []).map(plainText).join("");
-}
-
-/**
- * Text for inside a BBCode tag: a zero-width space after each `[`, so no text (`x]y[/URL]z`, `[B]`) can close the
- * tag early or open another; it reads the same.
- */
-function bbcodeText(text: string): string {
-  return text.replaceAll("[", "[\u200B");
-}
-
 function escapeAttr(str: string): string {
   return str
     .replace(/&/g, "&amp;")
@@ -143,51 +123,6 @@ function serializeNode(node: any): string {
 
 export function slateNodesToHtml(nodes: any[]): string {
   return nodes.map((n: any) => serializeNode(n)).join("");
-}
-
-function serializeNodeToBbcode(node: any): string {
-  if (typeof node.text === "string") {
-    let text = node.text ?? "";
-    if (!text) return "";
-    if (node.bold) text = `[B]${text}[/B]`;
-    if (node.italic) text = `[I]${text}[/I]`;
-    if (node.underline) text = `[U]${text}[/U]`;
-    return text;
-  }
-
-  const children: string = (node.children || []).map((c: any) => serializeNodeToBbcode(c)).join("");
-
-  switch (node.type) {
-    case "wikiembed": {
-      const read = readerLinkPath(node.title || "", node.source);
-      return `\n[QUOTE="${node.title || "Wiki"}"]${node.summary || ""}\n${node.imageUrl ? `[IMG]${node.imageUrl}[/IMG]\n` : ""}${read ? `[URL=${read}]Read on Wiki[/URL]` : ""}[/QUOTE]\n`;
-    }
-    case "wikilink": {
-      const link = composerLinkHref(node.target || "", node.source);
-      const text = plainText(node) || node.target || "";
-      return link ? `[URL=${link.href}]${bbcodeText(text)}[/URL]` : children;
-    }
-    case "link":
-      return `[URL=${node.url || ""}]${children || node.url}[/URL]`;
-    case "img":
-      return `[IMG]${node.src || ""}[/IMG]`;
-    case "ul":
-      return `\n[LIST]\n${children}[/LIST]\n`;
-    case "ol":
-      return `\n[LIST=1]\n${children}[/LIST]\n`;
-    case "li":
-      return `[*]${children}\n`;
-    case "p":
-    default:
-      return `${children}\n\n`;
-  }
-}
-
-export function slateNodesToBbcode(nodes: any[]): string {
-  return nodes
-    .map((n: any) => serializeNodeToBbcode(n))
-    .join("")
-    .trim();
 }
 
 export function parsoidHtmlToSlate(htmlContent: string): any[] {

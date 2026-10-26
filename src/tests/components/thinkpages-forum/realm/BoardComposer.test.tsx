@@ -20,7 +20,7 @@ interface MockEditorProps {
   onBlur?: () => void;
   hideToolbar?: boolean;
   minHeight?: number;
-  onChange?: (html: string, plain: string, bbcode: string) => void;
+  onChange?: (html: string, plain: string) => void;
   placeholder?: string;
   disabled?: boolean;
   maxHeight?: number;
@@ -63,7 +63,7 @@ jest.mock(
             }
             const field = textarea.current;
             field.value += echo.normalise(text);
-            const report = () => reportRef.current?.(`<p>${field.value}</p>`, field.value, "");
+            const report = () => reportRef.current?.(`<p>${field.value}</p>`, field.value);
             if (echo.defer) queueMicrotask(report);
             else report();
           },
@@ -83,7 +83,7 @@ jest.mock(
           placeholder={placeholder}
           onFocus={onFocus}
           onBlur={onBlur}
-          onChange={(e) => onChange?.(`<p>${e.target.value}</p>`, e.target.value, "")}
+          onChange={(e) => onChange?.(`<p>${e.target.value}</p>`, e.target.value)}
         />
       );
     }

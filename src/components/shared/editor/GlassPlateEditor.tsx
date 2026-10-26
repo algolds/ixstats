@@ -1,6 +1,6 @@
 "use client";
 // src/components/shared/editor/GlassPlateEditor.tsx
-// Unified PlateJS Glass Editor supporting full mode, compact mode, and BBCode serialization.
+// Unified PlateJS Glass Editor supporting full mode and compact mode.
 
 import React, { useCallback, useImperativeHandle, useRef, useState, forwardRef } from "react";
 import dynamic from "next/dynamic";
@@ -11,13 +11,7 @@ import { ReactEditor } from "slate-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { EditorToolbar } from "./EditorToolbar";
-import {
-  slateNodesToHtml,
-  slateNodesToBbcode,
-  isMarkActive,
-  toggleMark,
-  toggleBlock,
-} from "./SlateSerializer";
+import { slateNodesToHtml, isMarkActive, toggleMark, toggleBlock } from "./SlateSerializer";
 import { POST_IMAGE_CLASSES } from "./postImageClasses";
 import { MentionMenuPortal } from "./MentionMenuPortal";
 import type { MentionSource } from "./mention-source";
@@ -39,12 +33,11 @@ export interface GlassPlateEditorRef {
   focusEnd: () => void;
   getContent: () => string;
   getPlainText: () => string;
-  getBbcode: () => string;
 }
 
 interface GlassPlateEditorProps {
   value?: string;
-  onChange?: (htmlContent: string, plainText: string, bbcode: string) => void;
+  onChange?: (htmlContent: string, plainText: string) => void;
   placeholder?: string;
   disabled?: boolean;
   onFocus?: () => void;
@@ -89,17 +82,6 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
     },
     ref
   ) => {
-    const handleValueChange = useCallback(
-      (html: string, plainText: string) => {
-        if (onChange) {
-          // oxlint-disable-next-line
-          const bbcode = slateNodesToBbcode(editor.children || []);
-          onChange(html, plainText, bbcode);
-        }
-      },
-      [onChange]
-    );
-
     const {
       editor,
       version: _version,
@@ -145,7 +127,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       handleSelectEmoji,
     } = useGlassPlateEditor({
       value,
-      onChange: handleValueChange,
+      onChange,
       onFocus,
       onBlur,
       onSubmit,
@@ -189,9 +171,6 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
             .map((n: any) => SlateNode.string(n))
             .join("\n")
             .trim();
-        },
-        getBbcode: () => {
-          return slateNodesToBbcode(editor.children || []);
         },
       }),
       [editor]

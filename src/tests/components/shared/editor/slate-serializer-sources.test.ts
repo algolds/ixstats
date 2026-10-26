@@ -1,12 +1,11 @@
 /**
- * Composer wiki links and embeds carry their wiki (`?source=`): HTML and BBCode name the reader path the link opens,
+ * Composer wiki links and embeds carry their wiki (`?source=`): the HTML names the reader path the link opens,
  * and the deserializer reads it back as the same node. A link reads back as a wiki link only when it is one the
  * composer writes; anything else (a query, an absolute URL, a namespace the reader does not read) stays a plain
  * link with its href unchanged, so editing a post never moves a link.
  */
 import {
   parsoidHtmlToSlate,
-  slateNodesToBbcode,
   slateNodesToHtml,
   wikiLinkElement,
   type WikiLinkElement,
@@ -148,12 +147,6 @@ describe("composer wiki links carry the source", () => {
     );
   });
 
-  it("an excluded page's BBCode links to its own wiki too", () => {
-    expect(slateNodesToBbcode(paragraph(link("User talk:Kir", "iiwiki", "talk")))).toBe(
-      `[URL=${publicArticleUrl("User talk:Kir", "iiwiki")}]talk[/URL]`
-    );
-  });
-
   it("an article (not excluded) writes the same HTML on every save", () => {
     const first = slateNodesToHtml(paragraph(link("Portal:Nations", "iiwiki", "P")));
     expect(first).toBe('<p><a href="/wiki/Portal%3ANations?source=iiwiki">P</a></p>');
@@ -173,7 +166,6 @@ describe("composer wiki links carry the source", () => {
   ])("a crafted title %p never writes a link out of /wiki/: only its text is kept", (target) => {
     const node = link(target, "iiwiki", "click");
     expect(slateNodesToHtml(paragraph(node))).toBe("<p>click</p>");
-    expect(slateNodesToBbcode(paragraph(node))).toBe("click");
   });
 
   it("a title such as Mr. Foo or ... is still a link", () => {
@@ -187,60 +179,6 @@ describe("composer wiki links carry the source", () => {
   });
 });
 
-describe("BBCode links carry the source", () => {
-  it("BBCode links carry the source", () => {
-    expect(slateNodesToBbcode(paragraph(link("Gallambria Republic", "iiwiki", "G")))).toBe(
-      "[URL=/wiki/Gallambria_Republic?source=iiwiki]G[/URL]"
-    );
-    expect(slateNodesToBbcode(paragraph(link("Port of Ixnay")))).toBe(
-      "[URL=/wiki/Port_of_Ixnay]Port of Ixnay[/URL]"
-    );
-  });
-
-  it.each([
-    ["the link text", "x", "x]y[/URL]z [B]b[/B]"],
-    ["the title shown when there is no text", "x]y[/URL]z", ""],
-  ])("%s cannot end the URL tag early or open another", (_label, target, text) => {
-    const bbcode = slateNodesToBbcode(paragraph(link(target, "iiwiki", text)));
-    expect(bbcode.match(/\[\/URL\]/g)).toHaveLength(1);
-    expect(bbcode.endsWith("[/URL]")).toBe(true);
-    expect(bbcode).not.toContain("[B]");
-    expect(bbcode.replaceAll("\u200B", "")).toContain("x]y[/URL]z");
-  });
-
-  it("marks inside a wiki link keep their text in BBCode", () => {
-    const node = {
-      type: "wikilink",
-      target: "Foo",
-      children: [{ text: "bold", bold: true }, { text: " plain" }],
-    };
-    expect(slateNodesToBbcode(paragraph(node))).toBe("[URL=/wiki/Foo]bold plain[/URL]");
-  });
-
-  it("a BBCode link with no text shows its title", () => {
-    expect(slateNodesToBbcode(paragraph(link("Timeline", "althistory", "")))).toBe(
-      "[URL=/wiki/Timeline?source=althistory]Timeline[/URL]"
-    );
-  });
-
-  it("an embed's Read on Wiki link carries the source", () => {
-    const embed = {
-      type: "wikiembed",
-      title: "Pax Atomica",
-      summary: "A peace.",
-      imageUrl: "",
-      source: "althistory",
-      children: [{ text: "" }],
-    };
-    expect(slateNodesToBbcode([embed])).toContain(
-      "[URL=/wiki/Pax_Atomica?source=althistory]Read on Wiki[/URL]"
-    );
-    expect(slateNodesToBbcode([{ ...embed, source: "ixwiki" }])).toContain(
-      "[URL=/wiki/Pax_Atomica]Read on Wiki[/URL]"
-    );
-  });
-});
-
 describe("a stored node never writes raw text into a link", () => {
   it("a wiki link whose stored source the reader does not know writes IxWiki's path", () => {
     const node = {
@@ -250,14 +188,6 @@ describe("a stored node never writes raw text into a link", () => {
       children: [{ text: "x" }],
     };
     expect(slateNodesToHtml(paragraph(node))).toBe('<p><a href="/wiki/Foo">x</a></p>');
-    expect(slateNodesToBbcode(paragraph(node))).toBe("[URL=/wiki/Foo]x[/URL]");
-  });
-
-  it("an embed whose title would climb out of /wiki/ keeps its quote but drops the Read on Wiki link", () => {
-    const embed = { type: "wikiembed", title: "..", summary: "s", source: "iiwiki", children: [] };
-    const bbcode = slateNodesToBbcode([embed]);
-    expect(bbcode).toBe('[QUOTE=".."]s\n[/QUOTE]');
-    expect(bbcode).not.toContain("[URL");
   });
 
   it("an embed's stored source the reader does not know serializes as IxWiki's", () => {
