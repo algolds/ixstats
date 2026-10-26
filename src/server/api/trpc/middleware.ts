@@ -166,7 +166,7 @@ const ownerMiddleware = (grant?: CountryGrant) =>
 export const countryOwnerMiddleware = ownerMiddleware();
 export const mapFeatureOwnerMiddleware = ownerMiddleware(unclaimedNationOfMapEditor);
 
-interface RateLimitOptions {
+export interface RateLimitOptions {
   max: number;
   windowMs: number;
   /** Bucket name; `perProcedure` gives each procedure its own bucket under this prefix. */
@@ -174,38 +174,47 @@ interface RateLimitOptions {
   perProcedure?: boolean;
 }
 
+/**
+ * Counts one call of `path` by `identifier` against the bucket `options` names; throws RateLimitError past its limit.
+ * For a procedure whose limit depends on its input (call it from a `.use()` after `.input()`); otherwise use
+ * `createRateLimitMiddleware`.
+ */
+export async function enforceRateLimit(
+  identifier: string,
+  path: string,
+  options: RateLimitOptions
+): Promise<void> {
+  if (!rateLimiter.isEnabled()) return;
+
+  const base = options.namespace || "default";
+  const namespace = options.perProcedure ? `${base}:${path}` : base;
+
+  const result = await rateLimiter.check(identifier, namespace, {
+    maxRequests: options.max,
+    windowMs: options.windowMs,
+  });
+
+  if (!result.success) {
+    console.warn(
+      `[RATE_LIMIT] ${identifier} exceeded ${options.max} requests per ${options.windowMs}ms limit for ${path} (namespace: ${namespace})`
+    );
+    throw new RateLimitError(
+      `Too many requests. Maximum ${options.max} requests per ${options.windowMs / 1000} seconds. Try again at ${result.resetAt.toISOString()}`,
+      result.resetAt
+    );
+  }
+
+  const warningThreshold = Math.max(5, Math.floor(options.max * 0.2));
+  if (result.remaining < warningThreshold) {
+    console.warn(
+      `[RATE_LIMIT] ${identifier} on ${path}: ${result.remaining} of ${options.max} requests remaining (namespace: ${namespace})`
+    );
+  }
+}
+
 export const createRateLimitMiddleware = (options: RateLimitOptions) => {
   return t.middleware(async ({ ctx, next, path }) => {
-    if (!rateLimiter.isEnabled()) {
-      return next();
-    }
-
-    const identifier = ctx.rateLimitIdentifier;
-    const base = options.namespace || "default";
-    const namespace = options.perProcedure ? `${base}:${path}` : base;
-
-    const result = await rateLimiter.check(identifier, namespace, {
-      maxRequests: options.max,
-      windowMs: options.windowMs,
-    });
-
-    if (!result.success) {
-      console.warn(
-        `[RATE_LIMIT] ${identifier} exceeded ${options.max} requests per ${options.windowMs}ms limit for ${path} (namespace: ${namespace})`
-      );
-      throw new RateLimitError(
-        `Too many requests. Maximum ${options.max} requests per ${options.windowMs / 1000} seconds. Try again at ${result.resetAt.toISOString()}`,
-        result.resetAt
-      );
-    }
-
-    const warningThreshold = Math.max(5, Math.floor(options.max * 0.2));
-    if (result.remaining < warningThreshold) {
-      console.warn(
-        `[RATE_LIMIT] ${identifier} on ${path}: ${result.remaining} of ${options.max} requests remaining (namespace: ${namespace})`
-      );
-    }
-
+    await enforceRateLimit(ctx.rateLimitIdentifier, path, options);
     return next();
   });
 };

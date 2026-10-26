@@ -385,3 +385,67 @@ describe("a search across all wikis is best effort", () => {
     ).rejects.toMatchObject({ cause: expect.any(WikiUnavailableError) });
   });
 });
+
+// One anonymous client cannot drain the budget WikiOS's readers share on a sister wiki's host (240 a minute per
+// process): a search or an intro that reads a sister wiki counts against that caller's bucket of its own
+// (`SISTER_CALLER_LIMITS`), and past it the call is TOO_MANY_REQUESTS before anything leaves for the wiki. IxWiki's
+// own reads are not counted there.
+describe("per-caller limits on sister reads", () => {
+  let checked: Array<[string, { maxRequests: number; windowMs: number }]>;
+  let allow: boolean;
+
+  beforeEach(async () => {
+    const { rateLimiter } = await import("~/lib/cache");
+    checked = [];
+    allow = true;
+    jest.spyOn(rateLimiter, "isEnabled").mockReturnValue(true);
+    jest.spyOn(rateLimiter, "check").mockImplementation((async (
+      _id: string,
+      namespace: string,
+      options: { maxRequests: number; windowMs: number }
+    ) => {
+      checked.push([namespace, options]);
+      return { success: allow, remaining: allow ? 20 : 0, resetAt: new Date(now + 60_000) };
+    }) as never);
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it("a search of one sister or of all wikis counts against sistersearch (30 a minute); an IxWiki search does not", async () => {
+    answers = { iiwiki: opensearch(["Bashan"]), althistory: opensearch([]) };
+    // IxWiki's own search reads the shadow index first: none here
+    Object.assign(db, { $queryRawUnsafe: jest.fn(async () => []) });
+    await search().search({ query: "Bashan", wikiSource: "iiwiki" });
+    await search().search({ query: "Bashan", wikiSource: "all" });
+    await search().search({ query: "Bashan", wikiSource: "ixwiki" });
+
+    expect(checked).toEqual([
+      ["sistersearch", { maxRequests: 30, windowMs: 60_000 }],
+      ["sistersearch", { maxRequests: 30, windowMs: 60_000 }],
+    ]);
+  });
+
+  it("a sister intro counts against sisterintro (60 a minute); an IxWiki intro does not", async () => {
+    answers.iiwiki = () => Response.json({ query: { pages: { "-1": { missing: "" } } } });
+    const caller = createCallerFactory(wikiosPageContentRouter)(visitor());
+    await caller.getIntro({ title: "Nowhere", wiki: "iiwiki" });
+    await caller.getIntro({ title: "Nowhere", wiki: "ixwiki" }).catch(() => undefined);
+
+    expect(checked).toEqual([["sisterintro", { maxRequests: 60, windowMs: 60_000 }]]);
+  });
+
+  it("past the limit a sister search or intro is TOO_MANY_REQUESTS and asks the wiki nothing", async () => {
+    allow = false;
+    const searchInput = { query: "Bashan", wikiSource: "althistory" };
+    const introInput = { title: "Bashan", wiki: "althistory" };
+
+    expect(await clientErrorOf(wikiosSearchRouter, "search", searchInput, visitor())).toMatchObject({
+      status: 429,
+      code: "TOO_MANY_REQUESTS",
+    });
+    expect(
+      await clientErrorOf(wikiosPageContentRouter, "getIntro", introInput, visitor())
+    ).toMatchObject({ status: 429, code: "TOO_MANY_REQUESTS" });
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});

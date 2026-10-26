@@ -7,6 +7,7 @@
 import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
+  enforceRateLimit,
   publicProcedure,
   rateLimitedPublicProcedure,
   wikiReadProcedure,
@@ -41,6 +42,7 @@ import { assertTitleVisible, canSeeDeletedPages, visibleTitles } from "~/lib/wik
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 import { downloadMedia } from "~/lib/wiki-os/services/media-download";
 import { readVisiblePage } from "~/lib/wiki-os/services/visible-page";
+import { SISTER_CALLER_LIMITS } from "./search";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
@@ -305,7 +307,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
   /**
    * Get intro with backward compatible input signature { title, wiki }. Another wiki that cannot be reached is
    * SERVICE_UNAVAILABLE (WikiUnavailableError); a page it does not have is an empty intro, `missing`. Only an IxWiki
-   * title goes through IxWiki's redirects: a sister wiki follows its own (`readSisterWikitext`).
+   * title goes through IxWiki's redirects: a sister wiki follows its own (`readSisterWikitext`). A sister wiki's
+   * intro counts against the caller's `SISTER_CALLER_LIMITS.intro` (TOO_MANY_REQUESTS past it).
    */
   getIntro: publicProcedure
     .input(
@@ -314,6 +317,12 @@ export const wikiosPageContentRouter = createTRPCRouter({
         wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
       })
     )
+    .use(async ({ ctx, input, path, next }) => {
+      if (input.wiki !== "ixwiki") {
+        await enforceRateLimit(ctx.rateLimitIdentifier, path, SISTER_CALLER_LIMITS.intro);
+      }
+      return next();
+    })
     .query(async ({ input, ctx }) => {
       const cleanTitle = input.title.replace(/_/g, " ").trim();
       const resolvedTitle =

@@ -2,8 +2,8 @@
 // `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
 //
 // `wikios.sisterEmbed` (routers/wikios/sister.ts): the live embed behind a `Template:Sister` box, for anyone who can
-// read the page. It takes only a wiki WikiOS reads (never IxWiki) and a title MediaWiki could hold, shares the
-// `sisterwiki` rate-limit bucket, and hands the request to `getSisterEmbed`. A wiki that cannot be reached reaches the
+// read the page. It takes only a wiki WikiOS reads (never IxWiki) and a title MediaWiki could hold, has a rate-limit
+// bucket of its own per caller (`sisterembed`), and hands the request to `getSisterEmbed`. A wiki that cannot be reached reaches the
 // client as SERVICE_UNAVAILABLE through the tRPC formatter.
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({ __esModule: true, db: {}, isDatabaseReadOnly: true }));
@@ -121,6 +121,24 @@ describe("wikios.sisterEmbed", () => {
       code: "SERVICE_UNAVAILABLE",
       message: "IIWiki could not be reached just now.",
     });
+  });
+
+  it("each caller has a bucket of its own for it: sisterembed, 30 a minute (a page holds at most 10 embeds)", async () => {
+    const { rateLimiter } = await import("~/lib/cache");
+    jest.spyOn(rateLimiter, "isEnabled").mockReturnValue(true);
+    const check = jest
+      .spyOn(rateLimiter, "check")
+      .mockResolvedValue({ success: true, remaining: 20, resetAt: new Date() } as never);
+    try {
+      await caller().sisterEmbed({ wiki: "iiwiki", title: "Caphiria" });
+      expect(check).toHaveBeenCalledTimes(1);
+      expect(check).toHaveBeenCalledWith(expect.anything(), "sisterembed", {
+        maxRequests: 30,
+        windowMs: 60_000,
+      });
+    } finally {
+      jest.restoreAllMocks();
+    }
   });
 
   it("is merged into the wikios router", () => {

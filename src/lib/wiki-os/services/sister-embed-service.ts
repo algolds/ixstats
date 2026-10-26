@@ -17,7 +17,7 @@
  * (`headingKey`) is one entry. A wiki that cannot be reached throws WikiUnavailableError, which is never cached. The
  * cache is an LRU bounded in bytes (`EMBED_CACHE_BYTES`, 32 MB, each entry counted at two bytes a character of its
  * JSON and key plus 256), and an HTML part holds at most `MAX_EMBED_HTML_CHARS`. The page cap (`MAX_SISTER_EMBEDS`) is the reader's: this server cannot tell which page
- * asks, so a client that skips it is bounded by the `sisterwiki` rate limit per caller (120 a minute), this cache and
+ * asks, so a client that skips it is bounded by its own rate limit per caller (30 a minute), this cache and
  * single flight per embed, and the per-host guard (8 in flight, 240 a minute) on everything that leaves for the wiki.
  *
  * Server only: it calls the sister wikis.

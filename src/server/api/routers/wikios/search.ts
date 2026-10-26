@@ -6,7 +6,12 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure, createRateLimitMiddleware } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  createRateLimitMiddleware,
+  enforceRateLimit,
+} from "~/server/api/trpc";
 import {
   searchPages,
   getRecentChanges,
@@ -32,6 +37,20 @@ import { wikiSourceSchema } from "./_shared";
 export const sisterWikiProcedure = publicProcedure.use(
   createRateLimitMiddleware({ max: 120, windowMs: 60_000, namespace: "sisterwiki" })
 );
+
+/**
+ * Per-caller limits, each its own bucket, on the reads an anonymous client can point at a sister wiki, so no one
+ * client drains the budget WikiOS's readers share on that wiki's host (`lane: "wikios"`, 240 a minute per process,
+ * upstream-guard.ts). The rule: a limit times the most upstream calls one request makes stays at a quarter of that
+ * budget or less. A search sends one opensearch per sister host ("all" included): 30. An intro, a hover preview,
+ * reads one page's wikitext: 60. An embed reads the wikitext and its parse on a miss: 30 (2 calls each, so 60), and a
+ * page holds at most 10 embeds.
+ */
+export const SISTER_CALLER_LIMITS = {
+  search: { max: 30, windowMs: 60_000, namespace: "sistersearch" },
+  intro: { max: 60, windowMs: 60_000, namespace: "sisterintro" },
+  embed: { max: 30, windowMs: 60_000, namespace: "sisterembed" },
+} as const;
 
 /** A sister wiki's answers are reused for 5 minutes. */
 export const SISTER_CACHE_TTL_MS = 300_000;
@@ -99,7 +118,8 @@ export const wikiosSearchRouter = createTRPCRouter({
    * Supports multi-wiki search: specify a single source or "all" to query
    * ixwiki, iiwiki, and althistory in parallel. A single sister wiki that cannot be reached throws
    * WikiUnavailableError (SERVICE_UNAVAILABLE), never an empty list; "all" is best effort, so an unreachable
-   * sister only leaves its results out.
+   * sister only leaves its results out. A search that reads a sister wiki (one or "all") counts against the caller's
+   * `SISTER_CALLER_LIMITS.search` (TOO_MANY_REQUESTS past it).
    */
   search: publicProcedure
     .input(
@@ -109,6 +129,12 @@ export const wikiosSearchRouter = createTRPCRouter({
         wikiSource: z.enum(["ixwiki", "iiwiki", "althistory", "all"]).optional().default("ixwiki"),
       })
     )
+    .use(async ({ ctx, input, path, next }) => {
+      if (input.wikiSource !== "ixwiki") {
+        await enforceRateLimit(ctx.rateLimitIdentifier, path, SISTER_CALLER_LIMITS.search);
+      }
+      return next();
+    })
     .query(async ({ input }) => {
       const { query, limit, wikiSource } = input;
 

@@ -10,7 +10,7 @@ export { createTRPCContext } from "./context";
 export { createCallerFactory, createTRPCRouter, mergeRouters } from "./init";
 
 // Middlewares
-export { createRateLimitMiddleware, userCacheMiddleware } from "./middleware";
+export { createRateLimitMiddleware, enforceRateLimit, userCacheMiddleware } from "./middleware";
 
 // Procedure builders
 export {
