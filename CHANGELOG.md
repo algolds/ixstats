@@ -10,11 +10,11 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased] — `rose-garden` (1.5)
 
-Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the WikiOS launch hardening, 2026-10-24 → 10-25) is
+Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the WikiOS launch hardening, 2026-10-24 → 10-26) is
 listed first, then the Cards mark and trophy art (2026-10-24), then the ThinkPages forum refresh (2026-10-17), then realm nations (2026-10-15), then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
 work. The version registry (`src/lib/buildVersion.ts`) reads 1.5.0 (the Vault collectathon hub below); the next release candidate is not cut yet.
 
-### 📖 WikiOS launch hardening (2026-10-24 → 10-25)
+### 📖 WikiOS launch hardening (2026-10-24 → 10-26)
 
 No version or capability integer moves (owner to confirm).
 
@@ -59,8 +59,8 @@ is deployed; WikiOS editing launches with WikiOS v1.
     recurring profile, and checks them against `scripts/audit/wikios-proof-thresholds.json`.
   - The weekly `wikios-proof` cron job runs it on the server. Every deploy refuses a release whose WikiOS code has no
     committed passing proof ([docs/audits/wikios-proof/](docs/audits/wikios-proof/README.md)). The local proof passed
-    on 2026-10-26: 12,706 of 12,706 pages byte-identical through the editor, and 99.2% of a 497-page parity sample at
-    98 or more (mean 99.88, none below 70). The bench's gated run is the launch run.
+    on 2026-10-26: 12,706 of 12,706 pages byte-identical through the editor, and 99.2% of the 495 scored pages (of a
+    497-page parity sample) at 98 or more (mean 99.88, none below 70). The bench's gated run is the launch run.
   - A render in which MediaWiki could not show a file (a missing-file link or a failed thumbnail, which classic's
     Commons lookup can produce for one render and not the next) is rendered again once it is a day old.
   - The unreachable Margin Inspect tab and a stray log line are gone.

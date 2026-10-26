@@ -22,8 +22,9 @@ IxWorld (port 3002) is untouched.
 
 **Order matters.** Run the launch steps by hand, one at a time, in this order:
 
-- 0, 1, 1b, 1c.
-- Before step 2's deploy: step 4's loopback server and its env line, and step 6a's app URL check (step 2 says why).
+- 0, then 0b (owner-approved: it moves the checkout to the release, whose files steps 1, 1b and 4 run), then 1, 1b, 1c.
+- Before step 2's deploy: step 4's loopback server and its env line, step 6a's app URL check and the `ixstats-cron`
+  job list (step 2 says why).
 - 2, then 2a.
 - 3 (3a to 3e), then step 4's bot-login check, which needs 3c.
 - 4b, 4c (its proxy check waits for 6b), 4d.
@@ -199,7 +200,8 @@ docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 -
   wait instead, set `SKIP_MEDIAWIKI_SYNC=true` (then `pm2 restart ixstats-cron --update-env` and
   `pm2 restart "$IXAPP" --update-env`) or drop `wiki-mirror` from `CRON_ENABLED_JOBS`.
 
-Files the launch installs (all in the IxStats checkout, `/ixwiki/public/projects/ixstats/`, which step 2 deploys):
+Files the launch installs (all in the IxStats checkout, `/ixwiki/public/projects/ixstats/`, which step 0b brings to the
+release and step 2 deploys):
 
 | File | Installed as | Step |
 |------|--------------|------|
@@ -270,7 +272,7 @@ serves only the deferred takeover. Its table is in the deferred section.
 
 ```bash
 IX=/ixwiki/public/projects/ixstats
-git -C "$IX" log -1 --oneline   # the release that contains plan 417 and the WikiOS plans it depends on
+git -C "$IX" log -1 --oneline   # the commit running now; step 0b moves the checkout to the release
 df -h /                         # need several GB free: a full root disk takes Postgres down
 
 TS=$(date +%Y%m%d-%H%M%S)
@@ -291,6 +293,42 @@ mkdir -p /ixwiki/private/logs/wikios-cutover
 
 The baseline is for comparing the server a day after the launch: run the same block again into `after.txt` and
 `diff` the two. **Rollback:** nothing changed.
+
+## 0b. Bring the checkout to the release (owner-approved, no build)
+
+Steps 1, 1b and 4 run files from `$IX` that only the release has (step 1's SQL, step 1b's rights import, step 4's
+nginx file), but only step 2's deploy moves the checkout. So the checkout moves to the release here, as the deploy
+moves it (`scripts/deploy-production.sh`: fetch, `reset --hard`, `bun install --frozen-lockfile`, `bun run db:generate`),
+with nothing else the deploy does: no `bun run clean`, no build, no migration, no PM2 reload. Ask the owner before
+running it: from here to step 2 the checkout holds code that is not running.
+
+- **IxStates keeps running its old build.** `.next` is not touched (only the deploy's `bun run clean` removes it), and
+  what the app has loaded stays loaded, though a module it loads for the first time comes from the new `node_modules`.
+  Keep the time from here to step 2 to one sitting. The other apps of `ecosystem.config.cjs` (websockets, sync) keep the
+  code they loaded at start.
+- **`ixstats-cron` stops until step 2.** The runner imports a job's module the first time the job runs, so a running
+  `ixstats-cron` would load the release's job code against the old schema. No scheduled job runs from here to step 2's
+  PM2 reload, which starts it again; each job runs at its next slot after that.
+
+```bash
+B=$(git -C "$IX" branch --show-current); echo "$B"            # master: the deploy refuses any other branch
+git -C "$IX" status --short                                  # empty, or ask the owner: reset --hard drops a changed tracked file, the deploy's clean -fd an untracked one
+git -C "$IX" rev-parse HEAD | tee "$BK/previous-release.sha"  # the commit running now, for the rollback
+git -C "$IX" fetch master "$B"                               # the deploy's own fetch
+git -C "$IX" log -1 --oneline FETCH_HEAD                     # the release: the owner confirms it before the reset
+git -C "$IX" rev-parse FETCH_HEAD | tee "$BK/release.sha"
+pm2 stop ixstats-cron
+git -C "$IX" reset --hard "$(cat "$BK/release.sha")"
+( cd "$IX" && bun install --frozen-lockfile && bun run db:generate )
+git -C "$IX" log -1 --oneline                                # the release
+```
+
+**Rollback (before step 2):** put the checkout back on the commit that is running and start the runner again:
+`git -C "$IX" reset --hard "$(cat "$BK/previous-release.sha")"`, then
+`( cd "$IX" && bun install --frozen-lockfile && bun run db:generate )`, then
+`( cd "$IX" && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save`. The old build was never
+removed, so nothing needs building. Step 1's SQL, if it ran, is additive and the old code ignores it. After step 2, use
+step 2's rollback instead.
 
 ## 1. Apply the WikiOS SQL migrations
 
@@ -441,48 +479,74 @@ get `sessionsecretmissing` again and nothing else changes.
 **Before this deploy (launch time), when the release carries the integration and hosts work (plan 2026-10-25):**
 
 1. Step 4's loopback server and its `WIKIOS_MEDIAWIKI_INTERNAL_URL` line. They use plan 417's files, which the checkout
-   already holds (step 0). Step 4's bot-login check needs step 3c, so run that check after step 3. Without the variable,
+   holds since step 0b. Step 4's bot-login check needs step 3c, so run that check after step 3. Without the variable,
    production renders nothing through MediaWiki: forum posts, template previews and revision views are compiled locally
    until it is set ("Before the launch" above).
 2. Step 6a's app URL check. `NEXT_PUBLIC_APP_URL` is written into the build, so a value fixed after the build needs
    this deploy again, not only a restart.
-3. The two read-only checks of the WikiOS proof check, below.
+3. The read-only checks of the WikiOS proof check, below.
+4. The `ixstats-cron` job list. The deploy's PM2 reload (`pm2 startOrReload ecosystem.config.cjs --update-env`) starts
+   `ixstats-cron` with the `CRON_ENABLED_JOBS` of `ecosystem.config.cjs`, and `"*"` there enables every job of this
+   release, `wikios-proof`, `wiki-mirror` and `wiki-render-stale` among them, long before steps 6b and 7e want them.
+   Replace a `"*"` with the explicit list (the reload reads the file, so no restart here):
+
+   ```bash
+   grep -n 'CRON_ENABLED_JOBS' "$IX/ecosystem.config.cjs"     # an explicit list: nothing to do. "*": the next three lines
+   # every job of this release but those three, as the list to put in place of "*"
+   grep -oE '^\s+name: "[a-z0-9-]+"' "$IX/src/server/cron/jobs.ts" | sed -E 's/.*"(.*)"/\1/' \
+     | grep -vxE 'wikios-proof|wiki-mirror|wiki-render-stale' | paste -sd, -
+   bk "$IX/ecosystem.config.cjs" ecosystem.config.cjs.2
+   "${EDITOR:-nano}" "$IX/ecosystem.config.cjs"               # CRON_ENABLED_JOBS: "<the printed list>"
+   ```
+
+   **Rollback:** `sudo cp -a "$BK/ecosystem.config.cjs.2" "$IX/ecosystem.config.cjs"`, then restart `ixstats-cron` from
+   the file (Conventions).
 
 **The WikiOS proof check (launch time).** The deploy runs `bun scripts/audit/wikios-proof.ts predeploy` right after
 `db:generate`, before its database backup and before any migration or `db push`
 ([the proof's README](../audits/wikios-proof/README.md)). It takes the `wikios-proof` job lease, checks that
 `docs/audits/wikios-proof/latest.json` is a clean, passing proof of this release's WikiOS files (its tree key), and runs
 the editor round trip over every page of the production database (about 15 seconds). It prints one line per check,
-`ok   <check>: ...` or `FAIL <check>: ... Fix: ...`, and the deploy stops on any `FAIL`. A refused deploy changes
-nothing: the check runs before the backup, reads only, and gives its lease back. Its reports are `predeploy-<stamp>.json`
-and `.txt`, in `$IX/.bench-out/proof` until step 7e sets `WIKIOS_PROOF_DIR`, and in `/ixwiki/private/logs/wikios-proof`
-after.
+`ok   <check>: ...` or `FAIL <check>: ... Fix: ...`, and the deploy stops on any `FAIL`. A refused deploy changes no
+data: the check runs before the backup and every migration, reads only, and gives its lease back. It has changed the
+checkout, though: by then the deploy has reset it to the release (`reset --hard`, `clean -fd`), removed the previous
+build (`bun run clean` deletes `.next`), installed the release's dependencies and generated its Prisma client. The
+running IxStates keeps serving what it has loaded, but do not restart it until a deploy has built again. Its reports
+are `predeploy-<stamp>.json` and `.txt`, in `$IX/.bench-out/proof` until step 7e sets `WIKIOS_PROOF_DIR`, and in
+`/ixwiki/private/logs/wikios-proof` after.
 
 Read first (read-only, besides the fetch, which the deploy runs anyway and which changes no file of the checkout):
 
 ```bash
 B=$(git -C "$IX" branch --show-current); echo "$B"       # the branch the deploy fetches (master)
 git -C "$IX" fetch master "$B"                           # the deploy's own fetch (scripts/deploy-production.sh): moves FETCH_HEAD only
+[ "$(git -C "$IX" rev-parse FETCH_HEAD)" = "$(cat "$BK/release.sha")" ] && echo "the release of step 0b" || echo "master moved since step 0b: stop and ask the owner"
 git -C "$IX" show FETCH_HEAD:docs/audits/wikios-proof/latest.json | jq '{profile, passed, dirty, commit, treeKey}'
 git -C "$IX" show FETCH_HEAD:scripts/audit/wikios-proof-thresholds.json | jq '.roundTrip.minPages'    # the page floor
 # the columns the round trip reads: id, source, namespace, title, wikitext
 docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
   "select count(id) as pages, count(*) filter (where namespace = 0) as articles, count(wikitext) as with_text
      from wiki_articles where source = 'ixwiki' and title is not null"
+# the table the check's lease lives in: job_leases, or empty when production predates it (2026-10-05)
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -c "select to_regclass('public.job_leases')"
 ```
 
 - **`latest.json`** must show `profile` `local` or `launch`, `passed` true and `dirty` false. A `fatal: path ... does
   not exist` means the release carries no proof, and the deploy would refuse it: stop and tell the owner. The deploy
   compares the tree key itself.
-- **The query prints counts and `pages` is at or above the floor:** deploy as usual (below).
-- **The query errors with `column "..." does not exist`:** production's `wiki_articles` is older than this release's
-  schema (the 2026-09-03 database lacks a column the check reads), and the deploy's own `db push` adds it only after the
-  check. This is the one case for the override, and only for this first launch deploy:
-  `( cd "$IX" && WIKIOS_PROOF_OVERRIDE=1 bun run deploy:prod )`. Every failing line then starts
-  `WIKIOS PROOF OVERRIDDEN:`. Expect only `harness.roundtrip` and `roundTrip.*` lines among them; if `proof.committed` or
-  `proof.lease` is there too, tell the owner at once. After the deploy, run the query again: it must print counts now.
-  Step 7e's launch proof then runs the full round trip on the pushed database. Never set the override because a deploy
-  was refused without first reading which check failed.
+- **The query prints counts, `pages` is at or above the floor and `to_regclass` prints `job_leases`:** deploy as usual
+  (below).
+- **The query errors with `column "..." does not exist`, or `to_regclass` prints an empty value:** production's database
+  is older than this release's schema. The 2026-09-03 `wiki_articles` lacks a column the round trip reads, and a database
+  from before 2026-10-05 (commit `57c2feb14`) has no `job_leases` table, so the check cannot take its lease; the deploy's
+  own `db push` adds both only after the check. This is the one case for the override, and only for this first launch
+  deploy: `( cd "$IX" && WIKIOS_PROOF_OVERRIDE=1 bun run deploy:prod )`. Every failing line then starts
+  `WIKIOS PROOF OVERRIDDEN:`. The expected ones: `proof.lease` saying `could not take the lease` and that `job_leases`
+  does not exist, when `to_regclass` was empty; `harness.roundtrip` and `roundTrip.*`, when the query errored. Any other
+  overridden line (`proof.committed`, or a `proof.lease` that says something else) went past a check this case does not
+  explain: tell the owner at once. After the deploy, run the query and `to_regclass` again: they must print counts and `job_leases` now. Step 7e's
+  launch proof then runs the full round trip on the pushed database. Never set the override because a deploy was
+  refused without first reading which check failed.
 - **`pages` is below the floor:** every deploy and every weekly run would fail `roundTrip.pages`. Stop and ask the
   owner; do not override.
 
@@ -519,6 +583,10 @@ A hit means a process started without the variable: fix the env file (step 4) an
 
 The release arrives with `WIKIOS_V1_ENABLED` off (see "Before the launch"); leave it off until step 6b. If `db push`
 stops on the unique-constraint prompt, run `bun run db:push:force` by hand and answer yes, then run the deploy again.
+
+`ixstats-cron`, stopped since step 0b, is started again by the deploy's PM2 reload. Check it (read-only):
+`pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.status'` prints `online`; if it prints `stopped`,
+restart it from the file (Conventions).
 
 This also runs `deploy-ixworld.sh`. WikiOS is part of IxStates at this launch, so this deploy is WikiOS's deploy as
 well, and every later IxStates release carries its WikiOS code the same way.
@@ -1345,7 +1413,7 @@ grep -q '^WIKIOS_V1_ENABLED=' "$IX/.env.production.local" || ( umask 077; printf
 grep -c '^WIKIOS_V1_ENABLED=true$' "$IX/.env.production.local"          # expect 1
 # the cron jobs the launch needs (step 7b explains the render backlog): wiki-mirror, wiki-render-stale, wiki-recentchanges
 bk "$IX/ecosystem.config.cjs" ecosystem.config.cjs.6b
-grep -n 'CRON_ENABLED_JOBS' "$IX/ecosystem.config.cjs"             # the ixstats-cron list; skip the edit if it is "*" or names all three
+grep -n 'CRON_ENABLED_JOBS' "$IX/ecosystem.config.cjs"             # the ixstats-cron list (explicit since step 2, never "*"); skip the edit if it names all three
 "${EDITOR:-nano}" "$IX/ecosystem.config.cjs"                       # add whichever of the three is missing
 # restart from the file, so ixstats-cron reads the new list and the env line above
 ( cd "$IX" && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save
@@ -1531,7 +1599,16 @@ only once every page has rendered; how fast that happens depends on which kind o
 | Page is | Served meanwhile | Rendered by | Rate |
 |---------|------------------|-------------|------|
 | **never rendered**, or stale (`"htmlSyncedAt"` NULL; step 1's `rendered-view.sql` marks every row without a bundle so) | the reader waits up to 6 s for its render, else a locally compiled fallback marked stale | the first reader, a save, or the `wiki-render-stale` job (every minute, oldest first) | **20 per minute** |
-| **outdated**: its bundle was built by another renderer version (`RENDERER_VERSION` = transform version + sanitizer fingerprint; this release changes it, and so does any later sanitizer change or the `WIKIOS_TEMPLATESTYLES` lever, step 10c) | at once, the old bundle re-sanitized by the current rules and marked stale; a reader's visit also queues its background render | `wiki-render-stale` (one scan per process finds the backlog, at the first batch with room, so a minute or so after `ixstats-cron` starts) and readers' background renders | up to **60 per minute** when no never-rendered page is waiting; otherwise what is left of the 20 |
+| **outdated**: its bundle was built by another renderer version (`RENDERER_VERSION` = transform version + sanitizer fingerprint; this release changes it, and so does any later sanitizer change or the `WIKIOS_TEMPLATESTYLES` lever, step 10c); or, on a read only, its render a day or more ago could not show a file (below) | at once, the old bundle re-sanitized by the current rules and marked stale; a reader's visit also queues its background render | `wiki-render-stale` (one scan per process finds the backlog, at the first batch with room, so a minute or so after `ixstats-cron` starts) and readers' background renders | up to **60 per minute** when no never-rendered page is waiting; otherwise what is left of the 20 |
+
+**A render that could not show a file** (`mw:Error` on a media element: a missing-file link to `Special:Upload` with
+`wpDestFile=`, or "Error creating thumbnail") is outdated too once it is a day old, but only when a reader opens the
+page: it is served at once, marked stale, while a background render replaces it. Classic's own lookup of a Commons file
+can fail for one render and work for the next, and this heals the pages whose images came out broken. Neither
+`wiki-render-stale`'s scan nor the SQL below sees these pages (both compare renderer versions only), so they never count
+in `outdated`. A file that is really missing costs one render a day per page read, never a loop. A page that quotes
+such a link (a `wpDestFile=` URL in a code sample, say) or whose markup carries `mw:Error` matches too, with the same
+bound: one extra render a day when read.
 
 Renders run two at a time at background priority (a reader's or an editor's render goes first), a batch starts none after 45
 seconds, and a page MediaWiki fails to render is left alone for a while (doubling up to an hour) so it never holds up the
@@ -1779,7 +1856,9 @@ uptime                                                        # every few minute
 
 If the load stays above 2.0, `kill <proof pid>` (the CLI stops its running harness and exits), wait a minute (a new run
 refuses a directory that exists, and the directory is named to the minute), and start it again with
-`--parity-interval-ms 1000` after `--profile launch` (the default is 200). If the CLI refuses to start (a
+`--parity-interval-ms 1000` after `--profile launch` (the default is 200). At that pace parity alone takes about 3 to 4
+hours over the corpus's 4,779 articles (a second between pages plus each page's render), so start it early in the
+off-peak window or wait for the next one. If the CLI refuses to start (a
 `DATABASE_URL` that is not local, or a missing variable), it says which: stop and ask the owner.
 
 The run ends with its checks table, `PASSED` or `FAILED`, and `Proof written to <dir>`:
@@ -1793,6 +1872,16 @@ jq '{profile, passed, dirty, corpus}' "$D/summary.json"
 - **A failing round-trip or parity check:** stop. Give the owner the summary's lowest pages and templates (`$D/summary.md`)
   and leave the weekly job off: it would fail every week.
 - **A failing bench check only:** give the owner the p95 table from `$D/summary.md`. Going on is the owner's call.
+- **`bench.failures.wikios` failing, its errors "redirected too many times":** IxStates is running Clerk development
+  keys. A development instance redirects a cookie-less `accept: text/html` request to its handshake, so every WikiOS
+  page request of the bench loops (the local proof saw exactly this); production keys answer 200. It is not a WikiOS
+  fault: stop, and check the keys' kind without printing them, then ask the owner:
+
+  ```bash
+  jq -r '.failures[] | select(.system == "wikios") | "\(.kind) \(.error)"' "$D/bench.json" | sort | uniq -c
+  grep -hoE '^(NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY|CLERK_SECRET_KEY)="?(pk|sk)_(live|test)_' \
+    "$IX/.env.production.local" "$IX/.env.local" "$IX/.env.production" "$IX/.env" 2>/dev/null   # live, never test
+  ```
 - **`dirty` true:** the server checkout has uncommitted WikiOS changes. Stop and ask the owner.
 
 Bring the summary to the dev machine, read-only on the server (run this on the dev machine, in the repository):
@@ -1812,7 +1901,7 @@ grep -c '^WIKIOS_PROOF_DIR=' "$IX/.env.production.local"          # 0 = not set 
 ( umask 077; printf '\nWIKIOS_PROOF_DIR=/ixwiki/private/logs/wikios-proof\n' >> "$IX/.env.production.local" )
 ls -l "$IX/.env.production.local"                                  # same mode as before (-rw-------)
 bk "$IX/ecosystem.config.cjs" ecosystem.config.cjs.7e
-grep -n 'CRON_ENABLED_JOBS' "$IX/ecosystem.config.cjs"             # the ixstats-cron list; skip the edit if it is "*"
+grep -n 'CRON_ENABLED_JOBS' "$IX/ecosystem.config.cjs"             # the ixstats-cron list, explicit since step 2 (a "*" would have run the weekly proof since then)
 "${EDITOR:-nano}" "$IX/ecosystem.config.cjs"                       # add wikios-proof to that list
 # PM2 keeps a process's environment across a plain restart: restart from the file so the new list is read
 ( cd "$IX" && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save
@@ -2037,7 +2126,7 @@ Every one of them is copied into `$BK` before its first edit (classic's database
 | `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN` (3c); `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`; `WIKIOS_MEDIAWIKI_API` absent or private, 4); `WIKIOS_UPLOAD_DIR` (plan 411, 4d); `WIKIOS_IMPORT_MAX_BYTES`, only when raised (5c); `NEXT_PUBLIC_APP_URL` / `APP_URL` `https://ixwiki.com`, base path absent or `/projects/ixstates`, the same in `.env.production` (6a); `RATE_LIMIT_ENABLED` unset or `true` (6a); `WIKIOS_V1_ENABLED=true` (6b); `WIKIOS_PROOF_DIR=/ixwiki/private/logs/wikios-proof`, after the first passing launch proof (7e); `WIKIOS_TEMPLATESTYLES=0`, only when the lever is pulled (10c) | 1c, 3c, 4, 4d, 5c, 6a, 6b, 7e, 10c |
 | `/ixwiki/shared/wikios-uploads/` | new directory (750): the staging directory of uploads waiting for the mirror; in the backups until none is waiting | 4d |
 | `/ixwiki/private/logs/wikios-proof/` | new directory (750, owned by the user the deploy and `ixstats-cron` run as): the launch and weekly proof runs, pruned to the newest 12 by the CLI, and the newest 12 predeploy reports; the old predeploy reports in `$IX/.bench-out/proof` are removed once it is set | 7e |
-| `/ixwiki/public/projects/ixstats/ecosystem.config.cjs` | `CRON_ENABLED_JOBS` for `ixstats-cron` names `wiki-render-stale`, `wiki-mirror` and `wiki-recentchanges` (backup `ecosystem.config.cjs.6b`; then, in `$IX`, `pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env && pm2 save`, and the read-only check of the scheduled jobs) (6b, 7b); `wikios-proof`, after the first passing launch proof (then 7e's restart from the file) (7e) | 6b, 7b, 7e |
+| `/ixwiki/public/projects/ixstats/ecosystem.config.cjs` | `CRON_ENABLED_JOBS` for `ixstats-cron`: an explicit list in place of `"*"`, only when it was `"*"` (backup `ecosystem.config.cjs.2`; the deploy's PM2 reload reads it) (2); it names `wiki-render-stale`, `wiki-mirror` and `wiki-recentchanges` (backup `ecosystem.config.cjs.6b`; then, in `$IX`, `pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env && pm2 save`, and the read-only check of the scheduled jobs) (6b, 7b); `wikios-proof`, after the first passing launch proof (then 7e's restart from the file) (7e) | 2, 6b, 7b, 7e |
 | `/ixwiki/config/LocalSettings.php` | `require_once` of the snippet; never a `WIKIOS_TAKEOVER` define | 3a |
 | `/ixwiki/config/wikios-localsettings.php` | new, copy of the tracked snippet (mode 644) | 3a |
 | `/etc/php/8.4/fpm/conf.d/99-wikios-import.ini` | new: `upload_max_filesize` and `post_max_size` 16M | 3a |

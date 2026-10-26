@@ -1,6 +1,6 @@
 # WikiOS native architecture
 
-**Last updated:** 2026-10-25 (launch hardening: conflicts, classic authority, sister wikis, proof)
+**Last updated:** 2026-10-26 (launch hardening: conflicts, classic authority, sister wikis, proof)
 **Launch shape:** WikiOS is the wiki inside IxStates (ixwiki.com/projects/ixstates); ixwiki.com stays classic MediaWiki,
 public and editable, and canonical and share URLs stay on classic. WikiOS v1 (PR #52, D20) is merged and ships switched
 off; the launch turns `WIKIOS_V1_ENABLED` on (step 6b of the [launch runbook](../../operations/wikios-v1-cutover.md)). The
@@ -96,7 +96,7 @@ effort: an unreachable sister adds no results. Sister reader pages are not index
   sister pages alike; a link with a query string stays where it points. The composer, Discord markdown, admin link tools
   and media search carry the source, and hover previews work for sister pages.
 - **`Template:Sister` embed**: `{{Sister|iiwiki|Title}}` (optionally `section=`, `infobox=yes` or `card=yes`) is plain
-  wikitext on both wikis, so it round-trips and mirrors unchanged. Classic renders it as a small link box ("From iiwiki:
+  wikitext on both wikis, so it round-trips and mirrors unchanged. Classic renders it as a small link box ("From IIWiki:
   Title"; runbook step 3d creates the template). WikiOS replaces the box with a live embed of the real page (the whole
   page, a section, the infobox or a card), cached about an hour, up to ten a page; the rest stay link boxes. A wiki that
   cannot be reached says so, and a page its wiki cannot render is offered as a link to it there.
@@ -157,6 +157,13 @@ ratchet rule:
 - **Infobox-first images** (`transformers/image-url.ts`). Lead images come from infobox parameters (`| logo =`,
   `| image =`, `| flag =`, `| coat_of_arms =`) in the stored wikitext (`extractLeadImageFromWikitext`).
   `isNoticeOrUtilityIcon` skips maintenance and construction badges, and URLs are normalised to `Special:FilePath`.
+- **Missing-file re-render** (`services/view-bundle.ts`, `mediaErrorRerenderDue`). A stored render in which MediaWiki
+  could not show a file (`mw:Error` on a media element: a missing-file link to `Special:Upload&wpDestFile=`, or "Error
+  creating thumbnail") counts as outdated once it is a day old, so a reader gets it at once, marked stale, while a
+  background render replaces it. Classic's own lookup of a Commons file can fail for one render and work for the next.
+  It fires only on a read: `wiki-render-stale`'s scan compares renderer versions only and never finds these pages. A
+  file that is really missing costs one render a day per page read, never a loop; a page that quotes such a link (a
+  `wpDestFile=` URL in a code sample) or whose markup carries `mw:Error` matches too, with the same bound.
 - **Main page** (`components/wiki-os/reader/WikiOSMainPage.tsx`). Two header layouts, `editorial-masthead` and
   `sculpted-emblem`, a featured-image hero, a daily rotation of statistics articles from
   `Category:Bureau of International Statistics`, and a shuffled deck of featured countries.

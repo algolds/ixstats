@@ -16,7 +16,8 @@ The CLI is [`scripts/audit/wikios-proof.ts`](../../../scripts/audit/wikios-proof
   12,706 pages byte-identical, in every namespace. Parity compared a sample of 497 pages, each at the revision WikiOS
   holds: 99.2% of the 495 scored pages score 98 or more, the mean is 99.88 and none is below 70 (two pages failed on
   classic's side with an internal error; three `sanitized-css` pages were left out as not articles). The bench is
-  reference only on a dev server; the gated bench is the launch run.
+  reference only on a dev server; the gated bench is the launch run. Every WikiOS article page request of that bench
+  failed, for a reason of the dev server's, not WikiOS's ([below](#the-local-benchs-page-requests)).
 
 ## What each harness measures
 
@@ -46,10 +47,24 @@ The CLI is [`scripts/audit/wikios-proof.ts`](../../../scripts/audit/wikios-proof
 | `launch` | the server, at the launch (`NODE_ENV=production`) | the full round trip; parity over the whole corpus against the loopback renderer (`WIKIOS_MEDIAWIKI_INTERNAL_URL`) and IxStates on `127.0.0.1:$PORT$BASE_PATH`; the bench over 200 pages, 2 runs, through the public URLs | `bun scripts/audit/wikios-proof.ts run --profile launch` |
 | `recurring` | the server, weekly | as `launch`, with a parity sample of 200 and a bench of 50 pages, 1 run | the `wikios-proof` cron job; by hand, `bun scripts/audit/wikios-proof.ts run --profile recurring` |
 
+### The local bench's page requests
+
+In the 2026-10-26 local run all 50 WikiOS article page requests of the bench (25 pages, 2 runs) failed with "The
+response redirected too many times", so `bench.failures.wikios` measured 25% and the page rows have no samples. The
+cause is the dev server's Clerk development instance: it answers a request with no session cookie and
+`accept: text/html` with a redirect to its handshake, and the bench's fetch, which keeps no cookies, follows it round.
+Production keys do not do that: a cookie-less `text/html` request for the live `maps.ixwiki.com/dashboard` answers 200.
+The local profile does not gate the bench, so the proof passed; the launch profile does, and there a
+`bench.failures.wikios` failure that says "redirected too many times" means IxStates is running development Clerk
+keys (runbook step 7e), not a WikiOS fault.
+
 Only a `local` or a `launch` run can prove a release. The other commands:
 
 - `bun scripts/audit/wikios-proof.ts gate --profile <p> --roundtrip <f> --parity <f> [--bench <f>] [--out-dir <d>]` checks
-  existing reports against the thresholds again (after a threshold change, for example).
+  existing reports against the thresholds again (after a threshold change, for example). The reports must be one run's,
+  in its run directory: the new summary takes its commit, tree key and dirty flag from that run's own `summary.json`
+  (never from the checkout's HEAD, which may hold newer code), and `gate` refuses when that file is missing or
+  unreadable.
 - `bun scripts/audit/wikios-proof.ts predeploy` is the deploy's check (below); `deployed` releases the lease it took.
 - `bun scripts/audit/wikios-proof.ts --help` lists every flag.
 
@@ -74,6 +89,9 @@ parity report must record its settle wait (`parity.settleMs`) and have parsed th
 - `parity.fallbackRenders`: 0 scored pages still a fallback or stale render after the settle retries.
 - `parity.mediawikiMissing`: at most 2% of requested pages missing on MediaWiki, or whose held revision MediaWiki has
   deleted or hidden (corpus drift between the two copies).
+- `parity.leftOut`: at most 2% of the requested sample left out by content model, each named (a fixed cap in the gate,
+  not in the thresholds file). The corpus has 24 `sanitized-css` pages among 4,771 articles (0.5%), and the first proof
+  left out 3 of 500; more than 2% would mean the exclusion hides articles.
 - `parity.atLeast98`: at least 97.1% of scored pages score 98 or more (the first proof measured 99.2%).
 - `parity.meanScore`: a mean score of at least 98 (the first proof measured 99.88).
 - `parity.below70`: 0 pages below 70, except pages listed in `knownLowPages` with a reason.
@@ -129,8 +147,10 @@ The local proof needs a copy of the production corpus and a dev server on a clea
 ## How `latest.json` gates deploys
 
 `scripts/deploy-production.sh` runs `bun scripts/audit/wikios-proof.ts predeploy` after `db:generate` and before the
-database backup, so a refusal changes nothing. It takes the `wikios-proof` job lease (so the weekly proof never runs
-mid-deploy), reads only, and refuses when:
+database backup, so a refusal changes no data. It does not undo what the deploy did before it: the checkout is already
+reset to the new release, the previous build removed (`bun run clean`), and the release's dependencies installed and
+its Prisma client generated. It takes the `wikios-proof` job lease (so the weekly proof never runs mid-deploy), reads
+only, and refuses when:
 
 - there is no `latest.json`, or it measured uncommitted WikiOS changes (`dirty`);
 - its checks did not all pass (the result is recomputed from the checks, never read from the flag);
@@ -140,7 +160,9 @@ mid-deploy), reads only, and refuses when:
 - the new code's full round trip of the production corpus fails a round-trip check: one changed byte, one page the
   serializer could not finish, one error, or fewer pages than the floor.
 
-`WIKIOS_PROOF_OVERRIDE=1` deploys anyway and prints each failure as overridden. After the PM2 reload the deploy runs
+An error after it took the lease (an unwritable `WIKIOS_PROOF_DIR`, say) is a failed `predeploy.error` check like any
+other, so it refuses and gives the lease back. `WIKIOS_PROOF_OVERRIDE=1` deploys anyway and prints each failure as
+overridden. After the PM2 reload the deploy runs
 `deployed`, which releases the lease; a deploy that dies on the way leaves the lease to expire in 2 hours.
 
 **When to rerun the local proof:** after any committed change under the WikiOS paths (`WIKIOS_PROOF_PATHS` in
