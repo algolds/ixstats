@@ -305,9 +305,48 @@ interface FoundHeading {
   end: number;
 }
 
+/** The opening tag around a `mw-headline`: where it starts and ends, and its `id` when it is a `span.mw-headline`. */
+interface Headline {
+  start: number;
+  end: number;
+  id: string | null;
+}
+
 /**
- * The `<h2>`-`<h6>` headings that have an `id`, in order, each with its first closing `</h2>`-`</h6>` after it
- * (what `/<h([2-6])[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/h[2-6]>/gi` finds). With `wrapper`, the heading must be
+ * The `id` of the first `<span class="mw-headline" id="…">` between `from` and `to` (a heading's content), or null:
+ * where MediaWiki before 1.43 put a heading's anchor, as older Fandom pages still have it (the heading itself has no
+ * id). Each `mw-headline` is found once and its span read once (within TAG_BODY before it), however many headings
+ * around it ask, so the calls cost the page's length, not its headings times it.
+ */
+function headlineIdFinder(scan: HtmlScan): (from: number, to: number) => string | null {
+  const { lower } = scan;
+  const nextHeadline = forwardFinder(lower, "mw-headline");
+  let readAt = -1;
+  let read: Headline | null = null;
+  const headlineAt = (at: number): Headline | null => {
+    const windowStart = Math.max(0, at - TAG_BODY);
+    const opener = lower.slice(windowStart, at).lastIndexOf("<span");
+    const start = windowStart + opener;
+    const close = scan.nextGreater(at);
+    if (opener === -1 || lower.slice(start, at).includes(">") || close === -1) return null;
+    const tag = { start, end: close + 1 };
+    const isHeadline = hasClass(scan, tag, '"', /(?:^|\s)mw-headline(?:\s|$)/);
+    return { ...tag, id: isHeadline ? lastAttribute(scan, tag, "id") : null };
+  };
+  return (from, to) => {
+    const at = nextHeadline(from);
+    if (at === -1 || at >= to) return null;
+    if (at !== readAt) {
+      readAt = at;
+      read = headlineAt(at);
+    }
+    return read && read.start >= from && read.end <= to ? read.id : null;
+  };
+}
+
+/**
+ * The `<h2>`-`<h6>` headings that have an `id` (on the heading, else on the `span.mw-headline` inside it:
+ * `headlineIdFinder`), in order, each with its first closing `</h2>`-`</h6>` after it (what `/<h([2-6])[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/h[2-6]>/gi` finds). With `wrapper`, the heading must be
  * the first thing in a `<div class="mw-heading…">` and its closing tag the first that only blanks and `</div>`
  * follow (`/<div[^>]*class="mw-heading[^"]*"[^>]*>\s*<h(…)…<\/h[2-6]>\s*<\/div>/gi`).
  */
@@ -320,6 +359,7 @@ function* headingsOf(scan: HtmlScan, wrapper: boolean): Generator<FoundHeading> 
     }
     return -1;
   });
+  const headlineId = headlineIdFinder(scan);
   let reached = 0;
   for (const outer of openingTags(scan, wrapper ? ["div"] : ["h2", "h3", "h4", "h5", "h6"])) {
     if (outer.start < reached) continue;
@@ -336,10 +376,10 @@ function* headingsOf(scan: HtmlScan, wrapper: boolean): Generator<FoundHeading> 
         continue;
       heading = { start: inner, end: close + 1 };
     }
-    const id = lastAttribute(scan, heading, "id");
-    if (id === null) continue;
     const close = wrapper ? nextWrappedClose(heading.end) : nextHeadingClose(heading.end);
-    if (close === -1) return;
+    if (close === -1) return; // no heading after this one has a closer either
+    const id = lastAttribute(scan, heading, "id") ?? headlineId(heading.end, close);
+    if (id === null) continue;
     reached = wrapper ? skipBlanks(lower, close + 5) + "</div>".length : close + 5;
     yield {
       level: Number(lower.charAt(heading.start + 2)),

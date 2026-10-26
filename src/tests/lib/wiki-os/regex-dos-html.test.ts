@@ -303,6 +303,26 @@ describe("html-transformer: the page's passes scan for tags", () => {
   });
 });
 
+describe("html-transformer: a heading's id on its span.mw-headline", () => {
+  it("is read once per headline, however many open headings come before it", () => {
+    const html = `<div class="mw-parser-output">${"<h2>".repeat(100_000)}<span class="mw-headline" id="A">A</span></h2></div>`;
+    const started = performance.now();
+    const { toc } = transformArticleHtml(html, "/wiki", "althistory");
+    expect(performance.now() - started).toBeLessThan(1_000 * TIMING_BUDGET_SCALE);
+    expect(toc[0]).toEqual({ id: "A", text: "A", level: 2 });
+  });
+
+  it("is only a span's whose class has the mw-headline token, inside the heading", () => {
+    const toc = (body: string) => transformArticleHtml(`<div class="mw-parser-output">${body}</div>`, "/wiki", "althistory").toc;
+    expect(toc('<h2><span class="mw-headline-number" id="n">1</span></h2>')).toEqual([]);
+    expect(toc('<h2><b class="mw-headline" id="b">B</b></h2>')).toEqual([]);
+    expect(toc('<h2>Text</h2><span class="mw-headline" id="out">Out</span>')).toEqual([]);
+    expect(toc('<h2 id="own"><span class="mw-headline" id="inner">Own</span></h2>')).toEqual([
+      { id: "own", text: "Own", level: 2 },
+    ]);
+  });
+});
+
 // ---- main-page/featured-article ---------------------------------------------------------------------------
 
 const CARD_TOKENS = [

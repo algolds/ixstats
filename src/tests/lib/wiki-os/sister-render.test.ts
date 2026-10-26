@@ -185,6 +185,25 @@ describe("renderSisterArticle: the answer", () => {
     expect(out.toc).toEqual([expect.objectContaining({ id: "sister-History", text: "History" })]);
   });
 
+  it("an older page's headings (the id on a span.mw-headline inside, none on the heading) name their TOC entries by it", async () => {
+    fetchSpy.mockImplementation(async () =>
+      answer(
+        '<div class="mw-parser-output"><h2><span class="mw-headline" id="Early_life">Early life</span>' +
+          '<span class="mw-editsection">[edit]</span></h2><p>x</p>' +
+          '<h3><span id="Old_anchor"></span><span class="mw-headline" id="Later">Later</span></h3><p>y</p>' +
+          '<h2><span class="other" id="Not_a_headline">Plain</span></h2></div>'
+      )
+    );
+
+    const out = await renderSisterArticle("althistory", article());
+
+    expect(out.toc).toEqual([
+      { id: "sister-Early_life", text: "Early life", level: 2 },
+      { id: "sister-Later", text: "Later", level: 3 },
+    ]);
+    for (const entry of out.toc) expect(out.contentHtml).toContain(`id="${entry.id}"`);
+  });
+
   it("a Fandom CDN image of an AltHistory page loads its file through the proxy", async () => {
     fetchSpy.mockImplementation(async () =>
       answer(
