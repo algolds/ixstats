@@ -22,7 +22,7 @@ import {
 } from "~/components/ui/select";
 import { formatCompactCurrency } from "~/lib/utils/format-utils";
 import type { OrderSource } from "~/lib/military/model";
-import { domesticBlock, fitsDomain, quoteOrder } from "~/lib/military/defense-console";
+import { defaultOrderBranch, domesticBlock, fitsDomain, quoteOrder } from "~/lib/military/defense-console";
 import type { EquipmentPreset } from "~/lib/military/player-catalog";
 import type { RealmClockReader } from "~/lib/realms/realm-clock";
 import type { OwnerDefense } from "~/hooks/useDefenseConsole";
@@ -67,7 +67,8 @@ export function OrderSheet({ item, overview, reader, nowClockMs, pending, onOpen
   const [branchId, setBranchId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [source, setSource] = useState<OrderSource>("domestic");
-  const branch = branches.find((b) => b.id === branchId) ?? branches[0];
+  const branch =
+    branches.find((b) => b.id === branchId) ?? defaultOrderBranch(item?.catalogCategory, branches);
 
   const quote = quoteOrder({
     catalogCost: item?.acquisitionCost ?? 0,

@@ -216,6 +216,18 @@ export function fitsDomain(catalogCategory: string | null | undefined, domain: B
   return !allowed || allowed.includes(domain);
 }
 
+/**
+ * The branch an order sheet starts on: the first one in the item's natural domain (the first its category lists:
+ * aircraft → air, naval → sea, vehicle → land), else the first that can hold it.
+ */
+export function defaultOrderBranch<T extends { domain: BranchDomain }>(
+  catalogCategory: string | null | undefined,
+  eligible: readonly T[]
+): T | undefined {
+  const natural = CATALOG_CATEGORY_DOMAINS[catalogCategory ?? ""]?.[0];
+  return eligible.find((b) => b.domain === natural) ?? eligible[0];
+}
+
 export interface OrderQuote {
   unitCost: number;
   total: number;

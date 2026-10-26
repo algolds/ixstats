@@ -14,6 +14,7 @@ import {
 } from "~/lib/military/model";
 import {
   alertChange,
+  defaultOrderBranch,
   domesticBlock,
   fitsDomain,
   fundingPreview,
@@ -225,5 +226,23 @@ describe("funding preview", () => {
     const volunteers = fundingPreview(source, { volunteerShare: 1 });
     const conscripts = fundingPreview(source, { volunteerShare: 0 });
     expect(conscripts.headcountAfford).toBeGreaterThan(volunteers.headcountAfford);
+  });
+});
+
+describe("defaultOrderBranch", () => {
+  const army = { id: "army", domain: "land" as const };
+  const navy = { id: "navy", domain: "sea" as const };
+  const air = { id: "air", domain: "air" as const };
+
+  it("starts on the item's natural domain", () => {
+    expect(defaultOrderBranch("aircraft", [army, navy, air])).toBe(air);
+    expect(defaultOrderBranch("naval", [army, navy])).toBe(navy);
+    expect(defaultOrderBranch("vehicle", [navy, army])).toBe(army);
+  });
+
+  it("falls back to the first eligible branch", () => {
+    expect(defaultOrderBranch("aircraft", [army, navy])).toBe(army);
+    expect(defaultOrderBranch("missile", [navy, army])).toBe(navy);
+    expect(defaultOrderBranch("aircraft", [])).toBeUndefined();
   });
 });
