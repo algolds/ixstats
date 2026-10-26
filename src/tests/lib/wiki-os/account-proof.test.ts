@@ -129,10 +129,10 @@ describe("account-proof", () => {
       );
     });
 
-    it("is the classic MediaWiki editor once WikiOS v1 is on", () => {
+    it("stays the classic wiki's own user page once WikiOS v1 is on (no /classic/ path without the takeover)", () => {
       process.env.WIKIOS_V1_ENABLED = "1";
       expect(wikiUserPageUrl("ixwiki", "some user")).toMatch(
-        /^https:\/\/[^/]+\/classic\/User:Some_user\?action=edit$/
+        /^https:\/\/[^/]+\/wiki\/User:Some_user$/
       );
     });
   });

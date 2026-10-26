@@ -8,7 +8,6 @@
  */
 import { z } from "zod";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl, WIKI_SOURCES } from "~/lib/wiki-os/config";
-import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 import { SISTER_READER_IDS } from "~/lib/wiki-os/wiki-hosts";
 
 /** IxWiki and every sister wiki WikiOS reads (`reader: true` in `wiki-hosts.ts`). */
@@ -40,15 +39,12 @@ export function normalizeWikiUsername(name: string): string {
 }
 
 /**
- * Where a player saves the verification code. The proof reads classic MediaWiki's revision authors, so once WikiOS
- * v1 is on (`/wiki/` is WikiOS then) the IxWiki page is the classic editor at `/classic/` (wikios-takeover.conf);
- * before that, and for a sister wiki always, it is the wiki's own page.
+ * Where a player saves the verification code: the wiki's own user page. The proof reads classic MediaWiki's
+ * revision authors, and classic keeps `/wiki/` (WikiOS runs inside IxStates at launch; the `/classic/` path only
+ * exists under the deferred takeover, wikios-takeover.conf).
  */
 export function wikiUserPageUrl(source: ProofSource, username: string): string {
   const title = encodeURI(`User:${normalizeWikiUsername(username)}`.replace(/ /g, "_"));
-  if (source === "ixwiki" && isWikiosV1Enabled()) {
-    return `${siteUrl(source)}/classic/${title}?action=edit`;
-  }
   return `${siteUrl(source)}/wiki/${title}`;
 }
 
