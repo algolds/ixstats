@@ -2,7 +2,7 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-import { getPlayerPhotoUrl } from "~/lib/sports/photos";
+import { getPlayerPhotoUrl, playerPhotoFallbackUrl } from "~/lib/sports/photos";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import { Card } from "~/components/ui/card";
 
@@ -25,7 +25,7 @@ interface PlayerMatchupProps {
 }
 
 export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProps) {
-  const fallbackPhoto = "/images/sportyblocks/player-1.png";
+  const fallbackPhoto = playerPhotoFallbackUrl();
 
   const colorA = playerA.teamColor ?? "#3b82f6";
   const colorB = playerB.teamColor ?? "#ef4444";

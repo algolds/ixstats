@@ -1,5 +1,10 @@
 import { assetUrl, withBasePath } from "~/lib/base-path";
 
+/** The stock photo a player gets with no id or name, and an `<img>`'s fallback when a photo fails, with the base path. */
+export function playerPhotoFallbackUrl(): string {
+  return withBasePath("/images/sportyblocks/player-1.png");
+}
+
 /**
  * Resolves a player's photo URL dynamically.
  * If the player already has a custom imageUrl, it uses that.
@@ -21,7 +26,7 @@ export function getPlayerPhotoUrl(player: {
   const nameStr = `${firstName}${lastName}`;
   const key = idStr + nameStr;
 
-  if (!key) return withBasePath("/images/sportyblocks/player-1.png");
+  if (!key) return playerPhotoFallbackUrl();
 
   // Simple deterministic hash
   let hash = 0;

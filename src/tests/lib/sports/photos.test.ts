@@ -3,7 +3,7 @@
  * A player's photo is used straight as an `src`, so under production's base path both an uploaded photo and the
  * sportyblocks fallback carry it, and an absolute photo URL is left alone.
  */
-import { getPlayerPhotoUrl } from "~/lib/sports/photos";
+import { getPlayerPhotoUrl, playerPhotoFallbackUrl } from "~/lib/sports/photos";
 
 const BASE = "/projects/ixstates";
 const saved = { ...process.env };
@@ -35,5 +35,11 @@ describe("getPlayerPhotoUrl", () => {
     expect(getPlayerPhotoUrl({ id: "p1", firstName: "Kai", lastName: "Ito" })).toMatch(
       new RegExp(`^${BASE}/images/sportyblocks/player-(1|3|5|7|9|11|13)\\.png$`)
     );
+  });
+});
+
+describe("playerPhotoFallbackUrl", () => {
+  it("is the stock photo with the base path, for an <img>'s onError", () => {
+    expect(playerPhotoFallbackUrl()).toBe(`${BASE}/images/sportyblocks/player-1.png`);
   });
 });

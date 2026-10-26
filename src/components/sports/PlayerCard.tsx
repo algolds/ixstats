@@ -3,7 +3,7 @@
 import { TeamCrest } from "./TeamCrest";
 import React from "react";
 import { cn } from "~/lib/utils";
-import { getPlayerPhotoUrl } from "~/lib/sports/photos";
+import { getPlayerPhotoUrl, playerPhotoFallbackUrl } from "~/lib/sports/photos";
 import { withBasePath } from "~/lib/base-path";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import type { PlayerRatings } from "~/lib/sports/types";
@@ -68,7 +68,7 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
                 alt={`${player.firstName} ${player.lastName}`}
                 className="absolute bottom-0 h-[85%] max-w-full object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)]"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/images/sportyblocks/player-1.png";
+                  (e.target as HTMLImageElement).src = playerPhotoFallbackUrl();
                 }}
               />
             </div>
