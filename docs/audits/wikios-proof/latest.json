@@ -1,8 +1,8 @@
 {
   "profile": "local",
-  "generatedAt": "2026-10-26T06:23:18.487Z",
-  "commit": "72b282b77eb6255b251c3686edd01c3df2e2cfcf",
-  "treeKey": "10179cd66b38fe3ed9325f5547f4d6bf889480e261e0f8dffdbcd7ffd86b5b82",
+  "generatedAt": "2026-10-26T15:50:51.436Z",
+  "commit": "58ef66fe77255483980a148ef0623814a63ab039",
+  "treeKey": "aff5f5b26dc725bd9d18b9b7374b90275a7d9ef3fe628863c913942fd3b459bf",
   "dirty": false,
   "corpus": {
     "roundTripPages": 12706,
@@ -49,7 +49,7 @@
       "name": "parity.settleMs",
       "passed": true,
       "skipped": null,
-      "measured": "8000 ms",
+      "measured": "10000 ms",
       "threshold": "recorded"
     },
     {
@@ -63,8 +63,8 @@
       "name": "parity.pages",
       "passed": true,
       "skipped": null,
-      "measured": "495 answered of 497 requested (497 in the report)",
-      "threshold": ">= 200 answered, every requested page reported"
+      "measured": "494 answered of 497 requested, 3 left out (497 in the report)",
+      "threshold": ">= 200 answered or left out, every requested page reported"
     },
     {
       "name": "parity.wikiosFailures",
@@ -81,6 +81,13 @@
       "threshold": "<= 2% of requested pages"
     },
     {
+      "name": "parity.leftOut",
+      "passed": true,
+      "skipped": null,
+      "measured": "3 of 500 requested (0.6%): Hidden begin/styles.css, Infobox/styles.css, Message box/ombox.css",
+      "threshold": "<= 2% of requested pages, not wikitext"
+    },
+    {
       "name": "parity.fallbackRenders",
       "passed": true,
       "skipped": null,
@@ -91,14 +98,14 @@
       "name": "parity.atLeast98",
       "passed": true,
       "skipped": null,
-      "measured": "99.2%",
-      "threshold": ">= 97.1% of scored pages"
+      "measured": "99.8%",
+      "threshold": ">= 97.7% of scored pages"
     },
     {
       "name": "parity.meanScore",
       "passed": true,
       "skipped": null,
-      "measured": "99.88",
+      "measured": "99.93",
       "threshold": ">= 98"
     },
     {
@@ -131,23 +138,23 @@
     },
     {
       "name": "bench.p95.data.totalMs",
-      "passed": true,
+      "passed": false,
       "skipped": "dev server: reference only",
-      "measured": "45 ms",
+      "measured": "2018 ms",
       "threshold": "<= 800 ms"
     },
     {
       "name": "bench.p95.search.totalMs",
       "passed": true,
       "skipped": "dev server: reference only",
-      "measured": "43 ms",
+      "measured": "41 ms",
       "threshold": "<= 500 ms"
     },
     {
       "name": "bench.p95.history.totalMs",
       "passed": true,
       "skipped": "dev server: reference only",
-      "measured": "38 ms",
+      "measured": "39 ms",
       "threshold": "<= 800 ms"
     },
     {
@@ -161,14 +168,14 @@
       "name": "bench.ratio.search.totalMs",
       "passed": true,
       "skipped": "dev server: reference only",
-      "measured": "0.45 (n=50)",
+      "measured": "0.14 (n=50)",
       "threshold": "<= 1"
     },
     {
       "name": "bench.ratio.history.totalMs",
       "passed": true,
       "skipped": "dev server: reference only",
-      "measured": "0.38 (n=50)",
+      "measured": "0.29 (n=50)",
       "threshold": "<= 1"
     }
   ],

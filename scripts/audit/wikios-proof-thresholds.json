@@ -5,7 +5,7 @@
     "maxWikiosFailures": 0,
     "maxFallbackRenders": 0,
     "maxMediaWikiMissingPercent": 2,
-    "minAtLeast98Percent": 97.1,
+    "minAtLeast98Percent": 97.7,
     "minMeanScore": 98,
     "maxBelow70Pages": 0,
     "knownLowPages": []
