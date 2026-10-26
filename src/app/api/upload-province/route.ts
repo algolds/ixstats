@@ -12,10 +12,22 @@ import { isSystemOwner } from "~/lib/auth";
 import { db } from "~/server/db";
 import { createHash } from "crypto";
 import { extractSvgMetadata } from "~/lib/flags/svg-parser";
+import { sniffFile } from "~/lib/wiki-os/core/file-sniff";
 import { oversizedUploadResponse } from "~/server/shared/request-size";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB (smaller than world map's 50MB)
 const VALID_EXTENSIONS = [".svg", ".png"];
+
+/**
+ * ".png" or ".svg" from the file's own bytes (`sniffFile`), null for anything else. An SVG the sniffer finds unsafe is
+ * still an SVG here: it is stored for the province parser, never served.
+ */
+function sniffedProvinceExtension(bytes: Uint8Array): string | null {
+  const sniffed = sniffFile(bytes);
+  if (!sniffed.ok) return sniffed.code === "unsafe-svg" ? ".svg" : null;
+  if (sniffed.file.kind === "png") return ".png";
+  return sniffed.file.kind === "svg" ? ".svg" : null;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,6 +90,15 @@ export async function POST(request: NextRequest) {
 
     // Read file content
     const fileBuffer = await file.arrayBuffer();
+
+    // The bytes must be what the name says: the import reads a ".png" upload as base64 PNG and anything else as SVG
+    if (sniffedProvinceExtension(new Uint8Array(fileBuffer)) !== ext) {
+      return NextResponse.json(
+        { error: `The file's contents are not a valid ${ext.slice(1).toUpperCase()} image` },
+        { status: 400 }
+      );
+    }
+
     const fileContent =
       ext === ".svg"
         ? new TextDecoder().decode(fileBuffer)

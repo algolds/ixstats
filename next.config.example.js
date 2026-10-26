@@ -129,10 +129,15 @@ const config = {
       { protocol: "https", hostname: "media.discordapp.net" },
       // NationStates images go through /api/proxy-ns-image, so no NS hosts here
     ],
-    // Local API routes with query strings (NS image proxy, placeholders)
-    localPatterns: [{ pathname: "/**" }],
+    // Only the bundled top-level images in public/images (the setup intro) go through the
+    // optimizer; user uploads under /images/uploads and API routes stay out of it
+    localPatterns: [
+      { pathname: "/images/*", search: "" },
+      ...(basePath ? [{ pathname: `${basePath}/images/*`, search: "" }] : []),
+    ],
     formats: ["image/avif", "image/webp"],
-    dangerouslyAllowSVG: true,
+    // No SVG through the optimizer: next/image serves an .svg src unoptimized on its own
+    dangerouslyAllowSVG: false,
     contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },

@@ -14,25 +14,16 @@ import {
   nestedTooDeepSource,
   WIKI_ARTICLE_SANITIZE_CONFIG,
 } from "./sanitize-html";
-import { cleanStyleDeclarations, type StylePolicy } from "./scope-template-styles";
+import {
+  cleanStyleDeclarations,
+  keepsPositionInFlow,
+  type StylePolicy,
+} from "./scope-template-styles";
 
 type Purifier = ReturnType<typeof createArticlePurifier>;
 
 export { SISTER_ID_PREFIX };
 
-/** What `position` may be in a sister page: nothing that leaves the article (`fixed`, `sticky`, a `var()`, ...). */
-const IN_FLOW_POSITIONS = new Set([
-  "static",
-  "relative",
-  "absolute",
-  "inherit",
-  "initial",
-  "unset",
-  "revert",
-]);
-const POSITION_PROPERTY = /^(?:-[a-z]+-)?position$/;
-/** Position keywords that take an element out of the article: a custom property holding one is dropped too. */
-const OUT_OF_FLOW_POSITIONS = new Set(["fixed", "sticky", "-webkit-sticky"]);
 /** Attributes whose value is a list of ids: they name the prefixed ids too. */
 const ID_REFERENCE_ATTRIBUTES = new Set([
   "headers",
@@ -77,11 +68,7 @@ const LINK_BASE = "https://ixstates.invalid";
 function sisterStylePolicy(wiki: SisterReaderId): StylePolicy {
   return {
     allowsUrl: (target) => isSisterMediaPath(target, wiki),
-    allowsDeclaration: (property, value) => {
-      const keyword = (value.split("!")[0] ?? "").trim();
-      if (POSITION_PROPERTY.test(property)) return IN_FLOW_POSITIONS.has(keyword);
-      return !(property.startsWith("--") && OUT_OF_FLOW_POSITIONS.has(keyword));
-    },
+    allowsDeclaration: keepsPositionInFlow,
   };
 }
 

@@ -166,6 +166,17 @@ export function stripHtmlTags(text: string): string {
   });
 }
 
+/**
+ * What `stripHtmlTags` leaves of a tag with no `>` after it: from the last `<` that opens one (a letter, `/` or `!`
+ * after it) past the last `>`, to the end of the text, as an excerpt cut mid-tag leaves it (`<a href="..." style=`).
+ * A `<` that opens nothing (`a < b`) stays.
+ */
+export function stripUnclosedTagTail(text: string): string {
+  const after = text.lastIndexOf(">") + 1;
+  const open = /<[A-Za-z/!]/.exec(text.slice(after));
+  return open ? text.slice(0, after + open.index) : text;
+}
+
 const URL_END = /[\s\]]/g;
 
 /** Just past `[http://` or `[https://` at `open`, or -1. */

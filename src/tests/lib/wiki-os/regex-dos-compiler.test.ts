@@ -33,6 +33,7 @@ import {
   stripNamespacedLinks,
   stripSelfClosingRefs,
   stripTagBlocks,
+  stripUnclosedTagTail,
   stripUnclosedTemplateTail,
   unpackExternalLinks,
 } from "~/lib/wiki-os/transformers/clean-markup-passes";
@@ -1126,6 +1127,7 @@ const cleanLegacy = {
   templateLink: (t: string) => t.replace(/\[\[(?:Template|template):[^\]]+\]\]/gi, ""),
   unclosedTail: (t: string) => t.replace(/\{\{[^}]*$/g, ""),
   htmlTags: (t: string) => t.replace(/<[^>]+>/g, ""),
+  unclosedTag: (t: string) => t.replace(/<[A-Za-z/!][^>]*$/, ""),
   externalLabelled: (t: string) => t.replace(/\[https?:\/\/[^\s\]]+\s+([^\]]+)\]/g, "$1"),
   externalBare: (t: string) => t.replace(/\[https?:\/\/[^\s\]]+\]/g, ""),
   files: (text: string) => {
@@ -1197,7 +1199,7 @@ function legacyClean(rawText: string): string {
   text = legacyTemplates(text);
   text = text.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
   text = cleanLegacy.externalBare(cleanLegacy.externalLabelled(text));
-  text = cleanLegacy.htmlTags(text);
+  text = cleanLegacy.unclosedTag(cleanLegacy.htmlTags(text));
   text = text.replace(/^==+[^=]+==+/gm, "");
   text = text.replace(/'''''/g, "").replace(/'''/g, "").replace(/''/g, "");
   text = text.replace(/&\w+;/g, " ");
@@ -1346,6 +1348,7 @@ describe("each linear pass answers what its expression answered", () => {
     ["[[Template:]]", (t) => stripNamespacedLinks(t, "template:"), cleanLegacy.templateLink],
     ["unclosed {{ tail", stripUnclosedTemplateTail, cleanLegacy.unclosedTail],
     ["html tags", stripHtmlTags, cleanLegacy.htmlTags],
+    ["unclosed tag tail", stripUnclosedTagTail, cleanLegacy.unclosedTag],
     ["[url label]", unpackExternalLinks, cleanLegacy.externalLabelled],
     ["[url]", stripBareExternalLinks, cleanLegacy.externalBare],
     ["file links", stripWikitextFiles, cleanLegacy.files],

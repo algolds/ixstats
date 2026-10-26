@@ -13,6 +13,7 @@ import {
   stripNamespacedLinks,
   stripSelfClosingRefs,
   stripTagBlocks,
+  stripUnclosedTagTail,
   stripUnclosedTemplateTail,
   unpackExternalLinks,
   unpackInternalLinks,
@@ -545,8 +546,8 @@ export function cleanWikiMarkup(rawText: string | null | undefined, maxLength: n
   text = unpackExternalLinks(text);
   text = stripBareExternalLinks(text);
 
-  // 12. Strip HTML tags
-  text = stripHtmlTags(text);
+  // 12. Strip HTML tags, and a tag left unterminated at the end
+  text = stripUnclosedTagTail(stripHtmlTags(text));
 
   // 13. Strip headings: == Heading ==
   text = text.replace(/^==+[^=]+==+/gm, "");

@@ -133,7 +133,8 @@ export function stripStyleDeclarations(css: string): string {
 const POSITION_CLASS = /^(?:fixed|absolute|sticky|relative)$/;
 const OFFSET_CLASS =
   /^(?:inset(?:-(?:x|y|block|inline)(?:-(?:start|end))?)?|top|right|bottom|left|start|end)-(?:\d\S*|px|auto|full)$/;
-const STACKING_CLASS = /^(?:z-(?:\d+|auto)|translate-\S+|transform(?:-\S+)?)$/;
+// `z-*` includes the theme's named layers (`z-backdrop`, `z-sheet`, `z-toast`), not only numbers
+const STACKING_CLASS = /^(?:z-\S+|translate-\S+|transform(?:-\S+)?)$/;
 
 function overlayClass(token: string): boolean {
   if (token.includes("[") || token.includes("(") || token.includes("&")) return true;
