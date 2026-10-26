@@ -292,6 +292,22 @@ describe("getSisterEmbed: the wiki is asked rarely", () => {
     expect(calls()).toBeGreaterThan(asked);
   });
 
+  it("beforeRead (the caller's rate limit) runs only when the wiki may be asked: a cache hit skips it", async () => {
+    const req = request();
+    const beforeRead = jest.fn(async () => undefined);
+    await getSisterEmbed(req, beforeRead);
+    expect(beforeRead).toHaveBeenCalledTimes(1);
+    await getSisterEmbed(req, beforeRead);
+    expect(beforeRead).toHaveBeenCalledTimes(1);
+
+    const refused = new Error("limited");
+    const asked = calls();
+    await expect(
+      getSisterEmbed(request({ mode: "card" }), () => Promise.reject(refused))
+    ).rejects.toBe(refused);
+    expect(calls()).toBe(asked);
+  });
+
   it("a page that does not exist is asked about again after ten minutes, not before", async () => {
     const req = request();
     page = null;

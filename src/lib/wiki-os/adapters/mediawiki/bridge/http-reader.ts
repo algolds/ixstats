@@ -24,7 +24,8 @@ const SISTER_TIMEOUT_MS = 12_000;
 
 /** The API errors (in a 200) by which a wiki asks to be called less: busy, not down. */
 const BUSY_API_ERRORS: ReadonlySet<string> = new Set(["ratelimited", "maxlag"]);
-const NO_PAGE_ERRORS: ReadonlySet<string> = new Set();
+/** The API errors (in a 200) that refuse the request itself, a bad title or category name: no such page, no members. */
+const INPUT_REFUSALS: ReadonlySet<string> = new Set(["invalidtitle", "invalidcategory"]);
 
 /** What any api.php answer may carry besides its data: an API error, in a 200. */
 interface ApiAnswer {
@@ -42,13 +43,14 @@ function apiErrorCode(answer: ApiAnswer | null): string | null {
  * when there is no usable answer: the guard's failures (a timeout, a network error, HTTP 403, 429 or 5xx, a 2xx that
  * is not JSON or does not parse, a circuit at rest), a status that is not OK (api.php answers 200, even for a missing
  * page), or an API error in the 200 (`busy` for `ratelimited` and `maxlag`), so a refusal is never read as a missing
- * page or an empty list. Only the codes in `pageErrors` are the page's own answer, handed back for the caller to read.
+ * page or an empty list. Only the codes in `pageErrors` (by default a bad title or category name) are the page's own
+ * answer, handed back for the caller to read.
  * Never for IxWiki's loopback, file bytes or `action=raw`.
  */
 export async function readSisterJson<T>(
   url: string,
   timeoutMs: number = SISTER_TIMEOUT_MS,
-  pageErrors: ReadonlySet<string> = NO_PAGE_ERRORS
+  pageErrors: ReadonlySet<string> = INPUT_REFUSALS
 ): Promise<T> {
   const response = await upstreamGuard.fetch(url, { timeoutMs });
   const wiki = wikiNameForUrl(url);

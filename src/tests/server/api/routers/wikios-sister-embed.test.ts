@@ -3,7 +3,7 @@
 //
 // `wikios.sisterEmbed` (routers/wikios/sister.ts): the live embed behind a `Template:Sister` box, for anyone who can
 // read the page. It takes only a wiki WikiOS reads (never IxWiki) and a title MediaWiki could hold, has a rate-limit
-// bucket of its own per caller (`sisterembed`), and hands the request to `getSisterEmbed`. A wiki that cannot be reached reaches the
+// bucket of its own per caller (`sisterembed`, spent only by reads from the wiki), and hands the request to `getSisterEmbed`. A wiki that cannot be reached reaches the
 // client as SERVICE_UNAVAILABLE through the tRPC formatter.
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({ __esModule: true, db: {}, isDatabaseReadOnly: true }));
@@ -45,12 +45,10 @@ describe("wikios.sisterEmbed", () => {
     expect(await caller().sisterEmbed({ wiki: "iiwiki", title: "Caphiria" })).toEqual({
       status: "missing",
     });
-    expect(embed).toHaveBeenCalledWith({
-      wiki: "iiwiki",
-      title: "Caphiria",
-      mode: "page",
-      section: null,
-    });
+    expect(embed).toHaveBeenCalledWith(
+      { wiki: "iiwiki", title: "Caphiria", mode: "page", section: null },
+      expect.any(Function)
+    );
   });
 
   it("passes a section in section mode only, and a section mode with no section reads the page", async () => {
@@ -123,13 +121,20 @@ describe("wikios.sisterEmbed", () => {
     });
   });
 
-  it("each caller has a bucket of its own for it: sisterembed, 30 a minute (a page holds at most 10 embeds)", async () => {
+  it("each caller has a bucket of its own for its reads from the wiki: sisterembed, 30 a minute; a cache hit is free", async () => {
     const { rateLimiter } = await import("~/lib/cache");
     jest.spyOn(rateLimiter, "isEnabled").mockReturnValue(true);
     const check = jest
       .spyOn(rateLimiter, "check")
       .mockResolvedValue({ success: true, remaining: 20, resetAt: new Date() } as never);
     try {
+      await caller().sisterEmbed({ wiki: "iiwiki", title: "Caphiria" });
+      expect(check).not.toHaveBeenCalled();
+
+      embed.mockImplementation(async (_request, beforeRead) => {
+        await beforeRead?.();
+        return { status: "missing" };
+      });
       await caller().sisterEmbed({ wiki: "iiwiki", title: "Caphiria" });
       expect(check).toHaveBeenCalledTimes(1);
       expect(check).toHaveBeenCalledWith(expect.anything(), "sisterembed", {

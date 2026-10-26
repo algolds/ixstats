@@ -211,6 +211,18 @@ describe("a missing page and an unreachable wiki", () => {
     }
   );
 
+  it.each(["invalidtitle", "invalidcategory"])(
+    "an API error that refuses the request itself (%p) is the page's answer: no such page, no members",
+    async (code) => {
+      fetchSpy.mockImplementation(async () => Response.json({ error: { code, info: "x" } }));
+
+      await expect(readSisterWikitext("iiwiki", "Nowhere Land")).resolves.toBeNull();
+      await expect(
+        httpGetCategoryMembers("Bad|Name", 10, undefined, "iiwiki")
+      ).resolves.toMatchObject({ members: [] });
+    }
+  );
+
   it("a search with no match is empty; an unreachable wiki throws", async () => {
     fetchSpy.mockImplementation(async () => Response.json(["Zzyzx", [], [], []]));
     await expect(searchSisterWiki("iiwiki", "Zzyzx")).resolves.toEqual([]);

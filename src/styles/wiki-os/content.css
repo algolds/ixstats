@@ -33,13 +33,17 @@
     isolation: isolate;
   }
 
-  /* The paint containment clips whatever passes the box's edge, so a table wider than the box (a phone, an embed)
-     scrolls sideways inside its own box instead of being cut off. Infoboxes (the page's own, or the reader's
-     .wikios-infobox) and notice boxes keep their layout. */
-  .wikios-sister-article table:not(.infobox, .infobox table, .wikios-infobox table, .ambox) {
-    display: block;
-    max-width: 100%;
-    overflow-x: auto;
+  /* The paint containment clips whatever passes the box's edge, so on a phone a table wider than the box scrolls
+     sideways inside its own box instead of being cut off. Only there, and only outer tables: a block table sizes its
+     cells to their content, which on a wide screen would shrink full-width tables, navboxes and centred tables.
+     Infoboxes (the page's own, or the reader's .wikios-infobox) and notice boxes keep their layout. */
+  @media (width < 48rem) {
+    .wikios-sister-article
+      table:not(.infobox, .wikios-infobox table, .ambox, .navbox, table table) {
+      display: block;
+      max-width: 100%;
+      overflow-x: auto;
+    }
   }
 
   /* Infobox (right sidebar — floated within article content) */

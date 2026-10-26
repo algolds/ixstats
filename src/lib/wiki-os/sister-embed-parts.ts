@@ -156,7 +156,7 @@ export function cardOf(
 }
 
 /** MediaWiki's table of contents, in each of its spellings. */
-const TOC_SELECTOR = "#toc, .toc, .mw-toc";
+const TOC_SELECTOR = ".toc, .mw-toc";
 
 /**
  * `html` without the navigation that only works on a page of its own: its table of contents is dropped and each

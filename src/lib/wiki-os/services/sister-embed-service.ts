@@ -114,14 +114,19 @@ async function readEmbed(request: SisterEmbedRequest): Promise<SisterEmbed> {
 /**
  * The embed `request` asks for: the part as sanitized HTML, a card, `missing` (no such page), `unrenderable` (its wiki
  * could not render it) or `no-part` (no such section, or no infobox). Throws WikiUnavailableError when the wiki cannot
- * be reached (never cached).
+ * be reached (never cached). `beforeRead` runs only when the embed may be read from its wiki (not cached, no read in
+ * flight): the caller's rate limit, so cache hits are free; callers that arrive together each pay it, then share one read.
  */
-export async function getSisterEmbed(asked: SisterEmbedRequest): Promise<SisterEmbed> {
+export async function getSisterEmbed(
+  asked: SisterEmbedRequest,
+  beforeRead?: () => Promise<void>
+): Promise<SisterEmbed> {
   const request = { ...asked, title: canonicalOrTrimmedTitle(asked.title, asked.wiki) };
   const section = headingKey(request.section ?? "") ?? "";
   const key = [request.wiki, request.title, request.mode, section].join("\u0000");
   const cached = embeds.get(key);
   if (cached) return cached;
+  if (!inFlight.has(key)) await beforeRead?.();
   const pending = inFlight.get(key);
   if (pending) return pending;
 
