@@ -18,7 +18,7 @@ import { exchangeService } from "~/lib/vault/exchange-service";
 import { teamWageBill } from "~/lib/sports";
 import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
 import type { LiveTraceEvent } from "~/lib/sports/live-match";
-import { requireOwnedTeam } from "~/server/api/routers/sports/_shared";
+import { assertSportsEconomyOpen, requireOwnedTeam } from "~/server/api/routers/sports/_shared";
 
 const TEAM_OVERVIEW_INCLUDE = {
   players: { where: { isActive: true }, orderBy: { position: "asc" } },
@@ -99,6 +99,7 @@ export const sportsClubRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "manage");
+        await assertSportsEconomyOpen(ctx.db);
         const spend = await exchangeService.spend(
           ctx.user.id,
           1000,
@@ -166,6 +167,7 @@ export const sportsClubRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         const team = await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "manage");
+        await assertSportsEconomyOpen(ctx.db);
         const spend = await exchangeService.spend(
           ctx.user.id,
           100,
@@ -286,6 +288,7 @@ export const sportsClubRouter = createTRPCRouter({
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
         }
 
+        await assertSportsEconomyOpen(ctx.db);
         const spend = await exchangeService.spend(
           ctx.user.id,
           25,
@@ -321,6 +324,7 @@ export const sportsClubRouter = createTRPCRouter({
       try {
         await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "own");
 
+        await assertSportsEconomyOpen(ctx.db);
         const spend = await exchangeService.spend(
           ctx.user.id,
           100,

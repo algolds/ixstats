@@ -15,6 +15,7 @@ import {
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { isSystemOwner } from "~/lib/auth";
 import { viewerCanManageLeague, assertOwnsLeague } from "~/server/api/routers/sports/league-access";
+import { assertSportsEconomyOpen } from "~/server/api/routers/sports/_shared";
 
 export const leaguesCrudRouter = createTRPCRouter({
   getLeagues: publicProcedure
@@ -155,6 +156,7 @@ export const leaguesCrudRouter = createTRPCRouter({
           });
         }
 
+        await assertSportsEconomyOpen(ctx.db);
         const spend = await exchangeService.spend(
           ctx.user.id,
           500,
