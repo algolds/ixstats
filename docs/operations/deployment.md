@@ -70,7 +70,10 @@ newest 14. It exits non-zero on any failure and never leaves a partial file behi
   and aborts the deploy if the dump fails.
 - **Schedule.** The cron job `db-backup` (`src/server/cron/jobs.ts`) takes the same dump daily at 03:17 UTC
   with the default retention, into `backups/` under the cron runner's working directory. Like every job it
-  is off until named in `CRON_ENABLED_JOBS` (or `*`); restart `ixstats-cron` after changing it.
+  is off until named in `CRON_ENABLED_JOBS` (or `*`). After changing it, restart `ixstats-cron` from the
+  ecosystem file, `( cd /ixwiki/public/projects/ixstats && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save`: PM2 keeps a process's stored environment on a restart by name, so
+  `pm2 restart ixstats-cron` would not read the new list. Read back the list the runner got:
+  `pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`.
 - **Off-site.** Dumps live on the same VPS as the database; copy them elsewhere
   (`scp ixwiki:/ixwiki/public/projects/ixstats/backups/ixstats-<stamp>.dump .`) for disaster recovery.
 
