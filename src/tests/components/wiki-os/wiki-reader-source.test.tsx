@@ -139,6 +139,25 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       expect(refetch).toHaveBeenCalledTimes(1);
     });
   });
+  it("shows another wiki's Main Page as its article; only IxWiki's Main Page is the WikiOS home", () => {
+    found("Main Page");
+    const { unmount } = render(<Reader title="Main Page" wikiSource="althistory" />);
+    expect(mockRenderer).toHaveBeenCalledWith(expect.objectContaining({ title: "Main Page" }));
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      { title: "Main Page", wikiSource: "althistory" },
+      expect.objectContaining({ enabled: true })
+    );
+    unmount();
+
+    jest.clearAllMocks();
+    render(<Reader title="Main Page" wikiSource="ixwiki" />);
+    expect(mockRenderer).not.toHaveBeenCalled();
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      { title: "Main Page" },
+      expect.objectContaining({ enabled: false })
+    );
+  });
+
   it("never opens the ixwiki editor for another wiki's page", () => {
     mockSearch = "action=edit";
     found();

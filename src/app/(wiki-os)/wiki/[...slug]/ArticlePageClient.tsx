@@ -108,7 +108,8 @@ export default function ArticlePageClient({
   const isMarginParam = isIxWiki && Boolean(searchParams.get("margin"));
   // `?prefill=` (CreatePageModal's template): the editor opens on it only for a page that does not exist.
   const prefillWikitext = readPrefillParam(searchParams.get("prefill")) ?? undefined;
-  const isMainPage = title === "Main Page";
+  // IxWiki's Main Page is the WikiOS home; another wiki's (`[[althistory:Main Page]]`) is that wiki's article.
+  const isMainPage = isIxWiki && title === "Main Page";
   const [mode, setMode] = useState<ArticleMode>(
     isIxWiki && initialEdit ? initialEdit.mode : "reading"
   );
