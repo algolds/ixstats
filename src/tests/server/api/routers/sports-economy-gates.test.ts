@@ -88,6 +88,30 @@ const spends: [string, (c: Caller, db: Db) => Promise<unknown>][] = [
     "respondToTransferBid (reject)",
     (c) => c.respondToTransferBid({ bidId: "bid_1", action: "reject" }),
   ],
+  // These refund escrow before deleting what holds it
+  [
+    "deleteLeague",
+    (c, db) => {
+      db.sportLeague.findUnique.mockResolvedValue({
+        id: "league_1",
+        createdByUserId: ME,
+        seasons: [],
+      });
+      return c.deleteLeague({ id: "league_1" });
+    },
+  ],
+  ...(["resetSeason", "regenerateSchedule"] as const).map(
+    (name): [string, (c: Caller, db: Db) => Promise<unknown>] => [
+      name,
+      (c, db) => {
+        db.sportSeason.findUnique.mockResolvedValue({
+          id: "s1",
+          league: { id: "league_1", createdByUserId: ME, teams: [] },
+        });
+        return c[name]({ seasonId: "s1" });
+      },
+    ]
+  ),
 ];
 
 beforeEach(() => {

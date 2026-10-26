@@ -4,7 +4,7 @@
  * tRPC router for transfer listings, player market bids, escrows, and negotiations.
  *
  * Escrow safety: every listing, bid and answer runs in one transaction that first locks the
- * listed player (`transfer-escrow.ts`), then re-reads what it acts on. A bid is claimed with a
+ * listed player (`escrow.ts`), then re-reads what it acts on. A bid is claimed with a
  * conditional update (pending → accepted/rejected) and an accepted listing likewise (open →
  * completed), so a second answer matches nothing and pays nothing; every payout and refund
  * also carries the bid's idempotency key (`TRANSFER_ACCEPT:<bidId>`, `TRANSFER_BID_REFUND:<bidId>`).
@@ -25,7 +25,7 @@ import {
   lockTransferClub,
   lockTransferPlayer,
   refundTransferBidTx,
-} from "~/server/api/routers/sports/transfer-escrow";
+} from "~/server/api/routers/sports/escrow";
 
 const transferSovereigns = z.number().int().min(1).max(MAX_TRANSFER_SOVEREIGNS);
 

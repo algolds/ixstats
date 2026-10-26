@@ -12,7 +12,8 @@ import {
 import { TRPCError } from "@trpc/server";
 import { persistSeasonSchedule } from "~/lib/sports";
 import { recalculateStandings } from "./helpers";
-import { TEAM_BADGE } from "~/server/api/routers/sports/_shared";
+import { assertSportsEconomyOpen, TEAM_BADGE } from "~/server/api/routers/sports/_shared";
+import { refundOpenPredictionsTx } from "~/server/api/routers/sports/escrow";
 import { assertOwnsLeague, viewerCanManageLeague } from "~/server/api/routers/sports/league-access";
 
 export const leaguesScheduleRouter = createTRPCRouter({
@@ -92,7 +93,12 @@ export const leaguesScheduleRouter = createTRPCRouter({
         if (!season) throw new TRPCError({ code: "NOT_FOUND", message: "Season not found" });
         assertOwnsLeague(ctx, season.league);
 
-        await ctx.db.sportMatch.deleteMany({ where: { seasonId: input.seasonId } });
+        await assertSportsEconomyOpen(ctx.db);
+        await ctx.db.$transaction(async (tx) => {
+          // Deleting the matches takes their predictions with them: refund the open stakes first
+          await refundOpenPredictionsTx(tx, { seasonId: input.seasonId });
+          await tx.sportMatch.deleteMany({ where: { seasonId: input.seasonId } });
+        });
         await ctx.db.sportStanding.deleteMany({ where: { seasonId: input.seasonId } });
         await ctx.db.sportBracket.deleteMany({ where: { seasonId: input.seasonId } });
         await ctx.db.sportRace.deleteMany({ where: { seasonId: input.seasonId } });
@@ -173,7 +179,12 @@ export const leaguesScheduleRouter = createTRPCRouter({
           });
         }
 
-        await ctx.db.sportMatch.deleteMany({ where: { seasonId: input.seasonId } });
+        await assertSportsEconomyOpen(ctx.db);
+        await ctx.db.$transaction(async (tx) => {
+          // Deleting the matches takes their predictions with them: refund the open stakes first
+          await refundOpenPredictionsTx(tx, { seasonId: input.seasonId });
+          await tx.sportMatch.deleteMany({ where: { seasonId: input.seasonId } });
+        });
         await ctx.db.sportRace.deleteMany({ where: { seasonId: input.seasonId } });
         await ctx.db.sportBracket.deleteMany({ where: { seasonId: input.seasonId } });
 
