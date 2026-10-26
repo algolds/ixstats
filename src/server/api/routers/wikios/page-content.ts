@@ -304,7 +304,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
 
   /**
    * Get intro with backward compatible input signature { title, wiki }. Another wiki that cannot be reached is
-   * SERVICE_UNAVAILABLE (WikiUnavailableError); a page it does not have is an empty intro.
+   * SERVICE_UNAVAILABLE (WikiUnavailableError); a page it does not have is an empty intro, `missing`. Only an IxWiki
+   * title goes through IxWiki's redirects: a sister wiki follows its own (`readSisterWikitext`).
    */
   getIntro: publicProcedure
     .input(
@@ -315,7 +316,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
     )
     .query(async ({ input, ctx }) => {
       const cleanTitle = input.title.replace(/_/g, " ").trim();
-      const { title: resolvedTitle } = await resolveRedirect(cleanTitle);
+      const resolvedTitle =
+        input.wiki === "ixwiki" ? (await resolveRedirect(cleanTitle)).title : cleanTitle;
       await assertTitleVisible(ctx, resolvedTitle, input.wiki);
 
       const summary = await getArticleSummaryFromShadow(resolvedTitle, input.wiki);
@@ -325,6 +327,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
           intro: summary.intro,
           text: summary.intro,
           source: input.wiki,
+          missing: false,
         };
       }
 
@@ -340,6 +343,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
         intro: introText,
         text: introText,
         source: input.wiki,
+        missing: summary.missing && !nativeArticle,
       };
     }),
 

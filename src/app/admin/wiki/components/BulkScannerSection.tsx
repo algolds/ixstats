@@ -18,14 +18,8 @@ import {
   WarningTriangle as AlertTriangle,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import {
-  countryRows,
-  isWikiOutage,
-  unreachableText,
-  type CountriesData,
-  type CountryLinkRow,
-  type ScanResult,
-} from "./types";
+import { isWikiOutage, unreachableText } from "~/lib/wiki-os/wiki-outage";
+import { countryRows, type CountriesData, type CountryLinkRow, type ScanResult } from "./types";
 import {
   parseWikiSource,
   WIKI_SOURCES,

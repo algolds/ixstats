@@ -10,7 +10,8 @@
 // back.
 //
 // The sister reads are real (bridge, http-reader, upstream guard); only `fetch` is spied, answering by host. IxWiki's
-// own search is stubbed, and so is `resolveRedirect` (IxWiki's redirects, which live in Postgres).
+// own search is stubbed, and so is `resolveRedirect` (IxWiki's redirects, which live in Postgres): a sister title never
+// goes through it, since a sister wiki follows its own redirects (`redirects=1` in `readSisterWikitext`).
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({
   __esModule: true,
@@ -43,9 +44,14 @@ jest.mock("~/server/shared/ixstats-template-provider", () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
-import { getCategoryMembers, searchPages } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import {
+  getCategoryMembers,
+  resolveRedirect,
+  searchPages,
+} from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import type { WikiSearchResult, WikiSource } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { WikiUnavailableError } from "~/lib/wiki-os/upstream-guard";
+import { db } from "~/server/db";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "~/server/api/routers/wikios/page-content";
 import { wikiosSearchRouter } from "~/server/api/routers/wikios/search";
@@ -104,6 +110,10 @@ beforeEach(() => {
     .mockImplementation(async (input) => answers[sisterOf(new URL(String(input)))]());
   warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
   jest
+    .mocked(resolveRedirect)
+    .mockReset()
+    .mockImplementation(async (title: string) => ({ title, fragment: null }));
+  jest
     .mocked(searchPages)
     .mockImplementation(async (query: string, limit?: number, wiki?: WikiSource) =>
       wiki === "ixwiki" ? IXWIKI_RESULTS : actualSearchPages(query, limit, wiki)
@@ -146,13 +156,13 @@ describe("a sister wiki that cannot be reached is unavailable to the client", ()
     expect(error.message).toMatch(/^(IIWiki|AltHistory Wiki) could not be reached just now\.$/);
   });
 
-  it("getIntro of a page the wiki does not have is an empty intro, not an error", async () => {
+  it("getIntro of a page the wiki does not have is missing, not an error", async () => {
     answers.iiwiki = () => Response.json({ query: { pages: { "-1": { missing: "" } } } });
 
     const caller = createCallerFactory(wikiosPageContentRouter)(visitor());
     const intro = await caller.getIntro({ title: "No such page", wiki: "iiwiki" });
 
-    expect(intro).toMatchObject({ intro: "", source: "iiwiki" });
+    expect(intro).toMatchObject({ intro: "", missing: true, source: "iiwiki" });
   });
 
   it.each([
@@ -186,6 +196,88 @@ describe("a sister wiki that cannot be reached is unavailable to the client", ()
     const error = await clientErrorOf(wikiosCategoriesRouter, path, input, visitor());
 
     expect(error).toMatchObject({ status: 503, code: "SERVICE_UNAVAILABLE" });
+  });
+});
+
+describe("getIntro of a sister title", () => {
+  /** IIWiki's page `title` (after its own redirect from "Bashan redirect"), with `wikitext` as its text. */
+  const page = (title: string, wikitext: string) => () =>
+    Response.json({
+      query: {
+        redirects: [{ from: "Bashan redirect", to: title }],
+        pages: {
+          "7": { pageid: 7, title, revisions: [{ revid: 70, slots: { main: { "*": wikitext } } }] },
+        },
+      },
+    });
+
+  it("getIntro of an iiwiki title is not resolved against IxWiki redirects", async () => {
+    jest
+      .mocked(resolveRedirect)
+      .mockResolvedValue({ title: "Somewhere on IxWiki", fragment: null });
+    answers.iiwiki = page("Bashan", "'''Bashan''' is a city on the coast.");
+
+    const caller = createCallerFactory(wikiosPageContentRouter)(visitor());
+    const intro = await caller.getIntro({ title: "Bashan_redirect", wiki: "iiwiki" });
+
+    expect(resolveRedirect).not.toHaveBeenCalled();
+    expect(intro).toMatchObject({
+      title: "Bashan",
+      intro: expect.stringContaining("Bashan is a city on the coast."),
+      missing: false,
+      source: "iiwiki",
+    });
+    // IIWiki is asked for the title as written, and follows its own redirect.
+    const asked = new URL(String(fetchSpy.mock.calls[0]![0]));
+    expect(asked.searchParams.get("titles")).toBe("Bashan redirect");
+    expect(asked.searchParams.get("redirects")).toBe("1");
+  });
+
+  it("a page with no intro text is not missing", async () => {
+    answers.iiwiki = page("Bashan stub", "{{Infobox}}");
+
+    const caller = createCallerFactory(wikiosPageContentRouter)(visitor());
+    const intro = await caller.getIntro({ title: "Bashan stub", wiki: "iiwiki" });
+
+    expect(intro).toMatchObject({ intro: "", missing: false });
+  });
+
+  it("a page WikiOS has but the wiki does not is not missing", async () => {
+    answers.iiwiki = () => Response.json({ query: { pages: { "-1": { missing: "" } } } });
+    const native = {
+      id: "a1",
+      title: "Bashan native",
+      source: "iiwiki",
+      status: "PUBLISHED",
+      wikitext: "'''Bashan native''' is a page written in WikiOS.",
+      summary: null,
+    };
+    jest
+      .mocked(db.wikiArticle.findUnique)
+      .mockImplementation((async (args: { where: { source_title?: { title: string } } }) =>
+        args.where.source_title?.title === "Bashan native" ? native : null) as never);
+
+    try {
+      const caller = createCallerFactory(wikiosPageContentRouter)(visitor());
+      const intro = await caller.getIntro({ title: "Bashan native", wiki: "iiwiki" });
+
+      expect(intro).toMatchObject({
+        title: "Bashan native",
+        intro: expect.stringContaining("is a page written in WikiOS"),
+        missing: false,
+      });
+    } finally {
+      jest.mocked(db.wikiArticle.findUnique).mockImplementation(async () => null);
+    }
+  });
+
+  it("an IxWiki title still goes through IxWiki's redirects", async () => {
+    jest.mocked(resolveRedirect).mockRejectedValue(new Error("asked IxWiki's redirects"));
+
+    const caller = createCallerFactory(wikiosPageContentRouter)(visitor());
+    await expect(caller.getIntro({ title: "Burgundie", wiki: "ixwiki" })).rejects.toThrow(
+      "asked IxWiki's redirects"
+    );
   });
 });
 

@@ -5,23 +5,19 @@
  *
  * Uses document-level event delegation to detect any <a> whose href is a wiki article WikiOS can preview
  * (`wikiLinkTarget`): an app link `/wiki/Title` under the base path (with `?source=` for a sister wiki), or an
- * absolute link to IxWiki, IIWiki or AltHistory. The preview's link opens the article in WikiOS.
+ * absolute link to IxWiki, IIWiki or AltHistory (`/wiki/` or `index.php?title=`), portals and project pages included.
+ * The preview (`WikiTooltipBody`) always resolves, and its link opens the article in WikiOS.
  *
  * Mount once in the root layout as a sibling (it wraps nothing) — every link gets
  * tooltips automatically, no per-component wrapping needed. Future wiki links
  * added anywhere in the app will automatically get tooltip coverage.
  */
 
-import Link from "next/link";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Badge } from "~/components/ui/badge";
 import { VirtualAnchorHoverCard } from "~/components/ui/hover-card";
-import { Skeleton } from "~/components/ui/skeleton";
-import { api } from "~/trpc/react";
-import { OpenBook as BookOpen } from "iconoir-react";
 import { getBasePath } from "~/lib/base-path";
-import { WIKI_SOURCES, wikiReaderPath } from "~/lib/wiki-os/config";
 import { wikiLinkTarget, type WikiLinkTarget } from "~/lib/wiki-os/wiki-link-target";
+import { WikiTooltipBody } from "./WikiTooltipBody";
 
 export function GlobalLinkTooltips() {
   // The detected link and the <a> it came from (the hover card's virtual anchor). Kept after the
@@ -123,35 +119,5 @@ export function GlobalLinkTooltips() {
     >
       {active ? <WikiTooltipBody title={active.link.title} wiki={active.link.wiki} /> : null}
     </VirtualAnchorHoverCard>
-  );
-}
-
-function WikiTooltipBody({ title, wiki }: WikiLinkTarget) {
-  const { data: intro } = api.wikios.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <BookOpen className="text-tint size-3.5 shrink-0" aria-hidden="true" />
-        <span className="text-label text-headline truncate">{title}</span>
-        <Badge variant="default" className="ml-auto">
-          {WIKI_SOURCES[wiki].name}
-        </Badge>
-      </div>
-      {intro?.text ? (
-        <p className="text-label-secondary text-footnote line-clamp-4 leading-relaxed">
-          {intro.text.substring(0, 300)}
-          {intro.text.length > 300 ? "…" : ""}
-        </p>
-      ) : (
-        <Skeleton className="rounded-control-sm h-10 w-full" />
-      )}
-      <Link
-        href={wikiReaderPath(title, wiki)}
-        className="text-caption text-tint hover:text-tint-hover flex items-center gap-1 transition-colors"
-      >
-        Read full article
-      </Link>
-    </div>
   );
 }

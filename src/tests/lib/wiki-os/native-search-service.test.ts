@@ -307,6 +307,7 @@ describe("getArticleSummaryFromShadow: a sister page with no stored copy reads i
     await expect(getArticleSummaryFromShadow("Gylias", "iiwiki")).resolves.toMatchObject({
       title: "Gylias",
       intro: expect.stringContaining("Gylias is a country"),
+      missing: false,
     });
     expect(mockBridgeWikitext).toHaveBeenCalledWith("Gylias", "iiwiki");
   });
@@ -319,13 +320,46 @@ describe("getArticleSummaryFromShadow: a sister page with no stored copy reads i
     );
   });
 
-  it("logs and swallows any other error, as an empty intro", async () => {
+  it("a page its wiki does not have is missing", async () => {
+    mockBridgeWikitext.mockResolvedValue(null);
+
+    await expect(getArticleSummaryFromShadow("Nowhere", "iiwiki")).resolves.toEqual({
+      title: "Nowhere",
+      intro: "",
+      leadImageUrl: null,
+      missing: true,
+    });
+  });
+
+  it("a page with no text is there, not missing", async () => {
+    mockBridgeWikitext.mockResolvedValue({ title: "Blank", pageId: 4, wikitext: "", length: 0 });
+
+    await expect(getArticleSummaryFromShadow("Blank", "iiwiki")).resolves.toMatchObject({
+      intro: "",
+      missing: false,
+    });
+  });
+
+  it("a stored copy is not missing", async () => {
+    mockFindFirst.mockResolvedValue({ title: "Gylias", summary: "A country.", wikitext: "" });
+
+    await expect(getArticleSummaryFromShadow("Gylias", "iiwiki")).resolves.toEqual({
+      title: "Gylias",
+      intro: "A country.",
+      leadImageUrl: null,
+      missing: false,
+    });
+    expect(mockBridgeWikitext).not.toHaveBeenCalled();
+  });
+
+  it("logs and swallows any other error, as an empty intro it cannot call missing", async () => {
     mockBridgeWikitext.mockRejectedValue(new Error("boom"));
 
     await expect(getArticleSummaryFromShadow("Gylias", "iiwiki")).resolves.toEqual({
       title: "Gylias",
       intro: "",
       leadImageUrl: null,
+      missing: false,
     });
     expect(error).toHaveBeenCalled();
   });

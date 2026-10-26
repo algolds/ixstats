@@ -49,6 +49,36 @@ describe("GlobalLinkTooltips", () => {
     );
   });
 
+  it.each([
+    [
+      "https://iiwiki.com/index.php?title=Portal:Eurth",
+      "Portal:Eurth",
+      "iiwiki",
+      "/wiki/Portal%3AEurth?source=iiwiki",
+    ],
+    ["https://ixwiki.com/wiki/IxWiki:Policy", "IxWiki:Policy", "ixwiki", "/wiki/IxWiki%3APolicy"],
+    [
+      "https://ixwiki.com/index.php?title=Project:About",
+      "Project:About",
+      "ixwiki",
+      "/wiki/Project%3AAbout",
+    ],
+  ])(
+    "previews %s, a page the reader reads, and opens it in the reader",
+    (href, title, wiki, path) => {
+      jest
+        .mocked(api.wikios.getIntro.useQuery)
+        .mockReturnValue({
+          data: { title, intro: "", text: "", source: wiki, missing: false },
+        } as never);
+      hover(href);
+
+      expect(api.wikios.getIntro.useQuery).toHaveBeenCalledWith({ title, wiki }, expect.anything());
+      expect(screen.getByRole("link", { name: "Read full article" })).toHaveAttribute("href", path);
+      expect(screen.getByText("No summary for this page.")).toBeInTheDocument();
+    }
+  );
+
   it("does not preview a file link", () => {
     hover("/projects/ixstates/wiki/File:Flag.svg");
     expect(api.wikios.getIntro.useQuery).not.toHaveBeenCalled();

@@ -509,14 +509,14 @@ import { extractIntroFromWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridg
 export { extractIntroFromWikitext };
 
 /**
- * Retrieves summary/intro for an article from PostgreSQL (a sister wiki's page falls back to its own wiki). A sister
- * wiki that cannot be reached throws WikiUnavailableError, never an empty intro; any other failure of the fallback is
- * logged and reads as no intro.
+ * Retrieves summary/intro for an article from PostgreSQL (a sister wiki's page falls back to its own wiki). `missing`
+ * when neither has the page. A sister wiki that cannot be reached throws WikiUnavailableError, never an empty intro;
+ * any other failure of the fallback is logged and reads as no intro, which it cannot call missing.
  */
 export async function getArticleSummaryFromShadow(
   title: string,
   source: WikiSource = "ixwiki"
-): Promise<{ title: string; intro: string; leadImageUrl?: string | null }> {
+): Promise<{ title: string; intro: string; leadImageUrl?: string | null; missing: boolean }> {
   // `title` arrives already URL-decoded (a "%" in it is part of the title): never decode again.
   const cleanTitle = title.replace(/_/g, " ").trim();
   try {
@@ -545,23 +545,23 @@ export async function getArticleSummaryFromShadow(
         title: article.title || cleanTitle,
         intro,
         leadImageUrl: null,
+        missing: false,
       };
     }
   } catch {
     // Postgres table column not present yet or read-only shadow miss — fall through
   }
 
-  // Fallback to the bridge (PostgreSQL for IxWiki, HTTP for a sister wiki)
+  // Fallback to the bridge (PostgreSQL for IxWiki, HTTP for a sister wiki): null only for a page it does not have.
   try {
     const { getArticleWikitext } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
     const res = await getArticleWikitext(cleanTitle, source);
-    if (res?.wikitext) {
-      return {
-        title: res.title || cleanTitle,
-        intro: extractIntroFromWikitext(res.wikitext),
-        leadImageUrl: null,
-      };
-    }
+    return {
+      title: res?.title || cleanTitle,
+      intro: res?.wikitext ? extractIntroFromWikitext(res.wikitext) : "",
+      leadImageUrl: null,
+      missing: !res,
+    };
   } catch (err) {
     if (err instanceof WikiUnavailableError) throw err;
     console.error("[SearchService] Bridge intro fallback error:", err);
@@ -571,6 +571,7 @@ export async function getArticleSummaryFromShadow(
     title: cleanTitle,
     intro: "",
     leadImageUrl: null,
+    missing: false,
   };
 }
 

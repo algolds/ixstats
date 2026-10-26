@@ -20,13 +20,8 @@ import {
 import { cn } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
 import type { WikiSource } from "~/lib/wiki-os/config";
-import {
-  countryRows,
-  isWikiOutage,
-  unreachableText,
-  WIKI_SOURCE_OPTIONS,
-  type CountriesData,
-} from "./types";
+import { isWikiOutage, unreachableText } from "~/lib/wiki-os/wiki-outage";
+import { countryRows, WIKI_SOURCE_OPTIONS, type CountriesData } from "./types";
 
 /** What testing a link found: the page (with its intro), no such page, or a wiki that did not answer. */
 type TestResult =
@@ -35,13 +30,14 @@ type TestResult =
   | { status: "unreachable"; wiki: WikiSource };
 
 interface IntroRead {
-  data?: { intro: string } | null;
+  data?: { intro: string; missing: boolean } | null;
   error?: { data?: { code?: string } | null } | null;
 }
 
-/** An outage is not "not found": the page may well exist. */
+/** An outage is not "not found": the page may well exist. A page the wiki does not have is (`missing`). */
 function testResultOf(read: IntroRead, wiki: WikiSource): TestResult {
-  if (read.data) return { status: "found", intro: read.data.intro };
+  if (read.data)
+    return read.data.missing ? { status: "missing" } : { status: "found", intro: read.data.intro };
   return isWikiOutage(read.error) ? { status: "unreachable", wiki } : { status: "missing" };
 }
 

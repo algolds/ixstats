@@ -209,6 +209,31 @@ describe("the manual link editor", () => {
     expect(screen.queryByText(/could not be reached/)).not.toBeInTheDocument();
   });
 
+  it("a page the wiki reports missing is not found, not article found", async () => {
+    mockRefetch.mockResolvedValue({
+      data: { title: "Nowhere", intro: "", text: "", source: "iiwiki", missing: true },
+      error: null,
+    });
+    render(<ManualLinkEditorSection countriesData={{ countries: [] }} />);
+    await testLink("iiwiki", "Nowhere");
+
+    expect(
+      await screen.findByText("Article not found. Check the title and source.")
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Article found")).not.toBeInTheDocument();
+  });
+
+  it("a page with no intro is still found", async () => {
+    mockRefetch.mockResolvedValue({
+      data: { title: "Stub", intro: "", text: "", source: "ixwiki", missing: false },
+      error: null,
+    });
+    render(<ManualLinkEditorSection countriesData={{ countries: [] }} />);
+    await testLink("ixwiki", "Stub");
+
+    expect(await screen.findByText("Article found")).toBeInTheDocument();
+  });
+
   it("a found page shows its intro, and saving keeps the wiki", async () => {
     mockRefetch.mockResolvedValue({
       data: {
@@ -216,6 +241,7 @@ describe("the manual link editor", () => {
         intro: "A kingdom.",
         text: "A kingdom.",
         source: "althistory",
+        missing: false,
       },
       error: null,
     });
