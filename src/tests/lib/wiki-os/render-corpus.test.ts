@@ -216,7 +216,7 @@ describe("MediaWiki's HTML of an IxWiki article", () => {
   });
 
   it("the renderer version changed, so stored bundles re-render", () => {
-    expect(RENDERER_VERSION.startsWith("6:")).toBe(true);
+    expect(RENDERER_VERSION.startsWith("7:")).toBe(true);
   });
 });
 
