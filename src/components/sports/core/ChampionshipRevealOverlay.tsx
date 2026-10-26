@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/compone
 import { springGentle } from "~/lib/design/motion";
 import { getSportTheme } from "~/lib/sports/theming";
 
+import { assetUrl } from "~/lib/base-path";
 interface ChampionshipRevealOverlayProps {
   isOpen: boolean;
   championName: string;
@@ -73,7 +74,11 @@ export function ChampionshipRevealOverlay({
             style={championColor ? { borderColor: championColor } : undefined}
           >
             {championLogo ? (
-              <img src={championLogo} alt={championName} className="h-full w-full object-cover" />
+              <img
+                src={assetUrl(championLogo) ?? undefined}
+                alt={championName}
+                className="h-full w-full object-cover"
+              />
             ) : (
               <Trophy className="text-yellow size-10" aria-hidden />
             )}

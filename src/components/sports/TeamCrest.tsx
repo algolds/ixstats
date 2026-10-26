@@ -1,3 +1,5 @@
+import { assetUrl } from "~/lib/base-path";
+
 /** A team's logo, or the default shield tinted with its colour when it has none. */
 export function TeamCrest({
   src,
@@ -10,8 +12,9 @@ export function TeamCrest({
   color?: string;
   shieldClassName?: string;
 }) {
-  if (src) {
-    return <img src={src} alt={alt} className="h-full w-full rounded-full object-contain" />;
+  const url = assetUrl(src);
+  if (url) {
+    return <img src={url} alt={alt} className="h-full w-full rounded-full object-contain" />;
   }
   return (
     <svg

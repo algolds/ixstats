@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "~/components/ui/dialog";
-import { withBasePath } from "~/lib/base-path";
+import { assetUrl, withBasePath } from "~/lib/base-path";
 import { SPORT_PRESETS } from "~/lib/sports/presets";
 import { SportsShell } from "~/components/sports/core/SportsShell";
 import { useUrlSyncedSection } from "~/components/sports/core/useUrlSyncedSection";
@@ -180,7 +180,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
           >
             {teamPublic.logo ? (
               <img
-                src={teamPublic.logo}
+                src={assetUrl(teamPublic.logo) ?? undefined}
                 alt={teamPublic.name}
                 className="h-full w-full object-cover"
               />
@@ -274,7 +274,11 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
             style={team.color ? { borderColor: team.color } : undefined}
           >
             {team.logo ? (
-              <img src={team.logo} alt={team.name} className="h-full w-full object-cover" />
+              <img
+                src={assetUrl(team.logo) ?? undefined}
+                alt={team.name}
+                className="h-full w-full object-cover"
+              />
             ) : (
               emoji
             )}

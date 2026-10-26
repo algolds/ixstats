@@ -2,12 +2,14 @@
 /**
  * Uploaded flags and images are stored without the base path (`/images/uploads/…`, `/flags/…`, see
  * `src/server/shared/uploaded-assets.ts`). Under production's `/projects/ixstates` a root-relative `src` loads from
- * classic MediaWiki's root and 404s, so every flag `src` goes through `assetUrl()` (or `withBasePath()`), which leaves
- * absolute, data: and blob: URLs alone and never doubles the base path.
+ * classic MediaWiki's root and 404s, so every flag, avatar, profile picture, banner, logo, cover, thumbnail or photo
+ * `src` goes through `assetUrl()` (or `withBasePath()`), which leaves absolute, data: and blob: URLs alone and never
+ * doubles the base path.
  *
- * This walks every `.tsx` under `src` and fails on a JSX `src={…}` that names a flag (or holds an `/images/uploads`
- * literal) without one of those calls. A value resolved earlier in the file (`const flagUrl = assetUrl(raw)`) counts
- * as resolved. Components that resolve their own `src` are listed in `RESOLVING_TAGS`.
+ * This walks every `.tsx` under `src` and fails on a JSX `src={…}` that names one of those (or holds an
+ * `/images/uploads` literal) without one of the `RESOLVERS`. A value resolved earlier in the file
+ * (`const flagUrl = assetUrl(raw)`) counts as resolved. Components that resolve their own `src` are listed in
+ * `RESOLVING_TAGS`.
  *
  * OG images (`src/lib/og`) are exempt: `next/og` needs absolute URLs, which their loaders build.
  */
@@ -16,11 +18,41 @@ import path from "node:path";
 import { ts } from "ts-morph";
 
 const SRC = path.join(process.cwd(), "src");
-const RESOLVERS = new Set(["assetUrl", "withBasePath", "resolveSrc"]);
+/** `assetUrl`, `withBasePath`, and helpers that return an absolute URL or one already carrying the base path. */
+const RESOLVERS = new Set([
+  "assetUrl",
+  "withBasePath",
+  "resolveSrc",
+  "proxyDiscordUrl",
+  "proxyCardArtwork",
+  "proxyNSImage",
+  "getPlayerPhotoUrl",
+  "mediaWikiImageUrl",
+  "getImageUrl",
+]);
 /** Components that pass their `src` through `assetUrl`/`withBasePath` themselves. */
-const RESOLVING_TAGS = new Set(["FlagTile", "FlagBanner", "FlagWatermark", "FlagDot"]);
+const RESOLVING_TAGS = new Set([
+  "FlagTile",
+  "FlagBanner",
+  "FlagWatermark",
+  "FlagDot",
+  "AvatarImage",
+  "TeamCrest",
+  "PillImage",
+]);
 const EXEMPT_DIRS = [path.join("src", "lib", "og"), path.join("src", "tests")];
 const FLAGGISH = /flag/i;
+const PICTURISH =
+  /flag|avatar|profileImage|imageUrl|banner|logo|cover|thumbnail|photo|heroImage|selectedImage|mediaUrl|media\.url/i;
+/**
+ * WikiOS surfaces are held to the flag rule, and their picture srcs to a count that only falls (mostly wiki
+ * thumbnails and Clerk avatars, which are absolute, but a stored relative one would 404).
+ */
+const WIKIOS_DIRS = [
+  path.join("src", "components", "wiki-os"),
+  path.join("src", "app", "(wiki-os)"),
+];
+const WIKIOS_UNRESOLVED_PICTURES_ALLOWED = 10;
 const UPLOAD_LITERAL = /["'`]\/images\/uploads\//;
 
 function walk(dir: string, visit: (file: string) => void): void {
@@ -60,15 +92,20 @@ function resolvedNames(sf: ts.SourceFile): Set<string> {
   return names;
 }
 
-function isUnresolved(expr: ts.Expression, sf: ts.SourceFile, resolved: Set<string>): boolean {
+function isUnresolved(
+  expr: ts.Expression,
+  sf: ts.SourceFile,
+  resolved: Set<string>,
+  names: RegExp
+): boolean {
   if (callsResolver(expr)) return false;
   if (ts.isIdentifier(expr) && resolved.has(expr.text)) return false;
   const text = expr.getText(sf);
-  return FLAGGISH.test(text) || UPLOAD_LITERAL.test(text);
+  return names.test(text) || UPLOAD_LITERAL.test(text);
 }
 
-/** The `src={…}` attributes in `source` that name a flag or an upload without resolving it, as `file:line`. */
-function unresolvedAssetSrcs(file: string, source: string): string[] {
+/** The `src={…}` attributes in `source` that match `names` (or hold an upload) without resolving it, as `file:line`. */
+function unresolvedAssetSrcs(file: string, source: string, names: RegExp = PICTURISH): string[] {
   const sf = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const resolved = resolvedNames(sf);
   const found: string[] = [];
@@ -80,7 +117,7 @@ function unresolvedAssetSrcs(file: string, source: string): string[] {
           const init = attr.initializer;
           const expr = init && ts.isJsxExpression(init) ? init.expression : undefined;
           const literal = init && ts.isStringLiteral(init) && UPLOAD_LITERAL.test(init.getText(sf));
-          if (literal || (expr && isUnresolved(expr, sf, resolved))) {
+          if (literal || (expr && isUnresolved(expr, sf, resolved, names))) {
             const { line } = sf.getLineAndCharacterOfPosition(attr.getStart(sf));
             found.push(`${path.relative(process.cwd(), file)}:${line + 1}`);
           }
@@ -100,7 +137,12 @@ describe("the detector", () => {
   it.each([
     ["<img src={c.flagUrl} />"],
     ["<img src={c.country?.flag ?? undefined} />"],
-    ["<AvatarImage src={user.flag} />"],
+    ["<img src={user.flag} />"],
+    ["<img src={account.profileImageUrl} />"],
+    ["<img src={group.settings.bannerUrl} />"],
+    ["<img src={team.logo} />"],
+    ["<img src={post.mediaUrls[0]} />"],
+    ["<motion.img src={lightboxMedia.url} />"],
     ['<img src="/images/uploads/x.png" />'],
     ["<img src={`/images/uploads/${name}`} />"],
     ["<img src={normalizeFlagUrl(c.flag) ?? undefined} />"],
@@ -112,7 +154,10 @@ describe("the detector", () => {
     ["<img src={assetUrl(c.flagUrl) ?? undefined} />"],
     ["<img src={withBasePath(c.flag)} />"],
     ["<FlagWatermark src={flagUrl} />"],
-    ["<img src={c.avatarUrl} />"],
+    ["<img src={assetUrl(c.avatarUrl) ?? undefined} />"],
+    ["<AvatarImage src={account.profileImageUrl} />"],
+    ["<img src={proxyDiscordUrl(account.profileImageUrl)} />"],
+    ["<img src={gif.images.fixed_height.url} />"],
     ['<img src="/logo.svg" />'],
   ])("allows %s", (el) => {
     expect(scan(jsx(el))).toEqual([]);
@@ -126,15 +171,27 @@ describe("the detector", () => {
 });
 
 describe("flag and upload srcs carry the base path", () => {
-  it("every .tsx under src resolves a flag or upload src", () => {
-    const files: string[] = [];
-    walk(SRC, (file) => {
-      if (!EXEMPT_DIRS.some((dir) => path.relative(process.cwd(), file).startsWith(dir)))
-        files.push(file);
-    });
-    expect(files.length).toBeGreaterThan(1000); // the walk found the app
-    expect(
-      files.flatMap((file) => unresolvedAssetSrcs(file, fs.readFileSync(file, "utf8")))
-    ).toEqual([]);
+  const inside = (file: string, dirs: string[]) =>
+    dirs.some((dir) => path.relative(process.cwd(), file).startsWith(dir));
+  const files: string[] = [];
+  walk(SRC, (file) => {
+    if (!inside(file, EXEMPT_DIRS)) files.push(file);
+  });
+  const app = files.filter((file) => !inside(file, WIKIOS_DIRS));
+  const wikiOs = files.filter((file) => inside(file, WIKIOS_DIRS));
+  const scanAll = (list: string[], names: RegExp) =>
+    list.flatMap((file) => unresolvedAssetSrcs(file, fs.readFileSync(file, "utf8"), names));
+
+  it("every .tsx under src outside WikiOS resolves a flag, picture or upload src", () => {
+    expect(app.length).toBeGreaterThan(1000); // the walk found the app
+    expect(scanAll(app, PICTURISH)).toEqual([]);
+  });
+
+  it("every WikiOS .tsx resolves a flag or upload src, and its unresolved picture srcs only fall", () => {
+    expect(wikiOs.length).toBeGreaterThan(50);
+    expect(scanAll(wikiOs, FLAGGISH)).toEqual([]);
+    expect(scanAll(wikiOs, PICTURISH).length).toBeLessThanOrEqual(
+      WIKIOS_UNRESOLVED_PICTURES_ALLOWED
+    );
   });
 });

@@ -16,6 +16,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
+import { assetUrl } from "~/lib/base-path";
 // Attribute badge styling
 // Career stage styling
 const CAREER_STAGE_STYLES: Record<string, { label: string; className: string }> = {
@@ -88,7 +89,11 @@ function OrganizationFocusContent({
           style={{ backgroundColor: team.color ? `${team.color}20` : "rgba(255,255,255,0.05)" }}
         >
           {team.logo ? (
-            <img src={team.logo} alt={team.name} className="h-full w-full object-cover" />
+            <img
+              src={assetUrl(team.logo) ?? undefined}
+              alt={team.name}
+              className="h-full w-full object-cover"
+            />
           ) : (
             <span>{theme.emoji}</span>
           )}

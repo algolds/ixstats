@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 
+import { assetUrl } from "~/lib/base-path";
 export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const {
     activeTrack,
@@ -63,7 +64,11 @@ export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () =
         <div className="mt-2 flex flex-col items-center gap-4 text-center">
           {activeTrack.coverArt && (
             <div className="rounded-card border-separator shadow-card relative size-48 overflow-hidden border">
-              <img src={activeTrack.coverArt} className="h-full w-full object-cover" alt="Cover" />
+              <img
+                src={assetUrl(activeTrack.coverArt) ?? undefined}
+                className="h-full w-full object-cover"
+                alt="Cover"
+              />
             </div>
           )}
           <div>

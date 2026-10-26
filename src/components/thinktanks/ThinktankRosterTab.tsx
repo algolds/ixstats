@@ -6,6 +6,7 @@ import { Input } from "~/components/ui/input";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Badge } from "~/components/ui/badge";
 
+import { assetUrl } from "~/lib/base-path";
 interface Member {
   id: string;
   userId: string;
@@ -92,7 +93,11 @@ function MemberCard({ member, isSelf }: { member: Member; isSelf: boolean }) {
       <div className="flex min-w-0 items-center gap-3">
         <div className="border-separator bg-tint-fill text-tint rounded-control flex size-10 shrink-0 items-center justify-center overflow-hidden border">
           {user?.avatarUrl ? (
-            <img src={user.avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+            <img
+              src={assetUrl(user.avatarUrl) ?? undefined}
+              alt={displayName}
+              className="h-full w-full object-cover"
+            />
           ) : country?.flag ? (
             <span className="text-title-3">{country.flag}</span>
           ) : (

@@ -31,6 +31,7 @@ import {
 import { ReactionsDialog } from "../ReactionsDialog";
 import type { PostState } from "./postViewTypes";
 
+import { assetUrl } from "~/lib/base-path";
 interface PostModalsProps {
   post: any;
   state: PostState;
@@ -144,7 +145,7 @@ export function PostModals({ post, state, onAccountClick }: PostModalsProps) {
             <div className="bg-surface rounded-card shadow-sheet p-2">
               <motion.img
                 layoutId={lightboxMedia.id}
-                src={lightboxMedia.url}
+                src={assetUrl(lightboxMedia.url) ?? undefined}
                 alt="Expanded view"
                 className="rounded-row max-h-[65vh] w-full object-contain"
               />

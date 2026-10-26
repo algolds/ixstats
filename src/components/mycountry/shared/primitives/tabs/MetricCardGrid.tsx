@@ -92,7 +92,7 @@ function BackgroundLayer({ background }: { background: BackgroundImage }) {
       <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
         {hasImage ? (
           <img
-            src={imageUrl}
+            src={assetUrl(imageUrl) ?? undefined}
             alt={preset?.label || "Custom Background"}
             className="h-full w-full object-cover opacity-25 blur-[12px] saturate-50"
             onError={() => setImageError(true)}

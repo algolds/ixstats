@@ -12,6 +12,7 @@ import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { cn } from "~/lib/utils";
 
+import { assetUrl } from "~/lib/base-path";
 export interface MessageTrayConversation {
   id: string;
   title?: string | null;
@@ -139,7 +140,7 @@ export function MessageTrayItem({
                 </div>
               ) : otherParticipant?.avatarUrl ? (
                 <img
-                  src={otherParticipant.avatarUrl}
+                  src={assetUrl(otherParticipant.avatarUrl) ?? undefined}
                   alt=""
                   className="ring-separator h-8 w-8 rounded-full object-cover ring-1"
                 />

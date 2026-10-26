@@ -38,6 +38,7 @@ import { formatMembershipTier } from "~/lib/tier-utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { Card } from "~/components/ui/card";
 
+import { assetUrl } from "~/lib/base-path";
 interface AccountIdentityPanelProps {
   user: UserResource | null | undefined;
 }
@@ -129,7 +130,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             <div className="border-separator bg-fill-3 rounded-row relative size-14 shrink-0 overflow-hidden border">
               {user?.imageUrl ? (
                 <img
-                  src={user.imageUrl}
+                  src={assetUrl(user.imageUrl) ?? undefined}
                   alt={user.username || "User"}
                   className="h-full w-full object-cover"
                 />

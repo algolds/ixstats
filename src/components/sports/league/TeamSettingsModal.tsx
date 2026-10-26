@@ -18,7 +18,7 @@ const MediaSearchModal = dynamic(
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
-import { withBasePath } from "~/lib/base-path";
+import { assetUrl, withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -227,7 +227,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
               >
                 {logoPreviewSrc ? (
                   <img
-                    src={logoPreviewSrc}
+                    src={assetUrl(logoPreviewSrc) ?? undefined}
                     alt="Logo preview"
                     className="h-full w-full object-cover"
                   />
@@ -303,7 +303,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
               >
                 {coverPreviewSrc ? (
                   <img
-                    src={coverPreviewSrc}
+                    src={assetUrl(coverPreviewSrc) ?? undefined}
                     alt="Cover preview"
                     className="h-full w-full object-cover"
                   />

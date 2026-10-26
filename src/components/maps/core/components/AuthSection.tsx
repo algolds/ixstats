@@ -7,6 +7,7 @@ import { Button } from "~/components/ui/button";
 import { cn, getNationUrl } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 
+import { assetUrl } from "~/lib/base-path";
 /**
  * Controls on the map island (Halo's acrylic pill, which clips at its edge — `overflow-hidden`,
  * 4px of padding): the focus ring sits just inside the control, as MapDynamicIsland's buttons.
@@ -51,7 +52,7 @@ export function AuthSection({ user, isLoaded, greeting, countryName }: AuthSecti
         >
           {user.imageUrl ? (
             <img
-              src={user.imageUrl}
+              src={assetUrl(user.imageUrl) ?? undefined}
               alt=""
               className="ring-separator h-4 w-4 rounded-full object-cover ring-1"
             />
@@ -75,7 +76,7 @@ export function AuthSection({ user, isLoaded, greeting, countryName }: AuthSecti
         <div className="border-separator flex items-center gap-3 border-b px-4 py-3">
           {user.imageUrl ? (
             <img
-              src={user.imageUrl}
+              src={assetUrl(user.imageUrl) ?? undefined}
               alt=""
               className="ring-separator h-8 w-8 rounded-full object-cover ring-2"
             />

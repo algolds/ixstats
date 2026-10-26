@@ -12,6 +12,7 @@ import { useCountryData } from "../CountryDataProvider";
 import { extractCountryImageData, type ImageContext } from "~/lib/media";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
+import { assetUrl } from "~/lib/base-path";
 interface SectorData {
   id: string;
   name: string;
@@ -109,7 +110,12 @@ const SectorGridItemImage = React.memo(function SectorGridItemImage({
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+        <img
+          src={assetUrl(imageUrl) ?? undefined}
+          alt=""
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/60 to-black/40" />
       </motion.div>
     </AnimatePresence>

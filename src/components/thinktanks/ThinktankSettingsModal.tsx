@@ -32,6 +32,7 @@ import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { THINKTANK_CATEGORIES, ThinktankDialogHeader, ThinktankField } from "./ThinktankFormParts";
 
+import { assetUrl } from "~/lib/base-path";
 interface ThinktankSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -78,7 +79,11 @@ function BrandingSection({
 
       <div className="border-separator bg-fill-4 rounded-control relative h-24 w-full overflow-hidden border">
         {bannerUrl ? (
-          <img src={bannerUrl} alt="Group banner" className="h-full w-full object-cover" />
+          <img
+            src={assetUrl(bannerUrl) ?? undefined}
+            alt="Group banner"
+            className="h-full w-full object-cover"
+          />
         ) : (
           <div className="text-footnote text-label-secondary flex size-full items-center justify-center">
             No banner set

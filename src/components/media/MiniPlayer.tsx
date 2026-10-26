@@ -8,6 +8,7 @@ import { Play, Pause, FastArrowRight as SkipForward, Expand as Maximize2 } from 
 import dynamic from "next/dynamic";
 import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
 
+import { assetUrl } from "~/lib/base-path";
 // The full-screen player is opened from the mini bar: its chunk is fetched then.
 const FullPlayer = dynamic(() => import("./FullPlayer").then((m) => m.FullPlayer), { ssr: false });
 
@@ -42,7 +43,11 @@ export function MiniPlayer() {
           >
             {activeTrack.coverArt && (
               <span className="rounded-control-sm relative size-10 flex-shrink-0 overflow-hidden">
-                <img src={activeTrack.coverArt} className="h-full w-full object-cover" alt="" />
+                <img
+                  src={assetUrl(activeTrack.coverArt) ?? undefined}
+                  className="h-full w-full object-cover"
+                  alt=""
+                />
               </span>
             )}
             <span className="flex min-w-0 flex-col">

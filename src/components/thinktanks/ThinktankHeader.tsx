@@ -20,6 +20,7 @@ import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
+import { assetUrl } from "~/lib/base-path";
 export type ThinktankTab = "feed" | "roster" | "docs" | "chat";
 
 interface ThinktankHeaderProps {
@@ -115,7 +116,7 @@ export function ThinktankHeader({
           className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-30"
         >
           <img
-            src={group.settings.bannerUrl}
+            src={assetUrl(group.settings.bannerUrl) ?? undefined}
             alt=""
             className="size-full object-cover blur-[2px]"
           />

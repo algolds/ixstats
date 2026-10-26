@@ -12,6 +12,7 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import type { ThinkpagesAccountInput } from "../account-types";
 
+import { assetUrl } from "~/lib/base-path";
 interface AccountDetailsFormProps {
   formData: {
     firstName: string;
@@ -156,7 +157,7 @@ export function AccountDetailsForm({
           <div className="border-separator bg-fill-3 size-16 shrink-0 overflow-hidden rounded-full border">
             {formData.profileImageUrl ? (
               <img
-                src={formData.profileImageUrl}
+                src={assetUrl(formData.profileImageUrl) ?? undefined}
                 alt="Profile"
                 className="size-full object-cover"
               />

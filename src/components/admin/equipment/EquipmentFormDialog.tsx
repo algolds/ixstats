@@ -40,6 +40,7 @@ import {
   type EquipmentFormData,
 } from "~/lib/military/catalog-utils";
 
+import { assetUrl } from "~/lib/base-path";
 interface EquipmentFormDialogProps {
   isOpen: boolean;
   isEditing: boolean;
@@ -459,7 +460,7 @@ function MediaTab({
         />
         {formData.imageUrl && (
           <img
-            src={formData.imageUrl}
+            src={assetUrl(formData.imageUrl) ?? undefined}
             alt="Preview"
             className="rounded-control border-separator mt-2 h-32 w-32 border object-cover"
             onError={(e) => {

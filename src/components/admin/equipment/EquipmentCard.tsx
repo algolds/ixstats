@@ -17,6 +17,7 @@ import { CATEGORY_ICONS } from "~/lib/military/catalog-utils";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils/cn";
 
+import { assetUrl } from "~/lib/base-path";
 interface EquipmentCardProps {
   equipment: any;
   isSelected: boolean;
@@ -47,7 +48,7 @@ export function EquipmentCard({
         <Checkbox checked={isSelected} onCheckedChange={onToggleSelect} />
         {equipment.imageUrl ? (
           <img
-            src={equipment.imageUrl}
+            src={assetUrl(equipment.imageUrl) ?? undefined}
             alt={equipment.name}
             className="rounded-control border-separator h-16 w-16 border object-cover"
           />

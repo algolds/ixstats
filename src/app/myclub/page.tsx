@@ -14,6 +14,7 @@ import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-moda
 import { SPORT_EMOJIS, type SportPresetKey } from "~/lib/sports/presets";
 import { Card } from "~/components/ui/card";
 
+import { assetUrl } from "~/lib/base-path";
 const MYCLUB_HELP_STEPS: HeroHelpStep[] = [
   {
     title: "Welcome to MyClub",
@@ -140,7 +141,7 @@ export default function MyClubPage() {
                     <div className="border-separator bg-surface-secondary rounded-row flex size-12 shrink-0 items-center justify-center overflow-hidden border">
                       {team.logo ? (
                         <img
-                          src={team.logo}
+                          src={assetUrl(team.logo) ?? undefined}
                           alt={team.name}
                           className="h-full w-full object-cover"
                         />

@@ -21,6 +21,7 @@ import { generateMatchAnalysisFacts, type MatchAnalysisFacts } from "~/lib/sport
 import { cn } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
 
+import { assetUrl } from "~/lib/base-path";
 interface MatchCenterProps {
   matchId: string;
   onClose?: () => void;
@@ -256,7 +257,11 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
               style={match.homeTeam.color ? { borderColor: match.homeTeam.color } : undefined}
             >
               {match.homeTeam.logo ? (
-                <img src={match.homeTeam.logo} alt="" className="h-full w-full object-cover" />
+                <img
+                  src={assetUrl(match.homeTeam.logo) ?? undefined}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <span>{theme.emoji}</span>
               )}
@@ -299,7 +304,11 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
               style={match.awayTeam.color ? { borderColor: match.awayTeam.color } : undefined}
             >
               {match.awayTeam.logo ? (
-                <img src={match.awayTeam.logo} alt="" className="h-full w-full object-cover" />
+                <img
+                  src={assetUrl(match.awayTeam.logo) ?? undefined}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <span>{theme.emoji}</span>
               )}

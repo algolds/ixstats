@@ -21,6 +21,7 @@ import { PreText } from "~/components/ui/pretext";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { springSnappy } from "~/lib/design/motion";
 
+import { assetUrl } from "~/lib/base-path";
 function CompactViewComponent({
   mode,
   isSticky,
@@ -290,7 +291,7 @@ function CompactViewComponent({
                       >
                         {user?.imageUrl ? (
                           <img
-                            src={user.imageUrl}
+                            src={assetUrl(user.imageUrl) ?? undefined}
                             alt=""
                             className="ring-separator h-4 w-4 rounded-full object-cover ring-1"
                           />

@@ -43,6 +43,7 @@ import {
   type SwitchRowSpec,
 } from "./privacy-rows";
 
+import { assetUrl } from "~/lib/base-path";
 /*
  * Every control here is enforced on the server (SL-4; src/server/shared/privacy-permissions.ts,
  * user-blocks.ts, presence.ts, clear-history.ts). See docs/systems/settings.md for what each does.
@@ -132,7 +133,7 @@ function AccountList(props: {
               <div className="bg-muted text-muted-foreground border-border/60 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg border text-xs font-bold">
                 {account.avatarUrl ? (
                   <img
-                    src={account.avatarUrl}
+                    src={assetUrl(account.avatarUrl) ?? undefined}
                     alt={account.label}
                     className="h-full w-full object-cover"
                   />

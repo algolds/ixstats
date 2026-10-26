@@ -21,6 +21,7 @@ import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 
+import { assetUrl } from "~/lib/base-path";
 // The plugin's metadata (id, priority, breadcrumb, accent) is synchronous; its expanded views are not needed
 // until the Halo opens, so each is its own chunk fetched then (plan 415, F19): the narrator player and the
 // profile view stay out of every article page's first load.
@@ -148,7 +149,7 @@ function WikiBreadcrumb() {
         <span className="flex min-w-0 items-center gap-2">
           {user?.imageUrl ? (
             <img
-              src={user.imageUrl}
+              src={assetUrl(user.imageUrl) ?? undefined}
               alt=""
               className="ring-separator h-4 w-4 shrink-0 rounded-full object-cover ring-1"
             />

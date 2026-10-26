@@ -1,7 +1,10 @@
+import { assetUrl, withBasePath } from "~/lib/base-path";
+
 /**
  * Resolves a player's photo URL dynamically.
  * If the player already has a custom imageUrl, it uses that.
  * Otherwise, it hashes the player's name and ID to deterministically assign one of the 14 sportyblocks photos.
+ * The result carries the base path, ready for `src`.
  */
 export function getPlayerPhotoUrl(player: {
   id?: string;
@@ -9,7 +12,8 @@ export function getPlayerPhotoUrl(player: {
   lastName?: string;
   imageUrl?: string | null;
 }) {
-  if (player.imageUrl) return player.imageUrl;
+  const custom = assetUrl(player.imageUrl);
+  if (custom) return custom;
 
   const idStr = player.id || "";
   const firstName = player.firstName || "";
@@ -17,7 +21,7 @@ export function getPlayerPhotoUrl(player: {
   const nameStr = `${firstName}${lastName}`;
   const key = idStr + nameStr;
 
-  if (!key) return "/images/sportyblocks/player-1.png";
+  if (!key) return withBasePath("/images/sportyblocks/player-1.png");
 
   // Simple deterministic hash
   let hash = 0;
@@ -34,7 +38,7 @@ export function getPlayerPhotoUrl(player: {
   const indexSubset = isFemale ? [2, 4, 6, 8, 10, 12, 14] : [1, 3, 5, 7, 9, 11, 13];
 
   const index = indexSubset[Math.abs(hash % indexSubset.length)];
-  return `/images/sportyblocks/player-${index}.png`;
+  return withBasePath(`/images/sportyblocks/player-${index}.png`);
 }
 
 function isProbablyFemale(firstName: string): boolean {

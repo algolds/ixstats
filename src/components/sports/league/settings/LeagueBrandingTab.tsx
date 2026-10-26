@@ -10,6 +10,7 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
+import { assetUrl } from "~/lib/base-path";
 interface LeagueBrandingTabProps {
   name: string;
   setName: (v: string) => void;
@@ -146,7 +147,11 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
             )}
           >
             {coverUrl ? (
-              <img src={coverUrl} alt="Cover preview" className="h-full w-full object-cover" />
+              <img
+                src={assetUrl(coverUrl) ?? undefined}
+                alt="Cover preview"
+                className="h-full w-full object-cover"
+              />
             ) : (
               <span className="text-label-secondary text-footnote font-medium">No cover</span>
             )}

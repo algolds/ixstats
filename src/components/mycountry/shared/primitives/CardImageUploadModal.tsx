@@ -23,6 +23,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { getCardImagePreset, type CardImageType } from "~/lib/cards/image-presets";
 import { cn } from "~/lib/utils";
 
+import { assetUrl } from "~/lib/base-path";
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
   () =>
@@ -290,7 +291,7 @@ export function CardImageUploadModal({
                     onClick={() => setSelectedImage(imageUrl)}
                   >
                     <img
-                      src={imageUrl}
+                      src={assetUrl(imageUrl) ?? undefined}
                       alt={`${preset.label} preset ${idx + 1}`}
                       className="h-full w-full object-cover"
                     />
@@ -314,7 +315,7 @@ export function CardImageUploadModal({
               {selectedImage && !presetImages.includes(selectedImage) && (
                 <div className="border-tint rounded-control relative aspect-video overflow-hidden border-2">
                   <img
-                    src={selectedImage}
+                    src={assetUrl(selectedImage) ?? undefined}
                     alt="Selected image"
                     className="h-full w-full object-cover"
                   />

@@ -24,6 +24,7 @@ import { ComposerPollModal } from "./composer/ComposerPollModal";
 import { usePostAsYourself, isPersonalAccount } from "./composer/usePostAsYourself";
 import { Card } from "~/components/ui/card";
 
+import { assetUrl } from "~/lib/base-path";
 const MediaSearchModal = dynamic(
   () =>
     import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
@@ -316,7 +317,7 @@ export function GlassCanvasComposer({
                     <X className="size-3.5" />
                   </button>
                   <img
-                    src={imageUrl}
+                    src={assetUrl(imageUrl) ?? undefined}
                     alt={`Selected image ${index + 1}`}
                     className="h-full w-full object-cover"
                   />

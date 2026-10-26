@@ -5,6 +5,7 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { Airplane, Home } from "iconoir-react";
 
+import { assetUrl } from "~/lib/base-path";
 export interface MatchdayTapeItem {
   id: string;
   matchDay?: number | null;
@@ -92,7 +93,11 @@ export function MatchdayTape({ matches, matchDay, onMatchClick, className }: Mat
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <div className="rounded-control border-separator bg-fill-3 flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden border">
                   {match.homeTeam.logo ? (
-                    <img src={match.homeTeam.logo} alt="" className="h-full w-full object-cover" />
+                    <img
+                      src={assetUrl(match.homeTeam.logo) ?? undefined}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     <Home className="h-3.5 w-3.5" aria-hidden="true" />
                   )}
@@ -130,7 +135,11 @@ export function MatchdayTape({ matches, matchDay, onMatchClick, className }: Mat
                 </span>
                 <div className="rounded-control border-separator bg-fill-3 flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden border">
                   {match.awayTeam.logo ? (
-                    <img src={match.awayTeam.logo} alt="" className="h-full w-full object-cover" />
+                    <img
+                      src={assetUrl(match.awayTeam.logo) ?? undefined}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     <Airplane className="h-3.5 w-3.5" aria-hidden="true" />
                   )}

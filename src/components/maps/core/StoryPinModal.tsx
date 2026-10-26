@@ -31,6 +31,7 @@ import { FACET_PROSE } from "~/components/maps/shared/facet-prose";
 import { cn } from "~/lib/utils/cn";
 import { Card } from "~/components/ui/card";
 
+import { assetUrl } from "~/lib/base-path";
 const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
 
 type StoryPinData = NonNullable<ReturnType<typeof useStoryPinModalState>["data"]>;
@@ -122,7 +123,11 @@ function StoryPinHeader({
     <div className="shrink-0">
       {heroImage && (
         <div className="h-48 w-full overflow-hidden sm:h-56">
-          <img src={heroImage} alt={pin.title} className="h-full w-full object-cover" />
+          <img
+            src={assetUrl(heroImage) ?? undefined}
+            alt={pin.title}
+            className="h-full w-full object-cover"
+          />
         </div>
       )}
 

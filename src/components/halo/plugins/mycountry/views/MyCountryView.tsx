@@ -33,6 +33,7 @@ import type { ViewMode } from "~/components/halo/types";
 import { springSnappy } from "~/lib/design/motion";
 import { effectiveGrowthOf } from "~/lib/economy/effective-growth";
 
+import { assetUrl } from "~/lib/base-path";
 /** A decimal rate (0.03) as the signed percent GrowthArrow shows (3). */
 const asPercent = (rate: number | null | undefined) =>
   rate != null && Number.isFinite(rate) ? rate * 100 : 0;
@@ -103,7 +104,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
             >
               {user?.imageUrl ? (
                 <img
-                  src={user.imageUrl}
+                  src={assetUrl(user.imageUrl) ?? undefined}
                   alt=""
                   className="ring-separator group-hover:ring-tint size-7 rounded-full object-cover ring-2 transition-[box-shadow]"
                 />

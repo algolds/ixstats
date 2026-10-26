@@ -37,6 +37,7 @@ import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { Card } from "~/components/ui/card";
 
+import { assetUrl } from "~/lib/base-path";
 interface ThinktankFeedTabProps {
   groupId: string;
   groupName: string;
@@ -310,7 +311,11 @@ function FeedPostCard({
       <div className="flex items-center gap-3">
         <div className="border-separator bg-fill-3 text-label rounded-control flex size-9 shrink-0 items-center justify-center overflow-hidden border">
           {avatarUrl ? (
-            <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+            <img
+              src={assetUrl(avatarUrl) ?? undefined}
+              alt={displayName}
+              className="h-full w-full object-cover"
+            />
           ) : countryFlag ? (
             <span className="text-body">{countryFlag}</span>
           ) : (
@@ -340,7 +345,7 @@ function FeedPostCard({
       {post.mediaUrls?.length > 0 && (
         <div className="border-separator bg-fill-3 rounded-row mt-3 overflow-hidden border">
           <img
-            src={post.mediaUrls[0]}
+            src={assetUrl(post.mediaUrls[0]) ?? undefined}
             alt="Post media"
             className="max-h-96 w-full object-cover"
             loading="lazy"

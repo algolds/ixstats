@@ -36,6 +36,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover
 import { NationSwitcher } from "~/components/navigation/NationSwitcher";
 import { CollapsedTooltip, rowBase } from "./AppSidebar";
 
+import { assetUrl } from "~/lib/base-path";
 interface AccountMenuProps {
   layout: "sidebar" | "sheet";
   /** The sidebar is collapsed to icons (`null` before hydration). */
@@ -77,7 +78,11 @@ function Avatar({
   if (imageUrl) {
     // Clerk avatar or flag URL; next/image would need its host allow-listed.
     return (
-      <img src={imageUrl} alt="" className={cn("shrink-0 rounded-full object-cover", className)} />
+      <img
+        src={assetUrl(imageUrl) ?? undefined}
+        alt=""
+        className={cn("shrink-0 rounded-full object-cover", className)}
+      />
     );
   }
   return (

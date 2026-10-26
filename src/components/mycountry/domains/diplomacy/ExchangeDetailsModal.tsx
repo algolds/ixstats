@@ -488,7 +488,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>((props
                     >
                       {artifact.thumbnailUrl ? (
                         <img
-                          src={artifact.thumbnailUrl}
+                          src={assetUrl(artifact.thumbnailUrl) ?? undefined}
                           alt={artifact.title}
                           className="h-full w-full object-cover"
                         />

@@ -7,6 +7,7 @@ import { Play, Trash as Trash2, XmarkCircle as XCircle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 
+import { assetUrl } from "~/lib/base-path";
 export function QueuePanel() {
   const { queue, currentIndex } = useIxMediaState();
   const { playTrack, removeFromQueue, clearQueue } = useIxMediaActions();
@@ -55,7 +56,7 @@ export function QueuePanel() {
                 <div className="flex min-w-0 items-center gap-3">
                   {track.coverArt && (
                     <img
-                      src={track.coverArt}
+                      src={assetUrl(track.coverArt) ?? undefined}
                       className="rounded-control-sm size-10 flex-shrink-0 object-cover"
                       alt={track.title}
                     />

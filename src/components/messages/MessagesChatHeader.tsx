@@ -33,6 +33,7 @@ import { Button, buttonVariants } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 
+import { assetUrl } from "~/lib/base-path";
 interface MessagesChatHeaderProps {
   conversation: ThinkShareConversation;
   currentUserId: string;
@@ -166,7 +167,7 @@ function ThreadAvatar({ view }: { view: ReturnType<typeof getThreadView> }) {
   if (avatarUrl) {
     return (
       <img
-        src={avatarUrl}
+        src={assetUrl(avatarUrl) ?? undefined}
         alt={title}
         className="border-separator rounded-control size-9 border object-cover"
       />

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { navigateWithBasePath } from "~/lib/base-path";
+import { assetUrl, navigateWithBasePath } from "~/lib/base-path";
 import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { useRouter } from "next/navigation";
 import {
@@ -234,7 +234,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                     >
                       {user?.imageUrl ? (
                         <img
-                          src={user.imageUrl}
+                          src={assetUrl(user.imageUrl) ?? undefined}
                           alt=""
                           className="h-full w-full rounded-full object-cover"
                         />
