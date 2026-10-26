@@ -3,7 +3,7 @@
 //
 // `wikios.sisterEmbed`'s own limit on the embeds that cost a sister wiki a call (routers/wikios/sister.ts): every
 // reader shares a per-host budget of 240 calls a minute, so a caller asking for title after new title is held to
-// `EMBED_READS_PER_MINUTE` of them (20 for a visitor, 30 signed in) on a `sisterembed` bucket of its own, while an embed
+// `EMBED_READS_PER_MINUTE` of them (20 for a visitor, 60 signed in) on a `sisterembed` bucket of its own, while an embed
 // already cached (or being read for someone else) costs nothing against it. Real in-memory RateLimiter, Redis off.
 jest.mock("~/env", () => ({
   env: { ...jest.requireActual("~/env").env, RATE_LIMIT_ENABLED: "true", REDIS_ENABLED: "false" },
@@ -55,6 +55,10 @@ beforeEach(() => {
 });
 
 describe("wikios.sisterEmbed: reads of a sister wiki per caller", () => {
+  it("allows 20 new embeds a minute to a visitor and 60 to a signed-in reader", () => {
+    expect(EMBED_READS_PER_MINUTE).toEqual({ visitor: 20, signedIn: 60 });
+  });
+
   it.each([
     ["a visitor", false, EMBED_READS_PER_MINUTE.visitor],
     ["a signed-in reader", true, EMBED_READS_PER_MINUTE.signedIn],

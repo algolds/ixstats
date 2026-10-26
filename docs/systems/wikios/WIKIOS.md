@@ -102,7 +102,7 @@ effort: an unreachable sister adds no results. Sister reader pages are not index
   cannot be reached says so, and a page its wiki cannot render is offered as a link to it there. The reader asks
   `wikios.sisterEmbed` for each box, and `getSisterEmbed` caches each embed for an hour (one read in flight per page).
   A cached embed is free; an embed that has to be read from the sister wiki costs it up to two calls, so those reads
-  count against a per-caller `sisterembed` bucket: 20 a minute for a visitor, 30 signed in.
+  count against a per-caller `sisterembed` bucket: 20 a minute for a visitor, 60 signed in.
 - **Size limits**: a sister wiki's answer is read up to 16 MB (`MAX_SISTER_RESPONSE_BYTES`, in the upstream guard;
   refused by `Content-Length` or cut off once the stream passes it) and then fails as "could not be reached"; a render
   that big is cached as unrenderable. The sister render cache holds at most 64 MB (`RENDER_CACHE_BYTES`, two bytes a

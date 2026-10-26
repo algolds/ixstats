@@ -95,7 +95,7 @@ known Next.js RCE was reachable. This block fixes what the audit found.
     crafted line. The section scan behind `countries.getWikiSections` is linear too.
   - Approved story chains re-check edit rights before writing the wiki.
   - Sister answers are capped at 16 MB (in the upstream guard, which reads every sister answer), the render cache
-    at 64 MB, and the embed reads that miss the cache per caller (`sisterembed`: 20 a minute for a visitor, 30 signed
+    at 64 MB, and the embed reads that miss the cache per caller (`sisterembed`: 20 a minute for a visitor, 60 signed
     in; cache hits are free).
   - Template preview and TemplateData caches are keyed by the canonical title and refresh after edits.
   - Rate limits or sign-in on the remaining unthrottled writes (annotations, watchlist, stash, usage counters,

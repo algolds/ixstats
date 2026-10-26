@@ -41,15 +41,18 @@ export const sisterWikiProcedure = publicProcedure.use(
 /**
  * Per-caller limits, each its own bucket, on the reads an anonymous client can point at a sister wiki, so no one
  * client drains the budget WikiOS's readers share on that wiki's host (`lane: "wikios"`, 240 a minute per process,
- * upstream-guard.ts). The rule: a limit times the most upstream calls one request makes stays at a quarter of that
- * budget or less. A search sends one opensearch per sister host ("all" included): 30. An intro, a hover preview,
- * reads one page's wikitext: 60. An embed reads the wikitext and its parse on a miss: 30 (2 calls each, so 60), and a
- * page holds at most 10 embeds; a visitor's embed reads are held lower still, to 20 (`EMBED_READS_PER_MINUTE`, sister.ts).
+ * upstream-guard.ts). The rule for anyone who is not signed in: a limit times the most upstream calls one request
+ * makes stays at a quarter of that budget or less. A search sends one opensearch per sister host ("all" included): 30.
+ * An intro, a hover preview, reads one page's wikitext: 60. An embed reads the wikitext and its parse on a miss (2
+ * calls), and a page holds at most 10 embeds: a visitor gets 20 (40 calls). A signed-in reader gets 60 embeds (120
+ * calls, half the budget): the owner's choice (2026-10-27), bounded by the host guard (its limiter and breaker) and the
+ * embed cache rather than by the quarter rule. `max` here is the visitor's; the signed-in number is
+ * `EMBED_READS_PER_MINUTE.signedIn` (sister.ts).
  */
 export const SISTER_CALLER_LIMITS = {
   search: { max: 30, windowMs: 60_000, namespace: "sistersearch" },
   intro: { max: 60, windowMs: 60_000, namespace: "sisterintro" },
-  embed: { max: 30, windowMs: 60_000, namespace: "sisterembed" },
+  embed: { max: 20, windowMs: 60_000, namespace: "sisterembed" },
 } as const;
 
 /** A sister wiki's answers are reused for 5 minutes. */

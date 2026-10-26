@@ -6,7 +6,7 @@
  *
  * An embed that is not cached costs the wiki up to two calls, out of a per-host budget of 240 a minute shared by every
  * reader, so only those reads count, against a bucket of the caller's own (`sisterembed`): `EMBED_READS_PER_MINUTE`, 20
- * for a visitor and `SISTER_CALLER_LIMITS.embed` (30) signed in. A visitor, or a script, asking for random titles would
+ * for a visitor and 60 signed in. A visitor, or a script, asking for random titles would
  * otherwise leave every other reader's sister content "busy". Cache hits are free.
  */
 import { z } from "zod/v4";
@@ -16,12 +16,14 @@ import { getSisterEmbed } from "~/lib/wiki-os/services/sister-embed-service";
 import { SISTER_CALLER_LIMITS } from "./search";
 
 /**
- * Embeds a caller may read from a sister wiki a minute (cache hits are free): a visitor two pages of ten boxes, a
- * signed-in reader `SISTER_CALLER_LIMITS.embed` (2 calls each, a quarter of the host's budget).
+ * Embeds a caller may read from a sister wiki a minute (cache hits are free), 2 calls each. A visitor: two pages of ten
+ * boxes, 40 calls, inside the quarter of the host's 240-a-minute budget that every anonymous limit keeps to. A
+ * signed-in reader: 60, 120 calls, half the budget, the owner's choice (2026-10-27); it is bounded by the host guard
+ * (limiter and breaker, upstream-guard.ts) and the embed cache, not by the quarter rule.
  */
 export const EMBED_READS_PER_MINUTE = {
-  visitor: 20,
-  signedIn: SISTER_CALLER_LIMITS.embed.max,
+  visitor: SISTER_CALLER_LIMITS.embed.max,
+  signedIn: 60,
 } as const;
 
 /** The caller's `sisterembed` bucket: the visitor's limit or the signed-in reader's. */
