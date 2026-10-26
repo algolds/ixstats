@@ -3,7 +3,7 @@
  * article previews). `parseWikitextToHtml` passes the wikitext's own HTML through, and the wikitext may be another
  * wiki's (IIWiki, AltHistory), so its output is never rendered as it is: this compiles and sanitizes in one call.
  */
-import { sanitizeWikiPreviewHtml } from "~/lib/utils/sanitize-html";
+import { sanitizeWikiPreviewHtml } from "~/lib/utils/sanitize-wiki-preview";
 import { parseWikitextToHtml } from "./wikitext-parser";
 
 /** `parseWikitextToHtml`'s HTML, sanitized for an excerpt (`sanitizeWikiPreviewHtml`). */

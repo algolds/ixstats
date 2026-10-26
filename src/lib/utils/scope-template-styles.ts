@@ -431,8 +431,9 @@ function urlIsAllowed(raw: string, ownOrigin: string | undefined): boolean {
 
 /**
  * What a sheet's declarations may hold beyond the rules every sheet follows (the blocked properties, values and
- * functions above). The default (`scopeTemplateStyles`) lets a `url()` name the page or the wiki's own origin; a
- * stricter caller (the sister wikis' sanitizer) names its own targets and drops declarations of its own.
+ * functions above). The default (`scopeTemplateStyles`) lets a `url()` name the page or the wiki's own origin and drops
+ * a position that leaves the article; a stricter caller (the sister wikis' sanitizer) names its own targets and drops
+ * declarations of its own.
  */
 export interface StylePolicy {
   /** Whether the target of a `url()`, as the tokenizer delimits it and unescaped, may stay. */
@@ -441,8 +442,9 @@ export interface StylePolicy {
   readonly allowsDeclaration?: (property: string, value: string) => boolean;
 }
 
+/** The default (an article's own sheet): `url()` on the page or the wiki's origin, nothing positioned out of the article. */
 function originPolicy(ownOrigin: string | undefined): StylePolicy {
-  return { allowsUrl: (raw) => urlIsAllowed(raw, ownOrigin) };
+  return { allowsUrl: (raw) => urlIsAllowed(raw, ownOrigin), allowsDeclaration: keepsPositionInFlow };
 }
 
 /** What `position` may be in an article: nothing that leaves it (`fixed`, `sticky`, a `var()`, ...). */
@@ -470,9 +472,17 @@ export function keepsPositionInFlow(property: string, value: string): boolean {
   return !(property.startsWith("--") && OUT_OF_FLOW_POSITIONS.has(keyword));
 }
 
-/** The article's own policy: `url()` on the page or the wiki's origin, and nothing positioned out of the article. */
-export function articleStylePolicy(ownOrigin: string | undefined): StylePolicy {
-  return { ...originPolicy(ownOrigin), allowsDeclaration: keepsPositionInFlow };
+/** A `style` attribute that might position its element out of the article (a keyword, or an escape that could spell one). */
+const MAY_LEAVE_ARTICLE = /fixed|sticky|\\/i;
+/** Inline styles keep any `url()` they had; only a position that leaves the article goes. */
+const INLINE_STYLE_POLICY: StylePolicy = { allowsUrl: () => true, allowsDeclaration: keepsPositionInFlow };
+
+/**
+ * A first-party article's `style` attribute without a `fixed`/`sticky` position (an editor's full-screen overlay), as
+ * `cleanStyleDeclarations` leaves it ("" when nothing stays); a style naming neither is returned as written.
+ */
+export function articleInlineStyle(style: string): string {
+  return MAY_LEAVE_ARTICLE.test(style) ? cleanStyleDeclarations(style, INLINE_STYLE_POLICY) : style;
 }
 
 /** Whether every `url()` in `declaration` names what the policy allows. */
@@ -583,8 +593,9 @@ export function cssIdentifiers(css: string): Set<string> {
 /**
  * The CSS of a TemplateStyles block as it may appear in an article: scoped under the article root and
  * stripped of everything that could load, run or reach outside it. An empty string when nothing is left.
- * `ownOrigin` is the wiki's origin (`https://host`): the one absolute origin a `url()` may name; or a policy that
- * names what a `url()` may target and drops declarations of its own (StylePolicy).
+ * `ownOrigin` is the wiki's origin (`https://host`): the one absolute origin a `url()` may name (and no `fixed` or
+ * `sticky` position stays, `keepsPositionInFlow`); or a policy that names what a `url()` may target and drops
+ * declarations of its own (StylePolicy).
  */
 export function scopeTemplateStyles(css: string, ownOrigin?: string | StylePolicy): string {
   if (css.length > MAX_CSS_LENGTH) return "";

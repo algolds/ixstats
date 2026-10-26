@@ -3,11 +3,8 @@
  * compiler), user content (the app's own Tailwind utilities in `class`) and first-party article styles.
  */
 import { describe, expect, it } from "@jest/globals";
-import {
-  sanitizeUserContent,
-  sanitizeWikiArticleHtml,
-  sanitizeWikiPreviewHtml,
-} from "~/lib/utils/sanitize-html";
+import { sanitizeUserContent, sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import { sanitizeWikiPreviewHtml } from "~/lib/utils/sanitize-wiki-preview";
 import { stripUnclosedTagTail } from "~/lib/wiki-os/transformers/clean-markup-passes";
 import { cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { parseWikitextToPreviewHtml } from "~/lib/wiki-os/transformers/wikitext-preview";
