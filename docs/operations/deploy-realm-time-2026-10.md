@@ -16,7 +16,7 @@ run_sql() { docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ER
 | 1 | First | The MyCountry runbook, then the checks |
 | 2 | Before the window | Backup, stop cron |
 | 3 | Before the window, old build still serving | T1 clocks, the schema read-out |
-| 4 | Deploy window (old build stopped) | T3, t3b, D2a and the starter forces, D1, D2b placeholder, D3 combat columns |
+| 4 | Deploy window (old build stopped) | T3, t3b, D2a, D3 combat columns, the starter forces, D1, D2b placeholder |
 | 5 | Deploy window | The code deploy and the IxWorld rebuild |
 | 6 | After the code | Nothing required (D1 moved into step 4); D2b placeholder |
 | 7 | After the code | Cron back on, job by job |
@@ -100,18 +100,32 @@ several minutes): announce the window. `ixstats-cron` is already stopped (step 2
    `MilitaryAsset.modernizationLevel`, adds `MilitaryAsset.catalogKey`/`designYear`, `MilitaryConflict.startClockMs`,
    the `DefensePolicy` and `ProcurementOrder` tables and their enums, and **deletes free assets** (rows without a
    catalog key: every asset today; owner decision). Branch names, mottos, images and units are kept.
-4. **Starter forces**, from the new checkout: `bun scripts/defense/reset-starter-forces.ts --apply`. Every nation
-   without a `DefensePolicy` gets its starter force: the equilibrium of its defense budget (the Defense department
-   lines summed, else the builder's Defense figure, else its government form's Defense share of spending, else 2% of
-   GDP), on its existing branches or a new army, navy and air force; NPCs get the same from their economy
-   (conscript-heavy forms take the territorial split). Idempotent: nations with a policy are skipped, and a nation the
-   new build reads first gets the same force lazily. The report prints the active-share distribution (sanity band
-   0.2–1.1% of population), budget sources, C-levels and sample nations. Dry run on the clone (2026-10-25, the SQL and
-   the reset in one transaction, rolled back): 407 nations, active share min 0.24% / median 0.28% / max 0.47%, none
-   outside the band; budget sources estimate 316, government form 89, Defense department 1, builder 1; C-2 404, C-3
-   3; Caphiria 1,880,297 active (0.30%), 2,256,356 reserves, 2,818bn capital, C-2. Stop and read the report if any
-   nation falls outside the band.
-5. **D1, legacy security tables.** `run_sql scripts/migrations/2026-10-realm-time/d1-drop-legacy-security.sql`. It
+4. **D3, combat and economic feedback.** `run_sql scripts/migrations/2026-10-realm-time/d3-combat.sql` (right after 4.3,
+   which creates `DefensePolicy`, and before the reset: the new client reads D3's policy columns). Additive and
+   idempotent: `DefensePolicy.terrainProfile` (a nation's declared terrain, used where the realm map has no data) and
+   `npcBurdenAdjustment` (an NPC's Richardson response, default 0); on `MilitaryConflict` the orders, their hash, the
+   commit time, the HMAC seed, the inputs snapshot and the result (`outcomeBand`, `margin`, `engagementDays`); on
+   `MilitaryOperation` an intervention's orders, hash, commit time, seed, snapshot and band. No data moves. Optional:
+   set `COMBAT_SEED_SECRET` in `.env.production.local` (without it seeds use `CRON_SECRET`); changing either later only
+   changes seeds of battles committed after.
+5. **Starter forces**, from the new checkout, after D2a and D3:
+
+   ```bash
+   bun scripts/defense/reset-starter-forces.ts --apply --i-know ixstats
+   ```
+
+   The script refuses a database that is not a known clone unless `--i-know` names the database it is connected to.
+   Every nation without a `DefensePolicy` gets its starter force: the equilibrium of its defense budget
+   (the Defense department lines summed, else the builder's Defense figure, else its government form's Defense share of
+   spending, else 2% of GDP), on its existing branches or a new army, navy and air force; NPCs get the same from their
+   economy (conscript-heavy forms take the territorial split). Idempotent: nations with a policy are skipped, and a
+   nation the new build reads first gets the same force lazily. The report prints the active-share distribution (sanity
+   band 0.2–1.1% of population), budget sources, C-levels and sample nations. Dry run on the clone (2026-10-25, the D2a
+   and D3 SQL and the reset in one transaction, rolled back; the dry run applies both files itself): 407 nations, active
+   share min 0.24% / median 0.28% / max 0.47%, none outside the band; budget sources estimate 316, government form 89,
+   Defense department 1, builder 1; C-2 404, C-3 3; Caphiria 1,880,297 active (0.30%), 2,256,356 reserves, 2,818bn
+   capital, C-2. Stop and read the report if any nation falls outside the band.
+6. **D1, legacy security tables.** `run_sql scripts/migrations/2026-10-realm-time/d1-drop-legacy-security.sql`. It
    drops `NeighborThreatAssessment`, `BorderSecurity`, `ThreatIncident`, `SecurityThreat`, `SecurityEvent`,
    `SecurityAssessment` and `DefenseBudget` (`CASCADE`, children first) and the `ThreatType`, `ThreatSeverity` and
    `ThreatStatus` enums. Nothing is migrated: the assessment and border rows were never written past their defaults,
@@ -119,14 +133,7 @@ several minutes): announce the window. `ixstats-cron` is already stopped (step 2
    (2026-10-25): `DefenseBudget` 1 (the E2E Testland test row), `SecurityAssessment` 15, `BorderSecurity` 7, the rest
    0. D1 was written to run after the code deploy (the old build reads these tables), but the old build is stopped
    here and the push in step 5 would abort on the non-empty tables, so it runs now.
-6. **D2b, the Defense page.** _Placeholder: any SQL D2b adds to `scripts/migrations/2026-10-realm-time/` goes here._
-7. **D3, combat and economic feedback.** `run_sql scripts/migrations/2026-10-realm-time/d3-combat.sql` (after 4.3,
-   which creates `DefensePolicy`). Additive and idempotent: `DefensePolicy.terrainProfile` (a nation's declared
-   terrain, used where the realm map has no data) and `npcBurdenAdjustment` (an NPC's Richardson response, default
-   0); on `MilitaryConflict` the orders, their hash, the commit time, the HMAC seed, the inputs snapshot and the
-   result (`outcomeBand`, `margin`, `engagementDays`); on `MilitaryOperation` an intervention's orders, hash, commit
-   time, seed, snapshot and band. No data moves. Optional: set `COMBAT_SEED_SECRET` in `.env.production.local`
-   (without it seeds use `CRON_SECRET`); changing either later only changes seeds of battles committed after.
+7. **D2b, the Defense page.** _Placeholder: any SQL D2b adds to `scripts/migrations/2026-10-realm-time/` goes here._
 8. Re-run the step 3.2 read-out: no `DROP` on military or security tables may remain.
 
 ## 5. The code deploy
@@ -148,7 +155,7 @@ If `ixstats-ws` was stopped in step 4 and the deploy script did not start it, ru
 
 ## 6. SQL after the code
 
-No realm-time SQL is left for after the code: D1, first planned here, runs in step 4 (see 4.5).
+No realm-time SQL is left for after the code: D1, first planned here, runs in step 4 (see 4.6).
 
 - **D2b.** _Placeholder: a post-deploy data step D2b adds goes here._
 - **D3.** Nothing: the combat columns need no backfill. PvP conflicts accepted before the deploy have no seed; they

@@ -8,20 +8,27 @@
  * forces from their economy. The model is `~/lib/military/model` (`starterNation`); the writer is the defense
  * module's `ensureStarterForce`, the same path a nation's first read takes.
  *
- *   bun scripts/defense/reset-starter-forces.ts               # dry run: DDL + reset inside one transaction, rolled back
- *   bun scripts/defense/reset-starter-forces.ts --apply       # after d2a-defense-model.sql: reset every nation
+ *   bun scripts/defense/reset-starter-forces.ts                          # dry run: DDL + reset in one transaction, rolled back
+ *   bun scripts/defense/reset-starter-forces.ts --apply --i-know ixstats # after d2a and d3: reset every nation
  *
  * Other flags: --country <id> (one nation), --show <name,name> (nations to print in full; default a sample).
+ * Database guard: it runs only on a clone named in CLONE_DATABASES, or with `--i-know <database>` naming the database
+ * it is connected to (the runbook passes `--i-know ixstats`), so a stray DATABASE_URL never resets the wrong one.
  * Idempotent: a nation that already has a DefensePolicy is skipped, so a re-run (or a nation that was read by the new
- * build first) changes nothing. The dry run applies `scripts/migrations/2026-10-realm-time/d2a-defense-model.sql`
- * inside the same transaction first, so it runs against a database that has not had the SQL yet, and rolls both back.
+ * build first) changes nothing. The dry run applies `d2a-defense-model.sql` and `d3-combat.sql` (the defense policy's
+ * D3 columns, which the generated client reads) from `scripts/migrations/2026-10-realm-time/` inside the same
+ * transaction first, so it runs against a database that has had neither, and rolls everything back.
  */
 import { readFileSync } from "fs";
 import { join } from "path";
 import { PrismaClient, type Prisma } from "@prisma/client";
 import { syncDefense } from "~/server/modules/defense";
 
-const SQL_PATH = join(__dirname, "../migrations/2026-10-realm-time/d2a-defense-model.sql");
+const SQL_DIR = join(__dirname, "../migrations/2026-10-realm-time");
+/** The SQL the reset needs before it runs, in order: the defense model, then D3's policy columns. */
+export const DRY_RUN_SQL = ["d2a-defense-model.sql", "d3-combat.sql"] as const;
+/** Clones the reset may run on without `--i-know`. */
+export const CLONE_DATABASES: readonly string[] = ["ixstats_wv1", "ixstats_dryrun", "ixstats_scenarios"];
 const BAND = { min: 0.002, max: 0.011 };
 
 class RolledBack extends Error {}
@@ -48,7 +55,18 @@ export function sqlStatements(sql: string): string[] {
   return statements.filter((s) => !/^(BEGIN|COMMIT);$/i.test(s) && !/^SELECT\b/i.test(s));
 }
 
-interface Row {
+/** Why the reset must not run on `database` with these arguments, or null when it may. */
+export function resetRefusal(database: string, argv: readonly string[]): string | null {
+  if (CLONE_DATABASES.includes(database)) return null;
+  const i = argv.indexOf("--i-know");
+  const confirmed = i >= 0 ? argv[i + 1] : undefined;
+  if (confirmed === database) return null;
+  return confirmed === undefined
+    ? `Refusing to run on "${database}": it is not a known clone. Pass --i-know ${database} if that is intended.`
+    : `Refusing to run on "${database}": --i-know names "${confirmed}".`;
+}
+
+export interface Row {
   name: string;
   population: number;
   gdpPerCapita: number;
@@ -94,11 +112,12 @@ async function resetCountry(db: Prisma.TransactionClient, id: string): Promise<R
 const fmt = (n: number) => Math.round(n).toLocaleString("en-US");
 const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
 
-function report(rows: Row[], show: string[]) {
+export function report(rows: Row[], show: string[]) {
+  console.log(`\nNations reset: ${rows.length}`);
+  if (rows.length === 0) return;
   const shares = rows.filter((r) => r.population > 0).map((r) => r.activeShare).sort((a, b) => a - b);
   const q = (p: number) => shares[Math.min(shares.length - 1, Math.floor(p * shares.length))] ?? 0;
   const outside = rows.filter((r) => r.population > 0 && (r.activeShare < BAND.min || r.activeShare > BAND.max));
-  console.log(`\nNations reset: ${rows.length}`);
   console.log(
     `Active share of population: min ${pct(q(0))}, p10 ${pct(q(0.1))}, median ${pct(q(0.5))}, p90 ${pct(q(0.9))}, max ${pct(q(1))}`
   );
@@ -127,6 +146,11 @@ async function main() {
   const db = new PrismaClient();
   const [{ current_database: database }] =
     await db.$queryRaw<{ current_database: string }[]>`SELECT current_database()`;
+  const refusal = resetRefusal(database, process.argv);
+  if (refusal) {
+    await db.$disconnect();
+    throw new Error(refusal);
+  }
   console.log(`${apply ? "APPLY" : "DRY RUN (rolled back)"} on ${database}`);
 
   const ids = async (tx: Prisma.TransactionClient) =>
@@ -141,8 +165,10 @@ async function main() {
     } else {
       await db.$transaction(
         async (tx) => {
-          for (const statement of sqlStatements(readFileSync(SQL_PATH, "utf8"))) {
-            await tx.$executeRawUnsafe(statement);
+          for (const file of DRY_RUN_SQL) {
+            for (const statement of sqlStatements(readFileSync(join(SQL_DIR, file), "utf8"))) {
+              await tx.$executeRawUnsafe(statement);
+            }
           }
           for (const id of await ids(tx)) {
             const row = await resetCountry(tx, id);

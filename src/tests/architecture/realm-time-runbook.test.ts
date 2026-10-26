@@ -26,6 +26,16 @@ describe("the realm time runbook", () => {
     expect(files.length).toBeGreaterThanOrEqual(5);
   });
 
+  it("runs D3 after D2a and both before the starter-force reset (the reset reads D3's policy columns)", () => {
+    const at = (text: string) => runbook.indexOf(text);
+    const d2a = at(`run_sql ${SQL_DIR}/d2a-defense-model.sql`);
+    const d3 = at(`run_sql ${SQL_DIR}/d3-combat.sql`);
+    const reset = at("bun scripts/defense/reset-starter-forces.ts --apply");
+    expect(d2a).toBeGreaterThan(0);
+    expect(d3).toBeGreaterThan(d2a);
+    expect(reset).toBeGreaterThan(d3);
+  });
+
   it("enables only jobs that exist", () => {
     const names = [...runbook.matchAll(/CRON_ENABLED_JOBS="([^"]*)"/g)].flatMap((m) =>
       m[1]!.split(",").map((n) => n.trim())
