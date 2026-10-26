@@ -205,6 +205,23 @@ bunx prisma db execute --schema prisma/schema --file prisma/migrations/202611051
 # past it). Additive and idempotent.
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261105120001_wikios_sync_dead_letters/migration.sql || exit 1
 
+# MyCountry fixes and realm time (docs/operations/deploy-mycountry-2026-10.md, deploy-realm-time-2026-10.md): the data
+# SQL in the runbooks' order. Realm time drops the legacy security tables and retypes military columns, which db push
+# refuses to do. Idempotent; the runbooks' manual run_sql steps and the starter-force reset stay as written.
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/h-meeting-intent-columns.sql || exit 1
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/a1-storyteller-effects.sql || exit 1
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/a2-units-and-scales.sql || exit 1
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/de-relation-bands.sql || exit 1
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/f-defense.sql || exit 1
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/r1-coercive-fp-effects.sql || exit 1
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/t1-realm-clocks.sql || exit 1
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/t3-platform-real-time.sql || exit 1
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/t3b-sports-intervals.sql || exit 1
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/d2a-defense-model.sql || exit 1
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/d3-combat.sql || exit 1
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/d1-drop-legacy-security.sql || exit 1
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/r3-catalog-duplicates.sql || exit 1
+
 # Sync production database with schema
 echo "🔄 Syncing production database schema..."
 bun run db:push:force

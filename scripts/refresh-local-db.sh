@@ -64,6 +64,22 @@ bunx prisma db execute --schema prisma/schema --file prisma/migrations/202611041
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261105120000_wikios_conflicts/migration.sql
 # The inbound sync's dead letters (a step failing five cycles is quarantined)
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261105120001_wikios_sync_dead_letters/migration.sql
+# MyCountry fixes and realm time (docs/operations/deploy-mycountry-2026-10.md, deploy-realm-time-2026-10.md): the data
+# SQL in the runbooks' order. Realm time drops the legacy security tables and retypes military columns, which db push
+# refuses to do. Idempotent; the runbooks' manual run_sql steps and the starter-force reset stay as written.
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/h-meeting-intent-columns.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/a1-storyteller-effects.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/a2-units-and-scales.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/de-relation-bands.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/f-defense.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/r1-coercive-fp-effects.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/t1-realm-clocks.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/t3-platform-real-time.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/t3b-sports-intervals.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/d2a-defense-model.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/d3-combat.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/d1-drop-legacy-security.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/r3-catalog-duplicates.sql
 bun run db:push:force
 
 # Verify and auto-heal WikiOS articles and categories in PostgreSQL

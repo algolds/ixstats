@@ -118,7 +118,7 @@ only shortens the time the old build errors.
 
 ## 4. Code deploy and the IxWorld rebuild
 
-Run rose-garden step 5 (`./scripts/deploy-production.sh`). It runs the migration SQL files, `db push` (stop and read
+Run rose-garden step 5 (`./scripts/deploy-production.sh`). Since the realm-time merge into rose-garden, the deploy script also re-runs this runbook's data SQL (and the other 2026-10 runbook's) right before its `db push`; each file is a no-op once applied, so running the steps above by hand first, as written, is still the order to follow. It runs the migration SQL files, `db push` (stop and read
 the message if it reports data loss), `db:generate`, the build, `scripts/deploy-ixworld.sh`, and finally
 `pm2 startOrReload ecosystem.config.cjs --update-env` (which starts the new `cron-runner.mjs` with no jobs).
 

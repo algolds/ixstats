@@ -34,7 +34,7 @@ SELECT (v ->> 'timeOverride')::float8 AS t_override,
 FROM (SELECT value::jsonb AS v FROM "SystemConfig" WHERE key = 'ixtime_clock_state') s
 WHERE jsonb_typeof(v) = 'object';
 
-CREATE FUNCTION pg_temp.t3_real(ix float8) RETURNS float8 LANGUAGE sql STABLE AS $$
+CREATE OR REPLACE FUNCTION pg_temp.t3_real(ix float8) RETURNS float8 LANGUAGE sql STABLE AS $$
   SELECT CASE
     WHEN ix IS NULL OR ix <= 2051222400000 THEN ix
     WHEN c.t_override IS NOT NULL AND c.t_set_at IS NOT NULL AND ix >= c.t_override

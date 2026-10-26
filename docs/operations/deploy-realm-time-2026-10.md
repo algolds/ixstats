@@ -145,7 +145,7 @@ several minutes): announce the window. `ixstats-cron` is already stopped (step 2
 
 ## 5. The code deploy
 
-Run the deploy script (rose-garden step 5): `./scripts/deploy-production.sh`. It backs up, runs the rose-garden SQL,
+Run the deploy script (rose-garden step 5): `./scripts/deploy-production.sh`. Since the realm-time merge into rose-garden, the deploy script also re-runs this runbook's data SQL (and the other 2026-10 runbook's) right before its `db push`; each file is a no-op once applied, so running the steps above by hand first, as written, is still the order to follow. It backs up, runs the rose-garden SQL,
 `db push` (stop and read the message if it reports data loss: a realm-time step was skipped), `db:generate`, the
 build, `scripts/deploy-ixworld.sh` (which reloads PM2 `ixworld`, ending the window) and
 `pm2 startOrReload ecosystem.config.cjs --update-env` (the cron runner starts with no jobs). Then check the rebuild:
