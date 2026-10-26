@@ -19,6 +19,16 @@
  */
 import { loadEnvVariables } from "./load-env.mjs";
 
+// A rejection or exception nothing handled leaves the runner in an unknown state: log it and exit, PM2 restarts it.
+process.on("unhandledRejection", (reason) => {
+  console.error("[Cron] Unhandled rejection, exiting:", reason);
+  process.exit(1);
+});
+process.on("uncaughtException", (error) => {
+  console.error("[Cron] Uncaught exception, exiting:", error);
+  process.exit(1);
+});
+
 async function main() {
   if (typeof Bun === "undefined") {
     console.error("[Cron] cron-runner.mjs must run under Bun");
@@ -104,6 +114,8 @@ async function main() {
       await recordCronRun(db, { job: job.name, status: "success", startedAt, finishedAt, summary });
     } catch (error) {
       const detail = error instanceof Error ? (error.stack ?? error.message) : String(error);
+      // recordCronRun and alertCronFailure never throw (src/lib/system/cron-runs.ts): a database that is down still
+      // gets its Discord alert, and the job's own error is what the scheduler logs.
       await recordCronRun(db, {
         job: job.name,
         status: "failed",
