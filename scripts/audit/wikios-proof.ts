@@ -44,11 +44,13 @@ import {
   corpusCounts,
   evaluatePredeploy,
   evaluateProof,
-  leaseCheck,
+  gateRunDirectory,
+  measuredTree,
   parityReportSchema,
   parseCli,
   parseProofSummary,
   parseThresholds,
+  predeployChecks,
   predeployFilesToPrune,
   predeployReport,
   profileCommands,
@@ -61,6 +63,7 @@ import {
   roundTripReportSchema,
   runsToPrune,
   treeState,
+  type Check,
   type CliCommand,
   type CommittedProofResult,
   type DeployLease,
@@ -95,12 +98,14 @@ run      Writes <WIKIOS_PROOF_DIR or .bench-out/proof>/<yyyymmdd-HHMM UTC>-<prof
          titles, the bench pages, each harness's report and log, summary.json and summary.md. The round trip
          always covers every namespace of the database. Server profiles keep the newest --keep runs. Exits 1
          unless every check passed.
-gate     Checks existing reports against scripts/audit/wikios-proof-thresholds.json and writes the summary to
-         --out-dir (default: <the parity report's directory>/regated).
+gate     Checks existing reports of one run against scripts/audit/wikios-proof-thresholds.json and writes the summary
+         to --out-dir (default: <the run directory>/regated), keyed to the commit and tree in the run's own
+         summary.json (refused when it is missing or unreadable), never HEAD's.
 predeploy  Takes the wikios-proof job lease for the deploy (2 hours; refused while the weekly proof holds it), checks
          docs/audits/wikios-proof/latest.json against this commit's WikiOS tree and runs the full round trip into
-         <WIKIOS_PROOF_DIR or .bench-out/proof>/predeploy-<stamp>.json, keeping the newest 12 predeploy runs. Exits 1
-         on a failure, releasing the lease; WIKIOS_PROOF_OVERRIDE=1 prints each failure as overridden and exits 0.
+         <WIKIOS_PROOF_DIR or .bench-out/proof>/predeploy-<stamp>.json, keeping the newest 12 predeploy runs. An error
+         after the lease is a failed predeploy.error check. Exits 1 on a failure, releasing the lease;
+         WIKIOS_PROOF_OVERRIDE=1 prints each failure as overridden and exits 0.
 deployed Releases the lease predeploy took (the deploy runs it after its PM2 reload).
 
 Run from the repository root. Nothing is written to any database but the wikios-proof job lease. See
@@ -297,14 +302,20 @@ async function run(command: Extract<CliCommand, { command: "run" }>): Promise<nu
 }
 
 function gate(command: Extract<CliCommand, { command: "gate" }>): number {
+  const runDir = gateRunDirectory([command.roundtrip, command.parity, command.bench]);
+  const summaryFile = join(runDir, "summary.json");
+  const tree = measuredTree(
+    existsSync(summaryFile) ? readFileSync(summaryFile, "utf8") : null,
+    summaryFile
+  );
   const reports: ProofReports = {
     roundTrip: readReport(command.roundtrip, roundTripReportSchema),
     parity: readReport(command.parity, parityReportSchema),
     bench: command.bench === null ? null : readReport(command.bench, benchReportSchema),
   };
-  const outDir = command.outDir ?? join(dirname(command.parity), "regated");
+  const outDir = command.outDir ?? join(runDir, "regated");
   mkdirSync(outDir, { recursive: true });
-  const passed = writeSummary(command.profile, reports, [], outDir, currentTree());
+  const passed = writeSummary(command.profile, reports, [], outDir, tree);
   console.log(`Proof written to ${outDir}`);
   return passed ? 0 : 1;
 }
@@ -319,21 +330,29 @@ function committedProof(treeKey: string): CommittedProofResult {
   }
 }
 
-async function predeploy(): Promise<number> {
-  const t = thresholds();
-  const lease = await takeDeployLease();
+/** The committed proof and the full round trip, the report in the proof directory (pruned to the newest runs). */
+async function measurePredeploy(t: ProofThresholds): Promise<Check[]> {
   const committed = committedProof(currentTree().treeKey);
   const dir = proofDir();
   mkdirSync(dir, { recursive: true });
   const stamp = proofStamp(new Date());
   const command = roundTripCommand(join(dir, `predeploy-${stamp}.json`));
   const exit = await runHarness(command, join(dir, `predeploy-${stamp}.txt`));
-  const checks = [
-    leaseCheck(lease),
-    ...evaluatePredeploy(committed, readReport(command.out, roundTripReportSchema), t, exit),
-  ];
+  const checks = evaluatePredeploy(
+    committed,
+    readReport(command.out, roundTripReportSchema),
+    t,
+    exit
+  );
   for (const name of predeployFilesToPrune(readdirSync(dir), DEFAULT_KEEP))
     rmSync(join(dir, name), { force: true });
+  return checks;
+}
+
+async function predeploy(): Promise<number> {
+  const t = thresholds();
+  const lease = await takeDeployLease();
+  const checks = await predeployChecks(lease, () => measurePredeploy(t));
   const { lines, exitCode } = predeployReport(checks, process.env.WIKIOS_PROOF_OVERRIDE === "1");
   for (const line of lines) console.log(line);
   if (releasesLease(exitCode, lease)) await releaseDeployLease();

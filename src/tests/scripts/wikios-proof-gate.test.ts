@@ -166,16 +166,17 @@ function summary(overrides: Partial<ProofSummary> = {}): ProofSummary {
 // ---------------------------------------------------------------------------
 
 describe("parseThresholds", () => {
-  it("reads the committed thresholds file with the provisional floors", () => {
+  it("reads the committed thresholds file, its floors never below the plan's (a ratchet only raises them)", () => {
     const t = thresholds();
     expect(t.roundTrip).toEqual({
-      minPages: 11000,
+      minPages: t.roundTrip.minPages,
       maxNonIdentical: 0,
       maxIncomplete: 0,
       maxErrors: 0,
     });
-    expect(t.parity.minAtLeast98Percent).toBe(95);
-    expect(t.parity.minMeanScore).toBe(97);
+    expect(t.roundTrip.minPages).toBeGreaterThanOrEqual(11000);
+    expect(t.parity.minAtLeast98Percent).toBeGreaterThanOrEqual(95);
+    expect(t.parity.minMeanScore).toBeGreaterThanOrEqual(97);
     expect(t.parity.maxBelow70Pages).toBe(0);
     expect(t.parity.knownLowPages).toEqual([]);
     expect(t.bench.p95Ms["page+data.totalMs"]).toBe(1500);
@@ -256,6 +257,15 @@ describe("report schemas", () => {
       aggregate: { requested: 2, meanScore: 99 },
     };
     expect(parityReportSchema.parse(olderParity).pages).toHaveLength(2);
+    expect(
+      parityReportSchema.parse({
+        ...olderParity,
+        meta: {
+          titles: ["A", "B"],
+          leftOut: [{ title: "Infobox/styles.css", contentModel: "sanitized-css" }],
+        },
+      }).meta.leftOut
+    ).toHaveLength(1);
 
     const bench = {
       meta: { runs: 2 },
@@ -305,8 +315,11 @@ describe("report schemas", () => {
 // ---------------------------------------------------------------------------
 
 describe("evaluateRoundTrip", () => {
+  // The committed floor, so the next ratchet of the thresholds file does not break these tests.
+  const floor = thresholds().roundTrip.minPages;
+
   it("all identical passes", () => {
-    const checks = evaluateRoundTrip(roundTripReport(11000), thresholds());
+    const checks = evaluateRoundTrip(roundTripReport(floor), thresholds());
     expect(checks.map((c) => c.name)).toEqual([
       "roundTrip.pages",
       "roundTrip.nonIdentical",
@@ -314,11 +327,11 @@ describe("evaluateRoundTrip", () => {
       "roundTrip.errors",
     ]);
     expect(failing(checks)).toEqual([]);
-    expect(byName(checks, "roundTrip.pages").measured).toBe("11000");
+    expect(byName(checks, "roundTrip.pages").measured).toBe(String(floor));
   });
 
   it("one changed byte fails maxNonIdentical", () => {
-    const report = roundTripReport(11000, (page, index) =>
+    const report = roundTripReport(floor, (page, index) =>
       index === 7 ? { ...page, identical: false } : page
     );
     const checks = evaluateRoundTrip(report, thresholds());
@@ -327,7 +340,7 @@ describe("evaluateRoundTrip", () => {
   });
 
   it("an incomplete serialization and an error each fail their own check", () => {
-    const report = roundTripReport(11000, (page, index) => {
+    const report = roundTripReport(floor, (page, index) => {
       if (index === 1) return { ...page, complete: false };
       if (index === 2) return { ...page, error: "parse threw" };
       return page;
@@ -339,7 +352,7 @@ describe("evaluateRoundTrip", () => {
   });
 
   it("a report below minPages fails", () => {
-    expect(failing(evaluateRoundTrip(roundTripReport(10999), thresholds()))).toEqual([
+    expect(failing(evaluateRoundTrip(roundTripReport(floor - 1), thresholds()))).toEqual([
       "roundTrip.pages",
     ]);
     expect(failing(evaluateRoundTrip(roundTripReport(0), thresholds()))).toEqual([
@@ -359,12 +372,35 @@ describe("evaluateParity", () => {
       "parity.pages",
       "parity.wikiosFailures",
       "parity.mediawikiMissing",
+      "parity.leftOut",
       "parity.fallbackRenders",
       "parity.atLeast98",
       "parity.meanScore",
       "parity.below70",
     ]);
     expect(failing(checks)).toEqual([]);
+    expect(byName(checks, "parity.leftOut").measured).toBe("0 of 200 requested (0.0%)");
+  });
+
+  it("pages left out by content model are capped at 2% of the requested sample and named", () => {
+    const css = (n: number) =>
+      Array.from({ length: n }, (_, index) => ({
+        title: `Box ${index}/styles.css`,
+        contentModel: "sanitized-css",
+      }));
+    const report = (n: number): ParityReport => {
+      const base = parityReport(perfectPages(500 - n));
+      return { ...base, meta: { ...base.meta, leftOut: css(n) } };
+    };
+    // The committed proof: 3 of a 500-page sample.
+    const committed = byName(evaluateParity(report(3), thresholds()), "parity.leftOut");
+    expect(committed).toMatchObject({
+      passed: true,
+      measured: "3 of 500 requested (0.6%): Box 0/styles.css, Box 1/styles.css, Box 2/styles.css",
+      threshold: "<= 2% of requested pages, not wikitext",
+    });
+    expect(failing(evaluateParity(report(10), thresholds()))).toEqual([]);
+    expect(failing(evaluateParity(report(11), thresholds()))).toEqual(["parity.leftOut"]);
   });
 
   it("a report below minPages fails", () => {

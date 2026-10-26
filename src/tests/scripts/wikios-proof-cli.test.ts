@@ -7,7 +7,7 @@
  * `main()` is never run here.
  */
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import {
   DEFAULT_KEEP,
   HARNESS_SCRIPTS,
@@ -17,8 +17,11 @@ import {
   evaluateBench,
   evaluatePredeploy,
   evaluateProof,
+  gateRunDirectory,
+  measuredTree,
   parseCli,
   leaseCheck,
+  predeployChecks,
   parseThresholds,
   predeployFilesToPrune,
   predeployReport,
@@ -597,6 +600,58 @@ describe("predeployFilesToPrune", () => {
   });
 });
 
+describe("gate's tree", () => {
+  const summary = {
+    profile: "local",
+    generatedAt: "2026-10-26T06:22:29.521Z",
+    commit: "72b282b77",
+    treeKey: "measured-key",
+    dirty: false,
+    corpus: { roundTripPages: 1, parityPages: 1, benchPages: 0 },
+    checks: [],
+    passed: false,
+  };
+
+  it("the reports of one run share its directory; reports from two runs, or none, are refused", () => {
+    const run = ".bench-out/proof/20261026-0539-local";
+    expect(gateRunDirectory([`${run}/roundtrip.json`, `./${run}/parity.json`, null])).toBe(
+      resolve(run)
+    );
+    expect(
+      gateRunDirectory([`${run}/roundtrip.json`, `${run}/parity.json`, `${run}/bench.json`])
+    ).toBe(resolve(run));
+    expect(() =>
+      gateRunDirectory([
+        ".bench-out/proof/20261026-0447-local/roundtrip.json",
+        `${run}/parity.json`,
+        null,
+      ])
+    ).toThrow(/one run directory/);
+    expect(() => gateRunDirectory([null])).toThrow(/none/);
+  });
+
+  it("keys the summary to the run's own summary.json, not HEAD", () => {
+    const file = join("run", "summary.json");
+    expect(measuredTree(JSON.stringify(summary), file)).toEqual({
+      commit: "72b282b77",
+      treeKey: "measured-key",
+      dirty: false,
+    });
+    expect(measuredTree(JSON.stringify({ ...summary, dirty: true }), file).dirty).toBe(true);
+  });
+
+  it("a missing or unreadable run summary is refused", () => {
+    expect(() => measuredTree(null, "run/summary.json")).toThrow(
+      /^run\/summary\.json is missing; gate keys its summary to the run that measured the reports/
+    );
+    expect(() => measuredTree("{", "run/summary.json")).toThrow(/is not a proof summary/);
+    const { treeKey: _treeKey, ...keyless } = summary;
+    expect(() => measuredTree(JSON.stringify(keyless), "run/summary.json")).toThrow(
+      /is not a proof summary/
+    );
+  });
+});
+
 describe("leaseCheck", () => {
   it("passes when the deploy took the wikios-proof lease", () => {
     expect(leaseCheck({ state: "taken" })).toEqual({
@@ -665,7 +720,9 @@ function parity(count: number, settled = true): ParityReport {
   }));
   const titles = pages.map((p) => p.title);
   return {
-    meta: settled ? { titles, settleMs: 8000, comparedByRevision: count } : { titles, comparedByRevision: count },
+    meta: settled
+      ? { titles, settleMs: 8000, comparedByRevision: count }
+      : { titles, comparedByRevision: count },
     pages,
   };
 }
@@ -683,19 +740,31 @@ describe("evaluateProof", () => {
     expect(failing(checks)).toEqual([]);
     expect(byName(checks, "roundTrip.namespaces").passed).toBe(true);
     expect(byName(checks, "parity.settleMs").measured).toBe("8000 ms");
-    expect(byName(checks, "parity.byRevision").measured).toBe(`${t.parity.minPages} of ${t.parity.minPages} pages`);
+    expect(byName(checks, "parity.byRevision").measured).toBe(
+      `${t.parity.minPages} of ${t.parity.minPages} pages`
+    );
   });
 
   it("a parity report that parsed the current page, not the revision WikiOS holds, is refused", () => {
     const current = parity(t.parity.minPages);
     const unrecorded = { ...current, meta: { titles: current.meta.titles, settleMs: 8000 } };
     const none = { ...current, meta: { ...current.meta, comparedByRevision: 0 } };
-    expect(failing(evaluateProof("local", { ...good, parity: unrecorded }, t, []))).toEqual(["parity.byRevision"]);
-    expect(failing(evaluateProof("recurring", { ...good, parity: none }, t, []))).toContain("parity.byRevision");
+    expect(failing(evaluateProof("local", { ...good, parity: unrecorded }, t, []))).toEqual([
+      "parity.byRevision",
+    ]);
+    expect(failing(evaluateProof("recurring", { ...good, parity: none }, t, []))).toContain(
+      "parity.byRevision"
+    );
   });
 
   it("the revisions file holds each corpus page's rev id, and leaves out a page with none", () => {
-    expect(corpusRevisions([{ title: "A", revid: 7 }, { title: "B", revid: null }, { title: "C", revid: 9 }])).toEqual({
+    expect(
+      corpusRevisions([
+        { title: "A", revid: 7 },
+        { title: "B", revid: null },
+        { title: "C", revid: 9 },
+      ])
+    ).toEqual({
       A: 7,
       C: 9,
     });
@@ -817,6 +886,36 @@ describe("predeploy", () => {
     const { lines, exitCode } = predeployReport([skipped], false);
     expect(lines).toEqual(["skip bench.p95: 900 ms (dev server: reference only)"]);
     expect(exitCode).toBe(0);
+  });
+
+  it("an error after the lease is one failed predeploy.error check: refused, the lease given back, or overridden", async () => {
+    const taken = { state: "taken" } as const;
+    const checks = await predeployChecks(taken, () =>
+      Promise.reject(new Error("EACCES: permission denied, mkdir '/var/lib/ixstats/proof'"))
+    );
+    expect(checks.map((c) => c.name)).toEqual(["proof.lease", "predeploy.error"]);
+    expect(byName(checks, "predeploy.error")).toEqual({
+      name: "predeploy.error",
+      passed: false,
+      skipped: null,
+      measured: "EACCES: permission denied, mkdir '/var/lib/ixstats/proof'",
+      threshold: "no error",
+    });
+    const refused = predeployReport(checks, false);
+    expect(refused.exitCode).toBe(1);
+    expect(releasesLease(refused.exitCode, taken)).toBe(true);
+    const overridden = predeployReport(checks, true);
+    expect(overridden.exitCode).toBe(0);
+    expect(overridden.lines[1]).toMatch(/^WIKIOS PROOF OVERRIDDEN: FAIL predeploy\.error: EACCES/);
+  });
+
+  it("without an error the lease check comes first, then the measured checks", async () => {
+    const measured = evaluatePredeploy({ ok: true }, roundTrip(t.roundTrip.minPages), t, {
+      name: "roundtrip",
+      code: 0,
+    });
+    const checks = await predeployChecks({ state: "taken" }, () => Promise.resolve(measured));
+    expect(checks).toEqual([leaseCheck({ state: "taken" }), ...measured]);
   });
 
   it("all passing exits 0 with or without the override", () => {

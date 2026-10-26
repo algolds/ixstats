@@ -16,7 +16,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import {
@@ -74,6 +74,8 @@ export const parityReportSchema = z.object({
     settleMs: z.number().optional(),
     /** Pages parsed at the revision WikiOS holds; absent from reports written before parity compared revisions. */
     comparedByRevision: z.number().int().optional(),
+    /** Sampled pages whose held revision is not wikitext, left out of `titles`; absent from earlier reports. */
+    leftOut: z.array(z.object({ title: z.string(), contentModel: z.string() })).optional(),
   }),
   pages: z.array(
     z.object({
@@ -293,6 +295,35 @@ function scoreChecks(scored: readonly ScoredParityPage[], t: ProofThresholds["pa
   ];
 }
 
+/**
+ * The share of the requested sample parity may leave out by content model. The corpus holds 24 `sanitized-css` pages
+ * among 4,771 articles (0.5%; the 2026-10-26 proof left out 3 of 500); 2%, as for drift, leaves a 200-page sample room
+ * for where its stride lands, and anything above it means the exclusion is hiding articles.
+ */
+const MAX_LEFT_OUT_PERCENT = 2;
+
+function leftOutCheck(report: ParityReport): Check {
+  const leftOut = report.meta.leftOut ?? [];
+  const requested = report.meta.titles.length + leftOut.length;
+  const share = requested === 0 ? 0 : percentOf(leftOut.length, requested);
+  const named =
+    leftOut.length === 0
+      ? ""
+      : `: ${leftOut
+          .slice(0, 5)
+          .map((page) => page.title)
+          .join(", ")}`;
+  return {
+    ...atMost(
+      "parity.leftOut",
+      share,
+      MAX_LEFT_OUT_PERCENT,
+      `${leftOut.length} of ${requested} requested (${fixedPercent(share)})${named}`
+    ),
+    threshold: `<= ${MAX_LEFT_OUT_PERCENT}% of requested pages, not wikitext`,
+  };
+}
+
 export function evaluateParity(report: ParityReport, t: ProofThresholds): Check[] {
   const p = t.parity;
   const scored = report.pages.filter(isScored);
@@ -314,6 +345,7 @@ export function evaluateParity(report: ParityReport, t: ProofThresholds): Check[
       ),
       threshold: `<= ${p.maxMediaWikiMissingPercent}% of requested pages`,
     },
+    leftOutCheck(report),
     atMost("parity.fallbackRenders", scored.filter(needsSettling).length, p.maxFallbackRenders),
     ...scoreChecks(scored, p),
   ];
@@ -685,7 +717,10 @@ export interface ProfileConfig {
   benchIntervalMs: number;
 }
 
-export type ProfileDefaults = Omit<ProfileConfig, "outDir" | "corpusFile" | "revisionsFile" | "benchPagesFile">;
+export type ProfileDefaults = Omit<
+  ProfileConfig,
+  "outDir" | "corpusFile" | "revisionsFile" | "benchPagesFile"
+>;
 
 export type RunOverrides = Partial<
   Pick<
@@ -920,8 +955,12 @@ export function resolveRunConfig(
 }
 
 /** The revisions file parity reads: each page's held rev id; a page with none is parsed as the current page. */
-export function corpusRevisions(pages: ReadonlyArray<{ title: string; revid: number | null }>): Record<string, number> {
-  return Object.fromEntries(pages.flatMap((page) => (page.revid === null ? [] : [[page.title, page.revid]])));
+export function corpusRevisions(
+  pages: ReadonlyArray<{ title: string; revid: number | null }>
+): Record<string, number> {
+  return Object.fromEntries(
+    pages.flatMap((page) => (page.revid === null ? [] : [[page.title, page.revid]]))
+  );
 }
 
 /** The bench's pages: the defaults first, then an even sample of the rest of the corpus, up to `pages`. */
@@ -1021,6 +1060,39 @@ export function treeState(lsTree: GitOutput, status: GitOutput, head: GitOutput)
     treeKey: wikiosTreeKey(lsTree.stdout),
     dirty: isTreeDirty(status.stdout),
   };
+}
+
+const errorText = (error: Error | string): string =>
+  error instanceof Error ? error.message : error;
+
+/**
+ * The run directory `gate` reads its tree from. The reports must sit in one run's directory: its summary.json holds the
+ * commit, tree key and dirty flag of the code that measured them, which HEAD's tree no longer is once code moved on.
+ */
+export function gateRunDirectory(reportFiles: ReadonlyArray<string | null>): string {
+  const dirs = [
+    ...new Set(reportFiles.flatMap((file) => (file === null ? [] : [dirname(resolve(file))]))),
+  ];
+  if (dirs.length !== 1) {
+    throw new Error(
+      `gate reads the reports of one run, from one run directory; they are in ${dirs.join(", ") || "none"}`
+    );
+  }
+  return dirs[0];
+}
+
+/** The tree the run measured, from its summary.json (`file`, null when missing); a missing or malformed one throws. */
+export function measuredTree(summaryJson: string | null, file: string): TreeState {
+  const fix =
+    "gate keys its summary to the run that measured the reports: gate them in their run directory";
+  if (summaryJson === null) throw new Error(`${file} is missing; ${fix}`);
+  try {
+    const { commit, treeKey, dirty } = parseProofSummary(summaryJson);
+    return { commit, treeKey, dirty };
+  } catch (error) {
+    const why = errorText(error instanceof Error ? error : String(error));
+    throw new Error(`${file} is not a proof summary (${why}); ${fix}`, { cause: error });
+  }
 }
 
 export type CliCommand =
@@ -1248,6 +1320,31 @@ export function evaluateProof(
       : [missingReport("parity")]),
     ...evaluateBench(reports.bench, t, profile),
   ];
+}
+
+/**
+ * The lease check, then `measure`'s checks; when `measure` throws after the lease was taken (an unwritable
+ * WIKIOS_PROOF_DIR, git missing), one failed `predeploy.error` instead, so WIKIOS_PROOF_OVERRIDE=1 still applies and a
+ * refused deploy still gives the lease back.
+ */
+export async function predeployChecks(
+  lease: DeployLease,
+  measure: () => Promise<Check[]>
+): Promise<Check[]> {
+  try {
+    return [leaseCheck(lease), ...(await measure())];
+  } catch (error) {
+    return [
+      leaseCheck(lease),
+      {
+        name: "predeploy.error",
+        passed: false,
+        skipped: null,
+        measured: errorText(error instanceof Error ? error : String(error)),
+        threshold: "no error",
+      },
+    ];
+  }
 }
 
 /** The pre-deploy checks: the committed proof covers this tree, and the full round trip is lossless. */
