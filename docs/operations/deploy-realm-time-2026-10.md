@@ -215,8 +215,19 @@ cooldowns. To read the clocks: `SELECT id, slug, settings->'clock' FROM realms;`
    line. _Placeholder: D2b's checks (levers, procurement) go here._ D3: Operations → PvNPC strike → pick a related
    NPC: the odds screen shows the factor breakdown, odds and band probabilities as ranges, and the preview (1,000
    runs); commit and the result shows the seed, band and losses; the target NPC's alert reads High afterwards.
-   `SELECT "createdBy", value FROM "StorytellerEffect" WHERE "createdBy" LIKE 'defense:%' ORDER BY "createdAt" DESC
-   LIMIT 10;` lists crowd-out levels for nations above 2% of GDP once their defense has ticked a month.
+   The effects live in the `"DmInputs"` table (the `StorytellerEffect` model's table):
+
+   ```sql
+   SELECT "createdBy", "inputType", value FROM "DmInputs"
+   WHERE "createdBy" LIKE 'conflict:%' OR "createdBy" LIKE 'operation:%' OR "createdBy" LIKE 'defense:%'
+   ORDER BY "createdAt" DESC LIMIT 10;
+   ```
+
+   The strike writes `conflict:<id>:casualties` (population, both sides) and `conflict:<id>:war-damage` (the target's
+   GDP); an intervention writes the same under `operation:<id>:`. A nation above 2% of GDP gets `defense:crowd-out`
+   once its defense has ticked a month (with `defense:rd-spillover`, `defense:labour` and `defense:collapse:<month>`
+   where they apply). On the clone the strike's three rows showed; no crowd-out row did, as no nation above 2% ticked a
+   month during the check.
 
 ## Rollback
 

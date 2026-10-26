@@ -6,6 +6,7 @@
  */
 import fs from "fs";
 import path from "path";
+import { FEEDBACK_KEYS } from "~/lib/military/economy/feedback";
 import { CRON_JOBS, resolveEnabledJobs } from "~/server/cron/jobs";
 
 const ROOT = path.resolve(__dirname, "../../..");
@@ -34,6 +35,14 @@ describe("the realm time runbook", () => {
     expect(d2a).toBeGreaterThan(0);
     expect(d3).toBeGreaterThan(d2a);
     expect(reset).toBeGreaterThan(d3);
+  });
+
+  it("queries effects in their real table under the keys the code writes", () => {
+    expect(runbook).not.toMatch(/FROM "StorytellerEffect"/);
+    expect(runbook).toContain('FROM "DmInputs"');
+    for (const key of ["conflict:<id>:casualties", "conflict:<id>:war-damage", FEEDBACK_KEYS.crowdOut]) {
+      expect(runbook).toContain(key);
+    }
   });
 
   it("enables only jobs that exist", () => {
