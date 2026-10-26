@@ -2,12 +2,13 @@
 
 /** The wiki article search in the suggest-a-card dialog: pick the article a lore card is suggested for. */
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { debounce } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { cardSourceLabel, type CardArticleSource } from "~/lib/cards/card-sources";
 import { Button } from "~/components/ui/button";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { Signal } from "~/components/ui/signal";
 
 interface ArticleSearchProps {
   /** The search field's id, for its label. */
@@ -26,13 +27,15 @@ export function ArticleSearch({ id, wikiSource, onSelect }: ArticleSearchProps) 
   const [suggestions, setSuggestions] = useState<ArticleSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  /** The last search failed, so its empty list is an outage and not "no articles". */
+  const [failed, setFailed] = useState(false);
 
   const utils = api.useUtils();
 
-  // Debounced search — uses WikiBridge via tRPC (PostgreSQL for ixwiki)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const searchArticles = useCallback(
-    debounce(async (query: string) => {
+  // Uses WikiBridge via tRPC (PostgreSQL for ixwiki)
+  const runSearch = useCallback(
+    async (query: string) => {
+      setFailed(false);
       if (!query || query.length < 3) {
         setSuggestions([]);
         return;
@@ -51,12 +54,14 @@ export function ArticleSearch({ id, wikiSource, onSelect }: ArticleSearchProps) 
       } catch (error) {
         console.error("Article search error:", error);
         setSuggestions([]);
+        setFailed(true);
       } finally {
         setLoading(false);
       }
-    }, 500),
+    },
     [wikiSource, utils]
   );
+  const searchArticles = useMemo(() => debounce(runSearch, 500), [runSearch]);
 
   useEffect(() => {
     searchArticles(searchQuery);
@@ -149,14 +154,30 @@ export function ArticleSearch({ id, wikiSource, onSelect }: ArticleSearchProps) 
         </div>
       )}
 
-      {/* No Results Message */}
-      {!loading && searchQuery.length >= 3 && suggestions.length === 0 && showSuggestions && (
-        <div className="border-separator bg-surface-elevated rounded-control shadow-floating absolute z-10 mt-2 w-full border px-4 py-3">
-          <div className="text-body text-label-secondary text-center">
-            No articles found matching "{searchQuery}"
-          </div>
-        </div>
+      {!loading && failed && searchQuery.length >= 3 && (
+        <Signal
+          tone="destructive"
+          title={`Could not search ${cardSourceLabel(wikiSource)} articles`}
+          className="mt-2"
+        >
+          <Button variant="outline" size="sm" onClick={() => void runSearch(searchQuery)}>
+            Try again
+          </Button>
+        </Signal>
       )}
+
+      {/* No Results Message */}
+      {!loading &&
+        !failed &&
+        searchQuery.length >= 3 &&
+        suggestions.length === 0 &&
+        showSuggestions && (
+          <div className="border-separator bg-surface-elevated rounded-control shadow-floating absolute z-10 mt-2 w-full border px-4 py-3">
+            <div className="text-body text-label-secondary text-center">
+              No articles found matching "{searchQuery}"
+            </div>
+          </div>
+        )}
     </div>
   );
 }
