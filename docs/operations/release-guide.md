@@ -127,8 +127,9 @@ tmux new -s deploy            # the deploy runs for many minutes, and without ix
       restart limits): the deploy then reloads it with the other apps and waits for it to answer, and nothing needs to
       stay in the foreground. Without that block the deploy ends by running `start-production.sh` in the foreground, as
       before.
-- [ ] **Server-only config:** `next.config.js` is not tracked; if the release changes rewrites/redirects, edit the
-      server copy by hand and check it with `node --check next.config.js`.
+- [ ] **Tracked config:** `next.config.js` and `postcss.config.js` are tracked, so A3's checkout and the deploy's
+      `reset --hard` put the release's copies in place. A production-only edit to either is lost; check for one
+      before the checkout (B2).
 - [ ] **Hand database steps** the release needs before the deploy (Part B for this one) are done.
 
 ### A3. Promote to `master`
@@ -155,7 +156,7 @@ below).
 
 1. **Git sync** (on the production checkout only): refuses any branch but `master` (override:
    `ALLOW_NON_MASTER_DEPLOY=1`, for rollbacks only), fetches it from the `master` remote, `reset --hard` and
-   `git clean -fd` (git-ignored files such as `.env*`, `backups/` and `next.config.js` are kept). It exports the
+   `git clean -fd` (git-ignored files such as `.env*`, `backups/` and `ecosystem.config.cjs` are kept). It exports the
    commit as `IXSTATS_DEPLOY_COMMIT`, so IxWorld, cron and the websockets are built from the same commit as the web app.
 2. **Env:** loads `.env.production` and `.env.production.local`, checks `DATABASE_URL` is PostgreSQL and the Clerk
    keys are live keys.
@@ -215,23 +216,33 @@ Every stop of the old web server is graceful: `SIGTERM`, up to 30 seconds to exi
 `bun run clean` any more.
 
 **Where downtime starts.** Nothing before the build touches the live build, so a deploy that stops in steps 1–8 leaves
-the old server serving. From step 9 the old server keeps running, but its build has moved to `.next.prev`, so pages it
-has not loaded yet and its static files stop resolving: count the window from the build. Under PM2 the old server is
+a running old server serving what it has loaded. Step 3 has already replaced `node_modules` with the release's,
+though: a module the old server loads for the first time comes from there, and a stopped server must not be started on
+this checkout (see "When it fails"). From step 9 the old server keeps running, but its build has moved to
+`.next.prev`, so pages it has not loaded yet and its static files stop resolving: count the window from the build. Under PM2 the old server is
 restarted at step 11; in the foreground it is stopped at step 12.
 
 **When it fails.**
 
-- **Steps 1–8:** the live build is untouched. The schema may be partly changed (the additive step, some SQL files):
-  fix the cause and run the deploy again; every step is idempotent. The backup of step 4 is the way back. The old server
-  only keeps working if the SQL that ran changed nothing it reads; a release whose SQL converts such data (1.5) stops
-  the app before the deploy (Part B).
-- **Build, IxWorld or PM2 reload (steps 9–11), or `Ctrl+C`:** an exit trap moves `.next.prev` back to `.next`, so the
-  old build is in place again. Its server serves again if it is still running; start it if it was stopped.
+- **Steps 1–8:** the live build is untouched, but from step 3 `node_modules` and the Prisma client are the
+  release's, so the same rule holds as below: never start a stopped server on this checkout. The schema may be partly
+  changed (the additive step, some SQL files): fix the cause and run the deploy again; every step is idempotent. The
+  backup of step 4 is the way back. The old server only keeps working if the SQL that ran changed nothing it reads; a
+  release whose SQL converts such data (1.5) stops the app before the deploy (Part B).
+- **Build, IxWorld or PM2 reload (steps 9–11), or `Ctrl+C`:** an exit trap moves `.next.prev` back to `.next`. A
+  server still running keeps serving what it has loaded, but a module it loads for the first time comes from the
+  release's `node_modules` (step 3). Never start a stopped server on this checkout: the old build would run on the
+  release's `next` and Prisma client. Fix the cause and run the deploy again, or roll back (below), which rebuilds the
+  old release on its own dependencies.
 - **The deploy was killed outright** (the box rebooted, `kill -9`): `.next.prev` stays. The next deploy puts it back
   first (or drops it when `.next` is a finished build, with a `BUILD_ID`). To serve the old build at once:
-  `rm -rf .next && mv .next.prev .next`, then start the web app.
-- **The new server does not answer (step 12):** the previous build stays in `.next.prev`. Read the logs first. Put it
-  back by hand only for a release whose schema the old code still reads; otherwise roll back (below).
+  first `git reset --hard <previous commit from backups/deploy-history.log> && bun install --frozen-lockfile && bun run db:generate`,
+  and only for a release whose SQL changed nothing the old code reads; then `rm -rf .next && mv .next.prev .next`
+  and start the web app.
+- **The new server does not answer (step 12):** the previous build stays in `.next.prev`. Read the logs first. To put
+  it back by hand, first `git reset --hard <previous commit from backups/deploy-history.log> && bun install --frozen-lockfile && bun run db:generate`,
+  and only for a release whose SQL changed nothing the old code reads; then `rm -rf .next && mv .next.prev .next` and
+  start it. Otherwise roll back (below).
 
 **`SKIP_SCHEMA_SYNC=1`** runs everything but the schema work: the additive step, the SQL, the push, the post-push SQL
 and the post-deploy SQL are skipped; the backup and the WikiOS proof check still run. It exists for rollbacks, where an
@@ -252,6 +263,24 @@ ls .next.prev 2>/dev/null                                    # nothing: the depl
 
 Every app in the list reads `production`, `ixstats-web` included when defined. `ixstats-ws` exits (and PM2 restarts
 it) when a socket server fails to start, so a climbing restart count in `pm2 status` means read its log.
+
+**The fonts under the base path.** The stylesheets' `url("/fonts/…")` get the base path from a PostCSS pass
+(`scripts/setup/postcss-base-path-urls.cjs`, loaded by `postcss.config.js`). Whether Next 16's Turbopack build runs it
+can only be seen on the production build, so read the served CSS:
+
+```bash
+P=http://localhost:3550/projects/ixstates
+CSS=$(curl -sL "$P/" | grep -o '/projects/ixstates/_next/static/[^"]*\.css' | sort -u); echo "$CSS"
+for c in $CSS; do curl -s "http://localhost:3550$c" | grep -o '/projects/ixstates/fonts/[^")]*'; done | sort -u
+```
+
+The first line lists the stylesheets (none: the page or the pattern is wrong, not the fonts; look at the HTML). A hit
+such as `/projects/ixstates/fonts/National-Book.otf` means the pass ran. No hit while
+`grep -o 'url("*/fonts/[^")]*'` on the same files finds root URLs means it did not: the fonts 404 and the text falls
+back to the system font. That is cosmetic and nothing else breaks, so do not roll back for it. Fix it in the code
+(`postcss.config.js` must name the pass by its absolute path, and the build must run with `NODE_ENV=production` or
+`BASE_PATH` set and without the IxWorld standalone flag; `scripts/setup/base-path.cjs`), then deploy again;
+until then the owner may let nginx serve the root `/fonts/` from `public/fonts`.
 
 In a browser (console open):
 
@@ -347,7 +376,7 @@ This part gives the order. The detail stays in each runbook:
 
 | Area | Runbook |
 | --- | --- |
-| Environment, `next.config.js`, WikiRevision dedupe, Realms backfill, relief, Vault hub backfills, Eurth, cron order | [deploy-rose-garden-2026-09.md](deploy-rose-garden-2026-09.md) (its order is superseded by this part) |
+| Environment, WikiRevision dedupe, Realms backfill, relief, Vault hub backfills, Eurth, cron order | [deploy-rose-garden-2026-09.md](deploy-rose-garden-2026-09.md) (its order is superseded by this part) |
 | Cards Phases 1 to 4 and categories | [cards.md](../systems/cards.md#deploy-runbook-notes) and the phase runbooks after it |
 | IxnayID and Lorewards | [ixnayid-passport.md](../systems/ixnayid-passport.md#ixnayid-identity-deploy-runbook-owner) |
 | MyCountry fixes | [deploy-mycountry-2026-10.md](deploy-mycountry-2026-10.md) |
@@ -377,8 +406,6 @@ This part gives the order. The detail stays in each runbook:
 - [ ] **`ecosystem.config.cjs`:** `NODE_ENV: "production"` for every app, `CRON_ENABLED_JOBS: ""` for `ixstats-cron`
       (the new runner exits on old names such as `passive-income`, `scheduled-changes` and `lorewards-state-sync`),
       and the `ixstats-web` block if the web app should run under PM2 (A2).
-- [ ] **`next.config.js`:** the canonical `/@user` edit,
-      [September step 3](deploy-rose-garden-2026-09.md#3-nextconfigjs-on-the-server-canonical-user-urls).
 - [ ] **Drain the card market** a few days ahead: switch off auctions (`vault_isAuctionsEnabled`) and trading
       (`vault_isTradingEnabled`) in the Vault admin
       ([cards refresh spec §5.5](../specs/2026-10-15-cards-refresh-design.md#55-migration-and-deploy-order)). Production's
@@ -391,7 +418,20 @@ This part gives the order. The detail stays in each runbook:
 
 ### B2. Pre-window checks (read-only; the old build still serving)
 
-Do A3 first (the checkout does not touch the running servers), load the production env, then:
+**Before A3, production-only config.** `next.config.js` and `postcss.config.js` are tracked now, and A3's checkout
+(then the deploy's `reset --hard`) replaces the server's copies with the release's without a word: production's old
+checkout ignores them. Compare them first, and keep a copy:
+
+```bash
+git fetch master master
+mkdir -p "backups/config-$(date +%F)" && cp next.config.js postcss.config.js "backups/config-$(date +%F)/"
+for f in next.config.js postcss.config.js; do diff -u <(git show master/master:"$f") "$f" && echo "$f: same as the release"; done
+```
+
+Most of the diff is the release's own changes. Look for `+` lines, the ones only production has (a rewrite, a
+header, a plugin): they are lost at A3 unless the release carries them, so commit them on `development` first, or decide they can go.
+
+Then do A3 (the checkout does not touch the running servers), load the production env, and:
 
 1. **Schema state.** The `migrate diff` and the additive dry run of A1. Note whether the diff adds
    `Country.ownerUserId` (the Realms schema has not reached production), `wiki_revisions.revId`, the
@@ -528,8 +568,9 @@ Do A3 first (the checkout does not touch the running servers), load the producti
    with the [realm-time notes](deploy-realm-time-2026-10.md#7-cron-back-on); `budget-year-rollover` only after step 8.
    Size the money jobs' backlogs first (September step 7). Leave `wiki-mirror` and `wiki-render-stale` to the WikiOS
    launch.
-10. **The WikiOS launch:** the rest of the cutover runbook's launch steps, from 1b's rights import on, in its order.
-    WikiOS editing stays off until its step 6b.
+10. **The WikiOS launch:** the rest of the cutover runbook's launch steps, from 1b's rights import on, in its order
+    (the identity deploy has run by now, so read the claims that pass groups first, as 1b says). WikiOS editing stays
+    off until its step 6b.
 11. **Later:** Eurth ([6b](deploy-rose-garden-2026-09.md#6b-serve-eurth-the-first-outside-realm)) and the CSP (B6).
 
 ### B5. Ops prerequisites still open

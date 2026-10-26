@@ -171,7 +171,7 @@ scp ixwiki:"/ixwiki/public/projects/ixstats/docker-compose.yml" .
 scp -r ixwiki:"/ixwiki/public/projects/ixstats/docker" .
 
 # Copy gitignored JS/TS toolchain configs (skip any the server does not have)
-scp ixwiki:"/ixwiki/public/projects/ixstats/{next.config.js,eslint.config.js,postcss.config.js,prettier.config.js,components.json,bunfig.toml}" .
+scp ixwiki:"/ixwiki/public/projects/ixstats/{eslint.config.js,prettier.config.js,components.json,bunfig.toml}" .
 
 # Copy editor workspace settings
 scp -r ixwiki:"/ixwiki/public/projects/ixstats/.vscode" .

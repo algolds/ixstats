@@ -5,8 +5,9 @@
 #
 # Order: git sync and checks; dependencies and the Prisma client; the database backup; the additive schema step, the
 # WikiOS proof check, the hand-written SQL, db push and the post-push SQL; the build; IxWorld and the PM2 reload; the
-# web server, and once it answers the post-deploy data SQL (run_post_deploy_sql). Nothing before the build touches the live build (.next), so a failure there leaves the site serving. The
-# build moves .next to .next.prev first and puts it back if anything fails before the new server answers; .next.prev
+# web server, and once it answers the post-deploy data SQL (run_post_deploy_sql). Nothing before the build touches the
+# live build (.next), so a failure there leaves a running server serving what it has loaded; but the dependencies step
+# has already replaced node_modules with the release's, so never start a stopped server on this checkout. The build moves .next to .next.prev first and puts it back if anything fails before the new server answers; .next.prev
 # is deleted once it does.
 #
 # SKIP_SCHEMA_SYNC=1 runs everything but the schema work (the additive step, the SQL and db push): for a rollback to

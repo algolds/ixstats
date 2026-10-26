@@ -135,7 +135,6 @@ docker-compose.yml
 docker/
 ecosystem.config.cjs
 ecosystem.ixworld.config.cjs
-postcss.config.js
 prettier.config.js
 
 # --------------------------------------------------------------------------------
@@ -177,7 +176,6 @@ scripts/world-roster-data.json
 # Specific Config Files & Local Tooling (keep on disk, not in repo)
 # --------------------------------------------------------------------------------
 eslint.config.js
-next.config.js
 
 # --------------------------------------------------------------------------------
 # Session Data & Temp Drafts

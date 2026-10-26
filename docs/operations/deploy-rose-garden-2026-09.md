@@ -3,7 +3,7 @@
 > **Superseded as an order: follow the [release guide](release-guide.md), Part B.** 1.4 never completed on production,
 > so its steps ship with 1.5, and the release guide now gives their order around the new deploy script (the additive
 > schema step, the SQL it runs before `db push`, the post-deploy SQL). This runbook keeps the detail the release guide
-> links to: the environment, `next.config.js`, the WikiRevision dedupe, the Realms collisions, relief, the Vault hub
+> links to: the environment, the WikiRevision dedupe, the Realms collisions, relief, the Vault hub
 > backfills, Eurth, the cron order and the data fixes. Where a step below runs SQL or `db push` by hand that the deploy
 > script now runs, the step says so. It retires to [docs/history/](../history/README.md) once 1.5 is released.
 
@@ -182,21 +182,12 @@ echo 'REDIS_URL=redis://localhost:6379' >> .env.production.local   # ixstats-red
   and keep it: changing it invalidates every saved browser subscription. Set them for the web app and for
   `ixstats-cron` (the digest job sends email). Details: [notifications.md](../systems/notifications.md#email-and-web-push-sl-5).
 
-## 3. `next.config.js` on the server (canonical `/@user` URLs)
+## 3. `next.config.js` (canonical `/@user` URLs)
 
-`next.config.js` is not tracked, so edit the server's copy by hand.
-- **In `rewrites()`:** replace the two `/id/@:username…` entries in `passportRewrites` with this:
-  ```js
-  const passportRewrites = [{ source: "/@:username", destination: "/id/:username" }];
-  ```
-- **In `redirects()`:** delete the `/@:username…` entries (`permanent: false`) and every other legacy entry (the
-  repository's `next.config.js` has no `redirects()` any more). Wiki
-  pages that still link `/id/@user`, `/@user/<tab>` or `/thinkpages/profile/<user>` are resolved to the new pages
-  when they render.
-- **Check it parses:** run `node --check next.config.js`.
-- **If you skip this step,** the server's old `/@:username` redirects stay, and `/@user` links bounce to
-  `/id/@user`. There are no config redirects left in the repository: old profile links in wiki pages are rewritten
-  when the page renders, not by the config.
+Nothing to do by hand. `next.config.js` is tracked now, and the release's copy already maps `/@:username` to
+`/id/:username` and has no `redirects()`; the checkout and the deploy's `reset --hard` put it in place. Wiki pages
+that still link `/id/@user`, `/@user/<tab>` or `/thinkpages/profile/<user>` are resolved to the new pages when they
+render. A line only production's old copy has is lost at that checkout: the release guide's B2 compares the two first.
 
 ## 4. Database steps that must happen before the deploy
 

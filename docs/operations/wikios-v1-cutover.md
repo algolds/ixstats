@@ -22,12 +22,15 @@ IxWorld (port 3002) is untouched.
 
 **Order matters.** Run the launch steps by hand, one at a time, in this order:
 
-- 0, then 0b (owner-approved: it moves the checkout to the release, whose files steps 1, 1b and 4 run), then 1, 1b, 1c.
-  All of them come before step 2's deploy: step 1's `2026-09-30-wikios-api.sql` above all (see "The data-safety
-  SQL runs before the push"), and step 1b's `verifiedById` fix-up while the IxnayID identity deploy has not run.
+- 0, then 0b (owner-approved: it moves the checkout to the release, whose files steps 1, 1b and 4 run), then 1, step
+  1b's `verifiedById` fix-up, 1c. All of them come before step 2's deploy: step 1's `2026-09-30-wikios-api.sql` above
+  all (see "The data-safety SQL runs before the push"), and the `verifiedById` fix-up while the IxnayID identity deploy
+  has not run (that deploy's conversion reads it).
 - Before step 2's deploy: step 4's loopback server and its env line, step 6a's app URL check and the `ixstats-cron`
   job list (step 2 says why).
-- 2, then 2a.
+- 2, then step 1b's rights import (its dry run and `--yes` run), then 2a. The import runs after the deploy, as in the
+  [release guide](release-guide.md#b4-right-after-the-deploy-in-order) (B4 step 10). That is safe: WikiOS editing stays
+  off until step 6b (`WIKIOS_V1_ENABLED`), and WikiOS takes no write before the import's protections marker anyway.
 - 3 (3a to 3e), then step 4's bot-login check, which needs 3c.
 - 4b, 4c (its proxy check waits for 6b), 4d.
 - 5b (optional, any time after step 2). 5c is a reference: use it only when an import or the upload limit needs it.
@@ -383,6 +386,12 @@ restore the dump taken above (`pg_restore` into a scratch database first; never 
 ## 1b. Import the MediaWiki rights (plan 409), after checking who vouched for each name
 
 **Mandatory before any WikiOS write.** Its `--yes` run writes the protections marker WikiOS waits for (below).
+
+**When.** Two parts, at two times (the order list at the top). The `verifiedById` fix-up comes before step 2's deploy
+while the IxnayID identity deploy has not run: that deploy's conversion reads it. The import itself (the dry run and
+the `--yes` run, "Then dry-run the import" below) comes after step 2's deploy, as in the
+[release guide](release-guide.md#b4-right-after-the-deploy-in-order) (B4 step 10). Running it then is safe: WikiOS
+editing stays off until step 6b, and no WikiOS write is taken before the marker exists.
 
 `scripts/wikios-import-rights.ts` copies MediaWiki group memberships, protections and blocks into WikiOS. Its group and
 block rows are keyed by wiki username alone; they reach an IxStates account through its **approved old IxWiki name
