@@ -109,6 +109,84 @@ function mayRenderThroughMediaWiki(): boolean {
   return false;
 }
 
+/** Render-failure lines a process writes a minute at most; the rest are counted and named by the next line. */
+export const RENDER_FAILURE_LOGS_PER_MINUTE = 10;
+const LOG_WINDOW_MS = 60_000;
+/** How much of a body that is not MediaWiki's JSON (a Cloudflare or nginx page) a failure line quotes. */
+const BODY_EXCERPT_CHARS = 160;
+
+const renderFailureLog = { windowStart: Number.NEGATIVE_INFINITY, logged: 0, suppressed: 0 };
+
+/**
+ * One line saying why MediaWiki did not render `title`, throttled to RENDER_FAILURE_LOGS_PER_MINUTE a minute so a
+ * broken classic cannot flood the log; the next line written says how many were left out.
+ */
+export function logRenderFailure(title: string, cause: string, now = Date.now()): void {
+  if (now - renderFailureLog.windowStart >= LOG_WINDOW_MS) {
+    renderFailureLog.windowStart = now;
+    renderFailureLog.logged = 0;
+  }
+  if (renderFailureLog.logged >= RENDER_FAILURE_LOGS_PER_MINUTE) {
+    renderFailureLog.suppressed++;
+    return;
+  }
+  renderFailureLog.logged++;
+  const left = renderFailureLog.suppressed;
+  renderFailureLog.suppressed = 0;
+  const more = left > 0 ? ` (${left} earlier failure${left === 1 ? "" : "s"} not logged)` : "";
+  console.warn(`[WikiOS:render] MediaWiki did not render "${title}": ${cause}${more}`);
+}
+
+const RENDER_TIMEOUT_MS = 6000;
+const jsonValue = z.json();
+
+/** `body` as JSON, or undefined when it is not JSON (a Cloudflare or nginx page). */
+function readJson(body: string): z.infer<typeof jsonValue> | undefined {
+  try {
+    return jsonValue.parse(JSON.parse(body));
+  } catch {
+    return undefined;
+  }
+}
+
+const excerpt = (body: string): string =>
+  JSON.stringify(body.replace(/\s+/g, " ").trim().slice(0, BODY_EXCERPT_CHARS));
+
+/** The cause undici gives a failed fetch: a system error code (ECONNRESET, UND_ERR_SOCKET, ...) and its message. */
+const errorCauseSchema = z.looseObject({
+  code: z.string().optional(),
+  message: z.string().optional(),
+});
+
+const apiErrorSchema = z.object({
+  error: z.object({ code: z.string(), info: z.string().optional() }),
+});
+
+/** Why a response is not a render: its status and the start of a body that is not JSON, or MediaWiki's error code. */
+function describeResponse(status: number, body: string): string {
+  const payload = readJson(body);
+  if (payload === undefined) return `HTTP ${status}, not JSON: ${excerpt(body)}`;
+  const failure = apiErrorSchema.safeParse(payload);
+  if (failure.success) {
+    const { code, info } = failure.data.error;
+    return `HTTP ${status}, MediaWiki API error ${code}${info ? `: ${excerpt(info)}` : ""}`;
+  }
+  return status >= 200 && status < 300
+    ? `HTTP ${status}, no page text in the response`
+    : `HTTP ${status}: ${excerpt(body)}`;
+}
+
+/** A thrown fetch as a cause: the 6 s timeout, or the network error and its code (ECONNRESET, ...). */
+function describeThrown(error: Error | string): string {
+  if (typeof error === "string") return `network error: ${error}`;
+  if (error.name === "TimeoutError" || error.name === "AbortError") {
+    return `no answer within ${RENDER_TIMEOUT_MS} ms`;
+  }
+  const cause = errorCauseSchema.safeParse(error.cause);
+  const code = cause.success ? (cause.data.code ?? cause.data.message ?? "") : "";
+  return `network error: ${error.name}: ${error.message}${code ? ` (${code})` : ""}`;
+}
+
 /**
  * Render an article's Postgres wikitext through MediaWiki `action=parse` (`text=`, with the title as
  * context) so templates, parser functions and Lua expand. MediaWiki's own copy of the page is never
@@ -116,13 +194,22 @@ function mayRenderThroughMediaWiki(): boolean {
  * SKIP_MEDIAWIKI_SYNC). `wikitext` must not be blank (the render service never sends a blank page).
  * The same request asks for the page's links, templates, images, categories and properties
  * (`RenderMetadata`): the render is the only place WikiOS learns them. Returns null when MediaWiki is
- * unreachable or returns nothing, and without a request in production with no private render engine.
+ * unreachable or returns nothing, and without a request in production with no private render engine; each null is
+ * explained by one throttled line (`logRenderFailure`).
  */
 export async function renderArticleViaMediaWiki(
   wikitext: string,
   title: string
 ): Promise<RenderedPage | null> {
-  if (!mayRenderThroughMediaWiki()) return null;
+  if (!mayRenderThroughMediaWiki()) {
+    logRenderFailure(
+      title,
+      "refused locally: production has no private render engine (WIKIOS_MEDIAWIKI_INTERNAL_URL)"
+    );
+    return null;
+  }
+  let status: number;
+  let body: string;
   try {
     const res = await fetch(getMediaWikiApiUrl("ixwiki"), {
       method: "POST",
@@ -142,15 +229,29 @@ export async function renderArticleViaMediaWiki(
         formatversion: "2",
         format: "json",
       }).toString(),
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(RENDER_TIMEOUT_MS),
     });
-    if (!res.ok) return null;
-    const data = parseResponseSchema.safeParse(await res.json());
-    const parsed = data.success ? data.data.parse : undefined;
-    return parsed?.text ? { html: parsed.text, metadata: toMetadata(parsed) } : null;
-  } catch {
+    status = res.status;
+    body = await res.text();
+  } catch (error) {
+    logRenderFailure(title, describeThrown(error instanceof Error ? error : String(error)));
     return null;
   }
+  const parsed = parsedRender(status, body);
+  if (parsed) return { html: parsed.text, metadata: toMetadata(parsed) };
+  logRenderFailure(title, describeResponse(status, body));
+  return null;
+}
+
+/** The `parse` part of a 2xx answer that carries page text, else null. */
+function parsedRender(
+  status: number,
+  body: string
+): (NonNullable<z.infer<typeof parseResponseSchema>["parse"]> & { text: string }) | null {
+  if (status < 200 || status >= 300) return null;
+  const data = parseResponseSchema.safeParse(readJson(body));
+  const parsed = data.success ? data.data.parse : undefined;
+  return parsed?.text ? { ...parsed, text: parsed.text } : null;
 }
 
 /**
