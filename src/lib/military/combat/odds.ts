@@ -2,12 +2,17 @@
  * Step 2 and the roll of step 3 (research §7.5): logistic odds on the effective force ratio with 5% catastrophe
  * tails, outcome bands in closed form, and the margin a uniform draw sets.
  *
- *   x = ln FR;  P(m > c) = 0.05 + 0.90 × σ(k (x − c));  P(success) = P(m > 0)
+ *   x = ln FR;  P(m > c) = 0.05 × [t > c] + 0.90 × σ(k (x − c));  P(success) = P(m > 0)
+ *
+ * t is the margin the defender's catastrophe sets: +1.5 (a breakthrough), or +0.2 (a marginal gain) when the attack
+ * is hopeless (FR below 0.1). The attacker's catastrophe (−1.5) lies below every band edge.
  */
 import {
   BAND_EDGES,
   CATASTROPHE_MARGIN,
   CATASTROPHE_TAIL,
+  HOPELESS_CATASTROPHE_MARGIN,
+  HOPELESS_RATIO,
   MAX_FORCE_RATIO,
   MIN_FORCE_RATIO,
   ODDS_SLOPE,
@@ -25,12 +30,18 @@ export function boundedRatio(attacker: number, defender: number): number {
   return Math.min(MAX_FORCE_RATIO, Math.max(MIN_FORCE_RATIO, attacker / defender));
 }
 
-/** P(m > c) at force ratio `ratio`. */
-export function marginExceeds(ratio: number, c: number): number {
-  return CATASTROPHE_TAIL + CORE * sigmoid(ODDS_SLOPE * (Math.log(ratio) - c));
+/** The margin the defender's catastrophe sets: a breakthrough, capped at a marginal gain in a hopeless attack. */
+export function defenderCatastropheMargin(ratio: number): number {
+  return ratio < HOPELESS_RATIO ? HOPELESS_CATASTROPHE_MARGIN : CATASTROPHE_MARGIN;
 }
 
-/** P(success) = 0.05 + 0.90 σ(2.5 ln FR). */
+/** P(m > c) at force ratio `ratio`. */
+export function marginExceeds(ratio: number, c: number): number {
+  const tail = defenderCatastropheMargin(ratio) > c ? CATASTROPHE_TAIL : 0;
+  return tail + CORE * sigmoid(ODDS_SLOPE * (Math.log(ratio) - c));
+}
+
+/** P(success) = 0.05 + 0.90 σ(2.5 ln FR) (a hopeless attack's tail is a marginal gain, still ground taken). */
 export const successProbability = (ratio: number) => marginExceeds(ratio, 0);
 
 export type BandProbabilities = Record<OutcomeBand, number>;
@@ -54,11 +65,11 @@ export function bandOf(margin: number): OutcomeBand {
 }
 
 /**
- * The margin a uniform draw u ∈ [0, 1) sets: +1.5 below the defender-catastrophe tail, −1.5 above the attacker's,
- * otherwise x + (1/k) logit((u − 0.05) / 0.90).
+ * The margin a uniform draw u ∈ [0, 1) sets: the defender's catastrophe margin below its tail (+1.5, or +0.2 in a
+ * hopeless attack), −1.5 above the attacker's, otherwise x + (1/k) logit((u − 0.05) / 0.90).
  */
 export function marginFromUniform(ratio: number, u: number): number {
-  if (u < CATASTROPHE_TAIL) return CATASTROPHE_MARGIN;
+  if (u < CATASTROPHE_TAIL) return defenderCatastropheMargin(ratio);
   if (u > 1 - CATASTROPHE_TAIL) return -CATASTROPHE_MARGIN;
   const v = Math.min(1 - 1e-12, Math.max(1e-12, (u - CATASTROPHE_TAIL) / CORE));
   return Math.log(ratio) + Math.log(v / (1 - v)) / ODDS_SLOPE;

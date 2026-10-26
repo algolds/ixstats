@@ -5,6 +5,7 @@
  */
 import {
   BAND_EDGES,
+  HOPELESS_RATIO,
   MULTIPLIER_CAP,
   OUTCOME_BANDS,
   bandOf,
@@ -52,6 +53,29 @@ describe("odds", () => {
 
   it("the roll's band frequencies match the closed form", () => {
     const ratio = 1.6;
+    const counts = Object.fromEntries(OUTCOME_BANDS.map((b) => [b, 0])) as Record<string, number>;
+    const n = 200_000;
+    for (let i = 0; i < n; i++) counts[bandOf(marginFromUniform(ratio, (i + 0.5) / n))]! += 1;
+    const expected = bandProbabilities(ratio);
+    for (const band of OUTCOME_BANDS) expect(counts[band]! / n).toBeCloseTo(expected[band], 3);
+  });
+
+  it("caps a hopeless attack's catastrophe tail at a marginal gain, and keeps the tail otherwise", () => {
+    expect(HOPELESS_RATIO).toBe(0.1);
+    const hopeless = bandProbabilities(0.01);
+    expect(hopeless.breakthrough).toBeLessThan(1e-4);
+    expect(hopeless.success).toBeLessThan(1e-4);
+    expect(hopeless.marginal).toBeCloseTo(0.05, 3);
+    expect(successProbability(0.01)).toBeCloseTo(0.05, 3);
+    expect(bandOf(marginFromUniform(0.01, 0.01))).toBe("marginal");
+    expect(OUTCOME_BANDS.reduce((s, b) => s + hopeless[b], 0)).toBeCloseTo(1, 12);
+    // At 0.1 and above the tail is a breakthrough again.
+    expect(bandProbabilities(HOPELESS_RATIO).breakthrough).toBeGreaterThan(0.05);
+    expect(bandOf(marginFromUniform(HOPELESS_RATIO, 0.01))).toBe("breakthrough");
+  });
+
+  it("a hopeless roll's band frequencies match the closed form", () => {
+    const ratio = 0.05;
     const counts = Object.fromEntries(OUTCOME_BANDS.map((b) => [b, 0])) as Record<string, number>;
     const n = 200_000;
     for (let i = 0; i < n; i++) counts[bandOf(marginFromUniform(ratio, (i + 0.5) / n))]! += 1;

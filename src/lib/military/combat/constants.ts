@@ -15,6 +15,13 @@ export const ODDS_SLOPE = 2.5;
 export const CATASTROPHE_TAIL = 0.05;
 /** The margin a catastrophe sets (beyond every band edge). */
 export const CATASTROPHE_MARGIN = 1.5;
+/**
+ * Below this effective force ratio an attack is hopeless: the defender's catastrophe can still hand it ground, but
+ * no more than a marginal gain, so a small nation cannot farm breakthroughs off a much larger one (designer).
+ */
+export const HOPELESS_RATIO = 0.1;
+/** The margin the defender's catastrophe sets in a hopeless attack: the middle of the marginal gain band (designer). */
+export const HOPELESS_CATASTROPHE_MARGIN = 0.2;
 /** Force ratios are kept inside these bounds so an empty side never produces ±∞ (designer). */
 export const MIN_FORCE_RATIO = 0.01;
 export const MAX_FORCE_RATIO = 100;
