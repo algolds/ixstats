@@ -22,10 +22,10 @@ describe("budget years on the realm calendar", () => {
     expect(formatBudgetYear(thisGameYear, frost)).toBe("812 AE");
   });
 
-  it("counts other budget years from it, a game year apart on the clock", () => {
-    const lastYear = realmYearOfGameYear(thisGameYear - 1, frost);
-    expect(lastYear).toBe(realmYear(frost.now() - 365.25 * DAY, frost.calendar));
-    expect(lastYear).toBeLessThan(812);
+  it("counts other budget years from it, one calendar year per budget year (no skips on a short year)", () => {
+    expect(realmYearOfGameYear(thisGameYear - 1, frost)).toBe(811);
+    expect(realmYearOfGameYear(thisGameYear + 1, frost)).toBe(813);
+    expect(realmYearOfGameYear(thisGameYear + 5, frost)).toBe(817);
   });
 
   it("leaves Ixnay's years as they are", () => {

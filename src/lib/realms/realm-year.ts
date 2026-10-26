@@ -8,9 +8,6 @@ import { currentBudgetYear } from "~/lib/government/budget-year";
 import { realmYear } from "~/lib/realms/nation-time";
 import type { RealmCalendar } from "~/lib/realms/realm-calendar";
 
-/** A game year on the shared timeline: 365.25 days, as `IxTime.getCurrentGameYear` counts them. */
-const GAME_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
-
 /** Gregorian with no offset (Ixnay's calendar): its years are the game years. */
 function isGameCalendar(calendar: RealmCalendar): boolean {
   return calendar.calendarOffsetMs === 0 && !calendar.months?.length;
@@ -23,7 +20,8 @@ export function formatRealmYear(year: number, calendar: RealmCalendar): string {
 
 /**
  * The realm calendar year a stored game year (a budget year) is shown as: the current budget year reads as the
- * calendar year today, and others count from it.
+ * calendar year today, and others count from it one year per budget year (so consecutive budget years read as
+ * consecutive calendar years, whatever the calendar's year length).
  */
 export function realmYearOfGameYear(
   gameYear: number,
@@ -31,7 +29,7 @@ export function realmYearOfGameYear(
 ): number {
   if (isGameCalendar(clock.calendar)) return gameYear;
   const now = clock.now();
-  return realmYear(now + (gameYear - currentBudgetYear(now)) * GAME_YEAR_MS, clock.calendar);
+  return realmYear(now, clock.calendar) + (gameYear - currentBudgetYear(now));
 }
 
 /** A stored budget year as the nation's calendar labels it ("812 AE", "2041"). */
