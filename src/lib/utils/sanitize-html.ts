@@ -7,15 +7,23 @@
  * - sanitizeHtml(): Balanced - for general use cases
  * - sanitizeWikiArticleHtml(): WikiOS article HTML (Parsoid/MediaWiki markup, MediaWiki's legacy tags and
  *   attributes, and TemplateStyles <style> blocks, scoped to the article)
+ * - sanitizeWikiPreviewHtml(): compiled wikitext excerpts (feed cards, lore cards) from any wiki
  * - sanitizeSisterHtml() (sanitize-sister-html.ts): another wiki's HTML, on top of the article sanitizer
  *
  * Uses DOMPurify in the browser and DOMPurify + jsdom on the server (SSR, tRPC, API routes).
  */
 
 import DOMPurify, { type Config } from "dompurify";
+import { stripPositioning } from "~/lib/thinkpages-forum/strip-positioning";
 import { mediaWikiOrigin, wikiosConfig } from "~/lib/wiki-os/config";
 import { DOM_DEPTH_CEILING, tagsNestTooDeep } from "~/lib/wiki-os/transformers/inert-dom";
-import { scopeTemplateStyles, type StylePolicy } from "./scope-template-styles";
+import {
+  articleStylePolicy,
+  cleanStyleDeclarations,
+  keepsPositionInFlow,
+  scopeTemplateStyles,
+  type StylePolicy,
+} from "./scope-template-styles";
 
 type Purifier = typeof DOMPurify;
 type StyleSanitizer = (style: Element) => void;
@@ -71,7 +79,8 @@ const TEMPLATE_STYLES_ATTRIBUTE = "data-mw-deduplicate";
  * Keeps a `<style>` only when it is TemplateStyles' own: an HTML element, carrying `data-mw-deduplicate`,
  * holding nothing but text, whose CSS the scoper leaves something of. It then holds that scoped CSS and no
  * other attribute; anything else is removed (DOMPurify treats a node a hook detached as removed).
- * `policy` is what the CSS may name and keep: by default the page and the wiki's own origin.
+ * `policy` is what the CSS may name and keep: by default the page and the wiki's own origin, and no position that
+ * leaves the article (`articleStylePolicy`).
  */
 const templateStyleFilter =
   (policy?: StylePolicy): StyleSanitizer =>
@@ -83,7 +92,7 @@ const templateStyleFilter =
       wikiosConfig.templateStyles &&
       style.namespaceURI === HTML_NAMESPACE &&
       style.hasAttribute(TEMPLATE_STYLES_ATTRIBUTE)
-        ? scopeTemplateStyles(text, policy ?? new URL(mediaWikiOrigin()).origin)
+        ? scopeTemplateStyles(text, policy ?? articleStylePolicy(new URL(mediaWikiOrigin()).origin))
         : "";
     if (!css) {
       style.remove();
@@ -111,10 +120,30 @@ export function createArticlePurifier(policy?: StylePolicy): Purifier {
   return created;
 }
 
-/** The article's own instance: the shared hooks plus the `<style>` filter, which no other sanitizer wants. */
+/** A `style` attribute that might position its element out of the article (a keyword, or an escape that could spell one). */
+const MAY_LEAVE_ARTICLE = /fixed|sticky|\\/i;
+/** Inline styles keep any `url()` they had; only a position that leaves the article goes. */
+const INLINE_STYLE_POLICY: StylePolicy = {
+  allowsUrl: () => true,
+  allowsDeclaration: keepsPositionInFlow,
+};
+
+/**
+ * The article's own instance: the shared hooks plus the `<style>` filter, which no other sanitizer wants, and a
+ * `style` attribute without a `fixed`/`sticky` position (an editor's full-screen overlay); every other style is left
+ * as written. The sister wikis' instance cleans styles its own way.
+ */
 function getArticlePurifier(): Purifier {
-  articlePurifier ??= createArticlePurifier();
-  return articlePurifier;
+  if (articlePurifier) return articlePurifier;
+  const created = createArticlePurifier();
+  created.addHook("uponSanitizeAttribute", (_node, event) => {
+    if (event.attrName !== "style" || !MAY_LEAVE_ARTICLE.test(event.attrValue)) return;
+    const kept = cleanStyleDeclarations(event.attrValue, INLINE_STYLE_POLICY);
+    if (kept) event.attrValue = kept;
+    else event.keepAttr = false;
+  });
+  articlePurifier = created;
+  return created;
 }
 
 /**
@@ -122,7 +151,8 @@ function getArticlePurifier(): Purifier {
  * Use for: ThinkPages posts, comments, collaborative documents, user profiles
  *
  * Allows: Basic text formatting (b, i, em, strong, p, br, ul, ol, li, blockquote)
- * Blocks: Scripts, iframes, forms, links with javascript:, event handlers
+ * Blocks: Scripts, iframes, forms, links with javascript:, event handlers, and the app's own positioning and
+ * stacking utilities in `class` (`fixed inset-0 z-backdrop` would draw a full-screen link over the app)
  */
 export function sanitizeUserContent(html: string): string {
   if (!html) return "";
@@ -188,7 +218,7 @@ export function sanitizeUserContent(html: string): string {
     RETURN_TRUSTED_TYPE: false,
   };
 
-  return purify.sanitize(html, config);
+  return stripPositioning(purify.sanitize(html, config));
 }
 
 /**
@@ -452,8 +482,9 @@ function hashString(text: string): string {
  * (`scope-template-styles.ts`) or the guard that shows HTML nested too deep as its source
  * (`sanitizeWikiArticleHtml`) change: they shape the output but are not part of the config.
  * 8: HTML nested past DOM_DEPTH_CEILING (as the parser nests it) is an escaped `<pre class="wikios-fallback-plain">`.
+ * 9: no `fixed`/`sticky` position in a `style` attribute or a TemplateStyles block.
  */
-const SANITIZER_HOOKS_VERSION = 8;
+const SANITIZER_HOOKS_VERSION = 9;
 
 let articleSanitizerFingerprint: string | null = null;
 
@@ -487,12 +518,32 @@ export function wikiArticleSanitizerFingerprint(): string {
  * Wiki config plus the MediaWiki/Parsoid markup articles need, and the legacy tags and attributes
  * MediaWiki's own Sanitizer allows. A `<style>` stays only when it is TemplateStyles' (it carries
  * `data-mw-deduplicate`) and then only as CSS scoped under `.mw-parser-output` and cleared of imports,
- * URLs other than the page's own and the wiki's origin, and script hooks (`scope-template-styles.ts`); the style attribute stays allowed.
+ * URLs other than the page's own and the wiki's origin, and script hooks (`scope-template-styles.ts`); the style
+ * attribute stays allowed, less any `fixed`/`sticky` position (as in a TemplateStyles block).
  */
 export function sanitizeWikiArticleHtml(html: string): string {
   if (!html) return "";
   return (
     nestedTooDeepSource(html) ?? getArticlePurifier().sanitize(html, WIKI_ARTICLE_SANITIZE_CONFIG)
+  );
+}
+
+/** The article config without any `<style>`: an excerpt has no TemplateStyles to keep. */
+const WIKI_PREVIEW_SANITIZE_CONFIG: Config = {
+  ...WIKI_ARTICLE_SANITIZE_CONFIG,
+  FORBID_TAGS: [...(WIKI_ARTICLE_SANITIZE_CONFIG.FORBID_TAGS ?? []), "style"],
+};
+
+/**
+ * Wikitext compiled by `parseWikitextToHtml` for an excerpt (feed cards, lore cards, inline article previews). The
+ * compiler passes the wikitext's own HTML through, and that wikitext can come from another wiki (IIWiki,
+ * AltHistory): the article sanitizer with no `<style>`, then the forum Canvas pass (`stripPositioning`), so no
+ * style or class takes an element out of the excerpt. `parseWikitextToPreviewHtml` compiles and sanitizes in one.
+ */
+export function sanitizeWikiPreviewHtml(html: string): string {
+  if (!html) return "";
+  return stripPositioning(
+    nestedTooDeepSource(html) ?? purify.sanitize(html, WIKI_PREVIEW_SANITIZE_CONFIG)
   );
 }
 

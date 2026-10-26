@@ -445,6 +445,36 @@ function originPolicy(ownOrigin: string | undefined): StylePolicy {
   return { allowsUrl: (raw) => urlIsAllowed(raw, ownOrigin) };
 }
 
+/** What `position` may be in an article: nothing that leaves it (`fixed`, `sticky`, a `var()`, ...). */
+const IN_FLOW_POSITIONS = new Set([
+  "static",
+  "relative",
+  "absolute",
+  "inherit",
+  "initial",
+  "unset",
+  "revert",
+]);
+const POSITION_PROPERTY = /^(?:-[a-z]+-)?position$/;
+/** Position keywords that take an element out of the article: a custom property holding one is dropped too. */
+const OUT_OF_FLOW_POSITIONS = new Set(["fixed", "sticky", "-webkit-sticky"]);
+
+/**
+ * A StylePolicy rule (`allowsDeclaration`): false for a declaration that positions an element out of the article, a
+ * `position` other than an in-flow keyword or a custom property holding `fixed`/`sticky`. Absolute and relative stay
+ * (location maps and infobox overlays use them); the article box clips nothing, so a fixed overlay would cover the app.
+ */
+export function keepsPositionInFlow(property: string, value: string): boolean {
+  const keyword = (value.split("!")[0] ?? "").trim();
+  if (POSITION_PROPERTY.test(property)) return IN_FLOW_POSITIONS.has(keyword);
+  return !(property.startsWith("--") && OUT_OF_FLOW_POSITIONS.has(keyword));
+}
+
+/** The article's own policy: `url()` on the page or the wiki's origin, and nothing positioned out of the article. */
+export function articleStylePolicy(ownOrigin: string | undefined): StylePolicy {
+  return { ...originPolicy(ownOrigin), allowsDeclaration: keepsPositionInFlow };
+}
+
 /** Whether every `url()` in `declaration` names what the policy allows. */
 function urlsAreAllowed(masked: string, strings: readonly string[], policy: StylePolicy): boolean {
   const targets = urlTargets(masked, strings);

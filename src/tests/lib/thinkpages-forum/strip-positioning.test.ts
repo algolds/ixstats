@@ -65,6 +65,8 @@ describe("stripClassTokens", () => {
     ["fixed inset-0 z-50", ""],
     ["md:fixed hover:absolute !fixed sm:-z-10 max-md:inset-0", ""],
     ["[position:fixed] z-[9999] top-[10px] inset-(--x)", ""],
+    ["fixed inset-0 z-backdrop bg-scrim", "bg-scrim"],
+    ["z-toast md:z-sheet keep", "keep"],
     [
       "wikitable infobox mw-parser-output infobox-header navbox floatright",
       "wikitable infobox mw-parser-output infobox-header navbox floatright",
