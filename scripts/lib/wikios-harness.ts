@@ -266,9 +266,27 @@ function hasInfoboxClass(root: ParentNode): boolean {
 }
 
 /**
+ * Elements a reader sees as their own line or cell. WikiOS stores its render without the whitespace between them
+ * (`slim-html.ts` drops it: no reader can see it), and MediaWiki's has a line feed there, so the text is read with a
+ * break at each one, as `innerText` would, and "Name</th><td>Elfin" is two words on both sides.
+ */
+const TEXT_BREAK_SELECTOR =
+  "address, article, aside, blockquote, br, caption, dd, details, div, dl, dt, figcaption, figure, footer, h1, h2, " +
+  "h3, h4, h5, h6, header, hr, li, nav, ol, p, pre, section, summary, table, tbody, td, tfoot, th, thead, tr, ul";
+
+/** The visible words of `body`, with a break at each line or cell; the inline spaces are the page's own. */
+function blockText(body: HTMLElement): string {
+  for (const element of body.querySelectorAll(TEXT_BREAK_SELECTOR)) {
+    element.after(" ");
+    element.before(" ");
+  }
+  return collapse(body.textContent ?? "");
+}
+
+/**
  * Reduces rendered article HTML to the parts that must survive a change of renderer. Scripts, styles,
  * section-edit links and the TOC are dropped; comments never reach `textContent`; class/id/style/data-*
- * attributes are only read (infobox detection) and never compared.
+ * attributes are only read (infobox detection) and never compared. The text is read last: it adds breaks.
  */
 export function normalizeHtml(html: string): NormalizedDoc {
   const dom = new JSDOM(html);
@@ -276,8 +294,7 @@ export function normalizeHtml(html: string): NormalizedDoc {
     const { body } = dom.window.document;
     const infobox = hasInfoboxClass(body);
     for (const element of body.querySelectorAll(NON_CONTENT_SELECTOR)) element.remove();
-    return {
-      text: collapse(body.textContent ?? ""),
+    const doc = {
       headings: [...body.querySelectorAll("h1, h2, h3, h4, h5, h6")]
         .map((heading) => collapse(heading.textContent ?? ""))
         .filter(Boolean),
@@ -287,6 +304,7 @@ export function normalizeHtml(html: string): NormalizedDoc {
       infobox,
       refs: body.querySelectorAll("sup.reference, .mw-ref").length,
     };
+    return { text: blockText(body), ...doc };
   } finally {
     dom.window.close();
   }

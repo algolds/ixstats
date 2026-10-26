@@ -12,7 +12,9 @@ import {
   fetchUntilSettled,
   isLocalDatabaseUrl,
   needsSettling,
+  normalizeHtml,
   parseNamespaces,
+  similarity,
   throttledFetch,
   type Parsed,
 } from "../../../scripts/lib/wikios-harness";
@@ -193,5 +195,33 @@ describe("settling a WikiOS view", () => {
     const result = await fetchUntilSettled(fetchOnce, { settleMs: 5, settleTries: 3, wait: async () => undefined });
     expect(result).toEqual({ ok: false, error: "WikiOS unreachable" });
     expect(fetchOnce).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("normalizing rendered text", () => {
+  const mediawiki =
+    '<table class="infobox">\n<tbody><tr>\n<th>Builder</th>\n<td>J. Samuel White</td></tr>\n<tr>\n<th>Launched</th>\n' +
+    '<td>1933</td></tr></tbody></table>\n<div>Elfin</div>\n<p>A <b>steam</b> yacht.</p>\n<ul>\n<li>One</li>\n<li>Two</li>\n</ul>';
+  const slimmed =
+    '<table class="infobox"><tbody><tr><th>Builder</th><td>J. Samuel White</td></tr><tr><th>Launched</th>' +
+    "<td>1933</td></tr></tbody></table><div>Elfin</div><p>A <b>steam</b> yacht.</p><ul><li>One</li><li>Two</li></ul>";
+
+  it("cells, rows, blocks and list items are separate words with or without whitespace between them", () => {
+    expect(normalizeHtml(slimmed).text).toBe("Builder J. Samuel White Launched 1933 Elfin A steam yacht. One Two");
+    expect(normalizeHtml(slimmed).text).toBe(normalizeHtml(mediawiki).text);
+    expect(similarity(normalizeHtml(mediawiki), normalizeHtml(slimmed)).overall).toBe(100);
+  });
+
+  it("a space lost between inline neighbours still counts against the text", () => {
+    const spaced = normalizeHtml("<p>A <b>steam</b> <i>yacht</i></p>");
+    const lost = normalizeHtml("<p>A <b>steam</b><i>yacht</i></p>");
+    expect(lost.text).toBe("A steamyacht");
+    expect(similarity(spaced, lost).text).toBeLessThan(100);
+  });
+
+  it("a line break separates the words on either side, and headings keep their own text", () => {
+    const doc = normalizeHtml("<h2>History</h2><p>Laid down<br>June 1933</p>");
+    expect(doc.text).toBe("History Laid down June 1933");
+    expect(doc.headings).toEqual(["History"]);
   });
 });
