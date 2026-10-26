@@ -7,6 +7,7 @@ import {
   pollInclude,
   postInclude,
   transformPost,
+  withVisibleEmbeds,
 } from "../../post-utils";
 
 export const thinkpagesPostsPostsQueriesRouter = createTRPCRouter({
@@ -43,12 +44,7 @@ export const thinkpagesPostsPostsQueriesRouter = createTRPCRouter({
       }
 
       // Don't leak embedded parent/repost/replies the viewer couldn't read on their own.
-      const visible = (p: any) => (p && canViewPost(p, viewerClerkUserId) ? p : null);
-      const transformed = transformPost({
-        ...post,
-        parentPost: visible((post as any).parentPost),
-        repostOf: visible((post as any).repostOf),
-      });
+      const transformed = transformPost(withVisibleEmbeds(post, viewerClerkUserId));
 
       return {
         ...transformed,

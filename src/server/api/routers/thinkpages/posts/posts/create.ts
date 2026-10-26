@@ -4,11 +4,20 @@ import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { validateNoXSS } from "~/lib/utils";
-import { invalidateFeeds, personaDisplayName, postAuthorsInclude } from "../../post-utils";
+import {
+  canViewPost,
+  invalidateFeeds,
+  personaDisplayName,
+  postAuthorsInclude,
+  stripDiscordMarker,
+  withoutOwnerIds,
+} from "../../post-utils";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ownHashtags } from "~/server/shared/realm-board";
 import { recipientsBlockingSender } from "~/server/shared/user-blocks";
 import { recipientsRefusing } from "~/server/shared/privacy-permissions";
+import { MENTION_MAX_PER_POST } from "~/lib/thinkpages-forum/mentions";
+import { extractMentions } from "~/lib/utils/text-formatter";
 
 /** Visibilities whose posts other people can open, so they may trigger notifications. */
 const NOTIFIABLE_VISIBILITIES = new Set(["public", "unlisted"]);
@@ -30,9 +39,11 @@ const CreatePostSchema = z.object({
         message:
           "Content contains potentially unsafe HTML. Please avoid using script tags, javascript: URLs, or event handlers.",
       }
-    ),
+    )
+    .transform(stripDiscordMarker),
   hashtags: z.array(z.string()).optional(),
-  mentions: z.array(z.string()).optional(),
+  // Only names written in the content count, at most MENTION_MAX_PER_POST of them (recordMentions).
+  mentions: z.array(z.string().max(64)).max(1000).optional(),
   visibility: z.enum(["public", "private", "unlisted", "draft"]).default("public"),
   parentPostId: z.string().optional(), // For replies
   repostOfId: z.string().optional(), // For reposts
@@ -131,6 +142,8 @@ const mediaAttachmentData = (postId: string, urls: string[]) =>
 
 /**
  * Record @mentions and notify the owning user of each mentioned persona once, never the author.
+ * Only names that appear in the content count, at most MENTION_MAX_PER_POST (the forum's cap), so
+ * a post can't fan out to personas it never names.
  * Users who blocked the author, or whose mention setting excludes them (SL-4), are not notified;
  * the mention is still recorded.
  */
@@ -140,8 +153,13 @@ async function recordMentions(
   input: { content: string; mentions: string[] },
   notify: { clerkUserId: string; actorName: string | undefined; notifiable: boolean }
 ) {
+  const written = new Set(extractMentions(input.content).map((name) => name.toLowerCase()));
+  const names = [...new Set(input.mentions.map((m) => m.replace("@", "")))]
+    .filter((name) => written.has(name.toLowerCase()))
+    .slice(0, MENTION_MAX_PER_POST);
+  if (names.length === 0) return;
   const mentionedAccounts = await db.thinkpagesAccount.findMany({
-    where: { username: { in: input.mentions.map((m) => m.replace("@", "")) } },
+    where: { username: { in: names } },
     select: { id: true, username: true, clerkUserId: true },
   });
   if (mentionedAccounts.length === 0) return;
@@ -239,8 +257,32 @@ async function mirrorToDiscord(
   }
 }
 
-/** Notify the original author of a repost or quote (never for self-reposts or private posts). */
+/** Whether `recipient` blocked the actor (by account or nation); their engagement notifies nobody then. */
+async function blockedBy(db: PostDb, actorClerkUserId: string, recipient: string) {
+  const blocking = await recipientsBlockingSender(db, actorClerkUserId, [recipient]);
+  return blocking.length > 0;
+}
+
+/**
+ * The post a reply or repost points at, which the caller must be able to read: replying to or
+ * reposting a private post would otherwise publish (and return) its content.
+ */
+async function requireReadableReference(db: PostDb, postId: string, clerkUserId: string) {
+  const target = await db.thinkpagesPost.findUnique({
+    where: { id: postId },
+    select: { id: true, visibility: true, account: { select: { clerkUserId: true } } },
+  });
+  if (!target || !canViewPost(target, clerkUserId)) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+  }
+}
+
+/**
+ * Notify the original author of a repost or quote (never for self-reposts or private posts, nor
+ * when the author blocked the reposter).
+ */
 async function notifyRepost(
+  db: PostDb,
   post: {
     id: string;
     repostOf?: { content: string | null; account: { clerkUserId: string | null } } | null;
@@ -250,6 +292,7 @@ async function notifyRepost(
 ) {
   const originalAuthorId = post.repostOf?.account?.clerkUserId;
   if (!input.repostOfId || !originalAuthorId || originalAuthorId === from.clerkUserId) return;
+  if (await blockedBy(db, from.clerkUserId, originalAuthorId)) return;
 
   const isQuote = input.content.trim().length > 0;
   await notificationHooks
@@ -302,6 +345,8 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
       const account = await requirePostingAccount(db, input.accountId, clerkUserId);
 
       const postType = input.repostOfId ? "repost" : input.parentPostId ? "reply" : "original";
+      if (input.parentPostId) await requireReadableReference(db, input.parentPostId, clerkUserId);
+      if (input.repostOfId) await requireReadableReference(db, input.repostOfId, clerkUserId);
 
       const poll = input.poll
         ? await db.poll.create({
@@ -358,17 +403,21 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
         );
       }
 
-      if (notifiable) await notifyRepost(post, input, { clerkUserId, actorName });
+      if (notifiable) await notifyRepost(db, post, input, { clerkUserId, actorName });
 
       // Notify if this is a reply. Skip replies to any of the caller's own personas (keyed by
-      // owning user, not persona).
+      // owning user, not persona), and parent authors who blocked the caller.
       if (input.parentPostId && post.parentPost) {
         const parentPost = await db.thinkpagesPost.findUnique({
           where: { id: input.parentPostId },
           select: { id: true, accountId: true, account: { select: { clerkUserId: true } } },
         });
 
-        if (parentPost && parentPost.account.clerkUserId !== clerkUserId) {
+        if (
+          parentPost &&
+          parentPost.account.clerkUserId !== clerkUserId &&
+          !(await blockedBy(db, clerkUserId, parentPost.account.clerkUserId))
+        ) {
           await notificationHooks
             .onThinkPageActivity({
               thinkpageId: post.id,
@@ -387,6 +436,6 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
       queueAchievementCheck(clerkUserId);
       await invalidateFeeds();
 
-      return post;
+      return withoutOwnerIds(post);
     }),
 });

@@ -15,7 +15,12 @@ import {
   type RemoveReactionInput,
   type MessagingDependencies,
 } from "./contracts";
-import { MessagingBlockedError, MessagingForbiddenError, MessagingNotFoundError } from "./errors";
+import {
+  MessagingBlockedError,
+  MessagingForbiddenError,
+  MessagingNotFoundError,
+  MessagingValidationError,
+} from "./errors";
 import { recipientsBlockingSender } from "~/server/shared/user-blocks";
 import { realmBoardChatRestriction } from "~/server/shared/realm-board";
 import { enrollThinktankMember } from "./thinktank-enrollment";
@@ -83,6 +88,19 @@ export class MessagingMessageOperations {
         ? await this.checkDirectRecipients(actorId, targetConvId)
         : new Set<string>();
 
+    // A reply quotes a live message of this conversation, never one from elsewhere.
+    if (input.replyToId) {
+      const replyTo = await this.db.thinkshareMessage.findFirst({
+        where: { id: input.replyToId, conversationId: targetConvId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!replyTo) {
+        throw new MessagingValidationError(
+          "The message you replied to is not in this conversation"
+        );
+      }
+    }
+
     const message = await this.db.$transaction(async (tx: any) => {
       const createdMsg = await tx.thinkshareMessage.create({
         data: {
@@ -109,14 +127,16 @@ export class MessagingMessageOperations {
     });
 
     // Recipients holding the conversation as a message request are not notified or pushed it;
-    // it waits in their Requests folder.
+    // it waits in their Requests folder. Nor is anyone who declined it.
     let otherParticipants: Array<{ userId: string; requestStatus?: string }> = (
       await this.db.conversationParticipant.findMany({
         where: { conversationId: targetConvId, userId: { not: actorId }, isActive: true },
       })
     ).filter(
       (p: { userId: string; requestStatus?: string }) =>
-        p.requestStatus !== "pending" && !newlyPending.has(p.userId)
+        p.requestStatus !== "pending" &&
+        p.requestStatus !== "declined" &&
+        !newlyPending.has(p.userId)
     );
     // Group members who blocked the sender are not notified or pushed the message.
     if ((conv ?? participant.conversation)?.type !== "direct" && otherParticipants.length > 0) {
@@ -141,9 +161,10 @@ export class MessagingMessageOperations {
         .catch(() => {});
     }
 
-    // Auto-prune default user messages beyond 1000 cap
+    // Storage stays bounded per sender: each (non-exempt) user keeps their newest 1000 messages.
+    // There is no per-conversation cap, which let any member erase a group's history by sending
+    // 1000 messages; a sender's spam now only ever evicts their own messages.
     void this.pruneOldMessagesForUser(actorId, DEFAULT_USER_MESSAGE_CAP).catch(() => {});
-    void this.pruneConversationMessages(targetConvId, DEFAULT_USER_MESSAGE_CAP).catch(() => {});
 
     return message;
   }
@@ -404,21 +425,6 @@ export class MessagingMessageOperations {
       return await this.deleteOldestBeyondCap({ userId }, cap);
     } catch (err) {
       console.error(`[MessagingMessageOperations] Auto-prune error for user ${userId}:`, err);
-      return 0;
-    }
-  }
-
-  public async pruneConversationMessages(
-    conversationId: string,
-    cap: number = DEFAULT_USER_MESSAGE_CAP
-  ): Promise<number> {
-    try {
-      return await this.deleteOldestBeyondCap({ conversationId }, cap);
-    } catch (err) {
-      console.error(
-        `[MessagingMessageOperations] Auto-prune error for conversation ${conversationId}:`,
-        err
-      );
       return 0;
     }
   }

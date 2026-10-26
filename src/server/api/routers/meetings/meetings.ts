@@ -84,6 +84,7 @@ export const meetingsMeetingsRouter = createTRPCRouter({
     .input(
       z.object({
         countryId: z.string(),
+        limit: z.number().int().min(1).max(100).default(50),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -92,6 +93,7 @@ export const meetingsMeetingsRouter = createTRPCRouter({
           OR: [{ countryId: input.countryId }, { targetCountryId: input.countryId }],
         },
         orderBy: { scheduledDate: "desc" },
+        take: input.limit,
         include: {
           attendances: true,
           agendaItems: true,
@@ -99,7 +101,8 @@ export const meetingsMeetingsRouter = createTRPCRouter({
           actionItems: true,
         },
       });
-      // Notes, decisions and agenda outcomes belong to the governments at the table: redacted for everyone else.
+      // Notes, decisions, action items, attendance notes and agenda outcomes belong to the
+      // governments at the table: redacted for everyone else.
       const writable = await countriesWithWriteAccess(
         ctx,
         meetings.flatMap((m) => [m.countryId, m.targetCountryId])
@@ -111,6 +114,8 @@ export const meetingsMeetingsRouter = createTRPCRouter({
               ...m,
               notes: null,
               decisions: [],
+              actionItems: [],
+              attendances: m.attendances.map((a) => ({ ...a, notes: null })),
               agendaItems: m.agendaItems.map((a) => ({ ...a, outcome: null })),
             }
       );

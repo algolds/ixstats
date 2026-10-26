@@ -13,6 +13,10 @@ jest.mock("~/lib/notifications/hooks", () => ({
   __esModule: true,
   notificationHooks: { onThinktankActivity: jest.fn().mockResolvedValue(undefined) },
 }));
+const mockEvictFromRoom = jest.fn();
+jest.mock("~/server/websocket-server", () => ({
+  getThinkPagesBroadcaster: () => ({ evictFromRoom: mockEvictFromRoom }),
+}));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
@@ -175,6 +179,16 @@ describe("SL-1: join, leave and documents act as the caller", () => {
     expect(db.thinktankMember.findUnique).toHaveBeenCalledWith({
       where: { groupId_userId: { groupId: "g1", userId: MEMBER } },
     });
+  });
+
+  it("leaveThinktank takes the caller's sockets out of the group's and its chat's rooms", async () => {
+    mockEvictFromRoom.mockClear();
+    const db = makeDb(group({ conversationId: "conv_g1" }));
+    await callerAs(MEMBER, db).leaveThinktank({ groupId: "g1" });
+    expect(mockEvictFromRoom.mock.calls.map(([event]) => event)).toEqual([
+      { type: "room:evict", clerkUserId: MEMBER, groupId: "g1" },
+      { type: "room:evict", clerkUserId: MEMBER, conversationId: "conv_g1" },
+    ]);
   });
 
   it("createThinktankDocument rejects a non-member even with a spoofed createdBy", async () => {

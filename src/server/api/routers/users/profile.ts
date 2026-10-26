@@ -248,15 +248,28 @@ export const usersProfileRouter = createTRPCRouter({
     }
   }),
 
-  // A user's role level by Clerk ID (ThinkPages staff moderation compares a post author's with their own). Public,
-  // so it returns the level only, never the user row: no name or id reaches the caller. Null for an unknown user,
-  // one without a role, or a read error.
+  // A user's role level by Clerk ID, or by a ThinkPages persona they own (ThinkPages staff moderation compares a post
+  // author's with their own; posts carry no owner Clerk id). Public, so it returns the level only, never the user
+  // row: no name or id reaches the caller. Null for an unknown user, one without a role, or a read error.
   getUserWithRole: publicProcedure
-    .input(z.object({ clerkUserId: z.string() }))
+    .input(
+      z
+        .object({ clerkUserId: z.string().optional(), thinkpagesAccountId: z.string().optional() })
+        .refine((v) => !!v.clerkUserId || !!v.thinkpagesAccountId, "A user or persona is required")
+    )
     .query(async ({ ctx, input }) => {
       try {
+        const clerkUserId =
+          input.clerkUserId ??
+          (
+            await ctx.db.thinkpagesAccount.findUnique({
+              where: { id: input.thinkpagesAccountId },
+              select: { clerkUserId: true },
+            })
+          )?.clerkUserId;
+        if (!clerkUserId) return { roleLevel: null };
         const user = await ctx.db.user.findUnique({
-          where: { clerkUserId: input.clerkUserId },
+          where: { clerkUserId },
           select: { role: { select: { level: true } } },
         });
         return { roleLevel: user?.role?.level ?? null };
