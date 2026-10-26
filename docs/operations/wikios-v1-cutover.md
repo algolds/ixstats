@@ -305,14 +305,17 @@ running it: from here to step 2 the checkout holds code that is not running.
 - **IxStates keeps running its old build.** `.next` is not touched (only the deploy's `bun run clean` removes it), and
   what the app has loaded stays loaded, though a module it loads for the first time comes from the new `node_modules`.
   Keep the time from here to step 2 to one sitting. The other apps of `ecosystem.config.cjs` (websockets, sync) keep the
-  code they loaded at start.
+  code they loaded at start, unless PM2 restarts one (a crash, a memory restart): it would then start on the release's
+  code against the old schema. If `pm2 jlist` shows a restart in this window, go straight on to step 2, or run the
+  rollback below. `git -C "$IX" diff "$(cat "$BK/previous-release.sha")" "$(cat "$BK/release.sha")" -- bun.lock | grep -E '"(next|react|@prisma/client)"'`
+  shows whether the core packages changed, which is how much a first-time module load risks.
 - **`ixstats-cron` stops until step 2.** The runner imports a job's module the first time the job runs, so a running
   `ixstats-cron` would load the release's job code against the old schema. No scheduled job runs from here to step 2's
   PM2 reload, which starts it again; each job runs at its next slot after that.
 
 ```bash
 B=$(git -C "$IX" branch --show-current); echo "$B"            # master: the deploy refuses any other branch
-git -C "$IX" status --short                                  # empty, or ask the owner: reset --hard drops a changed tracked file, the deploy's clean -fd an untracked one
+git -C "$IX" status --short                                  # only " M src/lib/buildVersion.generated.ts" (every build rewrites it), or ask the owner: reset --hard drops a changed tracked file, the deploy's clean -fd an untracked one
 git -C "$IX" rev-parse HEAD | tee "$BK/previous-release.sha"  # the commit running now, for the rollback
 git -C "$IX" fetch master "$B"                               # the deploy's own fetch
 git -C "$IX" log -1 --oneline FETCH_HEAD                     # the release: the owner confirms it before the reset
@@ -510,8 +513,10 @@ the editor round trip over every page of the production database (about 15 secon
 `ok   <check>: ...` or `FAIL <check>: ... Fix: ...`, and the deploy stops on any `FAIL`. A refused deploy changes no
 data: the check runs before the backup and every migration, reads only, and gives its lease back. It has changed the
 checkout, though: by then the deploy has reset it to the release (`reset --hard`, `clean -fd`), removed the previous
-build (`bun run clean` deletes `.next`), installed the release's dependencies and generated its Prisma client. The
-running IxStates keeps serving what it has loaded, but do not restart it until a deploy has built again. Its reports
+build (`bun run clean` deletes `.next`), installed the release's dependencies and generated its Prisma client. With
+`.next` gone, IxStates is effectively down from the refusal on: the running server sends pages whose scripts and styles
+(`/_next/static/…`) no longer exist, and any route it had not loaded fails. Recover at once (below), and never restart
+it on the half-installed checkout. Its reports
 are `predeploy-<stamp>.json` and `.txt`, in `$IX/.bench-out/proof` until step 7e sets `WIKIOS_PROOF_DIR`, and in
 `/ixwiki/private/logs/wikios-proof` after.
 
@@ -563,6 +568,17 @@ If the deploy refuses:
   change saved text. Stop and give the owner the `predeploy-<stamp>.json` in the reports directory above. Do not
   override.
 
+Whatever the refusal, IxStates stays down until a deploy builds again, so recover within minutes, one of two ways:
+
+- **The refusal is an expected override case** (the read-first block above says when, for example `proof.lease` with no
+  `job_leases` table): run the deploy again with `WIKIOS_PROOF_OVERRIDE=1`. It builds and reloads as usual.
+- **Anything else** (do not override): roll back to the release that was running. The owner pushes a branch at
+  `$BK/previous-release.sha` to the server's `master` remote
+  (`git push origin "$(cat "$BK/previous-release.sha")":refs/heads/rollback-<date>`, from a checkout that has that
+  commit), then run `( cd "$IX" && ./scripts/deployment/rollback-deployment.sh rollback-<date> )`, which deploys
+  and rebuilds it. If that deploy stops on a proof check, the old release has no committed proof: run it again with
+  `WIKIOS_PROOF_OVERRIDE=1`. Then hand the owner the `predeploy-<stamp>.json`.
+
 A deploy that dies after the check leaves the lease to lapse within 2 hours (a weekly run in that window is recorded
 as `skipped`), and the next deploy takes it over. A finished deploy prints `Released the wikios-proof lease` after
 its PM2 reload.
@@ -591,8 +607,10 @@ restart it from the file (Conventions).
 This also runs `deploy-ixworld.sh`. WikiOS is part of IxStates at this launch, so this deploy is WikiOS's deploy as
 well, and every later IxStates release carries its WikiOS code the same way.
 
-**Rollback:** the usual IxStates rollback (`bun run deploy:rollback`). The proof check has none of its own: it reads
-only, and its lease is given back on a refusal and released after the PM2 reload.
+**Rollback:** the usual IxStates rollback: `./scripts/deployment/rollback-deployment.sh <remote-branch>` (what
+`bun run deploy:rollback` runs), with the branch at `$BK/previous-release.sha` pushed as in "If the deploy refuses"
+above. The proof check has none of its own: it reads only, and its lease is given back on a refusal and released after
+the PM2 reload.
 
 ## 2a. Fonts and uploads at the site root (read-only, after step 2)
 
@@ -1857,7 +1875,7 @@ uptime                                                        # every few minute
 If the load stays above 2.0, `kill <proof pid>` (the CLI stops its running harness and exits), wait a minute (a new run
 refuses a directory that exists, and the directory is named to the minute), and start it again with
 `--parity-interval-ms 1000` after `--profile launch` (the default is 200). At that pace parity alone takes about 3 to 4
-hours over the corpus's 4,779 articles (a second between pages plus each page's render), so start it early in the
+hours over the corpus's 4,771 articles (a second between pages plus each page's render), so start it early in the
 off-peak window or wait for the next one. If the CLI refuses to start (a
 `DATABASE_URL` that is not local, or a missing variable), it says which: stop and ask the owner.
 

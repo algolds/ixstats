@@ -42,6 +42,7 @@ import {
   buildSummary,
   checkCommittedProof,
   corpusCounts,
+  errorText,
   evaluatePredeploy,
   evaluateProof,
   gateRunDirectory,
@@ -122,7 +123,6 @@ const PRODUCTION_ENV_FILES = [".env.production.local", ".env.local", ".env.produ
 
 const proofDir = (): string => process.env.WIKIOS_PROOF_DIR || ".bench-out/proof";
 const thresholds = (): ProofThresholds => parseThresholds(readFileSync(THRESHOLDS_FILE, "utf8"));
-const message = (error: Error | string): string => (error instanceof Error ? error.message : error);
 const writeJson = (file: string, value: object): void =>
   writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
 
@@ -178,7 +178,7 @@ function readReport<T>(file: string, schema: z.ZodType<T>): T | null {
     return schema.parse(JSON.parse(readFileSync(file, "utf8")));
   } catch (error) {
     console.error(
-      `${file} is not a usable report: ${message(error instanceof Error ? error : String(error))}`
+      `${file} is not a usable report: ${errorText(error instanceof Error ? error : String(error))}`
     );
     return null;
   }
@@ -228,7 +228,7 @@ async function takeDeployLease(): Promise<DeployLease> {
       };
     });
   } catch (error) {
-    return { state: "error", message: message(error instanceof Error ? error : String(error)) };
+    return { state: "error", message: errorText(error instanceof Error ? error : String(error)) };
   }
 }
 
@@ -325,7 +325,7 @@ function committedProof(treeKey: string): CommittedProofResult {
   try {
     return checkCommittedProof(parseProofSummary(readFileSync(COMMITTED_PROOF, "utf8")), treeKey);
   } catch (error) {
-    const why = message(error instanceof Error ? error : String(error));
+    const why = errorText(error instanceof Error ? error : String(error));
     return { ok: false, reason: `${COMMITTED_PROOF} is not a proof summary (${why})` };
   }
 }
@@ -377,7 +377,7 @@ async function main(): Promise<void> {
   try {
     command = parseCli(process.argv.slice(2));
   } catch (error) {
-    console.error(message(error instanceof Error ? error : String(error)));
+    console.error(errorText(error instanceof Error ? error : String(error)));
     console.error(USAGE);
     process.exit(1);
   }

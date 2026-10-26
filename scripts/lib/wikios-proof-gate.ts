@@ -255,13 +255,16 @@ function parityFloor(
   minPages: number
 ): Check {
   const requested = report.meta.titles.length;
+  // A page left out by content model was sampled and is not an article; it counts toward the floor (capped by
+  // parity.leftOut), so a fixed-size sample whose stride lands on one still meets it.
+  const leftOut = report.meta.leftOut?.length ?? 0;
   const answered = scored + missing;
   return {
     name: "parity.pages",
-    passed: answered >= minPages && report.pages.length === requested,
+    passed: answered + leftOut >= minPages && report.pages.length === requested,
     skipped: null,
-    measured: `${answered} answered of ${requested} requested (${report.pages.length} in the report)`,
-    threshold: `>= ${minPages} answered, every requested page reported`,
+    measured: `${answered} answered of ${requested} requested, ${leftOut} left out (${report.pages.length} in the report)`,
+    threshold: `>= ${minPages} answered or left out, every requested page reported`,
   };
 }
 
@@ -298,7 +301,8 @@ function scoreChecks(scored: readonly ScoredParityPage[], t: ProofThresholds["pa
 /**
  * The share of the requested sample parity may leave out by content model. The corpus holds 24 `sanitized-css` pages
  * among 4,771 articles (0.5%; the 2026-10-26 proof left out 3 of 500); 2%, as for drift, leaves a 200-page sample room
- * for where its stride lands, and anything above it means the exclusion is hiding articles.
+ * for where its stride lands (left-out pages count toward parity.pages), and anything above it means the exclusion is
+ * hiding articles.
  */
 const MAX_LEFT_OUT_PERCENT = 2;
 
@@ -1062,7 +1066,8 @@ export function treeState(lsTree: GitOutput, status: GitOutput, head: GitOutput)
   };
 }
 
-const errorText = (error: Error | string): string =>
+/** An error's message, or the string thrown. */
+export const errorText = (error: Error | string): string =>
   error instanceof Error ? error.message : error;
 
 /**

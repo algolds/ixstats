@@ -149,7 +149,9 @@ The local proof needs a copy of the production corpus and a dev server on a clea
 `scripts/deploy-production.sh` runs `bun scripts/audit/wikios-proof.ts predeploy` after `db:generate` and before the
 database backup, so a refusal changes no data. It does not undo what the deploy did before it: the checkout is already
 reset to the new release, the previous build removed (`bun run clean`), and the release's dependencies installed and
-its Prisma client generated. It takes the `wikios-proof` job lease (so the weekly proof never runs mid-deploy), reads
+its Prisma client generated. With `.next` removed the running IxStates is effectively down until a deploy builds
+again, so a refusal is recovered at once: a deploy with `WIKIOS_PROOF_OVERRIDE=1` in an expected override case, or a
+rollback to the previous release (runbook step 2, "If the deploy refuses"). It takes the `wikios-proof` job lease (so the weekly proof never runs mid-deploy), reads
 only, and refuses when:
 
 - there is no `latest.json`, or it measured uncommitted WikiOS changes (`dirty`);

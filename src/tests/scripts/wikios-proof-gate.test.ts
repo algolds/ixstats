@@ -409,6 +409,19 @@ describe("evaluateParity", () => {
     ]);
   });
 
+  it("a page left out by content model counts toward the floor: a 200-page sample whose stride lands on one passes", () => {
+    const base = parityReport(perfectPages(199));
+    const report: ParityReport = {
+      ...base,
+      meta: { ...base.meta, leftOut: [{ title: "Box/styles.css", contentModel: "sanitized-css" }] },
+    };
+    const checks = evaluateParity(report, thresholds());
+    expect(failing(checks)).toEqual([]);
+    expect(byName(checks, "parity.pages").measured).toBe(
+      "199 answered of 199 requested, 1 left out (199 in the report)"
+    );
+  });
+
   it("pages MediaWiki could not answer do not count toward the floor", () => {
     const pages = perfectPages(200).map((page, index) =>
       index < 150
