@@ -14,12 +14,16 @@ import {
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { exchangeService } from "~/lib/vault/exchange-service";
 import { teamWageBill } from "~/lib/sports";
 import { MAX_TICKET_PRICE } from "~/lib/sports/match-revenue";
 import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
 import type { LiveTraceEvent } from "~/lib/sports/live-match";
-import { assertSportsEconomyOpen, requireOwnedTeam } from "~/server/api/routers/sports/_shared";
+import {
+  assertSportsEconomyOpen,
+  chargeSportsFeeTx,
+  requireOwnedTeam,
+  sportsRequestId,
+} from "~/server/api/routers/sports/_shared";
 
 const TEAM_OVERVIEW_INCLUDE = {
   players: { where: { isActive: true }, orderBy: { position: "asc" } },
@@ -96,27 +100,28 @@ async function buildTeamOverview(
 
 export const sportsClubRouter = createTRPCRouter({
   upgradeStadium: rateLimitedMutationProcedure
-    .input(z.object({ teamId: z.string() }))
+    .input(z.object({ teamId: z.string(), requestId: sportsRequestId }))
     .mutation(async ({ ctx, input }) => {
       try {
         await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "manage");
         await assertSportsEconomyOpen(ctx.db);
-        const spend = await exchangeService.spend(
-          ctx.user.id,
-          1000,
-          "STADIUM_UPGRADE",
-          `STADIUM_UPGRADE:${input.teamId}`,
-          ctx.db
-        );
-        if (!spend.success) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: spend.message ?? "Insufficient balance to upgrade stadium",
+        return await ctx.db.$transaction(async (tx) => {
+          const charge = await chargeSportsFeeTx(tx, {
+            userId: ctx.user.id,
+            amount: 1000,
+            type: "STADIUM_UPGRADE",
+            source: `STADIUM_UPGRADE:${input.teamId}`,
+            action: "stadium",
+            requestId: input.requestId,
+            failure: "Insufficient balance to upgrade stadium",
           });
-        }
-        return ctx.db.sportTeam.update({
-          where: { id: input.teamId },
-          data: { stadiumCapacity: { increment: 1000 } },
+          if (charge.alreadyApplied) {
+            return tx.sportTeam.findUniqueOrThrow({ where: { id: input.teamId } });
+          }
+          return tx.sportTeam.update({
+            where: { id: input.teamId },
+            data: { stadiumCapacity: { increment: 1000 } },
+          });
         });
       } catch (error) {
         if (error instanceof TRPCError) throw error;
@@ -164,39 +169,38 @@ export const sportsClubRouter = createTRPCRouter({
     }),
 
   invokePatronSaint: rateLimitedMutationProcedure
-    .input(z.object({ teamId: z.string(), saintName: z.string() }))
+    .input(z.object({ teamId: z.string(), saintName: z.string(), requestId: sportsRequestId }))
     .mutation(async ({ ctx, input }) => {
       try {
         const team = await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "manage");
         await assertSportsEconomyOpen(ctx.db);
-        const spend = await exchangeService.spend(
-          ctx.user.id,
-          100,
-          "CHARTER_FEE",
-          `SAINT_INVOCATION:${input.teamId}:${input.saintName}`,
-          ctx.db
-        );
-        if (!spend.success) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: spend.message ?? "Insufficient balance to invoke patron saint",
+        await ctx.db.$transaction(async (tx) => {
+          const charge = await chargeSportsFeeTx(tx, {
+            userId: ctx.user.id,
+            amount: 100,
+            type: "CHARTER_FEE",
+            source: `SAINT_INVOCATION:${input.teamId}:${input.saintName}`,
+            action: "saint",
+            requestId: input.requestId,
+            failure: "Insufficient balance to invoke patron saint",
           });
-        }
+          if (charge.alreadyApplied) return;
 
-        await ctx.db.sportTeam.update({
-          where: { id: input.teamId },
-          data: { patronSaint: input.saintName },
+          await tx.sportTeam.update({
+            where: { id: input.teamId },
+            data: { patronSaint: input.saintName },
+          });
+
+          if (team.nationId) {
+            await createStorytellerEffect(tx, {
+              countryId: team.nationId,
+              inputType: "sports_saint_blessing",
+              value: 5.0,
+              description: `The home crowd echoes the Invocation of ${input.saintName}. Blessings descend upon the pitch!`,
+              duration: 1,
+            });
+          }
         });
-
-        if (team.nationId) {
-          await createStorytellerEffect(ctx.db, {
-            countryId: team.nationId,
-            inputType: "sports_saint_blessing",
-            value: 5.0,
-            description: `The home crowd echoes the Invocation of ${input.saintName}. Blessings descend upon the pitch!`,
-            duration: 1,
-          });
-        }
 
         return { success: true };
       } catch (error) {
@@ -277,41 +281,53 @@ export const sportsClubRouter = createTRPCRouter({
     }),
 
   trainPlayer: rateLimitedMutationProcedure
-    .input(z.object({ playerId: z.string(), attributeFocus: z.string() }))
+    .input(
+      z.object({ playerId: z.string(), attributeFocus: z.string(), requestId: sportsRequestId })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
-        const player = await ctx.db.sportPlayer.findUnique({
+        const owned = await ctx.db.sportPlayer.findUnique({
           where: { id: input.playerId },
           include: { team: true },
         });
-        if (!player) throw new TRPCError({ code: "NOT_FOUND", message: "Player not found" });
-        if (!player.team || player.team.ownerUserId !== ctx.user.id) {
+        if (!owned) throw new TRPCError({ code: "NOT_FOUND", message: "Player not found" });
+        if (!owned.team || owned.team.ownerUserId !== ctx.user.id) {
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
         }
 
         await assertSportsEconomyOpen(ctx.db);
-        const spend = await exchangeService.spend(
-          ctx.user.id,
-          25,
-          "TRAINING_FEE",
-          `PLAYER:${input.playerId}`,
-          ctx.db
-        );
-        if (!spend.success) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: spend.message ?? "Insufficient balance to train player",
+        return await ctx.db.$transaction(async (tx) => {
+          // Lock the player before the wallet (the transfer market's order) and read it under the
+          // lock: two trainings can't overwrite each other's ratings, and a sale meanwhile stops this
+          await tx.$queryRaw`SELECT id FROM "sport_players" WHERE id = ${input.playerId} FOR UPDATE`;
+          const { team, ...player } = await tx.sportPlayer.findUniqueOrThrow({
+            where: { id: input.playerId },
+            include: { team: { select: { ownerUserId: true } } },
           });
-        }
+          if (team.ownerUserId !== ctx.user.id) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
+          }
 
-        const ratings = (player.ratings as Record<string, number> | null) ?? {};
-        const current = ratings[input.attributeFocus] ?? 50;
-        const gain = Math.random() < 0.4 ? Math.floor(Math.random() * 3) + 1 : 1;
-        const newVal = Math.min(99, current + gain);
+          const charge = await chargeSportsFeeTx(tx, {
+            userId: ctx.user.id,
+            amount: 25,
+            type: "TRAINING_FEE",
+            source: `PLAYER:${input.playerId}`,
+            action: "train-player",
+            requestId: input.requestId,
+            failure: "Insufficient balance to train player",
+          });
+          if (charge.alreadyApplied) return player;
 
-        return ctx.db.sportPlayer.update({
-          where: { id: input.playerId },
-          data: { ratings: { ...ratings, [input.attributeFocus]: newVal } },
+          const ratings = (player.ratings as Record<string, number> | null) ?? {};
+          const current = ratings[input.attributeFocus] ?? 50;
+          const gain = Math.random() < 0.4 ? Math.floor(Math.random() * 3) + 1 : 1;
+          const newVal = Math.min(99, current + gain);
+
+          return tx.sportPlayer.update({
+            where: { id: input.playerId },
+            data: { ratings: { ...ratings, [input.attributeFocus]: newVal } },
+          });
         });
       } catch (error) {
         if (error instanceof TRPCError) throw error;
@@ -320,47 +336,50 @@ export const sportsClubRouter = createTRPCRouter({
     }),
 
   teamTraining: rateLimitedMutationProcedure
-    .input(z.object({ teamId: z.string() }))
+    .input(z.object({ teamId: z.string(), requestId: sportsRequestId }))
     .mutation(async ({ ctx, input }) => {
       try {
         await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "own");
 
         await assertSportsEconomyOpen(ctx.db);
-        const spend = await exchangeService.spend(
-          ctx.user.id,
-          100,
-          "TEAM_TRAINING",
-          `TEAM:${input.teamId}`,
-          ctx.db
-        );
-        if (!spend.success) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: spend.message ?? "Insufficient balance to train team",
+        return await ctx.db.$transaction(async (tx) => {
+          // Lock the players (in id order, so two of these can't deadlock) before the wallet, and
+          // read their ratings under the locks, so a training alongside can't overwrite them
+          await tx.$queryRaw`SELECT id FROM "sport_players" WHERE "teamId" = ${input.teamId} AND "isActive" = true ORDER BY id FOR UPDATE`;
+          const players = await tx.sportPlayer.findMany({
+            where: { teamId: input.teamId, isActive: true },
           });
-        }
 
-        const players = await ctx.db.sportPlayer.findMany({
-          where: { teamId: input.teamId, isActive: true },
-        });
+          const charge = await chargeSportsFeeTx(tx, {
+            userId: ctx.user.id,
+            amount: 100,
+            type: "TEAM_TRAINING",
+            source: `TEAM:${input.teamId}`,
+            action: "train-team",
+            requestId: input.requestId,
+            failure: "Insufficient balance to train team",
+          });
+          if (charge.alreadyApplied) return { trained: players.length };
 
-        const updatePromises = players.map(async (player) => {
-          const ratings = (player.ratings as Record<string, number> | null) ?? {};
-          const keys = Object.keys(ratings).filter((k) => k !== "overall");
-          if (keys.length === 0) return;
-          const attr = keys[Math.floor(Math.random() * keys.length)];
-          if (!attr) return;
-          const gain = Math.random() < 0.3 ? 1 : 0;
-          if (gain > 0) {
-            await ctx.db.sportPlayer.update({
-              where: { id: player.id },
-              data: { ratings: { ...ratings, [attr]: Math.min(99, (ratings[attr] ?? 50) + gain) } },
-            });
+          for (const player of players) {
+            const ratings = (player.ratings as Record<string, number> | null) ?? {};
+            const keys = Object.keys(ratings).filter((k) => k !== "overall");
+            if (keys.length === 0) continue;
+            const attr = keys[Math.floor(Math.random() * keys.length)];
+            if (!attr) continue;
+            const gain = Math.random() < 0.3 ? 1 : 0;
+            if (gain > 0) {
+              await tx.sportPlayer.update({
+                where: { id: player.id },
+                data: {
+                  ratings: { ...ratings, [attr]: Math.min(99, (ratings[attr] ?? 50) + gain) },
+                },
+              });
+            }
           }
-        });
-        await Promise.all(updatePromises);
 
-        return { trained: players.length };
+          return { trained: players.length };
+        });
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Team training failed" });

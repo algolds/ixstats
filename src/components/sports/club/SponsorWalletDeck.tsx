@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useNotify } from "~/hooks/useNotify";
 import { springSmooth, tweenFast } from "~/lib/design/motion";
+import { usePaidActionRequestId } from "~/components/sports/core/usePaidActionRequestId";
 
 interface ClubSponsor {
   type?: string | null;
@@ -44,8 +45,10 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
   const [updatingPrice, setUpdatingPrice] = useState(false);
   const notify = useNotify();
 
+  const stadiumRequest = usePaidActionRequestId();
   const upgradeStadium = api.sports.upgradeStadium.useMutation({
     onSuccess: () => {
+      stadiumRequest.done();
       refetchTeam();
       notify.success("Stadium upgraded. Capacity increased by 1,000 seats.");
     },
@@ -132,7 +135,12 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => upgradeStadium.mutate({ teamId: team.id })}
+              onClick={() =>
+                upgradeStadium.mutate({
+                  teamId: team.id,
+                  requestId: stadiumRequest.idFor(team.id),
+                })
+              }
               disabled={upgradeStadium.isPending}
             >
               {upgradeStadium.isPending ? "Upgrading..." : "Expand (+1k seats)"}
