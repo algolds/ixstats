@@ -1,13 +1,14 @@
 /**
  * Procurement orders (owner decision: domestic within industrial capacity, catalog imports at +15% and longer lead
- * times). An order pays 15% down then evenly over its lead time from the procurement line; it delivers into the
- * branch's capital and assets on the realm clock (`defense.sync`).
+ * times). An order pays 15% down when placed, then evenly over its lead time, from the procurement line; it delivers
+ * into the branch's capital and assets on the realm clock (`defense.sync`).
  */
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import {
   CATALOG_CATEGORY_DOMAINS,
   MONTH_MS,
+  ORDER_DOWN_PAYMENT,
   capacityDraw,
   domesticCapacity,
   leadMonths,
@@ -114,6 +115,8 @@ export async function orderProcurement(
       designYear,
       orderedClockMs: now,
       expectedClockMs: now + lead * MONTH_MS,
+      // The down payment is paid at order (this month's procurement line carries it), so a cancel sinks it.
+      paidSoFar: unitCost * input.quantity * ORDER_DOWN_PAYMENT,
     },
   });
 }

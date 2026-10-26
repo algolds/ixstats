@@ -99,7 +99,10 @@ export const capacityDraw = (order: OrderState) =>
     ? orderTotal(order) / Math.max(1, order.leadMonths)
     : 0;
 
-/** Share of the order scheduled to be paid by `clockMs`: 15% at order, the rest evenly over the lead time. */
+/**
+ * Share of the order scheduled to be paid by `clockMs`: 15% at order (paid when the order is placed), the rest evenly
+ * over the lead time.
+ */
 export function scheduledShare(order: OrderState, clockMs: number): number {
   const remaining = Math.max(0, (order.expectedClockMs - clockMs) / MONTH_MS);
   const progress = 1 - Math.min(1, remaining / Math.max(1, order.leadMonths));
@@ -138,6 +141,17 @@ function delivered(order: OrderState, clockMs: number): boolean {
 }
 
 /**
+ * Down payments made at order this month (orders placed since the previous month end, cancelled ones included: what
+ * was paid is sunk). They come out of this month's procurement line like the monthly payments; an overdraft beyond
+ * the line is not carried into later months.
+ */
+export function paidAtOrder(orders: readonly OrderState[], clockMs: number): number {
+  return orders
+    .filter((o) => o.orderedClockMs >= clockMs - MONTH_MS && o.orderedClockMs < clockMs)
+    .reduce((sum, o) => sum + o.paidSoFar, 0);
+}
+
+/**
  * One month of order payments and deliveries at month end `clockMs`, oldest order first. Orders that cannot be
  * paid slip; later, cheaper orders may still be paid.
  */
@@ -146,7 +160,7 @@ export function procurementMonth(
   money: number,
   clockMs: number
 ): ProcurementMonth {
-  let left = Math.max(0, money);
+  let left = Math.max(0, money - paidAtOrder(orders, clockMs));
   let slipped = 0;
   const deliveries: Delivery[] = [];
   const queue = [...orders].sort(

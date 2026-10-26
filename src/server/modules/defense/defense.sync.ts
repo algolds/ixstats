@@ -198,14 +198,23 @@ export async function ensureStarterForce(
 }
 
 async function readState(db: DefenseDb, countryId: string) {
-  const [policy, branches, orders] = await Promise.all([
+  const [policy, branches] = await Promise.all([
     db.defensePolicy.findUnique({ where: { countryId } }),
     db.militaryBranch.findMany({
       where: { countryId, isActive: true },
       orderBy: { createdAt: "asc" },
     }),
-    db.procurementOrder.findMany({ where: { countryId, status: "ordered" } }),
   ]);
+  // Open orders, and orders cancelled since the last month end: their down payment still comes out of this month.
+  const orders = await db.procurementOrder.findMany({
+    where: {
+      countryId,
+      OR: [
+        { status: "ordered" },
+        { status: "cancelled", orderedClockMs: { gte: policy?.lastTickClockMs ?? 0 } },
+      ],
+    },
+  });
   return { policy, branches, orders };
 }
 

@@ -177,6 +177,35 @@ describe("procurement", () => {
   });
 });
 
+describe("down payment", () => {
+  const capitalOf = (rows: Record<string, unknown>[]) => rows.reduce((sum, b) => sum + (b.capital as number), 0);
+
+  it("is paid at order, and a cancel right after sinks it from that month's procurement line", async () => {
+    await catalogItem({});
+    const order = await orderProcurement(D(), {
+      countryId: "c1",
+      branchId: branchOf("air").id as string,
+      catalogKey: "F35",
+      quantity: 2,
+      source: "import",
+    });
+    expect(order.paidSoFar).toBeCloseTo(2 * 80e6 * 1.15 * 0.15);
+    await cancelProcurementOrder(D(), { countryId: "c1", orderId: order.id });
+
+    // A twin nation that never ordered: after the month end it has bought more capital with the same line.
+    const cancelled = db;
+    db = fakeDefenseDb([{ id: "c1", currentPopulation: 27e6, currentGdpPerCapita: 21_000 }]);
+    await syncDefense(D(), "c1");
+    const twin = db;
+    clock.now = T0 + MONTH_MS + 1;
+    await syncDefense(twin as never, "c1");
+    await syncDefense(cancelled as never, "c1");
+    const lost = capitalOf(twin.militaryBranch.rows) - capitalOf(cancelled.militaryBranch.rows);
+    expect(lost).toBeGreaterThan(0);
+    expect(cancelled.procurementOrder.rows[0]).toMatchObject({ status: "cancelled", paidSoFar: order.paidSoFar });
+  });
+});
+
 describe("mobilisation", () => {
   it("calls up reservists gradually and keeps those already reported when adding to the order", async () => {
     const land = branchOf("land");
