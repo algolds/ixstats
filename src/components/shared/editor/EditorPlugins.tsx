@@ -6,7 +6,8 @@ import React from "react";
 import { createPlatePlugin } from "platejs/react";
 import { assetUrl } from "~/lib/base-path";
 import { createUrl } from "~/lib/utils/url-utils";
-import { wikiReaderPath } from "~/lib/wiki-os/config";
+import { readerLinkPath } from "~/lib/wiki-os/wiki-link-target";
+import type { WikiLinkElement } from "./SlateSerializer";
 
 export const BoldPlugin = createPlatePlugin({
   key: "bold",
@@ -80,19 +81,29 @@ export const LinkPlugin = createPlatePlugin({
   },
 });
 
+interface WikiLinkRenderProps {
+  attributes: React.AnchorHTMLAttributes<HTMLAnchorElement>;
+  children: React.ReactNode;
+  element: WikiLinkElement;
+}
+
+/** A wiki link in the composer: a plain `<a>` to the article in the reader on its wiki, under the base path. */
 export const WikiLinkPlugin = createPlatePlugin({
   key: "wikilink",
   node: { isElement: true, isInline: true },
   render: {
-    node: ({ children, element, attributes }: any) => (
-      <a
-        {...attributes}
-        href={createUrl(wikiReaderPath((element?.target as string) || ""))}
-        className="text-wiki font-semibold underline transition-colors hover:opacity-80"
-      >
-        {children}
-      </a>
-    ),
+    node: ({ children, element, attributes }: WikiLinkRenderProps) => {
+      const href = readerLinkPath(element.target, element.source);
+      return (
+        <a
+          {...attributes}
+          href={href ? createUrl(href) : undefined}
+          className="text-wiki font-semibold underline transition-colors hover:opacity-80"
+        >
+          {children}
+        </a>
+      );
+    },
   },
 });
 

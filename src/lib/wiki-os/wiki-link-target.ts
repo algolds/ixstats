@@ -17,7 +17,13 @@
 // own site (`SITE_NAMESPACE`: no preview, and the transform leaves the link alone), an empty one or a malformed
 // percent escape gives null; no href throws.
 
-import { isMediaWikiUrl, isUrlOnHost, parseWikiSource, type WikiSource } from "./config";
+import {
+  isMediaWikiUrl,
+  isUrlOnHost,
+  parseWikiSource,
+  wikiReaderPath,
+  type WikiSource,
+} from "./config";
 import {
   READER_HOST_ALIASES,
   SISTER_READER_IDS,
@@ -44,6 +50,22 @@ export const SITE_NAMESPACE =
 
 /** A title MediaWiki refuses: `.` or `..` as a whole `/` segment (a link to it would climb out of `/wiki/`). */
 const DOT_SEGMENT = /(?:^|\/)\.\.?(?:\/|$)/u;
+
+/** Whether `title` (decoded, trimmed) can name a page: not empty, and no `.` or `..` segment (`DOT_SEGMENT`). */
+function isReaderTitle(title: string): boolean {
+  return title !== "" && !DOT_SEGMENT.test(title);
+}
+
+/**
+ * The reader path (`/wiki/<title>`, `?source=` for a sister wiki) for a title that came from user content (a composer
+ * link, an embed's `data-title`), or null when no link may name it: empty, or with a `.`/`..` segment that would climb
+ * out of `/wiki/`. Underscores read as spaces. The source is read as the reader reads it, so a value it does not know
+ * gives IxWiki's path, never raw text in the query.
+ */
+export function readerLinkPath(title: string, source: string | null | undefined): string | null {
+  const name = title.replace(/_/g, " ").trim();
+  return isReaderTitle(name) ? wikiReaderPath(name, parseWikiSource(source)) : null;
+}
 
 /** A MediaWiki entry point under `/w/` (`api.php`, `index.php/Foo`, `load.php`): never an article. */
 const ENTRY_POINT = /^[a-z_]+\.php(?:\/|$)/iu;
@@ -74,7 +96,7 @@ function parseHref(href: string): URL | null {
 function titled(segment: string, wiki: WikiSource): WikiLinkTarget | null {
   try {
     const title = decodeURIComponent(segment).replace(/_/g, " ").trim();
-    return title && !DOT_SEGMENT.test(title) ? { title, wiki } : null;
+    return isReaderTitle(title) ? { title, wiki } : null;
   } catch {
     return null;
   }

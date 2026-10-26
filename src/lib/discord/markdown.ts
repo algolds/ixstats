@@ -6,7 +6,9 @@
  */
 
 import { DOMParser, type Element as XmlElement, type Node as XmlNode } from "@xmldom/xmldom";
-import { appUrl, wikiPermalink } from "~/lib/app-url";
+import { appUrl } from "~/lib/app-url";
+import { WIKI_SOURCES, parseWikiSource } from "~/lib/wiki-os/config";
+import { readerLinkPath } from "~/lib/wiki-os/wiki-link-target";
 
 function decodeHtmlEntities(str: string): string {
   if (!str) return "";
@@ -83,9 +85,15 @@ export function htmlToDiscordMarkdown(html: string): string {
 /** Site-relative links become absolute so they work outside IxStates. */
 const absoluteUrl = (href: string) => (href.startsWith("/") ? appUrl(href) : href);
 
+/**
+ * A wiki embed: the page in the WikiOS reader on the app URL (`appUrl(wikiReaderPath)`, `?source=` for a sister wiki),
+ * naming its wiki. A title that would climb out of `/wiki/` (`readerLinkPath`) is named with no link.
+ */
 const wikiEmbedMarkdown = (title: string, summary: string, source: string) => {
-  const wikiUrl = wikiPermalink(title);
-  return `\n**Wiki Embed: [${title}](${wikiUrl})**\n*Source: ${source}*\n> ${summary}\n`;
+  const wiki = parseWikiSource(source);
+  const path = readerLinkPath(title, wiki);
+  const name = path ? `[${title}](${appUrl(path)})` : title;
+  return `\n**Wiki Embed: ${name}**\n*Source: ${WIKI_SOURCES[wiki].name}*\n> ${summary}\n`;
 };
 
 /** Markdown wrapping per element; tags not listed pass their children through. */

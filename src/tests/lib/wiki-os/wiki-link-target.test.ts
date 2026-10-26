@@ -6,7 +6,12 @@
  * reads is that wiki's article. Anything WikiOS cannot preview (files, specials, other namespaces, other sites, the
  * wiki's entry points) is null, and no href makes it throw.
  */
-import { absoluteReaderTarget, SITE_NAMESPACE, wikiLinkTarget } from "~/lib/wiki-os/wiki-link-target";
+import {
+  absoluteReaderTarget,
+  readerLinkPath,
+  SITE_NAMESPACE,
+  wikiLinkTarget,
+} from "~/lib/wiki-os/wiki-link-target";
 import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 
 const BASE = "/projects/ixstates";
@@ -440,4 +445,26 @@ describe("SITE_NAMESPACE", () => {
       expect(SITE_NAMESPACE.test(title)).toBe(false);
     }
   });
+});
+
+describe("readerLinkPath", () => {
+  it.each([
+    ["Port of Ixnay", "ixwiki", "/wiki/Port_of_Ixnay"],
+    ["Gallambria Republic", "iiwiki", "/wiki/Gallambria_Republic?source=iiwiki"],
+    ["  Pax_Atomica ", "althistory", "/wiki/Pax_Atomica?source=althistory"],
+    ["Foo", undefined, "/wiki/Foo"],
+    ["Foo", 'evil"><b>', "/wiki/Foo"],
+    ["A/B?c#d", "iiwiki", "/wiki/A%2FB%3Fc%23d?source=iiwiki"],
+    ["Mr. Foo", null, "/wiki/Mr._Foo"],
+    ["...", null, "/wiki/..."],
+  ])("%p on %p is %p", (title, source, path) => {
+    expect(readerLinkPath(title, source)).toBe(path);
+  });
+
+  it.each([[""], ["   "], [".."], ["."], ["_.._"], [" . "], ["a/../b"], ["../api"], ["Foo/."]])(
+    "a title that names nothing or would climb out of /wiki/ (%p) is null",
+    (title) => {
+      expect(readerLinkPath(title, "iiwiki")).toBeNull();
+    }
+  );
 });

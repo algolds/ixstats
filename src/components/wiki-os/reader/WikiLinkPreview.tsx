@@ -7,7 +7,9 @@ import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { cn } from "~/lib/utils";
 import { currentProfileHref } from "~/lib/wiki-os/legacy-profile-links";
 import { entityKinds, mentionQueries } from "~/lib/wiki-os/mention-target";
-import { wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
+import { WIKI_SOURCES, parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
+import { sisterMediaPath } from "~/lib/wiki-os/sister-media";
+import { readerLinkPath } from "~/lib/wiki-os/wiki-link-target";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -67,9 +69,14 @@ const NO_MISSING_PAGES: ReadonlySet<string> = new Set();
 const RED_LINK_CLASS =
   "text-destructive underline decoration-destructive/30 transition-colors hover:decoration-destructive";
 
-/** Article title a `/wiki/...` href points at; null for namespaced (File:, Category:…) targets. */
+/**
+ * IxWiki article title a `/wiki/...` href points at; null for namespaced (File:, Category:…) targets and for a sister
+ * wiki's page (`?source=iiwiki`), which IxWiki's missing-page check knows nothing about.
+ */
 function wikiLinkTitle(href: string): string | null {
-  const path = href.slice("/wiki/".length).split(/[?#]/)[0] ?? "";
+  const [link = ""] = href.slice("/wiki/".length).split("#");
+  const [path = "", query = ""] = link.split("?");
+  if (parseWikiSource(new URLSearchParams(query).get("source")) !== "ixwiki") return null;
   try {
     const title = decodeURIComponent(path).replace(/_/g, " ").trim();
     return title && title.length <= 255 && !title.includes(":") ? title : null;
@@ -121,39 +128,60 @@ function renderWikiLink(
 const renderChildren = (element: HTMLElement, missing: ReadonlySet<string>) =>
   Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx, missing));
 
-/** Card for a `data-wikiembed` placeholder. */
+/**
+ * Where an embed card's image loads from: IxWiki's as stored; a sister wiki's only through that wiki's media proxy
+ * (`sisterMediaPath`), and none when it is on any other host.
+ */
+function embedImageSrc(imageUrl: string, source: WikiSource): string | null {
+  return source === "ixwiki" ? imageUrl : sisterMediaPath(imageUrl, source);
+}
+
+const EMBED_CARD_CLASS =
+  "rounded-card border-separator bg-fill-4 hover:border-separator flex items-center gap-4 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200";
+
+/**
+ * Card for a `data-wikiembed` placeholder: the article on its wiki (`data-source`), in the reader. The title is user
+ * content: one that would climb out of `/wiki/` (`readerLinkPath`) shows the card with no link.
+ */
 function renderWikiEmbed(element: HTMLElement, index: number): React.ReactNode {
   const title = element.getAttribute("data-title") || "";
   const summary = element.getAttribute("data-summary") || "";
-  const imageUrl = element.getAttribute("data-imageurl") || "";
-  const isIiwiki = element.getAttribute("data-source") === "iiwiki";
+  const source = parseWikiSource(element.getAttribute("data-source"));
+  const imageSrc = embedImageSrc(element.getAttribute("data-imageurl") || "", source);
+  const href = readerLinkPath(title, source);
 
+  const body = (
+    <>
+      <div className="min-w-0 flex-1 text-left">
+        <div className="mb-1 flex items-center gap-2">
+          <WikiOSLogomark className="text-tint h-3.5 w-3.5 shrink-0" />
+          <span className="text-footnote text-label-secondary">
+            {source === "ixwiki" ? "Wiki article" : `From ${WIKI_SOURCES[source].name}`}
+          </span>
+        </div>
+        <h4 className="text-headline text-label truncate leading-snug">{title}</h4>
+        <p className="text-footnote text-label-secondary mt-0.5 line-clamp-2 leading-normal">
+          {summary}
+        </p>
+      </div>
+      {imageSrc && (
+        <img
+          src={imageSrc}
+          className="rounded-row border-separator h-16 w-16 border object-cover"
+          alt=""
+        />
+      )}
+    </>
+  );
   return (
     <div key={index} className="my-3 select-none">
-      <Link
-        href={wikiReaderPath(title, isIiwiki ? "iiwiki" : "ixwiki")}
-        className="rounded-card border-separator bg-fill-4 hover:border-separator flex items-center gap-4 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
-      >
-        <div className="min-w-0 flex-1 text-left">
-          <div className="mb-1 flex items-center gap-2">
-            <WikiOSLogomark className="text-tint h-3.5 w-3.5 shrink-0" />
-            <span className="text-eyebrow text-label-secondary">
-              {isIiwiki ? "From IIWiki" : "Wiki article"}
-            </span>
-          </div>
-          <h4 className="text-headline text-label truncate leading-snug">{title}</h4>
-          <p className="text-footnote text-label-secondary mt-0.5 line-clamp-2 leading-normal">
-            {summary}
-          </p>
-        </div>
-        {imageUrl && (
-          <img
-            src={imageUrl}
-            className="rounded-row border-separator h-16 w-16 border object-cover"
-            alt=""
-          />
-        )}
-      </Link>
+      {href ? (
+        <Link href={href} className={EMBED_CARD_CLASS}>
+          {body}
+        </Link>
+      ) : (
+        <div className={EMBED_CARD_CLASS}>{body}</div>
+      )}
     </div>
   );
 }

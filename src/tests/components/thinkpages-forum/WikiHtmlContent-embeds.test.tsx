@@ -96,3 +96,84 @@ describe("WikiHtmlContent links under the base path", () => {
     mockMissing = undefined;
   });
 });
+
+describe("WikiHtmlContent wiki embed cards", () => {
+  const embedHtml = (source: string, imageUrl: string, title = "Pax Atomica") =>
+    `<div data-wikiembed="true" data-title="${title}" data-summary="A peace." data-imageurl="${imageUrl}" data-source="${source}"></div>`;
+
+  async function mountedCard(html: string): Promise<HTMLAnchorElement> {
+    const { container } = render(<WikiHtmlContent html={html} />);
+    await waitFor(() => expect(container.querySelector("h4")).not.toBeNull());
+    return container.querySelector("h4")!.closest("a")!;
+  }
+
+  it("an althistory embed card says From AltHistory Wiki, links with ?source=althistory, and its image goes through the media proxy", async () => {
+    const card = await mountedCard(
+      embedHtml(
+        "althistory",
+        "https://static.wikia.nocookie.net/althistory/images/a/ab/Pax.png/revision/latest?cb=1"
+      )
+    );
+    expect(card.getAttribute("href")).toBe("/wiki/Pax_Atomica?source=althistory");
+    expect(card.textContent).toContain("From AltHistory Wiki");
+    expect(card.querySelector(".text-eyebrow")).toBeNull();
+    expect(card.querySelector("img")?.getAttribute("src")).toBe(
+      "/api/mediawiki/althistory/wiki/Special:FilePath/Pax.png"
+    );
+  });
+
+  it("an iiwiki embed card names IIWiki, and its own-host image loads through its proxy", async () => {
+    const card = await mountedCard(embedHtml("iiwiki", "https://iiwiki.com/images/a/ab/Flag.png"));
+    expect(card.getAttribute("href")).toBe("/wiki/Pax_Atomica?source=iiwiki");
+    expect(card.textContent).toContain("From IIWiki");
+    expect(card.querySelector("img")?.getAttribute("src")).toBe(
+      "/api/mediawiki/iiwiki/images/a/ab/Flag.png"
+    );
+  });
+
+  it.each([
+    ["another host", "https://evil.example/track.png"],
+    ["the other sister's host", "https://iiwiki.com/images/a/ab/Flag.png"],
+    ["a javascript: URL", "javascript:alert(1)"],
+  ])("an off-host embed image is not shown (%s)", async (_label, imageUrl) => {
+    const card = await mountedCard(embedHtml("althistory", imageUrl));
+    expect(card.querySelector("img")).toBeNull();
+  });
+
+  it("an IxWiki embed card says Wiki article, links the bare path and keeps its image", async () => {
+    const card = await mountedCard(embedHtml("ixwiki", "https://ixwiki.com/images/a/ab/Port.png"));
+    expect(card.getAttribute("href")).toBe("/wiki/Pax_Atomica");
+    expect(card.textContent).toContain("Wiki article");
+    expect(card.textContent).not.toContain("From");
+    expect(card.querySelector("img")?.getAttribute("src")).toBe(
+      "https://ixwiki.com/images/a/ab/Port.png"
+    );
+  });
+
+  it("an embed whose title would climb out of /wiki/ shows its card with no link", async () => {
+    const { container } = render(<WikiHtmlContent html={embedHtml("iiwiki", "", "..")} />);
+    await waitFor(() => expect(container.querySelector("h4")).not.toBeNull());
+    expect(container.querySelector("h4")?.textContent).toBe("..");
+    expect(container.querySelector("a")).toBeNull();
+  });
+
+  it("an embed whose source the reader does not know renders as IxWiki's", async () => {
+    const card = await mountedCard(embedHtml("evil", ""));
+    expect(card.getAttribute("href")).toBe("/wiki/Pax_Atomica");
+    expect(card.textContent).toContain("Wiki article");
+    expect(card.querySelector("img")).toBeNull();
+  });
+});
+
+describe("WikiHtmlContent sister links and the missing-page check", () => {
+  it("a link to a sister page is never marked red from IxWiki's missing pages", async () => {
+    mockMissing = ["Gallambria"];
+    const html =
+      '<p><a href="/wiki/Gallambria?source=iiwiki">G</a> <a href="/wiki/Gallambria">H</a></p>';
+    const { container } = render(<WikiHtmlContent html={html} />);
+    await waitFor(() => expect(container.querySelector("a.text-destructive")).not.toBeNull());
+    const red = Array.from(container.querySelectorAll("a.text-destructive"));
+    expect(red.map((a) => a.textContent)).toEqual(["H"]);
+    mockMissing = undefined;
+  });
+});

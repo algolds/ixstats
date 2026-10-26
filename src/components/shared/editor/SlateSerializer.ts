@@ -1,7 +1,43 @@
 // src/components/shared/editor/SlateSerializer.ts
 // Serializer for Slate AST to HTML, Slate AST to BBCode, and Parsoid HTML to Slate.
 
-import { Editor, Transforms } from "slate";
+import { Editor, Transforms, type Descendant } from "slate";
+import { getBasePath } from "~/lib/base-path";
+import { parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
+import {
+  readerLinkPath,
+  wikiLinkTarget,
+  type WikiLinkTarget,
+} from "~/lib/wiki-os/wiki-link-target";
+
+/** A composer link to a wiki article: its title and, for a sister wiki, the wiki (IxWiki's links carry none). */
+export interface WikiLinkElement {
+  type: "wikilink";
+  target: string;
+  source?: WikiSource;
+  children: Descendant[];
+}
+
+/** A wiki link node for `target` on `source`, showing `text` (the title when empty). */
+export function wikiLinkElement(target: string, source: WikiSource, text = ""): WikiLinkElement {
+  const children = [{ text: text || target }];
+  return source === "ixwiki"
+    ? { type: "wikilink", target, children }
+    : { type: "wikilink", target, source, children };
+}
+
+/**
+ * The article an `<a href>` names when it is a link the composer writes (`readerLinkPath`, under the base path or
+ * not), else null. A link with a query or a fragment, an absolute URL, a path spelled otherwise or a namespace the
+ * reader does not read as an article (`wikiLinkTarget`: talk, Module, MediaWiki, File…) reads back as a plain link
+ * with its href unchanged, so saving a post again never moves a link.
+ */
+function composerWikiLink(href: string): WikiLinkTarget | null {
+  const basePath = getBasePath();
+  const target = wikiLinkTarget(href, basePath);
+  const path = target && readerLinkPath(target.title, target.wiki);
+  return path && (href === path || href === `${basePath}${path}`) ? target : null;
+}
 
 function escapeAttr(str: string): string {
   return str
@@ -32,9 +68,11 @@ function serializeNode(node: any): string {
 
   switch (node.type) {
     case "wikiembed":
-      return `<div data-wikiembed="true" data-title="${escapeAttr(node.title || "")}" data-summary="${escapeAttr(node.summary || "")}" data-imageurl="${escapeAttr(node.imageUrl || "")}" data-source="${escapeAttr(node.source || "ixwiki")}"></div>`;
-    case "wikilink":
-      return `<a href="/wiki/${encodeURIComponent((node.target || "").replace(/ /g, "_"))}">${children}</a>`;
+      return `<div data-wikiembed="true" data-title="${escapeAttr(node.title || "")}" data-summary="${escapeAttr(node.summary || "")}" data-imageurl="${escapeAttr(node.imageUrl || "")}" data-source="${parseWikiSource(node.source)}"></div>`;
+    case "wikilink": {
+      const href = readerLinkPath(node.target || "", node.source);
+      return href ? `<a href="${escapeAttr(href)}">${children}</a>` : children;
+    }
     case "link":
       return `<a href="${escapeAttr(node.url || "")}" target="_blank" rel="noopener noreferrer">${children}</a>`;
     case "img":
@@ -68,10 +106,14 @@ function serializeNodeToBbcode(node: any): string {
   const children: string = (node.children || []).map((c: any) => serializeNodeToBbcode(c)).join("");
 
   switch (node.type) {
-    case "wikiembed":
-      return `\n[QUOTE="${node.title || "Wiki"}"]${node.summary || ""}\n${node.imageUrl ? `[IMG]${node.imageUrl}[/IMG]\n` : ""}[URL=/wiki/${encodeURIComponent((node.title || "").replace(/ /g, "_"))}]Read on Wiki[/URL][/QUOTE]\n`;
-    case "wikilink":
-      return `[URL=/wiki/${encodeURIComponent((node.target || "").replace(/ /g, "_"))}]${children || node.target}[/URL]`;
+    case "wikiembed": {
+      const read = readerLinkPath(node.title || "", node.source);
+      return `\n[QUOTE="${node.title || "Wiki"}"]${node.summary || ""}\n${node.imageUrl ? `[IMG]${node.imageUrl}[/IMG]\n` : ""}${read ? `[URL=${read}]Read on Wiki[/URL]` : ""}[/QUOTE]\n`;
+    }
+    case "wikilink": {
+      const href = readerLinkPath(node.target || "", node.source);
+      return href ? `[URL=${href}]${children || node.target}[/URL]` : children;
+    }
     case "link":
       return `[URL=${node.url || ""}]${children || node.url}[/URL]`;
     case "img":
@@ -131,7 +173,7 @@ export function parsoidHtmlToSlate(htmlContent: string): any[] {
             title: elem.getAttribute("data-title") || "",
             summary: elem.getAttribute("data-summary") || "",
             imageUrl: elem.getAttribute("data-imageurl") || "",
-            source: elem.getAttribute("data-source") || "ixwiki",
+            source: parseWikiSource(elem.getAttribute("data-source")),
             children: [{ text: "" }],
           });
           continue;
@@ -197,11 +239,10 @@ export function parsoidHtmlToSlate(htmlContent: string): any[] {
           const href = elem.getAttribute("href") || "";
           const children = deserializeNode(elem);
           const validChildren = children.length > 0 ? children : [{ text: href || "link" }];
-          if (href.startsWith("/wiki/")) {
-            const target = decodeURIComponent(href.replace("/wiki/", "")).replace(/_/g, " ");
+          const wikiLink = composerWikiLink(href);
+          if (wikiLink) {
             result.push({
-              type: "wikilink",
-              target,
+              ...wikiLinkElement(wikiLink.title, wikiLink.wiki),
               children: validChildren,
             });
           } else {

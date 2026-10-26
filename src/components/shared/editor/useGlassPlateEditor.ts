@@ -19,7 +19,13 @@ import {
   WikiEmbedPlugin,
   ImagePlugin,
 } from "./EditorPlugins";
-import { slateNodesToHtml, parsoidHtmlToSlate, toggleMark } from "./SlateSerializer";
+import {
+  slateNodesToHtml,
+  parsoidHtmlToSlate,
+  toggleMark,
+  wikiLinkElement,
+} from "./SlateSerializer";
+import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
 import { userMentionItems, type MentionSource } from "./mention-source";
 
 function getMentionItemIcon(name: string, type: "league" | "club") {
@@ -84,9 +90,7 @@ export function useGlassPlateEditor({
   const [wikiInsertMode, setWikiInsertMode] = useState<"link" | "embed">("link");
   const [wikiTarget, setWikiTarget] = useState("");
   const [wikiText, setWikiText] = useState("");
-  const [selectedWikiSource, setSelectedWikiSource] = useState<"ixwiki" | "iiwiki" | "althistory">(
-    "ixwiki"
-  );
+  const [selectedWikiSource, setSelectedWikiSource] = useState<WikiSource>("ixwiki");
   const [selectedWikiImageUrl, setSelectedWikiImageUrl] = useState("");
   const [wikiSearchQuery, setWikiSearchQuery] = useState("");
 
@@ -160,6 +164,8 @@ export function useGlassPlateEditor({
       name: string;
       description: string;
       icon: string;
+      /** A wiki row's wiki: its link opens the article there. */
+      source?: WikiSource;
       raw: any;
     }> = [];
 
@@ -195,8 +201,9 @@ export function useGlassPlateEditor({
           type: "wiki",
           id: w.title,
           name: `[[${w.title}]]`,
-          description: `${w.source.toUpperCase()} Article`,
+          description: `${WIKI_SOURCES[w.source].name} article`,
           icon: "📖",
+          source: w.source,
           raw: w,
         });
       }
@@ -373,14 +380,7 @@ export function useGlassPlateEditor({
       Transforms.select(editor as any, mentionRange);
 
       if (item.type === "wiki") {
-        Transforms.insertNodes(
-          editor as any,
-          {
-            type: "wikilink",
-            target: item.id,
-            children: [{ text: item.id }],
-          } as any
-        );
+        Transforms.insertNodes(editor as never, wikiLinkElement(item.id, item.source ?? "ixwiki"));
       } else {
         Transforms.insertText(editor as any, `${item.name} `);
       }
@@ -496,14 +496,9 @@ export function useGlassPlateEditor({
         } as any
       );
     } else {
-      const textToInsert = wikiText.trim() || wikiTarget.trim();
       Transforms.insertNodes(
-        editor as any,
-        {
-          type: "wikilink",
-          target: wikiTarget.trim(),
-          children: [{ text: textToInsert }],
-        } as any
+        editor as never,
+        wikiLinkElement(wikiTarget.trim(), selectedWikiSource, wikiText.trim())
       );
     }
     setIsWikiOpen(false);
