@@ -64,6 +64,33 @@ describe("the SQL the deploy runs", () => {
     }
   });
 
+  it("touches a column another deploy file drops only inside a block that checks it is still there", () => {
+    // `ALTER TABLE "T" ... DROP COLUMN IF EXISTS "c"`: every re-run after the first finds the column gone
+    const dropped = runs.flatMap(({ file }) =>
+      [...sql(file).matchAll(/ALTER TABLE "?(\w+)"? ([^;]*)/gi)].flatMap(([, table, body]) =>
+        [...body!.matchAll(/DROP COLUMN IF EXISTS "?(\w+)"?/gi)].map(([, column]) => ({
+          table: table!,
+          column: column!,
+        }))
+      )
+    );
+    expect(dropped).toContainEqual({ table: "MilitaryUnit", column: "readiness" });
+    // A write to the table that names the column (the statement's target, so a join's alias is not mistaken for it)
+    const writes = (statement: string, table: string, column: string) =>
+      new RegExp(`^\\s*(UPDATE|INSERT INTO|DELETE FROM) "?${table}"?[\\s(]`, "i").test(statement) &&
+      new RegExp(`"${column}"|\\b${column}\\b`).test(statement);
+    const offenders = runs.flatMap(({ file }) =>
+      unguarded(file)
+        .split(";")
+        .flatMap((statement) =>
+          dropped
+            .filter(({ table, column }) => writes(statement, table, column))
+            .map(({ table, column }) => `${file}: ${table}.${column}`)
+        )
+    );
+    expect(offenders).toEqual([]);
+  });
+
   it("runs SQL that drops a table or converts a column type before db push", () => {
     const destructive = runs.filter(({ file }) =>
       /DROP TABLE|ALTER COLUMN \S+ (SET DATA )?TYPE/i.test(sql(file))
