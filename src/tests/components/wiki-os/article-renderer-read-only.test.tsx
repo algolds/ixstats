@@ -179,9 +179,12 @@ describe("ArticleRenderer for another wiki's page is read-only (ruling E-l)", ()
     const rule = /\.wikios-sister-article \{([^}]*)\}/.exec(css)?.[1] ?? "";
     expect(rule).toMatch(/contain: layout paint;/);
     expect(rule).toMatch(/isolation: isolate;/);
-    // which clips: a wide table (not an infobox or a notice) scrolls inside its own box instead
-    const table = /\.wikios-sister-article table:not\(([^)]*)\) \{([^}]*)\}/.exec(css);
-    expect(table?.[1]).toBe(".infobox, .infobox table, .wikios-infobox table, .ambox");
+    // which clips: on a phone, a wide outer table (not an infobox, a notice or a navbox) scrolls inside its own box
+    const table =
+      /@media \(width < 48rem\) \{\s*\.wikios-sister-article\s+table:not\(([^)]*)\) \{([^}]*)\}/.exec(
+        css
+      );
+    expect(table?.[1]).toBe(".infobox, .wikios-infobox table, .ambox, .navbox, table table");
     expect(table?.[2]).toMatch(/display: block;\s*max-width: 100%;\s*overflow-x: auto;/);
   });
 
