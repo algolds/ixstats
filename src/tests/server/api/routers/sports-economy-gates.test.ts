@@ -140,6 +140,14 @@ describe("sports ₷ moves in maintenance mode", () => {
 
     await caller.upgradeStadium({ teamId: "team_1" });
 
-    expect(spend).toHaveBeenCalledWith(ME, 1000, "STADIUM_UPGRADE", "STADIUM_UPGRADE:team_1", db);
+    expect(spend).toHaveBeenCalledWith(
+      ME,
+      1000,
+      "STADIUM_UPGRADE",
+      "STADIUM_UPGRADE:team_1",
+      db,
+      undefined,
+      undefined
+    );
   });
 });
