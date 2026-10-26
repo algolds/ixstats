@@ -59,7 +59,7 @@ posts, country follows and sign-ups) were deleted (SL-7). The `achievements` fil
 
 Notifications are keyed by Clerk user id. The recipient is always the **owning user** of the target persona, never the persona id, and a user is never notified about their own personas. Titles name the acting persona (display name, else `@username`), and every link goes to `/dashboard/post/<id>` (base path applied).
 - **Like** (`reactions/mutations.ts`) and **reply** (`createPost`): "*Persona* liked / commented on your ThinkPage".
-- **Mention** (`createPost`): one notification per mentioned user ("*Persona* mentioned you"), linked to the new post. Mentions are still recorded in `PostMention`.
+- **Mention** (`createPost`): one notification per mentioned user ("*Persona* mentioned you"), linked to the new post. Mentions are still recorded in `PostMention`. A mention counts only when the name is written in the post's text, at most 50 per post (`MENTION_MAX_PER_POST`), so a post cannot notify personas it never names.
 - **Repost / quote** (`createPost`): "*Persona* reposted your post" links to the original; "*Persona* quoted your post" links to the quoting post.
 - Mention, repost and quote notifications are sent only for `public` and `unlisted` posts, since only the author can open private and draft posts.
 
@@ -92,6 +92,7 @@ All platform direct messaging runs on the unified ThinkShare infrastructure:
 - **Message Types**: Personal 1:1 DMs, Diplomatic and official cables, Group rooms, and pinned **System / LoreBot** streams.
 - **Classification Tiers**: `PUBLIC`, `RESTRICTED`, `CONFIDENTIAL`, `SECRET`, `TOP_SECRET` (metadata on diplomatic/official conversations and messages). They can be written only through the admin `sendAdminMessage`; `createConversation` accepts `diplomaticClassification` but drops it, so diplomatic conversations cannot be created with a tier from the UI.
 - **Security**: The schema reserves `signature` and `encryptedContent` message fields and an `encrypted` conversation flag, but no signing or end-to-end encryption is implemented yet; access is enforced by participant checks.
+- **Limits**: a group conversation holds at most 50 members, its creator included (`MAX_GROUP_PARTICIPANTS`), and a message at most 10,000 characters (`MAX_MESSAGE_LENGTH`, as a ThinkPages post); unsafe HTML in a message is refused. Adding someone to a group makes the same block and audience checks as starting a conversation, and someone who left comes back only as a pending request they must accept (one who declined cannot be re-added).
 - **Requests, Seen and online (SL-4)**: a direct message from outside the recipient's audience lands in their **Requests** folder (`ConversationParticipant.requestStatus`, `messages.respondToRequest`); direct conversations show **Seen** when both people allow read receipts (`messages.getSeenState`); a green dot marks participants who are online and share it (`server/shared/presence.ts`). Details: [Settings](./settings.md#privacy--security-privacy--privacysecuritypanel).
 - **Caching**: Feed pages are cached in `globalCache` (15 s TTL) and invalidated by pattern (`thinkpages_feed:*`) on new posts.
 

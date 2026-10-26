@@ -48,7 +48,9 @@ same wallet.
   capital; a secondary listing escrows a holder's shares until sold or cancelled. The founder switches trading on or
   off (off at charter). Trades lock the company row, then wallets in user-id order.
 - **Dividends:** pro rata to all shares held (listed ones included), each payout rounded down to a cent; capital drops
-  by exactly the sum paid, so no ₷ is created or lost.
+  by exactly the sum paid, so no ₷ is created or lost. A dividend is refused while the company's own primary issue is
+  on sale (`assertNoOpenPrimaryIssue`, under the company lock, as for a withdrawal): that issue's price was set from the
+  capital.
 - **Sector funds:** buy and sell units at fund ₷ ÷ units. Each `exchange-market` run moves each index at most 5% toward
   its activity target and rebalances the four funds by relative growth, exact to the cent: no ₷ is minted. A sale waits
   24 hours after the seller's last buy in that sector.
@@ -78,6 +80,7 @@ minimum urgency apply. They are sent after the transaction commits and never blo
   order book are not built (spec §8, "Still not built").
 - Sector indices follow Exchange activity, not `SectoralOutput`; nothing sets `SectorIndex.dmModifier` yet.
 - Two colluding accounts can drain a company's capital through a contract to an accomplice; fees bound it. ₷ can no longer be turned into IxC.
-- MyClub's ₷ spends ignore the Exchange flag and vault maintenance mode on purpose (they predate the Exchange).
+- MyClub's ₷ moves ignore the Exchange flag on purpose (they predate the Exchange), but they refuse in vault
+  maintenance mode like every other write ([myleague.md](myleague.md#economic-integration)).
 - There is no admin-registered event key for Exchange notifications; the notification guard treats `exchangeNotification`
   as enabled.

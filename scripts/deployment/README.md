@@ -9,7 +9,8 @@ The repository consolidates production deployment tooling behind a single canoni
 - **Canonical Deployment Script**: [`scripts/deploy-production.sh`](../deploy-production.sh)
 - **Local Trigger / Remote Deploy**: [`scripts/deploy-local.sh`](../deploy-local.sh)
 - **Production Start Command**: `bun run start:prod` (invokes the root `start-production.sh` → `next start` on `${PORT:-3550}`)
-- **Current release runbook**: [`docs/operations/deploy-rose-garden-2026-09.md`](../../docs/operations/deploy-rose-garden-2026-09.md) (Realms schema push, ownership backfill, Eurth serving)
+- **Current release runbook**: the [release guide](../../docs/operations/release-guide.md), Part B (1.5), which links the per-area runbooks
+- **Schema step before the SQL**: [`apply-additive-schema.ts`](apply-additive-schema.ts) (`bun scripts/deployment/apply-additive-schema.ts`, dry run; `--apply` in the deploy) applies only the purely additive part of the difference between the database and `prisma/schema`; the classifier is [`additive-schema.ts`](additive-schema.ts)
 
 ## Operator Decisions & Decisions Record (2026-08-20)
 
@@ -25,7 +26,7 @@ The repository consolidates production deployment tooling behind a single canoni
    - Env files: `server.mjs`, `ws-backend.mjs` and `cron-runner.mjs` load them through `load-env.mjs` in the order `.env.production.local`, `.env.local`, `.env.production`, `.env` (first file to set a key wins; real env vars always win). `start-production.sh` sources `.env.production` and then `.env.production.local`, so the secrets file wins there too.
 
 3. **Schema Migration Strategy**:
-   - Schema deployment runs through explicit, guarded operations (`prisma db push` / `prisma migrate deploy`).
+   - Schema deployment runs through explicit, guarded operations: the additive step, the hand-written idempotent SQL files `deploy-production.sh` names, then `prisma db push` without `--accept-data-loss`. `SKIP_SCHEMA_SYNC=1` skips all three (rollbacks).
    - Destructive database writes (`db:reset`, unconfirmed schema drops) are permanently blocked in scripts.
 
 4. **Prod-Clone / E2E Verification Workflow**:
@@ -51,7 +52,8 @@ Validates:
 
 | Script | Alias | Notes |
 | --- | --- | --- |
-| `rollback-deployment.sh` | `bun run deploy:rollback -- <remote-branch> [--restore <dump>]` | Checks out a rollback branch, optionally restores the pre-deploy dump listed in `backups/deploy-history.log`, then redeploys with `ALLOW_NON_MASTER_DEPLOY=1` ([release guide](../../docs/operations/release-guide.md#rollback)) |
+| `apply-additive-schema.ts` | — | The deploy's pre-SQL schema step: dry run by default, `--apply` in one transaction. Leaves to the SQL and the push everything not purely additive, everything a deploy SQL file creates or converts, and `wiki_revisions.origin` |
+| `rollback-deployment.sh` | `bun run deploy:rollback -- <remote-branch> [--restore <dump>]` | Copies the current `deploy-production.sh`, checks out a rollback branch, optionally restores the pre-deploy dump listed in `backups/deploy-history.log`, then runs the copy with `ALLOW_NON_MASTER_DEPLOY=1 SKIP_SCHEMA_SYNC=1`, so no older schema is pushed ([release guide](../../docs/operations/release-guide.md#rollback)) |
 | `post-deployment-validation.ts` | `bun run post:deploy:validate` | Post-deploy smoke checks |
 | `verify-environment.ts` | `bun run verify:environment` | Checks the environment it runs in. With `NODE_ENV=production` it fails when a secret `src/env.ts` requires in production is missing or too short (Clerk keys, `IXTIME_BOT_SECRET`, `CRON_SECRET` and `WIKI_SYNC_WEBHOOK_SECRET`, the last two at least 32 characters) and warns about Redis, `NEXT_PUBLIC_APP_URL` and the Discord webhook. It reads `process.env` only, so load the production env files first |
 | `setup-monitoring.ts` | `bun run setup:monitoring` | Monitoring setup |
