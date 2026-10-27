@@ -580,6 +580,37 @@ describe("diplomatic core", () => {
     expect(db.diplomaticRelation.update).not.toHaveBeenCalled();
   });
 
+  it("opens the relation with an embassy-only partner when the caller sets a stance", async () => {
+    db.diplomaticRelation.findFirst.mockResolvedValue(null);
+    db.embassy.findFirst.mockResolvedValue({ id: "e1" });
+    db.diplomaticRelation.create.mockResolvedValue({ id: "r_new" });
+    await coreAs(db, "u1", "c_a").setDiplomaticGoal({ targetCountryId: "c_b", goal: "ALLY" });
+    expect(db.diplomaticRelation.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ country1: "c_a", country2: "c_b", goalCountry1: "ALLY" }),
+    });
+
+    // An existing relation found by partner is updated on the caller's side instead.
+    db.diplomaticRelation.findFirst.mockResolvedValue({
+      id: "r1",
+      country1: "c_b",
+      country2: "c_a",
+    });
+    await coreAs(db, "u1", "c_a").setDiplomaticGoal({ targetCountryId: "c_b", goal: "RIVAL" });
+    expect(db.diplomaticRelation.update).toHaveBeenCalledWith({
+      where: { id: "r1" },
+      data: { goalCountry2: "RIVAL" },
+    });
+
+    // No embassy, no relation: nothing is opened.
+    db.diplomaticRelation.create.mockClear();
+    db.diplomaticRelation.findFirst.mockResolvedValue(null);
+    db.embassy.findFirst.mockResolvedValue(null);
+    await expect(
+      coreAs(db, "u1", "c_a").setDiplomaticGoal({ targetCountryId: "c_z", goal: "ALLY" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(db.diplomaticRelation.create).not.toHaveBeenCalled();
+  });
+
   it("keeps option usage analytics to admins", async () => {
     await expect(coreAs(db, "u1", "c_mine").getOptionUsageStats()).rejects.toThrow(
       /Admin privileges required/
