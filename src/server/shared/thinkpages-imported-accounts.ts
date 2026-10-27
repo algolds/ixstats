@@ -13,6 +13,8 @@
  */
 
 /** The synthetic Clerk id prefix every IxTwitter-imported account carries until it is claimed. */
+import type { PrismaClient } from "@prisma/client";
+
 export const IXTWITTER_IMPORT_OWNER_PREFIX = "system_ixtwitter_";
 
 /** True when the account was made by the IxTwitter sync and no member has claimed it yet. */
@@ -32,4 +34,28 @@ export function canClaimImportedAccount(
   if (!isUnclaimedImportedAccount(account)) return false;
   if (!account.verified) return true;
   return !!targetCountryId && account.countryId === targetCountryId;
+}
+
+type AccountDb = Pick<PrismaClient, "thinkpagesAccount">;
+
+/**
+ * The sync's own account for a Discord poster: matched by username or by the `discord:<name>` bio tag,
+ * and only while still sync-owned, since a claimed account is its member's and no longer the poster's.
+ */
+export function findSyncPosterAccount(db: AccountDb, discordUsername: string) {
+  return db.thinkpagesAccount.findFirst({
+    where: {
+      clerkUserId: { startsWith: IXTWITTER_IMPORT_OWNER_PREFIX },
+      OR: [{ username: discordUsername }, { bio: { contains: `discord:${discordUsername}` } }],
+    },
+  });
+}
+
+/** The username to mirror a poster under: their own, or `<name>_ixtwitter` once a member holds it. */
+export async function posterMirrorUsername(db: AccountDb, discordUsername: string): Promise<string> {
+  const taken = await db.thinkpagesAccount.findUnique({
+    where: { username: discordUsername },
+    select: { id: true },
+  });
+  return taken ? `${discordUsername}_ixtwitter` : discordUsername;
 }

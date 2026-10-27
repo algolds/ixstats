@@ -22,10 +22,7 @@ import { htmlToDiscordMarkdown } from "./markdown";
 import { appUrl } from "~/lib/app-url";
 import { withBasePath } from "~/lib/base-path";
 import { APP_TINTS } from "~/lib/design/tokens";
-import {
-  IXTWITTER_IMPORT_OWNER_PREFIX,
-  isUnclaimedImportedAccount,
-} from "~/server/shared/thinkpages-imported-accounts";
+import * as imported from "~/server/shared/thinkpages-imported-accounts";
 
 // Callers and tests import the converter from here.
 export { htmlToDiscordMarkdown };
@@ -236,25 +233,13 @@ async function getOrCreateDiscordAccount(
   const mappedCountry = DISCORD_COUNTRY_MAP[discordUsername];
   const isFormerNation = !mappedCountry;
 
-  // Try to find existing account by discord username. Only sync-owned rows count: once a member
-  // claims an imported account (thinkpages-imported-accounts) it is theirs, not this poster's.
-  const existingAccount = await db.thinkpagesAccount.findFirst({
-    where: {
-      clerkUserId: { startsWith: IXTWITTER_IMPORT_OWNER_PREFIX },
-      OR: [{ username: discordUsername }, { bio: { contains: `discord:${discordUsername}` } }],
-    },
-  });
+  const existingAccount = await imported.findSyncPosterAccount(db, discordUsername);
 
   if (existingAccount) {
     return { accountId: existingAccount.id, isFormerNation };
   }
 
-  // The poster's own name was claimed by a member: mirror into a suffixed account instead.
-  const nameTaken = await db.thinkpagesAccount.findUnique({
-    where: { username: discordUsername },
-    select: { id: true },
-  });
-  const username = nameTaken ? `${discordUsername}_ixtwitter` : discordUsername;
+  const username = await imported.posterMirrorUsername(db, discordUsername);
 
   const countryId = mappedCountry ? COUNTRY_ID_CACHE[mappedCountry] : null;
   const defaultCountryId = DEFAULT_COUNTRY_ID || (await getDefaultCountryId(db));
@@ -324,17 +309,11 @@ async function getOrCreateHandleAccount(
   });
   if (existingAccount) {
     // A handle a member owns (claimed or created) is not this poster's: post as the main account.
-    return isUnclaimedImportedAccount(existingAccount) ? existingAccount.id : null;
+    return imported.isUnclaimedImportedAccount(existingAccount) ? existingAccount.id : null;
   }
 
   // Get the main Discord user account to inherit country/verified status
-  const mainAccount = await db.thinkpagesAccount.findFirst({
-    where: {
-      clerkUserId: { startsWith: IXTWITTER_IMPORT_OWNER_PREFIX },
-      OR: [{ username: discordUsername }, { bio: { contains: `discord:${discordUsername}` } }],
-    },
-    select: { id: true, verified: true, countryId: true },
-  });
+  const mainAccount = await imported.findSyncPosterAccount(db, discordUsername);
 
   if (!mainAccount) {
     return null;

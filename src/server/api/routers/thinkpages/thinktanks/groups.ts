@@ -130,7 +130,6 @@ async function enrichGroupMembers<M extends GroupMemberRow>(
 }
 
 export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
-  // Create a new ThinkTank group
   createThinktank: rateLimitedMutationProcedure
     .input(
       z.object({
