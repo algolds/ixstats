@@ -14,6 +14,7 @@ import {
 } from "~/lib/military/model";
 import {
   alertChange,
+  catalogMatches,
   defaultOrderBranch,
   domesticBlock,
   fitsDomain,
@@ -185,6 +186,27 @@ describe("procurement", () => {
     expect(fitsDomain("naval", "land")).toBe(false);
     expect(fitsDomain("naval", "sea")).toBe(true);
     expect(fitsDomain("missile", "land")).toBe(true);
+  });
+
+  it("lists a domain's own equipment first, with or without a search", () => {
+    // The catalog arrives sorted by category: aircraft first.
+    const item = (name: string, catalogCategory: string) => ({ name, category: catalogCategory, catalogCategory });
+    const catalog = [
+      item("Falcon", "aircraft"),
+      item("Hawk", "aircraft"),
+      item("Patriot", "missile"),
+      item("Destroyer", "naval"),
+      item("Leopard", "vehicle"),
+    ];
+    const names = (domain: Parameters<typeof catalogMatches>[2], query = "") =>
+      catalogMatches(catalog, ["land", "sea", "air"], domain, query).map((i) => i.name);
+
+    expect(names("land")).toEqual(["Leopard", "Patriot", "Falcon", "Hawk"]);
+    expect(names("sea")).toEqual(["Destroyer", "Falcon", "Hawk", "Patriot"]);
+    expect(names("air")).toEqual(["Falcon", "Hawk", "Patriot"]);
+    expect(names("all")).toEqual(["Falcon", "Hawk", "Patriot", "Destroyer", "Leopard"]);
+    expect(names("land", "a")).toEqual(["Leopard", "Patriot", "Falcon", "Hawk"]);
+    expect(names("land", "haw")).toEqual(["Hawk"]);
   });
 
   it("counts the months an order has slipped", () => {
