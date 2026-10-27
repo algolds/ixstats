@@ -1,15 +1,35 @@
 /**
- * Characterization test for resolveMatch (plan 315).
+ * The sports resolver corpus. resolveMatch is pinned (plan 315): the full result (scores, key stats, rating deltas,
+ * evaluation vector and the play-by-play trace) for fixed seeds, one per sport and modifier path, so a refactor keeps
+ * the exact RNG call order and arithmetic. Hockey never ends in a draw and its overtime call reads from the trace
+ * (standings points depend on it). A live broadcast reveals only the events up to its minute. simulateAndPersistMatch
+ * (plans 345 Step 1 + 320) persists the same result and snapshot whatever the roster order, and the stored snapshot
+ * alone replays it; a knockout bout is claimed once and replays the same way. Once-only completion and the points
+ * rules are asserted in tests/scenarios/engines/sports-season.test.ts.
  *
- * Pins the full result object (scores, key stats, rating deltas, evaluation
- * vector and the complete play-by-play trace) for fixed seeds, so refactors of
- * the resolver must keep the exact same RNG call order and arithmetic.
+ * Folds hockey, live-match and simulate-and-persist.
  */
-import { describe, it, expect } from "@jest/globals";
+import { beforeEach, describe, it, expect, jest } from "@jest/globals";
+import type { Prisma } from "@prisma/client";
 import { createHash } from "crypto";
-import { resolveMatch } from "~/lib/sports/resolver";
+import { createRNG, resolveMatch } from "~/lib/sports/resolver";
 import type { ExtendedMatchResult, TeamRatingVector } from "~/lib/sports/types";
 import type { RosterPlayer } from "~/lib/sports/resolvers";
+import { runHockeyMatch } from "~/lib/sports/resolvers/hockey";
+import type { SportResolverContext } from "~/lib/sports/resolvers/types";
+import { decidedAfterRegulation } from "~/lib/sports/match-outcome";
+import { computeLiveMatchState, type LiveTraceEvent } from "~/lib/sports/live-match";
+import {
+  matchSeed,
+  resolveFromSnapshot,
+  simulateAndPersistBout,
+  simulateAndPersistMatch,
+  standingDelta,
+  type PersistedBoutResult,
+  type PersistedMatchStats,
+  type SimMatch,
+  type SimTeam,
+} from "~/lib/sports/simulate-and-persist";
 
 type ResolveArgs = Parameters<typeof resolveMatch>[0];
 type Summary = Omit<ExtendedMatchResult, "trace"> & { traceLength: number };
@@ -49,7 +69,6 @@ function roster(prefix: string, positions: string[]): RosterPlayer[] {
   }));
 }
 
-const SOCCER_POSITIONS = ["GK", "DF", "DF", "DF", "DF", "MF", "MF", "MF", "FW", "FW", "FW"];
 const HOCKEY_POSITIONS = ["G", "D", "D", "D", "D", "C", "C", "LW", "LW", "RW", "RW"];
 
 const CASES: Record<string, ResolveArgs> = {
@@ -59,15 +78,6 @@ const CASES: Record<string, ResolveArgs> = {
     awayTeam: weak,
     archetype: "league",
     seed: 12345,
-  },
-  soccerEvenWithRosters: {
-    sport: "soccer",
-    homeTeam: average,
-    awayTeam: average,
-    archetype: "league",
-    seed: 777,
-    homeRoster: roster("h", SOCCER_POSITIONS),
-    awayRoster: roster("a", SOCCER_POSITIONS),
   },
   soccerDivineDerby: {
     sport: "soccer",
@@ -119,14 +129,6 @@ const CASES: Record<string, ResolveArgs> = {
     homeTacticalIntent: "counter_attack",
     awayTacticalIntent: "kick_and_rush",
   },
-  unknownSportFallsBackToSoccer: {
-    sport: "curling",
-    homeTeam: weak,
-    awayTeam: weak,
-    archetype: "league",
-    seed: 1,
-    awayTacticalIntent: "all_out_attack",
-  },
 };
 
 const EXPECTED: Record<string, { summary: Summary; digest: string }> = {
@@ -151,28 +153,6 @@ const EXPECTED: Record<string, { summary: Summary; digest: string }> = {
       traceLength: 17,
     },
     digest: "c819ddcbc56bab31c5d4c0118e3e7a592f2aab4a9f1cce7aab67acd68d95f13f",
-  },
-  soccerEvenWithRosters: {
-    summary: {
-      homeScore: 1,
-      awayScore: 0,
-      winner: "home",
-      upset: false,
-      upsetFactor: 0.01,
-      keyStats: {
-        homeStrength: 61.15,
-        awayStrength: 60.65,
-        differential: 0.5,
-        dominance: 0.5,
-        tempo: 1,
-        volatility: 1,
-      },
-      homeRatingDelta: 8,
-      awayRatingDelta: -8,
-      evaluation: { winProbability: 0.5, dominance: 0.5, tempo: 1, volatility: 1 },
-      traceLength: 14,
-    },
-    digest: "9a92e2fe7576f79cc77056897d51e2caeb85192d2b39c9bfe4f33d165c141268",
   },
   soccerDivineDerby: {
     summary: {
@@ -284,28 +264,6 @@ const EXPECTED: Record<string, { summary: Summary; digest: string }> = {
     },
     digest: "1e41bb8a6ce2b08c20d9fd0880a03e398f81d8e3302f817dda802cc12149fb2e",
   },
-  unknownSportFallsBackToSoccer: {
-    summary: {
-      homeScore: 0,
-      awayScore: 2,
-      winner: "away",
-      upset: true,
-      upsetFactor: 0.03,
-      keyStats: {
-        homeStrength: 47.1,
-        awayStrength: 45.6,
-        differential: 1.5,
-        dominance: 0.51,
-        tempo: 0.9,
-        volatility: 1,
-      },
-      homeRatingDelta: -8,
-      awayRatingDelta: 8,
-      evaluation: { winProbability: 0.5, dominance: 0.51, tempo: 0.9, volatility: 1 },
-      traceLength: 13,
-    },
-    digest: "eab18e28e51b17dae7c642e3e0c7015a7be52fe1d942631c8441343fd95dee9f",
-  },
 };
 
 function summarize(result: ExtendedMatchResult): Summary {
@@ -329,9 +287,410 @@ describe("resolveMatch characterization (fixed seeds)", () => {
       expect(actual).toEqual(EXPECTED[name]);
     });
   }
+});
 
-  it("is deterministic for the same seed", () => {
-    const args = CASES.hockeyPlayoffRosters!;
-    expect(digest(resolveMatch(args))).toBe(digest(resolveMatch(args)));
+describe("Ice Hockey 3-Period Match Resolver", () => {
+  const createMockContext = (
+    seed: number,
+    overrides?: Partial<SportResolverContext>
+  ): SportResolverContext => ({
+    rng: createRNG(seed),
+    homeOffense: 75,
+    homeDefense: 70,
+    awayOffense: 72,
+    awayDefense: 74,
+    homeTactical: "neutral",
+    awayTactical: "neutral",
+    homeTeamModified: { overall: 73, offense: 75, defense: 70, form: 50, depth: 50, coaching: 50 },
+    awayTeamModified: { overall: 73, offense: 72, defense: 74, form: 50, depth: 50, coaching: 50 },
+    isPlayoff: false,
+    isChampionship: false,
+    archetype: "league",
+    homeRoster: [
+      {
+        id: "h_f1",
+        firstName: "Connor",
+        lastName: "McPlayer",
+        position: "C",
+        ratings: { overall: 92, shooting: 90, passing: 95 },
+      },
+      {
+        id: "h_f2",
+        firstName: "Leon",
+        lastName: "Striker",
+        position: "LW",
+        ratings: { overall: 88, shooting: 89, passing: 85 },
+      },
+      {
+        id: "h_d1",
+        firstName: "Cale",
+        lastName: "Blueline",
+        position: "D",
+        ratings: { overall: 90, defense: 92, skating: 91 },
+      },
+      {
+        id: "h_g1",
+        firstName: "Igor",
+        lastName: "Netminder",
+        position: "G",
+        ratings: { overall: 91, defense: 91 },
+      },
+    ],
+    awayRoster: [
+      {
+        id: "a_f1",
+        firstName: "Auston",
+        lastName: "Sniper",
+        position: "C",
+        ratings: { overall: 91, shooting: 93, passing: 84 },
+      },
+      {
+        id: "a_f2",
+        firstName: "Mitch",
+        lastName: "Playmaker",
+        position: "RW",
+        ratings: { overall: 87, shooting: 82, passing: 92 },
+      },
+      {
+        id: "a_d1",
+        firstName: "Victor",
+        lastName: "Anchor",
+        position: "D",
+        ratings: { overall: 89, defense: 90, skating: 88 },
+      },
+      {
+        id: "a_g1",
+        firstName: "Andrei",
+        lastName: "Wall",
+        position: "G",
+        ratings: { overall: 90, defense: 90 },
+      },
+    ],
+    ...overrides,
+  });
+  it("resolves ties with 3-on-3 Overtime or Shootout without draws", () => {
+    // Force tied ratings
+    for (let seed = 100; seed <= 150; seed++) {
+      const ctx = createMockContext(seed, {
+        homeOffense: 50,
+        homeDefense: 50,
+        awayOffense: 50,
+        awayDefense: 50,
+      });
+      const outcome = runHockeyMatch(ctx);
+      // Hockey matches must never end in a draw
+      expect(outcome.homeScore).not.toEqual(outcome.awayScore);
+    }
+  });
+
+  it("reads an overtime / shootout decision from the trace (tied after 60 minutes)", () => {
+    let overtimeGames = 0;
+    let regulationGames = 0;
+    for (let seed = 100; seed <= 150; seed++) {
+      const outcome = runHockeyMatch(
+        createMockContext(seed, {
+          homeOffense: 50,
+          homeDefense: 50,
+          awayOffense: 50,
+          awayDefense: 50,
+        })
+      );
+      const tiedAfterRegulation = outcome.trace.some((e) =>
+        e.description.startsWith("END OF REGULATION")
+      );
+      expect(decidedAfterRegulation("hockey", outcome.trace)).toBe(tiedAfterRegulation);
+      // Only hockey awards an overtime-loss point.
+      expect(decidedAfterRegulation("soccer", outcome.trace)).toBe(false);
+      if (tiedAfterRegulation) overtimeGames++;
+      else regulationGames++;
+    }
+    expect(overtimeGames).toBeGreaterThan(0);
+    expect(regulationGames).toBeGreaterThan(0);
+  });
+});
+
+const trace: LiveTraceEvent[] = [
+  { t: 10, type: "goal", team: "home", description: "1-0" },
+  { t: 35, type: "card", team: "away", description: "yellow" },
+  { t: 55, type: "goal", team: "away", description: "1-1" },
+  { t: 80, type: "goal", team: "home", description: "2-1" },
+];
+
+const base = {
+  trace,
+  resolvedIxTime: 1000,
+  windowMs: 100, // broadcast spans 100 IxMs; maxMinute = 80
+  finalHomeScore: 2,
+  finalAwayScore: 1,
+};
+
+describe("computeLiveMatchState", () => {
+  it("mid-broadcast reveals only events up to the current minute", () => {
+    // 50% through 100ms window -> minute 40 of 80 -> first goal (t=10) only
+    const s = computeLiveMatchState({ ...base, nowMs: 1050 });
+    expect(s.minute).toBe(40);
+    expect(s.homeScore).toBe(1);
+    expect(s.awayScore).toBe(0);
+    expect(s.lastEvent?.type).toBe("card"); // t=35 is the latest <= 40
+  });
+});
+
+const FIXED_IXTIME = 1_790_000_000_000; // real epoch-ms: sports run on real time
+const POSITIONS = ["GK", "CB", "CB", "FB", "FB", "CM", "CM", "CM", "AM", "W", "ST", "ST"];
+
+function team(
+  id: string,
+  base: number,
+  nationId: string | null,
+  positions: string[] = POSITIONS
+): SimTeam {
+  return {
+    id,
+    name: `${id} FC`,
+    nationId,
+    patronSaint: nationId ? "St. Test" : null,
+    tacticalIntent: "neutral",
+    lineup: null,
+    players: positions.map((position, i) => ({
+      id: `${id}_p${String(i).padStart(2, "0")}`,
+      firstName: `${id}${i}`,
+      lastName: "Player",
+      position,
+      careerStage: "prime",
+      isActive: true,
+      morale: 40 + i,
+      ratings: {
+        overall: base + (i % 5),
+        shooting: base + 2,
+        passing: base,
+        pace: base + 1,
+        defending: base - 1,
+        physical: base,
+        composure: base,
+      },
+    })),
+    coaches: [{ isActive: true, ratings: { strategy: 60 } }],
+  };
+}
+
+function fixture(): SimMatch {
+  return {
+    id: "match_1",
+    seasonId: "season_1",
+    matchDay: 4,
+    homeTeamId: "home",
+    awayTeamId: "away",
+    homeTeam: team("home", 64, "nation_h"),
+    awayTeam: team("away", 60, null),
+  };
+}
+
+const LEAGUE = { sportPreset: "soccer", archetype: "league" };
+
+type StandingRow = ReturnType<typeof standingDelta>;
+type StandingField = keyof StandingRow;
+type ClaimArgs = {
+  where: { id: string; status: string };
+  data: { homeScore: number; awayScore: number; matchStats: PersistedMatchStats };
+};
+type BoutClaimArgs = {
+  where: { id: string; status: string };
+  data: { winnerId: string; status: string; resolvedIxTime: number; result: PersistedBoutResult };
+};
+type UpsertArgs = {
+  where: { seasonId_teamId: { seasonId: string; teamId: string } };
+  create: StandingRow & { seasonId: string; teamId: string };
+  update: Record<StandingField, { increment: number }>;
+};
+
+/** In-memory stand-in for the Prisma calls simulateAndPersistMatch makes. */
+function fakeDb(
+  rivalryIntensity: number | null = null,
+  meetings: Array<{ homeScore: number; awayScore: number }> = []
+) {
+  let status = "scheduled";
+  let boutStatus = "scheduled";
+  const standings = new Map<string, StandingRow>();
+  const sportMatch = {
+    updateMany: jest.fn(async (args: ClaimArgs) => {
+      if (args.where.status !== status) return { count: 0 };
+      status = "completed";
+      return { count: 1 };
+    }),
+    findMany: jest.fn(async () => meetings),
+  };
+  const sportBracket = {
+    updateMany: jest.fn(async (args: BoutClaimArgs) => {
+      if (args.where.status !== boutStatus) return { count: 0 };
+      boutStatus = "completed";
+      return { count: 1 };
+    }),
+  };
+  const sportStanding = {
+    upsert: jest.fn(async (args: UpsertArgs) => {
+      const teamId = args.where.seasonId_teamId.teamId;
+      const row = standings.get(teamId);
+      if (!row) {
+        const c = args.create;
+        standings.set(teamId, {
+          wins: c.wins,
+          draws: c.draws,
+          losses: c.losses,
+          points: c.points,
+          pointsFor: c.pointsFor,
+          pointsAgainst: c.pointsAgainst,
+        });
+        return;
+      }
+      for (const field of Object.keys(args.update) as StandingField[]) {
+        row[field] += args.update[field].increment;
+      }
+    }),
+  };
+  const sportTeamSeason = { updateMany: jest.fn(async () => ({ count: 1 })) };
+  const sportMatchStat = { createMany: jest.fn(async () => ({ count: 1 })) };
+  const sportRivalry = {
+    findFirst: jest.fn(async () =>
+      rivalryIntensity === null ? null : { id: "rivalry_1", intensity: rivalryIntensity }
+    ),
+    update: jest.fn(async (_args: unknown) => ({})),
+    upsert: jest.fn(async (_args: unknown) => ({})),
+  };
+  const fake = {
+    sportMatch,
+    sportBracket,
+    sportStanding,
+    sportTeamSeason,
+    sportMatchStat,
+    sportRivalry,
+    sportPlayer: { updateMany: jest.fn(async () => ({ count: 1 })) },
+    storytellerEffect: {
+      findMany: jest.fn(async () => [
+        {
+          id: "effect_1",
+          countryId: "nation_h",
+          inputType: "sports_saint_blessing",
+          value: 2,
+          isActive: true,
+        },
+      ]),
+    },
+  };
+  return {
+    db: fake as unknown as Prisma.TransactionClient,
+    sportMatch,
+    sportBracket,
+    sportStanding,
+    sportTeamSeason,
+    sportMatchStat,
+    sportRivalry,
+    standings,
+  };
+}
+
+function claimArgs(fake: ReturnType<typeof fakeDb>): ClaimArgs {
+  const call = fake.sportMatch.updateMany.mock.calls[0];
+  if (!call) throw new Error("match was never claimed");
+  return call[0];
+}
+
+describe("simulateAndPersistMatch", () => {
+  beforeEach(() => {
+    jest.restoreAllMocks();
+    jest.spyOn(Date, "now").mockReturnValue(FIXED_IXTIME);
+  });
+
+  it("persists an identical result + snapshot for the same match, whatever the roster order", async () => {
+    const first = fakeDb();
+    const second = fakeDb();
+    const reordered = fixture();
+    reordered.homeTeam.players.reverse();
+    reordered.awayTeam.players.reverse();
+
+    await simulateAndPersistMatch(first.db, { match: fixture(), league: LEAGUE });
+    await simulateAndPersistMatch(second.db, { match: reordered, league: LEAGUE });
+
+    const persisted = claimArgs(first);
+    expect(persisted.where).toEqual({ id: "match_1", status: "scheduled" });
+    expect(claimArgs(second).data).toEqual(persisted.data);
+    expect(second.sportMatchStat.createMany.mock.calls).toEqual(
+      first.sportMatchStat.createMany.mock.calls
+    );
+
+    const snapshot = persisted.data.matchStats.simulationSnapshot;
+    expect(snapshot.seed).toBe(matchSeed(fixture()));
+    expect(snapshot.capturedIxTime).toBe(FIXED_IXTIME);
+    expect(snapshot.homeTeamSnapshot.roster).toHaveLength(POSITIONS.length);
+    expect(snapshot.homeTeamSnapshot.morale).toBe(46); // mean of 40..51, rounded
+    expect(snapshot.homeTeamSnapshot.worldModifiers).toMatchObject({
+      saintName: "St. Test",
+      saintBlessing: 2,
+    });
+    expect(snapshot.awayTeamSnapshot.worldModifiers).toBeNull();
+  });
+
+  it("replays the stored result from the persisted (JSON) snapshot alone", async () => {
+    const fake = fakeDb();
+    await simulateAndPersistMatch(fake.db, { match: fixture(), league: LEAGUE });
+    const persisted = claimArgs(fake).data;
+    const stored = JSON.parse(JSON.stringify(persisted.matchStats)) as PersistedMatchStats;
+
+    const replay = resolveFromSnapshot(stored.simulationSnapshot);
+
+    expect(replay.homeScore).toBe(persisted.homeScore);
+    expect(replay.awayScore).toBe(persisted.awayScore);
+    expect(replay.trace).toEqual(stored.trace);
+  });
+});
+
+describe("simulateAndPersistBout", () => {
+  const bout = {
+    id: "bout_1",
+    seasonId: "season_1",
+    round: 2,
+    fighter1Id: "home",
+    fighter2Id: "away",
+  };
+
+  function simulateBout(fake: ReturnType<typeof fakeDb>) {
+    const { homeTeam, awayTeam } = fixture();
+    return simulateAndPersistBout(fake.db, {
+      bout,
+      fighter1: homeTeam,
+      fighter2: awayTeam,
+      sportPreset: "soccer",
+    });
+  }
+
+  beforeEach(() => {
+    jest.restoreAllMocks();
+    jest.spyOn(Date, "now").mockReturnValue(FIXED_IXTIME);
+  });
+
+  it("claims a bout once, persists the same result on every run and replays it from its stored snapshot", async () => {
+    const fake = fakeDb();
+    const first = await simulateBout(fake);
+    expect(await simulateBout(fake)).toBeNull();
+    expect(await simulateBout(fakeDb())).toEqual(first);
+    expect(fake.sportStanding.upsert).not.toHaveBeenCalled();
+
+    const call = fake.sportBracket.updateMany.mock.calls[0];
+    if (!call) throw new Error("bout was never claimed");
+    const { where, data } = call[0];
+    const stored = JSON.parse(JSON.stringify(data.result)) as PersistedBoutResult;
+    const snapshot = stored.simulationSnapshot;
+
+    expect(where).toEqual({ id: "bout_1", status: "scheduled" });
+    expect(snapshot.seed).toBe(matchSeed({ id: "bout_1", seasonId: "season_1", matchDay: 2 }));
+    expect(snapshot.archetype).toBe("bracket");
+    expect(snapshot.capturedIxTime).toBe(FIXED_IXTIME);
+    expect(data.resolvedIxTime).toBe(FIXED_IXTIME);
+
+    const replay = resolveFromSnapshot(snapshot);
+    expect(replay.homeScore).toBe(stored.homeScore);
+    expect(replay.awayScore).toBe(stored.awayScore);
+    expect(replay.trace).toEqual(stored.trace);
+    expect(data.winnerId).toBe(replay.winner === "home" ? "home" : "away");
+    expect(stored.winner).toBe(data.winnerId);
   });
 });

@@ -1,11 +1,12 @@
 import { z } from "zod";
-import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, standardMutationMapFeatureOwnerProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
-import { clipAndValidatePolygon } from "~/lib/maps/geo-validation";
+import { clipAndValidatePolygon, COUNTRY_BORDER_SQL } from "~/lib/maps/geo-validation";
 import { generateProvinces } from "~/lib/maps/province-generator";
 import { syncGeographicDemographics } from "~/lib/country-geo/sync";
+import { assertOwnCountry } from "../../core/shared";
 
 export const geoFeaturesSubdivisionsGenerationRouter = createTRPCRouter({
   /**
@@ -13,7 +14,7 @@ export const geoFeaturesSubdivisionsGenerationRouter = createTRPCRouter({
    * Reduces vertex count using Douglas-Peucker, sanitizes shapes,
    * and snaps shared borders between neighbors.
    */
-  simplifySubdivisions: standardMutationCountryOwnerProcedure
+  simplifySubdivisions: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -21,13 +22,11 @@ export const geoFeaturesSubdivisionsGenerationRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       const subdivisions = await ctx.db.subdivision.findMany({
-        where: { countryId: input.countryId },
+        // An owner's batch leaves admin-locked subdivisions (PL-21) as they are
+        where: { countryId: input.countryId, ...(ctx.country ? { editableByOwner: true } : {}) },
         take: 200,
         select: { id: true, name: true, geometry: true },
       });
@@ -92,7 +91,7 @@ export const geoFeaturesSubdivisionsGenerationRouter = createTRPCRouter({
    * provinces using Voronoi tessellation. Each cell is clipped to the country
    * border via clipAndValidatePolygon and bulk-created as an approved Subdivision.
    */
-  commitGeneratedSubdivisions: standardMutationCountryOwnerProcedure
+  commitGeneratedSubdivisions: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -102,17 +101,11 @@ export const geoFeaturesSubdivisionsGenerationRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
-      // Load country geometry from the map_layers table (needed for the pure-math generator)
-      const rows = await ctx.db.$queryRawUnsafe<Array<{ geom_geojson: string }>>(
-        `SELECT ST_AsGeoJSON(geom_postgis) as geom_geojson
-         FROM map_layers
-         WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL
-         LIMIT 1`,
+      // Load the country's border in its own realm (needed for the pure-math generator)
+      const rows = await ctx.db.$queryRawUnsafe<Array<{ geom_geojson: string | null }>>(
+        `SELECT ST_AsGeoJSON(${COUNTRY_BORDER_SQL}) as geom_geojson`,
         input.countryId
       );
       if (rows.length === 0 || !rows[0]?.geom_geojson) {

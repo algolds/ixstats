@@ -21,7 +21,7 @@ export class QueryPerformanceMonitor {
   // Fixed-size ring buffer: recording is O(1) with no per-query array reallocation
   private readonly buffer: QueryMetrics[] = [];
   private readonly capacity: number;
-  private readonly slowThresholdMs: number;
+  readonly slowThresholdMs: number;
   private head = 0; // next write position
   private count = 0;
 
@@ -53,17 +53,6 @@ export class QueryPerformanceMonitor {
 
   getMetrics(): QueryMetrics[] {
     return this.snapshot();
-  }
-
-  getAverageDuration(queryKey: string): number {
-    const relevant = this.snapshot().filter((m) => m.queryKey === queryKey && m.success);
-    if (relevant.length === 0) return 0;
-
-    return relevant.reduce((sum, m) => sum + m.duration, 0) / relevant.length;
-  }
-
-  getSlowQueries(threshold = 100): QueryMetrics[] {
-    return this.snapshot().filter((m) => m.duration > threshold && m.success);
   }
 
   clearMetrics(): void {

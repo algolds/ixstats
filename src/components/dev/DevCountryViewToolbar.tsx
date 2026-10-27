@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from "react";
 // oxlint-disable-next-line eslint/no-unused-vars
 import {
-  Globe,
   Undo as RotateCcw,
   Eye,
   NavArrowDown as ChevronDown,
@@ -81,7 +80,7 @@ export function DevCountryViewToolbar() {
       <button
         onClick={() => setToolbarExpanded(true)}
         className={cn(
-          "fixed right-4 bottom-4 z-50",
+          "fixed right-4 bottom-[calc(var(--shell-tabbar-height)+1rem)] z-50",
           "flex items-center gap-2 px-3 py-2",
           "rounded-full shadow-lg",
           "border backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105",
@@ -89,7 +88,7 @@ export function DevCountryViewToolbar() {
             ? "border-amber-500 bg-amber-500/20 text-amber-300"
             : "border-blue-500 bg-blue-500/20 text-blue-300"
         )}
-        title="Developer Country View"
+        title="Developer country view"
       >
         <Eye className="h-4 w-4" />
         <span className="text-xs font-semibold">DEV</span>
@@ -104,7 +103,7 @@ export function DevCountryViewToolbar() {
   return (
     <div
       className={cn(
-        "fixed right-4 bottom-4 z-50 w-80",
+        "fixed right-4 bottom-[calc(var(--shell-tabbar-height)+1rem)] z-50 w-80",
         "rounded-xl p-4 shadow-2xl",
         "border backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform]",
         isViewingOtherCountry
@@ -118,7 +117,7 @@ export function DevCountryViewToolbar() {
           <Eye
             className={cn("h-5 w-5", isViewingOtherCountry ? "text-amber-400" : "text-blue-400")}
           />
-          <span className="text-sm font-bold text-white">Dev Country View</span>
+          <span className="text-sm font-bold text-white">Dev country view</span>
         </div>
         <button
           onClick={() => setToolbarExpanded(false)}

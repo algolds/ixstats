@@ -7,14 +7,14 @@ import { z } from "zod";
 
 export type WikiQuery = <T>(params: Record<string, string>, schema: z.ZodType<T>) => Promise<T>;
 
-export interface CrawlOptions {
+interface CrawlOptions {
   rootCategory: string; // "Category:Eurth"
   keyword: string; // "Eurth" — only subcategories containing it are followed
   maxDepth?: number; // default 5
   maxPages?: number; // default 5000
 }
 
-export interface CrawlResult {
+interface CrawlResult {
   pages: string[];
   categoriesVisited: string[];
   /** True when the page cap or the depth cap stopped the crawl before the tree was exhausted. */
@@ -26,13 +26,13 @@ const NS_CATEGORY = 14;
 const SKIP_SUBCATEGORY = /\b(redirects|templates|users|stubs)\b/i;
 
 /** MediaWiki continuation: every value is passed back verbatim on the next request. */
-const ContinueSchema = z.record(z.string(), z.string()).optional();
+export const ContinueSchema = z.record(z.string(), z.string()).optional();
 
 /**
  * Runs a query, following MediaWiki continuation until the wiki stops returning a `continue` object. A repeated
  * `continue` (e.g. a proxy that strips continue params) throws rather than looping forever.
  */
-async function queryAll<T extends { continue?: Record<string, string> }>(
+export async function queryAll<T extends { continue?: Record<string, string> }>(
   query: WikiQuery,
   params: Record<string, string>,
   schema: z.ZodType<T>
@@ -181,7 +181,52 @@ export async function listRosterNations(query: WikiQuery, rosterCategory: string
   return [...titles].sort();
 }
 
-export type NationMethod = { kind: "infobox" } | { kind: "roster"; roster: string };
+/** What the import script was given on its command line (each flag optional). */
+export interface LoreImportArgs {
+  source?: string;
+  category?: string;
+  keyword?: string;
+  roster?: string;
+}
+
+export interface LoreImportOptions {
+  source: string;
+  category: string;
+  keyword: string;
+  roster: string | undefined;
+}
+
+/** The part of a realm's wiki settings (`realm-wiki-settings.ts`) the import reads. */
+export interface LoreImportDefaults {
+  source: string;
+  rootCategory: string;
+  keyword: string;
+  rosterCategory: string | null;
+}
+
+/**
+ * The import's options: a flag given on the command line wins, else the realm's wiki settings fill it, so
+ * `--realm eurth` alone is enough once the realm's wiki is configured. The settings apply only to their own wiki:
+ * with `--source` naming another wiki, every other value must be given too. Throws naming what is still missing.
+ */
+export function loreImportOptions(args: LoreImportArgs, defaults: LoreImportDefaults | null): LoreImportOptions {
+  const fill = defaults && (args.source === undefined || args.source === defaults.source) ? defaults : null;
+  const options = {
+    source: args.source ?? fill?.source,
+    category: args.category ?? fill?.rootCategory,
+    keyword: args.keyword ?? fill?.keyword,
+    roster: args.roster ?? fill?.rosterCategory ?? undefined,
+  };
+  const missing = (["source", "category", "keyword"] as const).filter((key) => !options[key]);
+  if (missing.length > 0) {
+    throw new Error(
+      `missing ${missing.map((key) => `--${key}`).join(", ")}: pass them, or set the realm's wiki in /admin/realms → Wiki`
+    );
+  }
+  return options as LoreImportOptions;
+}
+
+type NationMethod = { kind: "infobox" } | { kind: "roster"; roster: string };
 
 const RETIRED_ROSTER = /retired/i;
 
@@ -203,4 +248,60 @@ export async function indexNations(
   if (method.kind === "infobox") return { pages: crawled, nations: await detectNationTitles(query, crawled) };
   const nations = new Set(await listRosterNations(query, method.roster));
   return { pages: [...new Set([...crawled, ...nations])].sort(), nations };
+}
+
+/**
+ * Roster nations the crawl did not find, sorted. They join the index anyway (`indexNations`), but each is worth a
+ * look before applying: a page renamed or outside the category tree, or a roster entry that is not a nation.
+ */
+export function rosterTitlesNotCrawled(crawled: string[], nations: Iterable<string>): string[] {
+  const found = new Set(crawled);
+  return [...nations].filter((title) => !found.has(title)).sort();
+}
+
+/** Words that name a kind of page rather than a nation ("Cities of Aurelia", "Flags (Eurth)", "Eurth maps"). */
+const NON_NATION_ENTRY =
+  /\b(?:categor(?:y|ies)|templates?|maps?|flags?|cities|towns|people|history|geography|politics|economy|culture|military|lists?|images|files|portals?|stubs?|redirects?|users?)\b/i;
+
+/**
+ * Roster entries that look like a subcategory of pages rather than a nation, sorted. Only a warning: a
+ * conservative word list, so a real nation that happens to match is never dropped from the index.
+ */
+export function suspectRosterEntries(nations: Iterable<string>): string[] {
+  return [...nations].filter((title) => NON_NATION_ENTRY.test(title)).sort();
+}
+
+/**
+ * The indexed titles a re-import may delete: those no longer in the index, less the protected ones (a page with
+ * a pending or approved claim, or a nation's Country, which name their page by title). Both lists sorted.
+ */
+export function prunableTitles(
+  indexed: string[],
+  pages: string[],
+  protectedTitles: Iterable<string>
+): { prune: string[]; kept: string[] } {
+  const current = new Set(pages);
+  const guarded = new Set(protectedTitles);
+  const stale = indexed.filter((title) => !current.has(title)).sort();
+  return {
+    prune: stale.filter((title) => !guarded.has(title)),
+    kept: stale.filter((title) => guarded.has(title)),
+  };
+}
+
+/**
+ * The pages a re-import may turn into lore: the titles detection now calls lore, less the protected ones (a page
+ * with a pending or approved claim, or a nation's Country). A claimed nation page stays a nation even when the
+ * roster no longer lists it. Both lists sorted.
+ */
+export function loreDowngrades(
+  loreTitles: string[],
+  protectedTitles: Iterable<string>
+): { downgrade: string[]; kept: string[] } {
+  const guarded = new Set(protectedTitles);
+  const sorted = [...loreTitles].sort();
+  return {
+    downgrade: sorted.filter((title) => !guarded.has(title)),
+    kept: sorted.filter((title) => guarded.has(title)),
+  };
 }

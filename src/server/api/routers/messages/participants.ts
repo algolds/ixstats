@@ -3,19 +3,19 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { createMessagingService } from "~/server/modules/messaging";
-import { notificationAPI } from "~/lib/notifications/api";
-import { getThinkPagesBroadcaster } from "~/server/websocket-server";
-import { forumBridge } from "~/server/modules/forum";
-import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
+import { messagingFor, mapMessagingErrors } from "./_service";
 
 export const messagesParticipantsRouter = createTRPCRouter({
   /**
    * Leave a conversation (marks participant as inactive).
    */
-  leaveConversation: protectedProcedure
+  leaveConversation: rateLimitedMutationProcedure
     .input(
       z.object({
         conversationId: z.string(),
@@ -31,13 +31,7 @@ export const messagesParticipantsRouter = createTRPCRouter({
         });
       }
 
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
       return await messagingService.leaveConversation(principalId, {
         conversationId: input.conversationId,
@@ -47,7 +41,7 @@ export const messagesParticipantsRouter = createTRPCRouter({
   /**
    * Add a participant to a conversation.
    */
-  addParticipant: protectedProcedure
+  addParticipant: rateLimitedMutationProcedure
     .input(
       z.object({
         conversationId: z.string(),
@@ -55,40 +49,26 @@ export const messagesParticipantsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
-      try {
-        return await messagingService.addParticipant(ctx.auth.userId, {
-          conversationId: input.conversationId,
-          targetUserId: input.userId,
-        });
-      } catch (err: any) {
-        if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You must be an active participant to add others",
-          });
+      return await mapMessagingErrors(
+        () =>
+          messagingService.addParticipant(ctx.auth.userId, {
+            conversationId: input.conversationId,
+            targetUserId: input.userId,
+          }),
+        {
+          forbidden:
+            "Only an active participant can add others, and not to a direct message or a ThinkTank chat",
+          notFound: "Conversation not found",
         }
-        if (err.name === "MessagingNotFoundError") {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Conversation not found",
-          });
-        }
-        throw err;
-      }
+      );
     }),
 
   /**
    * Mark messages as read.
    */
-  markMessagesAsRead: protectedProcedure
+  markMessagesAsRead: rateLimitedMutationProcedure
     .input(
       z.object({
         conversationId: z.string(),
@@ -97,34 +77,52 @@ export const messagesParticipantsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
-      try {
-        return await messagingService.markMessagesAsRead(ctx.auth.userId, {
-          conversationId: input.conversationId,
-          messageIds: input.messageIds,
-        });
-      } catch (err: any) {
-        if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You are not an active participant in this conversation",
-          });
+      return await mapMessagingErrors(
+        () =>
+          messagingService.markMessagesAsRead(ctx.auth.userId, {
+            conversationId: input.conversationId,
+            messageIds: input.messageIds,
+          }),
+        { forbidden: "You are not an active participant in this conversation" }
+      );
+    }),
+
+  /**
+   * Accept or decline a message request (SL-4).
+   */
+  respondToRequest: rateLimitedMutationProcedure
+    .input(z.object({ conversationId: z.string().min(1), accept: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const messagingService = messagingFor(ctx);
+      return await mapMessagingErrors(
+        () => messagingService.respondToRequest(ctx.auth.userId, input),
+        { forbidden: "You cannot answer this request", notFound: "Message request not found" }
+      );
+    }),
+
+  /**
+   * Read receipts (SL-4): when the other person in a direct conversation last read it, or null
+   * unless both of you allow read receipts.
+   */
+  getSeenState: protectedProcedure
+    .input(z.object({ conversationId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const messagingService = messagingFor(ctx);
+      return await mapMessagingErrors(
+        () => messagingService.getSeenState(ctx.auth.userId, input.conversationId),
+        {
+          forbidden: "You are not an active participant in this conversation",
+          notFound: "Conversation not found",
         }
-        throw err;
-      }
+      );
     }),
 
   /**
    * Search users for new conversation creation.
    */
-  searchUsers: publicProcedure
+  searchUsers: protectedProcedure
     .input(z.object({ query: z.string() }))
     .query(async ({ ctx, input }) => {
       if (input.query.length < 3) return [];
@@ -139,7 +137,13 @@ export const messagesParticipantsRouter = createTRPCRouter({
             ],
           },
         },
-        include: { country: true },
+        // Only the fields the compose/add-participant UI renders (clerkUserId is the
+        // participant identifier). Never return the full User/Country rows.
+        select: {
+          id: true,
+          clerkUserId: true,
+          country: { select: { name: true, slug: true, flag: true } },
+        },
         take: 10,
       });
 

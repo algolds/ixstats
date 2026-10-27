@@ -1,42 +1,47 @@
 "use client";
-// src/components/media-search/UploadTab.tsx
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "~/lib/utils";
 import { Upload, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
-import { withBasePath } from "~/lib/base-path";
+import { uploadImageFile, UploadImageError } from "~/lib/media/upload-image";
 
 interface UploadTabProps {
   onImageSelect: (imageUrl: string) => void;
   onClose: () => void;
-  onFileUpload?: (file: File) => Promise<void>;
   isUploading: boolean;
   setIsUploading: (val: boolean) => void;
 }
 
-export function UploadTab({
-  onImageSelect,
-  onClose,
-  onFileUpload,
-  isUploading,
-  setIsUploading,
-}: UploadTabProps) {
+export function UploadTab({ onImageSelect, onClose, isUploading, setIsUploading }: UploadTabProps) {
   const notify = useNotify();
   const [isDragging, setIsDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const uploadingRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(
+    () => () => {
+      abortRef.current?.abort();
+    },
+    []
+  );
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
 
-  const handleDragLeave = () => {
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Moving over a child of the drop zone also fires dragleave on the zone; that is not leaving it.
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
     setIsDragging(false);
   };
 
   const processUploadFile = useCallback(
     async (file: File) => {
+      if (uploadingRef.current) return;
       if (file.size > 5 * 1024 * 1024) {
         notify.error("File size exceeds 5MB limit");
         return;
@@ -55,52 +60,45 @@ export function UploadTab({
         return;
       }
 
+      uploadingRef.current = true;
+      const controller = new AbortController();
+      abortRef.current = controller;
       setIsUploading(true);
       try {
-        if (onFileUpload) {
-          await onFileUpload(file);
-        } else {
-          const formData = new FormData();
-          formData.append("file", file);
-
-          const response = await fetch(withBasePath("/api/upload/image"), {
-            method: "POST",
-            body: formData,
-          });
-
-          const result = await response.json();
-
-          if (result.success) {
-            onImageSelect(result.url);
-            onClose();
-            notify.success("Image uploaded successfully");
-          } else if (response.status === 401) {
-            notify.error("Authentication required", "You need to be signed in to upload images.");
-          } else if (response.status === 429) {
-            notify.error(
-              "Upload limit reached",
-              result.retryAfter
-                ? `Please try again in ${result.retryAfter} seconds.`
-                : "Please try again later."
-            );
-          } else {
-            notify.error(result.error || "Failed to upload image");
-          }
-        }
+        const url = await uploadImageFile(file, { signal: controller.signal });
+        if (controller.signal.aborted) return;
+        onImageSelect(url);
+        onClose();
+        notify.success("Image uploaded");
       } catch (error) {
-        console.error("Upload error:", error);
-        notify.error("Upload failed", "Could not connect to the server.");
+        if (controller.signal.aborted) return;
+        if (error instanceof UploadImageError && error.status === 401) {
+          notify.error("Authentication required", "You need to be signed in to upload images.");
+        } else if (error instanceof UploadImageError && error.status === 429) {
+          notify.error(
+            "Upload limit reached",
+            error.retryAfter
+              ? `Please try again in ${error.retryAfter} seconds.`
+              : "Please try again later."
+          );
+        } else if (error instanceof UploadImageError) {
+          notify.error(error.message || "Failed to upload image");
+        } else {
+          console.error("Upload error:", error);
+          notify.error("Upload failed", "Could not connect to the server.");
+        }
       } finally {
+        uploadingRef.current = false;
         setIsUploading(false);
       }
     },
-    [notify, onFileUpload, onImageSelect, onClose, setIsUploading]
+    [notify, onImageSelect, onClose, setIsUploading]
   );
 
   // Clipboard paste handler
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
-      if (isUploading) return;
+      if (uploadingRef.current) return;
       const items = e.clipboardData?.items;
       if (!items) return;
 
@@ -121,7 +119,7 @@ export function UploadTab({
     return () => {
       window.removeEventListener("paste", handlePaste);
     };
-  }, [isUploading, processUploadFile]);
+  }, [processUploadFile]);
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
@@ -139,27 +137,31 @@ export function UploadTab({
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onClick={() => document.getElementById("drag-upload-input")?.click()}
+          onClick={() => {
+            if (!isUploading) inputRef.current?.click();
+          }}
+          aria-disabled={isUploading}
           className={cn(
-            "flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed bg-slate-100/50 p-10 text-center backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] dark:bg-white/5",
+            "rounded-row bg-fill-2 flex min-h-[200px] cursor-pointer flex-col items-center justify-center border-2 border-dashed p-10 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+            isUploading && "pointer-events-none opacity-60",
             isDragging
-              ? "border-blue-500 bg-blue-500/5 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
-              : "border-border/40 hover:border-blue-400/50 hover:bg-slate-200/50 dark:hover:bg-white/10"
+              ? "border-tint bg-tint/5"
+              : "border-separator hover:border-tint/50 hover:bg-fill-2"
           )}
         >
           <Upload
             className={cn(
               "mb-4 h-10 w-10 transition-colors",
-              isDragging ? "text-blue-400" : "text-muted-foreground"
+              isDragging ? "text-tint" : "text-label-secondary"
             )}
           />
-          <h3 className="text-foreground mb-1 text-sm font-semibold">
+          <h3 className="text-label text-headline mb-1">
             {isDragging ? "Drop your file here" : "Drag, drop or paste your image"}
           </h3>
-          <p className="text-muted-foreground mb-4 text-xs">or click to browse local files</p>
+          <p className="text-label-secondary text-footnote mb-4">or click to browse local files</p>
           <input
             type="file"
-            id="drag-upload-input"
+            ref={inputRef}
             accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/svg+xml"
             className="hidden"
             onChange={async (e) => {
@@ -173,15 +175,15 @@ export function UploadTab({
           <Button
             onClick={(e) => {
               e.stopPropagation();
-              document.getElementById("drag-upload-input")?.click();
+              inputRef.current?.click();
             }}
             disabled={isUploading}
             size="sm"
-            className="h-8 text-xs font-semibold"
+            className="text-caption h-8 font-semibold"
           >
             {isUploading ? (
               <>
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Uploading...
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Uploading...
               </>
             ) : (
               "Select File"
@@ -191,7 +193,7 @@ export function UploadTab({
       </div>
 
       {/* Requirements low-contrast subtle footer */}
-      <div className="border-border/5 text-muted-foreground mt-6 flex justify-between border-t pt-4 text-xs">
+      <div className="border-separator text-label-secondary text-footnote mt-6 flex justify-between border-t pt-4">
         <span>Maximum size: 5MB</span>
         <span>Formats: PNG, JPG, GIF, WEBP, SVG</span>
         <span>Directly embeds in your content</span>

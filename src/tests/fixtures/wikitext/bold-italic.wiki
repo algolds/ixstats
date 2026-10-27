@@ -1,0 +1,10 @@
+'''''x''' y''
+
+''a'''b'''c''
+
+'''a''b'''c''
+
+This has '''bold text''' then ''italic text'' then '''''bold italic''''' end.
+
+'''Unclosed bold on this line
+and a second line.

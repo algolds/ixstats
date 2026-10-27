@@ -1,8 +1,6 @@
-import type { RefractionMode } from "./FeaturedImageRefraction";
-
 export type WikiHeroVariant = "editorial-masthead" | "sculpted-emblem";
 
-export interface FeaturedArticleData {
+interface FeaturedArticleData {
   title: string;
   slug: string;
   imgSrc: string | null;
@@ -18,13 +16,14 @@ export interface FeaturedArticleData {
 }
 
 export interface WikiHeroProps {
+  /** Counts from the database; a count that could not be read is null and left out of the page. */
   siteStats?: {
-    articles?: number;
-    edits?: number;
-    users?: number;
-    activeUsers?: number;
-    images?: number;
-    countries?: number;
+    articles?: number | null;
+    edits?: number | null;
+    users?: number | null;
+    activeUsers?: number | null;
+    images?: number | null;
+    countries?: number | null;
   };
   activePrompt?: {
     title: string;
@@ -38,13 +37,9 @@ export interface WikiHeroProps {
     timestamp: string;
     comment?: string;
   } | null;
-  totalNations?: number;
   featuredArticleHtml?: string | null;
   featuredArticleData?: FeaturedArticleData | null;
   variant?: WikiHeroVariant;
   onSelectVariant?: (variant: WikiHeroVariant) => void;
-  refractionMode?: RefractionMode;
-  onSelectRefractionMode?: (mode: RefractionMode) => void;
-  onOpenSearch?: () => void;
   onOpenBlurbs?: () => void;
 }

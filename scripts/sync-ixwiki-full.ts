@@ -9,17 +9,11 @@
  *   bun run scripts/sync-ixwiki-full.ts --limit=100
  */
 
+import "./lib/load-env"; // first: the config below reads process.env when it loads
 import { PrismaClient } from "@prisma/client";
 import mysql from "mysql2/promise";
-import dotenv from "dotenv";
-import {
-  cleanExcerpt,
-  extractLeadImageFromWikitext,
-} from "../src/lib/wiki-os/transformers/excerpt";
-
-dotenv.config({ path: ".env.local.dev" });
-dotenv.config({ path: ".env.local" });
-dotenv.config({ path: ".env" });
+import { extractLeadImagePath } from "../src/lib/wiki-os/transformers/image-url";
+import { cleanExcerpt } from "../src/lib/wiki-os/transformers/wikitext-parser";
 
 const prisma = new PrismaClient({
   datasources: {
@@ -32,7 +26,13 @@ const prisma = new PrismaClient({
 const IXWIKI_DB_HOST = process.env.IXWIKI_DB_HOST || "localhost";
 const IXWIKI_DB_PORT = parseInt(process.env.IXWIKI_DB_PORT || "13306", 10);
 const IXWIKI_DB_USER = process.env.IXWIKI_DB_USER || "ixwiki";
-const IXWIKI_DB_PASSWORD = process.env.IXWIKI_DB_PASSWORD || "Multico1!";
+const IXWIKI_DB_PASSWORD = process.env.IXWIKI_DB_PASSWORD;
+if (!IXWIKI_DB_PASSWORD) {
+  console.error(
+    "IXWIKI_DB_PASSWORD is not set. Export it (or add it to .env.local) before running this script; no default is provided."
+  );
+  process.exit(1);
+}
 const IXWIKI_DB_NAME = process.env.IXWIKI_DB_NAME || "ixwiki";
 
 function sanitize(str: string | null | undefined): string {
@@ -138,7 +138,13 @@ async function main() {
 
         // Precompute clean excerpt and lead image
         const summary = cleanExcerpt(wikitext, 300);
-        const leadImageUrl = extractLeadImageFromWikitext(wikitext);
+        const leadImageUrl = extractLeadImagePath(wikitext);
+
+        // A changed text leaves the rendered view stale: readers re-render it on their next visit.
+        const textUnchanged =
+          (await prisma.wikiArticle.count({
+            where: { source: "ixwiki", title: fullTitle, wikitext },
+          })) > 0;
 
         const article = await prisma.wikiArticle.upsert({
           where: {
@@ -169,6 +175,7 @@ async function main() {
             namespace: ns,
             namespacePrefix: prefix || null,
             wikitext,
+            ...(textUnchanged ? {} : { htmlSyncedAt: null }),
             summary: summary || null,
             leadImageUrl: leadImageUrl || null,
             wordCount,
@@ -192,6 +199,7 @@ async function main() {
               data: {
                 articleId: article.id,
                 mwRevId: revId,
+                origin: "classic",
                 author,
                 summary: sanitize(row.comment_text || "Latest revision"),
                 wikitext,
@@ -258,6 +266,7 @@ async function main() {
               data: {
                 articleId: article.id,
                 mwRevId: revId,
+                origin: "classic",
                 author: sanitize(r.actor_name || "MediaWiki Editor"),
                 summary: sanitize(r.comment_text || ""),
                 wikitext: "", // Historical diff placeholder

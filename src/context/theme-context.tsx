@@ -2,35 +2,40 @@
 // src/context/theme-context.tsx
 
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
+import {
+  APPEARANCE_STORAGE_KEYS,
+  applyAppearance,
+  clampTextScale,
+} from "~/lib/design/appearance";
 
 export type Theme = "light" | "dark" | "system";
-export type TypographyPreset = "sovereign" | "national" | "swiss" | "apple";
 
 interface ThemeContextType {
   theme: Theme;
   effectiveTheme: "light" | "dark";
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
-  typographyPreset: TypographyPreset;
-  setTypographyPreset: (preset: TypographyPreset) => void;
   compactMode: boolean;
   setCompactMode: (compact: boolean) => void;
   toggleCompactMode: () => void;
   reduceAnimations: boolean;
   setReduceAnimations: (reduce: boolean) => void;
   toggleReduceAnimations: () => void;
-  lowFidelityMode: boolean;
-  setLowFidelityMode: (lowFidelity: boolean) => void;
-  toggleLowFidelityMode: () => void;
   enableTextures: boolean;
   setEnableTextures: (enable: boolean) => void;
   toggleEnableTextures: () => void;
-  interactiveHover: boolean;
-  setInteractiveHover: (hover: boolean) => void;
-  toggleInteractiveHover: () => void;
   showNsImporter: boolean;
   setShowNsImporter: (show: boolean) => void;
   toggleShowNsImporter: () => void;
+  /** Increase Contrast (`data-contrast="more"`); the OS setting applies regardless. */
+  increaseContrast: boolean;
+  setIncreaseContrast: (more: boolean) => void;
+  /** Reduce Transparency (`data-transparency="reduced"`); the OS setting applies regardless. */
+  reduceTransparency: boolean;
+  setReduceTransparency: (reduce: boolean) => void;
+  /** Text size multiplier (`--text-scale`, 0.9–1.3). */
+  textScale: number;
+  setTextScale: (scale: number) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -44,149 +49,110 @@ interface ThemeProviderProps {
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  storageKey = "ixstats-theme",
+  storageKey = APPEARANCE_STORAGE_KEYS.theme,
 }: ThemeProviderProps) {
+  // Initial values match the server render; the pre-paint script in layout.tsx has already
+  // written the stored preferences onto <html>, and the effect below loads them into state.
   const [theme, setThemeState] = useState<Theme>(defaultTheme);
-  const [effectiveTheme, setEffectiveTheme] = useState<"light" | "dark">("dark");
+  const [systemTheme, setSystemTheme] = useState<"light" | "dark">("dark");
   const [compactMode, setCompactModeState] = useState<boolean>(false);
   const [reduceAnimations, setReduceAnimationsState] = useState<boolean>(false);
-  const [lowFidelityMode, setLowFidelityModeState] = useState<boolean>(false);
   const [enableTextures, setEnableTexturesState] = useState<boolean>(true);
-  const [interactiveHover, setInteractiveHoverState] = useState<boolean>(true);
   const [showNsImporter, setShowNsImporterState] = useState<boolean>(false);
-  const [typographyPreset, setTypographyPresetState] = useState<TypographyPreset>("swiss");
+  const [increaseContrast, setIncreaseContrastState] = useState<boolean>(false);
+  const [reduceTransparency, setReduceTransparencyState] = useState<boolean>(false);
+  const [textScale, setTextScaleState] = useState<number>(1);
+  const [soundOff, setSoundOff] = useState<boolean>(false);
+  // Don't write to <html> until stored settings are loaded, so the defaults above never
+  // overwrite what the pre-paint script applied.
+  const [loaded, setLoaded] = useState(false);
 
-  // Initialize theme and compact mode from localStorage
+  // Initialize settings from localStorage
   useEffect(() => {
+    const readBool = (key: string): boolean | null => {
+      const value = localStorage.getItem(key);
+      return value === null ? null : value === "true";
+    };
     try {
       const storedTheme = localStorage.getItem(storageKey) as Theme | null;
       if (storedTheme && ["light", "dark", "system"].includes(storedTheme)) {
         setThemeState(storedTheme);
       }
 
-      const storedTypography = localStorage.getItem("ixstats-typography") as TypographyPreset | null;
-      if (storedTypography && ["sovereign", "national", "swiss", "apple"].includes(storedTypography)) {
-        setTypographyPresetState(storedTypography);
-      } else {
-        setTypographyPresetState("swiss");
-      }
-
-      const storedCompactMode = localStorage.getItem("ixstats-compact-mode");
-      if (storedCompactMode !== null) {
-        setCompactModeState(storedCompactMode === "true");
-      }
-
-      const storedReduceAnimations = localStorage.getItem("ixstats-reduce-animations");
-      if (storedReduceAnimations !== null) {
-        setReduceAnimationsState(storedReduceAnimations === "true");
-      }
-
-      const storedLowFidelityMode = localStorage.getItem("ixstats-low-fidelity");
-      if (storedLowFidelityMode !== null) {
-        setLowFidelityModeState(storedLowFidelityMode === "true");
-      }
-
-      const storedEnableTextures = localStorage.getItem("ixstats-enable-textures");
-      if (storedEnableTextures !== null) {
-        setEnableTexturesState(storedEnableTextures === "true");
-      }
-
-      const storedInteractiveHover = localStorage.getItem("ixstats-interactive-hover");
-      if (storedInteractiveHover !== null) {
-        setInteractiveHoverState(storedInteractiveHover === "true");
-      }
-
-      const storedShowNsImporter = localStorage.getItem("ixstats-show-ns-importer");
-      if (storedShowNsImporter !== null) {
-        setShowNsImporterState(storedShowNsImporter === "true");
-      }
+      const k = APPEARANCE_STORAGE_KEYS;
+      const compact = readBool(k.compactMode);
+      if (compact !== null) setCompactModeState(compact);
+      const reduce = readBool(k.reduceAnimations);
+      if (reduce !== null) setReduceAnimationsState(reduce);
+      const textures = readBool(k.enableTextures);
+      if (textures !== null) setEnableTexturesState(textures);
+      const nsImporter = readBool("ixstats-show-ns-importer");
+      if (nsImporter !== null) setShowNsImporterState(nsImporter);
+      const contrast = readBool(k.increaseContrast);
+      if (contrast !== null) setIncreaseContrastState(contrast);
+      const transparency = readBool(k.reduceTransparency);
+      if (transparency !== null) setReduceTransparencyState(transparency);
+      const scale = parseFloat(localStorage.getItem(k.textScale) ?? "");
+      if (!Number.isNaN(scale)) setTextScaleState(clampTextScale(scale));
+      setSoundOff(localStorage.getItem(k.soundEnabled) === "false");
     } catch (error) {
       console.warn("Failed to load theme settings from localStorage:", error);
     }
+    setLoaded(true);
   }, [storageKey]);
 
-  // Memoize system theme detection and update effective theme
-  const systemTheme = useMemo(() => {
-    if (typeof window === "undefined") return "dark";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }, []);
-
-  // Update effective theme with better performance
+  // Follow the OS appearance (used when theme === "system")
   useEffect(() => {
-    const newEffectiveTheme = theme === "system" ? systemTheme : theme;
-    if (newEffectiveTheme !== effectiveTheme) {
-      setEffectiveTheme(newEffectiveTheme);
-    }
-  }, [theme, systemTheme, effectiveTheme]);
-
-  // Listen for system theme changes - optimized
-  useEffect(() => {
-    if (theme !== "system") return;
-
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
+    setSystemTheme(mediaQuery.matches ? "light" : "dark");
     const handleChange = (e: MediaQueryListEvent) => {
-      setEffectiveTheme(e.matches ? "dark" : "light");
+      setSystemTheme(e.matches ? "light" : "dark");
     };
-
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
-  }, [theme]);
+  }, []);
 
-  // Apply theme and compact mode to document - debounced for performance
+  // Mirror the Cuelume mute toggle into data-sound
   useEffect(() => {
-    const applyTheme = () => {
-      const root = document.documentElement;
-      root.classList.remove("light", "dark");
-      root.classList.add(effectiveTheme);
-
-      // Apply compact mode class
-      if (compactMode) {
-        root.classList.add("compact-mode");
-      } else {
-        root.classList.remove("compact-mode");
-      }
-
-      // Apply reduce animations class
-      if (reduceAnimations) {
-        root.classList.add("reduce-animations");
-      } else {
-        root.classList.remove("reduce-animations");
-      }
-
-      // Apply low fidelity class
-      if (lowFidelityMode) {
-        root.classList.add("low-fidelity");
-      } else {
-        root.classList.remove("low-fidelity");
-      }
-
-      // Set data attributes for CSS
-      root.setAttribute("data-theme", effectiveTheme);
-      root.setAttribute("data-typography", typographyPreset);
-      root.setAttribute("data-compact", compactMode.toString());
-      root.setAttribute("data-reduce-animations", reduceAnimations.toString());
-      root.setAttribute("data-low-fidelity", lowFidelityMode.toString());
-      root.setAttribute("data-enable-textures", enableTextures.toString());
-      root.setAttribute("data-interactive-hover", interactiveHover.toString());
-
-      // Update meta theme-color for mobile browsers
-      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-      if (metaThemeColor) {
-        metaThemeColor.setAttribute("content", effectiveTheme === "dark" ? "#1f2937" : "#ffffff");
-      }
+    const handleSound = (event: Event) => {
+      const enabled = (event as CustomEvent<{ enabled?: boolean }>).detail?.enabled;
+      if (typeof enabled === "boolean") setSoundOff(!enabled);
     };
+    window.addEventListener("ixstates-sound-settings-changed", handleSound);
+    return () => window.removeEventListener("ixstates-sound-settings-changed", handleSound);
+  }, []);
 
-    // Debounce theme application
-    const timeoutId = setTimeout(applyTheme, 0);
-    return () => clearTimeout(timeoutId);
+  const effectiveTheme: "light" | "dark" = theme === "system" ? systemTheme : theme;
+
+  // Apply preferences to <html> (same writer as the pre-paint script)
+  useEffect(() => {
+    if (!loaded) return;
+    applyAppearance(document.documentElement, {
+      theme: effectiveTheme,
+      compact: compactMode,
+      reduceMotion: reduceAnimations,
+      enableTextures,
+      increaseContrast,
+      reduceTransparency,
+      soundOff,
+      textScale,
+    });
+
+    // Update meta theme-color for mobile browsers
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute("content", effectiveTheme === "dark" ? "#0f1114" : "#f2f3f6");
+    }
   }, [
+    loaded,
     effectiveTheme,
-    typographyPreset,
     compactMode,
     reduceAnimations,
-    lowFidelityMode,
     enableTextures,
-    interactiveHover,
+    increaseContrast,
+    reduceTransparency,
+    soundOff,
+    textScale,
   ]);
 
   // Memoize theme functions to prevent re-renders
@@ -216,7 +182,7 @@ export function ThemeProvider({
   // Compact mode functions
   const setCompactMode = useCallback((compact: boolean) => {
     try {
-      localStorage.setItem("ixstats-compact-mode", compact.toString());
+      localStorage.setItem(APPEARANCE_STORAGE_KEYS.compactMode, compact.toString());
       setCompactModeState(compact);
     } catch (error) {
       console.warn("Failed to save compact mode to localStorage:", error);
@@ -230,7 +196,7 @@ export function ThemeProvider({
 
   const setReduceAnimations = useCallback((reduce: boolean) => {
     try {
-      localStorage.setItem("ixstats-reduce-animations", reduce.toString());
+      localStorage.setItem(APPEARANCE_STORAGE_KEYS.reduceAnimations, reduce.toString());
       setReduceAnimationsState(reduce);
     } catch (error) {
       console.warn("Failed to save reduce animations to localStorage:", error);
@@ -242,23 +208,9 @@ export function ThemeProvider({
     setReduceAnimations(!reduceAnimations);
   }, [reduceAnimations, setReduceAnimations]);
 
-  const setLowFidelityMode = useCallback((lowFidelity: boolean) => {
-    try {
-      localStorage.setItem("ixstats-low-fidelity", lowFidelity.toString());
-      setLowFidelityModeState(lowFidelity);
-    } catch (error) {
-      console.warn("Failed to save low fidelity to localStorage:", error);
-      setLowFidelityModeState(lowFidelity);
-    }
-  }, []);
-
-  const toggleLowFidelityMode = useCallback(() => {
-    setLowFidelityMode(!lowFidelityMode);
-  }, [lowFidelityMode, setLowFidelityMode]);
-
   const setEnableTextures = useCallback((enable: boolean) => {
     try {
-      localStorage.setItem("ixstats-enable-textures", enable.toString());
+      localStorage.setItem(APPEARANCE_STORAGE_KEYS.enableTextures, enable.toString());
       setEnableTexturesState(enable);
     } catch (error) {
       console.warn("Failed to save enable textures to localStorage:", error);
@@ -270,20 +222,6 @@ export function ThemeProvider({
     setEnableTextures(!enableTextures);
   }, [enableTextures, setEnableTextures]);
 
-  const setInteractiveHover = useCallback((hover: boolean) => {
-    try {
-      localStorage.setItem("ixstats-interactive-hover", hover.toString());
-      setInteractiveHoverState(hover);
-    } catch (error) {
-      console.warn("Failed to save interactive hover to localStorage:", error);
-      setInteractiveHoverState(hover);
-    }
-  }, []);
-
-  const toggleInteractiveHover = useCallback(() => {
-    setInteractiveHover(!interactiveHover);
-  }, [interactiveHover, setInteractiveHover]);
-
   const setShowNsImporter = useCallback((show: boolean) => {
     try {
       localStorage.setItem("ixstats-show-ns-importer", show.toString());
@@ -294,19 +232,37 @@ export function ThemeProvider({
     }
   }, []);
 
-  const setTypographyPreset = useCallback((preset: TypographyPreset) => {
-    try {
-      localStorage.setItem("ixstats-typography", preset);
-      setTypographyPresetState(preset);
-    } catch (error) {
-      console.warn("Failed to save typography preset to localStorage:", error);
-      setTypographyPresetState(preset);
-    }
-  }, []);
-
   const toggleShowNsImporter = useCallback(() => {
     setShowNsImporter(!showNsImporter);
   }, [showNsImporter, setShowNsImporter]);
+
+  const setIncreaseContrast = useCallback((more: boolean) => {
+    try {
+      localStorage.setItem(APPEARANCE_STORAGE_KEYS.increaseContrast, more.toString());
+    } catch (error) {
+      console.warn("Failed to save increase contrast to localStorage:", error);
+    }
+    setIncreaseContrastState(more);
+  }, []);
+
+  const setReduceTransparency = useCallback((reduce: boolean) => {
+    try {
+      localStorage.setItem(APPEARANCE_STORAGE_KEYS.reduceTransparency, reduce.toString());
+    } catch (error) {
+      console.warn("Failed to save reduce transparency to localStorage:", error);
+    }
+    setReduceTransparencyState(reduce);
+  }, []);
+
+  const setTextScale = useCallback((scale: number) => {
+    const next = clampTextScale(scale);
+    try {
+      localStorage.setItem(APPEARANCE_STORAGE_KEYS.textScale, next.toString());
+    } catch (error) {
+      console.warn("Failed to save text scale to localStorage:", error);
+    }
+    setTextScaleState(next);
+  }, []);
 
   // Memoize context value to prevent unnecessary re-renders
   const value: ThemeContextType = useMemo(
@@ -315,52 +271,48 @@ export function ThemeProvider({
       effectiveTheme,
       setTheme,
       toggleTheme,
-      typographyPreset,
-      setTypographyPreset,
       compactMode,
       setCompactMode,
       toggleCompactMode,
       reduceAnimations,
       setReduceAnimations,
       toggleReduceAnimations,
-      lowFidelityMode,
-      setLowFidelityMode,
-      toggleLowFidelityMode,
       enableTextures,
       setEnableTextures,
       toggleEnableTextures,
-      interactiveHover,
-      setInteractiveHover,
-      toggleInteractiveHover,
       showNsImporter,
       setShowNsImporter,
       toggleShowNsImporter,
+      increaseContrast,
+      setIncreaseContrast,
+      reduceTransparency,
+      setReduceTransparency,
+      textScale,
+      setTextScale,
     }),
     [
       theme,
       effectiveTheme,
       setTheme,
       toggleTheme,
-      typographyPreset,
-      setTypographyPreset,
       compactMode,
       setCompactMode,
       toggleCompactMode,
       reduceAnimations,
       setReduceAnimations,
       toggleReduceAnimations,
-      lowFidelityMode,
-      setLowFidelityMode,
-      toggleLowFidelityMode,
       enableTextures,
       setEnableTextures,
       toggleEnableTextures,
-      interactiveHover,
-      setInteractiveHover,
-      toggleInteractiveHover,
       showNsImporter,
       setShowNsImporter,
       toggleShowNsImporter,
+      increaseContrast,
+      setIncreaseContrast,
+      reduceTransparency,
+      setReduceTransparency,
+      textScale,
+      setTextScale,
     ]
   );
 
@@ -374,59 +326,3 @@ export function useTheme(): ThemeContextType {
   }
   return context;
 }
-
-// Theme configuration for CSS custom properties
-export const themeConfig = {
-  light: {
-    "--color-bg-primary": "#ffffff",
-    "--color-bg-secondary": "#f8fafc",
-    "--color-bg-tertiary": "#f1f5f9",
-    "--color-bg-surface": "#ffffff",
-    "--color-bg-accent": "#e2e8f0",
-    "--color-text-primary": "#1e293b",
-    "--color-text-secondary": "#475569",
-    "--color-text-tertiary": "#64748b",
-    "--color-text-muted": "#94a3b8",
-    "--color-border-primary": "#e2e8f0",
-    "--color-border-secondary": "#cbd5e0",
-    "--color-brand-primary": "#3b82f6",
-    "--color-brand-secondary": "#60a5fa",
-    "--color-brand-dark": "#2563eb",
-    "--color-success": "#10b981",
-    "--color-success-dark": "#059669",
-    "--color-warning": "#f59e0b",
-    "--color-warning-dark": "#d97706",
-    "--color-error": "#ef4444",
-    "--color-error-dark": "#dc2626",
-    "--color-info": "#06b6d4",
-    "--color-purple": "#8b5cf6",
-    "--color-surface-blur": "rgba(255, 255, 255, 0.95)",
-    "--shadow-lg": "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-  },
-  dark: {
-    "--color-bg-primary": "#0f172a",
-    "--color-bg-secondary": "#1e293b",
-    "--color-bg-tertiary": "#334155",
-    "--color-bg-surface": "#1e293b",
-    "--color-bg-accent": "#475569",
-    "--color-text-primary": "#f1f5f9",
-    "--color-text-secondary": "#e2e8f0",
-    "--color-text-tertiary": "#cbd5e0",
-    "--color-text-muted": "#94a3b8",
-    "--color-border-primary": "#475569",
-    "--color-border-secondary": "#64748b",
-    "--color-brand-primary": "#3b82f6",
-    "--color-brand-secondary": "#60a5fa",
-    "--color-brand-dark": "#2563eb",
-    "--color-success": "#10b981",
-    "--color-success-dark": "#059669",
-    "--color-warning": "#f59e0b",
-    "--color-warning-dark": "#d97706",
-    "--color-error": "#ef4444",
-    "--color-error-dark": "#dc2626",
-    "--color-info": "#06b6d4",
-    "--color-purple": "#8b5cf6",
-    "--color-surface-blur": "rgba(30, 41, 59, 0.95)",
-    "--shadow-lg": "0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2)",
-  },
-} as const;

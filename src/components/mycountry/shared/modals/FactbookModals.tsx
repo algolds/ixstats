@@ -12,6 +12,29 @@ import {
   DemographicsHealthModal,
 } from "~/components/mycountry/shared/modals/metric-details";
 
+type MetricModalComponent = React.ComponentType<{
+  isOpen: boolean;
+  onClose: () => void;
+  countryId: string;
+  countryName?: string;
+}>;
+
+/** The detail modal each metric type opens. */
+const METRIC_MODALS: Record<string, MetricModalComponent> = {
+  gdp: GdpDetailsModal,
+  "gdp-per-capita": GdpDetailsModal,
+  "total-gdp": GdpDetailsModal,
+  population: PopulationDetailsModal,
+  "population-density": PopulationDetailsModal,
+  "labor-force": LaborDetailsModal,
+  employment: LaborDetailsModal,
+  unemployment: LaborDetailsModal,
+  "government-spending": GovernmentSpendingModal,
+  debt: DebtAnalysisModal,
+  "demographics-health": DemographicsHealthModal,
+  "life-expectancy": DemographicsHealthModal,
+};
+
 /**
  * FactbookModals — shared metric-details + card-image-upload modal renderer.
  *
@@ -30,6 +53,7 @@ export function FactbookModals() {
     closeMetricModal,
   } = useFactbookMetrics();
   const { isPublicReadOnly } = useCountryData();
+  const ActiveMetricModal = metricType ? METRIC_MODALS[metricType] : undefined;
 
   return (
     <>
@@ -43,56 +67,9 @@ export function FactbookModals() {
         />
       )}
 
-      {/* Metric Detail Modals */}
-      {(metricType === "gdp" || metricType === "gdp-per-capita" || metricType === "total-gdp") && (
-        <GdpDetailsModal
-          isOpen={isMetricModalOpen}
-          onClose={closeMetricModal}
-          countryId={modalCountryId || country?.id || ""}
-          countryName={country?.name}
-        />
-      )}
-
-      {(metricType === "population" || metricType === "population-density") && (
-        <PopulationDetailsModal
-          isOpen={isMetricModalOpen}
-          onClose={closeMetricModal}
-          countryId={modalCountryId || country?.id || ""}
-          countryName={country?.name}
-        />
-      )}
-
-      {(metricType === "labor-force" ||
-        metricType === "employment" ||
-        metricType === "unemployment") && (
-        <LaborDetailsModal
-          isOpen={isMetricModalOpen}
-          onClose={closeMetricModal}
-          countryId={modalCountryId || country?.id || ""}
-          countryName={country?.name}
-        />
-      )}
-
-      {metricType === "government-spending" && (
-        <GovernmentSpendingModal
-          isOpen={isMetricModalOpen}
-          onClose={closeMetricModal}
-          countryId={modalCountryId || country?.id || ""}
-          countryName={country?.name}
-        />
-      )}
-
-      {metricType === "debt" && (
-        <DebtAnalysisModal
-          isOpen={isMetricModalOpen}
-          onClose={closeMetricModal}
-          countryId={modalCountryId || country?.id || ""}
-          countryName={country?.name}
-        />
-      )}
-
-      {(metricType === "demographics-health" || metricType === "life-expectancy") && (
-        <DemographicsHealthModal
+      {/* Metric detail modal for the open metric */}
+      {ActiveMetricModal && (
+        <ActiveMetricModal
           isOpen={isMetricModalOpen}
           onClose={closeMetricModal}
           countryId={modalCountryId || country?.id || ""}

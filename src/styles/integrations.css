@@ -1,5 +1,13 @@
 /* ==========================================================================
    INTEGRATIONS — MAPLIBRE GL, IXMAPS & SONNER TOASTER
+
+   Deliberately UNLAYERED and allowed `!important` (third-party overrides; exempt in
+   src/tests/architecture/css-layering.test.ts):
+   MapLibre and Sonner ship their own stylesheets / inline styles
+   (maplibre-gl.css is imported by map components after globals.css, and
+   Sonner writes inline `top`/`--offset-*`), so these overrides must beat
+   both. Selectors target library classes/attributes only (`.maplibregl-*`,
+   `[data-sonner-*]`, the IxMap tooltip popup) plus the maps-page scroll lock.
    ========================================================================== */
 
 /* ─── 1. MapLibre GL & IxMaps Canvas Overrides ─────────────────────────── */
@@ -13,12 +21,12 @@
   }
 }
 
-/* MapLibre GL Controls - Ensure they appear above navigation (var(--z-navigation)) */
+/* MapLibre GL Controls - Ensure they appear above navigation (z-nav) */
 .maplibregl-ctrl-top-right,
 .maplibregl-ctrl-top-left,
 .maplibregl-ctrl-bottom-right,
 .maplibregl-ctrl-bottom-left {
-  z-index: calc(var(--z-navigation) + 100) !important;
+  z-index: calc(var(--z-index-nav) + 100) !important;
 }
 
 /* Hide MapLibre's built-in loading indicator and attribution */
@@ -117,7 +125,7 @@ body:has([data-maps-page]) {
 
 /* Position Sonner list containers below the Dynamic Island / Halo */
 [data-sonner-toaster].dynamic-island-toaster {
-  z-index: var(--z-toast, 100050) !important;
+  z-index: var(--z-index-toast) !important;
 }
 
 @media (min-width: 1024px) {

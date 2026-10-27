@@ -42,29 +42,12 @@ export class ServerFlagResolver implements FlagResolver {
     this.persistentCache = persistentCache;
   }
 
-  public setPersistentCache(adapter: PersistentFlagCacheAdapter): void {
-    this.persistentCache = adapter;
-  }
-
   private getCacheKey(normalizedName: string, policy: FlagFallbackPolicy): string {
     return `${normalizedName}::${policy}`;
   }
 
   private getPlaceholderUrl(): string {
     return withBasePath(PLACEHOLDER_PATH);
-  }
-
-  public peek(countryName: string): FlagResolution | null {
-    const normalized = normalizeCountryName(countryName);
-    if (!normalized) return null;
-
-    // Check with default policy
-    const key = this.getCacheKey(normalized, "commons-only");
-    const entry = this.memoryCache.get(key);
-    if (entry && entry.expiresAt > Date.now()) {
-      return entry.resolution;
-    }
-    return null;
   }
 
   public async resolve(

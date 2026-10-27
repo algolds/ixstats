@@ -45,15 +45,18 @@ export function useCountryPanelData(countryId: string | null, displayName?: stri
   // Only fall back to summary.name if displayName wasn't provided.
   const wikiName = displayName ?? summary?.name ?? null;
 
-  const { data: wikiSections } = api.countries.getWikiSectionPreviews.useQuery(
-    { countryName: wikiName! },
-    { enabled: !!wikiName, ...WARMED_QUERY_OPTS }
-  );
+  // The country's id reads its own wiki page (an Eurth nation's on IIWiki) instead of its name.
+  const wikiInput = { countryName: wikiName!, countryId: countryId ?? undefined };
 
-  const { data: wikiImages } = api.countries.getWikiPageImages.useQuery(
-    { countryName: wikiName! },
-    { enabled: !!wikiName, ...WARMED_QUERY_OPTS }
-  );
+  const { data: wikiSections } = api.countries.getWikiSectionPreviews.useQuery(wikiInput, {
+    enabled: !!wikiName,
+    ...WARMED_QUERY_OPTS,
+  });
+
+  const { data: wikiImages } = api.countries.getWikiPageImages.useQuery(wikiInput, {
+    enabled: !!wikiName,
+    ...WARMED_QUERY_OPTS,
+  });
 
   return {
     summary: summary ?? null,

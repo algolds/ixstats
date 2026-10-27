@@ -1,19 +1,22 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 
-/** A nation the viewer owns: "Play as" makes it their active nation; "Active" when it already is (ruling F-1). */
+/** A nation the viewer owns: "Play as" makes it their active nation; "Active" when it already is. */
 export function PlayAsNation({
   countryId,
   countryName,
   active,
+  label = `Play as ${countryName}`,
 }: {
   countryId: string;
   countryName: string;
   active: boolean;
+  label?: ReactNode;
 }) {
   const notify = useNotify();
   const utils = api.useUtils();
@@ -25,7 +28,7 @@ export function PlayAsNation({
     onError: (error) => notify.error("Could not switch nation", error.message),
   });
 
-  if (active) return <Badge variant="secondary">Active</Badge>;
+  if (active) return <Badge variant="default">Active</Badge>;
   return (
     <Button
       size="xs"
@@ -33,7 +36,7 @@ export function PlayAsNation({
       disabled={playAs.isPending}
       onClick={() => playAs.mutate({ countryId })}
     >
-      Play as {countryName}
+      {label}
     </Button>
   );
 }

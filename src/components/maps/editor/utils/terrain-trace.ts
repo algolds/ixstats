@@ -21,7 +21,7 @@ const TRACE_LAYER_TYPES = ["rivers", "lakes", "background"] as const;
 const MAX_TRACE_VERTICES = 500;
 
 /** A traceable polyline. `size` excludes a closed ring's repeated closing vertex. */
-export interface TracePath {
+interface TracePath {
   coords: Position[];
   size: number;
   closed: boolean;

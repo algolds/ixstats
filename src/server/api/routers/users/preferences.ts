@@ -6,13 +6,19 @@ import {
   createTRPCRouter,
   protectedProcedure,
   rateLimitedPublicProcedure,
+  rateLimitedMutationProcedure,
+  createRateLimitMiddleware,
 } from "~/server/api/trpc";
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { hiddenLinkedNames } from "~/server/shared/privacy-permissions";
+import { accountOfWikiName } from "~/lib/identity/wiki-names";
+import { recordHeartbeat } from "~/server/shared/presence";
+import { clearOwnHistory } from "~/server/shared/clear-history";
 
 /**
  * The nation a player typed: its name within the viewer's realm first, else a (globally unique) slug.
- * IxWorld holds the plain slugs, so slug-first would send an Eurth player's "Gallambria" to IxWorld's
+ * Ixnay holds the plain slugs, so slug-first would send an Eurth player's "Gallambria" to Ixnay's
  * owner (ruling E-s).
  */
 async function findTypedCountry(
@@ -31,6 +37,47 @@ async function findTypedCountry(
   );
 }
 
+const LISTED_USER_SELECT = {
+  id: true,
+  clerkUserId: true,
+  handle: true,
+  discordUsername: true,
+  country: { select: { name: true, slug: true, flag: true } },
+} satisfies Prisma.UserSelect;
+type ListedUser = Prisma.UserGetPayload<{ select: typeof LISTED_USER_SELECT }>;
+
+/**
+ * The users the block and mute lists name (a row stores a platform or a Clerk id), keyed by both ids: one query,
+ * then one batch read of the Discord switch for the users with a Discord name (hiddenLinkedNames). The Discord name
+ * is blanked for each user with `showDiscordTag` off; a read error blanks every one.
+ */
+async function listedUsers(
+  db: Pick<PrismaClient, "user" | "userConnection">,
+  targetIds: string[]
+): Promise<Map<string, ListedUser>> {
+  const byId = new Map<string, ListedUser>();
+  const ids = [...new Set(targetIds)];
+  if (ids.length === 0) return byId;
+  const rows = await db.user.findMany({
+    where: { OR: [{ id: { in: ids } }, { clerkUserId: { in: ids } }] },
+    select: LISTED_USER_SELECT,
+  });
+  const named = rows.filter((u) => u.discordUsername).map((u) => u.clerkUserId);
+  const hidden = await hiddenLinkedNames(db, named);
+  for (const row of rows) {
+    const user = {
+      ...row,
+      discordUsername: hidden.discord.has(row.clerkUserId) ? null : row.discordUsername,
+    };
+    byId.set(user.id, user);
+    byId.set(user.clerkUserId, user);
+  }
+  return byId;
+}
+
+/** How the block and mute lists name a user: their nation, handle, a Discord tag they show, else "User". */
+const listedLabel = (u: ListedUser) => u.country?.name || u.handle || u.discordUsername || "User";
+
 export interface PrivacyConfig {
   directMessages: "everyone" | "followers" | "verified" | "nobody";
   messageRequestFiltering: boolean;
@@ -41,12 +88,14 @@ export interface PrivacyConfig {
   searchDiscoverable: boolean;
   searchEngineIndexing: boolean;
   dmReadReceipts: boolean;
-  diagnosticTelemetry: boolean;
-  personalizedRecommendations: boolean;
   showDiscordTag: boolean;
-  showWikiAttribution: boolean;
 }
 
+/**
+ * Every key is enforced (SL-4; see server/shared/privacy-permissions.ts). "Anonymous diagnostics"
+ * and "Personalized recommendations" were removed: no telemetry is sent anywhere and nothing is
+ * recommended, so they had nothing to switch. Stored values for them are ignored.
+ */
 const DEFAULT_PRIVACY_CONFIG: PrivacyConfig = {
   directMessages: "everyone",
   messageRequestFiltering: true,
@@ -57,11 +106,53 @@ const DEFAULT_PRIVACY_CONFIG: PrivacyConfig = {
   searchDiscoverable: true,
   searchEngineIndexing: true,
   dmReadReceipts: true,
-  diagnosticTelemetry: true,
-  personalizedRecommendations: true,
   showDiscordTag: true,
-  showWikiAttribution: true,
 };
+
+/** The stored config merged over the defaults, keeping only known keys. */
+function parsePrivacyConfig(status: string | null | undefined): PrivacyConfig {
+  if (!status) return DEFAULT_PRIVACY_CONFIG;
+  try {
+    const parsed = JSON.parse(status) as Record<string, unknown>;
+    const known = Object.keys(DEFAULT_PRIVACY_CONFIG).filter((key) => key in parsed);
+    return {
+      ...DEFAULT_PRIVACY_CONFIG,
+      ...Object.fromEntries(known.map((key) => [key, parsed[key]])),
+    };
+  } catch {
+    return DEFAULT_PRIVACY_CONFIG;
+  }
+}
+
+/** Clear history may run three times an hour. */
+const clearHistoryRateLimit = createRateLimitMiddleware({
+  max: 3,
+  windowMs: 60 * 60_000,
+  namespace: "clear_history",
+});
+
+/** Deletes the caller's own connection record; anything else reads as not found. */
+async function deleteOwnConnection(
+  db: PrismaClient,
+  userId: string,
+  connectionId: string,
+  label: string
+) {
+  const record = await db.userConnection.findUnique({ where: { id: connectionId } });
+  if (!record || record.userId !== userId) {
+    throw new Error(`${label} record not found`);
+  }
+  return db.userConnection.delete({ where: { id: connectionId } });
+}
+
+/** The existing connection for (user, target, type), else a newly created one. */
+async function findOrCreateConnection(
+  db: PrismaClient,
+  data: { userId: string; targetUserId: string; connectionType: string; status: string }
+) {
+  const { status: _status, ...key } = data;
+  return (await db.userConnection.findFirst({ where: key })) ?? db.userConnection.create({ data });
+}
 
 export const usersPreferencesRouter = createTRPCRouter({
   // ─── Wiki Preferences ────────────────────────────────────────────────
@@ -78,7 +169,7 @@ export const usersPreferencesRouter = createTRPCRouter({
     );
   }),
 
-  updateWikiPreferences: protectedProcedure
+  updateWikiPreferences: rateLimitedMutationProcedure
     .input(
       z.object({
         wikiAutoScan: z.boolean().optional(),
@@ -109,15 +200,7 @@ export const usersPreferencesRouter = createTRPCRouter({
       },
     });
 
-    let config: PrivacyConfig = DEFAULT_PRIVACY_CONFIG;
-    if (configRecord?.status) {
-      try {
-        const parsed = JSON.parse(configRecord.status);
-        config = { ...DEFAULT_PRIVACY_CONFIG, ...parsed };
-      } catch {
-        config = DEFAULT_PRIVACY_CONFIG;
-      }
-    }
+    const config = parsePrivacyConfig(configRecord?.status);
 
     // 2. Fetch blocked connections
     const blockedConnections = await ctx.db.userConnection.findMany({
@@ -128,6 +211,20 @@ export const usersPreferencesRouter = createTRPCRouter({
       orderBy: { createdAt: "desc" },
     });
 
+    // 3. Fetch muted connections
+    const mutedConnections = await ctx.db.userConnection.findMany({
+      where: {
+        userId,
+        connectionType: "muted",
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const listed = await listedUsers(
+      ctx.db,
+      [...blockedConnections, ...mutedConnections].flatMap((c) => c.targetUserId ?? [])
+    );
+
     const blockedItems = await Promise.all(
       blockedConnections.map(async (c) => {
         let label = "Unknown Account";
@@ -135,14 +232,9 @@ export const usersPreferencesRouter = createTRPCRouter({
         let avatarUrl: string | null = null;
 
         if (c.targetUserId) {
-          const u = await ctx.db.user.findFirst({
-            where: {
-              OR: [{ id: c.targetUserId }, { clerkUserId: c.targetUserId }],
-            },
-            include: { country: true },
-          });
+          const u = listed.get(c.targetUserId);
           if (u) {
-            label = u.country?.name || u.wikiUsername || u.discordUsername || "User";
+            label = listedLabel(u);
             subtitle = u.country?.slug ? `@${u.country.slug}` : "IxnayID User";
             avatarUrl = u.country?.flag || null;
           }
@@ -169,42 +261,24 @@ export const usersPreferencesRouter = createTRPCRouter({
       })
     );
 
-    // 3. Fetch muted connections
-    const mutedConnections = await ctx.db.userConnection.findMany({
-      where: {
-        userId,
-        connectionType: "muted",
-      },
-      orderBy: { createdAt: "desc" },
+    const mutedItems = mutedConnections.map((c) => {
+      let label = "Unknown Account";
+      let subtitle = "Muted Account";
+
+      const u = c.targetUserId ? listed.get(c.targetUserId) : undefined;
+      if (u) {
+        label = listedLabel(u);
+        subtitle = u.country?.slug ? `@${u.country.slug}` : "Muted User";
+      }
+
+      return {
+        id: c.id,
+        targetUserId: c.targetUserId,
+        label,
+        subtitle,
+        createdAt: c.createdAt,
+      };
     });
-
-    const mutedItems = await Promise.all(
-      mutedConnections.map(async (c) => {
-        let label = "Unknown Account";
-        let subtitle = "Muted Account";
-
-        if (c.targetUserId) {
-          const u = await ctx.db.user.findFirst({
-            where: {
-              OR: [{ id: c.targetUserId }, { clerkUserId: c.targetUserId }],
-            },
-            include: { country: true },
-          });
-          if (u) {
-            label = u.country?.name || u.wikiUsername || "User";
-            subtitle = u.country?.slug ? `@${u.country.slug}` : "Muted User";
-          }
-        }
-
-        return {
-          id: c.id,
-          targetUserId: c.targetUserId,
-          label,
-          subtitle,
-          createdAt: c.createdAt,
-        };
-      })
-    );
 
     // 4. Fetch muted keywords
     const keywordConnections = await ctx.db.userConnection.findMany({
@@ -229,7 +303,7 @@ export const usersPreferencesRouter = createTRPCRouter({
     };
   }),
 
-  updatePrivacyConfig: protectedProcedure
+  updatePrivacyConfig: rateLimitedMutationProcedure
     .input(
       z.object({
         directMessages: z.enum(["everyone", "followers", "verified", "nobody"]).optional(),
@@ -241,10 +315,7 @@ export const usersPreferencesRouter = createTRPCRouter({
         searchDiscoverable: z.boolean().optional(),
         searchEngineIndexing: z.boolean().optional(),
         dmReadReceipts: z.boolean().optional(),
-        diagnosticTelemetry: z.boolean().optional(),
-        personalizedRecommendations: z.boolean().optional(),
         showDiscordTag: z.boolean().optional(),
-        showWikiAttribution: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -258,16 +329,7 @@ export const usersPreferencesRouter = createTRPCRouter({
         },
       });
 
-      let currentConfig: PrivacyConfig = DEFAULT_PRIVACY_CONFIG;
-      if (existingRecord?.status) {
-        try {
-          currentConfig = { ...DEFAULT_PRIVACY_CONFIG, ...JSON.parse(existingRecord.status) };
-        } catch {
-          currentConfig = DEFAULT_PRIVACY_CONFIG;
-        }
-      }
-
-      const mergedConfig = { ...currentConfig, ...input };
+      const mergedConfig = { ...parsePrivacyConfig(existingRecord?.status), ...input };
 
       if (existingRecord) {
         return ctx.db.userConnection.update({
@@ -288,7 +350,7 @@ export const usersPreferencesRouter = createTRPCRouter({
 
   // ─── Blocking & Muting Management ────────────────────────────────────
 
-  blockAccount: protectedProcedure
+  blockAccount: rateLimitedMutationProcedure
     .input(z.object({ identifier: z.string().min(1).max(100) }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;
@@ -300,7 +362,7 @@ export const usersPreferencesRouter = createTRPCRouter({
       const targetUser = await ctx.db.user.findFirst({
         where: {
           OR: [
-            { wikiUsername: { equals: clean, mode: "insensitive" } },
+            { handle: { equals: clean, mode: "insensitive" } },
             { discordUsername: { equals: clean, mode: "insensitive" } },
             { forumUsername: { equals: clean, mode: "insensitive" } },
             ...(targetCountry ? [{ countryId: targetCountry.id }] : []),
@@ -347,24 +409,13 @@ export const usersPreferencesRouter = createTRPCRouter({
       });
     }),
 
-  unblockAccount: protectedProcedure
+  unblockAccount: rateLimitedMutationProcedure
     .input(z.object({ connectionId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
-      const record = await ctx.db.userConnection.findUnique({
-        where: { id: input.connectionId },
-      });
+    .mutation(({ ctx, input }) =>
+      deleteOwnConnection(ctx.db, ctx.auth.userId, input.connectionId, "Blocked connection")
+    ),
 
-      if (!record || record.userId !== userId) {
-        throw new Error("Blocked connection record not found");
-      }
-
-      return ctx.db.userConnection.delete({
-        where: { id: input.connectionId },
-      });
-    }),
-
-  muteAccount: protectedProcedure
+  muteAccount: rateLimitedMutationProcedure
     .input(z.object({ identifier: z.string().min(1).max(100) }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;
@@ -374,7 +425,7 @@ export const usersPreferencesRouter = createTRPCRouter({
       const targetUser = await ctx.db.user.findFirst({
         where: {
           OR: [
-            { wikiUsername: { equals: clean, mode: "insensitive" } },
+            { handle: { equals: clean, mode: "insensitive" } },
             { discordUsername: { equals: clean, mode: "insensitive" } },
             ...(targetCountry ? [{ countryId: targetCountry.id }] : []),
           ],
@@ -389,88 +440,50 @@ export const usersPreferencesRouter = createTRPCRouter({
         throw new Error("You cannot mute your own account");
       }
 
-      const existing = await ctx.db.userConnection.findFirst({
-        where: {
-          userId,
-          targetUserId: targetUser.id,
-          connectionType: "muted",
-        },
-      });
-
-      if (existing) return existing;
-
-      return ctx.db.userConnection.create({
-        data: {
-          userId,
-          targetUserId: targetUser.id,
-          connectionType: "muted",
-          status: "active",
-        },
+      return findOrCreateConnection(ctx.db, {
+        userId,
+        targetUserId: targetUser.id,
+        connectionType: "muted",
+        status: "active",
       });
     }),
 
-  unmuteAccount: protectedProcedure
+  unmuteAccount: rateLimitedMutationProcedure
     .input(z.object({ connectionId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
-      const record = await ctx.db.userConnection.findUnique({
-        where: { id: input.connectionId },
-      });
+    .mutation(({ ctx, input }) =>
+      deleteOwnConnection(ctx.db, ctx.auth.userId, input.connectionId, "Muted connection")
+    ),
 
-      if (!record || record.userId !== userId) {
-        throw new Error("Muted connection record not found");
-      }
-
-      return ctx.db.userConnection.delete({
-        where: { id: input.connectionId },
-      });
-    }),
-
-  addMutedKeyword: protectedProcedure
+  addMutedKeyword: rateLimitedMutationProcedure
     .input(z.object({ keyword: z.string().min(1).max(50) }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.userId;
       const clean = input.keyword.trim().toLowerCase();
 
-      const existing = await ctx.db.userConnection.findFirst({
-        where: {
-          userId,
-          targetUserId: clean,
-          connectionType: "keyword",
-        },
-      });
-
-      if (existing) return existing;
-
-      return ctx.db.userConnection.create({
-        data: {
-          userId,
-          targetUserId: clean,
-          connectionType: "keyword",
-          status: input.keyword.trim(),
-        },
+      return findOrCreateConnection(ctx.db, {
+        userId,
+        targetUserId: clean,
+        connectionType: "keyword",
+        status: input.keyword.trim(),
       });
     }),
 
-  removeMutedKeyword: protectedProcedure
+  removeMutedKeyword: rateLimitedMutationProcedure
     .input(z.object({ connectionId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
-      const record = await ctx.db.userConnection.findUnique({
-        where: { id: input.connectionId },
-      });
+    .mutation(({ ctx, input }) =>
+      deleteOwnConnection(ctx.db, ctx.auth.userId, input.connectionId, "Keyword filter")
+    ),
 
-      if (!record || record.userId !== userId) {
-        throw new Error("Keyword filter record not found");
-      }
+  /** Clear history (SL-4); exactly what it deletes is listed on `clearOwnHistory`. */
+  clearHistory: rateLimitedMutationProcedure
+    .use(clearHistoryRateLimit)
+    .input(z.object({ confirm: z.literal(true) }))
+    .mutation(({ ctx }) => clearOwnHistory(ctx.db, ctx.auth.userId, ctx.user?.id)),
 
-      return ctx.db.userConnection.delete({
-        where: { id: input.connectionId },
-      });
-    }),
-
-  clearSearchHistory: protectedProcedure.mutation(async () => {
-    return { success: true, timestamp: new Date().toISOString() };
+  /** Online status heartbeat (SL-4): signed-in clients call it about once a minute. */
+  heartbeat: rateLimitedMutationProcedure.mutation(async ({ ctx }) => {
+    await recordHeartbeat(ctx.auth.userId);
+    return { ok: true };
   }),
 
   // ─── Data Export (Account & Country Data) ─────────────────────────────
@@ -494,7 +507,7 @@ export const usersPreferencesRouter = createTRPCRouter({
 
     const cardCount = user?.id
       ? await ctx.db.cardOwnership.count({
-          where: { userId: user.id },
+          where: { ownerId: user.id },
         })
       : 0;
 
@@ -512,6 +525,15 @@ export const usersPreferencesRouter = createTRPCRouter({
       },
     });
 
+    // Every old wiki name the user asked for or holds, whatever became of the claim
+    const wikiNames = user?.id
+      ? await ctx.db.wikiNameClaim.findMany({
+          where: { userId: user.id },
+          select: { source: true, name: true, status: true, visible: true, createdAt: true },
+          orderBy: { createdAt: "asc" },
+        })
+      : [];
+
     return {
       exportedAt: new Date().toISOString(),
       user: {
@@ -519,8 +541,8 @@ export const usersPreferencesRouter = createTRPCRouter({
         membershipTier: user?.membershipTier,
         createdAt: user?.createdAt,
         discordUsername: user?.discordUsername,
-        wikiUsername: user?.wikiUsername,
         forumUsername: user?.forumUsername,
+        wikiNames,
       },
       country: country
         ? {
@@ -565,19 +587,19 @@ export const usersPreferencesRouter = createTRPCRouter({
 
   // ─── Wiki Author Resolution ──────────────────────────────────────────
 
+  /**
+   * The account a wiki name stands for (a claim its owner shows, else the handle the name spells), with its role and
+   * nation; null when nobody shows the name. Visibility lives on the claim, never on a privacy switch.
+   */
   resolveWikiAuthor: rateLimitedPublicProcedure
     .input(z.object({ wikiUsername: z.string().min(1).max(100) }))
     .query(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findFirst({
-        where: { wikiUsername: input.wikiUsername },
+      const account = await accountOfWikiName(ctx.db, input.wikiUsername, { shown: true });
+      if (!account) return null;
+      const user = await ctx.db.user.findUnique({
+        where: { id: account.userId },
         select: {
-          wikiUsername: true,
-          role: {
-            select: {
-              name: true,
-              displayName: true,
-            },
-          },
+          role: { select: { name: true, displayName: true } },
           country: {
             select: {
               id: true,
@@ -592,27 +614,21 @@ export const usersPreferencesRouter = createTRPCRouter({
         },
       });
 
-      if (!user) return null;
-
       return {
-        wikiUsername: user.wikiUsername,
-        role: user.role
-          ? {
-              name: user.role.name,
-              displayName: user.role.displayName,
-            }
-          : null,
-        country: user.country
-          ? {
-              id: user.country.id,
-              name: user.country.name,
-              slug: user.country.slug,
-              flag: user.country.flag,
-              economicTier: user.country.economicTier,
-              leader: user.country.leader,
-              continent: user.country.continent,
-            }
-          : null,
+        wikiUsername: input.wikiUsername,
+        role: user?.role ?? null,
+        country: user?.country ?? null,
       };
+    }),
+
+  /**
+   * The passport a `User:<name>` page opens (IxnayID design decision 10): the handle of the account an approved, shown
+   * claim gives the name to, else of the account whose handle the name spells. Null without a handle to open.
+   */
+  wikiUserPageOwner: rateLimitedPublicProcedure
+    .input(z.object({ name: z.string().min(1).max(255) }))
+    .query(async ({ ctx, input }) => {
+      const account = await accountOfWikiName(ctx.db, input.name, { shown: true });
+      return account?.handle ? { handle: account.handle } : null;
     }),
 });

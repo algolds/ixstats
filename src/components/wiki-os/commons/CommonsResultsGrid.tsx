@@ -1,33 +1,34 @@
 "use client";
 
-import { useState, useCallback, memo } from "react";
+import { useState, useMemo, memo } from "react";
+import { Skeleton } from "~/components/ui/skeleton";
 import { ZoomIn, MediaImage as ImageIcon, RefreshDouble } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils";
-
-interface CommonsImage {
-  pageid: number;
-  title: string;
-  thumbUrl: string;
-  url: string;
-  descriptionUrl: string;
-  width: number;
-  height: number;
-  mime: string;
-  description: string;
-  artist: string;
-  license: string;
-}
+import { BlurHashService } from "~/lib/wiki-os/core/blurhash-service";
+import { PlaceholderImage } from "~/components/wiki-os/shared/PlaceholderImage";
+import type { CommonsImage } from "~/components/wiki-os/media-search/types";
 
 interface CommonsResultsGridProps {
   images: CommonsImage[];
   selectedImage: CommonsImage | null;
   onSelect: (image: CommonsImage) => void;
+  /** Double-click on an image (the picker confirms its choice with it). */
+  onConfirm?: (image: CommonsImage) => void;
   onLoadMore?: () => void;
   hasMore: boolean;
   isLoading: boolean;
+  /** What the results are: nothing asked yet, a typed search, or a browsed category. */
+  mode: "idle" | "search" | "browse" | "list";
+  /** The search the results are for (shown when nothing was found). */
+  query?: string;
+  /** How many images were loaded before the type/orientation filters hid some. */
+  loadedCount?: number;
+  /** What an empty category or list says (the forum and own uploads are not categories). */
+  emptyText?: string;
   totalHits?: number | null;
+  error?: { rateLimited: boolean } | null;
+  onRetry?: () => void;
   isFilterActive?: boolean;
   onClearFilters?: () => void;
 }
@@ -36,89 +37,77 @@ const CommonsCard = memo(function CommonsCard({
   img,
   isSelected,
   onSelect,
+  onConfirm,
 }: {
   img: CommonsImage;
   isSelected: boolean;
   onSelect: (image: CommonsImage) => void;
+  onConfirm?: (image: CommonsImage) => void;
 }) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const cleanTitle = img.title.replace(/^File:/, "").replace(/_/g, " ");
-
-  const handleClick = useCallback(() => {
-    onSelect(img);
-  }, [img, onSelect]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        onSelect(img);
-      }
-    },
-    [img, onSelect]
+  // A file with a BlurHash shows its blurred shape while loading, anything else a skeleton
+  const placeholder = useMemo(
+    () => BlurHashService.placeholderDataUri(img.blurhash, img.width, img.height),
+    [img.blurhash, img.width, img.height]
   );
 
   return (
     <button
       type="button"
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      aria-selected={isSelected}
+      onClick={() => onSelect(img)}
+      onDoubleClick={onConfirm ? () => onConfirm(img) : undefined}
+      aria-pressed={isSelected}
       aria-label={cleanTitle}
       className={cn(
         "wikios-commons-card group relative text-left select-none",
-        "focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none",
-        "active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
+        "focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none",
+        "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
         isSelected && "wikios-commons-card--selected"
       )}
       style={{ contentVisibility: "auto", containIntrinsicSize: "auto 200px" }}
     >
-      <TextureOverlay texture="paperGrain" opacity={0.05} className="mix-blend-overlay" />
-      <TextureOverlay texture="dots" opacity={0.03} className="mix-blend-overlay" />
-
-      <div className="wikios-commons-card-thumb relative aspect-[4/3] w-full overflow-hidden bg-white/[0.03]">
-        {!imageLoaded && !imageError && (
-          <div className="absolute inset-0 animate-pulse bg-white/[0.04]" />
+      <div className="wikios-commons-card-thumb bg-fill-4 relative aspect-[4/3] w-full overflow-hidden">
+        {!imageLoaded && !imageError && !placeholder && (
+          <Skeleton className="absolute inset-0 rounded-none" />
         )}
 
         {imageError ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-3 text-center text-muted-foreground/60">
-            <ImageIcon className="h-6 w-6 opacity-40" />
-            <span className="text-xs font-medium tracking-wide uppercase opacity-70">
+          <div className="text-label-secondary absolute inset-0 flex flex-col items-center justify-center gap-2 p-3 text-center">
+            <ImageIcon className="h-6 w-6 opacity-40" aria-hidden="true" />
+            <span className="text-footnote opacity-70">
               {img.mime ? img.mime.split("/")[1] : "Image"}
             </span>
           </div>
         ) : (
-          <img
+          <PlaceholderImage
+            placeholder={placeholder}
             src={img.thumbUrl}
             alt={cleanTitle}
             loading="lazy"
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
-            onContextMenu={(e) => e.preventDefault()}
             className={cn(
-              "h-full w-full object-cover transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:scale-105",
-              imageLoaded ? "opacity-100" : "opacity-0"
+              "h-full w-full object-cover transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+              imageLoaded || placeholder ? "opacity-100" : "opacity-0"
             )}
           />
         )}
 
-        <div className="wikios-commons-card-overlay pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:opacity-100">
-          <div className="rounded-full border border-white/20 bg-black/60 p-2 text-white shadow-md">
-            <ZoomIn className="h-4 w-4" />
+        <div className="wikios-commons-card-overlay pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          <div className="border-separator shadow-card rounded-full border bg-black/60 p-2 text-white">
+            <ZoomIn className="h-4 w-4" aria-hidden="true" />
           </div>
         </div>
       </div>
 
-      <div className="wikios-commons-card-info flex flex-col gap-0.5 p-2.5">
-        <span className="wikios-commons-card-title truncate text-xs font-medium text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)] transition-colors">
+      <div className="wikios-commons-card-info flex flex-col gap-0.5 p-3">
+        <span className="wikios-commons-card-title text-caption text-label-secondary group-hover:text-label truncate transition-colors">
           {cleanTitle}
         </span>
-        <div className="flex items-center justify-between text-xs text-[var(--wikios-text-dim)]">
-          <span>
-            {img.width > 0 && img.height > 0 ? `${img.width}×${img.height}` : "Vector"}
-          </span>
+        <div className="text-footnote text-label-secondary flex items-center justify-between">
+          <span>{dimensionsLabel(img)}</span>
           {img.license && <span className="max-w-[80px] truncate opacity-70">{img.license}</span>}
         </div>
       </div>
@@ -126,21 +115,174 @@ const CommonsCard = memo(function CommonsCard({
   );
 });
 
+/** "W×H" when both sides are known; "Vector" only for an SVG; otherwise nothing. */
+function dimensionsLabel(img: CommonsImage): string | null {
+  if (img.width > 0 && img.height > 0) return `${img.width}×${img.height}`;
+  return img.mime.toLowerCase().includes("svg") ? "Vector" : null;
+}
+
 function ShimmerSkeletonGrid({ count = 8 }: { count?: number }) {
   return (
     <div className="wikios-commons-grid">
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={`skeleton-${i}`}
-          className="wikios-commons-card overflow-hidden border border-white/5 bg-white/[0.02]"
+          className="wikios-commons-card border-separator bg-surface overflow-hidden border"
         >
-          <div className="aspect-[4/3] w-full animate-pulse bg-white/[0.04]" />
-          <div className="p-2.5 space-y-2">
-            <div className="h-2.5 w-3/4 animate-pulse rounded bg-white/[0.05]" />
-            <div className="h-2 w-1/3 animate-pulse rounded bg-white/[0.03]" />
+          <Skeleton className="aspect-[4/3] w-full rounded-none" />
+          <div className="space-y-2 p-3">
+            <Skeleton className="rounded-control-sm h-3 w-3/4" />
+            <Skeleton className="rounded-control-sm h-3 w-1/3" />
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function StateMessage({
+  title,
+  children,
+  action,
+}: {
+  title: string;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="wikios-commons-empty flex flex-col items-center justify-center p-12 text-center">
+      <div className="bg-fill-4 text-label-secondary mb-3 rounded-full p-3">
+        <ImageIcon className="h-6 w-6" aria-hidden="true" />
+      </div>
+      <p className="text-body text-label mb-1 font-medium">{title}</p>
+      <p className="text-footnote text-label-secondary mb-4 max-w-sm">{children}</p>
+      {action}
+    </div>
+  );
+}
+
+function RetryButton({ onRetry }: { onRetry?: () => void }) {
+  if (!onRetry) return null;
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={onRetry}
+      className="text-footnote border-separator hover:bg-fill-4"
+    >
+      <RefreshDouble className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
+      Retry
+    </Button>
+  );
+}
+
+function errorMessage(error: { rateLimited: boolean }): string {
+  return error.rateLimited
+    ? "Too many searches. Wait a minute and retry."
+    : "Could not reach the image source.";
+}
+
+function LoadMore({ onLoadMore }: { onLoadMore?: () => void }) {
+  return (
+    <div className="wikios-commons-loadmore pt-6 pb-2 text-center">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onLoadMore}
+        className="border-separator text-footnote hover:bg-fill-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+      >
+        Load more images
+      </Button>
+    </div>
+  );
+}
+
+/** What to show when there are no images to list: not asked yet, then filtered out, then nothing found. */
+function EmptyState({
+  mode,
+  query,
+  isFilterActive,
+  onClearFilters,
+  hasMore,
+  onLoadMore,
+  emptyText,
+}: Pick<
+  CommonsResultsGridProps,
+  "mode" | "query" | "isFilterActive" | "onClearFilters" | "hasMore" | "onLoadMore" | "emptyText"
+>) {
+  if (mode === "idle") {
+    return (
+      <StateMessage title="Explore images">
+        Search for images using the search bar above, or browse a category.
+      </StateMessage>
+    );
+  }
+  if (isFilterActive) {
+    return (
+      <>
+        <StateMessage
+          title="No matching images found"
+          action={
+            onClearFilters && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onClearFilters}
+                className="text-footnote border-separator hover:bg-fill-4"
+              >
+                <RefreshDouble className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
+                Reset filters
+              </Button>
+            )
+          }
+        >
+          No images match your active type or orientation filters. Try resetting filters to see all
+          results.
+        </StateMessage>
+        {hasMore && <LoadMore onLoadMore={onLoadMore} />}
+      </>
+    );
+  }
+  if (mode === "search" && query) {
+    return (
+      <StateMessage title={`No images found for \u201c${query}\u201d`}>
+        Try different words, or remove a category filter.
+      </StateMessage>
+    );
+  }
+  if (mode === "list") {
+    return (
+      <StateMessage title="No images found">
+        {emptyText ?? "This wiki has no images to list."}
+      </StateMessage>
+    );
+  }
+  return (
+    <StateMessage title="No images found">
+      {emptyText ?? "This category has no images."}
+    </StateMessage>
+  );
+}
+
+function CountLine({
+  shown,
+  totalHits,
+  loadedCount,
+}: {
+  shown: number;
+  totalHits?: number | null;
+  loadedCount?: number;
+}) {
+  const hidden = loadedCount !== undefined ? Math.max(0, loadedCount - shown) : 0;
+  let text: string | null = null;
+  if (totalHits != null && totalHits > 0) {
+    text = `Showing ${shown} of ${totalHits.toLocaleString()}`;
+  }
+  if (!text) return null;
+  return (
+    <div className="text-footnote text-label-secondary mb-3 px-1">
+      {text}
+      {hidden > 0 && ` (${hidden} hidden by filters)`}
     </div>
   );
 }
@@ -149,87 +291,60 @@ export function CommonsResultsGrid({
   images,
   selectedImage,
   onSelect,
+  onConfirm,
   onLoadMore,
   hasMore,
   isLoading,
+  mode,
+  query,
+  loadedCount,
+  emptyText,
   totalHits,
+  error,
+  onRetry,
   isFilterActive,
   onClearFilters,
 }: CommonsResultsGridProps) {
-  if (images.length === 0 && isLoading) {
-    return (
-      <div className="wikios-commons-results">
-        <ShimmerSkeletonGrid count={8} />
-      </div>
-    );
-  }
-
-  if (images.length === 0 && !isLoading) {
-    if (isFilterActive) {
+  if (images.length === 0) {
+    if (isLoading) {
       return (
-        <div className="wikios-commons-empty flex flex-col items-center justify-center p-12 text-center">
-          <div className="rounded-full bg-white/[0.04] p-3 text-muted-foreground/60 mb-3">
-            <ImageIcon className="h-6 w-6" />
-          </div>
-          <p className="text-sm font-medium text-[var(--wikios-text)] mb-1">
-            No matching images found
-          </p>
-          <p className="text-xs text-[var(--wikios-text-dim)] max-w-sm mb-4">
-            No images match your active type or orientation filters. Try resetting filters to see
-            all results.
-          </p>
-          {onClearFilters && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onClearFilters}
-              className="text-xs border-white/10 hover:bg-white/5"
-            >
-              <RefreshDouble className="mr-1.5 h-3.5 w-3.5" />
-              Reset Filters
-            </Button>
-          )}
+        <div className="wikios-commons-results">
+          <ShimmerSkeletonGrid count={8} />
         </div>
       );
     }
-
+    if (error) {
+      return (
+        <StateMessage title="Search failed" action={<RetryButton onRetry={onRetry} />}>
+          {errorMessage(error)}
+        </StateMessage>
+      );
+    }
     return (
-      <div className="wikios-commons-empty flex flex-col items-center justify-center p-12 text-center">
-        <div className="rounded-full bg-white/[0.04] p-3 text-muted-foreground/60 mb-3">
-          <ImageIcon className="h-6 w-6" />
-        </div>
-        <p className="text-sm font-medium text-[var(--wikios-text)] mb-1">
-          Explore Sovereign Assets
-        </p>
-        <p className="text-xs text-[var(--wikios-text-dim)] max-w-sm">
-          Search Wikimedia Commons, browse worldbuilding categories in the sidebar, or switch to
-          IxWiki to find community uploads.
-        </p>
-      </div>
+      <EmptyState
+        mode={mode}
+        query={query}
+        isFilterActive={isFilterActive}
+        onClearFilters={onClearFilters}
+        hasMore={hasMore}
+        onLoadMore={onLoadMore}
+        emptyText={emptyText}
+      />
     );
   }
 
   return (
     <div className="wikios-commons-results">
-      {totalHits != null && totalHits > 0 && (
-        <div className="mb-3 flex items-center justify-between px-1 text-xs text-[var(--wikios-text-dim)]">
-          <span>
-            Showing <strong className="text-[var(--wikios-text-muted)]">{images.length}</strong> of{" "}
-            <strong className="text-[var(--wikios-text-muted)]">
-              {totalHits.toLocaleString()}
-            </strong>{" "}
-            available
-          </span>
-        </div>
-      )}
+      <CountLine shown={images.length} totalHits={totalHits} loadedCount={loadedCount} />
 
       <div className="wikios-commons-grid">
         {images.map((img) => (
           <CommonsCard
-            key={img.pageid}
+            key={img.url}
             img={img}
-            isSelected={selectedImage?.pageid === img.pageid}
+            isSelected={selectedImage?.url === img.url}
             onSelect={onSelect}
+            onConfirm={onConfirm}
           />
         ))}
       </div>
@@ -240,18 +355,14 @@ export function CommonsResultsGrid({
         </div>
       )}
 
-      {hasMore && !isLoading && (
-        <div className="wikios-commons-loadmore pt-6 pb-2 text-center">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onLoadMore}
-            className="border-white/10 text-xs hover:bg-white/5 active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-          >
-            Load more images
-          </Button>
+      {error && (
+        <div className="text-footnote text-label-secondary mt-4 flex items-center justify-center gap-3">
+          <span role="alert">{errorMessage(error)}</span>
+          <RetryButton onRetry={onRetry} />
         </div>
       )}
+
+      {hasMore && !isLoading && <LoadMore onLoadMore={onLoadMore} />}
     </div>
   );
 }

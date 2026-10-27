@@ -1,0 +1,5 @@
+Visit [https://example.org the example site] or [https://example.org/bare] or the raw https://example.com/page address.
+
+See also [//example.org/relative protocol relative] and [mailto:someone@example.org mail].
+* [https://example.net/one One]
+* [https://example.net/two Two]

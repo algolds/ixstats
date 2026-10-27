@@ -1,44 +1,60 @@
 ---
-title: Achievements & Progression
-description: Achievement categories, rarity tiers, IxCredits rewards, and the unlock system.
-badge: Living World
+title: Achievements & Ribbons
+description: How achievements unlock, what they pay, and how they show as ribbons on your passport.
+badge: Vault, Cards & Rewards
+prevHref: /help/vault/ns-import
+prevLabel: Importing NationStates Cards
+nextHref: /help/gameplay/ribbons
+nextLabel: Ribbons & Your Showcase
 ---
 
-## Achievement System
+## How achievements work
 
-Achievements are automatic rewards that unlock when your country data meets specific criteria. The Achievement Service monitors country changes and checks unlock conditions whenever data updates, so you never need to manually claim achievements.
+Achievements are milestones that unlock automatically; you never claim them. They live in the [Vault](/vault/achievements). There are about 114 active achievements in ten categories. Five are about your nation: **Executive**, **Politics**, **Diplomacy**, **Defense** and **Nation**. Five are about you: **Social**, **Wiki**, **Cards**, **Lorewards** and **General**. Each one pays IxCredits once, by rarity. Browse them all, locked and unlocked, on the [Achievements](/vault/achievements) page.
 
-## Rarity Tiers & Rewards
+## Account and nation achievements
 
-> **Achievement Rarities**
->
-> Default rewards are shown below; administrators can tune them.
->
-> - **Common** — 100 IxCredits. Basic milestones like creating your first country or establishing your first embassy.
-> - **Uncommon** — 250 IxCredits. Intermediate goals like reaching specific GDP thresholds or diplomatic relationship counts.
-> - **Rare** — 500 IxCredits. Significant accomplishments like top-10 leaderboard placement or advanced military readiness.
-> - **Epic** — 1,000 IxCredits. Major milestones like reaching higher economic tiers.
-> - **Legendary** — 2,500 IxCredits. The rarest achievements for exceptional accomplishments. Some legendary achievements also award special cards.
+- **Account achievements** follow you, with or without a nation: joining, time on the platform (a week, a year and so on), how many achievements you hold, wiki edits and articles (edits made in WikiOS count; classic-wiki edits once the old IxWiki name they were made under is [approved for your account](/help/getting-started/ixnayid#claim-your-old-ixwiki-names)), ThinkPages and forum activity, your card collection and packs, trades and sales, daily-claim streaks, and Lorewards.
+- **Nation achievements** are checked against the nation you're playing as. Each system has one early milestone, such as answering a national issue, committing a directive, holding an election or opening an embassy. The rest are long-term and measured in real weeks and months of play: answering issues week after week, steady directives, laws and cabinet meetings, elections, lasting embassies and alliances, and how long you have owned your nation (Stewardship).
+- Time-based achievements count real time, so a realm with a faster or slower clock isn't at an advantage.
 
-## Achievement Categories
+## When they're checked
 
-- **Economic:** GDP milestones, growth rate targets, trade volume thresholds, economic tier advancement
-- **Diplomatic:** Embassy count goals, alliance formation, cultural exchange completion, diplomatic influence ranking
-- **Military:** Military readiness levels, equipment milestones, operation completion, defense score thresholds
-- **Government:** Milestones for how your nation is governed
-- **Social:** ThinkPages engagement metrics, ThinkTank participation, collaboration milestones
-- **General:** Getting started and platform-wide milestones
+- When you open the [Achievements](/vault/achievements) page.
+- In the background shortly after things like creating or claiming a nation, opening a pack, importing a NationStates deck, posting on ThinkPages or answering a national issue.
+- Hourly for players who've been active recently.
 
-## Notification & Display
+## Rewards
 
-When an achievement unlocks:
+| Rarity | IxCredits (default) |
+| --- | --- |
+| Common | 100 |
+| Uncommon | 250 |
+| Rare | 500 |
+| Epic | 1,000 |
+| Legendary | 2,500 |
 
-- **Real-Time Notifications:** An "Achievement Unlocked" alert appears in the notification feed
-- **Achievements Page:** Browse every achievement, unlocked and locked, on the [Achievements](/achievements) page
-- **Showcase Shelf:** Turn on the Showcase Shelf on the Achievements page to display your highlights
-- **Achievement Tooltips:** Hover over achievement badges for detailed information
+Some achievements also award a card or a pack. Achievement IxCredits don't count toward your daily earning caps.
 
-> **Related Documentation**
->
-> - [IxCredits Economy](/help/vault/ixcredits) — IxCredits earning and spending
-> - [Leaderboards & Rankings](/help/gameplay/leaderboards) — Competitive rankings
+## The Achievements page
+
+- Four tabs: **All** (filter by category and rarity, search, grid or list; secret achievements stay hidden until you unlock them), **Lorewards** (your wiki-writing trophies, see [Lorewards](/help/wiki/lorewards)), **Showcase** (your rarest unlocks; see [Ribbons & Your Showcase](/help/gameplay/ribbons#the-achievements-showcase-shelf)) and **Leaderboard** (players ranked by achievement points).
+
+## Legacy achievements
+
+Some older achievements were retired because they could not be earned fairly, such as ones tied to GDP or population tiers. If you unlocked one, it stays: you keep its points and IxCredits, it still counts toward the "unlock N achievements" milestones, and it shows greyed out with a **Legacy** mark. Retired ones can't be earned any more and aren't counted in "N of total".
+
+## Ribbons
+
+Every unlocked achievement is also a **ribbon**. The stripe colour shows the category and the star shows the rarity.
+
+- Your [passport](/help/getting-started/ixnayid) shows your full ribbon rack and a signature shelf of three ribbons: the three you pin, or your three rarest.
+- Your nations' profiles show your top three ribbons in the header.
+- Pin ribbons from your passport with **Edit passport**. Hiding Achievements there hides your ribbons everywhere.
+
+More in [Ribbons & Your Showcase](/help/gameplay/ribbons).
+
+## Good to know
+
+- Nation achievements are checked against the nation you're playing as.
+- Wiki writing is recognised separately through [Lorewards](/help/wiki/lorewards).

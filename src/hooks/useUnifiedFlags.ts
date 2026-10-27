@@ -1,15 +1,15 @@
 "use client";
 // Unified Flag Hooks - Consolidates all flag loading approaches (Plan 164)
-// Replaces useFlag, useBulkFlagCache, useBatchFlags, etc.
+// Replaces the old useFlag / bulk flag cache hooks.
 
-import { useState, useMemo, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 
 const DEFAULT_PLACEHOLDER = "/images/flags/placeholder.svg";
 
 // Single flag hook result
-export interface UseFlagResult {
+interface UseFlagResult {
   flagUrl: string | null;
   isLoading: boolean;
   error: boolean;
@@ -18,7 +18,7 @@ export interface UseFlagResult {
 }
 
 // Bulk flag hook result
-export interface UseBulkFlagsResult {
+interface UseBulkFlagsResult {
   flagUrls: Record<string, string | null>;
   isLoading: boolean;
   error: string | null;
@@ -28,16 +28,12 @@ export interface UseBulkFlagsResult {
 }
 
 // Flag preloader result
-export interface UseFlagPreloaderResult {
-  preloadFlags: (countryNames: string[]) => Promise<void>;
-  isPreloading: boolean;
-  preloadedCount: number;
-}
 
 /**
- * Hook for loading a single flag
+ * Hook for loading a single flag. `realm` names the realm the country is in (a realm map's nations); without it
+ * the name is looked up in the viewer's realm.
  */
-export function useFlag(countryName?: string): UseFlagResult {
+export function useFlag(countryName?: string, realm?: string): UseFlagResult {
   const cleanName = countryName?.replace(/ \(Demo\)$/, "").trim();
   const placeholderUrl = useMemo(() => withBasePath(DEFAULT_PLACEHOLDER), []);
 
@@ -46,7 +42,7 @@ export function useFlag(countryName?: string): UseFlagResult {
     isLoading,
     isError,
   } = api.countries.flags.resolveBatch.useQuery(
-    { countryNames: cleanName ? [cleanName] : [] },
+    { countryNames: cleanName ? [cleanName] : [], ...(realm && { realm }) },
     {
       enabled: Boolean(cleanName),
       staleTime: 1000 * 60 * 60, // 1 hour
@@ -75,9 +71,6 @@ export function useBulkFlags(
   countryNames: readonly string[],
   source: "irl" | "wiki" = "wiki"
 ): UseBulkFlagsResult {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const placeholderUrl = useMemo(() => withBasePath(DEFAULT_PLACEHOLDER), []);
-
   // Safe copied sort for dependency key without mutating input
   const countryNamesKey = useMemo(() => {
     return [...countryNames].sort().join(",");
@@ -133,44 +126,5 @@ export function useBulkFlags(
     localCount: 0,
     placeholderCount,
     refetch,
-  };
-}
-
-/**
- * Backward compatibility alias for useBulkFlags
- */
-export const useBulkFlagCache = useBulkFlags;
-export const useBatchFlags = useBulkFlags;
-
-/**
- * Hook for preloading flags in the background
- */
-export function useFlagPreloader(): UseFlagPreloaderResult {
-  const utils = api.useUtils();
-  const [isPreloading, setIsPreloading] = useState(false);
-  const [preloadedCount, setPreloadedCount] = useState(0);
-
-  const preloadFlags = useCallback(
-    async (countryNames: string[]) => {
-      if (!countryNames.length) return;
-      setIsPreloading(true);
-      try {
-        await utils.countries.flags.resolveBatch.prefetch({
-          countryNames: [...countryNames],
-        });
-        setPreloadedCount((prev) => prev + countryNames.length);
-      } catch (err) {
-        console.warn("[useFlagPreloader] Preload error:", err);
-      } finally {
-        setIsPreloading(false);
-      }
-    },
-    [utils]
-  );
-
-  return {
-    preloadFlags,
-    isPreloading,
-    preloadedCount,
   };
 }

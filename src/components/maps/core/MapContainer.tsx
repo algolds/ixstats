@@ -1,45 +1,57 @@
 "use client";
 
-/**
- * MapContainer - Wrapper component that handles data loading and error states
- * for the IxWorldMap component. Fetches GeoJSON data via tRPC.
- */
-
-import { useRef, useMemo, useCallback, useState, useEffect, useDeferredValue } from "react";
+import {
+  useRef,
+  useCallback,
+  useState,
+  useEffect,
+  useDeferredValue,
+  useMemo,
+  type RefObject,
+} from "react";
 import dynamic from "next/dynamic";
-import { useIsAdmin, useIsStaff } from "~/hooks/usePermissions";
+import { useSearchParams } from "next/navigation";
+import { useIsAdmin } from "~/hooks/usePermissions";
+import { wantsRealmMapEditor } from "~/lib/maps/realm-world-editor";
+import { useNotify } from "~/hooks/useNotify";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
 import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 import { api } from "~/trpc/react";
-import { IxTime } from "~/lib/ixtime";
-import { MapControls } from "./MapControls";
-import { MapControlsFAB } from "./MapControlsFAB";
+import { MapControls, type RasterControls } from "./MapControls";
 import { useIsMobile } from "~/hooks/useIsMobile";
-import { CountryInfoPanel } from "./CountryInfoPanel";
-import { FeatureInfoPanel } from "./FeatureInfoPanel";
-import { StoryPinModal } from "./StoryPinModal";
-import { RouteInfoPanel } from "./RouteInfoPanel";
-import MapPinInfoPanel from "./MapPinInfoPanel";
 import { MapDynamicIsland } from "./MapDynamicIsland";
 import { AnalyticsLegend } from "./AnalyticsLegend";
 import { MeasureTool } from "./MeasureTool";
 import { MapKeyboardControls } from "./MapKeyboardControls";
 import { MapLoadingScreen } from "./MapLoadingScreen";
 import { MapWelcomeModal } from "./MapWelcomeModal";
-import { TimelineScrubber } from "./TimelineScrubber";
+import { TimelineScrubber, type TimelineScrubberProps } from "./TimelineScrubber";
 import { MapRealmProvider } from "./MapRealmContext";
-import type { FeatureCollection } from "geojson";
-import type { MapLayerType } from "~/lib/maps/map-config";
-import type { SelectedCountry, IxWorldMapRef } from "./IxWorldMap";
+import type { MapLayerType, ProjectionMode } from "~/lib/maps/map-config";
+import type { ClimateKey } from "~/lib/maps/realm-map-settings";
+import { mapHomeCenter } from "~/lib/maps/map-config";
+import type { SelectedCountry, IxWorldMapRef, MapLayerData } from "./IxWorldMap";
 
-// MapLibre CSS - imported here so it's in the main bundle
 import "maplibre-gl/dist/maplibre-gl.css";
 
-// Extracted hooks
 import { useMapState } from "./hooks/useMapState";
 import { useMapDataQueries } from "./hooks/useMapDataQueries";
+import { getZoomBand } from "~/hooks/useMapDataBatched";
+import { useRetryMapLayers } from "~/hooks/useMapLayerData";
 import { useMapTour } from "./hooks/useMapTour";
 import { TourHUD } from "./components/TourHUD";
+import { MapFailureOverlay, MapLoadError } from "./components/MapNotices";
+import { MapInfoPanels } from "./components/MapInfoPanels";
+import { useHistoricalMapLayers } from "./hooks/useHistoricalMapLayers";
+import { isIxnayView } from "~/lib/realms/realm-ids";
+import {
+  useArtModeLabels,
+  useRealmDefaultView,
+  useRealmMapDisplay,
+  useRealmRasterSelection,
+} from "./hooks/useRealmMapDisplay";
+import { RealmMapScale } from "./RealmMapScale";
+import { EARTH_RADIUS_KM } from "~/lib/maps/planet";
 
 const IxWorldMap = dynamic(() => import("./IxWorldMap"), {
   ssr: false,
@@ -50,7 +62,7 @@ const MapEditorOverlay = dynamic(() => import("~/components/maps/editor/MapEdito
   ssr: false,
 });
 
-export interface MapContainerProps {
+interface MapContainerProps {
   className?: string;
   showControls?: boolean;
   showTools?: boolean; // Search + measure tools
@@ -74,6 +86,225 @@ export interface MapContainerProps {
   realm?: string;
 }
 
+type MapState = ReturnType<typeof useMapState>;
+type MapPin = ReturnType<typeof useMapPinInfo>;
+
+const whenTrue = <T,>(condition: boolean, value: T) => (condition ? value : undefined);
+
+const selectedMapId = (country: SelectedCountry | null) => country?.countryId || country?.featureId;
+
+/** `sidePanelOpen`: a right-hand side panel (desktop) / bottom sheet (mobile) is showing. */
+function getPanelFlags(allowed: boolean, country: unknown, feature: unknown) {
+  const countryPanelOpen = allowed && !!country && !feature;
+  const featurePanelOpen = allowed && !!feature;
+  return {
+    countryPanelOpen,
+    featurePanelOpen,
+    sidePanelOpen: countryPanelOpen || featurePanelOpen,
+  };
+}
+
+interface MapEditorsProps {
+  state: MapState;
+  mapLayers: MapLayerData[];
+  realm: string | undefined;
+  historicalYear: number | null;
+  mapRef: RefObject<IxWorldMapRef | null>;
+}
+
+function MapEditors({ state, mapLayers, realm, historicalYear, mapRef }: MapEditorsProps) {
+  const shared = { mapLayers, historicalYear, mapInstance: mapRef.current?.getMap() ?? null };
+  return (
+    <>
+      {/* The country editor only ever edits the viewer's own (active) nation, so it works in that
+          nation's realm (undefined = the viewer's realm) even when opened from /maps?realm=<other> */}
+      <MapRealmProvider value={undefined}>
+        {state.isEditing && state.editingCountryId && (
+          <MapEditorOverlay
+            countryId={state.editingCountryId}
+            onExit={state.handleExitEditor}
+            {...shared}
+          />
+        )}
+      </MapRealmProvider>
+      {/* The world editor edits the realm this map shows (ruling E-r) */}
+      <MapRealmProvider value={realm}>
+        {state.isWorldEditing && (
+          <MapEditorOverlay isWorldMode onExit={() => state.setIsWorldEditing(false)} {...shared} />
+        )}
+      </MapRealmProvider>
+    </>
+  );
+}
+
+interface MapToolbarsProps {
+  state: MapState;
+  pin: MapPin;
+  mapRef: RefObject<IxWorldMapRef | null>;
+  measureToolRef: RefObject<{ toggle: () => void } | null>;
+  showControls: boolean;
+  toolsVisible: boolean;
+  tourIdle: boolean;
+  visibleLayers: Set<MapLayerType>;
+  onToggleLayer: (layer: MapLayerType) => void;
+  hasCountry: boolean;
+  isAdmin: boolean;
+  /** The viewer edits this realm's map (its founder or a map officer): offer the world editor. */
+  canEditRealmMap: boolean;
+  hideEditButtons: boolean;
+  onEditMap: () => void;
+  projectionMode: ProjectionMode;
+  onProjectionChange: (mode: ProjectionMode) => void;
+  onOpenWelcome: () => void;
+  realm: string | undefined;
+  /** The realm's planet radius (km), for the measure tool. */
+  radiusKm: number | undefined;
+  /** The realm's vector layer types (undefined on Ixnay: every switch), climate key and raster art switches. */
+  layerTypes: readonly string[] | undefined;
+  climateKey: ClimateKey | null | undefined;
+  raster: RasterControls | undefined;
+}
+
+function MapToolbars({
+  state,
+  pin,
+  mapRef,
+  measureToolRef,
+  showControls,
+  toolsVisible,
+  tourIdle,
+  visibleLayers,
+  onToggleLayer,
+  hasCountry,
+  isAdmin,
+  canEditRealmMap,
+  hideEditButtons,
+  onEditMap,
+  projectionMode,
+  onProjectionChange,
+  onOpenWelcome,
+  realm,
+  radiusKm,
+  layerTypes,
+  climateKey,
+  raster,
+}: MapToolbarsProps) {
+  const isMobile = useIsMobile();
+  const editAllowed = !hideEditButtons && !state.isEditing && !state.isWorldEditing;
+  const toggleMeasure = useCallback(() => measureToolRef.current?.toggle(), [measureToolRef]);
+  return (
+    <>
+      {showControls && tourIdle && (
+        <MapControls
+          variant={isMobile ? "mobile" : "desktop"}
+          visibleLayers={visibleLayers}
+          onToggleLayer={onToggleLayer}
+          overlayVisibility={state.overlayVisibility}
+          onToggleOverlay={state.toggleOverlay}
+          labelsVisible={state.labelsVisible}
+          onToggleLabels={state.toggleLabels}
+          isMeasuring={state.isMeasuring}
+          onToggleMeasure={toggleMeasure}
+          isPinActive={pin.isPinToolActive}
+          onTogglePin={pin.togglePinTool}
+          toolsVisible={toolsVisible}
+          canEdit={editAllowed && hasCountry}
+          onEditMap={onEditMap}
+          showWorldEditor={editAllowed && (isAdmin || canEditRealmMap)}
+          onOpenWorldEditor={state.handleOpenWorldEditor}
+          layerTypes={layerTypes}
+          climateKey={climateKey}
+          raster={raster}
+        />
+      )}
+
+      {toolsVisible && (
+        <MeasureTool
+          ref={measureToolRef}
+          mapRef={mapRef}
+          onActiveChange={state.setIsMeasuring}
+          headless
+          radiusKm={radiusKm}
+        />
+      )}
+
+      {toolsVisible && tourIdle && (
+        <MapDynamicIsland
+          projectionMode={projectionMode}
+          onProjectionChange={onProjectionChange}
+          onSearchResult={state.handleSearchResult}
+          onOpenWelcome={onOpenWelcome}
+          realm={realm}
+        />
+      )}
+    </>
+  );
+}
+
+interface MapOverlaysProps {
+  state: MapState;
+  tour: ReturnType<typeof useMapTour>;
+  /** The tour is offered only on Ixnay's map. */
+  tourAvailable: boolean;
+  showLoading: boolean;
+  showControls: boolean;
+  mapReady: boolean;
+  isWelcomeOpen: boolean | undefined;
+  onCloseWelcome: () => void;
+  /** The timeline scrubber's position, setter and realm. */
+  historical: Pick<TimelineScrubberProps, "value" | "onChange" | "realm">;
+  sidePanelOpen: boolean;
+}
+
+/** Full-screen loading, first-visit welcome, tour HUD and the WebGL / timeout fallback. */
+function MapOverlays({
+  state,
+  tour,
+  tourAvailable,
+  showLoading,
+  showControls,
+  mapReady,
+  isWelcomeOpen,
+  onCloseWelcome,
+  historical,
+  sidePanelOpen,
+}: MapOverlaysProps) {
+  const tourIdle = tour.tourState === "idle";
+  const failed = state.webglError || (state.mapLoadTimeout && !state.mapEngineReady);
+  return (
+    <>
+      {showLoading && <MapLoadingScreen isReady={mapReady} />}
+
+      {showControls && (
+        <MapWelcomeModal
+          isMapReady={mapReady}
+          onStartTour={tourAvailable ? tour.startTour : undefined}
+          isOpen={isWelcomeOpen}
+          onClose={onCloseWelcome}
+        />
+      )}
+
+      {!tourIdle && <TourHUD {...tour} />}
+
+      {/* Historical timeline scrubber (read-only). Collapsed to a pill until opened; hidden on
+          mobile while the bottom sheet is up and shifted clear of the desktop side panel. */}
+      {showControls && tourIdle && !state.isEditing && !state.isWorldEditing && (
+        <TimelineScrubber
+          {...historical}
+          className={sidePanelOpen ? "max-sm:hidden sm:right-[25rem]" : undefined}
+        />
+      )}
+
+      {failed && (
+        <MapFailureOverlay
+          webglError={!!state.webglError}
+          onKeepWaiting={() => state.setMapLoadTimeout(false)}
+        />
+      )}
+    </>
+  );
+}
+
 export function MapContainer({
   className = "",
   showControls = true,
@@ -94,102 +325,77 @@ export function MapContainer({
   disableCountrySelect = false,
   realm,
 }: MapContainerProps) {
+  const retryMapLayers = useRetryMapLayers();
   const isAdmin = useIsAdmin();
-  const isStaff = useIsStaff();
-  const [showGatekeepingWarning, setShowGatekeepingWarning] = useState(true);
-  const isMobile = useIsMobile();
   const toolsVisible = showTools ?? showControls;
   const mapRef = useRef<IxWorldMapRef>(null);
   const measureToolRef = useRef<{ toggle: () => void }>(null);
 
-  // Real-time sync: invalidate map caches when any geo mutation succeeds
-  useMapLiveSync();
+  useMapLiveSync(realm);
 
-  // Clear the exposed map handle when this container unmounts.
   useEffect(() => {
     return () => onMapReady?.(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Pin tool state
-  const {
-    isPinToolActive,
-    togglePinTool,
-    pinPosition,
-    clientResult,
-    serverResult,
-    isServerLoading,
-    dropPin,
-    clearPin,
-  } = useMapPinInfo(realm);
+  const pin = useMapPinInfo(realm);
 
-  // Fetch user profile to get countryId first
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
     staleTime: 5 * 60_000,
     retry: false,
   });
   const userCountryId = userProfile?.countryId ?? null;
+  // Ocean labels, the prime meridian, the home view and the guided tour describe Ixnay only (AT-2).
+  const ixnay = isIxnayView(realm, userProfile?.country?.realmId);
+  // The realm's planet radius, default view, base image, credit line, raster art and climate key
+  const realmDisplay = useRealmMapDisplay(realm);
+  // Its raster art: a base map (art mode while one is shown) and overlays
+  const raster = useRealmRasterSelection(realmDisplay);
+  const { layers: rasterLayers, selection: rasterSelection, setBase, toggleOverlay } = raster;
+  const rasterRealmId = realmDisplay?.realmId;
+  const rasterControls = useMemo<RasterControls | undefined>(
+    () =>
+      rasterRealmId && rasterLayers.length > 0
+        ? {
+            realmId: rasterRealmId,
+            layers: rasterLayers,
+            selection: rasterSelection,
+            onBaseChange: setBase,
+            onToggleOverlay: toggleOverlay,
+          }
+        : undefined,
+    [rasterRealmId, rasterLayers, rasterSelection, setBase, toggleOverlay]
+  );
 
-  // 1. Hook: Manage State (selections, controls, UI panels)
-  const {
-    selectedCountry,
-    setSelectedCountry,
-    selectedFeature,
-    setSelectedFeature,
-    isMeasuring,
-    setIsMeasuring,
-    mapEngineReady,
-    setMapEngineReady,
-    webglError,
-    mapLoadTimeout,
-    setMapLoadTimeout,
-    geographyFilter,
-    setGeographyFilter,
-    projectionMode,
-    setProjectionMode,
-    isEditing,
-    isWorldEditing,
-    setIsWorldEditing,
-    selectedRouteId,
-    setSelectedRouteId,
-    storyPinModalId,
-    setStoryPinModalId,
-    editingCountryId,
-    currentZoom,
-    setCurrentZoom,
-    overlayVisibility,
-    labelsVisible,
-    toggleLabels,
-    toggleOverlay,
-    handleFeatureClick,
-    handleCountryClick,
-    handleCountryHover,
-    handleMapClick,
-    handleClosePanel,
-    handleEditMap,
-    handleExitEditor,
-    handleOpenMyEditor,
-    handleOpenWorldEditor,
-    handleEscapePress,
-    handleSearchResult,
-    handleNeighborClick,
-  } = useMapState({
-    userCountryId, // passed from fetched profile
-    isAdmin,
+  // Loaded layers, read lazily by click handlers (pin tool, neighbour lookup). The layers are
+  // fetched after useMapState runs, so they are handed over through a ref-backed getter.
+  const mapLayersRef = useRef<MapLayerData[]>([]);
+  const getMapLayers = useCallback(() => mapLayersRef.current, []);
+
+  const state = useMapState({
+    userCountryId,
     onCountrySelect,
     mapRef,
-    measureToolRef,
-    mapLayers: [], // will be bound from queries
-    layerDataMap: {}, // will be bound from queries
-    isPinToolActive,
-    pinPosition,
-    dropPin,
-    clearPin,
+    getMapLayers,
+    isPinToolActive: pin.isPinToolActive,
+    pinPosition: pin.pinPosition,
+    dropPin: pin.dropPin,
+    clearPin: pin.clearPin,
   });
+  const { selectedCountry, setMapEngineReady, setProjectionMode, isEditing } = state;
 
-  // 2. Hook: Manage Queries & Prefetching
+  // `?editor=labels` or `?editor=world` (links from admin and Manage): open the world editor once the map is up.
+  const openEditorFromLink = wantsRealmMapEditor(useSearchParams());
+  const mayEditRealmMap = isAdmin || !!realmDisplay?.canEdit;
+  const openedEditor = useRef(false);
+  const { mapEngineReady, setIsWorldEditing } = state;
+  useEffect(() => {
+    if (openedEditor.current || !openEditorFromLink || !mayEditRealmMap || !mapEngineReady) return;
+    openedEditor.current = true;
+    setIsWorldEditing(true);
+  }, [openEditorFromLink, mayEditRealmMap, mapEngineReady, setIsWorldEditing]);
+
   const {
-    userCountryId: _queriedUserCountryId,
     mapLayers,
     toggleLayer,
     visibleLayers,
@@ -199,134 +405,103 @@ export function MapContainer({
     isPreloading,
     overlayData,
     error,
+    tileSource,
   } = useMapDataQueries({
     realm,
     initialLayers,
-    currentZoom,
+    currentZoom: state.currentZoom,
     initialCountryId,
     selectedCountryId,
-    overlayVisibility,
-    mapEngineReady,
-    setMapLoadTimeout,
+    overlayVisibility: state.overlayVisibility,
+    mapEngineReady: state.mapEngineReady,
+    setMapLoadTimeout: state.setMapLoadTimeout,
     mapRef,
-    setSelectedCountry,
+    setSelectedCountry: state.setSelectedCountry,
     onCountrySelect,
     selectedCountry,
-    userCountryId,
   });
+
+  useEffect(() => {
+    mapLayersRef.current = mapLayers;
+  }, [mapLayers]);
+
+  const effectiveVisibleLayers = controlledVisibleLayers ?? visibleLayers;
+  const effectiveToggleLayer = onToggleLayer ?? toggleLayer;
+  useArtModeLabels(raster.artMode, effectiveVisibleLayers, effectiveToggleLayer);
 
   const deferredOverlayData = useDeferredValue(overlayData);
 
-  // 1.5 Hook: Tour & Demo Mode State Machine
-  const {
-    tourState,
-    currentStepIndex,
-    isPaused,
-    progress,
-    startTour,
-    exitTour,
-    nextStep,
-    prevStep,
-    togglePause,
-    currentStepData,
-    totalSteps,
-  } = useMapTour({
+  useRealmDefaultView(mapRef, realmDisplay, {
+    mapReady: state.mapEngineReady,
+    explicitView: !!initialCenter || initialZoom !== undefined || !!initialCountryId,
+  });
+
+  const tour = useMapTour({
     mapRef,
-    projectionMode,
+    projectionMode: state.projectionMode,
     setProjectionMode,
-    setSelectedCountry,
+    setSelectedCountry: state.setSelectedCountry,
     mapLayers,
   });
 
-  // Bind aggregated layer properties needed by state handlers
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const layerDataMap = useMemo(() => {
-    const map: Record<string, any> = {};
-    for (const ml of mapLayers) {
-      map[ml.type] = ml.data;
-    }
-    return map;
-  }, [mapLayers]);
-
-  // Timeline scrubber: when the user scrubs to a past IxTime, fetch the
-  // "as-of" political FeatureCollection and swap it into the political layer.
-  // `null` = at "now", live data flows through.
-  const [historicalIxTime, setHistoricalIxTime] = useState<number | null>(null);
+  const { activeMapLayers, historicalIxTime, setHistoricalIxTime, historicalYear } =
+    useHistoricalMapLayers(mapLayers, controlledVisibleLayers, realm);
 
   // Parent control state for the welcome & help modal
   const [isWelcomeOpen, setIsWelcomeOpen] = useState<boolean | undefined>(undefined);
 
-  const historicalYear =
-    historicalIxTime === null ? null : IxTime.getCurrentGameYear(historicalIxTime);
+  // Stable callbacks for the memoised IxWorldMap. Inline arrows here re-rendered the map
+  // component (and re-ran all four of its layer hooks) on every container render.
+  const onMapReadyRef = useRef(onMapReady);
+  useEffect(() => {
+    onMapReadyRef.current = onMapReady;
+  }, [onMapReady]);
+  const handleMapReady = useCallback(() => {
+    setMapEngineReady(true);
+    onMapReadyRef.current?.(mapRef.current?.getMap() ?? null);
+  }, [setMapEngineReady]);
 
-  const { data: historicalPolitical } = api.geoCore.getWorldMapAsOf.useQuery(
-    { ixTime: historicalIxTime as number, realm },
-    {
-      enabled: historicalIxTime !== null,
-      staleTime: 5 * 60_000,
-      gcTime: 30 * 60_000,
-    }
+  // Only the zoom band matters to data loading, so ignore zoom changes inside a band
+  // instead of re-rendering the whole container after every zoom gesture.
+  const { setCurrentZoom } = state;
+  const handleZoomChange = useCallback(
+    (zoom: number) =>
+      setCurrentZoom((prev) =>
+        prev !== undefined && getZoomBand(prev) === getZoomBand(zoom) ? prev : zoom
+      ),
+    [setCurrentZoom]
   );
 
-  // Inject computed parameters back into state refs/configs
-  const activeMapLayers = useMemo(() => {
-    const visibilityAdjusted = !controlledVisibleLayers
-      ? mapLayers
-      : mapLayers.map((layer) => ({
-          ...layer,
-          visible: controlledVisibleLayers.has(layer.type),
-        }));
+  const handleOpenWelcome = useCallback(() => setIsWelcomeOpen(true), []);
+  const noopProjectionChange = useCallback(() => {}, []);
+  const effectiveProjection = forceFlatProjection ? "mercator" : state.projectionMode;
+  const handleProjectionChange = forceFlatProjection ? noopProjectionChange : setProjectionMode;
 
-    // When scrubbed to a past date, swap the political layer's data for the
-    // historical FeatureCollection. If the historical query has not returned
-    // yet, keep the live layer so the map doesn't blink.
-    if (historicalIxTime === null || !historicalPolitical) {
-      return visibilityAdjusted;
-    }
-    return visibilityAdjusted.map((layer) =>
-      layer.type === "political"
-        ? { ...layer, data: historicalPolitical as FeatureCollection }
-        : layer
-    );
-  }, [mapLayers, controlledVisibleLayers, historicalIxTime, historicalPolitical]);
-
-  // Setup callbacks/variables that link mapLayers / userCountryId
-  const handleMapClickWithLayers = useCallback(
-    (lng: number, lat: number) => {
-      handleMapClick(lng, lat);
-    },
-    [handleMapClick]
-  );
-
-  const handleNeighborClickWithLayers = useCallback(
-    (neighbor: any) => {
-      handleNeighborClick(neighbor);
-    },
-    [handleNeighborClick]
-  );
-
+  const { handleOpenMyEditor } = state;
+  const notify = useNotify();
   const handleOpenMyEditorWithUser = useCallback(() => {
     if (userCountryId) {
       handleOpenMyEditor();
     } else {
-      alert("You must have a country to edit the map. Go to /mycountry to create or claim one.");
+      notify.warning(
+        "You need a country to edit the map",
+        "Create or claim one from MyCountry first."
+      );
     }
-  }, [userCountryId, handleOpenMyEditor]);
+  }, [userCountryId, handleOpenMyEditor, notify]);
 
   if (error) {
-    return (
-      <div
-        className={`bg-background absolute inset-0 flex items-center justify-center ${className}`}
-      >
-        <div className="text-center">
-          <p className="text-foreground text-lg font-medium">Failed to load map data</p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {error.message || "Please try again later."}
-          </p>
-        </div>
-      </div>
-    );
+    return <MapLoadError className={className} message={error.message} onRetry={retryMapLayers} />;
   }
+
+  const { countryPanelOpen, featurePanelOpen, sidePanelOpen } = getPanelFlags(
+    showPopup && !pin.isPinToolActive && !isEditing,
+    selectedCountry,
+    state.selectedFeature
+  );
+
+  const tourIdle = tour.tourState === "idle";
+  const mapReady = !isPreloading && state.mapEngineReady;
 
   return (
     <div className={`absolute inset-0 pb-[env(safe-area-inset-bottom)] ${className}`}>
@@ -334,284 +509,118 @@ export function MapContainer({
         ref={mapRef}
         layers={activeMapLayers}
         capitals={capitalsGeoJson}
-        overlayFeatures={overlayFeatures ?? undefined}
-        overlayVisibility={overlayVisibility}
-        onCountryClick={
-          disableCountrySelect || tourState !== "idle" ? undefined : handleCountryClick
-        }
-        onCountryHover={tourState !== "idle" ? undefined : handleCountryHover}
-        onMapClick={handleMapClickWithLayers}
-        onFeatureClick={tourState !== "idle" ? undefined : handleFeatureClick}
-        onReady={() => {
-          setMapEngineReady(true);
-          onMapReady?.(mapRef.current?.getMap() ?? null);
-        }}
-        selectedCountryId={selectedCountry?.countryId || selectedCountry?.featureId}
-        isMeasuring={isMeasuring}
-        geographyFilter={geographyFilter}
-        projectionMode={forceFlatProjection ? "mercator" : projectionMode}
+        overlayFeatures={overlayFeatures}
+        overlayVisibility={state.overlayVisibility}
+        onCountryClick={whenTrue(tourIdle && !disableCountrySelect, state.handleCountryClick)}
+        onCountryHover={whenTrue(tourIdle, state.handleCountryHover)}
+        onMapClick={state.handleMapClick}
+        onFeatureClick={whenTrue(tourIdle, state.handleFeatureClick)}
+        onReady={handleMapReady}
+        selectedCountryId={selectedMapId(selectedCountry)}
+        isMeasuring={state.isMeasuring}
+        geographyFilter={state.geographyFilter}
+        projectionMode={effectiveProjection}
         topCountryNames={topCountrySet}
-        labelsVisible={labelsVisible}
-        onZoomChange={setCurrentZoom}
+        labelsVisible={state.labelsVisible}
+        onZoomChange={handleZoomChange}
         initialCenter={initialCenter}
         initialZoom={initialZoom}
         overlayData={deferredOverlayData}
-        onRouteClick={(id) => setSelectedRouteId(id)}
+        onRouteClick={state.setSelectedRouteId}
+        showOceanLabels={ixnay}
+        ixnay={ixnay}
+        baseImageUrl={realmDisplay?.baseImage}
+        tileSource={tileSource}
+        rasterRealmId={realmDisplay?.realmId}
+        rasterLayers={raster.shown}
+        artMode={raster.artMode}
       />
 
-      {/* Layer controls + tools toolbar */}
-      {showControls &&
-        tourState === "idle" &&
-        (isMobile ? (
-          <MapControlsFAB
-            visibleLayers={controlledVisibleLayers ?? visibleLayers}
-            onToggleLayer={onToggleLayer ?? toggleLayer}
-            overlayVisibility={overlayVisibility}
-            onToggleOverlay={toggleOverlay}
-            labelsVisible={labelsVisible}
-            onToggleLabels={toggleLabels}
-            isMeasuring={isMeasuring}
-            onToggleMeasure={() => measureToolRef.current?.toggle()}
-            isPinActive={isPinToolActive}
-            onTogglePin={togglePinTool}
-            toolsVisible={toolsVisible}
+      <MapToolbars
+        state={state}
+        pin={pin}
+        mapRef={mapRef}
+        measureToolRef={measureToolRef}
+        showControls={showControls}
+        toolsVisible={toolsVisible}
+        tourIdle={tourIdle}
+        visibleLayers={effectiveVisibleLayers}
+        onToggleLayer={effectiveToggleLayer}
+        hasCountry={!!userCountryId}
+        isAdmin={isAdmin}
+        canEditRealmMap={!!realmDisplay?.canEdit}
+        hideEditButtons={hideEditButtons}
+        onEditMap={handleOpenMyEditorWithUser}
+        projectionMode={effectiveProjection}
+        onProjectionChange={handleProjectionChange}
+        onOpenWelcome={handleOpenWelcome}
+        realm={realm}
+        radiusKm={realmDisplay?.radiusKm}
+        layerTypes={realmDisplay?.isIxnay ? undefined : realmDisplay?.layerTypes}
+        climateKey={realmDisplay?.climateKey}
+        raster={rasterControls}
+      />
+
+      {/* Bottom-left stack: analytics legend and the scale with the cursor's coordinates; hidden on
+          mobile while the bottom sheet is up. */}
+      <div
+        className={`pointer-events-none absolute bottom-4 left-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-col-reverse items-start gap-2 sm:bottom-6 ${
+          sidePanelOpen ? "max-sm:hidden" : ""
+        }`}
+      >
+        {showControls && (
+          <RealmMapScale
+            map={state.mapEngineReady ? (mapRef.current?.getMap() ?? null) : null}
+            radiusKm={realmDisplay?.radiusKm ?? EARTH_RADIUS_KM}
           />
-        ) : (
-          <MapControls
-            visibleLayers={controlledVisibleLayers ?? visibleLayers}
-            onToggleLayer={onToggleLayer ?? toggleLayer}
-            overlayVisibility={overlayVisibility}
-            onToggleOverlay={toggleOverlay}
-            labelsVisible={labelsVisible}
-            onToggleLabels={toggleLabels}
-            isMeasuring={isMeasuring}
-            onToggleMeasure={() => measureToolRef.current?.toggle()}
-            isPinActive={isPinToolActive}
-            onTogglePin={togglePinTool}
-            toolsVisible={toolsVisible}
-            canEdit={hideEditButtons || isEditing || isWorldEditing ? false : !!userCountryId}
-            onEditMap={handleOpenMyEditorWithUser}
-            showWorldEditor={hideEditButtons || isEditing || isWorldEditing ? false : isAdmin}
-            onOpenWorldEditor={handleOpenWorldEditor}
-          />
-        ))}
+        )}
+        <AnalyticsLegend overlayVisibility={state.overlayVisibility} overlayData={overlayData} />
+      </div>
 
-      {/* MeasureTool */}
-      {toolsVisible && (
-        <MeasureTool
-          ref={measureToolRef}
-          mapRef={mapRef}
-          onActiveChange={setIsMeasuring}
-          headless
-        />
-      )}
-
-      {/* Dynamic Island */}
-      {toolsVisible && tourState === "idle" && (
-        <MapDynamicIsland
-          projectionMode={forceFlatProjection ? "mercator" : projectionMode}
-          onProjectionChange={forceFlatProjection ? () => {} : setProjectionMode}
-          onSearchResult={handleSearchResult}
-          onOpenWelcome={() => setIsWelcomeOpen(true)}
-          realm={realm}
-        />
-      )}
-
-      {/* Analytics legend */}
-      <AnalyticsLegend overlayVisibility={overlayVisibility} />
-
-      {/* Keyboard navigation */}
+      {/* Keyboard navigation + bottom-right credits (shifted left of the desktop side panel) */}
       <MapKeyboardControls
         mapRef={mapRef}
-        onEscapePress={handleEscapePress}
-        projectionMode={forceFlatProjection ? "mercator" : projectionMode}
-        onProjectionChange={forceFlatProjection ? () => {} : setProjectionMode}
+        onEscapePress={state.handleEscapePress}
+        projectionMode={effectiveProjection}
+        onProjectionChange={handleProjectionChange}
+        measureAvailable={toolsVisible}
+        sidePanelOpen={sidePanelOpen}
+        homeCenter={realmDisplay?.defaultView?.center ?? mapHomeCenter(ixnay)}
+        attribution={realmDisplay?.attribution}
       />
 
-      {/* Pin info panel */}
-      {isPinToolActive && pinPosition && (
-        <MapPinInfoPanel
-          pinPosition={pinPosition}
-          clientResult={clientResult}
-          serverResult={serverResult}
-          isServerLoading={isServerLoading}
-          onClose={clearPin}
-        />
-      )}
-
-      {/* Country info panel */}
-      {showPopup && selectedCountry && !selectedFeature && !isPinToolActive && !isEditing && (
-        <CountryInfoPanel
-          key={selectedCountry.featureId}
-          country={selectedCountry}
-          onClose={handleClosePanel}
-          onNeighborClick={handleNeighborClickWithLayers}
-          onGeographyFilter={setGeographyFilter}
-          onEditMap={handleEditMap}
-        />
-      )}
-
-      {/* Feature info panel */}
-      {showPopup && selectedFeature && !isPinToolActive && !isEditing && (
-        <FeatureInfoPanel
-          feature={selectedFeature}
-          onClose={() => setSelectedFeature(null)}
-          onOpenStoryModal={(pinId) => {
-            setStoryPinModalId(pinId);
-            setSelectedFeature(null);
-          }}
-        />
-      )}
-
-      {/* Story pin modal */}
-      {storyPinModalId && (
-        <StoryPinModal
-          pinId={storyPinModalId}
-          onClose={() => setStoryPinModalId(null)}
-          onFlyTo={(lng, lat) => {
-            mapRef.current?.flyTo(lng, lat, 8);
-          }}
-          onNavigateToPin={(pinId) => setStoryPinModalId(pinId)}
-        />
-      )}
-
-      {/* Route info panel */}
-      {selectedRouteId && !isEditing && (
-        <RouteInfoPanel
-          routeId={selectedRouteId}
-          onClose={() => setSelectedRouteId(null)}
+      {/* Feature panels read the wiki of the realm this map shows */}
+      <MapRealmProvider value={realm}>
+        <MapInfoPanels
+          state={state}
+          pin={pin}
+          mapRef={mapRef}
+          countryPanelOpen={countryPanelOpen}
+          featurePanelOpen={featurePanelOpen}
           canEdit={!!userCountryId}
         />
-      )}
+      </MapRealmProvider>
 
-      {/* Full-screen loading overlay */}
-      {showLoading && <MapLoadingScreen isReady={!isPreloading && mapEngineReady} />}
-
-      {/* First-visit welcome modal */}
-      {showControls && (
-        <MapWelcomeModal
-          isMapReady={!isPreloading && mapEngineReady}
-          onStartTour={startTour}
-          isOpen={isWelcomeOpen}
-          onClose={() => setIsWelcomeOpen(false)}
-        />
-      )}
-
-      {/* Tour / Demo Mode HUD overlay */}
-      <TourHUD
-        tourState={tourState}
-        currentStepIndex={currentStepIndex}
-        isPaused={isPaused}
-        progress={progress}
-        exitTour={exitTour}
-        nextStep={nextStep}
-        prevStep={prevStep}
-        togglePause={togglePause}
-        currentStepData={currentStepData}
-        totalSteps={totalSteps}
+      <MapOverlays
+        state={state}
+        tour={tour}
+        tourAvailable={ixnay}
+        showLoading={showLoading}
+        showControls={showControls}
+        mapReady={mapReady}
+        isWelcomeOpen={isWelcomeOpen}
+        onCloseWelcome={() => setIsWelcomeOpen(false)}
+        historical={{ value: historicalIxTime, onChange: setHistoricalIxTime, realm }}
+        sidePanelOpen={sidePanelOpen}
       />
 
-      {/* The country editor only ever edits the viewer's own (active) nation, so it works in that
-          nation's realm — undefined = the viewer's realm — even when opened from /maps?realm=<other> */}
-      <MapRealmProvider value={undefined}>
-        {isEditing && editingCountryId && (
-          <MapEditorOverlay
-            countryId={editingCountryId}
-            mapLayers={mapLayers}
-            onExit={handleExitEditor}
-            historicalYear={historicalYear}
-            mapInstance={mapRef.current?.getMap() ?? null}
-          />
-        )}
-      </MapRealmProvider>
-
-      {/* The world editor edits the realm this map shows (ruling E-r) */}
-      <MapRealmProvider value={realm}>
-        {isWorldEditing && (
-          <MapEditorOverlay
-            isWorldMode={true}
-            mapLayers={mapLayers}
-            onExit={() => setIsWorldEditing(false)}
-            historicalYear={historicalYear}
-            mapInstance={mapRef.current?.getMap() ?? null}
-          />
-        )}
-      </MapRealmProvider>
-
-      {/* Historical timeline scrubber (read-only) */}
-      {showControls && tourState === "idle" && (
-        <TimelineScrubber value={historicalIxTime} onChange={setHistoricalIxTime} />
-      )}
-
-      {/* Maps Private Beta Alert Banner for Non-Staff */}
-      {!isStaff && showGatekeepingWarning && (
-        <div className="absolute bottom-20 left-4 z-50 max-w-sm rounded-xl border border-amber-500/20 bg-slate-950/80 p-4 shadow-xl backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex gap-2.5">
-              <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-xs font-bold text-amber-500">
-                ⚠️
-              </span>
-              <div className="space-y-1">
-                <h4 className="text-xs font-bold text-amber-500">Maps Private Beta</h4>
-                <p className="text-xs leading-relaxed text-zinc-300">
-                  External country integration and interactive plotting are under active
-                  development. You can freely explore the world map, topography, and other nations,
-                  but adding your own borders or claiming territory is not yet open to external
-                  players.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowGatekeepingWarning(false)}
-              className="p-0.5 text-xs font-bold text-zinc-400 transition-colors hover:text-white"
-              title="Dismiss warning"
-              type="button"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* WebGL/Loading Error Fallback Overlay */}
-      {(webglError || mapLoadTimeout) && (
-        <div className="bg-map-ocean absolute inset-0 z-[60] flex items-center justify-center p-6 text-center">
-          <div className="facet-hierarchy-child max-w-md space-y-6 rounded-2xl border border-red-500/20 bg-black/60 p-8 shadow-2xl backdrop-blur-xl">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-500">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="h-8 w-8"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-13.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286zm0 13.036h.008v.008H12v-.008z"
-                />
-              </svg>
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-white">
-                {webglError ? "WebGL Error Detected" : "Map Loading Timeout"}
-              </h3>
-              <p className="text-sm text-white/60">
-                {webglError
-                  ? "WebGL is either disabled, crashed, or not supported by your browser. Please check your hardware acceleration settings."
-                  : "The map engine is taking longer than expected to load. This might be due to slow network speeds or database recovery mode."}
-              </p>
-            </div>
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-blue-500 active:scale-[0.98]"
-            >
-              Reload Page
-            </button>
-          </div>
-        </div>
-      )}
+      <MapEditors
+        state={state}
+        mapLayers={mapLayers}
+        realm={realm}
+        historicalYear={historicalYear}
+        mapRef={mapRef}
+      />
     </div>
   );
 }

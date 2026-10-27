@@ -1,11 +1,103 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import type { PrismaClient } from "@prisma/client";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
+import { ActivityHooks } from "~/lib/activity/hooks";
+import {
+  INVITE_STATUS,
+  inviteIssuedAt,
+  isProposalExpired,
+} from "~/lib/diplomacy/proposal-lifecycle";
+import { notifyCountryOwners } from "./notify";
+import { openForeignPolicyAction } from "./foreignPolicy";
+import { assertSameRealm } from "~/server/shared/same-realm-guard";
+import { allianceInviteProcedures } from "./alliance-invite-procedures";
+import {
+  allianceNameTaken,
+  assertAllianceRealm,
+  autoRespondNpcAllianceInvite,
+} from "./alliance-invites";
 
-// Helper functions for cultural exchange <-> embassy mission integration
+/** Collective actions that act on a target nation, and the foreign-policy action each member opens toward it. */
+const TARGETED_ALLIANCE_ACTIONS = {
+  collective_sanction: "sanction",
+  trade_bloc: "free_trade",
+} as const;
+
+type TargetedAllianceAction = keyof typeof TARGETED_ALLIANCE_ACTIONS;
+const isTargetedAction = (type: string): type is TargetedAllianceAction =>
+  type in TARGETED_ALLIANCE_ACTIONS;
+
+/** A targeted action needs a target: a real nation of the proposer's realm that is not in the alliance. */
+async function assertValidAllianceTarget(
+  db: PrismaClient,
+  allianceId: string,
+  proposerId: string,
+  targetId: string | undefined
+): Promise<void> {
+  if (!targetId) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Choose the nation this action targets." });
+  }
+  const [target, member] = await Promise.all([
+    db.country.findUnique({ where: { id: targetId }, select: { id: true } }),
+    db.allianceMember.findUnique({
+      where: { allianceId_countryId: { allianceId, countryId: targetId } },
+      select: { isActive: true },
+    }),
+  ]);
+  if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "Target nation not found." });
+  if (member?.isActive) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "An alliance cannot act against one of its own members.",
+    });
+  }
+  await assertSameRealm(db, proposerId, targetId);
+}
+
+/**
+ * Carries out an approved targeted action: every voting member opens the foreign-policy action through the same path
+ * a player's own proposal takes. A sanction is enacted at once (effects on both sides); a free trade offer waits for
+ * the target's consent. A member that already has one in force, whose relation forbids it, or of another realm
+ * than the target, is skipped.
+ */
+async function executeTargetedAllianceAction(
+  db: PrismaClient,
+  action: {
+    allianceId: string;
+    actionType: TargetedAllianceAction;
+    targetId: string;
+    title: string;
+    description: string | null;
+  }
+): Promise<number> {
+  const members = await db.allianceMember.findMany({
+    where: { allianceId: action.allianceId, isActive: true, role: { not: "observer" } },
+    select: { countryId: true },
+  });
+  let opened = 0;
+  for (const member of members) {
+    if (member.countryId === action.targetId) continue;
+    try {
+      await openForeignPolicyAction(db, {
+        initiatorId: member.countryId,
+        targetId: action.targetId,
+        actionType: TARGETED_ALLIANCE_ACTIONS[action.actionType],
+        severity: "moderate",
+        reason: `Alliance action: ${action.title}`,
+        description: action.description ?? undefined,
+      });
+      opened++;
+    } catch (error) {
+      if (!(error instanceof TRPCError)) throw error;
+    }
+  }
+  return opened;
+}
+
 export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
   // ============================================================
   // Alliance / Bloc System (Phase 3)
@@ -99,7 +191,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
     }),
 
   // Create a new alliance
-  createAlliance: protectedProcedure
+  createAlliance: rateLimitedMutationProcedure
     .input(
       z.object({
         name: z.string().min(2, "Alliance name must be at least 2 characters long").max(100),
@@ -120,45 +212,59 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
         });
       }
 
-      // Create alliance and add founder as first member
-      const alliance = await ctx.db.alliance.create({
-        data: {
-          name: input.name,
-          shortName: input.shortName,
-          type: input.type,
-          description: input.description,
-          charter: input.charter,
-          color: input.color,
-          visibility: input.visibility,
-          joinPolicy: input.joinPolicy,
-          memberCount: 1,
-          members: {
-            create: {
-              countryId: ctx.user.countryId,
-              role: "founder",
-              votingPower: 1.0, // Standard 1 vote per member
-              contributionLevel: "high",
-            },
-          },
-        },
-        include: {
-          members: {
-            include: {
-              country: { select: { id: true, name: true } },
-            },
-          },
-        },
-      });
-
-      // Auto-news: alliance formed
+      // The alliance belongs to the founding nation's realm; its name is unique within that realm.
       const founderCountry = await ctx.db.country.findUnique({
         where: { id: ctx.user.countryId },
-        select: { name: true },
+        select: { name: true, realmId: true },
       });
+
+      // Create alliance and add founder as first member
+      const alliance = await ctx.db.alliance
+        .create({
+          data: {
+            ...(founderCountry?.realmId && { realmId: founderCountry.realmId }),
+            name: input.name,
+            shortName: input.shortName,
+            type: input.type,
+            description: input.description,
+            charter: input.charter,
+            color: input.color,
+            visibility: input.visibility,
+            joinPolicy: input.joinPolicy,
+            memberCount: 1,
+            members: {
+              create: {
+                countryId: ctx.user.countryId,
+                role: "founder",
+                votingPower: 1.0, // Standard 1 vote per member
+                contributionLevel: "high",
+              },
+            },
+          },
+          include: {
+            members: {
+              include: {
+                country: { select: { id: true, name: true } },
+              },
+            },
+          },
+        })
+        .catch(allianceNameTaken);
+
+      // Auto-news: alliance formed
       void generateDiplomaticNews(ctx.db, ctx.user.countryId, "alliance_formed", {
         allianceName: input.name,
         countryName: founderCountry?.name ?? "Unknown",
       });
+      // Activity feed: only public alliances are announced (best effort, never throws).
+      if (input.visibility === "public") {
+        void ActivityHooks.Diplomatic.onAllianceFormed(
+          ctx.user.countryId,
+          input.name,
+          input.type,
+          ctx.auth?.userId ?? undefined
+        );
+      }
 
       // Notification: alliance formed (fire-and-forget)
       try {
@@ -182,7 +288,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
     }),
 
   // Invite a country to join an alliance
-  inviteMember: protectedProcedure
+  inviteMember: rateLimitedMutationProcedure
     .input(
       z.object({
         allianceId: z.string(),
@@ -222,72 +328,71 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
         },
       });
 
-      if (existing) {
-        if (existing.isActive) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Country is already a member." });
-        }
-        // Re-activate
-        await ctx.db.allianceMember.update({
-          where: { id: existing.id },
-          data: { isActive: true, role: input.role },
-        });
-      } else {
-        await ctx.db.allianceMember.create({
-          data: {
-            allianceId: input.allianceId,
-            countryId: input.targetCountryId,
-            role: input.role,
-            votingPower: input.role === "observer" ? 0 : 1.0,
-          },
+      if (existing?.isActive) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Country is already a member." });
+      }
+      // A stale invite no longer blocks a fresh one (it is re-issued below).
+      if (existing?.status === "invited" && !isProposalExpired(inviteIssuedAt(existing))) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "An invitation to this country is already pending.",
         });
       }
 
-      // Update member count
-      const count = await ctx.db.allianceMember.count({
-        where: { allianceId: input.allianceId, isActive: true },
+      const targetExists = await ctx.db.country.findUnique({
+        where: { id: input.targetCountryId },
+        select: { id: true, realmId: true },
       });
+      if (!targetExists) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Country not found." });
+      }
+      await assertAllianceRealm(ctx.db, input.allianceId, targetExists.realmId);
 
-      await ctx.db.alliance.update({
-        where: { id: input.allianceId },
-        data: { memberCount: count },
-      });
-
-      // Notification: notify invited country (fire-and-forget)
-      try {
-        const targetCountry = await ctx.db.country.findUnique({
-          where: { id: input.targetCountryId },
-          select: { owner: { select: { clerkUserId: true } } },
-        });
-        const targetUserId = targetCountry?.owner?.clerkUserId;
-        const alliance = await ctx.db.alliance.findUnique({
-          where: { id: input.allianceId },
-          select: { name: true },
-        });
-        if (targetUserId) {
-          await notificationAPI.create({
-            userId: targetUserId,
-            countryId: input.targetCountryId,
-            title: "Alliance Invitation",
-            message: `You've been invited to join ${alliance?.name ?? "an alliance"}`,
-            type: "info",
-            category: "diplomatic",
-            priority: "high",
-            metadata: { allianceId: input.allianceId },
+      // An invite is a pending row (isActive=false, status="invited"): the target's owner must
+      // accept via respondToAllianceInvite before the country becomes a member.
+      const votingPower = input.role === "observer" ? 0 : 1.0;
+      const inviteFields = {
+        isActive: false,
+        status: INVITE_STATUS.pending,
+        role: input.role,
+        votingPower,
+        invitedByCountryId: ctx.user.countryId,
+        invitedAt: new Date(),
+      };
+      // Previously left, declined, withdrawn or expired: re-issue the invite.
+      const invite = existing
+        ? await ctx.db.allianceMember.update({ where: { id: existing.id }, data: inviteFields })
+        : await ctx.db.allianceMember.create({
+            data: {
+              allianceId: input.allianceId,
+              countryId: input.targetCountryId,
+              ...inviteFields,
+            },
           });
-        }
-      } catch (err) {
-        console.warn(
-          "[Alliances] Invitation notification failed for alliance",
-          input.allianceId,
-          err
-        );
-      }
 
-      return { success: true };
+      // NPC (unowned) nations answer at once from their personality; players use their inbox.
+      const npcStatus = await autoRespondNpcAllianceInvite(ctx.db, invite);
+      if (npcStatus) return { success: true, pending: false, status: npcStatus };
+
+      // Notification: notify invited country's owner (best effort)
+      const alliance = await ctx.db.alliance.findUnique({
+        where: { id: input.allianceId },
+        select: { name: true },
+      });
+      await notifyCountryOwners(ctx.db, [input.targetCountryId], {
+        title: "Alliance Invitation",
+        message: `You've been invited to join ${alliance?.name ?? "an alliance"}. Review it in your diplomacy inbox.`,
+        priority: "high",
+        metadata: { allianceId: input.allianceId },
+      });
+
+      return { success: true, pending: true };
     }),
 
+  ...allianceInviteProcedures,
+
   // Leave an alliance
-  leaveAlliance: protectedProcedure
+  leaveAlliance: rateLimitedMutationProcedure
     .input(z.object({ allianceId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       if (!ctx.user?.countryId) {
@@ -309,7 +414,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
 
       await ctx.db.allianceMember.update({
         where: { id: membership.id },
-        data: { isActive: false },
+        data: { isActive: false, status: "left" },
       });
 
       // Update count
@@ -326,7 +431,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
     }),
 
   // Propose an alliance action (collective sanction, shared defense, etc.)
-  proposeAllianceAction: protectedProcedure
+  proposeAllianceAction: rateLimitedMutationProcedure
     .input(
       z.object({
         allianceId: z.string(),
@@ -363,6 +468,15 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
         });
       }
 
+      if (isTargetedAction(input.actionType)) {
+        await assertValidAllianceTarget(
+          ctx.db as PrismaClient,
+          input.allianceId,
+          ctx.user.countryId,
+          input.targetId
+        );
+      }
+
       // Calculate required votes: simple majority of voting members
       const votingMembers = await ctx.db.allianceMember.count({
         where: {
@@ -391,7 +505,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
     }),
 
   // Vote on an alliance action
-  voteOnAllianceAction: protectedProcedure
+  voteOnAllianceAction: rateLimitedMutationProcedure
     .input(
       z.object({
         actionId: z.string(),
@@ -467,64 +581,28 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
         .filter((v) => v.vote === "against")
         .reduce((sum, v) => sum + v.votingPower, 0);
 
-      const updatedAction = await ctx.db.allianceAction.update({
-        where: { id: input.actionId },
-        data: {
-          votesFor: Math.round(votesFor),
-          votesAgainst: Math.round(votesAgainst),
-          status: votesFor >= action.requiredVotes ? "approved" : "proposed",
-        },
+      const tally = { votesFor: Math.round(votesFor), votesAgainst: Math.round(votesAgainst) };
+      if (votesFor < action.requiredVotes) {
+        return ctx.db.allianceAction.update({ where: { id: input.actionId }, data: tally });
+      }
+
+      // Approved: claimed conditionally, so two final votes landing together carry it out once.
+      const claimed = await ctx.db.allianceAction.updateMany({
+        where: { id: input.actionId, status: "proposed" },
+        data: { ...tally, status: "active" },
       });
-
-      // If approved, execute the action
-      if (updatedAction.status === "approved" && action.status === "proposed") {
-        // For collective sanctions: create individual ForeignPolicyAction per member
-        if (
-          (action.actionType === "collective_sanction" || action.actionType === "trade_bloc") &&
-          action.targetId
-        ) {
-          const members = await ctx.db.allianceMember.findMany({
-            where: { allianceId: action.allianceId, isActive: true, role: { not: "observer" } },
-            select: { countryId: true },
-          });
-
-          const fpType = action.actionType === "collective_sanction" ? "sanction" : "free_trade";
-
-          for (const member of members) {
-            // Skip if action already exists
-            const existing = await ctx.db.foreignPolicyAction.findFirst({
-              where: {
-                initiatorId: member.countryId,
-                targetId: action.targetId,
-                actionType: fpType,
-                status: "active",
-              },
-            });
-
-            if (!existing) {
-              await ctx.db.foreignPolicyAction.create({
-                data: {
-                  initiatorId: member.countryId,
-                  targetId: action.targetId,
-                  actionType: fpType,
-                  category: "trade",
-                  severity: "moderate",
-                  status: "active",
-                  reason: `Alliance action: ${action.title}`,
-                  description: action.description,
-                  relationshipDelta: fpType === "sanction" ? -15 : 10,
-                },
-              });
-            }
-          }
-        }
-
-        // Mark as active
-        await ctx.db.allianceAction.update({
-          where: { id: input.actionId },
-          data: { status: "active" },
+      if (claimed.count === 1 && isTargetedAction(action.actionType) && action.targetId) {
+        await executeTargetedAllianceAction(ctx.db as PrismaClient, {
+          allianceId: action.allianceId,
+          actionType: action.actionType,
+          targetId: action.targetId,
+          title: action.title,
+          description: action.description,
         });
       }
+      const updatedAction = await ctx.db.allianceAction.findUniqueOrThrow({
+        where: { id: input.actionId },
+      });
 
       return updatedAction;
     }),

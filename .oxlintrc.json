@@ -6,7 +6,7 @@
     "suspicious": "warn",
     "pedantic": "off"
   },
-  "options": { "maxWarnings": 2100 },
+  "options": { "maxWarnings": 24 },
   "rules": {
     // Unused vars - replaces eslint-plugin-unused-imports (auto-fixable, respects ^_)
     "eslint/no-unused-vars": "off",
@@ -154,7 +154,7 @@
       }
     },
     {
-      "files": ["src/app/admin/maps/style-editor/_components/StyleEditorRouter.tsx"],
+      "files": ["src/app/admin/maps/style-editor/_components/StyleEditorFrame.tsx"],
       "rules": {
         "react/iframe-missing-sandbox": "off"
       }
@@ -191,8 +191,6 @@
         "src/trpc/react.tsx",
         "src/app/labs/onoma/**",
         "src/lib/websocket/intelligence-websocket-client.ts",
-        "src/app/builder/components/enhanced/EconomicArchetypeDisplay.tsx",
-        "src/app/builder/utils/governmentValidation.ts",
         "src/lib/flags/png-to-svg.ts",
         "src/lib/maps/story-pin-icons.ts",
         "src/lib/maps/map-engine.ts"

@@ -3,13 +3,8 @@
 /**
  * useMapData - Hook for fetching and managing world map layer data.
  *
- * Uses a two-tier cache strategy:
- * 1. IndexedDB (persistent) — survives page refreshes, 24h TTL; per realm, read-only here
- *    (useMapDataBatched writes it)
- * 2. React Query (in-memory) — instant during SPA navigation, 30min stale
- *
- * On first load: check IndexedDB → use as initialData → background refresh from server.
- * On subsequent loads within session: React Query serves from memory instantly.
+ * The layers download as packed JSON from the versioned layer route (`useMapLayerData`): the URL names the realm's
+ * map version, so a repeat load finds them in the browser cache and a changed map is a new URL.
  */
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
@@ -17,8 +12,9 @@ import { api } from "~/trpc/react";
 import { LAYER_CONFIGS, MAP_LAYER_TYPES, type MapLayerType } from "~/lib/maps/map-config";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import type { FeatureCollection } from "geojson";
-import { getCachedMapLayers, type MapCacheScope } from "~/lib/maps/map-idb-cache";
-import { useViewerRealmId } from "~/hooks/useViewerRealmId";
+import { useMapLayerData } from "~/hooks/useMapLayerData";
+import { unpackLayers } from "~/lib/maps/geojson-pack";
+import { TILED_LAYERS, isTiledLayer } from "~/lib/maps/decorative-tiles";
 
 /** Layers that are always visible and cannot be toggled off */
 export const LOCKED_LAYERS: MapLayerType[] = ["background"];
@@ -36,19 +32,17 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
  * Climate excluded — lazy-loaded on toggle to save ~2MB on initial bundle. */
 const ALL_PREFETCH_LAYERS: MapLayerType[] = [...DEFAULT_VISIBLE];
 
-/** Critical layers load first — altitudes are the terrain base, must render with map.
- * Shared with useMapDataBatched so useMapPrefetch fills the exact bundle key /maps reads first. */
+/** The /maps bundle's layers: what the viewer needs as GeoJSON. Altitudes, rivers, lakes and climate
+ * come from vector tiles (`~/lib/maps/decorative-tiles`). Shared with useMapDataBatched so
+ * useMapPrefetch fills the exact bundle key /maps reads first. */
 export const CRITICAL_LAYERS: MapLayerType[] = [
   "background",
-  "altitudes",
   "political",
   "country_labels",
-  "rivers",
-  "lakes",
   "icecaps",
 ];
 
-/** Shared query options for map data - long cache, no refetching */
+/** Query options for the map's POIs, capitals, cities and subdivisions - long cache, no refetching */
 export const MAP_QUERY_OPTIONS = {
   staleTime: 30 * 60 * 1000, // 30 min - map data rarely changes
   gcTime: 2 * 60 * 60 * 1000, // 2 hours - keep in cache long after unmount
@@ -57,76 +51,42 @@ export const MAP_QUERY_OPTIONS = {
   refetchOnReconnect: false,
 } as const;
 
-/** @param realm realm slug the map shows (`?realm=`); undefined = the viewer's realm */
-export function useMapData(initialLayers?: MapLayerType[], zoom?: number, realm?: string) {
+const EMPTY_COLLECTION: FeatureCollection = { type: "FeatureCollection", features: [] };
+
+/**
+ * @param realm realm slug the map shows (`?realm=`); undefined = the viewer's realm
+ * @param options.deferTiled hold back the GeoJSON of the vector-tiled layers (altitudes, rivers,
+ *   lakes): the editor draws them from tiles and needs their GeoJSON only for snapping, so it loads
+ *   once the editor has painted
+ */
+export function useMapData(
+  initialLayers?: MapLayerType[],
+  realm?: string,
+  { deferTiled = false }: { deferTiled?: boolean } = {}
+) {
   const [visibleLayers, setVisibleLayers] = useState<Set<MapLayerType>>(
     () => new Set(initialLayers ?? DEFAULT_VISIBLE)
   );
 
-  // IndexedDB cached data for the realm this map shows (only in browser, once that realm is known).
-  // Read-only here: getWorldMap doesn't report the realm it resolved, so only useMapDataBatched —
-  // whose bundle does — writes entries.
-  const viewerRealmId = useViewerRealmId();
-  const cacheScope = useMemo<MapCacheScope>(
-    () => ({ realm, viewerRealmId }),
-    [realm, viewerRealmId]
-  );
-  const [idbData, setIdbData] = useState<Record<string, unknown> | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setIdbData(null);
-    getCachedMapLayers(cacheScope).then((cached) => {
-      if (cached && !cancelled) {
-        console.log("[useMapData] Loaded map data from IndexedDB cache");
-        setIdbData(cached);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [cacheScope]);
-
-  // Compute zoom bucket (0=globe, 1=mid, 2=detail) — only re-fetches on bucket change
-  const zoomBucket = useMemo(() => {
-    if (zoom === undefined) return undefined;
-    if (zoom < 4) return 0;
-    if (zoom < 7) return 1;
-    return 2;
-  }, [zoom]);
-
-  // Fetch all layers upfront (pre-fetch climate + lakes for instant toggle)
   const allRequestedLayers = useMemo(() => {
     const layers = new Set([...ALL_PREFETCH_LAYERS, ...visibleLayers]);
-    return Array.from(layers);
-  }, [visibleLayers]);
+    return Array.from(layers).filter((layer) => !(deferTiled && isTiledLayer(layer)));
+  }, [visibleLayers, deferTiled]);
 
-  const {
-    data: layerData,
-    isLoading: queryLoading,
-    error,
-  } = api.geoCore.getWorldMap.useQuery(
-    {
-      layers: allRequestedLayers,
-      zoom:
-        zoomBucket !== undefined ? (zoomBucket === 0 ? 2 : zoomBucket === 1 ? 5 : 8) : undefined,
-      realm,
-    },
-    {
-      ...MAP_QUERY_OPTIONS,
-      // Use IndexedDB data as placeholder until server responds
-      placeholderData: (idbData as any) ?? undefined,
-    }
-  );
+  // One query per layer (the same keys /maps uses), so switching a layer on fetches only that
+  // layer instead of every visible layer again under a new combined key.
+  const { packed } = useMapLayerData({ layers: allRequestedLayers, realm, bucket: 1 });
 
-  // Use server data if available, otherwise IDB cache
-  const effectiveData = layerData ?? idbData;
-  const isLoading = queryLoading && !effectiveData;
+  // The layers that have arrived, decoded. Tiled layers are listed (empty) until their GeoJSON
+  // arrives, so their visibility still applies.
+  const effectiveData = useMemo(() => {
+    const merged: Record<string, unknown> = { ...(packed && unpackLayers(packed)) };
+    for (const type of TILED_LAYERS) merged[type] ??= EMPTY_COLLECTION;
+    return merged;
+  }, [packed]);
 
-  // Transform tRPC data into MapLayerData format
+  // Transform the layers into MapLayerData format
   const mapLayers: MapLayerData[] = useMemo(() => {
-    if (!effectiveData) return [];
-
     return Object.entries(effectiveData)
       .filter(
         ([type]) =>
@@ -158,8 +118,6 @@ export function useMapData(initialLayers?: MapLayerType[], zoom?: number, realm?
     mapLayers,
     visibleLayers,
     toggleLayer,
-    isLoading,
-    error,
   };
 }
 
@@ -178,12 +136,11 @@ export function useMapPrefetch() {
   const utils = api.useUtils();
   const warmedRef = useRef(false);
 
-  // Same key useMapDataBatched requests first (zoom omitted = undefined), so /maps reads this entry.
-  const { data: bundle } = api.geoCore.getMapBundle.useQuery(
-    { layers: CRITICAL_LAYERS },
-    { ...MAP_QUERY_OPTIONS, enabled: !warmedRef.current }
-  );
-  const worldMap = bundle?.worldMap;
+  // The political layer /maps downloads first (same URL, same query key), so /maps reads this entry.
+  const { packed: worldMap } = useMapLayerData({
+    layers: ["political"],
+    enabled: !warmedRef.current,
+  });
 
   // After political layer is available, warm ALL per-country data
 
@@ -191,7 +148,8 @@ export function useMapPrefetch() {
     if (warmedRef.current || !worldMap) return;
     warmedRef.current = true;
 
-    const political = (worldMap as Record<string, FeatureCollection>).political;
+    // Only properties are read here, so the packed geometry needs no decoding
+    const political = worldMap.political;
     if (!political?.features) return;
 
     // Extract unique countries from the political layer
@@ -206,49 +164,63 @@ export function useMapPrefetch() {
       }
     }
 
-    const countryNames = countries.map((c) => c.name);
+    // The panel's intro query key: the id reads a country's own wiki page.
+    const wikiCountries = countries.map((c) => ({
+      countryName: c.name,
+      countryId: c.id ?? undefined,
+    }));
     const countryIds = countries.filter((c) => c.id).map((c) => c.id!);
     const wikiOpts = { staleTime: 24 * 60 * 60_000 }; // 24hr — wiki data is static, matches individual query staleTime
 
-    // ── 1. Bulk map summaries (single DB query) ──
-    void (async () => {
-      try {
-        const bulkSummaries = await utils.countries.getBulkMapSummaries.fetch(
-          { countryIds },
-          wikiOpts
-        );
-        if (bulkSummaries) {
-          for (const [id, summary] of Object.entries(bulkSummaries)) {
-            utils.countries.getMapSummary.setData({ countryId: id }, summary);
-          }
-        }
-      } catch {
-        /* summaries will load on click instead */
-      }
-    })();
-
-    // ── 2. Bulk rich wiki intros (map panel + /countries/[slug] page) ──
-    // Throttled: 20 countries per chunk with 500ms delay between chunks
-    // to stay well within nginx rate limit (burst=30).
-    void (async () => {
-      try {
-        for (let i = 0; i < countryNames.length; i += 20) {
-          if (i > 0) await new Promise((r) => setTimeout(r, 500));
-          const chunk = countryNames.slice(i, i + 20);
-          const bulk = await utils.countries.getBulkWikiRichIntros.fetch(
-            { countryNames: chunk },
+    // Defer the warm-up until the browser is idle so it doesn't compete with the map's own
+    // first render (worker tiling, style load) for the network and main thread.
+    const warm = () => {
+      // 1. Bulk map summaries (single DB query)
+      void (async () => {
+        try {
+          const bulkSummaries = await utils.countries.getBulkMapSummaries.fetch(
+            { countryIds },
             wikiOpts
           );
-          if (bulk) {
-            for (const [name, data] of Object.entries(bulk)) {
-              utils.countries.getWikiRichIntro.setData({ countryName: name }, data);
+          if (bulkSummaries) {
+            for (const [id, summary] of Object.entries(bulkSummaries)) {
+              utils.countries.getMapSummary.setData({ countryId: id }, summary);
             }
           }
+        } catch {
+          /* summaries will load on click instead */
         }
-      } catch {
-        /* rich intros will load on click instead */
-      }
-    })();
+      })();
+
+      // 2. Bulk rich wiki intros (map panel + /countries/[slug] page)
+      // Throttled: 20 countries per chunk with 500ms delay between chunks
+      // to stay well within nginx rate limit (burst=30).
+      void (async () => {
+        try {
+          for (let i = 0; i < wikiCountries.length; i += 20) {
+            if (i > 0) await new Promise((r) => setTimeout(r, 500));
+            const chunk = wikiCountries.slice(i, i + 20);
+            const bulk = await utils.countries.getBulkWikiRichIntros.fetch(
+              { countries: chunk },
+              wikiOpts
+            );
+            if (bulk) {
+              for (const key of chunk) {
+                const data = bulk[key.countryName];
+                if (data !== undefined) utils.countries.getWikiRichIntro.setData(key, data);
+              }
+            }
+          }
+        } catch {
+          /* rich intros will load on click instead */
+        }
+      })();
+    };
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      window.requestIdleCallback(warm, { timeout: 4000 });
+    } else {
+      setTimeout(warm, 1500);
+    }
 
     // NOTE: Page images, infoboxes, and section previews load on-demand
     // when a country is clicked. Bulk prefetching them caused 429 errors

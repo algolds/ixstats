@@ -17,7 +17,7 @@ export interface SoundShiftEpoch {
   rules: SoundShiftRule[];
 }
 
-export interface EvolutionStep {
+interface EvolutionStep {
   epochName: string;
   ruleDescription: string;
   before: string;
@@ -33,41 +33,6 @@ export interface WordEvolutionResult {
 // Regex shorthand token definitions
 const VOWEL_CLASS = "[aeiouyɑɛɪɔʊəäöüæøåáéíóúàèìòùâêîôûãẽĩõũ]";
 const CONSONANT_CLASS = "[^aeiouyɑɛɪɔʊəäöüæøåáéíóúàèìòùâêîôûãẽĩõũ\\s\\d_]";
-
-/**
- * Compiles a linguistic sound shift rule (X -> Y / ENV) into an executable RegExp.
- */
-export function compileRuleRegex(source: string, context?: string): RegExp {
-  const escapedSource = source.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  if (!context || !context.trim()) {
-    return new RegExp(escapedSource, "gi");
-  }
-
-  const rawCtx = context.trim();
-  const underscoreIdx = rawCtx.indexOf("_");
-
-  if (underscoreIdx === -1) {
-    // If no underscore position placeholder, treat context as literal environment
-    return new RegExp(escapedSource, "gi");
-  }
-
-  let leftCtx = rawCtx.substring(0, underscoreIdx);
-  let rightCtx = rawCtx.substring(underscoreIdx + 1);
-
-  const expandLeft = (s: string) =>
-    s.replace(/#/g, "^").replace(/V/g, VOWEL_CLASS).replace(/C/g, CONSONANT_CLASS);
-
-  const expandRight = (s: string) =>
-    s.replace(/#/g, "$").replace(/V/g, VOWEL_CLASS).replace(/C/g, CONSONANT_CLASS);
-
-  leftCtx = expandLeft(leftCtx);
-  rightCtx = expandRight(rightCtx);
-
-  const leftPattern = leftCtx ? `(${leftCtx})` : "";
-  const rightPattern = rightCtx ? `(${rightCtx})` : "";
-
-  return new RegExp(`${leftPattern}${escapedSource}${rightPattern}`, "gi");
-}
 
 /**
  * Applies a single sound shift rule to a target word.
@@ -187,7 +152,7 @@ export function applySoundShifts(
 /**
  * Curated preset sound change rules and historical evolution models.
  */
-export interface SoundShiftPreset {
+interface SoundShiftPreset {
   id: string;
   name: string;
   description: string;

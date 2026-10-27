@@ -1,24 +1,23 @@
 /**
  * Identity module contracts (plan 188): the public passport resolved from a handle.
  */
-import type { IdentityCountry, IdentityUser } from "./identity.selects";
+import type { LorewardStatsTotal } from "~/lib/lorewards/stats-of-names";
+import type { IdentityUser } from "./identity.selects";
 
-/** Minimal XenForo member shape the passport reads; the forum module's `XFUser` satisfies it. */
-export interface IdentityForumMember {
-  user_id: number;
-  username: string;
-  user_title: string;
-  message_count: number;
-  reaction_score: number;
-  trophy_points: number;
-  register_date: number;
-  is_staff: boolean;
+/** A member's own visible posts and threads on the ThinkPages forum (persona content left out). */
+export interface IdentityForumActivity {
+  posts: number;
+  threads: number;
 }
 
-/** Forum access, injected by the API layer because modules may not import other modules. */
+/**
+ * Forum access, injected by the API layer because modules may not import other modules. Native since phase 4b:
+ * `lookupUser` finds an old XenForo member by the name their imported posts carry (XenForo id and name), and
+ * `getActivity` counts a user's forum content.
+ */
 export interface IdentityForumGateway {
   lookupUser(name: string): Promise<{ userId: number; username: string } | null>;
-  getMember(userId: number): Promise<IdentityForumMember | null>;
+  getActivity(userId: string): Promise<IdentityForumActivity>;
 }
 
 /** A handle resolved to its user, country and linked wiki/forum names. */
@@ -28,19 +27,22 @@ export interface ResolvedIdentity {
   /** Handle with a trailing `_` removed (wiki/forum names sometimes carry one). */
   strippedHandle: string;
   user: IdentityUser | null;
-  country: IdentityCountry | null;
   wikiName: string | null;
   forumUserId: number | null;
   forumUsername: string | null;
   isOwner: boolean;
 }
 
+/** The holder's standing in a realm: its founder, an appointed officer, or a member. */
+export type RealmRole = "founder" | "officer" | "member";
+
 export interface RealmMembership {
   id: string;
   name: string;
   slug: string;
-  role: string;
-  isFeatured: boolean;
+  role: RealmRole;
+  /** The holder's primary nation (User.countryId when held, else the highest-GDP held nation). */
+  isPrimary: boolean;
   country: {
     id: string;
     name: string;
@@ -68,6 +70,8 @@ export interface WikiActivityItem {
   byteDiff: number | null;
   timestamp: string;
   url: string;
+  /** A MediaWiki edit that did not go live (conflict): listed, never the page's live text. */
+  parked?: boolean;
 }
 
 export interface AuthoredArticle {
@@ -79,13 +83,20 @@ export interface AuthoredArticle {
   updatedAt: Date;
 }
 
-export interface AwardHistoryItem {
-  id: string;
-  date: string;
-  type: string;
-  role: "winner" | "runner-up";
-  page: string | null;
-  score: number | null;
+/** Lorewards standing shown on the passport: the stats of `names` added up. */
+export interface PassportLorewards extends LorewardStatsTotal {
+  rank: number | null;
+  /**
+   * The wiki names summed, oldest approval first: the holder's shown approved names (on their own passport every
+   * approved name, hidden ones too); an identity with no user, its wiki name.
+   */
+  names: string[];
+}
+
+/** Forum counters shown on the passport: the holder's own visible posts and threads. */
+export interface PassportForumStats {
+  messageCount: number;
+  threadCount: number;
 }
 
 export type IdentitySystem =
@@ -135,3 +146,38 @@ export interface IdentityHistoryPage {
   items: IdentityEventPayload[];
   nextCursor: string | null;
 }
+
+/** The primary nation on the passport card. */
+export interface PassportCardNation {
+  name: string;
+  slug: string;
+  /** Raw stored `Country.flag`; resolve with `assetUrl` (src/lib/base-path.ts) before rendering. */
+  flagUrl: string | null;
+  realm: { name: string; slug: string };
+  role: RealmRole;
+}
+
+/**
+ * The slim public passport summary (`getPassportCard`) for page metadata and the OG image. Hidden
+ * sections are null. `{ preview: false }` when the holder turned link previews off.
+ */
+export type PassportCard =
+  | { preview: false }
+  | {
+      preview: true;
+      /** The passport handle (`loadPassportHandle`), as `getPassport` returns it. */
+      handle: string;
+      /** Personal ThinkPages persona name, else the forum name, else the handle (no Clerk call). */
+      displayName: string;
+      /** Raw stored personal ThinkPages persona image; null when none. */
+      avatarUrl: string | null;
+      primaryNation: PassportCardNation | null;
+      /** Null when hidden (accolades off) or when there are no stats. */
+      lorewards: { score: number; rank: number | null } | null;
+      realmCount: number;
+      nationCount: number;
+      joinedAt: Date | null;
+      signature: string | null;
+      /** Personal ThinkPages persona bio. */
+      bio: string | null;
+    };

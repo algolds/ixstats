@@ -4,11 +4,23 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { requireWikiUserId } from "~/lib/wiki-os/auth";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
+import { requireWikiAuthId, requireWikiUserId } from "~/lib/wiki-os/auth";
 import { findWikiUserByAuthId } from "~/lib/wiki-os/storage";
 import { db } from "~/server/db";
 import { TRPCError } from "@trpc/server";
+import { stripDiscordMarker } from "~/server/shared/thinkpages-post-utils";
+import {
+  cursorPageInput,
+  cursorPageArgs,
+  trimCursorPage,
+  PROMPT_SUMMARY,
+  COUNTRY_BADGE,
+} from "./_shared";
 
 export const blurbsRespondRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
@@ -19,40 +31,32 @@ export const blurbsRespondRouter = createTRPCRouter({
   getMyBlurbs: protectedProcedure
     .input(
       z.object({
-        limit: z.number().min(1).max(50).default(20),
-        cursor: z.string().optional(),
+        ...cursorPageInput,
       })
     )
     .query(async ({ ctx, input }) => {
-      const userId = requireWikiUserId(ctx);
-      const user = await findWikiUserByAuthId(userId);
+      const user = await findWikiUserByAuthId(requireWikiAuthId(ctx));
       if (!user) return { responses: [], nextCursor: undefined };
 
       const responses = await db.blurbResponse.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
-        take: input.limit + 1,
-        ...(input.cursor && { cursor: { id: input.cursor }, skip: 1 }),
+        ...cursorPageArgs(input),
         include: {
-          prompt: { select: { id: true, title: true, question: true, slug: true } },
-          country: { select: { id: true, name: true, flag: true } },
+          prompt: PROMPT_SUMMARY,
+          country: COUNTRY_BADGE,
         },
       });
 
-      let nextCursor: string | undefined;
-      if (responses.length > input.limit) {
-        nextCursor = responses.pop()!.id;
-      }
-
-      return { responses, nextCursor };
+      const page = trimCursorPage(responses, input.limit);
+      return { responses: page.rows, nextCursor: page.nextCursor };
     }),
 
   /** Check if current user already responded to a prompt. */
   getMyResponse: protectedProcedure
     .input(z.object({ promptId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
-      const userId = requireWikiUserId(ctx);
-      const user = await findWikiUserByAuthId(userId);
+      const user = await findWikiUserByAuthId(requireWikiAuthId(ctx));
       if (!user) return null;
 
       return db.blurbResponse.findUnique({
@@ -69,7 +73,7 @@ export const blurbsRespondRouter = createTRPCRouter({
     }),
 
   /** Submit a response to a prompt. One per user per prompt. */
-  submitResponse: protectedProcedure
+  submitResponse: rateLimitedMutationProcedure
     .input(
       z.object({
         promptId: z.string().min(1),
@@ -86,9 +90,10 @@ export const blurbsRespondRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = requireWikiUserId(ctx);
-      // Look up the user and their country
-      const user = await findWikiUserByAuthId(userId);
+      // Look up the user and their country by the Clerk id (findWikiUserByAuthId matches
+      // User.clerkUserId; requireWikiUserId returns the internal User id).
+      const authId = requireWikiAuthId(ctx);
+      const user = await findWikiUserByAuthId(authId);
       if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "User not found" });
       if (!user.countryId)
         throw new TRPCError({
@@ -123,7 +128,7 @@ export const blurbsRespondRouter = createTRPCRouter({
       let thinkpagesPostId: string | null = null;
       try {
         thinkpagesPostId = await crossPostToThinkPages(
-          userId,
+          authId,
           user.countryId,
           input.content,
           prompt.title,
@@ -152,7 +157,7 @@ export const blurbsRespondRouter = createTRPCRouter({
     }),
 
   /** User-submitted prompt (goes to DRAFT for admin review). */
-  submitPrompt: protectedProcedure
+  submitPrompt: rateLimitedMutationProcedure
     .input(
       z.object({
         title: z.string().min(1).max(200),
@@ -205,8 +210,8 @@ async function crossPostToThinkPages(
   // Embed structured metadata prefix for ThinkPages to render distinctively
   const prefix = `[blurb:${promptSlug}|${promptTitle}]\n\n`;
   const maxContent = 280 - prefix.length;
-  const truncated =
-    content.length > maxContent ? content.slice(0, maxContent - 3) + "..." : content;
+  const body = stripDiscordMarker(content); // only the IxTwitter sync may mark a post
+  const truncated = body.length > maxContent ? body.slice(0, maxContent - 3) + "..." : body;
 
   const post = await db.thinkpagesPost.create({
     data: {

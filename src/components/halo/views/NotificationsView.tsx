@@ -23,7 +23,7 @@ import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { NotificationsViewProps } from "../types";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
-import { useDynamicIslandSize, SIZE_PRESETS } from "../HaloPrimitives";
+import { useHaloSize, SIZE_PRESETS } from "../HaloPrimitives";
 import { SwipeableGroup } from "~/components/ui/facet/swipeable/SwipeableRow";
 import { MessageTrayItem, type MessageTrayConversation } from "./tray/MessageTrayItem";
 import { NotificationRow } from "./tray/NotificationRow";
@@ -35,6 +35,9 @@ import {
   relativeTime,
 } from "./tray/types";
 import { soundEffects } from "~/lib/sound/cuelume";
+import { tweenFast } from "~/lib/design/motion";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const notify = useNotify();
@@ -42,8 +45,8 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [expandedNotificationId, setExpandedNotificationId] = useState<string | null>(null);
   const [locallyDismissedIds, setLocallyDismissedIds] = useState<Set<string>>(new Set());
-  const { state: diSizeState, setSize } = useDynamicIslandSize();
-  const isUltra = diSizeState.size === SIZE_PRESETS.ULTRA;
+  const { size: haloSize, setSize } = useHaloSize();
+  const isUltra = haloSize === SIZE_PRESETS.ULTRA;
 
   // ESC to close
   React.useEffect(() => {
@@ -57,7 +60,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  // ─── Data sources ──────────────────────────────────────────────────────
+  // Data sources
 
   const enhancedNotifications = useNotificationStore((s) => s.notifications);
   const enhancedStats = useNotificationStore((s) => s.stats);
@@ -125,10 +128,9 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   // Default active tab to whichever has unread, defaulting to alerts
   const [activeTab, setActiveTab] = useState<NotificationTab>("alerts");
 
-  // ─── Merge & group ─────────────────────────────────────────────────────
+  // Merge & group
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { allAlerts, groups } = useMemo(() => {
+  const { groups } = useMemo(() => {
     const standardList: NotificationItem[] = (notificationsData?.notifications || [])
       .filter((n) => !n.dismissed && !locallyDismissedIds.has(n.id))
       .map((n) => ({
@@ -158,8 +160,8 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     const grps: { label: string; items: NotificationItem[] }[] = [];
     const buckets = {
       Recent: [] as NotificationItem[],
-      "Earlier Today": [] as NotificationItem[],
-      "This Week": [] as NotificationItem[],
+      "Earlier today": [] as NotificationItem[],
+      "This week": [] as NotificationItem[],
       Earlier: [] as NotificationItem[],
     };
 
@@ -167,8 +169,8 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       // oxlint-disable-next-line
       const hrs = (Date.now() - new Date(n.timestamp ?? n.createdAt ?? 0).getTime()) / 3600000;
       if (hrs < 1) buckets.Recent.push(n);
-      else if (hrs < 24) buckets["Earlier Today"].push(n);
-      else if (hrs < 168) buckets["This Week"].push(n);
+      else if (hrs < 24) buckets["Earlier today"].push(n);
+      else if (hrs < 168) buckets["This week"].push(n);
       else buckets.Earlier.push(n);
     }
 
@@ -176,7 +178,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       if (items.length > 0) grps.push({ label, items });
     }
 
-    return { allAlerts: alerts, groups: grps };
+    return { groups: grps };
   }, [
     notificationsData?.notifications,
     locallyDismissedIds,
@@ -191,7 +193,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     );
   }, [messagesData?.conversations, locallyDismissedIds]);
 
-  // ─── Actions ───────────────────────────────────────────────────────────
+  // Actions
 
   const handleMarkRead = (n: NotificationItem) => {
     if (n.source === "enhanced") {
@@ -263,20 +265,17 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     { id: "messages", label: "Messages", icon: MessageCircle, unread: messageUnreadCount },
   ];
 
-  // ─── Render ────────────────────────────────────────────────────────────
-
   return (
     <div className="p-4">
-      {/* Header */}
       <div className="mb-3 flex items-center justify-between">
-        <div className="text-foreground flex items-center gap-2 text-sm font-bold tracking-tight">
-          <BellRing className="h-4 w-4 text-amber-400" />
+        <div className="text-label text-headline flex items-center gap-2">
+          <BellRing className="text-yellow h-4 w-4" />
           <PreText className="text-inherit" whiteSpace="nowrap">
-            {isExecutiveMode ? "Intelligence Hub" : "Alert Center"}
+            {isExecutiveMode ? "Intelligence" : "Notifications"}
           </PreText>
           {totalUnreadCount > 0 && (
             <PreText
-              className="min-w-[18px] rounded-full bg-amber-500 px-1.5 py-0.5 text-center text-xs font-bold text-white shadow-xs"
+              className="bg-yellow text-caption text-on-yellow min-w-[18px] rounded-full px-2 py-0.5 text-center font-semibold"
               whiteSpace="nowrap"
             >
               {String(totalUnreadCount)}
@@ -285,70 +284,58 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
         </div>
         <div className="flex items-center gap-1">
           {totalUnreadCount > 0 && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={handleMarkAllRead}
               disabled={markAllAsReadMutation.isPending || markAllMessagesMutation.isPending}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 disabled:opacity-40"
+              className="text-label-secondary hover:text-label"
               title="Mark all notifications and messages as read"
             >
-              <CheckCircle className="h-3 w-3 text-emerald-400" />
+              <CheckCircle aria-hidden className="text-green" />
               <PreText className="text-inherit" whiteSpace="nowrap">
                 Read all
               </PreText>
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={() => {
               soundEffects.droplet();
               onClose();
             }}
-            data-cuelume-press="droplet"
-            className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+            className="text-label-secondary hover:text-label"
             title="Close tray"
+            aria-label="Close tray"
           >
-            <X className="h-3.5 w-3.5" />
-          </button>
+            <X aria-hidden />
+          </Button>
         </div>
       </div>
 
       {/* Segmented Filter Pills (Notifications vs Messages) */}
-      <div className="mb-3 flex items-center gap-1 rounded-xl border border-black/[0.06] bg-black/[0.03] p-1 dark:border-white/10 dark:bg-white/[0.04]">
-        {tabs.map((tab) => {
+      <SegmentedControl
+        aria-label="Inbox"
+        asTabs
+        fullWidth
+        size="sm"
+        className="mb-3"
+        value={activeTab}
+        onValueChange={setActiveTab}
+        options={tabs.map((tab) => {
           const Icon = tab.icon;
-          const isSelected = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              data-cuelume-press="page"
-              data-cuelume-hover="tick"
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.97]",
-                isSelected
-                  ? "text-foreground shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
-              )}
-            >
-              {isSelected && (
-                <motion.div
-                  layoutId="halo-notif-tab-indicator"
-                  className="absolute inset-0 rounded-lg border border-black/[0.08] bg-white/90 shadow-xs backdrop-blur-md dark:border-white/15 dark:bg-white/[0.12]"
-                  transition={{ type: "spring", stiffness: 420, damping: 38 }}
-                />
-              )}
-              <span className="relative z-10 flex items-center gap-1.5">
-                <Icon className={cn("h-3.5 w-3.5", isSelected && "text-amber-400")} />
-                <span>{tab.label}</span>
-                {tab.unread > 0 && (
-                  <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-xs font-bold text-white shadow-2xs">
-                    {tab.unread > 9 ? "9+" : tab.unread}
-                  </span>
-                )}
-              </span>
-            </button>
-          );
+          return {
+            value: tab.id,
+            label: tab.label,
+            icon: <Icon aria-hidden />,
+            badge: tab.unread > 0 ? (tab.unread > 9 ? "9+" : tab.unread) : undefined,
+            badgeLabel: tab.unread > 0 ? `${tab.unread} unread` : undefined,
+          };
         })}
-      </div>
+      />
 
       {/* Main Content Area */}
       <div
@@ -356,7 +343,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
           "space-y-2 overflow-y-auto pr-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
           isUltra ? "max-h-[540px]" : "max-h-80"
         )}
-        style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent" }}
+        style={{ scrollbarWidth: "thin" }}
       >
         {activeTab === "messages" ? (
           /* Messages View */
@@ -376,13 +363,15 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
               </div>
             ) : (
               <div className="py-10 text-center">
-                <MessageCircle className="text-muted-foreground/20 mx-auto mb-3 h-8 w-8" />
-                <p className="text-muted-foreground text-xs font-semibold">No recent messages</p>
+                <MessageCircle className="text-label-tertiary mx-auto mb-3 h-8 w-8" />
+                <p className="text-label-secondary text-caption font-semibold">
+                  No recent messages
+                </p>
                 <Link
                   href="/messages"
-                  className="text-primary mt-2 inline-block text-xs font-semibold hover:underline"
+                  className="text-tint text-caption mt-2 inline-block font-semibold hover:underline"
                 >
-                  Start a diplomatic conversation →
+                  Start a conversation
                 </Link>
               </div>
             )}
@@ -397,24 +386,23 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                   <div key={group.label}>
                     {/* Group header */}
                     <button
+                      type="button"
                       onClick={() => toggleGroup(group.label)}
-                      className="hover:bg-accent/5 mb-1 flex w-full items-center justify-between rounded px-1 py-0.5 transition-colors"
+                      aria-expanded={!isCollapsed}
+                      className="hover:bg-fill-4 rounded-control-sm focus-visible:outline-tint mb-1 flex w-full items-center justify-between px-1 py-0.5 transition-colors focus-visible:outline-2"
                     >
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         <motion.div
                           animate={{ rotate: isCollapsed ? 0 : 90 }}
-                          transition={{ duration: 0.15 }}
+                          transition={tweenFast}
                         >
-                          <ChevronRight className="text-muted-foreground/60 h-3 w-3" />
+                          <ChevronRight className="text-label-tertiary h-3 w-3" />
                         </motion.div>
-                        <PreText
-                          className="text-muted-foreground/90 text-xs font-semibold tracking-wider uppercase"
-                          whiteSpace="nowrap"
-                        >
+                        <PreText className="text-label-secondary text-eyebrow" whiteSpace="nowrap">
                           {group.label}
                         </PreText>
                       </div>
-                      <PreText className="text-muted-foreground/70 text-xs" whiteSpace="nowrap">
+                      <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
                         {String(group.items.length)}
                       </PreText>
                     </button>
@@ -443,7 +431,6 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                                   isRead={isRead}
                                   colors={colors}
                                   Icon={Icon}
-                                  handleMarkRead={handleMarkRead}
                                   handleDismiss={handleDismiss}
                                   handleClick={handleClick}
                                   relativeTime={relativeTime}
@@ -465,12 +452,9 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
               })
             ) : (
               <div className="py-10 text-center">
-                <Bell className="text-muted-foreground/20 mx-auto mb-3 h-8 w-8" />
-                <PreText className="text-muted-foreground text-sm font-medium" whiteSpace="nowrap">
-                  {isExecutiveMode ? "Situation stable" : "All caught up"}
-                </PreText>
-                <PreText className="text-muted-foreground/75 mt-1 text-xs" whiteSpace="nowrap">
-                  No notifications right now
+                <Bell className="text-label-tertiary mx-auto mb-3 h-8 w-8" />
+                <PreText className="text-label-secondary text-body font-medium" whiteSpace="nowrap">
+                  {isExecutiveMode ? "No alerts" : "No notifications"}
                 </PreText>
               </div>
             )}
@@ -479,21 +463,20 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       </div>
 
       {/* Expand / Minimize DI Size Toggle */}
-      <div className="border-border/30 mt-3 flex justify-center border-t pt-2">
-        <button
+      <div className="border-separator mt-3 flex justify-center border-t pt-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
           onClick={() => {
             setSize(isUltra ? SIZE_PRESETS.TALL : SIZE_PRESETS.ULTRA);
           }}
-          className="text-muted-foreground hover:text-foreground border-border/40 hover:bg-accent/15 flex h-7 w-7 items-center justify-center rounded-full border shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-          title={isUltra ? "Standard View" : "Expanded View"}
-          aria-label={isUltra ? "Standard View" : "Expanded View"}
+          className="text-label-secondary hover:text-label rounded-full"
+          title={isUltra ? "Standard view" : "Expanded view"}
+          aria-label={isUltra ? "Standard view" : "Expanded view"}
         >
-          {isUltra ? (
-            <Minimize2 className="text-foreground/70 h-3.5 w-3.5" />
-          ) : (
-            <Maximize2 className="text-foreground/70 h-3.5 w-3.5" />
-          )}
-        </button>
+          {isUltra ? <Minimize2 aria-hidden /> : <Maximize2 aria-hidden />}
+        </Button>
       </div>
     </div>
   );

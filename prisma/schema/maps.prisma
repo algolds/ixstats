@@ -1,20 +1,5 @@
 // IxStates — Maps, Geography & IxWorld models
 
-model Territory {
-  id           String                   @id @default(cuid())
-  countryId    String
-  name         String
-  geometry     Json
-  isMainland   Boolean                  @default(false)
-  areaSqKm     Float?
-  geom_postgis Unsupported("geometry")?
-  country      Country                  @relation(fields: [countryId], references: [id], onDelete: Cascade)
-
-  @@index([countryId])  // FK index for country territory queries
-  @@index([geom_postgis], map: "idx_territory_geom", type: Gist)
-  @@map("territories")
-}
-
 model BorderHistory {
   id            String   @id @default(cuid())
   countryId     String
@@ -115,7 +100,6 @@ model City {
   country              Country                  @relation("CountryCities", fields: [countryId], references: [id], onDelete: Cascade)
   subdivision          Subdivision?             @relation("SubdivisionCities", fields: [subdivisionId], references: [id])
   transportHubs        TransportHub[]           @relation("CityTransportHubs")
-  transportNodes       TransportNode[]          @relation("CityTransportNodes")
   nationalCapitalOf    NationalIdentity[]       @relation("NationalCapital")
   nationalLargestOf    NationalIdentity[]       @relation("NationalLargestCity")
   subdivisionCapitalOf Subdivision[]            @relation("SubdivisionCapital")
@@ -202,17 +186,29 @@ model StoryPin {
 /// Storylines — Narrative chains connecting story pins into sequential historical arcs.
 /// Each storyline belongs to a country and groups related story pins in order.
 model Storyline {
-  id          String     @id @default(cuid())
-  title       String     @db.VarChar(200)
-  description String?    @db.Text
-  countryId   String
-  color       String?    @db.VarChar(7) // hex color for map connection lines
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  country     Country    @relation("CountryStorylines", fields: [countryId], references: [id], onDelete: Cascade)
-  pins        StoryPin[] @relation("StorylinePins")
+  id            String           @id @default(cuid())
+  title         String           @db.VarChar(200)
+  description   String?          @db.Text
+  countryId     String
+  color         String?          @db.VarChar(7) // hex color for map connection lines
+  /// "map" (pins joined by connection lines) or "chain" (action-linked posts, reviewed then written to the wiki).
+  kind          String           @default("map")
+  /// Chains only: open, submitted, approved, rejected (rejected returns to open with reviewNote).
+  status        String           @default("open")
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  reviewNote    String?
+  wikiPageTitle String?
+  /// Set when the approved chain's section is written; null on an approved chain means the cron retries it.
+  wikiSyncedAt  DateTime?
+  actionLinks   PostActionLink[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  country       Country          @relation("CountryStorylines", fields: [countryId], references: [id], onDelete: Cascade)
+  pins          StoryPin[]       @relation("StorylinePins")
 
   @@index([countryId])
+  @@index([kind, status])
   @@map("storylines")
 }
 
@@ -220,15 +216,20 @@ model Storyline {
 /// Mountain ranges, straits, bays, deserts, etc. Rendered as MapLibre text layers.
 model MapLabel {
   id            String                   @id @default(cuid())
-  countryId     String
+  /// A nation's label (its owner places it inside the nation), or null for a realm label (ocean, sea, region,
+  /// continent) that the realm's map editors place anywhere.
+  countryId     String?
+  /// The realm a realm label belongs to (null on a nation's label, whose realm is its country's).
+  realmId       String?
   text          String
-  labelType     String                   // mountain_range, strait, bay, peninsula, plateau, valley, desert, sea, region, historical
+  labelType     String                   // mountain_range, strait, bay, peninsula, plateau, valley, desert, sea, region, historical; realm labels: ocean, sea, region, continent
   coordinates   Json                     // [lng, lat] anchor point
   fontSize      Float                    @default(14)
   color         String                   @default("#374151")
   rotation      Float                    @default(0)
   letterSpacing Float                    @default(0)
   fontWeight    String                   @default("normal")
+  fontStyle     String                   @default("normal") // normal | italic
   opacity       Float                    @default(1.0)
   minZoom       Float                    @default(4)
   maxZoom       Float                    @default(18)
@@ -240,9 +241,10 @@ model MapLabel {
   reviewedAt    DateTime?
   createdAt     DateTime                 @default(now())
   updatedAt     DateTime                 @updatedAt
-  country       Country                  @relation("CountryMapLabels", fields: [countryId], references: [id], onDelete: Cascade)
+  country       Country?                 @relation("CountryMapLabels", fields: [countryId], references: [id], onDelete: Cascade)
 
   @@index([countryId, status])
+  @@index([realmId, status])
   @@index([status, minZoom])
   @@map("map_labels")
 }
@@ -281,6 +283,7 @@ model MapLayer {
 model MapEditRequest {
   id               String    @id @default(cuid())
   countryId        String
+  realmId          String?   // the realm whose map the edit is for (null on requests filed before realms)
   userId           String
   editType         String    // "subdivision", "city", "poi", "border_adjust", "split", "merge", "redraw", "vertex_edit"
   targetId         String?   // ID of entity being edited (null for new)
@@ -300,6 +303,7 @@ model MapEditRequest {
   country          Country   @relation("CountryMapEdits", fields: [countryId], references: [id], onDelete: Cascade)
 
   @@index([countryId, status])
+  @@index([realmId, status])
   @@index([userId, status])
   @@index([status, createdAt])
   @@map("map_edit_requests")
@@ -322,44 +326,46 @@ model MapEditorSession {
   @@map("map_editor_sessions")
 }
 
-/// IxMaps - World template for export/import (clone system)
-model WorldTemplate {
-  id            String    @id @default(cuid())
-  name          String
-  description   String?
-  version       String    @default("1.0.0")
-  createdBy     String    // Clerk userId
-  metadata      Json?     // { bounds, featureCounts, generatedFrom, etc. }
-  layers        Json      // Record<LayerType, GeoJSON.FeatureCollection>
-  countries     Json?     // Array<{ name, featureId, properties }>
-  sovereignty   Json?     // Array<{ sovereign, subject, type, autonomy }>
-  mapConfig     Json?     // { center, zoom, layerConfigs, colorPalette }
-  fileSizeBytes Int?
-  isPublic      Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+/// World Studio preset (docs/specs/2026-10-12-atlas-studio-design.md): a named recipe without a seed that founders
+/// pick on the World tab. `params` of a version is `Partial<WorldGenParams>` minus `seed`. The three built-ins are
+/// seeded from `WORLD_PRESETS` on first read; a draft is an unpublished version, a publish stamps `publishedAt`.
+model WorldPreset {
+  id                 String    @id @default(cuid())
+  slug               String    @unique
+  name               String
+  description        String    @default("")
+  sortOrder          Int       @default(0)
+  builtIn            Boolean   @default(false)
+  publishedVersionId String?
+  draftVersionId     String?
+  archivedAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  @@index([createdBy])
-  @@index([isPublic])
-  @@map("world_templates")
+  versions         WorldPresetVersion[] @relation("PresetVersions")
+  publishedVersion WorldPresetVersion?  @relation("PresetPublished", fields: [publishedVersionId], references: [id], onDelete: SetNull)
+  draftVersion     WorldPresetVersion?  @relation("PresetDraft", fields: [draftVersionId], references: [id], onDelete: SetNull)
+
+  @@index([archivedAt, sortOrder])
+  @@map("world_presets")
 }
 
-/// IxMaps - Procedurally generated worlds
-model ProceduralWorld {
-  id             String    @id @default(cuid())
-  seed           Int
-  parameters     Json      // WorldGenParams
-  status         String    @default("completed") // "generating", "completed", "failed"
-  generatedData  Json?     // Generated layers (FeatureCollections)
-  metadata       Json?     // Stats: landPercentage, countryCount, generationTimeMs, etc.
-  templateId     String?   // If saved as template
-  createdBy      String    // Clerk userId
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+model WorldPresetVersion {
+  id          String    @id @default(cuid())
+  presetId    String
+  params      Json
+  note        String?
+  createdBy   String    // Clerk userId, or "system" for the factory seed
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt // a draft's last save
+  publishedAt DateTime?
 
-  @@index([seed])
-  @@index([createdBy])
-  @@map("procedural_worlds")
+  preset       WorldPreset   @relation("PresetVersions", fields: [presetId], references: [id], onDelete: Cascade)
+  publishedFor WorldPreset[] @relation("PresetPublished")
+  draftFor     WorldPreset[] @relation("PresetDraft")
+
+  @@index([presetId, createdAt])
+  @@map("world_preset_versions")
 }
 
 /// IxMaps - Sovereignty/dependency relationships between countries
@@ -383,21 +389,6 @@ model CountrySovereignty {
   @@index([sovereignId])
   @@index([subjectId])
   @@map("country_sovereignty")
-}
-
-/// IxMaps - Canonical elevation zone reference (9 zones matching IxWiki topographic legend)
-model ElevationZone {
-  id           String   @id @default(cuid())
-  zoneId       String   @unique // "zone_0" through "zone_8"
-  zoneName     String // "Coastal Lowlands", "Low Hills", etc.
-  elevationMin Int // meters: 0, 100, 350, 500, 1000, 2000, 3000, 4000, 5000
-  elevationMax Int // meters: 99, 349, 499, 999, 1999, 2999, 3999, 4999, 9999
-  color        String // hex with alpha: "#a8c995ff"
-  sortOrder    Int // 0-8 for rendering order
-  createdAt    DateTime @default(now())
-
-  @@index([sortOrder])
-  @@map("elevation_zones")
 }
 
 /// IxMaps - Shared vertices between political features for synchronized border editing
@@ -500,7 +491,7 @@ model GeographicResource {
 }
 
 /// A Realm is a self-contained world instance with its own map, countries, and IxStats data.
-/// The "default" realm is IxWorld. Custom realms are created via World Studio.
+/// The "default" realm is Ixnay (slug `ixnay`; `ixworld` is a legacy alias). Custom realms are created via World Studio.
 model Realm {
   id              String       @id @default(cuid())
   slug            String       @unique // URL-safe: "my-fantasy-world"
@@ -509,7 +500,8 @@ model Realm {
   ownerId         String       // Clerk userId
   status          String       @default("draft") // draft, generating, active, archived
   visibility      String       @default("unlisted") // public | unlisted (never private — realms decision 19)
-  templateId      String?      // Source ProceduralWorld or WorldTemplate
+  /// A system realm (nationstates, iiwiki, althistory): a card shelf only, never listed, claimed or mapped (cards refresh §5.1).
+  isSystem        Boolean      @default(false)
   settings        Json?        // Realm-specific config overrides
   thumbnail       String?      // Preview image URL
   seed            Int?         // Master generation seed for reproducibility
@@ -517,6 +509,35 @@ model Realm {
   countries       Country[]        @relation("RealmCountries")
   claims          RealmClaim[]
   pages           RealmPage[]
+  /// Region page (docs/specs/2026-10-05-realm-regions-design.md): banner, factbook, directory tags.
+  bannerUrl         String?
+  factbookWikitext  String?   // source, edited with the WikiOS canvas editor
+  factbookHtml      String?   // rendered and sanitized on save
+  factbookUpdatedAt DateTime?
+  factbookUpdatedBy String?   // Clerk userId
+  tags              String[]  @default([]) // from REALM_TAGS (src/lib/realms/realm-tags.ts)
+  /// Incremented by invalidateRealmMap (src/server/shared/map-invalidation.ts) on every map change; versioned layer and tile URLs carry it.
+  mapVersion        Int       @default(0)
+  foundedAt         DateTime? // shown as "founded"; null = createdAt
+  /// Community links and rules (the realm's date is its clock, `settings.clock`: src/lib/realms/realm-clock.ts).
+  communityLinks    Json?     // [{ label, url, kind }], https only (src/lib/realms/realm-community.ts)
+  rulesWikitext     String?   // source, edited with the WikiOS canvas editor
+  rulesHtml         String?   // rendered and sanitized on save; claimants must accept it
+  rulesUpdatedAt    DateTime?
+  rulesUpdatedBy    String?   // Clerk userId
+  /// Realm board (docs/superpowers/specs/2026-10-10-thinkpages-realm-board-design.md): emblem, then the board's settings.
+  emblemUrl            String?
+  boardVisitorsAllowed Boolean @default(true) // visitors (members of other realms) may post on the board
+  boardSlowModeSeconds Int     @default(0)    // members post at most once per this many seconds; 0 = off
+  officers          RealmOfficer[]
+  embassiesProposed RealmEmbassy[]   @relation("EmbassyFrom")
+  embassiesReceived RealmEmbassy[]   @relation("EmbassyTo")
+  boardBans         RealmBoardBan[]
+  /// The realm's one Find a Realm advert thread (docs/superpowers/specs/2026-10-10-thinkpages-forum-realm-adverts-design.md).
+  advertThread      ForumThread?    @relation("RealmAdvert")
+  polls             Poll[]           @relation("RealmPolls")
+  cardDustBalances  CardDustBalance[]
+  cards             Card[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -549,8 +570,6 @@ model TransportRoute {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  routeSegments     TransportRouteSegment[] @relation("RouteSegments")
-
   @@index([countryId])
   @@index([routeType])
   @@index([realmId, routeType])
@@ -578,79 +597,6 @@ model TransportHub {
   @@index([realmId])
   @@index([cityId])
   @@map("transport_hubs")
-}
-
-/// Shared intersection or waypoint node in the transport network.
-model TransportNode {
-  id            String   @id @default(cuid())
-  coordinates   Json     // [lng, lat]
-  nodeType      String   // "city", "junction", "interchange", "waypoint", "border_crossing"
-  cityId        String?
-  city          City?    @relation("CityTransportNodes", fields: [cityId], references: [id], onDelete: SetNull)
-  countryId     String?
-  country       Country? @relation("CountryTransportNodes", fields: [countryId], references: [id], onDelete: SetNull)
-  name          String?
-  elevation     Float?
-  realmId       String   @default("default") @map("worldId")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  segmentsFrom  TransportSegment[] @relation("SegmentFromNode")
-  segmentsTo    TransportSegment[] @relation("SegmentToNode")
-
-  @@index([countryId])
-  @@index([realmId])
-  @@index([cityId])
-  @@map("transport_nodes")
-}
-
-/// Network edge representing a physically connected segment between two nodes.
-model TransportSegment {
-  id                String   @id @default(cuid())
-  fromNodeId        String
-  fromNode          TransportNode @relation("SegmentFromNode", fields: [fromNodeId], references: [id], onDelete: Cascade)
-  toNodeId          String
-  toNode            TransportNode @relation("SegmentToNode", fields: [toNodeId], references: [id], onDelete: Cascade)
-  routeType         String   // rail, high_speed_rail, motorway, highway, road, etc.
-  geometry          Json     // GeoJSON LineString
-  status            String   @default("operational") // planned, under_construction, operational, abandoned
-  builtYear         Int?
-  lengthKm          Float?
-  terrainDifficulty Float?
-  speedKmh          Float?
-  capacity          Float?
-  properties        Json?
-  isInternational   Boolean  @default(false)
-  countryId         String?
-  country           Country? @relation("CountryTransportSegments", fields: [countryId], references: [id], onDelete: SetNull)
-  realmId           String   @default("default") @map("worldId")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  routeSegments     TransportRouteSegment[]
-
-  @@index([countryId])
-  @@index([routeType])
-  @@index([realmId, routeType])
-  @@index([fromNodeId])
-  @@index([toNodeId])
-  @@map("transport_segments")
-}
-
-/// Ordered join linking named routes to their constituent network segments.
-model TransportRouteSegment {
-  id         String           @id @default(cuid())
-  routeId    String
-  route      TransportRoute   @relation("RouteSegments", fields: [routeId], references: [id], onDelete: Cascade)
-  segmentId  String
-  segment    TransportSegment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
-  order      Int              // 0-indexed position in route
-  direction  String           @default("forward") // "forward" | "reverse"
-
-  @@unique([routeId, segmentId])
-  @@index([routeId])
-  @@index([segmentId])
-  @@map("transport_route_segments")
 }
 
 model MapStyleOverride {
@@ -758,13 +704,93 @@ model RealmClaim {
   reviewedBy        String?   // Clerk userId of the reviewer, or "system:auto"
   reviewedAt        DateTime?
   rejectionReason   String?
+  rulesAcceptedAt   DateTime? // when the claimant confirmed reading the realm's rules (null: it had none)
+  invitedByUserId   String? // User.id of the member who invited the claimant; plain column, no relation
+  consentVersion    String? // the realm content terms version the claimant agreed to (ToS §2.6); null before them
+  consentAt         DateTime?
+  consentBasis      String? // author | permission
+  permissionNote    String? // who gave the claimant permission, for the reviewing moderators
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   @@index([realmId, status])
   @@index([userId])
   @@index([countryId])
+  @@index([invitedByUserId])
   @@map("realm_claims")
+}
+
+/// A released nation's material (ToS §2.7, §2.8): its flag and arms, hidden from display. The former holder's
+/// reclaim restores them until `purgeAfter`; then the realm-inactivity job deletes the row and any local files.
+model NationMaterialHold {
+  countryId         String   @id
+  country           Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  formerOwnerUserId String // User.id; plain column, no relation
+  reason            String // released | inactive
+  flag              String?
+  coatOfArms        String?
+  heldAt            DateTime @default(now())
+  purgeAfter        DateTime
+
+  @@index([purgeAfter])
+  @@map("nation_material_holds")
+}
+
+/// A realm officer appointed by its founder: a custom title and a set of powers
+/// (`appearance` = factbook, header, rules and links, `board` = board moderation, `diplomacy` = embassies and polls).
+model RealmOfficer {
+  id          String   @id @default(cuid())
+  realmId     String
+  realm       Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  userId      String   // Clerk userId
+  title       String
+  powers      String[] @default([])
+  appointedBy String   // Clerk userId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([realmId, userId])
+  @@index([userId])
+  @@map("realm_officers")
+}
+
+/// An embassy between two realms: one proposes, the other accepts. Board posts flagged for embassies show
+/// on the partner realm's board while the embassy is active.
+model RealmEmbassy {
+  id          String    @id @default(cuid())
+  fromRealmId String
+  fromRealm   Realm     @relation("EmbassyFrom", fields: [fromRealmId], references: [id], onDelete: Cascade)
+  toRealmId   String
+  toRealm     Realm     @relation("EmbassyTo", fields: [toRealmId], references: [id], onDelete: Cascade)
+  pairKey     String    @unique // the two realm ids, sorted and joined with ":" — one embassy per pair
+  status      String    @default("proposed") // proposed | active | closed
+  proposedBy  String    // Clerk userId
+  respondedBy String?   // Clerk userId who accepted, declined or closed it
+  openedAt    DateTime?
+  closedAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([fromRealmId, status])
+  @@index([toRealmId, status])
+  @@map("realm_embassies")
+}
+
+/// A nation stopped from using its realm's board: `mute` = no board posts, `ban` = off the board (posts and
+/// chat). Founders and officers can only mute or ban; they cannot remove a nation from the realm.
+model RealmBoardBan {
+  id        String    @id @default(cuid())
+  realmId   String
+  realm     Realm     @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  countryId String
+  kind      String    // mute | ban
+  reason    String?
+  until     DateTime? // null = until lifted
+  createdBy String    // Clerk userId
+  createdAt DateTime  @default(now())
+
+  @@unique([realmId, countryId])
+  @@map("realm_board_bans")
 }
 
 /// One wiki page belonging to a realm's lore (indexed, not copied — WikiOS renders it live from `wikiSource`).

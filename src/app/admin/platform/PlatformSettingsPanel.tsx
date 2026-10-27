@@ -4,8 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
-import { ImportPreviewDialog } from "../_components/ImportPreviewDialog";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { NavigationSettings } from "../_components/NavigationSettings";
 import { IxTimeVisualizer } from "../_components/IxTimeVisualizer";
 import { SystemValidationDashboard } from "../_components/SystemValidationDashboard";
@@ -15,7 +14,6 @@ import { api } from "~/trpc/react";
 import { useAdminState } from "../_hooks/useAdminState";
 import { useAdminHandlers } from "../_hooks/useAdminHandlers";
 import {
-  Settings,
   Clock,
   StatUp as TrendingUp,
   Heart as HeartPulse,
@@ -121,55 +119,36 @@ export function PlatformSettingsPanel({ defaultTab = "general" }: PlatformSettin
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Settings}
-        title="General Settings & Platform Controls"
-        description="Global engine parameters, time override multipliers, spatial autosave telemetry, and system diagnostic monitors."
+      <PageHeader
+        title="Platform settings"
+        subtitle="Engine parameters, time overrides, autosave telemetry and diagnostics."
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-card/40 border-border/40 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
-          <TabsTrigger
-            value="general"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
-            <TrendingUp className="h-4 w-4 text-emerald-400" />
-            Economic Controls
+        <TabsList className="bg-fill-3 rounded-row flex w-full flex-wrap justify-start gap-1 p-1">
+          <TabsTrigger value="general" className="text-caption flex items-center gap-2">
+            <TrendingUp className="text-green h-4 w-4" />
+            Economic controls
           </TabsTrigger>
-          <TabsTrigger
-            value="autosave"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
-            <Activity className="h-4 w-4 text-emerald-400" />
-            Autosave Monitor
+          <TabsTrigger value="autosave" className="text-caption flex items-center gap-2">
+            <Activity className="text-green h-4 w-4" />
+            Autosave monitor
           </TabsTrigger>
-          <TabsTrigger
-            value="time"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
-            <Clock className="h-4 w-4 text-blue-400" />
-            Time Override
+          <TabsTrigger value="time" className="text-caption flex items-center gap-2">
+            <Clock className="text-blue h-4 w-4" />
+            Time override
           </TabsTrigger>
-          <TabsTrigger
-            value="system-health"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
-            <HeartPulse className="h-4 w-4 text-rose-400" />
-            System Diagnostics
+          <TabsTrigger value="system-health" className="text-caption flex items-center gap-2">
+            <HeartPulse className="text-red h-4 w-4" />
+            System diagnostics
           </TabsTrigger>
-          <TabsTrigger
-            value="navigation"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
-            <Navigation className="h-4 w-4 text-cyan-400" />
-            Navigation Controls
+          <TabsTrigger value="navigation" className="text-caption flex items-center gap-2">
+            <Navigation className="text-teal h-4 w-4" />
+            Navigation controls
           </TabsTrigger>
-          <TabsTrigger
-            value="database"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
-            <Database className="h-4 w-4 text-indigo-400" />
-            Database Explorer
+          <TabsTrigger value="database" className="text-caption flex items-center gap-2">
+            <Database className="text-indigo h-4 w-4" />
+            Database explorer
           </TabsTrigger>
         </TabsList>
 
@@ -214,23 +193,12 @@ export function PlatformSettingsPanel({ defaultTab = "general" }: PlatformSettin
             />
 
             <DataImportCard
+              importState={importState}
               onFileSelect={handleFileSelect}
-              isUploading={importState.isUploading}
-              isAnalyzing={importState.isAnalyzing}
-              analyzeError={importState.analyzeError}
-              importError={importState.importError}
+              onImportClose={handleImportClose}
+              onImportConfirm={handleImportConfirm}
             />
           </div>
-
-          {importState.showPreview && importState.previewData && (
-            <ImportPreviewDialog
-              isOpen={importState.showPreview}
-              onClose={handleImportClose}
-              onConfirm={handleImportConfirm}
-              changes={importState.previewData.changes}
-              isLoading={importState.isUploading}
-            />
-          )}
 
           <CalculationLogsCard
             logs={calculationLogs}
@@ -273,5 +241,3 @@ export function PlatformSettingsPanel({ defaultTab = "general" }: PlatformSettin
     </div>
   );
 }
-
-export default PlatformSettingsPanel;

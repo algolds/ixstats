@@ -84,8 +84,9 @@ traces/
 AGENTS.md
 CLAUDE.md
 arch.md
-maps.md
+/maps.md
 plans/
+.forum-import/
 c15t-backend.config.ts
 typecheck-*.log
 
@@ -134,7 +135,6 @@ docker-compose.yml
 docker/
 ecosystem.config.cjs
 ecosystem.ixworld.config.cjs
-postcss.config.js
 prettier.config.js
 
 # --------------------------------------------------------------------------------
@@ -176,7 +176,6 @@ scripts/world-roster-data.json
 # Specific Config Files & Local Tooling (keep on disk, not in repo)
 # --------------------------------------------------------------------------------
 eslint.config.js
-next.config.js
 
 # --------------------------------------------------------------------------------
 # Session Data & Temp Drafts
@@ -242,5 +241,17 @@ scripts/merge-and-cleanup.ts
 scripts/archive/geojson_dumps/
 scripts/reports/
 data/political-audit/
+# Realm raster map tiles (scripts/realms/build-realm-rasters.ts; MAP_RASTER_DIR)
+data/map-rasters/
 scripts/*.json
 scripts/*_report.md
+
+# WikiOS bench / parity / round-trip script output (plan 405)
+.bench-out/
+scripts/ops/wikios-test-mediawiki/.env.test-mediawiki
+
+# WikiOS native uploads waiting for the mirror (plan 411): WIKIOS_UPLOAD_DIR defaults to this in dev
+.wikios-uploads/
+
+# Map import uploads and results (MAP_IMPORT_DIR default)
+/.map-imports/

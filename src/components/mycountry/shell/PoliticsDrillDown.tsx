@@ -9,15 +9,25 @@ import {
   Page as FileText,
   Crown,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Badge } from "~/components/ui/badge";
+import { Card } from "~/components/ui/card";
 
 const CabinetPanel = dynamic(
   () =>
     import("~/components/executive/politics/CabinetPanel").then((m) => ({
       default: m.CabinetPanel,
     })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+  { loading: () => <Skeleton className="rounded-card h-64" /> }
+);
+
+const CabinetMeetingsPanel = dynamic(
+  () =>
+    import("~/components/executive/politics/CabinetMeetingsPanel").then((m) => ({
+      default: m.CabinetMeetingsPanel,
+    })),
+  { loading: () => <Skeleton className="rounded-card h-32" /> }
 );
 
 const PartyManager = dynamic(
@@ -25,7 +35,7 @@ const PartyManager = dynamic(
     import("~/components/executive/politics/PartyManager").then((m) => ({
       default: m.PartyManager,
     })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+  { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
 const LegislaturePanel = dynamic(
@@ -33,7 +43,7 @@ const LegislaturePanel = dynamic(
     import("~/components/executive/politics/LegislaturePanel").then((m) => ({
       default: m.LegislaturePanel,
     })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+  { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
 const BillsPanel = dynamic(
@@ -41,7 +51,15 @@ const BillsPanel = dynamic(
     import("~/components/executive/politics/BillsPanel").then((m) => ({
       default: m.BillsPanel,
     })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+  { loading: () => <Skeleton className="rounded-card h-64" /> }
+);
+
+const ElectionStatusCard = dynamic(
+  () =>
+    import("~/components/executive/politics/ElectionStatusCard").then((m) => ({
+      default: m.ElectionStatusCard,
+    })),
+  { loading: () => <Skeleton className="rounded-card h-20" /> }
 );
 
 const PowerBrokersPanel = dynamic(
@@ -49,17 +67,17 @@ const PowerBrokersPanel = dynamic(
     import("~/components/executive/politics/PowerBrokersPanel").then((m) => ({
       default: m.PowerBrokersPanel,
     })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+  { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
-export interface PoliticsDrillDownProps {
+interface PoliticsDrillDownProps {
   countryId: string;
 }
 
 /**
- * Politics drill-down — cabinet / parties / legislature / bills / power brokers (player fiat).
- * Shared between the v2 right-side drill sheet and the full-page politics surface.
- * (v2 Design Bible §6: Politics is 100% player fiat; sim informs but never overrides)
+ * Politics drill-down: cabinet, parties, legislature, bills and power brokers. Shared between the
+ * drill sheet and the full-page politics surface. Politics is player-decided; the sim informs but
+ * never overrides.
  */
 function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<
@@ -71,56 +89,43 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
       { id: "cabinet" as const, label: "Cabinet", icon: Users },
       { id: "parties" as const, label: "Parties", icon: Scale },
       { id: "legislature" as const, label: "Legislature", icon: Building2 },
-      { id: "bills" as const, label: "Bills & Reforms", icon: FileText },
-      { id: "power" as const, label: "Power Brokers", icon: Crown },
+      { id: "bills" as const, label: "Bills & reforms", icon: FileText },
+      { id: "power" as const, label: "Power brokers", icon: Crown },
     ],
     []
   );
 
   return (
     <div className="space-y-4">
-      {/* Player Fiat Banner */}
-      <div className="flex items-center justify-between rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-3 text-xs">
-        <div className="flex items-center gap-2">
-          <Crown className="h-4 w-4 shrink-0 text-indigo-500 dark:text-indigo-400" />
-          <div>
-            <span className="text-foreground font-extrabold">Executive Fiat Mode</span>
-            <p className="text-muted-foreground text-xs">
-              Political structure, party seats, cabinet posts, and legislative rules are 100% player
-              configurable.
+      {/* Player fiat notice */}
+      <Card className="rounded-card flex items-start justify-between gap-3 p-3">
+        <div className="flex min-w-0 items-start gap-2">
+          <Crown aria-hidden="true" className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-label text-headline">Executive fiat mode</p>
+            <p className="text-label-secondary text-footnote leading-relaxed">
+              Political structure, parties, cabinet posts, and legislative rules are player
+              configurable. Legislative seats are won at elections.
             </p>
           </div>
         </div>
-        <span className="shrink-0 rounded-full border border-indigo-500/40 bg-indigo-500/20 px-2 py-0.5 text-xs font-bold text-indigo-800 dark:text-indigo-300">
-          Player Fiat Enabled
-        </span>
-      </div>
+        <Badge variant="default" className="shrink-0">
+          Player fiat
+        </Badge>
+      </Card>
 
-      {/* Facet Segmented Sub-Tab Switcher */}
-      <div className="border-border/30 flex scrollbar-none items-center gap-1.5 overflow-x-auto border-b pb-2">
-        {tabs.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            data-cuelume-press="soft"
-            onClick={() => {
-              soundEffects.press();
-              setActiveTab(id);
-            }}
-            className={cn(
-              "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-              activeTab === id
-                ? "border border-indigo-500/40 bg-indigo-500/20 text-indigo-900 dark:text-indigo-300 shadow-2xs"
-                : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            <span>{label}</span>
-          </button>
-        ))}
-      </div>
+      {/* Election lifecycle: first election date, results, seated chamber (MC-2) */}
+      <ElectionStatusCard countryId={countryId} />
 
-      {activeTab === "cabinet" && <CabinetPanel countryId={countryId} />}
+      {/* Sub-tab switcher (shared with the other domain sections) */}
+      <SectionTabBar tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+
+      {activeTab === "cabinet" && (
+        <div className="space-y-4">
+          <CabinetPanel countryId={countryId} />
+          <CabinetMeetingsPanel countryId={countryId} />
+        </div>
+      )}
       {activeTab === "parties" && <PartyManager countryId={countryId} />}
       {activeTab === "legislature" && <LegislaturePanel countryId={countryId} />}
       {activeTab === "bills" && <BillsPanel countryId={countryId} />}

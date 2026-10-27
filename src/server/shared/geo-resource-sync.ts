@@ -9,9 +9,9 @@ const CONNECTION_RADIUS_KM = 15;
 const MAX_ROWS = 500;
 
 /**
- * Recompute the "connected to transport" flag on every approved resource POI of a country
- * and mirror it into a StorytellerEffect (`resource_<type>_output`). Effects belonging to
- * deleted POIs are deactivated.
+ * Recompute the "connected to transport" flag on every approved resource POI of a country.
+ * (It used to mirror the flag into `resource_<type>_output` StorytellerEffects, which no
+ * engine read; they are gone.)
  *
  * Single implementation shared by the geo feature routers and the transport router
  * (five copies were folded into this one on 2026-09-25, plan 345).
@@ -52,47 +52,6 @@ export async function syncResourcePoolModifiers(db: Db, countryId: string) {
     await db.pointOfInterest.update({
       where: { id: resource.id },
       data: { metadata: { ...existingMeta, isConnected, resourceType, quality } },
-    });
-
-    const inputType = `resource_${resourceType}_output`;
-    const effectValue = isConnected ? quality * 100 : 0;
-    const description = `Resource output for ${resource.name} (${resourceType}, quality: ${quality.toFixed(2)}, connected: ${isConnected})`;
-    const createdBy = `resource_node_${resource.id}`;
-
-    const existingEffect = await db.storytellerEffect.findFirst({
-      where: { countryId, inputType, createdBy },
-    });
-
-    if (existingEffect) {
-      await db.storytellerEffect.update({
-        where: { id: existingEffect.id },
-        data: { value: effectValue, description, isActive: isConnected, ixTimeTimestamp: new Date() },
-      });
-    } else {
-      await db.storytellerEffect.create({
-        data: {
-          countryId,
-          inputType,
-          value: effectValue,
-          description,
-          isActive: isConnected,
-          createdBy,
-          ixTimeTimestamp: new Date(),
-        },
-      });
-    }
-  }
-
-  // Deactivate storyteller effects for any deleted resource POIs.
-  const activeIds = new Set(resources.map((r) => r.id));
-  const obsoleteEffects = await db.storytellerEffect.findMany({
-    where: { countryId, createdBy: { startsWith: "resource_node_" }, isActive: true },
-  });
-  for (const eff of obsoleteEffects) {
-    if (activeIds.has((eff.createdBy ?? "").replace("resource_node_", ""))) continue;
-    await db.storytellerEffect.update({
-      where: { id: eff.id },
-      data: { isActive: false, value: 0, description: "Resource POI deleted", ixTimeTimestamp: new Date() },
     });
   }
 }

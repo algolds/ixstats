@@ -6,8 +6,14 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { IxTime } from "~/lib/ixtime";
+import type { PrismaClient } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import {
   pickDisplayName,
@@ -15,15 +21,116 @@ import {
   UNKNOWN_DISPLAY_NAME,
 } from "~/server/shared/display-names";
 import {
+  canReadGroupType,
   requireGroupManager,
   requireGroupMember,
   requireGroupReader,
   requirePersonaAccount,
 } from "./access";
+import {
+  getRealmBoardAccess,
+  groupFeedScope,
+  groupPostTag,
+  groupPostTags,
+  isRealmBoard,
+  REALM_BOARD_TYPE,
+  realmBoardPersona,
+  realmBoardPoster,
+  requireRealmPersona,
+} from "./realm-board";
+
+/** Realm boards belong to their realm: their type, lifetime and membership are not group-managed. */
+function rejectRealmBoard(group: { type: string }, action: string): void {
+  if (isRealmBoard(group)) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `A realm board's ${action} follows its realm and cannot be changed here`,
+    });
+  }
+}
+import { filterInvitableUserIds } from "./invite-privacy";
+import {
+  parseGroupSettings,
+  parseGroupTags,
+  healGroupConversation,
+  viewerMembership,
+  type GroupMemberRow,
+} from "./group-helpers";
+import { ensurePersonalAccount } from "../personal-account";
+import { stripDiscordMarker } from "../post-utils";
+
+type GroupDb = Pick<
+  PrismaClient,
+  "thinkshareConversation" | "thinktankGroup" | "user" | "thinkpagesAccount"
+>;
+
+/** Players' user rows for display (an old wiki name is never one: it is a name claim, shown on the passport). */
+function displayUsers(db: GroupDb, clerkUserIds: string[]) {
+  return db.user.findMany({
+    where: { clerkUserId: { in: clerkUserIds } },
+    select: {
+      id: true,
+      clerkUserId: true,
+      forumUsername: true,
+      handle: true,
+      country: { select: { id: true, name: true, flag: true } },
+    },
+  });
+}
+
+/** Members joined to their user record (or first active persona) for display. */
+async function enrichGroupMembers<M extends GroupMemberRow>(
+  db: GroupDb,
+  members: M[]
+): Promise<Array<M & { user: any }>> {
+  const memberUserIds = members.map((m) => m.userId);
+  const [users, userAccounts] = await Promise.all([
+    displayUsers(db, memberUserIds),
+    db.thinkpagesAccount.findMany({
+      where: { clerkUserId: { in: memberUserIds }, isActive: true },
+      select: { clerkUserId: true, profileImageUrl: true, displayName: true, username: true },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
+
+  const userMap = new Map(users.map((u) => [u.clerkUserId, u]));
+  const accountMap = new Map<string, (typeof userAccounts)[number]>();
+  for (const acc of userAccounts) {
+    if (!accountMap.has(acc.clerkUserId)) accountMap.set(acc.clerkUserId, acc);
+  }
+
+  return members.map((m) => {
+    const u = userMap.get(m.userId);
+    const acc = accountMap.get(m.userId);
+    if (u) {
+      return {
+        ...m,
+        user: {
+          ...u,
+          avatarUrl: acc?.profileImageUrl || null,
+          displayName:
+            pickDisplayName({ ...u, thinkpagesDisplayName: acc?.displayName }) ??
+            UNKNOWN_DISPLAY_NAME,
+        },
+      };
+    }
+    return {
+      ...m,
+      user: acc
+        ? {
+            clerkUserId: m.userId,
+            avatarUrl: acc.profileImageUrl || null,
+            displayName: acc.displayName || acc.username,
+            country: null,
+          }
+        : null,
+    };
+  });
+}
 
 export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
   // Create a new ThinkTank group
-  createThinktank: protectedProcedure
+  createThinktank: rateLimitedMutationProcedure
     .input(
       z.object({
         name: z.string().min(1).max(100),
@@ -127,6 +234,9 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
           ];
         } else if (input?.type === "created" && targetUserId) {
           whereClause.createdBy = targetUserId;
+        } else {
+          // Realm boards are listed in the realm directory (/realms), not among ThinkTanks.
+          whereClause.type = { not: REALM_BOARD_TYPE };
         }
 
         const groups = await db.thinktankGroup.findMany({
@@ -204,7 +314,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
           return {
             ...group,
             // Member lists of non-public groups are visible to their members only.
-            members: group.type === "public" || isMember ? group.members : [],
+            members: canReadGroupType(group.type) || isMember ? group.members : [],
             tags: group.tags ? JSON.parse(group.tags) : [],
             isMember,
             isJoined: isMember,
@@ -221,14 +331,15 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
     }),
 
   // Update a ThinkTank group
-  updateThinktank: protectedProcedure
+  updateThinktank: rateLimitedMutationProcedure
     .input(
       z.object({
         groupId: z.string(),
         name: z.string().min(1).max(100).optional(),
         description: z.string().max(500).optional(),
         avatar: z.string().optional().nullable(),
-        type: z.enum(["public", "private", "invite_only"]).optional(),
+        // "realm_board" is accepted only as the unchanged type of a realm board (its settings form resends it).
+        type: z.enum(["public", "private", "invite_only", REALM_BOARD_TYPE]).optional(),
         category: z.string().optional(),
         tags: z.array(z.string()).optional(),
       })
@@ -238,7 +349,11 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       const actorId = ctx.auth.userId;
       const { groupId, ...updateData } = input;
 
-      await requireGroupManager(db, groupId, actorId);
+      const { group: current } = await requireGroupManager(db, groupId, actorId);
+      if (updateData.type && updateData.type !== current.type) {
+        rejectRealmBoard(current, "type");
+        rejectRealmBoard({ type: updateData.type }, "type");
+      }
 
       const group = await db.thinktankGroup.update({
         where: { id: groupId },
@@ -278,11 +393,12 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       return group;
     }),
 
-  deleteThinktank: protectedProcedure
+  deleteThinktank: rateLimitedMutationProcedure
     .input(z.object({ groupId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
       const { group } = await requireGroupManager(db, input.groupId, ctx.auth.userId);
+      rejectRealmBoard(group, "lifetime");
       await db.thinktankGroup.delete({
         where: { id: input.groupId },
       });
@@ -327,151 +443,41 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
 
       if (!group) return null;
 
-      // Auto-heal missing ThinkShare conversation for this group
-      if (!group.conversationId || !group.conversation) {
-        try {
-          const newConv = await db.thinkshareConversation.create({
-            data: {
-              type: "group",
-              name: group.name,
-              avatar: group.avatar,
-              source: "thinktank",
-              sourceId: group.id,
-              participants: {
-                create: group.members.map((m: any) => ({
-                  userId: m.userId,
-                  role: m.role === "owner" || m.role === "admin" ? "admin" : "participant",
-                })),
-              },
-            },
-          });
-
-          await db.thinktankGroup.update({
-            where: { id: group.id },
-            data: { conversationId: newConv.id },
-          });
-
-          group.conversationId = newConv.id;
-          group.conversation = { id: newConv.id, lastActivity: newConv.createdAt };
-        } catch (e) {
-          console.warn("[ThinkTanks] Failed to auto-heal group conversation:", e);
-        }
-      }
-
-      const memberUserIds = group.members.map((m: any) => m.userId);
-      const users = await db.user.findMany({
-        where: { clerkUserId: { in: memberUserIds } },
-        select: {
-          id: true,
-          clerkUserId: true,
-          forumUsername: true,
-          wikiUsername: true,
-          country: { select: { id: true, name: true, flag: true } },
-        },
-      });
-
-      const userAccounts = await db.thinkpagesAccount.findMany({
-        where: { clerkUserId: { in: memberUserIds }, isActive: true },
-        select: {
-          clerkUserId: true,
-          profileImageUrl: true,
-          displayName: true,
-          username: true,
-        },
-        orderBy: { createdAt: "asc" },
-      });
-
-      const userMap = new Map<string, any>(users.map((u: any) => [u.clerkUserId, u]));
-      const accountMap = new Map<string, any>();
-      for (const acc of userAccounts) {
-        if (!accountMap.has(acc.clerkUserId)) {
-          accountMap.set(acc.clerkUserId, acc);
-        }
-      }
-
-      const enrichedMembers = group.members.map((m: any) => {
-        const u = userMap.get(m.userId);
-        const acc = accountMap.get(m.userId);
-        return {
-          ...m,
-          user: u
-            ? {
-                ...u,
-                avatarUrl: acc?.profileImageUrl || null,
-                displayName:
-                  pickDisplayName({ ...u, thinkpagesDisplayName: acc?.displayName }) ??
-                  UNKNOWN_DISPLAY_NAME,
-              }
-            : acc
-              ? {
-                  clerkUserId: m.userId,
-                  avatarUrl: acc.profileImageUrl || null,
-                  displayName: acc.displayName || acc.username,
-                  country: null,
-                }
-              : null,
-        };
-      });
-
-      let parsedSettings: {
-        allowPersonaPosting?: boolean;
-        rules?: string;
-        bannerUrl?: string;
-        themeAccent?: string;
-        pinnedDocIds?: string[];
-      } = {
-        allowPersonaPosting: false,
-      };
-
-      if (group.settings) {
-        try {
-          parsedSettings = { ...parsedSettings, ...JSON.parse(group.settings) };
-        } catch (err) {
-          console.warn("[ThinkTanks] Malformed settings on group", input.groupId, err);
-        }
-      }
-
-      let parsedTags: string[] = [];
-      if (group.tags) {
-        try {
-          parsedTags = JSON.parse(group.tags);
-        } catch {
-          parsedTags = [group.tags];
-        }
-      }
+      await healGroupConversation(db, group);
+      const enrichedMembers = await enrichGroupMembers(db, group.members);
 
       const targetUserId = ctx.auth?.userId || "";
 
-      const isMember = targetUserId
-        ? group.createdBy === targetUserId ||
-          group.members.some((m: any) => m.userId === targetUserId)
-        : false;
-
-      const userRole = targetUserId
-        ? group.createdBy === targetUserId
-          ? "owner"
-          : group.members.find((m: any) => m.userId === targetUserId)?.role ||
-            (isMember ? "member" : null)
+      // Realm boards: membership is nation ownership in the realm, not a member row.
+      const boardAccess = isRealmBoard(group)
+        ? await getRealmBoardAccess(db, group.id, targetUserId)
         : null;
+      const { isMember, userRole } = boardAccess
+        ? { isMember: boardAccess.isMember, userRole: boardAccess.role }
+        : viewerMembership(group, targetUserId);
 
       // Members and documents of non-public groups are for members only (SL-2).
-      const canRead = group.type === "public" || isMember;
+      const canRead = canReadGroupType(group.type) || isMember;
 
       return {
         ...group,
         collaborativeDocs: canRead ? group.collaborativeDocs : [],
+        // The group chat is for members only: don't hand its conversation id to outsiders.
+        conversationId: isMember ? group.conversationId : null,
+        conversation: isMember ? group.conversation : null,
         members: canRead ? enrichedMembers : [],
-        settings: parsedSettings,
-        tags: parsedTags,
+        settings: parseGroupSettings(group.settings, input.groupId),
+        tags: parseGroupTags(group.tags),
         isMember,
         userRole,
+        realmId: boardAccess?.realmId ?? null,
       };
     }),
 
   /**
    * Update ThinkTank group settings (including multi-persona posting toggle)
    */
-  updateGroupSettings: protectedProcedure
+  updateGroupSettings: rateLimitedMutationProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -532,12 +538,11 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       const limit = input.limit ?? 20;
 
       // Signed-out callers and non-members see public groups only (SL-2).
-      await requireGroupReader(db, input.groupId, ctx.auth?.userId);
+      const { group } = await requireGroupReader(db, input.groupId, ctx.auth?.userId);
+      const { where, embassyFrom } = await groupFeedScope(db, group); // + embassy partners' posts
 
       const posts = await db.thinkpagesPost.findMany({
-        where: {
-          hashtags: { contains: `group:${input.groupId}` },
-        },
+        where,
         take: limit + 1,
         orderBy: { ixTimeTimestamp: "desc" },
         include: {
@@ -555,22 +560,12 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       });
 
       const clerkUserIds = posts.map((p) => p.account?.clerkUserId).filter(Boolean);
-      const users = await db.user.findMany({
-        where: { clerkUserId: { in: clerkUserIds } },
-        select: {
-          id: true,
-          clerkUserId: true,
-          forumUsername: true,
-          wikiUsername: true,
-          country: { select: { id: true, name: true, flag: true } },
-        },
-      });
+      const users = await displayUsers(db, clerkUserIds);
       const userMap = new Map(users.map((u) => [u.clerkUserId, u]));
 
       let nextCursor: string | undefined = undefined;
       if (posts.length > limit) {
-        const nextItem = posts.pop()!;
-        nextCursor = nextItem.id;
+        nextCursor = posts.pop()!.id;
       }
 
       return {
@@ -580,6 +575,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
           likeCount: p._count.reactions,
           replyCount: p._count.replies,
           repostCount: p._count.reposts,
+          embassyFrom: embassyFrom(p.hashtags),
         })),
         nextCursor,
       };
@@ -588,7 +584,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
   /**
    * Create a group post / Think in a ThinkTank
    */
-  createGroupPost: protectedProcedure
+  createGroupPost: rateLimitedMutationProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -596,6 +592,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
         content: z.string().min(1).max(5000),
         hashtags: z.array(z.string()).optional(),
         mediaUrls: z.array(z.string()).optional(),
+        embassy: z.boolean().optional(), // realm boards: also show it on embassy partners' boards
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -603,58 +600,40 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       const currentUserId = auth.userId;
 
       const { group } = await requireGroupMember(db, input.groupId, currentUserId);
+      const board = await realmBoardPoster(db, group, currentUserId); // throws when muted or banned
 
       let targetAccountId = input.accountId;
 
       // A persona account must belong to the caller, and the group must allow persona posting.
       if (targetAccountId) {
         await requirePersonaAccount(db, group, targetAccountId, currentUserId);
+        // On a realm board the persona speaks for one of the realm's nations.
+        if (board?.realmId) await requireRealmPersona(db, targetAccountId, board.realmId);
       }
 
-      // If no persona account specified, resolve the caller's primary account
+      // On a realm board, "post as yourself" uses the caller's persona of a nation in the realm,
+      // creating a citizen persona in their first nation there when they have none.
+      if (!targetAccountId && board?.realmId && board.ownedCountryIds.length > 0) {
+        targetAccountId = await realmBoardPersona(db, currentUserId, board.ownedCountryIds);
+      }
+
+      // No persona given: post as yourself, through the caller's personal persona (one per user,
+      // tied to no country), never a government/media persona or an arbitrary nation.
       if (!targetAccountId) {
-        let primaryAcc = await db.thinkpagesAccount.findFirst({
-          where: { clerkUserId: currentUserId, isActive: true },
-          orderBy: { createdAt: "asc" },
-        });
-
-        if (!primaryAcc) {
-          const user = await db.user.findUnique({
-            where: { clerkUserId: currentUserId },
-            include: { country: true },
-          });
-
-          const countryId = user?.countryId || (await db.country.findFirst())?.id || "";
-          const username =
-            user?.forumUsername || user?.wikiUsername || `user_${currentUserId.slice(-6)}`;
-          const displayName = user?.country?.name || username;
-
-          primaryAcc = await db.thinkpagesAccount.create({
-            data: {
-              clerkUserId: currentUserId,
-              countryId,
-              accountType: "citizen",
-              username: `${username.toLowerCase().replace(/[^a-z0-9_]/g, "")}_${Date.now().toString().slice(-4)}`,
-              displayName,
-              firstName: displayName,
-              lastName: "",
-              bio: "User Account",
-            },
-          });
-        }
-        targetAccountId = primaryAcc.id;
+        const personal = await ensurePersonalAccount(db, currentUserId);
+        targetAccountId = personal.id;
       }
 
-      const groupTag = `group:${input.groupId}`;
-      const allTags = input.hashtags ? [...new Set([...input.hashtags, groupTag])] : [groupTag];
+      const allTags = groupPostTags(input.groupId, input.hashtags, input.embassy && board?.realmId);
 
       const post = await db.thinkpagesPost.create({
         data: {
           accountId: targetAccountId,
-          content: input.content,
+          content: stripDiscordMarker(input.content), // only the IxTwitter sync sets one
           hashtags: JSON.stringify(allTags),
           visibility: "thinktank",
-          ixTimeTimestamp: new Date(IxTime.getCurrentIxTime()),
+          // Forum posts are stamped with real time, like every other feed post.
+          ixTimeTimestamp: new Date(),
           mediaAttachments: input.mediaUrls
             ? {
                 create: input.mediaUrls.map((url) => ({
@@ -678,8 +657,40 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       return post;
     }),
 
+  /**
+   * Remove a post from a group's feed (moderation). Group owners and admins may do this; on a realm board
+   * that is the realm's moderators. The post leaves the group feed and is hidden everywhere else.
+   */
+  removeGroupPost: rateLimitedMutationProcedure
+    .input(z.object({ groupId: z.string(), postId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      await requireGroupManager(db, input.groupId, ctx.auth.userId);
+
+      const tag = groupPostTag(input.groupId);
+      const post = await db.thinkpagesPost.findFirst({
+        where: { id: input.postId, hashtags: { contains: `"${tag}"` } },
+        select: { id: true, hashtags: true },
+      });
+      if (!post) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Post not found in this group" });
+      }
+
+      let tags: string[] = [];
+      try {
+        tags = JSON.parse(post.hashtags ?? "[]") as string[];
+      } catch {
+        tags = [];
+      }
+      await db.thinkpagesPost.update({
+        where: { id: post.id },
+        data: { visibility: "removed", hashtags: JSON.stringify(tags.filter((t) => t !== tag)) },
+      });
+      return { success: true, postId: post.id };
+    }),
+
   // Invite users to a ThinkTank group
-  inviteToThinktank: protectedProcedure
+  inviteToThinktank: rateLimitedMutationProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -692,17 +703,27 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
 
       // Only the owner or a group admin can invite (the invite form is in group settings).
       const { group } = await requireGroupManager(db, input.groupId, invitedBy);
-      const userIds = [...new Set(input.userIds.map((id) => id.trim()))].filter(
+      rejectRealmBoard(group, "membership");
+      const requestedIds = [...new Set(input.userIds.map((id) => id.trim()))].filter(
         (id) => id && id !== invitedBy
       );
+      // Honor each invitee's privacy settings (thinktankInvites, blocks) and skip unknown users.
+      const userIds = await filterInvitableUserIds(
+        db,
+        { clerkUserId: invitedBy, dbUserId: ctx.user?.id },
+        requestedIds
+      );
 
-      const invites = await db.thinktankInvite.createMany({
-        data: userIds.map((userId) => ({
-          groupId: input.groupId,
-          invitedUser: userId,
-          invitedBy,
-        })),
-      });
+      const invites =
+        userIds.length > 0
+          ? await db.thinktankInvite.createMany({
+              data: userIds.map((userId) => ({
+                groupId: input.groupId,
+                invitedUser: userId,
+                invitedBy,
+              })),
+            })
+          : { count: 0 };
 
       // Send notifications to all invited users
       if (userIds.length > 0) {
@@ -720,6 +741,76 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
           .catch((e) => console.warn("[ThinkTanks] Failed to send invite notifications:", e));
       }
 
-      return invites;
+      return { ...invites, skipped: requestedIds.length - userIds.length };
+    }),
+
+  // Look up users to invite by ThinkPages username / display name (group managers only).
+  // Returns only what the invite picker needs; never email or other account fields.
+  searchInvitableUsers: protectedProcedure
+    .input(z.object({ groupId: z.string(), query: z.string().trim().min(2).max(50) }))
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+      const callerId = ctx.auth.userId;
+      await requireGroupManager(db, input.groupId, callerId);
+
+      const term = input.query.replace(/^@/, "");
+      if (term.length < 2) return [];
+
+      const accounts = await db.thinkpagesAccount.findMany({
+        where: {
+          isActive: true,
+          clerkUserId: { not: callerId },
+          OR: [
+            { username: { contains: term, mode: "insensitive" } },
+            { displayName: { contains: term, mode: "insensitive" } },
+          ],
+        },
+        select: {
+          clerkUserId: true,
+          username: true,
+          displayName: true,
+          profileImageUrl: true,
+          country: { select: { name: true } },
+        },
+        orderBy: { username: "asc" },
+        take: 25,
+      });
+
+      const seen = new Set<string>();
+      const unique = accounts.filter((a) => {
+        if (seen.has(a.clerkUserId)) return false;
+        seen.add(a.clerkUserId);
+        return true;
+      });
+
+      const members = await db.thinktankMember.findMany({
+        where: {
+          groupId: input.groupId,
+          isActive: true,
+          userId: { in: unique.map((a) => a.clerkUserId) },
+        },
+        select: { userId: true },
+      });
+      const memberIds = new Set(members.map((m) => m.userId));
+
+      const allowed = new Set(
+        await filterInvitableUserIds(
+          db,
+          { clerkUserId: callerId, dbUserId: ctx.user?.id },
+          unique.map((a) => a.clerkUserId).filter((id) => !memberIds.has(id)),
+          { forSearch: true }
+        )
+      );
+
+      return unique
+        .filter((a) => allowed.has(a.clerkUserId))
+        .slice(0, 10)
+        .map((a) => ({
+          userId: a.clerkUserId,
+          username: a.username,
+          displayName: a.displayName,
+          profileImageUrl: a.profileImageUrl,
+          countryName: a.country?.name ?? null,
+        }));
     }),
 });

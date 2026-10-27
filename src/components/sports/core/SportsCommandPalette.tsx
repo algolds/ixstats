@@ -2,16 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Trophy,
-  Shield,
-  Play,
-  Calendar,
-  Activity,
-  Search,
-  Book,
-  User,
-} from "iconoir-react";
+import { Trophy, Shield, Play, Calendar, Book } from "iconoir-react";
 import {
   CommandDialog,
   CommandInput,
@@ -21,11 +12,9 @@ import {
   CommandItem,
   CommandSeparator,
 } from "~/components/ui/command";
-import { withBasePath } from "~/lib/base-path";
 import { useSportsFocus } from "./SportsFocusProvider";
-import { soundEffects } from "~/lib/sound/cuelume";
 
-export interface SportsCommandPaletteProps {
+interface SportsCommandPaletteProps {
   onNavigateSection?: (section: string) => void;
   onSimulateNext?: () => void;
   teams?: Array<{ id: string; name: string; logo?: string | null }>;
@@ -45,7 +34,6 @@ export function SportsCommandPalette({
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        soundEffects.press();
         setOpen((prev) => !prev);
       }
     };
@@ -55,7 +43,6 @@ export function SportsCommandPalette({
   }, []);
 
   const runCommand = (command: () => void) => {
-    soundEffects.press();
     setOpen(false);
     command();
   };
@@ -64,23 +51,23 @@ export function SportsCommandPalette({
     <CommandDialog
       open={open}
       onOpenChange={setOpen}
-      title="Sports Command Palette"
+      title="Sports command palette"
       description="Quick actions, navigation, and club search"
-      className="max-w-xl border-border/40 bg-card/95 backdrop-blur-2xl rounded-3xl"
+      className="border-separator bg-surface rounded-sheet max-w-xl"
     >
       <CommandInput placeholder="Type a command or search a club (⌘K)..." />
       <CommandList className="max-h-80 overflow-y-auto p-2">
         <CommandEmpty>No matching commands or clubs found.</CommandEmpty>
 
         {/* Quick Actions */}
-        <CommandGroup heading="Quick Actions">
+        <CommandGroup heading="Quick actions">
           {onSimulateNext && (
             <CommandItem
               onSelect={() => runCommand(onSimulateNext)}
-              className="flex items-center gap-2.5 rounded-xl px-3 py-2 cursor-pointer font-bold text-xs hover:bg-muted/40"
+              className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
             >
-              <Play className="h-4 w-4 text-primary fill-current" />
-              <span>Simulate Next Match</span>
+              <Play className="text-tint h-4 w-4 fill-current" />
+              <span>Simulate next match</span>
             </CommandItem>
           )}
 
@@ -88,26 +75,26 @@ export function SportsCommandPalette({
             <>
               <CommandItem
                 onSelect={() => runCommand(() => onNavigateSection("standings"))}
-                className="flex items-center gap-2.5 rounded-xl px-3 py-2 cursor-pointer font-bold text-xs hover:bg-muted/40"
+                className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
               >
-                <Trophy className="h-4 w-4 text-amber-400" />
-                <span>View Standings Matrix</span>
+                <Trophy className="text-yellow h-4 w-4" />
+                <span>View standings matrix</span>
               </CommandItem>
 
               <CommandItem
                 onSelect={() => runCommand(() => onNavigateSection("schedule"))}
-                className="flex items-center gap-2.5 rounded-xl px-3 py-2 cursor-pointer font-bold text-xs hover:bg-muted/40"
+                className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
               >
-                <Calendar className="h-4 w-4 text-cyan-400" />
-                <span>View Schedule & Fixtures</span>
+                <Calendar className="text-teal h-4 w-4" />
+                <span>View schedule & fixtures</span>
               </CommandItem>
 
               <CommandItem
                 onSelect={() => runCommand(() => onNavigateSection("history"))}
-                className="flex items-center gap-2.5 rounded-xl px-3 py-2 cursor-pointer font-bold text-xs hover:bg-muted/40"
+                className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
               >
-                <Book className="h-4 w-4 text-indigo-400" />
-                <span>View Competition Almanac</span>
+                <Book className="text-indigo h-4 w-4" />
+                <span>View competition almanac</span>
               </CommandItem>
             </>
           )}
@@ -122,9 +109,9 @@ export function SportsCommandPalette({
               <CommandItem
                 key={team.id}
                 onSelect={() => runCommand(() => focusOrganization(team.id))}
-                className="flex items-center gap-2.5 rounded-xl px-3 py-2 cursor-pointer font-bold text-xs hover:bg-muted/40"
+                className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
               >
-                <Shield className="h-4 w-4 text-cyan-400" />
+                <Shield className="text-teal h-4 w-4" />
                 <span>{team.name}</span>
               </CommandItem>
             ))}
@@ -136,18 +123,18 @@ export function SportsCommandPalette({
         {/* Global Navigation */}
         <CommandGroup heading="Portals">
           <CommandItem
-            onSelect={() => runCommand(() => router.push(withBasePath("/myleague")))}
-            className="flex items-center gap-2.5 rounded-xl px-3 py-2 cursor-pointer font-bold text-xs hover:bg-muted/40"
+            onSelect={() => runCommand(() => router.push("/myleague"))}
+            className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
           >
-            <Trophy className="h-4 w-4 text-muted-foreground" />
+            <Trophy className="text-label-secondary h-4 w-4" />
             <span>Browse Competitions (MyLeague)</span>
           </CommandItem>
 
           <CommandItem
-            onSelect={() => runCommand(() => router.push(withBasePath("/myclub")))}
-            className="flex items-center gap-2.5 rounded-xl px-3 py-2 cursor-pointer font-bold text-xs hover:bg-muted/40"
+            onSelect={() => runCommand(() => router.push("/myclub"))}
+            className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
           >
-            <Shield className="h-4 w-4 text-muted-foreground" />
+            <Shield className="text-label-secondary h-4 w-4" />
             <span>Franchise Headquarters (MyClub)</span>
           </CommandItem>
         </CommandGroup>
@@ -155,5 +142,3 @@ export function SportsCommandPalette({
     </CommandDialog>
   );
 }
-
-export default SportsCommandPalette;

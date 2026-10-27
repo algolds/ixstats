@@ -11,11 +11,13 @@ import {
   TableCell,
 } from "~/components/ui/table";
 import { Skeleton } from "~/components/ui/skeleton";
+import { EmptyState } from "~/components/ui/empty-state";
 import { cn } from "~/lib/utils/cn";
 import { FacetMobileCard } from "./FacetMobileCard";
 import { FacetTableToolbar } from "./FacetTableToolbar";
 import { FacetTablePagination } from "./FacetTablePagination";
 import type { FacetDataTableProps, FacetColumn, SortState } from "./types";
+import { Card } from "~/components/ui/card";
 
 export function FacetDataTable<T extends Record<string, any>>({
   data,
@@ -59,7 +61,7 @@ export function FacetDataTable<T extends Record<string, any>>({
   tableContainerClassName,
   cardContainerClassName,
 }: FacetDataTableProps<T>) {
-  // ─── 1. URL Sync Initialization & State ─────────────────────────
+  // 1. URL Sync Initialization & State
   const getInitialUrlState = () => {
     if (!urlSync || typeof window === "undefined") {
       return { search: "", page: 1, sort: null as SortState | null };
@@ -95,7 +97,7 @@ export function FacetDataTable<T extends Record<string, any>>({
   const isSortControlled = controlledSortState !== undefined;
   const currentSort = isSortControlled ? controlledSortState : internalSort;
 
-  // ─── 2. URL Sync Effect ──────────────────────────────────────────
+  // 2. URL Sync Effect
   useEffect(() => {
     if (!urlSync || typeof window === "undefined") return;
 
@@ -124,7 +126,7 @@ export function FacetDataTable<T extends Record<string, any>>({
     window.history.replaceState(null, "", newUrl);
   }, [urlSync, urlPrefix, searchTerm, currentPage, currentSort]);
 
-  // ─── 3. State Change Handlers ────────────────────────────────────
+  // 3. State Change Handlers
   const handleSearchChange = useCallback(
     (term: string) => {
       if (controlledOnSearchChange) {
@@ -184,7 +186,7 @@ export function FacetDataTable<T extends Record<string, any>>({
     [currentSort, controlledOnSortChange]
   );
 
-  // ─── 4. Client-side In-memory Filtering, Sorting & Slicing ────────
+  // 4. Client-side In-memory Filtering, Sorting & Slicing
   const filteredData = useMemo(() => {
     if (!searchable || !searchTerm.trim() || isSearchControlled) {
       return data;
@@ -250,7 +252,7 @@ export function FacetDataTable<T extends Record<string, any>>({
     return sortedData.slice(start, start + effectivePageSize);
   }, [sortedData, paginated, isPageControlled, currentPage, effectivePageSize]);
 
-  // ─── 5. CSV Export Handler ───────────────────────────────────────
+  // 5. CSV Export Handler
   const handleExportCSV = useCallback(() => {
     if (!data.length) return;
 
@@ -284,30 +286,27 @@ export function FacetDataTable<T extends Record<string, any>>({
     const val = col.accessor ? col.accessor(row) : row[col.key];
     if (col.render) return col.render(val, row, index);
     if (val === null || val === undefined || val === "")
-      return <span className="text-muted-foreground/50">—</span>;
+      return <span className="text-label-tertiary">—</span>;
     return val;
   };
 
   const renderSortIcon = (colKey: string) => {
     if (!currentSort || currentSort.columnKey !== colKey) {
-      return <ArrowUpDown className="text-muted-foreground/50 ml-1 h-3 w-3 shrink-0" />;
+      return <ArrowUpDown aria-hidden="true" className="text-label-tertiary size-3 shrink-0" />;
     }
     return currentSort.direction === "asc" ? (
-      <ArrowUp className="text-primary ml-1 h-3 w-3 shrink-0" />
+      <ArrowUp aria-hidden="true" className="text-tint size-3 shrink-0" />
     ) : (
-      <ArrowDown className="text-primary ml-1 h-3 w-3 shrink-0" />
+      <ArrowDown aria-hidden="true" className="text-tint size-3 shrink-0" />
     );
   };
 
-  // ─── 6. View Rendering ───────────────────────────────────────────
+  // 6. View Rendering
   const isEmpty = !loading && paginatedData.length === 0;
 
   return (
-    <div
-      data-slot="facet-data-table"
-      className={cn("facet-hierarchy-child flex flex-col gap-4", className)}
-    >
-      {/* ─── Toolbar ──────────────────────────────────────────────── */}
+    <div data-slot="facet-data-table" className={cn("flex flex-col gap-4", className)}>
+      {/* Toolbar */}
       <FacetTableToolbar
         title={title}
         description={description}
@@ -320,33 +319,29 @@ export function FacetDataTable<T extends Record<string, any>>({
         toolbarActions={toolbarActions}
       />
 
-      {/* ─── Loading Skeleton View ────────────────────────────────── */}
+      {/* Loading Skeleton View */}
       {loading ? (
-        <div className="space-y-3">
-          {/* Desktop Table Skeleton */}
-          <div
+        <div aria-busy="true" aria-label="Loading" className="flex flex-col gap-3">
+          {/* Desktop Table Skeleton: shaped like the Table (header row + body rows) */}
+          <Card
             className={cn(
-              layoutMode === "auto"
-                ? "hidden sm:block"
-                : layoutMode === "table"
-                  ? "block"
-                  : "hidden",
-              "border-border/40 space-y-3 overflow-hidden rounded-xl border p-4"
+              layoutMode === "auto" ? "hidden sm:flex" : layoutMode === "table" ? "flex" : "hidden",
+              "flex-col gap-3 overflow-hidden p-4"
             )}
           >
-            <div className="border-border/40 flex gap-4 border-b pb-3">
+            <div className="border-separator flex gap-4 border-b pb-3">
               {columns.slice(0, 5).map((_, i) => (
-                <Skeleton key={i} className="h-4 flex-1 rounded-md" />
+                <Skeleton key={i} className="rounded-control-sm h-4 flex-1" />
               ))}
             </div>
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex gap-4 py-2">
                 {columns.slice(0, 5).map((_, j) => (
-                  <Skeleton key={j} className="h-8 flex-1 rounded-md" />
+                  <Skeleton key={j} className="rounded-control-sm h-8 flex-1" />
                 ))}
               </div>
             ))}
-          </div>
+          </Card>
 
           {/* Mobile Card Skeleton */}
           <div
@@ -359,72 +354,90 @@ export function FacetDataTable<T extends Record<string, any>>({
             )}
           >
             {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-28 w-full rounded-2xl" />
+              <Skeleton key={i} className="rounded-card h-28 w-full" />
             ))}
           </div>
         </div>
       ) : isEmpty ? (
         /* ─── Empty State View ──────────────────────────────────────── */
-        <div className="border-border/40 bg-card/20 flex flex-col items-center justify-center rounded-2xl border border-dashed px-4 py-12 text-center backdrop-blur-md">
-          {emptyIcon || <Database className="text-muted-foreground/40 mb-3 h-10 w-10" />}
-          <p className="text-foreground text-sm font-semibold">{emptyMessage}</p>
-          {searchTerm && (
-            <p className="text-muted-foreground mt-1 text-xs">
-              Try adjusting your search terms or clearing active filters.
-            </p>
-          )}
-        </div>
+        <Card>
+          <EmptyState
+            icon={emptyIcon || <Database />}
+            title={emptyMessage}
+            message={
+              searchTerm ? "Try adjusting your search terms or clearing active filters." : undefined
+            }
+          />
+        </Card>
       ) : (
         <>
-          {/* ─── Desktop Table Mode (sm: and up) ────────────────────── */}
+          {/* Desktop Table Mode (sm: and up) */}
           {layoutMode !== "cards" && (
-            <div
-              className={cn(
-                layoutMode === "auto" ? "hidden sm:block" : "block",
-                "border-border/40 bg-card/30 overflow-hidden rounded-2xl border shadow-xs backdrop-blur-md",
-                tableContainerClassName
-              )}
-            >
-              <Table>
-                <TableHeader className="bg-muted/40">
-                  <TableRow className="border-border/40">
-                    {columns.map((col) => (
-                      <TableHead
-                        key={col.key}
-                        className={cn(
-                          "text-muted-foreground px-4 py-3 text-xs font-semibold tracking-wider select-none",
-                          col.align === "center" && "text-center",
-                          col.align === "right" && "text-right",
-                          col.sortable &&
-                            "hover:text-foreground hover:bg-muted/50 cursor-pointer transition-colors",
-                          col.className,
-                          col.headerClassName
-                        )}
-                        onClick={() => col.sortable && handleSortToggle(col.key)}
-                      >
-                        <div
-                          className={cn(
-                            "flex items-center gap-1",
-                            col.align === "center" && "justify-center",
-                            col.align === "right" && "justify-end"
-                          )}
-                        >
+            <div className={cn(layoutMode === "auto" ? "hidden sm:block" : "block")}>
+              <Table containerClassName={tableContainerClassName}>
+                <TableHeader>
+                  <TableRow>
+                    {columns.map((col) => {
+                      const sorted = currentSort?.columnKey === col.key ? currentSort : null;
+                      const content = (
+                        <>
                           <span>{col.header}</span>
                           {col.sortable && renderSortIcon(col.key)}
-                        </div>
-                      </TableHead>
-                    ))}
+                        </>
+                      );
+                      const justify = cn(
+                        col.align === "center" && "justify-center",
+                        col.align === "right" && "justify-end"
+                      );
+                      return (
+                        <TableHead
+                          key={col.key}
+                          aria-sort={
+                            col.sortable
+                              ? sorted
+                                ? sorted.direction === "asc"
+                                  ? "ascending"
+                                  : "descending"
+                                : "none"
+                              : undefined
+                          }
+                          className={cn(
+                            "px-4 py-3 select-none",
+                            col.align === "center" && "text-center",
+                            col.align === "right" && "text-right",
+                            col.sortable && "hover:text-label hover:bg-fill-4 transition-colors",
+                            col.className,
+                            col.headerClassName
+                          )}
+                        >
+                          {col.sortable ? (
+                            // A real button: sortable headers are reachable and operable by keyboard.
+                            <button
+                              type="button"
+                              onClick={() => handleSortToggle(col.key)}
+                              className={cn(
+                                "rounded-control-sm focus-visible:outline-tint inline-flex w-full cursor-pointer items-center gap-1 outline-none focus-visible:outline-2 focus-visible:outline-offset-2",
+                                justify
+                              )}
+                            >
+                              {content}
+                            </button>
+                          ) : (
+                            <div className={cn("flex items-center gap-1", justify)}>{content}</div>
+                          )}
+                        </TableHead>
+                      );
+                    })}
                   </TableRow>
                 </TableHeader>
 
-                <TableBody className="divide-border/30 divide-y">
+                <TableBody>
                   {paginatedData.map((row, index) => (
                     <TableRow
                       key={row.id || index}
                       onClick={() => onRowClick?.(row)}
                       className={cn(
-                        "hover:bg-muted/30 border-border/20 transition-colors",
-                        onRowClick && "active:bg-muted/50 cursor-pointer",
+                        onRowClick && "active:bg-fill-3 cursor-pointer",
                         rowClassName?.(row, index)
                       )}
                     >
@@ -432,7 +445,7 @@ export function FacetDataTable<T extends Record<string, any>>({
                         <TableCell
                           key={col.key}
                           className={cn(
-                            "px-4 py-3 text-xs",
+                            "px-4 py-3",
                             col.align === "center" && "text-center",
                             col.align === "right" && "text-right",
                             col.className,
@@ -449,7 +462,7 @@ export function FacetDataTable<T extends Record<string, any>>({
             </div>
           )}
 
-          {/* ─── Mobile Card Mode (< sm) ────────────────────────────── */}
+          {/* Mobile Card Mode (< sm) */}
           {layoutMode !== "table" && (
             <div
               className={cn(
@@ -472,7 +485,7 @@ export function FacetDataTable<T extends Record<string, any>>({
         </>
       )}
 
-      {/* ─── Pagination Controls ──────────────────────────────────── */}
+      {/* Pagination Controls */}
       {paginated && !loading && !isEmpty && (
         <FacetTablePagination
           currentPage={currentPage}

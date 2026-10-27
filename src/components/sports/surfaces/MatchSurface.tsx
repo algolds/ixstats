@@ -4,7 +4,7 @@ import { HockeyRink } from "./HockeyRink";
 import { CircuitMap } from "./CircuitMap";
 import { FootballField } from "./FootballField";
 
-export interface MatchSurfaceProps {
+interface MatchSurfaceProps {
   sportPreset?: string | null;
   className?: string;
   circuitName?: string;

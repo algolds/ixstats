@@ -21,6 +21,9 @@ permissions:
 
 jobs:
   triage-issues:
+    # Gemini jobs run only once credentials exist: set the repo variable GEMINI_ENABLED=true
+    # together with the GEMINI_API_KEY secret (or Vertex/GCA settings). Otherwise the job is skipped.
+    if: "${{ vars.GEMINI_ENABLED == 'true' }}"
     timeout-minutes: 5
     runs-on: 'ubuntu-latest'
     steps:

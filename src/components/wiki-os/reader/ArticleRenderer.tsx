@@ -1,15 +1,15 @@
 "use client";
-// src/components/wiki-os/reader/ArticleRenderer.tsx
-// Renders pre-transformed WikiOS article data in reader mode.
-// Composes modular ArticleHeader, ArticleCategories, ArticleFooter, ArticleModals, and ArticlePlaceholders.
-
 import React, { useRef, useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
-import dynamic from "next/dynamic";
-import { addSectionEditLinks, type TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
-import { AppleBooksTocDrawer } from "~/components/wiki-os/reader/AppleBooksTocDrawer";
+import {
+  appendSectionEditLinks,
+  removeSectionEditLinks,
+  type TocEntry,
+} from "~/lib/wiki-os/transformers/html-transformer";
 import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
+import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
+import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { InfoboxWithMap } from "~/components/wiki-os/reader/InfoboxWithMap";
 import { useImageLightbox } from "~/components/wiki-os/reader/ImageLightbox";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -19,61 +19,52 @@ import { useWikiNarrator } from "~/hooks/useWikiNarrator";
 import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { getFlagColors } from "~/lib/flags/flag-color-extractor";
-import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
-import { EMBED_CSS, EMBED_JS } from "~/lib/wiki-os/editor/wiki-embed-shared";
 import { parseWikiSource } from "~/lib/wiki-os/config";
+import { hexToRgb } from "~/lib/color";
+import type { ArticleAuthorInfo } from "~/lib/wiki-os/types/canonical";
 
 // Subcomponent imports
-import { WikiOSHeader, type ArticleAuthorInfo } from "./ArticleHeader";
+import { WikiOSHeader } from "./ArticleHeader";
+import { normalizeAuthorInfo } from "./author-info";
 import { QuickHistoryModal, QuickBacklinksModal } from "./ArticleModals";
-import {
-  injectPlaceholderElements,
-  CoordsPill,
-  DynamicStatSpan,
-  type DynamicStatData,
-} from "./ArticlePlaceholders";
+import { ArticleWidgetPortals, useWidgetHtml } from "./ArticleWidgets";
+import { useSisterHash } from "./useSisterHash";
+import { useHydrated } from "~/hooks/useHydrated";
+import { useScrollSpy } from "./useScrollSpy";
+import { leanElementId, parseLeanMarker, resolveLeanHtml } from "~/lib/wiki-os/lean-article";
 import { CategoriesBar } from "./ArticleCategories";
 import { ArticleFooter } from "./ArticleFooter";
 import { ArticleCompanionHUD } from "./ArticleCompanionHUD";
+import { Button } from "~/components/ui/button";
+import { NavArrowLeft, NavArrowRight } from "iconoir-react";
 import { SourceWikiNote } from "./SourceWikiNote";
-import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
-import { NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft } from "iconoir-react";
-import { useNotify } from "~/hooks/useNotify";
-import { extractLeadImageFromHtml } from "~/lib/wiki-os/transformers/image-url";
+import { useEmbedAssets } from "./useEmbedAssets";
+import { useArticleAnnotations } from "./useArticleAnnotations";
 import {
-  WikiMarginDrawer,
   MarginGutterPins,
-  SelectionCapsule,
   MarginShareModal,
-  type SelectionPayload,
-} from "~/components/wiki-os/margin";
+  SelectionCapsule,
+  WikiMarginDrawer,
+} from "./article-lazy";
+import { cn } from "~/lib/utils";
+import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
+import { extractLeadImage } from "~/lib/wiki-os/transformers/image-url";
+import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
+import { heroCardInputs, mayNameCountry } from "~/lib/wiki-os/hero-card";
+import type { SelectionPayload } from "~/components/wiki-os/margin/SelectionCapsule";
 
-const CoordinatesMapEmbed = dynamic(
-  () =>
-    import("~/components/maps/widgets/CoordinatesMapEmbed").then((m) => ({
-      default: m.CoordinatesMapEmbed,
-    })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="wikios-ixworld-loading flex min-h-[200px] items-center justify-center rounded-xl border border-white/10 bg-white/5">
-        <div
-          className="wikios-loading-spinner mr-2 animate-spin"
-          style={{ width: 20, height: 20 }}
-        />
-        <span className="text-xs text-zinc-400">Loading map...</span>
-      </div>
-    ),
-  }
-);
+/** Accent hue by article category keywords (first match wins); otherwise decided by the title prefix. */
+const HUE_RULES: ReadonlyArray<[hue: number, keywords: string[]]> = [
+  [38, ["history", "politics", "executive", "government"]],
+  [0, ["military", "war", "conflict", "defense"]],
+  [188, ["diplomacy", "geography", "relation"]],
+  [142, ["file", "media", "image"]],
+  [262, ["talk", "discussion"]],
+];
 
 function getRgbaColor(colorStr: string, opacity: number): string {
   if (colorStr.startsWith("#")) {
-    const cleanHex = colorStr.replace("#", "");
-    const r = parseInt(cleanHex.substring(0, 2), 16);
-    const g = parseInt(cleanHex.substring(2, 4), 16);
-    const b = parseInt(cleanHex.substring(4, 6), 16);
+    const { r, g, b } = hexToRgb(colorStr);
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   }
   if (colorStr.startsWith("hsl")) {
@@ -91,54 +82,30 @@ interface ArticleRendererProps {
   categories: string[];
   lastModified: string | null;
   wikiSource?: "ixwiki" | "iiwiki" | "althistory";
+  /** Authorship the page already came with (another wiki's page); an IxWiki page loads its own. */
   authorInfo?: ArticleAuthorInfo | null;
 }
 
-// oxlint-disable-next-line eslint/no-unused-vars
-const WIKI_SOURCE_LABELS: Record<string, { label: string; url: string }> = {
-  iiwiki: { label: "iiwiki.com", url: "https://iiwiki.com/wiki/" },
-  althistory: { label: "althistory.fandom.com", url: "https://althistory.fandom.com/wiki/" },
-};
-
-const EMPTY_STATS_DATA: Record<string, DynamicStatData> = {};
-
-type PortalTarget =
-  | {
-      element: Element;
-      type: "coords";
-      data: { lat: number; lng: number; zoom: number; label: string };
-    }
-  | {
-      element: Element;
-      type: "map-embed";
-      data: { lat: number; lng: number; zoom: number; options: string };
-    }
-  | {
-      element: Element;
-      type: "stat";
-      data: { key: string };
-    };
-
-/** A plain article title that may name a country: not empty, not the Main Page, no namespace. */
-function mayNameCountry(title: string): boolean {
-  return (
-    title.trim() !== "" && title !== "Main Page" && title !== "Main_Page" && !title.includes(":")
-  );
-}
+const AUTHORS_STALE_MS = 10 * 60 * 1000;
 
 export function ArticleRenderer({
   title,
-  contentHtml,
-  infoboxHtml,
-  noticesHtml,
+  contentHtml: contentMarker,
+  infoboxHtml: infoboxMarker,
+  noticesHtml: noticesMarker,
   toc,
   categories,
   lastModified,
   wikiSource,
   authorInfo,
 }: ArticleRendererProps) {
-  const titleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  // In lean mode (lib/wiki-os/lean-article.ts) the three parts arrive as markers, and the real HTML is
+  // read from where the server rendered it: the DOM in the browser, the server's stash in the SSR render.
+  const leanToken = parseLeanMarker(contentMarker)?.token ?? null;
+  const contentHtml = useMemo(() => resolveLeanHtml(contentMarker) ?? "", [contentMarker]);
+  const infoboxHtml = useMemo(() => resolveLeanHtml(infoboxMarker), [infoboxMarker]);
+  const noticesHtml = useMemo(() => resolveLeanHtml(noticesMarker), [noticesMarker]);
   const {
     setWikiPage,
     activeModal,
@@ -155,43 +122,50 @@ export function ArticleRenderer({
   // Another wiki's page (ruling E-l) is read-only here: no section edits, no margin, no IxWiki history.
   const source = parseWikiSource(wikiSource);
   const readOnly = source !== "ixwiki";
+  const contained = readOnly ? " wikios-sister-article" : ""; // another wiki's HTML: boxed in (content.css)
   const marginOpen = isMarginOpen && !readOnly;
   const marginEnabled = !!title && !readOnly;
+  // The Inspector sheet below 1280px, opened by the header's Contents button.
   const [tocOpen, setTocOpen] = useState(false);
-  // oxlint-disable-next-line eslint/no-unused-vars
+  // The setting gates the whole Inspector: off, the page opts out of the gutter (ArticlePageClient).
   const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
-  const [companionCollapsed, setCompanionCollapsed] = useState(false);
-
-  // Persist companion collapsed preference (xl only)
-  useEffect(() => {
+  const tocVisible = showWikiToc && toc.length > 0;
+  // From 1280px the sidebar shows only the contents until the page info is opened (remembered
+  // per browser).
+  const wide = useMediaQuery("(min-width: 1280px)");
+  const railCollapsed = useWikiSetting("wikios:railCollapsed", true);
+  const asideShown = showWikiToc && !marginOpen;
+  const toggleRail = () => {
     try {
-      const v = localStorage.getItem("wikios:companionCollapsed");
-      if (v === "true") setCompanionCollapsed(true);
+      localStorage.setItem("wikios:railCollapsed", String(!railCollapsed));
     } catch {
-      /* ignore */
+      return;
     }
-  }, []);
-  useEffect(() => {
-    try {
-      localStorage.setItem("wikios:companionCollapsed", String(companionCollapsed));
-    } catch {
-      /* ignore */
-    }
-  }, [companionCollapsed]);
+    window.dispatchEvent(new Event("wikios-settings-changed"));
+  };
 
-  // --- WikiOS Margin Suite State ---
+  const marginDrawerMounted = useMountOnFirstOpen(marginOpen);
+
   const [marginExpanded, setMarginExpanded] = useState(false);
   const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
   const [draftQuote, setDraftQuote] = useState<string | null>(null);
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
-  const utils = api.useUtils();
 
   const slug = useMemo(() => encodeURIComponent(title.replace(/ /g, "_")), [title]);
 
+  // Authorship loads beside the article, never in front of it (it can take MediaWiki a moment).
+  const authorsQuery = api.wikios.getArticleAuthors.useQuery(
+    { title, wikiSource: source },
+    { enabled: !authorInfo && !!title, staleTime: AUTHORS_STALE_MS, retry: false }
+  );
+  const authors = useMemo(
+    () => normalizeAuthorInfo(authorInfo ?? authorsQuery.data),
+    [authorInfo, authorsQuery.data]
+  );
+
   // Query discussions for Gutter Pins & counts
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { data: marginData, refetch: refetchMargin } = api.wikios.getArticleMarginData.useQuery(
+  const { data: marginData } = api.wikios.getArticleMarginData.useQuery(
     { articleTitle: title, status: "ALL" },
     { enabled: marginEnabled, staleTime: 15_000 }
   );
@@ -222,7 +196,6 @@ export function ArticleRenderer({
         !e.altKey
       ) {
         e.preventDefault();
-        soundEffects.press();
         toggleMargin();
       }
     };
@@ -231,52 +204,12 @@ export function ArticleRenderer({
   }, [toggleMargin, readOnly]);
 
   // Selection Capsule Handlers & Live Sync
-  const notify = useNotify();
-
-  const { data: annotationsData, refetch: refetchAnnotations } = api.wikios.getAnnotations.useQuery(
-    { pageTitle: title },
-    { enabled: marginEnabled && isAuthenticated, staleTime: 15_000 }
+  const { annotationsData, handleAddHighlight, handleStashQuote } = useArticleAnnotations(
+    title,
+    marginEnabled && isAuthenticated
   );
 
-  const addAnnotationMutation = api.wikios.addAnnotation.useMutation({
-    onSuccess: () => {
-      soundEffects.success();
-      void utils.wikios.getAnnotations.invalidate({ pageTitle: title });
-      void utils.wikios.getStashItems.invalidate();
-      void utils.wikios.getStashes.invalidate();
-      void refetchAnnotations();
-    },
-    onError: (err: { message?: string }) => {
-      notify.error(err.message || "Failed to add highlight");
-    },
-  });
-
-  const stashPageMutation = api.wikios.stashPage.useMutation({
-    onSuccess: () => {
-      void utils.wikios.isStashed.invalidate({ pageTitle: title });
-      void utils.wikios.getStashes.invalidate();
-      void utils.wikios.getStashItems.invalidate();
-    },
-    onError: (err: { message?: string }) => {
-      notify.error(err.message || "Failed to stash page");
-    },
-  });
-
-  const handleAddHighlight = (payload: SelectionPayload, color: string) => {
-    addAnnotationMutation.mutate(
-      {
-        pageTitle: title,
-        selectedText: payload.text,
-        color,
-      },
-      {
-        onSuccess: () => {
-          notify.success("Highlight saved to Margin Markup");
-        },
-      }
-    );
-  };
-
+  // Both open the Margin threads tab with the selection quoted in a new-thread draft.
   const handleOpenThreadDraft = (payload: SelectionPayload) => {
     setActiveAnchor(null);
     setDraftQuote(payload.text);
@@ -284,195 +217,49 @@ export function ArticleRenderer({
     setMarginOpen(true);
   };
 
-  const handleStashQuote = (payload: SelectionPayload) => {
-    addAnnotationMutation.mutate(
-      {
-        pageTitle: title,
-        selectedText: payload.text,
-        comment: "Saved quote",
-        color: "#f472b6",
-      },
-      {
-        onSuccess: () => {
-          notify.success("Quote saved to Stash & Margin");
-          stashPageMutation.mutate({ pageTitle: title });
-        },
-      }
-    );
-  };
-
   const [sharePayload, setSharePayload] = useState<SelectionPayload | null>(null);
 
-  const handleSuggestEdit = (payload: SelectionPayload) => {
-    setActiveAnchor(null);
-    setDraftQuote(payload.text);
-    setMarginTab("threads");
-    setMarginOpen(true);
-  };
+  useEmbedAssets(contentHtml, infoboxHtml);
 
-  const handleShareQuote = (payload: SelectionPayload) => {
-    setSharePayload(payload);
-  };
+  // The placeholder pass needs a DOM, so the server renders the article as it is. The browser's
+  // hydrating pass must start from that same HTML (it does until `hydrated`), and the pass is applied
+  // straight after: a mismatch would leave the server's HTML in place with no placeholders mounted.
+  // Another wiki's page gets no pass: it mounts no IxStates widget (ArticleWidgets.tsx).
+  const hydrated = useHydrated();
+  const processedHtml = useWidgetHtml(contentHtml, hydrated && !readOnly);
+  const processedInfoboxHtml = useWidgetHtml(infoboxHtml, hydrated && !readOnly);
+  useSisterHash(contentRef, readOnly, processedHtml);
 
-  // --- Portal & Dynamic Widgets Setup ---
-  const statKeys = useMemo(() => {
-    const keys = new Set<string>();
-    const regex = /\{\{((?:MyCountry|CountryData|BusinessData):[^}\n]+?)\}\}/gi;
-    let match;
-    while ((match = regex.exec(contentHtml)) !== null) {
-      if (match[1]) keys.add(match[1]);
-    }
-    const linkRegex =
-      /Template(?::|%3a)((?:MyCountry|CountryData|BusinessData)(?::|%3a)[^"|?#&]+)/gi;
-    while ((match = linkRegex.exec(contentHtml)) !== null) {
-      if (match[1]) keys.add(safeDecodeURI(match[1]));
-    }
-    return Array.from(keys);
-  }, [contentHtml]);
-
-  const statsQuery = api.wikios.resolveWikiPlaceholders.useQuery(
-    { placeholders: statKeys },
-    { enabled: statKeys.length > 0, staleTime: 5 * 60 * 1000 }
-  );
-  const statsData = statsQuery.data || EMPTY_STATS_DATA;
-
-  const { data: currentUserData } = api.users.getCurrentUserWithRole.useQuery(undefined, {
-    enabled: isAuthenticated,
-  });
-  const { data: viewerCountryData } = api.countries.getByIdBasic.useQuery(
-    { id: currentUserData?.user?.country?.id || "" },
-    { enabled: !!currentUserData?.user?.country?.id }
-  );
-  const viewerCentroid = useMemo(() => {
-    if (!viewerCountryData?.centroid) return null;
-    const c = viewerCountryData.centroid as { lat: number; lng: number } | [number, number];
-    if (Array.isArray(c)) {
-      return { lng: c[0] || 0, lat: c[1] || 0 };
-    }
-    return { lat: c.lat || 0, lng: c.lng || 0 };
-  }, [viewerCountryData]);
-
-  // Inject shared embed CSS + JS
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-
-    if (!document.getElementById("ixstats-embed-css")) {
-      const style = document.createElement("style");
-      style.id = "ixstats-embed-css";
-      style.textContent = EMBED_CSS;
-      document.head.appendChild(style);
-    }
-    if (!document.getElementById("ixstats-embed-js")) {
-      const script = document.createElement("script");
-      script.id = "ixstats-embed-js";
-      script.textContent = EMBED_JS;
-      document.head.appendChild(script);
-    }
-    if (!document.getElementById("ixstats-embed-prefetch")) {
-      const link = document.createElement("link");
-      link.id = "ixstats-embed-prefetch";
-      link.rel = "prefetch";
-      link.href = "/maps?embed=true";
-      link.setAttribute("as", "document");
-      document.head.appendChild(link);
-    }
-  }, []);
-
-  const processedHtml = useMemo(() => {
-    const html = injectPlaceholderElements(contentHtml);
-    return isAuthenticated && !readOnly ? addSectionEditLinks(html, slug) : html;
-  }, [contentHtml, isAuthenticated, readOnly, slug]);
-  const processedInfoboxHtml = useMemo(
-    () => (infoboxHtml ? injectPlaceholderElements(infoboxHtml) : null),
-    [infoboxHtml]
-  );
-
-  const [portalTargets, setPortalTargets] = useState<PortalTarget[]>([]);
-
+  // A signed-in reader's section edit links are added to the live article, in place: signing in
+  // resolves after hydration, and the article's HTML is never written again for it. Signing out
+  // takes them out the same way.
+  const canEdit = isAuthenticated && !readOnly;
   useEffect(() => {
     const container = contentRef.current;
     if (!container) return;
+    if (canEdit) appendSectionEditLinks(container, slug);
+    else removeSectionEditLinks(container);
+  }, [canEdit, slug, processedHtml]);
+  // One markup object per HTML (useHtmlMarkup), so a re-render (a section change in the scroll spy, a query
+  // settling) leaves the article's DOM, its images and its added links alone (React 19). Its app links get
+  // the base path there (`withAppHrefs`), after the placeholder pass above read them bare.
+  const bodyMarkup = useHtmlMarkup(processedHtml);
+  const noticesMarkup = useHtmlMarkup(noticesHtml ?? "");
 
-    const targets: PortalTarget[] = [];
-
-    container.querySelectorAll(".wikios-coords-placeholder").forEach((el) => {
-      const lat = parseFloat(el.getAttribute("data-lat") || "0");
-      const lng = parseFloat(el.getAttribute("data-lng") || "0");
-      const zoom = parseInt(el.getAttribute("data-zoom") || "4", 10);
-      const label = el.getAttribute("data-label") || "Location";
-      targets.push({
-        element: el,
-        type: "coords",
-        data: { lat, lng, zoom, label },
-      });
-    });
-
-    container.querySelectorAll(".wikios-map-embed-placeholder").forEach((el) => {
-      const lat = parseFloat(el.getAttribute("data-lat") || "0");
-      const lng = parseFloat(el.getAttribute("data-lng") || "0");
-      const zoom = parseInt(el.getAttribute("data-zoom") || "4", 10);
-      const options = el.getAttribute("data-options") || "";
-      targets.push({
-        element: el,
-        type: "map-embed",
-        data: { lat, lng, zoom, options },
-      });
-    });
-
-    container.querySelectorAll(".wikios-stat-placeholder").forEach((el) => {
-      const key = el.getAttribute("data-key") || "";
-      targets.push({
-        element: el,
-        type: "stat",
-        data: { key },
-      });
-    });
-
-    setPortalTargets(targets);
-    // oxlint-disable-next-line
-  }, [processedHtml, processedInfoboxHtml]);
-
-  const { data: countryData } = api.countries.getByIdBasic.useQuery(
-    { id: title },
-    { enabled: mayNameCountry(title), retry: false }
-  );
+  const { data: countryData } = api.countries.getByIdBasic.useQuery(heroCardInputs(title).country, {
+    enabled: mayNameCountry(title),
+    retry: false,
+  });
 
   const themeColors = useMemo(() => {
     if (countryData?.name) {
       return getFlagColors(countryData.name);
     }
 
-    let hue = 217;
     const catStr = categories.join(" ").toLowerCase();
-    if (
-      catStr.includes("history") ||
-      catStr.includes("politics") ||
-      catStr.includes("executive") ||
-      catStr.includes("government")
-    ) {
-      hue = 38;
-    } else if (
-      catStr.includes("military") ||
-      catStr.includes("war") ||
-      catStr.includes("conflict") ||
-      catStr.includes("defense")
-    ) {
-      hue = 0;
-    } else if (
-      catStr.includes("diplomacy") ||
-      catStr.includes("geography") ||
-      catStr.includes("relation")
-    ) {
-      hue = 188;
-    } else if (catStr.includes("file") || catStr.includes("media") || catStr.includes("image")) {
-      hue = 142;
-    } else if (catStr.includes("talk") || catStr.includes("discussion")) {
-      hue = 262;
-    } else if (title.startsWith("File:")) {
-      hue = 142;
-    } else if (title.startsWith("Talk:")) {
-      hue = 262;
-    }
+    const rule = HUE_RULES.find(([, keywords]) => keywords.some((k) => catStr.includes(k)));
+    const titleHue = title.startsWith("File:") ? 142 : title.startsWith("Talk:") ? 262 : 217;
+    const hue = rule?.[0] ?? titleHue;
 
     return {
       primary: `hsl(${hue}, 80%, 45%)`,
@@ -487,28 +274,9 @@ export function ArticleRenderer({
     return () => setWikiPage(null, [], null);
   }, [title, toc, themeColors, source, setWikiPage]);
 
-  // Scroll spy — single owner now in WikiArticleRightRail; this keeps WikiContext activeSectionId in sync
-  useEffect(() => {
-    if (toc.length === 0) return;
-    function tick() {
-      const ids = toc.map((e) => e.id);
-      let current: string | null = null;
-      for (const id of ids) {
-        const el = document.getElementById(id);
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          if (rect.top <= 120) current = id;
-        }
-      }
-      setActiveSectionId(current);
-    }
-    window.addEventListener("scroll", tick, { passive: true });
-    tick();
-    return () => {
-      window.removeEventListener("scroll", tick);
-      setActiveSectionId(null);
-    };
-  }, [toc, setActiveSectionId]);
+  // Scroll spy — keeps WikiContext activeSectionId in sync (offsets cached, one pass per frame)
+  const tocIds = useMemo(() => toc.map((entry) => entry.id), [toc]);
+  useScrollSpy(tocIds, setActiveSectionId);
 
   // Navbox collapse toggle
   useEffect(() => {
@@ -537,11 +305,6 @@ export function ArticleRenderer({
 
   const lightboxPortal = useImageLightbox(contentRef);
 
-  const _stashQuery = api.wikios.isStashed.useQuery(
-    { pageTitle: title },
-    { enabled: isAuthenticated, retry: false }
-  );
-
   useAnnotationOverlay({
     contentRef,
     annotations: (annotationsData as any) || [],
@@ -556,15 +319,24 @@ export function ArticleRenderer({
 
   const citeTooltipPortal = useCiteTooltips(contentRef);
 
+  // Lorewards and article awards belong to IxWiki pages: another wiki's page asks for none.
   const awardsQuery = api.lorewards.getArticleAwardsAndAchievements.useQuery(
-    { title },
-    { staleTime: 300000 }
+    heroCardInputs(title).awards,
+    { staleTime: 300000, enabled: source === "ixwiki" }
   );
   const awardsData = awardsQuery.data;
 
-  const featuredImageUrl = useMemo(() => {
-    return extractLeadImageFromHtml(infoboxHtml) ?? extractLeadImageFromHtml(contentHtml);
-  }, [infoboxHtml, contentHtml]);
+  // The lead image and the size of its file (the hero reserves its shape from it, before it loads)
+  const featuredImage = useMemo(
+    () => extractLeadImage(infoboxHtml) ?? extractLeadImage(contentHtml),
+    [infoboxHtml, contentHtml]
+  );
+  const featuredImageUrl = featuredImage?.url ?? null;
+  const featuredImageFile = useMemo(
+    () =>
+      featuredImage ? { width: featuredImage.fileWidth, height: featuredImage.fileHeight } : null,
+    [featuredImage]
+  );
 
   const containerStyle = {
     "--wikios-accent": themeColors.primary,
@@ -576,24 +348,44 @@ export function ArticleRenderer({
 
   const narrator = useWikiNarrator(contentRef);
 
+  const companion = (
+    <ArticleCompanionHUD
+      contentHtml={contentHtml}
+      lastModified={lastModified}
+      authorInfo={authors}
+      authorsPending={!authorInfo && authorsQuery.isLoading}
+      categories={categories}
+      awardsData={awardsData}
+      marginThreadsCount={(marginData?.totalOpenCount ?? 0) + (marginData?.totalResolvedCount ?? 0)}
+      marginAnnotationsCount={(annotationsData as any)?.length ?? 0}
+      onOpenMargin={(tab) => {
+        setMarginTab(tab || "threads");
+        setMarginOpen(true);
+        setTocOpen(false);
+      }}
+      onOpenHistory={() => {
+        setActiveModal("history");
+        setTocOpen(false);
+      }}
+      onOpenBacklinks={() => {
+        setActiveModal("backlinks");
+        setTocOpen(false);
+      }}
+      narrator={narrator}
+      readOnly={readOnly}
+    />
+  );
+
   return (
     <div
-      ref={titleRef}
       className={cn(
-        "wikios-article wikios-reader-container relative flex items-start justify-center gap-8 transition-[margin-right,padding-right] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)] 2xl:gap-10",
+        "wikios-article wikios-reader-container relative flex items-start justify-between transition-[margin-right,padding-right] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]",
         marginOpen && (marginExpanded ? "lg:mr-[400px]" : "lg:mr-80")
       )}
       style={containerStyle}
     >
-      <div ref={titleRef} className="wikios-title-sentinel" />
-
-      {/* Main Reading Vessel — expands when companion is collapsed */}
-      <div
-        className={cn(
-          "wikios-reading-vessel w-full min-w-0 flex-1 transition-[max-width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-          companionCollapsed ? "max-w-[1160px]" : "max-w-[1024px]"
-        )}
-      >
+      {/* Reading vessel: the header spans it, the body is centred at the reading width (layout.css) */}
+      <div className="wikios-reading-vessel w-full min-w-0 flex-1">
         {/* Redesigned Custom WikiOSHeader */}
         <WikiOSHeader
           title={title}
@@ -601,36 +393,34 @@ export function ArticleRenderer({
           wikiSource={wikiSource}
           countryData={countryData}
           featuredImageUrl={featuredImageUrl}
+          featuredImageFile={featuredImageFile}
           themeColors={themeColors}
-          authorInfo={authorInfo}
+          authorInfo={authors}
           awardsData={awardsData}
-          tocLength={toc.length}
-          onTocClick={() => setTocOpen(true)}
+          tocLength={tocVisible ? toc.length : 0}
+          onTocClick={showWikiToc ? () => setTocOpen(true) : undefined}
         />
         <SourceWikiNote title={title} wikiSource={source} />
 
         {/* Mobile Byline Strip (< XL screens where right Intel HUD is hidden) */}
         {(() => {
-          const creator = authorInfo?.creator;
-          const creatorName =
-            typeof creator === "object"
-              ? (creator as any)?.username
-              : creator || (authorInfo as any)?.author || null;
+          const creatorName = authors?.creator ?? null;
 
           if (!creatorName && !lastModified) return null;
 
           return (
-            <div className="text-muted-foreground mt-2.5 mb-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 px-1 text-xs xl:hidden">
+            <div className="text-label-secondary text-footnote mt-2 mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 px-1 xl:hidden">
               {creatorName && (
-                <span className="text-foreground/90 font-medium">
+                <span className="text-label font-medium">
                   By <span className="font-semibold">{creatorName}</span>
                 </span>
               )}
               {lastModified && (
                 <>
-                  {creatorName && <span className="text-muted-foreground/40 select-none">•</span>}
+                  {creatorName && <span className="text-label-secondary select-none">•</span>}
                   <span>
-                    {new Date(lastModified).toLocaleDateString(undefined, {
+                    {new Date(lastModified).toLocaleDateString("en-US", {
+                      timeZone: "UTC",
                       month: "short",
                       day: "numeric",
                       year: "numeric",
@@ -644,52 +434,38 @@ export function ArticleRenderer({
 
         {/* Page-top notices (WIP, stub, hatnotes) */}
         {noticesHtml && (
-          <div className="wikios-notices" dangerouslySetInnerHTML={{ __html: noticesHtml }} />
+          <div
+            id={leanToken ? leanElementId(leanToken, "notices") : undefined}
+            className={`wikios-notices ${ARTICLE_STYLE_ROOT_CLASS}${contained}`}
+            dangerouslySetInnerHTML={noticesMarkup}
+          />
         )}
 
         {/* Content layout */}
         <div className="wikios-article-main" ref={contentRef}>
-          <div className="wikios-article-body wikios-article-content">
+          <div className={`wikios-article-body wikios-article-content${contained}`}>
             {processedInfoboxHtml && (
-              <InfoboxWithMap infoboxHtml={processedInfoboxHtml} articleTitle={title} />
+              <InfoboxWithMap
+                infoboxHtml={processedInfoboxHtml}
+                articleTitle={title}
+                markupId={leanToken ? leanElementId(leanToken, "infobox") : undefined}
+              />
             )}
-            <div dangerouslySetInnerHTML={{ __html: processedHtml }} />
-            {/* Render portals into injected placeholder nodes */}
-            {portalTargets.map((target, _idx) => {
-              if (target.type === "coords") {
-                return createPortal(
-                  <CoordsPill
-                    lat={target.data.lat}
-                    lng={target.data.lng}
-                    zoom={target.data.zoom}
-                    label={target.data.label}
-                    viewerCentroid={viewerCentroid}
-                  />,
-                  target.element
-                );
-              }
-              if (target.type === "map-embed") {
-                return createPortal(
-                  <CoordinatesMapEmbed
-                    lat={target.data.lat}
-                    lng={target.data.lng}
-                    zoom={target.data.zoom}
-                    options={target.data.options}
-                  />,
-                  target.element
-                );
-              }
-              if (target.type === "stat") {
-                return createPortal(
-                  <DynamicStatSpan
-                    placeholderKey={target.data.key}
-                    data={statsData[target.data.key]}
-                  />,
-                  target.element
-                );
-              }
-              return null;
-            })}
+            <div
+              id={leanToken ? leanElementId(leanToken, "body") : undefined}
+              className={ARTICLE_STYLE_ROOT_CLASS}
+              dangerouslySetInnerHTML={bodyMarkup}
+            />
+            {/* Widgets and sister embeds mounted into the article's placeholder nodes */}
+            <ArticleWidgetPortals
+              contentRef={contentRef}
+              source={source}
+              isAuthenticated={isAuthenticated}
+              contentHtml={contentHtml}
+              infoboxHtml={infoboxHtml}
+              renderedHtml={processedHtml}
+              renderedInfoboxHtml={processedInfoboxHtml}
+            />
           </div>
 
           {categories.length > 0 && <CategoriesBar categories={categories} />}
@@ -701,7 +477,6 @@ export function ArticleRenderer({
               contentRef={contentRef}
               threads={(marginData?.threads as any) || []}
               annotations={(annotationsData as any) || []}
-              themeColors={themeColors}
               isMarginOpen={marginOpen}
               onSelectAnchor={(anchor, id, tab) => {
                 setActiveAnchor(anchor);
@@ -720,86 +495,52 @@ export function ArticleRenderer({
         </div>
       </div>
 
-      {/* Right static panel — Vector 2022 / Notion pattern: companion pinned, only TOC scrolls */}
-      {!marginOpen && !companionCollapsed && (
+      {/* Contents and page info: a sticky aside in the article row from 1280px, a sheet below.
+          Hiding the sidebar folds the page info away and keeps the contents inline in the row. Out
+          of the margin drawer's way: while that is open the aside steps aside and the header's
+          Contents button opens the sheet. It is in the server HTML (CSS shows it from xl, so it
+          never pops in); after hydration only while wide, so the sheet is the one copy below xl. */}
+      {asideShown && (wide || !hydrated) && (
         <aside
-          className="animate-in fade-in sticky top-20 hidden max-h-[calc(100vh-6rem)] w-[240px] shrink-0 flex-col gap-3 self-start border-l border-white/5 pr-1 pl-3 duration-200 xl:flex 2xl:w-[280px]"
-          aria-label="Article companion and table of contents"
-        >
-          <button
-            type="button"
-            onPointerDown={(e) => {
-              // §1 Response — kill latency: active feedback on pointer-down, not click
-              (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.96)";
-            }}
-            onPointerUp={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform = "";
-            }}
-            onPointerLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform = "";
-            }}
-            onClick={() => {
-              soundEffects.press();
-              setCompanionCollapsed(true);
-            }}
-            className="text-muted-foreground hover:text-foreground -mb-1 hidden cursor-pointer items-center justify-center gap-1 self-end rounded-full border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:border-white/15 hover:bg-white/10 active:scale-[0.96] xl:flex"
-            title="Hide companion"
-            aria-label="Hide companion"
-          >
-            <span>Hide</span>
-            <ChevronRight className="h-3 w-3" />
-          </button>
-          <ArticleCompanionHUD
-            title={title}
-            slug={slug}
-            contentHtml={contentHtml}
-            lastModified={lastModified}
-            authorInfo={authorInfo}
-            categories={categories}
-            awardsData={awardsData}
-            marginThreadsCount={(marginData?.threads as any)?.length ?? 0}
-            marginAnnotationsCount={(annotationsData as any)?.length ?? 0}
-            onOpenMargin={(tab) => {
-              setMarginTab(tab || "threads");
-              setMarginOpen(true);
-            }}
-            onOpenHistory={() => setActiveModal("history")}
-            onOpenBacklinks={() => setActiveModal("backlinks")}
-            narrator={narrator}
-            isAuthenticated={isAuthenticated}
-            isCollapsed={false}
-            readOnly={readOnly}
-          />
-          {toc.length > 0 && (
-            <div className="-mr-1 min-h-0 flex-1 scrollbar-thin overflow-y-auto [mask-image:linear-gradient(to_bottom,transparent,black_8px,black_calc(100%-8px),transparent)] pr-1">
-              <StickyToc entries={toc} contentRef={contentRef} isCollapsed={false} />
-            </div>
+          aria-label="Contents"
+          data-slot="wiki-contents-aside"
+          className={cn(
+            "sticky top-(--shell-top-offset) ml-8 hidden max-h-[calc(100vh-var(--shell-top-offset))] w-60 shrink-0 flex-col gap-3 self-start overflow-y-auto border-l pr-1 pb-6 pl-3 xl:flex 2xl:w-70",
+            railCollapsed ? "border-transparent" : "border-separator"
           )}
+        >
+          <Button
+            variant="ghost"
+            size="xs"
+            className="text-label-secondary self-end"
+            aria-expanded={!railCollapsed}
+            onClick={toggleRail}
+          >
+            {railCollapsed && <NavArrowLeft aria-hidden />}
+            {railCollapsed ? "Page info" : "Hide"}
+            {!railCollapsed && <NavArrowRight aria-hidden />}
+          </Button>
+          {tocVisible && <StickyToc entries={toc} contentRef={contentRef} />}
+          {!railCollapsed && companion}
         </aside>
       )}
-      {/* Companion collapsed — edge handle on the same border-l line (spatial consistency §7, hint §8) */}
-      {!marginOpen && companionCollapsed && (
-        <button
-          type="button"
-          onClick={() => {
-            soundEffects.press();
-            setCompanionCollapsed(false);
-          }}
-          className="text-muted-foreground/40 hover:text-foreground sticky top-20 hidden h-[calc(100vh-6rem)] w-8 shrink-0 cursor-pointer items-start justify-center self-start border-l border-white/5 pt-8 transition-colors duration-150 select-none hover:border-white/10 hover:bg-white/[0.04] xl:flex"
-          title="Show companion"
-          aria-label="Show companion"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-        </button>
+      {showWikiToc && !(wide && asideShown) && (
+        <Sheet open={tocOpen} onOpenChange={setTocOpen}>
+          <SheetContent>
+            <SheetTitle>Contents</SheetTitle>
+            <div className="flex flex-col gap-4">
+              {tocVisible && (
+                <StickyToc
+                  entries={toc}
+                  contentRef={contentRef}
+                  onNavigate={() => setTocOpen(false)}
+                />
+              )}
+              {companion}
+            </div>
+          </SheetContent>
+        </Sheet>
       )}
-
-      {/* Apple Books Style TOC Drawer (Modal Sheet) */}
-      <AppleBooksTocDrawer
-        isOpen={tocOpen}
-        onClose={() => setTocOpen(false)}
-        entries={toc}
-        themeColors={themeColors}
-      />
 
       {lightboxPortal}
       {citeTooltipPortal}
@@ -819,28 +560,30 @@ export function ArticleRenderer({
             isAuthenticated={isAuthenticated}
             onAddHighlight={handleAddHighlight}
             onOpenThreadDraft={handleOpenThreadDraft}
-            onSuggestEdit={handleSuggestEdit}
+            onSuggestEdit={handleOpenThreadDraft}
             onStashQuote={handleStashQuote}
-            onShareQuote={handleShareQuote}
+            onShareQuote={setSharePayload}
           />
 
-          <WikiMarginDrawer
-            isOpen={marginOpen}
-            onClose={() => setMarginOpen(false)}
-            articleTitle={title}
-            initialTab={marginTab}
-            activeAnchor={activeAnchor}
-            draftQuote={draftQuote}
-            onClearDraftQuote={() => setDraftQuote(null)}
-            selectedThreadId={selectedThreadId}
-            onSelectThread={setSelectedThreadId}
-            selectedAnnotationId={selectedAnnotationId}
-            onSelectAnnotation={setSelectedAnnotationId}
-            contentRef={contentRef}
-            isAuthenticated={isAuthenticated}
-            themeColors={themeColors}
-            onExpandedChange={setMarginExpanded}
-          />
+          {marginDrawerMounted && (
+            <WikiMarginDrawer
+              isOpen={marginOpen}
+              onClose={() => setMarginOpen(false)}
+              articleTitle={title}
+              initialTab={marginTab}
+              activeAnchor={activeAnchor}
+              draftQuote={draftQuote}
+              onClearDraftQuote={() => setDraftQuote(null)}
+              selectedThreadId={selectedThreadId}
+              onSelectThread={setSelectedThreadId}
+              selectedAnnotationId={selectedAnnotationId}
+              onSelectAnnotation={setSelectedAnnotationId}
+              contentRef={contentRef}
+              isAuthenticated={isAuthenticated}
+              themeColors={themeColors}
+              onExpandedChange={setMarginExpanded}
+            />
+          )}
 
           {/* Share Modal Dialog */}
           {sharePayload && (

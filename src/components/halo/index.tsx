@@ -4,15 +4,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { stripBasePath } from "~/lib/base-path";
 import { motion, AnimatePresence, type PanInfo } from "motion/react";
-import {
-  DynamicIsland,
-  useDynamicIslandSize,
-  SIZE_PRESETS,
-  DynamicIslandProvider,
-  type SizePresets,
-} from "./HaloPrimitives";
+import { Halo, useHaloSize, SIZE_PRESETS, HaloProvider, type SizePresets } from "./HaloPrimitives";
 import { CompactView, ExpandedView, NavTray } from "./views";
-import { getSectionForPath } from "./views/NavTray";
 import { useDynamicIslandState } from "./hooks";
 import { useActiveDIPlugin } from "./plugin-context";
 import { useNotificationStore } from "~/stores/notificationStore";
@@ -21,29 +14,8 @@ import { IOSActivityIndicator } from "~/components/ui/loader";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { HaloTourProvider, useHaloTour } from "./HaloTourContext";
 import { HaloTourTooltip } from "./HaloTourTooltip";
-
-// Re-export original dynamic island components for backward compatibility
-export {
-  DynamicIsland,
-  DynamicContainer,
-  useDynamicIslandSize,
-  SIZE_PRESETS,
-  DynamicIslandProvider,
-  Halo,
-  HaloContainer,
-  useHaloSize,
-  HaloProvider,
-} from "./HaloPrimitives";
-
-// Re-export plugin system for page-level consumption
-export {
-  useDIPlugin,
-  useActiveDIPlugin,
-  useAllDIPlugins,
-  useDIPluginView,
-  DIPluginProvider,
-} from "./plugin-context";
-export type { DIPlugin, DIAction, DIViewProps, DIBadge } from "./types";
+import { springSnappy } from "~/lib/design/motion";
+import { cn } from "~/lib/utils";
 
 interface CommandPaletteProps {
   className?: string;
@@ -62,7 +34,7 @@ function CommandPaletteContent({
   diState: ReturnType<typeof useDynamicIslandState>;
   isTourActive?: boolean;
 }) {
-  const { state: diSizeState, setSize } = useDynamicIslandSize();
+  const { size: haloSize, setSize } = useHaloSize();
   const [mounted, setMounted] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [diPulseClass, setDiPulseClass] = useState("");
@@ -108,14 +80,6 @@ function CommandPaletteContent({
     searchFilter,
     isUserInteracting,
     searchResults,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    countriesData,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    setMode,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    setIsExpanded,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    setExpandedMode,
     setSearchQuery,
     setSearchFilter,
     setIsUserInteracting,
@@ -124,11 +88,10 @@ function CommandPaletteContent({
 
   const diPathname = usePathname();
   const prevNavRef = useRef(diPathname);
-  const sectionInfo = getSectionForPath(diPathname || "/");
 
-  // ── Plugin system: read active plugin ──
+  // Plugin system: read active plugin
   const activePlugin = useActiveDIPlugin();
-  const pluginAccentColor = activePlugin?.accentColor ?? sectionInfo.accent;
+  const pluginAccentColor = activePlugin?.accentColor ?? "var(--tint)";
   const isWikiActive = activePlugin?.id === "wiki";
 
   const { activeSectionId, tocEntries } = useWikiContext();
@@ -145,10 +108,10 @@ function CommandPaletteContent({
       if (expandedMode === "search") {
         newSize = SIZE_PRESETS.ULTRA; // 630px wide
       } else if (expandedMode === "notifications") {
-        newSize = diSizeState.size === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.TALL;
+        newSize = haloSize === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.TALL;
       } else if (expandedMode === "settings") {
         newSize =
-          diSizeState.size === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM;
+          haloSize === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM;
       } else if (expandedMode === "mycountry") {
         newSize = SIZE_PRESETS.MEDIUM; // 371px wide — profile/country dropdown
       } else if (expandedMode.startsWith("plugin:")) {
@@ -298,7 +261,7 @@ function CommandPaletteContent({
           {ringActive && (
             <motion.div
               key="ring"
-              className="pointer-events-none absolute inset-0 rounded-full border-2 border-blue-400/60"
+              className="border-tint/60 pointer-events-none absolute inset-0 rounded-full border-2"
               initial={{ scale: 1, opacity: 0.8 }}
               animate={{ scale: 1.35, opacity: 0 }}
               exit={{ opacity: 0 }}
@@ -307,33 +270,17 @@ function CommandPaletteContent({
           )}
         </AnimatePresence>
 
-        {/* DI pill — draggable for swipe-up nav tray */}
+        {/* DI pill — draggable for swipe-up nav tray. During the walkthrough the island carries
+            a static tint ring instead of a looping pulse. It has no movement, so it is the same
+            under Reduce Motion. */}
         <motion.div
-          className={`rounded-full ${diPulseClass}`}
+          data-tour-highlight={isTourActive ? "true" : undefined}
+          className={cn("rounded-full", diPulseClass, isTourActive && "ring-tint/50 ring-2")}
           animate={{
             scale: ringActive ? 1.04 : 1,
             y: pillBounce ? -4 : 0,
-            boxShadow: isTourActive
-              ? [
-                  "0 0 0px rgba(59, 130, 246, 0)",
-                  "0 0 15px rgba(59, 130, 246, 0.5)",
-                  "0 0 0px rgba(59, 130, 246, 0)",
-                ]
-              : "0 0 0px rgba(0, 0, 0, 0)",
           }}
-          transition={
-            isTourActive
-              ? {
-                  boxShadow: {
-                    repeat: Infinity,
-                    duration: 2,
-                    ease: "easeInOut",
-                  },
-                  scale: { type: "spring", stiffness: 420, damping: 38, mass: 0.8 },
-                  y: { type: "spring", stiffness: 420, damping: 38, mass: 0.8 },
-                }
-              : { type: "spring", stiffness: 420, damping: 38, mass: 0.8 }
-          }
+          transition={springSnappy}
           drag="y"
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.15}
@@ -341,16 +288,14 @@ function CommandPaletteContent({
           onDragEnd={handleDragEnd}
           style={{ touchAction: "none" }}
         >
-          <DynamicIsland id="command-palette">
+          <Halo id="command-palette">
             {isNavLoading ? (
               <div
                 key="loading"
-                className="flex h-10 w-full items-center justify-center gap-2 px-3 text-neutral-200"
+                className="text-label flex h-10 w-full items-center justify-center gap-2 px-3"
               >
                 <IOSActivityIndicator size="sm" />
-                <span className="text-xs font-semibold tracking-wide">
-                  Loading...
-                </span>
+                <span className="text-caption">Loading...</span>
               </div>
             ) : !isExpanded ? (
               <div key="compact" className="h-full w-full">
@@ -384,7 +329,7 @@ function CommandPaletteContent({
                 />
               </div>
             )}
-          </DynamicIsland>
+          </Halo>
 
           {/* Section accent line — visible when sticky */}
           {activeIsSticky && (
@@ -417,9 +362,9 @@ export function CommandPalette({ className, isSticky, scrollY }: CommandPaletteP
 
   return (
     <HaloTourProvider>
-      <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
+      <HaloProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
         <CommandPaletteWrapper className={className} isSticky={isSticky} scrollY={scrollY} />
-      </DynamicIslandProvider>
+      </HaloProvider>
     </HaloTourProvider>
   );
 }
@@ -461,7 +406,7 @@ function CommandPaletteWrapper({
 
       // Allow clicks inside Radix portals/popovers/dialogs/tooltips
       if (
-        target.closest("[data-radix-portal]") ||
+        target.closest("[data-radix-popper-content-wrapper]") ||
         target.closest("[role='dialog']") ||
         target.closest("[role='tooltip']")
       ) {
@@ -490,7 +435,7 @@ function CommandPaletteWrapper({
   return (
     <div
       ref={wrapperRef}
-      className={`pointer-events-none relative z-[10000] flex w-full items-center justify-center ${className || ""}`}
+      className={`z-nav pointer-events-none relative flex w-full items-center justify-center ${className || ""}`}
       style={{
         maxWidth: isExpanded ? "100%" : isSticky ? "400px" : "100%",
       }}

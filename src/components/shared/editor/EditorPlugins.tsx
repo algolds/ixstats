@@ -3,7 +3,10 @@
 // Core PlateJS plugin definitions for shared text editors.
 
 import React from "react";
-import { createPlatePlugin, ParagraphPlugin } from "platejs/react";
+import { createPlatePlugin } from "platejs/react";
+import { assetUrl } from "~/lib/base-path";
+import { createUrl } from "~/lib/utils/url-utils";
+import { composerLinkHref, type WikiLinkElement } from "./SlateSerializer";
 
 export const BoldPlugin = createPlatePlugin({
   key: "bold",
@@ -77,19 +80,36 @@ export const LinkPlugin = createPlatePlugin({
   },
 });
 
+interface WikiLinkRenderProps {
+  attributes: React.AnchorHTMLAttributes<HTMLAnchorElement>;
+  children: React.ReactNode;
+  element: WikiLinkElement;
+}
+
+/**
+ * A wiki link in the composer, where it will point once saved (`composerLinkHref`): a plain `<a>` to the article in the
+ * reader on its wiki, under the base path, or (a page the reader does not read as an article) to that page on its
+ * wiki's own site, in a new tab.
+ */
 export const WikiLinkPlugin = createPlatePlugin({
   key: "wikilink",
   node: { isElement: true, isInline: true },
   render: {
-    node: ({ children, element, attributes }: any) => (
-      <a
-        {...attributes}
-        href={`/wiki/${((element?.target as string) || "").replace(/ /g, "_")}`}
-        className="text-wiki font-semibold underline transition-colors hover:opacity-80"
-      >
-        {children}
-      </a>
-    ),
+    node: ({ children, element, attributes }: WikiLinkRenderProps) => {
+      const link = composerLinkHref(element.target, element.source);
+      const external = link !== null && !link.reader;
+      return (
+        <a
+          {...attributes}
+          href={link ? (link.reader ? createUrl(link.href) : link.href) : undefined}
+          target={external ? "_blank" : undefined}
+          rel={external ? "noopener noreferrer" : undefined}
+          className="text-wiki font-semibold underline transition-colors hover:opacity-80"
+        >
+          {children}
+        </a>
+      );
+    },
   },
 });
 
@@ -98,10 +118,7 @@ export const WikiEmbedPlugin = createPlatePlugin({
   node: { isElement: true, isVoid: true },
   render: {
     node: ({ children, element, attributes }: any) => (
-      <div
-        {...attributes}
-        className="border-wiki/30 bg-wiki/10 my-2 rounded-lg border p-3"
-      >
+      <div {...attributes} className="border-wiki/30 bg-wiki/10 my-2 rounded-lg border p-3">
         <span className="text-wiki text-xs font-bold">📖 {element?.title}</span>
         <p className="mt-1 text-xs text-slate-300">{element?.summary}</p>
         {children}
@@ -116,23 +133,13 @@ export const ImagePlugin = createPlatePlugin({
   render: {
     node: ({ children, element, attributes }: any) => (
       <div {...attributes} className="my-2 overflow-hidden rounded-lg">
-        <img src={element?.src} alt={element?.alt || ""} className="max-h-64 w-auto object-cover" />
+        <img
+          src={assetUrl(element?.src) ?? undefined}
+          alt={element?.alt || ""}
+          className="max-h-64 w-auto object-cover"
+        />
         {children}
       </div>
     ),
   },
 });
-
-export const EDITOR_PLUGINS = [
-  ParagraphPlugin,
-  BoldPlugin,
-  ItalicPlugin,
-  UnderlinePlugin,
-  UnorderedListPlugin,
-  OrderedListPlugin,
-  ListItemPlugin,
-  LinkPlugin,
-  WikiLinkPlugin,
-  WikiEmbedPlugin,
-  ImagePlugin,
-];

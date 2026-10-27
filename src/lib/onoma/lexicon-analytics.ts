@@ -98,7 +98,7 @@ const NOISE_WORDS = new Set([
   "organization",
 ]);
 
-export interface LexiconHealthReport {
+interface LexiconHealthReport {
   score: number;
   issues: string[];
 }

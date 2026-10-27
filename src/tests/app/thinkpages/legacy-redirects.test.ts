@@ -1,0 +1,153 @@
+/** @jest-environment node */
+/**
+ * `/thinkpages/post/<id>` is the forum post permalink (ruling P5): a forum post the viewer may see goes to its thread
+ * and anchor, anything else to the feed post under /dashboard. Both hops are temporary (307), since the answer depends
+ * on the viewer and on moderation (ruling R-e). The page reads the Clerk session and asks as that viewer (P1), so a
+ * member's own report thread and a moderator's hidden post resolve on the server, on the page the viewer's own thread
+ * view shows (P2). An id over the input bound is not a forum post; other lookup failures surface. Every destination is
+ * a fixed prefix plus an encoded id. `/thinkpages` itself is the forum home.
+ */
+jest.mock("next/navigation", () => ({
+  redirect: jest.fn((url: string) => {
+    throw new Error(`redirect:${url}`);
+  }),
+  permanentRedirect: jest.fn((url: string) => {
+    throw new Error(`permanent:${url}`);
+  }),
+  unstable_rethrow: jest.fn(),
+}));
+jest.mock("@clerk/nextjs/server", () => ({ auth: jest.fn() }));
+jest.mock("~/server/db", () => ({
+  db: {
+    user: { findUnique: jest.fn() },
+    realm: { findMany: jest.fn(), findUnique: jest.fn() },
+    realmOfficer: { findMany: jest.fn() },
+    forumCategoryModerator: { findMany: jest.fn() },
+    forumPost: { findUnique: jest.fn(), count: jest.fn() },
+  },
+}));
+
+import { beforeEach, describe, expect, it } from "@jest/globals";
+import { auth } from "@clerk/nextjs/server";
+import { db } from "~/server/db";
+import LegacyPostPage from "~/app/thinkpages/post/[postId]/page";
+const mockAuth = jest.mocked(auth);
+const signedIn = (userId: string | null) =>
+  mockAuth.mockResolvedValue({ userId } as Awaited<ReturnType<typeof auth>>);
+
+const fakeDb = db as unknown as {
+  user: { findUnique: jest.Mock };
+  realm: { findMany: jest.Mock; findUnique: jest.Mock };
+  realmOfficer: { findMany: jest.Mock };
+  forumCategoryModerator: { findMany: jest.Mock };
+  forumPost: { findUnique: jest.Mock; count: jest.Mock };
+};
+
+const general = { id: "cat_general", visibility: "public", scope: "site", realmId: null };
+const reports = { id: "cat_reports", visibility: "reporter_staff", scope: "site", realmId: null };
+/** Public, but not a category u_mod moderates (they moderate General only). */
+const sideGames = { id: "cat_side", visibility: "public", scope: "site", realmId: null };
+const users = [
+  { id: "u_member", clerkUserId: "member", countryId: "c1", role: { name: "user", level: 100 } },
+  { id: "u_mod", clerkUserId: "mod", countryId: null, role: { name: "user", level: 100 } },
+];
+
+interface Row {
+  id: string;
+  hidden: boolean;
+  createdAt: Date;
+}
+interface CountArgs {
+  where: {
+    hidden?: false;
+    OR: [{ createdAt: { lt: Date } }, { createdAt: Date; id: { lt: string } }];
+  };
+}
+
+/** A thread of `rows` in `category`; `count` answers the resolver's "posts before this one" with the hidden rule. */
+function seedThread(
+  category: typeof general,
+  rows: Row[],
+  thread: { authorUserId: string | null; hidden: boolean } = {
+    authorUserId: "u_other",
+    hidden: false,
+  }
+) {
+  fakeDb.forumPost.findUnique.mockImplementation(async ({ where }: { where: { id: string } }) => {
+    const row = rows.find((r) => r.id === where.id);
+    return row ? { ...row, threadId: "t1", thread: { ...thread, category } } : null;
+  });
+  fakeDb.forumPost.count.mockImplementation(async ({ where }: CountArgs) => {
+    const [
+      {
+        createdAt: { lt },
+      },
+    ] = where.OR;
+    return rows.filter((r) => r.createdAt < lt && !(where.hidden === false && r.hidden)).length;
+  });
+}
+
+/** `n` posts a minute apart; the ids in `hidden` are hidden. */
+const postsOf = (n: number, hidden: ReadonlySet<number> = new Set()): Row[] =>
+  Array.from({ length: n }, (_, i) => ({
+    id: `p${i}`,
+    hidden: hidden.has(i),
+    createdAt: new Date(Date.UTC(2026, 9, 1, 0, i)),
+  }));
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockAuth.mockReset();
+  signedIn(null);
+  fakeDb.user.findUnique.mockImplementation(
+    async ({ where }: { where: { clerkUserId: string } }) =>
+      users.find((u) => u.clerkUserId === where.clerkUserId) ?? null
+  );
+  fakeDb.realm.findMany.mockResolvedValue([]);
+  fakeDb.realmOfficer.findMany.mockResolvedValue([]);
+  fakeDb.forumCategoryModerator.findMany.mockImplementation(
+    async ({ where }: { where: { userId: string } }) =>
+      where.userId === "u_mod" ? [{ categoryId: "cat_general" }] : []
+  );
+  seedThread(general, postsOf(45));
+});
+
+const openPost = (postId: string) => LegacyPostPage({ params: Promise.resolve({ postId }) });
+
+describe("/thinkpages/post/<id>", () => {
+  it("sends a signed-in member to their own Reports thread, and anyone else to the feed post", async () => {
+    seedThread(reports, postsOf(3), { authorUserId: "u_member", hidden: false });
+    signedIn("member");
+    await expect(openPost("p2")).rejects.toThrow("redirect:/thinkpages/t/t1?page=1#post-p2");
+    signedIn(null);
+    await expect(openPost("p2")).rejects.toThrow("redirect:/dashboard/post/p2");
+    signedIn("mod");
+    await expect(openPost("p2")).rejects.toThrow("redirect:/dashboard/post/p2");
+  });
+
+  it("puts a moderator on the page their thread view shows, counting hidden posts; others never learn of a hidden post", async () => {
+    // Six hidden posts among the first 22: a guest's page for p22 would be 1, the moderator's is 2.
+    seedThread(general, postsOf(30, new Set([2, 4, 6, 8, 10, 12, 22])));
+    signedIn("mod");
+    await expect(openPost("p22")).rejects.toThrow("redirect:/thinkpages/t/t1?page=2#post-p22");
+    await expect(openPost("p23")).rejects.toThrow("redirect:/thinkpages/t/t1?page=2#post-p23");
+    signedIn("member");
+    await expect(openPost("p22")).rejects.toThrow("redirect:/dashboard/post/p22");
+    await expect(openPost("p23")).rejects.toThrow("redirect:/thinkpages/t/t1?page=1#post-p23");
+  });
+
+  it("never shows a moderator of another category a hidden post here (review #7)", async () => {
+    seedThread(sideGames, postsOf(5, new Set([3])));
+    signedIn("mod");
+    await expect(openPost("p3")).rejects.toThrow("redirect:/dashboard/post/p3");
+    // The visible posts around it still resolve, on the page a non-moderator sees.
+    await expect(openPost("p4")).rejects.toThrow("redirect:/thinkpages/t/t1?page=1#post-p4");
+  });
+  it("encodes the ids on both paths", async () => {
+    seedThread(general, [{ id: "a b/c", hidden: false, createdAt: new Date() }]);
+    await expect(openPost("a b/c")).rejects.toThrow(
+      "redirect:/thinkpages/t/t1?page=1#post-a%20b%2Fc"
+    );
+    await expect(openPost("d e/f")).rejects.toThrow("redirect:/dashboard/post/d%20e%2Ff");
+  });
+});

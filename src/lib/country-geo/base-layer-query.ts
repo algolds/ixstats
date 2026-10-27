@@ -9,7 +9,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type { Geometry } from "geojson";
 
-export interface TerrainPointResult {
+interface TerrainPointResult {
   elevationZone: {
     zoneId: string;
     zoneName: string;
@@ -24,7 +24,7 @@ export interface TerrainPointResult {
   } | null;
 }
 
-export interface TerrainAreaResult {
+interface TerrainAreaResult {
   elevationZones: Array<{
     zoneId: string;
     zoneName: string;
@@ -38,31 +38,49 @@ export interface TerrainAreaResult {
 }
 
 /**
- * Get terrain info at a specific point (elevation zone + climate zone).
+ * Get terrain info at a specific point (elevation zone + climate zone) from the
+ * layers of `realmId` only: realms share a coordinate space, so another realm's
+ * layers would answer for the same point. When several altitude bands overlap
+ * the point, the highest (most specific) band wins, so the result is
+ * deterministic rather than whichever row the database returns first.
  */
 export async function getTerrainAtPoint(
   db: PrismaClient,
   lng: number,
-  lat: number
+  lat: number,
+  realmId: string
 ): Promise<TerrainPointResult> {
   try {
     const results = await db.$queryRawUnsafe<
       Array<{
         layerType: string;
+        featureId?: string;
         properties: Record<string, unknown>;
       }>
     >(
-      `SELECT "layerType", properties
+      `SELECT "layerType", "featureId", properties
        FROM map_layers
        WHERE "isActive" = true
          AND geom_postgis IS NOT NULL
          AND "layerType" IN ('altitudes', 'climate')
-         AND ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($1, $2), 4326))`,
+         AND "worldId" = $3
+         AND ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($1, $2), 4326))
+       ORDER BY "featureId"`,
       lng,
-      lat
+      lat,
+      realmId
     );
 
-    const altResult = results.find((r) => r.layerType === "altitudes");
+    const num = (v: unknown): number =>
+      typeof v === "number" && Number.isFinite(v) ? v : -Infinity;
+    const altResult = results
+      .filter((r) => r.layerType === "altitudes")
+      .reduce<(typeof results)[number] | undefined>((best, r) => {
+        if (!best) return r;
+        const dMin = num(r.properties?.elevationMin) - num(best.properties?.elevationMin);
+        if (dMin !== 0) return dMin > 0 ? r : best;
+        return num(r.properties?.elevationMax) > num(best.properties?.elevationMax) ? r : best;
+      }, undefined);
     const climResult = results.find((r) => r.layerType === "climate");
 
     return {
@@ -89,12 +107,13 @@ export async function getTerrainAtPoint(
 }
 
 /**
- * Get terrain breakdown for an area (which elevation zones it spans).
- * Returns zones ordered by percentage of area covered.
+ * Get terrain breakdown for an area (which elevation zones it spans) from the
+ * layers of `realmId` only. Returns zones ordered by percentage of area covered.
  */
 export async function getTerrainForArea(
   db: PrismaClient,
-  geometry: Geometry
+  geometry: Geometry,
+  realmId: string
 ): Promise<TerrainAreaResult> {
   try {
     const geojsonStr = JSON.stringify(geometry);
@@ -123,12 +142,14 @@ export async function getTerrainForArea(
        WHERE "isActive" = true
          AND "layerType" = 'altitudes'
          AND geom_postgis IS NOT NULL
+         AND "worldId" = $2
          AND ST_Intersects(geom_postgis, ST_SetSRID(ST_GeomFromGeoJSON($1), 4326))
        GROUP BY properties->>'zoneId', properties->>'zoneName',
                 properties->>'elevationMin', properties->>'elevationMax',
                 properties->>'fill'
        ORDER BY "intersectArea" DESC`,
-      geojsonStr
+      geojsonStr,
+      realmId
     );
 
     if (results.length === 0) {
@@ -161,11 +182,13 @@ export async function getTerrainForArea(
          WHERE "isActive" = true
            AND "layerType" = 'climate'
            AND geom_postgis IS NOT NULL
+           AND "worldId" = $2
            AND ST_Intersects(geom_postgis, ST_SetSRID(ST_GeomFromGeoJSON($1), 4326))
          GROUP BY properties->>'climateName'
          ORDER BY "totalArea" DESC
          LIMIT 1`,
-        geojsonStr
+        geojsonStr,
+        realmId
       );
       dominantClimate = climateResults[0]?.climateName ?? null;
     } catch {

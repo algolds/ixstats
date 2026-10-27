@@ -1,8 +1,11 @@
 "use client";
 
+import { Badge } from "~/components/ui/badge";
 import React from "react";
-import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { useNationClock } from "~/hooks/useNationClock";
+import { formatClockDate } from "~/lib/realms/nation-time";
+import { fromWireDate } from "./exchange-wizard-dates";
 import {
   WIZARD_EXCHANGE_TYPES,
   getCountryFlagUrl,
@@ -33,12 +36,12 @@ function ReviewCountry({
       <UnifiedCountryFlag
         countryName={name}
         size="sm"
-        className="rounded shadow-sm"
+        className="shadow-card rounded-control-sm"
         flagUrl={flagUrl}
       />
       <div>
-        <p className="text-foreground font-bold">{name}</p>
-        <p className="text-muted-foreground text-xs">{caption}</p>
+        <p className="text-label font-semibold">{name}</p>
+        <p className="text-label-secondary text-footnote">{caption}</p>
       </div>
     </div>
   );
@@ -47,8 +50,8 @@ function ReviewCountry({
 function ReviewDetail({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <p className="text-muted-foreground text-xs">{label}</p>
-      <p className="text-foreground text-sm font-medium">{value}</p>
+      <p className="text-label-secondary text-footnote">{label}</p>
+      <p className="text-label text-body font-medium">{value}</p>
     </div>
   );
 }
@@ -61,36 +64,33 @@ export const WizardStepReview = React.memo(function WizardStepReview({
   selectedCountry,
 }: WizardStepReviewProps) {
   const typeConfig = WIZARD_EXCHANGE_TYPES[type];
+  const clock = useNationClock();
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-foreground mb-2 text-lg font-bold">Review & Submit</h3>
-        <p className="text-muted-foreground text-sm">
+        <h3 className="text-label text-title-3 mb-2">Review & submit</h3>
+        <p className="text-label-secondary text-body">
           Review your exchange details before creating it.
         </p>
       </div>
 
       <div className="space-y-5">
-        {/* Type & Title */}
-        <div className="facet-hierarchy-child rounded-lg p-4">
+        <div className="border-separator bg-surface rounded-row border p-4">
           <div className="flex items-start gap-3">
             {React.createElement(typeConfig.icon, {
-              className: cn("h-6 w-6 mt-1", typeConfig.color),
+              className: "text-label-secondary mt-1 h-5 w-5",
             })}
             <div className="flex-1">
-              <h4 className="text-foreground text-lg font-bold">{data.title}</h4>
-              <p className="text-muted-foreground text-sm">{typeConfig.label}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{data.description}</p>
+              <h4 className="text-label text-title-3">{data.title}</h4>
+              <p className="text-label-secondary text-body">{typeConfig.label}</p>
+              <p className="text-label-secondary text-body mt-2">{data.description}</p>
             </div>
           </div>
         </div>
 
-        {/* Countries */}
-        <div className="facet-hierarchy-child rounded-lg p-4">
-          <h5 className="text-muted-foreground mb-3 text-sm font-semibold">
-            Participating Countries
-          </h5>
+        <div className="border-separator bg-surface rounded-row border p-4">
+          <h5 className="text-label-secondary text-headline mb-3">Participating countries</h5>
           <div className="flex flex-col gap-3">
             <ReviewCountry
               name={hostCountry.name}
@@ -107,37 +107,34 @@ export const WizardStepReview = React.memo(function WizardStepReview({
           </div>
         </div>
 
-        {/* Narrative */}
-        <div className="facet-hierarchy-child rounded-lg p-4">
-          <h5 className="text-muted-foreground mb-2 text-sm font-semibold">Narrative</h5>
-          <p className="text-sm text-muted-foreground">{data.narrative}</p>
+        <div className="border-separator bg-surface rounded-row border p-4">
+          <h5 className="text-label-secondary text-headline mb-2">Narrative</h5>
+          <p className="text-label-secondary text-body">{data.narrative}</p>
         </div>
 
-        {/* Objectives */}
-        <div className="facet-hierarchy-child rounded-lg p-4">
-          <h5 className="text-muted-foreground mb-3 text-sm font-semibold">Objectives</h5>
+        <div className="border-separator bg-surface rounded-row border p-4">
+          <h5 className="text-label-secondary text-headline mb-3">Objectives</h5>
           <div className="flex flex-wrap gap-2">
             {data.objectives.map((obj) => (
-              <span
-                key={obj}
-                className="rounded-full border border-amber-500/30 bg-amber-500/20 px-3 py-1 text-xs text-amber-600 dark:text-amber-400"
-              >
+              <Badge key={obj} variant="default">
                 {obj}
-              </span>
+              </Badge>
             ))}
           </div>
         </div>
 
-        {/* Details */}
-        <div className="facet-hierarchy-child rounded-lg p-4">
-          <h5 className="text-muted-foreground mb-3 text-sm font-semibold">Details</h5>
+        <div className="border-separator bg-surface rounded-row border p-4">
+          <h5 className="text-label-secondary text-headline mb-3">Details</h5>
           <div className="grid grid-cols-2 gap-4">
             <ReviewDetail
-              label="Start Date"
-              value={new Date(data.startDate).toLocaleDateString()}
+              label="Start date"
+              value={formatClockDate(fromWireDate(data.startDate), clock)}
             />
-            <ReviewDetail label="End Date" value={new Date(data.endDate).toLocaleDateString()} />
-            <ReviewDetail label="Max Participants" value={data.maxParticipants} />
+            <ReviewDetail
+              label="End date"
+              value={formatClockDate(fromWireDate(data.endDate), clock)}
+            />
+            <ReviewDetail label="Max participants" value={data.maxParticipants} />
             <ReviewDetail label="Visibility" value={data.isPublic ? "Public" : "Private"} />
           </div>
         </div>

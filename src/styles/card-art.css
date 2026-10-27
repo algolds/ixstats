@@ -1,0 +1,310 @@
+/* Trading-card art. Imported globally from globals.css, never from a component: this sheet uses
+   `@variant`, which only resolves inside the main Tailwind compile.
+   Card faces, backs, pack covers, holographic layers and cosmetic frames are content
+   artwork, not chrome: they keep their own palette and light effects. Their gradients live
+   here instead of `bg-gradient-to-*` utilities so the app's decorative-gradient ceiling
+   (facet-guards) only counts UI. Each class takes Tailwind's `from-*` / `via-*` / `to-*`
+   colour stops, exactly like the utility it replaces. Layered, so utilities still win. */
+@layer theme, base, components, utilities;
+
+@layer components {
+  .card-art-linear-t {
+    --tw-gradient-position: to top in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops, to top));
+  }
+  .card-art-linear-b {
+    --tw-gradient-position: to bottom in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops, to bottom));
+  }
+  .card-art-linear-r {
+    --tw-gradient-position: to right in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops, to right));
+  }
+  .card-art-linear-br {
+    --tw-gradient-position: to bottom right in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops, to bottom right));
+  }
+  .card-art-linear-tr {
+    --tw-gradient-position: to top right in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops, to top right));
+  }
+}
+
+/* Content art: flag watermarks and achievement medal layers keep their own palette. */
+@layer components {
+  /* Flag watermark. The hover host is the nearest `.group` or CutoutCard. */
+  .facet-flag-watermark {
+    --watermark-opacity: 0.14;
+    pointer-events: none;
+    opacity: var(--watermark-opacity);
+    mix-blend-mode: luminosity;
+    /* The tone caps the flag's extremes so labels stay legible over any flag. */
+    filter: blur(1px) contrast(0.7);
+    transition:
+      opacity var(--duration-slow) var(--ease-out-facet),
+      scale var(--duration-slow) var(--ease-out-facet);
+  }
+  :where([data-theme="dark"]) .facet-flag-watermark {
+    --watermark-opacity: 0.18;
+    mix-blend-mode: normal;
+    filter: blur(1px) brightness(0.6);
+  }
+  @media (hover: hover) {
+    :is(.group, [data-slot="card"], [data-slot="cutout-card"]):hover
+      .facet-flag-watermark[data-interactive="true"] {
+      opacity: 0.25;
+      scale: 1.05;
+      @variant motion-reduce {
+        scale: none;
+      }
+      @variant contrast-more {
+        opacity: var(--watermark-opacity);
+      }
+    }
+  }
+
+  /* Achievement backdrop layers. The category colour is the card's accent (`--facet-accent`); the
+     aurora's second hue is `--facet-accent-2`. Place each layer with utilities. Hover intensifies
+     when the card (the direct parent) is hovered. */
+  .facet-aurora {
+    pointer-events: none;
+    background-image: linear-gradient(
+      to top right,
+      color-mix(in srgb, var(--facet-accent, var(--tint)) 15%, transparent),
+      color-mix(in srgb, var(--facet-accent-2, var(--color-yellow)) 10%, transparent),
+      transparent
+    );
+    opacity: 0.4;
+    filter: blur(24px);
+    transition: opacity var(--duration-slow) var(--ease-out-facet);
+  }
+  .facet-foil {
+    pointer-events: none;
+    background-image: linear-gradient(
+      to top right,
+      color-mix(in srgb, var(--foil-color, var(--gold)) 15%, transparent),
+      transparent,
+      color-mix(in srgb, var(--foil-color, var(--gold)) 10%, transparent)
+    );
+    opacity: 0.6;
+    filter: blur(24px);
+  }
+  :hover > .facet-aurora[data-interactive="true"] {
+    opacity: 0.75;
+  }
+  .facet-aurora,
+  .facet-foil {
+    @variant transparency-reduced {
+      display: none;
+    }
+    @variant contrast-more {
+      display: none;
+    }
+    @variant motion-reduce {
+      transition: none;
+    }
+  }
+}
+
+/* Card faces, flips and reveals (src/components/cards/face/). `data-card-rarity` picks the edge, gem and tint from the one
+   rarity palette; `data-card-finish` adds the sheen. Grids stay still: the sheen only drifts while a pointer rests on the
+   card, and never under Reduce Motion. */
+@layer components {
+  [data-card-rarity] {
+    --card-rarity: var(--color-rarity-common);
+    /* What the edge and gem paint: darkened in the light theme so every rarity reaches 3:1 on the light roles
+       (token-contrast.test.ts); the dark theme paints the palette as it is. */
+    --card-rarity-paint: color-mix(in srgb, var(--card-rarity) 70%, black);
+    /* The Cards mark's lattice window takes the card's rarity (CardsLogomark). */
+    --cards-centre: var(--card-rarity-paint);
+    @variant dark {
+      --card-rarity-paint: var(--card-rarity);
+    }
+  }
+  [data-card-rarity="UNCOMMON"] {
+    --card-rarity: var(--color-rarity-uncommon);
+  }
+  [data-card-rarity="RARE"] {
+    --card-rarity: var(--color-rarity-rare);
+  }
+  [data-card-rarity="ULTRA_RARE"] {
+    --card-rarity: var(--color-rarity-ultra-rare);
+  }
+  [data-card-rarity="EPIC"] {
+    --card-rarity: var(--color-rarity-epic);
+  }
+  [data-card-rarity="LEGENDARY"] {
+    --card-rarity: var(--color-rarity-legendary);
+  }
+
+  .card-face-edge {
+    border: 2px solid var(--card-rarity-paint);
+    background-color: var(--color-surface-secondary);
+  }
+  /* The card back (CardBack.tsx), an engraved print in the rarity's colour: fine rings and a crosshatch under the
+     lattice of the back's mark. A Foil, Holo or Serialised copy's lattice catches the light where the pointer is
+     (`--holo-x`, `--holo-y`, set by useCardTilt on the tilting card); never with Reduce Transparency or more contrast,
+     and CardFlip leaves it out under Reduce Motion. */
+  .card-back {
+    --card-back-line: color-mix(in oklab, var(--card-rarity-paint) 9%, transparent);
+    background-image:
+      repeating-radial-gradient(
+        circle at 50% 50%,
+        var(--card-back-line) 0 1px,
+        transparent 1px 7px
+      ),
+      repeating-linear-gradient(45deg, var(--card-back-line) 0 1px, transparent 1px 10px),
+      repeating-linear-gradient(-45deg, var(--card-back-line) 0 1px, transparent 1px 10px);
+  }
+  .card-back-lattice {
+    color: var(--card-rarity-paint);
+    opacity: 0.24;
+  }
+  .card-back-shine {
+    color: rgb(255 255 255 / 0.85);
+    mask-image: radial-gradient(
+      circle at var(--holo-x, 50%) var(--holo-y, 50%),
+      black,
+      transparent 45%
+    );
+    @variant transparency-reduced {
+      display: none;
+    }
+    @variant contrast-more {
+      display: none;
+    }
+  }
+  .card-back-shine[data-card-finish="SERIALISED"] {
+    color: var(--color-rarity-legendary);
+  }
+  /* A card the viewer has not collected: its art, muted. Only the picture is filtered; the rarity edge and gem, the
+     scrim and the title keep their colour, so every rarity still reads as itself. The dark theme also dims it a little,
+     since muted art still stands out on a dark page. */
+  .card-face-uncollected {
+    filter: saturate(0.4);
+    @variant dark {
+      filter: saturate(0.4) brightness(0.85);
+    }
+  }
+  /* A card with no art: the realm crest on the rarity tint. */
+  .card-face-tint {
+    background-color: color-mix(in oklab, var(--card-rarity) 24%, var(--color-surface-secondary));
+  }
+  /* The realm initial's disc, under its white letter: black at 0.55 reaches 4.5:1 even over white, for the light
+     theme's light faces (card-face.test.tsx); the dark theme's faces are dark, so it keeps 0.4. */
+  .card-face-initial {
+    background-color: rgb(0 0 0 / 0.55);
+    @variant dark {
+      background-color: rgb(0 0 0 / 0.4);
+    }
+  }
+  .card-face-gem,
+  .card-rarity-gem {
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  }
+  /* The face gem sits on the title scrim in both themes, so its contrast is against the scrim. */
+  .card-face-gem {
+    background-color: var(--card-rarity);
+  }
+  /* The RarityMark gem sits on page backgrounds, so it takes the theme's paint. */
+  .card-rarity-gem {
+    background-color: var(--card-rarity-paint);
+  }
+  /* Keeps the title legible over any art. */
+  .card-face-scrim {
+    background-image: linear-gradient(to top, rgb(0 0 0 / 0.8), rgb(0 0 0 / 0.35) 55%, transparent);
+  }
+  /* The holo colours, shared by the HOLO sheen and the tilt highlight (as r g b channels). */
+  .card-face-sheen,
+  .card-holo {
+    --holo-pink: 255 128 214;
+    --holo-cyan: 128 222 255;
+    --holo-gold: 255 236 140;
+  }
+  .card-face-sheen {
+    pointer-events: none;
+    background-size: 250% 100%;
+    background-position: 100% 0;
+    transition: background-position var(--duration-slow) var(--ease-out-facet);
+    @variant motion-reduce {
+      transition: none;
+    }
+    @variant transparency-reduced {
+      display: none;
+    }
+    @variant contrast-more {
+      display: none;
+    }
+  }
+  [data-card-finish="FOIL"] .card-face-sheen {
+    background-image: linear-gradient(
+      115deg,
+      transparent 35%,
+      rgb(255 255 255 / 0.22) 48%,
+      transparent 60%
+    );
+  }
+  [data-card-finish="HOLO"] .card-face-sheen {
+    background-image: linear-gradient(
+      115deg,
+      transparent 20%,
+      rgb(var(--holo-pink) / 0.2) 36%,
+      rgb(var(--holo-cyan) / 0.2) 50%,
+      rgb(var(--holo-gold) / 0.2) 64%,
+      transparent 80%
+    );
+  }
+  [data-card-finish="SERIALISED"] .card-face-sheen {
+    background-image: linear-gradient(
+      115deg,
+      transparent 35%,
+      color-mix(in oklab, var(--color-rarity-legendary) 35%, transparent) 50%,
+      transparent 65%
+    );
+  }
+  @media (hover: hover) {
+    [data-card-face]:hover .card-face-sheen {
+      background-position: 0 0;
+      @variant motion-reduce {
+        background-position: 100% 0;
+      }
+    }
+  }
+
+  /* The tilt highlight, only in the sheet and the pack reveal; CardFlip moves it with the pointer. */
+  .card-holo {
+    pointer-events: none;
+    background-image:
+      radial-gradient(
+        circle at var(--holo-x, 50%) var(--holo-y, 50%),
+        rgb(255 255 255 / 0.35),
+        transparent 45%
+      ),
+      linear-gradient(
+        115deg,
+        rgb(var(--holo-pink) / 0.16),
+        rgb(var(--holo-cyan) / 0.16),
+        rgb(var(--holo-gold) / 0.16)
+      );
+    mix-blend-mode: overlay;
+    @variant motion-reduce {
+      display: none;
+    }
+    @variant transparency-reduced {
+      display: none;
+    }
+    @variant contrast-more {
+      display: none;
+    }
+  }
+
+  /* A card waiting to be turned over (the pack reveal, the daily reward). */
+  .card-face-down {
+    background-color: var(--color-surface-elevated);
+    background-image: repeating-linear-gradient(
+      45deg,
+      color-mix(in oklab, var(--tint) 22%, transparent) 0 2px,
+      transparent 2px 10px
+    );
+  }
+}

@@ -18,7 +18,6 @@ import {
   Shield,
   MultiplePages,
   Shop,
-  Hammer,
   Map,
   Trophy,
   Medal,
@@ -29,22 +28,23 @@ import {
   BookmarkBook,
   DiceFive,
   TriangleFlag,
-  Flask,
 } from "iconoir-react";
+import { FORUM_HOME, newThreadHref } from "~/lib/thinkpages-forum/links";
 
-export type CommandCategory =
+type CommandCategory =
   "Statecraft" | "Vault" | "Geography" | "Knowledge" | "Community" | "Sports" | "Labs" | "System";
 
-export type SystemActionId =
+type SystemActionId =
   | "toggle-theme"
   | "toggle-sound"
   | "toggle-compact"
   | "mark-all-read"
   | "reload-data"
   | "random-wiki"
-  | "random-country";
+  | "random-country"
+  | "sign-out";
 
-export interface CommandEntry {
+interface CommandEntry {
   id?: string;
   name: string;
   path?: string;
@@ -55,7 +55,7 @@ export interface CommandEntry {
   actionId?: SystemActionId;
 }
 
-export interface FeatureEntry {
+interface FeatureEntry {
   id?: string;
   name: string;
   path?: string;
@@ -66,189 +66,189 @@ export interface FeatureEntry {
   actionId?: SystemActionId;
 }
 
-/**
- * Comprehensive platform command catalog for the Halo search palette.
- * Covers all executive statecraft, vault trading cards, geography, wiki, community,
- * sports leagues, labs, and interactive system shortcuts.
- */
+/** Command catalog for the Halo search palette. */
 export const CORE_COMMANDS: CommandEntry[] = [
-  // ─── 1. Statecraft & National Governance ──────────────────────────────────
+  // 1. Statecraft & National Governance
   {
-    name: "MyCountry Command Center",
+    name: "MyCountry overview",
     path: "/mycountry",
     icon: CheckCircle,
     category: "Statecraft",
-    description: "National executive command overview, vitality, and KPIs",
+    description: "Your nation's vitality, key stats and executive summary",
     keywords: ["overview", "executive", "vitality", "stats", "kpi", "government", "president"],
   },
   {
-    name: "Executive Council & Directives",
+    name: "Executive council and Directives",
     path: "/mycountry/executive",
     icon: CheckCircle,
     category: "Statecraft",
-    description: "Issue national directives, executive orders, and cabinet meetings",
+    description: "Issue Directives, executive orders and cabinet meetings",
     keywords: ["directives", "decrees", "orders", "cabinet", "meetings", "executive", "council"],
   },
   {
-    name: "National Policy Studio",
+    name: "Country editor",
     path: "/mycountry/editor",
     icon: EditPencil,
     category: "Statecraft",
-    description: "Tune national governance, civic values, and state policies",
-    keywords: ["edit", "policy", "laws", "constitution", "governance", "sliders", "tuning"],
+    description: "Rename your nation and edit its flag, symbols, government and size",
+    keywords: [
+      "edit",
+      "rename",
+      "name",
+      "flag",
+      "symbols",
+      "identity",
+      "capital",
+      "language",
+      "government",
+      "institutions",
+      "population",
+    ],
   },
   {
-    name: "Diplomatic Missions & Embassies",
+    name: "Embassies and diplomacy",
     path: "/mycountry/diplomacy",
     icon: Globe,
     category: "Statecraft",
-    description: "Manage embassy network, diplomatic pacts, and treaties",
+    description: "Manage embassies, pacts and treaties",
     keywords: ["embassy", "treaties", "alliances", "ambassadors", "foreign policy", "diplomacy"],
   },
   {
-    name: "National Defense & Readiness",
+    name: "Defense and readiness",
     path: "/mycountry/defense",
     icon: Shield,
     category: "Statecraft",
-    description: "Force readiness, defense posture, and military operations",
+    description: "Force readiness, defense posture and military operations",
     keywords: ["military", "army", "navy", "air force", "war", "defense", "security", "readiness"],
   },
   {
-    name: "Strategic Intelligence & Recon",
+    name: "Intelligence and recon",
     path: "/mycountry/intelligence",
     icon: Compass,
     category: "Statecraft",
-    description: "Signals intelligence, economic trends, and predictive forecasting",
+    description: "Signals intelligence, economic trends and forecasts",
     keywords: ["intel", "recon", "spy", "signals", "projections", "forecasts", "trends"],
   },
   {
-    name: "Fiscal & Economic Policy",
+    name: "Fiscal and economic policy",
     path: "/mycountry/economy",
     icon: Coins,
     category: "Statecraft",
-    description: "National budget allocation, tax rates, and spending levers",
+    description: "Budget allocation, tax rates and spending",
     keywords: ["economy", "budget", "tax", "spending", "treasury", "revenue", "fiscal"],
   },
   {
-    name: "National Legislature & Elections",
+    name: "Legislature and elections",
     path: "/mycountry/politics",
     icon: Building,
     category: "Statecraft",
-    description: "Parliamentary seats, political parties, and election cycles",
+    description: "Parliamentary seats, parties and election cycles",
     keywords: ["politics", "parliament", "congress", "voting", "parties", "elections", "senate"],
   },
   {
-    name: "Territory & Borders Map Editor",
+    name: "Territory and borders editor",
     path: "/mycountry/map-editor",
     icon: Map,
     category: "Statecraft",
-    description: "Draw national boundary claims and provincial subdivisions",
+    description: "Draw national boundaries and provincial subdivisions",
     keywords: ["borders", "provinces", "claims", "geometry", "land", "territory", "map edit"],
   },
 
-  // ─── 2. Economy, Cards & IxVault ──────────────────────────────────────────
+  // 2. Economy, Cards & IxVault
   {
-    name: "IxVault Trading Cards",
-    path: "/vault/cards",
+    name: "IxVault cards",
+    path: "/vault/cards/mine",
     icon: MultiplePages,
     category: "Vault",
-    description: "Card binder, player inventory, and rarity collection",
-    keywords: ["cards", "binder", "inventory", "collection", "deck", "tcg"],
+    description: "Your cards, showcases and the card market",
+    keywords: ["cards", "mine", "showcase", "binder", "inventory", "collection", "deck", "tcg"],
   },
   {
-    name: "Open Card Packs",
-    path: "/vault/packs",
+    name: "Open card packs",
+    path: "/vault/store?view=packs",
     icon: Page,
     category: "Vault",
-    description: "Open booster packs and unbox collectible lore cards",
+    description: "Buy and open card packs in the Store",
     keywords: ["booster", "unbox", "packs", "pull", "gacha", "open cards"],
   },
   {
-    name: "Marketplace & Auctions",
-    path: "/vault/marketplace",
+    name: "Card market",
+    path: "/vault/cards/market",
     icon: Shop,
     category: "Vault",
-    description: "Buy, sell, and bid on collectible cards with credits",
+    description: "Bid on, sell and trade cards",
     keywords: ["market", "auction", "trade", "buy", "sell", "credits", "bids"],
   },
   {
-    name: "Card Crafting & Synthesis",
-    path: "/vault/crafting",
-    icon: Hammer,
-    category: "Vault",
-    description: "Combine duplicate cards to synthesize higher tier cards",
-    keywords: ["craft", "forge", "combine", "upgrade", "alchemy", "synthesis"],
-  },
-  {
-    name: "Lore Card Gallery",
-    path: "/vault/lore-gallery",
+    name: "Explore cards",
+    path: "/vault/cards/explore",
     icon: Palette,
     category: "Vault",
-    description: "Canonical illustrated world lore and history archive",
-    keywords: ["art", "illustrations", "lore", "gallery", "cards", "paintings"],
+    description: "Every realm's cards, collected or not",
+    keywords: ["explore", "gallery", "lore", "cards", "realms", "catalogue"],
   },
   {
-    name: "NationStates NS Deck",
-    path: "/vault/ns-deck",
+    name: "Import NationStates cards",
+    path: "/vault/import",
     icon: MultiplePages,
     category: "Vault",
-    description: "NationStates synced card collection and trading roster",
-    keywords: ["ns", "deck", "nationstates", "sync", "cards"],
+    description: "Import the cards of a NationStates nation you own",
+    keywords: ["ns", "deck", "nationstates", "import", "cards"],
   },
 
-  // ─── 3. Geography & Atlas ────────────────────────────────────────────────
+  // 3. Geography & Atlas
   {
-    name: "IxWorld Interactive Map",
+    name: "World map",
     path: "/maps",
     icon: Compass,
     category: "Geography",
-    description: "Vector spline procedural world map and territory atlas",
+    description: "The interactive world map and territory atlas",
     keywords: ["atlas", "globe", "terrain", "geography", "world", "continents", "map"],
   },
   {
-    name: "Explore Countries",
+    name: "Explore countries",
     path: "/countries",
     icon: Globe,
     category: "Geography",
-    description: "Directory and comparative profiles of all recognized nations",
+    description: "Directory and profiles of every nation",
     keywords: ["browse", "directory", "nations", "search countries", "states", "world"],
   },
   {
-    name: "Global Leaderboards",
+    name: "Leaderboards",
     path: "/leaderboards",
     icon: Trophy,
     category: "Geography",
-    description: "World rankings across GDP, population, and stability",
-    keywords: ["rankings", "leaderboards", "top", "score", "economy", "gdp", "tier"],
+    description: "Rankings of a realm's nations by GDP, population and stability",
+    keywords: ["rankings", "leaderboards", "top", "score", "economy", "gdp", "tier", "global"],
   },
   {
-    name: "Found Nation Builder",
+    name: "Found a nation",
     path: "/builder",
     icon: Building,
     category: "Geography",
-    description: "Found a new nation from custom or real-world templates",
+    description: "Choose a kind of nation, name it and found it",
     keywords: ["create", "builder", "found", "new nation", "wizard", "start nation"],
   },
 
-  // ─── 4. Knowledge & WikiOS ────────────────────────────────────────────────
+  // 4. Knowledge & WikiOS
   {
-    name: "Wiki Main Page",
+    name: "Wiki main page",
     path: "/wiki/Main_Page",
     icon: Book,
     category: "Knowledge",
-    description: "WikiOS community knowledge base and encyclopedic articles",
+    description: "The WikiOS knowledge base and articles",
     keywords: ["wiki", "encyclopedia", "articles", "lore", "reading", "docs"],
   },
   {
-    name: "Wiki Recent Changes",
-    path: "/wiki/recent-changes",
+    name: "Wiki recent changes",
+    path: "/util/recent-changes",
     icon: Page,
     category: "Knowledge",
-    description: "Real-time feed of article edits, revisions, and lore updates",
+    description: "Recent article edits, revisions and lore updates",
     keywords: ["history", "diffs", "edits", "recent", "activity", "log"],
   },
   {
-    name: "Random Wiki Article",
+    name: "Random wiki article",
     path: "#random-wiki",
     icon: DiceFive,
     category: "Knowledge",
@@ -257,175 +257,191 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["shuffle", "random", "surprise", "dice", "random wiki"],
   },
   {
-    name: "Create Wiki Article",
+    name: "Create wiki article",
     path: "/wiki/new",
     icon: EditPencil,
     category: "Knowledge",
-    description: "Draft and publish a new encyclopedic article",
+    description: "Draft and publish a new article",
     keywords: ["new article", "write", "publish", "author", "compose"],
   },
   {
-    name: "Lore Stashes",
+    name: "Lore stashes",
     path: "/stashes",
     icon: BookmarkBook,
     category: "Knowledge",
-    description: "Curated bookmarks and saved lore collections",
+    description: "Bookmarks and saved lore collections",
     keywords: ["stashes", "bookmarks", "saved", "reading list", "collections"],
   },
 
-  // ─── 5. Social & Community ────────────────────────────────────────────────
+  // 5. Social & Community
   {
-    name: "ThinkShare Messages",
+    name: "ThinkShare messages",
     path: "/messages",
     icon: MessageText,
     category: "Community",
-    description: "Unified messaging across private, diplomatic, and forum channels",
+    description: "Private, diplomatic and forum messages in one inbox",
     keywords: ["dms", "inbox", "mail", "chat", "messages", "conversations"],
   },
   {
-    name: "ThinkPages Social Feed",
+    name: "ThinkPages",
     path: "/thinkpages",
+    icon: MessageText,
+    category: "Community",
+    description: "The forum: sitewide boards and a section for every realm",
+    keywords: ["forum", "boards", "threads", "discussions", "thinkpages"],
+  },
+  {
+    name: "Home",
+    path: "/dashboard",
     icon: RssFeed,
     category: "Community",
-    description: "Diplomatic dispatches, public broadcasts, and microblogs",
+    description: "Diplomatic dispatches, public broadcasts and short posts",
     keywords: ["social", "feed", "posts", "dispatches", "broadcasts", "timeline"],
   },
   {
-    name: "ThinkTanks Working Groups",
+    name: "Accounts",
+    path: "/dashboard/accounts",
+    icon: User,
+    category: "Community",
+    description: "Your personas: government, media and citizen accounts",
+    keywords: ["personas", "accounts", "post as"],
+  },
+  {
+    name: "Saved posts",
+    path: "/dashboard/saved",
+    icon: BookmarkBook,
+    category: "Community",
+    description: "Feed posts you bookmarked",
+    keywords: ["saved", "bookmarks", "posts"],
+  },
+  {
+    name: "ThinkTanks",
     path: "/thinktanks",
     icon: User,
     category: "Community",
-    description: "Collaborative worldbuilding groups and policy working tables",
+    description: "Worldbuilding groups and policy working groups",
     keywords: ["thinktanks", "groups", "teams", "collaboration", "alliances"],
   },
   {
-    name: "Community Forum",
-    path: "/forum",
+    name: "Forum",
+    path: FORUM_HOME,
     icon: MessageText,
     category: "Community",
-    description: "Discussion boards, proposals, roleplay, and community debates",
+    description: "Discussion boards, proposals, roleplay and debates",
     keywords: ["forum", "boards", "threads", "discussions", "debates", "topics"],
   },
   {
-    name: "Start Forum Thread",
-    path: "/forum/new-thread",
+    name: "Start forum thread",
+    path: newThreadHref({ key: "general" }),
     icon: EditPencil,
     category: "Community",
-    description: "Create a new discussion topic in the forum",
+    description: "Create a new topic in the forum",
     keywords: ["new thread", "post", "topic", "create thread"],
   },
   {
-    name: "Achievements & Trophies",
-    path: "/achievements",
+    name: "Achievements and trophies",
+    path: "/vault/achievements",
     icon: Medal,
     category: "Community",
-    description: "Milestones, badges, and Loreward progression trophies",
+    description: "Milestones, badges and Loreward trophies",
     keywords: ["trophies", "badges", "rewards", "lorewards", "quests", "achievements"],
   },
 
-  // ─── 6. Sports & Simulation ───────────────────────────────────────────────
+  // 6. Sports & Simulation
   {
-    name: "MyLeague Standings & Fixtures",
+    name: "MyLeague standings and fixtures",
     path: "/myleague",
     icon: SoccerBall,
     category: "Sports",
-    description: "Simulated sports league tables, schedules, and live traces",
+    description: "League tables, schedules and live matches",
     keywords: ["myleague", "soccer", "football", "sports", "standings", "fixtures", "matches"],
   },
   {
-    name: "MyClub Squad & Roster",
+    name: "MyClub squad and roster",
     path: "/myclub",
     icon: BasketballField,
     category: "Sports",
-    description: "Manage club squad roster, tactics, and club operations",
+    description: "Manage your squad, tactics and club operations",
     keywords: ["myclub", "team", "squad", "players", "tactics", "club"],
   },
 
-  // ─── 7. Labs & Creative Engines ───────────────────────────────────────────
+  // 7. Labs & Creative Engines
   {
-    name: "Onoma Linguistic Engine",
+    name: "Onoma language engine",
     path: "/labs/onoma",
     icon: Book,
     category: "Labs",
-    description: "Procedural language synthesis, loanwords, and naming generator",
+    description: "Generate languages, loanwords and names",
     keywords: ["onoma", "language", "names", "linguistics", "phonetics", "words"],
   },
   {
-    name: "Vexel Flag Studio",
+    name: "Vexel flag studio",
     path: "/labs/vexel",
     icon: TriangleFlag,
     category: "Labs",
-    description: "Procedural vector flag designer, symbols, and SVG export",
+    description: "Design flags and symbols, export as SVG",
     keywords: ["vexel", "flags", "emblem", "heraldry", "designer", "banner"],
   },
-  {
-    name: "Map Mesh Pipeline",
-    path: "/labs/map-pipeline",
-    icon: Globe,
-    category: "Labs",
-    description: "Voronoi terrain mesh generator and spline topology inspector",
-    keywords: ["mesh", "voronoi", "pipeline", "terrain", "splines", "map generator"],
-  },
 
-  // ─── 8. System & Settings ─────────────────────────────────────────────────
+  // 8. System & Settings
   {
-    name: "Toggle Dark/Light Theme",
+    name: "Toggle dark or light theme",
     path: "#toggle-theme",
     icon: HalfMoon,
     category: "System",
     actionId: "toggle-theme",
-    description: "Switch between dark, light, and system theme appearance",
+    description: "Switch between dark, light and system appearance",
     keywords: ["theme", "dark mode", "light mode", "appearance", "color"],
   },
   {
-    name: "Toggle Audio & Sound Effects",
+    name: "Toggle sound effects",
     path: "#toggle-sound",
     icon: SoundHigh,
     category: "System",
     actionId: "toggle-sound",
-    description: "Turn Cuelume interaction sound effects on or off",
+    description: "Turn interface sound effects on or off",
     keywords: ["sound", "audio", "sfx", "mute", "unmute", "volume", "chime"],
   },
   {
-    name: "Toggle Compact Layout",
+    name: "Toggle compact layout",
     path: "#toggle-compact",
     icon: LayoutLeft,
     category: "System",
     actionId: "toggle-compact",
-    description: "Switch between dense and standard interface spacing",
+    description: "Switch between compact and standard spacing",
     keywords: ["compact", "dense", "layout", "spacing", "mode"],
   },
   {
-    name: "Mark All Notifications Read",
+    name: "Mark all notifications read",
     path: "#mark-all-read",
     icon: CheckCircle,
     category: "System",
     actionId: "mark-all-read",
-    description: "Clear all unread notification badges and alert counters",
+    description: "Clear all unread notification badges",
     keywords: ["read all", "clear notifications", "dismiss alerts", "inbox clean"],
   },
   {
-    name: "Account Settings",
+    name: "Account settings",
     path: "/settings",
     icon: Settings,
     category: "System",
-    description: "Manage your profile, authentication, and preferences",
+    description: "Manage your profile, sign-in and preferences",
     keywords: ["settings", "account", "profile", "password", "security", "preferences"],
   },
   {
-    name: "Platform Changelog",
+    name: "Changelog",
     path: "/changelog",
     icon: Page,
     category: "System",
-    description: "Platform release notes, capability logs, and version history",
+    description: "Release notes and version history",
     keywords: ["changelog", "updates", "versions", "release notes", "what's new"],
   },
   {
-    name: "Admin Panel",
+    name: "Admin panel",
     path: "/admin",
     icon: Shield,
     category: "System",
-    description: "Platform administration, feature flags, and CMS tools",
+    description: "Administration, feature flags and CMS tools",
     keywords: ["admin", "cms", "management", "config", "owner", "staff"],
   },
 ];
@@ -435,15 +451,15 @@ export const CORE_COMMANDS: CommandEntry[] = [
  */
 export const CORE_FEATURES: FeatureEntry[] = [
   {
-    name: "Economic Dashboard",
+    name: "Economic dashboard",
     path: "/dashboard",
     icon: Coins,
     category: "Statecraft",
-    description: "Macroeconomic metrics, GDP per capita, and projections",
+    description: "Economic metrics, GDP per capita and projections",
     keywords: ["economy", "gdp", "vitality", "analytics"],
   },
   {
-    name: "Global Rankings",
+    name: "Global rankings",
     path: "/leaderboards",
     icon: Trophy,
     category: "Geography",
@@ -451,44 +467,36 @@ export const CORE_FEATURES: FeatureEntry[] = [
     keywords: ["rankings", "leaderboards", "top"],
   },
   {
-    name: "Interactive Map Viewer",
+    name: "Map viewer",
     path: "/maps",
     icon: Compass,
     category: "Geography",
-    description: "Vector spline geography and political boundaries",
+    description: "Geography and political boundaries",
     keywords: ["maps", "atlas", "globe"],
   },
   {
-    name: "Open Card Packs",
-    path: "/vault/packs",
-    icon: Page,
-    category: "Vault",
-    description: "Open booster packs and unbox collectible lore cards",
-    keywords: ["packs", "cards", "booster"],
-  },
-  {
-    name: "Sync Latest Data",
+    name: "Refresh data",
     path: "#reload-data",
     icon: RefreshDouble,
     category: "System",
     actionId: "reload-data",
-    description: "Reload and synchronize the latest platform telemetry",
+    description: "Reload the latest data",
     keywords: ["refresh", "reload", "sync"],
   },
   {
-    name: "Alert Center",
+    name: "Notifications",
     path: "#notifications",
     icon: Compass,
     category: "System",
-    description: "Open notifications and diplomatic inbox tray",
+    description: "Open notifications and the diplomatic inbox",
     keywords: ["notifications", "alerts", "inbox"],
   },
   {
-    name: "Global Search",
+    name: "Search",
     path: "#search",
     icon: Search,
     category: "System",
-    description: "Locate any country, command, or wiki article",
+    description: "Find a country, command or wiki article",
     keywords: ["search", "find", "lookup"],
   },
 ];

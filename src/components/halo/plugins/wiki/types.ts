@@ -20,6 +20,15 @@ export const NARRATOR_VOICE_LABELS: Record<string, string> = {
   bm_lewis: "Male UK - Mellow",
 };
 
+/** Who reads the article aloud: Kokoro's natural voice (owners, admins and beta testers) or the browser's own voice. */
+export type NarratorEngine = "kokoro" | "browser";
+
+/** What the narrator player says about the voice that is reading (or will read), so it never claims the wrong one. */
+export function narratorEngineLabel(engine: NarratorEngine, voiceLabel?: string): string {
+  if (engine === "browser") return "Read aloud (browser voice)";
+  return voiceLabel ? `Natural voice (Kokoro) · ${voiceLabel}` : "Natural voice (Kokoro)";
+}
+
 export interface LocalDraft {
   title: string;
   type: "source" | "visual";

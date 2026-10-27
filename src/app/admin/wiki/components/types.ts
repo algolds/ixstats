@@ -12,6 +12,7 @@ import {
   Check,
   Sparks as Sparkles,
 } from "iconoir-react";
+import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
 
 export type FilterTab = "all" | "linked" | "unlinked";
 
@@ -19,73 +20,63 @@ export interface ScanResult {
   countryId: string;
   countryName: string;
   matchedTitle: string;
-  source: string;
+  source: WikiSource;
   confidence: "exact" | "partial";
   selected: boolean;
 }
 
-export const getIconComponent = (iconName?: string) => {
-  switch (iconName) {
-    case "trophy":
-      return Trophy;
-    case "medal":
-      return Medal;
-    case "star":
-      return Star;
-    case "crown":
-      return Crown;
-    case "shield":
-      return Shield;
-    case "award":
-      return Award;
-    case "users":
-      return Users;
-    case "check":
-      return Check;
-    case "sparkles":
-    default:
-      return Sparkles;
-  }
+/** A country as the wiki link tools read it (a row of `countries.getAll`). */
+export interface CountryLinkRow {
+  id: string;
+  name: string;
+  wikiPageTitle?: string | null;
+  wikiSource?: string | null;
+  wikiLastSynced?: string | Date | null;
+}
+
+/** `countries.getAll`'s answer (or a bare list of rows); undefined while it loads. */
+export type CountriesData =
+  { countries: readonly CountryLinkRow[] } | readonly CountryLinkRow[] | null | undefined;
+
+export function countryRows(data: CountriesData): readonly CountryLinkRow[] {
+  if (!data) return [];
+  return "countries" in data ? data.countries : data;
+}
+
+/** The wiki sources the link tools offer, in `WIKI_SOURCES` order, named as people see them. */
+export const WIKI_SOURCE_OPTIONS = (Object.keys(WIKI_SOURCES) as WikiSource[]).map((value) => ({
+  value,
+  label: WIKI_SOURCES[value].name,
+}));
+
+const ICON_COMPONENTS = {
+  trophy: Trophy,
+  medal: Medal,
+  star: Star,
+  crown: Crown,
+  shield: Shield,
+  award: Award,
+  users: Users,
+  check: Check,
+  sparkles: Sparkles,
+} as const;
+
+export const getIconComponent = (iconName?: string) =>
+  ICON_COMPONENTS[iconName as keyof typeof ICON_COMPONENTS] ?? Sparkles;
+
+/** Tailwind text class and chart colour token for each award colour name. */
+const AWARD_COLORS: Record<string, { text: string; hex: string }> = {
+  amber: { text: "text-yellow", hex: "var(--color-chart-2)" },
+  slate: { text: "text-label-secondary", hex: "var(--color-gray)" },
+  cyan: { text: "text-teal", hex: "var(--color-chart-6)" },
+  green: { text: "text-green", hex: "var(--color-chart-3)" },
+  purple: { text: "text-purple", hex: "var(--color-chart-4)" },
+  pink: { text: "text-pink", hex: "var(--color-chart-5)" },
+  red: { text: "text-red", hex: "var(--color-chart-8)" },
 };
 
-export const getColorClass = (colorName?: string) => {
-  switch (colorName) {
-    case "amber":
-      return "text-amber-500";
-    case "slate":
-      return "text-slate-400";
-    case "cyan":
-      return "text-cyan-500";
-    case "green":
-      return "text-emerald-500";
-    case "purple":
-      return "text-purple-500";
-    case "pink":
-      return "text-pink-500";
-    case "red":
-      return "text-red-500";
-    default:
-      return "text-amber-500";
-  }
-};
+export const getColorClass = (colorName?: string) =>
+  AWARD_COLORS[colorName ?? ""]?.text ?? AWARD_COLORS.amber.text;
 
-export const getColorHex = (colorName: string) => {
-  switch (colorName) {
-    case "amber":
-      return "#f59e0b";
-    case "slate":
-      return "#94a3b8";
-    case "cyan":
-      return "#06b6d4";
-    case "green":
-      return "#10b981";
-    case "purple":
-      return "#a855f7";
-    case "pink":
-      return "#ec4899";
-    case "red":
-      return "#ef4444";
-    default:
-      return "#f59e0b";
-  }
-};
+export const getColorHex = (colorName: string) =>
+  AWARD_COLORS[colorName]?.hex ?? AWARD_COLORS.amber.hex;

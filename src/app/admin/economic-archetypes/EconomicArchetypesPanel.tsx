@@ -2,43 +2,44 @@
 // src/app/admin/economic-archetypes/EconomicArchetypesPanel.tsx
 // Admin interface for managing economic archetypes
 
+import { RowActions } from "../_components/RowActions";
 import { useState, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  Plus,
-  EditPencil as Pencil,
-  Trash as Trash2,
-  Copy,
-  Search,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  EyeClosed as EyeOff,
-  StatUp as TrendingUp,
-} from "iconoir-react";
-import { AdminHeader } from "../_components/AdminHeader";
+import { Plus, Search } from "iconoir-react";
+import { PageHeader } from "~/components/shell/PageHeader";
 import {
   EconomicArchetypeFormDialog,
   type ArchetypeFormData,
   type ArchetypeEra,
   COMPLEXITY_LEVELS,
 } from "./_components/EconomicArchetypeFormDialog";
+import {
+  type ArchetypeRecord,
+  archetypeToFormData,
+  complexityLabel,
+  defaultArchetypeFormData,
+  formDataToArchetypeInput,
+} from "./_components/archetype-form-types";
 import { Skeleton } from "~/components/ui/skeleton";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 const COMPLEXITY_COLORS: Record<string, string> = {
-  Low: "text-green-400",
-  Moderate: "text-blue-400",
-  High: "text-amber-400",
-  "Very High": "text-red-400",
+  low: "text-green",
+  medium: "text-blue",
+  high: "text-yellow",
 };
 
 export function EconomicArchetypesPanel() {
@@ -51,55 +52,12 @@ export function EconomicArchetypesPanel() {
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
   const [selectedComplexity, setSelectedComplexity] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [showInactive, setShowInactive] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingArchetype, setEditingArchetype] = useState<any | null>(null);
+  const [editingArchetype, setEditingArchetype] = useState<ArchetypeRecord | null>(null);
   const [activeTab, setActiveTab] = useState("general");
 
   // Form state
-  const [formData, setFormData] = useState<ArchetypeFormData>({
-    key: "",
-    name: "",
-    description: "",
-    region: "",
-    era: "modern",
-    implementationComplexity: "Moderate",
-    historicalContext: "",
-    characteristics: [],
-    economicComponents: [],
-    governmentComponents: [],
-    taxProfile: {
-      corporateTax: 20,
-      incomeTax: 25,
-      consumptionTax: 10,
-      taxEfficiency: 75,
-    },
-    sectorFocus: {
-      agriculture: 10,
-      manufacturing: 25,
-      services: 35,
-      technology: 20,
-      finance: 5,
-      tourism: 5,
-    },
-    employmentProfile: {
-      unemploymentRate: 5.0,
-      laborParticipation: 65.0,
-      wageGrowth: 2.5,
-    },
-    growthMetrics: {
-      gdpGrowth: 3.0,
-      innovationIndex: 50,
-      competitiveness: 50,
-      stability: 50,
-    },
-    strengths: [],
-    challenges: [],
-    culturalFactors: [],
-    modernExamples: [],
-    recommendations: [],
-  });
+  const [formData, setFormData] = useState<ArchetypeFormData>(defaultArchetypeFormData);
 
   // Queries
   const {
@@ -107,15 +65,11 @@ export function EconomicArchetypesPanel() {
     isLoading,
     refetch,
   } = api.economicArchetypes.getAllArchetypes.useQuery({
-    isActive: showInactive ? undefined : true,
+    isActive: true,
   });
 
   const archetypes = archetypesData?.archetypes || [];
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { data: stats } = api.economicArchetypes.getArchetypeUsageStats.useQuery();
-
-  // Mutations
   const createMutation = api.economicArchetypes.createArchetype.useMutation({
     onSuccess: () => {
       notify.success("Success", "Archetype created successfully");
@@ -160,7 +114,6 @@ export function EconomicArchetypesPanel() {
     // oxlint-disable-next-line
   }, [archetypes]);
 
-  // Filtered archetypes
   const filteredArchetypes = useMemo(() => {
     return archetypes.filter((archetype: any) => {
       if (selectedEra !== "all" && archetype.era !== selectedEra) return false;
@@ -180,61 +133,20 @@ export function EconomicArchetypesPanel() {
   }, [archetypes, selectedEra, selectedRegion, selectedComplexity, searchQuery]);
 
   const resetForm = () => {
-    setFormData({
-      key: "",
-      name: "",
-      description: "",
-      region: "",
-      era: "modern",
-      implementationComplexity: "Moderate",
-      historicalContext: "",
-      characteristics: [],
-      economicComponents: [],
-      governmentComponents: [],
-      taxProfile: {
-        corporateTax: 20,
-        incomeTax: 25,
-        consumptionTax: 10,
-        taxEfficiency: 75,
-      },
-      sectorFocus: {
-        agriculture: 10,
-        manufacturing: 25,
-        services: 35,
-        technology: 20,
-        finance: 5,
-        tourism: 5,
-      },
-      employmentProfile: {
-        unemploymentRate: 5.0,
-        laborParticipation: 65.0,
-        wageGrowth: 2.5,
-      },
-      growthMetrics: {
-        gdpGrowth: 3.0,
-        innovationIndex: 50,
-        competitiveness: 50,
-        stability: 50,
-      },
-      strengths: [],
-      challenges: [],
-      culturalFactors: [],
-      modernExamples: [],
-      recommendations: [],
-    });
+    setFormData(defaultArchetypeFormData());
     setActiveTab("general");
   };
 
   const handleCreate = () => {
-    createMutation.mutate(formData as any);
+    createMutation.mutate(formDataToArchetypeInput(formData));
   };
 
   const handleUpdate = () => {
     if (editingArchetype?.id) {
       updateMutation.mutate({
         id: editingArchetype.id,
-        ...formData,
-      } as any);
+        ...formDataToArchetypeInput(formData),
+      });
     }
   };
 
@@ -244,49 +156,15 @@ export function EconomicArchetypesPanel() {
     }
   };
 
-  const handleEdit = (archetype: any) => {
-    setFormData({
-      key: archetype.key,
-      name: archetype.name,
-      description: archetype.description,
-      region: archetype.region,
-      era: archetype.era,
-      implementationComplexity: archetype.implementationComplexity,
-      historicalContext: archetype.historicalContext,
-      characteristics: archetype.characteristics || [],
-      economicComponents: archetype.economicComponents || [],
-      governmentComponents: archetype.governmentComponents || [],
-      taxProfile: archetype.taxProfile || {
-        corporateTax: 20,
-        incomeTax: 25,
-        consumptionTax: 10,
-        taxEfficiency: 75,
-      },
-      sectorFocus: archetype.sectorFocus || {},
-      employmentProfile: archetype.employmentProfile || {
-        unemploymentRate: 5.0,
-        laborParticipation: 65.0,
-        wageGrowth: 2.5,
-      },
-      growthMetrics: archetype.growthMetrics || {
-        gdpGrowth: 3.0,
-        innovationIndex: 50,
-        competitiveness: 50,
-        stability: 50,
-      },
-      strengths: archetype.strengths || [],
-      challenges: archetype.challenges || [],
-      culturalFactors: archetype.culturalFactors || [],
-      modernExamples: archetype.modernExamples || [],
-      recommendations: archetype.recommendations || [],
-    });
+  const handleEdit = (archetype: ArchetypeRecord) => {
+    setFormData(archetypeToFormData(archetype));
     setEditingArchetype(archetype);
     setActiveTab("general");
   };
 
-  const handleClone = (archetype: any) => {
+  const handleClone = (archetype: ArchetypeRecord) => {
     setFormData({
-      ...archetype,
+      ...archetypeToFormData(archetype),
       key: `${archetype.key}-copy`,
       name: `${archetype.name} (Copy)`,
     });
@@ -296,109 +174,87 @@ export function EconomicArchetypesPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={TrendingUp}
-        title="Economic Archetypes"
-        description="Comprehensive macroeconomic policy models, structural component templates, and simulation archetypes."
+      <PageHeader
+        title="Economic archetypes"
+        subtitle="Macroeconomic policy models, component templates and simulation archetypes."
       />
 
-      {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Total Archetypes
-          </div>
-          <div className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
-            {archetypes?.length ?? 0}
-          </div>
-        </div>
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Modern Policy
-          </div>
-          <div className="mt-1 font-mono text-xl font-bold tracking-tight text-blue-400">
+        <Card className="p-4">
+          <div className="text-label-secondary text-stat-label">Total archetypes</div>
+          <div className="text-label text-title-2 mt-1 tabular-nums">{archetypes?.length ?? 0}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-label-secondary text-stat-label">Modern policy</div>
+          <div className="text-title-2 text-blue mt-1 tabular-nums">
             {archetypes?.filter((a: any) => a.era === "modern").length ?? 0}
           </div>
-        </div>
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Historical Models
-          </div>
-          <div className="mt-1 font-mono text-xl font-bold tracking-tight text-amber-400">
+        </Card>
+        <Card className="p-4">
+          <div className="text-label-secondary text-stat-label">Historical models</div>
+          <div className="text-title-2 text-yellow mt-1 tabular-nums">
             {archetypes?.filter((a: any) => a.era === "historical").length ?? 0}
           </div>
-        </div>
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Filtered Roster
-          </div>
-          <div className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
+        </Card>
+        <Card className="p-4">
+          <div className="text-label-secondary text-stat-label">Filtered roster</div>
+          <div className="text-title-2 text-purple mt-1 tabular-nums">
             {filteredArchetypes.length}
           </div>
-        </div>
+        </Card>
       </div>
 
-      {/* Filter & Action Rail */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative max-w-sm min-w-[200px] flex-1">
-            <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search archetypes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
             />
           </div>
 
-          <Select value={selectedEra} onValueChange={(v: any) => setSelectedEra(v)}>
-            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-36 rounded-xl text-xs backdrop-blur-md">
-              <SelectValue placeholder="All Eras" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-xs">
-                All Eras
-              </SelectItem>
-              <SelectItem value="modern" className="text-xs">
-                Modern
-              </SelectItem>
-              <SelectItem value="historical" className="text-xs">
-                Historical
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedEra}
+            onValueChange={(v: any) => setSelectedEra(v)}
+            options={[
+              ["all", "All eras"],
+              ["modern", "Modern"],
+              ["historical", "Historical"],
+            ]}
+            size="sm"
+            className="w-36"
+            placeholder="All eras"
+            itemClassName="text-footnote"
+          />
 
-          <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-36 rounded-xl text-xs backdrop-blur-md">
-              <SelectValue placeholder="All Regions" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-xs">
-                All Regions
-              </SelectItem>
-              {regions.map((region) => (
-                <SelectItem key={region} value={region} className="text-xs">
-                  {region}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedRegion}
+            onValueChange={setSelectedRegion}
+            options={[
+              ["all", "All regions"],
+              ...regions.map((region) => [region, region] as const),
+            ]}
+            size="sm"
+            className="w-36"
+            placeholder="All regions"
+            itemClassName="text-footnote"
+          />
 
-          <Select value={selectedComplexity} onValueChange={setSelectedComplexity}>
-            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-40 rounded-xl text-xs backdrop-blur-md">
-              <SelectValue placeholder="All Complexities" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-xs">
-                All Complexities
-              </SelectItem>
-              {COMPLEXITY_LEVELS.map((level) => (
-                <SelectItem key={level} value={level} className="text-xs">
-                  {level}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ValueSelect
+            value={selectedComplexity}
+            onValueChange={setSelectedComplexity}
+            options={[
+              ["all", "All complexities"],
+              ...COMPLEXITY_LEVELS.map((level) => [level, complexityLabel(level)] as const),
+            ]}
+            size="sm"
+            className="w-40"
+            placeholder="All complexities"
+            itemClassName="text-footnote"
+          />
         </div>
 
         <Button
@@ -406,105 +262,86 @@ export function EconomicArchetypesPanel() {
             resetForm();
             setIsAddDialogOpen(true);
           }}
-          className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
         >
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
-          Add Archetype
+          <Plus className="mr-2 h-3.5 w-3.5" />
+          Add archetype
         </Button>
       </div>
 
-      {/* High-Density Inset Glass Table */}
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full rounded-xl" />
+            <Skeleton key={i} className="rounded-row h-12 w-full" />
           ))}
         </div>
       ) : filteredArchetypes.length === 0 ? (
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-12 text-center backdrop-blur-md">
-          <p className="text-muted-foreground text-xs">No archetypes found matching criteria.</p>
-        </div>
+        <Card className="p-12 text-center">
+          <p className="text-label-secondary text-footnote">
+            No archetypes found matching criteria.
+          </p>
+        </Card>
       ) : (
-        <div className="border-border/30 bg-card/25 overflow-x-auto rounded-2xl border shadow-xs backdrop-blur-md">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-border/30 bg-muted/20 text-muted-foreground border-b font-semibold">
-                <th className="px-4 py-2.5 text-left font-medium">Model & Focus</th>
-                <th className="px-4 py-2.5 text-left font-medium">Era & Region</th>
-                <th className="px-4 py-2.5 text-left font-medium">Complexity</th>
-                <th className="px-4 py-2.5 text-left font-medium">Usage</th>
-                <th className="px-4 py-2.5 text-right font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-border/15 divide-y">
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="px-4">Model & focus</TableHead>
+                <TableHead className="px-4">Era & region</TableHead>
+                <TableHead className="px-4">Complexity</TableHead>
+                <TableHead className="px-4">Usage</TableHead>
+                <TableHead className="px-4 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredArchetypes.map((archetype: any) => (
-                <tr key={archetype.id} className="hover:bg-foreground/[0.02] transition-colors">
-                  <td className="px-4 py-2.5">
-                    <div className="text-foreground font-semibold">{archetype.name}</div>
-                    <div className="text-muted-foreground max-w-sm truncate text-xs">
+                <TableRow key={archetype.id}>
+                  <TableCell className="px-4">
+                    <div className="text-label font-semibold">{archetype.name}</div>
+                    <div className="text-label-secondary text-footnote max-w-sm truncate">
                       {archetype.description}
                     </div>
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <div className="flex items-center gap-1.5">
+                  </TableCell>
+                  <TableCell className="px-4">
+                    <div className="flex items-center gap-2">
                       <span
-                        className={`rounded px-1.5 py-0.5 text-xs font-medium uppercase ${
+                        className={`rounded-control-sm text-eyebrow px-2 py-0.5 ${
                           archetype.era === "modern"
-                            ? "border border-blue-500/20 bg-blue-500/10 text-blue-400"
-                            : "border border-amber-500/20 bg-amber-500/10 text-amber-400"
+                            ? "border-blue/20 bg-blue/10 text-blue border"
+                            : "border-yellow/20 bg-yellow/10 text-yellow border"
                         }`}
                       >
                         {archetype.era}
                       </span>
-                      <span className="text-muted-foreground text-xs">{archetype.region}</span>
+                      <span className="text-label-secondary text-footnote">{archetype.region}</span>
                     </div>
-                  </td>
-                  <td className="px-4 py-2.5 font-medium">
+                  </TableCell>
+                  <TableCell className="px-4 font-medium">
                     <span
                       className={
                         COMPLEXITY_COLORS[archetype.implementationComplexity] ||
-                        "text-muted-foreground"
+                        "text-label-secondary"
                       }
                     >
-                      {archetype.implementationComplexity}
+                      {complexityLabel(archetype.implementationComplexity)}
                     </span>
-                  </td>
-                  <td className="text-foreground px-4 py-2.5 font-mono font-medium">
+                  </TableCell>
+                  <TableCell className="text-label px-4 font-medium">
                     {archetype.usageCount || 0}×
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    <div className="inline-flex items-center gap-1">
-                      <button
-                        onClick={() => handleClone(archetype)}
-                        className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-lg p-1 transition-transform active:scale-[0.98]"
-                        title="Clone"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(archetype)}
-                        className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-lg p-1 transition-transform active:scale-[0.98]"
-                        title="Edit"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(archetype.id, archetype.name)}
-                        className="rounded-lg p-1 text-red-400 transition-transform hover:bg-red-500/10 hover:text-red-300 active:scale-[0.98]"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                  <TableCell className="px-4 text-right">
+                    <RowActions
+                      onClone={() => handleClone(archetype)}
+                      onEdit={() => handleEdit(archetype)}
+                      onDelete={() => handleDelete(archetype.id, archetype.name)}
+                    />
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </Card>
       )}
 
-      {/* Editor Dialog */}
       {(isAddDialogOpen || editingArchetype) && (
         <EconomicArchetypeFormDialog
           isOpen={isAddDialogOpen || !!editingArchetype}
@@ -525,5 +362,3 @@ export function EconomicArchetypesPanel() {
     </div>
   );
 }
-
-export default EconomicArchetypesPanel;

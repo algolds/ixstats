@@ -22,11 +22,11 @@ import {
 } from "fs";
 import { join, resolve } from "path";
 
-export const DB_BACKUP_CONTAINER = "ixstats-postgres";
-export const DB_BACKUP_USER = "postgres";
-export const DB_BACKUP_DATABASE = "ixstats";
+const DB_BACKUP_CONTAINER = "ixstats-postgres";
+const DB_BACKUP_USER = "postgres";
+const DB_BACKUP_DATABASE = "ixstats";
 export const DEFAULT_BACKUP_DIR = "backups";
-export const DEFAULT_BACKUP_KEEP = 14;
+const DEFAULT_BACKUP_KEEP = 14;
 
 const BACKUP_FILE_PATTERN = /^ixstats-\d{8}T\d{6}Z\.dump$/;
 /** Query parameters libpq understands; Prisma-only ones (schema, connection_limit, …) are dropped. */
@@ -42,11 +42,11 @@ const LIBPQ_PARAMS = new Set([
   "target_session_attrs",
 ]);
 
-export type DbTarget =
+type DbTarget =
   | { kind: "docker"; container: string; user: string; database: string }
   | { kind: "url"; url: string; password?: string };
 
-export interface CommandSpec {
+interface CommandSpec {
   command: string;
   args: string[];
   env?: Record<string, string>;
@@ -146,7 +146,7 @@ export function restoreCommand(target: DbTarget, file: string): CommandSpec & { 
   };
 }
 
-export interface BackupArgs {
+interface BackupArgs {
   keep: number;
   dir: string;
   noDocker: boolean;
@@ -186,7 +186,7 @@ export function parseBackupArgs(argv: readonly string[]): BackupArgs {
   return out;
 }
 
-export interface RestoreArgs {
+interface RestoreArgs {
   file?: string;
   yes: boolean;
   production: boolean;
@@ -219,7 +219,7 @@ export function restoreRefusal(args: RestoreArgs, nodeEnv: string | undefined): 
 }
 
 /** True when `docker inspect` reports the container running (false if Docker is absent). */
-export function isContainerRunning(container: string): boolean {
+function isContainerRunning(container: string): boolean {
   const result = spawnSync("docker", ["inspect", "-f", "{{.State.Running}}", container], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "ignore"],
@@ -284,7 +284,7 @@ async function runToFile(spec: CommandSpec, outFile: string): Promise<void> {
   }
 }
 
-export interface BackupResult {
+interface BackupResult {
   file: string;
   bytes: number;
   target: DbTarget["kind"];

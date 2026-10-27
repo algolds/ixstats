@@ -1,6 +1,6 @@
 import { api, type RouterOutputs } from "~/trpc/react";
 
-export type GetAllCountriesOutput = RouterOutputs["countries"]["getAll"];
+type GetAllCountriesOutput = RouterOutputs["countries"]["getAll"];
 
 /**
  * Standardized hook to fetch all countries with a high staleTime.

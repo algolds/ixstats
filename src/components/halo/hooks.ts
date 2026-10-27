@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Book, Globe, HomeSimple, LogIn, LogOut } from "iconoir-react";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import { useUser } from "~/context/auth-context";
+import { useAuth, useUser } from "~/context/auth-context";
 import { useTheme } from "~/context/theme-context";
 import { useSoundSettings } from "~/hooks/useSoundSettings";
 import { useNotificationStore } from "~/stores/notificationStore";
@@ -14,8 +14,6 @@ import { extractCountriesList } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
 import { CORE_COMMANDS, CORE_FEATURES } from "./halo-registry";
 
-export { CORE_COMMANDS as commands, CORE_FEATURES as features } from "./halo-registry";
-
 /**
  * Shared state management hook for the Halo (Dynamic Island) system.
  * Handles mode transitions, debounced search, keyboard navigation shortcuts,
@@ -23,6 +21,7 @@ export { CORE_COMMANDS as commands, CORE_FEATURES as features } from "./halo-reg
  */
 export function useDynamicIslandState() {
   const { user, isSignedIn } = useUser();
+  const { signOut } = useAuth();
   const { toggleTheme, toggleCompactMode } = useTheme();
   const soundSettings = useSoundSettings();
   const notify = useNotify();
@@ -136,7 +135,7 @@ export function useDynamicIslandState() {
     if (!isSignedIn || !user) {
       ctx.push(
         {
-          name: "Sign In",
+          name: "Sign in",
           path: "/sign-in",
           icon: LogIn,
           category: "System",
@@ -144,7 +143,7 @@ export function useDynamicIslandState() {
           keywords: ["login", "auth", "signin", "session"],
         },
         {
-          name: "Sign Up",
+          name: "Sign up",
           path: "/sign-up",
           icon: LogIn,
           category: "System",
@@ -154,8 +153,8 @@ export function useDynamicIslandState() {
       );
     } else {
       ctx.push({
-        name: "Sign Out",
-        path: "/sign-out",
+        name: "Sign out",
+        actionId: "sign-out",
         icon: LogOut,
         category: "System",
         description: "Sign out of your account",
@@ -178,7 +177,7 @@ export function useDynamicIslandState() {
       const cid = pathname.split("/countries/")[1]?.split("/")[0];
       if (cid) {
         ctx.push({
-          name: "Country Profile",
+          name: "Country profile",
           path: `/countries/${cid}`,
           icon: Globe,
           category: "Geography",
@@ -247,7 +246,13 @@ export function useDynamicIslandState() {
             return;
           }
           case "random-wiki": {
-            window.location.href = createAbsoluteUrl("/wiki/random");
+            window.location.href = createAbsoluteUrl("/util/random");
+            return;
+          }
+          case "sign-out": {
+            void signOut().finally(() => {
+              window.location.href = createAbsoluteUrl("/");
+            });
             return;
           }
           case "random-country": {
@@ -275,7 +280,7 @@ export function useDynamicIslandState() {
         return;
       }
       if (targetPath) {
-        window.location.href = createAbsoluteUrl(targetPath === "/sign-out" ? "/" : targetPath);
+        window.location.href = createAbsoluteUrl(targetPath);
       }
     };
 
@@ -407,6 +412,7 @@ export function useDynamicIslandState() {
     toggleCompactMode,
     markAllNotificationsAsRead,
     notify,
+    signOut,
   ]);
 
   // Plugin view sync
@@ -541,8 +547,9 @@ export function useDynamicIslandState() {
         shortcutTimeoutRef.current = setTimeout(() => setIsProcessingShortcut(false), 500);
       }
 
-      // Escape to close
-      if (e.key === "Escape" && !isProcessingShortcut && !isInputFocused) {
+      // Escape to close. Only claim the event when Halo has something to close, so that other
+      // Escape handlers that respect `defaultPrevented` (e.g. detail rails) still run.
+      if (e.key === "Escape" && !isProcessingShortcut && !isInputFocused && mode !== "compact") {
         e.preventDefault();
         if (mode === "search" && searchQuery) {
           setSearchQuery("");

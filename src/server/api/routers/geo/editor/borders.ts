@@ -1,119 +1,133 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
-import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, adminProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { invalidateCache } from "~/lib/cache";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
-import { clearLayerCache } from "../core";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { validateGeometryValid } from "~/lib/maps/geo-validation";
+import { restorableBorderDraft } from "~/lib/maps/border-draft";
+import { rebuildAdjacency } from "~/lib/maps/adjacency";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
-import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { editableMapRealmId, realmScopeInput } from "~/server/api/trpc/realm-scope";
+import { assertFound } from "../core/shared";
+import { realmRadiusKmById } from "~/server/modules/realms/realms.map";
+import { scaleAreaToRadius } from "~/lib/maps/planet";
 
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
+type PolygonalGeometry = import("geojson").Polygon | import("geojson").MultiPolygon;
+
+/** The border editor's area measure on the realm's planet (`Realm.settings.map.radiusKm`, else Earth's). */
+async function realmAreaOf(
+  db: Parameters<typeof realmRadiusKmById>[0],
+  realmId: string,
+  flatArea: (geometry: PolygonalGeometry) => number
+) {
+  const radiusKm = await realmRadiusKmById(db, realmId);
+  return (geometry: PolygonalGeometry) => scaleAreaToRadius(flatArea(geometry), radiusKm);
+}
+
+/** A neighbouring political feature: what the editor draws, and when it was last saved. */
+interface NeighbourRow {
+  featureId: string;
+  displayName: string | null;
+  geometry: Prisma.JsonValue;
+  updatedAt: Date;
+}
+
+/** Degrees added around a feature's bounding box when looking for its neighbours. */
+const NEIGHBOUR_PAD = 1;
+
+/**
+ * The realm's other political features whose extent overlaps the feature's bounding box padded by NEIGHBOUR_PAD.
+ * The `&&` on `geom_postgis` is served by its GiST index, so the rest of the realm's outlines are never read.
+ */
+function findNeighbourRows(
+  db: Pick<PrismaClient, "$queryRawUnsafe">,
+  realmId: string,
+  featureId: string,
+  bbox: number[]
+): Promise<NeighbourRow[]> {
+  const [minLng, minLat, maxLng, maxLat] = bbox as [number, number, number, number];
+  return db.$queryRawUnsafe<NeighbourRow[]>(
+    `SELECT "featureId", "displayName", geometry, "updatedAt"
+       FROM map_layers
+      WHERE "layerType" = 'political' AND "isActive" = true AND "worldId" = $1
+        AND "featureId" <> $2
+        AND geom_postgis && ST_MakeEnvelope($3, $4, $5, $6, 4326)`,
+    realmId,
+    featureId,
+    minLng - NEIGHBOUR_PAD,
+    minLat - NEIGHBOUR_PAD,
+    maxLng + NEIGHBOUR_PAD,
+    maxLat + NEIGHBOUR_PAD
+  );
+}
+
+/** A user's border editor session for one feature of one realm (feature ids repeat across realms). */
+const borderSessionId = (userId: string, realmId: string, featureId: string) =>
+  `${userId}_${realmId}_${featureId}`;
 
 export const geoEditorBordersRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Border Editor
-  // ──────────────────────────────────────────────
-
   /** Start a border editing session for a feature. Returns geometry + neighbor info. */
-  startBorderEditSession: adminProcedure
+  startBorderEditSession: rateLimitedMutationProcedure
     .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
-      const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
-        select: {
-          id: true,
-          featureId: true,
-          displayName: true,
-          geometry: true,
-          centroid: true,
-          boundingBox: true,
-          areaSqKm: true,
-          countryId: true,
-        },
-      });
-      if (!feature) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Feature not found: ${input.featureId}`,
-        });
-      }
+      const realmId = await editableMapRealmId(ctx, input.realm);
+      const feature = assertFound(
+        await ctx.db.mapLayer.findFirst({
+          where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
+          select: {
+            id: true,
+            featureId: true,
+            displayName: true,
+            geometry: true,
+            centroid: true,
+            boundingBox: true,
+            areaSqKm: true,
+            countryId: true,
+            updatedAt: true,
+          },
+        }),
+        `Feature not found: ${input.featureId}`
+      );
 
-      // Find neighboring features by bounding box overlap
+      // Find neighboring features whose extent overlaps the feature's bounding box
       const bbox = feature.boundingBox as number[] | null;
-      let neighbors: Array<{
-        featureId: string;
-        displayName: string | null;
-        geometry: unknown;
-      }> = [];
-      if (bbox && bbox.length === 4) {
-        const pad = 1; // 1° padding for neighbor search
-        neighbors = await ctx.db.mapLayer
-          .findMany({
-            where: {
-              layerType: "political",
-              featureId: { not: input.featureId },
-              isActive: true,
-              realmId,
-            },
-            select: {
-              featureId: true,
-              displayName: true,
-              boundingBox: true,
-              geometry: true,
-            },
-          })
-          .then((layers) =>
-            layers
-              .filter((l) => {
-                const nb = l.boundingBox as number[] | null;
-                if (!nb || nb.length !== 4) return false;
-                return (
-                  nb[0]! < bbox[2]! + pad &&
-                  nb[2]! > bbox[0]! - pad &&
-                  nb[1]! < bbox[3]! + pad &&
-                  nb[3]! > bbox[1]! - pad
-                );
-              })
-              .map((l) => ({
-                featureId: l.featureId,
-                displayName: l.displayName,
-                geometry: l.geometry,
-              }))
-          );
-      }
+      const neighborRows =
+        bbox && bbox.length === 4
+          ? await findNeighbourRows(ctx.db, realmId, input.featureId, bbox)
+          : [];
 
       // Create or resume session
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const userId = ctx.auth!.userId ?? "system";
+      const sessionId = borderSessionId(userId, realmId, input.featureId);
       const session = await ctx.db.mapEditorSession.upsert({
-        where: { id: `${ctx.auth!.userId ?? "system"}_${input.featureId}` },
+        where: { id: sessionId },
         create: {
-          id: `${ctx.auth!.userId ?? "system"}_${input.featureId}`,
-          userId: ctx.auth!.userId ?? "system",
+          id: sessionId,
+          userId,
           featureId: input.featureId,
-          sessionData: { undoStack: [], mode: "select" } as any,
+          sessionData: { undoStack: [], mode: "select" },
           expiresAt,
         },
         update: { expiresAt, updatedAt: new Date() },
       });
 
       return {
-        session: { id: session.id, sessionData: session.sessionData },
+        session: { id: session.id },
+        // Only this user's draft of this feature, newer than the feature's last save
+        draft: restorableBorderDraft({
+          sessionData: session.sessionData,
+          sessionUserId: session.userId,
+          sessionFeatureId: session.featureId,
+          userId,
+          featureId: input.featureId,
+          featureUpdatedAt: feature.updatedAt,
+          neighborUpdatedAt: Object.fromEntries(
+            neighborRows.map((row) => [row.featureId, row.updatedAt])
+          ),
+        }),
         feature: {
           featureId: feature.featureId,
           displayName: feature.displayName,
@@ -123,12 +137,16 @@ export const geoEditorBordersRouter = createTRPCRouter({
           areaSqKm: feature.areaSqKm,
           countryId: feature.countryId,
         },
-        neighbors,
+        neighbors: neighborRows.map(({ featureId, displayName, geometry }) => ({
+          featureId,
+          displayName,
+          geometry,
+        })),
       };
     }),
 
   /** Save border edit draft (auto-save editor state). */
-  saveBorderEditDraft: adminProcedure
+  saveBorderEditDraft: rateLimitedMutationProcedure
     .input(
       z.object({
         sessionId: z.string(),
@@ -136,19 +154,24 @@ export const geoEditorBordersRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.mapEditorSession.update({
-        where: { id: input.sessionId },
+      // Only the session's own editor saves into it (session ids are `<userId>_<realmId>_<featureId>`).
+      const { count } = await ctx.db.mapEditorSession.updateMany({
+        where: { id: input.sessionId, userId: ctx.auth?.userId ?? "system" },
         data: {
-          sessionData: input.sessionData as any,
+          // Stamped here: a restore compares it with the feature's (server-side) updatedAt
+          sessionData: { ...(input.sessionData as Prisma.InputJsonObject), savedAt: Date.now() },
           updatedAt: new Date(),
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
       });
+      if (count === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Editor session not found" });
+      }
       return { ok: true };
     }),
 
-  /** Submit a border edit for review (or apply directly for admins). */
-  submitBorderEdit: adminProcedure
+  /** Submit a border edit for review, or apply it directly (site admins, the founder, map officers). */
+  submitBorderEdit: rateLimitedMutationProcedure
     .input(
       z.object({
         featureId: z.string(),
@@ -169,22 +192,23 @@ export const geoEditorBordersRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
-      const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
-        select: { id: true, geometry: true, countryId: true, displayName: true, areaSqKm: true },
-      });
-      if (!feature) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Feature not found: ${input.featureId}`,
-        });
-      }
+      const realmId = await editableMapRealmId(ctx, input.realm);
+      const feature = assertFound(
+        await ctx.db.mapLayer.findFirst({
+          where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
+          select: { id: true, geometry: true, countryId: true, displayName: true, areaSqKm: true },
+        }),
+        `Feature not found: ${input.featureId}`
+      );
 
       if (input.applyDirectly) {
-        // Admin direct apply — update geometry immediately
-        const { calculateArea, calculateCentroid, calculateBBox } =
-          await import("~/lib/maps/border-editor");
+        // Direct apply (the realm's map editors) — update geometry immediately
+        const {
+          calculateArea: flatArea,
+          calculateCentroid,
+          calculateBBox,
+        } = await import("~/lib/maps/border-editor");
+        const calculateArea = await realmAreaOf(ctx.db, realmId, flatArea);
         const geom = input.proposedGeometry as unknown as
           import("geojson").Polygon | import("geojson").MultiPolygon;
         await validateGeometryValid(ctx.db, input.proposedGeometry);
@@ -247,53 +271,51 @@ export const geoEditorBordersRouter = createTRPCRouter({
           }
         });
 
-        if (feature.countryId) {
-          // Sync outside the transaction — it does its own internal commits.
-          await syncCountryGeometryFromMapLayer(ctx.db, feature.countryId);
+        // The borders are committed: the map version moves even if the Country sync or history below fails
+        try {
+          if (feature.countryId) {
+            // Sync outside the transaction — it does its own internal commits.
+            await syncCountryGeometryFromMapLayer(ctx.db, feature.countryId);
 
-          // Log in BorderHistory
-          await ctx.db.borderHistory.create({
-            data: {
-              countryId: feature.countryId,
-              geometry: input.proposedGeometry as any,
-              changedBy: ctx.auth?.userId ?? "admin",
-              reason: input.reason ?? "Direct map edit via World Editor",
-              oldAreaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : null,
-              newAreaSqMi: area ? area * 0.386102 : null,
-              areaDeltaSqMi: feature.areaSqKm && area ? (area - feature.areaSqKm) * 0.386102 : null,
-            },
-          });
+            // Log in BorderHistory
+            await ctx.db.borderHistory.create({
+              data: {
+                countryId: feature.countryId,
+                geometry: input.proposedGeometry as any,
+                changedBy: ctx.auth?.userId ?? "admin",
+                reason: input.reason ?? "Direct map edit via World Editor",
+                oldAreaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : null,
+                newAreaSqMi: area ? area * 0.386102 : null,
+                areaDeltaSqMi:
+                  feature.areaSqKm && area ? (area - feature.areaSqKm) * 0.386102 : null,
+              },
+            });
+          }
+        } finally {
+          await invalidateRealmMap(ctx.db, realmId);
         }
-
-        // Clear cache
-        clearLayerCache("political");
-        await invalidateCache([
-          "geoCore.getCountryFeatures",
-          "geoCore.getMapBundle",
-          "geoCore.getWorldMap",
-          "geoCore.getAllMapFeatures",
-          "countryGeo.getCountryGeoBundle",
-          "geoCore.getCountryGeometry",
-        ]);
-        broadcastMapUpdate("borders", feature.countryId ?? undefined);
+        broadcastMapUpdate("borders", feature.countryId ?? undefined, realmId);
 
         // Clean up session
         await ctx.db.mapEditorSession.deleteMany({
-          where: { userId: ctx.auth!.userId ?? "system", featureId: input.featureId },
+          where: { id: borderSessionId(ctx.auth!.userId ?? "system", realmId, input.featureId) },
         });
 
         return { applied: true, editRequestId: null };
       }
 
-      // Create edit request for review
+      // Create edit request for review: refused now, as the direct path is, if PostGIS finds the border invalid
+      await validateGeometryValid(ctx.db, input.proposedGeometry);
       const editRequest = await ctx.db.mapEditRequest.create({
         data: {
           countryId: feature.countryId ?? "unknown",
+          realmId,
           userId: ctx.auth!.userId ?? "system",
           editType: "border_adjust",
           editSubtype: input.editSubtype,
           operation: "update",
-          proposedData: input.proposedGeometry as any,
+          targetId: feature.id,
+          proposedData: { geometry: input.proposedGeometry } as object,
           currentData: feature.geometry ?? undefined,
           previousGeometry: feature.geometry ?? undefined,
           affectedFeatures:
@@ -306,7 +328,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
     }),
 
   /** Split a country into two new features. */
-  splitCountry: adminProcedure
+  splitCountry: rateLimitedMutationProcedure
     .input(
       z.object({
         featureId: z.string(),
@@ -317,19 +339,21 @@ export const geoEditorBordersRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
-      const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
-      });
-      if (!feature) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Feature not found: ${input.featureId}`,
-        });
-      }
+      const realmId = await editableMapRealmId(ctx, input.realm);
+      const feature = assertFound(
+        await ctx.db.mapLayer.findFirst({
+          where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
+        }),
+        `Feature not found: ${input.featureId}`
+      );
 
-      const { splitPolygon, calculateArea, calculateCentroid, calculateBBox } =
-        await import("~/lib/maps/border-editor");
+      const {
+        splitPolygon,
+        calculateArea: flatArea,
+        calculateCentroid,
+        calculateBBox,
+      } = await import("~/lib/maps/border-editor");
+      const calculateArea = await realmAreaOf(ctx.db, realmId, flatArea);
       const geometry = feature.geometry as unknown as
         import("geojson").Polygon | import("geojson").MultiPolygon;
       const result = splitPolygon(geometry, input.splitLine);
@@ -342,10 +366,14 @@ export const geoEditorBordersRouter = createTRPCRouter({
       }
 
       const [geomA, geomB] = result;
+      const areaA = calculateArea(geomA);
+      const areaB = calculateArea(geomB);
       const featureIdA = input.nameA.replace(/\s+/g, "_");
       const featureIdB = input.nameB.replace(/\s+/g, "_");
       // Capture before the transaction nulls the original feature's link.
       const originalCountryId = feature.countryId;
+      // The larger part keeps the original's nation, so the sync below does not clear its outline
+      const aKeepsNation = areaA >= areaB;
 
       await ctx.db.$transaction(async (tx) => {
         // Deactivate and rename original to prevent unique constraint violation
@@ -370,7 +398,8 @@ export const geoEditorBordersRouter = createTRPCRouter({
               properties: { id: featureIdA, name: input.nameA },
               centroid: calculateCentroid(geomA),
               boundingBox: calculateBBox(geomA),
-              areaSqKm: calculateArea(geomA),
+              areaSqKm: areaA,
+              countryId: aKeepsNation ? originalCountryId : null,
               isActive: true,
             },
             {
@@ -382,27 +411,23 @@ export const geoEditorBordersRouter = createTRPCRouter({
               properties: { id: featureIdB, name: input.nameB },
               centroid: calculateCentroid(geomB),
               boundingBox: calculateBBox(geomB),
-              areaSqKm: calculateArea(geomB),
+              areaSqKm: areaB,
+              countryId: aKeepsNation ? null : originalCountryId,
               isActive: true,
             },
           ],
         });
       });
 
-      if (originalCountryId) {
-        await syncCountryGeometryFromMapLayer(ctx.db, originalCountryId);
+      // The split is committed: the map version moves even if the Country sync fails
+      try {
+        if (originalCountryId) {
+          await syncCountryGeometryFromMapLayer(ctx.db, originalCountryId);
+        }
+      } finally {
+        await invalidateRealmMap(ctx.db, realmId);
       }
-
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "geoCore.getWorldMap",
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-        "geoCore.getCountryGeometry",
-      ]);
-      broadcastMapUpdate("borders");
+      broadcastMapUpdate("borders", undefined, realmId);
 
       return {
         originalFeatureId: input.featureId,
@@ -414,7 +439,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
     }),
 
   /** Merge two or more countries into one. */
-  mergeCountries: adminProcedure
+  mergeCountries: rateLimitedMutationProcedure
     .input(
       z.object({
         featureIds: z.array(z.string()).min(2),
@@ -423,7 +448,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
+      const realmId = await editableMapRealmId(ctx, input.realm);
       const features = await ctx.db.mapLayer.findMany({
         where: {
           layerType: "political",
@@ -442,8 +467,13 @@ export const geoEditorBordersRouter = createTRPCRouter({
         });
       }
 
-      const { mergeGeometries, calculateArea, calculateCentroid, calculateBBox } =
-        await import("~/lib/maps/border-editor");
+      const {
+        mergeGeometries,
+        calculateArea: flatArea,
+        calculateCentroid,
+        calculateBBox,
+      } = await import("~/lib/maps/border-editor");
+      const calculateArea = await realmAreaOf(ctx.db, realmId, flatArea);
 
       // Merge all geometries
       type GeoType = import("geojson").Polygon | import("geojson").MultiPolygon;
@@ -456,6 +486,10 @@ export const geoEditorBordersRouter = createTRPCRouter({
       const countryIds = Array.from(
         new Set(features.map((f) => f.countryId).filter(Boolean))
       ) as string[];
+      // The merged feature keeps the largest linked source's nation, so its outline is not cleared
+      const keptCountryId =
+        features.filter((f) => f.countryId).sort((a, b) => (b.areaSqKm ?? 0) - (a.areaSqKm ?? 0))[0]
+          ?.countryId ?? null;
 
       await ctx.db.$transaction(async (tx) => {
         // Deactivate and rename originals to prevent unique constraint violation
@@ -482,26 +516,22 @@ export const geoEditorBordersRouter = createTRPCRouter({
             centroid: calculateCentroid(merged),
             boundingBox: calculateBBox(merged),
             areaSqKm: calculateArea(merged),
+            countryId: keptCountryId,
             isActive: true,
           },
         });
       });
 
-      // Sync geometries of any country that was linked to the merged features
-      for (const countryId of countryIds) {
-        await syncCountryGeometryFromMapLayer(ctx.db, countryId);
+      // Sync geometries of any country that was linked to the merged features. The merge is committed: the map
+      // version moves even if a sync fails.
+      try {
+        for (const countryId of countryIds) {
+          await syncCountryGeometryFromMapLayer(ctx.db, countryId);
+        }
+      } finally {
+        await invalidateRealmMap(ctx.db, realmId);
       }
-
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "geoCore.getWorldMap",
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-        "geoCore.getCountryGeometry",
-      ]);
-      broadcastMapUpdate("borders");
+      broadcastMapUpdate("borders", undefined, realmId);
 
       return {
         mergedFeatures: input.featureIds,
@@ -510,7 +540,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
     }),
 
   /** Clean up the current editor geometry (dedupe vertices, remove spikes). */
-  repairBorderGeometry: adminProcedure
+  repairBorderGeometry: rateLimitedMutationProcedure
     .input(z.object({ geometry: z.record(z.string(), z.unknown()) }))
     .mutation(async ({ input }) => {
       const { sanitizeRegionShape } = await import("~/lib/maps/border-editor");
@@ -520,40 +550,9 @@ export const geoEditorBordersRouter = createTRPCRouter({
       return { geometry, issues };
     }),
 
-  /** Rebuild the province adjacency graph for all active political features.
-   *  Requires PostGIS. Returns the number of features updated and pairs found.
-   *  Safe to re-run; overwrites existing neighbors values. */
+  /** Rebuild the province adjacency graph for all active political features of a realm (also run after an
+   *  import). Requires PostGIS. Returns the number of features updated and pairs found. */
   rebuildAdjacency: adminProcedure
     .input(z.object({ realmId: z.string().default(DEFAULT_REALM_ID) }))
-    .mutation(async ({ ctx, input }) => {
-      const { isPostGISAvailable } = await import("~/lib/maps/geo-validation");
-      if (!(await isPostGISAvailable(ctx.db))) return { features: 0, pairs: 0, skipped: true };
-      const pairs = await ctx.db.$queryRawUnsafe<Array<{ a: string; b: string }>>(
-        `SELECT a."featureId" AS a, b."featureId" AS b
-           FROM map_layers a
-           JOIN map_layers b
-             ON a.id < b.id
-            AND a."layerType" = 'political' AND a."isActive" = true
-            AND b."layerType" = 'political' AND b."isActive" = true
-            AND a."worldId" = $1 AND b."worldId" = $1
-            AND a.geom_postgis IS NOT NULL AND b.geom_postgis IS NOT NULL
-            AND ST_Intersects(a.geom_postgis, b.geom_postgis)
-            AND NOT ST_Equals(a.geom_postgis, b.geom_postgis)`,
-        input.realmId
-      );
-      const adj = new Map<string, Set<string>>();
-      for (const { a, b } of pairs) {
-        (adj.get(a) ?? adj.set(a, new Set()).get(a)!).add(b);
-        (adj.get(b) ?? adj.set(b, new Set()).get(b)!).add(a);
-      }
-      let updated = 0;
-      for (const [featureId, set] of Array.from(adj.entries())) {
-        await ctx.db.mapLayer.updateMany({
-          where: { layerType: "political", featureId, isActive: true, realmId: input.realmId },
-          data: { neighbors: Array.from(set) as any },
-        });
-        updated++;
-      }
-      return { features: updated, pairs: pairs.length };
-    }),
+    .mutation(({ ctx, input }) => rebuildAdjacency(ctx.db, input.realmId)),
 });

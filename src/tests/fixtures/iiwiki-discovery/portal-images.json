@@ -1,0 +1,24 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "pages": [
+      {
+        "pageid": 900,
+        "ns": 100,
+        "title": "Portal:Eurth",
+        "images": [
+          { "ns": 6, "title": "File:Eurth political map 2024.png" },
+          { "ns": 6, "title": "File:Flag of Aurelia.svg" },
+          { "ns": 6, "title": "File:Eurth banner.png" },
+          { "ns": 6, "title": "File:Eurth world map.svg" }
+        ],
+        "pageimage": "Eurth_world_map.svg",
+        "original": {
+          "source": "https://iiwiki.com/images/7/7c/Eurth_world_map.svg",
+          "width": 4000,
+          "height": 2000
+        }
+      }
+    ]
+  }
+}

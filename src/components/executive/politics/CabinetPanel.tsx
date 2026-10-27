@@ -1,14 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  Suitcase as Briefcase,
-  SystemRestart as Loader2,
-  Plus,
-  Group as Users,
-  Xmark as X,
-} from "iconoir-react";
-import { api } from "~/trpc/react";
+import { useState } from "react";
+import { format } from "date-fns";
+import { SystemRestart as Loader2, Plus, Group as Users, Xmark as X } from "iconoir-react";
+import { api, type RouterOutputs } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
@@ -25,6 +21,7 @@ import { Label } from "~/components/ui/label";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Textarea } from "~/components/ui/textarea";
 import { cn } from "~/lib/utils";
+import { CreateGovernmentStructureButton } from "~/components/mycountry/domains/government/CreateGovernmentStructureButton";
 
 interface CabinetPanelProps {
   countryId: string;
@@ -38,23 +35,167 @@ interface AppointFormState {
   bio: string;
 }
 
-function formatDateInput(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+const initialForm = (): AppointFormState => ({
+  name: "",
+  title: "",
+  role: "Cabinet Member",
+  appointedDate: format(new Date(), "yyyy-MM-dd"),
+  bio: "",
+});
+
+const FORM_FIELDS: {
+  key: keyof AppointFormState;
+  label: string;
+  placeholder: string;
+  type?: string;
+  required?: boolean;
+}[] = [
+  { key: "name", label: "Name", placeholder: "e.g. Elena Vance", required: true },
+  { key: "title", label: "Title", placeholder: "e.g. Minister of Foreign Affairs", required: true },
+  { key: "role", label: "Role", placeholder: "e.g. Cabinet member", required: true },
+  { key: "appointedDate", label: "Appointed date", placeholder: "", type: "date", required: true },
+];
+
+const plural = (n: number, word: string) => `${n} ${word}${n !== 1 ? "s" : ""}`;
+
+type Structure = NonNullable<RouterOutputs["government"]["getByCountryId"]>;
+type Department = NonNullable<Structure["departments"]>[number];
+type Official = NonNullable<RouterOutputs["meetings"]["getOfficials"]>[number];
+
+function DepartmentRow({
+  dept,
+  officials,
+  onAppoint,
+  onRemove,
+  removing,
+}: {
+  dept: Department;
+  officials: Official[];
+  onAppoint: () => void;
+  onRemove: (id: string) => void;
+  /** Id of the official currently being removed, if any. */
+  removing: { pending: boolean; id?: string };
+}) {
+  const isVacant = officials.length === 0;
+  return (
+    <div
+      className={cn(
+        "group rounded-control border p-3 transition-colors",
+        isVacant
+          ? "border-separator bg-fill-2 border-dashed"
+          : "border-separator bg-surface-secondary"
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-body truncate font-medium">{dept.name}</span>
+            {isVacant ? (
+              <Badge variant="outline" className="text-footnote">
+                Vacant
+              </Badge>
+            ) : (
+              <Badge variant="secondary">{plural(officials.length, "official")}</Badge>
+            )}
+          </div>
+          {dept.ministerTitle ? (
+            <p className="text-label-secondary text-footnote mt-0.5">{dept.ministerTitle}</p>
+          ) : null}
+        </div>
+
+        {isVacant ? (
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-footnote h-7 gap-1"
+            onClick={onAppoint}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Appoint
+          </Button>
+        ) : null}
+      </div>
+
+      {!isVacant && (
+        <ul className="mt-2 space-y-2">
+          {officials.map((official) => (
+            <li
+              key={official.id}
+              className="rounded-control-sm bg-surface text-body flex items-center justify-between gap-2 px-2 py-2"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{official.name}</p>
+                <p className="text-label-secondary text-footnote truncate">
+                  {official.title}
+                  {official.role ? ` · ${official.role}` : ""}
+                </p>
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="text-label-secondary hover:text-destructive h-7 w-7 shrink-0"
+                onClick={() => onRemove(official.id)}
+                disabled={removing.pending}
+                aria-label={`Remove ${official.name}`}
+              >
+                {removing.pending && removing.id === official.id ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <X className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function CabinetBody({
+  countryId,
+  loading,
+  departments,
+  render,
+}: {
+  countryId: string;
+  loading: boolean;
+  departments: Department[];
+  render: (dept: Department) => React.ReactNode;
+}) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="text-label-secondary h-5 w-5 animate-spin" />
+      </div>
+    );
+  }
+  if (departments.length === 0) {
+    return (
+      <div className="text-label-secondary text-body flex flex-col items-center justify-center py-8 text-center">
+        <Users className="mb-2 h-8 w-8 opacity-40" />
+        <p>No government departments yet.</p>
+        <p className="text-footnote mt-1 mb-3">
+          Create your government&apos;s departments, then appoint officials here.
+        </p>
+        <CreateGovernmentStructureButton countryId={countryId} />
+      </div>
+    );
+  }
+  return (
+    <ScrollArea className="h-[440px] pr-2">
+      <div className="space-y-2">{departments.map(render)}</div>
+    </ScrollArea>
+  );
 }
 
 export function CabinetPanel({ countryId }: CabinetPanelProps) {
   const utils = api.useUtils();
+  const notify = useNotify();
   const [dialogDepartmentId, setDialogDepartmentId] = useState<string | null>(null);
-  const [form, setForm] = useState<AppointFormState>({
-    name: "",
-    title: "",
-    role: "Cabinet Member",
-    appointedDate: formatDateInput(new Date()),
-    bio: "",
-  });
+  const [form, setForm] = useState<AppointFormState>(initialForm);
+  const setField = (key: keyof AppointFormState, value: string) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
 
   const { data: structure, isLoading: structureLoading } = api.government.getByCountryId.useQuery(
     { countryId },
@@ -71,43 +212,27 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
     onSuccess: () => {
       void utils.meetings.getOfficials.invalidate();
       setDialogDepartmentId(null);
-      setForm({
-        name: "",
-        title: "",
-        role: "Cabinet Member",
-        appointedDate: formatDateInput(new Date()),
-        bio: "",
-      });
+      setForm(initialForm());
     },
+    onError: (error) => notify.error("Could not appoint the official", error.message),
   });
 
   const remove = api.meetings.removeOfficial.useMutation({
     onSuccess: () => {
       void utils.meetings.getOfficials.invalidate();
     },
+    onError: (error) => notify.error("Could not remove the official", error.message),
   });
 
-  const departments = useMemo(() => structure?.departments ?? [], [structure?.departments]);
-
-  const officialsByDepartment = useMemo(() => {
-    const map = new Map<string, typeof officials>();
-    for (const dept of departments) {
-      map.set(dept.id, officials?.filter((o) => o.departmentId === dept.id) ?? []);
-    }
-    return map;
-  }, [departments, officials]);
-
-  const selectedDepartment = useMemo(
-    () => departments.find((d) => d.id === dialogDepartmentId),
-    [departments, dialogDepartmentId]
-  );
+  const departments = structure?.departments ?? [];
+  const selectedDepartment = departments.find((d) => d.id === dialogDepartmentId);
 
   const openAppointDialog = (departmentId: string) => {
     const dept = departments.find((d) => d.id === departmentId);
     setForm((prev) => ({
       ...prev,
       title: dept?.ministerTitle || "Minister",
-      role: "Cabinet Member",
+      role: "Cabinet member",
     }));
     setDialogDepartmentId(departmentId);
   };
@@ -129,140 +254,41 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
     });
   };
 
-  const isLoading = structureLoading || officialsLoading;
-
   return (
     <>
-      <Card className="border-indigo-200/60 dark:border-indigo-900/40">
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader className="pb-4">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-950/40">
-                <Briefcase className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-              </div>
-              <div>
-                <CardTitle className="text-base">Cabinet</CardTitle>
-                <CardDescription className="text-sm">
-                  Appoint officials to lead government departments
-                </CardDescription>
-              </div>
+            <div>
+              <CardTitle className="text-body">Cabinet</CardTitle>
+              <CardDescription className="text-body">
+                Appoint officials to lead each department.
+              </CardDescription>
             </div>
             {departments.length > 0 && (
-              <Badge variant="secondary" className="shrink-0">
-                {departments.length} department{departments.length !== 1 ? "s" : ""}
+              <Badge variant="default" className="shrink-0">
+                {plural(departments.length, "department")}
               </Badge>
             )}
           </div>
         </CardHeader>
 
         <CardContent className="pt-0">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-            </div>
-          ) : departments.length === 0 ? (
-            <div className="text-muted-foreground flex flex-col items-center justify-center py-8 text-center text-sm">
-              <Users className="mb-2 h-8 w-8 opacity-40" />
-              <p>No government departments configured yet.</p>
-              <p className="mt-1 text-xs">
-                Create a government structure to start staffing your cabinet.
-              </p>
-            </div>
-          ) : (
-            <ScrollArea className="h-[440px] pr-2">
-              <div className="space-y-2">
-                {departments.map((dept) => {
-                  const deptOfficials = officialsByDepartment.get(dept.id) ?? [];
-                  const isVacant = deptOfficials.length === 0;
-
-                  return (
-                    <div
-                      key={dept.id}
-                      className={cn(
-                        "group rounded-lg border p-3 transition-colors",
-                        isVacant
-                          ? "border-dashed border-neutral-200 bg-neutral-50/50 dark:border-neutral-800 dark:bg-neutral-900/30"
-                          : "border-indigo-100 bg-indigo-50/30 dark:border-indigo-900/30 dark:bg-indigo-950/20"
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="truncate text-sm font-medium">{dept.name}</span>
-                            {isVacant ? (
-                              <Badge variant="outline" className="text-xs">
-                                Vacant
-                              </Badge>
-                            ) : (
-                              <Badge
-                                variant="secondary"
-                                className="bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"
-                              >
-                                {deptOfficials.length} official
-                                {deptOfficials.length !== 1 ? "s" : ""}
-                              </Badge>
-                            )}
-                          </div>
-                          {dept.ministerTitle ? (
-                            <p className="text-muted-foreground mt-0.5 text-xs">
-                              {dept.ministerTitle}
-                            </p>
-                          ) : null}
-                        </div>
-
-                        {isVacant ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 gap-1 border-indigo-200 text-xs text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-950/40"
-                            onClick={() => openAppointDialog(dept.id)}
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                            Appoint
-                          </Button>
-                        ) : null}
-                      </div>
-
-                      {!isVacant && (
-                        <ul className="mt-2 space-y-1.5">
-                          {deptOfficials.map((official) => (
-                            <li
-                              key={official.id}
-                              className="flex items-center justify-between gap-2 rounded-md bg-white/60 px-2 py-1.5 text-sm dark:bg-black/20"
-                            >
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate font-medium">{official.name}</p>
-                                <p className="text-muted-foreground truncate text-xs">
-                                  {official.title}
-                                  {official.role ? ` · ${official.role}` : ""}
-                                </p>
-                              </div>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="text-muted-foreground hover:text-destructive h-7 w-7 shrink-0"
-                                onClick={() =>
-                                  remove.mutate({ id: official.id, reason: "Resigned" })
-                                }
-                                disabled={remove.isPending}
-                                aria-label={`Remove ${official.name}`}
-                              >
-                                {remove.isPending && remove.variables?.id === official.id ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  <X className="h-3.5 w-3.5" />
-                                )}
-                              </Button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          )}
+          <CabinetBody
+            countryId={countryId}
+            loading={structureLoading || officialsLoading}
+            departments={departments}
+            render={(dept) => (
+              <DepartmentRow
+                key={dept.id}
+                dept={dept}
+                officials={officials?.filter((o) => o.departmentId === dept.id) ?? []}
+                onAppoint={() => openAppointDialog(dept.id)}
+                onRemove={(id) => remove.mutate({ id, reason: "Resigned" })}
+                removing={{ pending: remove.isPending, id: remove.variables?.id }}
+              />
+            )}
+          />
         </CardContent>
       </Card>
 
@@ -276,61 +302,31 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
             <DialogDescription>
               {selectedDepartment
                 ? `Appoint a ${selectedDepartment.ministerTitle || "Minister"} to ${selectedDepartment.name}`
-                : "Appoint a new cabinet official"}
+                : "Appoint a cabinet official"}
             </DialogDescription>
           </DialogHeader>
 
           <form id="appoint-official-form" onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="official-name">Name</Label>
-              <Input
-                id="official-name"
-                value={form.name}
-                onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g. Elena Vance"
-                required
-              />
-            </div>
+            {FORM_FIELDS.map((f) => (
+              <div key={f.key} className="space-y-2">
+                <Label htmlFor={`official-${f.key}`}>{f.label}</Label>
+                <Input
+                  id={`official-${f.key}`}
+                  type={f.type}
+                  value={form[f.key]}
+                  onChange={(e) => setField(f.key, e.target.value)}
+                  placeholder={f.placeholder}
+                  required={f.required}
+                />
+              </div>
+            ))}
 
-            <div className="space-y-1.5">
-              <Label htmlFor="official-title">Title</Label>
-              <Input
-                id="official-title"
-                value={form.title}
-                onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                placeholder="e.g. Minister of Foreign Affairs"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="official-role">Role</Label>
-              <Input
-                id="official-role"
-                value={form.role}
-                onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value }))}
-                placeholder="e.g. Cabinet Member"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="official-date">Appointed date</Label>
-              <Input
-                id="official-date"
-                type="date"
-                value={form.appointedDate}
-                onChange={(e) => setForm((prev) => ({ ...prev, appointedDate: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="official-bio">Bio</Label>
               <Textarea
                 id="official-bio"
                 value={form.bio}
-                onChange={(e) => setForm((prev) => ({ ...prev, bio: e.target.value }))}
+                onChange={(e) => setField("bio", e.target.value)}
                 placeholder="Short background (optional)"
                 rows={3}
               />
@@ -350,12 +346,11 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
               type="submit"
               form="appoint-official-form"
               disabled={!canSubmit || appoint.isPending}
-              className="bg-indigo-600 text-white hover:bg-indigo-700"
             >
               {appoint.isPending ? (
-                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <Plus className="mr-1.5 h-4 w-4" />
+                <Plus className="mr-2 h-4 w-4" />
               )}
               Appoint
             </Button>

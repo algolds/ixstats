@@ -1,8 +1,5 @@
 "use client";
-// src/components/wiki-os/editor/components/WikiSourceToolbar.tsx
-// Top bar and Wikitext formatting toolbar for WikiOS Source Editor (CodeMirror).
-
-import React from "react";
+import type { ComponentType } from "react";
 import {
   Bold,
   Italic,
@@ -12,7 +9,7 @@ import {
   ArrowDown as Subscript,
   List,
   NumberedListLeft as ListOrdered,
-  Quote as Quote,
+  Quote,
   Link as Link2,
   MediaImage as ImageIcon,
   Puzzle,
@@ -24,7 +21,7 @@ import {
   Table,
   NavArrowDown as ChevronDown,
   Eye,
-  EyeClosed as EyeClosed,
+  EyeClosed,
   Hashtag as Hash,
   OpenNewWindow as ExternalLink,
   Code as FileCode,
@@ -36,8 +33,9 @@ import { WikiEditorHeader } from "./WikiEditorHeader";
 import { StashDropdown } from "./shared/StashDropdown";
 import { TemplateDropdown } from "./shared/TemplateDropdown";
 import { SettingsDropdown } from "./shared/SettingsDropdown";
+import { Button } from "~/components/ui/button";
 
-export interface WikiSourceToolbarProps {
+interface WikiSourceToolbarProps {
   title: string;
   isDirty: boolean;
   repulsionProgress: number;
@@ -45,7 +43,6 @@ export interface WikiSourceToolbarProps {
   setShowPreview: (show: boolean) => void;
   onSwitchToVisual?: () => void;
   onCancel: () => void;
-  onSave: () => void;
   handleSaveDraft: () => void;
 
   handleUndo: () => void;
@@ -56,6 +53,31 @@ export interface WikiSourceToolbarProps {
 
   handleInsertStashedImage: (filename: string) => void;
 }
+
+type WrapButton = readonly [
+  icon: ComponentType<{ className?: string }>,
+  title: string,
+  before: string,
+  after: string,
+];
+
+const TEXT_STYLES: readonly WrapButton[] = [
+  [Bold, "Bold ('''text''')", "'''", "'''"],
+  [Italic, "Italic (''text'')", "''", "''"],
+  [Strikethrough, "Strikethrough (<s>text</s>)", "<s>", "</s>"],
+  [Underline, "Underline (<u>text</u>)", "<u>", "</u>"],
+  [Code, "Inline code (<code>text</code>)", "<code>", "</code>"],
+  [Superscript, "Superscript (<sup>text</sup>)", "<sup>", "</sup>"],
+  [Subscript, "Subscript (<sub>text</sub>)", "<sub>", "</sub>"],
+];
+
+const HEADING_LEVELS = [
+  { level: 1, textClass: "text-title-3", iconClass: "text-tint" },
+  { level: 2, textClass: "text-headline", iconClass: "text-indigo" },
+  { level: 3, textClass: "text-caption", iconClass: "text-yellow" },
+  { level: 4, textClass: "text-footnote opacity-80", iconClass: "text-green" },
+  { level: 5, textClass: "text-footnote opacity-60", iconClass: "text-label-secondary" },
+];
 
 export function WikiSourceToolbar({
   title,
@@ -92,17 +114,17 @@ export function WikiSourceToolbar({
         summary={modal.summary}
         setSummary={modal.setSummary}
         extraActions={
-          <button
-            className={cn(
-              "wikios-editor-btn-preview active:scale-[0.97] transition-transform duration-100",
-              showPreview && "wikios-editor-btn-active"
-            )}
+          <Button
+            variant={showPreview ? "secondary" : "outline"}
+            size="icon-sm"
+            aria-pressed={showPreview}
+            className="rounded-full"
             onClick={() => setShowPreview(!showPreview)}
-            type="button"
             title={showPreview ? "Hide preview" : "Show preview"}
+            aria-label="Preview"
           >
-            {showPreview ? <EyeClosed className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
+            {showPreview ? <EyeClosed className="size-4" /> : <Eye className="size-4" />}
+          </Button>
         }
       />
 
@@ -115,98 +137,44 @@ export function WikiSourceToolbar({
         </div>
         <div className="wikios-editor-format-sep" />
 
-        {/* Text formatting */}
         <div className="wikios-editor-format-group">
-          <FmtBtn
-            icon={Bold}
-            title="Bold ('''text''')"
-            onClick={() => wrapSelection("'''", "'''")}
-          />
-          <FmtBtn
-            icon={Italic}
-            title="Italic (''text'')"
-            onClick={() => wrapSelection("''", "''")}
-          />
-          <FmtBtn
-            icon={Strikethrough}
-            title="Strikethrough (<s>text</s>)"
-            onClick={() => wrapSelection("<s>", "</s>")}
-          />
-          <FmtBtn
-            icon={Underline}
-            title="Underline (<u>text</u>)"
-            onClick={() => wrapSelection("<u>", "</u>")}
-          />
-          <FmtBtn
-            icon={Code}
-            title="Inline code (<code>text</code>)"
-            onClick={() => wrapSelection("<code>", "</code>")}
-          />
-          <FmtBtn
-            icon={Superscript}
-            title="Superscript (<sup>text</sup>)"
-            onClick={() => wrapSelection("<sup>", "</sup>")}
-          />
-          <FmtBtn
-            icon={Subscript}
-            title="Subscript (<sub>text</sub>)"
-            onClick={() => wrapSelection("<sub>", "</sub>")}
-          />
+          {TEXT_STYLES.map(([icon, title, before, after]) => (
+            <FmtBtn
+              key={title}
+              icon={icon}
+              title={title}
+              onClick={() => wrapSelection(before, after)}
+            />
+          ))}
         </div>
         <div className="wikios-editor-format-sep" />
 
         {/* Headings */}
         <div className="wikios-editor-format-group">
           <Popover>
-            <PopoverTrigger className="wikios-editor-format-btn wikios-editor-format-select">
-              <span className="text-xs font-semibold tracking-tight">Heading</span>
-              <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-label-secondary gap-1 px-2">
+                <span className="text-caption font-semibold">Heading</span>
+                <ChevronDown className="size-3 shrink-0 opacity-60" />
+              </Button>
             </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              className="glass-none z-[10001] w-44 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-1 text-[var(--wikios-text)] shadow-2xl"
-            >
-              <div className="flex flex-col gap-0.5 text-xs">
-                <button
-                  type="button"
-                  onClick={() => insertAtLine("= ", " =")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-base font-bold hover:bg-[var(--wikios-border)]"
-                >
-                  <Hash className="h-3.5 w-3.5 text-blue-400" />
-                  <span>Heading 1</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertAtLine("== ", " ==")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm font-semibold hover:bg-[var(--wikios-border)]"
-                >
-                  <Hash className="h-3.5 w-3.5 text-indigo-400" />
-                  <span>Heading 2</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertAtLine("=== ", " ===")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-medium hover:bg-[var(--wikios-border)]"
-                >
-                  <Hash className="h-3.5 w-3.5 text-amber-400" />
-                  <span>Heading 3</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertAtLine("==== ", " ====")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs opacity-80 hover:bg-[var(--wikios-border)]"
-                >
-                  <Hash className="h-3.5 w-3.5 text-emerald-400" />
-                  <span>Heading 4</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertAtLine("===== ", " =====")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs opacity-60 hover:bg-[var(--wikios-border)]"
-                >
-                  <Hash className="h-3.5 w-3.5 text-zinc-400" />
-                  <span>Heading 5</span>
-                </button>
+            <PopoverContent align="start" className="text-label w-44 p-1">
+              <div className="text-footnote flex flex-col gap-0.5">
+                {HEADING_LEVELS.map(({ level, textClass, iconClass }) => {
+                  const marks = "=".repeat(level);
+                  return (
+                    <Button
+                      key={level}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => insertAtLine(`${marks} `, ` ${marks}`)}
+                      className={`text-label w-full justify-start px-2 ${textClass}`}
+                    >
+                      <Hash className={`${iconClass} h-3.5 w-3.5`} />
+                      <span>Heading {level}</span>
+                    </Button>
+                  );
+                })}
               </div>
             </PopoverContent>
           </Popover>
@@ -261,12 +229,12 @@ export function WikiSourceToolbar({
         {/* Templates & Advanced */}
         <div className="wikios-editor-format-group">
           <TemplateDropdown
-            triggerClassName="wikios-editor-format-btn wikios-editor-format-select"
+            triggerClassName="gap-1 px-2"
             align="start"
             triggerContent={
               <>
-                <Puzzle className="h-3.5 w-3.5 shrink-0 text-blue-400" />
-                <span className="text-xs font-semibold tracking-tight">Templates</span>
+                <Puzzle className="text-tint h-3.5 w-3.5 shrink-0" />
+                <span className="text-caption font-semibold">Templates</span>
                 <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
               </>
             }
@@ -308,22 +276,22 @@ function FmtBtn({
   onClick,
   active,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   title: string;
   onClick: () => void;
   active?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      className={cn(
-        "wikios-editor-format-btn active:scale-[0.97] transition-transform duration-100",
-        active && "wikios-editor-format-btn-active"
-      )}
+    <Button
+      variant={active ? "secondary" : "ghost"}
+      size="icon-sm"
+      aria-pressed={active}
+      className={cn(!active && "text-label-secondary")}
       onClick={onClick}
       title={title}
+      aria-label={title}
     >
-      <Icon className="h-3.5 w-3.5 shrink-0" />
-    </button>
+      <Icon className="size-3.5 shrink-0" />
+    </Button>
   );
 }

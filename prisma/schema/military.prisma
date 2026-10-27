@@ -1,34 +1,50 @@
 // IxStates — Military & Security models
 
+/// A branch of a nation's armed forces (realm time D2). The player names it; its domain sets capital intensity,
+/// depreciation and training needs. Headcounts, capital and readiness are derived from the defense budget and time
+/// on the nation's realm clock (`~/lib/military/model`), never typed by the player.
 model MilitaryBranch {
-  id                  String          @id @default(cuid())
-  countryId           String
-  branchType          BranchType
-  name                String
-  motto               String?
-  imageUrl            String?
-  description         String?
-  established         String?
-  activeDuty          Int             @default(0)
-  reserves            Int             @default(0)
-  civilianStaff       Int             @default(0)
-  annualBudget        Float           @default(0)
-  budgetPercent       Float           @default(0)
-  readinessLevel      Float           @default(50)
-  technologyLevel     Float           @default(50)
-  trainingLevel       Float           @default(50)
-  morale              Float           @default(50)
-  deploymentCapacity  Float           @default(50)
-  sustainmentCapacity Float           @default(50)
-  isActive            Boolean         @default(true)
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
-  assets              MilitaryAsset[]
-  country             Country         @relation("CountryMilitaryBranches", fields: [countryId], references: [id], onDelete: Cascade)
-  units               MilitaryUnit[]
+  id                         String             @id @default(cuid())
+  countryId                  String
+  domain                     BranchDomain
+  name                       String
+  motto                      String?
+  imageUrl                   String?
+  description                String?
+  established                String?
+  /// Active personnel N (fractional so slow monthly adjustments never stall on rounding).
+  activeDuty                 Float              @default(0)
+  /// Reservists Rv.
+  reserves                   Float              @default(0)
+  civilianStaff              Int                @default(0)
+  /// The player's effort weight across branches (normalised).
+  effortShare                Float              @default(0)
+  /// The player's desired active strength; null follows what the budget affords.
+  targetActive               Int?
+  /// Real capital stock K (catalog price units at the reset).
+  capital                    Float              @default(0)
+  /// Readiness sub-scores in [0, 1] at the last tick: personnel fill P, equipment on hand S, condition Rc, training T.
+  readinessPersonnel         Float              @default(0)
+  readinessEquipment         Float              @default(0)
+  readinessCondition         Float              @default(0)
+  readinessTraining          Float              @default(0)
+  reserveTraining            Float              @default(0)
+  /// Reservists ordered to mobilise and when (realm clock ms); `mobilised` is who had reported at the last tick.
+  mobilisationOrder          Int                @default(0)
+  mobilisationOrderedClockMs Float?
+  mobilised                  Float              @default(0)
+  /// Realm clock ms of the last monthly tick (mirrors the nation's DefensePolicy.lastTickClockMs).
+  lastTickClockMs            Float              @default(0)
+  isActive                   Boolean            @default(true)
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime           @updatedAt
+  assets                     MilitaryAsset[]
+  country                    Country            @relation("CountryMilitaryBranches", fields: [countryId], references: [id], onDelete: Cascade)
+  units                      MilitaryUnit[]
+  procurementOrders          ProcurementOrder[]
 
   @@index([countryId])
-  @@index([branchType])
+  @@index([domain])
   @@index([isActive])
 }
 
@@ -43,7 +59,6 @@ model MilitaryUnit {
   commanderName String?
   commanderRank String?
   headquarters  String?
-  readiness     Float           @default(50)
   imageUrl      String?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
@@ -65,7 +80,9 @@ model MilitaryAsset {
   operational        Int            @default(1)
   acquisitionCost    Float          @default(0)
   maintenanceCost    Float          @default(0)
-  modernizationLevel Float          @default(50)
+  /// The catalog item it was procured as, and that design's year (quality decays against the realm frontier).
+  catalogKey         String?
+  designYear         Int?
   capability         String?
   imageUrl           String?
   createdAt          DateTime       @default(now())
@@ -77,113 +94,7 @@ model MilitaryAsset {
   @@index([unitId])
   @@index([assetType])
   @@index([status])
-}
-
-model SecurityThreat {
-  id                  String           @id @default(cuid())
-  countryId           String
-  userId              String?
-  threatName          String
-  threatType          ThreatType
-  severity            ThreatSeverity
-  status              ThreatStatus     @default(monitoring)
-  description         String?
-  likelihood          Float            @default(50)
-  impact              Float            @default(50)
-  urgency             String?
-  actorType           String?
-  actorName           String?
-  actorLocation       String?
-  actorCapability     Float            @default(50)
-  potentialCasualties Int              @default(0)
-  economicImpact      Float            @default(0)
-  politicalImpact     String?
-  infrastructureRisk  Float            @default(0)
-  responseLevel       String?
-  mitigationActions   String?
-  resourcesAllocated  Float            @default(0)
-  intelligenceSource  String?
-  confidenceLevel     Float            @default(50)
-  estimatedTimeline   String?
-  tags                String?
-  lastUpdated         DateTime         @updatedAt
-  detectedAt          DateTime         @default(now())
-  isActive            Boolean          @default(true)
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
-  country             Country          @relation("CountrySecurityThreats", fields: [countryId], references: [id], onDelete: Cascade)
-  incidents           ThreatIncident[]
-
-  @@index([countryId])
-  @@index([threatType])
-  @@index([severity])
-  @@index([isActive])
-  @@index([userId])
-}
-
-model ThreatIncident {
-  id              String         @id @default(cuid())
-  threatId        String
-  title           String
-  description     String
-  incidentType    String
-  casualties      Int            @default(0)
-  damage          Float          @default(0)
-  location        String?
-  responseActions String?
-  effectiveness   Float?
-  occurredAt      DateTime       @default(now())
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  threat          SecurityThreat @relation(fields: [threatId], references: [id], onDelete: Cascade)
-
-  @@index([threatId])
-  @@index([occurredAt])
-}
-
-model DefenseBudget {
-  id                    String   @id @default(cuid())
-  countryId             String   @unique
-  fiscalYear            Int
-  totalBudget           Float    @default(0)
-  gdpPercent            Float    @default(0)
-  perCapita             Float    @default(0)
-  personnelCosts        Float    @default(0)
-  operationsMaintenance Float    @default(0)
-  procurement           Float    @default(0)
-  rdteCosts             Float    @default(0)
-  militaryConstruction  Float    @default(0)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  country               Country  @relation("CountryDefenseBudget", fields: [countryId], references: [id], onDelete: Cascade)
-
-  @@index([countryId])
-  @@index([fiscalYear])
-}
-
-model SecurityAssessment {
-  id                   String   @id @default(cuid())
-  countryId            String   @unique
-  overallSecurityScore Float    @default(60)
-  securityLevel        String   @default("moderate")
-  securityTrend        String   @default("stable")
-  militaryStrength     Float    @default(60)
-  internalStability    Float    @default(60)
-  borderSecurity       Float    @default(60)
-  cybersecurity        Float    @default(50)
-  counterTerrorism     Float    @default(55)
-  militaryReadiness    Float    @default(65)
-  emergencyResponse    Float    @default(60)
-  disasterPreparedness Float    @default(55)
-  activeThreatCount    Int      @default(0)
-  highSeverityThreats  Int      @default(0)
-  lastAssessed         DateTime @default(now())
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  country              Country  @relation("CountrySecurityAssessment", fields: [countryId], references: [id], onDelete: Cascade)
-
-  @@index([countryId])
-  @@index([securityLevel])
+  @@index([catalogKey])
 }
 
 model InternalStabilityMetrics {
@@ -206,95 +117,15 @@ model InternalStabilityMetrics {
   trustInGovernment       Float    @default(50)
   trustInPolice           Float    @default(55)
   fearOfCrime             Float    @default(35)
+  /// JSON of the formula values the last recalculation produced; the gap between a stored
+  /// field and its formula value here is the event (issue/directive) delta to carry forward.
+  formulaSnapshot         String?
   lastCalculated          DateTime @default(now())
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
   country                 Country  @relation("CountryStabilityMetrics", fields: [countryId], references: [id], onDelete: Cascade)
 
   @@index([countryId])
-}
-
-model SecurityEvent {
-  id              String    @id @default(cuid())
-  countryId       String
-  eventType       String
-  severity        String
-  status          String    @default("active")
-  title           String
-  description     String?
-  casualties      Int       @default(0)
-  arrested        Int       @default(0)
-  economicImpact  Float     @default(0)
-  stabilityImpact Float     @default(0)
-  region          String?
-  city            String?
-  triggerFactors  String?
-  rngSeed         String?
-  resolutionNotes String?
-  startDate       DateTime  @default(now())
-  endDate         DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  country         Country   @relation("CountrySecurityEvents", fields: [countryId], references: [id], onDelete: Cascade)
-
-  @@index([countryId])
-  @@index([status])
-  @@index([severity])
-}
-
-model BorderSecurity {
-  id                    String                     @id @default(cuid())
-  countryId             String                     @unique
-  overallSecurityLevel  Float                      @default(70)
-  securityStatus        String                     @default("moderate")
-  borderIntegrity       Float                      @default(85)
-  borderLength          Float?
-  landBorders           Int                        @default(0)
-  maritimeBorders       Int                        @default(0)
-  borderAgents          Int                        @default(0)
-  checkpoints           Int                        @default(0)
-  surveillanceSystems   Int                        @default(0)
-  interceptionRate      Float                      @default(60)
-  processingEfficiency  Float                      @default(70)
-  illegalCrossings      Int                        @default(0)
-  smugglingActivity     Float                      @default(20)
-  traffickingRisk       Float                      @default(15)
-  refugeePresure        Float                      @default(10)
-  technologyLevel       Float                      @default(50)
-  infrastructureQuality Float                      @default(60)
-  lastAssessed          DateTime                   @default(now())
-  createdAt             DateTime                   @default(now())
-  updatedAt             DateTime                   @updatedAt
-  country               Country                    @relation("CountryBorderSecurity", fields: [countryId], references: [id], onDelete: Cascade)
-  neighborThreats       NeighborThreatAssessment[]
-
-  @@index([countryId])
-}
-
-model NeighborThreatAssessment {
-  id                  String         @id @default(cuid())
-  borderSecurityId    String
-  neighborName        String
-  neighborCountryId   String?
-  borderType          String
-  borderLength        Float?
-  threatLevel         String         @default("low")
-  threatScore         Float          @default(20)
-  militaryThreat      Float          @default(10)
-  terrorismRisk       Float          @default(15)
-  smugglingRisk       Float          @default(25)
-  refugeeFlow         Float          @default(20)
-  politicalStability  Float          @default(60)
-  diplomaticRelations String         @default("neutral")
-  tradeVolume         Float          @default(0)
-  treatyStatus        String?
-  notes               String?
-  lastAssessed        DateTime       @default(now())
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
-  borderSecurity      BorderSecurity @relation(fields: [borderSecurityId], references: [id], onDelete: Cascade)
-
-  @@index([borderSecurityId])
 }
 
 model MilitaryEquipmentCatalog {
@@ -426,6 +257,14 @@ model MilitaryOperation {
   successRating     String?      // "success", "partial", "failure"
   diplomaticImpact  Int          @default(0)
   casualties        Int          @default(0)
+  /// An intervention resolves on the combat model at its end: the seed fixed at launch with its orders hash and commit
+  /// time (realm clock ms), the inputs snapshot (server only) and the outcome band.
+  orders            String?
+  ordersHash        String?
+  committedClockMs  Float?
+  seed              String?
+  inputSnapshot     String?
+  outcomeBand       String?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
@@ -467,11 +306,24 @@ model MilitaryConflict {
   defenderApproved    Boolean  @default(false)
   reason              String?
   startDate           DateTime?
+  /// Realm clock ms when hostilities began (the PvP window runs on the realm clock).
+  startClockMs        Float?
   endDate             DateTime?
   winner              String?  // Country ID or "draw"
   initiatorCasualties Int      @default(0)
   defenderCasualties  Int      @default(0)
   economicDamage      Float    @default(0)
+  /// Combat resolution: the initiator's orders (JSON) and their hash, the commit time (realm clock ms), the HMAC seed
+  /// fixed at commit (never rerolled; shown once resolved), the inputs snapshot a replay recomputes from (server only),
+  /// and the result.
+  orders              String?
+  ordersHash          String?
+  committedClockMs    Float?
+  seed                String?
+  inputSnapshot       String?
+  outcomeBand         String?
+  margin              Float?
+  engagementDays      Int?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -482,4 +334,109 @@ model MilitaryConflict {
   @@index([defenderId])
   @@index([status])
   @@index([type])
+}
+
+/// A nation's defense policy and national defense stocks (realm time D2, design §4.2). Created with the nation's
+/// starter force; the monthly tick on the nation's realm clock advances the stocks.
+model DefensePolicy {
+  id                  String            @id @default(cuid())
+  countryId           String            @unique
+  /// Budget split of the Defense line; sums to 1.
+  sharePersonnel      Float             @default(0.35)
+  shareOm             Float             @default(0.3)
+  shareProcurement    Float             @default(0.22)
+  shareRd             Float             @default(0.06)
+  shareInfrastructure Float             @default(0.07)
+  /// The preset last applied ("professional", "territorial", "rearm"), null once edited.
+  preset              String?
+  /// Manpower model: volunteer share v (1 all-volunteer, 0 conscription), service months, reserve obligation years.
+  volunteerShare      Float             @default(1)
+  serviceMonths       Int               @default(12)
+  reserveYears        Int               @default(20)
+  doctrine            DefenseDoctrine   @default(balanced)
+  /// Ordered alert level; a raise bites after its days (7 Elevated … 30 War) from alertChangedClockMs.
+  alertLevel          DefenseAlertLevel @default(peacetime)
+  previousAlertLevel  DefenseAlertLevel @default(peacetime)
+  alertChangedClockMs Float             @default(0)
+  omPriority          DefenseOmPriority @default(balanced)
+  /// R&D and infrastructure stocks (real) and the catalog price index.
+  rdStock             Float             @default(0)
+  infrastructureStock Float             @default(0)
+  priceIndex          Float             @default(1)
+  surgeStartedClockMs Float?
+  /// The defender's declared terrain ("open" … "mountain", "+river" for a river line), used where the map has none.
+  terrainProfile      String?
+  /// An NPC's Richardson response to threats: burden added to its budget's share of GDP (players stay 0).
+  npcBurdenAdjustment Float             @default(0)
+  lastTickClockMs     Float             @default(0)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  country             Country           @relation("CountryDefensePolicy", fields: [countryId], references: [id], onDelete: Cascade)
+}
+
+/// A catalog procurement order: paid 15% down then over its lead time, delivered into the branch's capital and
+/// assets on the nation's realm clock.
+model ProcurementOrder {
+  id               String            @id @default(cuid())
+  countryId        String
+  branchId         String
+  catalogKey       String
+  quantity         Int
+  /// Nominal unit cost now (grows 0.5% for every month the order slips).
+  unitCost         Float
+  /// Real replacement value of one unit (enters the branch's capital on delivery).
+  unitRealValue    Float
+  source           ProcurementSource
+  leadMonths       Int
+  designYear       Int
+  orderedClockMs   Float
+  expectedClockMs  Float
+  paidSoFar        Float             @default(0)
+  status           ProcurementStatus @default(ordered)
+  deliveredClockMs Float?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  branch           MilitaryBranch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([countryId, status])
+  @@index([branchId])
+}
+
+enum BranchDomain {
+  land
+  sea
+  air
+  marines
+  space
+  strategic_missile
+}
+
+enum DefenseDoctrine {
+  defensive
+  balanced
+  expeditionary
+}
+
+enum DefenseAlertLevel {
+  peacetime
+  elevated
+  high
+  war
+}
+
+enum DefenseOmPriority {
+  balanced
+  maintenance
+  training
+}
+
+enum ProcurementSource {
+  domestic
+  import
+}
+
+enum ProcurementStatus {
+  ordered
+  delivered
+  cancelled
 }

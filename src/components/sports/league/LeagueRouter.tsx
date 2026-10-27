@@ -7,11 +7,21 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { SportsShell } from "~/components/sports/core/SportsShell";
-import { type SportsNavSection } from "~/components/sports/core/SportsSidebarNav";
-import { LeagueControlDeck, ReigningChampionWidget } from "~/components/sports/league/LeagueBrandWidgets";
+import { useUrlSyncedSection } from "~/components/sports/core/useUrlSyncedSection";
+import {
+  LEAGUE_SECTION_TABS,
+  type SportsNavSection,
+} from "~/components/sports/core/sportsSections";
+import { SportsSectionTabs } from "~/components/sports/core/SportsSectionTabs";
+import { PageHeader } from "~/components/shell/PageHeader";
+import { ControlSlider } from "iconoir-react";
+import {
+  LeagueControlDeck,
+  ReigningChampionWidget,
+} from "~/components/sports/league/LeagueBrandWidgets";
 import { ChampionshipRevealOverlay } from "~/components/sports/core/ChampionshipRevealOverlay";
 import { ARCHETYPE_LABELS, getSportTheme } from "~/lib/sports/theming";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 
 // Tab Sub-Components
 import { LeagueOverviewTab } from "~/components/sports/league/tabs/LeagueOverviewTab";
@@ -36,32 +46,57 @@ import { SportsCommandPalette } from "~/components/sports/core/SportsCommandPale
 import { type StandingsRow } from "~/components/sports/StandingsTable";
 import { type MatchEvent } from "~/components/sports/LatestResults";
 
-export interface LeagueRouterProps {
+interface LeagueRouterProps {
   leagueId: string;
+}
+
+interface FormMatch {
+  status: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  resolvedIxTime?: number | null;
+  homeTeam: { id: string };
+  awayTeam: { id: string };
+}
+
+/** Each team's last three completed results (oldest first), taken from the played fixtures. */
+function recentFormByTeam(matches: FormMatch[] | undefined): Map<string, Array<"W" | "D" | "L">> {
+  const form = new Map<string, Array<"W" | "D" | "L">>();
+  const played = (matches ?? [])
+    .filter((m) => m.status === "completed" && m.homeScore !== null && m.awayScore !== null)
+    .sort((a, b) => (a.resolvedIxTime ?? 0) - (b.resolvedIxTime ?? 0));
+  for (const m of played) {
+    const diff = m.homeScore! - m.awayScore!;
+    for (const [teamId, result] of [
+      [m.homeTeam.id, diff > 0 ? "W" : diff < 0 ? "L" : "D"],
+      [m.awayTeam.id, diff < 0 ? "W" : diff > 0 ? "L" : "D"],
+    ] as const) {
+      form.set(teamId, [...(form.get(teamId) ?? []), result].slice(-3));
+    }
+  }
+  return form;
 }
 
 export function LeagueRouter({ leagueId }: LeagueRouterProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { focusOrganization, focusMatch } = useSportsFocus();
+  const { focusOrganization } = useSportsFocus();
 
-  const sectionParam = (searchParams.get("section") || searchParams.get("tab")) as SportsNavSection | null;
-  const [activeSection, setActiveSection] = useState<SportsNavSection>(sectionParam || "overview");
+  const sectionParam = (searchParams.get("section") ||
+    searchParams.get("tab")) as SportsNavSection | null;
+  const [activeSection, setActiveSection] = useUrlSyncedSection<SportsNavSection>(
+    sectionParam,
+    "overview"
+  );
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [controlsOpen, setControlsOpen] = useState(false);
   const [editTeamId, setEditTeamId] = useState<string | null>(null);
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
   const [celebratingChampion, setCelebratingChampion] = useState<{
     championName: string;
     seasonNumber: number;
   } | null>(null);
-
-  // Sync state if search params change externally
-  useEffect(() => {
-    if (sectionParam && sectionParam !== activeSection) {
-      setActiveSection(sectionParam);
-    }
-  }, [sectionParam, activeSection]);
 
   // Client-side instant navigation with URL synchronization
   const handleNavigate = useCallback((section: SportsNavSection) => {
@@ -114,7 +149,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
   const simulateMatchDay = api.sports.simulateMatchDay.useMutation({
     onSuccess: () => {
-      soundEffects.bloom();
+      soundCues.success();
       void utils.sports.getLeague.invalidate({ id: leagueId });
       void utils.sports.getSchedule.invalidate({ seasonId: seasonId ?? "" });
       void utils.sports.getStandings.invalidate({ seasonId: seasonId ?? "" });
@@ -123,7 +158,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
   const simulateFullSeason = api.sports.simulateFullSeason.useMutation({
     onSuccess: (data) => {
-      soundEffects.bloom();
+      soundCues.success();
       void utils.sports.getLeague.invalidate({ id: leagueId });
       void utils.sports.getSchedule.invalidate({ seasonId: seasonId ?? "" });
       void utils.sports.getStandings.invalidate({ seasonId: seasonId ?? "" });
@@ -139,7 +174,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
   const transitionSeason = api.sports.transitionToNextSeason.useMutation({
     onSuccess: (data: unknown) => {
-      soundEffects.bloom();
+      soundCues.success();
       void utils.sports.getLeague.invalidate({ id: leagueId });
       const res = data as { newSeason?: { id: string } } | null;
       if (res?.newSeason) {
@@ -155,8 +190,14 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
     { enabled: !!seasonId }
   );
 
+  const { data: schedule } = api.sports.getSchedule.useQuery(
+    { seasonId: seasonId ?? "" },
+    { enabled: !!seasonId }
+  );
+
   const standingsRows = useMemo<StandingsRow[] | undefined>(() => {
     if (!standings) return undefined;
+    const formByTeam = recentFormByTeam(schedule?.matches);
     return standings.map((s, idx) => ({
       id: s.id,
       teamId: s.teamId,
@@ -168,27 +209,29 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
       pointsFor: s.pointsFor ?? 0,
       pointsAgainst: s.pointsAgainst ?? 0,
       rank: s.position ?? idx + 1,
+      recentForm: formByTeam.get(s.teamId),
       color: s.team.color ?? undefined,
       logo: s.team.logo,
       wikiSlug: s.team.wikiSlug,
     }));
-  }, [standings]);
-
-  const { data: schedule } = api.sports.getSchedule.useQuery(
-    { seasonId: seasonId ?? "" },
-    { enabled: !!seasonId }
-  );
+  }, [standings, schedule?.matches]);
 
   const sportTheme = getSportTheme(league?.sportPreset);
   const isBoxing = league?.archetype === "bracket" || league?.sportPreset === "boxing";
   const isF1 = league?.archetype === "circuit" || league?.sportPreset === "f1";
 
-  const visibleSections = useMemo<SportsNavSection[]>(() => {
-    const sections: SportsNavSection[] = ["overview", "standings", "schedule", "teams", "history"];
-    if (isBoxing) sections.splice(3, 0, "bracket");
-    if (isF1) sections.splice(3, 0, "races");
-    if (hasDraftPicks) sections.splice(sections.length - 1, 0, "draft");
-    return sections;
+  const sectionTabs = useMemo(() => {
+    const shown = new Set<SportsNavSection>([
+      "overview",
+      "standings",
+      "schedule",
+      "teams",
+      "history",
+    ]);
+    if (isBoxing) shown.add("bracket");
+    if (isF1) shown.add("races");
+    if (hasDraftPicks) shown.add("draft");
+    return LEAGUE_SECTION_TABS.filter((tab) => shown.has(tab.id));
   }, [isBoxing, isF1, hasDraftPicks]);
 
   // Computed on the server: createdByUserId is a database id, not the Clerk id `useUser` returns.
@@ -199,16 +242,13 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
   let completedCount = 0;
   let totalCount = 0;
-  let progressLabel = "Matches";
 
   if (isCircuit && schedule?.races) {
     totalCount = schedule.races.length;
     completedCount = schedule.races.filter((r) => r.status === "completed").length;
-    progressLabel = "GPs Completed";
   } else if (schedule?.matches) {
     totalCount = schedule.matches.length;
     completedCount = schedule.matches.filter((m) => m.status === "completed").length;
-    progressLabel = "Fixtures Played";
   }
 
   const progressPct = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
@@ -219,7 +259,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
   const nextMatchIxTime = nextScheduledMatch?.scheduledIxTime ?? null;
 
   // Matches for the live matchday tape strip
-  const currentMatchDay = activeSeason ? nextMatchDay ?? 1 : 1;
+  const currentMatchDay = activeSeason ? (nextMatchDay ?? 1) : 1;
   const matchdayTapeMatches = useMemo<MatchdayTapeItem[]>(() => {
     if (!schedule?.matches) return [];
     return schedule.matches
@@ -276,10 +316,10 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
   if (isLoading) {
     return (
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
-        <Skeleton className="h-36 w-full rounded-3xl" />
+        <Skeleton className="rounded-sheet h-36 w-full" />
         <div className="grid gap-6 lg:grid-cols-4">
-          <Skeleton className="h-96 rounded-2xl" />
-          <Skeleton className="h-96 rounded-2xl lg:col-span-3" />
+          <Skeleton className="rounded-card h-96" />
+          <Skeleton className="rounded-card h-96 lg:col-span-3" />
         </div>
       </div>
     );
@@ -287,11 +327,16 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
   if (!league) {
     return (
-      <div className="mx-auto max-w-xl py-20 text-center space-y-4">
-        <h2 className="text-xl font-black text-foreground">Competition Not Found</h2>
-        <p className="text-xs text-muted-foreground">The requested sports league does not exist or has been archived.</p>
-        <Button onClick={() => router.push("/myleague")} className="rounded-xl font-bold text-xs">
-          Return to MyLeague Lobby
+      <div className="mx-auto max-w-xl space-y-4 py-20 text-center">
+        <h2 className="text-title-2 text-label">Competition not found</h2>
+        <p className="text-footnote text-label-secondary">
+          The requested sports league does not exist or has been archived.
+        </p>
+        <Button
+          onClick={() => router.push("/myleague")}
+          className="rounded-row text-footnote font-semibold"
+        >
+          Return to MyLeague lobby
         </Button>
       </div>
     );
@@ -303,7 +348,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
   const heroSection = (
     <div className="space-y-4">
-      {/* ─── 1. Unified Competition Masthead ─── */}
+      {/* 1. Unified Competition Masthead */}
       <LeagueMasthead
         league={league}
         archetypeLabel={archetypeLabel}
@@ -316,14 +361,14 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
         canManageLeague={canManageLeague}
         onOpenSettings={() => setSettingsOpen(true)}
         onSimulateMatchDay={
-          activeSeason && nextMatchDay
+          canManageLeague && activeSeason && nextMatchDay
             ? () => simulateMatchDay.mutate({ seasonId: activeSeason.id, matchDay: nextMatchDay })
             : undefined
         }
         isSimulatingMatchDay={simulateMatchDay.isPending}
       />
 
-      {/* ─── 2. Signature Live Matchday Tape ─── */}
+      {/* 2. Signature Live Matchday Tape */}
       {matchdayTapeMatches.length > 0 && (
         <MatchdayTape
           matches={matchdayTapeMatches}
@@ -334,28 +379,24 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
     </div>
   );
 
-  const hasSidebarExtra = canManageLeague || Boolean(lastCompletedSeason?.champion);
+  const sideLabel = canManageLeague ? "League controls" : "Reigning champion";
+  const hasSideContent = canManageLeague || Boolean(lastCompletedSeason?.champion);
 
-  const sidebarExtra = hasSidebarExtra ? (
+  const sideContent = hasSideContent ? (
     <div className="space-y-4">
       {canManageLeague && (
         <LeagueControlDeck
           leagueId={league.id}
           canManageLeague={canManageLeague}
-          isCanonical={league.isCanonical}
           activeSeason={activeSeason}
           latestSeason={latestSeason}
-          nextMatchDay={nextMatchDay}
           hasMatchesPlayed={completedCount > 0}
           onOpenSettings={() => setSettingsOpen(true)}
-          onSimulateMatchDay={
-            activeSeason && nextMatchDay
-              ? () => simulateMatchDay.mutate({ seasonId: activeSeason.id, matchDay: nextMatchDay })
-              : undefined
-          }
           isSimulatingMatchDay={simulateMatchDay.isPending}
           onSimulateFullSeason={
-            activeSeason ? () => simulateFullSeason.mutate({ seasonId: activeSeason.id }) : undefined
+            activeSeason
+              ? () => simulateFullSeason.mutate({ seasonId: activeSeason.id })
+              : undefined
           }
           isSimulatingFullSeason={simulateFullSeason.isPending}
           onTransitionSeason={
@@ -394,8 +435,6 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
             leagueId={league.id}
             activeSeasonId={activeSeason?.id}
             latestSeasonId={latestSeason?.id}
-            sportPreset={league.sportPreset}
-            archetype={league.archetype}
             onTeamClick={(tId) => focusOrganization(tId)}
             onMatchClick={handleMatchClick}
           />
@@ -403,10 +442,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
       case "teams":
         return (
-          <LeagueTeamsTab
-            teams={league.teams}
-            onTeamClick={(tId) => focusOrganization(tId)}
-          />
+          <LeagueTeamsTab teams={league.teams} onTeamClick={(tId) => focusOrganization(tId)} />
         );
 
       case "bracket":
@@ -439,19 +475,13 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
         );
 
       case "history":
-        return (
-          <LeagueArchiveTab
-            leagueId={league.id}
-            sportPreset={league.sportPreset}
-          />
-        );
+        return <LeagueArchiveTab leagueId={league.id} sportPreset={league.sportPreset} />;
 
       case "overview":
       default:
         return (
           <LeagueOverviewTab
             leagueId={league.id}
-            seasonId={seasonId}
             activeSeason={activeSeason}
             latestSeason={latestSeason}
             standings={standings}
@@ -459,15 +489,21 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
             latestResultsMatches={latestResultsMatches}
             nextMatchDay={nextMatchDay}
             nextMatchIxTime={nextMatchIxTime}
-            progressPct={progressPct}
             onNavigate={handleNavigate}
             onTeamClick={(tId) => focusOrganization(tId)}
             onMatchClick={handleMatchClick}
-            onSimulateMatchDay={(sId: string, mDay: number) => simulateMatchDay.mutate({ seasonId: sId, matchDay: mDay })}
+            onSimulateMatchDay={
+              canManageLeague
+                ? (sId: string, mDay: number) =>
+                    simulateMatchDay.mutate({ seasonId: sId, matchDay: mDay })
+                : undefined
+            }
             isSimulatingMatchDay={simulateMatchDay.isPending}
-            onSimulateFullSeason={(sId: string) => simulateFullSeason.mutate({ seasonId: sId })}
-            isSimulatingFullSeason={simulateFullSeason.isPending}
-            onTransitionSeason={(sId: string) => transitionSeason.mutate({ seasonId: sId })}
+            onTransitionSeason={
+              canManageLeague
+                ? (sId: string) => transitionSeason.mutate({ seasonId: sId })
+                : undefined
+            }
             isTransitioningSeason={transitionSeason.isPending}
             onStartSeason={(lId: string) => startSeason.mutate({ leagueId: lId })}
             isStartingSeason={startSeason.isPending}
@@ -479,14 +515,42 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
   return (
     <>
       <SportsShell
-        activeSection={activeSection}
-        onNavigate={handleNavigate}
         sportPreset={league.sportPreset}
-        visibleSections={visibleSections}
+        header={
+          <PageHeader
+            title={league.name}
+            subtitle={sportTheme.name}
+            back={{ href: "/myleague", label: "Leagues" }}
+            bleed
+            actions={
+              hasSideContent ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="xl:hidden"
+                  onClick={() => setControlsOpen(true)}
+                >
+                  <ControlSlider />
+                  {sideLabel}
+                </Button>
+              ) : undefined
+            }
+          />
+        }
         heroSection={heroSection}
-        sidebarExtra={sidebarExtra}
+        sideContent={sideContent}
+        sideTitle={sideLabel}
+        sideOpen={controlsOpen}
+        onSideOpenChange={setControlsOpen}
       >
-        {renderSectionContent()}
+        <SportsSectionTabs
+          label="League views"
+          tabs={sectionTabs}
+          active={activeSection}
+          onChange={handleNavigate}
+        >
+          {renderSectionContent()}
+        </SportsSectionTabs>
       </SportsShell>
 
       {/* Match Center Dialog */}
@@ -509,18 +573,19 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
       />
 
       {/* Team Edit Modal */}
-      {editTeamId && (() => {
-        const t = league.teams?.find((tm) => tm.id === editTeamId);
-        if (!t) return null;
-        return (
-          <TeamSettingsModal
-            team={t}
-            open={!!editTeamId}
-            onOpenChange={(o) => !o && setEditTeamId(null)}
-            onSaved={() => void utils.sports.getLeague.invalidate({ id: league.id })}
-          />
-        );
-      })()}
+      {editTeamId &&
+        (() => {
+          const t = league.teams?.find((tm) => tm.id === editTeamId);
+          if (!t) return null;
+          return (
+            <TeamSettingsModal
+              team={t}
+              open={!!editTeamId}
+              onOpenChange={(o) => !o && setEditTeamId(null)}
+              onSaved={() => void utils.sports.getLeague.invalidate({ id: league.id })}
+            />
+          );
+        })()}
 
       {/* Full-Screen Championship Takeover Reveal */}
       {celebratingChampion && (
@@ -538,11 +603,14 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
       <SportsCommandPalette
         onNavigateSection={(sec) => handleNavigate(sec as SportsNavSection)}
         onSimulateNext={
-          activeSeason && schedule?.matches
+          canManageLeague && activeSeason && schedule?.matches
             ? () => {
                 const nextMatch = schedule.matches.find((m) => m.status === "scheduled");
                 if (nextMatch) {
-                  simulateMatchDay.mutate({ seasonId: activeSeason.id, matchDay: nextMatch.matchDay });
+                  simulateMatchDay.mutate({
+                    seasonId: activeSeason.id,
+                    matchDay: nextMatch.matchDay,
+                  });
                 }
               }
             : undefined
@@ -552,5 +620,3 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
     </>
   );
 }
-
-export default LeagueRouter;

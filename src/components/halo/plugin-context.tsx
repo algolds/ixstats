@@ -1,9 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useRef, useSyncExternalStore } from "react";
-import type { DIPlugin, DIViewProps } from "./types";
+import type { DIPlugin } from "./types";
 
-// ── Plugin Registry (external store for React 19 concurrency safety) ──
+// Plugin Registry (external store for React 19 concurrency safety)
 
 type Listener = () => void;
 
@@ -44,7 +44,7 @@ class DIPluginRegistry {
   }
 }
 
-// ── Context ──
+// Context
 
 interface DIPluginContextValue {
   registry: DIPluginRegistry;
@@ -52,7 +52,7 @@ interface DIPluginContextValue {
 
 const DIPluginContext = createContext<DIPluginContextValue | null>(null);
 
-// ── Provider ──
+// Provider
 
 export function DIPluginProvider({ children }: { children: React.ReactNode }) {
   const registryRef = useRef<DIPluginRegistry | null>(null);
@@ -64,8 +64,6 @@ export function DIPluginProvider({ children }: { children: React.ReactNode }) {
   // oxlint-disable-next-line
   return <DIPluginContext value={{ registry: registryRef.current }}>{children}</DIPluginContext>;
 }
-
-// ── Hooks ──
 
 const EMPTY_PLUGINS_MAP: Map<string, DIPlugin> = new Map();
 const DUMMY_SUBSCRIBE = () => () => {};
@@ -122,29 +120,4 @@ export function useActiveDIPlugin(): DIPlugin | null {
   }
 
   return best;
-}
-
-/**
- * Get all registered plugins (for rendering multiple badges, etc.)
- */
-export function useAllDIPlugins(): DIPlugin[] {
-  const ctx = useContext(DIPluginContext);
-  const registry = ctx?.registry;
-  const plugins = useSyncExternalStore(
-    registry?.subscribe ?? DUMMY_SUBSCRIBE,
-    registry?.getSnapshot ?? DUMMY_SNAPSHOT,
-    registry?.getSnapshot ?? DUMMY_SNAPSHOT
-  );
-
-  if (!registry) return [];
-  return Array.from(plugins.values());
-}
-
-/**
- * Look up a specific expanded view component from the active plugin.
- */
-export function useDIPluginView(viewName: string): React.ComponentType<DIViewProps> | null {
-  const plugin = useActiveDIPlugin();
-  if (!plugin?.expandedViews) return null;
-  return plugin.expandedViews[viewName] ?? null;
 }

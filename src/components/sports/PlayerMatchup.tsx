@@ -2,30 +2,30 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
-import { getPlayerPhotoUrl } from "~/lib/sports/photos";
+import { getPlayerPhotoUrl, playerPhotoFallbackUrl } from "~/lib/sports/photos";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
+import { Card } from "~/components/ui/card";
 
-export interface MatchupPlayer {
+interface MatchupPlayer {
   id: string;
   firstName: string;
   lastName: string;
   position: string;
   imageUrl?: string | null;
-  overallRating: number;
+  overallRating?: number;
   teamColor: string;
   teamLogo?: string | null;
   ratings: Record<string, number | undefined>;
 }
 
-export interface PlayerMatchupProps {
+interface PlayerMatchupProps {
   playerA: MatchupPlayer;
   playerB: MatchupPlayer;
   className?: string;
 }
 
 export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProps) {
-  const fallbackPhoto = "/images/sportyblocks/player-1.png";
+  const fallbackPhoto = playerPhotoFallbackUrl();
 
   const colorA = playerA.teamColor ?? "#3b82f6";
   const colorB = playerB.teamColor ?? "#ef4444";
@@ -37,25 +37,11 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
     .filter((k) => k !== "overall" && k !== "form" && k !== "injuredUntil")
     .slice(0, 5);
 
-  if (statKeys.length === 0) {
-    // Fallback comparison keys
-    statKeys.push("offense", "defense", "stamina", "speed");
-  }
-
   return (
-    <FacetCard
-      depth={2}
-      interactive="hover"
-      className={cn(
-        "border-border/40 bg-card/90 mx-auto w-full max-w-[550px] overflow-hidden rounded-3xl border p-6 shadow-xl",
-        className
-      )}
-    >
+    <Card padding="lg" className={cn("mx-auto w-full max-w-[550px] overflow-hidden", className)}>
       {/* Title / Header */}
       <div className="mb-6 text-center">
-        <h3 className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
-          Head to Head Comparison
-        </h3>
+        <h3 className="text-label-secondary text-headline">Head to head comparison</h3>
       </div>
 
       <div className="mb-8 grid grid-cols-[1fr_120px_1fr] items-center gap-4">
@@ -63,32 +49,30 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
         <div className="flex flex-col items-center text-center">
           <div className="relative mb-3">
             <div
-              className="border-border/30 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border p-1 shadow-md"
-              style={{
-                background: `linear-gradient(135deg, ${colorA}dd, ${colorA}44)`,
-              }}
+              className="border-separator shadow-card flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border p-1"
+              style={{ backgroundColor: `${colorA}66` }}
             >
               <img
                 src={getPlayerPhotoUrl(playerA)}
                 alt={`${playerA.firstName} ${playerA.lastName}`}
-                className="h-full w-full rounded-full object-contain drop-shadow-md"
+                className="h-full w-full rounded-full object-contain"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = fallbackPhoto;
                 }}
               />
             </div>
             <div
-              className="absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-xs font-bold text-white tabular-nums shadow-md"
+              className="border-separator text-footnote shadow-card absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border font-semibold text-white tabular-nums"
               style={{ backgroundColor: colorA }}
             >
-              {playerA.overallRating}
+              {playerA.overallRating ?? "—"}
             </div>
           </div>
-          <h4 className="text-foreground text-sm leading-tight font-semibold">
+          <h4 className="text-label text-headline leading-tight">
             {playerA.firstName} {playerA.lastName}
           </h4>
           <PositionTooltip position={playerA.position}>
-            <span className="text-muted-foreground mt-1 cursor-help text-xs font-semibold tracking-wider uppercase decoration-dotted hover:underline">
+            <span className="text-label-secondary text-footnote mt-1 cursor-help decoration-dotted hover:underline">
               {playerA.position}
             </span>
           </PositionTooltip>
@@ -96,41 +80,37 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
 
         {/* VS Indicator */}
         <div className="flex flex-col items-center justify-center">
-          <span className="text-muted-foreground/30 dark:text-muted-foreground/20 text-xl font-bold tracking-widest uppercase">
-            VS
-          </span>
+          <span className="text-label-tertiary text-title-2">VS</span>
         </div>
 
         {/* Player B Details */}
         <div className="flex flex-col items-center text-center">
           <div className="relative mb-3">
             <div
-              className="border-border/30 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border p-1 shadow-md"
-              style={{
-                background: `linear-gradient(135deg, ${colorB}dd, ${colorB}44)`,
-              }}
+              className="border-separator shadow-card flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border p-1"
+              style={{ backgroundColor: `${colorB}66` }}
             >
               <img
                 src={getPlayerPhotoUrl(playerB)}
                 alt={`${playerB.firstName} ${playerB.lastName}`}
-                className="h-full w-full rounded-full object-contain drop-shadow-md"
+                className="h-full w-full rounded-full object-contain"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = fallbackPhoto;
                 }}
               />
             </div>
             <div
-              className="absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-xs font-bold text-white tabular-nums shadow-md"
+              className="border-separator text-footnote shadow-card absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border font-semibold text-white tabular-nums"
               style={{ backgroundColor: colorB }}
             >
-              {playerB.overallRating}
+              {playerB.overallRating ?? "—"}
             </div>
           </div>
-          <h4 className="text-foreground text-sm leading-tight font-semibold">
+          <h4 className="text-label text-headline leading-tight">
             {playerB.firstName} {playerB.lastName}
           </h4>
           <PositionTooltip position={playerB.position}>
-            <span className="text-muted-foreground mt-1 cursor-help text-xs font-semibold tracking-wider uppercase decoration-dotted hover:underline">
+            <span className="text-label-secondary text-footnote mt-1 cursor-help decoration-dotted hover:underline">
               {playerB.position}
             </span>
           </PositionTooltip>
@@ -140,46 +120,45 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
       {/* Comparison Sliders / Bars */}
       <div className="space-y-4">
         {statKeys.map((key) => {
-          const valA = Number(playerA.ratings[key] ?? 50);
-          const valB = Number(playerB.ratings[key] ?? 50);
-          const total = valA + valB;
-          const pctA = total > 0 ? (valA / total) * 100 : 50;
+          const valA = playerA.ratings[key];
+          const valB = playerB.ratings[key];
+          const total = (valA ?? 0) + (valB ?? 0);
+          const pctA =
+            valA !== undefined && valB !== undefined && total > 0 ? (valA / total) * 100 : 50;
 
           return (
-            <div key={key} className="space-y-1.5">
-              <div className="flex justify-between text-xs font-semibold">
+            <div key={key} className="space-y-2">
+              <div className="text-footnote flex justify-between font-semibold">
                 <span
                   className={cn(
                     "tabular-nums",
-                    valA > valB ? "text-foreground font-bold" : "text-muted-foreground"
+                    (valA ?? 0) > (valB ?? 0) ? "text-label font-semibold" : "text-label-secondary"
                   )}
                 >
-                  {valA}
+                  {valA ?? "—"}
                 </span>
-                <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                  {key}
-                </span>
+                <span className="text-label-secondary text-eyebrow">{key}</span>
                 <span
                   className={cn(
                     "tabular-nums",
-                    valB > valA ? "text-foreground font-bold" : "text-muted-foreground"
+                    (valB ?? 0) > (valA ?? 0) ? "text-label font-semibold" : "text-label-secondary"
                   )}
                 >
-                  {valB}
+                  {valB ?? "—"}
                 </span>
               </div>
 
               {/* Progress Bar with Split */}
-              <div className="bg-muted/40 relative flex h-2 w-full overflow-hidden rounded-full">
+              <div className="bg-fill-3 relative flex h-2 w-full overflow-hidden rounded-full">
                 <div
-                  className="h-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
+                  className="ease-out-facet h-full transition-[width] duration-500"
                   style={{
                     width: `${pctA}%`,
                     backgroundColor: colorA,
                   }}
                 />
                 <div
-                  className="h-full flex-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
+                  className="ease-out-facet h-full flex-1 transition-[width] duration-500"
                   style={{
                     backgroundColor: colorB,
                   }}
@@ -189,8 +168,6 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
           );
         })}
       </div>
-    </FacetCard>
+    </Card>
   );
 }
-
-export default PlayerMatchup;

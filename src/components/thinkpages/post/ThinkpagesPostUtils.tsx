@@ -9,20 +9,25 @@ import {
   Crown,
   Journal as Newspaper,
   Group as Users,
+  User as UserIcon,
 } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { useRelativeTime } from "~/hooks/useRelativeTime";
+import { cn } from "~/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 
-export const ACCOUNT_TYPE_ICONS: Record<string, React.ElementType> = {
+const ACCOUNT_TYPE_ICONS: Record<string, React.ElementType> = {
   government: Crown,
   media: Newspaper,
   citizen: Users,
+  personal: UserIcon,
 };
 
-export const ACCOUNT_TYPE_COLORS: Record<string, string> = {
-  government: "text-amber-500 bg-amber-500/20",
-  media: "text-blue-500 bg-blue-500/20",
-  citizen: "text-green-500 bg-green-500/20",
+const ACCOUNT_TYPE_COLORS: Record<string, string> = {
+  government: "text-yellow bg-yellow/20",
+  media: "text-blue bg-blue/20",
+  citizen: "text-green bg-green/20",
+  personal: "text-label-secondary bg-fill-2",
 };
 
 export const REACTION_ICONS: Record<string, React.ElementType> = {
@@ -93,11 +98,43 @@ export function RelativeTimestamp({ timestamp }: { timestamp: Date | string | nu
   const hoursDiff = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 
   return (
-    <span
-      className="text-muted-foreground cursor-help text-sm"
-      title={`IxTime: ${date.toLocaleString()}`}
-    >
+    <span className="text-label-secondary text-body cursor-help" title={date.toLocaleString()}>
       {hoursDiff > 24 ? date.toLocaleDateString() : relativeTime}
     </span>
+  );
+}
+
+export const accountTypeColor = (type?: string, fallback = "bg-fill-2 text-label-secondary") =>
+  ACCOUNT_TYPE_COLORS[type ?? ""] || fallback;
+
+export function AccountTypeIcon({ type, className }: { type?: string; className?: string }) {
+  const Icon = ACCOUNT_TYPE_ICONS[type ?? ""] || Users;
+  return <Icon className={className} aria-hidden />;
+}
+
+export const getInitials = (name = "U") =>
+  name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase();
+
+/** Account avatar with an initials fallback tinted by account type. */
+export function AccountAvatar({
+  account,
+  className,
+  fallbackClassName,
+}: {
+  account?: { profileImageUrl?: string | null; displayName?: string; accountType?: string } | null;
+  className?: string;
+  fallbackClassName?: string;
+}) {
+  return (
+    <Avatar className={className}>
+      <AvatarImage src={proxyDiscordUrl(account?.profileImageUrl || "")} />
+      <AvatarFallback className={cn(accountTypeColor(account?.accountType), fallbackClassName)}>
+        {getInitials(account?.displayName)}
+      </AvatarFallback>
+    </Avatar>
   );
 }

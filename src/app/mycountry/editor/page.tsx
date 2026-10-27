@@ -1,56 +1,37 @@
 "use client";
 
-import { useUser } from "~/context/auth-context";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { usePageTitle } from "~/hooks/usePageTitle";
-import { createUrl } from "~/lib/utils";
-import { useUserCountry } from "~/hooks/useUserCountry";
-import { BuilderRouter } from "~/app/builder/components/BuilderRouter";
-import { GlobalBuilderLoading } from "~/app/builder/components/GlobalBuilderLoading";
+import { useUser } from "~/context/auth-context";
+import { api } from "~/trpc/react";
+import { CountryEditor, EditorSkeleton } from "./_components/CountryEditor";
 
 export const dynamic = "force-dynamic";
 
-export default function MyCountryEditor() {
-  usePageTitle({ title: "Country Editor" });
+/** Where a player without a nation goes instead: founding one. */
+const NO_NATION_REDIRECT = "/builder";
 
+/**
+ * The country editor for the active nation. Keyed by the nation's id, so switching nation mounts
+ * a fresh editor and no section can ever save one nation's values into another.
+ */
+export default function MyCountryEditorPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
-  const { country, profileLoading, countryLoading, userProfile } = useUserCountry();
+  const profile = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
+  const countryId = profile.data?.countryId ?? null;
 
-  if (!isLoaded || profileLoading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <GlobalBuilderLoading message="Loading profile..." variant="compact" />
-      </div>
-    );
-  }
+  const redirectTo =
+    isLoaded && !user
+      ? "/sign-in"
+      : isLoaded && profile.isSuccess && !countryId
+        ? NO_NATION_REDIRECT
+        : null;
 
-  if (!user) {
-    router.push(createUrl("/sign-in"));
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <GlobalBuilderLoading message="Redirecting to sign in..." variant="compact" />
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (redirectTo) router.replace(redirectTo);
+  }, [redirectTo, router]);
 
-  if (!userProfile?.countryId) {
-    router.push(createUrl("/mycountry/builder"));
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <GlobalBuilderLoading message="No country found. Redirecting to builder..." variant="compact" />
-      </div>
-    );
-  }
-
-  if (countryLoading || !country) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <GlobalBuilderLoading message="Loading country data..." variant="compact" />
-      </div>
-    );
-  }
-
-  return <BuilderRouter mode="edit" countryId={country.id} />;
+  if (!countryId || redirectTo) return <EditorSkeleton />;
+  return <CountryEditor key={countryId} countryId={countryId} />;
 }
-

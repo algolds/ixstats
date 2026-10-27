@@ -3,12 +3,13 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { createMessagingService } from "~/server/modules/messaging";
-import { notificationAPI } from "~/lib/notifications/api";
-import { getThinkPagesBroadcaster } from "~/server/websocket-server";
-import { forumBridge } from "~/server/modules/forum";
-import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
+import { MAX_GROUP_PARTICIPANTS } from "~/server/modules/messaging";
+import { mapMessagingErrors, messagingFor } from "./_service";
 
 const MessageFolderSchema = z.enum([
   "inbox",
@@ -23,6 +24,7 @@ const MessageFolderSchema = z.enum([
   "thinktank",
   "wiki",
   "forum",
+  "requests",
 ]);
 
 const MessageSourceSchema = z.enum([
@@ -48,13 +50,7 @@ export const messagesConversationsRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
       return await messagingService.getConversationsByFolder(ctx.auth.userId, {
         folder: input.folder as any,
@@ -69,15 +65,12 @@ export const messagesConversationsRouter = createTRPCRouter({
   getConversation: protectedProcedure
     .input(z.object({ conversationId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
-      return await messagingService.getConversation(ctx.auth.userId, input.conversationId);
+      return await mapMessagingErrors(
+        () => messagingService.getConversation(ctx.auth.userId, input.conversationId),
+        { forbidden: "You are not a participant in this conversation" }
+      );
     }),
 
   /**
@@ -86,13 +79,7 @@ export const messagesConversationsRouter = createTRPCRouter({
   getFolderCounts: protectedProcedure
     .input(z.object({ userId: z.string().optional().default("") }).optional())
     .query(async ({ ctx }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
       return await messagingService.getFolderCounts(ctx.auth.userId);
     }),
@@ -100,14 +87,8 @@ export const messagesConversationsRouter = createTRPCRouter({
   /**
    * Mark all conversations/messages as read for the current user.
    */
-  markAllAsRead: protectedProcedure.mutation(async ({ ctx }) => {
-    const messagingService = createMessagingService({
-      db: ctx.db,
-      notifications: notificationAPI,
-      websocket: getThinkPagesBroadcaster(),
-      forumBridge,
-      wikiBridge: wikiTalkBridge,
-    });
+  markAllAsRead: rateLimitedMutationProcedure.mutation(async ({ ctx }) => {
+    const messagingService = messagingFor(ctx);
 
     return await messagingService.markAllAsRead(ctx.auth.userId);
   }),
@@ -115,10 +96,14 @@ export const messagesConversationsRouter = createTRPCRouter({
   /**
    * Create a conversation (source-aware).
    */
-  createConversation: protectedProcedure
+  createConversation: rateLimitedMutationProcedure
     .input(
       z.object({
-        participantIds: z.array(z.string().min(1)),
+        // The creator is added on top, so a group holds at most MAX_GROUP_PARTICIPANTS.
+        participantIds: z
+          .array(z.string().min(1))
+          .min(1)
+          .max(MAX_GROUP_PARTICIPANTS - 1),
         source: MessageSourceSchema.optional().default("thinkshare"),
         name: z.string().optional(),
         conversationType: z.enum(["personal", "diplomatic", "official"]).optional(),
@@ -131,18 +116,20 @@ export const messagesConversationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
-      return await messagingService.createConversation(ctx.auth.userId, {
-        participantIds: input.participantIds,
-        subject: input.name,
-        source: input.source as any,
-      });
+      return await mapMessagingErrors(
+        () =>
+          messagingService.createConversation(ctx.auth.userId, {
+            participantIds: input.participantIds,
+            subject: input.name,
+            source: input.source as any,
+            conversationType: input.conversationType,
+            diplomaticClassification: input.diplomaticClassification,
+            priority: input.priority,
+            channelType: input.channelType,
+          }),
+        { forbidden: "You cannot start this conversation" }
+      );
     }),
 });

@@ -1,11 +1,10 @@
 "use client";
-// src/components/wiki-os/editor/components/WikiEditorStatusBar.tsx
 // Bottom status bar for WikiOS editors with cursor position and document stats.
 
 import React from "react";
 import type { EditorCursorPos } from "../types";
 
-export interface WikiEditorStatusBarProps {
+interface WikiEditorStatusBarProps {
   cursorPos: EditorCursorPos;
   wordCount: number;
   lineCount: number;

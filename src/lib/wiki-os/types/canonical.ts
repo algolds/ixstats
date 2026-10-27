@@ -27,31 +27,6 @@ export interface WikiArticleCardData {
 }
 
 /**
- * Universal canonical wiki feed activity representation for Dashboard and timelines.
- */
-export interface WikiFeedCardData {
-  id: string;
-  pageTitle: string;
-  wikiUrl: string;
-  excerpt: string;
-  thumbnail: string | null;
-  author: {
-    id: string;
-    name: string;
-    avatarUrl?: string | null;
-  };
-  timestamp: Date | string;
-  diff: {
-    oldLen: number;
-    newLen: number;
-    delta: number;
-  };
-  comment: string;
-  type: "new" | "edit" | "log";
-  source: WikiSource;
-}
-
-/**
  * Universal canonical category portal representation.
  */
 export interface WikiCategoryPortalData {
@@ -72,21 +47,6 @@ export interface WikiCategoryPortalData {
     slug: string;
     name: string;
   } | null;
-}
-
-/**
- * Universal canonical user wiki identity representation for Passports and profiles.
- */
-export interface WikiUserProfileData {
-  userId?: number | null;
-  username: string;
-  exists: boolean;
-  editCount: number;
-  registrationDate: string | null;
-  groups: string[];
-  recentEdits: WikiFeedCardData[];
-  lorewardScore: number;
-  loreRank?: number | null;
 }
 
 /**

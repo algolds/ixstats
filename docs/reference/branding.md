@@ -21,8 +21,7 @@ IxStates (platform/ecosystem)         ← versioned: 1.4.0 "Lobster Crosby" (Maj
 │   └── IxVault (wallet/economy/trading cards)
 
 ├── Engines (internal-only simulation cores — single integer)
-│   ├── MyCountry  (nation-scoped deterministic sim)
-│   ├── Statecraft (executive intent parsing, power brokers, CivCap throughput, recon research)
+│   ├── MyCountry  (nation-scoped deterministic sim; includes the Statecraft code: intent parsing, power brokers, executive bandwidth throughput, recon research. Statecraft has no engine version of its own)
 │   ├── Concord    (living-world sim — time, diplomacy, crises, NPCs)
 │   └── Atlas      (spatial foundation — worldgen, geo, maps; powers IxWorld)
 
@@ -42,7 +41,7 @@ IxStates (platform/ecosystem)         ← versioned: 1.4.0 "Lobster Crosby" (Maj
 │   └── Facet (glass / refraction / depth design language)
 
 ├── Inherits platform version (NOT independently versioned)
-│   ├── IxForum (community — not promoted to an App yet)
+│   ├── IxForum (community; the XenForo bridge is retired, the forum is ThinkPages)
 │   ├── Platform Utilities: IxTime (game clock), IxnayID (cross-platform identity)
 │   ├── Experimental / Labs: Vexel, Onoma, Strata, Dynas, Nomora (preview label only)
 │   └── Navigation Hubs: Dashboard, Explore / Countries, Feed
@@ -50,7 +49,6 @@ IxStates (platform/ecosystem)         ← versioned: 1.4.0 "Lobster Crosby" (Maj
 └── Infrastructure
     ├── Notifications
     ├── Help System
-    ├── Consent Manager (c15t)
     ├── Flag Service
     ├── WebSocket / Real-Time
     ├── Cron Jobs
@@ -105,7 +103,7 @@ IxStates (platform/ecosystem)         ← versioned: 1.4.0 "Lobster Crosby" (Maj
 
 ## 2. Apps
 
-Integrated apps with their own distinct brand identity that ship and break independently (each carries a single capability integer). **IxForum** is documented here for reference but is **not** an independently-versioned App yet — it inherits the platform version until promoted.
+Integrated apps with their own distinct brand identity that ship and break independently (each carries a single capability integer). **IxForum** (§2.2) was never promoted to an App; its XenForo bridge is retired and the forum is the native ThinkPages forum.
 
 ### 2.1 IxWorld (Maps)
 
@@ -115,7 +113,7 @@ Integrated apps with their own distinct brand identity that ship and break indep
 | **Nav icon**     | Compass (Lucide)                                                                                                                               |
 | **Accent hex**   | `#06b6d4` (cyan-500)                                                                                                                           |
 | **Standalone**   | IxWorld — `maps.ixwiki.com` (port 3002/3003, `NEXT_PUBLIC_IXWORLD_STANDALONE`)                                                                 |
-| **Prisma**       | `maps.prisma` (ProceduralWorld, Realm, CountrySovereignty, TransportRoute, TransportHub, StoryPin, ElevationZone, City, PointOfInterest, etc.) |
+| **Prisma**       | `maps.prisma` (WorldPreset, WorldPresetVersion, Realm, CountrySovereignty, TransportRoute, TransportHub, StoryPin, ElevationZone, City, PointOfInterest, etc.) |
 | **Key files**    | `src/app/maps/`, `src/components/maps/{core,editor,overlays,pipeline,shared,widgets}/`, `src/lib/maps/`                                                     |
 | **Map overlays** | Choropleth, Geopolitical, RiskHeatmap, TradeRoute, Transport                                                                                   |
 | **Map widgets**  | CountryMapEmbed, DashboardMapWidget, MiniWorldMap                                                                                              |
@@ -132,20 +130,13 @@ Integrated apps with their own distinct brand identity that ship and break indep
 | **Transport Network** | Routes & hubs with generator (`src/lib/economy/transport-generator.ts`)                  |
 | **SVG Upload**        | Flag/map SVG management (`src/lib/flags/svg-parser.ts`)                                |
 
-### 2.2 IxForum (Community)
+### 2.2 IxForum (Community, retired bridge)
 
-| Token              | Value                                                                                                                     |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| **Version**        | `IXFORUM_VERSION` (from registry) — **inherits the platform version**; not promoted to an independently-versioned App yet |
-| **Nav icon**       | MessageSquare (Lucide)                                                                                                    |
-| **Accent hex**     | `#f97316` (orange-500)                                                                                                    |
-| **Shine**          | `["#f97316", "#ea580c", "#fb923c"]`                                                                                       |
-| **Glow**           | `text-orange-400`                                                                                                         |
-| **Glass var**      | `--glass-forum: #f97316`                                                                                                  |
-| **Integration**    | XenForo REST API proxy (tRPC `forum.ts`, 1185 lines)                                                                      |
-| **Routes**         | `src/app/(forum)/forum/`, `src/components/forum/{composer,reader,shared}/`                                                |
-| **Widgets**        | ForumMiniCard, ForumRarityBar at `/(widget)/forum/cards/[username]/`                                                      |
-| **Layout tagline** | `Powered by IxForum v{IXFORUM_VERSION}`                                                                                   |
+The XenForo bridge that carried the IxForum name (`/forum`, its orange accent, the forum widget cards and the
+Halo forum plugin) was retired in ThinkPages forum phase 4b. The community forum is the native ThinkPages forum
+at `/thinkpages`, in ThinkPages' Commons leather tint; `/forum/*` no longer exists. Whether `IXFORUM_VERSION` stays in
+the version registry is an open owner decision (`docs/reference/revision.md` box 6 states the current facts but keeps its name and
+version until then).
 
 ### 2.3 IxVault (Wallet / Economy / Trading Cards)
 
@@ -157,20 +148,19 @@ Integrated apps with their own distinct brand identity that ship and break indep
 | **Glow**       | `text-cyan-400`                                                                                                                               |
 | **PWA**        | `IxCards - Trading Card Game` manifest with 8 icon sizes, 3 shortcuts                                                                         |
 | **Prisma**     | `cards.prisma` (MyVault, Card, VaultTransaction, CardValueHistory, etc.)                                                                      |
-| **Key routes** | `/vault/{cards,collections,crafting,create,import,inventory,lore-gallery,lore-generator,market,marketplace,ns-deck,ns-library,packs,trading}` |
+| **Key routes** | `/vault/cards/{mine,sets,market,explore}`, `/vault/store`, `/vault/import`, `/vault/achievements` |
 
 #### Sub-systems
 
 | Sub-system           | Description                                                                                               |
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
-| **IxCards**          | Trading card game — Phase 1, replaces legacy IxBank. Card types: Nation, Lore, NS Import, Special.        |
-| **IxCredits**        | Virtual currency (`src/components/vault/IxCreditsSymbol.tsx`, `src/lib/economy/budget-vault-calculator.ts`)       |
-| **Card Crafting**    | Card creation/combination with recipes. Prisma: `CraftingRecipe`, `CraftingHistory`. tRPC: `crafting/`. |
-| **Card Trading**     | Peer-to-peer trades. Prisma: `CardTrade`, `TradeOffer`. tRPC: `trading/`.                               |
+| **IxCards**          | Trading card game — Phase 1, replaces legacy IxBank. Card types: Nation, Lore, NS, Special, Trophy.       |
+| **IxCredits**        | Virtual currency (`src/components/vault/IxCreditsSymbol.tsx`)       |
+| **Card Trading**     | Peer-to-peer trades. Prisma: `TradeOffer`. tRPC: `trading/`.                                             |
 | **Card Marketplace** | Auction & trading platform. Prisma: `CardAuction`, `AuctionBid`. tRPC: `card-market/`.                  |
 | **Card Packs**       | Pack purchase & animated opening. tRPC: `card-packs/`. 🎁 emoji.                                        |
 | **Lore Cards**       | Wiki-generated narrative cards. Prisma: `LoreCardRequest`. tRPC: `lore-cards/`.                         |
-| **NS Import / Sync** | NationStates data import and synchronization. Prisma: `NSImport`, `SyncLog`, `SyncCheckpoint`.            |
+| **NS Import / Sync** | NationStates data import and synchronization. Prisma: `SyncLog`, `NSImportLedger`.                         |
 
 #### Vault Sidebar Sections
 
@@ -200,7 +190,7 @@ Integrated apps with their own distinct brand identity that ship and break indep
 | -------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **WikiOS**           | `WIKIOS_VERSION` (registry) | The **App** — next-gen wiki software that powers the IxWiki content, deprecating legacy MediaWiki to "Classic Mode."                                                                 |
 | **Canvas Editor**    | `CANVAS_VERSION` (registry) | WikiOS **sub-system** (nested sub-version): visual/contenteditable wiki editor (`src/components/wiki-os/editor/WikiVisualEditor.tsx`). Also used in ThinkPages Glass Canvas Composer. |
-| **Image Repository** | —                           | WikiOS Commons Explorer at `/w/repository/`. Wikimedia Commons API proxy. tRPC: `commons.ts`.                                                                                        |
+| **Image Repository** | —                           | WikiOS Commons Explorer at `/util/repository` (`src/app/(wiki-os)/util/repository`). Wikimedia Commons API proxy. tRPC: `commons.ts`.                                                                                        |
 
 #### WikiOS Special Pages
 
@@ -291,7 +281,7 @@ First-class systems within the IxStates platform.
 | Sub-system            | Description                                                                                                                                                     |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Builder Sections**  | 7 step-through sections: CoreIndicators, Demographics, Economy, FiscalSystem, GovernmentSpending, GovernmentStructure, LaborEmployment                          |
-| **Atomic Components** | Modular building system — AtomicEconomicComponents, AtomicGovernmentComponents, AtomicTaxComponents. Synergy/conflict system (`src/lib/government/synergy.ts`). |
+| **Atomic Components** | Modular building blocks of a nation: government, economic and tax components. Synergy/conflict pairs in `src/lib/government/synergy-table.ts`. |
 | **IIWiki Importer**   | Wiki data ingestion for country creation. tRPC: `countries/wiki` (`searchWiki`, `parseInfobox`; no standalone `wikiImporter` router).                                                                                              |
 
 ---
@@ -302,22 +292,21 @@ First-class systems within the IxStates platform.
 | ----------------- | ----------------------------------------------------------------------------- |
 | **Version**       | `THINKPAGES_VERSION` (from registry — single capability integer)              |
 | **Nav icon**      | ThinkPagesIcon (custom SVG: cyan-to-teal gradient) + Rss (Lucide, contextual) |
-| **Accent hex**    | `#3b82f6` (blue-500)                                                          |
+| **Accent hex**    | `#115536` / `#82d2a8` (Commons leather, `data-app="thinkpages"`)              |
 | **Shine**         | `["#3b82f6", "#1d4ed8", "#60a5fa"]`                                           |
 | **Glow**          | `text-blue-400`                                                               |
 | **Logo**          | `public/thinkpages-logo.svg`                                                  |
 | **Prisma**        | `social.prisma` (ThinkpagesAccount, ThinkpagesPost, etc.)                     |
 | **Reactions**     | ❤️ like, 😂 funny, 😡 angry, 😢 sad, 🔥 fire, 👍 thumb up, 👎 thumb down      |
 | **Custom emojis** | Discord CDN: ixnay, heky_boi, pog                                             |
-| **Status widget** | `ThinkPagesStatusWidget.tsx` — displays platform v{THINKPAGES_VERSION}        |
 
 #### Sub-systems
 
 | Sub-system     | Description                                                                                                                                    |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | **ThinkShare** | Unified messaging backbone — diplomatic DMs, personal messaging. Prisma: `ThinkshareConversation`, `ThinkshareMessage`. tRPC: `messages/`. |
-| **ThinkTanks** | Collaborative group workspace & research engine (`/thinktanks`). 4-pillar model (Feed, Chat, Docs, Members). Prisma: `ThinktankGroup`, `ThinktankMember`, `ThinktankCollaborativeDoc`. tRPC: `thinkpages/thinktanks/`. |
-| **IxTwitter**  | Discord auto-poster for ThinkPages content. tRPC backfill via `discord-ixtwitter-sync.ts`.                                                     |
+| **ThinkTanks** | Collaborative group workspace & research engine (`/thinktanks`). Planned 4-pillar model (Feed, Chat, Docs, Members); only Feed and Members are live. Prisma: `ThinktankGroup`, `ThinktankMember`, `CollaborativeDoc`. tRPC: `thinkpages/thinktanks/`. |
+| **IxTwitter**  | Discord auto-poster for ThinkPages content. Sync code is `src/lib/discord/ixtwitter-sync.ts`; the backfill is an archived script (`scripts/archive/migrations/backfill-ixtwitter.ts`), not tRPC.                                                     |
 
 ---
 
@@ -328,8 +317,8 @@ First-class systems within the IxStates platform.
 | **Default trophy**  | 🏆                                                                 |
 | **Featured**        | ⭐ / 📝                                                            |
 | **Locked**          | 🔒                                                                 |
-| **Definition file** | `src/lib/achievements/definitions.ts` (991 lines, 76 achievements) |
-| **Categories**      | Economic, Military, Diplomatic, Government, Social, General        |
+| **Definition files** | `src/lib/achievements/sets/` (161 definitions, 114 active and 47 Legacy) |
+| **Categories**      | Executive, Politics, Diplomacy, Defense, Nation, Social, Wiki, Cards, Lorewards, General |
 
 #### Category Icons
 
@@ -367,12 +356,12 @@ First-class systems within the IxStates platform.
 
 ### 3.5 Stash
 
-Save-for-later wiki articles with annotations. Integrated with WikiOS reader (`StashButton.tsx`). _(Formerly "LoreStash"; the Prisma models `LoreStash`/`LoreStashItem` keep their names.)_
+Save-for-later wiki articles with annotations. Integrated with WikiOS reader (`StashButton.tsx`). _(Formerly "LoreStash"; the Prisma models were renamed to `Stash`/`StashItem`/`StashAnnotation`, and the tables keep the legacy `lore_stash*` names.)_
 
 | Token      | Value                                     |
 | ---------- | ----------------------------------------- |
 | **Icon**   | Bookmark (Lucide)                         |
-| **Prisma** | `LoreStash` (30+ fields), `LoreStashItem` |
+| **Prisma** | `Stash`, `StashItem`, `StashAnnotation` (`wiki.prisma`) |
 | **Routes** | `src/app/stashes/`                        |
 
 ---
@@ -397,7 +386,7 @@ Global contextual UI overlay system with plugin architecture. _(Formerly "Dynami
 | Token        | Value                                 |
 | ------------ | ------------------------------------- |
 | **Location** | `src/components/halo/`       |
-| **Plugins**  | Wiki, Forum, Maps, Builder, MyCountry |
+| **Plugins**  | Wiki, Forum, MyCountry, Builder, Sports (no Maps plugin; `src/components/halo/plugins/`) |
 | **Views**    | CompactView, ExpandedView, NavTray, NotificationsView, SearchView, SettingsView |
 | **Docs**     | `docs/systems/halo.md`                |
 
@@ -461,7 +450,7 @@ Cross-platform identity linking service — unifies Forum, Wiki, and Discord ide
 
 ### 6.1 Facet (Design System)
 
-The platform's design system — a glass / refraction / depth visual language used throughout all UI (independently versioned; `FACET_VERSION` in the registry). Files: `src/styles/facet.css` plus `src/styles/facet/{core,components,physics}.css` (~2,200 lines). _(Formerly "Glass Physics". The CSS tokens/classes `--glass-*` / `glass-*` keep their names pending a separate mechanical rename.)_
+The platform's design system (independently versioned; `FACET_VERSION` = 3.1 in the registry): HIG colour roles and per-app tints, named text styles, glass for floating chrome only, concentric radii and springs. Tokens live in `src/styles/facet/tokens.css`; see the [Facet 3 reference](facet-design-system.md). _(Formerly "Glass Physics"; the legacy `glass-*` classes were removed in Facet 3.)_
 
 **Glass CSS Variables:**
 
@@ -472,7 +461,6 @@ The platform's design system — a glass / refraction / depth visual language us
 | `--glass-eci`       | `#4f46e5` | indigo-600  | Economic indicators          |
 | `--glass-sdi`       | `#dc2626` | red-600     | Strategic Defense Initiative |
 | `--glass-builder`   | `#10b981` | emerald-500 | Builder wizard               |
-| `--glass-forum`     | `#f97316` | orange-500  | Forum community              |
 
 ### 6.2 Notifications
 
@@ -484,7 +472,7 @@ In-app help center (`/help/`). Routes for economy, defense, diplomacy, intellige
 
 ### 6.4 Consent Manager (c15t)
 
-GDPR-style consent management. Package: `@c15t/nextjs`, `@c15t/backend`. Prisma: `c15t.prisma`. Route: `/api/c15t/`.
+Removed. The `@c15t/*` packages and the `/api/c15t/` route were deleted earlier, and the D9 schema drop (2026-10-27) removed the `c15t.prisma` tables.
 
 ### 6.5 Flag Service
 
@@ -500,7 +488,7 @@ Multi-source flag resolution pipeline. Key files: `unified-flag-service.ts`, `fl
 
 ### 6.7 Cron Jobs
 
-All scheduled jobs run only in `cron-runner.mjs` (PM2 app `ixstats-cron`); the 15 jobs are defined in `src/server/cron/jobs.ts` and enabled via `CRON_ENABLED_JOBS`. See [`events.md`](./events.md#scheduled--batch-jobs) for the full table (auction completion, passive income, card values, lore card generation, LoreWards full/state sync, trade expiry, sports season advance, scheduled changes, elections, politics drift, diplomatic drift, policy maintenance, national issues, wiki recent changes). IxTwitter Discord sync runs as its own PM2 process (`ixstats-ixtwitter`).
+All scheduled jobs run only in `cron-runner.mjs` (PM2 app `ixstats-cron`); the jobs are defined in `src/server/cron/jobs.ts` and enabled via `CRON_ENABLED_JOBS`. See [`events.md`](./events.md#scheduled--batch-jobs) for the full table (auction completion, passive income, card values, lore card generation, LoreWards full/state sync, trade expiry, sports season advance, elections, politics drift, diplomatic drift, policy maintenance, national issues, wiki recent changes). IxTwitter Discord sync runs as its own PM2 process (`ixstats-ixtwitter`).
 
 ### 6.8 Caching / Rate Limiting / Auth
 
@@ -540,7 +528,6 @@ Entry-point pages that aggregate content from multiple systems. Not branded prod
 | Feed                | `#8b5cf6`  | `["#8b5cf6", "#7c3aed", "#a78bfa"]` | `text-purple-400`  |
 | Maps / IxWorld      | `#06b6d4`  | (nav tray only)                     | —                  |
 | Cards / Vault       | `#06b6d4`  | `["#06b6d4", "#0891b2", "#22d3ee"]` | `text-cyan-400`    |
-| Forum / IxForum     | `#f97316`  | `["#f97316", "#ea580c", "#fb923c"]` | `text-orange-400`  |
 | Wiki / WikiOS       | `#3b82f6`  | (nav tray only)                     | —                  |
 | Admin               | `#ef4444`  | `["#ef4444", "#dc2626", "#f87171"]` | `text-red-400`     |
 | Help                | `#fb923c`  | `["#fb923c", "#f97316", "#fdba74"]` | `text-orange-400`  |
@@ -555,7 +542,6 @@ Entry-point pages that aggregate content from multiple systems. Not branded prod
 | `/countries`  | `#8b5cf6`  | Explore    |
 | `/maps`       | `#06b6d4`  | Maps       |
 | `/w`          | `#3b82f6`  | Wiki       |
-| `/forum`      | `#f97316`  | Forum      |
 | `/vault`      | `#06b6d4`  | Cards      |
 | `/thinkpages` | `#3b82f6`  | ThinkPages |
 | `/admin`      | `#ef4444`  | Admin      |
@@ -633,12 +619,11 @@ Activity, AlertTriangle, ArrowTrendingUp, ArrowTrendingDown, Bell, BookOpen, Bra
 | **Althistory Wiki**    | Tertiary wiki source                  | `mediawiki-config.ts` (WikiSource.ALTHISTORY) |
 | **Clerk**              | Authentication                        | `@clerk/nextjs`, `src/proxy.ts`               |
 | **Discord API**        | Bot, webhooks, user sync              | `discord.ts`, `discord-webhook.ts`            |
-| **XenForo**            | Forum backend                         | `modules/forum/services/xenforo-service.ts`   |
+| **XenForo**            | Old forum, retired (imported posts)   | `xenforo*` columns in `forum.prisma`          |
 | **Unsplash**           | Card backgrounds                      | `unsplash-service.ts`                         |
 | **Giphy**              | GIF picker                            | ThinkPages composer                           |
 | **Wikimedia Commons**  | Image repository                      | `wikiCommonsImageService.ts`                  |
 | **FlagCDN**            | Flag images                           | Referenced in external API cache              |
-| **c15t**               | Consent management                    | `@c15t/nextjs`, `prisma/schema/c15t.prisma`   |
 | **MapLibre GL**        | Map rendering                         | `src/components/maps/core/`                   |
 | **Redis (ioredis)**    | Rate limiting, caching                | `rate-limiter.ts`                             |
 | **Socket.IO**          | WebSocket transport                   | `server.mjs`                                  |

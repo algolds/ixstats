@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils/cn";
+import { DURATION_EXIT, EASE_OUT_FACET, ENTER_SCALE, tweenFast } from "~/lib/design/motion";
 
 export const Tooltip = ({
   content,
@@ -129,11 +130,14 @@ export const Tooltip = ({
             {isVisible && (
               <motion.div
                 key="tooltip"
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.96 }}
-                transition={{ duration: 0.15 }}
-                className="pointer-events-none fixed z-[100020] max-w-xs min-w-[15rem] overflow-hidden rounded-md border border-transparent bg-white shadow-lg ring-1 shadow-black/5 ring-black/5 dark:bg-neutral-900 dark:shadow-white/10 dark:ring-white/5"
+                initial={{ opacity: 0, scale: ENTER_SCALE }}
+                animate={{ opacity: 1, scale: 1, transition: tweenFast }}
+                exit={{
+                  opacity: 0,
+                  scale: ENTER_SCALE,
+                  transition: { duration: DURATION_EXIT, ease: EASE_OUT_FACET },
+                }}
+                className="pointer-events-none fixed z-tooltip max-w-xs min-w-[15rem] overflow-hidden rounded-row border border-separator bg-surface-elevated shadow-floating"
                 style={{
                   top: position.y,
                   left: position.x,
@@ -141,7 +145,7 @@ export const Tooltip = ({
               >
                 <div
                   ref={contentRef}
-                  className="p-2 text-sm text-neutral-600 md:p-4 dark:text-neutral-400"
+                  className="p-2 text-callout text-label-secondary md:p-4"
                 >
                   {content}
                 </div>

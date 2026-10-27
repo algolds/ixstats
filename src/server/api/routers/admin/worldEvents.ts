@@ -1,8 +1,23 @@
 // src/server/api/routers/admin/worldEvents.ts
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import type { PrismaClient } from "@prisma/client";
 import { AppError } from "~/lib/app-error";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { clockTimeAt } from "~/lib/realms/realm-time-convert";
+import { clocksForRealms, pickClock } from "~/server/shared/realm-time";
+import { createStorytellerEffects, endStorytellerEffects } from "~/lib/economy/storyteller-effects";
+import { worldEventEffectDrafts, worldEventImpact } from "~/lib/economy/world-event-effects";
+
+/** The nations a world event touches: every non-demo nation for a global event, else the listed ones. */
+async function eventCountryIds(
+  db: Pick<PrismaClient, "country">,
+  input: { allCountries: boolean; affectedCountryIds: string[] }
+): Promise<string[]> {
+  if (!input.allCountries) return input.affectedCountryIds;
+  const rows = await db.country.findMany({ where: { isDemo: false }, select: { id: true } });
+  return rows.map((r) => r.id);
+}
 
 export const adminWorldEventsRouter = createTRPCRouter({
   /**
@@ -393,12 +408,15 @@ export const adminWorldEventsRouter = createTRPCRouter({
         chainOrder: z.number().optional(),
         parameters: z.record(z.string(), z.unknown()).optional(),
         affectedCountryIds: z.array(z.string()),
+        /** "Global (all countries)": every non-demo nation in every realm, ignoring `affectedCountryIds`. */
+        allCountries: z.boolean().optional().default(false),
         generateEffects: z.boolean().optional().default(true),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.user?.id;
       if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+      const affectedCountryIds = await eventCountryIds(ctx.db, input);
 
       // Calculate end date from duration if not provided
       const endsAt =
@@ -422,33 +440,42 @@ export const adminWorldEventsRouter = createTRPCRouter({
           chainOrder: input.chainOrder,
           createdBy: userId,
           affectedCountries: {
-            create: input.affectedCountryIds.map((countryId) => ({
+            create: affectedCountryIds.map((countryId) => ({
               countryId,
             })),
           },
         },
         include: {
           affectedCountries: {
-            include: { country: { select: { id: true, name: true } } },
+            include: { country: { select: { id: true, name: true, realmId: true } } },
           },
         },
       });
 
       // Generate StorytellerEffects for each affected country
-      if (input.generateEffects && input.affectedCountryIds.length > 0) {
-        const effectsData = input.affectedCountryIds.map((countryId) => ({
-          countryId,
-          ixTimeTimestamp: input.startsAt,
-          inputType: input.type,
-          value: input.severity >= 0.5 ? -input.severity : input.severity,
-          description: `[WorldEvent: ${input.name}] ${input.description ?? ""}`.trim(),
-          duration: input.duration ? Math.round(input.duration) : null,
-          isActive: true,
-          createdBy: userId,
-          worldEventId: event.id,
-        }));
-
-        await ctx.db.storytellerEffect.createMany({ data: effectsData });
+      // (startsAt is a real date; each country's effects start then on its realm's clock.)
+      if (input.generateEffects && affectedCountryIds.length > 0) {
+        const realmOf = new Map(
+          event.affectedCountries.map(({ country }) => [country.id, country.realmId])
+        );
+        const clocks = await clocksForRealms(ctx.db, realmOf.values());
+        const startOf = (countryId: string) =>
+          clockTimeAt(pickClock(clocks, realmOf.get(countryId)), input.startsAt.getTime());
+        await createStorytellerEffects(
+          ctx.db,
+          affectedCountryIds.flatMap((countryId) =>
+            worldEventEffectDrafts({
+              countryId,
+              type: input.type,
+              severity: input.severity,
+              label: `[WorldEvent: ${input.name}] ${input.description ?? ""}`.trim(),
+              duration: input.duration ? Math.round(input.duration) : null,
+              startIxTime: startOf(countryId),
+              worldEventId: event.id,
+              createdBy: userId,
+            })
+          )
+        );
       }
 
       // Audit log
@@ -463,10 +490,10 @@ export const adminWorldEventsRouter = createTRPCRouter({
             name: input.name,
             type: input.type,
             severity: input.severity,
-            affectedCountries: input.affectedCountryIds.length,
+            affectedCountries: affectedCountryIds.length,
           }),
           adminId: userId,
-          adminName: ctx.user?.firstName ?? "Admin",
+          adminName: "Admin",
           timestamp: new Date(),
         },
       });
@@ -497,12 +524,9 @@ export const adminWorldEventsRouter = createTRPCRouter({
         },
       });
 
-      // If deactivating, also deactivate linked StorytellerEffects
+      // If deactivating, end its StorytellerEffects (unwound from now; the past is kept)
       if (input.isActive === false) {
-        await ctx.db.storytellerEffect.updateMany({
-          where: { worldEventId: eventId },
-          data: { isActive: false },
-        });
+        await endStorytellerEffects(ctx.db, { worldEventId: eventId });
       }
 
       return event;
@@ -515,13 +539,14 @@ export const adminWorldEventsRouter = createTRPCRouter({
         severity: z.number().min(0).max(1),
         duration: z.number().optional(),
         affectedCountryIds: z.array(z.string()),
+        allCountries: z.boolean().optional().default(false),
         parameters: z.record(z.string(), z.unknown()).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       // Fetch current state of affected countries
       const countries = await ctx.db.country.findMany({
-        where: { id: { in: input.affectedCountryIds } },
+        where: input.allCountries ? { isDemo: false } : { id: { in: input.affectedCountryIds } },
         select: {
           id: true,
           name: true,
@@ -540,32 +565,11 @@ export const adminWorldEventsRouter = createTRPCRouter({
 
       // Project impact based on severity and event type
       const projectedImpacts = countries.map((c) => {
-        const severityMultiplier = input.severity;
-        // Negative events reduce GDP; positive events (peace, tech) boost it
-        const isNegative = [
-          "economic_crisis",
-          "trade_war",
-          "natural_disaster",
-          "pandemic",
-          "political_upheaval",
-          "global_recession",
-          "currency_crisis",
-          "cyber_attack",
-          "climate_disaster",
-          "financial_crisis",
-        ].includes(input.type);
-
-        const gdpImpactPct = isNegative
-          ? -(severityMultiplier * 0.2) // up to -20% at max severity
-          : severityMultiplier * 0.15; // up to +15% boost
-
-        const popImpactPct = isNegative
-          ? -(severityMultiplier * 0.02) // up to -2% population impact
-          : severityMultiplier * 0.01;
-
-        const stabilityImpact = isNegative
-          ? -(severityMultiplier * 30) // up to -30 stability points
-          : severityMultiplier * 10;
+        const {
+          gdp: gdpImpactPct,
+          population: popImpactPct,
+          stability: stabilityImpact,
+        } = worldEventImpact(input.type, input.severity);
 
         const currentGdp = c.currentTotalGdp ?? 0;
         const currentPop = c.currentPopulation ?? 0;

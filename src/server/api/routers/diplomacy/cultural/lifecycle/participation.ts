@@ -1,14 +1,15 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
+import { assertSameRealm } from "~/server/shared/same-realm-guard";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 
 export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
   /**
    * Vote on a cultural exchange proposal
    */
-  voteOnExchange: protectedProcedure
+  voteOnExchange: rateLimitedMutationProcedure
     .input(
       z.object({
         exchangeId: z.string(),
@@ -35,6 +36,7 @@ export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
           message: "Cultural exchange not found",
         });
       }
+      await assertSameRealm(ctx.db, ctx.user.countryId, exchange.hostCountryId);
 
       // Get country name for vote record
       const country = await ctx.db.country.findUnique({
@@ -77,7 +79,7 @@ export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
           exchangeType: exchange.type,
           exchangeTitle: exchange.title,
         },
-        ixTimeTimestamp: IxTime.getCurrentIxTime(),
+        ixTimeTimestamp: (await clockForCountry(ctx.db, ctx.user.countryId)).now(),
       });
 
       return {
@@ -90,7 +92,7 @@ export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
   /**
    * Upload cultural artifact to exchange
    */
-  uploadCulturalArtifact: protectedProcedure
+  uploadCulturalArtifact: rateLimitedMutationProcedure
     .input(
       z.object({
         exchangeId: z.string(),
@@ -119,6 +121,8 @@ export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
       if (!exchange) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Cultural exchange not found" });
       }
+
+      await assertSameRealm(ctx.db, countryId, exchange.hostCountryId);
 
       // The host never gets a participant row (createCulturalExchange only adds the
       // invited country), so it is allowed alongside participants.
@@ -160,7 +164,7 @@ export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
           artifactTitle: input.title,
           exchangeType: exchange.type,
         },
-        ixTimeTimestamp: IxTime.getCurrentIxTime(),
+        ixTimeTimestamp: (await clockForCountry(ctx.db, countryId)).now(),
       });
 
       return artifact;

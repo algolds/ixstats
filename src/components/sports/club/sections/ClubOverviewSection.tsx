@@ -2,7 +2,8 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Stat } from "~/components/ui/stat";
 import { Switch } from "~/components/ui/switch";
 import { MatchTickerSim } from "~/components/sports/league/MatchTickerSim";
 import { ClubResultsCard } from "~/components/sports/club/ClubResultsCard";
@@ -15,9 +16,8 @@ import {
   StatsReport as BarChart3,
   Dollar as DollarSign,
 } from "iconoir-react";
-import { withBasePath } from "~/lib/base-path";
 
-export interface ClubOverviewSectionProps {
+interface ClubOverviewSectionProps {
   team: {
     id: string;
     name: string;
@@ -76,7 +76,15 @@ export function ClubOverviewSection({
   onTrained,
 }: ClubOverviewSectionProps) {
   const router = useRouter();
-  const teamColor = team.color || "#3b82f6";
+
+  // Average of the overall ratings that are recorded; none recorded shows "—"
+  const recordedOveralls = (team.players ?? []).flatMap((p) => {
+    const overall = (p.ratings as { overall?: number } | undefined)?.overall;
+    return overall === undefined ? [] : [overall];
+  });
+  const averageOverall = recordedOveralls.length
+    ? Math.round(recordedOveralls.reduce((sum, o) => sum + o, 0) / recordedOveralls.length)
+    : undefined;
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
@@ -97,18 +105,16 @@ export function ClubOverviewSection({
                   shortName: liveMatch.awayTeam.shortName,
                 }}
                 trace={liveMatch.trace as unknown[]}
-                homeScoreFinal={liveMatch.finalHomeScore ?? undefined}
-                awayScoreFinal={liveMatch.finalAwayScore ?? undefined}
               />
             ) : (
               <ClubResultsCard teamId={team.id} />
             )}
 
             {/* Match notifications toggle */}
-            <div className="facet-hierarchy-child border-border/40 bg-card/60 flex items-center justify-between rounded-2xl border p-4 backdrop-blur-md">
+            <Card padding="md" className="flex items-center justify-between">
               <div className="min-w-0 pr-4">
-                <p className="text-sm font-bold text-foreground">Match Notifications</p>
-                <p className="text-muted-foreground text-xs font-semibold">
+                <p className="text-headline text-label">Match notifications</p>
+                <p className="text-label-secondary text-footnote">
                   Receive notification push alerts when {team.name} competes.
                 </p>
               </div>
@@ -116,105 +122,99 @@ export function ClubOverviewSection({
                 checked={team.notifyResults ?? true}
                 disabled={isUpdatingNotifications}
                 onCheckedChange={onUpdateNotifications}
+                aria-label="Match notifications"
               />
-            </div>
+            </Card>
 
             {/* Record widgets */}
             {currentStandings && (
               <div className="grid gap-4 sm:grid-cols-3">
-                <Card className="facet-hierarchy-child bg-card/45 border-border/40 rounded-2xl backdrop-blur-md">
-                  <CardContent className="pt-6 text-center">
-                    <p className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                      Record
-                    </p>
-                    <p className="text-foreground mt-1 text-3xl font-black tabular-nums">
-                      {currentStandings.wins}-{currentStandings.losses}
-                      {currentStandings.draws > 0 ? `-${currentStandings.draws}` : ""}
-                    </p>
-                  </CardContent>
+                <Card padding="md">
+                  <Stat
+                    label="Record"
+                    value={
+                      <>
+                        {currentStandings.wins}-{currentStandings.losses}
+                        {currentStandings.draws > 0 ? `-${currentStandings.draws}` : ""}
+                      </>
+                    }
+                  />
                 </Card>
-                <Card className="facet-hierarchy-child bg-card/45 border-border/40 rounded-2xl backdrop-blur-md">
-                  <CardContent className="pt-6 text-center">
-                    <p className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                      League Points
-                    </p>
-                    <p className="text-foreground mt-1 text-3xl font-black tabular-nums">
-                      {currentStandings.points}
-                    </p>
-                  </CardContent>
+                <Card padding="md">
+                  <Stat label="League points" value={<>{currentStandings.points}</>} />
                 </Card>
-                <Card className="facet-hierarchy-child bg-card/45 border-border/40 rounded-2xl backdrop-blur-md">
-                  <CardContent className="pt-6 text-center">
-                    <p className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                      Scored / Conceded
-                    </p>
-                    <p className="text-foreground mt-1 text-3xl font-black tabular-nums">
-                      {currentStandings.pointsFor} : {currentStandings.pointsAgainst}
-                    </p>
-                  </CardContent>
+                <Card padding="md">
+                  <Stat
+                    label="Scored / Conceded"
+                    value={
+                      <>
+                        {currentStandings.pointsFor} : {currentStandings.pointsAgainst}
+                      </>
+                    }
+                  />
                 </Card>
               </div>
             )}
           </>
         ) : (
           <>
-            <Card className="facet-hierarchy-child bg-card/45 border-border/40 rounded-2xl backdrop-blur-md">
+            <Card className="flex flex-col gap-6 py-6">
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-12 w-12 items-center justify-center rounded-2xl text-amber-500 shadow-inner"
-                    style={{ color: teamColor, backgroundColor: `${teamColor}20` }}
-                  >
-                    <Calendar className="h-6 w-6" />
+                  <div className="bg-tint-fill text-tint rounded-row flex size-12 items-center justify-center">
+                    <Calendar className="size-6" aria-hidden />
                   </div>
                   <div>
-                    <CardTitle className="text-foreground text-lg font-bold">
-                      Off-Season Operations
-                    </CardTitle>
-                    <CardDescription className="text-muted-foreground text-xs font-semibold">
-                      The competition is currently in the off-season. Utilize this cycle to tune tactics, train athletes, and manage transfers.
-                    </CardDescription>
+                    <CardTitle className="text-label text-title-3">Off-Season Operations</CardTitle>
+                    <p className="text-label-secondary text-callout">
+                      The competition is currently in the off-season. Utilize this cycle to tune
+                      tactics, train athletes, and manage transfers.
+                    </p>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
-                <div className="border-border/30 bg-muted/20 hover:bg-muted/40 rounded-2xl border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+                <div className="bg-surface-secondary rounded-row p-4">
                   <div className="mb-2 flex items-center gap-2">
-                    <Users className="h-4 w-4" style={{ color: teamColor }} />
-                    <h4 className="text-foreground text-xs font-bold">Train Squad</h4>
+                    <Users className="text-tint size-4" aria-hidden />
+                    <h4 className="text-label text-headline">Train squad</h4>
                   </div>
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    Improve specific athlete attributes by conducting targeted drills or initiating team-wide training camps.
+                  <p className="text-label-secondary text-footnote leading-relaxed">
+                    Improve specific athlete attributes by conducting targeted drills or initiating
+                    team-wide training camps.
                   </p>
                 </div>
 
-                <div className="border-border/30 bg-muted/20 hover:bg-muted/40 rounded-2xl border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+                <div className="bg-surface-secondary rounded-row p-4">
                   <div className="mb-2 flex items-center gap-2">
-                    <ArrowLeftRight className="h-4 w-4" style={{ color: teamColor }} />
-                    <h4 className="text-foreground text-xs font-bold">Scout Transfers</h4>
+                    <ArrowLeftRight className="text-tint size-4" aria-hidden />
+                    <h4 className="text-label text-headline">Scout transfers</h4>
                   </div>
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    Explore the sealed-bid transfer market to sign promising athletes or put your own players up for sale.
+                  <p className="text-label-secondary text-footnote leading-relaxed">
+                    Explore the sealed-bid transfer market to sign promising athletes or put your
+                    own players up for sale.
                   </p>
                 </div>
 
-                <div className="border-border/30 bg-muted/20 hover:bg-muted/40 rounded-2xl border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+                <div className="bg-surface-secondary rounded-row p-4">
                   <div className="mb-2 flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4" style={{ color: teamColor }} />
-                    <h4 className="text-foreground text-xs font-bold">Tweak Tactics</h4>
+                    <BarChart3 className="text-tint size-4" aria-hidden />
+                    <h4 className="text-label text-headline">Tweak tactics</h4>
                   </div>
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    Adjust tactical layouts, team shapes, and player roles to outclass your rivals in upcoming matches.
+                  <p className="text-label-secondary text-footnote leading-relaxed">
+                    Adjust tactical layouts, team shapes, and player roles to outclass your rivals
+                    in upcoming matches.
                   </p>
                 </div>
 
-                <div className="border-border/30 bg-muted/20 hover:bg-muted/40 rounded-2xl border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+                <div className="bg-surface-secondary rounded-row p-4">
                   <div className="mb-2 flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" style={{ color: teamColor }} />
-                    <h4 className="text-foreground text-xs font-bold">Collect Revenue</h4>
+                    <DollarSign className="text-tint size-4" aria-hidden />
+                    <h4 className="text-label text-headline">Collect revenue</h4>
                   </div>
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    Manage commercial deals, collect gate receipts, and ensure stadium operations align with financial goals.
+                  <p className="text-label-secondary text-footnote leading-relaxed">
+                    Manage commercial deals, collect gate receipts, and ensure stadium operations
+                    align with financial goals.
                   </p>
                 </div>
               </CardContent>
@@ -222,44 +222,14 @@ export function ClubOverviewSection({
 
             {/* Club Statistics Grid */}
             <div className="grid gap-4 sm:grid-cols-3">
-              <Card className="facet-hierarchy-child bg-card/45 border-border/40 rounded-2xl backdrop-blur-md">
-                <CardContent className="pt-6 text-center">
-                  <p className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                    Squad Members
-                  </p>
-                  <p className="text-foreground mt-1 text-3xl font-black tabular-nums">
-                    {team.players?.length ?? 0}
-                  </p>
-                </CardContent>
+              <Card padding="md">
+                <Stat label="Squad members" value={<>{team.players?.length ?? 0}</>} />
               </Card>
-              <Card className="facet-hierarchy-child bg-card/45 border-border/40 rounded-2xl backdrop-blur-md">
-                <CardContent className="pt-6 text-center">
-                  <p className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                    Avg Roster OVR
-                  </p>
-                  <p className="text-foreground mt-1 text-3xl font-black tabular-nums">
-                    {team.players && team.players.length > 0
-                      ? Math.round(
-                          team.players.reduce(
-                            (acc, p) =>
-                              acc +
-                              ((p.ratings as { overall?: number } | undefined)?.overall ?? 50),
-                            0
-                          ) / team.players.length
-                        )
-                      : 0}
-                  </p>
-                </CardContent>
+              <Card padding="md">
+                <Stat label="Avg roster OVR" value={<>{averageOverall ?? "—"}</>} />
               </Card>
-              <Card className="facet-hierarchy-child bg-card/45 border-border/40 rounded-2xl backdrop-blur-md">
-                <CardContent className="pt-6 text-center">
-                  <p className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                    Available Budget
-                  </p>
-                  <p className="text-foreground mt-1 text-3xl font-black tabular-nums">
-                    ₷{team.budget ?? 0}
-                  </p>
-                </CardContent>
+              <Card padding="md">
+                <Stat label="Available budget" value={<>₷{team.budget ?? 0}</>} />
               </Card>
             </div>
           </>
@@ -274,11 +244,11 @@ export function ClubOverviewSection({
           onTrained={onTrained}
         />
         {upcomingMatches && upcomingMatches.length > 0 && (
-          <Card className="facet-hierarchy-child bg-card/45 border-border/40 rounded-2xl backdrop-blur-md">
+          <Card className="flex flex-col gap-6 py-6">
             <CardHeader>
-              <CardTitle className="text-foreground flex items-center gap-2 text-sm font-bold">
-                <Calendar className="h-4 w-4 text-cyan-400" />
-                Upcoming Fixtures
+              <CardTitle className="text-label flex items-center gap-2">
+                <Calendar className="text-label-secondary size-4" aria-hidden />
+                Upcoming fixtures
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -288,14 +258,14 @@ export function ClubOverviewSection({
                   id: m.homeTeam.id,
                   name: m.homeTeam.name,
                   city: isHome ? team.city : null,
-                  color: isHome ? team.color ?? undefined : undefined,
+                  color: isHome ? (team.color ?? undefined) : undefined,
                   logo: isHome ? team.logo : null,
                 };
                 const awayTeamInfo = {
                   id: m.awayTeam.id,
                   name: m.awayTeam.name,
                   city: !isHome ? team.city : null,
-                  color: !isHome ? team.color ?? undefined : undefined,
+                  color: !isHome ? (team.color ?? undefined) : undefined,
                   logo: !isHome ? team.logo : null,
                 };
 
@@ -308,7 +278,7 @@ export function ClubOverviewSection({
                     status={m.status}
                     onTeamClick={(id) => {
                       if (id === team.id) return;
-                      router.push(withBasePath(`/myclub/${id}`));
+                      router.push(`/myclub/${id}`);
                     }}
                   />
                 );
@@ -320,5 +290,3 @@ export function ClubOverviewSection({
     </div>
   );
 }
-
-export default ClubOverviewSection;

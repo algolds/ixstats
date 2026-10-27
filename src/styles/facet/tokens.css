@@ -1,0 +1,789 @@
+/* ==========================================================================
+   TOKENS
+   The single token source.
+
+   Every token is a CSS variable *and* a Tailwind utility. Values that switch
+   with appearance live in `@theme static` (light) and are overridden under
+   `:root[data-theme="dark"]`; aliases use `@theme inline` so they resolve at
+   the element (per-app tint scopes). No self-referential `@theme` entries.
+
+   Mirrored in TypeScript by src/lib/design/tokens.ts (checked by
+   src/tests/architecture/token-contrast.test.ts) and src/lib/design/motion.ts.
+
+   Theme selection: `html[data-theme="light"|"dark"]`, written pre-paint by the
+   inline script in src/app/layout.tsx, with the `.light` / `.dark` classes kept
+   in sync.
+   ========================================================================== */
+
+/* ─── Variants ───────────────────────────────────────────────────────────── */
+
+/* Tailwind `dark:` follows the theme attribute and the class. Feature code should prefer
+   roles, which already switch. */
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+/* Accessibility variants honour both the OS media query and the in-app override on <html>. */
+@custom-variant motion-reduce {
+  @media (prefers-reduced-motion: reduce) {
+    @slot;
+  }
+  &:where([data-motion="reduced"], [data-motion="reduced"] *) {
+    @slot;
+  }
+}
+@custom-variant motion-safe {
+  @media (prefers-reduced-motion: no-preference) {
+    &:not(:where([data-motion="reduced"], [data-motion="reduced"] *)) {
+      @slot;
+    }
+  }
+}
+@custom-variant contrast-more {
+  @media (prefers-contrast: more) {
+    @slot;
+  }
+  &:where([data-contrast="more"], [data-contrast="more"] *) {
+    @slot;
+  }
+}
+@custom-variant transparency-reduced {
+  @media (prefers-reduced-transparency: reduce) {
+    @slot;
+  }
+  &:where([data-transparency="reduced"], [data-transparency="reduced"] *) {
+    @slot;
+  }
+}
+@custom-variant compact (&:where([data-density="compact"], [data-density="compact"] *));
+
+/* ─── Colour roles (light values; dark below) ────────────────────────────── */
+
+@theme static {
+  /* Labels */
+  --color-label: #09090b;
+  --color-label-secondary: #52525b;
+  --color-label-tertiary: #a1a1aa;
+  --color-label-quaternary: #d4d4d8;
+  /* HIG vibrant secondary label: `label-secondary` inside `facet-chrome` (layers.css), where
+     chrome floats over arbitrary content — ≥ 4.5:1 over a black (light) / white (dark) backdrop
+     under the chrome fill (token-contrast.test.ts, "chrome"). */
+  --color-label-vibrant-secondary: #46464e;
+
+  /* Backgrounds & surfaces */
+  --color-background: #ffffff;
+  --color-background-grouped: #f2f3f6;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f2f3f6;
+  --color-surface-elevated: #ffffff;
+
+  /* Fills (label @ 16/12/8/5%) */
+  --color-fill: rgba(9, 9, 11, 0.16);
+  --color-fill-2: rgba(9, 9, 11, 0.12);
+  --color-fill-3: rgba(9, 9, 11, 0.08);
+  --color-fill-4: rgba(9, 9, 11, 0.05);
+
+  /* Selected segment / switch thumb over a fill track (raised in light, a stronger fill in dark) */
+  --color-control-thumb: #ffffff;
+
+  /* Modal scrim under dialogs, sheets and alert dialogs (light: 25% black; dark: 40%) */
+  --color-scrim: rgba(0, 0, 0, 0.25);
+
+  /* Separators */
+  --color-separator: rgba(0, 0, 0, 0.1);
+  --color-separator-opaque: #e4e4e7;
+
+  /* System colours (status & data) */
+  --color-red: #dc2626;
+  --color-orange: #c2410c;
+  --color-yellow: #a16207;
+  --color-green: #15803d;
+  --color-teal: #0f766e;
+  --color-blue: #1d4ed8;
+  --color-indigo: #4338ca;
+  --color-purple: #7e22ce;
+  --color-pink: #be185d;
+  --color-mint: #047857;
+  --color-cyan: #0e7490;
+  --color-brown: #8a5a2b;
+  --color-gray: #6b7280;
+  --color-on-system: #ffffff;
+}
+
+/* ─── Aliases (resolve at the element) ───────────────────────────────────── */
+
+@theme inline static {
+  --color-grouped: var(--color-background-grouped);
+
+  /* App tint — scoped per subtree by [data-app] */
+  --color-tint: var(--tint);
+  --color-tint-hover: var(--tint-hover);
+  --color-on-tint: var(--on-tint);
+  --color-tint-fill: var(--tint-fill);
+  /* Tint as text on its own fill (`Badge variant="tinted"`, a selected tinted chip): the tint pulled
+     20% toward the label, like the system-colour inks — the bare tint drops to 3.8:1 there. */
+  --color-tint-ink: color-mix(in srgb, var(--tint) 80%, var(--color-label));
+
+  /* on- pairs for system colours */
+  --color-on-red: var(--color-on-system);
+  --color-on-orange: var(--color-on-system);
+  --color-on-yellow: var(--color-on-system);
+  --color-on-green: var(--color-on-system);
+  --color-on-teal: var(--color-on-system);
+  --color-on-blue: var(--color-on-system);
+  --color-on-indigo: var(--color-on-system);
+  --color-on-purple: var(--color-on-system);
+  --color-on-pink: var(--color-on-system);
+  --color-on-mint: var(--color-on-system);
+  --color-on-cyan: var(--color-on-system);
+  --color-on-brown: var(--color-on-system);
+  --color-on-gray: var(--color-on-system);
+
+  /* Tinted fills (Badge colour variants, ActionPill pressed tones): text in `<colour>-ink` on a
+     15% fill of the colour. The ink is the colour pulled 20% toward the label, which keeps
+     12px text ≥ 4.5:1 on the fill over every background role in both themes
+     (token-contrast.test.ts). Same formula for every hue. */
+  --color-red-ink: color-mix(in srgb, var(--color-red) 80%, var(--color-label));
+  --color-orange-ink: color-mix(in srgb, var(--color-orange) 80%, var(--color-label));
+  --color-yellow-ink: color-mix(in srgb, var(--color-yellow) 80%, var(--color-label));
+  --color-green-ink: color-mix(in srgb, var(--color-green) 80%, var(--color-label));
+  --color-mint-ink: color-mix(in srgb, var(--color-mint) 80%, var(--color-label));
+  --color-teal-ink: color-mix(in srgb, var(--color-teal) 80%, var(--color-label));
+  --color-cyan-ink: color-mix(in srgb, var(--color-cyan) 80%, var(--color-label));
+  --color-blue-ink: color-mix(in srgb, var(--color-blue) 80%, var(--color-label));
+  --color-indigo-ink: color-mix(in srgb, var(--color-indigo) 80%, var(--color-label));
+  --color-purple-ink: color-mix(in srgb, var(--color-purple) 80%, var(--color-label));
+  --color-pink-ink: color-mix(in srgb, var(--color-pink) 80%, var(--color-label));
+  --color-brown-ink: color-mix(in srgb, var(--color-brown) 80%, var(--color-label));
+  --color-gray-ink: color-mix(in srgb, var(--color-gray) 80%, var(--color-label));
+
+  /* Status roles */
+  --color-destructive: var(--color-red);
+  --color-on-destructive: var(--color-on-red);
+  --color-warning: var(--color-orange);
+  --color-on-warning: var(--color-on-orange);
+  --color-caution: var(--color-yellow);
+  --color-on-caution: var(--color-on-yellow);
+  --color-success: var(--color-green);
+  --color-on-success: var(--color-on-green);
+  --color-info: var(--color-blue);
+  --color-on-info: var(--color-on-blue);
+  /* Status inks: text on a 15% fill of the status colour (status Badges, Alerts, toasts). */
+  --color-destructive-ink: var(--color-red-ink);
+  --color-warning-ink: var(--color-orange-ink);
+  --color-caution-ink: var(--color-yellow-ink);
+  --color-success-ink: var(--color-green-ink);
+  --color-info-ink: var(--color-blue-ink);
+  --color-error: var(--color-red);
+
+  /* shadcn names → roles */
+  --color-foreground: var(--color-label);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-label);
+  --color-popover: var(--color-surface-elevated);
+  --color-popover-foreground: var(--color-label);
+  --color-primary: var(--tint);
+  --color-primary-foreground: var(--on-tint);
+  --color-secondary: var(--color-fill-3);
+  --color-secondary-foreground: var(--color-label);
+  --color-muted: var(--color-fill-3);
+  --color-muted-foreground: var(--color-label-secondary);
+  --color-accent: var(--color-fill-3);
+  --color-accent-foreground: var(--color-label);
+  --color-destructive-foreground: var(--color-on-red);
+  --color-border: var(--color-separator);
+  --color-input: var(--color-separator);
+  --color-ring: var(--tint);
+
+  /* Categorical series: blue, orange, green, purple, pink, teal, yellow, red */
+  --color-chart-1: var(--color-blue);
+  --color-chart-2: var(--color-orange);
+  --color-chart-3: var(--color-green);
+  --color-chart-4: var(--color-purple);
+  --color-chart-5: var(--color-pink);
+  --color-chart-6: var(--color-teal);
+  --color-chart-7: var(--color-yellow);
+  --color-chart-8: var(--color-red);
+}
+
+/* ─── Shape · Elevation & z · Motion ─────────────────────────────────────── */
+
+@theme static {
+  /* Concentric radius scale */
+  --radius-sheet: 1.25rem; /* 20 */
+  --radius-card: 1rem; /* 16 */
+  --radius-row: 0.75rem; /* 12 — grouped list, inset panel */
+  --radius-control-lg: 0.75rem; /* 12 — 44px controls */
+  --radius-control: 0.625rem; /* 10 — 36px controls */
+  --radius-control-sm: 0.5rem; /* 8 — 28px controls */
+
+  /* Elevation; alpha × --shadow-strength (dark mode: half strength) */
+  --shadow-card:
+    0 1px 2px 0 rgb(0 0 0 / calc(0.06 * var(--shadow-strength, 1))),
+    0 1px 3px 0 rgb(0 0 0 / calc(0.08 * var(--shadow-strength, 1)));
+  --shadow-floating:
+    0 8px 24px -4px rgb(0 0 0 / calc(0.14 * var(--shadow-strength, 1))),
+    0 2px 6px -1px rgb(0 0 0 / calc(0.08 * var(--shadow-strength, 1)));
+  --shadow-sheet:
+    0 24px 48px -12px rgb(0 0 0 / calc(0.24 * var(--shadow-strength, 1))),
+    0 8px 16px -8px rgb(0 0 0 / calc(0.12 * var(--shadow-strength, 1)));
+
+  /* One z-index scale (`z-base` … `z-command`) */
+  --z-index-base: 0;
+  --z-index-raised: 10;
+  --z-index-sticky: 100;
+  --z-index-chrome: 500; /* sidebar, tab bar, toolbars */
+  --z-index-nav: 5000;
+  --z-index-backdrop: 100000;
+  --z-index-sheet: 100001;
+  --z-index-popover: 100010;
+  --z-index-tooltip: 100020;
+  --z-index-toast: 100050;
+  --z-index-command: 110000;
+
+  /* Motion. Springs are for motion/react — see src/lib/design/motion.ts. */
+  --duration-fast: 150ms; /* colour and opacity changes */
+  --duration-slow: 300ms; /* glass and chrome state changes */
+  --duration-exit: 120ms; /* exits, always faster than entrances */
+  --duration-drift: 1600ms; /* ambient drift on content art (the MyCountry flag) */
+  --ease-out-facet: cubic-bezier(0.23, 1, 0.32, 1);
+  --spring-snappy-stiffness: 520; /* controls */
+  --spring-snappy-damping: 38;
+  --spring-smooth-stiffness: 320; /* sheets, sidebar, navigation, layout */
+  --spring-smooth-damping: 32;
+  --spring-gentle-stiffness: 180; /* emphasis, reveals */
+  --spring-gentle-damping: 24;
+}
+
+@theme inline static {
+  /* `duration-fast` / `duration-slow` / `duration-exit` / `duration-drift` utilities */
+  --transition-duration-fast: var(--duration-fast);
+  --transition-duration-slow: var(--duration-slow);
+  --transition-duration-exit: var(--duration-exit);
+  --transition-duration-drift: var(--duration-drift);
+}
+
+/* ─── Legacy colour utilities (migrate to roles) ──────────────────────────── */
+
+@theme static {
+  --color-text-secondary: #d4d4d8;
+  --color-brand-primary: #6366f1;
+  --color-brand-secondary: #818cf8;
+
+  --color-poll: #ff8a65;
+  --color-discord: #5865f2;
+  --color-discord-hover: #4752c4;
+  --color-wiki: #1d4e89;
+  --color-wiki-hover: #184275;
+  --color-map-ocean: #0a1628;
+
+  --color-theme-gold: #b45309;
+  --color-theme-ocean: #0369a1;
+  --color-theme-emerald: #047857;
+  --color-theme-crimson: #b91c1c;
+  --color-theme-amethyst: #7e22ce;
+  --color-theme-slate: #334155;
+
+  /* Card rarity: content art, the same in both themes (CARD_RARITY_HEX in src/lib/design/tokens.ts). */
+  --color-rarity-common: #94a3b8;
+  --color-rarity-uncommon: #10b981;
+  --color-rarity-rare: #3b82f6;
+  --color-rarity-ultra-rare: #06b6d4;
+  --color-rarity-epic: #a855f7;
+  --color-rarity-legendary: #eab308;
+
+  --color-gold-50: #fffbeb;
+  --color-gold-100: #fef3c7;
+  --color-gold-200: #fde68a;
+  --color-gold-300: #fcd34d;
+  --color-gold-400: #fbbf24;
+  --color-gold-500: #fbbf24;
+  --color-gold-600: #d97706;
+  --color-gold-700: #b45309;
+  --color-gold-800: #92400e;
+  --color-gold-900: #78350f;
+  --color-gold-950: #451a03;
+
+  /* Font families */
+  --font-eurostile: "Eurostile", sans-serif;
+  --font-eurostile-cond: "Eurostile Condensed", "Eurostile", sans-serif;
+  --font-eurostile-extd: "Eurostile Extended", "Eurostile", sans-serif;
+  --font-host-grotesk: "Host Grotesk", sans-serif;
+  --font-sangbleu-empire: "SangBleu Empire", Georgia, serif;
+  --font-sangbleu-kingdom: "SangBleu Kingdom", Georgia, serif;
+  --font-sangbleu-republic: "SangBleu Republic", Georgia, serif;
+  --font-sangbleu-sunrise: "SangBleu Sunrise", Georgia, serif;
+  --font-sangbleu-versailles: "SangBleu Versailles", Georgia, serif;
+  --font-sangbleu: "SangBleu", "SangBleu Empire", "SangBleu Kingdom", Georgia, serif;
+}
+
+/* WikiOS margin/highlighter suite — values live in styles/wiki-os/tokens.css. */
+@theme inline {
+  --color-margin-accent: var(--margin-accent);
+  --color-margin-accent-hover: var(--margin-accent-hover);
+  --color-margin-bg: var(--margin-accent-bg);
+  --color-margin-border: var(--margin-accent-border);
+  --color-margin-glow: var(--margin-accent-glow);
+}
+
+/* Onoma lab palette — registered for utilities only; the values (and light overrides) are
+   defined in styles/domains.css. */
+@theme reference {
+  --color-onoma-primary: #0091ff;
+  --color-onoma-primary-light: #33a7ff;
+  --color-onoma-primary-hover: #0080e6;
+  --color-onoma-primary-active: #006ec4;
+  --color-onoma-primary-muted: rgba(0, 145, 255, 0.6);
+  --color-onoma-accent: #fef036;
+  --color-onoma-accent-hover: #e5d82f;
+  --color-onoma-accent-muted: rgba(254, 240, 54, 0.6);
+  --color-onoma-surface: rgba(0, 145, 255, 0.06);
+  --color-onoma-surface-hover: rgba(0, 145, 255, 0.12);
+  --color-onoma-surface-active: rgba(0, 145, 255, 0.18);
+  --color-onoma-accent-surface: rgba(254, 240, 54, 0.08);
+  --color-onoma-border: rgba(0, 145, 255, 0.25);
+  --color-onoma-border-hover: rgba(0, 145, 255, 0.45);
+  --color-onoma-border-active: rgba(0, 145, 255, 0.65);
+  --color-onoma-accent-border: rgba(254, 240, 54, 0.3);
+  --color-onoma-glow: rgba(0, 145, 255, 0.35);
+  --color-onoma-accent-glow: rgba(254, 240, 54, 0.3);
+}
+
+/* ─── Typefaces ────────────────────────────────────────────────────────────── */
+/* The single owner of the font stacks (the @font-face faces live in styles/typography.css).
+   Schibsted Grotesk for all UI; Azeret Mono only for code, IDs, coordinates and hashes; National
+   only through `text-display`. */
+
+@theme static {
+  --font-sans: "Schibsted Grotesk", "Akzidenz-Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Azeret Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-mono--font-feature-settings: "tnum" 1, "zero" 1;
+  --font-data: "Azeret Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-data--font-feature-settings: "tnum" 1, "zero" 1;
+  --font-serif: "Baskerville 10 Pro", "Baskerville", ui-serif, Georgia, serif;
+  --font-display: "National", "Neutraface 2", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ─── Text styles (rem × --text-scale) ───────────────────────────────────── */
+/* line-height / weight / tracking defer to `leading-*` / `font-*` / `tracking-*` when set. Tracking
+   tightens only as the size grows; body styles are 0. */
+
+@utility text-display {
+  font-family: var(--font-display);
+  font-size: calc(2.5rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(2.75rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 700);
+  letter-spacing: var(--tw-tracking, -0.015em);
+}
+@utility text-large-title {
+  font-size: calc(1.75rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(2.125rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 700);
+  letter-spacing: var(--tw-tracking, -0.015em);
+}
+@utility text-title-1 {
+  font-size: calc(1.375rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.75rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 700);
+  letter-spacing: var(--tw-tracking, -0.015em);
+}
+@utility text-title-2 {
+  font-size: calc(1.25rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.625rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 600);
+  letter-spacing: var(--tw-tracking, -0.01em);
+}
+@utility text-title-3 {
+  font-size: calc(1.0625rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.375rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 600);
+  letter-spacing: var(--tw-tracking, -0.005em);
+}
+@utility text-headline {
+  font-size: calc(0.875rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.25rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 600);
+  letter-spacing: var(--tw-tracking, 0);
+}
+@utility text-body {
+  font-size: calc(0.875rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.25rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 400);
+  letter-spacing: var(--tw-tracking, 0);
+}
+@utility text-callout {
+  font-size: calc(0.8125rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.125rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 400);
+  letter-spacing: var(--tw-tracking, 0);
+}
+@utility text-subhead {
+  font-size: calc(0.8125rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.125rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 500);
+  letter-spacing: var(--tw-tracking, 0);
+}
+@utility text-footnote {
+  font-size: calc(0.75rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 400);
+  letter-spacing: var(--tw-tracking, 0.005em);
+}
+@utility text-caption {
+  font-size: calc(0.75rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 500);
+  letter-spacing: var(--tw-tracking, 0.01em);
+}
+/* Eyebrow: a sentence-case label above a section or field. */
+@utility text-eyebrow {
+  font-size: calc(0.75rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 500);
+  letter-spacing: var(--tw-tracking, 0);
+  color: var(--color-label-secondary);
+}
+/* Stat label: a short uppercase label above a number. */
+@utility text-stat-label {
+  font-size: calc(0.75rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 500);
+  letter-spacing: var(--tw-tracking, 0.06em);
+  text-transform: uppercase;
+}
+
+/* ─── Runtime values: appearance, app tints, preferences ─────────────────── */
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --text-scale: 1;
+    --shadow-strength: 1;
+
+    /* Density: component padding/gap multiplier and control heights 28/36/44 */
+    --density: 1;
+    --control-height-sm: 1.75rem;
+    --control-height: 2.25rem;
+    --control-height-lg: 2.75rem;
+  }
+
+  /* Dark values */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --shadow-strength: 0.5;
+
+    --color-label: #e4e4e7;
+    --color-label-secondary: #a1a1aa;
+    --color-label-tertiary: #71717a;
+    --color-label-quaternary: #52525b;
+    --color-label-vibrant-secondary: #bebec6;
+
+    --color-background: #0f1114;
+    --color-background-grouped: #0f1114;
+    --color-surface: #16181d;
+    --color-surface-secondary: #1e2028;
+    --color-surface-elevated: #1e2028;
+
+    --color-fill: rgba(244, 244, 245, 0.24);
+    --color-fill-2: rgba(244, 244, 245, 0.18);
+    --color-fill-3: rgba(244, 244, 245, 0.12);
+    --color-fill-4: rgba(244, 244, 245, 0.08);
+
+    --color-control-thumb: rgba(244, 244, 245, 0.24);
+    --color-scrim: rgba(0, 0, 0, 0.4);
+
+    --color-separator: rgba(255, 255, 255, 0.08);
+    --color-separator-opaque: #2a2d35;
+
+    --color-red: #f87171;
+    --color-orange: #fb923c;
+    --color-yellow: #facc15;
+    --color-green: #4ade80;
+    --color-teal: #2dd4bf;
+    --color-blue: #60a5fa;
+    --color-indigo: #818cf8;
+    --color-purple: #c084fc;
+    --color-pink: #f472b6;
+    --color-mint: #34d399;
+    --color-cyan: #22d3ee;
+    --color-brown: #d6a77a;
+    --color-gray: #9ca3af;
+    --color-on-system: #0b0c0f;
+  }
+
+  /* Legacy colour utilities — light values */
+  :root[data-theme="light"] {
+    --color-text-secondary: #52525b;
+    --color-poll: #ea580c;
+    --color-theme-gold: #92400e;
+    --color-theme-ocean: #0284c7;
+    --color-theme-emerald: #059669;
+    --color-theme-crimson: #dc2626;
+    --color-theme-amethyst: #9333ea;
+    --color-theme-slate: #475569;
+  }
+
+  /* App tints. Each scope sets its palette; the generic rules below derive
+     --tint / --tint-hover / --on-tint / --tint-fill on the scope element itself so
+     nested scopes and appearance changes resolve correctly. */
+  :root,
+  [data-app="admin"] {
+    --tint-light: #5a493d;
+    --tint-light-strong: #46372b;
+    --on-tint-light: #ffffff;
+    --tint-dark: #c3b4a8;
+    --tint-dark-strong: #d7cbc2;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="mycountry"] {
+    --tint-light: #b45309;
+    --tint-light-strong: #92400e;
+    --on-tint-light: #ffffff;
+    --tint-dark: #fbbf24;
+    --tint-dark-strong: #fcd34d;
+    --on-tint-dark: #1c1917;
+  }
+  [data-app="wiki"] {
+    --tint-light: #1d4e89;
+    --tint-light-strong: #163b69;
+    --on-tint-light: #ffffff;
+    --tint-dark: #89b3e6;
+    --tint-dark-strong: #abc9ed;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="labs"] {
+    --tint-light: #5b6c04;
+    --tint-light-strong: #4b5a03;
+    --on-tint-light: #ffffff;
+    --tint-dark: #c8d84a;
+    --tint-dark-strong: #dfee82;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="thinkpages"] {
+    --tint-light: #115536;
+    --tint-light-strong: #014428;
+    --on-tint-light: #f4eedf;
+    --tint-dark: #82d2a8;
+    --tint-dark-strong: #ade3c5;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="maps"] {
+    --tint-light: #05667a;
+    --tint-light-strong: #025465;
+    --on-tint-light: #ffffff;
+    --tint-dark: #69cee6;
+    --tint-dark-strong: #9fe0f1;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="realms"] {
+    --tint-light: #603379;
+    --tint-light-strong: #4f2267;
+    --on-tint-light: #f4eedf;
+    --tint-dark: #d2acee;
+    --tint-dark-strong: #e3c8f7;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="vault"] {
+    --tint-light: #851f47;
+    --tint-light-strong: #710637;
+    --on-tint-light: #ffffff;
+    --tint-dark: #f3a3bd;
+    --tint-dark-strong: #fcc2d4;
+    --on-tint-dark: #0b0c0f;
+  }
+
+  :root,
+  [data-app] {
+    --tint: var(--tint-light);
+    --tint-hover: var(--tint-light-strong);
+    --on-tint: var(--on-tint-light);
+    --tint-fill: color-mix(in srgb, var(--tint) 14%, transparent);
+  }
+  :root[data-theme="dark"],
+  :root[data-theme="dark"] [data-app] {
+    --tint: var(--tint-dark);
+    --tint-hover: var(--tint-dark-strong);
+    --on-tint: var(--on-tint-dark);
+    --tint-fill: color-mix(in srgb, var(--tint) 18%, transparent);
+  }
+
+  /* Increase Contrast: separators .20/.24, labels and tints one step stronger. The dark rules come
+     second and are more specific, so they win in the dark theme. */
+  :root {
+    @variant contrast-more {
+      --color-label-secondary: #3f3f46;
+      --color-label-tertiary: #71717a;
+      --color-label-vibrant-secondary: #3f3f46;
+      --color-separator: rgba(0, 0, 0, 0.2);
+      --color-separator-opaque: #a1a1aa;
+    }
+  }
+  :root,
+  [data-app] {
+    @variant contrast-more {
+      --tint: var(--tint-light-strong);
+      --tint-hover: color-mix(in srgb, var(--tint-light-strong) 85%, black);
+    }
+  }
+  :root[data-theme="dark"] {
+    @variant contrast-more {
+      --color-label-secondary: #d4d4d8;
+      --color-label-tertiary: #a1a1aa;
+      --color-label-vibrant-secondary: #d4d4d8;
+      --color-separator: rgba(255, 255, 255, 0.24);
+      --color-separator-opaque: #52525b;
+    }
+  }
+  :root[data-theme="dark"],
+  :root[data-theme="dark"] [data-app] {
+    @variant contrast-more {
+      --tint: var(--tint-dark-strong);
+      --tint-hover: color-mix(in srgb, var(--tint-dark-strong) 85%, white);
+    }
+  }
+
+  /* Density: Compact multiplies component padding/gaps by 0.75; controls 28/32/40 */
+  :root[data-density="compact"] {
+    --density: 0.75;
+    --control-height-sm: 1.75rem;
+    --control-height: 2rem;
+    --control-height-lg: 2.5rem;
+  }
+
+  /* Reduce Motion: the page stops smooth-scrolling; motion/react and the
+     motion-reduce: variant handle the rest. */
+  :root[data-motion="reduced"] {
+    scroll-behavior: auto;
+  }
+
+  html,
+  body {
+    background-color: var(--color-background-grouped);
+    color: var(--color-label);
+  }
+}
+
+/* ─── Identity: glass, glow, primary ─────────────────────────────────────── */
+/* Scalars only. Anything that mixes the app tint (`--tint`) is composed at the element, in
+   layers.css and card-art.css: a custom property that reads `var(--tint)` on :root would bake the
+   root tint into every `[data-app]` subtree. */
+
+@theme static {
+  --radius-cutout: 1.75rem;
+}
+
+@layer base {
+  :root {
+    /* Layer glass scalars. Composed into paints in facet/layers.css. */
+    --pane-fill: 82%;
+    --pane-wash: 10%;
+    --canvas-wash: 7%;
+    --well-tint: 6%;
+    --chrome-fill: 80%;
+    --overlay-fill: 90%;
+    --chrome-blur: 20px;
+    --overlay-blur: 28px;
+    --glass-hairline: color-mix(in srgb, var(--color-label) 10%, transparent);
+
+    /* Press and lift (`facet-press`, `facet-lift`) */
+    --facet-press-scale: 0.98;
+    --facet-lift-y: -2px;
+    --facet-lift-shadow: 0 8px 24px rgb(0 0 0 / 0.08), 0 3px 8px rgb(0 0 0 / 0.04);
+
+    /* Primary action: monochrome, flat gold inside MyCountry and the Builder, the Commons leather tint inside ThinkPages
+       (and ThinkTanks and Messages, which wear its scope) */
+    --primary-mono: #18181b;
+    --primary-mono-hover: #3f3f46;
+    --on-primary-mono: #fafafa;
+    --gold: #f59e0b;
+    --gold-hover: #fbbf24;
+    --on-gold: #1c1917;
+    /* `accent="gold"`: amber-700 on light surfaces (the fill is under 3:1 there), amber-500 in dark */
+    --gold-accent: #b45309;
+
+    /* `bg-facet-accent-fill`: the accent at the `tint-fill` strength */
+    --accent-fill-mix: 14%;
+  }
+
+  :root[data-theme="dark"] {
+    --pane-fill: 64%;
+    --pane-wash: 8%;
+    --canvas-wash: 10%;
+    --well-tint: 8%;
+    --chrome-fill: 80%;
+    --overlay-fill: 90%;
+    --facet-lift-shadow: 0 12px 32px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
+    --primary-mono: #e4e4e7;
+    --primary-mono-hover: #d4d4d8;
+    --on-primary-mono: #0f1114;
+    --gold-accent: #f59e0b;
+    --accent-fill-mix: 18%;
+  }
+
+  /* Declared on every scope so a nested scope (a ThinkPages section inside Home) resets to the monochrome
+     primary unless its own rule below sets one. */
+  :root,
+  [data-app] {
+    --primary-fill: var(--primary-mono);
+    --primary-fill-hover: var(--primary-mono-hover);
+    --on-primary: var(--on-primary-mono);
+  }
+  [data-app="mycountry"],
+  [data-app="builder"] {
+    --primary-fill: var(--gold);
+    --primary-fill-hover: var(--gold-hover);
+    --on-primary: var(--on-gold);
+  }
+  /* ThinkPages (the forum, and the ThinkTanks and Messages pages that share its scope): the primary
+     action is the app tint itself. */
+  [data-app="thinkpages"] {
+    --primary-fill: var(--tint);
+    --primary-fill-hover: var(--tint-hover);
+    --on-primary: var(--on-tint);
+  }
+
+  @media (max-width: 768px) {
+    :root {
+      --chrome-blur: 12px;
+      --overlay-blur: 20px;
+    }
+  }
+  /* Reduce Transparency and Increase Contrast turn every glass layer opaque. */
+  :root[data-theme] {
+    @variant transparency-reduced {
+      --pane-fill: 100%;
+      --pane-wash: 0%;
+      --canvas-wash: 0%;
+      --well-tint: 0%;
+      --chrome-fill: 100%;
+      --overlay-fill: 100%;
+      --chrome-blur: 0px;
+      --overlay-blur: 0px;
+    }
+    @variant contrast-more {
+      --pane-fill: 100%;
+      --pane-wash: 0%;
+      --canvas-wash: 0%;
+      --well-tint: 0%;
+      --chrome-fill: 100%;
+      --overlay-fill: 100%;
+      --chrome-blur: 0px;
+      --overlay-blur: 0px;
+      --glass-hairline: var(--color-separator-opaque);
+    }
+  }
+}
+
+@theme inline static {
+  /* `bg-primary-fill`, `text-on-primary` */
+  --color-primary-fill: var(--primary-fill);
+  --color-primary-fill-hover: var(--primary-fill-hover);
+  --color-on-primary: var(--on-primary);
+
+  /* `accent` on cards: the scoped `--facet-accent`, or the app tint where none is set */
+  --color-facet-accent: var(--facet-accent, var(--tint));
+  --color-facet-accent-ink: color-mix(in srgb, var(--facet-accent, var(--tint)) 80%, var(--color-label));
+  --color-facet-accent-fill: color-mix(
+    in srgb,
+    var(--facet-accent, var(--tint)) var(--accent-fill-mix),
+    transparent
+  );
+}

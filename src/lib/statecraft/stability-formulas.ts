@@ -2,10 +2,6 @@
 // Internal stability calculation formulas
 // Converts economic, demographic, and policy data into security metrics
 
-// ====================================
-// TYPE DEFINITIONS
-// ====================================
-
 export interface EconomicData {
   gdpGrowth: number; // Percentage growth rate
   unemploymentRate: number; // Percentage
@@ -38,6 +34,38 @@ export interface PoliticalData {
   electionCycle: number; // Years since last election
   democracyIndex: number; // 0-100 scale
   protestFrequency: number; // Events per year
+}
+
+/** The stored columns the formula's unit-sensitive inputs come from. */
+export interface StoredStabilityUnits {
+  /** `Country.adjustedGdpGrowth`: a decimal (0.03 = 3%). */
+  gdpGrowthDecimal: number | null | undefined;
+  /** `Country.incomeInequalityGini`: a 0-1 fraction (the event spine bounds it there). */
+  gini: number | null | undefined;
+  /** `GovernmentStructure.politicalStability`: 0-100. */
+  politicalStability: number | null | undefined;
+}
+
+const finite = (value: number | null | undefined): value is number =>
+  typeof value === "number" && Number.isFinite(value);
+
+/**
+ * The formula's inputs in the units it expects (growth in percent, Gini 0-100, political
+ * stability on the World Bank -2.5..2.5 scale) from the stored columns' units. Missing values
+ * take the usual defaults (2.5% growth, Gini 35, stability 50); a Gini of 0 counts as missing.
+ */
+export function stabilityInputsFromStored(stored: StoredStabilityUnits): {
+  gdpGrowth: number;
+  giniIndex: number;
+  politicalStability: number;
+} {
+  const gini = finite(stored.gini) && stored.gini > 0 ? stored.gini : null;
+  const stability = finite(stored.politicalStability) ? stored.politicalStability : 50;
+  return {
+    gdpGrowth: finite(stored.gdpGrowthDecimal) ? stored.gdpGrowthDecimal * 100 : 2.5,
+    giniIndex: gini === null ? 35 : gini <= 1 ? gini * 100 : gini,
+    politicalStability: Math.max(0, Math.min(100, stability)) / 20 - 2.5,
+  };
 }
 
 export interface RecentPolicy {
@@ -80,14 +108,12 @@ export interface StabilityMetrics {
   stabilityTrend: "improving" | "stable" | "declining" | "critical";
 }
 
-// ====================================
 // CORE CALCULATION FUNCTIONS
-// ====================================
 
 /**
  * Calculate overall crime rate based on economic and social factors
  */
-export function calculateCrimeRate(
+function calculateCrimeRate(
   economic: EconomicData,
   demographic: DemographicData,
   government: GovernmentData
@@ -134,7 +160,7 @@ export function calculateCrimeRate(
 /**
  * Calculate organized crime level
  */
-export function calculateOrganizedCrime(
+function calculateOrganizedCrime(
   economic: EconomicData,
   government: GovernmentData,
   political: PoliticalData
@@ -160,7 +186,7 @@ export function calculateOrganizedCrime(
 /**
  * Calculate policing effectiveness
  */
-export function calculatePolicingEffectiveness(
+function calculatePolicingEffectiveness(
   government: GovernmentData,
   demographic: DemographicData
 ): number {
@@ -180,7 +206,7 @@ export function calculatePolicingEffectiveness(
 /**
  * Calculate social cohesion
  */
-export function calculateSocialCohesion(
+function calculateSocialCohesion(
   economic: EconomicData,
   demographic: DemographicData,
   political: PoliticalData
@@ -214,7 +240,7 @@ export function calculateSocialCohesion(
 /**
  * Calculate ethnic tension
  */
-export function calculateEthnicTension(
+function calculateEthnicTension(
   demographic: DemographicData,
   economic: EconomicData,
   political: PoliticalData
@@ -239,7 +265,7 @@ export function calculateEthnicTension(
 /**
  * Calculate protest frequency
  */
-export function calculateProtestFrequency(
+function calculateProtestFrequency(
   political: PoliticalData,
   economic: EconomicData,
   recentPolicies: RecentPolicy[]
@@ -268,7 +294,7 @@ export function calculateProtestFrequency(
 /**
  * Calculate riot risk
  */
-export function calculateRiotRisk(
+function calculateRiotRisk(
   political: PoliticalData,
   economic: EconomicData,
   crimeRate: number,
@@ -298,7 +324,7 @@ export function calculateRiotRisk(
 /**
  * Calculate trust in government
  */
-export function calculateTrustInGovernment(
+function calculateTrustInGovernment(
   political: PoliticalData,
   government: GovernmentData,
   economic: EconomicData
@@ -332,7 +358,7 @@ export function calculateTrustInGovernment(
 /**
  * Calculate trust in police
  */
-export function calculateTrustInPolice(
+function calculateTrustInPolice(
   policingEffectiveness: number,
   government: GovernmentData,
   crimeRate: number
@@ -358,7 +384,7 @@ export function calculateTrustInPolice(
 /**
  * Calculate fear of crime
  */
-export function calculateFearOfCrime(
+function calculateFearOfCrime(
   crimeRate: number,
   violentCrimeRate: number,
   policingEffectiveness: number,
@@ -379,9 +405,7 @@ export function calculateFearOfCrime(
   return Math.max(5, Math.min(85, fear));
 }
 
-// ====================================
 // MAIN AGGREGATION FUNCTION
-// ====================================
 
 /**
  * Calculate comprehensive stability metrics
@@ -473,63 +497,5 @@ export function calculateStabilityMetrics(
     trustInPolice: Math.round(trustInPolice),
     fearOfCrime: Math.round(fearOfCrime),
     stabilityTrend,
-  };
-}
-
-// ====================================
-// HELPER FUNCTIONS
-// ====================================
-
-/**
- * Generate default economic data for testing
- */
-export function generateDefaultEconomicData(): EconomicData {
-  return {
-    gdpGrowth: 2.5,
-    unemploymentRate: 5.0,
-    giniIndex: 35,
-    inflationRate: 2.0,
-    gdpPerCapita: 35000,
-    povertyRate: 12,
-  };
-}
-
-/**
- * Generate default government data for testing
- */
-export function generateDefaultGovernmentData(population: number): GovernmentData {
-  return {
-    policingBudget: population * 200,
-    educationBudget: population * 1500,
-    socialServicesBudget: population * 800,
-    totalBudget: population * 5000,
-    corruptionIndex: 30,
-  };
-}
-
-/**
- * Generate default demographic data for testing
- */
-export function generateDefaultDemographicData(): DemographicData {
-  return {
-    population: 10000000,
-    ethnicDiversity: 40,
-    religiousDiversity: 30,
-    urbanizationRate: 75,
-    youthUnemployment: 12,
-    populationDensity: 100,
-  };
-}
-
-/**
- * Generate default political data for testing
- */
-export function generateDefaultPoliticalData(): PoliticalData {
-  return {
-    politicalStability: 0.5,
-    politicalPolarization: 45,
-    electionCycle: 2,
-    democracyIndex: 70,
-    protestFrequency: 8,
   };
 }

@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/shared/WikiContext.tsx
 // Context for passing WikiOS state (TOC, current article) to the Dynamic Island.
 // Provides article metadata, TOC entries, and session tracking for wiki mode.
 
@@ -26,13 +25,13 @@ import {
 /** A reading-progress entry in localStorage ("wikios:pausedSessions"). */
 type PausedEntry = WikiPageRef & { scrollPercent: number; updatedAt: number };
 
-export interface WikiThemeColors {
+interface WikiThemeColors {
   primary: string;
   secondary: string;
   accent: string;
 }
 
-export interface WikiNarratorState {
+interface WikiNarratorState {
   isPlaying: boolean;
   activeBlockIndex: number;
   totalBlocks: number;
@@ -40,9 +39,11 @@ export interface WikiNarratorState {
   activeSectionTitle: string;
   speed: number;
   voice: string;
+  /** The voice that is reading: Kokoro's natural voice or the browser's; unknown until the first play. */
+  engine?: "kokoro" | "browser";
 }
 
-export interface WikiNarratorActions {
+interface WikiNarratorActions {
   play: () => void;
   pause: () => void;
   stop: () => void;

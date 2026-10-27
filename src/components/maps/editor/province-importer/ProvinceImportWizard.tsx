@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
 import React, { memo, useCallback } from "react";
 import {
   Xmark as X,
@@ -21,6 +22,7 @@ import { ValidationStep } from "./ValidationStep";
 import { CommitStep } from "./CommitStep";
 import { BorderConformanceModal } from "../BorderConformanceModal";
 import type { ImportStep } from "~/lib/maps/province-importer/types";
+import { StepIndicator } from "~/components/ui/step-indicator";
 
 interface ProvinceImportWizardProps {
   importer: ReturnType<typeof useProvinceImporter>;
@@ -38,6 +40,65 @@ const STEP_CONFIG: { key: ImportStep; label: string; icon: typeof Upload }[] = [
   { key: "commit", label: "Commit", icon: Save },
 ];
 
+const SCOPE_TITLES: Partial<Record<string, string>> = {
+  cities: "Import Cities",
+  provinces: "Import Provinces",
+};
+
+type Importer = ProvinceImportWizardProps["importer"];
+
+function WizardFooter({ importer, onCommit }: { importer: Importer; onCommit: () => void }) {
+  const isCities = importer.importScope === "cities";
+  return (
+    <div className="border-separator flex items-center justify-between border-t px-4 py-3">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-label-secondary"
+        onClick={importer.goBack}
+        disabled={!importer.canGoBack || importer.isProcessing}
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+        Back
+      </Button>
+
+      <div className="text-label-secondary text-footnote">
+        {isCities
+          ? `${importer.alignedCities.length} city/cities aligned`
+          : `${importer.includedCount} province${importer.includedCount !== 1 ? "s" : ""} selected`}
+      </div>
+
+      {importer.step !== "commit" ? (
+        <Button
+          size="sm"
+          onClick={importer.goNext}
+          disabled={
+            !importer.canGoNext ||
+            importer.isProcessing ||
+            (importer.step === "upload" &&
+              (isCities ? importer.rawCityPoints : importer.rawProvinces).length === 0)
+          }
+        >
+          Next
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Button>
+      ) : (
+        <Button
+          size="sm"
+          onClick={onCommit}
+          disabled={
+            importer.isProcessing ||
+            (isCities ? importer.alignedCities.length === 0 : importer.includedCount === 0)
+          }
+        >
+          {importer.isProcessing ? "Importing..." : isCities ? "Import Cities" : "Import Provinces"}
+          <Save className="h-3.5 w-3.5" />
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export const ProvinceImportWizard = memo(function ProvinceImportWizard({
   importer,
   onClose,
@@ -54,56 +115,40 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
   }, [importer, onComplete]);
 
   return (
-    <div className="bg-card flex h-full flex-col">
-      {/* Header */}
-      <div className="border-border flex items-center justify-between border-b px-4 py-3">
-        <h2 className="text-foreground text-sm font-semibold">
-          {importer.importScope === "cities"
-            ? "Import Cities"
-            : importer.importScope === "provinces"
-              ? "Import Provinces"
-              : "Import Provinces & Cities"}
+    <div className="bg-surface flex h-full flex-col">
+      <div className="border-separator flex items-center justify-between border-b px-4 py-3">
+        <h2 className="text-label text-headline">
+          {SCOPE_TITLES[importer.importScope] ?? "Import Provinces & Cities"}
         </h2>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-label-secondary h-6 w-6"
           onClick={handleClose}
-          className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1 transition-colors"
         >
           <X className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
-      {/* Step Indicator */}
-      <div className="border-border flex items-center gap-0.5 border-b px-3 py-2">
-        {STEP_CONFIG.map((s, i) => {
-          const Icon = s.icon;
-          const isActive = importer.step === s.key;
-          const isPast = importer.stepIndex > i;
-          return (
-            <React.Fragment key={s.key}>
-              {i > 0 && <div className={`h-px w-3 ${isPast ? "bg-primary" : "bg-border"}`} />}
-              <button
-                onClick={() => isPast && importer.goToStep(s.key)}
-                disabled={!isPast}
-                className={`flex items-center gap-1 rounded px-1.5 py-1 text-xs font-medium transition-colors ${
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : isPast
-                      ? "text-primary/70 hover:bg-accent cursor-pointer"
-                      : "text-muted-foreground"
-                }`}
-              >
-                <Icon className="h-3 w-3" />
-                <span className="hidden sm:inline">{s.label}</span>
-              </button>
-            </React.Fragment>
-          );
-        })}
-      </div>
+      <StepIndicator
+        aria-label="Import steps"
+        className="border-separator border-b px-3 py-2"
+        steps={STEP_CONFIG.map((s) => ({
+          id: s.key,
+          label: s.label,
+          icon: <s.icon aria-hidden />,
+        }))}
+        current={importer.stepIndex}
+        onStepClick={(index) => {
+          const step = STEP_CONFIG[index];
+          if (step) importer.goToStep(step.key);
+        }}
+        compactOnPhones
+      />
 
-      {/* Step Content */}
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {importer.error && (
-          <div className="bg-destructive/10 text-destructive mb-3 rounded-lg px-3 py-2 text-xs">
+          <div className="bg-destructive/10 text-destructive rounded-control text-footnote mb-3 px-3 py-2">
             {importer.error}
           </div>
         )}
@@ -113,63 +158,10 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
         {importer.step === "align" && <AlignmentStep importer={importer} />}
         {importer.step === "snap" && <SnapPreviewStep importer={importer} />}
         {importer.step === "validate" && <ValidationStep importer={importer} />}
-        {importer.step === "commit" && <CommitStep importer={importer} onCommit={handleCommit} />}
+        {importer.step === "commit" && <CommitStep importer={importer} />}
       </div>
 
-      {/* Footer Navigation */}
-      <div className="border-border flex items-center justify-between border-t px-4 py-3">
-        <button
-          onClick={importer.goBack}
-          disabled={!importer.canGoBack || importer.isProcessing}
-          className="text-muted-foreground hover:bg-accent flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-          Back
-        </button>
-
-        <div className="text-muted-foreground text-xs">
-          {importer.importScope === "cities"
-            ? `${importer.alignedCities.length} city/cities aligned`
-            : `${importer.includedCount} province${importer.includedCount !== 1 ? "s" : ""} selected`}
-        </div>
-
-        {importer.step !== "commit" ? (
-          <button
-            onClick={importer.goNext}
-            disabled={
-              !importer.canGoNext ||
-              importer.isProcessing ||
-              (importer.step === "upload" &&
-                (importer.importScope === "cities"
-                  ? importer.rawCityPoints.length === 0
-                  : importer.rawProvinces.length === 0))
-            }
-            className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
-          >
-            Next
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
-        ) : (
-          <button
-            onClick={handleCommit}
-            disabled={
-              importer.isProcessing ||
-              (importer.importScope === "cities"
-                ? importer.alignedCities.length === 0
-                : importer.includedCount === 0)
-            }
-            className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
-          >
-            {importer.isProcessing
-              ? "Importing..."
-              : importer.importScope === "cities"
-                ? "Import Cities"
-                : "Import Provinces"}
-            <Save className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
-      {/* Border conformance warning modal */}
+      <WizardFooter importer={importer} onCommit={handleCommit} />
       <BorderConformanceModal
         open={importer.showConformanceModal}
         onClose={() => importer.setShowConformanceModal(false)}

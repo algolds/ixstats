@@ -2,23 +2,101 @@
 
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { Group as Users, BellOff, Globe, AntennaSignal as Radio } from "iconoir-react";
+import { Group as Users, BellOff, Globe } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import type { MessageFolder } from "~/types/messages";
+import type { ThinkShareConversation } from "~/types/thinkshare";
+import type { MessagesSettings } from "./MessagesFolderNav";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { timeAgo } from "~/lib/format/compact";
 
-const formatRelativeTime = (date: Date | string) => timeAgo(date, { suffix: false });
+type CardSettings = Partial<Pick<MessagesSettings, "displayNamePreference">>;
+
+/** Name shown for the other participant, honouring the account-vs-country preference. */
+export function getParticipantName(conversation: ThinkShareConversation, settings?: CardSettings) {
+  const account = conversation.otherParticipants?.[0]?.account;
+  return settings?.displayNamePreference === "account" && account?.username
+    ? `@${account.username}`
+    : (account?.displayName ?? conversation.name);
+}
+
+export const isDiplomaticConversation = (c: ThinkShareConversation) =>
+  c.source === "diplomatic" || c.conversationType === "diplomatic";
+
+export const isCommunityConversation = (c: ThinkShareConversation) =>
+  ["wiki", "forum", "community"].includes(c.source ?? "");
+
+function getCardIdentity(conversation: ThinkShareConversation, settings?: CardSettings) {
+  const other = conversation.otherParticipants?.[0];
+  const isDiplomatic = isDiplomaticConversation(conversation);
+  const isGroup = conversation.type === "group" || conversation.source === "thinktank";
+  const countryName = other?.account?.countryName || other?.countryName || null;
+  const rawName = getParticipantName(conversation, settings) ?? "Unknown";
+
+  return {
+    other,
+    isDiplomatic,
+    isGroup,
+    isCommunity: isCommunityConversation(conversation),
+    countryName,
+    countryFlag: other?.account?.countryFlag || other?.countryFlag || null,
+    displayName: isDiplomatic
+      ? countryName || rawName
+      : isGroup
+        ? (conversation.name ?? "Group Chat")
+        : rawName,
+  };
+}
+
+function CardAvatar({
+  conversation,
+  identity,
+}: {
+  conversation: ThinkShareConversation;
+  identity: ReturnType<typeof getCardIdentity>;
+}) {
+  const { isGroup, isDiplomatic, countryFlag, countryName, displayName, other } = identity;
+
+  if (!isGroup && isDiplomatic && countryFlag) {
+    return (
+      <div className="border-separator rounded-control-sm h-7 w-10 overflow-hidden border">
+        <UnifiedCountryFlag
+          countryName={countryName || displayName}
+          flagUrl={normalizeFlagUrl(countryFlag)}
+          className="h-full w-full object-cover"
+          showTooltip={false}
+        />
+      </div>
+    );
+  }
+
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .filter(Boolean)
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
+
+  return (
+    <Avatar className="border-separator size-10 border">
+      <AvatarImage
+        src={(isGroup ? conversation.avatar : other?.account?.profileImageUrl) ?? undefined}
+        alt={displayName}
+      />
+      <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
+        {isGroup ? <Users className="size-4" aria-hidden="true" /> : initials || "?"}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
 
 interface MessagesConversationCardProps {
-  conversation: any;
+  conversation: ThinkShareConversation;
   isSelected: boolean;
   onClick: () => void;
   currentUserId: string;
-  activeFolder: MessageFolder;
-  settings?: any;
+  settings?: CardSettings;
   isMuted?: boolean;
 }
 
@@ -27,137 +105,76 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
   isSelected,
   onClick,
   currentUserId,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  activeFolder,
   settings,
   isMuted = false,
 }: MessagesConversationCardProps) {
-  const otherParticipant = conversation.otherParticipants?.[0];
-  const lastMessage = conversation.lastMessage;
-  const hasUnread = conversation.unreadCount > 0;
-
-  // Resolve identity based on settings & domain
-  const isDiplomatic =
-    conversation.source === "diplomatic" || conversation.conversationType === "diplomatic";
-  const isGroup = conversation.type === "group" || conversation.source === "thinktank";
-  const isCommunity =
-    conversation.source === "wiki" ||
-    conversation.source === "forum" ||
-    conversation.source === "community";
-
-  const participantCountryFlag =
-    otherParticipant?.account?.countryFlag || otherParticipant?.countryFlag || null;
-  const participantCountryName =
-    otherParticipant?.account?.countryName || otherParticipant?.countryName || null;
-
-  const rawName =
-    settings?.displayNamePreference === "account" && otherParticipant?.account?.username
-      ? `@${otherParticipant.account.username}`
-      : (otherParticipant?.account?.displayName ?? conversation.name ?? "Unknown");
-
-  const displayName = isDiplomatic
-    ? participantCountryName || rawName
-    : isGroup
-      ? (conversation.name ?? "Group Chat")
-      : rawName;
-
-  const participantAvatar = otherParticipant?.account?.profileImageUrl ?? null;
-  const isSelfMessage = otherParticipant?.accountId === currentUserId;
-
-  const initials = displayName
-    .split(" ")
-    .map((n: string) => n[0])
-    .filter(Boolean)
-    .join("")
-    .substring(0, 2)
-    .toUpperCase();
+  const { lastMessage, unreadCount } = conversation;
+  const hasUnread = unreadCount > 0;
+  const identity = getCardIdentity(conversation, settings);
+  const { displayName, isDiplomatic, isCommunity, other } = identity;
+  const isSelfMessage = other?.accountId === currentUserId;
 
   return (
     <button
+      type="button"
       onClick={onClick}
+      aria-current={isSelected || undefined}
       className={cn(
-        "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.985]",
-        isSelected
-          ? "bg-accent/80 text-accent-foreground ring-border/50 shadow-2xs ring-1"
-          : "hover:bg-accent/20 text-foreground/90 hover:text-foreground"
+        "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-colors duration-150 select-none",
+        isSelected ? "bg-tint-fill text-label" : "hover:bg-fill-4 text-label hover:text-label"
       )}
     >
-      {/* Avatar / Flag */}
       <div className="relative shrink-0">
-        {isGroup ? (
-          <Avatar className="ring-border/30 h-10 w-10 ring-1">
-            <AvatarImage src={conversation.avatar ?? undefined} alt={displayName} />
-            <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-semibold">
-              <Users className="h-4 w-4 opacity-80" />
-            </AvatarFallback>
-          </Avatar>
-        ) : isDiplomatic && participantCountryFlag ? (
-          <div className="ring-border/30 h-7 w-10 overflow-hidden rounded-md shadow-2xs ring-1">
-            <UnifiedCountryFlag
-              countryName={participantCountryName || displayName}
-              flagUrl={normalizeFlagUrl(participantCountryFlag)}
-              className="h-full w-full object-cover"
-              showTooltip={false}
-            />
-          </div>
-        ) : (
-          <Avatar className="ring-border/25 h-10 w-10 ring-1">
-            <AvatarImage src={participantAvatar ?? undefined} alt={displayName} />
-            <AvatarFallback className="bg-muted text-muted-foreground text-xs font-semibold">
-              {initials || "?"}
-            </AvatarFallback>
-          </Avatar>
-        )}
-
-        {/* Crisp unread indicator dot */}
+        <CardAvatar conversation={conversation} identity={identity} />
         {hasUnread && (
-          <span className="bg-primary ring-background absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2" />
+          <span
+            className="bg-tint ring-surface absolute -top-0.5 -right-0.5 size-2.5 rounded-full ring-2"
+            aria-hidden="true"
+          />
+        )}
+        {conversation.type === "direct" && other?.isOnline && (
+          <span
+            className="bg-success ring-surface absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2"
+            aria-label="Online"
+            role="img"
+          />
         )}
       </div>
 
-      {/* Content lines */}
       <div className="min-w-0 flex-1">
-        {/* Row 1: Name + Metadata + Time */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-1.5">
+          <div className="flex min-w-0 items-center gap-2">
             <span
               className={cn(
-                "truncate text-[13px] tracking-[-0.01em]",
-                hasUnread
-                  ? "text-foreground font-semibold"
-                  : isSelected
-                    ? "text-foreground font-semibold"
-                    : "text-foreground/90 font-medium"
+                "text-body text-label truncate",
+                hasUnread || isSelected ? "font-semibold" : "font-medium"
               )}
             >
               {isSelfMessage ? `${displayName} (You)` : displayName}
             </span>
-
-            {/* Subtle contextual glyph for official / community channels */}
-            {isDiplomatic && <Globe className="h-3 w-3 shrink-0 text-amber-500/80" />}
-            {isCommunity && (
-              <span className="text-muted-foreground/60 text-xs font-normal">
-                • Community
-              </span>
+            {isDiplomatic && (
+              <Globe className="text-label-secondary size-3.5 shrink-0" aria-label="Diplomatic" />
             )}
+            {isCommunity && <span className="text-footnote text-label-secondary">• Community</span>}
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5">
-            {isMuted && <BellOff className="text-muted-foreground/50 h-3 w-3 shrink-0" />}
+          <div className="flex shrink-0 items-center gap-2">
+            {isMuted && (
+              <BellOff className="text-label-secondary size-3.5 shrink-0" aria-label="Muted" />
+            )}
             {lastMessage && (
-              <span className="text-muted-foreground/60 text-xs font-normal tabular-nums">
-                {formatRelativeTime(lastMessage.createdAt ?? lastMessage.ixTimeTimestamp)}
+              <span className="text-footnote text-label-secondary tabular-nums">
+                {timeAgo(lastMessage.createdAt ?? lastMessage.ixTimeTimestamp, { suffix: false })}
               </span>
             )}
           </div>
         </div>
 
-        {/* Row 2: Message preview + Unread badge */}
         <div className="mt-0.5 flex items-center justify-between gap-2">
           <p
             className={cn(
-              "line-clamp-1 text-[12px] leading-normal",
-              hasUnread ? "text-foreground font-medium" : "text-muted-foreground font-normal"
+              "text-footnote line-clamp-1",
+              hasUnread ? "text-label font-medium" : "text-label-secondary"
             )}
           >
             {lastMessage ? (
@@ -166,13 +183,13 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
                 {lastMessage.content.replace(/<[^>]*>/g, "")}
               </>
             ) : (
-              <span className="italic opacity-60">No messages yet</span>
+              <span className="text-label-tertiary italic">No messages yet</span>
             )}
           </p>
 
-          {hasUnread && conversation.unreadCount > 0 && (
-            <span className="bg-primary text-primary-foreground flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full px-1 text-xs font-semibold tabular-nums shadow-2xs">
-              {conversation.unreadCount}
+          {hasUnread && (
+            <span className="bg-tint text-caption text-on-tint flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 tabular-nums">
+              {unreadCount}
             </span>
           )}
         </div>

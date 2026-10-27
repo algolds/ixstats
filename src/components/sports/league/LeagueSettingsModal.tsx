@@ -38,6 +38,7 @@ interface LeagueSettingsModalProps {
     promotionCount?: number;
     relegationCount?: number;
     sportPreset?: string;
+    createdByUserId?: string;
     archetype?: string;
     settings?: any;
     wikiSlug?: string | null;
@@ -253,11 +254,11 @@ export function LeagueSettingsModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base">
+          <DialogTitle className="text-body flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            League Settings & Engine
+            League settings & engine
           </DialogTitle>
-          <DialogDescription className="text-xs">
+          <DialogDescription className="text-footnote">
             Manage branding, promotion structure, and simulator engine behavior.
           </DialogDescription>
         </DialogHeader>
@@ -343,18 +344,14 @@ export function LeagueSettingsModal({
         )}
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="text-xs">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="text-footnote">
             Cancel
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={updateLeague.isPending || isUploading}
-            className="text-xs"
-          >
+          <Button onClick={handleSave} disabled={updateLeague.isPending || isUploading}>
             {updateLeague.isPending || isUploading ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
             ) : null}
-            Save Changes
+            Save changes
           </Button>
         </DialogFooter>
       </DialogContent>

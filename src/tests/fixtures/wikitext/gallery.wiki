@@ -1,0 +1,8 @@
+== Gallery ==
+<gallery mode="packed" heights="120">
+File:Vilena1.jpg|The harbour
+File:Vilena2.jpg|The old town
+File:Vilena3.jpg|[[Vilena Cathedral]] at night
+</gallery>
+
+Text after the gallery.

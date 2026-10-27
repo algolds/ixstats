@@ -1,110 +1,16 @@
-/**
- * wikios.ts — WikiOS tRPC router.
- *
- * Provides endpoints for WikiOS article rendering, editing, history, search,
- * template registry, watchlist, advanced search, and category tree.
- */
-
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { getWikiAuth } from "~/lib/wiki-os/auth";
+import { assertTitleVisible } from "~/lib/wiki-os/permissions";
 import {
   getUserContribs,
   getUserInfo,
   getBacklinks,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
-import { db } from "~/server/db";
 import { LinkGraphService } from "~/lib/wiki-os/core";
 import { toRevisionRef } from "~/lib/wiki-os/core/domain-types";
 
 export const wikiosUserTalkRouter = createTRPCRouter({
-  /**
-   * Consolidated author profile for WikiOS sidebar, header, and user cards.
-   * Resolves wiki identity, MediaWiki MySQL stats, loreward scores, and country affiliation in a single fast query (~15ms).
-   */
-  getAuthorProfile: publicProcedure
-    .input(
-      z
-        .object({
-          username: z.string().optional(),
-        })
-        .optional()
-    )
-    .query(async ({ ctx, input }) => {
-      let wikiName = input?.username?.trim() || null;
-      let internalUser = ctx.user;
-
-      if (!wikiName && ctx.auth?.userId) {
-        wikiName = getWikiAuth(ctx).wikiUsername;
-      }
-
-      if (!wikiName) {
-        return null;
-      }
-
-      const userPromise = !internalUser?.id
-        ? db.user.findFirst({
-            where: {
-              OR: [{ wikiUsername: wikiName }, { clerkUserId: ctx.auth?.userId ?? undefined }],
-            },
-            select: {
-              id: true,
-              clerkUserId: true,
-              countryId: true,
-              roleId: true,
-              membershipTier: true,
-              wikiUsername: true,
-              wikiUserId: true,
-              createdAt: true,
-              updatedAt: true,
-              country: { select: { id: true, name: true, flag: true } },
-              role: { select: { id: true, name: true, level: true } },
-            },
-          })
-        : Promise.resolve(internalUser);
-
-      // Parallel fetch User + Action API user info + Loreward stats
-      const [resolvedUser, mwInfo, loreStatsRecord] = await Promise.all([
-        userPromise,
-        getUserInfo(wikiName),
-        db.lorewardUserStats.findUnique({
-          where: { username: wikiName },
-        }),
-      ]);
-      internalUser = resolvedUser;
-
-      // Calculate rank if loreStatsRecord exists
-      let rank: number | null = null;
-      if (loreStatsRecord && loreStatsRecord.totalScore > 0) {
-        const higherCount = await db.lorewardUserStats.count({
-          where: { totalScore: { gt: loreStatsRecord.totalScore } },
-        });
-        rank = higherCount + 1;
-      }
-
-      const totalWins =
-        (loreStatsRecord?.dailyWins ?? 0) +
-        (loreStatsRecord?.weeklyWins ?? 0) +
-        (loreStatsRecord?.monthlyWins ?? 0);
-
-      return {
-        username: wikiName,
-        displayName: wikiName,
-        existsInMediaWiki: Boolean(mwInfo),
-        editCount: mwInfo?.user_editcount ?? 0,
-        registration: mwInfo?.user_registration ?? null,
-        groups: [] as string[],
-        loreScore: loreStatsRecord?.totalScore ?? 0,
-        loreStreak: loreStatsRecord?.currentStreak ?? 0,
-        longestStreak: loreStatsRecord?.longestStreak ?? 0,
-        totalWins,
-        rank,
-        country: internalUser?.country ?? null,
-        role: internalUser?.role ?? null,
-      };
-    }),
-
   /**
    * Get pages that link to the given page (backlinks / "What Links Here").
    * Native PostgreSQL Link Graph queried in O(1) time (<1ms).
@@ -117,7 +23,8 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         offset: z.string().optional(),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await assertTitleVisible(ctx, input.title);
       // 1. Fast-path: Native PostgreSQL Directed Link Graph (<1ms)
       const nativeLinks = await LinkGraphService.getBacklinks(input.title, "ixwiki", input.limit);
       if (nativeLinks.length > 0) {
@@ -131,7 +38,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         };
       }
 
-      // 2. Fallback: MySQL bridge
+      // 2. Fallback: the bridge (PostgreSQL)
       const result: any = await getBacklinks(
         input.title,
         input.limit,
@@ -186,6 +93,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
             minor: Boolean(c.rev_minor_edit ?? c.minor),
             diff: c.diff ?? 0,
             isNew: Boolean(c.is_new ?? c.isNew),
+            parked: c.parked === true,
           })),
           continueToken:
             contribs.length >= input.limit && contribs.length > 0
@@ -200,7 +108,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         .findMany({
           where: {
             author: { equals: cleanUser, mode: "insensitive" },
-            article: { namespace: ns },
+            article: { namespace: ns, status: "PUBLISHED" },
           },
           include: {
             article: { select: { title: true } },
@@ -221,6 +129,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         size: rev.byteSize,
         minor: rev.minor,
         isNew: !rev.parentRevisionId,
+        parked: rev.parked,
       }));
 
       return {
@@ -233,7 +142,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
   getUserInfo: publicProcedure
     .input(z.object({ username: z.string().min(1).max(200) }))
     .query(async ({ input }) => {
-      // Direct MySQL — ~20ms vs ~300ms via API
+      // PostgreSQL (revisions and the rights engine), not a MediaWiki call
       return getUserInfo(input.username);
     }),
 });

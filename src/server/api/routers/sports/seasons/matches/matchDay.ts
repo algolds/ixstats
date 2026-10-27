@@ -2,12 +2,12 @@
  * Sports Seasons — Match Day Simulation Router
  *
  * Both procedures go through simulateAndPersistMatch (seeded, snapshotted, atomically
- * claimed) — the same path as the full-season sim and the IxTime cron.
+ * claimed) — the same path as the full-season sim and the auto-advance cron.
  */
 
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { assertCanManageLeague } from "~/server/api/routers/sports/league-access";
 import { transitionToNextStage } from "~/lib/sports";
@@ -49,7 +49,7 @@ function narrateInBackground(
       const dbConfig = await getGlobalLLMConfig(db);
       const commentary = await narrateEvents(trace, { sport, config: dbConfig });
       if (!commentary || commentary.length === 0) return;
-      const broadcastAudio = await generateAudioBroadcast(commentary, dbConfig);
+      const broadcastAudio = await generateAudioBroadcast(commentary);
       const latest = await db.sportMatch.findUnique({
         where: { id: matchId },
         select: { matchStats: true },
@@ -74,7 +74,7 @@ function narrateInBackground(
 }
 
 export const matchDaySimulationRouter = createTRPCRouter({
-  simulateMatchDay: protectedProcedure
+  simulateMatchDay: rateLimitedMutationProcedure
     .input(z.object({ seasonId: z.string(), matchDay: z.number().int().min(1) }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -198,7 +198,7 @@ export const matchDaySimulationRouter = createTRPCRouter({
       }
     }),
 
-  simulateSingleMatch: protectedProcedure
+  simulateSingleMatch: rateLimitedMutationProcedure
     .input(z.object({ matchId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {

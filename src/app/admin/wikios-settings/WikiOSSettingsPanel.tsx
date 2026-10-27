@@ -3,8 +3,8 @@
 // WikiOS Base Settings Admin Panel
 
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
-import { OpenBook as BookOpen } from "iconoir-react";
+import { PageHeader } from "~/components/shell/PageHeader";
+
 import { api } from "~/trpc/react";
 import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import {
@@ -14,6 +14,10 @@ import {
 } from "../wiki/components";
 
 import { WikiOSUtilitiesDeck } from "~/components/wiki-os/utilities/WikiOSUtilitiesDeck";
+import { EditingSection } from "./EditingSection";
+import { MirrorStatusSection } from "./MirrorStatusSection";
+import { ConflictLogSection } from "./ConflictLogSection";
+import { InboundQuarantineSection } from "./InboundQuarantineSection";
 
 export function WikiOSSettingsPanel() {
   usePageTitle({ title: "Admin - WikiOS Settings" });
@@ -25,15 +29,19 @@ export function WikiOSSettingsPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={BookOpen}
-        title="WikiOS Utilities & Health Administration"
-        description="Unified health diagnostics, link integrity, and realm governance deck."
-      />
+      <PageHeader title="WikiOS settings" />
 
       <WikiOSUtilitiesDeck embedded={true} defaultDomain="diagnostics" />
 
-      <div className="border-border/40 space-y-6 border-t pt-6">
+      <EditingSection />
+
+      <MirrorStatusSection />
+
+      <InboundQuarantineSection />
+
+      <ConflictLogSection />
+
+      <div className="border-separator space-y-6 border-t pt-6">
         <WikiLinkStatusSection countriesData={countriesData} isLoading={countriesLoading} />
         <ManualLinkEditorSection countriesData={countriesData} />
         <SystemTuningSection />
@@ -41,5 +49,3 @@ export function WikiOSSettingsPanel() {
     </div>
   );
 }
-
-export default WikiOSSettingsPanel;

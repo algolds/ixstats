@@ -4,43 +4,51 @@
 
 import { useEffect, useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "./AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
-import { Switch } from "~/components/ui/switch";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Globe, FloppyDisk as Save, RssFeed as Rss, Send } from "iconoir-react";
+import { Globe, FloppyDisk as Save, RssFeed as Rss, WarningTriangle } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
+import { Card } from "~/components/ui/card";
+import { ThinkPagesDiscordFeedCard } from "./ThinkPagesDiscordFeedCard";
+import { ThinkPagesFlagQueueCard } from "./ThinkPagesFlagQueueCard";
 
 export function ThinkPagesSettingsContent() {
   usePageTitle({ title: "Admin - ThinkPages Panel" });
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Globe}
-        title="ThinkPages Social Platform Controls"
-        description="Configure ThinkPages social feed properties, maximum character caps, auto-news election logs, and Discord RSS-style feed mirroring."
+      <PageHeader
+        title="ThinkPages settings"
+        subtitle="Account limits, flagged posts and the Discord feed mirror."
       />
 
       <Tabs defaultValue="platform" className="w-full">
-        <TabsList className="bg-card/40 border-border/40 mb-4 flex w-full max-w-md justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
+        <TabsList className="bg-fill-3 mb-4 flex w-full max-w-xl justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="platform"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
-            <Globe className="h-4 w-4 text-cyan-400" />
-            Platform Settings
+            <Globe className="text-teal h-4 w-4" />
+            Platform settings
+          </TabsTrigger>
+          <TabsTrigger
+            value="flags"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
+          >
+            <WarningTriangle className="text-orange h-4 w-4" />
+            Flagged posts
           </TabsTrigger>
           <TabsTrigger
             value="discord"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
-            <Rss className="h-4 w-4 text-purple-400" />
-            Discord Mirror Feed
+            <Rss className="text-purple h-4 w-4" />
+            Discord mirror feed
           </TabsTrigger>
         </TabsList>
 
@@ -48,17 +56,19 @@ export function ThinkPagesSettingsContent() {
           <PlatformSettingsTab />
         </TabsContent>
 
+        <TabsContent value="flags" className="mt-4 focus-visible:outline-none">
+          <ThinkPagesFlagQueueCard />
+        </TabsContent>
+
         <TabsContent value="discord" className="mt-4 focus-visible:outline-none">
-          <DiscordMirrorTab />
+          <ThinkPagesDiscordFeedCard />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────
 // 1. Platform Settings Tab
-// ────────────────────────────────────────────────────────────────────────
 
 function PlatformSettingsTab() {
   const notify = useNotify();
@@ -105,77 +115,58 @@ function PlatformSettingsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Real Stats Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Total Social Posts
-          </p>
+        <Card className="p-4">
+          <p className="text-label-secondary text-eyebrow">Total social posts</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
-              {stats?.totalPosts.toLocaleString() ?? 0}
+            <p className="text-label text-title-2 mt-1 tabular-nums">
+              {stats?.totalPosts.toLocaleString() ?? "—"}
             </p>
           )}
-        </div>
+        </Card>
 
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Registered Accounts
-          </p>
+        <Card className="p-4">
+          <p className="text-label-secondary text-eyebrow">Registered accounts</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
-              {stats?.totalAccounts.toLocaleString() ?? 0}
+            <p className="text-title-2 text-purple mt-1 tabular-nums">
+              {stats?.totalAccounts.toLocaleString() ?? "—"}
             </p>
           )}
-        </div>
+        </Card>
 
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Weekly Growth
-          </p>
+        <Card className="p-4">
+          <p className="text-label-secondary text-eyebrow">Weekly growth</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
-              {(stats?.weeklyGrowth ?? 0) > 0 ? "+" : ""}
-              {stats?.weeklyGrowth ?? 0}%
+            <p className="text-title-2 text-green mt-1 tabular-nums">
+              {stats ? `${stats.weeklyGrowth > 0 ? "+" : ""}${stats.weeklyGrowth}%` : "—"}
             </p>
           )}
-        </div>
+        </Card>
       </div>
 
-      {/* Settings Form */}
-      <div className="border-border/30 bg-card/25 space-y-5 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-        <div className="border-border/20 flex items-center justify-between border-b pb-4">
+      <Card className="space-y-5 p-5">
+        <div className="border-separator flex items-center justify-between border-b pb-4">
           <div>
-            <h3 className="text-foreground text-xs font-bold">ThinkPages Platform Settings</h3>
-            <p className="text-muted-foreground mt-0.5 text-xs">
-              Limits, automated news publishing, and content moderation rules
-            </p>
+            <h3 className="text-label text-caption">ThinkPages Platform Settings</h3>
+            <p className="text-label-secondary text-footnote mt-0.5">Per-user account limit</p>
           </div>
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={saveMutation.isPending || configLoading}
-            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
-            <Save className="mr-1.5 h-3.5 w-3.5" />
+          <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending || configLoading}>
+            <Save className="mr-2 h-3.5 w-3.5" />
             {saveMutation.isPending ? "Saving..." : "Save Settings"}
           </Button>
         </div>
 
         <div className="space-y-3">
-          {/* Max Accounts */}
-          <div className="border-border/20 bg-background/30 flex flex-col justify-between gap-3 rounded-xl border p-3.5 sm:flex-row sm:items-center">
+          <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-4 sm:flex-row sm:items-center">
             <div>
-              <Label className="text-foreground text-xs font-bold">
-                Max Accounts Limit per User
-              </Label>
-              <p className="text-muted-foreground text-xs">
+              <Label className="text-label text-caption">Max Accounts Limit per User</Label>
+              <p className="text-label-secondary text-footnote">
                 Cap the maximum number of ThinkPages feed profiles a player can hold
               </p>
             </div>
@@ -183,142 +174,13 @@ function PlatformSettingsTab() {
               type="number"
               value={settings.maxAccountsPerUser}
               onChange={(e) => handleToggle("maxAccountsPerUser", parseInt(e.target.value) || 1)}
-              className="border-border/30 bg-background/50 h-8 w-28 rounded-xl font-mono text-xs font-bold"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm) w-28 font-mono"
               min={1}
               max={100}
             />
           </div>
-
-          {/* Character Cap */}
-          <div className="border-border/20 bg-background/30 flex flex-col justify-between gap-3 rounded-xl border p-3.5 sm:flex-row sm:items-center">
-            <div>
-              <Label className="text-foreground text-xs font-bold">Post Character Length Cap</Label>
-              <p className="text-muted-foreground text-xs">
-                Maximum allowed character length for post content (excluding blurb header tags)
-              </p>
-            </div>
-            <Input
-              type="number"
-              value={settings.maxCharLength}
-              onChange={(e) => handleToggle("maxCharLength", parseInt(e.target.value) || 280)}
-              className="border-border/30 bg-background/50 h-8 w-28 rounded-xl font-mono text-xs font-bold"
-              min={280}
-              max={10000}
-            />
-          </div>
-
-          {/* Auto News Elections */}
-          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
-            <div>
-              <Label className="text-foreground text-xs font-bold">
-                Election Results Auto-News
-              </Label>
-              <p className="text-muted-foreground text-xs">
-                Automatically publish detailed election outcomes to the ThinkPages feed
-              </p>
-            </div>
-            <Switch
-              checked={settings.autoNewsElections}
-              onCheckedChange={(checked) => handleToggle("autoNewsElections", checked)}
-              className="scale-90"
-            />
-          </div>
-
-          {/* Auto News Policies */}
-          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
-            <div>
-              <Label className="text-foreground text-xs font-bold">
-                Passed Directives Auto-News
-              </Label>
-              <p className="text-muted-foreground text-xs">
-                Broadcast newly declared national directives and policy milestones
-              </p>
-            </div>
-            <Switch
-              checked={settings.autoNewsPolicies}
-              onCheckedChange={(checked) => handleToggle("autoNewsPolicies", checked)}
-              className="scale-90"
-            />
-          </div>
-
-          {/* Comment Attachments */}
-          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
-            <div>
-              <Label className="text-foreground text-xs font-bold">Media & Card Attachments</Label>
-              <p className="text-muted-foreground text-xs">
-                Allow attaching vault cards, flags, and image links in replies
-              </p>
-            </div>
-            <Switch
-              checked={settings.commentAttachments}
-              onCheckedChange={(checked) => handleToggle("commentAttachments", checked)}
-              className="scale-90"
-            />
-          </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
-
-// ────────────────────────────────────────────────────────────────────────
-// 2. Discord Mirror Tab
-// ────────────────────────────────────────────────────────────────────────
-
-function DiscordMirrorTab() {
-  const notify = useNotify();
-  const [webhookUrl, setWebhookUrl] = useState("");
-  const [isSending, setIsSending] = useState(false);
-
-  const handleTestWebhook = () => {
-    if (!webhookUrl) {
-      notify.error("Validation Error", "Please provide a valid Discord Webhook URL.");
-      return;
-    }
-
-    setIsSending(true);
-    setTimeout(() => {
-      setIsSending(false);
-      notify.success("Test Dispatched", "Sample broadcast was sent to the Discord channel.");
-    }, 600);
-  };
-
-  return (
-    <div className="border-border/30 bg-card/25 space-y-5 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-      <div>
-        <h3 className="text-foreground text-xs font-bold">Discord ThinkPages Mirror</h3>
-        <p className="text-muted-foreground mt-0.5 text-xs">
-          Mirror trending thinkpage posts and breaking news bulletins directly to a Discord webhook
-          channel
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <Label className="text-foreground mb-1.5 block text-xs font-medium">
-            Discord Webhook URL
-          </Label>
-          <Input
-            value={webhookUrl}
-            onChange={(e) => setWebhookUrl(e.target.value)}
-            placeholder="https://discord.com/api/webhooks/..."
-            className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
-          />
-        </div>
-
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleTestWebhook}
-          disabled={isSending || !webhookUrl}
-          className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
-        >
-          <Send className="mr-1.5 h-3.5 w-3.5" />
-          {isSending ? "Sending Test..." : "Send Test Broadcast"}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-export default ThinkPagesSettingsContent;

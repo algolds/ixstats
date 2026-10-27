@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
@@ -13,13 +13,7 @@ import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import {
   Dialog,
   DialogContent,
@@ -42,36 +36,36 @@ import {
   Search,
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
+import { Card } from "~/components/ui/card";
 
-export function BlurbsPanel() {
+function BlurbsPanel() {
   usePageTitle({ title: "Admin - Blurbs & Prompts" });
   const [activeTab, setActiveTab] = useState("prompts");
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={MessageCircle}
-        title="Blurbs & Community Prompts"
-        description="Oversee weekly Topic Tuesday prompts, publish interactive discussion topics, and moderate community responses."
+      <PageHeader
+        title="Blurbs and community prompts"
+        subtitle="Weekly Topic Tuesday prompts, discussion topics and response moderation."
       />
 
       <BlurbStatsSummary />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-card/40 border-border/40 mb-4 flex w-full max-w-md justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
+        <TabsList className="bg-fill-3 mb-4 flex w-full max-w-md justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="prompts"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
-            <FileText className="h-4 w-4 text-cyan-400" />
-            Prompt Catalog
+            <FileText className="text-teal h-4 w-4" />
+            Prompt catalog
           </TabsTrigger>
           <TabsTrigger
             value="moderation"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
-            <MessageCircle className="h-4 w-4 text-purple-400" />
-            Response Moderation
+            <MessageCircle className="text-purple h-4 w-4" />
+            Response moderation
           </TabsTrigger>
         </TabsList>
 
@@ -87,8 +81,6 @@ export function BlurbsPanel() {
   );
 }
 
-// ── Stats Summary ────────────────────────────────────────────────────────────
-
 function BlurbStatsSummary() {
   const { data: blurbCount, isLoading: countLoading } = api.blurbs.getBlurbCount.useQuery();
   const { data: activePrompts, isLoading: activeLoading } = api.blurbs.getAllPrompts.useQuery({
@@ -100,53 +92,41 @@ function BlurbStatsSummary() {
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Total Responses
-        </p>
+      <Card className="p-4">
+        <p className="text-label-secondary text-eyebrow">Total responses</p>
         {countLoading ? (
           <Skeleton className="mt-1 h-7 w-16" />
         ) : (
-          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
+          <p className="text-label text-title-2 mt-1 tabular-nums">
             {(blurbCount ?? 0).toLocaleString()}
           </p>
         )}
-      </div>
+      </Card>
 
-      <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Active Prompts
-        </p>
+      <Card className="p-4">
+        <p className="text-label-secondary text-eyebrow">Active prompts</p>
         {activeLoading ? (
           <Skeleton className="mt-1 h-7 w-16" />
         ) : (
-          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
-            {activePrompts?.length ?? 0}
-          </p>
+          <p className="text-title-2 text-green mt-1 tabular-nums">{activePrompts?.length ?? 0}</p>
         )}
-      </div>
+      </Card>
 
-      <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          All Prompts Catalog
-        </p>
+      <Card className="p-4">
+        <p className="text-label-secondary text-eyebrow">All prompts catalog</p>
         {allLoading ? (
           <Skeleton className="mt-1 h-7 w-16" />
         ) : (
-          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
-            {allPrompts?.length ?? 0}
-          </p>
+          <p className="text-title-2 text-teal mt-1 tabular-nums">{allPrompts?.length ?? 0}</p>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
 
-// ── Prompt Management Section ────────────────────────────────────────────────
-
 const STATUS_CONFIG = {
-  DRAFT: { label: "Draft", icon: FileText, variant: "secondary" as const },
-  ACTIVE: { label: "Active", icon: CheckCircle, variant: "default" as const },
+  DRAFT: { label: "Draft", icon: FileText, variant: "default" as const },
+  ACTIVE: { label: "Active", icon: CheckCircle, variant: "secondary" as const },
   CLOSED: { label: "Closed", icon: Clock, variant: "outline" as const },
   ARCHIVED: { label: "Archived", icon: Archive, variant: "outline" as const },
 };
@@ -219,12 +199,12 @@ function PromptManagementSection() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 items-center gap-2">
           <div className="relative max-w-sm flex-1">
-            <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search prompts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-border/30 bg-background/50 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
             />
           </div>
 
@@ -234,7 +214,7 @@ function PromptManagementSection() {
                 key={s ?? "all"}
                 variant={statusFilter === s ? "default" : "ghost"}
                 size="sm"
-                className="h-8 rounded-xl px-2.5 text-xs font-semibold active:scale-[0.98]"
+
                 onClick={() =>
                   setStatusFilter(s as "DRAFT" | "ACTIVE" | "CLOSED" | "ARCHIVED" | undefined)
                 }
@@ -247,21 +227,18 @@ function PromptManagementSection() {
 
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button
-              size="sm"
-              className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
-            >
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              New Prompt
+            <Button size="sm">
+              <Plus className="mr-2 h-3.5 w-3.5" />
+              New prompt
             </Button>
           </DialogTrigger>
-          <DialogContent className="border-border/30 bg-card/95 max-w-md rounded-2xl backdrop-blur-md">
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-sm font-bold">Create Community Topic Prompt</DialogTitle>
+              <DialogTitle>Create community topic prompt</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-3">
-              <div className="space-y-1.5">
-                <Label className="text-foreground text-xs font-medium">Title</Label>
+              <div className="space-y-2">
+                <Label className="text-label text-caption">Title</Label>
                 <Input
                   value={form.title}
                   onChange={(e) => {
@@ -276,27 +253,25 @@ function PromptManagementSection() {
                     }));
                   }}
                   placeholder="Topic Tuesday: National Cuisine"
-                  className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                   maxLength={200}
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-foreground text-xs font-medium">
-                  Question / Description
-                </Label>
+              <div className="space-y-2">
+                <Label className="text-label text-caption">Question / Description</Label>
                 <Textarea
                   value={form.question}
                   onChange={(e) => setForm((prev) => ({ ...prev, question: e.target.value }))}
                   placeholder="What is your realm's national dish, and how is it prepared?"
                   rows={3}
-                  className="border-border/30 bg-background/50 rounded-xl text-xs"
+                  className="md:text-footnote"
                   maxLength={500}
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-foreground text-xs font-medium">URL Slug</Label>
+              <div className="space-y-2">
+                <Label className="text-label text-caption">URL Slug</Label>
                 <Input
                   value={form.slug}
                   onChange={(e) =>
@@ -306,13 +281,13 @@ function PromptManagementSection() {
                     }))
                   }
                   placeholder="topic-tuesday-cuisine"
-                  className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
                   maxLength={100}
                 />
               </div>
 
-              <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3">
-                <Label className="text-xs font-medium">Publish Immediately</Label>
+              <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3">
+                <Label className="text-caption">Publish immediately</Label>
                 <Switch
                   checked={form.publishNow}
                   onCheckedChange={(val) => setForm((prev) => ({ ...prev, publishNow: val }))}
@@ -321,12 +296,7 @@ function PromptManagementSection() {
               </div>
             </div>
             <DialogFooter>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsCreateOpen(false)}
-                className="h-8 rounded-xl px-3 text-xs"
-              >
+              <Button variant="outline" size="sm" onClick={() => setIsCreateOpen(false)}>
                 Cancel
               </Button>
               <Button
@@ -345,7 +315,6 @@ function PromptManagementSection() {
                   !form.slug.trim() ||
                   createMutation.isPending
                 }
-                className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98]"
               >
                 {createMutation.isPending ? "Creating..." : "Create Prompt"}
               </Button>
@@ -354,55 +323,44 @@ function PromptManagementSection() {
         </Dialog>
       </div>
 
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-14 w-full rounded-xl" />
+              <Skeleton key={i} className="rounded-row h-14 w-full" />
             ))}
           </div>
         ) : !filteredPrompts || filteredPrompts.length === 0 ? (
-          <div className="border-border/30 bg-card/25 rounded-2xl border p-8 text-center backdrop-blur-md">
-            <p className="text-muted-foreground text-xs">No prompts found matching query.</p>
-          </div>
+          <Card className="p-8 text-center">
+            <p className="text-label-secondary text-footnote">No prompts found matching query.</p>
+          </Card>
         ) : (
           filteredPrompts.map((prompt) => {
             const config = STATUS_CONFIG[prompt.status];
             const StatusIcon = config.icon;
             return (
-              <div
+              <Card
                 key={prompt.id}
-                className="border-border/30 bg-card/25 hover:border-border/50 flex flex-col justify-between gap-3 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md transition-colors sm:flex-row sm:items-center"
+                className="hover:border-separator flex flex-col justify-between gap-3 p-4 transition-colors sm:flex-row sm:items-center"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <div className="bg-primary/10 text-primary rounded-xl p-2">
+                  <div className="bg-tint-fill text-tint rounded-row p-2">
                     <StatusIcon className="h-4 w-4 shrink-0" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-foreground truncate text-xs font-bold">
-                        {prompt.title}
-                      </span>
-                      <Badge variant={config.variant} className="text-xs">
-                        {config.label}
-                      </Badge>
-                      {prompt.featured && (
-                        <Badge
-                          variant="outline"
-                          className="border-amber-500/30 bg-amber-500/10 text-xs text-amber-400"
-                        >
-                          Featured
-                        </Badge>
-                      )}
+                      <span className="text-label text-caption truncate">{prompt.title}</span>
+                      <Badge variant={config.variant}>{config.label}</Badge>
+                      {prompt.featured && <Badge variant="warning">Featured</Badge>}
                     </div>
-                    <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                    <p className="text-label-secondary text-footnote mt-0.5 truncate">
                       {prompt.question}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-3">
-                  <span className="text-muted-foreground font-mono text-xs">
+                  <span className="text-label-secondary text-footnote tabular-nums">
                     {prompt._count.responses} responses
                   </span>
 
@@ -411,7 +369,7 @@ function PromptManagementSection() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className={`h-7 w-7 rounded-lg p-0 ${prompt.featured ? "text-amber-400" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`rounded-control h-7 w-7 p-0 ${prompt.featured ? "text-yellow" : "text-label-secondary hover:text-label"}`}
                         onClick={() =>
                           featureMutation.mutate({
                             promptId: prompt.id,
@@ -433,7 +391,7 @@ function PromptManagementSection() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 rounded-lg px-2.5 text-xs active:scale-[0.98]"
+
                         onClick={() => updateMutation.mutate({ id: prompt.id, status: "ACTIVE" })}
                       >
                         Publish
@@ -444,7 +402,7 @@ function PromptManagementSection() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 rounded-lg px-2.5 text-xs text-amber-400 hover:bg-amber-500/10 active:scale-[0.98]"
+
                         onClick={() => updateMutation.mutate({ id: prompt.id, status: "CLOSED" })}
                       >
                         Close
@@ -455,7 +413,7 @@ function PromptManagementSection() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-muted-foreground h-7 rounded-lg px-2.5 text-xs active:scale-[0.98]"
+
                         onClick={() => updateMutation.mutate({ id: prompt.id, status: "ARCHIVED" })}
                       >
                         Archive
@@ -463,7 +421,7 @@ function PromptManagementSection() {
                     )}
                   </div>
                 </div>
-              </div>
+              </Card>
             );
           })
         )}
@@ -471,8 +429,6 @@ function PromptManagementSection() {
     </div>
   );
 }
-
-// ── Response Moderation Section ──────────────────────────────────────────────
 
 function ResponseModerationSection() {
   const notify = useNotify();
@@ -508,89 +464,76 @@ function ResponseModerationSection() {
   const responses = responsesData?.pages.flatMap((p) => p.responses) ?? [];
 
   return (
-    <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-      <div className="border-border/20 max-w-md space-y-1.5 border-b pb-4">
-        <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Select Discussion Prompt
-        </Label>
-        <Select value={selectedPromptId} onValueChange={setSelectedPromptId}>
-          <SelectTrigger className="border-border/30 bg-background/50 h-8 rounded-xl text-xs">
-            <SelectValue placeholder="Choose a prompt to view responses..." />
-          </SelectTrigger>
-          <SelectContent>
-            {prompts?.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.title} ({p._count.responses} responses)
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <Card className="space-y-4 p-5">
+      <div className="border-separator max-w-md space-y-2 border-b pb-4">
+        <Label className="text-label-secondary text-subhead">Select discussion prompt</Label>
+        <ValueSelect
+          value={selectedPromptId}
+          onValueChange={setSelectedPromptId}
+          options={
+            prompts?.map((p) => [p.id, `${p.title} (${p._count.responses} responses)`] as const) ??
+            []
+          }
+          size="sm"
+          placeholder="Choose a prompt to view responses..."
+        />
       </div>
 
       {!selectedPromptId ? (
-        <p className="text-muted-foreground p-8 text-center text-xs">
+        <p className="text-label-secondary text-footnote p-8 text-center">
           Select a prompt from the dropdown above to inspect and moderate replies.
         </p>
       ) : responsesLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+            <Skeleton key={i} className="rounded-row h-16 w-full" />
           ))}
         </div>
       ) : responses.length === 0 ? (
-        <p className="text-muted-foreground p-8 text-center text-xs">
+        <p className="text-label-secondary text-footnote p-8 text-center">
           No responses posted for this topic yet.
         </p>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {responses.map((r) => (
             <div
               key={r.id}
-              className={`rounded-xl border p-3.5 backdrop-blur-md ${
-                r.featured
-                  ? "border-amber-500/30 bg-amber-500/5"
-                  : "border-border/20 bg-background/30"
+              className={`rounded-row border p-4 ${
+                r.featured ? "border-yellow/30 bg-yellow/5" : "border-separator bg-fill-3"
               }`}
             >
-              <div className="mb-1.5 flex items-center justify-between">
+              <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="bg-primary/10 text-primary rounded-lg p-1">
+                  <div className="bg-tint-fill text-tint rounded-control p-1">
                     <User className="h-3.5 w-3.5" />
                   </div>
-                  <span className="text-foreground text-xs font-bold">
+                  <span className="text-label text-caption">
                     {r.country?.name ?? "Unknown Realm"}
                   </span>
-                  {r.featured && (
-                    <Badge
-                      variant="outline"
-                      className="border-amber-500/30 bg-amber-500/10 text-xs text-amber-400"
-                    >
-                      Featured
-                    </Badge>
-                  )}
+                  {r.featured && <Badge variant="warning">Featured</Badge>}
                 </div>
 
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 w-7 rounded-lg p-0"
+                  className="w-7 p-0"
                   onClick={() =>
                     featureMutation.mutate({ responseId: r.id, featured: !r.featured })
                   }
                   disabled={featureMutation.isPending}
                 >
                   {r.featured ? (
-                    <StarOff className="h-3.5 w-3.5 text-amber-400" />
+                    <StarOff className="text-yellow h-3.5 w-3.5" />
                   ) : (
-                    <Star className="text-muted-foreground h-3.5 w-3.5" />
+                    <Star className="text-label-secondary h-3.5 w-3.5" />
                   )}
                 </Button>
               </div>
 
-              <p className="text-muted-foreground text-xs leading-relaxed whitespace-pre-wrap">
+              <p className="text-label-secondary text-footnote leading-relaxed whitespace-pre-wrap">
                 {r.content}
               </p>
-              <span className="text-muted-foreground/60 mt-2 block font-mono text-xs">
+              <span className="text-label-secondary text-footnote mt-2 block tabular-nums">
                 {new Date(r.createdAt).toLocaleDateString()}
               </span>
             </div>
@@ -598,19 +541,14 @@ function ResponseModerationSection() {
 
           {hasNextPage && (
             <div className="pt-2 text-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fetchNextPage()}
-                className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98]"
-              >
-                Load More Responses
+              <Button variant="outline" size="sm" onClick={() => fetchNextPage()}>
+                Load more responses
               </Button>
             </div>
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 

@@ -1,19 +1,63 @@
 "use client";
-
-import React from "react";
+import { Button } from "~/components/ui/button";
+import React, { useState } from "react";
 import { Refresh as RefreshCw, MagicWand as Wand2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
-import type {
-  LinkageValidationData,
-  LinkageIssue,
-  LinkageLinkedItem,
-  LinkageUnlinkedItem,
-} from "../types/editor-state";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import type { LinkageValidationData } from "../types/editor-state";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Card } from "~/components/ui/card";
+import { AutoMatchReviewDialog } from "./AutoMatchReviewDialog";
+import { assetUrl } from "~/lib/base-path";
 
-export interface LinkageFeatureItem {
+const VALIDATION_TABS = [
+  { value: "issues", label: "Issues" },
+  { value: "linked", label: "Linked" },
+  { value: "unlinked", label: "Unlinked" },
+  { value: "features", label: "Features" },
+];
+
+const FEATURE_FILTER_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "linked", label: "Linked" },
+  { value: "unlinked", label: "Unlinked" },
+];
+
+const ROW_BASE =
+  "border-separator bg-fill-4 rounded-control flex items-center justify-between border p-2";
+const ROW_CLICKABLE = `${ROW_BASE} hover:border-tint/40 hover:bg-tint-fill cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity]`;
+
+function CountryLabel({ name, flag }: { name: string; flag?: string | null }) {
+  return (
+    <div className="flex items-center gap-2 truncate">
+      {flag && (
+        <img
+          src={assetUrl(flag) ?? undefined}
+          alt=""
+          className="border-separator h-3.5 w-5 rounded-xs border object-cover"
+        />
+      )}
+      <span className="text-label truncate font-medium">{name}</span>
+    </div>
+  );
+}
+
+const EmptyNote = ({ children }: { children: string }) => (
+  <p className="text-label-secondary py-4 text-center italic">{children}</p>
+);
+
+type LinkedRowItem = {
+  countryId: string;
+  countryName: string;
+  countryFlag?: string | null;
+  featureId?: string | null;
+  featureName?: string | null;
+};
+
+interface LinkageFeatureItem {
   featureId: string;
   displayName: string;
   countryId?: string | null;
@@ -39,7 +83,11 @@ interface LinkageValidationPanelProps {
   };
   autoMatchMutation: {
     isPending: boolean;
-    mutate: (args: { action: "auto_match"; realm?: string }) => void;
+    mutate: (args: {
+      action: "apply_matches";
+      realm?: string;
+      matches: Array<{ featureId: string; countryId: string }>;
+    }) => void;
   };
   setActiveCountryId: (id: string | null) => void;
   setMapSelectedCountry: (country: SelectedCountry | null) => void;
@@ -61,200 +109,131 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
   setMapSelectedCountry,
 }: LinkageValidationPanelProps) {
   const realm = useMapRealm();
+  const [reviewOpen, setReviewOpen] = useState(false);
+
+  const renderCountryFeatureRow = (item: LinkedRowItem, key: string) => (
+    <div
+      key={key}
+      onClick={() => {
+        setActiveCountryId(item.countryId);
+        setMapSelectedCountry({
+          featureId: item.featureId ?? "",
+          displayName: item.featureName ?? "",
+          fillColor: "#e8e5da",
+          centroidLng: 0,
+          centroidLat: 0,
+          countryId: item.countryId,
+        });
+      }}
+      className={ROW_CLICKABLE}
+    >
+      <CountryLabel name={item.countryName} flag={item.countryFlag} />
+      <span className="text-label-secondary text-footnote tabular-nums">{item.featureName}</span>
+    </div>
+  );
+
   return (
-    <div className="space-y-4 p-3 text-xs">
-      <div className="bg-muted/10 border-border/20 flex items-center justify-between rounded-lg border p-3">
+    <div className="text-footnote space-y-4 p-3">
+      <Card className="flex items-center justify-between p-3">
         <div className="space-y-0.5">
-          <span className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
-            Issues / Desyncs
-          </span>
-          <span className="text-foreground text-xl font-bold">
-            {validationData?.issues?.length ?? 0}
-          </span>
+          <span className="text-stat-label text-label-secondary block">Issues / Desyncs</span>
+          <span className="text-label text-title-2">{validationData?.issues?.length ?? 0}</span>
         </div>
         <div className="flex gap-1">
-          <button
+          <Button
+            variant="secondary"
+            size="icon"
+            className="h-7 w-7"
             onClick={() => syncMutation.mutate({ action: "sync_all", realm })}
             disabled={syncMutation.isPending}
-            className="rounded bg-primary/10 p-1.5 text-primary transition-colors hover:bg-primary/20 active:scale-[0.98]"
-            title="Sync All Linked"
+            title="Sync all linked"
           >
             <RefreshCw className={cn("h-4 w-4", syncMutation.isPending && "animate-spin")} />
-          </button>
-          <button
-            onClick={() => autoMatchMutation.mutate({ action: "auto_match", realm })}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setReviewOpen(true)}
             disabled={autoMatchMutation.isPending}
-            className="rounded bg-emerald-500/10 p-1.5 text-emerald-500 transition-colors hover:bg-emerald-500/20 active:scale-[0.98]"
-            title="Auto-Match by Name"
+            title="Auto-Match by name (review first)"
           >
             <Wand2 className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
 
-      <div className="border-border/30 bg-card/40 overflow-hidden rounded-lg border">
-        <div className="bg-muted/20 border-border/30 flex border-b text-xs font-semibold uppercase">
-          <button
-            onClick={() => setValidationTab("issues")}
-            className={cn(
-              "flex-1 border-b py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-              validationTab === "issues"
-                ? "bg-primary/10 border-primary text-primary"
-                : "text-muted-foreground border-transparent hover:text-foreground"
-            )}
-          >
-            Issues
-          </button>
-          <button
-            onClick={() => setValidationTab("linked")}
-            className={cn(
-              "flex-1 border-b py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-              validationTab === "linked"
-                ? "bg-primary/10 border-primary text-primary"
-                : "text-muted-foreground border-transparent hover:text-foreground"
-            )}
-          >
-            Linked
-          </button>
-          <button
-            onClick={() => setValidationTab("unlinked")}
-            className={cn(
-              "flex-1 border-b py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-              validationTab === "unlinked"
-                ? "bg-primary/10 border-primary text-primary"
-                : "text-muted-foreground border-transparent hover:text-foreground"
-            )}
-          >
-            Unlinked
-          </button>
-          <button
-            onClick={() => setValidationTab("features")}
-            className={cn(
-              "flex-1 border-b py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-              validationTab === "features"
-                ? "bg-primary/10 border-primary text-primary"
-                : "text-muted-foreground border-transparent hover:text-foreground"
-            )}
-          >
-            Features
-          </button>
+      {reviewOpen && (
+        <AutoMatchReviewDialog
+          realm={realm}
+          open={reviewOpen}
+          onOpenChange={setReviewOpen}
+          isLinking={autoMatchMutation.isPending}
+          onLink={(matches) =>
+            autoMatchMutation.mutate({ action: "apply_matches", realm, matches })
+          }
+        />
+      )}
+
+      <Card className="overflow-hidden">
+        <div className="border-separator border-b p-2">
+          <SegmentedControl
+            aria-label="Validation view"
+            asTabs
+            fullWidth
+            options={VALIDATION_TABS}
+            value={validationTab}
+            onValueChange={(tab) => setValidationTab(tab as typeof validationTab)}
+            size="sm"
+          />
         </div>
 
-        <div className="max-h-[300px] space-y-1.5 overflow-y-auto p-3">
+        <div className="max-h-[300px] space-y-2 overflow-y-auto p-3">
           {validationTab === "issues" &&
             validationData &&
-            (!validationData.issues || validationData.issues.length === 0 ? (
-              <p className="text-muted-foreground py-4 text-center italic">
-                No linkage issues found.
-              </p>
+            (validationData.issues?.length ? (
+              validationData.issues.map((item) =>
+                renderCountryFeatureRow(item, `${item.type}-${item.countryId}`)
+              )
             ) : (
-              validationData.issues.map((item: LinkageIssue) => (
-                <div
-                  key={`${item.type}-${item.countryId}`}
-                  onClick={() => {
-                    setActiveCountryId(item.countryId);
-                    setMapSelectedCountry({
-                      featureId: item.featureId ?? "",
-                      displayName: item.featureName ?? "",
-                      fillColor: "#e8e5da",
-                      centroidLng: 0,
-                      centroidLat: 0,
-                      countryId: item.countryId,
-                    });
-                  }}
-                  className="border-border/30 bg-muted/10 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99]"
-                >
-                  <div className="flex items-center gap-1.5 truncate">
-                    {item.countryFlag && (
-                      <img
-                        src={item.countryFlag}
-                        alt=""
-                        className="border-border/35 h-3.5 w-5 rounded border object-cover"
-                      />
-                    )}
-                    <span className="text-foreground truncate font-medium">{item.countryName}</span>
-                  </div>
-                  <span className="text-muted-foreground font-mono text-xs">
-                    {item.featureName}
-                  </span>
-                </div>
-              ))
+              <EmptyNote>No linkage issues found.</EmptyNote>
             ))}
 
           {validationTab === "linked" &&
             validationData &&
-            (validationData.linked.length === 0 ? (
-              <p className="text-muted-foreground py-4 text-center italic">No linked features.</p>
+            (validationData.linked.length ? (
+              validationData.linked.map((item) => renderCountryFeatureRow(item, item.featureId))
             ) : (
-              validationData.linked.map((item: LinkageLinkedItem) => (
-                <div
-                  key={item.featureId}
-                  onClick={() => {
-                    setActiveCountryId(item.countryId);
-                    setMapSelectedCountry({
-                      featureId: item.featureId,
-                      displayName: item.featureName,
-                      fillColor: "#e8e5da",
-                      centroidLng: 0,
-                      centroidLat: 0,
-                      countryId: item.countryId,
-                    });
-                  }}
-                  className="border-border/30 bg-muted/10 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99]"
-                >
-                  <div className="flex items-center gap-1.5 truncate">
-                    {item.countryFlag && (
-                      <img
-                        src={item.countryFlag}
-                        alt=""
-                        className="border-border/35 h-3.5 w-5 rounded border object-cover"
-                      />
-                    )}
-                    <span className="text-foreground truncate font-medium">{item.countryName}</span>
-                  </div>
-                  <span className="text-muted-foreground font-mono text-xs">
-                    {item.featureName}
-                  </span>
-                </div>
-              ))
+              <EmptyNote>No linked features.</EmptyNote>
             ))}
 
           {validationTab === "unlinked" &&
             validationData &&
-            (validationData.unlinked.length === 0 ? (
-              <p className="text-muted-foreground py-4 text-center italic">All countries linked.</p>
-            ) : (
-              validationData.unlinked.map((item: LinkageUnlinkedItem) => (
+            (validationData.unlinked.length ? (
+              validationData.unlinked.map((item) => (
                 <div
                   key={item.countryId}
                   onClick={() => {
                     setActiveCountryId(item.countryId);
                     setMapSelectedCountry(null);
                   }}
-                  className="border-border/30 bg-muted/10 flex items-center justify-between rounded-lg border p-2"
+                  className={ROW_BASE}
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    {item.countryFlag && (
-                      <img
-                        src={item.countryFlag}
-                        alt=""
-                        className="border-border/35 h-3.5 w-5 rounded border object-cover"
-                      />
-                    )}
-                    <span className="text-foreground truncate font-medium">{item.countryName}</span>
-                  </div>
+                  <CountryLabel name={item.countryName} flag={item.countryFlag} />
                   <span
                     className={cn(
-                      "inline-flex items-center rounded-full px-2 py-0.5 text-xs leading-tight font-semibold",
+                      "text-caption inline-flex items-center rounded-full px-2 py-0.5 leading-tight font-semibold",
                       item.hasGeometry
-                        ? "bg-amber-500/10 text-amber-500"
-                        : "bg-muted text-muted-foreground"
+                        ? "border-yellow/30 text-yellow border"
+                        : "bg-fill-3 text-label-secondary"
                     )}
                   >
                     {item.hasGeometry ? "Orphaned" : "No Geometry"}
                   </span>
                 </div>
               ))
+            ) : (
+              <EmptyNote>All countries linked.</EmptyNote>
             ))}
 
           {validationTab === "features" && featureList && (
@@ -265,19 +244,16 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                   placeholder="Search features..."
                   value={featureSearch}
                   onChange={(e) => setFeatureSearch(e.target.value)}
-                  className="bg-background border-border w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="bg-surface border-separator focus:ring-tint text-footnote rounded-control-sm w-full border px-2 py-1 focus:ring-1 focus:outline-none"
                 />
-                <select
+                <OptionSelect
+                  aria-label="Filter features"
+                  size="sm"
+                  className="w-auto"
                   value={featureFilter}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                    setFeatureFilter(e.target.value as "all" | "linked" | "unlinked")
-                  }
-                  className="bg-background border-border rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="all">All</option>
-                  <option value="linked">Linked</option>
-                  <option value="unlinked">Unlinked</option>
-                </select>
+                  onValueChange={(v) => setFeatureFilter(v as "all" | "linked" | "unlinked")}
+                  options={FEATURE_FILTER_OPTIONS}
+                />
               </div>
               <div className="max-h-[160px] space-y-1 overflow-y-auto pr-0.5">
                 {filteredFeatures.map((feat) => (
@@ -292,29 +268,23 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                         centroidLat: feat.centroidLat ?? 0,
                         countryId: feat.countryId ?? null,
                       });
-                      if (feat.countryId) {
-                        setActiveCountryId(feat.countryId);
-                      } else {
-                        setActiveCountryId(null);
-                      }
+                      setActiveCountryId(feat.countryId || null);
                     }}
-                    className="border-border/30 bg-muted/10 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99]"
+                    className={ROW_CLICKABLE}
                   >
-                    <div className="flex items-center gap-1.5 truncate">
+                    <div className="flex items-center gap-2 truncate">
                       <div
-                        className="border-border/40 h-3 w-3 shrink-0 rounded-full border shadow-sm"
+                        className="border-separator shadow-card h-3 w-3 shrink-0 rounded-full border"
                         style={{ backgroundColor: feat.fillColor }}
                       />
-                      <span className="text-foreground truncate font-medium">
-                        {feat.displayName}
-                      </span>
+                      <span className="text-label truncate font-medium">{feat.displayName}</span>
                     </div>
                     <span
                       className={cn(
-                        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
+                        "text-caption inline-flex items-center rounded-full px-2 py-0.5 font-semibold",
                         feat.isClaimed
-                          ? "bg-emerald-500/10 text-emerald-600"
-                          : "bg-muted text-muted-foreground"
+                          ? "border-green/30 text-green border"
+                          : "bg-fill-3 text-label-secondary"
                       )}
                     >
                       {feat.isClaimed ? "Linked" : "Unlinked"}
@@ -325,7 +295,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
             </div>
           )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 });

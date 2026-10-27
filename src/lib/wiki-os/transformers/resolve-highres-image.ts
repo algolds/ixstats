@@ -9,11 +9,42 @@ export interface HighResWikiImageResult {
   isSvg: boolean;
 }
 
-/**
- * Clean and decode a filename or URL component.
- */
 function cleanFileName(raw: string): string {
   return safeDecodeURI(raw).replace(/_/g, " ").trim();
+}
+
+const stripQuery = (url: string): string => url.split(/[?#]/)[0]!;
+
+/**
+ * Universal MediaWiki and Wikimedia Commons de-thumbnailing:
+ * - https://ixwiki.com/images/thumb/8/8c/File.jpg/300px-File.jpg -> https://ixwiki.com/images/8/8c/File.jpg
+ * - /api/mediawiki/ixwiki/images/thumb/8/8c/File.jpg/300px-File.jpg -> /api/mediawiki/ixwiki/images/8/8c/File.jpg
+ * - https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Logo.svg/300px-Logo.svg.png -> .../wikipedia/commons/a/ab/Logo.svg
+ * - https://static.wikia.nocookie.net/.../revision/latest/scale-to-width-down/300 -> .../revision/latest
+ */
+function deThumbnail(src: string): { highResSrc: string; filename: string } {
+  const match = src.match(
+    /(.*(?:\/images|\/wikipedia\/commons|\/wikipedia\/en)\/)thumb(\/[^?#]+)\/[^/?#]+(?:\?[^#]*)?$/i
+  );
+  if (match?.[1] && match[2]) {
+    const subpath = match[2].replace(/^\//, "");
+    return {
+      highResSrc: `${match[1]}${subpath}`,
+      filename: cleanFileName(stripQuery(subpath).split("/").pop() || ""),
+    };
+  }
+  if (src.includes("/revision/latest/scale-to-width-down/")) {
+    return { highResSrc: src.split("/scale-to-width-down/")[0]!, filename: "" };
+  }
+  return { highResSrc: src, filename: "" };
+}
+
+/** File name carried by a link to a File:/Image: page or Special:FilePath. */
+function filenameFromLink(href: string): string {
+  const rawName =
+    /\/wiki\/(?:File|Image):([^?#&]+)/i.exec(href)?.[1] ||
+    /\/wiki\/Special:FilePath\/([^?#&]+)/i.exec(href)?.[1];
+  return rawName ? cleanFileName(rawName) : "";
 }
 
 /**
@@ -28,80 +59,28 @@ export function resolveHighResWikiImage(
   const alt = img.getAttribute("alt") || img.title || "";
   const linkHref = link?.getAttribute("href") || "";
 
-  let highResSrc = thumbSrc;
-  let filename = "";
-  let fileUrl = linkHref;
+  let { highResSrc, filename } = deThumbnail(thumbSrc);
 
-  // 1. Primary Strategy: Universal MediaWiki & Wikimedia Commons de-thumbnailing
-  // Matches:
-  // - https://ixwiki.com/images/thumb/8/8c/File.jpg/300px-File.jpg -> https://ixwiki.com/images/8/8c/File.jpg
-  // - /images/thumb/a/ab/File.svg/300px-File.svg.png -> /images/a/ab/File.svg
-  // - /api/mediawiki/ixwiki/images/thumb/8/8c/File.jpg/300px-File.jpg -> /api/mediawiki/ixwiki/images/8/8c/File.jpg
-  // - https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Logo.svg/300px-Logo.svg.png -> .../wikipedia/commons/a/ab/Logo.svg
-  // - https://static.wikia.nocookie.net/.../revision/latest/scale-to-width-down/300 -> .../revision/latest
-  const mwThumbMatch = thumbSrc.match(
-    /(.*(?:\/images|\/wikipedia\/commons|\/wikipedia\/en)\/)thumb(\/[^?#]+)\/[^/?#]+(?:\?[^#]*)?$/i
-  );
-  if (mwThumbMatch && mwThumbMatch[1] && mwThumbMatch[2]) {
-    const baseDir = mwThumbMatch[1];
-    const subpath = mwThumbMatch[2].replace(/^\//, "");
-    highResSrc = `${baseDir}${subpath}`;
-    const cleanSub = subpath.split("?")[0]!.split("#")[0]!;
-    const parts = cleanSub.split("/");
-    filename = cleanFileName(parts[parts.length - 1] || "");
-  } else if (thumbSrc.includes("/revision/latest/scale-to-width-down/")) {
-    // Fandom / Wikia scaling
-    highResSrc = thumbSrc.split("/scale-to-width-down/")[0]!;
-  }
+  // Vector SVG recovery: restore the true .svg behind a rasterized .svg.png
+  highResSrc = highResSrc.replace(/\.svg\.png$/, ".svg");
 
-  // 2. Vector SVG recovery: if ending in .svg.png, restore true vector .svg
-  if (highResSrc.endsWith(".svg.png")) {
-    highResSrc = highResSrc.replace(/\.svg\.png$/i, ".svg");
-  }
-
-  // 3. Inspect srcset for highest-resolution render fallback if de-thumb wasn't possible
+  // Without a de-thumbnailed URL, the last (largest) srcset candidate is the best render available
   if (highResSrc === thumbSrc) {
-    const srcset = img.getAttribute("srcset");
-    if (srcset) {
-      const candidates = srcset.split(",").map((s) => s.trim().split(/\s+/));
-      const highest = candidates[candidates.length - 1]?.[0];
-      if (highest && highest.startsWith("http")) {
-        highResSrc = highest;
-      }
-    }
+    const candidates = (img.getAttribute("srcset") ?? "")
+      .split(",")
+      .map((c) => c.trim().split(/\s+/));
+    const highest = candidates[candidates.length - 1]?.[0];
+    if (highest?.startsWith("http")) highResSrc = highest;
   }
 
-  // 4. If filename not found yet, try parent link href
-  if (!filename && linkHref) {
-    const fileMatch = linkHref.match(/\/wiki\/(?:File|Image|file|image):([^?#&]+)/i);
-    const specialMatch = linkHref.match(/\/wiki\/Special:FilePath\/([^?#&]+)/i);
-    const rawName = fileMatch?.[1] || specialMatch?.[1];
-    if (rawName) {
-      filename = cleanFileName(rawName);
-    }
-  }
+  filename ||= filenameFromLink(linkHref);
+  filename ||= cleanFileName(stripQuery(highResSrc).split("/").pop() || "Wiki Media");
 
-  // 5. If filename is still empty, derive from cleaned highResSrc
-  if (!filename) {
-    const clean = highResSrc.split("?")[0]!.split("#")[0]!;
-    const segments = clean.split("/");
-    filename = cleanFileName(segments[segments.length - 1] || "Wiki Media");
-  }
-
-  // 6. Ensure fileUrl points to a readable wiki description page
-  if (!fileUrl && filename) {
-    fileUrl = `/wiki/File:${encodeURIComponent(filename.replace(/ /g, "_"))}`;
-  }
-
+  // fileUrl points to a readable wiki description page
+  const fileUrl =
+    linkHref || (filename ? `/wiki/File:${encodeURIComponent(filename.replace(/ /g, "_"))}` : "");
   const isSvg =
     highResSrc.toLowerCase().includes(".svg") || filename.toLowerCase().endsWith(".svg");
 
-  return {
-    highResSrc,
-    thumbSrc,
-    alt: alt || filename,
-    filename,
-    fileUrl,
-    isSvg,
-  };
+  return { highResSrc, thumbSrc, alt: alt || filename, filename, fileUrl, isSvg };
 }

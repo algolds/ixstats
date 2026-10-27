@@ -1,8 +1,10 @@
+import { MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import React, { useState, useEffect } from "react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { navigateWithBasePath } from "~/lib/base-path";
+import { assetUrl, navigateWithBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { useRouter } from "next/navigation";
 import {
   OpenBook as BookOpen,
@@ -22,16 +24,19 @@ import {
   Wallet,
   ScaleFrameEnlarge as Scale,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
-import * as IconoirIcons from "iconoir-react";
+import { resolveChatBadgeIcon } from "~/components/ui/chat-badge-icon";
 import { motion, AnimatePresence } from "motion/react";
 import type { PausedSession } from "../types";
 import { pageRefPath } from "~/lib/wiki-os/page-ref";
+import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Button } from "~/components/ui/button";
+import { tweenFast } from "~/lib/design/motion";
 
-export interface WikiProfileViewProps {
+interface WikiProfileViewProps {
   onClose: () => void;
 }
 
@@ -47,7 +52,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
   // Active cosmetics
   const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
-  const CrownIcon = (IconoirIcons as any)[chatBadge?.icon ?? ""] || Crown;
+  const CrownIcon = resolveChatBadgeIcon(chatBadge?.icon);
 
   // API query
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
@@ -60,8 +65,10 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
     { enabled: !!countryName, staleTime: 60_000 }
   );
 
-  const wikiUsername =
-    userProfile?.wikiUsername ??
+  // The passport handle names the player and their contributions; an old wiki name is never shown.
+  const handle = userProfile?.handle ?? null;
+  const profileName =
+    handle ??
     (user?.username
       ? user.username.charAt(0).toUpperCase() + user.username.slice(1)
       : (user?.firstName ?? ""));
@@ -107,44 +114,32 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15, ease: "easeInOut" }}
+            transition={tweenFast}
           >
-            {/* Header */}
-            <div className="border-border/50 mb-4 flex items-center justify-between border-b pb-3">
+            <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
               <div className="flex items-center gap-3">
-                <div className="bg-foreground/5 flex gap-1.5 rounded-lg p-1">
-                  <button
-                    onClick={() => setActiveTab("workspace")}
-                    className={cn(
-                      "flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
-                      activeTab === "workspace"
-                        ? "bg-foreground/10 text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <FileText className="h-3.5 w-3.5" />
-                    <span>Workspace</span>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("profile")}
-                    className={cn(
-                      "flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
-                      activeTab === "profile"
-                        ? "bg-foreground/10 text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <User className="h-3.5 w-3.5" />
-                    <span>Wiki Profile</span>
-                  </button>
-                </div>
+                <SegmentedControl
+                  aria-label="Wiki panel"
+                  asTabs
+                  size="sm"
+                  value={activeTab}
+                  onValueChange={setActiveTab}
+                  options={[
+                    { value: "workspace", label: "Workspace", icon: <FileText aria-hidden /> },
+                    { value: "profile", label: "Wiki profile", icon: <User aria-hidden /> },
+                  ]}
+                />
               </div>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={onClose}
-                className="text-muted-foreground hover:text-foreground hover:bg-foreground/5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+                aria-label="Close"
+                className="text-label-secondary hover:text-label"
               >
-                <X className="h-4 w-4" />
-              </button>
+                <X aria-hidden />
+              </Button>
             </div>
 
             {/* Content */}
@@ -152,16 +147,18 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {/* Left Column: Paused/Saved Sessions */}
                 <div className="space-y-3">
-                  <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
+                  <div className="text-label-secondary text-eyebrow flex items-center gap-2">
                     <History className="h-3 w-3" />
-                    <span>Saved & Paused Sessions</span>
+                    <span>Saved and paused sessions</span>
                   </div>
 
                   {pausedSessions.length === 0 ? (
-                    <div className="border-foreground/30 bg-foreground/[0.02] flex flex-col items-center justify-center rounded-xl border px-4 py-8 text-center">
-                      <BookOpen className="text-muted-foreground/45 mb-2 h-6 w-6" />
-                      <span className="text-muted-foreground text-xs">No paused sessions yet</span>
-                      <span className="text-muted-foreground/60 mt-1 text-xs">
+                    <div className="border-separator bg-fill-4 rounded-row flex flex-col items-center justify-center border px-4 py-8 text-center">
+                      <BookOpen className="text-label-tertiary mb-2 h-6 w-6" />
+                      <span className="text-label-secondary text-footnote">
+                        No paused sessions yet
+                      </span>
+                      <span className="text-label-secondary text-footnote mt-1">
                         Your reading/editing progress will appear here.
                       </span>
                     </div>
@@ -170,28 +167,30 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                       {pausedSessions.map((session) => (
                         <div
                           key={pageRefPath(session)}
-                          className="border-foreground/30 bg-foreground/[0.02] hover:bg-foreground/[0.04] flex flex-col gap-2 rounded-xl border p-3 transition-colors"
+                          className="border-separator bg-fill-4 hover:bg-fill-3 rounded-row flex flex-col gap-2 border p-3 transition-colors"
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-foreground truncate text-xs font-semibold">
+                            <span className="text-label text-caption truncate font-semibold">
                               {session.title}
                             </span>
-                            <button
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
                               onClick={() => handleResumeSession(session)}
-                              className="flex cursor-pointer items-center gap-1 rounded bg-blue-500/10 px-2 py-1 text-xs font-bold text-blue-600 transition-colors hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30"
                             >
                               Resume
-                            </button>
+                            </Button>
                           </div>
                           {/* Progress indicator */}
                           <div className="flex items-center gap-2">
-                            <div className="bg-foreground/10 h-1 flex-1 rounded-full">
+                            <div className="bg-fill-3 h-1 flex-1 rounded-full">
                               <div
-                                className="h-full rounded-full bg-blue-500 dark:bg-blue-400"
+                                className="bg-blue h-full rounded-full"
                                 style={{ width: `${session.scrollPercent}%` }}
                               />
                             </div>
-                            <span className="text-muted-foreground text-xs font-bold tabular-nums">
+                            <span className="text-label-secondary text-caption font-semibold tabular-nums">
                               {session.scrollPercent}% read
                             </span>
                           </div>
@@ -203,16 +202,16 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
                 {/* Right Column: Quick Notes / Scratchpad */}
                 <div className="flex flex-col space-y-2">
-                  <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
+                  <div className="text-label-secondary text-eyebrow flex items-center gap-2">
                     <FileText className="h-3 w-3" />
-                    <span>Wiki Scratchpad</span>
+                    <span>Wiki scratchpad</span>
                   </div>
                   <div className="relative flex-1">
                     <textarea
                       value={scratchpad}
                       onChange={handleScratchpadChange}
                       placeholder="Jot down quick worldbuilding notes, drafts, task lists, or article revisions here... (auto-saves)"
-                      className="border-foreground/30 bg-foreground/[0.02] text-foreground placeholder:text-muted-foreground/55 focus:border-foreground/50 focus:bg-foreground/[0.03] min-h-[140px] w-full resize-none rounded-xl border p-3 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
+                      className="border-separator bg-fill-4 text-label placeholder:text-label-tertiary focus:border-separator focus:bg-fill-3 rounded-row text-footnote min-h-[140px] w-full resize-none border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
                       style={{ scrollbarWidth: "thin" }}
                     />
                   </div>
@@ -223,31 +222,31 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
             {activeTab === "profile" && (
               <div className="space-y-4">
                 {/* Wiki Profile Stats */}
-                <div className="border-border/50 bg-foreground/[0.02] relative flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-xl border p-4">
+                <div className="border-separator bg-fill-4 rounded-row relative flex flex-wrap items-center justify-between gap-4 overflow-hidden border p-4">
                   {/* Neon Frame Overlay */}
-                  <NeonFrameOverlay neonFrame={neonFrame} className="rounded-xl" />
+                  <NeonFrameOverlay neonFrame={neonFrame} className="rounded-row" />
 
                   <div className="relative z-10 flex items-center gap-3">
                     <AvatarGlow
                       avatarGlow={avatarGlow}
                       roundedClass="rounded-full"
-                      className="h-10 w-10 bg-indigo-950/60 shadow-md"
+                      className="bg-indigo/60 shadow-card h-10 w-10"
                     >
                       {user?.imageUrl ? (
                         <img
-                          src={user.imageUrl}
+                          src={assetUrl(user.imageUrl) ?? undefined}
                           alt=""
                           className="h-full w-full rounded-full object-cover"
                         />
                       ) : (
-                        <div className="bg-foreground/5 flex h-full w-full items-center justify-center rounded-full text-base">
+                        <div className="bg-fill-4 text-body flex h-full w-full items-center justify-center rounded-full">
                           👤
                         </div>
                       )}
                     </AvatarGlow>
                     <div>
-                      <div className="text-foreground flex items-center gap-1.5 text-sm font-bold">
-                        <span>{wikiUsername || "Wiki Profile"}</span>
+                      <div className="text-label text-headline flex items-center gap-2">
+                        <span>{profileName || "Wiki profile"}</span>
                         {chatBadge.enabled && (
                           <CrownIcon
                             className="h-3.5 w-3.5 shrink-0"
@@ -255,102 +254,95 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                           />
                         )}
                       </div>
-                      <div className="text-muted-foreground/80 text-xs">
-                        Worldbuilding Editor
-                      </div>
+                      <div className="text-label-secondary text-footnote">Worldbuilding editor</div>
                     </div>
                   </div>
 
                   {lorewardStats && (
-                    <div className="border-border/50 relative z-10 flex gap-4 border-l pl-4">
+                    <div className="border-separator relative z-10 flex gap-4 border-l pl-4">
                       <div className="flex flex-col items-center">
-                        <div className="flex items-center gap-1.5">
-                          <Trophy className="h-4 w-4 text-amber-500" />
-                          <span className="text-foreground text-sm font-bold">
+                        <div className="flex items-center gap-2">
+                          <Trophy className="text-yellow h-4 w-4" />
+                          <span className="text-label text-headline">
                             {lorewardStats.stats?.totalScore ?? 0}
                           </span>
                         </div>
-                        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                          Score
-                        </span>
+                        <span className="text-label-secondary text-eyebrow">Score</span>
                       </div>
                       <div className="flex flex-col items-center">
-                        <div className="flex items-center gap-1.5">
-                          <Flame className="h-4 w-4 text-orange-500" />
-                          <span className="text-foreground text-sm font-bold">
+                        <div className="flex items-center gap-2">
+                          <Flame className="text-orange h-4 w-4" />
+                          <span className="text-label text-headline">
                             {lorewardStats.stats?.currentStreak ?? 0}
                           </span>
                         </div>
-                        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                          Streak
-                        </span>
+                        <span className="text-label-secondary text-eyebrow">Streak</span>
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* Quick Actions & Recent */}
+                {/* Quick actions & Recent */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <div className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                      Quick Actions
-                    </div>
+                    <div className="text-subhead text-label-secondary">Quick actions</div>
                     <div className="space-y-1">
-                      {wikiUsername && (
-                        <button
+                      {handle && (
+                        <Button
+                          type="button"
+                          variant="secondary"
                           onClick={() => {
                             onClose();
-                            navigateWithBasePath(
-                              `/wiki/user/${encodeURIComponent(wikiUsername)}`,
-                              router
-                            );
+                            navigateWithBasePath(getWikiProfilePath(handle), router);
                           }}
-                          className="bg-foreground/[0.02] border-border/50 text-foreground hover:bg-foreground/[0.04] flex w-full cursor-pointer items-center justify-between rounded-lg border px-3 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                          className="w-full justify-between"
                         >
                           <div className="flex items-center gap-2">
-                            <User className="h-3.5 w-3.5 text-blue-500" />
-                            <span>My Contributions</span>
+                            <User className="text-blue h-3.5 w-3.5" />
+                            <span>My contributions</span>
                           </div>
-                          <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
-                        </button>
+                          <ChevronRight className="text-label-tertiary h-3.5 w-3.5" />
+                        </Button>
                       )}
                       {userProfile?.countryId && (
-                        <button
+                        <Button
+                          type="button"
+                          variant="secondary"
                           onClick={() => setView("country-actions")}
-                          className="bg-foreground/[0.02] border-border/50 text-foreground hover:bg-foreground/[0.04] flex w-full cursor-pointer items-center justify-between rounded-lg border px-3 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                          className="w-full justify-between"
                         >
                           <div className="flex items-center gap-2">
-                            <Crown className="h-3.5 w-3.5 text-amber-500" />
-                            <span>Country Actions</span>
+                            <Crown className="text-yellow h-3.5 w-3.5" />
+                            <span>Country actions</span>
                           </div>
-                          <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
-                        </button>
+                          <ChevronRight className="text-label-tertiary h-3.5 w-3.5" />
+                        </Button>
                       )}
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <div className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                      Recent Pages Visited
-                    </div>
+                    <div className="text-subhead text-label-secondary">Recently visited pages</div>
                     {recentArticles.length === 0 ? (
-                      <div className="border-border/50 bg-foreground/[0.01] text-muted-foreground/75 rounded-lg border py-4 text-center text-xs">
+                      <div className="border-separator text-label-secondary rounded-control text-footnote border py-4 text-center">
                         No pages visited recently
                       </div>
                     ) : (
                       <div className="space-y-1">
                         {recentArticles.slice(0, 3).map((page) => (
-                          <button
+                          <Button
+                            type="button"
+                            variant="secondary"
                             key={pageRefPath(page)}
                             onClick={() => {
                               onClose();
                               restoreSession(page);
                             }}
-                            className="bg-foreground/[0.02] border-border/50 text-foreground hover:bg-foreground/[0.04] flex w-full cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                            className="w-full justify-start"
                           >
-                            <History className="h-3.5 w-3.5 text-blue-500" />
+                            <History className="text-blue h-3.5 w-3.5" />
                             <span className="truncate">{page.title}</span>
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     )}
@@ -365,103 +357,120 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15, ease: "easeInOut" }}
+            transition={tweenFast}
           >
-            {/* Country Actions Header */}
-            <div className="border-border/50 mb-4 flex items-center justify-between border-b pb-3">
-              <div className="flex items-center gap-2.5">
-                <button
+            {/* Country actions Header */}
+            <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => setView("tabs")}
-                  className="text-muted-foreground hover:text-foreground hover:bg-foreground/5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+                  className="text-label-secondary hover:text-label"
                   aria-label="Back"
                 >
-                  <ArrowLeft className="h-4 w-4" />
-                </button>
+                  <ArrowLeft aria-hidden />
+                </Button>
                 <div className="flex flex-col">
-                  <h3 className="text-foreground flex items-center gap-1.5 text-sm font-bold">
-                    <Crown className="h-4 w-4 text-amber-400" />
+                  <h3 className="text-label text-headline flex items-center gap-2">
+                    <Crown className="text-yellow h-4 w-4" />
                     Country Management
                   </h3>
-                  <span className="text-muted-foreground/60 text-xs font-semibold">
-                    {countryName}
-                  </span>
+                  <span className="text-label-secondary text-caption">{countryName}</span>
                 </div>
               </div>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={onClose}
-                className="text-muted-foreground hover:text-foreground hover:bg-foreground/5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+                aria-label="Close"
+                className="text-label-secondary hover:text-label"
               >
-                <X className="h-4 w-4" />
-              </button>
+                <X aria-hidden />
+              </Button>
             </div>
 
             {/* Grid of Actions */}
             <div className="grid grid-cols-2 gap-3 py-1">
-              <button
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/mycountry", router);
+                  navigateWithBasePath(ixstatesHref("/mycountry"), router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/15 to-orange-500/15 p-4 text-center text-xs font-semibold text-amber-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:from-amber-500/25 hover:to-orange-500/25 active:scale-95"
+                className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
-                <Building2 className="h-5 w-5 text-amber-400" />
+                <Building2 className="text-yellow h-5 w-5" />
                 <span>MyCountry Dashboard</span>
-              </button>
+              </Button>
 
-              <button
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/mycountry/executive", router);
+                  navigateWithBasePath(ixstatesHref("/mycountry/executive"), router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/15 to-indigo-600/15 p-4 text-center text-xs font-semibold text-indigo-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:from-indigo-500/25 hover:to-indigo-600/25 active:scale-95"
+                className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
-                <ScrollText className="h-5 w-5 text-indigo-400" />
-                <span>Executive Actions</span>
-              </button>
+                <ScrollText className="text-indigo h-5 w-5" />
+                <span>Executive actions</span>
+              </Button>
 
-              <button
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/mycountry/diplomacy", router);
+                  navigateWithBasePath(ixstatesHref("/mycountry/diplomacy"), router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4 text-center text-xs font-semibold text-cyan-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500/20 active:scale-95"
+                className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
-                <Handshake className="h-5 w-5 text-cyan-400" />
-                <span>Manage Diplomacy</span>
-              </button>
+                <Handshake className="text-teal h-5 w-5" />
+                <span>Manage diplomacy</span>
+              </Button>
 
-              <button
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/mycountry/editor", router);
+                  navigateWithBasePath(ixstatesHref(MYCOUNTRY_MAP_EDITOR_PATH), router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 p-4 text-center text-xs font-semibold text-blue-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500/20 active:scale-95"
+                className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
-                <Map className="h-5 w-5 text-blue-400" />
-                <span>Map & Editor</span>
-              </button>
+                <Map className="text-blue h-5 w-5" />
+                <span>Map and editor</span>
+              </Button>
 
-              <button
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/vault", router);
+                  navigateWithBasePath(ixstatesHref("/vault"), router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-center text-xs font-semibold text-amber-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-95"
+                className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
-                <Wallet className="h-5 w-5 text-amber-400" />
+                <Wallet data-app="vault" className="text-tint h-5 w-5" />
                 <span>IxVault Cards</span>
-              </button>
+              </Button>
 
-              <button
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/mycountry/politics", router);
+                  navigateWithBasePath(ixstatesHref("/mycountry/politics"), router);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-indigo-500/20 bg-indigo-500/10 p-4 text-center text-xs font-semibold text-indigo-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-indigo-500/20 active:scale-95"
+                className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
-                <Scale className="h-5 w-5 text-indigo-400" />
-                <span>Politics & Elections</span>
-              </button>
+                <Scale className="text-indigo h-5 w-5" />
+                <span>Politics and elections</span>
+              </Button>
             </div>
           </motion.div>
         )}

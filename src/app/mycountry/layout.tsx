@@ -7,6 +7,7 @@ import { DemoModeProvider, useDemoMode } from "~/context/DemoModeContext";
 import { DevCountryViewToolbar, ViewingAsBanner } from "~/components/dev";
 import { WarningTriangle as AlertTriangle } from "iconoir-react";
 import { MyCountryHalo } from "~/components/halo/plugins";
+import { PortalTintSync } from "~/components/providers/PortalTintSync";
 
 interface MyCountryLayoutProps {
   children: ReactNode;
@@ -17,9 +18,18 @@ function DemoModeBanner() {
   if (!isDemoActive) return null;
 
   return (
-    <div className="sticky top-0 z-50 flex items-center justify-center gap-2 border-b border-amber-500/30 bg-amber-500/15 px-4 py-1.5 text-xs font-semibold tracking-wide text-amber-600 backdrop-blur-md dark:text-amber-400">
-      <AlertTriangle className="h-3.5 w-3.5" />
-      <span>DEMO MODE — Viewing seeded demo data. Changes are not saved.</span>
+    // Opaque status bar (no blur); it sits above the depth-2 Facet cards (z 100) as they scroll.
+    <div
+      role="status"
+      className="border-separator bg-surface text-label text-caption z-chrome sticky top-0 flex items-center justify-center gap-2 border-b px-4 py-2 text-center"
+    >
+      <AlertTriangle aria-hidden="true" className="text-orange size-3.5 shrink-0" />
+      <span>
+        <span className="font-semibold">Demo mode.</span>{" "}
+        <span className="text-label-secondary">
+          You&apos;re viewing seeded demo data.
+        </span>
+      </span>
     </div>
   );
 }
@@ -29,7 +39,8 @@ export default function MyCountryLayout({ children }: MyCountryLayoutProps) {
     <Suspense fallback={null}>
       <DemoModeProvider>
         <DevCountryViewProvider>
-          <div className="relative flex min-h-screen flex-1 flex-col">
+          <div data-app="mycountry" className="relative flex min-h-screen flex-1 flex-col">
+            <PortalTintSync />
             <MyCountryHalo />
             <DemoModeBanner />
             <ViewingAsBanner />

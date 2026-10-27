@@ -13,13 +13,29 @@
 
 import {
   parseInfobox,
+  parseMoney,
   parsePopulation,
   extractCoordsFromFields,
   cleanWikiValue,
 } from "~/lib/wiki-os/transformers/infobox-parser";
+import {
+  lowerAscii,
+  replaceInlineTemplates,
+  replaceTagBlocks,
+  rewriteSpans,
+  stripComments,
+  stripHtmlTags,
+  unpackInternalLinks,
+} from "~/lib/wiki-os/transformers/clean-markup-passes";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
+import { forwardFinder } from "~/lib/wiki-os/wikitext/forward-finder";
+import {
+  FIELD_ALIASES,
+  MONEY_FIELD,
+  NUMERIC_FIELDS,
+  NUMERIC_FIELDS_LOWER,
+} from "./unified-field-map";
 export { resolveImageUrl };
-import type { WikiSource } from "~/lib/wiki-os/config";
 
 // ─── Unified Infobox Data Interface ───────────────────────────────────────────
 
@@ -233,14 +249,34 @@ function processHdi(value: string): string {
 }
 
 function processWikilinks(value: string): string {
-  return value.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
+  return unpackInternalLinks(value);
+}
+
+/** `<ref .../>` (what `/<ref[^/>]*\/>/gi` cuts): the first `/` or `>` after `<ref` is a `/` that `>` follows. */
+function stripLooseSelfClosingRefs(value: string): string {
+  const lower = lowerAscii(value);
+  const nextStop = forwardFinder(value, /[/>]/g);
+  return rewriteSpans(value, (from) => {
+    for (
+      let open = lower.indexOf("<ref", from);
+      open !== -1;
+      open = lower.indexOf("<ref", open + 1)
+    ) {
+      const stop = nextStop(open + 4);
+      if (stop === -1) return null;
+      if (value.startsWith("/>", stop)) return [open, stop + 2];
+    }
+    return null;
+  });
 }
 
 function processRefs(value: string): string {
-  return value
-    .replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "")
-    .replace(/<ref[^/>]*\/>/gi, "")
-    .replace(/<ref[^>]*>[\s\S]*/gi, "");
+  const withoutBlocks = stripLooseSelfClosingRefs(replaceTagBlocks(value, "ref", () => "", false));
+  // What follows a `<ref ...>` that nothing closes is cut with it.
+  const open = lowerAscii(withoutBlocks).indexOf("<ref");
+  return open !== -1 && withoutBlocks.indexOf(">", open + 4) !== -1
+    ? withoutBlocks.slice(0, open)
+    : withoutBlocks;
 }
 
 function processBr(value: string): string {
@@ -248,11 +284,11 @@ function processBr(value: string): string {
 }
 
 function processSmall(value: string): string {
-  return value.replace(/<small[^>]*>[\s\S]*?<\/small>/gi, "");
+  return replaceTagBlocks(value, "small", () => "", false);
 }
 
 function processComments(value: string): string {
-  return value.replace(/<!--[\s\S]*?-->/g, "");
+  return stripComments(value);
 }
 
 function processSort(value: string): string {
@@ -268,7 +304,7 @@ function processDts(value: string): string {
 }
 
 function processNowiki(value: string): string {
-  return value.replace(/<nowiki[^>]*>([\s\S]*?)<\/nowiki>/gi, "$1");
+  return replaceTagBlocks(value, "nowiki", (inside) => inside, false);
 }
 
 function processColor(value: string): string {
@@ -312,6 +348,14 @@ function processCompose(value: string): string {
   });
 }
 
+/**
+ * ponytail: MAX_TEMPLATE_ROUNDS, 64: the deepest nesting of templates in an infobox value that is stripped. A
+ * round takes the innermost level of the whole value, so a value nested thousands deep (a text of `{{a|` and
+ * `}}`) was a pass over all of it per level: 240 KB took 8.8 s. Real values nest a handful deep (the clone's
+ * deepest is 5); a level past the 64th is left as text.
+ */
+const MAX_TEMPLATE_ROUNDS = 64;
+
 function processTemplates(value: string): string {
   let result = value;
   result = processComments(result);
@@ -334,12 +378,12 @@ function processTemplates(value: string): string {
   result = processNobold(result);
   result = processList(result);
   result = processCompose(result);
-  // Iterate to strip nested templates from innermost out
-  let prevTemplate;
-  do {
-    prevTemplate = result;
-    result = result.replace(/\{\{[^{}]*\}\}/g, "");
-  } while (result !== prevTemplate);
+  // Strip nested templates from innermost out, a level a round
+  for (let round = 0; round < MAX_TEMPLATE_ROUNDS; round++) {
+    const stripped = result.replace(/\{\{[^{}]*\}\}/g, "");
+    if (stripped === result) break;
+    result = stripped;
+  }
   result = processRefs(result);
   result = processSmall(result);
   result = processBr(result);
@@ -353,152 +397,6 @@ function processTemplates(value: string): string {
     .trim();
   return result;
 }
-
-// ─── Field Mapping ────────────────────────────────────────────────────────────
-
-const FIELD_ALIASES: Record<string, keyof UnifiedInfoboxData> = {
-  conventional_long_name: "conventional_long_name",
-  native_name: "native_name",
-  common_name: "common_name",
-  official_name: "official_name",
-  officialname: "official_name",
-  image_flag: "image_flag",
-  flag: "flag",
-  image_coat: "image_coat",
-  coat_of_arms: "coat_of_arms",
-  coatofarms: "coat_of_arms",
-  locator_map: "locator_map",
-  image_map: "image_map",
-  capital: "capital",
-  capital_city: "capital",
-  largest_city: "largest_city",
-  largestcity: "largest_city",
-  area_total: "area_total",
-  area_km2: "area_km2",
-  area: "area_total",
-  area_rank: "area_rank",
-  continent: "continent",
-  climate: "climate",
-  government_type: "government_type",
-  government: "government_type",
-  gov_type: "government_type",
-  leader_title1: "leader_title1",
-  leader_name1: "leader_name1",
-  leader_title2: "leader_title2",
-  leader_name2: "leader_name2",
-  leader_title3: "leader_title3",
-  leader_name3: "leader_name3",
-  leader_title4: "leader_title4",
-  leader_name4: "leader_name4",
-  head_of_state: "head_of_state",
-  headofstate: "head_of_state",
-  head_of_government: "head_of_government",
-  headofgovernment: "head_of_government",
-  deputy_leader: "deputy_leader",
-  legislature: "legislature",
-  upper_house: "upper_house",
-  lower_house: "lower_house",
-  GDP_PPP: "GDP_PPP",
-  gdp_ppp: "GDP_PPP",
-  GDP_PPP_per_capita: "GDP_PPP_per_capita",
-  gdp_ppp_per_capita: "GDP_PPP_per_capita",
-  GDP_nominal: "GDP_nominal",
-  gdp_nominal: "GDP_nominal",
-  GDP: "GDP_nominal",
-  gdp: "GDP_nominal",
-  GDP_total: "GDP_nominal",
-  gdp_total: "GDP_nominal",
-  GDP_nominal_per_capita: "GDP_nominal_per_capita",
-  gdp_nominal_per_capita: "GDP_nominal_per_capita",
-  GDP_per_capita: "GDP_nominal_per_capita",
-  gdp_per_capita: "GDP_nominal_per_capita",
-  currency: "currency",
-  currency_code: "currency_code",
-  population_estimate: "population_estimate",
-  population_est: "population_estimate",
-  pop_estimate: "population_estimate",
-  population_census: "population_census",
-  population: "population",
-  population_total: "population",
-  pop: "population",
-  pop_total: "population",
-  population_data: "population",
-  population_density: "population_density",
-  pop_density: "population_density",
-  life_expectancy: "life_expectancy",
-  life_expect: "life_expectancy",
-  literacy_rate: "literacy_rate",
-  literacy: "literacy_rate",
-  urbanization: "urbanization",
-  urban_pop: "urbanization",
-  official_languages: "official_languages",
-  official_language: "official_languages",
-  languages: "languages",
-  language: "languages",
-  ethnic_groups: "ethnic_groups",
-  ethnicity: "ethnic_groups",
-  religion: "religion",
-  demonym: "demonym",
-  national_anthem: "national_anthem",
-  anthem: "national_anthem",
-  motto: "motto",
-  national_motto: "national_motto",
-  established: "established",
-  established_event1: "established_event1",
-  established_date1: "established_date1",
-  established_event2: "established_event2",
-  established_date2: "established_date2",
-  established_event3: "established_event3",
-  established_date3: "established_date3",
-  independence_date: "independence_date",
-  independence: "independence_date",
-  time_zone: "time_zone",
-  timezone: "time_zone",
-  drives_on: "drives_on",
-  drives: "drives_on",
-  driving_side: "drives_on",
-  calling_code: "calling_code",
-  callingCode: "calling_code",
-  internet_tld: "internet_tld",
-  internetTld: "internet_tld",
-  tld: "internet_tld",
-  iso_code: "iso_code",
-  iso: "iso_code",
-  electricity: "electricity",
-  HDI: "hdi",
-  hdi: "hdi",
-  patron_saint: "patron_saint",
-  englishmotto: "motto",
-};
-
-const NUMERIC_FIELDS = new Set([
-  "population",
-  "population_estimate",
-  "population_census",
-  "area_km2",
-  "GDP_nominal",
-  "GDP_PPP",
-  "GDP_nominal_per_capita",
-  "GDP_PPP_per_capita",
-  "life_expectancy",
-  "literacy_rate",
-  "urbanization",
-]);
-
-// Also track lowercase versions since FIELD_ALIASES values are case-sensitive
-const NUMERIC_FIELDS_LOWER = new Set([
-  "population",
-  "population_estimate",
-  "population_census",
-  "area_km2",
-  "gdp_nominal",
-  "gdp_ppp",
-  "gdp_nominal_per_capita",
-  "gdp_ppp_per_capita",
-  "life_expectancy",
-  "literacy_rate",
-  "urbanization",
-]);
 
 // ─── Image/File Extraction Helpers ──────────────────────────────────────────
 
@@ -515,7 +413,7 @@ function extractFilename(value: string): string {
   if (!value) return "";
   // Trim comments first
   // eslint-disable-next-line prefer-const
-  let clean = value.replace(/<!--[\s\S]*?-->/g, "").trim();
+  let clean = stripComments(value).trim();
 
   // If it's an external URL, return as is
   if (/^https?:\/\//i.test(clean) || clean.startsWith("//")) {
@@ -541,11 +439,9 @@ function extractFilename(value: string): string {
   }
 
   // Strip general templates and formatting
-  let plain = clean
-    .replace(/\{\{[^}]*\}\}/g, "")
-    .replace(/<[^>]+>/g, "")
-    .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1")
-    .trim();
+  let plain = unpackInternalLinks(
+    stripHtmlTags(replaceInlineTemplates(clean, /\{\{[^}]*\}\}/, () => ""))
+  ).trim();
 
   if (plain.includes("|")) {
     plain = plain.split("|")[0]!.trim();
@@ -556,6 +452,18 @@ function extractFilename(value: string): string {
 
 // ─── Main Parser ──────────────────────────────────────────────────────────────
 
+/** The page-name magic words a template fills in from the page it is on ("Flag of {{PAGENAME}}.png"). */
+const PAGE_NAME_WORDS = /\{\{\s*(?:FULL|BASE|ROOT|SUB)?PAGENAME\s*\}\}/g;
+
+/**
+ * The infobox source as MediaWiki would read it: comments gone first (a commented-out `|image_flag = …` line is not
+ * a field), and the page-name magic words filled with the page's title when it is known.
+ */
+export function preprocessInfoboxSource(wikitext: string, pageTitle?: string): string {
+  const text = stripComments(wikitext);
+  return pageTitle ? text.replace(PAGE_NAME_WORDS, pageTitle) : text;
+}
+
 export function parseInfoboxWithTemplates(
   wikitext: string,
   countryName?: string
@@ -563,7 +471,7 @@ export function parseInfoboxWithTemplates(
   // Guard against excessively large wikitext (potential regex DoS)
   if (wikitext.length > 500_000) return null;
 
-  const parsed = parseInfobox(wikitext);
+  const parsed = parseInfobox(preprocessInfoboxSource(wikitext, countryName));
   if (!parsed) return null;
 
   const result: UnifiedInfoboxData = {
@@ -588,7 +496,9 @@ export function parseInfoboxWithTemplates(
     if (unifiedKey) {
       const isNumeric = NUMERIC_FIELDS.has(unifiedKey) || NUMERIC_FIELDS_LOWER.has(unifiedKey);
       if (isNumeric) {
-        const num = parsePopulation(field.rawValue);
+        const num = MONEY_FIELD.test(unifiedKey)
+          ? parseMoney(field.rawValue)
+          : parsePopulation(field.rawValue);
         if (num !== null) {
           (result as any)[unifiedKey] = num;
         } else {
@@ -629,19 +539,19 @@ export function parseInfoboxWithTemplates(
   }
 
   if (typeof result.GDP_nominal === "string") {
-    const gdpNum = parsePopulation(result.GDP_nominal);
+    const gdpNum = parseMoney(result.GDP_nominal);
     if (gdpNum !== null) result.gdp_nominal = gdpNum;
   } else if (typeof result.GDP_nominal === "number") {
     result.gdp_nominal = result.GDP_nominal;
   }
   if (typeof result.GDP_PPP === "string") {
-    const gdpPppNum = parsePopulation(result.GDP_PPP);
+    const gdpPppNum = parseMoney(result.GDP_PPP);
     if (gdpPppNum !== null) result.gdp_ppp = gdpPppNum;
   } else if (typeof result.GDP_PPP === "number") {
     result.gdp_ppp = result.GDP_PPP;
   }
   if (typeof result.GDP_nominal_per_capita === "string") {
-    const gdpPcNum = parsePopulation(result.GDP_nominal_per_capita);
+    const gdpPcNum = parseMoney(result.GDP_nominal_per_capita);
     if (gdpPcNum !== null) result.gdpPerCapita = gdpPcNum;
   } else if (typeof result.GDP_nominal_per_capita === "number") {
     result.gdpPerCapita = result.GDP_nominal_per_capita;
@@ -654,18 +564,4 @@ export function parseInfoboxWithTemplates(
   result.templateName = parsed.templateName;
 
   return result;
-}
-
-export async function fetchAndParseInfobox(
-  pageName: string,
-  wikiSource: WikiSource = "ixwiki"
-): Promise<UnifiedInfoboxData | null> {
-  try {
-    const { getArticleWikitext } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
-    const wikitext = await getArticleWikitext(pageName, wikiSource);
-    if (!wikitext) return null;
-    return parseInfoboxWithTemplates(wikitext.wikitext, pageName);
-  } catch {
-    return null;
-  }
 }

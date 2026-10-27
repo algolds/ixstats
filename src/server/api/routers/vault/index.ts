@@ -8,20 +8,20 @@
  *  - balance-credits: user wallet — balance, budget multiplier, earn/spend, level, earnings
  *  - daily-claims:    daily bonus / streak / combined claim + admin streak adjustment
  *  - store:           storefront — list, config, purchase, purchased items, transactions
- *  - collections:     card collection CRUD, public browse, comments, leaderboard, likes
- *  - admin:           credit adjustments, store-item CRUD, vault config, season, purchase logs
+ *  - public-cosmetics: another player's equipped cosmetics (public, batched)
+ *  - admin:           credit adjustments, store-item CRUD, vault config, purchase logs
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { vaultBalanceCreditsRouter } from "./balance-credits";
 import { vaultDailyClaimsRouter } from "./daily-claims";
 import { vaultStoreRouter } from "./store";
-import { vaultCollectionsRouter } from "./collections";
+import { vaultPublicCosmeticsRouter } from "./public-cosmetics";
 import { vaultAdminRouter } from "./admin";
 
 export const vaultRouter = mergeRouters(
   vaultBalanceCreditsRouter,
   vaultDailyClaimsRouter,
   vaultStoreRouter,
-  vaultCollectionsRouter,
+  vaultPublicCosmeticsRouter,
   vaultAdminRouter
 );

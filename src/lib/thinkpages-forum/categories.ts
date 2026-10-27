@@ -1,0 +1,73 @@
+/** Who sees a forum category. The sitewide section's categories are seeded by the phase 1 migration. */
+export type ForumVisibility = "public" | "staff" | "reporter_staff";
+
+/** M8: public to all; reporter_staff to signed-in members (thread-level rule in access.ts); staff to site admins. */
+export function visibleForumVisibilities(viewer: {
+  signedIn: boolean;
+  siteAdmin: boolean;
+}): readonly ForumVisibility[] {
+  if (viewer.siteAdmin) return ["public", "reporter_staff", "staff"];
+  return viewer.signedIn ? ["public", "reporter_staff"] : ["public"];
+}
+
+/** The Prisma where fragment for the same rule, for callers outside the forum module (realms.forum-preview.ts). */
+export function categoryVisibilityWhere(viewer: { signedIn: boolean; siteAdmin: boolean }): {
+  visibility: { in: ForumVisibility[] };
+} {
+  return { visibility: { in: [...visibleForumVisibilities(viewer)] } };
+}
+
+/** The three categories every realm section (and Ixnay's) has. Seeded by the phase 2 migration and on realm creation. */
+export const REALM_HUB_KEY = "hub";
+
+export interface RealmCategorySeed {
+  key: string;
+  name: string;
+  description: string;
+  order: number;
+  icAllowed: boolean;
+}
+
+export const REALM_CATEGORIES: readonly RealmCategorySeed[] = [
+  { key: "hub", name: "Hub", description: "Out-of-character talk for the realm.", order: 10, icAllowed: false },
+  { key: "character-threads", name: "Character Threads", description: "In-character stories and correspondence.", order: 20, icAllowed: true },
+  { key: "current-events", name: "Current Events", description: "In-character news from the realm's nations.", order: 30, icAllowed: true },
+];
+
+/**
+ * The realm board: a hidden category (style "board") holding exactly one thread whose posts are the realm's live
+ * message board. Seeded by `seedRealmCategories` and the realm-board migration. It is not one of the realm's listed
+ * boards (`REALM_CATEGORIES`) and must never show in a forum list, count, stat, Trending, activity feed, passport or
+ * search: every such read leaves it out with `isBoardCategory` or `notBoardCategory`.
+ */
+export const REALM_BOARD_KEY = "board";
+export const BOARD_STYLE = "board";
+
+/**
+ * Whether this is a realm's board category: style "board", or key "board" in a realm section (a category not yet
+ * restyled). A sitewide category keyed "board" is not one; `scope` left out is read as a realm category.
+ */
+export function isBoardCategory(category: {
+  key: string;
+  style?: string | null;
+  scope?: string;
+}): boolean {
+  if (category.style === BOARD_STYLE) return true;
+  return (category.scope === undefined || category.scope === "realm") && category.key === REALM_BOARD_KEY;
+}
+
+/**
+ * The Prisma where fragment for "not a board category" (the negation of `isBoardCategory`), for a `ForumCategory`
+ * where or a relation filter onto one.
+ */
+export function notBoardCategory(): {
+  style: { not: typeof BOARD_STYLE };
+  NOT: { scope: "realm"; key: typeof REALM_BOARD_KEY };
+} {
+  return { style: { not: BOARD_STYLE }, NOT: { scope: "realm", key: REALM_BOARD_KEY } };
+}
+
+/** Imported threads from a XenForo forum node with no mapped category live in an archive category `xf-<nodeId>`. */
+export function isArchiveCategory(key: string): boolean {
+  return /^xf-\d+$/.test(key);
+}

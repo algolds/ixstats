@@ -1,30 +1,27 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "motion/react";
 import {
   Globe,
   Lock,
   ShareAndroid,
   Settings,
-  ArrowLeft,
   Check,
   Plus,
   LogOut,
-  // oxlint-disable-next-line eslint/no-unused-vars
   ChatBubble,
+  Book,
   RssFeed,
   Group,
-  SidebarCollapse,
-  SidebarExpand,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { assetUrl } from "~/lib/base-path";
 
-export type ThinktankTab = "feed" | "roster";
+export type ThinktankTab = "feed" | "roster" | "docs" | "chat";
 
 interface ThinktankHeaderProps {
   group: {
@@ -49,11 +46,52 @@ interface ThinktankHeaderProps {
   onOpenSettings: () => void;
   onJoin: () => void;
   onLeave: () => void;
-  onBack?: () => void;
+  /** Opens the directory; shown only where the directory is a sheet rather than a column. */
+  onOpenDirectory?: () => void;
   isJoining?: boolean;
   isLeaving?: boolean;
-  isSidebarCollapsed?: boolean;
-  onToggleSidebar?: () => void;
+}
+
+const TABS: Array<{
+  id: ThinktankTab;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
+  { id: "feed", label: "Feed", icon: RssFeed },
+  { id: "roster", label: "Members", icon: Group },
+  { id: "docs", label: "Docs", icon: Book },
+  { id: "chat", label: "Chat", icon: ChatBubble },
+];
+
+const withPress = (action: () => void) => () => {
+  soundEffects.press();
+  action();
+};
+
+function ShareButton({ groupId }: { groupId: string }) {
+  const notify = useNotify();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = () => {
+    soundEffects.press();
+    void navigator.clipboard.writeText(`${window.location.origin}/thinktanks/${groupId}`);
+    setCopied(true);
+    notify.success("Group link copied to clipboard");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleCopyLink}
+      className="text-label-secondary hover:text-label"
+      title="Share group link"
+    >
+      {copied ? <Check className="text-success" /> : <ShareAndroid />}
+      <span className="hidden sm:inline">{copied ? "Copied" : "Share"}</span>
+    </Button>
+  );
 }
 
 export function ThinktankHeader({
@@ -63,122 +101,75 @@ export function ThinktankHeader({
   onOpenSettings,
   onJoin,
   onLeave,
-  onBack,
+  onOpenDirectory,
   isJoining = false,
   isLeaving = false,
-  isSidebarCollapsed = false,
-  onToggleSidebar,
 }: ThinktankHeaderProps) {
-  const notify = useNotify();
-  const [copied, setCopied] = useState(false);
-
   const isOwnerOrAdmin = group.userRole === "owner" || group.userRole === "admin";
-  const allowPersona = Boolean(group.settings?.allowPersonaPosting);
-
-  const handleCopyLink = () => {
-    soundEffects.press();
-    const url = `${window.location.origin}/thinktanks/${group.id}`;
-    void navigator.clipboard.writeText(url);
-    setCopied(true);
-    notify.success("Group link copied to clipboard");
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const isMember = Boolean(group.isMember);
 
-  const tabs: Array<{
-    id: ThinktankTab;
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-  }> = [
-    { id: "feed", label: "Feed", icon: RssFeed },
-    { id: "roster", label: "Members", icon: Group },
-  ];
-
   return (
-    <div className="border-border/30 bg-card/75 dark:bg-card/40 relative z-20 flex shrink-0 flex-col overflow-hidden border-b backdrop-blur-2xl dark:border-white/10">
-      {/* ── Optional Group Banner Backdrop ── */}
+    <div className="border-separator bg-surface relative flex shrink-0 flex-col overflow-hidden border-b">
       {group.settings?.bannerUrl && (
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-30 dark:opacity-25">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-30"
+        >
           <img
-            src={group.settings.bannerUrl}
+            src={assetUrl(group.settings.bannerUrl) ?? undefined}
             alt=""
-            className="h-full w-full object-cover blur-[2px] filter"
+            className="size-full object-cover blur-[2px]"
           />
-          <div className="from-card/30 via-card/70 to-card absolute inset-0 bg-gradient-to-b" />
+          {/* Banner scrim: the artwork fades into the header surface. */}
+          <div className="from-surface/30 via-surface/70 to-surface absolute inset-0 bg-gradient-to-b" />
         </div>
       )}
 
-      {/* ── Top Bar: Identity & Actions ── */}
       <div className="relative z-10 flex items-center justify-between gap-3 px-4 py-3 md:px-5">
-        {/* Left: Back / Sidebar toggle & Group Avatar + Title */}
-        <div className="flex min-w-0 items-center gap-2.5">
-          {onBack && (
+        <div className="flex min-w-0 items-center gap-2">
+          {onOpenDirectory && (
             <Button
               variant="ghost"
-              size="sm"
-              onClick={() => {
-                soundEffects.press();
-                onBack();
-              }}
-              className="text-muted-foreground hover:text-foreground h-8 w-8 shrink-0 rounded-xl p-0 active:scale-90 md:hidden"
-              title="Back to Directory"
+              size="icon"
+              onClick={withPress(onOpenDirectory)}
+              className="text-label-secondary hover:text-label shrink-0 xl:hidden"
+              title="All ThinkTanks"
+              aria-label="All ThinkTanks"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <Group />
             </Button>
           )}
 
-          {onToggleSidebar && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                soundEffects.press();
-                onToggleSidebar();
-              }}
-              className="text-muted-foreground hover:text-foreground hidden h-8 w-8 shrink-0 rounded-xl p-0 active:scale-90 lg:flex"
-              title={isSidebarCollapsed ? "Show Directory Sidebar" : "Collapse Sidebar for Focus"}
-            >
-              {isSidebarCollapsed ? (
-                <SidebarExpand className="h-4 w-4" />
-              ) : (
-                <SidebarCollapse className="h-4 w-4" />
-              )}
-            </Button>
-          )}
-
-          <Avatar className="border-border/50 h-9 w-9 shrink-0 rounded-xl border bg-emerald-500/15 shadow-xs">
+          <Avatar className="border-separator bg-tint-fill rounded-control size-9 shrink-0 border">
             <AvatarImage src={group.avatar || undefined} alt={group.name} />
-            <AvatarFallback className="rounded-xl bg-transparent text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            <AvatarFallback className="rounded-control text-caption text-tint bg-transparent">
               {group.name.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h1 className="text-foreground truncate text-sm font-bold tracking-tight md:text-base">
-                {group.name}
-              </h1>
+              <h1 className="text-headline text-label truncate">{group.name}</h1>
               {group.type === "private" ? (
-                <span title="Private Group" className="inline-flex">
-                  <Lock className="h-3.5 w-3.5 shrink-0 text-amber-500/80" />
+                <span title="Private group" className="inline-flex">
+                  <Lock className="text-orange size-3.5 shrink-0" aria-label="Private" />
                 </span>
               ) : (
-                <span title="Public Group" className="inline-flex">
-                  <Globe className="h-3.5 w-3.5 shrink-0 text-emerald-500/80" />
+                <span title="Public group" className="inline-flex">
+                  <Globe className="text-green size-3.5 shrink-0" aria-label="Public" />
                 </span>
               )}
             </div>
 
-            <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-              <span className="text-foreground/80 font-medium">{group.category || "General"}</span>
-              <span>·</span>
-              <span>{group.memberCount ?? 1} members</span>
-              {allowPersona && (
+            <div className="text-footnote text-label-secondary flex items-center gap-1">
+              <span className="text-label font-medium">{group.category || "General"}</span>
+              <span aria-hidden="true">·</span>
+              <span className="tabular-nums">{group.memberCount ?? 1} members</span>
+              {group.settings?.allowPersonaPosting && (
                 <>
-                  <span>·</span>
-                  <span className="flex items-center gap-1 font-medium text-indigo-600 dark:text-indigo-400">
-                    <Group className="h-3 w-3" /> Multi-Persona
+                  <span aria-hidden="true">·</span>
+                  <span className="flex items-center gap-1 font-medium">
+                    <Group className="size-3.5" aria-hidden="true" /> Multi-Persona
                   </span>
                 </>
               )}
@@ -186,99 +177,59 @@ export function ThinktankHeader({
           </div>
         </div>
 
-        {/* Right: Actions */}
         <div className="flex shrink-0 items-center gap-2">
-          {/* Share button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleCopyLink}
-            className="text-muted-foreground hover:text-foreground h-8 rounded-xl px-2.5 text-xs active:scale-95"
-            title="Share group link"
-          >
-            {copied ? (
-              <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-500" />
-            ) : (
-              <ShareAndroid className="mr-1.5 h-3.5 w-3.5" />
-            )}
-            <span className="hidden sm:inline">{copied ? "Copied" : "Share"}</span>
-          </Button>
+          <ShareButton groupId={group.id} />
 
-          {/* Group Settings Trigger */}
-          {isOwnerOrAdmin && onOpenSettings && (
+          {isOwnerOrAdmin && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                soundEffects.press();
-                onOpenSettings();
-              }}
-              className="text-muted-foreground hover:text-foreground h-8 w-8 rounded-xl p-0 active:scale-95"
-              title="Group Settings"
+              onClick={withPress(onOpenSettings)}
+              className="text-label-secondary hover:text-label size-8 p-0"
+              title="Group settings"
+              aria-label="Group settings"
             >
-              <Settings className="h-4 w-4" />
+              <Settings />
             </Button>
           )}
 
-          {/* Join / Leave Button */}
           {isMember ? (
             <Button
               variant="ghost"
               size="sm"
               disabled={isLeaving}
               onClick={onLeave}
-              className="h-8 rounded-xl px-2.5 text-xs text-red-500 hover:bg-red-500/10 hover:text-red-600 active:scale-95"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
-              <LogOut className="mr-1.5 h-3.5 w-3.5" />
+              <LogOut />
               Leave
             </Button>
           ) : (
-            <Button
-              size="sm"
-              disabled={isJoining}
-              onClick={onJoin}
-              className="h-8 rounded-xl bg-emerald-600 px-3 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-600"
-            >
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Join Group
+            <Button size="sm" disabled={isJoining} onClick={onJoin}>
+              <Plus />
+              Join group
             </Button>
           )}
         </div>
       </div>
 
-      {/* ── Bottom Bar: Fluid Segmented Tab Strip (Members Only) ── */}
       {isMember && (
-        <div className="border-border/20 relative z-10 flex items-center gap-1 border-t px-4 py-1.5 md:px-5">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-            const Icon = tab.icon;
-
-            return (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  soundEffects.press();
-                  onTabChange(tab.id);
-                }}
-                className={cn(
-                  "relative flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.97]",
-                  isActive
-                    ? "text-emerald-700 dark:text-emerald-300"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="thinktank-tab-pill"
-                    className="absolute inset-0 rounded-lg border border-emerald-500/30 bg-emerald-500/15 shadow-2xs dark:bg-emerald-500/20"
-                    transition={{ type: "spring", stiffness: 450, damping: 30 }}
-                  />
-                )}
-                <Icon className="relative z-10 h-3.5 w-3.5" />
-                <span className="relative z-10">{tab.label}</span>
-              </button>
-            );
-          })}
+        <div className="border-separator relative z-10 border-t px-4 py-2 md:px-5">
+          <SegmentedControl
+            size="sm"
+            aria-label="Group sections"
+            value={activeTab}
+            onValueChange={(id) => {
+              soundEffects.press();
+              onTabChange(id as ThinktankTab);
+            }}
+            options={TABS.map(({ id, label, icon: Icon }) => ({
+              value: id,
+              label,
+              icon: <Icon />,
+            }))}
+            asTabs
+          />
         </div>
       )}
     </div>

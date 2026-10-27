@@ -5,7 +5,7 @@ import { SponsorWalletDeck } from "~/components/sports/club/SponsorWalletDeck";
 import { RevenueCollector } from "~/components/sports/club/RevenueCollector";
 import type { TeamSponsor } from "~/lib/sports/types";
 
-export interface ClubManagementSectionProps {
+interface ClubManagementSectionProps {
   team: {
     id: string;
     name: string;
@@ -41,5 +41,3 @@ export function ClubManagementSection({ team, onRefetchOverview }: ClubManagemen
     </div>
   );
 }
-
-export default ClubManagementSection;

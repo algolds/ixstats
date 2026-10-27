@@ -7,17 +7,20 @@
  */
 
 import React from "react";
+import { getEconomicComponentDisplay } from "./display";
 
 /**
- * Format component type to display name
- * Converts SCREAMING_SNAKE_CASE to Title Case
- * Example: "FREE_MARKET_SYSTEM" -> "Free Market System"
+ * Display name for an economic component type.
+ *
+ * Returns the hand-written plain-language name from ./display (for example RD_INVESTMENT ->
+ * "Research funding"). Unknown strings fall back to sentence case so legacy or custom values
+ * still read as words.
  */
 export function formatComponentName(componentType: string): string {
-  return componentType
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
+  const written = getEconomicComponentDisplay(componentType);
+  if (written) return written.name;
+  const words = componentType.toLowerCase().split("_").filter(Boolean).join(" ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 /**

@@ -86,7 +86,7 @@ export const DEFAULT_EQUIPMENT_FORM: EquipmentFormData = {
   isActive: true,
 };
 
-export interface FilterableEquipmentItem {
+interface FilterableEquipmentItem {
   subcategory?: string | null;
   technologyLevel?: number | null;
   acquisitionCost?: number | null;

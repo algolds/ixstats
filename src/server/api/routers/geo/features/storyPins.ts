@@ -1,14 +1,3 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
 import {
   createTRPCRouter,
@@ -20,23 +9,10 @@ import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { validatePointContainment, checkNameUniqueness } from "~/lib/maps/geo-validation";
-
-/** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
-const coordinatesSchema = z
-  .tuple([z.number(), z.number()])
-  .refine(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90, {
-    message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
-  });
-
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
+import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
+import { assertStorylineInCountry } from "./storylines";
 
 export const geoFeaturesStoryPinsRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Story Pins — Narrative markers on the map
-  // ──────────────────────────────────────────────
-
   createStoryPin: standardMutationCountryOwnerProcedure
     .input(
       z.object({
@@ -73,10 +49,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
       await validatePointContainment(
         ctx.db as any,
         input.countryId,
@@ -85,6 +58,10 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
         "Story pin"
       );
       await checkNameUniqueness(ctx.db as any, input.countryId, input.title, "storyPin");
+      // A pin may only join a storyline of its own country.
+      if (input.storylineId) {
+        await assertStorylineInCountry(ctx.db, input.storylineId, input.countryId);
+      }
 
       const pin = await ctx.db.storyPin.create({
         data: {
@@ -172,14 +149,13 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
-      const pin = await ctx.db.storyPin.findFirst({
-        where: { id: input.pinId, countryId: input.countryId },
-      });
-      if (!pin) throw new TRPCError({ code: "NOT_FOUND", message: "Story pin not found" });
+      assertOwnCountry(ctx, input.countryId);
+      assertFound(
+        await ctx.db.storyPin.findFirst({
+          where: { id: input.pinId, countryId: input.countryId },
+        }),
+        "Story pin not found"
+      );
 
       if (input.coordinates) {
         await validatePointContainment(
@@ -189,6 +165,9 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
           input.coordinates[1],
           "Story pin"
         );
+      }
+      if (input.storylineId) {
+        await assertStorylineInCountry(ctx.db, input.storylineId, input.countryId);
       }
       if (input.title) {
         await checkNameUniqueness(
@@ -227,14 +206,13 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
   deleteStoryPin: standardMutationCountryOwnerProcedure
     .input(z.object({ countryId: z.string(), pinId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
-      const pin = await ctx.db.storyPin.findFirst({
-        where: { id: input.pinId, countryId: input.countryId },
-      });
-      if (!pin) throw new TRPCError({ code: "NOT_FOUND", message: "Story pin not found" });
+      assertOwnCountry(ctx, input.countryId);
+      assertFound(
+        await ctx.db.storyPin.findFirst({
+          where: { id: input.pinId, countryId: input.countryId },
+        }),
+        "Story pin not found"
+      );
       await ctx.db.storyPin.delete({ where: { id: input.pinId } });
       await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS);
       broadcastMapUpdate("storyPin", input.countryId);

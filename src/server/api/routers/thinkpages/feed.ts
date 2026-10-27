@@ -1,8 +1,13 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import type { Prisma } from "@prisma/client";
 // Import the wiki search service
 import { globalCache } from "~/lib/cache";
+import { postInclude, transformPost, withVisibleEmbeds } from "./post-utils";
+import { realmFeedWhere } from "./realm-feed";
+import { hiddenThinkpagesAccountIds } from "~/server/shared/user-blocks";
+import { mutedKeywords } from "~/server/shared/privacy-permissions";
 
 interface PostDateFields {
   createdAt?: string | Date | null;
@@ -13,7 +18,7 @@ interface PostDateFields {
   [key: string]: unknown;
 }
 
-export function hydratePostDates<T extends PostDateFields | null | undefined>(post: T): T {
+function hydratePostDates<T extends PostDateFields | null | undefined>(post: T): T {
   if (!post) return post;
   return {
     ...post,
@@ -46,53 +51,26 @@ export function hydratePostDates<T extends PostDateFields | null | undefined>(po
   } as T;
 }
 
-function formatPollForClient(poll: any) {
-  if (!poll) return null;
-  const votes: Record<string, number> = {};
-  let totalVotes = 0;
-  poll.options.forEach((opt: any) => {
-    const count = opt._count?.votes ?? 0;
-    votes[opt.id] = count;
-    totalVotes += count;
-  });
-
-  return {
-    id: poll.id,
-    question: poll.question,
-    description: poll.description,
-    pollType: poll.pollType,
-    multiple: poll.multiple,
-    isActive: poll.isActive,
-    endDate: poll.endDate,
-    countryId: poll.countryId,
-    options: poll.options.map((opt: any) => ({
-      id: opt.id,
-      label: opt.label,
-      description: opt.description,
-    })),
-    votes,
-    totalVotes,
-    hasVoted: false,
-    userVotedOptionIds: [],
-  };
+/**
+ * Feed ordering. "trending" (posts the thinkpages-trending cron flagged) and "hot" (every post)
+ * rank by the cron's engagement-decay `trendingScore`, newest first among equals; "recent" is
+ * pinned-then-newest.
+ */
+export function feedOrderBy(
+  filter: "recent" | "trending" | "hot"
+): Prisma.ThinkpagesPostOrderByWithRelationInput[] {
+  if (filter === "trending") {
+    return [{ trendingScore: "desc" }, { ixTimeTimestamp: "desc" }];
+  }
+  if (filter === "hot") {
+    return [{ pinned: "desc" }, { trendingScore: "desc" }, { ixTimeTimestamp: "desc" }];
+  }
+  return [{ pinned: "desc" }, { ixTimeTimestamp: "desc" }];
 }
-
-const pollInclude = {
-  poll: {
-    include: {
-      options: {
-        include: {
-          _count: {
-            select: { votes: true },
-          },
-        },
-      },
-    },
-  },
-};
 
 const GetFeedSchema = z.object({
   countryId: z.string().optional(), // Feed filtered by country
+  realmId: z.string().max(100).optional(), // Feed filtered by realm (its nations' posts; the board is shown by the feed's board block); omitted = all realms
   hashtag: z.string().optional(),
   filter: z.enum(["recent", "trending", "hot"]).default("recent"),
   limit: z.number().min(1).max(50).default(20),
@@ -130,7 +108,15 @@ export const thinkpagesFeedRouter = createTRPCRouter({
   // Get feed
   getFeed: rateLimitedPublicProcedure.input(GetFeedSchema).query(async ({ ctx, input }) => {
     try {
-      const cacheKey = `thinkpages_feed:${input.countryId || "all"}:${input.hashtag || "all"}:${input.filter}:${input.limit}:${input.cursor || "none"}`;
+      // Posts by accounts the viewer blocked or muted, and posts containing one of the viewer's
+      // muted words (SL-4), are left out (and cached per viewer).
+      const [hiddenAccountIds, mutedWords] = await Promise.all([
+        hiddenThinkpagesAccountIds(ctx.db, ctx.auth?.userId),
+        mutedKeywords(ctx.db, ctx.auth?.userId),
+      ]);
+      const viewerScope =
+        hiddenAccountIds.length || mutedWords.length ? `:viewer:${ctx.auth?.userId}` : "";
+      const cacheKey = `thinkpages_feed:${input.countryId || "all"}:${input.realmId || "all"}:${input.hashtag || "all"}:${input.filter}:${input.limit}:${input.cursor || "none"}${viewerScope}`;
 
       const cached = await globalCache.get<{ posts: any[]; nextCursor: string | null }>(cacheKey);
       if (cached) {
@@ -147,10 +133,29 @@ export const thinkpagesFeedRouter = createTRPCRouter({
         visibility: "public",
       };
 
+      if (hiddenAccountIds.length) {
+        whereClause.accountId = { notIn: hiddenAccountIds };
+      }
+
       if ((input as any).countryId) {
         whereClause.account = {
           countryId: (input as any).countryId,
         };
+      }
+
+      if (input.realmId) {
+        // The realm clause carries its own visibility.
+        delete whereClause.visibility;
+        whereClause.AND = [realmFeedWhere(input.realmId)];
+      }
+
+      if (mutedWords.length) {
+        whereClause.AND = [
+          ...(whereClause.AND ?? []),
+          ...mutedWords.map((word) => ({
+            NOT: { content: { contains: word, mode: "insensitive" } },
+          })),
+        ];
       }
 
       if (input.filter === "trending") {
@@ -165,116 +170,16 @@ export const thinkpagesFeedRouter = createTRPCRouter({
 
       const posts = await db.thinkpagesPost.findMany({
         where: whereClause,
-        include: {
-          account: {
-            select: {
-              id: true,
-              username: true,
-              displayName: true,
-              profileImageUrl: true,
-              accountType: true,
-              verified: true,
-              clerkUserId: true,
-              countryId: true,
-              country: {
-                select: {
-                  id: true,
-                  name: true,
-                  flag: true,
-                },
-              },
-            },
-          },
-          parentPost: {
-            include: {
-              account: {
-                select: {
-                  id: true,
-                  username: true,
-                  displayName: true,
-                  profileImageUrl: true,
-                  accountType: true,
-                  verified: true,
-                  clerkUserId: true,
-                  countryId: true,
-                  country: {
-                    select: {
-                      id: true,
-                      name: true,
-                      flag: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          repostOf: {
-            include: {
-              account: {
-                select: {
-                  id: true,
-                  username: true,
-                  displayName: true,
-                  profileImageUrl: true,
-                  accountType: true,
-                  verified: true,
-                  clerkUserId: true,
-                  countryId: true,
-                  country: {
-                    select: {
-                      id: true,
-                      name: true,
-                      flag: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          reactions: true,
-          mediaAttachments: true,
-          ...pollInclude,
-          reposts: {
-            select: { accountId: true },
-          },
-          _count: {
-            select: {
-              replies: true,
-              reposts: true,
-            },
-          },
-        },
-        orderBy: [{ pinned: "desc" }, { ixTimeTimestamp: "desc" }],
+        include: postInclude,
+        orderBy: feedOrderBy(input.filter),
         take: input.limit,
         cursor: input.cursor ? { id: input.cursor } : undefined,
         skip: input.cursor ? 1 : 0,
       });
 
-      const transformedPosts = posts.map((post) => ({
-        ...post,
-        poll: formatPollForClient((post as any).poll),
-        hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
-        reactionCounts: (() => {
-          let baseline: Record<string, number> = {};
-          try {
-            if (post.reactionCounts) {
-              baseline =
-                typeof post.reactionCounts === "string"
-                  ? JSON.parse(post.reactionCounts)
-                  : post.reactionCounts;
-            }
-          } catch {
-            // ignore
-          }
-          return (post as any).reactions.reduce((acc: any, reaction: any) => {
-            acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
-            return acc;
-          }, baseline);
-        })(),
-        timestamp: post.isAutoGenerated
-          ? post.ixTimeTimestamp.toISOString()
-          : post.createdAt.toISOString(),
-      }));
+      // The feed is cached for every viewer, so an embedded private parent or original is dropped
+      // even for its owner (they still see it on the post page).
+      const transformedPosts = posts.map((post) => transformPost(withVisibleEmbeds(post, null)));
 
       const nextCursor = posts.length === input.limit ? posts[posts.length - 1]?.id : null;
 

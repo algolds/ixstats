@@ -6,43 +6,122 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import type { Prisma, PrismaClient } from "@prisma/client";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { exchangeService } from "~/lib/vault/exchange-service";
 import { teamWageBill } from "~/lib/sports";
-import { IxTime } from "~/lib/ixtime";
+import { MAX_TICKET_PRICE } from "~/lib/sports/match-revenue";
+import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
 import type { LiveTraceEvent } from "~/lib/sports/live-match";
+import {
+  assertSportsEconomyOpen,
+  requireOwnedTeam,
+  sportsRequestId,
+} from "~/server/api/routers/sports/_shared";
+import { chargeSportsFeeTx } from "~/server/api/routers/sports/fees";
+
+const TEAM_OVERVIEW_INCLUDE = {
+  players: { where: { isActive: true }, orderBy: { position: "asc" } },
+  coaches: { where: { isActive: true } },
+  league: { select: { id: true, name: true, sportPreset: true, archetype: true } },
+} satisfies Prisma.SportTeamInclude;
+
+type TeamWithOverview = Prisma.SportTeamGetPayload<{ include: typeof TEAM_OVERVIEW_INCLUDE }>;
+
+/** Season context, standings, fixtures and records shared by the owner and public team overviews. */
+async function buildTeamOverview(
+  db: Pick<PrismaClient, "sportSeason" | "sportStanding" | "sportMatch" | "sportTeamSeason">,
+  team: TeamWithOverview
+) {
+  const activeSeason = await db.sportSeason.findFirst({
+    where: { leagueId: team.leagueId, status: "in_progress" },
+    select: { id: true, seasonNumber: true, status: true },
+  });
+
+  let currentStandings = null;
+  let upcomingMatches: Array<{
+    id: string;
+    matchDay: number;
+    status: string;
+    homeTeamId: string;
+    awayTeamId: string;
+    homeTeam: { id: string; name: string };
+    awayTeam: { id: string; name: string };
+  }> = [];
+
+  if (activeSeason) {
+    currentStandings = await db.sportStanding.findUnique({
+      where: { seasonId_teamId: { seasonId: activeSeason.id, teamId: team.id } },
+    });
+
+    upcomingMatches = await db.sportMatch.findMany({
+      where: {
+        seasonId: activeSeason.id,
+        status: "scheduled",
+        OR: [{ homeTeamId: team.id }, { awayTeamId: team.id }],
+      },
+      include: {
+        homeTeam: { select: { id: true, name: true, shortName: true } },
+        awayTeam: { select: { id: true, name: true, shortName: true } },
+      },
+      orderBy: { matchDay: "asc" },
+      take: 5,
+    });
+  }
+
+  const seasonsCount = await db.sportTeamSeason.count({
+    where: { teamId: team.id },
+  });
+
+  const championships = await db.sportSeason.count({
+    where: { championTeamId: team.id, status: "completed" },
+  });
+
+  return {
+    team,
+    activeSeason,
+    currentStandings,
+    upcomingMatches,
+    seasonsCount,
+    championships,
+    wageBill: teamWageBill(
+      team.players as unknown as Array<{
+        isActive?: boolean;
+        ratings: Record<string, unknown> | null;
+      }>
+    ),
+  };
+}
 
 export const sportsClubRouter = createTRPCRouter({
-  upgradeStadium: protectedProcedure
-    .input(z.object({ teamId: z.string() }))
+  upgradeStadium: rateLimitedMutationProcedure
+    .input(z.object({ teamId: z.string(), requestId: sportsRequestId }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({
-          where: { id: input.teamId },
-        });
-        if (!team) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        }
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
-        }
-        const spend = await exchangeService.spend(
-          ctx.user.id,
-          1000,
-          "STADIUM_UPGRADE",
-          `STADIUM_UPGRADE:${input.teamId}`,
-          ctx.db
-        );
-        if (!spend.success) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: spend.message ?? "Insufficient balance to upgrade stadium",
+        await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "manage");
+        await assertSportsEconomyOpen(ctx.db);
+        return await ctx.db.$transaction(async (tx) => {
+          const charge = await chargeSportsFeeTx(tx, {
+            userId: ctx.user.id,
+            amount: 1000,
+            type: "STADIUM_UPGRADE",
+            source: `STADIUM_UPGRADE:${input.teamId}`,
+            action: "stadium",
+            requestId: input.requestId,
+            failure: "Insufficient balance to upgrade stadium",
           });
-        }
-        return ctx.db.sportTeam.update({
-          where: { id: input.teamId },
-          data: { stadiumCapacity: { increment: 1000 } },
+          if (charge.alreadyApplied) {
+            return tx.sportTeam.findUniqueOrThrow({ where: { id: input.teamId } });
+          }
+          return tx.sportTeam.update({
+            where: { id: input.teamId },
+            data: { stadiumCapacity: { increment: 1000 } },
+          });
         });
       } catch (error) {
         if (error instanceof TRPCError) throw error;
@@ -53,19 +132,11 @@ export const sportsClubRouter = createTRPCRouter({
       }
     }),
 
-  setTicketPrice: protectedProcedure
-    .input(z.object({ teamId: z.string(), price: z.number().min(1) }))
+  setTicketPrice: rateLimitedMutationProcedure
+    .input(z.object({ teamId: z.string(), price: z.number().min(1).max(MAX_TICKET_PRICE) }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({
-          where: { id: input.teamId },
-        });
-        if (!team) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        }
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
-        }
+        await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "manage");
         return ctx.db.sportTeam.update({
           where: { id: input.teamId },
           data: { ticketPrice: input.price },
@@ -79,7 +150,7 @@ export const sportsClubRouter = createTRPCRouter({
       }
     }),
 
-  setClubNotifications: protectedProcedure
+  setClubNotifications: rateLimitedMutationProcedure
     .input(z.object({ teamId: z.string(), enabled: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       const team = await ctx.db.sportTeam.findUnique({
@@ -97,51 +168,39 @@ export const sportsClubRouter = createTRPCRouter({
       });
     }),
 
-  invokePatronSaint: protectedProcedure
-    .input(z.object({ teamId: z.string(), saintName: z.string() }))
+  invokePatronSaint: rateLimitedMutationProcedure
+    .input(z.object({ teamId: z.string(), saintName: z.string(), requestId: sportsRequestId }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({
-          where: { id: input.teamId },
-        });
-        if (!team) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        }
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
-        }
-        const spend = await exchangeService.spend(
-          ctx.user.id,
-          100,
-          "CHARTER_FEE",
-          `SAINT_INVOCATION:${input.teamId}:${input.saintName}`,
-          ctx.db
-        );
-        if (!spend.success) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: spend.message ?? "Insufficient balance to invoke patron saint",
+        const team = await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "manage");
+        await assertSportsEconomyOpen(ctx.db);
+        await ctx.db.$transaction(async (tx) => {
+          const charge = await chargeSportsFeeTx(tx, {
+            userId: ctx.user.id,
+            amount: 100,
+            type: "CHARTER_FEE",
+            source: `SAINT_INVOCATION:${input.teamId}:${input.saintName}`,
+            action: "saint",
+            requestId: input.requestId,
+            failure: "Insufficient balance to invoke patron saint",
           });
-        }
+          if (charge.alreadyApplied) return;
 
-        await ctx.db.sportTeam.update({
-          where: { id: input.teamId },
-          data: { patronSaint: input.saintName },
-        });
+          await tx.sportTeam.update({
+            where: { id: input.teamId },
+            data: { patronSaint: input.saintName },
+          });
 
-        if (team.nationId) {
-          await ctx.db.storytellerEffect.create({
-            data: {
+          if (team.nationId) {
+            await createStorytellerEffect(tx, {
               countryId: team.nationId,
-              ixTimeTimestamp: IxTime.timestampToDate(IxTime.getCurrentIxTime()),
               inputType: "sports_saint_blessing",
               value: 5.0,
               description: `The home crowd echoes the Invocation of ${input.saintName}. Blessings descend upon the pitch!`,
-              isActive: true,
               duration: 1,
-            },
-          });
-        }
+            });
+          }
+        });
 
         return { success: true };
       } catch (error) {
@@ -153,7 +212,7 @@ export const sportsClubRouter = createTRPCRouter({
       }
     }),
 
-  updateTeamTactics: protectedProcedure
+  updateTeamTactics: rateLimitedMutationProcedure
     .input(
       z.object({
         teamId: z.string(),
@@ -164,19 +223,19 @@ export const sportsClubRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
-        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
-        }
+        const team = await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "own");
 
         const lineup = (team.lineup as Record<string, unknown> | null) ?? {};
         const updatedLineup = {
           ...lineup,
           attackFocus:
-            input.attackFocus !== undefined ? input.attackFocus : ((lineup.attackFocus as number) ?? 50),
+            input.attackFocus !== undefined
+              ? input.attackFocus
+              : ((lineup.attackFocus as number) ?? 50),
           teamIntensity:
-            input.teamIntensity !== undefined ? input.teamIntensity : ((lineup.teamIntensity as number) ?? 50),
+            input.teamIntensity !== undefined
+              ? input.teamIntensity
+              : ((lineup.teamIntensity as number) ?? 50),
         };
 
         return ctx.db.sportTeam.update({
@@ -192,15 +251,11 @@ export const sportsClubRouter = createTRPCRouter({
       }
     }),
 
-  selectSponsor: protectedProcedure
+  selectSponsor: rateLimitedMutationProcedure
     .input(z.object({ teamId: z.string(), sponsorType: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
-        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
-        }
+        await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "own");
 
         const sponsors: Record<string, { name: string; baseFee: number; winBonus: number }> = {
           conservative: { name: "SafeState Insurance", baseFee: 100, winBonus: 0 },
@@ -225,41 +280,54 @@ export const sportsClubRouter = createTRPCRouter({
       }
     }),
 
-  trainPlayer: protectedProcedure
-    .input(z.object({ playerId: z.string(), attributeFocus: z.string() }))
+  trainPlayer: rateLimitedMutationProcedure
+    .input(
+      z.object({ playerId: z.string(), attributeFocus: z.string(), requestId: sportsRequestId })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
-        const player = await ctx.db.sportPlayer.findUnique({
+        const owned = await ctx.db.sportPlayer.findUnique({
           where: { id: input.playerId },
           include: { team: true },
         });
-        if (!player) throw new TRPCError({ code: "NOT_FOUND", message: "Player not found" });
-        if (!player.team || player.team.ownerUserId !== ctx.user.id) {
+        if (!owned) throw new TRPCError({ code: "NOT_FOUND", message: "Player not found" });
+        if (!owned.team || owned.team.ownerUserId !== ctx.user.id) {
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
         }
 
-        const spend = await exchangeService.spend(
-          ctx.user.id,
-          25,
-          "TRAINING_FEE",
-          `PLAYER:${input.playerId}`,
-          ctx.db
-        );
-        if (!spend.success) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: spend.message ?? "Insufficient balance to train player",
+        await assertSportsEconomyOpen(ctx.db);
+        return await ctx.db.$transaction(async (tx) => {
+          // Lock the player before the wallet (the transfer market's order) and read it under the
+          // lock: two trainings can't overwrite each other's ratings, and a sale meanwhile stops this
+          await tx.$queryRaw`SELECT id FROM "sport_players" WHERE id = ${input.playerId} FOR UPDATE`;
+          const { team, ...player } = await tx.sportPlayer.findUniqueOrThrow({
+            where: { id: input.playerId },
+            include: { team: { select: { ownerUserId: true } } },
           });
-        }
+          if (team.ownerUserId !== ctx.user.id) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
+          }
 
-        const ratings = (player.ratings as Record<string, number> | null) ?? {};
-        const current = ratings[input.attributeFocus] ?? 50;
-        const gain = Math.random() < 0.4 ? Math.floor(Math.random() * 3) + 1 : 1;
-        const newVal = Math.min(99, current + gain);
+          const charge = await chargeSportsFeeTx(tx, {
+            userId: ctx.user.id,
+            amount: 25,
+            type: "TRAINING_FEE",
+            source: `PLAYER:${input.playerId}`,
+            action: "train-player",
+            requestId: input.requestId,
+            failure: "Insufficient balance to train player",
+          });
+          if (charge.alreadyApplied) return player;
 
-        return ctx.db.sportPlayer.update({
-          where: { id: input.playerId },
-          data: { ratings: { ...ratings, [input.attributeFocus]: newVal } },
+          const ratings = (player.ratings as Record<string, number> | null) ?? {};
+          const current = ratings[input.attributeFocus] ?? 50;
+          const gain = Math.random() < 0.4 ? Math.floor(Math.random() * 3) + 1 : 1;
+          const newVal = Math.min(99, current + gain);
+
+          return tx.sportPlayer.update({
+            where: { id: input.playerId },
+            data: { ratings: { ...ratings, [input.attributeFocus]: newVal } },
+          });
         });
       } catch (error) {
         if (error instanceof TRPCError) throw error;
@@ -267,58 +335,58 @@ export const sportsClubRouter = createTRPCRouter({
       }
     }),
 
-  teamTraining: protectedProcedure
-    .input(z.object({ teamId: z.string() }))
+  teamTraining: rateLimitedMutationProcedure
+    .input(z.object({ teamId: z.string(), requestId: sportsRequestId }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
-        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
-        }
+        await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "own");
 
-        const spend = await exchangeService.spend(
-          ctx.user.id,
-          100,
-          "TEAM_TRAINING",
-          `TEAM:${input.teamId}`,
-          ctx.db
-        );
-        if (!spend.success) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: spend.message ?? "Insufficient balance to train team",
+        await assertSportsEconomyOpen(ctx.db);
+        return await ctx.db.$transaction(async (tx) => {
+          // Lock the players (in id order, so two of these can't deadlock) before the wallet, and
+          // read their ratings under the locks, so a training alongside can't overwrite them
+          await tx.$queryRaw`SELECT id FROM "sport_players" WHERE "teamId" = ${input.teamId} AND "isActive" = true ORDER BY id FOR UPDATE`;
+          const players = await tx.sportPlayer.findMany({
+            where: { teamId: input.teamId, isActive: true },
           });
-        }
 
-        const players = await ctx.db.sportPlayer.findMany({
-          where: { teamId: input.teamId, isActive: true },
-        });
+          const charge = await chargeSportsFeeTx(tx, {
+            userId: ctx.user.id,
+            amount: 100,
+            type: "TEAM_TRAINING",
+            source: `TEAM:${input.teamId}`,
+            action: "train-team",
+            requestId: input.requestId,
+            failure: "Insufficient balance to train team",
+          });
+          if (charge.alreadyApplied) return { trained: players.length };
 
-        const updatePromises = players.map(async (player) => {
-          const ratings = (player.ratings as Record<string, number> | null) ?? {};
-          const keys = Object.keys(ratings).filter((k) => k !== "overall");
-          if (keys.length === 0) return;
-          const attr = keys[Math.floor(Math.random() * keys.length)];
-          if (!attr) return;
-          const gain = Math.random() < 0.3 ? 1 : 0;
-          if (gain > 0) {
-            await ctx.db.sportPlayer.update({
-              where: { id: player.id },
-              data: { ratings: { ...ratings, [attr]: Math.min(99, (ratings[attr] ?? 50) + gain) } },
-            });
+          for (const player of players) {
+            const ratings = (player.ratings as Record<string, number> | null) ?? {};
+            const keys = Object.keys(ratings).filter((k) => k !== "overall");
+            if (keys.length === 0) continue;
+            const attr = keys[Math.floor(Math.random() * keys.length)];
+            if (!attr) continue;
+            const gain = Math.random() < 0.3 ? 1 : 0;
+            if (gain > 0) {
+              await tx.sportPlayer.update({
+                where: { id: player.id },
+                data: {
+                  ratings: { ...ratings, [attr]: Math.min(99, (ratings[attr] ?? 50) + gain) },
+                },
+              });
+            }
           }
-        });
-        await Promise.all(updatePromises);
 
-        return { trained: players.length };
+          return { trained: players.length };
+        });
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Team training failed" });
       }
     }),
 
-  setLineup: protectedProcedure
+  setLineup: rateLimitedMutationProcedure
     .input(
       z.object({
         teamId: z.string(),
@@ -329,11 +397,7 @@ export const sportsClubRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
-        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
-        }
+        await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "own");
         const lineup = {
           starters: input.starters,
           captainId: input.captainId ?? null,
@@ -350,8 +414,8 @@ export const sportsClubRouter = createTRPCRouter({
     }),
 
   getLiveActivities: protectedProcedure.query(async ({ ctx }) => {
-    const LIVE_WINDOW_IXMS = 10 * 60 * 1000;
-    const now = IxTime.getCurrentIxTime();
+    const LIVE_WINDOW_MS = 10 * 60 * 1000;
+    const now = Date.now();
 
     const myTeams = await ctx.db.sportTeam.findMany({
       where: { ownerUserId: ctx.user.id },
@@ -363,7 +427,7 @@ export const sportsClubRouter = createTRPCRouter({
     const matches = await ctx.db.sportMatch.findMany({
       where: {
         status: "completed",
-        resolvedIxTime: { gte: now - LIVE_WINDOW_IXMS, lte: now },
+        resolvedIxTime: { gte: now - LIVE_WINDOW_MS, lte: now },
         OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
       },
       include: {
@@ -380,7 +444,7 @@ export const sportsClubRouter = createTRPCRouter({
       leagueName: m.season.league.name,
       sportPreset: m.season.league.sportPreset,
       resolvedIxTime: m.resolvedIxTime!,
-      windowMs: LIVE_WINDOW_IXMS,
+      windowMs: LIVE_WINDOW_MS,
       homeTeamId: m.homeTeamId,
       awayTeamId: m.awayTeamId,
       homeTeam: m.homeTeam,
@@ -594,165 +658,20 @@ export const sportsClubRouter = createTRPCRouter({
     }
   }),
 
-  getMyClubOverview: protectedProcedure
-    .input(z.object({ teamId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const team = await ctx.db.sportTeam.findUnique({
-          where: { id: input.teamId, ownerUserId: ctx.user.id },
-          include: {
-            players: { where: { isActive: true }, orderBy: { position: "asc" } },
-            coaches: { where: { isActive: true } },
-            league: { select: { id: true, name: true, sportPreset: true, archetype: true } },
-          },
-        });
-
-        if (!team) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Club not found or not owned by you" });
-        }
-
-        const activeSeason = await ctx.db.sportSeason.findFirst({
-          where: { leagueId: team.leagueId, status: "in_progress" },
-          select: { id: true, seasonNumber: true, status: true },
-        });
-
-        let currentStandings = null;
-        let upcomingMatches: Array<{
-          id: string;
-          matchDay: number;
-          status: string;
-          homeTeamId: string;
-          awayTeamId: string;
-          homeTeam: { id: string; name: string };
-          awayTeam: { id: string; name: string };
-        }> = [];
-
-        if (activeSeason) {
-          currentStandings = await ctx.db.sportStanding.findUnique({
-            where: { seasonId_teamId: { seasonId: activeSeason.id, teamId: team.id } },
-          });
-
-          upcomingMatches = await ctx.db.sportMatch.findMany({
-            where: {
-              seasonId: activeSeason.id,
-              status: "scheduled",
-              OR: [{ homeTeamId: team.id }, { awayTeamId: team.id }],
-            },
-            include: {
-              homeTeam: { select: { id: true, name: true, shortName: true } },
-              awayTeam: { select: { id: true, name: true, shortName: true } },
-            },
-            orderBy: { matchDay: "asc" },
-            take: 5,
-          });
-        }
-
-        const seasonsCount = await ctx.db.sportTeamSeason.count({
-          where: { teamId: team.id },
-        });
-
-        const championships = await ctx.db.sportSeason.count({
-          where: { championTeamId: team.id, status: "completed" },
-        });
-
-        return {
-          team,
-          activeSeason,
-          currentStandings,
-          upcomingMatches,
-          seasonsCount,
-          championships,
-          wageBill: teamWageBill(
-            team.players as unknown as Array<{
-              isActive?: boolean;
-              ratings: Record<string, unknown> | null;
-            }>
-          ),
-        };
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch club overview",
-        });
-      }
-    }),
-
   getTeamOverview: publicProcedure
     .input(z.object({ teamId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
         const team = await ctx.db.sportTeam.findUnique({
           where: { id: input.teamId },
-          include: {
-            players: { where: { isActive: true }, orderBy: { position: "asc" } },
-            coaches: { where: { isActive: true } },
-            league: { select: { id: true, name: true, sportPreset: true, archetype: true } },
-          },
+          include: TEAM_OVERVIEW_INCLUDE,
         });
 
         if (!team) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
         }
 
-        const activeSeason = await ctx.db.sportSeason.findFirst({
-          where: { leagueId: team.leagueId, status: "in_progress" },
-          select: { id: true, seasonNumber: true, status: true },
-        });
-
-        let currentStandings = null;
-        let upcomingMatches: Array<{
-          id: string;
-          matchDay: number;
-          status: string;
-          homeTeamId: string;
-          awayTeamId: string;
-          homeTeam: { id: string; name: string };
-          awayTeam: { id: string; name: string };
-        }> = [];
-
-        if (activeSeason) {
-          currentStandings = await ctx.db.sportStanding.findUnique({
-            where: { seasonId_teamId: { seasonId: activeSeason.id, teamId: team.id } },
-          });
-
-          upcomingMatches = await ctx.db.sportMatch.findMany({
-            where: {
-              seasonId: activeSeason.id,
-              status: "scheduled",
-              OR: [{ homeTeamId: team.id }, { awayTeamId: team.id }],
-            },
-            include: {
-              homeTeam: { select: { id: true, name: true, shortName: true } },
-              awayTeam: { select: { id: true, name: true, shortName: true } },
-            },
-            orderBy: { matchDay: "asc" },
-            take: 5,
-          });
-        }
-
-        const seasonsCount = await ctx.db.sportTeamSeason.count({
-          where: { teamId: team.id },
-        });
-
-        const championships = await ctx.db.sportSeason.count({
-          where: { championTeamId: team.id, status: "completed" },
-        });
-
-        return {
-          team,
-          activeSeason,
-          currentStandings,
-          upcomingMatches,
-          seasonsCount,
-          championships,
-          wageBill: teamWageBill(
-            team.players as unknown as Array<{
-              isActive?: boolean;
-              ratings: Record<string, unknown> | null;
-            }>
-          ),
-        };
+        return buildTeamOverview(ctx.db, team);
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({

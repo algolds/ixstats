@@ -8,6 +8,7 @@ import {
   StatUp as TrendingUp,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { MAX_TICKET_PRICE } from "~/lib/sports/match-revenue";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
@@ -30,79 +31,83 @@ export function RevenueCollector({
   popularity,
   sponsor,
   onCollected,
-  teamColor,
+  teamColor: _teamColor,
 }: RevenueCollectorProps) {
   const utils = api.useUtils();
 
+  // What's waiting: completed matches this club hasn't been paid for yet (each pays once).
+  const { data: pending } = api.sports.previewMatchRevenue.useQuery({ teamId });
   const collect = api.sports.collectMatchRevenue.useMutation({
     onSuccess: () => {
-      utils.sports.getMyClubOverview.invalidate({ teamId });
+      void utils.sports.previewMatchRevenue.invalidate({ teamId });
       onCollected?.();
     },
   });
 
-  const ticketRevenue = Math.round(stadiumCapacity * ticketPrice * 0.6 * (popularity / 100));
-  const sponsorIncome = sponsor?.baseFee ?? 0;
-  const total = ticketRevenue + sponsorIncome;
+  const perHomeMatch = Math.round(
+    stadiumCapacity * Math.min(Math.max(ticketPrice, 0), MAX_TICKET_PRICE) * 0.6 * (popularity / 100)
+  );
+  const ticketRevenue = pending?.ticketRevenue ?? 0;
+  const sponsorIncome = (pending?.sponsorFees ?? 0) + (pending?.winBonuses ?? 0);
+  const total = pending?.total ?? 0;
+  const matchesWaiting = pending ? pending.homeMatches : 0;
 
   return (
-    <Card className="facet-hierarchy-child bg-card/40 border-border">
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base font-bold">
-          <Coins className="h-5 w-5" style={{ color: teamColor || "var(--color-warning)" }} />
-          Revenue Collection
+        <CardTitle className="flex items-center gap-2">
+          <Coins className="text-label-secondary size-5" aria-hidden />
+          Revenue collection
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground flex items-center gap-1.5">
+          <div className="text-body flex items-center justify-between">
+            <span className="text-label-secondary flex items-center gap-2">
               <Ticket className="h-3.5 w-3.5" />
-              Ticket Revenue
+              Ticket Revenue ({matchesWaiting} home {matchesWaiting === 1 ? "match" : "matches"} ×{" "}
+              {perHomeMatch.toLocaleString()}c)
             </span>
-            <span className="text-foreground font-medium tabular-nums">
+            <span className="text-label font-medium tabular-nums">
               +{ticketRevenue.toLocaleString()}c
             </span>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground flex items-center gap-1.5">
+          <div className="text-body flex items-center justify-between">
+            <span className="text-label-secondary flex items-center gap-2">
               <BadgeDollarSign className="h-3.5 w-3.5" />
               {sponsor?.name ?? "No sponsor"}
+              {pending && pending.wins > 0
+                ? ` (incl. ${pending.wins} ${pending.wins === 1 ? "win bonus" : "win bonuses"})`
+                : ""}
             </span>
-            <span className="text-foreground font-medium tabular-nums">
+            <span className="text-label font-medium tabular-nums">
               +{sponsorIncome.toLocaleString()}c
             </span>
           </div>
-          <div className="border-border flex items-center justify-between border-t pt-2 text-sm font-bold">
-            <span className="text-foreground flex items-center gap-1.5">
-              <TrendingUp
-                className="h-3.5 w-3.5"
-                style={{ color: teamColor || "var(--color-success)" }}
-              />
-              Collect Match Revenue
+          <div className="border-separator text-headline flex items-center justify-between border-t pt-2">
+            <span className="text-label flex items-center gap-2">
+              <TrendingUp className="text-success size-3.5" aria-hidden />
+              Collect match revenue
             </span>
-            <span className="tabular-nums" style={{ color: teamColor || "var(--color-success)" }}>
-              +{total.toLocaleString()}c
-            </span>
+            <span className="text-success tabular-nums">+{total.toLocaleString()}c</span>
           </div>
         </div>
 
-        <div className="text-muted-foreground flex items-center justify-between text-xs">
-          <span>Club Budget</span>
-          <span className="text-foreground font-bold tabular-nums">
+        <div className="text-label-secondary text-footnote flex items-center justify-between">
+          <span>Club budget</span>
+          <span className="text-label font-semibold tabular-nums">
             {teamBudget.toLocaleString()}c
           </span>
         </div>
 
         <Button
           onClick={() => collect.mutate({ teamId })}
-          disabled={collect.isPending}
-          className="w-full text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90"
+          disabled={collect.isPending || total <= 0}
+          className="w-full"
           size="sm"
-          style={{ backgroundColor: teamColor || "var(--color-info)" }}
         >
-          {collect.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
-          Collect Revenue
+          {collect.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+          {total > 0 ? "Collect Revenue" : "No new match revenue"}
         </Button>
       </CardContent>
     </Card>

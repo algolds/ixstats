@@ -1,38 +1,154 @@
 /** @jest-environment node */
 /**
- * Plan 339 Step 2: runAutoSyncCycle is the single recentchanges sync. It keeps a high-water mark
- * in SystemConfig, follows rccontinue, never advances past a failed page, and inserts revisions
- * idempotently on (source, mwRevId).
+ * Plan 339 Step 2 + plan 406: runAutoSyncCycle is the single recentchanges sync. It keeps a high-water mark in
+ * SystemConfig, follows rccontinue, never advances past a failed page, and applies MediaWiki revisions one at a time,
+ * oldest first, by the inbound relation (echo, older, fast-forward or collision), which is given as its own table of
+ * cases, and settles the conflict log after its steps. Collisions themselves (the conflict rule) and the incident
+ * regressions the stateful site can play are rows of the inbound-sync-mirror scenario; these are the rest.
  */
-import { runAutoSyncCycle } from "~/lib/wiki-os/services/auto-sync-service";
-
+// The mirror's api.php and bot login come from `wikiosConfig`; this test sets their variables as it runs.
 const mockSystemConfigFindUnique = jest.fn();
 const mockSystemConfigUpsert = jest.fn();
-const mockWikiArticleUpsert = jest.fn();
-const mockWikiRevisionFindFirst = jest.fn();
-const mockWikiRevisionCreateMany = jest.fn();
-
+const mockArticleFindUnique = jest.fn();
+const mockArticleFindFirst = jest.fn();
+const mockArticleUpdate = jest.fn();
+const mockRevisionFindUnique = jest.fn();
+const mockRevisionFindFirst = jest.fn();
+const mockRevisionCreateMany = jest.fn();
+const mockRevisionCreate = jest.fn();
+const mockRevisionUpdateMany = jest.fn();
+const mockClaimFindFirst = jest.fn();
+const mockQueryRaw = jest.fn();
+const mockExecuteRaw = jest.fn();
+const mockTransaction = jest.fn();
+const mockJobCreate = jest.fn();
+// the dead letters are a real table (in memory): the quarantine is counted across cycles
+let mockDeadLetters: MemoryPrisma;
+jest.mock("~/lib/wiki-os/config", () =>
+  jest
+    .requireActual("~/tests/helpers/live-wikios-config")
+    .withLiveEnvironment(jest.requireActual("~/lib/wiki-os/config"))
+);
 jest.mock("~/server/db", () => ({
   db: {
+    $transaction: (...a: unknown[]) => mockTransaction(...a),
+    $queryRaw: (...a: unknown[]) => mockQueryRaw(...a),
+    $executeRaw: (...a: unknown[]) => mockExecuteRaw(...a),
     systemConfig: {
-      findUnique: (...a: unknown[]) => mockSystemConfigFindUnique(...a),
+      // the mock itself (not a wrapper), so describeEachWikiosMode can answer the mode's rows through it
+      get findUnique() {
+        return mockSystemConfigFindUnique;
+      },
       upsert: (...a: unknown[]) => mockSystemConfigUpsert(...a),
     },
-    wikiArticle: { upsert: (...a: unknown[]) => mockWikiArticleUpsert(...a) },
-    wikiRevision: {
-      findFirst: (...a: unknown[]) => mockWikiRevisionFindFirst(...a),
-      createMany: (...a: unknown[]) => mockWikiRevisionCreateMany(...a),
+    wikiArticle: {
+      findUnique: (...a: unknown[]) => mockArticleFindUnique(...a),
+      findFirst: (...a: unknown[]) => mockArticleFindFirst(...a),
+      findMany: async () => [],
+      update: (...a: unknown[]) => mockArticleUpdate(...a),
     },
-    wikiCategory: { upsert: jest.fn() },
-    wikiCategoryMember: { upsert: jest.fn() },
+    wikiRevision: {
+      findUnique: (...a: unknown[]) => mockRevisionFindUnique(...a),
+      findFirst: (...a: unknown[]) => mockRevisionFindFirst(...a),
+      createMany: (...a: unknown[]) => mockRevisionCreateMany(...a),
+      create: (...a: unknown[]) => mockRevisionCreate(...a),
+      updateMany: (...a: unknown[]) => mockRevisionUpdateMany(...a),
+    },
+    wikiNameClaim: { findFirst: (...a: unknown[]) => mockClaimFindFirst(...a) },
+    wikiMirrorJob: { create: (...a: unknown[]) => mockJobCreate(...a) },
+    get wikiSyncDeadLetter() {
+      return mockDeadLetters.wikiSyncDeadLetter;
+    },
+    // what a retry's staleness check reads (inbound-stale-steps.ts)
+    get wikiLog() {
+      return mockDeadLetters.wikiLog;
+    },
   },
 }));
+jest.mock("~/lib/wiki-os/core/article-repository", () => ({
+  ArticleRepository: { importPageRevisions: jest.fn() },
+}));
+jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn() } }));
+// the claim tags of stored revisions are inbound-claim-tags.test.ts's
+jest.mock("~/lib/identity/claim-tags", () => ({
+  tagRevisionsOfName: jest.fn().mockResolvedValue(0),
+}));
+jest.mock("~/lib/wiki-os/services/inbound-log-events", () => ({ applyLogEvent: jest.fn() }));
+// the settling itself is conflict-notices.test.ts's; the cycle only has to call it
+jest.mock("~/lib/wiki-os/services/conflict-notices", () => ({ settleConflicts: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/title-cache-eviction", () => ({
+  evictWikiTitleCaches: jest.fn().mockResolvedValue(undefined),
+}));
+
+import { createHash } from "node:crypto";
+import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
+import {
+  getInboundSyncStatus,
+  runAutoSyncCycle,
+  syncSinglePage,
+} from "~/lib/wiki-os/services/auto-sync-service";
+import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
+import { notificationAPI } from "~/lib/notifications/api";
+import { applyLogEvent } from "~/lib/wiki-os/services/inbound-log-events";
+import { settleConflicts } from "~/lib/wiki-os/services/conflict-notices";
+import { dismissQuarantined, retryQuarantined } from "~/lib/wiki-os/services/inbound-dead-letters";
+import { describeEachWikiosMode } from "~/tests/helpers/wikios-modes";
+import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
+import {
+  decideInbound,
+  type InboundHead,
+  type InboundRelation,
+  type InboundRevision,
+} from "~/lib/wiki-os/services/inbound-decision";
+
+/** The lease upsert of withJobLock when the lease is free: it returns the caller's own holder (its second value). */
+const leaseFree = async (_strings: TemplateStringsArray, ...values: unknown[]) => [
+  { holder: values[1] },
+];
+/** ... and when another process holds it: no row comes back. */
+const leaseTaken = async () => [];
+/** The raw statements the sync itself ran: the lease's own release left out. */
+const syncStatements = () =>
+  mockExecuteRaw.mock.calls.filter(
+    ([strings]) => !(strings as TemplateStringsArray).join("?").includes('"job_leases"')
+  );
 
 const HWM_KEY = "wikiAutoSync.rcHighWater";
+const LOG_HWM_KEY = "wikiAutoSync.logHighWater";
+
+const importPageRevisions = jest.mocked(ArticleRepository.importPageRevisions);
+const notify = jest.mocked(notificationAPI.create);
+const applyEvent = jest.mocked(applyLogEvent);
+const settle = jest.mocked(settleConflicts);
+
+// ---------------------------------------------------------------------------
+// A fake MediaWiki: revisions by id, the newest revision of each title, a recent-changes queue
+// ---------------------------------------------------------------------------
+
+interface FakeRevision {
+  pageId?: number;
+  ns?: number;
+  title: string;
+  revid: number;
+  parentid?: number;
+  user?: string;
+  text?: string;
+  timestamp?: string;
+  minor?: boolean;
+  comment?: string;
+}
 
 interface Change {
   title: string;
   revid: number;
+  timestamp: string;
+}
+
+interface FakeLogEvent {
+  logid: number;
+  type: string;
+  action: string;
+  title: string;
   timestamp: string;
 }
 
@@ -45,151 +161,1468 @@ const change = (title: string, revid: number, second: number): Change => ({
 const jsonResponse = (body: object, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
-const pageResponse = (title: string, revid: number) =>
-  jsonResponse({
-    query: {
-      pages: {
-        "1": {
-          pageid: 1,
-          ns: 0,
-          title,
-          lastrevid: revid,
-          revisions: [
-            {
-              revid,
-              timestamp: "2026-09-27T10:00:00Z",
-              user: "alice",
-              comment: "edit",
-              slots: { main: { "*": "Body text." } },
-            },
-          ],
-        },
-      },
-    },
-  });
+/** The hex SHA-1 the API reports for `text`. */
+const sha1Hex = (text: string): string => createHash("sha1").update(text, "utf8").digest("hex");
 
 const realFetch = globalThis.fetch;
 let rcResponses: Array<{ changes: Change[]; next?: Record<string, string> }> = [];
-let failingTitles = new Set<string>();
+let logResponses: Array<{ events: FakeLogEvent[]; next?: Record<string, string> }> = [];
+let mwRevisions: Map<number, FakeRevision> = new Map();
+let failingRevisions = new Set<number>();
+
+const revisionPage = (rev: FakeRevision) => ({
+  pageid: rev.pageId ?? 1,
+  ns: rev.ns ?? 0,
+  title: rev.title,
+  revisions: [
+    {
+      revid: rev.revid,
+      parentid: rev.parentid ?? 0,
+      timestamp: rev.timestamp ?? "2026-09-27T10:00:00Z",
+      user: rev.user ?? "alice",
+      comment: rev.comment ?? "edit",
+      minor: rev.minor ?? false,
+      slots: { main: { content: rev.text ?? "Body text.", contentmodel: "wikitext" } },
+    },
+  ],
+});
 
 const fetchMock = jest.fn(async (input: RequestInfo | URL): Promise<Response> => {
-  const url = new URL(String(input));
-  if (url.searchParams.get("list") === "recentchanges") {
+  const params = new URL(String(input)).searchParams;
+  if (params.get("list") === "recentchanges") {
     const next = rcResponses.shift() ?? { changes: [] };
     return jsonResponse({
       query: { recentchanges: next.changes },
       ...(next.next ? { continue: next.next } : {}),
     });
   }
-  const title = url.searchParams.get("titles") ?? "";
-  return failingTitles.has(title) ? jsonResponse({}, 500) : pageResponse(title, 100);
+  if (params.get("list") === "logevents") {
+    const next = logResponses.shift() ?? { events: [] };
+    return jsonResponse({
+      query: { logevents: next.events },
+      ...(next.next ? { continue: next.next } : {}),
+    });
+  }
+  const revid = Number(params.get("revids"));
+  if (params.has("revids") && failingRevisions.has(revid)) return jsonResponse({}, 500);
+  if (params.get("rvprop") === "ids|sha1") {
+    const text = mwRevisions.get(revid)?.text ?? "";
+    return jsonResponse({ query: { pages: [{ revisions: [{ revid, sha1: sha1Hex(text) }] }] } });
+  }
+  const rev = params.has("revids")
+    ? mwRevisions.get(revid)
+    : [...mwRevisions.values()].filter((r) => r.title === params.get("titles")).at(-1);
+  return jsonResponse({
+    query: { pages: rev ? [revisionPage(rev)] : [{ title: "x", missing: true }] },
+  });
 });
+
+const fetchedRevids = (): number[] =>
+  fetchMock.mock.calls
+    .map(([input]) => new URL(String(input)).searchParams)
+    .filter((params) => params.has("revids") && params.get("rvprop") !== "ids|sha1")
+    .map((params) => Number(params.get("revids")));
 
 const rcCalls = (): URLSearchParams[] =>
   fetchMock.mock.calls
     .map(([input]) => new URL(String(input)).searchParams)
     .filter((params) => params.get("list") === "recentchanges");
 
-const syncedTitles = (): string[] =>
+const logCalls = (): URLSearchParams[] =>
   fetchMock.mock.calls
-    .map(([input]) => new URL(String(input)).searchParams.get("titles"))
-    .filter((title): title is string => title !== null);
+    .map(([input]) => new URL(String(input)).searchParams)
+    .filter((params) => params.get("list") === "logevents");
 
-const storedHighWater = (): string | undefined =>
-  mockSystemConfigUpsert.mock.calls.at(-1)?.[0]?.update?.value;
+/** What was upserted under SystemConfig `key` (a high-water mark, the sync status), if anything. */
+const highWaterWritten = (key: string): string | undefined =>
+  mockSystemConfigUpsert.mock.calls.find(([args]) => args.where.key === key)?.[0].update.value;
+
+const storedHighWater = (): string | undefined => highWaterWritten(HWM_KEY);
+
+// ---------------------------------------------------------------------------
+// A tiny Postgres: the article row and the head revision the sync reads
+// ---------------------------------------------------------------------------
+
+interface StoredArticle {
+  id: string;
+  title: string;
+  slug: string;
+  status: string;
+  wikitext: string;
+  namespace: number;
+  namespacePrefix: string | null;
+  mwPageId: number | null;
+  mwLatestRevId: number | null;
+  updatedAt: Date;
+}
+
+interface StoredHead {
+  id: string;
+  mwRevId: number | null;
+  sha1: string | null;
+  byteSize: number;
+  createdAt: Date;
+}
+
+let article: StoredArticle | null = null;
+let head: StoredHead | null = null;
+let knownRevids = new Set<number>();
+
+const storedArticle = (over: Partial<StoredArticle> = {}): StoredArticle => ({
+  id: "art-1",
+  title: "Foo",
+  slug: "foo",
+  status: "PUBLISHED",
+  wikitext: "WikiOS text.",
+  namespace: 0,
+  namespacePrefix: null,
+  mwPageId: 1,
+  mwLatestRevId: null,
+  updatedAt: new Date("2026-09-27T08:00:00Z"),
+  ...over,
+});
+
+/** WikiOS's head: the revision with the text "WikiOS text.", stamped with MediaWiki revision `mwRevId`. */
+const storedHead = (mwRevId: number | null, over: Partial<StoredHead> = {}): StoredHead => ({
+  id: "rev-9",
+  mwRevId,
+  sha1: mwSha1Base36("WikiOS text."),
+  byteSize: 12,
+  createdAt: new Date("2026-09-27T09:00:00Z"),
+  ...over,
+});
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockDeadLetters = createMemoryPrisma();
+  delete process.env.WIKIOS_MEDIAWIKI_BOT_USER;
   rcResponses = [];
-  failingTitles = new Set();
+  logResponses = [];
+  mwRevisions = new Map();
+  failingRevisions = new Set();
+  article = null;
+  head = null;
+  knownRevids = new Set();
   globalThis.fetch = fetchMock as typeof fetch;
+
   mockSystemConfigFindUnique.mockResolvedValue(null);
   mockSystemConfigUpsert.mockResolvedValue({});
-  mockWikiArticleUpsert.mockResolvedValue({ id: "art-1" });
-  mockWikiRevisionFindFirst.mockResolvedValue(null);
-  mockWikiRevisionCreateMany.mockResolvedValue({ count: 1 });
+  applyEvent.mockResolvedValue("applied");
+  settle.mockResolvedValue({ notified: 0, trails: 0, pending: 0 });
+  // withJobLock: a lease row (job_leases) taken by one upsert, which returns the holder when the lease was free.
+  mockQueryRaw.mockImplementation(leaseFree);
+  mockExecuteRaw.mockResolvedValue(0);
+  mockJobCreate.mockResolvedValue({});
+  mockTransaction.mockImplementation(async (callback: (tx: object) => unknown) =>
+    callback({
+      wikiRevision: { createMany: (...a: unknown[]) => mockRevisionCreateMany(...a) },
+    })
+  );
+  mockArticleFindUnique.mockImplementation(async ({ where }) =>
+    article && article.title === where.source_title.title ? article : null
+  );
+  mockArticleFindFirst.mockResolvedValue(null);
+  mockArticleUpdate.mockResolvedValue({});
+  mockRevisionFindUnique.mockImplementation(async ({ where }) =>
+    knownRevids.has(where.source_mwRevId.mwRevId) ? { id: "existing" } : null
+  );
+  mockRevisionFindFirst.mockImplementation(async () => head);
+  mockRevisionCreateMany.mockResolvedValue({ count: 1 });
+  mockRevisionCreate.mockImplementation(async ({ data }) => ({
+    id: "rev-base",
+    mwRevId: data.mwRevId ?? null,
+    sha1: data.sha1,
+    byteSize: data.byteSize,
+    createdAt: data.createdAt,
+  }));
+  mockRevisionUpdateMany.mockResolvedValue({ count: 1 });
+  mockClaimFindFirst.mockResolvedValue(null);
+  importPageRevisions.mockImplementation(async (input) => {
+    const revision = input.revisions[0]!;
+    // What the importer's write leaves behind: the revision is the head and its text the page's.
+    head = {
+      id: "rev-new",
+      mwRevId: revision.mwRevId,
+      sha1: revision.sha1,
+      byteSize: revision.byteSize,
+      createdAt: revision.createdAt,
+    };
+    article = storedArticle({ title: input.title, wikitext: revision.wikitext ?? "" });
+    return { created: false, inserted: 1, filled: 0, skipped: 0, conflicts: 0, headUpdated: true };
+  });
 });
 
 afterAll(() => {
   globalThis.fetch = realFetch;
 });
 
-test("first run without HWM requests latest changes and stores the newest timestamp", async () => {
-  // MediaWiki's default order is newest first.
-  rcResponses = [{ changes: [change("B", 2, 2), change("A", 1, 1)] }];
+// ---------------------------------------------------------------------------
+// The cycle: high-water mark, pagination, failures (plan 339)
+// ---------------------------------------------------------------------------
 
-  await runAutoSyncCycle();
+describe("the cycle", () => {
+  it("first run without HWM requests the latest changes (all namespaces) and stores the newest timestamp", async () => {
+    // MediaWiki's default order is newest first.
+    rcResponses = [{ changes: [change("B", 2, 2), change("A", 1, 1)] }];
 
-  const [params] = rcCalls();
-  expect(params?.get("rclimit")).toBe("30");
-  expect(params?.get("rcdir")).toBeNull();
-  expect(syncedTitles()).toEqual(["A", "B"]);
-  expect(mockSystemConfigUpsert).toHaveBeenCalledWith(
-    expect.objectContaining({ where: { key: HWM_KEY } })
-  );
-  expect(storedHighWater()).toBe("2026-09-27T10:00:02Z");
+    await runAutoSyncCycle();
+
+    const [params] = rcCalls();
+    expect(params?.get("rclimit")).toBe("30");
+    expect(params?.get("rcdir")).toBeNull();
+    expect(params?.has("rcnamespace")).toBe(false);
+    expect(params?.get("rctype")).toBe("edit|new");
+    expect(fetchedRevids()).toEqual([1, 2]);
+    expect(mockSystemConfigUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { key: HWM_KEY } })
+    );
+    expect(storedHighWater()).toBe("2026-09-27T10:00:02Z");
+  });
+  it("follows rccontinue across two pages", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
+    rcResponses = [
+      { changes: [change("A", 1, 1)], next: { rccontinue: "x", continue: "-||" } },
+      { changes: [change("B", 2, 2)] },
+    ];
+
+    await runAutoSyncCycle();
+
+    const calls = rcCalls();
+    expect(calls).toHaveLength(2);
+    expect(calls[1]?.get("rccontinue")).toBe("x");
+    expect(calls[1]?.get("continue")).toBe("-||");
+    expect(storedHighWater()).toBe("2026-09-27T10:00:02Z");
+  });
+  it("skips a revision MediaWiki no longer has (deleted since)", async () => {
+    rcResponses = [{ changes: [change("A", 1, 1)] }];
+
+    await runAutoSyncCycle();
+
+    expect(importPageRevisions).not.toHaveBeenCalled();
+    expect(mockRevisionCreateMany).not.toHaveBeenCalled();
+    expect(storedHighWater()).toBe("2026-09-27T10:00:01Z");
+  });
 });
 
-test("with HWM requests rcdir=newer&rcstart=<hwm>", async () => {
-  mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
+// ---------------------------------------------------------------------------
+// Log events (plan 406 B): their own high-water mark, one chronological order with the edits
+// ---------------------------------------------------------------------------
 
-  await runAutoSyncCycle();
+describe("log events in the cycle", () => {
+  const logEvent = (
+    type: string,
+    action: string,
+    title: string,
+    logid: number,
+    second: number
+  ): FakeLogEvent => ({
+    logid,
+    type,
+    action,
+    title,
+    timestamp: `2026-09-27T10:00:0${second}Z`,
+  });
 
-  const [params] = rcCalls();
-  expect(params?.get("rcdir")).toBe("newer");
-  expect(params?.get("rcstart")).toBe("2026-09-27T09:00:00Z");
-  expect(params?.get("rclimit")).toBe("50");
-  expect(mockSystemConfigUpsert).not.toHaveBeenCalled();
+  it("reads log events from their own high-water mark, oldest first, and follows lecontinue", async () => {
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === LOG_HWM_KEY ? { value: "2026-09-27T08:00:00Z" } : null
+    );
+    logResponses = [
+      {
+        events: [logEvent("delete", "delete", "A", 1, 1)],
+        next: { lecontinue: "y", continue: "-||" },
+      },
+      { events: [logEvent("block", "block", "User:B", 2, 2)] },
+    ];
+
+    await runAutoSyncCycle();
+
+    const [first, second] = logCalls();
+    expect(first?.get("ledir")).toBe("newer");
+    expect(first?.get("lestart")).toBe("2026-09-27T08:00:00Z");
+    expect(first?.get("lelimit")).toBe("50");
+    expect(first?.get("leprop")).toContain("details");
+    expect(second?.get("lecontinue")).toBe("y");
+    expect(applyEvent.mock.calls.map(([e]) => e.logid)).toEqual([1, 2]);
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:02Z|2");
+    expect(highWaterWritten(HWM_KEY)).toBeUndefined();
+  });
+
+  it("the first run asks for the newest events (reversed to oldest first) and writes the log mark", async () => {
+    logResponses = [
+      { events: [logEvent("move", "move", "B", 2, 2), logEvent("delete", "delete", "A", 1, 1)] },
+    ];
+
+    await runAutoSyncCycle();
+
+    const [params] = logCalls();
+    expect(params?.get("lelimit")).toBe("30");
+    expect(params?.get("ledir")).toBeNull();
+    expect(applyEvent.mock.calls.map(([e]) => e.logid)).toEqual([1, 2]);
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:02Z|2");
+  });
+
+  it("applies edits and log events in the order MediaWiki recorded them, a log event first within one second", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
+    const order: string[] = [];
+    applyEvent.mockImplementation(async (e) => {
+      order.push(`log:${e.logid}`);
+      return "applied";
+    });
+    importPageRevisions.mockImplementation(async (input) => {
+      order.push(`edit:${input.revisions[0]?.mwRevId}`);
+      return {
+        created: false,
+        inserted: 1,
+        filled: 0,
+        skipped: 0,
+        conflicts: 0,
+        headUpdated: true,
+      };
+    });
+    rcResponses = [{ changes: [change("Foo", 11, 2), change("Foo", 12, 3)] }];
+    logResponses = [
+      {
+        events: [logEvent("delete", "delete", "Foo", 7, 2), logEvent("move", "move", "Bar", 8, 4)],
+      },
+    ];
+    mwRevisions = new Map([
+      [11, { title: "Foo", revid: 11 }],
+      [12, { title: "Foo", revid: 12 }],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(order).toEqual(["log:7", "edit:11", "edit:12", "log:8"]);
+  });
+
+  it("does not advance the log mark past a failed event, still applies the edits, and holds the page's later events back", async () => {
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === LOG_HWM_KEY
+        ? { value: "2026-09-27T08:00:00Z" }
+        : { value: "2026-09-27T09:00:00Z" }
+    );
+    applyEvent.mockImplementation(async (e) => {
+      if (e.logid === 2) throw new Error("db down");
+      return "applied";
+    });
+    logResponses = [
+      {
+        events: [
+          logEvent("delete", "delete", "A", 1, 1),
+          logEvent("delete", "delete", "B", 2, 2),
+          logEvent("move", "move", "B", 3, 3),
+          logEvent("delete", "delete", "C", 4, 4),
+        ],
+      },
+    ];
+    rcResponses = [{ changes: [change("D", 20, 5)] }];
+    mwRevisions = new Map([[20, { title: "D", revid: 20 }]]);
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    await runAutoSyncCycle();
+
+    expect(applyEvent.mock.calls.map(([e]) => e.logid)).toEqual([1, 2, 4]);
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:01Z|1");
+    expect(highWaterWritten(HWM_KEY)).toBe("2026-09-27T10:00:05Z");
+    expect(importPageRevisions).toHaveBeenCalledTimes(1);
+    consoleError.mockRestore();
+  });
+
+  it("holds the log mark behind an event held back because an earlier edit of the same page failed, and applies it once the failure clears", async () => {
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === LOG_HWM_KEY
+        ? { value: "2026-09-27T08:00:00Z" }
+        : { value: "2026-09-27T09:00:00Z" }
+    );
+    rcResponses = [{ changes: [change("P", 5, 1)] }];
+    logResponses = [
+      {
+        events: [
+          logEvent("protect", "protect", "P", 7, 2),
+          logEvent("protect", "protect", "Q", 8, 3),
+        ],
+      },
+    ];
+    failingRevisions = new Set([5]);
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    await runAutoSyncCycle();
+
+    // P's edit failed: its protect waits, Q's applies; the log mark did not pass P's protect.
+    expect(applyEvent.mock.calls.map(([e]) => e.logid)).toEqual([8]);
+    expect(highWaterWritten(LOG_HWM_KEY)).toBeUndefined();
+    expect(highWaterWritten(HWM_KEY)).toBeUndefined();
+
+    // The failure clears: the next cycle reads the log from the same mark and applies P's protect.
+    failingRevisions = new Set();
+    mwRevisions = new Map([[5, { title: "P", revid: 5 }]]);
+    rcResponses = [{ changes: [change("P", 5, 1)] }];
+    logResponses = [
+      {
+        events: [
+          logEvent("protect", "protect", "P", 7, 2),
+          logEvent("protect", "protect", "Q", 8, 3),
+        ],
+      },
+    ];
+    applyEvent.mockClear();
+
+    await runAutoSyncCycle();
+
+    expect(applyEvent.mock.calls.map(([e]) => e.logid)).toEqual([7, 8]);
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:03Z|8");
+    consoleError.mockRestore();
+  });
+
+  it("does not apply, or warn of, an event the mark already covers (a skipped one comes back at the mark's second)", async () => {
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === LOG_HWM_KEY ? { value: "2026-09-27T10:00:02Z|2" } : null
+    );
+    logResponses = [
+      {
+        events: [
+          logEvent("move", "move", "A", 1, 2),
+          logEvent("move", "move", "B", 2, 2),
+          logEvent("move", "move", "C", 3, 2),
+          logEvent("move", "move", "D", 4, 3),
+        ],
+      },
+    ];
+
+    await runAutoSyncCycle();
+
+    // The list is read from the mark's second; events 1 and 2 are done, 3 and 4 are new.
+    expect(logCalls()[0]?.get("lestart")).toBe("2026-09-27T10:00:02Z");
+    expect(applyEvent.mock.calls.map(([e]) => e.logid)).toEqual([3, 4]);
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:03Z|4");
+  });
+
+  it("reads a log mark written before it carried an id (a bare timestamp) as covering nothing but the older seconds", async () => {
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === LOG_HWM_KEY ? { value: "2026-09-27T10:00:02Z" } : null
+    );
+    logResponses = [{ events: [logEvent("move", "move", "A", 1, 2)] }];
+
+    await runAutoSyncCycle();
+
+    expect(applyEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it("an ignored or skipped event does not hold the mark back", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T08:00:00Z" });
+    applyEvent.mockResolvedValueOnce("ignored").mockResolvedValueOnce("skipped");
+    logResponses = [
+      {
+        events: [logEvent("upload", "upload", "File:X", 1, 1), logEvent("move", "move", "A", 2, 2)],
+      },
+    ];
+
+    await runAutoSyncCycle();
+
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:02Z|2");
+  });
 });
 
-test("follows rccontinue across two pages", async () => {
-  mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
-  rcResponses = [
-    { changes: [change("A", 1, 1)], next: { rccontinue: "x", continue: "-||" } },
-    { changes: [change("B", 2, 2)] },
+// ---------------------------------------------------------------------------
+// Fast-forward and echo (plan 406 A)
+// ---------------------------------------------------------------------------
+
+describe("fast-forward", () => {
+  it("imports when the head was never stamped but the edit's parent has exactly WikiOS's text", async () => {
+    article = storedArticle();
+    head = storedHead(null);
+    rcResponses = [{ changes: [change("Foo", 91, 1)] }];
+    mwRevisions = new Map([
+      [80, { title: "Foo", revid: 80, text: "WikiOS text." }],
+      [91, { title: "Foo", revid: 91, parentid: 80, text: "Edited in MediaWiki." }],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(importPageRevisions).toHaveBeenCalledTimes(1);
+    expect(mockRevisionCreateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("echo", () => {
+  it("stores an echo of a head that already has its MediaWiki id as a non-parked revision stamped with its own, dated before the head (the head does not change)", async () => {
+    article = storedArticle();
+    head = storedHead(90, { createdAt: new Date("2026-09-27T09:00:00Z") });
+    rcResponses = [{ changes: [change("Foo", 91, 1)] }];
+    mwRevisions = new Map([
+      [
+        91,
+        {
+          title: "Foo",
+          revid: 91,
+          parentid: 90,
+          text: "WikiOS text.",
+          timestamp: "2026-09-27T10:00:01Z",
+        },
+      ],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(importPageRevisions).not.toHaveBeenCalled();
+    expect(mockRevisionUpdateMany).not.toHaveBeenCalled();
+    const [{ data, skipDuplicates }] = mockRevisionCreateMany.mock.calls[0]!;
+    expect(skipDuplicates).toBe(true);
+    expect(data[0]).toMatchObject({
+      articleId: "art-1",
+      mwRevId: 91,
+      wikitext: "WikiOS text.",
+      sha1: mwSha1Base36("WikiOS text."),
+      createdAt: new Date("2026-09-27T08:59:59.999Z"),
+    });
+    expect(data[0]).not.toHaveProperty("parked");
+    expect(mockArticleUpdate).toHaveBeenCalledWith({
+      where: { id: "art-1" },
+      data: expect.objectContaining({ mwLatestRevId: 91 }),
+    });
+    // the echo is a live revision: it is given the live revision before it as its parent (F5)
+    expect(syncStatements()).toHaveLength(1);
+    const [strings, articleId] = syncStatements()[0]!;
+    expect((strings as TemplateStringsArray).join("?")).toContain('SET "parentRevisionId"');
+    expect(articleId).toBe("art-1");
+  });
+
+  it("keeps an echo's own time when it is older than the head", async () => {
+    article = storedArticle();
+    head = storedHead(90, { createdAt: new Date("2026-09-27T09:00:00Z") });
+    rcResponses = [{ changes: [change("Foo", 85, 1)] }];
+    mwRevisions = new Map([
+      [
+        85,
+        {
+          title: "Foo",
+          revid: 85,
+          parentid: 80,
+          text: "WikiOS text.",
+          timestamp: "2026-09-27T08:00:00Z",
+        },
+      ],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(mockRevisionCreateMany.mock.calls[0]![0].data[0].createdAt).toEqual(
+      new Date("2026-09-27T08:00:00Z")
+    );
+  });
+
+  it("never judges a replayed echo again, even when the head has moved on since (it is known by its id)", async () => {
+    article = storedArticle({ wikitext: "A newer WikiOS text." });
+    head = storedHead(null, { sha1: mwSha1Base36("A newer WikiOS text.") });
+    knownRevids = new Set([91]); // the echo of the older text, recorded by an earlier cycle
+    rcResponses = [{ changes: [change("Foo", 91, 1)] }];
+    mwRevisions = new Map([[91, { title: "Foo", revid: 91, parentid: 50, text: "WikiOS text." }]]);
+
+    await runAutoSyncCycle();
+
+    expect(mockRevisionCreateMany).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
+  });
+});
+
+describe("identity of a synced page (plan 402, 403)", () => {
+  it("keeps MediaWiki's namespace and the title's prefix when the canonical table lacks it", async () => {
+    rcResponses = [{ changes: [change("Portal:Eurth", 100, 1), change("Foo: bar", 101, 2)] }];
+    mwRevisions = new Map([
+      [100, { title: "Portal:Eurth", revid: 100, ns: 100, pageId: 2 }],
+      [101, { title: "Foo: bar", revid: 101, ns: 0, pageId: 3 }],
+    ]);
+
+    await runAutoSyncCycle();
+
+    const inputFor = (title: string) =>
+      importPageRevisions.mock.calls.find(([input]) => input.title === title)?.[0];
+    expect(inputFor("Portal:Eurth")).toMatchObject({
+      slug: "portal:eurth",
+      namespace: 100,
+      namespacePrefix: "Portal",
+    });
+    expect(inputFor("Foo: bar")).toMatchObject({ namespace: 0, namespacePrefix: null });
+  });
+
+  it("a namespace the canonical table knows is not overridden by MediaWiki's id", async () => {
+    rcResponses = [{ changes: [change("Talk:x", 100, 1)] }];
+    mwRevisions = new Map([[100, { title: "Talk:x", revid: 100, ns: 1 }]]);
+
+    await runAutoSyncCycle();
+
+    expect(importPageRevisions.mock.calls[0]![0]).toMatchObject({
+      namespace: 1,
+      namespacePrefix: "Talk",
+    });
+  });
+  it("applies a revision to the article MediaWiki's page id names when the title is unknown (a page moved in MediaWiki)", async () => {
+    article = storedArticle({
+      title: "Old name",
+      slug: "old_name",
+      mwPageId: 7,
+      wikitext: "Text.",
+    });
+    mockArticleFindFirst.mockImplementation(async ({ where }) =>
+      where.mwPageId === 7 ? article : null
+    );
+    head = storedHead(90, { sha1: mwSha1Base36("Text."), byteSize: 5 });
+    rcResponses = [{ changes: [change("New name", 91, 1)] }];
+    mwRevisions = new Map([
+      [91, { title: "New name", revid: 91, parentid: 90, pageId: 7, text: "More text." }],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(importPageRevisions.mock.calls[0]![0]).toMatchObject({
+      title: "Old name",
+      slug: "old_name",
+      mwPageId: 7,
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The webhook and the reader: the newest revision of one page
+// ---------------------------------------------------------------------------
+
+describe("syncSinglePage", () => {
+  it("answers true without writing when the revision is already stored", async () => {
+    mwRevisions = new Map([[100, { title: "Foo", revid: 100 }]]);
+    knownRevids = new Set([100]);
+
+    await expect(syncSinglePage("Foo")).resolves.toBe(true);
+
+    expect(importPageRevisions).not.toHaveBeenCalled();
+  });
+
+  it("recognises WikiOS's own export in the webhook that announces it (no duplicate revision)", async () => {
+    article = storedArticle({ mwPageId: 1 });
+    head = storedHead(null);
+    mwRevisions = new Map([[91, { title: "Foo", revid: 91, parentid: 50, text: "WikiOS text." }]]);
+
+    await expect(syncSinglePage("Foo")).resolves.toBe(true);
+
+    expect(importPageRevisions).not.toHaveBeenCalled();
+    expect(mockRevisionUpdateMany).toHaveBeenCalledWith({
+      where: { id: "rev-9", mwRevId: null },
+      data: { mwRevId: 91 },
+    });
+  });
+  it("answers false when MediaWiki has no such page", async () => {
+    await expect(syncSinglePage("Nowhere")).resolves.toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// One sync at a time, failures counted, status for the telemetry (plan 406 F)
+// ---------------------------------------------------------------------------
+
+describe("the advisory lock", () => {
+  it("a cycle takes the lease named wikios-inbound-sync, and every request of the cycle runs while it is held", async () => {
+    rcResponses = [{ changes: [change("A", 1, 1)] }];
+    mwRevisions = new Map([[1, { title: "A", revid: 1 }]]);
+
+    await runAutoSyncCycle();
+
+    const [strings, ...values] = mockQueryRaw.mock.calls[0]!;
+    expect((strings as string[]).join("?")).toContain('"job_leases"');
+    expect(values[0]).toBe("wikios-inbound-sync");
+    expect(values[2]).toBe((12 * 60_000) / 1000); // the lease outlasts the cycle's 9-minute budget
+    expect(importPageRevisions).toHaveBeenCalledTimes(1);
+    // released once the cycle settles
+    expect(mockExecuteRaw.mock.calls.at(-1)?.[1]).toBe("wikios-inbound-sync");
+  });
+
+  /** Run a cycle with the clock under test control: the waits between lock retries are not real. */
+  const cycleWithFakeTimers = async () => {
+    jest.useFakeTimers();
+    try {
+      const running = runAutoSyncCycle();
+      await jest.advanceTimersByTimeAsync(10_000);
+      return await running;
+    } finally {
+      jest.useRealTimers();
+    }
+  };
+
+  it("a cycle that keeps finding the lock taken tries four times, 2 s apart, then reads nothing and returns the stats it has", async () => {
+    mockQueryRaw.mockImplementation(leaseTaken);
+    rcResponses = [{ changes: [change("A", 1, 1)] }];
+
+    const stats = await cycleWithFakeTimers();
+
+    expect(mockQueryRaw).toHaveBeenCalledTimes(4);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mockSystemConfigFindUnique).not.toHaveBeenCalled();
+    expect(stats).toHaveProperty("pagesChecked");
+  });
+
+  it("a cycle that finds the lock taken by a single-page import runs once it is free (a retry, not a skipped cycle)", async () => {
+    mockQueryRaw
+      .mockImplementationOnce(leaseTaken)
+      .mockImplementationOnce(leaseTaken)
+      .mockImplementation(leaseFree);
+    rcResponses = [{ changes: [change("A", 1, 1)] }];
+    mwRevisions = new Map([[1, { title: "A", revid: 1 }]]);
+
+    await cycleWithFakeTimers();
+
+    expect(mockQueryRaw).toHaveBeenCalledTimes(3);
+    expect(importPageRevisions).toHaveBeenCalledTimes(1);
+  });
+
+  it("starts no new step once the 9-minute budget is spent, and the marks stay behind the steps it did not apply", async () => {
+    jest.useFakeTimers({
+      now: new Date("2026-09-27T10:00:00Z"),
+      doNotFake: ["setTimeout", "setImmediate", "nextTick"],
+    });
+    try {
+      mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
+      rcResponses = [{ changes: [change("A", 1, 1), change("B", 2, 2), change("C", 3, 3)] }];
+      mwRevisions = new Map([
+        [1, { title: "A", revid: 1 }],
+        [2, { title: "B", revid: 2 }],
+        [3, { title: "C", revid: 3 }],
+      ]);
+      // The first page takes ten minutes to sync.
+      importPageRevisions.mockImplementationOnce(async () => {
+        jest.setSystemTime(new Date("2026-09-27T10:10:00Z"));
+        return {
+          created: false,
+          inserted: 1,
+          filled: 0,
+          skipped: 0,
+          conflicts: 0,
+          headUpdated: true,
+        };
+      });
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+
+      await runAutoSyncCycle();
+
+      expect(importPageRevisions).toHaveBeenCalledTimes(1);
+      expect(storedHighWater()).toBe("2026-09-27T10:00:01Z");
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("time budget"));
+      warn.mockRestore();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("the webhook's single-page sync takes the same lock without waiting and answers false when it is busy", async () => {
+    mockQueryRaw.mockImplementation(leaseTaken);
+    mwRevisions = new Map([[100, { title: "Foo", revid: 100 }]]);
+
+    await expect(syncSinglePage("Foo")).resolves.toBe(false);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(importPageRevisions).not.toHaveBeenCalled();
+  });
+  it("never throws when the lock cannot even be taken (database down), and says so", async () => {
+    mockQueryRaw.mockRejectedValue(new Error("connection refused"));
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const stats = await runAutoSyncCycle();
+
+    expect(stats.failures).toBe(1);
+    expect(stats.lastError).toContain("connection refused");
+    await expect(syncSinglePage("Foo")).resolves.toBe(false);
+    consoleError.mockRestore();
+  });
+});
+
+describe("failures are counted, not swallowed", () => {
+  it("counts a failed step and keeps its message, and a clean cycle after it resets both", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
+    rcResponses = [{ changes: [change("A", 1, 1), change("B", 2, 2)] }];
+    mwRevisions = new Map([[2, { title: "B", revid: 2 }]]);
+    failingRevisions = new Set([1]);
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const failed = await runAutoSyncCycle();
+
+    expect(failed.failures).toBe(1);
+    expect(failed.lastError).toBe("A: MediaWiki returned HTTP 500");
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.stringContaining("Error syncing A"),
+      "MediaWiki returned HTTP 500"
+    );
+
+    failingRevisions = new Set();
+    rcResponses = [{ changes: [] }];
+    const clean = await runAutoSyncCycle();
+
+    expect(clean.failures).toBe(0);
+    expect(clean.lastError).toBeNull();
+    consoleError.mockRestore();
+  });
+
+  it("a list that cannot be read is a counted failure, and the other list is still synced", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
+    logResponses = [
+      {
+        events: [
+          {
+            logid: 1,
+            type: "delete",
+            action: "delete",
+            title: "A",
+            timestamp: "2026-09-27T10:00:01Z",
+          },
+        ],
+      },
+    ];
+    fetchMock.mockImplementationOnce(async () => jsonResponse({}, 503));
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const stats = await runAutoSyncCycle();
+
+    expect(stats.failures).toBe(1);
+    expect(stats.lastError).toContain("reading recent changes");
+    expect(applyEvent).toHaveBeenCalledTimes(1);
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:01Z|1");
+    expect(highWaterWritten(HWM_KEY)).toBeUndefined();
+    consoleError.mockRestore();
+  });
+
+  it("an unexpected shape from MediaWiki is an error, not a field read off an any", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
+    fetchMock.mockImplementationOnce(async () => jsonResponse({ query: { recentchanges: "no" } }));
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const stats = await runAutoSyncCycle();
+
+    expect(stats.failures).toBe(1);
+    consoleError.mockRestore();
+  });
+});
+
+describe("the sync status the telemetry reads", () => {
+  const statusRow = (over: Record<string, unknown> = {}) => ({
+    value: JSON.stringify({
+      lastRunAt: "2026-09-27T10:00:00Z",
+      failures: 0,
+      lastError: null,
+      ...over,
+    }),
+  });
+  const now = new Date("2026-09-27T10:05:00Z");
+  /** SystemConfig answers the sync status under its key. */
+  const stored = (status: { value: string } | null) =>
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === "wikiAutoSync.status" ? status : null
+    );
+
+  it("each cycle leaves its outcome in SystemConfig", async () => {
+    rcResponses = [{ changes: [change("A", 1, 1)] }];
+    failingRevisions = new Set([1]);
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    await runAutoSyncCycle();
+
+    const stored = JSON.parse(highWaterWritten("wikiAutoSync.status")!);
+    expect(stored).toMatchObject({ failures: 1, lastError: "A: MediaWiki returned HTTP 500" });
+    expect(new Date(stored.lastRunAt).getTime()).toBeGreaterThan(0);
+    consoleError.mockRestore();
+  });
+
+  it("does not fail the cycle when the status cannot be stored", async () => {
+    mockSystemConfigUpsert.mockRejectedValue(new Error("read only"));
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(runAutoSyncCycle()).resolves.toHaveProperty("lastRunAt");
+
+    consoleError.mockRestore();
+  });
+
+  it("is UNKNOWN before any cycle has run, and for a row it cannot read", async () => {
+    stored(null);
+    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({
+      status: "UNKNOWN",
+      lastRunAt: null,
+    });
+
+    stored({ value: "{not json" });
+    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({ status: "UNKNOWN" });
+
+    stored({ value: JSON.stringify({ lastRunAt: 5 }) });
+    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({ status: "UNKNOWN" });
+  });
+  it("carries the conflicts the last cycle left unsettled, none for a row written before it counted them", async () => {
+    stored(statusRow({ conflictsPending: 3 }));
+    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({
+      status: "ACTIVE",
+      conflictsPending: 3,
+    });
+
+    stored(statusRow());
+    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({ conflictsPending: 0 });
+  });
+
+  it("is STALE when no cycle has run for an hour (the cron job is not running)", async () => {
+    stored(statusRow());
+
+    await expect(getInboundSyncStatus(new Date("2026-09-27T11:00:01Z"))).resolves.toMatchObject({
+      status: "STALE",
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A step that keeps failing is quarantined, and the mark moves past it (A5)
+// ---------------------------------------------------------------------------
+
+describeEachWikiosMode("a step that keeps failing", () => {
+  /** SystemConfig as a table: the marks and the status a cycle writes are what the next one reads. */
+  let config: Map<string, string>;
+  const START = "2026-09-27T09:00:00Z";
+  let consoleError: jest.SpyInstance;
+  let consoleWarn: jest.SpyInstance;
+
+  beforeEach(() => {
+    config = new Map([
+      [HWM_KEY, START],
+      [LOG_HWM_KEY, `${START}|0`],
+    ]);
+    // the mode's own rows (the switch, the protections marker) still answer through it
+    const modeRows = mockSystemConfigFindUnique.getMockImplementation();
+    mockSystemConfigFindUnique.mockImplementation(async (args: { where: { key: string } }) => {
+      const value = config.get(args.where.key);
+      return value === undefined ? (modeRows?.(args) ?? null) : { value };
+    });
+    mockSystemConfigUpsert.mockImplementation(
+      async (args: { where: { key: string }; update: { value: string } }) => {
+        config.set(args.where.key, args.update.value);
+        return {};
+      }
+    );
+    consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    consoleWarn = jest.spyOn(console, "warn").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    consoleError.mockRestore();
+    consoleWarn.mockRestore();
+  });
+
+  /** One cycle that reads `changes` and `events` (from the stored marks). */
+  const cycle = async (changes: Change[], events: FakeLogEvent[] = []) => {
+    rcResponses = [{ changes }];
+    logResponses = [{ events }];
+    fetchMock.mockClear();
+    return runAutoSyncCycle();
+  };
+  const cycles = async (times: number, changes: Change[], events: FakeLogEvent[] = []) => {
+    for (let i = 0; i < times; i++) await cycle(changes, events);
+  };
+  const deadLetter = (stepKey: string) =>
+    mockDeadLetters.wikiSyncDeadLetter.findUnique({ where: { stepKey } });
+
+  // P's revision 5 fails (MediaWiki answers 500 for it); Q's revision 6, a second later, is fine.
+  const P5 = change("P", 5, 1);
+  const P7 = change("P", 7, 3);
+  const Q6 = change("Q", 6, 2);
+  beforeEach(() => {
+    failingRevisions = new Set([5]);
+    mwRevisions = new Map([
+      [5, { title: "P", revid: 5, text: "P five." }],
+      [6, { title: "Q", revid: 6, text: "Q six." }],
+      [7, { title: "P", revid: 7, parentid: 5, text: "P seven." }],
+    ]);
+  });
+
+  it("four failures still hold the mark", async () => {
+    await cycles(4, [P5, Q6]);
+
+    expect(config.get(HWM_KEY)).toBe(START);
+    expect(await deadLetter("rc:5")).toMatchObject({ attempts: 4, quarantinedAt: null });
+  });
+
+  it("a step failing for the fifth cycle is quarantined and the mark moves past it", async () => {
+    await cycles(4, [P5, Q6]);
+    const fifth = await cycle([P5, Q6]);
+
+    expect(config.get(HWM_KEY)).toBe(Q6.timestamp);
+    expect(fifth.failures).toBe(1);
+    expect(await deadLetter("rc:5")).toMatchObject({
+      stream: "edits",
+      subject: "P",
+      label: "P",
+      mark: P5.timestamp,
+      payload: { title: "P", revid: 5, timestamp: P5.timestamp },
+      attempts: 5,
+      lastError: "MediaWiki returned HTTP 500",
+      quarantinedAt: expect.any(Date),
+      resolvedAt: null,
+    });
+    expect(consoleWarn).toHaveBeenCalledWith(expect.stringContaining("quarantined"));
+
+    // the next cycle reads past it: the quarantined step does not run again
+    const next = await cycle([Q6]);
+    expect(next.failures).toBe(0);
+    expect(fetchedRevids()).not.toContain(5);
+  });
+
+  it("later steps of the same page run once it is quarantined", async () => {
+    await cycles(4, [P5, P7]);
+    expect(importPageRevisions).not.toHaveBeenCalled();
+    expect(applyEvent).not.toHaveBeenCalled();
+
+    await cycle(
+      [P5, P7],
+      [
+        {
+          logid: 9,
+          type: "protect",
+          action: "protect",
+          title: "P",
+          timestamp: "2026-09-27T10:00:04Z",
+        },
+      ]
+    );
+
+    expect(importPageRevisions.mock.calls.map(([input]) => input.revisions[0]?.mwRevId)).toEqual([
+      7,
+    ]);
+    expect(applyEvent.mock.calls.map(([event]) => event.logid)).toEqual([9]);
+    expect(config.get(HWM_KEY)).toBe(P7.timestamp);
+    expect(config.get(LOG_HWM_KEY)).toBe("2026-09-27T10:00:04Z|9");
+  });
+
+  it("a log event failing for the fifth cycle is quarantined with the event as it was read, and its mark moves on", async () => {
+    const protect: FakeLogEvent = {
+      logid: 4,
+      type: "protect",
+      action: "protect",
+      title: "R",
+      timestamp: "2026-09-27T10:00:01Z",
+    };
+    applyEvent.mockRejectedValue(new Error("db down"));
+
+    await cycles(4, [], [protect]);
+    expect(config.get(LOG_HWM_KEY)).toBe(`${START}|0`);
+    await cycle([], [protect]);
+
+    expect(config.get(LOG_HWM_KEY)).toBe("2026-09-27T10:00:01Z|4");
+    expect(await deadLetter("log:4")).toMatchObject({
+      stream: "log",
+      subject: "R",
+      label: "protect/protect R",
+      mark: "2026-09-27T10:00:01Z|4",
+      payload: expect.objectContaining({ logid: 4, type: "protect", title: "R" }),
+      quarantinedAt: expect.any(Date),
+    });
+
+    // a retry hands applyLogEvent the event the cycle read
+    applyEvent.mockReset();
+    applyEvent.mockResolvedValue("applied");
+    const row = (await deadLetter("log:4"))!;
+    await expect(retryQuarantined(row.id)).resolves.toBe("applied");
+    expect(applyEvent).toHaveBeenCalledWith(row.payload);
+    expect(applyEvent.mock.calls[0]?.[0]).toMatchObject({ logid: 4, title: "R" });
+  });
+
+  it("a step that succeeds after failing clears its count", async () => {
+    await cycles(3, [P5, Q6]);
+    expect(await deadLetter("rc:5")).toMatchObject({ attempts: 3 });
+
+    failingRevisions = new Set();
+    await cycle([P5, Q6]);
+    expect(await deadLetter("rc:5")).toBeNull();
+    expect(config.get(HWM_KEY)).toBe(Q6.timestamp);
+
+    // failing again later counts from one: four more failures do not quarantine it
+    failingRevisions = new Set([7]);
+    await cycles(4, [P7]);
+    expect(await deadLetter("rc:7")).toMatchObject({ attempts: 4, quarantinedAt: null });
+  });
+
+  it("a failure that cannot be counted holds the mark, as before", async () => {
+    jest
+      .spyOn(mockDeadLetters.wikiSyncDeadLetter, "upsert")
+      .mockRejectedValue(new Error("dead letters down"));
+
+    await cycles(6, [P5, Q6]);
+
+    expect(config.get(HWM_KEY)).toBe(START);
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.stringContaining("Could not count"),
+      "dead letters down"
+    );
+  });
+
+  it("the status is DEGRADED while a quarantined step is unresolved", async () => {
+    await cycles(5, [P5, Q6]);
+    const clean = await cycle([Q6]);
+    expect(clean.failures).toBe(0);
+
+    await expect(getInboundSyncStatus()).resolves.toMatchObject({
+      status: "DEGRADED",
+      failures: 0,
+      quarantined: 1,
+    });
+
+    await dismissQuarantined((await deadLetter("rc:5"))!.id);
+    await expect(getInboundSyncStatus()).resolves.toMatchObject({
+      status: "ACTIVE",
+      quarantined: 0,
+    });
+  });
+
+  it("a dismissed step at the mark's second is not run again and does not keep the status degraded", async () => {
+    // P's revision 5 is the newest change: once quarantined, the mark is its second, so every cycle reads it again
+    await cycles(5, [P5]);
+    expect(config.get(HWM_KEY)).toBe(P5.timestamp);
+    await dismissQuarantined((await deadLetter("rc:5"))!.id);
+
+    const after = await cycle([P5]);
+
+    expect(after.failures).toBe(0);
+    expect(fetchedRevids()).not.toContain(5);
+    expect(await deadLetter("rc:5")).toMatchObject({ attempts: 5 });
+    await expect(getInboundSyncStatus()).resolves.toMatchObject({
+      status: "ACTIVE",
+      quarantined: 0,
+    });
+  });
+
+  it("an open quarantined step read again at the mark's second still runs, and resolves itself once it succeeds", async () => {
+    await cycles(5, [P5]);
+    failingRevisions = new Set();
+
+    await cycle([P5]);
+
+    expect(fetchedRevids()).toContain(5);
+    expect(await deadLetter("rc:5")).toMatchObject({ resolvedAt: expect.any(Date) });
+    await expect(getInboundSyncStatus()).resolves.toMatchObject({ quarantined: 0 });
+  });
+
+  it("retry applies a quarantined revision and resolves the row", async () => {
+    await cycles(5, [P5, Q6]);
+    const row = (await deadLetter("rc:5"))!;
+    importPageRevisions.mockClear();
+
+    failingRevisions = new Set();
+    await expect(retryQuarantined(row.id)).resolves.toBe("applied");
+
+    expect(importPageRevisions).toHaveBeenCalledTimes(1);
+    expect(importPageRevisions.mock.calls[0]?.[0].revisions[0]).toMatchObject({
+      mwRevId: 5,
+      wikitext: "P five.",
+    });
+    expect(await deadLetter("rc:5")).toMatchObject({ resolvedAt: expect.any(Date) });
+    await expect(getInboundSyncStatus()).resolves.toMatchObject({ quarantined: 0 });
+  });
+});
+
+describe("settling the conflict log", () => {
+  const deletion: FakeLogEvent = {
+    logid: 1,
+    type: "delete",
+    action: "delete",
+    title: "A",
+    timestamp: "2026-09-27T10:00:01Z",
+  };
+
+  it("the cycle settles conflicts after its steps, and keeps how many are left", async () => {
+    const order: string[] = [];
+    applyEvent.mockImplementation(async () => {
+      order.push("step");
+      return "applied";
+    });
+    settle.mockImplementation(async () => {
+      order.push("settle");
+      return { notified: 1, trails: 0, pending: 2 };
+    });
+    logResponses = [{ events: [deletion] }];
+
+    const stats = await runAutoSyncCycle();
+
+    expect(order).toEqual(["step", "settle"]);
+    expect(stats).toMatchObject({ failures: 0, conflictsPending: 2 });
+    expect(JSON.parse(highWaterWritten("wikiAutoSync.status")!)).toMatchObject({
+      conflictsPending: 2,
+    });
+  });
+
+  it("settles after a cycle whose step failed, and counts a settling that fails without throwing", async () => {
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    applyEvent.mockRejectedValue(new Error("log down"));
+    settle.mockRejectedValue(new Error("conflicts down"));
+    logResponses = [{ events: [deletion] }];
+
+    const stats = await runAutoSyncCycle();
+
+    expect(settle).toHaveBeenCalledTimes(1);
+    expect(stats).toMatchObject({
+      failures: 2,
+      lastError: "settling conflicts: conflicts down",
+    });
+    consoleError.mockRestore();
+  });
+});
+
+describe("a page with text but no revision row (the shape of Crown Jewels of Caphiria)", () => {
+  const CROWN = "The crown jewels of Caphiria are kept in the old treasury.";
+  const crown = (over: Partial<StoredArticle> = {}) =>
+    storedArticle({
+      title: "Crown Jewels of Caphiria",
+      slug: "crown_jewels_of_caphiria",
+      wikitext: CROWN,
+      mwLatestRevId: 70,
+      mwPageId: 5,
+      updatedAt: new Date("2026-09-20T12:00:00Z"),
+      ...over,
+    });
+
+  beforeEach(() => {
+    process.env.WIKIOS_MEDIAWIKI_BOT_USER = "Mirror@WikiOS";
+    head = null; // no revision row at all
+    rcResponses = [{ changes: [change("Crown Jewels of Caphiria", 95, 1)] }];
+  });
+  it("recognises the page's own text coming back, and gives it a revision stamped with the MediaWiki id", async () => {
+    article = crown();
+    mwRevisions = new Map([
+      [95, { title: "Crown Jewels of Caphiria", revid: 95, parentid: 0, pageId: 5, text: CROWN }],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(importPageRevisions).not.toHaveBeenCalled();
+    expect(mockRevisionCreate.mock.calls[0]![0].data).toMatchObject({
+      wikitext: CROWN,
+      mwRevId: 95,
+    });
+    expect(mockRevisionCreateMany).not.toHaveBeenCalled();
+    expect(mockArticleUpdate).toHaveBeenCalledWith({
+      where: { id: "art-1" },
+      data: expect.objectContaining({ mwLatestRevId: 95 }),
+    });
+  });
+
+  it("is free to import into only a page with no text at all (and no page at all)", async () => {
+    article = crown({ wikitext: "  \n" });
+    mwRevisions = new Map([
+      [
+        95,
+        {
+          title: "Crown Jewels of Caphiria",
+          revid: 95,
+          parentid: 0,
+          pageId: 5,
+          text: "First real text.",
+        },
+      ],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(mockRevisionCreate).not.toHaveBeenCalled();
+    expect(importPageRevisions).toHaveBeenCalledTimes(1);
+  });
+
+  it("the webhook leaves such a conflict to the ordered cycle: it captures nothing and answers false", async () => {
+    article = crown();
+    mwRevisions = new Map([
+      [60, { title: "Crown Jewels of Caphiria", revid: 60, text: "An older text." }],
+      [
+        95,
+        {
+          title: "Crown Jewels of Caphiria",
+          revid: 95,
+          parentid: 60,
+          pageId: 5,
+          text: "Different.",
+        },
+      ],
+    ]);
+
+    await expect(syncSinglePage("Crown Jewels of Caphiria")).resolves.toBe(false);
+
+    expect(mockRevisionCreate).not.toHaveBeenCalled();
+    expect(importPageRevisions).not.toHaveBeenCalled();
+  });
+
+  it("a page WikiOS deleted that has text but no revision row is captured before MediaWiki's new page replaces it", async () => {
+    article = crown({ status: "ARCHIVED" });
+    mwRevisions = new Map([
+      [
+        95,
+        {
+          title: "Crown Jewels of Caphiria",
+          revid: 95,
+          parentid: 0,
+          pageId: 9,
+          text: "Born again.",
+        },
+      ],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+    expect(importPageRevisions).toHaveBeenCalledTimes(1);
+    expect(mockArticleUpdate).toHaveBeenCalledWith({
+      where: { id: "art-1" },
+      data: { status: "PUBLISHED" },
+    });
+  });
+});
+
+describe("the inbound rule", () => {
+  const HEAD_TEXT = "The head text.\n";
+  const HEAD_SHA1 = mwSha1Base36(HEAD_TEXT);
+  const OTHER_SHA1 = mwSha1Base36("Somebody else's text.");
+  const THIRD_SHA1 = mwSha1Base36("A third text.");
+
+  const head = (over: Partial<InboundHead> = {}): InboundHead => ({
+    mwRevId: 100,
+    sha1: HEAD_SHA1,
+    wikitext: HEAD_TEXT,
+    fromClassic: false,
+    ...over,
+  });
+
+  const rev = (over: Partial<InboundRevision> = {}): InboundRevision => ({
+    revid: 101,
+    parentid: 100,
+    sha1: OTHER_SHA1,
+    byMirrorBot: false,
+    ...over,
+  });
+
+  interface Row {
+    name: string;
+    head: InboundHead | null;
+    rev: InboundRevision;
+    parentSha1?: string | null;
+    expected: InboundRelation;
+  }
+
+  const rows: Row[] = [
+    {
+      name: "the page is new to WikiOS",
+      head: null,
+      rev: rev({ parentid: 0 }),
+      expected: "fast-forward",
+    },
+    {
+      name: "the page exists in WikiOS but has no revision",
+      head: null,
+      rev: rev({ parentid: 77 }),
+      expected: "fast-forward",
+    },
+    {
+      name: "the edit's parent is the head by MediaWiki revision id",
+      head: head(),
+      rev: rev({ parentid: 100 }),
+      expected: "fast-forward",
+    },
+    {
+      name: "the head has no stored hash: it is computed from its text",
+      head: head({ sha1: null }),
+      rev: rev({ sha1: HEAD_SHA1, parentid: 55 }),
+      expected: "echo",
+    },
+    {
+      name: "the edit has exactly the head's text (the mirror's export coming back)",
+      head: head({ mwRevId: null }),
+      rev: rev({ sha1: HEAD_SHA1, parentid: 55 }),
+      expected: "echo",
+    },
+    {
+      name: "the edit's text is the head's without its trailing newline (MediaWiki trims what it saves)",
+      head: head({ sha1: null }),
+      rev: rev({ sha1: mwSha1Base36("The head text."), parentid: 55 }),
+      expected: "echo",
+    },
+    {
+      name: "an edit by the mirror account is an echo whatever its text",
+      head: head({ mwRevId: 90 }),
+      rev: rev({ byMirrorBot: true, parentid: 12, sha1: THIRD_SHA1 }),
+      expected: "echo",
+    },
+    {
+      name: "the head was never stamped, but the parent has exactly the head's text",
+      head: head({ mwRevId: null }),
+      rev: rev({ parentid: 55 }),
+      parentSha1: HEAD_SHA1,
+      expected: "fast-forward",
+    },
+    {
+      name: "the head is stamped with an older revision, but the parent has the head's text (the mirror pushed it again)",
+      head: head({ mwRevId: 90 }),
+      rev: rev({ parentid: 95 }),
+      parentSha1: HEAD_SHA1,
+      expected: "fast-forward",
+    },
+    {
+      name: "the parent's text differs from the head's: the author never saw WikiOS's edit",
+      head: head({ mwRevId: null }),
+      rev: rev({ parentid: 55 }),
+      parentSha1: THIRD_SHA1,
+      expected: "collision",
+    },
+    {
+      name: "the parent is another revision and its hash was not fetched",
+      head: head({ mwRevId: 90 }),
+      rev: rev({ parentid: 95 }),
+      parentSha1: null,
+      expected: "collision",
+    },
+    {
+      name: "a revision older than the classic revision WikiOS's head is (a replay after a newer one)",
+      head: head({ mwRevId: 100, fromClassic: true }),
+      rev: rev({ revid: 99, parentid: 98 }),
+      expected: "older",
+    },
+    {
+      name: "an older revision whose parent is the head's own text is still older (never the head)",
+      head: head({ mwRevId: 100, fromClassic: true }),
+      rev: rev({ revid: 99, parentid: 98 }),
+      parentSha1: HEAD_SHA1,
+      expected: "older",
+    },
+    {
+      name: "a lower id than a WikiOS head the mirror stamped is no replay (an import's id is newer than its time): a collision",
+      head: head({ mwRevId: 100, fromClassic: false }),
+      rev: rev({ revid: 99, parentid: 98 }),
+      parentSha1: THIRD_SHA1,
+      expected: "collision",
+    },
+    {
+      name: "an older revision with the head's text is an echo, as any of WikiOS's own text",
+      head: head({ mwRevId: 100, fromClassic: true }),
+      rev: rev({ revid: 99, parentid: 98, sha1: HEAD_SHA1 }),
+      expected: "echo",
+    },
+    {
+      name: "a head with no MediaWiki stamp has nothing to be older than",
+      head: head({ mwRevId: null }),
+      rev: rev({ revid: 3, parentid: 2 }),
+      parentSha1: THIRD_SHA1,
+      expected: "collision",
+    },
+    {
+      name: "a page created in MediaWiki while WikiOS already has one with other text",
+      head: head({ mwRevId: null }),
+      rev: rev({ parentid: 0 }),
+      expected: "collision",
+    },
   ];
 
-  await runAutoSyncCycle();
+  describe("decideInbound", () => {
+    it.each(rows)("$name -> $expected", ({ head: h, rev: r, parentSha1, expected }) => {
+      expect(decideInbound({ head: h, rev: r, parentSha1: parentSha1 ?? null })).toBe(expected);
+    });
 
-  const calls = rcCalls();
-  expect(calls).toHaveLength(2);
-  expect(calls[1]?.get("rccontinue")).toBe("x");
-  expect(calls[1]?.get("continue")).toBe("-||");
-  expect(storedHighWater()).toBe("2026-09-27T10:00:02Z");
-});
-
-test("does not advance HWM past a failed page sync", async () => {
-  mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
-  rcResponses = [{ changes: [change("A", 1, 1), change("B", 2, 2), change("C", 3, 3)] }];
-  failingTitles = new Set(["B"]);
-  const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
-
-  await runAutoSyncCycle();
-
-  expect(syncedTitles()).toEqual(["A", "B", "C"]);
-  expect(storedHighWater()).toBe("2026-09-27T10:00:01Z");
-  consoleError.mockRestore();
-});
-
-test("skips a change whose revision is already stored", async () => {
-  rcResponses = [{ changes: [change("A", 1, 1)] }];
-  mockWikiRevisionFindFirst.mockResolvedValue({ id: "existing" });
-
-  await runAutoSyncCycle();
-
-  expect(syncedTitles()).toEqual([]);
-  expect(storedHighWater()).toBe("2026-09-27T10:00:01Z");
-});
-
-test("inserts revisions with createMany skipDuplicates", async () => {
-  rcResponses = [{ changes: [change("A", 100, 1)] }];
-
-  await runAutoSyncCycle();
-
-  expect(mockWikiRevisionCreateMany).toHaveBeenCalledWith(
-    expect.objectContaining({
-      skipDuplicates: true,
-      data: [expect.objectContaining({ mwRevId: 100, source: "ixwiki", articleId: "art-1" })],
-    })
-  );
+    it("covers every decision", () => {
+      expect(new Set(rows.map((row) => row.expected))).toEqual(
+        new Set(["echo", "older", "fast-forward", "collision"])
+      );
+      expect(rows.length).toBeGreaterThanOrEqual(8);
+    });
+  });
 });

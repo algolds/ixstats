@@ -2,7 +2,7 @@
 // src/app/admin/_components/BotIntegrationCenter.tsx
 
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "./AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { SystemCronScheduleWidget } from "./SystemCronScheduleWidget";
 import { BotControlCard } from "./platform/BotControlCard";
 import { api } from "~/trpc/react";
@@ -15,9 +15,7 @@ import { LorewardsBotSection } from "./platform/LorewardsBotSection";
 export function BotIntegrationCenter() {
   usePageTitle({ title: "Admin - Bot Settings" });
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { config, setConfig, timeState, importState, setImportState, actionState, setActionState } =
-    useAdminState();
+  const { config, setConfig, actionState, setActionState } = useAdminState();
 
   // tRPC queries
   const { refetch: refetchStatus } = api.admin.getSystemStatus.useQuery(undefined, {
@@ -31,9 +29,6 @@ export function BotIntegrationCenter() {
       refetchOnWindowFocus: false,
     }
   );
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { data: configData, refetch: refetchConfig } = api.admin.getConfig.useQuery();
 
   // Handlers
   const {
@@ -52,26 +47,25 @@ export function BotIntegrationCenter() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Cpu}
-        title="Bot Settings"
-        description="Monitor Discord bot synchronizations, toggle rate limits, clear override caches, and track automated cron schedules."
+      <PageHeader
+        title="Bot settings"
+        subtitle="Discord bot sync, rate limits, override caches and cron schedules."
       />
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="bg-card/40 border-border/40 mb-4 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
+        <TabsList className="bg-fill-3 rounded-row mb-4 flex w-full flex-wrap justify-start gap-1 p-1">
           <TabsTrigger
             value="general"
-            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
           >
             <Cpu className="h-3.5 w-3.5" />
-            General Controls & Crons
+            General controls & crons
           </TabsTrigger>
           <TabsTrigger
             value="lorewards"
-            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
           >
-            Lorewards Bot
+            Lorewards bot
           </TabsTrigger>
         </TabsList>
         <TabsContent value="general" className="mt-6 space-y-6">

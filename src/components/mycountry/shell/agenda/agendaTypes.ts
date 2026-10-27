@@ -1,35 +1,37 @@
-import type { Calendar } from "iconoir-react";
-import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/DrillSheets";
+import type { ComponentType } from "react";
+import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
+import type { StatusTone } from "../status-tone";
 
-export interface AgendaEvent {
+/** Where an agenda item comes from. */
+type AgendaItemKind = "issue" | "directive" | "election";
+
+/**
+ * How pressing an item is, relative to its deadline. Never a calendar date: an item is either
+ * past its deadline, close to it, or simply scheduled.
+ */
+export type AgendaUrgency = "overdue" | "due-soon" | "upcoming";
+
+/** One agenda item, derived from live game state (never stored or invented). */
+export interface AgendaItem {
+  /** Stable across refetches: `<kind>:<source id>`. */
   id: string;
-  dayOffset: number; // 0 = Today, 1 = Tomorrow, etc.
-  timeLabel: string;
+  kind: AgendaItemKind;
   title: string;
-  category: "defense" | "diplomacy" | "politics" | "economy" | "directive";
-  description: string;
-  directiveGoal: string;
+  /** One-line snippet under the title. */
+  preview: string;
+  /** Sentence-case source label, e.g. "Priority issue", "Moderate directive", "Election". */
   statusLabel: string;
-  icon: typeof Calendar;
-  accentCls: string;
-  badgeCls: string;
-  drillKind?: Exclude<V2Drill, { kind: "intent" } | null>;
+  icon: ComponentType<{ className?: string }>;
+  /** Status tone for the glyph and source label (colour only when it means something). */
+  tone: StatusTone;
+  /** When the item arrived (real time, ms), shown as "2h ago". */
+  receivedAt: number | null;
+  /** Deadline pressure, when the item has a deadline or a scheduled time. */
+  urgency: AgendaUrgency | null;
+  /** Urgent: shown with a flag. */
+  flagged: boolean;
+  drillKind?: Exclude<DrillSheetKind, { kind: "intent" } | null>;
   intentId?: string;
-  rawIxTime?: number;
-}
-
-export interface DayHorizonItem {
-  offset: number;
-  dayName: string;
-  dayNum: number;
-  isToday: boolean;
-}
-
-export function seasonFor(month: number): { name: string; emoji: string } {
-  if (month <= 1 || month === 11) return { name: "Winter", emoji: "❄️" };
-  if (month <= 4) return { name: "Spring", emoji: "🌸" };
-  if (month <= 7) return { name: "Summer", emoji: "☀️" };
-  return { name: "Autumn", emoji: "🍂" };
 }
 
 export function getSeverityRank(s: string): number {
@@ -43,6 +45,5 @@ export function getSeverityRank(s: string): number {
 export interface ExecutiveAgendaProps {
   countryId: string;
   onOpenDrill?: (drill: Exclude<DrillSheetKind, { kind: "intent" } | null>) => void;
-  onIssueDirective?: (goal?: string) => void;
   onOpenIntent?: (intentId: string) => void;
 }

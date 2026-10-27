@@ -23,17 +23,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-
-// ==================== VALIDATION SCHEMAS ====================
-
-const archetypeEnum = z.enum([
-  "aggressive_expansionist",
-  "peaceful_merchant",
-  "cautious_isolationist",
-  "cultural_diplomat",
-  "pragmatic_realist",
-  "ideological_hardliner",
-]);
+import { archetypeEnum, parsePersonalityJSON } from "./shared";
 
 // ==================== TRPC ROUTER ====================
 
@@ -61,41 +51,6 @@ export const npcPersonalitiesQueryRouter = createTRPCRouter({
           input.orderBy === "usageCount" ? { usageCount: "desc" } : { [input.orderBy]: "asc" },
       });
 
-      // Fallback to hardcoded if database empty
-      if (personalities.length === 0) {
-        return getFallbackPersonalities();
-      }
-
       return personalities.map(parsePersonalityJSON);
     }),
 });
-
-// ==================== HELPER FUNCTIONS ====================
-
-/**
- * Parse JSON fields from database personality record
- */
-function parsePersonalityJSON(personality: any) {
-  return {
-    ...personality,
-    traitDescriptions: personality.traitDescriptions
-      ? JSON.parse(personality.traitDescriptions)
-      : {},
-    culturalProfile: personality.culturalProfile ? JSON.parse(personality.culturalProfile) : null,
-    toneMatrix: personality.toneMatrix ? JSON.parse(personality.toneMatrix) : {},
-    responsePatterns: personality.responsePatterns ? JSON.parse(personality.responsePatterns) : [],
-    scenarioResponses: personality.scenarioResponses
-      ? JSON.parse(personality.scenarioResponses)
-      : {},
-    eventModifiers: personality.eventModifiers ? JSON.parse(personality.eventModifiers) : {},
-  };
-}
-
-/**
- * Fallback to hardcoded personalities if database empty
- */
-function getFallbackPersonalities() {
-  // In production, this would return hardcoded data
-  // For now, return empty array to encourage database population
-  return [];
-}

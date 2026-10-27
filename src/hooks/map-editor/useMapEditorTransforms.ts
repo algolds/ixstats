@@ -1,6 +1,11 @@
 "use client";
 
-import { useCallback } from "react";
+/**
+ * useMapEditorTransforms — multi-feature operations (merge, split, scale, rotate,
+ * union/subtract/intersect). Each operation records a single "batch" history
+ * entry so one Ctrl+Z undoes the whole operation.
+ */
+
 import type { Feature, Polygon, MultiPolygon } from "geojson";
 import { point } from "@turf/helpers";
 import { centroid } from "@turf/centroid";
@@ -10,9 +15,10 @@ import { union } from "@turf/union";
 import { difference } from "@turf/difference";
 import { intersect } from "@turf/intersect";
 import { featureCollection } from "@turf/helpers";
-import { api } from "~/trpc/react";
 import { splitPolygonByLine, cleanPolygonGeometry } from "~/lib/maps/map-editor-geom";
 import type { EditorFeature } from "./editor-types";
+import { useFeatureMutations } from "./feature-mutations";
+import type { EditorAction, HistoryData, PushableEditorAction } from "./useMapHistory";
 
 type PolyFeature = Feature<Polygon | MultiPolygon>;
 
@@ -23,6 +29,48 @@ interface UseMapEditorTransformsProps {
   clearMultiSelect: () => void;
   invalidateAllMapData: () => void;
   debouncedRefetch: () => void;
+  pushAction?: (action: PushableEditorAction) => void;
+  setMutationError?: (err: string | null) => void;
+  setLastSavedAt?: (date: Date) => void;
+}
+
+/** Full snapshot of a feature for re-creation on undo. */
+function snapshot(f: EditorFeature): HistoryData {
+  return {
+    ...f.properties,
+    name: f.name,
+    coordinates: f.coordinates,
+    geometry: f.geometry,
+  };
+}
+
+function sub(
+  type: EditorAction["type"],
+  f: { id: string; type: EditorFeature["type"]; name: string },
+  previousData?: HistoryData,
+  newData?: HistoryData
+): EditorAction {
+  return {
+    type,
+    featureType: f.type,
+    featureId: f.id,
+    description: `${type} ${f.type} "${f.name}"`,
+    timestamp: Date.now(),
+    previousData,
+    newData,
+  };
+}
+
+/** Runs async tasks with bounded concurrency (keeps bulk ops fast without flooding the API). */
+async function runLimited<T>(items: T[], limit: number, task: (item: T) => Promise<void>) {
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const item = items[cursor++]!;
+      await task(item);
+    }
+  });
+  await Promise.all(workers);
 }
 
 export function useMapEditorTransforms({
@@ -32,331 +80,328 @@ export function useMapEditorTransforms({
   clearMultiSelect,
   invalidateAllMapData,
   debouncedRefetch,
+  pushAction,
+  setMutationError,
+  setLastSavedAt,
 }: UseMapEditorTransformsProps) {
-  const updateCity = api.geoFeatures.updateCity.useMutation();
-  const createCity = api.geoFeatures.createCity.useMutation();
-  const deleteCity = api.geoFeatures.deleteCity.useMutation();
-  const updateSubdivision = api.geoFeatures.updateSubdivision.useMutation();
-  const createSubdivision = api.geoFeatures.createSubdivision.useMutation();
-  const deleteSubdivision = api.geoFeatures.deleteSubdivision.useMutation();
+  const { city, subdivision } = useFeatureMutations();
 
-  const mergeSelectedCities = useCallback(async () => {
+  const finish = (description: string, subActions: EditorAction[], first?: EditorFeature) => {
+    if (subActions.length > 0 && first) {
+      pushAction?.({
+        type: "batch",
+        featureType: first.type,
+        featureId: first.id,
+        description,
+        subActions,
+      });
+    }
+    invalidateAllMapData();
+    debouncedRefetch();
+    setLastSavedAt?.(new Date());
+    setMutationError?.(null);
+  };
+
+  const fail = (label: string, e: unknown) => {
+    setMutationError?.(e instanceof Error && e.message ? e.message : `Failed to ${label}`);
+    invalidateAllMapData();
+    debouncedRefetch();
+  };
+
+  /**
+   * Run a multi-step operation that collects history sub-actions. `work` returns the history
+   * description on success; on error what was already applied is recorded as a partial batch.
+   */
+  const runBatch = async (
+    first: EditorFeature | undefined,
+    partialDescription: string,
+    failLabel: string,
+    work: (subActions: EditorAction[]) => Promise<string>
+  ): Promise<boolean> => {
+    const subActions: EditorAction[] = [];
+    try {
+      finish(await work(subActions), subActions, first);
+      return true;
+    } catch (e) {
+      finish(partialDescription, subActions, first);
+      fail(failLabel, e);
+      return false;
+    }
+  };
+
+  const selectedOfType = (type: EditorFeature["type"], needs?: "coordinates" | "geometry") =>
+    allFeatures.filter((f) => selectedIds.has(f.id) && f.type === type && (!needs || f[needs]));
+
+  const populationOf = (f: EditorFeature) => Number(f.properties.population) || 0;
+
+  const mergeSelectedCities = async () => {
     if (!countryId || selectedIds.size < 2) return;
-
-    const citiesToMerge = allFeatures.filter(
-      (f) => selectedIds.has(f.id) && f.type === "city" && f.coordinates
-    );
-
+    const citiesToMerge = selectedOfType("city", "coordinates");
     if (citiesToMerge.length < 2) return;
 
     const baseCity = citiesToMerge[0]!;
-    let totalPopulation = Number(baseCity.properties.population) || 0;
-    for (let i = 1; i < citiesToMerge.length; i++) {
-      totalPopulation += Number(citiesToMerge[i]!.properties.population) || 0;
-    }
+    const basePop = populationOf(baseCity);
+    const totalPopulation = Math.round(citiesToMerge.reduce((sum, c) => sum + populationOf(c), 0));
 
-    await updateCity.mutateAsync({
-      countryId,
-      cityId: baseCity.id,
-      name: baseCity.name,
-      cityType: baseCity.properties.cityType as string,
-      coordinates: baseCity.coordinates!,
-      population: totalPopulation,
-      isNationalCapital: !!baseCity.properties.isNationalCapital,
-      isSubdivisionCapital: !!baseCity.properties.isSubdivisionCapital,
-    });
-
-    for (let i = 1; i < citiesToMerge.length; i++) {
-      await deleteCity.mutateAsync({
+    await runBatch(baseCity, "Merged cities (partial)", "merge cities", async (subActions) => {
+      await city.update.mutateAsync({
         countryId,
-        cityId: citiesToMerge[i]!.id,
+        cityId: baseCity.id,
+        population: totalPopulation,
       });
-    }
+      subActions.push(
+        sub("update", baseCity, { population: basePop }, { population: totalPopulation })
+      );
+      for (const c of citiesToMerge.slice(1)) {
+        await city.remove.mutateAsync({ countryId, cityId: c.id });
+        subActions.push(sub("delete", c, snapshot(c)));
+      }
+      clearMultiSelect();
+      return `Merged ${citiesToMerge.length} cities into "${baseCity.name}"`;
+    });
+  };
 
-    clearMultiSelect();
-    invalidateAllMapData();
-    debouncedRefetch();
-  }, [
-    countryId,
-    selectedIds,
-    allFeatures,
-    updateCity,
-    deleteCity,
-    clearMultiSelect,
-    invalidateAllMapData,
-    debouncedRefetch,
-  ]);
+  const splitCity = async (cityId: string) => {
+    if (!countryId) return;
+    const target = allFeatures.find((f) => f.id === cityId && f.type === "city");
+    if (!target || !target.coordinates) return;
 
-  const splitCity = useCallback(
-    async (cityId: string) => {
-      if (!countryId) return;
-      const city = allFeatures.find((f) => f.id === cityId && f.type === "city");
-      if (!city || !city.coordinates) return;
+    const name = target.name;
+    const [lng, lat] = target.coordinates;
+    const totalPop = populationOf(target);
+    const halvedPop = Math.round(totalPop / 2);
 
-      const name = city.name;
-      const [lng, lat] = city.coordinates;
-      const totalPop = Number(city.properties.population) || 0;
-      const halvedPop = Math.round(totalPop / 2);
-
-      await updateCity.mutateAsync({
+    await runBatch(target, `Split City "${name}" (partial)`, "split city", async (subActions) => {
+      await city.update.mutateAsync({
         countryId,
         cityId,
         name: `${name} A`,
-        cityType: city.properties.cityType as string,
-        coordinates: [lng, lat],
         population: halvedPop,
-        isNationalCapital: !!city.properties.isNationalCapital,
-        isSubdivisionCapital: !!city.properties.isSubdivisionCapital,
       });
-
-      await createCity.mutateAsync({
-        countryId,
+      subActions.push(
+        sub(
+          "update",
+          target,
+          { name, population: totalPop },
+          { name: `${name} A`, population: halvedPop }
+        )
+      );
+      const newCity = {
         name: `${name} B`,
-        cityType: city.properties.cityType as string,
-        coordinates: [lng + 0.05, lat + 0.05],
+        cityType: (target.properties.cityType as string) || "city",
+        coordinates: [lng + 0.05, lat + 0.05] as [number, number],
         population: halvedPop,
+        subdivisionId: (target.properties.subdivisionId as string | undefined) ?? undefined,
+      };
+      const res = await city.create.mutateAsync({
+        countryId,
+        ...newCity,
         isNationalCapital: false,
         isSubdivisionCapital: false,
-        subdivisionId: city.properties.subdivisionId as string | undefined,
       });
-
-      invalidateAllMapData();
-      debouncedRefetch();
-    },
-    [countryId, allFeatures, updateCity, createCity, invalidateAllMapData, debouncedRefetch]
-  );
-
-  const scaleSelectedCitiesPopulation = useCallback(
-    async (multiplier: number) => {
-      if (!countryId || selectedIds.size === 0) return;
-      const cities = allFeatures.filter((f) => selectedIds.has(f.id) && f.type === "city");
-      for (const city of cities) {
-        const cur = Number(city.properties.population) || 0;
-        const scaled = Math.max(1, Math.round(cur * multiplier));
-        await updateCity.mutateAsync({
-          countryId,
-          cityId: city.id,
-          name: city.name,
-          cityType: city.properties.cityType as string,
-          coordinates: city.coordinates!,
-          population: scaled,
-          isNationalCapital: !!city.properties.isNationalCapital,
-          isSubdivisionCapital: !!city.properties.isSubdivisionCapital,
-        });
-      }
-      invalidateAllMapData();
-      debouncedRefetch();
-    },
-    [countryId, selectedIds, allFeatures, updateCity, invalidateAllMapData, debouncedRefetch]
-  );
-
-  const rotateSelectedCities = useCallback(
-    async (angleDeg: number) => {
-      if (!countryId || selectedIds.size < 2) return;
-      const cities = allFeatures.filter(
-        (f) => selectedIds.has(f.id) && f.type === "city" && f.coordinates
+      subActions.push(
+        sub("create", { id: res.id, type: "city", name: newCity.name }, undefined, newCity)
       );
-      if (cities.length < 2) return;
+      return `Split City "${name}"`;
+    });
+  };
 
-      const pts = cities.map((c) => point(c.coordinates!));
-      const fc = featureCollection(pts);
-      const pivot = centroid(fc);
+  const scaleSelectedCitiesPopulation = async (multiplier: number) => {
+    if (!countryId || selectedIds.size === 0) return;
+    const cities = selectedOfType("city");
 
-      for (const city of cities) {
-        const pt = point(city.coordinates!);
-        const rotated = transformRotate(pt, angleDeg, { pivot });
+    await runBatch(
+      cities[0],
+      "Scaled city population (partial)",
+      "scale population",
+      async (subActions) => {
+        await runLimited(cities, 4, async (c) => {
+          const cur = populationOf(c);
+          const scaled = Math.max(1, Math.round(cur * multiplier));
+          await city.update.mutateAsync({ countryId, cityId: c.id, population: scaled });
+          subActions.push(sub("update", c, { population: cur }, { population: scaled }));
+        });
+        return `Scaled population of ${cities.length} cities ×${multiplier}`;
+      }
+    );
+  };
+
+  const rotateSelectedCities = async (angleDeg: number) => {
+    if (!countryId || selectedIds.size < 2) return;
+    const cities = selectedOfType("city", "coordinates");
+    if (cities.length < 2) return;
+
+    const pivot = centroid(featureCollection(cities.map((c) => point(c.coordinates!))));
+    await runBatch(cities[0], "Rotated cities (partial)", "rotate cities", async (subActions) => {
+      await runLimited(cities, 4, async (c) => {
+        const rotated = transformRotate(point(c.coordinates!), angleDeg, { pivot });
         const newCoords = rotated.geometry.coordinates as [number, number];
-
-        await updateCity.mutateAsync({
-          countryId,
-          cityId: city.id,
-          name: city.name,
-          cityType: city.properties.cityType as string,
-          coordinates: newCoords,
-          population: city.properties.population ? Number(city.properties.population) : undefined,
-          isNationalCapital: !!city.properties.isNationalCapital,
-          isSubdivisionCapital: !!city.properties.isSubdivisionCapital,
-        });
-      }
-      invalidateAllMapData();
-      debouncedRefetch();
-    },
-    [countryId, selectedIds, allFeatures, updateCity, invalidateAllMapData, debouncedRefetch]
-  );
-
-  const pathfinderOperation = useCallback(
-    async (op: "union" | "subtract" | "intersect") => {
-      if (!countryId || selectedIds.size < 2) return;
-      const subs = allFeatures.filter(
-        (f) => selectedIds.has(f.id) && f.type === "subdivision" && f.geometry
-      );
-      if (subs.length < 2) return;
-
-      let resultGeom: PolyFeature | null = null;
-      const baseSub = subs[0]!;
-
-      for (let i = 0; i < subs.length; i++) {
-        const sub = subs[i]!;
-        const feat: PolyFeature = {
-          type: "Feature",
-          geometry: sub.geometry as Polygon | MultiPolygon,
-          properties: {},
-        };
-        if (!resultGeom) {
-          resultGeom = feat;
-        } else {
-          try {
-            if (op === "union") {
-              const res = union(featureCollection([resultGeom, feat]));
-              if (res) resultGeom = res as PolyFeature;
-            } else if (op === "subtract") {
-              const res = difference(featureCollection([resultGeom, feat]));
-              if (res) resultGeom = res as PolyFeature;
-            } else if (op === "intersect") {
-              const res = intersect(featureCollection([resultGeom, feat]));
-              if (res) resultGeom = res as PolyFeature;
-            }
-          } catch (e) {
-            console.warn(`Pathfinder ${op} failed:`, e);
-          }
-        }
-      }
-
-      if (!resultGeom) return;
-
-      const cleaned = cleanPolygonGeometry(resultGeom.geometry);
-      if (!cleaned) return;
-
-      await updateSubdivision.mutateAsync({
-        countryId,
-        subdivisionId: baseSub.id,
-        name: baseSub.name,
-        geometry: cleaned,
-        type: baseSub.properties.type as string,
-        level: Number(baseSub.properties.level) || 1,
+        await city.update.mutateAsync({ countryId, cityId: c.id, coordinates: newCoords });
+        subActions.push(
+          sub("update", c, { coordinates: c.coordinates }, { coordinates: newCoords })
+        );
       });
+      return `Rotated ${cities.length} cities ${angleDeg}°`;
+    });
+  };
 
-      for (let i = 1; i < subs.length; i++) {
-        await deleteSubdivision.mutateAsync({
-          countryId,
-          subdivisionId: subs[i]!.id,
-        });
-      }
+  const pathfinderOperation = async (op: "union" | "subtract" | "intersect") => {
+    if (!countryId || selectedIds.size < 2) return;
+    const subs = selectedOfType("subdivision", "geometry");
+    if (subs.length < 2) return;
 
-      clearMultiSelect();
-      invalidateAllMapData();
-      debouncedRefetch();
-    },
-    [
-      countryId,
-      selectedIds,
-      allFeatures,
-      updateSubdivision,
-      deleteSubdivision,
-      clearMultiSelect,
-      invalidateAllMapData,
-      debouncedRefetch,
-    ]
-  );
+    const combine = { union, subtract: difference, intersect }[op];
+    const baseSub = subs[0]!;
+    let resultGeom: PolyFeature | null = null;
 
-  const mergeSelectedSubdivisions = useCallback(async () => {
-    await pathfinderOperation("union");
-  }, [pathfinderOperation]);
-
-  const executeSplitSubdivision = useCallback(
-    async (subdivisionId: string, lineCoords: [number, number][]) => {
-      if (!countryId || lineCoords.length < 2) return;
-      const sub = allFeatures.find((f) => f.id === subdivisionId && f.type === "subdivision");
-      if (!sub || !sub.geometry) return;
-
-      const pieces = splitPolygonByLine(sub.geometry, lineCoords);
-      if (!pieces || pieces.length < 2) return;
-
-      const p1 = cleanPolygonGeometry(pieces[0]!);
-      const p2 = cleanPolygonGeometry(pieces[1]!);
-      if (!p1 || !p2) return;
-
-      await updateSubdivision.mutateAsync({
-        countryId,
-        subdivisionId: sub.id,
-        name: `${sub.name} North`,
-        geometry: p1,
-        type: sub.properties.type as string,
-        level: Number(sub.properties.level) || 1,
-      });
-
-      await createSubdivision.mutateAsync({
-        countryId,
-        name: `${sub.name} South`,
-        geometry: p2,
-        type: sub.properties.type as string,
-        level: Number(sub.properties.level) || 1,
-      });
-
-      invalidateAllMapData();
-      debouncedRefetch();
-    },
-    [
-      countryId,
-      allFeatures,
-      updateSubdivision,
-      createSubdivision,
-      invalidateAllMapData,
-      debouncedRefetch,
-    ]
-  );
-
-  const applyGeometryTransformation = useCallback(
-    async (
-      subdivisionId: string,
-      transform: { type: "rotate" | "scale"; factor: number; pivot?: [number, number] }
-    ) => {
-      if (!countryId) return;
-      const sub = allFeatures.find((f) => f.id === subdivisionId && f.type === "subdivision");
-      if (!sub || !sub.geometry) return;
-
+    for (const s of subs) {
       const feat: PolyFeature = {
         type: "Feature",
-        geometry: sub.geometry as Polygon | MultiPolygon,
+        geometry: s.geometry as Polygon | MultiPolygon,
         properties: {},
       };
-      let transformed: PolyFeature | null = null;
-
-      if (transform.type === "rotate") {
-        transformed = transformRotate(feat, transform.factor, {
-          pivot: transform.pivot ? point(transform.pivot) : undefined,
-        }) as PolyFeature;
-      } else if (transform.type === "scale") {
-        transformed = transformScale(feat, transform.factor, {
-          origin: transform.pivot ? point(transform.pivot) : undefined,
-        }) as PolyFeature;
+      if (!resultGeom) {
+        resultGeom = feat;
+        continue;
       }
+      try {
+        const res = combine(featureCollection([resultGeom, feat]));
+        if (res) resultGeom = res as PolyFeature;
+      } catch (e) {
+        console.warn(`Pathfinder ${op} failed:`, e);
+      }
+    }
 
-      if (!transformed?.geometry) return;
-      const cleaned = cleanPolygonGeometry(transformed.geometry);
-      if (!cleaned) return;
+    if (!resultGeom) return;
+    const cleaned = cleanPolygonGeometry(resultGeom.geometry);
+    if (!cleaned) {
+      setMutationError?.(`The ${op} produced an empty shape — nothing was changed.`);
+      return;
+    }
 
-      await updateSubdivision.mutateAsync({
+    await runBatch(baseSub, `Region ${op} (partial)`, `${op} regions`, async (subActions) => {
+      await subdivision.update.mutateAsync({
         countryId,
-        subdivisionId: sub.id,
-        name: sub.name,
-        geometry: cleaned,
-        type: sub.properties.type as string,
-        level: Number(sub.properties.level) || 1,
+        subdivisionId: baseSub.id,
+        geometry: cleaned as unknown as Record<string, unknown>,
       });
+      subActions.push(
+        sub("update", baseSub, { geometry: baseSub.geometry }, { geometry: cleaned })
+      );
+      // Union consumes the other regions; subtract/intersect only reshape the first.
+      if (op === "union") {
+        for (const s of subs.slice(1)) {
+          await subdivision.remove.mutateAsync({ countryId, subdivisionId: s.id });
+          subActions.push(sub("delete", s, snapshot(s)));
+        }
+      }
+      clearMultiSelect();
+      const verb = { union: "Merged", subtract: "Subtracted", intersect: "Intersected" }[op];
+      return `${verb} ${subs.length} regions into "${baseSub.name}"`;
+    });
+  };
 
-      invalidateAllMapData();
-      debouncedRefetch();
-    },
-    [countryId, allFeatures, updateSubdivision, invalidateAllMapData, debouncedRefetch]
-  );
+  /** Splits a region along a drawn line. Returns true when the split was applied. */
+  const executeSplitSubdivision = async (
+    subdivisionId: string,
+    lineCoords: [number, number][]
+  ): Promise<boolean> => {
+    if (!countryId) return false;
+    if (lineCoords.length < 2) {
+      setMutationError?.("Draw a split line with at least two points across the region.");
+      return false;
+    }
+    const s = allFeatures.find((f) => f.id === subdivisionId && f.type === "subdivision");
+    if (!s || !s.geometry) return false;
+
+    const pieces = splitPolygonByLine(s.geometry, lineCoords);
+    if (!pieces || pieces.length < 2) {
+      setMutationError?.("The split line must cross the region completely (edge to edge).");
+      return false;
+    }
+    const p1 = cleanPolygonGeometry(pieces[0]!);
+    const p2 = cleanPolygonGeometry(pieces[1]!);
+    if (!p1 || !p2) {
+      setMutationError?.("The split produced an empty piece — try a different line.");
+      return false;
+    }
+
+    const type = (s.properties.type as string) || "region";
+    const level = Number(s.properties.level) || 1;
+    return runBatch(s, `Split Region "${s.name}" (partial)`, "split region", async (subActions) => {
+      await subdivision.update.mutateAsync({
+        countryId,
+        subdivisionId: s.id,
+        name: `${s.name} A`,
+        geometry: p1 as unknown as Record<string, unknown>,
+      });
+      subActions.push(
+        sub(
+          "update",
+          s,
+          { name: s.name, geometry: s.geometry },
+          { name: `${s.name} A`, geometry: p1 }
+        )
+      );
+      const newSub = { name: `${s.name} B`, type, level, geometry: p2 };
+      const res = await subdivision.create.mutateAsync({
+        countryId,
+        ...newSub,
+        geometry: p2 as unknown as Record<string, unknown>,
+      });
+      subActions.push(
+        sub("create", { id: res.id, type: "subdivision", name: newSub.name }, undefined, newSub)
+      );
+      return `Split Region "${s.name}"`;
+    });
+  };
+
+  const applyGeometryTransformation = async (
+    subdivisionId: string,
+    transform: { type: "rotate" | "scale"; factor: number; pivot?: [number, number] }
+  ) => {
+    if (!countryId) return;
+    const s = allFeatures.find((f) => f.id === subdivisionId && f.type === "subdivision");
+    if (!s || !s.geometry) return;
+
+    const feat: PolyFeature = {
+      type: "Feature",
+      geometry: s.geometry as Polygon | MultiPolygon,
+      properties: {},
+    };
+    const pivot = transform.pivot ? point(transform.pivot) : undefined;
+    const transformed = (
+      transform.type === "rotate"
+        ? transformRotate(feat, transform.factor, { pivot })
+        : transformScale(feat, transform.factor, { origin: pivot })
+    ) as PolyFeature;
+
+    if (!transformed?.geometry) return;
+    const cleaned = cleanPolygonGeometry(transformed.geometry);
+    if (!cleaned) return;
+
+    try {
+      await subdivision.update.mutateAsync({
+        countryId,
+        subdivisionId: s.id,
+        geometry: cleaned as unknown as Record<string, unknown>,
+      });
+      finish(
+        `${transform.type === "rotate" ? "Rotated" : "Scaled"} Region "${s.name}"`,
+        [sub("update", s, { geometry: s.geometry }, { geometry: cleaned })],
+        s
+      );
+    } catch (e) {
+      fail(`${transform.type} region`, e);
+    }
+  };
 
   return {
     mergeSelectedCities,
     splitCity,
     scaleSelectedCitiesPopulation,
     rotateSelectedCities,
-    mergeSelectedSubdivisions,
+    mergeSelectedSubdivisions: () => pathfinderOperation("union"),
     pathfinderOperation,
     executeSplitSubdivision,
     applyGeometryTransformation,

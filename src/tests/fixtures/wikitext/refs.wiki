@@ -1,0 +1,10 @@
+Vesperia exports wine.<ref name="a">Trade Ministry report, 1998.</ref> It also exports grain.<ref name=a /> Timber follows.<ref name="b" group="note">Only softwood.</ref>
+
+Another claim.<ref>
+A multi-line reference
+with [[Vilena|a link]] and a <br /> break.
+</ref>
+
+== Notes ==
+<references group="note" />
+<references />

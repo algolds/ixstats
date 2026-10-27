@@ -2,7 +2,7 @@ import { type Metadata } from "next";
 import { DocumentPage } from "~/components/documents/DocumentPage";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — IxStates",
+  title: "Terms of service | IxStates",
   description:
     "Terms of Service and legal agreement governing the IxStates platform and Alpaia Holdings services.",
 };

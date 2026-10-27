@@ -1,20 +1,16 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import { TextReveal, FadeIn } from "~/components/ui/text-reveal";
 import { formatPopulation } from "~/lib/utils";
-import { Coins, Eye, Globe, Group as UsersIcon, Star, StatUp as TrendingUp } from "iconoir-react";
+import { Coins, Eye, Globe, Group as UsersIcon, StatUp as TrendingUp } from "iconoir-react";
 import { ExpandedCardContent } from "./ExpandedCardContent";
-import { withBasePath } from "~/lib/base-path";
+import { assetUrl } from "~/lib/base-path";
 
-export type Brand<T, B extends string> = T & { readonly __brand: B };
-export type CountryId = Brand<string, "CountryId">;
-export type CountrySlug = Brand<string, "CountrySlug">;
-
-export type EconomicTier =
+type EconomicTier =
   | "Extravagant"
   | "Very Strong"
   | "Strong"
@@ -24,6 +20,11 @@ export type EconomicTier =
   | "Impoverished"
   | "Unknown"
   | (string & {});
+
+function growthTrend(rate: number): "up" | "down" | "stable" {
+  if (rate > 0) return "up";
+  return rate < 0 ? "down" : "stable";
+}
 
 export interface CountryCardData {
   id: string;
@@ -37,7 +38,8 @@ export interface CountryCardData {
   landArea?: number;
   populationDensity?: number;
   gdpDensity?: number;
-  adjustedGdpGrowth?: number;
+  /** Realised GDP growth as a decimal (0.021 = 2.1%). */
+  gdpGrowth?: number;
   populationGrowthRate?: number;
   flagUrl?: string;
   // Identity & Governance
@@ -76,7 +78,172 @@ interface CountryFocusCardProps {
   onCountryClick?: (countryId: string, countryName: string) => void;
   viewerCountryId?: string;
   size?: "default" | "small";
+  /** The card's top corner while it is collapsed (a realm's claim badge and actions); clicks there never toggle the card. */
+  corner?: React.ReactNode;
 }
+
+function QuickStat({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="text-caption flex items-center justify-between text-white/90">
+      <div className="flex items-center gap-2">
+        <Icon className="h-3.5 w-3.5 text-white/70" />
+        <span>{label}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/** Population, GDP and growth figures revealed while the card is hovered. */
+function HoverStats({ country }: { country: CountryCardData }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 15 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="rounded-row mt-3 space-y-2 bg-black/60 p-4"
+    >
+      <QuickStat icon={UsersIcon} label="Population">
+        <NumberFlowDisplay
+          value={country.currentPopulation}
+          format="population"
+          className="font-semibold tabular-nums"
+        />
+      </QuickStat>
+      <QuickStat icon={Coins} label="GDP per capita">
+        <NumberFlowDisplay
+          value={country.currentGdpPerCapita}
+          format="currency"
+          className="font-semibold tabular-nums"
+        />
+      </QuickStat>
+      <QuickStat icon={Globe} label="Total GDP">
+        <NumberFlowDisplay
+          value={country.currentTotalGdp}
+          format="currency"
+          decimalPlaces={1}
+          className="font-semibold tabular-nums"
+        />
+      </QuickStat>
+      {country.gdpGrowth != null && (
+        <QuickStat icon={TrendingUp} label="Growth rate">
+          <NumberFlowDisplay
+            value={country.gdpGrowth * 100}
+            format="percentage"
+            decimalPlaces={1}
+            trend={growthTrend(country.gdpGrowth)}
+            className="font-semibold tabular-nums"
+          />
+        </QuickStat>
+      )}
+    </motion.div>
+  );
+}
+
+function CardOverlay({
+  country,
+  isHovered,
+  isExpanded,
+  onVisit,
+  onOpenDossier,
+}: {
+  country: CountryCardData;
+  isHovered: boolean;
+  isExpanded: boolean;
+  onVisit: (e: React.MouseEvent) => void;
+  onOpenDossier: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "absolute inset-0 flex flex-col justify-end p-5 transition-opacity duration-200 md:p-6",
+        isExpanded && "pointer-events-none opacity-0"
+      )}
+    >
+      {/* Basic Info (Always Visible) */}
+      <div className="space-y-2">
+        <div>
+          <h3 className="text-title-3 sm:text-title-2 md:text-title-1 text-white">
+            {country.name}
+          </h3>
+        </div>
+
+        <div className="text-caption sm:text-body flex items-center gap-2 text-white/90">
+          <Globe className="h-3.5 w-3.5 shrink-0 opacity-80" />
+          <span>{country.economicTier}</span>
+          <span className="opacity-60">•</span>
+          <span>{formatPopulation(country.currentPopulation)}</span>
+        </div>
+
+        {/* Quick Stats (revealed on hover) */}
+        <AnimatePresence>
+          {isHovered && !isExpanded && <HoverStats country={country} />}
+        </AnimatePresence>
+
+        {/* Hover Action Buttons */}
+        <AnimatePresence>
+          {isHovered && !isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="mt-3 flex gap-2"
+            >
+              <Button size="sm" className="flex-1" onClick={onVisit}>
+                <Eye className="h-3.5 w-3.5" />
+                View
+              </Button>
+              <Button size="sm" variant="secondary" onClick={onOpenDossier}>
+                Dossier
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+function ExpandedHeader({ country, onClose }: { country: CountryCardData; onClose: () => void }) {
+  return (
+    <div className="border-separator bg-surface relative flex min-h-16 shrink-0 items-center justify-between border-b px-4 py-3 sm:px-5">
+      <div className="flex items-center gap-3">
+        {country.flagUrl && (
+          <div className="border-separator rounded-control-sm relative h-7 w-10 shrink-0 overflow-hidden border sm:h-8 sm:w-11">
+            <img
+              src={assetUrl(country.flagUrl) ?? undefined}
+              alt={`${country.name} flag`}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        )}
+        <div>
+          <h3 className="text-label text-title-3 sm:text-title-3">{country.name}</h3>
+          <p className="text-label-secondary text-caption">
+            {country.economicTier} • {country.continent || country.region || "Global"}
+          </p>
+        </div>
+      </div>
+      <Button size="sm" variant="outline" onClick={onClose}>
+        Close
+      </Button>
+    </div>
+  );
+}
+
+/** Cards other than the expanded or hovered one fade back. */
+const dimOpacity = (otherExpanded: boolean, otherHovered: boolean) =>
+  otherExpanded ? 0.6 : otherHovered ? 0.85 : 1;
 
 export const CountryFocusCard = React.memo<CountryFocusCardProps>(
   ({
@@ -94,20 +261,19 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
     onExpandToggle,
     onCountryClick,
     viewerCountryId,
+    corner,
   }) => {
     const isHovered = propIsHovered ?? hovered === index;
     const isExpanded = propIsExpanded ?? expanded === index;
-    const isOtherHovered = propIsOtherHovered ?? (hovered !== null && hovered !== index);
-    const isOtherExpanded = propIsOtherExpanded ?? (expanded !== null && expanded !== index);
+    const dimmed = dimOpacity(
+      propIsOtherExpanded ?? (expanded !== null && expanded !== index),
+      propIsOtherHovered ?? (hovered !== null && hovered !== index)
+    );
     const isOwnCountry = !!viewerCountryId && viewerCountryId === country.id;
 
-    const handleCardClick = () => {
-      if (onExpandToggle) {
-        onExpandToggle(isExpanded ? null : index);
-      } else if (setExpanded) {
-        setExpanded(isExpanded ? null : index);
-      }
-    };
+    const setHover = onHoverToggle ?? setHovered;
+    const toggleExpanded = onExpandToggle ?? setExpanded;
+    const handleCardClick = () => toggleExpanded?.(isExpanded ? null : index);
 
     const handleCountryVisit = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -117,195 +283,65 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
     return (
       <motion.div
         className={cn(
-          "country-focus-card relative cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+          "country-focus-card relative cursor-pointer",
           isHovered ? "z-20" : isExpanded ? "z-30" : "z-10"
         )}
-        onMouseEnter={() => {
-          if (onHoverToggle) {
-            onHoverToggle(index);
-          } else {
-            setHovered?.(index);
-          }
-        }}
-        onMouseLeave={() => {
-          if (onHoverToggle) {
-            onHoverToggle(null);
-          } else {
-            setHovered?.(null);
-          }
-        }}
+        onMouseEnter={() => setHover?.(index)}
+        onMouseLeave={() => setHover?.(null)}
         onClick={handleCardClick}
-        animate={{
-          scale: isExpanded ? 1.02 : isHovered ? 1.015 : isOtherHovered ? 0.98 : 1,
-          opacity: isOtherExpanded ? 0.6 : isOtherHovered ? 0.85 : 1,
-          y: isExpanded ? -4 : isHovered ? -6 : 0,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 380,
-          damping: 28,
-        }}
+        animate={{ opacity: dimmed }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
       >
         <div
           className={cn(
-            "facet-floating facet-refraction relative overflow-hidden rounded-2xl border border-white/15 bg-background/60 shadow-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+            "border-separator bg-surface rounded-card shadow-card relative overflow-hidden border transition-[border-color,box-shadow] duration-200",
             isExpanded
-              ? "flex h-auto flex-col border-white/25 shadow-[0_25px_60px_rgba(0,0,0,0.5)]"
+              ? "shadow-floating flex h-auto flex-col"
               : isHovered
-                ? "h-60 border-white/30 shadow-2xl md:h-96"
+                ? "border-ring/40 shadow-card h-60 md:h-96"
                 : "h-60 md:h-96"
           )}
         >
           {/* Flag Background — blurred when expanded for readability */}
           {country.flagUrl ? (
             <img
-              src={
-                country.flagUrl.startsWith("http://") ||
-                country.flagUrl.startsWith("https://") ||
-                country.flagUrl.startsWith("data:") ||
-                country.flagUrl.startsWith("blob:")
-                  ? country.flagUrl
-                  : withBasePath(country.flagUrl)
-              }
+              src={assetUrl(country.flagUrl) ?? undefined}
               alt={`${country.name} flag`}
               className={cn(
-                "absolute inset-0 h-full w-full object-cover transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500",
-                isExpanded ? "scale-110 blur-md" : isHovered ? "scale-105" : "scale-100"
+                "absolute inset-0 h-full w-full object-cover transition-transform duration-200",
+                isHovered && !isExpanded ? "scale-105" : "scale-100"
               )}
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-slate-900/60" />
+            <div className="bg-fill-3 absolute inset-0" />
           )}
 
           {/* Permanent Ambient Contrast Scrim */}
           <div
             className={cn(
-              "pointer-events-none absolute inset-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+              "pointer-events-none absolute inset-0 transition-opacity duration-200",
+              // Legibility scrim for the white type over the flag photo; opaque card when expanded.
               isExpanded
-                ? "bg-card/95 backdrop-blur-xl dark:bg-slate-950/95"
+                ? "bg-surface"
                 : "bg-gradient-to-t from-black/95 via-black/50 to-transparent",
               isHovered && !isExpanded ? "opacity-100" : "opacity-90"
             )}
           />
 
-          {/* Content Overlay — always legible; stats and actions reveal on hover */}
-          <div
-            className={cn(
-              "absolute inset-0 flex flex-col justify-end p-5 md:p-6 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
-              isExpanded && "pointer-events-none opacity-0"
-            )}
-          >
-            {/* Basic Info (Always Visible) */}
-            <div className="space-y-2">
-              <div>
-                <h3 className="text-lg font-bold tracking-tight text-white drop-shadow-md sm:text-xl md:text-2xl">
-                  {country.name}
-                </h3>
-              </div>
-
-              <div className="flex items-center gap-2 text-xs font-semibold text-white/90 drop-shadow-sm sm:text-sm">
-                <Globe className="h-3.5 w-3.5 shrink-0 opacity-80" />
-                <span>{country.economicTier}</span>
-                <span className="opacity-60">•</span>
-                <span>{formatPopulation(country.currentPopulation)}</span>
-              </div>
-
-              {/* Quick Stats (revealed on hover) */}
-              <AnimatePresence>
-                {isHovered && !isExpanded && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 15 }}
-                    transition={{ duration: 0.25, ease: "easeOut" }}
-                    className="mt-3 space-y-2.5 rounded-xl border border-white/15 bg-black/40 p-3.5 backdrop-blur-md"
-                  >
-                    <div className="flex items-center justify-between text-xs font-medium text-white/90">
-                      <div className="flex items-center gap-2">
-                        <UsersIcon className="h-3.5 w-3.5 text-blue-400" />
-                        <span>Population</span>
-                      </div>
-                      <NumberFlowDisplay
-                        value={country.currentPopulation}
-                        format="population"
-                        className="font-semibold tabular-nums"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs font-medium text-white/90">
-                      <div className="flex items-center gap-2">
-                        <Coins className="h-3.5 w-3.5 text-emerald-400" />
-                        <span>GDP per Capita</span>
-                      </div>
-                      <NumberFlowDisplay
-                        value={country.currentGdpPerCapita}
-                        format="currency"
-                        className="font-semibold tabular-nums"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs font-medium text-white/90">
-                      <div className="flex items-center gap-2">
-                        <Globe className="h-3.5 w-3.5 text-indigo-400" />
-                        <span>Total GDP</span>
-                      </div>
-                      <NumberFlowDisplay
-                        value={country.currentTotalGdp}
-                        format="currency"
-                        decimalPlaces={1}
-                        className="font-semibold tabular-nums"
-                      />
-                    </div>
-
-                    {country.adjustedGdpGrowth && (
-                      <div className="flex items-center justify-between text-xs font-medium text-white/90">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
-                          <span>Growth Rate</span>
-                        </div>
-                        <NumberFlowDisplay
-                          value={country.adjustedGdpGrowth * 100}
-                          format="percentage"
-                          decimalPlaces={1}
-                          trend="up"
-                          className="font-semibold text-emerald-400 tabular-nums"
-                        />
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Hover Action Buttons */}
-              <AnimatePresence>
-                {isHovered && !isExpanded && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="mt-3 flex gap-2"
-                  >
-                    <button
-                      onClick={handleCountryVisit}
-                      data-cuelume-press="tick"
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white/20 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/30 active:scale-95"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      <span>View</span>
-                    </button>
-                    <button
-                      onClick={handleCardClick}
-                      data-cuelume-press="tick"
-                      className="flex items-center justify-center rounded-xl bg-white/10 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20 active:scale-95"
-                    >
-                      <span>Dossier</span>
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+          {corner && !isExpanded && (
+            // Stops clicks (including from a dialog the corner opens, which bubble through React) toggling the card.
+            <div className="absolute top-3 left-3 z-10" onClick={(e) => e.stopPropagation()}>
+              {corner}
             </div>
-          </div>
+          )}
+
+          <CardOverlay
+            country={country}
+            isHovered={isHovered}
+            isExpanded={isExpanded}
+            onVisit={handleCountryVisit}
+            onOpenDossier={handleCardClick}
+          />
 
           {/* Expanded: flag peek spacer + content */}
           <AnimatePresence>
@@ -314,45 +350,10 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className="relative flex w-full flex-col"
               >
-                {/* Expanded Header with Flag, Name, and Close Action */}
-                <div className="relative flex min-h-16 shrink-0 items-center justify-between border-b border-border/80 bg-card/80 px-4 py-3 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/60 sm:px-5">
-                  <div className="flex items-center gap-3">
-                    {country.flagUrl && (
-                      <div className="relative h-7 w-10 shrink-0 overflow-hidden rounded-md border border-border/60 shadow-xs sm:h-8 sm:w-11">
-                        <img
-                          src={
-                            country.flagUrl.startsWith("http://") ||
-                            country.flagUrl.startsWith("https://") ||
-                            country.flagUrl.startsWith("data:") ||
-                            country.flagUrl.startsWith("blob:")
-                              ? country.flagUrl
-                              : withBasePath(country.flagUrl)
-                          }
-                          alt={`${country.name} flag`}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <div>
-                      <h3 className="text-base font-bold tracking-tight text-foreground sm:text-lg">
-                        {country.name}
-                      </h3>
-                      <p className="text-xs font-medium text-muted-foreground">
-                        {country.economicTier} • {country.continent || country.region || "Global"}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleCardClick}
-                    data-cuelume-press="tick"
-                    className="rounded-lg border border-border/80 bg-muted/60 px-2.5 py-1 text-xs font-semibold text-foreground backdrop-blur-md transition-colors hover:bg-muted active:scale-95"
-                  >
-                    Close
-                  </button>
-                </div>
+                <ExpandedHeader country={country} onClose={handleCardClick} />
                 <ExpandedCardContent
                   country={country}
                   viewerCountryId={viewerCountryId}

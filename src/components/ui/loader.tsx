@@ -26,11 +26,7 @@ export function IOSActivityIndicator({
       {Array.from({ length: 12 }).map((_, i) => (
         <motion.div
           key={i}
-          className={cn(
-            "absolute rounded-full bg-neutral-600 dark:bg-neutral-300",
-            spokeWidth,
-            spokeHeight
-          )}
+          className={cn("bg-label-secondary absolute rounded-full", spokeWidth, spokeHeight)}
           style={{
             transform: `rotate(${i * 30}deg) translateY(${offset}px)`,
             transformOrigin: "center center",
@@ -76,12 +72,11 @@ export const GlobalLoader = ({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="flex flex-col items-center justify-center space-y-4 rounded-2xl border border-white/20 bg-white/40 p-6 shadow-xl backdrop-blur-md dark:border-neutral-800/30 dark:bg-neutral-900/40"
+        role="status"
+        className="bg-surface border-separator rounded-card shadow-card flex flex-col items-center justify-center space-y-4 border p-6"
       >
         <IOSActivityIndicator size="md" />
-        <span className="text-sm font-medium tracking-wide text-neutral-600 dark:text-neutral-300">
-          {message}
-        </span>
+        <span className="text-subhead text-label-secondary font-medium">{message}</span>
       </motion.div>
     </div>
   );

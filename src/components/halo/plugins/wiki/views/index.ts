@@ -1,3 +1,3 @@
-export { WikiView, type WikiViewProps } from "./WikiView";
-export { WikiProfileView, type WikiProfileViewProps } from "./WikiProfileView";
-export { WikiNarratorView, type WikiNarratorViewProps } from "./WikiNarratorView";
+export { WikiView } from "./WikiView";
+export { WikiProfileView } from "./WikiProfileView";
+export { WikiNarratorView } from "./WikiNarratorView";

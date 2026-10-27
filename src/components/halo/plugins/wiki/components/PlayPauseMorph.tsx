@@ -7,7 +7,7 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 
-export interface PlayPauseMorphProps {
+interface PlayPauseMorphProps {
   /** Whether currently in Playing state (shows Pause glyph) or Paused state (shows Play glyph) */
   isPlaying: boolean;
   /** Size in pixels (width and height) */

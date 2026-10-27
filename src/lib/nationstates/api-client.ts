@@ -38,7 +38,7 @@ interface NSDeckResponse {
 /**
  * NationStates API Client
  */
-export class NSApiClient {
+class NSApiClient {
   private readonly baseUrl = "https://www.nationstates.net/cgi-bin/api.cgi";
   private readonly userAgent = "IxStats/1.0 (https://ixwiki.com; contact: admin@ixwiki.com)";
 

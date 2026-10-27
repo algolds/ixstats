@@ -1,40 +1,41 @@
 ---
 title: Trade & Commerce
-description: Learn how international trade shapes your nation's economy and how to strengthen your position on the global stage.
-badge: Economy & Finances
+description: Trade figures, tariffs, trade agreements and transport routes, and what each one actually affects.
+badge: Economy & Government
+prevHref: /help/economy/tax-system
+prevLabel: Taxes & Revenue
+nextHref: /help/economy/modeling
+nextLabel: Economic Modeling
 ---
 
-## How Trade Works
+## Where trade lives
 
-Every nation in IxStats participates in a global trade network. Your country imports goods it needs and exports goods it produces efficiently. The balance between these two flows — your **trade balance** — is one of the most important indicators of economic health.
+Trade shows up in three places: the **Trade & Commerce** tab of [Economy & Budget](/help/mycountry/economy), trade agreements in [Diplomacy](/help/mycountry/diplomacy), and transport routes on [the map](/help/mycountry/map-editor). Trade is one of the less developed parts of the simulation, so it's worth knowing which parts change your nation and which are planning tools.
 
-- **Trade surplus** means your exports exceed your imports, bringing wealth into your economy.
-- **Trade deficit** means you are spending more on imports than you earn from exports, which can weaken your currency and increase debt over time.
-- Your exports, imports, and overall balance are all tracked automatically as your economy evolves.
+## The Trade & Commerce tab
 
-## Where to View Your Trade Data
+- **Trade summary.** Exports, imports and the trade balance, worked out from the exports and imports (as a share of GDP) you recorded for your nation, applied to your current GDP. If none are recorded they show "—". These are not a record of real trade with other nations.
+- **Sector Tariff Planner.** Sliders for tariffs by sector, with the planner's average tariff and the tariff revenue it would raise on your recorded imports. The planner starts from your nation's recorded sectors, each at your saved import tariff and weighted by its share of GDP. You can add sectors to try ideas out.
+- **Bilateral Trade Agreements & Partners.** The nations you have relations with. A **Trade treaty** badge means a trade treaty is recorded with that nation; otherwise **Propose FTA** opens their country page so you can propose one (see below).
 
-> **Finding Trade Information**
->
-> - **MyCountry → Economy & Budget → Trade & Commerce** — View your exports, imports, and trade balance, set sector tariff schedules, and track your free trade pacts.
-> - **ThinkPages** — Share trade strategy posts with the community using the #trade tag to document your decisions and get feedback.
+> [!WARNING]
+> **The Sector Tariff Planner isn't saved.** It's marked **Not saved** in the tab: use it to try out a tariff schedule. It resets when you leave the page and doesn't change your economy. The tariff that is saved for your nation is the **Import tariff** in [Taxes](/help/economy/tax-system).
 
-## What Affects Your Trade Balance
+## Trade agreements
 
-- **Diplomatic relationships** — Nations with strong diplomatic ties enjoy preferential trade terms. Establishing embassies and maintaining good relations with key partners opens the door to better deals and increased trade volume.
-- **Economic policies** — Tax incentives, tariffs, and infrastructure investment directly influence which sectors thrive and how competitive your exports are on the world market.
-- **Industrial strength** — A diversified economy with strong production sectors generates more valuable exports. Invest in key industries to shift your trade balance in your favor.
-- **Global events** — Crises, sanctions, and shifts in the world economy can disrupt trade routes and change demand for your goods overnight.
+A free trade agreement is a diplomatic proposal:
 
-## How to Improve Your Trade Position
+1. Open the other nation's profile in [Explore](/countries) and choose **Country Actions**.
+2. Propose a **free trade agreement**. It goes to their Diplomacy Inbox.
+3. If they accept, it becomes an active agreement between you. Unanswered proposals expire after 14 real days.
 
-- **Strengthen diplomatic ties** — Establish embassies and build alliances with major trading partners to unlock trade bonuses and reduce barriers.
-- **Invest in infrastructure** — Better infrastructure lowers the cost of moving goods, making your exports more competitive globally.
-- **Adjust your tax policy** — Offer incentives to high-export industries or adjust tariffs to protect vulnerable domestic sectors while encouraging growth.
-- **Monitor and adapt** — Keep an eye on your trade data in the Trade & Commerce tab and respond quickly when deficits emerge or new opportunities arise.
+**Trade embargoes** and **sanctions** are made the same way but take effect at once, and count against the target's Diplomatic score.
 
-> **Related Topics**
->
-> - [Embassies](/help/diplomacy/embassies) — Discover how embassy networks strengthen your trading relationships.
-> - [Economic Tiers](/help/economy/tiers) — see how your economy climbs from one stage to the next.
-> - [Economic Modeling](/help/economy/modeling) — Explore how supply-side factors and projections affect trade outcomes.
+## Transport routes
+
+Roads, rail and sea routes you draw (or generate) in the [map editor](/help/mycountry/map-editor) feed a small modifier into your economy. Sea routes take currents and wind into account for travel time.
+
+## Tips
+
+- If you want trade to shape your story, record agreements and routes; those are saved and visible to others.
+- Keep the import tariff in the Taxes tab in line with the story you tell: it's the tariff figure that's stored for your nation.

@@ -3,4 +3,4 @@
  * (Consolidated in ~/types/ixstats)
  */
 
-export type { TimeRange, IxTimeDate } from "./ixstats";
+export type { TimeRange } from "./ixstats";

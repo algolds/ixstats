@@ -79,7 +79,7 @@ export function teamWageBill(
     .reduce((sum, p) => sum + playerWage(p.ratings), 0);
 }
 
-export const careerStageMultiplier: Record<string, number> = {
+const careerStageMultiplier: Record<string, number> = {
   rookie: 0.7,
   developing: 0.85,
   prime: 1.0,

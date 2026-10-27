@@ -4,10 +4,14 @@
 
 import type { EconomicTier, PopulationTier } from "~/types/ixstats";
 
-export interface TierInfo {
+/** The `Badge` variant a membership tier renders with. */
+type TierBadgeVariant = "warning" | "default";
+
+interface TierInfo {
   label: string;
   isPremium: boolean;
-  badgeClass: string;
+  /** Render with `<Badge variant={badgeVariant}>`. */
+  badgeVariant: TierBadgeVariant;
 }
 
 export function formatMembershipTier(tier?: string | null): TierInfo {
@@ -15,7 +19,7 @@ export function formatMembershipTier(tier?: string | null): TierInfo {
     return {
       label: "Citizen",
       isPremium: false,
-      badgeClass: "border-border/60 bg-muted/60 text-muted-foreground",
+      badgeVariant: "default",
     };
   }
 
@@ -27,7 +31,7 @@ export function formatMembershipTier(tier?: string | null): TierInfo {
     return {
       label: "Premium",
       isPremium: true,
-      badgeClass: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+      badgeVariant: "warning",
     };
   }
 
@@ -37,11 +41,11 @@ export function formatMembershipTier(tier?: string | null): TierInfo {
         ? "Citizen"
         : tier.charAt(0).toUpperCase() + tier.slice(1).replace(/_/g, " "),
     isPremium: false,
-    badgeClass: "border-border/60 bg-muted/60 text-muted-foreground",
+    badgeVariant: "default",
   };
 }
 
-// ─── Economic & Population Tier Mappings ───────────────────────────────────
+// Economic & Population Tier Mappings
 
 export const ECONOMIC_TIER_INFO: Record<
   EconomicTier,
@@ -56,7 +60,7 @@ export const ECONOMIC_TIER_INFO: Record<
   Extravagant: { min: 65000, max: Infinity, maxGrowth: 0.005 },
 };
 
-export const POPULATION_TIER_INFO: Record<PopulationTier, { min: number; max: number }> = {
+const POPULATION_TIER_INFO: Record<PopulationTier, { min: number; max: number }> = {
   "1": { min: 0, max: 9_999_999 },
   "2": { min: 10_000_000, max: 29_999_999 },
   "3": { min: 30_000_000, max: 49_999_999 },
@@ -67,15 +71,15 @@ export const POPULATION_TIER_INFO: Record<PopulationTier, { min: number; max: nu
   X: { min: 500_000_000, max: Infinity },
 };
 
-// ─── Deterministic Tier Calculation Functions ───────────────────────────────
+// Deterministic Tier Calculation Functions
 
+/** The highest tier whose minimum the GDP per capita reaches (so 24,999.50 is Developing, not a gap). */
 export function getEconomicTierFromGdpPerCapita(gdpPerCapita: number): EconomicTier {
+  let found = "Impoverished" as EconomicTier;
   for (const [tier, info] of Object.entries(ECONOMIC_TIER_INFO)) {
-    if (gdpPerCapita >= info.min && gdpPerCapita <= info.max) {
-      return tier as EconomicTier;
-    }
+    if (gdpPerCapita >= info.min) found = tier as EconomicTier;
   }
-  return "Impoverished" as EconomicTier;
+  return found;
 }
 
 export function getPopulationTierFromPopulation(population: number): PopulationTier {

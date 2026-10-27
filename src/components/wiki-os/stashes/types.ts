@@ -1,7 +1,4 @@
-// src/components/wiki-os/stashes/types.ts
 // Shared types, preset colors, and discriminated models for the Stash system.
-// Apple Design & WikiOS standard.
-
 export const PRESET_COLORS = [
   "#3b82f6", // Blue
   "#8b5cf6", // Purple
@@ -15,20 +12,6 @@ export const PRESET_COLORS = [
 
 export type StashTab = "articles" | "quotes" | "images" | "threads";
 
-export interface CommonsImage {
-  pageid: number;
-  title: string;
-  thumbUrl: string;
-  url: string;
-  descriptionUrl: string;
-  width: number;
-  height: number;
-  mime: string;
-  description: string;
-  artist: string;
-  license: string;
-}
-
 export interface StashHeaderItem {
   id: string;
   name: string;
@@ -41,7 +24,7 @@ export interface StashHeaderItem {
   updatedAt?: string | Date;
 }
 
-export interface StashedAnnotationItem {
+interface StashedAnnotationItem {
   id: string;
   selectedText: string;
   comment?: string | null;
@@ -77,5 +60,4 @@ export interface StashedThreadItem {
   pageSlug: string;
   savedAt: string | Date;
   note?: string | null;
-  threadId?: number;
 }

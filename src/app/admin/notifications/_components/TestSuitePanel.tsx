@@ -26,6 +26,7 @@ import {
   Bell,
   Flask as FlaskConical,
 } from "iconoir-react";
+import { ValueSelect } from "~/components/ui/value-select";
 
 const CATEGORIES: { label: string; value: NotificationCategory }[] = [
   { label: "System", value: "system" },
@@ -70,11 +71,11 @@ export function TestSuitePanel() {
   const [persistent, setPersistent] = useState(false);
   const [silent, setSilent] = useState(false);
   const [hasAction, setHasAction] = useState(false);
+  const [duration, setDuration] = useState("5000");
 
   const addResult = (msg: string) => setTestResults((prev) => [...prev, msg]);
   const clearResults = () => setTestResults([]);
 
-  // === Trigger preset via useNotify ===
   const triggerPreset = (preset: string) => {
     switch (preset) {
       case "crisis":
@@ -88,7 +89,7 @@ export function TestSuitePanel() {
           persistent: true,
           actions: [
             {
-              label: "Deploy Peacekeepers",
+              label: "Deploy peacekeepers",
               onClick: () => addResult("✅ Peacekeepers deployed"),
             },
           ],
@@ -129,7 +130,7 @@ export function TestSuitePanel() {
           duration: 5000,
           actions: [
             {
-              label: "Accept Treaty",
+              label: "Accept treaty",
               onClick: () => addResult("✅ Treaty accepted"),
             },
           ],
@@ -141,7 +142,6 @@ export function TestSuitePanel() {
     }
   };
 
-  // === Fire custom notification simulator ===
   const handleCustomTrigger = () => {
     notify.notify({
       title,
@@ -151,10 +151,11 @@ export function TestSuitePanel() {
       category,
       persistent,
       silent,
+      duration: duration ? parseInt(duration, 10) : undefined,
       actions: hasAction
         ? [
             {
-              label: "Run Test Callback",
+              label: "Run test callback",
               onClick: () => addResult("✅ Custom callback executed"),
             },
           ]
@@ -163,13 +164,12 @@ export function TestSuitePanel() {
     addResult(`📨 Custom "${title}" notification triggered`);
   };
 
-  // === System-level tests via store ===
   const testIntelligence = async () => {
     try {
       await addNotification({
         source: "intelligence",
         title: "🚨 TEST: Critical Intelligence Alert",
-        message: "High-priority security alert detected — test from admin panel.",
+        message: "High-priority security alert detected. Test from admin panel.",
         category: "security",
         type: "alert",
         priority: "critical",
@@ -210,7 +210,7 @@ export function TestSuitePanel() {
         actions: [
           {
             id: "view",
-            label: "View Dashboard",
+            label: "View dashboard",
             type: "primary",
             onClick: () => addResult("📊 Dashboard opened"),
           },
@@ -288,59 +288,41 @@ export function TestSuitePanel() {
 
   return (
     <div className="space-y-6">
-      {/* Preset Buttons */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-yellow-500" />
-            Quick Test Presets
+            <Zap className="text-yellow h-5 w-5" />
+            Quick test presets
           </CardTitle>
           <CardDescription>Trigger pre-configured notification scenarios</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Button
-              variant="outline"
-              onClick={() => triggerPreset("crisis")}
-              className="border-red-500/20 bg-red-500/5 text-red-500 hover:bg-red-500/10"
-            >
-              <ShieldAlert className="mr-1.5 h-4 w-4" />
-              Crisis Alert
+            <Button variant="destructive" onClick={() => triggerPreset("crisis")}>
+              <ShieldAlert className="mr-2 h-4 w-4" />
+              Crisis alert
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => triggerPreset("achievement")}
-              className="border-emerald-500/20 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500/10"
-            >
-              <Award className="mr-1.5 h-4 w-4" />
+            <Button variant="secondary" onClick={() => triggerPreset("achievement")}>
+              <Award className="mr-2 h-4 w-4" />
               Achievement
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => triggerPreset("security")}
-              className="border-amber-500/20 bg-amber-500/5 text-amber-500 hover:bg-amber-500/10"
-            >
-              <AlertTriangle className="mr-1.5 h-4 w-4" />
-              Security Intel
+            <Button variant="secondary" onClick={() => triggerPreset("security")}>
+              <AlertTriangle className="mr-2 h-4 w-4" />
+              Security intel
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => triggerPreset("trade")}
-              className="border-blue-500/20 bg-blue-500/5 text-blue-500 hover:bg-blue-500/10"
-            >
-              <Sparkles className="mr-1.5 h-4 w-4" />
-              Trade Pact
+            <Button variant="secondary" onClick={() => triggerPreset("trade")}>
+              <Sparkles className="mr-2 h-4 w-4" />
+              Trade pact
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* System-level test buttons */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FlaskConical className="h-5 w-5 text-purple-500" />
-            System Integration Tests
+            <FlaskConical className="text-purple h-5 w-5" />
+            System integration tests
           </CardTitle>
           <CardDescription>
             Test full notification pipeline: store, services, and delivery handlers
@@ -348,69 +330,53 @@ export function TestSuitePanel() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Button
-              onClick={testIntelligence}
-              className="h-auto border-red-500/30 bg-red-500/20 p-4 hover:bg-red-500/30"
-            >
-              <Shield className="mr-2 h-5 w-5 text-red-400" />
+            <Button variant="destructive" onClick={testIntelligence} className="h-auto">
+              <Shield className="text-red mr-2 h-5 w-5" />
               <div className="text-left">
-                <div className="text-sm font-medium">Intelligence</div>
-                <div className="text-xs opacity-70">Critical alert</div>
+                <div className="text-body font-medium">Intelligence</div>
+                <div className="text-footnote opacity-70">Critical alert</div>
               </div>
             </Button>
-            <Button
-              onClick={testEconomic}
-              className="h-auto border-green-500/30 bg-green-500/20 p-4 hover:bg-green-500/30"
-            >
-              <DollarSign className="mr-2 h-5 w-5 text-green-400" />
+            <Button variant="secondary" onClick={testEconomic} className="h-auto">
+              <DollarSign className="text-green mr-2 h-5 w-5" />
               <div className="text-left">
-                <div className="text-sm font-medium">Economic</div>
-                <div className="text-xs opacity-70">GDP update</div>
+                <div className="text-body font-medium">Economic</div>
+                <div className="text-footnote opacity-70">GDP update</div>
               </div>
             </Button>
-            <Button
-              onClick={testDiplomatic}
-              className="h-auto border-blue-500/30 bg-blue-500/20 p-4 hover:bg-blue-500/30"
-            >
-              <Globe className="mr-2 h-5 w-5 text-blue-400" />
+            <Button variant="secondary" onClick={testDiplomatic} className="h-auto">
+              <Globe className="text-blue mr-2 h-5 w-5" />
               <div className="text-left">
-                <div className="text-sm font-medium">Diplomatic</div>
-                <div className="text-xs opacity-70">Treaty event</div>
+                <div className="text-body font-medium">Diplomatic</div>
+                <div className="text-footnote opacity-70">Treaty event</div>
               </div>
             </Button>
-            <Button
-              onClick={testAchievement}
-              className="h-auto border-yellow-500/30 bg-yellow-500/20 p-4 hover:bg-yellow-500/30"
-            >
-              <Trophy className="mr-2 h-5 w-5 text-yellow-400" />
+            <Button variant="secondary" onClick={testAchievement} className="h-auto">
+              <Trophy className="text-yellow mr-2 h-5 w-5" />
               <div className="text-left">
-                <div className="text-sm font-medium">Achievement</div>
-                <div className="text-xs opacity-70">Unlock test</div>
+                <div className="text-body font-medium">Achievement</div>
+                <div className="text-footnote opacity-70">Unlock test</div>
               </div>
             </Button>
           </div>
 
           <div className="flex gap-3">
-            <Button
-              onClick={runFullTest}
-              className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-            >
+            <Button onClick={runFullTest} className="flex-1">
               <Play className="mr-2 h-4 w-4" />
-              Run Full Test Suite
+              Run full test suite
             </Button>
             <Button onClick={clearResults} variant="outline">
-              Clear Results
+              Clear results
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Custom Simulator */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-indigo-500" />
-            Custom Notification Simulator
+            <Bell className="text-indigo h-5 w-5" />
+            Custom notification simulator
           </CardTitle>
           <CardDescription>
             Configure and trigger a custom notification with specific parameters
@@ -419,11 +385,11 @@ export function TestSuitePanel() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-4">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label>Title</Label>
                 <Input value={title} onChange={(e) => setTitle(e.target.value)} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label>Message</Label>
                 <Textarea
                   value={message}
@@ -432,63 +398,51 @@ export function TestSuitePanel() {
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Type</Label>
-                  <select
+                <div className="space-y-2">
+                  <Label className="text-footnote">Type</Label>
+                  <ValueSelect
                     value={type}
-                    onChange={(e) => setType(e.target.value as ToastType)}
-                    className="border-border/60 bg-background text-foreground flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
-                  >
-                    {TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={(v) => setType(v as ToastType)}
+                    options={TYPES.map((t) => [t.value, t.label] as const)}
+                    size="sm"
+                    className="w-full"
+                  />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Priority</Label>
-                  <select
+                <div className="space-y-2">
+                  <Label className="text-footnote">Priority</Label>
+                  <ValueSelect
                     value={priority}
-                    onChange={(e) => setPriority(e.target.value as ToastPriority)}
-                    className="border-border/60 bg-background text-foreground flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
-                  >
-                    {PRIORITIES.map((p) => (
-                      <option key={p.value} value={p.value}>
-                        {p.label}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={(v) => setPriority(v as ToastPriority)}
+                    options={PRIORITIES.map((p) => [p.value, p.label] as const)}
+                    size="sm"
+                    className="w-full"
+                  />
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Category</Label>
-                <select
+              <div className="space-y-2">
+                <Label className="text-footnote">Category</Label>
+                <ValueSelect
                   value={category}
-                  onChange={(e) => setCategory(e.target.value as NotificationCategory)}
-                  className="border-border/60 bg-background text-foreground flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={(v) => setCategory(v as NotificationCategory)}
+                  options={CATEGORIES.map((c) => [c.value, c.label] as const)}
+                  size="sm"
+                  className="w-full"
+                />
               </div>
             </div>
 
-            <div className="border-border/40 bg-card/40 space-y-4 rounded-lg border p-4">
+            <div className="border-separator bg-surface rounded-control space-y-4 border p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-sm font-medium">Persistent</Label>
-                  <p className="text-muted-foreground text-xs">Requires manual closing</p>
+                  <Label className="text-body font-medium">Persistent</Label>
+                  <p className="text-label-secondary text-footnote">Requires manual closing</p>
                 </div>
                 <Switch checked={persistent} onCheckedChange={setPersistent} />
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-sm font-medium">Silent</Label>
-                  <p className="text-muted-foreground text-xs">
+                  <Label className="text-body font-medium">Silent</Label>
+                  <p className="text-label-secondary text-footnote">
                     Suppress toast, add to center only
                   </p>
                 </div>
@@ -496,49 +450,63 @@ export function TestSuitePanel() {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-sm font-medium">Action Callback</Label>
-                  <p className="text-muted-foreground text-xs">Include clickable action</p>
+                  <Label className="text-body font-medium">Action callback</Label>
+                  <p className="text-label-secondary text-footnote">Include clickable action</p>
                 </div>
                 <Switch checked={hasAction} onCheckedChange={setHasAction} />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="notif-duration" className="text-footnote">
+                  Auto-dismiss duration (ms)
+                </Label>
+                <Input
+                  id="notif-duration"
+                  type="number"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  disabled={persistent}
+                />
+              </div>
               <Button onClick={handleCustomTrigger} className="w-full" size="lg">
                 <Play className="mr-2 h-4 w-4" />
-                Trigger Custom Notification
+                Trigger custom notification
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Test Results */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FlaskConical className="h-5 w-5" />
-            Test Results
+            Test results
           </CardTitle>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-48">
             {testResults.length === 0 ? (
-              <p className="text-muted-foreground py-4 text-center text-sm">
+              <p className="text-label-secondary text-body py-4 text-center">
                 No test results yet. Run some tests above.
               </p>
             ) : (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {testResults.map((result, i) => {
-                  let color = "bg-blue-500/10 text-blue-400";
-                  if (result.includes("✅")) color = "bg-green-500/10 text-green-400";
-                  else if (result.includes("❌")) color = "bg-red-500/10 text-red-400";
+                  let color = "bg-blue/10 text-blue";
+                  if (result.includes("✅")) color = "bg-green/10 text-green";
+                  else if (result.includes("❌")) color = "bg-red/10 text-red";
                   else if (result.includes("🧪") || result.includes("🎉"))
-                    color = "bg-purple-500/10 text-purple-400";
-                  else if (result.includes("🔴")) color = "bg-red-500/10 text-red-400";
-                  else if (result.includes("🏆")) color = "bg-yellow-500/10 text-yellow-400";
-                  else if (result.includes("🛡️")) color = "bg-amber-500/10 text-amber-400";
+                    color = "bg-purple/10 text-purple";
+                  else if (result.includes("🔴")) color = "bg-red/10 text-red";
+                  else if (result.includes("🏆")) color = "bg-yellow/10 text-yellow";
+                  else if (result.includes("🛡️")) color = "bg-yellow/10 text-yellow";
                   else if (result.includes("🤝") || result.includes("📨"))
-                    color = "bg-blue-500/10 text-blue-400";
+                    color = "bg-blue/10 text-blue";
                   return (
-                    <div key={i} className={`rounded px-3 py-1.5 font-mono text-xs ${color}`}>
+                    <div
+                      key={i}
+                      className={`rounded-control-sm text-footnote px-3 py-2 tabular-nums ${color}`}
+                    >
                       {result}
                     </div>
                   );

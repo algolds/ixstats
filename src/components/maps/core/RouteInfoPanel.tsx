@@ -1,13 +1,6 @@
 "use client";
 
-/**
- * RouteInfoPanel — Slide-in panel showing transport route details.
- *
- * Appears when a user clicks on a route line on the map.
- * Shows route metadata, stops, and actions (edit, delete, status change).
- */
-
-import { useState, memo, useMemo } from "react";
+import { useState, memo, useMemo, type ComponentType, type ReactNode } from "react";
 import {
   Xmark as X,
   Train,
@@ -31,8 +24,14 @@ import {
   PathArrow as Route,
   Wind,
 } from "iconoir-react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import { Badge, type BadgeVariant } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { FacetMaterial } from "~/components/ui/facet";
+import { Skeleton } from "~/components/ui/skeleton";
 import { getRouteFamily } from "~/lib/economy/transport-costs";
 import {
   calculateRouteTravelTime,
@@ -40,6 +39,7 @@ import {
   KMH_PER_KNOT,
   type LngLat,
 } from "~/lib/economy/travel-time";
+import { Card } from "~/components/ui/card";
 
 interface RouteInfoPanelProps {
   routeId: string;
@@ -76,546 +76,610 @@ function formatSignedSpeed(kmh: number): string {
   return `${sign}${abs.toFixed(1)} km/h (${sign}${(abs / KMH_PER_KNOT).toFixed(1)} kn)`;
 }
 
-interface ResolvedStop {
-  cityId?: string;
-  cityName?: string;
-  name?: string;
-  cityPopulation?: number | null;
-  coordinates?: [number, number];
-  order?: number;
+const TYPE_META: Record<string, { icon: typeof Train; label: string }> = {
+  rail: { icon: Train, label: "Railway" },
+  high_speed_rail: { icon: Train, label: "High-Speed Rail" },
+  railway: { icon: Train, label: "Conventional rail" },
+  metro: { icon: Train, label: "Metro system" },
+  light_rail: { icon: Train, label: "Light rail" },
+  monorail: { icon: Train, label: "Monorail" },
+  motorway: { icon: Car, label: "Motorway" },
+  highway: { icon: Car, label: "Highway" },
+  trunk: { icon: Car, label: "Trunk road" },
+  road: { icon: Car, label: "Road" },
+  secondary: { icon: Car, label: "Secondary road" },
+  shipping_lane: { icon: Ship, label: "Shipping lane" },
+  canal: { icon: Droplets, label: "Canal" },
+  ferry: { icon: Ship, label: "Ferry" },
+  air_corridor: { icon: Plane, label: "Air route" },
+  pipeline: { icon: Droplets, label: "Pipeline" },
+  power_grid: { icon: Flash, label: "Power grid" },
+  fiber: { icon: Wifi, label: "Fiber optic" },
+  military_supply: { icon: Shield, label: "Mil. Supply" },
+  military_naval: { icon: Shield, label: "Mil. Naval" },
+};
+
+/** Route statuses with their label and the semantic tint of the outline status badge. */
+const ROUTE_STATUSES = {
+  planned: { label: "Planned", badge: "default" },
+  under_construction: { label: "Under construction", badge: "warning" },
+  operational: { label: "Operational", badge: "success" },
+  abandoned: { label: "Abandoned", badge: "destructive" },
+} satisfies Record<string, { label: string; badge: BadgeVariant }>;
+
+type RouteStatus = keyof typeof ROUTE_STATUSES;
+
+const ROUTE_STATUS_OPTIONS = Object.entries(ROUTE_STATUSES).map(([value, { label }]) => ({
+  value,
+  label,
+}));
+
+type RouteData = NonNullable<RouterOutputs["transport"]["getRouteById"]>;
+type TravelTime = ReturnType<typeof calculateRouteTravelTime>;
+
+const routeSpeedKmh = (route: RouteData) => (route as { speedKmh?: number | null }).speedKmh;
+
+const routeBaseSpeed = (route: RouteData) =>
+  resolveRouteBaseSpeed({
+    speedKmh: routeSpeedKmh(route),
+    properties: route.properties as Record<string, unknown> | null,
+    routeType: route.routeType,
+  });
+
+/** The speed the edit field starts at: the route's own, else its stored property, else the type default. */
+function initialEditSpeed(route: RouteData) {
+  const stored = (route.properties as RouteDisplayProperties | null)?.speed_kmh;
+  const fallback =
+    typeof stored === "number" ? stored : stored ? Number(stored) : routeBaseSpeed(route);
+  return routeSpeedKmh(route) ?? fallback;
 }
 
-const TYPE_META: Record<string, { icon: typeof Train; label: string; badgeClass: string }> = {
-  // Rail
-  rail: { icon: Train, label: "Railway", badgeClass: "bg-slate-500/15 text-slate-400" },
-  high_speed_rail: { icon: Train, label: "High-Speed Rail", badgeClass: "bg-blue-500/15 text-blue-400" },
-  railway: { icon: Train, label: "Conventional Rail", badgeClass: "bg-blue-600/15 text-blue-400" },
-  metro: { icon: Train, label: "Metro System", badgeClass: "bg-indigo-600/15 text-indigo-400" },
-  light_rail: { icon: Train, label: "Light Rail", badgeClass: "bg-cyan-500/15 text-cyan-400" },
-  monorail: { icon: Train, label: "Monorail", badgeClass: "bg-indigo-500/15 text-indigo-400" },
-
-  // Road
-  motorway: { icon: Car, label: "Motorway", badgeClass: "bg-orange-600/15 text-orange-500" },
-  highway: { icon: Car, label: "Highway", badgeClass: "bg-amber-500/15 text-amber-400" },
-  trunk: { icon: Car, label: "Trunk Road", badgeClass: "bg-amber-600/15 text-amber-500" },
-  road: { icon: Car, label: "Road", badgeClass: "bg-orange-500/15 text-orange-400" },
-  secondary: { icon: Car, label: "Secondary Road", badgeClass: "bg-stone-500/15 text-stone-400" },
-
-  // Maritime
-  shipping_lane: { icon: Ship, label: "Shipping Lane", badgeClass: "bg-blue-500/15 text-blue-400" },
-  canal: { icon: Droplets, label: "Canal", badgeClass: "bg-cyan-500/15 text-cyan-400" },
-  ferry: { icon: Ship, label: "Ferry", badgeClass: "bg-cyan-600/15 text-cyan-400" },
-
-  // Air
-  air_corridor: { icon: Plane, label: "Air Route", badgeClass: "bg-indigo-500/15 text-indigo-400" },
-
-  // Utility
-  pipeline: { icon: Droplets, label: "Pipeline", badgeClass: "bg-yellow-500/15 text-yellow-400" },
-  power_grid: { icon: Flash, label: "Power Grid", badgeClass: "bg-amber-500/15 text-amber-300" },
-  fiber: { icon: Wifi, label: "Fiber Optic", badgeClass: "bg-emerald-500/15 text-emerald-400" },
-
-  // Military
-  military_supply: { icon: Shield, label: "Mil. Supply", badgeClass: "bg-red-500/15 text-red-400" },
-  military_naval: { icon: Shield, label: "Mil. Naval", badgeClass: "bg-red-900/20 text-red-400" },
+const INTERMODAL_NOTES = {
+  maritime: {
+    title: "Deepwater Transshipment Corridor",
+    detail: "Connects maritime sea lanes to on-dock rail & drayage trucking terminals.",
+  },
+  freightRail: {
+    title: "Intermodal Freight Rail Spine",
+    detail: "Heavy-haul container rail linked to seaport terminals & classification yards.",
+  },
+  air: {
+    title: "Air Freight Express Corridor",
+    detail: "High-speed cargo link for courier dispatch & perishable airfreight.",
+  },
+  road: {
+    title: "Arterial Highway Freight Route",
+    detail: "Regional drayage corridor connecting production centers to logistics hubs.",
+  },
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  planned: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-  under_construction: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  operational: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  abandoned: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
-};
+function intermodalNote(route: RouteData, family: string) {
+  if (family === "maritime") return INTERMODAL_NOTES.maritime;
+  if (route.routeType === "freight_rail") return INTERMODAL_NOTES.freightRail;
+  if (family === "air") return INTERMODAL_NOTES.air;
+  const arterial = route.routeType === "motorway" || route.routeType === "trunk";
+  if (family === "road" && (arterial || route.isInternational)) return INTERMODAL_NOTES.road;
+  return null;
+}
 
-export const RouteInfoPanel = memo(function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteInfoPanelProps) {
+/** Inline edit / delete-confirmation state and the update/delete mutations for one route. */
+function useRouteEditor(routeId: string, onClose: () => void) {
   const utils = api.useUtils();
-  const { data: route, isLoading } = api.transport.getRouteById.useQuery(
-    { id: routeId },
-    { staleTime: 30_000 }
-  );
-
   const [editing, setEditing] = useState(false);
-  const [editName, setEditName] = useState("");
-  const [editStatus, setEditStatus] = useState("");
-  const [editSpeed, setEditSpeed] = useState<number | undefined>(undefined);
+  const [name, setName] = useState("");
+  const [status, setStatus] = useState("");
+  const [speed, setSpeed] = useState<number | undefined>(undefined);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+  const invalidateRoutes = () => {
+    void utils.transport.getAllRoutesGeoJSON.invalidate();
+    void utils.transport.getCountryRoutes.invalidate();
+  };
 
   const updateRoute = api.transport.updateRoute.useMutation({
     onSuccess: () => {
       void utils.transport.getRouteById.invalidate({ id: routeId });
-      void utils.transport.getAllRoutesGeoJSON.invalidate();
-      void utils.transport.getCountryRoutes.invalidate();
+      invalidateRoutes();
       setEditing(false);
     },
   });
 
   const deleteRoute = api.transport.deleteRoute.useMutation({
     onSuccess: () => {
-      void utils.transport.getAllRoutesGeoJSON.invalidate();
-      void utils.transport.getCountryRoutes.invalidate();
+      invalidateRoutes();
       void utils.transport.getTransportStats.invalidate();
       onClose();
     },
   });
 
-  const routeSpeedKmh = (route as { speedKmh?: number | null } | undefined)?.speedKmh;
+  const start = (route: RouteData, initialSpeed: number) => {
+    setName(route.name ?? "");
+    setStatus(route.status);
+    setSpeed(initialSpeed);
+    setEditing(true);
+  };
 
-  const baseSpeed = useMemo(() => {
-    if (!route) return 0;
-    return resolveRouteBaseSpeed({
-      speedKmh: routeSpeedKmh,
-      properties: route.properties as Record<string, unknown> | null,
-      routeType: route.routeType,
+  const save = (route: RouteData) => {
+    if (!route.countryId) return;
+    updateRoute.mutate({
+      id: route.id,
+      countryId: route.countryId,
+      name: name || undefined,
+      status: status as RouteStatus,
+      speedKmh: speed != null && !isNaN(speed) && speed > 0 ? speed : undefined,
     });
-  }, [routeSpeedKmh, route?.properties, route?.routeType]);
+  };
+
+  return {
+    editing,
+    setEditing,
+    name,
+    setName,
+    status,
+    setStatus,
+    speed,
+    setSpeed,
+    confirmingDelete,
+    setConfirmingDelete,
+    start,
+    save,
+    updateRoute,
+    deleteRoute,
+  };
+}
+
+type RouteEditor = ReturnType<typeof useRouteEditor>;
+
+function StatRow({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon?: ComponentType<{ className?: string }>;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-label-secondary flex items-center gap-2">
+        {Icon && <Icon className="h-3 w-3" />}
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+function RouteHeader({
+  route,
+  editor,
+  onClose,
+}: {
+  route: RouteData;
+  editor: RouteEditor;
+  onClose: () => void;
+}) {
+  const typeMeta = TYPE_META[route.routeType] ?? TYPE_META.road!;
+  const TypeIcon = typeMeta.icon;
+  return (
+    <div className="border-separator flex items-start gap-2 border-b px-4 py-3">
+      <TypeIcon className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+      <div className="min-w-0 flex-1">
+        {editor.editing ? (
+          <Input
+            value={editor.name}
+            onChange={(e) => editor.setName(e.target.value)}
+            aria-label="Route name"
+            className="text-headline h-(--control-height-sm) px-2"
+            placeholder="Route name"
+            autoFocus
+          />
+        ) : (
+          <h3 className="text-label text-headline truncate">
+            {route.name ?? `${typeMeta.label} Route`}
+          </h3>
+        )}
+        <div className="mt-0.5 flex items-center gap-2">
+          <span className="text-label-secondary text-footnote">{typeMeta.label}</span>
+          {editor.editing ? (
+            <OptionSelect
+              aria-label="Route status"
+              size="sm"
+              className="w-auto"
+              value={editor.status}
+              onValueChange={editor.setStatus}
+              options={ROUTE_STATUS_OPTIONS}
+            />
+          ) : (
+            <Badge
+              variant={ROUTE_STATUSES[route.status as RouteStatus]?.badge ?? "success"}
+              className="capitalize"
+            >
+              {route.status.replace("_", " ")}
+            </Badge>
+          )}
+        </div>
+      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onClose}
+        aria-label="Close route details"
+        className="text-label-secondary -mt-1 -mr-2 h-8 w-8 shrink-0 rounded-full"
+      >
+        <X aria-hidden />
+      </Button>
+    </div>
+  );
+}
+
+function RouteStats({
+  route,
+  travelTime,
+  baseSpeed,
+  editor,
+}: {
+  route: RouteData;
+  travelTime: TravelTime;
+  baseSpeed: number;
+  editor: RouteEditor;
+}) {
+  const difficulty = route.terrainDifficulty;
+  const diffPercent = Math.round((difficulty ?? 0) * 100);
+  const diffBgClass =
+    (difficulty ?? 0) > 0.7 ? "bg-destructive" : (difficulty ?? 0) > 0.4 ? "bg-yellow" : "bg-green";
+
+  return (
+    <div className="text-footnote space-y-2 px-4 py-3">
+      <StatRow icon={Gauge} label="Length">
+        <span className="font-medium tabular-nums">
+          {route.lengthKm?.toLocaleString() ?? "—"} km
+        </span>
+      </StatRow>
+
+      {difficulty != null && (
+        <StatRow icon={Mountain} label="Terrain">
+          <div className="flex items-center gap-2">
+            <div className="bg-fill-3 h-1.5 w-16 overflow-hidden rounded-full">
+              <div
+                className={`h-full rounded-full ${diffBgClass}`}
+                style={{ width: `${diffPercent}%` }}
+              />
+            </div>
+            <span className="font-medium tabular-nums">{diffPercent}%</span>
+          </div>
+        </StatRow>
+      )}
+
+      <StatRow icon={Clock} label="Est. Travel Time">
+        <span className="text-label font-semibold tabular-nums">{travelTime.formattedTime}</span>
+      </StatRow>
+
+      <StatRow icon={Gauge} label="Speed">
+        {editor.editing ? (
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min={5}
+              max={2000}
+              aria-label="Speed in km/h"
+              value={editor.speed ?? ""}
+              onChange={(e) => editor.setSpeed(e.target.value ? Number(e.target.value) : undefined)}
+              className="text-footnote h-(--control-height-sm) w-20 px-2 text-right tabular-nums"
+              placeholder={String(baseSpeed)}
+            />
+            <span className="text-label-secondary text-footnote">km/h</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 tabular-nums">
+            <span className="font-medium">{Math.round(travelTime.effectiveSpeedKmh)} km/h</span>
+            {travelTime.terrainDragFactor < 1 && (
+              <span className="text-footnote text-yellow/80">({Math.round(baseSpeed)} base)</span>
+            )}
+          </div>
+        )}
+      </StatRow>
+
+      {Boolean(route.builtYear) && (
+        <StatRow icon={Calendar} label="Built">
+          <span className="font-medium tabular-nums">{route.builtYear}</span>
+        </StatRow>
+      )}
+
+      {Boolean(route.isInternational) && (
+        <StatRow label="International">
+          <span className="text-tint font-medium">Yes</span>
+        </StatRow>
+      )}
+
+      {route.country && (
+        <StatRow label="Country">
+          <span className="font-medium">{route.country.name}</span>
+        </StatRow>
+      )}
+    </div>
+  );
+}
+
+/** Sea routes: total time plus the current/wind system with the largest net effect. */
+function SeaTransitDetails({
+  sea,
+  formattedTime,
+}: {
+  sea: NonNullable<TravelTime["sea"]>;
+  formattedTime: string;
+}) {
+  const effect = sea.largestEffect;
+  return (
+    <div className="border-separator text-footnote space-y-2 border-t px-4 py-3">
+      <Eyebrow className="mb-2 block">Transit details</Eyebrow>
+      <StatRow icon={Clock} label="Total time">
+        <span className="text-label font-semibold tabular-nums">{formattedTime}</span>
+      </StatRow>
+      <StatRow icon={Gauge} label="Avg. speed">
+        <span className="font-medium tabular-nums">
+          {`${sea.averageSpeedKmh.toFixed(1)} km/h (${(sea.averageSpeedKmh / KMH_PER_KNOT).toFixed(1)} kn)`}
+        </span>
+      </StatRow>
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-label-secondary flex shrink-0 items-center gap-2">
+          <Wind className="h-3 w-3" /> Largest effect
+        </span>
+        {effect ? (
+          <span className="min-w-0 text-right">
+            <span className="block truncate font-medium">{effect.name}</span>
+            <span
+              className={`block tabular-nums ${effect.averageChangeKmh >= 0 ? "text-green" : "text-yellow"}`}
+            >
+              {formatSignedSpeed(effect.averageChangeKmh)}
+            </span>
+            <span className="text-label-secondary block">
+              {effect.kind} · over {Math.round(effect.distanceKm).toLocaleString()} km
+            </span>
+          </span>
+        ) : (
+          <span className="text-label-secondary">None on this path</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RouteActions({
+  route,
+  editor,
+  onEditPath,
+}: {
+  route: RouteData;
+  editor: RouteEditor;
+  onEditPath?: () => void;
+}) {
+  const { updateRoute, deleteRoute } = editor;
+
+  if (editor.editing) {
+    return (
+      <div className="flex w-full items-center gap-1">
+        <Button
+          size="xs"
+          onClick={() => editor.save(route)}
+          disabled={updateRoute.isPending}
+          className="flex-1"
+        >
+          {updateRoute.isPending ? (
+            <Loader2 className="animate-spin" aria-hidden />
+          ) : (
+            <Check aria-hidden />
+          )}
+          Save
+        </Button>
+        <Button variant="outline" size="xs" onClick={() => editor.setEditing(false)}>
+          Cancel
+        </Button>
+      </div>
+    );
+  }
+
+  if (editor.confirmingDelete) {
+    return (
+      <div className="flex w-full items-center justify-between gap-2">
+        <span className="text-destructive text-caption">Delete route?</span>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="destructive"
+            size="xs"
+            onClick={() => {
+              if (route.countryId) {
+                deleteRoute.mutate({ id: route.id, countryId: route.countryId });
+              }
+            }}
+            disabled={deleteRoute.isPending}
+          >
+            {deleteRoute.isPending ? <Loader2 className="animate-spin" aria-hidden /> : "Confirm"}
+          </Button>
+          <Button variant="outline" size="xs" onClick={() => editor.setConfirmingDelete(false)}>
+            Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="xs"
+        onClick={() => editor.start(route, initialEditSpeed(route))}
+        className="text-label-secondary"
+      >
+        <Pencil aria-hidden /> Edit
+      </Button>
+      {onEditPath && (
+        <Button variant="ghost" size="xs" onClick={onEditPath} className="text-label-secondary">
+          <Route aria-hidden /> Edit path
+        </Button>
+      )}
+      <Button
+        variant="ghost"
+        size="xs"
+        onClick={() => editor.setConfirmingDelete(true)}
+        disabled={deleteRoute.isPending}
+        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+      >
+        <Trash2 aria-hidden /> Delete
+      </Button>
+    </>
+  );
+}
+
+export const RouteInfoPanel = memo(function RouteInfoPanel({
+  routeId,
+  onClose,
+  canEdit,
+  onEditPath,
+}: RouteInfoPanelProps) {
+  const { data: route, isLoading } = api.transport.getRouteById.useQuery(
+    { id: routeId },
+    { staleTime: 30_000 }
+  );
+  const editor = useRouteEditor(routeId, onClose);
+
+  const baseSpeed = route ? routeBaseSpeed(route) : 0;
 
   const seaPath = useMemo(
     () => routeGeometryPath(route?.geometry as RouteGeometry | null | undefined),
     [route?.geometry]
   );
 
-  const travelTime = useMemo(() => {
-    return calculateRouteTravelTime({
-      lengthKm: route?.lengthKm ?? 0,
-      speedKmh: baseSpeed,
-      routeType: route?.routeType ?? "rail",
-      terrainDifficulty: route?.terrainDifficulty,
-      stopsCount: route?.stopsResolved?.length ?? 0,
+  const travelTime = useMemo(
+    () =>
+      calculateRouteTravelTime({
+        lengthKm: route?.lengthKm ?? 0,
+        speedKmh: baseSpeed,
+        routeType: route?.routeType ?? "rail",
+        terrainDifficulty: route?.terrainDifficulty,
+        stopsCount: route?.stopsResolved?.length ?? 0,
+        seaPath,
+      }),
+    [
+      route?.lengthKm,
+      baseSpeed,
+      route?.routeType,
+      route?.terrainDifficulty,
+      route?.stopsResolved?.length,
       seaPath,
-    });
-  }, [route?.lengthKm, baseSpeed, route?.routeType, route?.terrainDifficulty, route?.stopsResolved?.length, seaPath]);
+    ]
+  );
 
   if (isLoading) {
     return (
-      <div className="border-border bg-card absolute top-16 right-4 z-30 w-72 rounded-xl border p-4 shadow-xl">
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-        </div>
+      <div className="absolute top-16 right-4 z-30 w-72">
+        <FacetMaterial layer="chrome" className="rounded-card space-y-3 p-4" aria-busy="true">
+          <Skeleton className="h-5 w-2/3" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-5/6" />
+        </FacetMaterial>
       </div>
     );
   }
 
   if (!route) {
     return (
-      <div className="border-border bg-card absolute top-16 right-4 z-30 w-72 rounded-xl border p-4 shadow-xl">
-        <p className="text-muted-foreground text-sm">Route not found</p>
-        <button onClick={onClose} className="text-primary mt-2 text-xs hover:underline">
-          Close
-        </button>
+      <div className="absolute top-16 right-4 z-30 w-72">
+        <FacetMaterial layer="chrome" className="rounded-card p-4">
+          <p className="text-label-secondary text-body">Route not found</p>
+          <Button variant="link" size="xs" onClick={onClose} className="mt-1 px-0">
+            Close
+          </Button>
+        </FacetMaterial>
       </div>
     );
   }
 
-  const typeMeta = TYPE_META[route.routeType] ?? TYPE_META.road!;
-  const TypeIcon = typeMeta.icon;
-  const statusClass = STATUS_COLORS[route.status] ?? STATUS_COLORS.operational!;
   const props = (route.properties as RouteDisplayProperties | null) ?? {};
   const modalFamily = getRouteFamily(route.routeType);
-  const largestSeaEffect = travelTime.sea?.largestEffect ?? null;
-
-  const intermodalBadge = (() => {
-    if (modalFamily === "maritime") {
-      return {
-        title: "Deepwater Transshipment Corridor",
-        detail: "Connects maritime sea lanes to on-dock rail & drayage trucking terminals.",
-      };
-    }
-    if (route.routeType === "freight_rail") {
-      return {
-        title: "Intermodal Freight Rail Spine",
-        detail: "Heavy-haul container rail linked to seaport terminals & classification yards.",
-      };
-    }
-    if (modalFamily === "air") {
-      return {
-        title: "Air Freight Express Corridor",
-        detail: "High-speed cargo link for courier dispatch & perishable airfreight.",
-      };
-    }
-    if (
-      modalFamily === "road" &&
-      (route.routeType === "motorway" || route.routeType === "trunk" || route.isInternational)
-    ) {
-      return {
-        title: "Arterial Highway Freight Route",
-        detail: "Regional drayage corridor connecting production centers to logistics hubs.",
-      };
-    }
-    return null;
-  })();
-
-
-  const handleStartEdit = () => {
-    setEditName(route.name ?? "");
-    setEditStatus(route.status);
-    setEditSpeed(
-      routeSpeedKmh ??
-        (typeof props.speed_kmh === "number"
-          ? props.speed_kmh
-          : props.speed_kmh
-            ? Number(props.speed_kmh)
-            : baseSpeed)
-    );
-    setEditing(true);
-  };
-
-  const handleSaveEdit = () => {
-    if (!route.countryId) return;
-    updateRoute.mutate({
-      id: route.id,
-      countryId: route.countryId,
-      name: editName || undefined,
-      status: editStatus as "planned" | "under_construction" | "operational" | "abandoned",
-      speedKmh: editSpeed != null && !isNaN(editSpeed) && editSpeed > 0 ? editSpeed : undefined,
-    });
-  };
-
-  const diffBgClass =
-    (route.terrainDifficulty ?? 0) > 0.7
-      ? "bg-destructive"
-      : (route.terrainDifficulty ?? 0) > 0.4
-        ? "bg-amber-500"
-        : "bg-emerald-500";
+  const note = intermodalNote(route, modalFamily);
 
   return (
     <div
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
-      className="border-border bg-card animate-in slide-in-from-right-4 absolute top-16 right-4 z-30 w-72 rounded-xl border shadow-xl duration-200"
+      className="animate-in slide-in-from-right-4 absolute top-16 right-4 z-30 w-72 duration-200"
     >
-      {/* Header */}
-      <div className="border-border flex items-start gap-2 border-b px-4 py-3">
-        <div
-          className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${typeMeta.badgeClass}`}
-        >
-          <TypeIcon className="h-4 w-4" />
-        </div>
-        <div className="min-w-0 flex-1">
-          {editing ? (
-            <input
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              className="border-border bg-background w-full rounded border px-1.5 py-0.5 text-sm font-semibold focus:outline-none"
-              placeholder="Route name"
-              autoFocus
-            />
-          ) : (
-            <h3 className="text-foreground truncate text-sm font-semibold">
-              {route.name ?? `${typeMeta.label} Route`}
-            </h3>
-          )}
-          <div className="mt-0.5 flex items-center gap-1.5">
-            <span className="text-muted-foreground text-xs">{typeMeta.label}</span>
-            {editing ? (
-              <select
-                value={editStatus}
-                onChange={(e) => setEditStatus(e.target.value)}
-                className="border-border bg-background rounded border px-1 py-0.5 text-xs focus:outline-none"
-              >
-                <option value="planned">Planned</option>
-                <option value="under_construction">Under Construction</option>
-                <option value="operational">Operational</option>
-                <option value="abandoned">Abandoned</option>
-              </select>
-            ) : (
-              <span className={`rounded-full px-1.5 py-0.5 text-xs font-medium ${statusClass}`}>
-                {route.status.replace("_", " ")}
-              </span>
+      <FacetMaterial
+        layer="chrome"
+        className="rounded-card max-h-[calc(100dvh-5rem)] overflow-y-auto"
+      >
+        <RouteHeader route={route} editor={editor} onClose={onClose} />
+        <RouteStats route={route} travelTime={travelTime} baseSpeed={baseSpeed} editor={editor} />
+
+        {travelTime.sea && (
+          <SeaTransitDetails sea={travelTime.sea} formattedTime={travelTime.formattedTime} />
+        )}
+
+        {Boolean(props.costBillion || props.maintenanceCost) && (
+          <div className="border-separator text-footnote space-y-2 border-t px-4 py-3">
+            {Boolean(props.costBillion) && (
+              <StatRow icon={Coins} label="Build cost">
+                <span className="font-medium tabular-nums">
+                  {Number(props.costBillion).toFixed(2)}B
+                </span>
+              </StatRow>
+            )}
+            {Boolean(props.maintenanceCost) && (
+              <StatRow label="Annual Maint.">
+                <span className="font-medium tabular-nums">
+                  {Number(props.maintenanceCost).toFixed(3)}B/yr
+                </span>
+              </StatRow>
             )}
           </div>
-        </div>
-        <button
-          onClick={onClose}
-          className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-md p-1 transition-colors active:scale-[0.98]"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
-      {/* Stats */}
-      <div className="space-y-1.5 px-4 py-3 text-xs">
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground flex items-center gap-1.5">
-            <Gauge className="h-3 w-3" /> Length
-          </span>
-          <span className="font-medium font-mono tabular-nums">
-            {route.lengthKm?.toLocaleString() ?? "—"} km
-          </span>
-        </div>
-
-        {route.terrainDifficulty != null && (
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground flex items-center gap-1.5">
-              <Mountain className="h-3 w-3" /> Terrain
-            </span>
-            <div className="flex items-center gap-1.5">
-              <div className="bg-muted h-1.5 w-16 overflow-hidden rounded-full">
-                <div
-                  className={`h-full rounded-full ${diffBgClass}`}
-                  style={{
-                    width: `${Math.round(route.terrainDifficulty * 100)}%`,
-                  }}
-                />
-              </div>
-              <span className="font-medium font-mono tabular-nums">
-                {Math.round(route.terrainDifficulty * 100)}%
-              </span>
-            </div>
-          </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground flex items-center gap-1.5">
-            <Clock className="h-3 w-3" /> Est. Travel Time
-          </span>
-          <span className="font-semibold font-mono tabular-nums text-foreground">
-            {travelTime.formattedTime}
-          </span>
-        </div>
-
-        {editing ? (
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground flex items-center gap-1.5">
-              <Gauge className="h-3 w-3" /> Speed
-            </span>
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                min={5}
-                max={2000}
-                value={editSpeed ?? ""}
-                onChange={(e) => setEditSpeed(e.target.value ? Number(e.target.value) : undefined)}
-                className="border-border bg-background w-20 rounded border px-1.5 py-0.5 text-right font-mono text-xs tabular-nums focus:outline-none"
-                placeholder={String(baseSpeed)}
-              />
-              <span className="text-muted-foreground text-xs">km/h</span>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground flex items-center gap-1.5">
-              <Gauge className="h-3 w-3" /> Speed
-            </span>
-            <div className="flex items-center gap-1.5 font-mono tabular-nums">
-              <span className="font-medium">{Math.round(travelTime.effectiveSpeedKmh)} km/h</span>
-              {travelTime.terrainDragFactor < 1 && (
-                <span className="text-xs text-amber-500/80">
-                  ({Math.round(baseSpeed)} base)
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {Boolean(route.builtYear) && (
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground flex items-center gap-1.5">
-              <Calendar className="h-3 w-3" /> Built
-            </span>
-            <span className="font-medium font-mono tabular-nums">{route.builtYear}</span>
-          </div>
-        )}
-
-        {Boolean(route.isInternational) && (
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">International</span>
-            <span className="text-primary font-medium">Yes</span>
-          </div>
-        )}
-
-        {route.country && (
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Country</span>
-            <span className="font-medium">{route.country.name}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Transit details (sea routes: currents & prevailing winds) */}
-      {travelTime.sea && (
-        <div className="border-border space-y-1.5 border-t px-4 py-3 text-xs">
-          <Eyebrow className="mb-1.5 block">Transit details</Eyebrow>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground flex items-center gap-1.5">
-              <Clock className="h-3 w-3" /> Total time
-            </span>
-            <span className="font-semibold font-mono tabular-nums text-foreground">
-              {travelTime.formattedTime}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground flex items-center gap-1.5">
-              <Gauge className="h-3 w-3" /> Avg. speed
-            </span>
-            <span className="font-medium font-mono tabular-nums">
-              {`${travelTime.sea.averageSpeedKmh.toFixed(1)} km/h (${(travelTime.sea.averageSpeedKmh / KMH_PER_KNOT).toFixed(1)} kn)`}
-            </span>
-          </div>
-          <div className="flex items-start justify-between gap-2">
-            <span className="text-muted-foreground flex shrink-0 items-center gap-1.5">
-              <Wind className="h-3 w-3" /> Largest effect
-            </span>
-            {largestSeaEffect ? (
-              <span className="min-w-0 text-right">
-                <span className="block truncate font-medium">{largestSeaEffect.name}</span>
-                <span
-                  className={`block font-mono tabular-nums ${
-                    largestSeaEffect.averageChangeKmh >= 0 ? "text-emerald-500" : "text-amber-500"
-                  }`}
-                >
-                  {formatSignedSpeed(largestSeaEffect.averageChangeKmh)}
-                </span>
-                <span className="text-muted-foreground block">
-                  {largestSeaEffect.kind} · over {Math.round(largestSeaEffect.distanceKm).toLocaleString()} km
-                </span>
-              </span>
-            ) : (
-              <span className="text-muted-foreground">None on this path</span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Cost breakdown */}
-      {Boolean(props.costBillion || props.maintenanceCost) && (
-        <div className="border-border space-y-1.5 border-t px-4 py-3 text-xs">
-          {Boolean(props.costBillion) && (
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground flex items-center gap-1.5">
-                <Coins className="h-3 w-3" /> Build Cost
-              </span>
-              <span className="font-medium font-mono tabular-nums">
-                {Number(props.costBillion).toFixed(2)}B
-              </span>
-            </div>
-          )}
-          {Boolean(props.maintenanceCost) && (
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Annual Maint.</span>
-              <span className="font-medium font-mono tabular-nums">
-                {Number(props.maintenanceCost).toFixed(3)}B/yr
-              </span>
-            </div>
+        <div className="border-separator text-footnote space-y-2 border-t px-4 py-2">
+          <StatRow label="Modal network">
+            <span className="text-label font-medium capitalize">{modalFamily} Logistics</span>
+          </StatRow>
+          {note && (
+            <Card variant="well" className="text-footnote px-3 py-2">
+              <span className="text-label font-semibold">{note.title}</span>
+              <p className="text-label-secondary text-footnote mt-0.5">{note.detail}</p>
+            </Card>
           )}
         </div>
-      )}
 
-      {/* Intermodal Logistics */}
-      <div className="border-border space-y-1.5 border-t px-4 py-2.5 text-xs">
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">Modal Network</span>
-          <span className="font-medium capitalize text-foreground">{modalFamily} Logistics</span>
-        </div>
-        {intermodalBadge && (
-          <div className="rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-1.5 text-xs text-cyan-400">
-            <span className="font-semibold">{intermodalBadge.title}</span>
-            <p className="text-xs text-muted-foreground mt-0.5">{intermodalBadge.detail}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Stops */}
-      {Boolean(route.stopsResolved && route.stopsResolved.length > 0) && (
-        <div className="border-border border-t px-4 py-3">
-          <div className="text-muted-foreground mb-1.5 text-xs font-semibold tracking-wider uppercase">
-            Stops ({route.stopsResolved.length})
-          </div>
-          <div className="space-y-1">
-            {route.stopsResolved.map((stop: ResolvedStop, i: number) => (
-              <div key={i} className="flex items-center gap-1.5 text-xs">
-                <MapPin className="text-muted-foreground h-3 w-3 shrink-0" />
-                <span className="flex-1 truncate">
-                  {stop.cityName ?? stop.name ?? `Stop ${i + 1}`}
-                </span>
-                {Boolean(stop.cityPopulation) && (
-                  <span className="text-muted-foreground text-xs font-mono tabular-nums">
-                    {Number(stop.cityPopulation).toLocaleString()}
+        {Boolean(route.stopsResolved?.length) && (
+          <div className="border-separator border-t px-4 py-3">
+            <Eyebrow className="mb-2 block">Stops ({route.stopsResolved.length})</Eyebrow>
+            <div className="space-y-1">
+              {route.stopsResolved.map((stop, i) => (
+                <div key={i} className="text-footnote flex items-center gap-2">
+                  <MapPin className="text-label-secondary h-3 w-3 shrink-0" />
+                  <span className="flex-1 truncate">
+                    {stop.cityName ?? stop.name ?? `Stop ${i + 1}`}
                   </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Actions */}
-      {Boolean(canEdit && route.countryId) && (
-        <div className="border-border flex items-center justify-between gap-1 border-t px-4 py-2">
-          {editing ? (
-            <div className="flex w-full items-center gap-1">
-              <button
-                onClick={handleSaveEdit}
-                disabled={updateRoute.isPending}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition active:scale-[0.98] disabled:opacity-50"
-              >
-                {updateRoute.isPending ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Check className="h-3 w-3" />
-                )}
-                Save
-              </button>
-              <button
-                onClick={() => setEditing(false)}
-                className="border-border text-foreground/80 hover:bg-accent rounded-md border px-2 py-1.5 text-xs transition active:scale-[0.98]"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : confirmingDelete ? (
-            <div className="flex w-full items-center justify-between gap-2">
-              <span className="text-xs font-medium text-destructive">Delete route?</span>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => {
-                    if (route.countryId) {
-                      deleteRoute.mutate({ id: route.id, countryId: route.countryId });
-                    }
-                  }}
-                  disabled={deleteRoute.isPending}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded px-2 py-1 text-xs font-medium transition active:scale-[0.98] disabled:opacity-50"
-                >
-                  {deleteRoute.isPending ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    "Confirm"
+                  {Boolean(stop.cityPopulation) && (
+                    <span className="text-label-secondary text-footnote tabular-nums">
+                      {Number(stop.cityPopulation).toLocaleString()}
+                    </span>
                   )}
-                </button>
-                <button
-                  onClick={() => setConfirmingDelete(false)}
-                  className="border-border hover:bg-accent rounded border px-2 py-1 text-xs text-muted-foreground transition active:scale-[0.98]"
-                >
-                  Cancel
-                </button>
-              </div>
+                </div>
+              ))}
             </div>
-          ) : (
-            <>
-              <button
-                onClick={handleStartEdit}
-                className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-2 py-1.5 text-xs transition active:scale-[0.98]"
-              >
-                <Pencil className="h-3 w-3" /> Edit
-              </button>
-              {onEditPath && (
-                <button
-                  onClick={() => onEditPath(routeId)}
-                  className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-2 py-1.5 text-xs transition active:scale-[0.98]"
-                >
-                  <Route className="h-3 w-3" /> Edit Path
-                </button>
-              )}
-              <button
-                onClick={() => setConfirmingDelete(true)}
-                disabled={deleteRoute.isPending}
-                className="flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10 transition active:scale-[0.98] disabled:opacity-50"
-              >
-                <Trash2 className="h-3 w-3" /> Delete
-              </button>
-            </>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+
+        {Boolean(canEdit && route.countryId) && (
+          <div className="border-separator flex items-center justify-between gap-1 border-t px-4 py-2">
+            <RouteActions
+              route={route}
+              editor={editor}
+              onEditPath={onEditPath && (() => onEditPath(routeId))}
+            />
+          </div>
+        )}
+      </FacetMaterial>
     </div>
   );
 });

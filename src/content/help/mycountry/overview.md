@@ -1,45 +1,68 @@
 ---
-title: Your National Overview
-description: Your nation's health at a glance — the vital signs you check first each visit.
-badge: MyCountry — Your Nation's Home
+title: MyCountry Overview
+description: Your nation's home page, its vital signs and agenda, and where each MyCountry section lives.
+badge: MyCountry
+nextHref: /help/mycountry/executive
+nextLabel: Executive Directives
 ---
 
-## The First Thing You'll See
+## What MyCountry is
 
-The Overview is your nation’s home screen — a calm, at-a-glance read on how your country is doing across the board. This is where you take the temperature and see what’s waiting on you; most of the doing happens in the other MyCountry sections.
+[MyCountry](/mycountry) is where you run your nation. Its home page tells you how the nation is doing and what is waiting for you; the other sections are where you act. You need a nation to use it (see [Create Your First Nation](/help/getting-started/first-country)). If you own several nations, MyCountry shows the one you're playing as; switch nations from the user menu.
 
-## The Vital Signs
+## The home page, top to bottom
 
-The **National Standing** card gives your nation a quick health score in four rings:
+- **Header.** Your seal, name and leader, and the **Declare Directive** button. The line under it shows how many directives you have left this week ("2 of 3 directives left this week"), or a countdown to your next one when all three are used. See [Executive Directives](/help/mycountry/executive).
+- **National standing.** Your vital signs (below).
+- **Priority.** The most pressing thing on your desk. For a national issue, choose **Open issue brief** to respond.
+- **Agenda.** Your inbox of things waiting on you (below).
+- **Recent activity.** A log of recent changes to your nation.
+- **Side column.** Your **World Census** ranking and a **Territory** card with your map, plus buttons to open the world map and edit your territory.
 
-- **Economic** — growth, debt, trade, and how varied your economy is, rolled into one number.
-- **Wellbeing** — how your people are doing: population, education, health, and everyday satisfaction.
-- **Diplomatic** — your standing in the world: embassies, relationships, and alliances.
-- **Efficiency** — how well your government runs.
+## National standing
 
-Alongside the rings you’ll see your population, GDP, public approval, political stability, and how many of this week’s directive slots you’ve used. Tap the rings for the full vitality breakdown.
+- **Population** (tap it to switch between the short and the exact figure) and **GDP**.
+- **Approval** and **Stability.** Issue responses, directives and elections move them.
+- **Bandwidth** (executive bandwidth): how much work your government can carry, shown as used/capacity. The bar turns red when you're over capacity. See [Executive bandwidth](/help/mycountry/executive#executive-bandwidth).
+- **Vitality rings**, four scores from 0 to 100:
+  - **Economic:** from GDP per person and growth.
+  - **Wellbeing:** from population growth and density.
+  - **Diplomatic:** from your real diplomatic record (relations, embassies, alliances and treaties, minus embargoes and sanctions against you).
+  - **Efficiency:** your government effectiveness score.
 
-Green is healthy, amber is worth a look, red wants your attention. A glance tells you where to spend your time.
+The **Vitality** button opens the full breakdown. A score with no data yet (for example, Diplomatic before you have any relations) shows "—", never 0.
 
-## What Needs You Now
+## The agenda
 
-> **Your agenda at a glance**
->
-> - **Opportunities** — the most pressing situation up top, with a one-tap way to open the brief or declare a directive to resolve it.
-> - **Agenda** — scheduled events, directives rolling out, and national issues waiting on a decision. Tap through to the [Executive desk](/help/mycountry/executive) to handle them.
-> - **Recent activity** — your national log of what’s happened lately.
+The agenda works like an email inbox. It lists only real items: open [national issues](/help/gameplay/national-issues), active [directives](/help/mycountry/executive) and upcoming [elections](/help/mycountry/politics). Each row shows what it is, a one-line preview and how long ago it arrived ("2h ago"), or how pressing it is ("Due soon", "Overdue"). New items are **bold with a dot** until you open them, and the number next to "Agenda" counts your unread items. A flag marks anything urgent.
 
-## Where Your Economy Goes
+- **Mailboxes.** Switch between **All**, **Needs action** (the flagged items), **Issues**, **Directives** and **Elections**. Only mailboxes with items appear.
+- **Open an item** to act on it; for an issue, choose **Open issue brief**. Opening an item marks it read.
+- **Tidy up** from the open item: **Mark as unread**, **Snooze a day**, **Snooze a week** or **Done**. On a phone, swipe a row: right to mark it read or unread, left to snooze or finish it. **Mark all as read** clears every dot.
+- **Snoozed and done** items move out of the way; "Show … snoozed and … done" at the bottom lists them, and **Move to inbox** brings one back. A snoozed item returns on its own, and a finished one comes back if it changes, for example when an issue escalates.
 
-For the sector breakdown, your national budget, tax rates, and trade, open **Economy & Budget** from the MyCountry command bar.
+Read, snoozed and done are remembered in this browser, separately for each of your nations. When nothing is waiting you'll see **Inbox zero**. A new nation often starts there; it fills as issues arrive and you declare directives or set up elections.
 
-## Handy on the Side
+## The other sections
 
-- **Your territory** — a map of your nation, with shortcuts to the world map and the Map Editor.
-- **Domain tiles** — jump straight into Diplomacy, Defense, Politics, or Economy & Budget.
+Domain tiles on the home page link to Politics, Economy, Diplomacy and Defense. Each tile shows a real figure when there is one (your stability, your real GDP growth, and the number of Diplomacy items awaiting your answer); otherwise it shows a short description.
 
-> **Keep Exploring**
->
-> - [The Executive Desk](/help/mycountry/executive) — where the big decisions get made.
-> - [Economic Tiers](/help/economy/tiers) — how your economy climbs from one stage to the next.
-> - [IxCredits](/help/vault/ixcredits) — earning and spending the currency.
+| Section    | Address                                        | What you do there                     | Guide                                                |
+| ---------- | ---------------------------------------------- | ------------------------------------- | ---------------------------------------------------- |
+| Executive  | [/mycountry/executive](/mycountry/executive)   | Declare directives, respond to issues | [Executive Directives](/help/mycountry/executive)    |
+| Economy    | [/mycountry/economy](/mycountry/economy)       | Budget, tax rates, trade              | [Economy & Budget](/help/mycountry/economy)          |
+| Politics   | [/mycountry/politics](/mycountry/politics)     | Cabinet, parties, legislature, bills  | [Politics & Elections](/help/mycountry/politics)     |
+| Diplomacy  | [/mycountry/diplomacy](/mycountry/diplomacy)   | Embassies, relations, alliances       | [Foreign Affairs](/help/mycountry/diplomacy)         |
+| Defense    | [/mycountry/defense](/mycountry/defense)       | Military and security (Premium)       | [Defense & Security](/help/mycountry/defense)        |
+| Editor     | [/mycountry/editor](/mycountry/editor)         | Change name, identity, government, size | [The Country Editor](/help/mycountry/editor)         |
+| Map editor | [/mycountry/map-editor](/mycountry/map-editor) | Your territory                        | [Editing Your Territory](/help/mycountry/map-editor) |
+
+## World Census
+
+The World Census card ranks your nation against the other nations in your realm on ten measures: GDP per person, total GDP, GDP growth, population, approval, stability, diplomatic standing, infrastructure, debt-to-GDP and income equality. It shows the five where your nation stands out most (your best ranks first); choose **See more** for the rest and **See less** to fold them away. Hover a rank to see your position in the realm and your region.
+
+## Tips
+
+- Check in every few real days: you get 3 directives per IxTime week (3.5 real days), and new issues keep arriving.
+- A "—" usually means a system you haven't used yet. Open an embassy and the Diplomatic ring gets a score.
+- Your public profile in [Explore](/countries) shows others a read-only view of the same nation.

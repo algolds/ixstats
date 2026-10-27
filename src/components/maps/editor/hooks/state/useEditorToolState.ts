@@ -36,6 +36,7 @@ export function useEditorToolState() {
     labels: { visible: true, locked: false, opacity: 1 },
     routes: { visible: true, locked: false, opacity: 1 },
     rivers: { visible: true, locked: false, opacity: 1 },
+    geography: { visible: true, locked: false, opacity: 1 },
     altitude: { visible: true, locked: false, opacity: 1 },
     grid: { visible: false, locked: false, opacity: 1 },
   });

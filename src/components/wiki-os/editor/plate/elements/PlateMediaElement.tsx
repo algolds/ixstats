@@ -1,10 +1,14 @@
 "use client";
 
+import { cn } from "~/lib/utils";
 import React from "react";
 import { useElement, usePath, useReadOnly, useEditorRef } from "platejs/react";
 import { Transforms } from "slate";
-import { usePlateWikiCallbacks } from "./PlateRawHtmlElement";
+import { useOptionalPlateWikiCallbacks } from "./PlateRawHtmlElement";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
+import { Button } from "~/components/ui/button";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { assetUrl } from "~/lib/base-path";
 
 /** Stashed/Commons media block — original figure HTML or AST-resolved image rendered. */
 export function PlateMediaElement({
@@ -18,12 +22,10 @@ export function PlateMediaElement({
   const path = usePath();
   const editor = useEditorRef();
   const readOnly = useReadOnly();
-  let cb: ReturnType<typeof usePlateWikiCallbacks> | null = null;
-  try {
-    cb = usePlateWikiCallbacks();
-  } catch {
-    // rendered outside the PlateWikiCallbacks provider — media callbacks disabled
-  }
+  // one object per HTML: a new one each render would write the figure's DOM again (React 19)
+  const htmlMarkup = useHtmlMarkup(el?.html ?? "");
+  // null outside the PlateWikiCallbacks provider: media callbacks are disabled then
+  const cb = useOptionalPlateWikiCallbacks();
 
   if (!el) return <div {...attributes}>{children}</div>;
 
@@ -50,46 +52,48 @@ export function PlateMediaElement({
       <div contentEditable={false} className="group relative">
         {el.html ? (
           <div
-            className="wikios-ve-media overflow-hidden rounded-xl [&_figure]:m-0 [&_img]:max-w-full"
-            dangerouslySetInnerHTML={{ __html: el.html }}
+            className="wikios-ve-media rounded-row overflow-hidden [&_figure]:m-0 [&_img]:max-w-full"
+            dangerouslySetInnerHTML={htmlMarkup}
           />
         ) : (
           <figure
-            className={`overflow-hidden rounded-xl border border-border/40 bg-secondary/20 p-2 ${
+            className={cn(
+              "rounded-row border-separator bg-fill-4 overflow-hidden border p-2",
               align === "left"
                 ? "float-left mr-4 mb-2 max-w-sm"
                 : align === "right" || align === "thumb"
-                ? "float-right ml-4 mb-2 max-w-sm"
-                : "mx-auto max-w-lg"
-            }`}
+                  ? "float-right mb-2 ml-4 max-w-sm"
+                  : "mx-auto max-w-lg"
+            )}
           >
             {imageUrl ? (
               <img
-                src={imageUrl}
+                src={assetUrl(imageUrl) ?? undefined}
                 alt={caption || filename}
-                className="w-full h-auto rounded-lg object-contain"
+                className="rounded-control h-auto w-full object-contain"
                 loading="lazy"
               />
             ) : (
-              <div className="flex h-32 items-center justify-center rounded-lg bg-secondary/50 text-muted-foreground text-xs font-mono">
+              <div className="rounded-control bg-fill-3 text-label-secondary text-footnote flex h-32 items-center justify-center tabular-nums">
                 {filename || "Media File"}
               </div>
             )}
             {caption && (
-              <figcaption className="mt-1.5 text-center text-xs text-muted-foreground">
+              <figcaption className="text-footnote text-label-secondary mt-2 text-center">
                 {caption}
               </figcaption>
             )}
           </figure>
         )}
         {!readOnly && (
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleDelete}
-            className="absolute top-2 right-2 rounded-lg bg-black/60 px-2 py-0.5 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100 active:scale-[0.98] z-10"
+            className="absolute top-2 right-2 z-10 bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-black/80 focus-visible:opacity-100"
           >
             Remove
-          </button>
+          </Button>
         )}
       </div>
     </div>

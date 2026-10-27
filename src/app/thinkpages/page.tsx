@@ -1,9 +1,12 @@
-import { ThinkPagesAccountHub } from "~/components/thinkpages/ThinkPagesAccountHub";
-import { getSignedInCountryId } from "~/lib/auth/signed-in-country.server";
+import { type Metadata } from "next";
+import { ForumHome } from "~/components/thinkpages-forum/home";
 
-export default async function ThinkPagesMainPage() {
-  // Server-resolved so the hub's country query runs alongside users.getProfile, not after it.
-  const initialCountryId = await getSignedInCountryId();
+export const metadata: Metadata = {
+  title: "ThinkPages - IxStates",
+  description: "The community forum: sitewide boards and a section for every realm.",
+};
 
-  return <ThinkPagesAccountHub initialCountryId={initialCountryId} />;
+/** The Forums home: the sitewide boards and the old forum's archive. */
+export default function ThinkPagesHomePage() {
+  return <ForumHome />;
 }

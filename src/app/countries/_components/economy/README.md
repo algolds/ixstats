@@ -6,8 +6,8 @@ This directory contains the `EconomicModelingEngine` component rendered on the `
 
 ## Component
 
-| Component | Purpose |
-| --- | --- |
+| Component                    | Purpose                                                                                                                                                                                                                       |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `EconomicModelingEngine.tsx` | Interactive forecasting engine with parameter sliders (GDP growth, inflation, unemployment, interest rate, population growth), sectoral breakdown editor, and policy scenario simulator with Recharts time-series projections |
 
 ## Integration

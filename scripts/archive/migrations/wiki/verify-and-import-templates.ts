@@ -19,7 +19,7 @@ import {
   fetchTemplateData,
 } from "../../src/lib/wiki-os/templates/template-registry";
 import { toArticleSlug } from "../../src/lib/wiki-os/core/domain-types";
-import { DEFAULT_USER_AGENT, DEFAULT_MEDIAWIKI_URL } from "../../src/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, mediaWikiOrigin } from "../../src/lib/wiki-os/config";
 import type mysql from "mysql2/promise";
 
 const prisma = new PrismaClient();
@@ -103,7 +103,7 @@ async function fetchTemplatesFromMariaDB(): Promise<TemplateItem[] | null> {
 
 async function fetchTemplatesFromMediaWikiApi(): Promise<TemplateItem[]> {
   console.log("🌐 Streaming templates from MediaWiki API (https://ixwiki.com/api.php)...");
-  const apiUrl = DEFAULT_MEDIAWIKI_URL.replace(/\/$/, "") + "/api.php";
+  const apiUrl = mediaWikiOrigin() + "/api.php";
   const items: TemplateItem[] = [];
   let apcontinue: string | null = null;
 

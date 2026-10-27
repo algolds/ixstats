@@ -13,6 +13,10 @@ jest.mock("~/lib/notifications/hooks", () => ({
   __esModule: true,
   notificationHooks: { onThinktankActivity: jest.fn().mockResolvedValue(undefined) },
 }));
+const mockEvictFromRoom = jest.fn();
+jest.mock("~/server/websocket-server", () => ({
+  getThinkPagesBroadcaster: () => ({ evictFromRoom: mockEvictFromRoom }),
+}));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
@@ -118,6 +122,7 @@ describe("SL-1: group management needs the owner or a group admin", () => {
     ).rejects.toThrow(/owner or a group admin/);
     expect(db.thinktankInvite.createMany).not.toHaveBeenCalled();
 
+    db.user.findMany.mockResolvedValue([{ clerkUserId: "user_friend", countryId: null }]);
     await callerAs(OWNER, db).inviteToThinktank({
       groupId: "g1",
       userIds: ["user_friend"],
@@ -174,6 +179,16 @@ describe("SL-1: join, leave and documents act as the caller", () => {
     expect(db.thinktankMember.findUnique).toHaveBeenCalledWith({
       where: { groupId_userId: { groupId: "g1", userId: MEMBER } },
     });
+  });
+
+  it("leaveThinktank takes the caller's sockets out of the group's and its chat's rooms", async () => {
+    mockEvictFromRoom.mockClear();
+    const db = makeDb(group({ conversationId: "conv_g1" }));
+    await callerAs(MEMBER, db).leaveThinktank({ groupId: "g1" });
+    expect(mockEvictFromRoom.mock.calls.map(([event]) => event)).toEqual([
+      { type: "room:evict", clerkUserId: MEMBER, groupId: "g1" },
+      { type: "room:evict", clerkUserId: MEMBER, conversationId: "conv_g1" },
+    ]);
   });
 
   it("createThinktankDocument rejects a non-member even with a spoofed createdBy", async () => {
@@ -278,6 +293,23 @@ describe("SL-1: group posts", () => {
       expect.objectContaining({ data: expect.objectContaining({ accountId: "acc_mine" }) })
     );
   });
+
+  it("createGroupPost stamps a ThinkTank post with real time, never IxTime", async () => {
+    const db = makeDb(group({ settings: JSON.stringify({ allowPersonaPosting: true }) }));
+    db.thinkpagesAccount.findFirst.mockResolvedValue({ id: "acc_mine" });
+    db.thinkpagesPost.create.mockResolvedValue({ id: "p1" });
+    const before = Date.now();
+    await callerAs(MEMBER, db).createGroupPost({
+      groupId: "g1",
+      accountId: "acc_mine",
+      content: "hi",
+    });
+    const stamp = (
+      db.thinkpagesPost.create.mock.calls[0][0].data.ixTimeTimestamp as Date
+    ).getTime();
+    expect(stamp).toBeGreaterThanOrEqual(before);
+    expect(stamp).toBeLessThanOrEqual(Date.now());
+  });
 });
 
 describe("SL-2: private group content is for members only", () => {
@@ -346,7 +378,7 @@ describe("SL-12: notification names come from the identity resolver", () => {
       {
         clerkUserId: OUTSIDER,
         forumUsername: null,
-        wikiUsername: null,
+        handle: null,
         country: { name: "Caphiria" },
       },
     ]);

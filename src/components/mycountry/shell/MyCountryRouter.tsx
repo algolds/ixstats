@@ -12,13 +12,13 @@ import { MobileOptimized } from "./MobileOptimizations";
 import {
   getSectionFromPathname,
   type MyCountrySection,
-} from "~/components/mycountry/shell/MyCountrySidebarNav";
+} from "~/components/mycountry/shell/mycountry-sections";
 import { useMyCountryCompliance } from "~/hooks/useMyCountryCompliance";
 import { MyCountryComplianceModal } from "~/components/mycountry/shared/modals/MyCountryComplianceModal";
 import { DashboardErrorBoundary } from "~/components/dashboard/DashboardErrorBoundary";
 import { withBasePath } from "~/lib/base-path";
+import { complianceReviewHref } from "~/lib/mycountry/routes";
 import { useNationalIssuesToast } from "~/hooks/useNationalIssuesToast";
-import { createUrl } from "~/lib/utils";
 import { CommandSurface } from "./CommandSurface";
 
 const SECTION_TITLES: Record<MyCountrySection, string> = {
@@ -26,7 +26,8 @@ const SECTION_TITLES: Record<MyCountrySection, string> = {
   executive: "Executive Directives",
   economy: "Economy & Budget",
   diplomacy: "Diplomatic Operations",
-  intelligence: "Intelligence Dashboard",
+  // /mycountry/intelligence renders the Defense section.
+  intelligence: "Defense & Security",
   defense: "Defense & Security",
   politics: "Political Landscape",
   "map-editor": "Map Editor",
@@ -97,13 +98,19 @@ function MyCountryRouterInner() {
       window.localStorage.removeItem(complianceStorageKey);
     }
     setShowComplianceModal(false);
-    router.push(createUrl("/mycountry/editor"));
+    router.push(complianceReviewHref(complianceSections.find((section) => !section.isComplete)));
   };
 
   // Navigate to a section (instant client-side switch)
   const handleNavigate = useCallback(
     (section: string) => {
       if (!isMyCountrySection(section) || section === activeSection) return;
+
+      // The map editor is a full-screen route, not a surface of the command shell.
+      if (section === "map-editor") {
+        router.push("/mycountry/map-editor");
+        return;
+      }
 
       setActiveSection(section);
 
@@ -116,12 +123,12 @@ function MyCountryRouterInner() {
       document.title =
         section === "overview"
           ? `${countryName} - MyCountry`
-          : `${countryName} - ${SECTION_TITLES[section]} - IxStats`;
+          : `${countryName} - ${SECTION_TITLES[section]} - IxStates`;
 
       // Scroll to top on section change
       window.scrollTo({ top: 0, behavior: "instant" });
     },
-    [activeSection, country?.name]
+    [activeSection, country?.name, router]
   );
 
   // Handle browser back/forward navigation
@@ -149,7 +156,7 @@ function MyCountryRouterInner() {
     document.title =
       activeSection === "overview"
         ? `${country.name} - MyCountry`
-        : `${country.name} - ${SECTION_TITLES[activeSection]} - IxStats`;
+        : `${country.name} - ${SECTION_TITLES[activeSection]} - IxStates`;
   }, [country?.name, activeSection]);
 
   return (
@@ -173,12 +180,12 @@ function MyCountryRouterInner() {
   );
 }
 
-export function MyCountryRouter({ v2: _v2 }: { v2?: boolean } = {}) {
+export function MyCountryRouter() {
   const { user } = useUser();
 
   return (
     <MobileOptimized enableTouchGestures={true} className="min-h-screen">
-      <AuthenticationGuard redirectPath="/mycountry">
+      <AuthenticationGuard>
         <CountryDataProvider userId={user?.id || "placeholder-disabled"}>
           <MyCountryRouterInner />
         </CountryDataProvider>

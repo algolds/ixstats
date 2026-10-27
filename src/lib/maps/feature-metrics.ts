@@ -1,15 +1,15 @@
 /**
- * The per-feature metrics the SVG parser computes (svg/feature-extraction: centroid, bounding box, approximate
- * area over the feature's rings), recomputed from a polygon geometry so an import can persist them.
+ * The per-feature metrics an import persists (centroid, bounding box, approximate area with holes subtracted),
+ * computed from a polygon geometry.
  */
 import type { Geometry, Position } from "geojson";
 import {
-  calculateApproxArea,
   calculateBoundingBox,
   calculateCentroid,
+  roundedAreaSqKm,
 } from "~/lib/flags/svg/topology-flattener";
 
-export interface PolygonMetrics {
+interface PolygonMetrics {
   centroid: [number, number];
   boundingBox: [number, number, number, number];
   areaSqKm: number;
@@ -28,6 +28,6 @@ export function polygonMetrics(geometry: Geometry | null | undefined): PolygonMe
   return {
     centroid: calculateCentroid(rings),
     boundingBox: calculateBoundingBox(rings),
-    areaSqKm: calculateApproxArea(rings),
+    areaSqKm: roundedAreaSqKm(geometry!),
   };
 }

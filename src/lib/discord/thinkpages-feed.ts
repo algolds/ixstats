@@ -18,7 +18,7 @@ const DISCORD_API_BASE = "https://discord.com/api/v10";
 /** The #thinkpages channel created for this feed (seed default; admin can change). */
 export const DEFAULT_THINKPAGES_CHANNEL_ID = "1514756187193741433";
 
-export interface FeedFilterConfig {
+interface FeedFilterConfig {
   enabled: boolean;
   channelId: string;
   includeGovernment: boolean;
@@ -108,7 +108,7 @@ function toFilterConfig(row: {
   };
 }
 
-export interface FilterVerdict {
+interface FilterVerdict {
   eligible: boolean;
   reason: string;
 }
@@ -189,7 +189,7 @@ function evaluateFeedFilter(
   return { eligible: true, reason: "Passes all filters" };
 }
 
-export interface MirrorResult {
+interface MirrorResult {
   mirrored: boolean;
   reason: string;
   discordMessageId?: string;

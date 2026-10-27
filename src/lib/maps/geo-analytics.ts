@@ -1,33 +1,13 @@
-/**
- * geo-analytics.ts — Pure geographic analytics functions.
- *
- * Computes derived gameplay metrics from geographic data:
- * - Arable land percentage from climate distribution
- * - Landlocked / island classification
- * - Climate diversity index (Shannon)
- * - Terrain roughness
- * - NPC personality modifiers (geography → trait drift)
- * - Economic modifiers (geography → GDP/trade/infrastructure)
- * - Crisis risk factors (geography → natural disaster probabilities)
- *
- * All functions are pure (no DB, no React, no side effects) and can be
- * used server-side in tRPC endpoints or client-side in components.
- *
- * Constants ported from scripts/country-geo-report.ts and
- * src/lib/procedural/climate-system.ts.
- */
+import { CLIMATE_CODE_TO_NAME } from "./geo-climate-codes";
 
-import { distanceKm as haversineKm } from "~/lib/maps/geo-math";
-
-// ─────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────
+export { climateMetadataType, resolveClimateFromColor, trewarthaCodeOf } from "./geo-climate-codes";
 
 /** Climate zone distribution entry for a country */
 export interface ClimateZoneEntry {
   type: string; // Full name e.g. "Tropical Wet (Ar)"
   code?: string; // Short code e.g. "Ar"
   name?: string; // Display name e.g. "Tropical Wet"
+  color?: string; // A realm climate key's zone colour
   percentArea: number; // 0–100
   areaSqKm: number;
   agricultureFactor: number; // 0.0–0.9
@@ -44,7 +24,7 @@ export interface ElevationZoneEntry {
 }
 
 /** Full geographic profile for a country */
-export interface GeoProfile {
+interface GeoProfile {
   arableLandPercent: number;
   coastlineKm: number;
   isLandlocked: boolean;
@@ -63,7 +43,7 @@ export interface GeoProfile {
 }
 
 /** NPC personality trait names (matches diplomatic-npc-personality.ts) */
-export interface PersonalityTraits {
+interface PersonalityTraits {
   assertiveness: number;
   cooperativeness: number;
   economicFocus: number;
@@ -75,7 +55,7 @@ export interface PersonalityTraits {
 }
 
 /** Economic modifiers derived from geography */
-export interface EconomicGeoModifiers {
+interface EconomicGeoModifiers {
   /** Multiplier on GDP growth rate (e.g. 1.05 = +5%) */
   gdpModifier: number;
   /** Multiplier on trade efficiency */
@@ -85,7 +65,7 @@ export interface EconomicGeoModifiers {
 }
 
 /** Crisis risk scores by type (0–1 probability weight) */
-export interface CrisisRiskFactors {
+interface CrisisRiskFactors {
   hurricane: number;
   earthquake: number;
   drought: number;
@@ -95,12 +75,8 @@ export interface CrisisRiskFactors {
   famine: number;
 }
 
-// ─────────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────────
-
 /** Climate metadata — agriculture factors, temperature, precipitation per Trewartha zone */
-export const CLIMATE_METADATA: Record<
+const CLIMATE_METADATA: Record<
   string,
   {
     tempModifier: number;
@@ -222,75 +198,6 @@ export const CLIMATE_METADATA: Record<
   },
 };
 
-/** Short code → full climate name lookup */
-export const CLIMATE_CODE_TO_NAME: Record<string, string> = {
-  Ar: "Tropical Wet (Ar)",
-  Aw: "Tropical Wet-And-Dry (Aw)",
-  Bw: "Desert or Arid (Bw)",
-  Bs: "Steppe or Semiarid (Bs)",
-  Cs: "Subtropical Dry Summer (Cs)",
-  Cf: "Subtropical Humid (Cf)",
-  Do: "Temperate Oceanic (Do)",
-  Dc: "Temperate Continental (Dc)",
-  E: "Boreal (E)",
-  Ft: "Tundra (Ft)",
-  Fi: "Ice Cap (Fi)",
-  H: "Highland (H)",
-};
-
-/** Canonical Trewartha fill colors → climate code. Used to identify climate zones from SVG map data. */
-export const CLIMATE_COLORS: Record<string, string> = {
-  "#990000": "Ar",
-  "#ff3300": "Aw",
-  "#ffff33": "Bw",
-  "#ff9933": "Bs",
-  "#669900": "Cs",
-  "#336600": "Cf",
-  "#00ff99": "Do",
-  "#0099ff": "Dc",
-  "#0066cc": "E",
-  "#b9b9b9": "Ft",
-  "#99ffff": "Fi",
-  "#ffccff": "H",
-};
-
-/**
- * Resolve a climate zone name from a fill color hex string.
- * Matches against canonical Trewartha colors with tolerance for slight SVG variations.
- * Returns full name like "Tropical Wet (Ar)" or null if no match.
- */
-export function resolveClimateFromColor(fill: string): string | null {
-  if (!fill) return null;
-  const hex = fill.toLowerCase().replace(/\s/g, "");
-
-  // Direct match
-  for (const [canonical, code] of Object.entries(CLIMATE_COLORS)) {
-    if (hex === canonical) return CLIMATE_CODE_TO_NAME[code] ?? null;
-  }
-
-  // Fuzzy match by RGB distance (SVG colors may be slightly off)
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  if (isNaN(r) || isNaN(g) || isNaN(b)) return null;
-
-  let bestCode: string | null = null;
-  let bestDist = 50; // max tolerance
-
-  for (const [canonical, code] of Object.entries(CLIMATE_COLORS)) {
-    const cr = parseInt(canonical.slice(1, 3), 16);
-    const cg = parseInt(canonical.slice(3, 5), 16);
-    const cb = parseInt(canonical.slice(5, 7), 16);
-    const dist = Math.sqrt((r - cr) ** 2 + (g - cg) ** 2 + (b - cb) ** 2);
-    if (dist < bestDist) {
-      bestDist = dist;
-      bestCode = code;
-    }
-  }
-
-  return bestCode ? (CLIMATE_CODE_TO_NAME[bestCode] ?? null) : null;
-}
-
 /** Elevation zone definitions */
 export const ELEVATION_ZONES = [
   {
@@ -352,15 +259,11 @@ export const ELEVATION_ZONES = [
   },
 ] as const;
 
-// ─────────────────────────────────────────────────────────────────
-// Core Analytics Functions
-// ─────────────────────────────────────────────────────────────────
-
 /**
  * Compute arable land percentage from climate zone distribution.
  * Weighted average of agriculture factors by area share.
  */
-export function computeArableLandPercent(zones: ClimateZoneEntry[]): number {
+function computeArableLandPercent(zones: ClimateZoneEntry[]): number {
   const totalArea = zones.reduce((s, z) => s + z.areaSqKm, 0);
   if (totalArea <= 0) return 0;
 
@@ -376,7 +279,7 @@ export function computeArableLandPercent(zones: ClimateZoneEntry[]): number {
 /**
  * Determine if a country is landlocked (no coastline).
  */
-export function computeIsLandlocked(coastlineKm: number): boolean {
+function computeIsLandlocked(coastlineKm: number): boolean {
   return coastlineKm < 1;
 }
 
@@ -384,11 +287,7 @@ export function computeIsLandlocked(coastlineKm: number): boolean {
  * Determine if a country is an island nation.
  * Island = has coastline + no land neighbors (or very small land area with high coast-to-area ratio).
  */
-export function computeIsIsland(
-  neighborCount: number,
-  coastlineKm: number,
-  landAreaKm2: number
-): boolean {
+function computeIsIsland(neighborCount: number, coastlineKm: number, landAreaKm2: number): boolean {
   if (coastlineKm < 1) return false;
   if (neighborCount === 0) return true;
   // High coast-to-area ratio suggests island archipelago even with a neighbor
@@ -400,7 +299,7 @@ export function computeIsIsland(
  * Shannon diversity index for climate zones.
  * Higher = more diverse climate. Range: 0 (monoculture) to ~2.5 (very diverse).
  */
-export function computeClimateDiversity(zones: ClimateZoneEntry[]): number {
+function computeClimateDiversity(zones: ClimateZoneEntry[]): number {
   const totalArea = zones.reduce((s, z) => s + z.areaSqKm, 0);
   if (totalArea <= 0) return 0;
 
@@ -418,7 +317,7 @@ export function computeClimateDiversity(zones: ClimateZoneEntry[]): number {
  * Standard deviation of the elevation zone distribution, weighted by area.
  * Higher = more varied terrain.
  */
-export function computeTerrainRoughness(zones: ElevationZoneEntry[]): number {
+function computeTerrainRoughness(zones: ElevationZoneEntry[]): number {
   const totalArea = zones.reduce((s, z) => s + z.areaSqKm, 0);
   if (totalArea <= 0) return 0;
 
@@ -445,7 +344,7 @@ export function computeTerrainRoughness(zones: ElevationZoneEntry[]): number {
 /**
  * Compute mean elevation from elevation profile (area-weighted).
  */
-export function computeMeanElevation(zones: ElevationZoneEntry[]): number {
+function computeMeanElevation(zones: ElevationZoneEntry[]): number {
   const totalArea = zones.reduce((s, z) => s + z.areaSqKm, 0);
   if (totalArea <= 0) return 0;
 
@@ -518,14 +417,10 @@ export function estimatePrecipitation(zones: ClimateZoneEntry[], meanElevation: 
 /**
  * Compute drainage density (river length per area).
  */
-export function computeDrainageDensity(totalRiverLengthKm: number, areaKm2: number): number {
+function computeDrainageDensity(totalRiverLengthKm: number, areaKm2: number): number {
   if (areaKm2 <= 0) return 0;
   return Math.round((totalRiverLengthKm / areaKm2) * 1000) / 1000;
 }
-
-// ─────────────────────────────────────────────────────────────────
-// Gameplay Integration Functions
-// ─────────────────────────────────────────────────────────────────
 
 /**
  * Compute economic modifiers from geographic profile.
@@ -607,55 +502,41 @@ export function computeEconomicGeoModifiers(profile: GeoProfile): EconomicGeoMod
  * in applyPersonalityDrift().
  */
 export function computeNPCGeoModifiers(profile: GeoProfile): Partial<PersonalityTraits> {
-  const mods: Partial<PersonalityTraits> = {};
-
-  // Island nation → maritime self-sufficiency, insular tendency
-  if (profile.isIsland) {
-    mods.cooperativeness = (mods.cooperativeness ?? 0) - 0.5;
-    mods.isolationism = (mods.isolationism ?? 0) + 0.5;
-  }
-
-  // Landlocked → trade-seeking, cooperation-driven
-  if (profile.isLandlocked) {
-    mods.economicFocus = (mods.economicFocus ?? 0) + 0.5;
-    mods.cooperativeness = (mods.cooperativeness ?? 0) + 0.3;
-  }
-
-  // Desert dominant → scarcity-driven boldness
   const dominant = profile.dominantClimate ?? "";
-  if (dominant.includes("Desert") || dominant.includes("Bw")) {
-    mods.riskTolerance = (mods.riskTolerance ?? 0) + 0.4;
-  }
+  const climateIs = (...needles: string[]) => needles.some((n) => dominant.includes(n));
 
-  // Tropical climate → historical trade crossroads openness
-  if (dominant.includes("Tropical") || dominant.includes("(Ar)") || dominant.includes("(Aw)")) {
-    mods.culturalOpenness = (mods.culturalOpenness ?? 0) + 0.3;
-  }
+  const rules: [applies: boolean, effects: Partial<PersonalityTraits>][] = [
+    // Island nation → maritime self-sufficiency, insular tendency
+    [profile.isIsland, { cooperativeness: -0.5, isolationism: 0.5 }],
+    // Landlocked → trade-seeking, cooperation-driven
+    [profile.isLandlocked, { economicFocus: 0.5, cooperativeness: 0.3 }],
+    // Desert dominant → scarcity-driven boldness
+    [climateIs("Desert", "Bw"), { riskTolerance: 0.4 }],
+    // Tropical climate → historical trade crossroads openness
+    [climateIs("Tropical", "(Ar)", "(Aw)"), { culturalOpenness: 0.3 }],
+    // Many neighbors → crowded neighborhood tension
+    [profile.neighborCount > 4, { assertiveness: 0.3 }],
+    // Mountain terrain → defensive isolation mindset
+    [profile.terrainRoughness > 0.5, { isolationism: 0.3, militarism: 0.3 }],
+    // High coastline → maritime trade orientation
+    [profile.coastlineKm > 500, { economicFocus: 0.3 }],
+    // Boreal/cold climate → self-reliant tendency
+    [climateIs("Boreal", "(E)"), { isolationism: 0.2, ideologicalRigidity: 0.2 }],
+  ];
 
-  // Many neighbors → crowded neighborhood tension
-  if (profile.neighborCount > 4) {
-    mods.assertiveness = (mods.assertiveness ?? 0) + 0.3;
+  const mods: Partial<PersonalityTraits> = {};
+  for (const [applies, effects] of rules) {
+    if (!applies) continue;
+    for (const [trait, delta] of Object.entries(effects) as [keyof PersonalityTraits, number][]) {
+      mods[trait] = (mods[trait] ?? 0) + delta;
+    }
   }
-
-  // Mountain terrain → defensive isolation mindset
-  if (profile.terrainRoughness > 0.5) {
-    mods.isolationism = (mods.isolationism ?? 0) + 0.3;
-    mods.militarism = (mods.militarism ?? 0) + 0.3;
-  }
-
-  // High coastline → maritime trade orientation
-  if (profile.coastlineKm > 500) {
-    mods.economicFocus = (mods.economicFocus ?? 0) + 0.3;
-  }
-
-  // Boreal/cold climate → self-reliant tendency
-  if (dominant.includes("Boreal") || dominant.includes("(E)")) {
-    mods.isolationism = (mods.isolationism ?? 0) + 0.2;
-    mods.ideologicalRigidity = (mods.ideologicalRigidity ?? 0) + 0.2;
-  }
-
   return mods;
 }
+
+/** The value of the first matching tier, else `fallback`. */
+const tiered = (tiers: [matches: boolean, value: number][], fallback: number) =>
+  tiers.find(([matches]) => matches)?.[1] ?? fallback;
 
 /**
  * Compute crisis risk factors from geographic profile.
@@ -664,74 +545,74 @@ export function computeNPCGeoModifiers(profile: GeoProfile): Partial<Personality
  */
 export function computeCrisisRiskFactors(profile: GeoProfile): CrisisRiskFactors {
   const dominant = profile.dominantClimate ?? "";
+  const climateIs = (...needles: string[]) => needles.some((n) => dominant.includes(n));
+  const { arableLandPercent, drainageDensity, terrainRoughness } = profile;
   const hasCoast = profile.coastlineKm > 100;
-
-  // Hurricane risk: tropical + coastal
-  const isTropical =
-    dominant.includes("Tropical") || dominant.includes("(Ar)") || dominant.includes("(Aw)");
-  const hurricane = isTropical && hasCoast ? 0.7 : isTropical ? 0.2 : hasCoast ? 0.1 : 0;
-
-  // Earthquake risk: high terrain roughness (mountain boundary zones)
-  const earthquake =
-    profile.terrainRoughness > 0.5 ? 0.6 : profile.terrainRoughness > 0.3 ? 0.3 : 0.1;
-
-  // Drought risk: arid climate + low arable land
-  const isArid =
-    dominant.includes("Desert") ||
-    dominant.includes("Bw") ||
-    dominant.includes("Steppe") ||
-    dominant.includes("Bs");
-  const drought =
-    isArid && profile.arableLandPercent < 15
-      ? 0.8
-      : isArid
-        ? 0.5
-        : profile.arableLandPercent < 20
-          ? 0.3
-          : 0.1;
-
-  // Flood risk: high drainage density + humid climate
-  const isHumid =
-    dominant.includes("Humid") ||
-    dominant.includes("Cf") ||
-    dominant.includes("Oceanic") ||
-    dominant.includes("Do");
-  const flood =
-    profile.drainageDensity > 0.8 && isHumid
-      ? 0.7
-      : profile.drainageDensity > 0.5
-        ? 0.4
-        : isHumid
-          ? 0.3
-          : 0.1;
-
-  // Wildfire risk: dry summer climate (Mediterranean, steppe)
-  const isDrySummer =
-    dominant.includes("Dry Summer") ||
-    dominant.includes("Cs") ||
-    dominant.includes("Steppe") ||
-    dominant.includes("Bs");
-  const wildfire = isDrySummer ? 0.6 : isArid ? 0.3 : 0.1;
-
-  // Pandemic risk: high population density correlates with tropical + humid
-  const pandemic = isTropical ? 0.4 : isHumid ? 0.3 : 0.2;
-
-  // Famine risk: low arable + low water resources
-  const famine =
-    profile.arableLandPercent < 10 && profile.drainageDensity < 0.3
-      ? 0.7
-      : profile.arableLandPercent < 20
-        ? 0.4
-        : 0.1;
+  const isTropical = climateIs("Tropical", "(Ar)", "(Aw)");
+  const isArid = climateIs("Desert", "Bw", "Steppe", "Bs");
+  const isHumid = climateIs("Humid", "Cf", "Oceanic", "Do");
+  const isDrySummer = climateIs("Dry Summer", "Cs", "Steppe", "Bs");
 
   return {
-    hurricane: Math.round(hurricane * 100) / 100,
-    earthquake: Math.round(earthquake * 100) / 100,
-    drought: Math.round(drought * 100) / 100,
-    flood: Math.round(flood * 100) / 100,
-    wildfire: Math.round(wildfire * 100) / 100,
-    pandemic: Math.round(pandemic * 100) / 100,
-    famine: Math.round(famine * 100) / 100,
+    // Tropical + coastal
+    hurricane: tiered(
+      [
+        [isTropical && hasCoast, 0.7],
+        [isTropical, 0.2],
+        [hasCoast, 0.1],
+      ],
+      0
+    ),
+    // High terrain roughness (mountain boundary zones)
+    earthquake: tiered(
+      [
+        [terrainRoughness > 0.5, 0.6],
+        [terrainRoughness > 0.3, 0.3],
+      ],
+      0.1
+    ),
+    // Arid climate + low arable land
+    drought: tiered(
+      [
+        [isArid && arableLandPercent < 15, 0.8],
+        [isArid, 0.5],
+        [arableLandPercent < 20, 0.3],
+      ],
+      0.1
+    ),
+    // High drainage density + humid climate
+    flood: tiered(
+      [
+        [drainageDensity > 0.8 && isHumid, 0.7],
+        [drainageDensity > 0.5, 0.4],
+        [isHumid, 0.3],
+      ],
+      0.1
+    ),
+    // Dry summer climate (Mediterranean, steppe)
+    wildfire: tiered(
+      [
+        [isDrySummer, 0.6],
+        [isArid, 0.3],
+      ],
+      0.1
+    ),
+    // High population density correlates with tropical + humid
+    pandemic: tiered(
+      [
+        [isTropical, 0.4],
+        [isHumid, 0.3],
+      ],
+      0.2
+    ),
+    // Low arable + low water resources
+    famine: tiered(
+      [
+        [arableLandPercent < 10 && drainageDensity < 0.3, 0.7],
+        [arableLandPercent < 20, 0.4],
+      ],
+      0.1
+    ),
   };
 }
 
@@ -811,27 +692,6 @@ export function buildGeoProfile(raw: {
     totalRiverLengthKm: raw.totalRiverLengthKm,
     totalLakeAreaSqKm: raw.totalLakeAreaSqKm,
   };
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Centralized Measurement Math & Distance Formatting (Plan 146)
-// ─────────────────────────────────────────────────────────────────
-
-/**
- * Calculates Great-Circle distance between two [lng, lat] coordinates in kilometers using Haversine formula.
- */
-export const calculateHaversineDistance = haversineKm;
-
-/**
- * Calculates total cumulative distance for a series of polyline coordinates in kilometers.
- */
-export function calculatePolylineDistance(points: [number, number][]): number {
-  if (!points || points.length < 2) return 0;
-  let totalKm = 0;
-  for (let i = 0; i < points.length - 1; i++) {
-    totalKm += calculateHaversineDistance(points[i]!, points[i + 1]!);
-  }
-  return totalKm;
 }
 
 /**

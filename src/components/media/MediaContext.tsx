@@ -12,14 +12,14 @@ import React, {
 import { IxMediaEngine } from "~/lib/media/IxMediaEngine";
 import type { Media } from "~/lib/media/types";
 
-export interface PlaybackDelegate {
+interface PlaybackDelegate {
   play: () => void;
   pause: () => void;
   seek: (seconds: number) => void;
   setSpeed?: (speed: number) => void;
 }
 
-export interface MediaContextState {
+interface MediaContextState {
   activeTrack: Media | null;
   isPlaying: boolean;
   currentTime: number;
@@ -47,7 +47,7 @@ export interface MediaContextState {
 }
 
 /** The playback commands — stable across `timeupdate` ticks. */
-export type MediaActions = Pick<
+type MediaActions = Pick<
   MediaContextState,
   | "playTrack"
   | "pauseTrack"
@@ -65,7 +65,7 @@ export type MediaActions = Pick<
 >;
 
 /** Everything except `currentTime`, which changes ~4×/s while playing. */
-export type MediaPlaybackState = Pick<
+type MediaPlaybackState = Pick<
   MediaContextState,
   "activeTrack" | "isPlaying" | "duration" | "volume" | "speed" | "queue" | "currentIndex"
 >;

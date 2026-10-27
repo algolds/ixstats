@@ -1,36 +1,10 @@
 /**
- * PNG-to-SVG Conversion for Political Maps
- *
- * Converts a PNG map image (where each country is a distinct color)
- * into an SVG with layered paths, ready for the existing SVG parser pipeline.
- *
- * Pipeline: PNG → sharp (color extraction) → potrace (vectorization) → SVG
+ * Provinces from a PNG raster map: the province importer's direct PNG path (`extractProvincesFromPng`).
  */
 
 import { Buffer } from "node:buffer";
-import { hslToHex, hexToRgbArray } from "~/lib/color";
+import { hslToHex } from "~/lib/color";
 import { MAX_PNG_PIXELS, PngDecodeError } from "~/lib/maps/png-realm-map";
-
-export interface PngToSvgConfig {
-  /** Color map: hex color → feature ID. If not provided, auto-detects colors. */
-  colorMapping?: Record<string, string>;
-  /** Auto-detect distinct colors from the image */
-  autoDetectColors?: boolean;
-  /** Minimum region size in pixels to keep (filters noise) */
-  minRegionSize?: number;
-  /** Background color to ignore (e.g., ocean) */
-  backgroundColor?: string;
-  /** Simplification tolerance for potrace (0 = none, higher = smoother) */
-  smoothing?: number;
-}
-
-export interface PngToSvgResult {
-  svg: string;
-  width: number;
-  height: number;
-  detectedColors: Array<{ hex: string; pixelCount: number; featureId: string | null }>;
-  log: string[];
-}
 
 const decodeFailure = (err: Error) => new PngDecodeError(err.message);
 
@@ -50,9 +24,13 @@ async function decodeRgb(pngBuffer: Buffer) {
     });
 }
 
-/** The image's dimensions from its header, refusing unreadable or over-limit images like decodeRgb. */
+/**
+ * The image's dimensions from its header (no pixels are decoded), refusing unreadable or over-limit images like
+ * decodeRgb. Callers read it before a full decode so an oversize image is turned away early.
+ */
 async function imageSize(pngBuffer: Buffer): Promise<{ width: number; height: number }> {
   const sharp = (await import("sharp")).default;
+  // metadata() reads the header only; the size check below names the image's dimensions.
   const metadata = await sharp(pngBuffer)
     .metadata()
     .catch((err: Error) => {
@@ -66,243 +44,9 @@ async function imageSize(pngBuffer: Buffer): Promise<{ width: number; height: nu
   return { width, height };
 }
 
-/**
- * Extract distinct colors from a PNG image buffer.
- * Returns an array of { hex, count } sorted by pixel count descending.
- *
- * Uses sharp to read raw pixel data and count unique RGB values.
- */
-export async function extractColors(
-  pngBuffer: Buffer,
-  options: { backgroundColor?: string; minPixels?: number } = {}
-): Promise<Array<{ hex: string; pixelCount: number }>> {
-  const { data, info } = await decodeRgb(pngBuffer);
-
-  const colorCounts = new Map<string, number>();
-  const bgHex = options.backgroundColor?.toLowerCase().replace("#", "");
-
-  for (let i = 0; i < data.length; i += 3) {
-    const r = data[i]!;
-    const g = data[i + 1]!;
-    const b = data[i + 2]!;
-    const hex = `${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-
-    // Skip background color
-    if (bgHex && hex === bgHex) continue;
-
-    colorCounts.set(hex, (colorCounts.get(hex) ?? 0) + 1);
-  }
-
-  const minPixels = options.minPixels ?? Math.round(info.width * info.height * 0.0001);
-
-  return Array.from(colorCounts.entries())
-    .filter(([, count]) => count >= minPixels)
-    .sort((a, b) => b[1] - a[1])
-    .map(([hex, count]) => ({ hex: `#${hex}`, pixelCount: count }));
-}
-
-/**
- * Create a binary mask for a specific color from a PNG image.
- * Returns a 1-bit PNG buffer where matching pixels are white and others are black.
- */
-export async function createColorMask(
-  pngBuffer: Buffer,
-  targetHex: string,
-  tolerance: number = 15
-): Promise<Buffer> {
-  const sharp = (await import("sharp")).default;
-
-  const target = hexToRgbArray(targetHex);
-  const { data, info } = await decodeRgb(pngBuffer);
-
-  // Create mask: white for matching pixels, black for others
-  const mask = Buffer.alloc(info.width * info.height);
-  for (let i = 0; i < data.length; i += 3) {
-    const r = data[i]!;
-    const g = data[i + 1]!;
-    const b = data[i + 2]!;
-
-    const dr = Math.abs(r - target[0]);
-    const dg = Math.abs(g - target[1]);
-    const db = Math.abs(b - target[2]);
-
-    if (dr <= tolerance && dg <= tolerance && db <= tolerance) {
-      mask[i / 3] = 255;
-    }
-  }
-
-  // Convert mask to PNG for potrace
-  return sharp(mask, {
-    raw: { width: info.width, height: info.height, channels: 1 },
-  })
-    .png()
-    .toBuffer();
-}
-
-/** The part of the `potrace` package (pure JS, no type definitions) this module uses. */
-interface PotraceModule {
-  trace(
-    image: Buffer,
-    options: { turdSize: number; optTolerance: number; threshold: number; blackOnWhite: boolean },
-    callback: (err: Error | null, svg: string) => void
-  ): void;
-}
-
-/**
- * Load potrace from the project's node_modules at run time. A require created at run time (not a static
- * import) keeps bundlers from pulling potrace and its image stack into the server bundle, and works under
- * Node, Bun and Jest alike — unlike `eval("require")`, which is undefined in ES modules.
- */
-async function loadPotrace(): Promise<PotraceModule> {
-  const [{ createRequire }, { join }] = await Promise.all([
-    import("node:module"),
-    import("node:path"),
-  ]);
-  return createRequire(join(process.cwd(), "package.json"))("potrace") as PotraceModule;
-}
-
-/** Trace a colour mask's white (matching) pixels into one SVG path `d`. */
-function traceMask(potrace: PotraceModule, mask: Buffer, config: PngToSvgConfig): Promise<string> {
-  const options = {
-    turdSize: config.minRegionSize ?? 10,
-    optTolerance: config.smoothing ?? 0.2,
-    threshold: 128,
-    blackOnWhite: false,
-  };
-  return new Promise((resolve, reject) => {
-    potrace.trace(mask, options, (err, svg) => {
-      if (err) reject(err);
-      else resolve(svg.match(/d="([^"]+)"/)?.[1] ?? "");
-    });
-  });
-}
-
-export interface PoliticalSvgPath {
-  featureId: string;
-  d: string;
-  fill: string;
-}
-
-/** One path per colour, named by its feature id; a colour that fails to trace is logged and skipped. */
-async function traceColours(
-  potrace: PotraceModule,
-  pngBuffer: Buffer,
-  colorEntries: PngToSvgResult["detectedColors"],
-  config: PngToSvgConfig,
-  log: string[]
-): Promise<PoliticalSvgPath[]> {
-  const svgPaths: PoliticalSvgPath[] = [];
-  for (const entry of colorEntries) {
-    try {
-      const mask = await createColorMask(pngBuffer, entry.hex);
-      const pathData = await traceMask(potrace, mask, config);
-      if (pathData) {
-        const featureId = entry.featureId ?? `feature_${svgPaths.length}`;
-        svgPaths.push({ featureId, d: pathData, fill: entry.hex });
-        log.push(`Vectorized: ${featureId} (${entry.hex}, ${entry.pixelCount}px)`);
-      }
-    } catch (err) {
-      log.push(`ERROR tracing ${entry.hex}: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  }
-  return svgPaths;
-}
-
-/** Feature ids are nation names from the colour mapping (e.g. "Trinidad & Tobago"): escape them for XML. */
-function escapeXmlAttribute(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-/** The political layer SVG the parser reads back: one path per region, its id the feature id. */
-export function assemblePoliticalSvg(
-  width: number,
-  height: number,
-  paths: readonly PoliticalSvgPath[]
-): string {
-  return [
-    `<?xml version="1.0" encoding="UTF-8"?>`,
-    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"`,
-    `     viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">`,
-    `  <g inkscape:label="political" inkscape:groupmode="layer">`,
-    ...paths.map(
-      (p) =>
-        `  <path id="${escapeXmlAttribute(p.featureId)}" d="${p.d}" fill="${p.fill}" stroke="none" />`
-    ),
-    `  </g>`,
-    `</svg>`,
-  ].join("\n");
-}
-
-/**
- * Convert a PNG political map to SVG.
- *
- * Steps:
- * 1. Extract distinct colors from the image
- * 2. For each color: create binary mask → vectorize with potrace
- * 3. Combine all vectorized paths into a single SVG
- */
-export async function convertPngToSvg(
-  pngBuffer: Buffer,
-  config: PngToSvgConfig = {}
-): Promise<PngToSvgResult> {
-  const log: string[] = [];
-
-  // Get image dimensions
-  const { width, height } = await imageSize(pngBuffer);
-  log.push(`Image size: ${width}x${height}`);
-
-  // Step 1: Detect or use provided colors
-  let colorEntries: Array<{ hex: string; pixelCount: number; featureId: string | null }>;
-
-  if (config.colorMapping) {
-    colorEntries = Object.entries(config.colorMapping).map(([hex, featureId]) => ({
-      hex,
-      pixelCount: 0,
-      featureId,
-    }));
-    log.push(`Using ${colorEntries.length} provided color mappings`);
-  } else {
-    const detected = await extractColors(pngBuffer, {
-      backgroundColor: config.backgroundColor,
-      minPixels: config.minRegionSize ?? Math.round(width * height * 0.0001),
-    });
-    colorEntries = detected.map((c, i) => ({
-      ...c,
-      featureId: `country_${i}`,
-    }));
-    log.push(`Auto-detected ${colorEntries.length} distinct colors`);
-  }
-
-  // Step 2: For each color, create mask and vectorize
-  const potrace = await loadPotrace().catch((err: Error) => {
-    log.push(`ERROR potrace could not be loaded, no region was traced: ${err.message}`);
-    return null;
-  });
-  const svgPaths = potrace ? await traceColours(potrace, pngBuffer, colorEntries, config, log) : [];
-
-  // Step 3: Assemble SVG
-  const svg = assemblePoliticalSvg(width, height, svgPaths);
-
-  log.push(`Generated SVG with ${svgPaths.length} features`);
-
-  return {
-    svg,
-    width,
-    height,
-    detectedColors: colorEntries,
-    log,
-  };
-}
-
-// ──────────────────────────────────────────────
 // Direct PNG → ProvinceFeature[] Pipeline
-// ──────────────────────────────────────────────
 
-export interface PngProvinceResult {
+interface PngProvinceResult {
   provinces: Array<{
     sourceId: string;
     name: string;
@@ -319,7 +63,7 @@ export interface PngProvinceResult {
   log: string[];
 }
 
-export interface PngProvinceConfig {
+interface PngProvinceConfig {
   /** Brightness threshold (0-255) — pixels darker than this are boundary/ocean. Default 130 */
   boundaryThreshold?: number;
   /** Minimum region area in pixels to keep. Default 500 */
@@ -337,7 +81,7 @@ export interface PngProvinceConfig {
  * separated by thin dark boundary lines (e.g., rasterized political maps).
  *
  * Pipeline:
- *   1. Decode PNG → raw RGB via sharp
+ *   1. Decode PNG → raw RGB via sharp (at most MAX_PNG_PIXELS; anything else is a PngDecodeError)
  *   2. Classify pixels: boundary (dark) / ocean (blue-hue) / land
  *   3. Erode land mask to clean anti-aliased edges between land & boundary
  *   4. Connected component labeling (scan-line flood fill)
@@ -349,7 +93,6 @@ export async function extractProvincesFromPng(
   pngBuffer: Buffer,
   config: PngProvinceConfig = {}
 ): Promise<PngProvinceResult> {
-  const sharp = (await import("sharp")).default;
   const log: string[] = [];
 
   const threshold = config.boundaryThreshold ?? 130;
@@ -357,17 +100,15 @@ export async function extractProvincesFromPng(
   const simplifyTol = config.simplifyTolerance ?? 1.5;
   const erosionPasses = config.erosionPasses ?? 2;
 
-  // ── Step 1: Decode ──
-  const { data, info } = await sharp(pngBuffer)
-    .removeAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
+  // Step 1: Decode (the header first, so an image over the pixel limit is refused before any pixel buffer)
+  await imageSize(pngBuffer);
+  const { data, info } = await decodeRgb(pngBuffer);
   const W = info.width;
   const H = info.height;
   const N = W * H;
   log.push(`PNG decoded: ${W}×${H} (${N} pixels)`);
 
-  // ── Step 2: Classify pixels ──
+  // Step 2: Classify pixels
   // 1 = land, 0 = boundary or ocean
   const mask = new Uint8Array(N);
   let nLand = 0,
@@ -405,7 +146,7 @@ export async function extractProvincesFromPng(
   }
   log.push(`Classified: ${nLand} land, ${nBound} boundary, ${nOcean} ocean`);
 
-  // ── Step 3: Erode land mask ──
+  // Step 3: Erode land mask
   // Removes anti-aliased fringe pixels that blur boundary lines.
   // Each pass removes 1px of land adjacent to any non-land pixel.
   for (let pass = 0; pass < erosionPasses; pass++) {
@@ -432,7 +173,7 @@ export async function extractProvincesFromPng(
     log.push(`After ${erosionPasses} erosion passes: ${remaining} land pixels remaining`);
   }
 
-  // ── Step 4: Connected component labeling ──
+  // Step 4: Connected component labeling
   const labels = new Int32Array(N);
   let nextLabel = 1;
   const sizes = new Map<number, number>();
@@ -484,7 +225,7 @@ export async function extractProvincesFromPng(
     `Found ${nextLabel - 1} components, ${validLabels.length} above ${minRegion}px threshold`
   );
 
-  // ── Step 5 & 6: Trace contour + simplify for each component ──
+  // Step 5 & 6: Trace contour + simplify for each component
   const palette = generatePalette(validLabels.length);
   const provinces: PngProvinceResult["provinces"] = [];
 
@@ -554,9 +295,7 @@ export async function extractProvincesFromPng(
   return { provinces, width: W, height: H, log };
 }
 
-// ──────────────────────────────────────────────
 // Shared Geometry Utilities
-// ──────────────────────────────────────────────
 
 /** Moore neighborhood contour tracing */
 function traceContour(mask: Uint8Array, width: number, height: number): [number, number][] {

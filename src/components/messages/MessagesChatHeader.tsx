@@ -11,14 +11,15 @@ import {
   Xmark,
   Shield,
   Refresh,
+  OpenBook as BookOpen,
 } from "iconoir-react";
-import { OpenBook as BookOpen } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { ThinkShareConversation } from "~/types/thinkshare";
 import type { MessageFolder } from "~/types/messages";
 import { SYSTEM_CONVERSATION_ID, LOREBOT_CONVERSATION_ID } from "~/types/messages";
 import { resolveIdentity, MessagesIdentityBadge } from "./MessagesIdentityBadge";
-import { Input } from "~/components/ui/input";
+import { Badge } from "~/components/ui/badge";
+import { SearchField } from "~/components/ui/search-field";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,7 @@ import {
 import { Button, buttonVariants } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { assetUrl } from "~/lib/base-path";
 
 interface MessagesChatHeaderProps {
   conversation: ThinkShareConversation;
@@ -39,7 +41,6 @@ interface MessagesChatHeaderProps {
   participantStatus?: string;
   onSearch?: (query: string) => void;
   onBack?: () => void;
-  isSidebarCollapsed?: boolean;
   onViewDetails?: () => void;
   onAddParticipants?: () => void;
   onMuteToggle?: () => void;
@@ -48,91 +49,292 @@ interface MessagesChatHeaderProps {
   onClearSystemMessages?: () => void;
   isMuted?: boolean;
   isArchived?: boolean;
-  displayNamePreference?: "account" | "country";
+}
+
+type OfficialKind = "system" | "lorebot";
+
+const OFFICIAL_THREADS = {
+  system: {
+    title: "System Messages",
+    status: "Broadcast Channel",
+    subtitle: "Platform broadcasts, simulation digests & system dispatches",
+    Icon: Shield,
+    iconWrapClass: "bg-yellow/15",
+    iconClass: "text-yellow",
+  },
+  lorebot: {
+    title: "LoreBot",
+    status: "WikiOS Activity Feed",
+    subtitle: "WikiOS activity stream, watchlist updates & lore dispatches",
+    Icon: BookOpen,
+    iconWrapClass: "bg-teal/15",
+    iconClass: "text-teal",
+  },
+} as const;
+
+function getOfficialKind(conversation: ThinkShareConversation): OfficialKind | null {
+  if (conversation.id === SYSTEM_CONVERSATION_ID || conversation.source === "system") {
+    return "system";
+  }
+  if (conversation.id === LOREBOT_CONVERSATION_ID || conversation.source === "lorebot") {
+    return "lorebot";
+  }
+  return null;
+}
+
+type Participant = ThinkShareConversation["otherParticipants"][number];
+
+function getDirectView(
+  conversation: ThinkShareConversation,
+  folder: MessageFolder,
+  other: Participant["account"] | undefined,
+  participantStatus?: string
+) {
+  const identity = other
+    ? resolveIdentity(
+        other.displayName || other.username || "User",
+        other.profileImageUrl || other.countryFlag || null,
+        folder,
+        other.countryName
+          ? { country: { name: other.countryName, slug: "", flag: other.countryFlag } }
+          : null,
+        null,
+        conversation.source,
+        conversation.conversationType
+      )
+    : null;
+  return {
+    identity,
+    title:
+      identity?.displayName ??
+      (conversation.name || other?.displayName || other?.username || "Direct Message"),
+    subtitle: participantStatus || "Active now",
+    avatarUrl: identity?.avatar || other?.countryFlag || other?.profileImageUrl,
+  };
+}
+
+function getThreadView(
+  conversation: ThinkShareConversation,
+  currentUserId: string,
+  folder: MessageFolder,
+  participantStatus?: string
+) {
+  const official = getOfficialKind(conversation);
+  const isGroup = conversation.type === "group" || conversation.source === "thinktank";
+  const others = (conversation.otherParticipants ?? []).filter(
+    (p: Participant) => p.accountId !== currentUserId
+  );
+  const other = others[0]?.account;
+  const base = { official, isGroup, other, isDirect: !isGroup && !official };
+
+  if (official) {
+    const { title, subtitle } = OFFICIAL_THREADS[official];
+    return { ...base, identity: null, title, subtitle, avatarUrl: null };
+  }
+  if (isGroup) {
+    return {
+      ...base,
+      identity: null,
+      title: conversation.name || "ThinkTank",
+      subtitle: `${others.length + 1} members • Group Chat`,
+      avatarUrl: conversation.avatar,
+    };
+  }
+  return { ...base, ...getDirectView(conversation, folder, other, participantStatus) };
+}
+
+function ThreadAvatar({ view }: { view: ReturnType<typeof getThreadView> }) {
+  const { official, isGroup, other, avatarUrl, title } = view;
+  if (official) {
+    const { Icon, iconWrapClass, iconClass } = OFFICIAL_THREADS[official];
+    return (
+      <div className={cn(iconWrapClass, "rounded-control flex size-9 items-center justify-center")}>
+        <Icon className={cn(iconClass, "size-4")} aria-hidden="true" />
+      </div>
+    );
+  }
+  if (avatarUrl && other?.countryFlag) {
+    return (
+      <div className="border-separator bg-fill-4 rounded-control relative flex size-9 items-center justify-center overflow-hidden border">
+        <UnifiedCountryFlag
+          countryName={other.countryName || title}
+          flagUrl={normalizeFlagUrl(avatarUrl)}
+          className="h-full w-full object-cover"
+        />
+      </div>
+    );
+  }
+  if (avatarUrl) {
+    return (
+      <img
+        src={assetUrl(avatarUrl) ?? undefined}
+        alt={title}
+        className="border-separator rounded-control size-9 border object-cover"
+      />
+    );
+  }
+  return (
+    <div
+      className={cn(
+        "text-headline rounded-control flex size-9 items-center justify-center",
+        isGroup ? "bg-tint-fill text-tint" : "bg-fill-3 text-label-secondary"
+      )}
+    >
+      {title.charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
+function ThreadInfo({
+  view,
+  isDiplomatic,
+  participantStatus,
+}: {
+  view: ReturnType<typeof getThreadView>;
+  isDiplomatic: boolean;
+  participantStatus?: string;
+}) {
+  const { official, isGroup, isDirect, identity, title, subtitle } = view;
+  return (
+    <>
+      <div className="relative shrink-0">
+        <ThreadAvatar view={view} />
+        {isDirect && (
+          <span
+            className={cn(
+              "ring-surface absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2",
+              participantStatus?.toLowerCase().includes("online")
+                ? "bg-success"
+                : "bg-label-tertiary"
+            )}
+          />
+        )}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <h3 className="text-headline text-label truncate">{title}</h3>
+          {official ? (
+            <Badge variant="warning">Official</Badge>
+          ) : (
+            identity && <MessagesIdentityBadge identity={identity} />
+          )}
+          {isDiplomatic && (
+            <Badge variant="warning">
+              <Shield aria-hidden="true" />
+              Diplomatic cable
+            </Badge>
+          )}
+          {isGroup && <Badge variant="secondary">Group chat</Badge>}
+        </div>
+        <p className="text-footnote text-label-secondary truncate">{subtitle}</p>
+      </div>
+    </>
+  );
+}
+
+interface ConversationMenuProps extends Pick<
+  MessagesChatHeaderProps,
+  | "onViewDetails"
+  | "onMuteToggle"
+  | "onArchiveToggle"
+  | "onDeleteConversation"
+  | "onClearSystemMessages"
+  | "isMuted"
+  | "isArchived"
+> {
+  isSystemThread: boolean;
+  isGroup: boolean;
+}
+
+function ConversationMenu({
+  onViewDetails,
+  onMuteToggle,
+  onArchiveToggle,
+  onDeleteConversation,
+  onClearSystemMessages,
+  isMuted,
+  isArchived,
+  isSystemThread,
+  isGroup,
+}: ConversationMenuProps) {
+  const destructive =
+    isSystemThread && onClearSystemMessages
+      ? { onClick: onClearSystemMessages, Icon: Refresh, label: "Clear system logs" }
+      : onDeleteConversation && {
+          onClick: onDeleteConversation,
+          Icon: Trash,
+          label: isGroup ? "Leave Group" : "Delete Thread",
+        };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={buttonVariants({ variant: "ghost", size: "icon" })}
+        aria-label="Conversation actions"
+      >
+        <MoreVert className="size-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuGroup>
+          <DropdownMenuGroupLabel>Conversation</DropdownMenuGroupLabel>
+          {onViewDetails && (
+            <DropdownMenuItem onClick={onViewDetails}>
+              <InfoCircle />
+              <span>View details</span>
+            </DropdownMenuItem>
+          )}
+          {onMuteToggle && !isSystemThread && (
+            <DropdownMenuItem onClick={onMuteToggle}>
+              <BellOff />
+              <span>{isMuted ? "Unmute Thread" : "Mute Thread"}</span>
+            </DropdownMenuItem>
+          )}
+          {onArchiveToggle && !isSystemThread && (
+            <DropdownMenuItem onClick={onArchiveToggle}>
+              <Archive />
+              <span>{isArchived ? "Unarchive Thread" : "Archive Thread"}</span>
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuGroup>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuGroup>
+          {destructive && (
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={destructive.onClick}
+              className="text-destructive focus:text-destructive"
+            >
+              <destructive.Icon />
+              <span>{destructive.label}</span>
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
   conversation,
   currentUserId,
-  activeFolder: _activeFolder,
+  activeFolder,
   participantStatus,
   onSearch,
   onBack,
-  isSidebarCollapsed: _isSidebarCollapsed,
-  onViewDetails,
   onAddParticipants,
-  onMuteToggle,
-  onArchiveToggle,
-  onDeleteConversation,
-  onClearSystemMessages,
   isMuted = false,
   isArchived = false,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  displayNamePreference = "country",
+  ...menuHandlers
 }) => {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const isSystemThread =
-    conversation.id === SYSTEM_CONVERSATION_ID || conversation.source === "system";
-  const isLoreBotThread =
-    conversation.id === LOREBOT_CONVERSATION_ID || conversation.source === "lorebot";
+  const view = getThreadView(conversation, currentUserId, activeFolder, participantStatus);
   const isDiplomatic =
     conversation.source === "diplomatic" || conversation.conversationType === "diplomatic";
-  const isGroup = conversation.type === "group" || conversation.source === "thinktank";
-
-  const otherParticipants = (conversation.otherParticipants ?? []).filter(
-    (p: any) => p.accountId !== currentUserId
-  );
-  const primaryOther = otherParticipants[0]?.account;
-  const memberCount = otherParticipants.length + 1;
-
-  const identity =
-    !isGroup && !isSystemThread && !isLoreBotThread && primaryOther
-      ? resolveIdentity(
-          primaryOther.displayName || primaryOther.username || "User",
-          primaryOther.profileImageUrl || primaryOther.countryFlag || null,
-          _activeFolder,
-          primaryOther.countryName
-            ? {
-                country: {
-                  name: primaryOther.countryName,
-                  slug: "",
-                  flag: primaryOther.countryFlag,
-                },
-              }
-            : null,
-          null,
-          conversation.source,
-          conversation.conversationType
-        )
-      : null;
-
-  const displayTitle = isSystemThread
-    ? "System Messages"
-    : isLoreBotThread
-      ? "LoreBot"
-      : isGroup
-        ? conversation.name || "ThinkTank"
-        : identity
-          ? identity.displayName
-          : conversation.name ||
-            primaryOther?.displayName ||
-            primaryOther?.username ||
-            "Direct Message";
-
-  const avatarUrl =
-    isSystemThread || isLoreBotThread
-      ? null
-      : isGroup
-        ? conversation.avatar
-        : identity?.avatar || primaryOther?.countryFlag || primaryOther?.profileImageUrl;
-
-  const currentStatus = isSystemThread
-    ? "Broadcast Channel"
-    : isLoreBotThread
-      ? "WikiOS Activity Feed"
-      : participantStatus || (isGroup ? `${memberCount} members` : "Active now");
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -145,219 +347,77 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
     onSearch?.("");
   };
 
-  const toggleSearch = () => {
-    if (isSearchVisible) {
-      clearSearch();
-    } else {
-      setIsSearchVisible(true);
-    }
-  };
-
-  // Dynamic header styling by thread type
-  const headerTheme = isSystemThread
-    ? "bg-amber-500/[0.04] dark:bg-amber-500/10 border-b border-amber-500/20"
-    : isLoreBotThread
-      ? "bg-cyan-500/[0.04] dark:bg-cyan-500/10 border-b border-cyan-500/20"
-      : isDiplomatic
-        ? "bg-amber-500/[0.03] dark:bg-amber-500/[0.07] border-b border-amber-500/20"
-        : isGroup
-          ? "bg-emerald-500/[0.04] border-b border-emerald-500/20 dark:bg-emerald-500/10"
-          : "bg-muted/[0.08] border-b border-border/40";
-
   return (
-    <header
-      className={cn(
-        "relative z-10 flex h-14 shrink-0 items-center justify-between px-3 backdrop-blur-xl transition-colors duration-300 md:px-4",
-        headerTheme
-      )}
-    >
-      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+    <header className="border-separator relative flex h-14 shrink-0 items-center justify-between border-b px-3 md:px-4">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
         {onBack && (
           <Button
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="text-muted-foreground hover:bg-accent/40 hover:text-foreground mr-1 -ml-1 h-8 w-8 shrink-0 rounded-xl active:scale-95"
+            className="text-label-secondary mr-1 -ml-1 size-8 shrink-0"
             title="Back to conversation list"
+            aria-label="Back to conversation list"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft />
           </Button>
         )}
 
         {isSearchVisible ? (
           <div className="flex flex-1 items-center gap-2 pr-2">
-            <Search className="text-muted-foreground h-4 w-4 shrink-0" />
-            <Input
+            <SearchField
               autoFocus
+              containerClassName="flex-1"
               value={searchQuery}
               onChange={handleSearchChange}
               placeholder="Search in conversation..."
-              className="bg-background/50 h-8 flex-1 rounded-xl text-xs"
+              aria-label="Search in conversation"
             />
-            <Button variant="ghost" size="icon" onClick={clearSearch} className="h-7 w-7">
-              <Xmark className="h-3.5 w-3.5" />
+            <Button variant="ghost" size="icon-sm" onClick={clearSearch} aria-label="Close search">
+              <Xmark />
             </Button>
           </div>
         ) : (
-          <>
-            <div className="relative shrink-0">
-              {isSystemThread ? (
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 shadow-inner">
-                  <Shield className="h-4.5 w-4.5 text-amber-500" />
-                </div>
-              ) : isLoreBotThread ? (
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/15 shadow-inner">
-                  <BookOpen className="h-4.5 w-4.5 text-cyan-400" />
-                </div>
-              ) : avatarUrl ? (
-                primaryOther?.countryFlag ? (
-                  <div className="border-border/30 bg-background/50 relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border shadow-xs">
-                    <UnifiedCountryFlag
-                      countryName={primaryOther.countryName || displayTitle}
-                      flagUrl={normalizeFlagUrl(avatarUrl)}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <img
-                    src={avatarUrl}
-                    alt={displayTitle}
-                    className="border-border/30 h-9 w-9 rounded-xl border object-cover shadow-xs"
-                  />
-                )
-              ) : (
-                <div
-                  className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-xl border font-bold shadow-xs",
-                    isGroup
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                      : "border-border/30 bg-accent/20 text-muted-foreground"
-                  )}
-                >
-                  {displayTitle.charAt(0).toUpperCase()}
-                </div>
-              )}
-
-              {/* Online status indicator */}
-              {!isSystemThread && !isLoreBotThread && !isGroup && (
-                <span
-                  className={cn(
-                    "ring-background absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full ring-2",
-                    participantStatus?.toLowerCase().includes("online")
-                      ? "bg-emerald-500"
-                      : "bg-muted-foreground/40"
-                  )}
-                />
-              )}
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <h3 className="text-foreground truncate text-sm font-semibold">{displayTitle}</h3>
-                {isSystemThread || isLoreBotThread ? (
-                  <span className="py-0.2 flex items-center gap-0.5 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 text-xs font-bold tracking-wider text-amber-500 uppercase">
-                    Official
-                  </span>
-                ) : (
-                  identity && <MessagesIdentityBadge identity={identity} />
-                )}
-                {isDiplomatic && (
-                  <span className="py-0.2 flex items-center gap-0.5 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 text-xs font-bold tracking-wider text-amber-400 uppercase">
-                    <Shield className="h-2.5 w-2.5" />
-                    Diplomatic Cable
-                  </span>
-                )}
-                {isGroup && (
-                  <span className="py-0.2 flex items-center gap-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 px-1.5 text-xs font-bold tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
-                    Group Chat
-                  </span>
-                )}
-              </div>
-              <p className="text-muted-foreground text-xs">
-                {isSystemThread
-                  ? "Platform broadcasts, simulation digests & system dispatches"
-                  : isLoreBotThread
-                    ? "WikiOS activity stream, watchlist updates & lore dispatches"
-                    : isGroup
-                      ? `${memberCount || 0} members • Group Chat`
-                      : currentStatus}
-              </p>
-            </div>
-          </>
+          <ThreadInfo
+            view={view}
+            isDiplomatic={isDiplomatic}
+            participantStatus={participantStatus}
+          />
         )}
       </div>
 
       {!isSearchVisible && (
-        <div className="flex items-center gap-1.5">
-          {!isSystemThread && !isLoreBotThread && (
-            <Button variant="ghost" size="icon" onClick={toggleSearch}>
-              <Search className="h-4 w-4" />
-            </Button>
-          )}
-
-          {isGroup && onAddParticipants && (
-            <Button variant="ghost" size="icon" onClick={onAddParticipants}>
-              <UserPlus className="h-4 w-4" />
-            </Button>
-          )}
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className={buttonVariants({ variant: "ghost", size: "icon" })}
-              aria-label="Conversation actions"
+        <div className="flex items-center gap-1">
+          {!view.official && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsSearchVisible(true)}
+              aria-label="Search in conversation"
             >
-              <MoreVert className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuGroup>
-                <DropdownMenuGroupLabel>Conversation</DropdownMenuGroupLabel>
-                {onViewDetails && (
-                  <DropdownMenuItem onClick={onViewDetails}>
-                    <InfoCircle className="mr-2 h-4 w-4" />
-                    <span>View Details</span>
-                  </DropdownMenuItem>
-                )}
-                {onMuteToggle && !isSystemThread && (
-                  <DropdownMenuItem onClick={onMuteToggle}>
-                    <BellOff className="mr-2 h-4 w-4" />
-                    <span>{isMuted ? "Unmute Thread" : "Mute Thread"}</span>
-                  </DropdownMenuItem>
-                )}
-                {onArchiveToggle && !isSystemThread && (
-                  <DropdownMenuItem onClick={onArchiveToggle}>
-                    <Archive className="mr-2 h-4 w-4" />
-                    <span>{isArchived ? "Unarchive Thread" : "Archive Thread"}</span>
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuGroup>
+              <Search />
+            </Button>
+          )}
 
-              <DropdownMenuSeparator />
+          {/* A ThinkTank's chat follows its membership: people join it through the ThinkTank */}
+          {view.isGroup && conversation.source !== "thinktank" && onAddParticipants && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onAddParticipants}
+              aria-label="Add participants"
+            >
+              <UserPlus />
+            </Button>
+          )}
 
-              <DropdownMenuGroup>
-                {isSystemThread && onClearSystemMessages ? (
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onClick={onClearSystemMessages}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Refresh className="mr-2 h-4 w-4" />
-                    <span>Clear System Logs</span>
-                  </DropdownMenuItem>
-                ) : (
-                  onDeleteConversation && (
-                    <DropdownMenuItem
-                      variant="destructive"
-                      onClick={onDeleteConversation}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash className="mr-2 h-4 w-4" />
-                      <span>{isGroup ? "Leave Group" : "Delete Thread"}</span>
-                    </DropdownMenuItem>
-                  )
-                )}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ConversationMenu
+            {...menuHandlers}
+            isMuted={isMuted}
+            isArchived={isArchived}
+            isSystemThread={view.official === "system"}
+            isGroup={view.isGroup}
+          />
         </div>
       )}
     </header>

@@ -3,15 +3,27 @@
 // Realms Management Admin Panel
 
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
-import { Sparks, Globe, Group as Users, CheckCircle } from "iconoir-react";
+import { PageHeader } from "~/components/shell/PageHeader";
+import {
+  Book,
+  Globe,
+  Group as Users,
+  CheckCircle,
+  Refresh,
+  GraphUp,
+  Map as MapIcon,
+} from "iconoir-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { RealmsTab } from "./_components/RealmsTab";
 import { RealmUsersTab } from "./_components/RealmUsersTab";
 import { ClaimsTab } from "./_components/ClaimsTab";
+import { SourceSyncTab } from "./_components/source-sync/SourceSyncTab";
+import { WikiTab } from "./_components/wiki/WikiTab";
+import { NationsTab } from "./_components/nations/NationsTab";
+import { RealmMapLinks } from "./_components/map-pipeline/RealmMapLinks";
 
 interface RealmsPanelProps {
-  defaultTab?: "realms" | "claims" | "users";
+  defaultTab?: "realms" | "claims" | "users" | "source-sync" | "wiki" | "nations" | "map";
 }
 
 export function RealmsPanel({ defaultTab = "realms" }: RealmsPanelProps) {
@@ -19,34 +31,61 @@ export function RealmsPanel({ defaultTab = "realms" }: RealmsPanelProps) {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Sparks}
+      <PageHeader
         title="Realms"
-        description="Realms, nation claims and player access."
+        subtitle="Nation claims, player access, source sync, realm wikis and map pipelines."
       />
 
       <Tabs defaultValue={defaultTab} className="w-full">
-        <TabsList className="bg-card/40 border-border/40 flex w-full max-w-lg justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
+        <TabsList className="bg-fill-3 flex w-full max-w-3xl justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="realms"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
-            <Globe className="h-4 w-4 text-cyan-400" />
+            <Globe className="text-teal h-4 w-4" />
             Realms
           </TabsTrigger>
           <TabsTrigger
             value="claims"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
-            <CheckCircle className="h-4 w-4 text-amber-400" />
+            <CheckCircle className="text-yellow h-4 w-4" />
             Claims
           </TabsTrigger>
           <TabsTrigger
             value="users"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
-            <Users className="h-4 w-4 text-purple-400" />
-            User Access
+            <Users className="text-purple h-4 w-4" />
+            User access
+          </TabsTrigger>
+          <TabsTrigger
+            value="source-sync"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
+          >
+            <Refresh className="text-blue h-4 w-4" />
+            Source sync
+          </TabsTrigger>
+          <TabsTrigger
+            value="wiki"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
+          >
+            <Book className="text-green h-4 w-4" />
+            Wiki
+          </TabsTrigger>
+          <TabsTrigger
+            value="nations"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
+          >
+            <GraphUp className="text-orange h-4 w-4" />
+            Nations
+          </TabsTrigger>
+          <TabsTrigger
+            value="map"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
+          >
+            <MapIcon className="text-cyan h-4 w-4" />
+            Map
           </TabsTrigger>
         </TabsList>
 
@@ -61,9 +100,23 @@ export function RealmsPanel({ defaultTab = "realms" }: RealmsPanelProps) {
         <TabsContent value="users" className="mt-6 focus-visible:outline-none">
           <RealmUsersTab />
         </TabsContent>
+
+        <TabsContent value="source-sync" className="mt-6 focus-visible:outline-none">
+          <SourceSyncTab />
+        </TabsContent>
+
+        <TabsContent value="wiki" className="mt-6 focus-visible:outline-none">
+          <WikiTab />
+        </TabsContent>
+
+        <TabsContent value="nations" className="mt-6 focus-visible:outline-none">
+          <NationsTab />
+        </TabsContent>
+
+        <TabsContent value="map" className="mt-6 focus-visible:outline-none">
+          <RealmMapLinks />
+        </TabsContent>
       </Tabs>
     </div>
   );
 }
-
-export default RealmsPanel;

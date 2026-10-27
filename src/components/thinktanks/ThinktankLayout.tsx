@@ -1,49 +1,35 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { cn } from "~/lib/utils";
-import { CutoutCard, cutoutCardSurfaceClassName } from "~/components/ui/cutout-card";
+import { Card } from "~/components/ui/card";
+import { Inspector } from "~/components/ui/inspector";
 
 interface ThinktankLayoutProps {
   directoryPanel: ReactNode;
   workspacePanel: ReactNode;
-  isSidebarCollapsed: boolean;
+  /** Whether the directory sheet is open; the directory is a column at 1280px and wider. */
+  directoryOpen: boolean;
+  onDirectoryOpenChange: (open: boolean) => void;
 }
 
+const PANEL_HEIGHT = "h-[calc(100vh-8.5rem)] min-h-[500px]";
+
+/** The open group, with the directory of ThinkTanks beside it in an Inspector. */
 export function ThinktankLayout({
   directoryPanel,
   workspacePanel,
-  isSidebarCollapsed,
+  directoryOpen,
+  onDirectoryOpenChange,
 }: ThinktankLayoutProps) {
   return (
-    <div className="relative grid h-[calc(100vh-8.5rem)] min-h-[500px] grid-cols-1 gap-5 lg:grid-cols-3">
-      {/* Column 1: Directory list panel (1/3 width on large screens) */}
-      <CutoutCard
-        className={cn(
-          cutoutCardSurfaceClassName,
-          "border-border/50 bg-card/60 relative z-10 flex h-full min-w-0 cursor-default flex-col overflow-hidden rounded-2xl border shadow-xl backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 lg:col-span-1 dark:border-white/10 dark:bg-white/[0.03]",
-          isSidebarCollapsed ? "hidden" : "flex"
-        )}
-        trackPointerHover={false}
-        texture="paperGrain"
-        textureOpacity={0.08}
-      >
-        {directoryPanel}
-      </CutoutCard>
-
-      {/* Column 2: Workspace panel (2/3 width on large screens) */}
-      <CutoutCard
-        className={cn(
-          cutoutCardSurfaceClassName,
-          "border-border/50 bg-card/60 relative z-10 flex h-full min-w-0 cursor-default flex-col overflow-hidden rounded-2xl border shadow-xl backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:border-white/10 dark:bg-white/[0.03]",
-          isSidebarCollapsed ? "col-span-full lg:col-span-3" : "hidden lg:col-span-2 lg:flex"
-        )}
-        trackPointerHover={false}
-        texture="diagonal"
-        textureOpacity={0.06}
-      >
+    <>
+      <Card className={`flex min-w-0 flex-col overflow-hidden ${PANEL_HEIGHT}`}>
         {workspacePanel}
-      </CutoutCard>
-    </div>
+      </Card>
+
+      <Inspector title="ThinkTanks" open={directoryOpen} onOpenChange={onDirectoryOpenChange}>
+        <Card className={`flex flex-col overflow-hidden ${PANEL_HEIGHT}`}>{directoryPanel}</Card>
+      </Inspector>
+    </>
   );
 }

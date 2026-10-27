@@ -23,11 +23,7 @@ export function SettingsGroup({
       {(title || description || action) && (
         <div className="flex items-center justify-between px-2 pb-0.5">
           <div className="min-w-0 flex-1 space-y-0.5">
-            {title && (
-              <h3 className="text-muted-foreground/80 text-xs font-bold tracking-wider uppercase">
-                {title}
-              </h3>
-            )}
+            {title && <h3 className="text-eyebrow">{title}</h3>}
             {description && (
               <p className="text-muted-foreground/70 text-xs font-medium">{description}</p>
             )}
@@ -36,7 +32,7 @@ export function SettingsGroup({
         </div>
       )}
 
-      <div className="border-border/40 bg-card/40 divide-border/20 divide-y overflow-hidden rounded-2xl border shadow-xs backdrop-blur-md">
+      <div className="border-separator bg-surface rounded-card divide-separator divide-y overflow-hidden border">
         {children}
       </div>
 

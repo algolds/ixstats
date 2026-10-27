@@ -3,7 +3,8 @@
 import { Globe, Plus, StatsReport, Trophy } from "iconoir-react";
 
 import React from "react";
-import { cn } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import type { Achievement } from "./cultural-exchange-types";
 
 interface ExchangeHeaderProps {
@@ -35,36 +36,32 @@ export const ExchangeHeader = React.memo<ExchangeHeaderProps>(
     return (
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 flex-1">
-          <h3 className="flex flex-wrap items-center gap-2 text-lg font-bold text-amber-600 dark:text-amber-400">
-            <Globe className="h-5 w-5 shrink-0" />
-            <span>Cultural Exchange Program</span>
-            <span className="text-xs font-normal text-muted-foreground">
-              ({filteredExchangesCount} exchanges)
+          <h3
+            className="text-label text-title-3 flex flex-wrap items-center gap-2"
+            aria-busy={isLoading || undefined}
+          >
+            <Globe className="text-label-secondary h-4 w-4 shrink-0" />
+            <span>Cultural exchange program</span>
+            <span className="text-label-secondary text-footnote font-normal tabular-nums">
+              {isLoading ? "Loading…" : `${filteredExchangesCount} exchanges`}
             </span>
-            {isLoading && (
-              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-amber-500/20 border-t-amber-500" />
-            )}
           </h3>
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <p className="min-w-0 flex-1 text-xs text-muted-foreground">
+            <p className="text-label-secondary text-footnote min-w-0 flex-1">
               Cross-cultural collaboration and diplomatic engagement for {primaryCountry.name}
             </p>
-            {/* Achievement Badges */}
             {achievements.length > 0 && (
-              <div className="flex shrink-0 items-center gap-1">
+              <div className="flex shrink-0 flex-wrap items-center gap-1">
                 {achievements.slice(0, 3).map((badge) => (
-                  <div
-                    key={badge.id}
-                    className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-amber-500/40 bg-amber-500/20 text-sm transition-colors hover:bg-amber-500/30"
-                    title={`${badge.name}: ${badge.description}`}
-                  >
-                    <span>{badge.icon}</span>
-                  </div>
+                  <Badge key={badge.id} variant="outline" title={badge.description}>
+                    <Trophy className="text-yellow" />
+                    {badge.name}
+                  </Badge>
                 ))}
                 {achievements.length > 3 && (
-                  <div className="text-xs text-muted-foreground">
+                  <span className="text-label-secondary text-footnote">
                     +{achievements.length - 3} more
-                  </div>
+                  </span>
                 )}
               </div>
             )}
@@ -73,40 +70,28 @@ export const ExchangeHeader = React.memo<ExchangeHeaderProps>(
 
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           {onShowPredictions && (
-            <button
-              type="button"
+            <Button
+              variant={showPredictionPanel ? "secondary" : "outline"}
+              size="sm"
               onClick={onShowPredictions}
-              className={cn(
-                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-                showPredictionPanel
-                  ? "border border-cyan-500/50 bg-cyan-500/30 text-cyan-400"
-                  : "bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
-              )}
+              aria-pressed={showPredictionPanel}
             >
               <StatsReport className="h-3.5 w-3.5" />
               Predictions
-            </button>
+            </Button>
           )}
 
           {onShowLeaderboard && (
-            <button
-              type="button"
-              onClick={onShowLeaderboard}
-              className="flex items-center gap-1.5 rounded-lg bg-amber-500/20 px-3 py-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/30 active:scale-[0.98]"
-            >
+            <Button variant="outline" size="sm" onClick={onShowLeaderboard}>
               <Trophy className="h-3.5 w-3.5" />
               Leaderboard
-            </button>
+            </Button>
           )}
 
-          <button
-            type="button"
-            onClick={onCreateExchange}
-            className="flex items-center gap-1.5 rounded-lg bg-amber-500/20 px-3 py-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/30 active:scale-[0.98]"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Create Exchange
-          </button>
+          <Button size="sm" onClick={onCreateExchange}>
+            <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+            Create exchange
+          </Button>
         </div>
       </div>
     );

@@ -1,7 +1,462 @@
 import { z } from "zod";
-import { createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import { Prisma, type PrismaClient } from "@prisma/client";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedPublicProcedure,
+} from "~/server/api/trpc";
+import { achievementService } from "~/lib/achievements/service";
+import { IXWIKI, namesOfUser } from "~/lib/identity/wiki-names";
+
+/** How many of the newest unlocks the summary carries. */
+const RECENT_UNLOCKS = 3;
+
+const percentOf = (count: number, total: number) =>
+  Math.min(100, parseFloat(((count / total) * 100).toFixed(1)));
+
+/** Case-insensitive occurrence count. */
+function tally(names: Iterable<string>) {
+  const counts = new Map<string, number>();
+  for (const name of names) {
+    const key = name.toLowerCase();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return counts;
+}
+
+interface MedalWins {
+  dailyWins: number;
+  weeklyWins: number;
+  monthlyWins: number;
+  annualWins: number;
+  fiftyKEdits: number;
+}
+
+/** Medals ever earned: 10 bronze -> silver, 5 silver -> gold, 5 gold -> burg cross. */
+function medalLadder(w: MedalWins) {
+  const bronze = w.dailyWins + w.fiftyKEdits;
+  const silver = w.weeklyWins + w.monthlyWins * 3 + Math.floor(bronze / 10);
+  const gold = Math.floor(silver / 5);
+  const burg = w.annualWins + Math.floor(gold / 5);
+  return { ever: [bronze, silver, gold, burg], owned: [bronze % 10, silver % 5, gold % 5, burg] };
+}
+
+const MEDALS = [
+  {
+    key: "ool-bronze",
+    title: "Bronze Lore Medal",
+    description:
+      "Daily Lore Award winner or 50k edit contributor. A daily win or a 50k edit conveys a bronze medal.",
+    rarity: "Common",
+    points: 1,
+    iconUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/5/54/%D0%91%D1%80%D0%BE%D0%BD%D0%B7%D0%B0%D0%B2%D1%8B_%D0%BC%D1%8D%D0%B4%D0%B0%D0%BB%D1%8C.svg",
+  },
+  {
+    key: "ool-silver",
+    title: "Silver Lore Medal",
+    description:
+      "Weekly or Monthly Lore Award winner, or upgraded from 10 Bronze medals. A weekly win conveys a silver medal; a monthly win awards three.",
+    rarity: "Rare",
+    points: 10,
+    iconUrl: "/images/ool-silver.svg",
+  },
+  {
+    key: "ool-gold",
+    title: "Gold Lore Medal",
+    description:
+      "Upgraded from 5 Silver medals. Represents a significant accumulation of lore contributions.",
+    rarity: "Epic",
+    points: 50,
+    iconUrl: "/images/ool-gold.svg",
+  },
+  {
+    key: "ool-burg-cross",
+    title: "Burg Cross Lore Medal",
+    description:
+      "Annual Lore Award winner, or upgraded from 5 Gold medals. An annual win or 5 Gold medals awards a platinum Burg cross medal.",
+    rarity: "Legendary",
+    points: 250,
+    iconUrl: "/images/ool-burg-cross.png",
+  },
+];
+
+function parseRecipients(value: Prisma.JsonValue | null): string[] {
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value) as string[];
+    } catch (err) {
+      console.warn("[AchievementsProgress] Failed to parse recipientUsers JSON:", err);
+      return [];
+    }
+  }
+  return Array.isArray(value) ? (value as string[]) : [];
+}
+
+function wikiAwardRarity(award: { category: string | null; name: string }) {
+  if (award.name.includes("50k")) return "Rare";
+  if (award.name.includes("100k")) return "Legendary";
+  return award.category === "FEATURED" ? "Epic" : "Uncommon";
+}
+
+/** The user whose progress is shown: the one asked for, else the country's owner, else the viewer. */
+async function resolveTargetUserId(
+  db: PrismaClient,
+  input: { userId?: string; countryId?: string },
+  viewerClerkId: string | undefined
+) {
+  if (input.userId) return input.userId;
+  if (input.countryId) {
+    const owner = await db.user.findFirst({
+      where: { ownedCountries: { some: { id: input.countryId } } },
+      select: { clerkUserId: true },
+    });
+    if (owner) return owner.clerkUserId;
+  }
+  return viewerClerkId || undefined;
+}
+
+/**
+ * The approved wiki names whose Lorewards medals and wiki awards the target's list can show, oldest approval first:
+ * all of the viewer's own; another player's only those they show (a hidden claim reads as no name). The medals sum
+ * their wins and the awards list each name's. None leaves the medals as for a player with no wiki account.
+ */
+async function lorewardsWikiNames(
+  db: Pick<PrismaClient, "wikiNameClaim">,
+  target: { id: string; clerkUserId: string } | null,
+  viewerClerkId: string | undefined
+): Promise<string[]> {
+  if (!target) return [];
+  const shown = target.clerkUserId !== viewerClerkId;
+  return (await namesOfUser(db, target.id, { shown })).map((c) => c.name);
+}
+
+async function loadMasterAchievements(db: PrismaClient) {
+  const load = () =>
+    db.achievement.findMany({ where: { isActive: true }, orderBy: { key: "asc" } });
+  const masters = await load();
+  // Auto-sync if the database is behind the definitions registry, or still holds an active row
+  // of a retired definition. Retired definitions are not part of the active count.
+  const { ALL_DEFINITIONS } = await import("~/lib/achievements/sets");
+  const { RETIRED_IDS, syncAchievements } = await import("~/lib/achievements/sync");
+  const activeCount = ALL_DEFINITIONS.length - RETIRED_IDS.size;
+  if (masters.length >= activeCount && !masters.some((m) => RETIRED_IDS.has(m.key))) {
+    return masters;
+  }
+  await syncAchievements(db);
+  return load();
+}
+
+function parseRewards(rewardsJson: string | null) {
+  if (!rewardsJson) return null;
+  try {
+    return JSON.parse(rewardsJson);
+  } catch {
+    return null;
+  }
+}
+
+/** The IxCredits an unlock paid, as the unlock recorded them in its metadata; null when it paid none or the record is unreadable. */
+function paidCredits(metadata: string | null): number | null {
+  if (!metadata) return null;
+  try {
+    const parsed: { rewards?: { credits?: number | string } | null } | null = JSON.parse(metadata);
+    const credits = parsed?.rewards?.credits;
+    return typeof credits === "number" && credits > 0 ? credits : null;
+  } catch {
+    return null;
+  }
+}
+
+async function standardAchievements(
+  db: PrismaClient,
+  targetUserId: string | undefined,
+  totalUsers: number
+) {
+  const masters = await loadMasterAchievements(db);
+  const unlocks = targetUserId
+    ? await db.userAchievement.findMany({ where: { userId: targetUserId } })
+    : [];
+  const unlockMap = new Map(unlocks.map((u) => [u.achievementId, u]));
+  // Legacy: retired achievements the player earned stay on show (greyed); the rest are gone
+  const legacy = unlocks.length
+    ? await db.achievement.findMany({
+        where: { isActive: false, key: { in: unlocks.map((u) => u.achievementId) } },
+        orderBy: { key: "asc" },
+      })
+    : [];
+  const globalUnlocks = await db.userAchievement.groupBy({
+    by: ["achievementId"],
+    _count: { achievementId: true },
+  });
+  const countMap = new Map(globalUnlocks.map((g) => [g.achievementId, g._count.achievementId]));
+
+  return [...masters, ...legacy].map((m) => {
+    const unlock = unlockMap.get(m.key);
+    return {
+      key: m.key,
+      title: m.title,
+      description: m.description,
+      category: m.category,
+      rarity: m.rarity,
+      points: m.points,
+      iconUrl: m.iconUrl || "Trophy",
+      isLegacy: !m.isActive,
+      triggerType: m.triggerType,
+      conditionJson: m.conditionJson,
+      isUnlocked: !!unlock,
+      unlockedAt: unlock ? unlock.unlockedAt.toISOString() : null,
+      metadata: unlock ? unlock.metadata : null,
+      rewards: parseRewards(m.rewardsJson),
+      globalUnlockPercent: percentOf(countMap.get(m.key) || 0, totalUsers),
+    };
+  });
+}
+
+/** 50k-byte revisions per registered wiki author (empty when the revision table is unpopulated). */
+async function bigEditTally(db: PrismaClient, claimedNames: string[]) {
+  if (claimedNames.length === 0) return new Map<string, number>();
+  try {
+    const bigRevs = await db.wikiRevision.findMany({
+      where: { byteDelta: { gte: 50000 }, author: { in: claimedNames } },
+      select: { author: true },
+    });
+    return tally(bigRevs.flatMap((r) => r.author || []));
+  } catch {
+    return new Map<string, number>();
+  }
+}
+
+/** An approved claimed wiki name and the account holding it. */
+interface RegisteredName {
+  name: string;
+  userId: string;
+}
+
+async function oolMedals(
+  db: PrismaClient,
+  targetNames: readonly string[],
+  registered: RegisteredName[],
+  totalUsers: number
+) {
+  const claimedNames = registered.map((r) => r.name);
+  const activeUserStats = claimedNames.length
+    ? await db.lorewardUserStats.findMany({
+        where: { username: { in: claimedNames, mode: "insensitive" } },
+        select: {
+          username: true,
+          dailyWins: true,
+          weeklyWins: true,
+          monthlyWins: true,
+          totalScore: true,
+          updatedAt: true,
+        },
+      })
+    : [];
+  // First row wins for a case-insensitive username clash (reversed so the Map's last write is the first row).
+  const statsByName = new Map(
+    [...activeUserStats].reverse().map((s) => [s.username.toLowerCase(), s])
+  );
+  const fiftyKEdits = await bigEditTally(db, claimedNames);
+  const annualWinners = await db.lorewardEntry.findMany({
+    where: { type: "annual", status: "approved", winnerUser: { not: null } },
+    select: { winnerUser: true },
+  });
+  const annualWins = tally(annualWinners.flatMap((w) => w.winnerUser || []));
+
+  /** The medals of a set of names, their wins summed (an account's names are one player). */
+  const laddersFor = (names: readonly string[]) => {
+    const lower = names.map((name) => name.toLowerCase());
+    const sum = (count: (name: string) => number) => lower.reduce((n, name) => n + count(name), 0);
+    return medalLadder({
+      dailyWins: sum((name) => statsByName.get(name)?.dailyWins ?? 0),
+      weeklyWins: sum((name) => statsByName.get(name)?.weeklyWins ?? 0),
+      monthlyWins: sum((name) => statsByName.get(name)?.monthlyWins ?? 0),
+      annualWins: sum((name) => annualWins.get(name) ?? 0),
+      fiftyKEdits: sum((name) => fiftyKEdits.get(name) ?? 0),
+    });
+  };
+
+  // Earning accounts per tier: a player holding several names counts once, with their names' wins summed
+  const namesByAccount = new Map<string, string[]>();
+  for (const { name, userId } of registered) {
+    namesByAccount.set(userId, [...(namesByAccount.get(userId) ?? []), name]);
+  }
+  const earners = MEDALS.map(() => new Set<string>());
+  for (const [userId, names] of namesByAccount) {
+    laddersFor(names).ever.forEach((ever, tier) => {
+      if (ever > 0) earners[tier]!.add(userId);
+    });
+  }
+
+  const target = laddersFor(targetNames);
+  const latest = Math.max(
+    0,
+    ...targetNames.map((name) => statsByName.get(name.toLowerCase())?.updatedAt.getTime() ?? 0)
+  );
+  const unlockedAt = (latest ? new Date(latest) : new Date()).toISOString();
+  return MEDALS.map((medal, tier) => ({
+    ...medal,
+    category: "Order of the Lore",
+    triggerType: "OOL_MEDAL",
+    conditionJson: null,
+    isUnlocked: target.ever[tier]! > 0,
+    unlockedAt: target.ever[tier]! > 0 ? unlockedAt : null,
+    metadata: JSON.stringify({ count: target.owned[tier] }),
+    rewards: null,
+    globalUnlockPercent: percentOf(earners[tier]!.size, totalUsers),
+  }));
+}
+
+async function wikiAwardAchievements(
+  db: PrismaClient,
+  targetNames: readonly string[],
+  accountByName: Map<string, string>,
+  totalUsers: number
+) {
+  const allAwards = await db.wikiArticleAward.findMany({ orderBy: { awardedAt: "desc" } });
+
+  // Registered earning accounts per award name (lower-cased name to account in `accountByName`)
+  const earnersByAward = new Map<string, Set<string>>();
+  for (const award of allAwards) {
+    const earners = earnersByAward.get(award.name) ?? new Set<string>();
+    for (const user of parseRecipients(award.recipientUsers)) {
+      const account = typeof user === "string" ? accountByName.get(user.toLowerCase()) : undefined;
+      if (account) earners.add(account);
+    }
+    earnersByAward.set(award.name, earners);
+  }
+
+  const userAwards = allAwards.filter((a) => {
+    const recipients = a.recipientUsers;
+    return Array.isArray(recipients) && targetNames.some((name) => recipients.includes(name));
+  });
+  return userAwards.map((a) => ({
+    key: `wiki-award-${a.id}`,
+    title: `${a.name} on ${a.pageTitle}`,
+    description: a.description || `Awarded for achievements on the ${a.pageTitle} article.`,
+    category: "Wiki Milestones",
+    rarity: wikiAwardRarity(a),
+    points: 20,
+    iconUrl: a.category === "FEATURED" ? "Star" : "PageEdit",
+    triggerType: "WIKI_AWARD",
+    conditionJson: null,
+    isUnlocked: true,
+    unlockedAt: a.awardedAt.toISOString(),
+    metadata: JSON.stringify({ pageTitle: a.pageTitle, pageSlug: a.pageSlug }),
+    rewards: null,
+    globalUnlockPercent: percentOf(earnersByAward.get(a.name)?.size || 0, totalUsers),
+  }));
+}
+
+interface PlayerTotals {
+  userId: string;
+  totalPoints: number;
+  achievementCount: number;
+  rareAchievements: number;
+  rank: number;
+}
+
+const RARE_PLUS = ["Rare", "Epic", "Legendary"];
+
+/**
+ * Every player with an unlock, best first; players on equal points share a rank. Points count
+ * every unlock, Legacy included; the counts are of active achievements only. One aggregate in the
+ * database, so the unlock table is never loaded into memory; ties on points break on the active
+ * count, then the user id, so the order is deterministic.
+ */
+async function playerTotals(db: PrismaClient): Promise<PlayerTotals[]> {
+  const rows = await db.$queryRaw<Omit<PlayerTotals, "rank">[]>(Prisma.sql`
+    SELECT ua."userId" AS "userId",
+           COALESCE(SUM(a."points"), 0)::int AS "totalPoints",
+           (COUNT(*) FILTER (WHERE a."isActive"))::int AS "achievementCount",
+           (COUNT(*) FILTER (WHERE a."isActive" AND a."rarity" IN (${Prisma.join(RARE_PLUS)})))::int AS "rareAchievements"
+    FROM "UserAchievement" ua
+    JOIN "Achievement" a ON a."key" = ua."achievementId"
+    GROUP BY ua."userId"
+    ORDER BY "totalPoints" DESC, "achievementCount" DESC, ua."userId" ASC
+  `);
+  let rank = 0;
+  return rows.map((row, i) => {
+    if (i === 0 || row.totalPoints !== rows[i - 1]!.totalPoints) rank = i + 1;
+    return { ...row, rank };
+  });
+}
 
 export const achievementsProgressRouter = createTRPCRouter({
+  /** The signed-in player's achievement standing: unlocks of active achievements, their points and rank. */
+  getMySummary: protectedProcedure.query(async ({ ctx }) => {
+    const [activeTotal, totals, newest] = await Promise.all([
+      ctx.db.achievement.count({ where: { isActive: true } }),
+      playerTotals(ctx.db),
+      ctx.db.userAchievement.findMany({
+        where: { userId: ctx.user.clerkUserId, achievement: { isActive: true } },
+        orderBy: { unlockedAt: "desc" },
+        take: RECENT_UNLOCKS,
+        select: {
+          metadata: true,
+          achievement: {
+            select: { key: true, title: true, rarity: true, category: true, iconUrl: true },
+          },
+        },
+      }),
+    ]);
+    const mine = totals.find((t) => t.userId === ctx.user.clerkUserId);
+    return {
+      unlocked: mine?.achievementCount ?? 0,
+      activeTotal,
+      points: mine?.totalPoints ?? 0,
+      rank: mine?.rank ?? null,
+      /** The newest unlocks, newest first. */
+      recent: newest.map(({ achievement, metadata }) => ({
+        ...achievement,
+        reward: paidCredits(metadata),
+      })),
+    };
+  }),
+
+  /** The locked achievement the viewer is nearest to unlocking, with how far along they are; null when none is measurable. */
+  getNextUnlock: protectedProcedure.query(async ({ ctx }) => {
+    const nearest = await achievementService.nearestLocked(
+      ctx.user.clerkUserId,
+      ctx.user.countryId ?? null,
+      ctx.db
+    );
+    if (!nearest) return null;
+    const { key, title, rarity, category, iconUrl } = nearest.achievement;
+    return {
+      key,
+      title,
+      rarity,
+      category,
+      iconUrl,
+      current: nearest.current,
+      target: nearest.target,
+    };
+  }),
+
+  /** Ranked players by achievement points; names come from the account, never a Clerk id. */
+  getPlayerLeaderboard: rateLimitedPublicProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(100).default(25) }))
+    .query(async ({ ctx, input }) => {
+      const top = (await playerTotals(ctx.db)).slice(0, input.limit);
+      const users = await ctx.db.user.findMany({
+        where: { clerkUserId: { in: top.map((t) => t.userId) } },
+        select: { clerkUserId: true, handle: true, forumUsername: true },
+      });
+      const userById = new Map(users.map((u) => [u.clerkUserId, u]));
+      const viewerId = ctx.user?.clerkUserId;
+      return top.map(({ userId, ...row }) => {
+        const account = userById.get(userId);
+        return {
+          ...row,
+          name: account?.handle ?? account?.forumUsername ?? "Player",
+          handle: account?.handle ?? null,
+          isViewer: userId === viewerId,
+        };
+      });
+    }),
+
   getAllWithStatus: rateLimitedPublicProcedure
     .input(
       z.object({
@@ -11,409 +466,32 @@ export const achievementsProgressRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        let targetUserId = input.userId;
-
-        // If no user specified but countryId is provided, find country's owner/first user
-        if (!targetUserId && input.countryId) {
-          const user = await ctx.db.user.findFirst({
-            where: { ownedCountries: { some: { id: input.countryId } } },
-            select: { clerkUserId: true },
-          });
-          if (user) targetUserId = user.clerkUserId;
-        }
-
-        // Fallback to logged-in user
-        if (!targetUserId) {
-          targetUserId = ctx.user?.clerkUserId || undefined;
-        }
-
-        // Fetch target user record to get wikiUsername
+        const targetUserId = await resolveTargetUserId(ctx.db, input, ctx.user?.clerkUserId);
         const userRecord = targetUserId
           ? await ctx.db.user.findUnique({
               where: { clerkUserId: targetUserId },
-              select: { wikiUsername: true },
+              select: { id: true, clerkUserId: true },
             })
           : null;
-        const wikiUsername = userRecord?.wikiUsername;
+        const targetNames = await lorewardsWikiNames(ctx.db, userRecord, ctx.user?.clerkUserId);
 
-        // Get all active master achievements
-        let masterAchievements = await ctx.db.achievement.findMany({
-          where: { isActive: true },
-          orderBy: { key: "asc" },
+        const totalUsers = (await ctx.db.user.count()) || 1;
+        const standard = await standardAchievements(ctx.db, targetUserId, totalUsers);
+
+        // Global unlock percents count the accounts holding approved claimed wiki names, once each
+        const registered = await ctx.db.wikiNameClaim.findMany({
+          where: { source: IXWIKI, status: "APPROVED" },
+          select: { name: true, userId: true },
         });
 
-        // Auto-sync if database achievements count doesn't match definitions registry
-        const { ACHIEVEMENT_DEFINITIONS } = await import("~/lib/achievements/definitions");
-        if (masterAchievements.length < ACHIEVEMENT_DEFINITIONS.length) {
-          const { syncAchievements } = await import("~/lib/achievements/sync");
-          await syncAchievements(ctx.db);
-          // Re-fetch master achievements after sync
-          masterAchievements = await ctx.db.achievement.findMany({
-            where: { isActive: true },
-            orderBy: { key: "asc" },
-          });
-        }
-
-        // Get user's unlocked achievements if target user is known
-        const userUnlocks = targetUserId
-          ? await ctx.db.userAchievement.findMany({
-              where: { userId: targetUserId },
-            })
-          : [];
-
-        const unlockMap = new Map(userUnlocks.map((u) => [u.achievementId, u]));
-
-        // Calculate global unlock stats
-        const totalUsersCount = (await ctx.db.user.count()) || 1;
-        const globalUnlocksGroup = await ctx.db.userAchievement.groupBy({
-          by: ["achievementId"],
-          _count: {
-            achievementId: true,
-          },
-        });
-        const countMap = new Map(
-          globalUnlocksGroup.map((g) => [g.achievementId, g._count.achievementId])
+        const medals = await oolMedals(ctx.db, targetNames, registered, totalUsers);
+        const wikiAwards = await wikiAwardAchievements(
+          ctx.db,
+          targetNames,
+          new Map(registered.map((r) => [r.name.toLowerCase(), r.userId])),
+          totalUsers
         );
-
-        // Map standard achievements
-        const standardAchievements = masterAchievements.map((m) => {
-          const unlock = unlockMap.get(m.key);
-          let rewards = null;
-          if (m.rewardsJson) {
-            try {
-              rewards = JSON.parse(m.rewardsJson);
-            } catch {
-              // ignore
-            }
-          }
-
-          const globalUnlocks = countMap.get(m.key) || 0;
-          const globalUnlockPercent = Math.min(
-            100.0,
-            parseFloat(((globalUnlocks / totalUsersCount) * 100).toFixed(1))
-          );
-
-          return {
-            key: m.key,
-            title: m.title,
-            description: m.description,
-            category: m.category,
-            rarity: m.rarity,
-            points: m.points,
-            iconUrl: m.iconUrl || "🏆",
-            triggerType: m.triggerType,
-            conditionJson: m.conditionJson,
-            isUnlocked: !!unlock,
-            unlockedAt: unlock ? unlock.unlockedAt.toISOString() : null,
-            metadata: unlock ? unlock.metadata : null,
-            rewards,
-            globalUnlockPercent,
-          };
-        });
-
-        // Query OOL stats for user if wikiUsername exists
-        const oolStats = wikiUsername
-          ? await ctx.db.lorewardUserStats.findUnique({
-              where: { username: wikiUsername },
-            })
-          : null;
-
-        // Calculate accurate global unlock percents among registered users
-        const registeredUsersWithWiki = await ctx.db.user.findMany({
-          where: {
-            wikiUsername: { not: null },
-          },
-          select: {
-            wikiUsername: true,
-          },
-        });
-        const wikiUsernames = registeredUsersWithWiki
-          .map((u) => u.wikiUsername)
-          .filter(Boolean) as string[];
-        const registeredUsernamesSet = new Set(wikiUsernames.map((name) => name.toLowerCase()));
-
-        const activeUserStats =
-          wikiUsernames.length > 0
-            ? await ctx.db.lorewardUserStats.findMany({
-                where: {
-                  username: {
-                    in: wikiUsernames,
-                    mode: "insensitive",
-                  },
-                },
-                select: {
-                  username: true,
-                  dailyWins: true,
-                  weeklyWins: true,
-                  monthlyWins: true,
-                  totalScore: true,
-                },
-              })
-            : [];
-
-        // Query 50k edits for all registered wiki users via PostgreSQL
-        const fiftyKEditsMap = new Map<string, number>();
-        if (wikiUsernames.length > 0) {
-          try {
-            const bigRevs = await ctx.db.wikiRevision.findMany({
-              where: {
-                byteDelta: { gte: 50000 },
-                author: { in: wikiUsernames },
-              },
-              select: {
-                author: true,
-              },
-            });
-
-            for (const r of bigRevs) {
-              if (r.author) {
-                const lower = r.author.toLowerCase();
-                fiftyKEditsMap.set(lower, (fiftyKEditsMap.get(lower) ?? 0) + 1);
-              }
-            }
-          } catch (_err) {
-            // Skip 50k edit counts if revision table is unpopulated
-          }
-        }
-
-        // Fetch annual winners from LorewardEntry
-        const annualWinners = await ctx.db.lorewardEntry.findMany({
-          where: {
-            type: "annual",
-            status: "approved",
-            winnerUser: { not: null },
-          },
-          select: {
-            winnerUser: true,
-          },
-        });
-        const annualWinsMap = new Map<string, number>();
-        const annualWinnerNames = annualWinners
-          .map((w) => w.winnerUser)
-          .filter(Boolean) as string[];
-
-        // Build annual wins map for earners percentage
-        for (const w of annualWinnerNames) {
-          const lowerName = w.toLowerCase();
-          annualWinsMap.set(lowerName, (annualWinsMap.get(lowerName) ?? 0) + 1);
-        }
-
-        let bronzeEarnersCount = 0;
-        let silverEarnersCount = 0;
-        let goldEarnersCount = 0;
-        let burgEarnersCount = 0;
-
-        for (const username of wikiUsernames) {
-          const lowerName = username.toLowerCase();
-          const stats = activeUserStats.find((s) => s.username.toLowerCase() === lowerName);
-          const dailyWins = stats?.dailyWins ?? 0;
-          const weeklyWins = stats?.weeklyWins ?? 0;
-          const monthlyWins = stats?.monthlyWins ?? 0;
-          const annualWins = annualWinsMap.get(lowerName) ?? 0;
-          const fiftyKEdits = fiftyKEditsMap.get(lowerName) ?? 0;
-
-          const bronzeEver = dailyWins + fiftyKEdits;
-          const silverFromBronze = Math.floor(bronzeEver / 10);
-          const silverEver = weeklyWins + monthlyWins * 3 + silverFromBronze;
-          const goldEver = Math.floor(silverEver / 5);
-          const burgEver = annualWins + Math.floor(goldEver / 5);
-
-          if (bronzeEver > 0) bronzeEarnersCount++;
-          if (silverEver > 0) silverEarnersCount++;
-          if (goldEver > 0) goldEarnersCount++;
-          if (burgEver > 0) burgEarnersCount++;
-        }
-
-        const bronzeUnlockPercent = Math.min(
-          100.0,
-          parseFloat(((bronzeEarnersCount / totalUsersCount) * 100).toFixed(1))
-        );
-        const silverUnlockPercent = Math.min(
-          100.0,
-          parseFloat(((silverEarnersCount / totalUsersCount) * 100).toFixed(1))
-        );
-        const goldUnlockPercent = Math.min(
-          100.0,
-          parseFloat(((goldEarnersCount / totalUsersCount) * 100).toFixed(1))
-        );
-        const burgUnlockPercent = Math.min(
-          100.0,
-          parseFloat(((burgEarnersCount / totalUsersCount) * 100).toFixed(1))
-        );
-
-        // Target user specifics
-        const targetLower = wikiUsername ? wikiUsername.toLowerCase() : "";
-        const targetStats = activeUserStats.find((s) => s.username.toLowerCase() === targetLower);
-        const targetDailyWins = targetStats?.dailyWins ?? 0;
-        const targetWeeklyWins = targetStats?.weeklyWins ?? 0;
-        const targetMonthlyWins = targetStats?.monthlyWins ?? 0;
-        const targetAnnualWins = targetLower ? (annualWinsMap.get(targetLower) ?? 0) : 0;
-        const targetFiftyKEdits = targetLower ? (fiftyKEditsMap.get(targetLower) ?? 0) : 0;
-
-        const targetBronzeEver = targetDailyWins + targetFiftyKEdits;
-        const targetSilverFromBronze = Math.floor(targetBronzeEver / 10);
-        const targetSilverEver = targetWeeklyWins + targetMonthlyWins * 3 + targetSilverFromBronze;
-        const targetGoldEver = Math.floor(targetSilverEver / 5);
-        const targetBurgEver = targetAnnualWins + Math.floor(targetGoldEver / 5);
-
-        const targetBronzeOwned = targetBronzeEver - targetSilverFromBronze * 10;
-        const targetSilverOwned = targetSilverEver - Math.floor(targetSilverEver / 5) * 5;
-        const targetGoldOwned =
-          Math.floor(targetSilverEver / 5) - Math.floor(Math.floor(targetSilverEver / 5) / 5) * 5;
-        const targetBurgOwned = targetBurgEver;
-
-        const targetUnlockedAtStr = oolStats
-          ? oolStats.updatedAt.toISOString()
-          : new Date().toISOString();
-
-        const oolMedals = [
-          {
-            key: "ool-bronze",
-            title: "Bronze Lore Medal",
-            description:
-              "Daily Lore Award winner or 50k edit contributor. A daily win or a 50k edit conveys a bronze medal.",
-            category: "Order of the Lore",
-            rarity: "Common",
-            points: 1,
-            iconUrl:
-              "https://upload.wikimedia.org/wikipedia/commons/5/54/%D0%91%D1%80%D0%BE%D0%BD%D0%B7%D0%B0%D0%B2%D1%8B_%D0%BC%D1%8D%D0%B4%D0%B0%D0%BB%D1%8C.svg",
-            triggerType: "OOL_MEDAL",
-            conditionJson: null,
-            isUnlocked: targetBronzeEver > 0,
-            unlockedAt: targetBronzeEver > 0 ? targetUnlockedAtStr : null,
-            metadata: JSON.stringify({ count: targetBronzeOwned }),
-            rewards: null,
-            globalUnlockPercent: bronzeUnlockPercent,
-          },
-          {
-            key: "ool-silver",
-            title: "Silver Lore Medal",
-            description:
-              "Weekly or Monthly Lore Award winner, or upgraded from 10 Bronze medals. A weekly win conveys a silver medal; a monthly win awards three.",
-            category: "Order of the Lore",
-            rarity: "Rare",
-            points: 10,
-            iconUrl: "/images/ool-silver.svg",
-            triggerType: "OOL_MEDAL",
-            conditionJson: null,
-            isUnlocked: targetSilverEver > 0,
-            unlockedAt: targetSilverEver > 0 ? targetUnlockedAtStr : null,
-            metadata: JSON.stringify({ count: targetSilverOwned }),
-            rewards: null,
-            globalUnlockPercent: silverUnlockPercent,
-          },
-          {
-            key: "ool-gold",
-            title: "Gold Lore Medal",
-            description:
-              "Upgraded from 5 Silver medals. Represents a significant accumulation of lore contributions.",
-            category: "Order of the Lore",
-            rarity: "Epic",
-            points: 50,
-            iconUrl: "/images/ool-gold.svg",
-            triggerType: "OOL_MEDAL",
-            conditionJson: null,
-            isUnlocked: targetGoldEver > 0,
-            unlockedAt: targetGoldEver > 0 ? targetUnlockedAtStr : null,
-            metadata: JSON.stringify({ count: targetGoldOwned }),
-            rewards: null,
-            globalUnlockPercent: goldUnlockPercent,
-          },
-          {
-            key: "ool-burg-cross",
-            title: "Burg Cross Lore Medal",
-            description:
-              "Annual Lore Award winner, or upgraded from 5 Gold medals. An annual win or 5 Gold medals awards a platinum Burg cross medal.",
-            category: "Order of the Lore",
-            rarity: "Legendary",
-            points: 250,
-            iconUrl: "/images/ool-burg-cross.png",
-            triggerType: "OOL_MEDAL",
-            conditionJson: null,
-            isUnlocked: targetBurgEver > 0,
-            unlockedAt: targetBurgEver > 0 ? targetUnlockedAtStr : null,
-            metadata: JSON.stringify({ count: targetBurgOwned }),
-            rewards: null,
-            globalUnlockPercent: burgUnlockPercent,
-          },
-        ];
-
-        // Fetch Wiki article awards
-        const allWikiAwards = await ctx.db.wikiArticleAward.findMany({
-          orderBy: { awardedAt: "desc" },
-        });
-
-        const userWikiAwards = wikiUsername
-          ? allWikiAwards.filter((a) => {
-              const recipients = a.recipientUsers as string[] | null;
-              return Array.isArray(recipients) && recipients.includes(wikiUsername);
-            })
-          : [];
-
-        // Pre-calculate mapping from award name to registered earners count
-        const awardRegisteredEarnersMap = new Map<string, number>();
-        const awardsByName = new Map<string, typeof allWikiAwards>();
-        for (const wa of allWikiAwards) {
-          const list = awardsByName.get(wa.name) || [];
-          list.push(wa);
-          awardsByName.set(wa.name, list);
-        }
-
-        for (const [name, list] of awardsByName.entries()) {
-          const earnersSet = new Set<string>();
-          for (const wa of list) {
-            if (wa.recipientUsers) {
-              let parsedRecipients: string[] = [];
-              if (typeof wa.recipientUsers === "string") {
-                try {
-                  parsedRecipients = JSON.parse(wa.recipientUsers);
-                } catch (err) {
-                  console.warn("[AchievementsProgress] Failed to parse recipientUsers JSON:", err);
-                }
-              } else if (Array.isArray(wa.recipientUsers)) {
-                parsedRecipients = wa.recipientUsers as string[];
-              }
-              for (const u of parsedRecipients) {
-                if (typeof u === "string" && registeredUsernamesSet.has(u.toLowerCase())) {
-                  earnersSet.add(u.toLowerCase());
-                }
-              }
-            }
-          }
-          awardRegisteredEarnersMap.set(name, earnersSet.size);
-        }
-
-        const wikiAchievements = userWikiAwards.map((a) => {
-          const registeredEarners = awardRegisteredEarnersMap.get(a.name) || 0;
-          const globalUnlockPercent = Math.min(
-            100.0,
-            parseFloat(((registeredEarners / totalUsersCount) * 100).toFixed(1))
-          );
-
-          let rarity = "Uncommon";
-          if (a.category === "FEATURED") rarity = "Epic";
-          if (a.name.includes("100k")) rarity = "Legendary";
-          if (a.name.includes("50k")) rarity = "Rare";
-
-          return {
-            key: `wiki-award-${a.id}`,
-            title: `${a.name} on ${a.pageTitle}`,
-            description: a.description || `Awarded for achievements on the ${a.pageTitle} article.`,
-            category: "Wiki Milestones",
-            rarity,
-            points: 20,
-            iconUrl: a.category === "FEATURED" ? "⭐" : "📝",
-            triggerType: "WIKI_AWARD",
-            conditionJson: null,
-            isUnlocked: true,
-            unlockedAt: a.awardedAt.toISOString(),
-            metadata: JSON.stringify({ pageTitle: a.pageTitle, pageSlug: a.pageSlug }),
-            rewards: null,
-            globalUnlockPercent,
-          };
-        });
-
-        return [...standardAchievements, ...oolMedals, ...wikiAchievements];
+        return [...standard, ...medals, ...wikiAwards];
       } catch (error) {
         console.error("Error in getAllWithStatus:", error);
         return [];

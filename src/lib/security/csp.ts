@@ -9,6 +9,8 @@
  *
  * If Clerk SDK breaks, check: https://clerk.com/docs/security/csp
  */
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
+
 // oxlint-disable-next-line typescript/no-unused-vars
 export function buildCSPTemplate(standalone: boolean): string {
   const isDevelopment = process.env.NODE_ENV === "development";
@@ -23,12 +25,17 @@ export function buildCSPTemplate(standalone: boolean): string {
     `default-src 'self'`,
     scriptSrc,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
-    `img-src 'self' data: blob: https: http:`,
+    // Production drops plain http:/ws: (upgrade-insecure-requests rewrites them to https/wss
+    // anyway); development keeps ws: for the local sockets. Sister wiki HTML never carries an off-origin image (sanitizeSisterHtml).
+    isDevelopment ? `img-src 'self' data: blob: https: http:` : `img-src 'self' data: blob: https:`,
     `font-src 'self' https://fonts.gstatic.com data:`,
-    `connect-src 'self' https: wss: ws:`,
+    // blob: lets MapLibre's worker read the world editor's draft GeoJSON through source.setData(blobUrl)
+    isDevelopment
+      ? `connect-src 'self' blob: https: wss: ws:`
+      : `connect-src 'self' blob: https: wss:`,
     `frame-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com https://maps.ixwiki.com`,
     `worker-src 'self' blob:`,
-    `media-src 'self' https://ixwiki.com data: blob:`,
+    `media-src 'self' ${mediaWikiOrigin()} data: blob:`,
     `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,

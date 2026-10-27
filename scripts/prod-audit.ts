@@ -268,8 +268,9 @@ async function testThinkPagesSystem(testUserId?: string) {
     }
 
     // Test post count
+    // Posts belong to ThinkPages accounts, which carry the author's Clerk id.
     const postCount = await prisma.thinkpagesPost.count({
-      where: { userId: user.id },
+      where: { account: { clerkUserId: user.clerkUserId } },
     });
     logResult("THINKPAGES_POSTS", "PASS", `Found ${postCount} ThinkPages posts for user`);
 

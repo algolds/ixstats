@@ -3,15 +3,16 @@
 import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { formatCurrency } from "~/lib/utils/format-utils";
+import { cn } from "~/lib/utils";
 import { useUser } from "~/context/auth-context";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -39,11 +40,12 @@ import {
   POLICY_TYPES,
   POLICY_CATEGORIES,
   PRIORITY_OPTIONS,
-  getMatchingDepartmentCategory,
 } from "./policies/policy-creator-constants";
+import { findPolicyDepartment, policyDepartmentKey } from "~/lib/policies/department-match";
 import { PolicyTargetMetrics, type TargetMetric } from "./policies/PolicyTargetMetrics";
 import { PolicyTemplateSliders } from "./policies/PolicyTemplateSliders";
 import { PolicyReconBanner } from "./policies/PolicyReconBanner";
+import { Card } from "~/components/ui/card";
 
 interface PolicyCreatorSheetProps {
   countryId: string;
@@ -74,28 +76,146 @@ function CollapsibleSection({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="border-border/50 rounded-lg border">
+    <div className="border-separator rounded-control border">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="hover:bg-muted/50 flex w-full items-center justify-between rounded-lg p-3 text-sm font-medium transition-colors"
+        aria-expanded={isOpen}
+        className="hover:bg-fill-3 rounded-control text-body flex w-full items-center justify-between p-3 font-medium transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Icon className="text-muted-foreground h-4 w-4" />
+          <Icon className="text-label-secondary h-4 w-4" />
           <span>{title}</span>
           {badge && (
-            <Badge variant="secondary" className="px-1.5 py-0 text-xs">
+            <Badge variant="default" className="text-footnote px-2 py-0">
               {badge}
             </Badge>
           )}
         </div>
         {isOpen ? (
-          <ChevronDown className="text-muted-foreground h-4 w-4" />
+          <ChevronDown className="text-label-secondary h-4 w-4" />
         ) : (
-          <ChevronRight className="text-muted-foreground h-4 w-4" />
+          <ChevronRight className="text-label-secondary h-4 w-4" />
         )}
       </button>
       {isOpen && <div className="px-3 pb-3">{children}</div>}
+    </div>
+  );
+}
+
+function FieldSelect({
+  label,
+  value,
+  onChange,
+  options,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: readonly { value: string; label: string }[];
+  disabled?: boolean;
+}) {
+  return (
+    <div>
+      <Label className="text-footnote">{label}</Label>
+      <Select value={value} onValueChange={onChange} disabled={disabled}>
+        <SelectTrigger className="text-footnote h-8">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((o) => (
+            <SelectItem key={o.value} value={o.value}>
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function CustomPolicyFields({
+  title,
+  description,
+  onTitleChange,
+  onDescriptionChange,
+}: {
+  title: string;
+  description: string;
+  onTitleChange: (value: string) => void;
+  onDescriptionChange: (value: string) => void;
+}) {
+  return (
+    <>
+      <div>
+        <Label htmlFor="policy-title" className="text-footnote">
+          Title *
+        </Label>
+        <Input
+          id="policy-title"
+          value={title}
+          onChange={(e) => onTitleChange(e.target.value)}
+          placeholder="e.g. National Infrastructure Investment Act"
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="policy-desc" className="text-footnote">
+          Description *
+        </Label>
+        <Textarea
+          id="policy-desc"
+          value={description}
+          onChange={(e) => onDescriptionChange(e.target.value)}
+          placeholder="What the policy does and what you expect from it"
+          rows={3}
+        />
+      </div>
+    </>
+  );
+}
+
+const signedPct = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
+
+type PolicyEffects = ReturnType<(typeof PREDEFINED_DECRETALS)[string]["calculate"]>;
+
+function ProjectedEffects({ effects }: { effects: PolicyEffects }) {
+  const rows: [label: string, value: string, tone?: string][] = [
+    ["Setup cost", formatCurrency(effects.implementationCost)],
+    ["Annual maintenance", formatCurrency(effects.maintenanceCost)],
+    [
+      "GDP growth",
+      signedPct(effects.gdpEffect),
+      effects.gdpEffect >= 0 ? "text-green" : "text-red",
+    ],
+    [
+      "Employment",
+      signedPct(effects.employmentEffect),
+      effects.employmentEffect >= 0 ? "text-green" : "text-red",
+    ],
+    [
+      "Inflation",
+      signedPct(effects.inflationEffect),
+      effects.inflationEffect <= 2 ? "text-green" : "text-yellow",
+    ],
+    ["Tax revenue", signedPct(effects.taxRevenueEffect)],
+  ];
+  return (
+    <div className="bg-surface-secondary rounded-row space-y-3 p-4">
+      <h4 className="text-eyebrow text-label-secondary flex items-center gap-2">
+        <Sliders aria-hidden className="h-3.5 w-3.5" />
+        Projected effects
+      </h4>
+      <div className="text-footnote grid grid-cols-2 gap-2">
+        {rows.map(([label, value, tone]) => (
+          <div key={label} className="border-separator flex justify-between border-b pb-1">
+            <span className="text-label-secondary">{label}</span>
+            <span className={cn("font-semibold", tone)}>{value}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -140,10 +260,10 @@ export function PolicyCreatorSheet({
     }
   }, [prefill]);
 
-  const currentTemplate =
-    selectedTemplateKey !== "custom"
-      ? PREDEFINED_DECRETALS[selectedTemplateKey as keyof typeof PREDEFINED_DECRETALS]
-      : null;
+  const isTemplate = selectedTemplateKey !== "custom";
+  const currentTemplate = isTemplate
+    ? PREDEFINED_DECRETALS[selectedTemplateKey as keyof typeof PREDEFINED_DECRETALS]
+    : null;
 
   useEffect(() => {
     if (currentTemplate) {
@@ -161,7 +281,7 @@ export function PolicyCreatorSheet({
   }, [currentTemplate]);
 
   useEffect(() => {
-    if (selectedTemplateKey === "custom") {
+    if (!isTemplate) {
       const base = CATEGORY_BASE_COSTS[formCategory] || CATEGORY_BASE_COSTS.default;
       const mult = PRIORITY_MULTIPLIERS[formPriority] || 1.0;
       setFormImplCost(String(Math.round((base?.impl ?? 500000) * mult)));
@@ -169,11 +289,14 @@ export function PolicyCreatorSheet({
     }
   }, [formCategory, formPriority, selectedTemplateKey]);
 
-  const departmentKey = getMatchingDepartmentCategory(formCategory);
-  const targetDepartment = (country as any)?.departments?.find(
-    (d: any) => d.category?.toLowerCase() === departmentKey.toLowerCase()
+  // Custom policies need a managing department (the server checks the same match).
+  const { data: government } = api.government.getByCountryId.useQuery(
+    { countryId },
+    { enabled: open && !!countryId }
   );
-  const hasDepartment = !!targetDepartment;
+  const departmentKey = policyDepartmentKey(formCategory);
+  const targetDepartment = findPolicyDepartment(government?.departments ?? [], formCategory);
+  const needsDepartment = !isTemplate && !targetDepartment;
 
   const calculatedEffects = currentTemplate
     ? currentTemplate.calculate(sliderSettings, country)
@@ -187,7 +310,7 @@ export function PolicyCreatorSheet({
   const utils = api.useUtils();
   const createPolicyMutation = api.policies.createPolicy.useMutation({
     onSuccess: () => {
-      notify.success("Policy draft created successfully");
+      notify.success("Policy draft created");
       utils.policies.invalidate();
       onOpenChange(false);
       onCreated?.();
@@ -198,68 +321,54 @@ export function PolicyCreatorSheet({
   });
 
   const isPending = createPolicyMutation.isPending;
+  const cannotSubmit = isPending || !formTitle.trim() || !formDescription.trim() || needsDepartment;
+
+  const createPolicy = () => {
+    if (!formTitle.trim() || !formDescription.trim()) return;
+    createPolicyMutation.mutate({
+      countryId,
+      userId: user?.id || "",
+      name: formTitle.trim(),
+      description: formDescription.trim(),
+      policyType: formType,
+      category: formCategory,
+      priority: formPriority,
+      implementationCost: parseFloat(formImplCost) || 0,
+      maintenanceCost: parseFloat(formMaintCost) || 0,
+      targetMetrics: targetMetrics.length > 0 ? JSON.stringify(targetMetrics) : undefined,
+      decretalKey: isTemplate ? selectedTemplateKey : undefined,
+      settings: isTemplate ? sliderSettings : undefined,
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formTitle.trim() || !formDescription.trim()) return;
-
-    createPolicyMutation.mutate({
-      countryId,
-      userId: user?.id || "",
-      name: formTitle.trim(),
-      description: formDescription.trim(),
-      policyType: formType,
-      category: formCategory,
-      priority: formPriority,
-      implementationCost: parseFloat(formImplCost) || 0,
-      maintenanceCost: parseFloat(formMaintCost) || 0,
-      targetMetrics: targetMetrics.length > 0 ? JSON.stringify(targetMetrics) : undefined,
-      decretalKey: selectedTemplateKey !== "custom" ? selectedTemplateKey : undefined,
-      settings: selectedTemplateKey !== "custom" ? sliderSettings : undefined,
-    });
-  };
-
-  const handleCreateAndLaunch = () => {
-    if (!formTitle.trim() || !formDescription.trim()) return;
-    createPolicyMutation.mutate({
-      countryId,
-      userId: user?.id || "",
-      name: formTitle.trim(),
-      description: formDescription.trim(),
-      policyType: formType,
-      category: formCategory,
-      priority: formPriority,
-      implementationCost: parseFloat(formImplCost) || 0,
-      maintenanceCost: parseFloat(formMaintCost) || 0,
-      targetMetrics: targetMetrics.length > 0 ? JSON.stringify(targetMetrics) : undefined,
-      decretalKey: selectedTemplateKey !== "custom" ? selectedTemplateKey : undefined,
-      settings: selectedTemplateKey !== "custom" ? sliderSettings : undefined,
-    });
+    createPolicy();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto p-0 sm:max-w-[650px]">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent size="wide" className="overflow-y-auto p-0">
         <form onSubmit={handleSubmit}>
-          <DialogHeader className="border-border/50 border-b px-6 pt-6 pb-4">
-            <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-              <FileText className="h-5 w-5 text-indigo-400" />
-              Declare New Executive Policy
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground text-xs">
-              Establish a national decretal, allocate budget, and project macro impacts.
-            </DialogDescription>
-          </DialogHeader>
+          <SheetHeader className="border-separator border-b px-6 pt-6 pb-4">
+            <SheetTitle className="text-title-3 flex items-center gap-2">
+              <FileText aria-hidden className="text-label-secondary h-5 w-5" />
+              New executive policy
+            </SheetTitle>
+            <SheetDescription className="text-label-secondary text-footnote">
+              Set the policy, its budget and its expected effects.
+            </SheetDescription>
+          </SheetHeader>
 
           <div className="space-y-5 px-6 py-4">
             <div>
-              <Label className="text-xs font-semibold">Policy Template / Blueprint</Label>
+              <Label className="text-caption font-semibold">Policy template</Label>
               <Select value={selectedTemplateKey} onValueChange={setSelectedTemplateKey}>
                 <SelectTrigger className="mt-1 h-9">
-                  <SelectValue placeholder="Select template..." />
+                  <SelectValue placeholder="Select a template" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="custom">Custom Decretal (Scratch Design)</SelectItem>
+                  <SelectItem value="custom">Custom (start from scratch)</SelectItem>
                   {Object.entries(PREDEFINED_DECRETALS).map(([key, tmpl]) => (
                     <SelectItem key={key} value={key}>
                       {tmpl.name} ({tmpl.category})
@@ -273,107 +382,52 @@ export function PolicyCreatorSheet({
               reconContext={reconContext}
               targetDepartment={targetDepartment}
               departmentKey={departmentKey}
+              needsDepartment={needsDepartment}
             />
 
             <div className="space-y-3">
-              {selectedTemplateKey === "custom" && (
-                <>
-                  <div>
-                    <Label htmlFor="policy-title" className="text-xs">
-                      Title *
-                    </Label>
-                    <Input
-                      id="policy-title"
-                      value={formTitle}
-                      onChange={(e) => setFormTitle(e.target.value)}
-                      placeholder="e.g., National Infrastructure Investment Act"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="policy-desc" className="text-xs">
-                      Description *
-                    </Label>
-                    <Textarea
-                      id="policy-desc"
-                      value={formDescription}
-                      onChange={(e) => setFormDescription(e.target.value)}
-                      placeholder="Describe the policy's purpose and expected impact..."
-                      rows={3}
-                    />
-                  </div>
-                </>
+              {!isTemplate && (
+                <CustomPolicyFields
+                  title={formTitle}
+                  description={formDescription}
+                  onTitleChange={setFormTitle}
+                  onDescriptionChange={setFormDescription}
+                />
               )}
 
-              {selectedTemplateKey !== "custom" && currentTemplate && (
-                <div className="bg-muted/30 border-border/40 rounded-lg border p-3">
-                  <h4 className="text-sm font-semibold">{currentTemplate.name}</h4>
-                  <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+              {isTemplate && currentTemplate && (
+                <Card variant="well" padding="none" className="p-3">
+                  <h4 className="text-headline">{currentTemplate.name}</h4>
+                  <p className="text-label-secondary text-footnote mt-1 leading-relaxed">
                     {currentTemplate.description}
                   </p>
-                </div>
+                </Card>
               )}
 
               <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <Label className="text-xs">Type</Label>
-                  <Select
-                    value={formType}
-                    onValueChange={(v) => setFormType(v as any)}
-                    disabled={selectedTemplateKey !== "custom"}
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {POLICY_TYPES.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>
-                          {t.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="text-xs">Category</Label>
-                  <Select
-                    value={formCategory}
-                    onValueChange={setFormCategory}
-                    disabled={selectedTemplateKey !== "custom"}
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {POLICY_CATEGORIES.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {c.charAt(0).toUpperCase() + c.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="text-xs">Priority</Label>
-                  <Select
-                    value={formPriority}
-                    onValueChange={(v) => setFormPriority(v as typeof formPriority)}
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PRIORITY_OPTIONS.map((p) => (
-                        <SelectItem key={p.value} value={p.value}>
-                          {p.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <FieldSelect
+                  label="Type"
+                  value={formType}
+                  onChange={(v) => setFormType(v as typeof formType)}
+                  disabled={isTemplate}
+                  options={POLICY_TYPES}
+                />
+                <FieldSelect
+                  label="Category"
+                  value={formCategory}
+                  onChange={setFormCategory}
+                  disabled={isTemplate}
+                  options={POLICY_CATEGORIES.map((c) => ({
+                    value: c,
+                    label: c.charAt(0).toUpperCase() + c.slice(1),
+                  }))}
+                />
+                <FieldSelect
+                  label="Priority"
+                  value={formPriority}
+                  onChange={(v) => setFormPriority(v as typeof formPriority)}
+                  options={PRIORITY_OPTIONS}
+                />
               </div>
             </div>
 
@@ -383,130 +437,62 @@ export function PolicyCreatorSheet({
               onSliderChange={(key, val) => setSliderSettings((prev) => ({ ...prev, [key]: val }))}
             />
 
-            {selectedTemplateKey !== "custom" && calculatedEffects && (
-              <div className="space-y-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
-                <h4 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-emerald-400 uppercase">
-                  <Sliders className="h-3.5 w-3.5" />
-                  Calculated Simulation Projections
-                </h4>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="border-border/30 flex justify-between border-b pb-1">
-                    <span className="text-muted-foreground">Setup Cost:</span>
-                    <span className="font-semibold">
-                      {formatCurrency(calculatedEffects.implementationCost)}
-                    </span>
-                  </div>
-                  <div className="border-border/30 flex justify-between border-b pb-1">
-                    <span className="text-muted-foreground">Annual Maint:</span>
-                    <span className="font-semibold">
-                      {formatCurrency(calculatedEffects.maintenanceCost)}
-                    </span>
-                  </div>
-                  <div className="border-border/30 flex justify-between border-b pb-1">
-                    <span className="text-muted-foreground">GDP growth:</span>
-                    <span
-                      className={`font-semibold ${calculatedEffects.gdpEffect >= 0 ? "text-emerald-500" : "text-red-500"}`}
-                    >
-                      {calculatedEffects.gdpEffect >= 0 ? "+" : ""}
-                      {calculatedEffects.gdpEffect.toFixed(2)}%
-                    </span>
-                  </div>
-                  <div className="border-border/30 flex justify-between border-b pb-1">
-                    <span className="text-muted-foreground">Employment:</span>
-                    <span
-                      className={`font-semibold ${calculatedEffects.employmentEffect >= 0 ? "text-emerald-500" : "text-red-500"}`}
-                    >
-                      {calculatedEffects.employmentEffect >= 0 ? "+" : ""}
-                      {calculatedEffects.employmentEffect.toFixed(2)}%
-                    </span>
-                  </div>
-                  <div className="border-border/30 flex justify-between border-b pb-1">
-                    <span className="text-muted-foreground">Inflation:</span>
-                    <span
-                      className={`font-semibold ${calculatedEffects.inflationEffect <= 2 ? "text-emerald-500" : "text-amber-500"}`}
-                    >
-                      {calculatedEffects.inflationEffect >= 0 ? "+" : ""}
-                      {calculatedEffects.inflationEffect.toFixed(2)}%
-                    </span>
-                  </div>
-                  <div className="border-border/30 flex justify-between border-b pb-1">
-                    <span className="text-muted-foreground">Tax Revenue:</span>
-                    <span className="font-semibold text-indigo-400">
-                      {calculatedEffects.taxRevenueEffect >= 0 ? "+" : ""}
-                      {calculatedEffects.taxRevenueEffect.toFixed(2)}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
+            {isTemplate && calculatedEffects && <ProjectedEffects effects={calculatedEffects} />}
 
-            {selectedTemplateKey === "custom" && (
+            {!isTemplate && (
               <>
-                <div className="space-y-2 rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3.5">
-                  <p className="text-xs font-semibold tracking-wider text-indigo-400 uppercase">
-                    Estimated Cost Projections
-                  </p>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-muted-foreground">Setup Cost (Implementation):</span>
-                      <span className="text-sm font-semibold text-white">
-                        {formatCurrency(parseFloat(formImplCost) || 0)}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-muted-foreground">Annual Maintenance:</span>
-                      <span className="text-sm font-semibold text-white">
-                        {formatCurrency(parseFloat(formMaintCost) || 0)}
-                      </span>
-                    </div>
+                <div className="bg-surface-secondary rounded-row space-y-2 p-4">
+                  <p className="text-eyebrow text-label-secondary">Estimated costs</p>
+                  <div className="text-footnote grid grid-cols-2 gap-3">
+                    {[
+                      ["Setup cost", formImplCost],
+                      ["Annual maintenance", formMaintCost],
+                    ].map(([label, cost]) => (
+                      <div key={label} className="flex flex-col gap-0.5">
+                        <span className="text-label-secondary">{label}</span>
+                        <span className="text-headline text-label">
+                          {formatCurrency(parseFloat(cost!) || 0)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 <PolicyTargetMetrics metrics={targetMetrics} onChange={setTargetMetrics} />
 
-                <CollapsibleSection title="Advanced Options" icon={Settings2} defaultOpen={false}>
-                  <div className="space-y-3">
-                    <div>
-                      <Label className="text-xs">Objectives</Label>
-                      <Textarea
-                        value={formObjectives}
-                        onChange={(e) => setFormObjectives(e.target.value)}
-                        placeholder="Key objectives and goals..."
-                        rows={2}
-                        className="text-sm"
-                      />
-                    </div>
-                  </div>
+                <CollapsibleSection title="Advanced options" icon={Settings2} defaultOpen={false}>
+                  <Label className="text-footnote">Objectives</Label>
+                  <Textarea
+                    value={formObjectives}
+                    onChange={(e) => setFormObjectives(e.target.value)}
+                    placeholder="What the policy should achieve"
+                    rows={2}
+                    className="text-body"
+                  />
                 </CollapsibleSection>
               </>
             )}
           </div>
 
-          <DialogFooter className="border-border/50 flex gap-2 border-t px-6 py-4">
+          <SheetFooter className="border-separator flex gap-2 border-t px-6 py-4">
             <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="outline"
-              size="sm"
-              disabled={isPending || !formTitle.trim() || !formDescription.trim() || !hasDepartment}
-            >
-              {isPending ? "Creating..." : "Save Draft"}
+            <Button type="submit" variant="outline" size="sm" disabled={cannotSubmit}>
+              {isPending ? "Creating" : "Save draft"}
             </Button>
             <Button
               type="button"
               variant="default"
               size="sm"
-              disabled={isPending || !formTitle.trim() || !formDescription.trim() || !hasDepartment}
-              onClick={handleCreateAndLaunch}
-              className="bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+              disabled={cannotSubmit}
+              onClick={createPolicy}
             >
-              {isPending ? "Launching..." : "Create & Launch"}
+              {isPending ? "Launching" : "Create and launch"}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

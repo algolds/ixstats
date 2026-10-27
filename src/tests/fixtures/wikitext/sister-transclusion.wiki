@@ -1,0 +1,15 @@
+'''Caphiria''' is described in full on IIWiki.
+
+{{Sister|iiwiki|Caphiria}}
+
+== History ==
+{{Sister|iiwiki|Caphiria|section=History}}
+
+== Elsewhere ==
+{| class="wikitable"
+! Wiki !! Page
+|-
+| AltHistory || {{Sister|althistory|Main Page|infobox=yes}}
+|}
+
+{{Sister|iiwiki|Caphiria|card=yes}}

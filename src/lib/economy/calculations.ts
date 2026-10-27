@@ -7,7 +7,6 @@ import type {
   CountryStats,
   EconomicConfig,
   StorytellerEffect as StorytellerEffectRecord,
-  HistoricalDataPoint,
 } from "~/types/ixstats";
 import { calculateComponentEconomicModifiers } from "~/lib/government/atomic-utils";
 
@@ -22,7 +21,7 @@ export enum EconomicTier {
   EXTRAVAGANT = "Extravagant", // $65,000+ (0.50% max growth)
 }
 
-export enum PopulationTier {
+enum PopulationTier {
   TIER_1 = "1", // 0-9,999,999
   TIER_2 = "2", // 10,000,000-29,999,999
   TIER_3 = "3", // 30,000,000-49,999,999
@@ -33,15 +32,76 @@ export enum PopulationTier {
   TIER_X = "X", // 500,000,000+
 }
 
+/**
+ * Effect types the projection reads (matched case-insensitively). The three growth types are
+ * legacy: they change the single growth rate compounded since the baseline, so they rewrite the
+ * whole projected history; new effects are level effects (see `storyteller-effects.ts`).
+ */
 export enum StorytellerEffectType {
   POPULATION_ADJUSTMENT = "population_adjustment",
   GDP_ADJUSTMENT = "gdp_adjustment",
   GROWTH_RATE_MODIFIER = "growth_rate_modifier",
   SPECIAL_EVENT = "special_event",
+  /** Scales GDP per capita by `1 + value`; phased in over `duration` years, then kept. */
   TRADE_AGREEMENT = "trade_agreement",
   NATURAL_DISASTER = "natural_disaster",
-  ECONOMIC_POLICY = "economic_policy",
+  /** Scales GDP per capita by `1 + value`; phased in over `duration` years, then kept. */
+  GDP_LEVEL_ADJUSTMENT = "gdp_level_adjustment",
+  /** Scales population by `1 + value`; phased in over `duration` years, then kept. */
+  POPULATION_LEVEL_ADJUSTMENT = "population_level_adjustment",
 }
+
+/**
+ * Share (0-1) of a level effect in force at `targetTimeMs`: 0 before it starts, rising linearly
+ * over its `duration` (IxTime years), 1 afterwards. An effect with no duration applies at once.
+ */
+export function levelPhaseIn(
+  effect: Pick<StorytellerEffectRecord, "ixTimeTimestamp" | "duration">,
+  targetTimeMs: number
+): number {
+  const start =
+    effect.ixTimeTimestamp instanceof Date
+      ? effect.ixTimeTimestamp.getTime()
+      : effect.ixTimeTimestamp;
+  if (targetTimeMs < start) return 0;
+  if (!effect.duration || effect.duration <= 0) return 1;
+  return Math.min(1, IxTime.getYearsElapsed(start, targetTimeMs) / effect.duration);
+}
+
+/** Growth rate a relative growth modifier is sized against when it becomes a level effect. */
+const REFERENCE_GDP_GROWTH = 0.03;
+
+/**
+ * GDP level shift equivalent to multiplying a `referenceGrowth` growth rate by `1 + modifier`
+ * for `years`: ((1 + g(1 + m)) / (1 + g))^years − 1. Rounded to 6 decimals.
+ */
+export function growthModifierToLevelShift(
+  modifier: number,
+  years: number,
+  referenceGrowth = REFERENCE_GDP_GROWTH
+): number {
+  const g = referenceGrowth;
+  const shift = Math.pow((1 + g * (1 + modifier)) / (1 + g), years) - 1;
+  return Math.round(shift * 1e6) / 1e6;
+}
+
+/** GDP per capita where each economic tier above Impoverished starts (see `calculateEconomicTier`). */
+const ECONOMIC_TIER_THRESHOLDS = [10000, 25000, 35000, 45000, 55000, 65000] as const;
+
+/** The next tier threshold GDP per capita reaches growing at `rate`, or null if none. */
+function nextTierThreshold(gdpPerCapita: number, rate: number): number | null {
+  if (rate > 0) return ECONOMIC_TIER_THRESHOLDS.find((t) => t > gdpPerCapita) ?? null;
+  if (rate < 0)
+    return [...ECONOMIC_TIER_THRESHOLDS].reverse().find((t) => t < gdpPerCapita) ?? null;
+  return null;
+}
+
+/** Inflation is a percent (2 = 2%); the bounds match the event spine's guardrail. */
+export const DEFAULT_INFLATION_RATE = 2;
+/** Unemployment is a percent (5 = 5%), read when a nation has none stored. */
+export const DEFAULT_UNEMPLOYMENT_RATE = 5;
+const MIN_INFLATION_RATE = -5;
+const MAX_INFLATION_RATE = 100;
 
 /** Floor for the summed annual population growth rate; keeps `1 + rate` positive. */
 const MIN_POPULATION_GROWTH_RATE = -0.5;
@@ -64,7 +124,7 @@ export function assertPersistableStats(
   }
 }
 
-export interface StatsCalculationResult {
+interface StatsCalculationResult {
   country: string;
   oldStats: Partial<CountryStats>;
   newStats: CountryStats;
@@ -157,6 +217,14 @@ export class IxStatsCalculator {
       implementingGovComponents: baseData.implementingGovComponents,
       implementingEconComponents: baseData.implementingEconComponents,
       implementingTaxComponents: baseData.implementingTaxComponents,
+
+      // Stored rates the projection adjusts by component modifiers (dropping them here made
+      // every read show the defaults instead of the stored values).
+      totalGovernmentSpending: baseData.totalGovernmentSpending,
+      taxRevenueGDPPercent: baseData.taxRevenueGDPPercent,
+      unemploymentRate: baseData.unemploymentRate,
+      inflationRate: baseData.inflationRate,
+      activePolicyMaintenanceCost: baseData.activePolicyMaintenanceCost,
     };
   }
 
@@ -175,12 +243,13 @@ export class IxStatsCalculator {
   /**
    * Calculate country stats for a specific point in time
    */
+  /** `targetTime`: the nation's clock time to project to (its realm's now for the present). */
   calculateTimeProgression(
     baselineStats: CountryStats,
-    targetTime?: number,
+    targetTime: number,
     effects: StorytellerEffectRecord[] = []
   ): StatsCalculationResult {
-    const targetTimeMs = targetTime || IxTime.getCurrentIxTime();
+    const targetTimeMs = targetTime;
     const baselineTimeMs = this.baselineDate;
 
     const yearsFromBaseline = IxTime.getYearsElapsed(baselineTimeMs, targetTimeMs);
@@ -191,6 +260,11 @@ export class IxStatsCalculator {
         oldStats: baselineStats,
         newStats: {
           ...baselineStats,
+          effectiveGdpGrowth: this.currentGdpGrowthRate(
+            baselineStats,
+            baselineStats.gdpPerCapita,
+            this.getActiveEffects(effects, baselineTimeMs, targetTimeMs)
+          ),
           lastCalculated: new Date(targetTimeMs),
         },
         timeElapsed: 0,
@@ -211,7 +285,6 @@ export class IxStatsCalculator {
     const newGdpPerCapita = this.calculateGdpPerCapitaProgression(
       baselineStats.gdpPerCapita,
       baselineStats.adjustedGdpGrowth,
-      baselineStats.maxGdpGrowthRate,
       baselineStats.economicTier as EconomicTier,
       yearsFromBaseline,
       activeEffects,
@@ -234,6 +307,7 @@ export class IxStatsCalculator {
 
     const updatedStats: CountryStats = {
       ...baselineStats,
+      effectiveGdpGrowth: this.currentGdpGrowthRate(baselineStats, newGdpPerCapita, activeEffects),
       currentPopulation: newPopulation,
       currentGdpPerCapita: newGdpPerCapita,
       currentTotalGdp: newTotalGdp,
@@ -252,15 +326,22 @@ export class IxStatsCalculator {
       ),
       unemploymentRate: Math.max(
         0,
-        Math.min(100, (baselineStats.unemploymentRate ?? 5) + mods.unemploymentModifier)
+        Math.min(
+          100,
+          (baselineStats.unemploymentRate ?? DEFAULT_UNEMPLOYMENT_RATE) + mods.unemploymentModifier
+        )
       ),
+      // Percent, like every writer (issue and directive consequences move it in points).
       inflationRate: Math.max(
-        -0.5,
-        Math.min(2, (baselineStats.inflationRate ?? 0.02) + mods.inflationModifier)
+        MIN_INFLATION_RATE,
+        Math.min(
+          MAX_INFLATION_RATE,
+          (baselineStats.inflationRate ?? DEFAULT_INFLATION_RATE) + mods.inflationModifier
+        )
       ),
     };
 
-    const modifiedStats = this.applySpecialModifiers(updatedStats, activeEffects);
+    const modifiedStats = this.applySpecialModifiers(updatedStats, activeEffects, targetTimeMs);
 
     if (
       modifiedStats.currentPopulation !== updatedStats.currentPopulation ||
@@ -303,32 +384,87 @@ export class IxStatsCalculator {
   }
 
   /**
-   * FIXED: GDP per capita progression with proper global growth factor application
+   * GDP per capita after `yearsFromBaseline`. The growth rate depends on the economic tier (tier
+   * modifier and cap), so a forward projection is compounded piecewise: each time GDP per capita
+   * crosses a tier threshold, the rest of the span grows at the new tier's rate.
    */
   private calculateGdpPerCapitaProgression(
     baselineGdpPerCapita: number,
     adjustedGrowthDecimal: number,
-    maxGrowthRateDecimal: number,
     tier: EconomicTier,
     yearsFromBaseline: number,
     effects: StorytellerEffectRecord[],
     localGrowthFactor = 1.0
   ): number {
-    // Start with the base adjusted growth rate
-    let effectiveGrowthRate = adjustedGrowthDecimal;
+    const rateFor = (t: EconomicTier) =>
+      this.effectiveGdpGrowthRate(
+        adjustedGrowthDecimal,
+        t,
+        effects,
+        localGrowthFactor,
+        baselineGdpPerCapita,
+        yearsFromBaseline
+      );
+    if (yearsFromBaseline <= 0) {
+      return baselineGdpPerCapita * Math.pow(1 + rateFor(tier), yearsFromBaseline);
+    }
 
-    // FIXED: Apply global growth factor (3.21% = 1.0321 multiplier)
-    // The global growth factor amplifies the base growth rate
-    effectiveGrowthRate *= this.config.globalGrowthFactor;
+    let gdpPerCapita = baselineGdpPerCapita;
+    let currentTier = tier;
+    let remaining = yearsFromBaseline;
+    // One segment per tier crossed; there are only 7 tiers.
+    for (let segment = 0; segment < 8 && remaining > 0; segment++) {
+      const rate = rateFor(currentTier);
+      const threshold = nextTierThreshold(gdpPerCapita, rate);
+      const yearsToThreshold =
+        threshold === null ? Infinity : Math.log(threshold / gdpPerCapita) / Math.log(1 + rate);
+      if (yearsToThreshold >= remaining) {
+        return gdpPerCapita * Math.pow(1 + rate, remaining);
+      }
+      gdpPerCapita = threshold!;
+      remaining -= yearsToThreshold;
+      // At a threshold the upper tier applies; falling through it, the lower one.
+      currentTier = this.calculateEconomicTier(rate > 0 ? threshold! : threshold! * (1 - 1e-9));
+    }
+    return gdpPerCapita;
+  }
 
-    // Apply local growth factor
-    effectiveGrowthRate *= localGrowthFactor;
+  /**
+   * The growth rate the projection applies going forward from `gdpPerCapita`: its tier's rate,
+   * with diminishing returns as the forward projection applies them.
+   */
+  private currentGdpGrowthRate(
+    baselineStats: CountryStats,
+    gdpPerCapita: number,
+    effects: StorytellerEffectRecord[]
+  ): number {
+    return this.effectiveGdpGrowthRate(
+      baselineStats.adjustedGdpGrowth,
+      this.calculateEconomicTier(gdpPerCapita),
+      effects,
+      baselineStats.localGrowthFactor || 1,
+      baselineStats.gdpPerCapita,
+      1
+    );
+  }
 
-    // Apply tier growth modifiers (usually 1.0 unless specified otherwise)
-    const tierModifier = this.config.tierGrowthModifiers[tier] || 1.0;
-    effectiveGrowthRate *= tierModifier;
+  /** Annual GDP per capita growth rate for a tier: factors, legacy growth effects, cap, floor. */
+  private effectiveGdpGrowthRate(
+    adjustedGrowthDecimal: number,
+    tier: EconomicTier,
+    effects: StorytellerEffectRecord[],
+    localGrowthFactor: number,
+    baselineGdpPerCapita: number,
+    yearsFromBaseline: number
+  ): number {
+    // The global growth factor amplifies the base growth rate, then local and tier factors
+    let effectiveGrowthRate =
+      adjustedGrowthDecimal *
+      this.config.globalGrowthFactor *
+      localGrowthFactor *
+      (this.config.tierGrowthModifiers[tier] || 1.0);
 
-    // Apply storyteller effects
+    // Legacy growth-type storyteller effects
     effects.forEach((input) => {
       const inputValue = this.validateGrowthRate(input.value);
       const inputTypeLower = input.inputType?.toLowerCase();
@@ -339,13 +475,11 @@ export class IxStatsCalculator {
       }
     });
 
-    // FIXED: Apply tier-based growth rate caps AFTER global factor
-    const tierMaxRate = this.getTierMaxGrowthRate(tier);
-    effectiveGrowthRate = Math.min(effectiveGrowthRate, tierMaxRate);
+    // Tier-based growth rate cap AFTER the global factor
+    effectiveGrowthRate = Math.min(effectiveGrowthRate, this.getTierMaxGrowthRate(tier));
 
     // Ensure no extreme negative growth (configurable floor)
-    const minFloor = this.config.minGrowthFloor ?? -0.1;
-    effectiveGrowthRate = Math.max(effectiveGrowthRate, minFloor);
+    effectiveGrowthRate = Math.max(effectiveGrowthRate, this.config.minGrowthFloor ?? -0.1);
 
     // Apply diminishing returns for very high GDP per capita (configurable)
     const drThreshold = this.config.diminishingReturnsThreshold ?? 60000;
@@ -355,7 +489,7 @@ export class IxStatsCalculator {
       effectiveGrowthRate /= 1 + diminishingFactor * drFactor;
     }
 
-    return baselineGdpPerCapita * Math.pow(1 + effectiveGrowthRate, yearsFromBaseline);
+    return effectiveGrowthRate;
   }
 
   /**
@@ -402,118 +536,6 @@ export class IxStatsCalculator {
     return PopulationTier.TIER_1;
   }
 
-  /**
-   * Enhanced method to calculate stats relative to current time
-   */
-  calculateCurrentTimeProgression(
-    currentStats: CountryStats,
-    targetTime?: number,
-    effects: StorytellerEffectRecord[] = []
-  ): StatsCalculationResult {
-    const nowIxTimeMs = targetTime || IxTime.getCurrentIxTime();
-    const lastCalculatedMs =
-      currentStats.lastCalculated instanceof Date
-        ? currentStats.lastCalculated.getTime()
-        : currentStats.lastCalculated;
-
-    const yearsElapsed = IxTime.getYearsElapsed(lastCalculatedMs, nowIxTimeMs);
-
-    if (yearsElapsed <= 0) {
-      return {
-        country: currentStats.country,
-        oldStats: currentStats,
-        newStats: {
-          ...currentStats,
-          lastCalculated: new Date(nowIxTimeMs),
-        },
-        timeElapsed: 0,
-        calculationDate: nowIxTimeMs,
-      };
-    }
-
-    const oldStats = { ...currentStats };
-    const activeEffects = this.getActiveEffects(effects, lastCalculatedMs, nowIxTimeMs);
-
-    const newPopulation = this.calculatePopulationProgression(
-      currentStats.currentPopulation,
-      currentStats.populationGrowthRate,
-      yearsElapsed,
-      activeEffects
-    );
-
-    const newGdpPerCapita = this.calculateGdpPerCapitaProgression(
-      currentStats.currentGdpPerCapita,
-      currentStats.adjustedGdpGrowth,
-      currentStats.maxGdpGrowthRate,
-      currentStats.economicTier as EconomicTier,
-      yearsElapsed,
-      activeEffects,
-      currentStats.localGrowthFactor
-    );
-
-    const newTotalGdp = newPopulation * newGdpPerCapita;
-    const newEconomicTier = this.calculateEconomicTier(newGdpPerCapita);
-    const newPopulationTier = this.calculatePopulationTier(newPopulation);
-
-    const landArea = currentStats.landArea || 0;
-    const newPopulationDensity = landArea > 0 ? newPopulation / landArea : undefined;
-    const newGdpDensity = landArea > 0 ? newTotalGdp / landArea : undefined;
-
-    const mods = calculateComponentEconomicModifiers(
-      (currentStats.activeGovComponents || []) as any[],
-      (currentStats.activeEconComponents || []) as any[],
-      (currentStats.activeTaxComponents || []) as any[]
-    );
-
-    const updatedStats: CountryStats = {
-      ...currentStats,
-      currentPopulation: newPopulation,
-      currentGdpPerCapita: newGdpPerCapita,
-      currentTotalGdp: newTotalGdp,
-      economicTier: newEconomicTier,
-      populationTier: newPopulationTier,
-      populationDensity: newPopulationDensity,
-      gdpDensity: newGdpDensity,
-      lastCalculated: new Date(nowIxTimeMs),
-      totalGovernmentSpending:
-        (currentStats.totalGovernmentSpending ?? 0) +
-        mods.maintenanceCost +
-        (currentStats.activePolicyMaintenanceCost ?? 0),
-      taxRevenueGDPPercent: Math.max(
-        0,
-        Math.min(100, (currentStats.taxRevenueGDPPercent ?? 25) + mods.taxRevenueModifier)
-      ),
-      unemploymentRate: Math.max(
-        0,
-        Math.min(100, (currentStats.unemploymentRate ?? 5) + mods.unemploymentModifier)
-      ),
-      inflationRate: Math.max(
-        -0.5,
-        Math.min(2, (currentStats.inflationRate ?? 0.02) + mods.inflationModifier)
-      ),
-    };
-
-    const modifiedStats = this.applySpecialModifiers(updatedStats, activeEffects);
-
-    if (
-      modifiedStats.currentPopulation !== updatedStats.currentPopulation ||
-      modifiedStats.currentTotalGdp !== updatedStats.currentTotalGdp
-    ) {
-      modifiedStats.populationDensity =
-        landArea > 0 ? modifiedStats.currentPopulation / landArea : undefined;
-      modifiedStats.gdpDensity =
-        landArea > 0 ? modifiedStats.currentTotalGdp / landArea : undefined;
-    }
-
-    return {
-      country: currentStats.country,
-      oldStats,
-      newStats: modifiedStats,
-      timeElapsed: yearsElapsed,
-      calculationDate: nowIxTimeMs,
-    };
-  }
-
   private getActiveEffects(
     effects: StorytellerEffectRecord[],
     startTime: number,
@@ -538,24 +560,30 @@ export class IxStatsCalculator {
 
   private applySpecialModifiers(
     stats: CountryStats,
-    effects: StorytellerEffectRecord[]
+    effects: StorytellerEffectRecord[],
+    targetTimeMs: number
   ): CountryStats {
     const modifiedStats = { ...stats };
 
     effects.forEach((input) => {
       const inputValue = this.validateGrowthRate(input.value);
-      switch (input.inputType) {
+      switch (input.inputType?.toLowerCase()) {
+        // Level effects: unlike the growth effects above they never rewrite the path before
+        // their own start, and they persist after `duration`.
+        case StorytellerEffectType.GDP_LEVEL_ADJUSTMENT:
+        case StorytellerEffectType.TRADE_AGREEMENT:
+          modifiedStats.currentGdpPerCapita *= 1 + inputValue * levelPhaseIn(input, targetTimeMs);
+          break;
+
+        case StorytellerEffectType.POPULATION_LEVEL_ADJUSTMENT:
+          modifiedStats.currentPopulation *= 1 + inputValue * levelPhaseIn(input, targetTimeMs);
+          break;
+
+        // Total GDP falls 1.5x as far as population: GDP per capita carries the extra share,
+        // because total GDP is recomputed from population x GDP per capita below.
         case StorytellerEffectType.NATURAL_DISASTER:
           modifiedStats.currentPopulation *= 1 + inputValue;
-          modifiedStats.currentTotalGdp *= 1 + inputValue * 1.5;
-          break;
-
-        case StorytellerEffectType.TRADE_AGREEMENT:
-          modifiedStats.currentGdpPerCapita *= 1 + inputValue;
-          break;
-
-        case StorytellerEffectType.ECONOMIC_POLICY:
-          modifiedStats.localGrowthFactor *= 1 + inputValue;
+          modifiedStats.currentGdpPerCapita *= (1 + inputValue * 1.5) / (1 + inputValue);
           break;
 
         case StorytellerEffectType.SPECIAL_EVENT:
@@ -579,89 +607,7 @@ export class IxStatsCalculator {
     return modifiedStats;
   }
 
-  createHistoricalDataPoint(stats: CountryStats, ixTime?: number): HistoricalDataPoint {
-    const timestamp =
-      ixTime ||
-      (stats.lastCalculated instanceof Date
-        ? stats.lastCalculated.getTime()
-        : stats.lastCalculated);
-
-    return {
-      ixTimeTimestamp: new Date(timestamp),
-      population: stats.currentPopulation,
-      gdpPerCapita: stats.currentGdpPerCapita,
-      totalGdp: stats.currentTotalGdp,
-      populationGrowthRate: stats.populationGrowthRate,
-      gdpGrowthRate: stats.adjustedGdpGrowth,
-      landArea: stats.landArea,
-      populationDensity: stats.populationDensity,
-      gdpDensity: stats.gdpDensity,
-    };
-  }
-
-  updateConfig(newConfig: Partial<EconomicConfig>): void {
-    this.config = { ...this.config, ...newConfig };
-  }
-
   getBaselineDate(): number {
     return this.baselineDate;
-  }
-
-  isHistoricalTime(targetTime: number): boolean {
-    return targetTime < this.baselineDate;
-  }
-
-  getTimeDescription(targetTime: number): string {
-    const yearsFromBaseline = IxTime.getYearsElapsed(this.baselineDate, targetTime);
-
-    if (Math.abs(yearsFromBaseline) < 0.1) {
-      return "Baseline Period (Roster Data)";
-    } else if (yearsFromBaseline < 0) {
-      return `${Math.abs(yearsFromBaseline).toFixed(1)} years before roster baseline`;
-    } else {
-      return `${yearsFromBaseline.toFixed(1)} years after roster baseline`;
-    }
-  }
-
-  /**
-   * FIXED: Helper to get growth rates in percentage form for display
-   * Converts internal decimal rates to percentages for UI display
-   */
-  getGrowthRateAsPercentage(decimalRate: number): number {
-    return decimalRate * 100;
-  }
-
-  /**
-   * FIXED: Helper to get effective growth rate after all modifiers
-   * This is useful for debugging and display purposes
-   */
-  getEffectiveGrowthRate(
-    baseGrowthRate: number,
-    tier: EconomicTier,
-    localGrowthFactor = 1.0
-  ): {
-    baseRate: number;
-    withGlobalFactor: number;
-    withLocalFactor: number;
-    withTierModifier: number;
-    finalRate: number;
-    tierMax: number;
-  } {
-    const baseRate = this.validateGrowthRate(baseGrowthRate);
-    const withGlobalFactor = baseRate * this.config.globalGrowthFactor;
-    const withLocalFactor = withGlobalFactor * localGrowthFactor;
-    const tierModifier = this.config.tierGrowthModifiers[tier] || 1.0;
-    const withTierModifier = withLocalFactor * tierModifier;
-    const tierMax = this.getTierMaxGrowthRate(tier);
-    const finalRate = Math.min(withTierModifier, tierMax);
-
-    return {
-      baseRate,
-      withGlobalFactor,
-      withLocalFactor,
-      withTierModifier,
-      finalRate,
-      tierMax,
-    };
   }
 }

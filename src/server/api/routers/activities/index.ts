@@ -8,7 +8,7 @@
  *  - feed:       global / following / user / country activity feeds and headlines
  *  - activities: activity CRUD, engagement, comments, stats, test mutation
  *  - trending:   trending topics and unified trending aggregation
- *  - follows:    country follow graph (follow/unfollow, followers/following, stats)
+ *  - follows:    follow graph: country → country, and ThinkPages persona → persona
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { activitiesFeedRouter } from "./feed";

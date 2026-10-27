@@ -1,7 +1,7 @@
 // src/lib/onoma/data/species-data.ts
 import rawSpecies from "./species-data.json";
 
-export interface SpeciesSyllables {
+interface SpeciesSyllables {
   vileAndCrude: { small: string[]; medium: string[]; large: string[] };
   primitive: { names: string[]; suffixes: string[] };
   doughty: { syllables: string[]; maleSuffixes: string[]; femaleSuffixes: string[] };

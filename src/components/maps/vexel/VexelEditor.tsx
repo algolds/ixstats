@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
+import { Badge } from "~/components/ui/badge";
+import { useEffect, useState } from "react";
 import { VexelEditorProvider, useVexelEditor } from "./VexelEditorProvider";
 import { api } from "~/trpc/react";
 import type { HeraldryComposition } from "~/lib/heraldry";
@@ -20,43 +21,36 @@ interface VexelEditorProps {
 
 function EditorShell() {
   const { isDirty, achievementId } = useVexelEditor();
-  const [isCommonsOpen, setIsCommonsOpen] = React.useState(false);
+  const [isCommonsOpen, setIsCommonsOpen] = useState(false);
 
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden bg-zinc-950 font-sans text-zinc-100">
-      {/* Top Navbar */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-zinc-900/60 px-6 backdrop-blur-md">
+    <div className="bg-surface text-label relative flex h-screen flex-col overflow-hidden font-sans">
+      <header className="border-separator bg-fill-3 flex h-14 shrink-0 items-center justify-between border-b px-6">
         <div className="flex items-center gap-3">
-          <span className="text-xl font-bold tracking-wider text-amber-500">🛡️ VEXEL</span>
-          <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-400">
-            Heraldry Lab
-          </span>
+          <span className="text-title-2 text-tint">Vexel</span>
+          <Badge variant="secondary">Heraldry lab</Badge>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-xs text-zinc-400">
+          <span className="text-label-secondary text-footnote">
             {isDirty ? (
-              <span className="flex items-center gap-1.5 text-amber-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                Unsaved Changes
+              <span className="text-tint flex items-center gap-2">
+                <span className="bg-tint h-1.5 w-1.5 rounded-full" aria-hidden />
+                Unsaved changes
               </span>
             ) : (
-              <span className="text-zinc-500">All saved</span>
+              <span className="text-label-secondary">All saved</span>
             )}
           </span>
         </div>
       </header>
 
-      {/* Main Layout Area */}
       <div className="relative flex flex-1 overflow-hidden">
-        {/* Main Grid */}
         <div className="grid flex-1 grid-cols-[280px_1fr_320px] overflow-hidden">
-          {/* Left Sidebar: Layers */}
-          <aside className="overflow-y-auto border-r border-white/10 bg-zinc-900/40 p-4">
+          <aside className="border-separator bg-fill-3 overflow-y-auto border-r p-4">
             <LayerPanel />
           </aside>
 
-          {/* Center Canvas: Preview / Audit */}
-          <main className="flex flex-col space-y-0 overflow-y-auto bg-zinc-900/10 p-6">
+          <main className="bg-fill-3 flex flex-col space-y-0 overflow-y-auto p-6">
             <SaveControls />
             <div className="mt-4 space-y-6">
               <PreviewPanel />
@@ -65,19 +59,16 @@ function EditorShell() {
             </div>
           </main>
 
-          {/* Right Sidebar: Properties & Charge Library */}
-          <aside className="flex flex-col gap-6 overflow-y-auto border-l border-white/10 bg-zinc-900/40 p-4">
+          <aside className="border-separator bg-fill-3 flex flex-col gap-6 overflow-y-auto border-l p-4">
             <PropertiesPanel />
             <ChargeLibraryPanel onOpenCommons={() => setIsCommonsOpen(true)} />
           </aside>
         </div>
 
-        {/* Wikimedia Commons slide-over */}
         {isCommonsOpen && <CommonsBrowserPanel onClose={() => setIsCommonsOpen(false)} />}
       </div>
 
-      {/* Bottom Status Bar */}
-      <footer className="flex h-8 shrink-0 items-center justify-between border-t border-white/10 bg-zinc-900/80 px-6 text-xs text-zinc-500">
+      <footer className="border-separator bg-fill-3 text-label-secondary text-footnote flex h-8 shrink-0 items-center justify-between border-t px-6">
         <div>{achievementId ? `Editing: ${achievementId}` : "New Design Draft"}</div>
         <div>IxStates Vexel Engine v1.0.0</div>
       </footer>
@@ -104,10 +95,10 @@ function EditorInner({ id }: { id?: string }) {
 
   if (id && isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-zinc-950 text-amber-500">
+      <div className="bg-surface text-tint flex h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-          <span className="text-sm font-medium tracking-wide">Loading Achievement...</span>
+          <div className="border-tint h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
+          <span className="text-body font-medium">Loading Achievement...</span>
         </div>
       </div>
     );

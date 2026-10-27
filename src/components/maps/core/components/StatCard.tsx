@@ -2,6 +2,8 @@
 
 import React from "react";
 import { NavArrowRight as ChevronRight } from "iconoir-react";
+import { Stat } from "~/components/ui/stat";
+import { Card } from "~/components/ui/card";
 
 interface StatCardProps {
   icon: React.ComponentType<{ className?: string }>;
@@ -10,24 +12,20 @@ interface StatCardProps {
   onClick?: () => void;
 }
 
+/**
+ * A labelled figure inside a map panel: a `Stat` on an inset (the panel itself is the glass).
+ * With `onClick` the inset is pressable (hover wash, focus ring, Enter/Space) and shows a chevron.
+ */
 export function StatCard({ icon: Icon, label, value, onClick }: StatCardProps) {
-  const interactive = !!onClick;
-  const Tag = interactive ? "button" : "div";
   return (
-    <Tag
-      onClick={onClick}
-      className={`bg-muted rounded-lg px-3 py-2 text-left ${
-        interactive
-          ? "hover:bg-accent cursor-pointer transition-colors hover:ring-1 hover:ring-blue-300/50 active:scale-[0.98]"
-          : ""
-      }`}
-    >
-      <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
-        <Icon className="h-3 w-3" />
-        {label}
-        {interactive && <ChevronRight className="ml-auto h-2.5 w-2.5 opacity-40" />}
-      </div>
-      <div className="text-foreground mt-0.5 text-sm font-semibold">{value}</div>
-    </Tag>
+    <Card variant="well" padding="none" onClick={onClick} className="px-3 py-2" interactive>
+      <Stat size="sm" label={label} value={value} icon={<Icon className="size-3.5" />} />
+      {onClick && (
+        <ChevronRight
+          aria-hidden
+          className="text-label-secondary absolute top-2 right-2 size-3.5 opacity-60"
+        />
+      )}
+    </Card>
   );
 }

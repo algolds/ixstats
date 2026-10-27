@@ -1,8 +1,8 @@
 # IxStates Versioning & Release Architecture
 
 **Status:** Canonical Standard v2  
-**Platform Release:** IxStates 1.4.0 "Lobster Crosby" (Release Candidate)  
-**Last Updated:** September 2026  
+**Platform Release:** IxStates 1.5.0 "Lobster Crosby" (Release Candidate)  
+**Last Updated:** October 2026  
 
 ---
 
@@ -23,7 +23,7 @@ Versioning communicates:
 
 ```text
 ====================================================================================================
-                            IXSTATES 1.4.0 "LOBSTER CROSBY" — OPERATING TAXONOMY
+                            IXSTATES 1.5.0 "LOBSTER CROSBY" — OPERATING TAXONOMY
 ====================================================================================================
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -32,7 +32,7 @@ Versioning communicates:
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
  │ • Command Surface (v6)     │ Single-page executive console across 4 active domains: Identity,  │
  │                            │ Economy, Politics, Diplomacy. (Defense & Intel in preview).       │
- │ • Directives System        │ Declare national mandates, balance civil capacity (CivCap), and   │
+ │ • Directives System        │ Declare national mandates, balance civil capacity (executive bandwidth), and   │
  │                            │ resolve factional resistance.                                     │
  │ • Statecraft Engine (v4)   │ Deterministic sim: 42-tax bracket calculus, parliamentary D'Hondt │
  │                            │ representation, and composite vitality scoring.                   │
@@ -42,7 +42,7 @@ Versioning communicates:
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
  │ 2. 🗺️ IXWORLD — Spatial Geography & Cartographic Studio (v2)                                   │
- │    Action: MAP | Domain Accent: Sky Blue (#0EA5E9) | Route: /maps                              │
+ │    Action: MAP | Domain Accent: Chart shallows (#05667a) | Route: /maps                        │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
  │ • Interactive Map (v2)     │ WebGL vector globe rendering rivers, lakes, national borders,     │
  │                            │ topography, and climate biomes.                                   │
@@ -56,34 +56,38 @@ Versioning communicates:
  │ 3. 📖 WIKIOS — Lore & Knowledge Operating System (v1)                                          │
  │    Action: PUBLISH | Domain Accent: Slate Cyan (#06B6D4) | Route: /wiki                        │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
- │ • Native Lore Engine (v1)  │ High-speed lore platform with PostgreSQL storage, sub-2ms link    │
+ │ • Native Lore Engine (v1)  │ High-speed lore platform with PostgreSQL storage, indexed link    │
  │                            │ graph (`wiki_links`), and MediaWiki background sync.              │
  │ • Margin                   │ Split-canvas inspector, text markup, gutter pins, and threaded    │
  │                            │ discussions directly on article text.                             │
  │ • Canvas Editor (v1)       │ Visual rich-text authoring with modular content blocks.           │
- │ • Wiki Awards (LoreWards)  │ Editor milestone trophies, peer citations, and author medals.     │
+ │ • Wiki Awards (LoreWards)  │ Daily, weekly and monthly contests with tiered payouts and trophy │
+ │                            │ cards; one view shared with the Vault (/util/lorewards).          │
  │ • Stash System (v1)        │ Save articles, quotes, media, and forum threads for later.        │
  │ • Image Repository (v2)    │ Shared image and media library with instant card generators.      │
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
- │ 4. 💎 VAULT — Metagame Incentives, Social Economy & Collectibles (v2)                          │
- │    Action: COLLECT | Domain Accent: Burnished Copper (#D97706) | Route: /vault                 │
+ │ 4. 💎 VAULT — Collectathon Hub: Wallet, Achievements, Cards & Store (v3)                       │
+ │    Action: COLLECT | Domain Accent: Raspberry (`APP_TINTS.vault`) | Route: /vault              │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
- │ • Metagame Incentive Hub   │ Engagement and reward engine driving player progression across    │
- │                            │ governance, lore writing, and community activity.                 │
- │ • Atomic Credit Ledger (v2)│ Safe virtual currency ledger, daily streak bonuses, and passive   │
- │                            │ nation dividend yields.                                           │
+ │ • Wallet                   │ Bank-statement page: balance card, showcase, statement with       │
+ │                            │ running balance and a Your Vault list; in the sidebar for all.    │
+ │ • Atomic Credit Ledger (v2)│ Safe virtual currency ledger, daily streak bonuses, and the       │
+ │                            │ nightly Vault dividend (collection interest plus activity).       │
  │ • Cards System (v2)        │ 3D holographic cards across 5 editions: Nation, Lore, Import,     │
  │                            │ Special, and Community with physics pack opening.                 │
- │ • Marketplace Trading Desk │ Live auction bidding, instant buyout escrow, and peer trading.    │
- │ • Achievements System (v2) │ Platform milestone showcase, category trophy racks, and unlocks.  │
+ │ • Store, Auctions & Trading│ Packs and cosmetics, live auction bidding, and peer trading.      │
+ │ • Achievements System (v3) │ Nation, platform and Loreward achievements, Legacy unlocks,       │
+ │                            │ showcase and leaderboard (/vault/achievements).                   │
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
- │ 5. 💬 THINKPAGES — Real-Time Knowledge Feed & Communications (v2)                              │
- │    Action: DELIBERATE | Domain Accent: Emerald Jade (#10B981) | Route: /thinkpages             │
+ │ 5. 💬 THINKPAGES — Real-Time Knowledge Feed & Communications (v3)                              │
+ │    Action: DELIBERATE | Domain Accent: Commons leather (#115536) | Route: /thinkpages          │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+ │ • Forum                    │ Sitewide and realm boards, threads and replies, posting as        │
+ │                            │ yourself or a persona, and each realm's live board.               │
  │ • Sovereign Feed (v2)      │ Sovereign micro-posts, `[blurb:slug]` tags, polls, and live wiki  │
  │                            │ card embeds.                                                      │
  │ • Account Manager          │ Multi-account switching, automated Discord webhook syndication,   │
@@ -94,11 +98,12 @@ Versioning communicates:
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
- │ 6. 🗨️ IXFORUM — Archival Community Discourse (Inherited v1.4)                                  │
- │    Action: DEBATE | Domain Accent: Warm Orange (#F97316) | Route: /forum                       │
+ │ 6. 🗨️ IXFORUM — Archival Community Discourse (Inherited v1.5)                                  │
+ │    Action: DEBATE | Domain Accent: Commons leather (#115536) | Route: /thinkpages              │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
- │ • XenForo Native Bridge    │ Thread synchronization, category boards, and sovereign dispatches.│
- │ • Single Sign-On (SSO)     │ Unified auth via IxnayID session sharing.                         │
+ │ • XenForo bridge (retired) │ Retired in forum phase 4b; there is no /forum route. The old      │
+ │                            │ forum's threads were imported into the native forum.              │
+ │ • Native forum             │ The community forum lives in ThinkPages at /thinkpages (box 5).   │
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -106,7 +111,8 @@ Versioning communicates:
  │    Role: Platform Simulation Backend | Powers living-world state across all apps               │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
  │ • IxTime Master Clock      │ Continuous world time synchronization, game epochs, and ticks.    │
- │ • Dynamic World Events     │ Algorithmic natural disaster, economic shock, and crisis queues.  │
+ │ • World Events (admin)     │ Admin-authored events that write Storyteller effects; crisis feed │
+ │                            │ is read-only, with no generator (see crisis-events.md).           │
  │ • Autonomous NPC AI        │ 8 personality traits and 6 behavioral archetypes with dampening.  │
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
@@ -114,8 +120,8 @@ Versioning communicates:
  │ 8. 🎨 FACET UI DESIGN SYSTEM & AMBIENT RUNTIME                                                 │
  │    Visual, Motion & Tactile Foundation                                                         │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
- │ • Facet Primitives (v2)    │ Volumetric Z-depth, physical materials, glare, 100% Radix slots.  │
- │ • Halo Contextual Overlay  │ Floating header capsule, live telemetry, and `Cmd+K` palette (v5).│
+ │ • Facet (v4)               │ Layers, content types, tinted canvas, Radix slots.                │
+ │ • Halo Contextual Overlay  │ Floating header capsule, live telemetry, and `Cmd+K` palette (v6).│
  │ • Cuelume Audio Engine (v1)│ 17 Web Audio synthesized haptic sound cues (`data-cuelume-*`).    │
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
@@ -125,9 +131,12 @@ Versioning communicates:
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
  │ • Onoma Studio (v4)        │ Linguistic engine, phonetic Markov chains, Kokoro TTS (/labs/onoma)
  │ • MyLeague & MyClub (v1)   │ 7-sport season simulation engine and franchise ownership (/myleague, /myclub)
+ │ • Exchange (Sovereigns)    │ Companies, contracts, shares and sector funds (/labs/exchange)
  │ • Vexel (v1)               │ Procedural heraldic coat-of-arms and vector flag studio (/labs/vexel)
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+> **Registry mapping:** `VERSIONS.engines` in `src/lib/buildVersion.ts` has exactly three entries: `mycountry` (the "Statecraft Engine" above; Statecraft has no separate integer), `concord` and `atlas`. Other systems named under Concord (IxTime, crisis events, NPC AI) are a documentation grouping and are not versioned separately. The `MYCOUNTRY_ENGINE_VERSION` and `CONCORD_ENGINE_VERSION` constants are not read anywhere else in `src/`.
 
 ---
 
@@ -136,11 +145,11 @@ Versioning communicates:
 The platform maintains strict separation between the **Platform SemVer Level** and the **Component Capability Integers**:
 
 1. **Platform**: `Major.Minor.Patch` + Permanent Epoch **Release Name** + **Channel**  
-   *Current:* **`IxStates 1.4.0 "Lobster Crosby"`** (Channel: *Release Candidate*).
-2. **First-Party Apps**: A single monotonic capability integer (`IXWORLD_VERSION = 2`, `WIKIOS_VERSION = 1`, `IXVAULT_VERSION = 2`).
+   *Current:* **`IxStates 1.5.0 "Lobster Crosby"`** (Channel: *Release Candidate*).
+2. **First-Party Apps**: A single monotonic capability integer (`IXWORLD_VERSION = 3`, `WIKIOS_VERSION = 1`, `IXVAULT_VERSION = 3`).
 3. **Simulation Engines**: Internal capability integers surfaced only in the Developer Panel (`MYCOUNTRY_ENGINE_VERSION = 4`, `CONCORD_ENGINE_VERSION = 2`, `ATLAS_ENGINE_VERSION = 5`).
-4. **UI / Feature Systems & Design**: Independent capability integers (`MYCOUNTRY_VERSION = 6`, `BUILDER_VERSION = 4`, `THINKPAGES_VERSION = 2`, `ACHIEVEMENTS_VERSION = 2` (incl. LoreWards / Wiki Awards), `STASH_VERSION = 1`, `REPOSITORY_VERSION = 2`, `HALO_VERSION = 5`, `ONOMA_VERSION = 4`), the design system (`FACET_VERSION = 2`) and the WikiOS sub-system `CANVAS_VERSION = 1`.
-5. **Inherited Components**: Components that do not version independently inherit the platform version: **IxForum** (`1.4`), **IxTime / IxnayID**, **Labs**, and **Navigation Hubs**.
+4. **UI / Feature Systems & Design**: Independent capability integers (`MYCOUNTRY_VERSION = 6`, `BUILDER_VERSION = 4`, `THINKPAGES_VERSION = 3`, `ACHIEVEMENTS_VERSION = 3` (incl. LoreWards / Wiki Awards), `STASH_VERSION = 1`, `REPOSITORY_VERSION = 2`, `HALO_VERSION = 6`, `ONOMA_VERSION = 4`), the design system (`FACET_VERSION = 4`) and the WikiOS sub-system `CANVAS_VERSION = 1`.
+5. **Inherited Components**: Components that do not version independently inherit the platform version: **IxForum** (`1.5`), **IxTime / IxnayID**, **Labs**, and **Navigation Hubs**.
 
 ---
 

@@ -7,7 +7,6 @@
 // See plans/wikios-workstream-c-packaging.md.
 
 import { TRPCError } from "@trpc/server";
-import { isSystemOwner } from "~/lib/auth";
 
 /** Minimal structural shape WikiOS needs from the request context. */
 export interface WikiAuthContext {
@@ -15,11 +14,12 @@ export interface WikiAuthContext {
   user?: {
     id?: string | null;
     clerkUserId?: string | null;
-    wikiUsername?: string | null;
-    wikiUserId?: number | null;
+    /** The passport handle; null until picked. */
+    handle?: string | null;
     countryId?: string | null;
     country?: { id?: string; name?: string | null; flag?: string | null } | null;
     role?: { id?: string; name?: string | null; level?: number | null } | null;
+    createdAt?: Date | string | null;
   } | null;
 }
 
@@ -28,89 +28,38 @@ export interface WikiAuthIdentity {
   internalUserId: string | null;
   /** Stable account id from the auth provider (Clerk user id). */
   userId: string | null;
-  /** MediaWiki username, either explicitly linked or resolved via Smart Hierarchy. */
-  wikiUsername: string | null;
-  /** Whether the user explicitly linked a MediaWiki account (stands in for "autoconfirmed"). */
-  hasLinkedWikiAccount: boolean;
+  /** The passport handle; null until picked. */
+  handle: string | null;
   /** Active country name if affiliated. */
   countryName: string | null;
-  /** Whether the user is system owner / wiki admin. */
-  isAdmin: boolean;
 }
 
-/** Sanitize a string to be a safe MediaWiki username. */
-export function sanitizeMediaWikiUsername(input: string): string {
-  // MediaWiki usernames cannot contain # < > [ ] | { } / @ : =
-  let clean = input
-    .replace(/[#<>[\]|{}/@:=]/g, "")
-    .trim()
-    .replace(/\s+/g, "_");
-  if (!clean) clean = "User";
-  return clean.charAt(0).toUpperCase() + clean.slice(1);
+/** The refusal for a save by a player who has not picked a passport handle yet. */
+export const HANDLE_REQUIRED_MESSAGE = "Pick a passport handle before you save.";
+
+/** The name a player's edits are signed with: their passport handle (design decision 9), else null. */
+export function wikiAuthorName(ctx: WikiAuthContext): string | null {
+  return ctx.user?.handle?.trim() || null;
 }
 
 /**
- * Smart Hierarchy resolution for Wiki author name:
- * 1. User.wikiUsername (if set/linked)
- * 2. Country name (user.country.name)
- * 3. Sanitized Clerk user ID / handle
+ * The passport handle a player's save is signed with. Throws PRECONDITION_FAILED until they pick one, so an
+ * edit is never saved under a country name or an account id.
  */
-export function resolveWikiUsername(ctx: WikiAuthContext): string | null {
-  if (ctx.user?.wikiUsername && ctx.user.wikiUsername.trim() !== "") {
-    return ctx.user.wikiUsername.trim();
-  }
-
-  // Country name fallback
-  if (ctx.user?.country?.name && ctx.user.country.name.trim() !== "") {
-    return sanitizeMediaWikiUsername(ctx.user.country.name.trim());
-  }
-
-  // Fallback to clerk user ID or internal ID
-  const authId = ctx.auth?.userId || ctx.user?.clerkUserId || ctx.user?.id;
-  if (authId) {
-    const shortId = authId.replace(/^user_/, "");
-    return sanitizeMediaWikiUsername(`User_${shortId.slice(0, 8)}`);
-  }
-
-  return null;
+export function requireWikiAuthorName(ctx: WikiAuthContext): string {
+  const name = wikiAuthorName(ctx);
+  if (!name) throw new TRPCError({ code: "PRECONDITION_FAILED", message: HANDLE_REQUIRED_MESSAGE });
+  return name;
 }
 
-/** Read the current identity with Smart Hierarchy. */
+/** Read the current identity. */
 export function getWikiAuth(ctx: WikiAuthContext): WikiAuthIdentity {
-  const userId = ctx.auth?.userId ?? ctx.user?.clerkUserId ?? null;
-  const internalUserId = ctx.user?.id ?? null;
-  const countryName = ctx.user?.country?.name ?? null;
-  const wikiUsername = resolveWikiUsername(ctx);
-  const hasLinkedWikiAccount = Boolean(ctx.user?.wikiUsername?.trim());
-  const isAdmin = !!userId && isSystemOwner(userId);
-
   return {
-    internalUserId,
-    userId,
-    wikiUsername,
-    hasLinkedWikiAccount,
-    countryName,
-    isAdmin,
+    internalUserId: ctx.user?.id ?? null,
+    userId: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? null,
+    handle: wikiAuthorName(ctx),
+    countryName: ctx.user?.country?.name ?? null,
   };
-}
-
-/**
- * Whether `identity` may edit an article with the given protection.
- * `null` (new page) is editable by anyone signed in; expired protection counts as "ALL";
- * "AUTOCONFIRMED" is approximated as "has a linked wiki account"; "SYSOP", "PROTECTED" and
- * unknown levels are admin-only.
- */
-export function canEditProtectedArticle(
-  article: { protectionLevel: string; protectionExpiry: Date | null } | null,
-  identity: WikiAuthIdentity,
-  now: Date = new Date()
-): boolean {
-  if (article === null) return identity.userId !== null;
-  const expired = article.protectionExpiry !== null && article.protectionExpiry < now;
-  const level = expired ? "ALL" : article.protectionLevel;
-  if (level === "ALL") return identity.userId !== null;
-  if (level === "AUTOCONFIRMED") return identity.isAdmin || identity.hasLinkedWikiAccount;
-  return identity.isAdmin;
 }
 
 /** Require a signed-in user; throws UNAUTHORIZED otherwise. */
@@ -122,16 +71,44 @@ export function requireWikiUserId(ctx: WikiAuthContext): string {
   return userId;
 }
 
-/** Attribution label for edit summaries: wiki username, else account id, else "anonymous". */
-export function getWikiActorLabel(ctx: WikiAuthContext): string {
-  const { wikiUsername, userId } = getWikiAuth(ctx);
-  return wikiUsername ?? userId ?? "anonymous";
+/**
+ * Every id the signed-in user's WikiOS rows may be keyed by: the internal User id that
+ * requireWikiUserId returns, plus the Clerk id that it returned before 2026-08-22 (rows
+ * written earlier, such as stashes and watchlists, still carry it). Read with
+ * `userId: { in: ids }` and check ownership with `ids.includes(...)`; write new rows with
+ * requireWikiUserId. Throws UNAUTHORIZED when signed out.
+ */
+export function requireWikiUserIds(ctx: WikiAuthContext): string[] {
+  const primary = requireWikiUserId(ctx);
+  const ids = [primary, ctx.auth?.userId, ctx.user?.clerkUserId].filter(
+    (id): id is string => typeof id === "string" && id.length > 0
+  );
+  return [...new Set(ids)];
+}
+
+/** Require a signed-in user and return the auth provider's (Clerk) user id. */
+export function requireWikiAuthId(ctx: WikiAuthContext): string {
+  const authId = ctx.auth?.userId ?? ctx.user?.clerkUserId ?? null;
+  if (!authId) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "You must be signed in." });
+  }
+  return authId;
 }
 
 /**
- * Whether the current user has wiki-admin privileges.
+ * The name an action is logged under: the passport handle, else "anonymous". Never an account id: logs are public
+ * (`getLog`), and the actor's id is stored beside the name.
  */
-export function isWikiAdmin(ctx: WikiAuthContext): boolean {
-  const { isAdmin } = getWikiAuth(ctx);
-  return isAdmin;
+export function getWikiActorLabel(ctx: WikiAuthContext): string {
+  return wikiAuthorName(ctx) ?? "anonymous";
+}
+
+/**
+ * Whether the current user is a wiki administrator: they hold the `editprotected` right, which
+ * comes from the sysop group (explicit, or through their IxStates role). The rights engine is loaded
+ * lazily: it reads this seam's `getWikiAuth`, so a static import would be circular.
+ */
+export async function isWikiAdmin(ctx: WikiAuthContext): Promise<boolean> {
+  const { getWikiPermissions } = await import("~/lib/wiki-os/rights");
+  return (await getWikiPermissions(ctx)).rights.has("editprotected");
 }

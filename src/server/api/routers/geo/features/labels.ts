@@ -1,43 +1,19 @@
-/**
- * Geographic Map Router
- *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
- */
-
 import { z } from "zod";
 import {
   createTRPCRouter,
   cachedPublicProcedure,
-  standardMutationCountryOwnerProcedure,
+  standardMutationMapFeatureOwnerProcedure,
 } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
-import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { validatePointContainment } from "~/lib/maps/geo-validation";
-
-/** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
-const coordinatesSchema = z
-  .tuple([z.number(), z.number()])
-  .refine(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90, {
-    message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
-  });
-
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
+import { realmLabelRank } from "~/lib/maps/realm-labels";
+import { storedRealmLabelRank } from "~/server/modules/maps/realm-labels";
+import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 
 export const geoFeaturesLabelsRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Map Labels — Custom styled text on the map
-  // ──────────────────────────────────────────────
-
-  createMapLabel: standardMutationCountryOwnerProcedure
+  createMapLabel: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -70,10 +46,7 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
       await validatePointContainment(
         ctx.db as any,
         input.countryId,
@@ -106,7 +79,7 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
       return { id: label.id, text: label.text, status: "approved" as const };
     }),
 
-  updateMapLabel: standardMutationCountryOwnerProcedure
+  updateMapLabel: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -142,14 +115,13 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
-      const label = await ctx.db.mapLabel.findFirst({
-        where: { id: input.labelId, countryId: input.countryId },
-      });
-      if (!label) throw new TRPCError({ code: "NOT_FOUND", message: "Map label not found" });
+      assertOwnCountry(ctx, input.countryId);
+      assertFound(
+        await ctx.db.mapLabel.findFirst({
+          where: { id: input.labelId, countryId: input.countryId },
+        }),
+        "Map label not found"
+      );
 
       if (input.coordinates) {
         await validatePointContainment(
@@ -171,17 +143,16 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
       return { id: updated.id, text: updated.text };
     }),
 
-  deleteMapLabel: standardMutationCountryOwnerProcedure
+  deleteMapLabel: standardMutationMapFeatureOwnerProcedure
     .input(z.object({ countryId: z.string(), labelId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
-      const label = await ctx.db.mapLabel.findFirst({
-        where: { id: input.labelId, countryId: input.countryId },
-      });
-      if (!label) throw new TRPCError({ code: "NOT_FOUND", message: "Map label not found" });
+      assertOwnCountry(ctx, input.countryId);
+      assertFound(
+        await ctx.db.mapLabel.findFirst({
+          where: { id: input.labelId, countryId: input.countryId },
+        }),
+        "Map label not found"
+      );
       await ctx.db.mapLabel.delete({ where: { id: input.labelId } });
       await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS);
       broadcastMapUpdate("mapLabel", input.countryId);
@@ -191,11 +162,21 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
   getAllMapLabels: cachedPublicProcedure
     .input(realmScopeInput.optional())
     .query(async ({ ctx, input }) => {
-      const labels = await ctx.db.mapLabel.findMany({
-        where: { status: "approved", country: { realmId: await viewerRealmId(ctx, input?.realm) } },
-        take: 2000,
-        include: { country: { select: { name: true, slug: true } } },
-      });
+      const realmId = await viewerRealmId(ctx, input?.realm);
+      // The realm's nations' labels, then the realm's own labels (oceans, seas, regions, continents)
+      const [nationLabels, realmLabels] = await Promise.all([
+        ctx.db.mapLabel.findMany({
+          where: { status: "approved", country: { realmId } },
+          take: 2000,
+          include: { country: { select: { name: true, slug: true } } },
+        }),
+        ctx.db.mapLabel.findMany({
+          where: { status: "approved", realmId, countryId: null },
+          take: 500,
+          include: { country: { select: { name: true, slug: true } } },
+        }),
+      ]);
+      const labels = [...realmLabels, ...nationLabels];
 
       return {
         type: "FeatureCollection" as const,
@@ -213,12 +194,19 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
               rotation: l.rotation,
               letterSpacing: l.letterSpacing,
               fontWeight: l.fontWeight,
+              fontStyle: l.fontStyle,
               opacity: l.opacity,
               minZoom: l.minZoom,
               maxZoom: l.maxZoom,
               wikiPageTitle: l.wikiPageTitle,
               countryId: l.countryId,
-              countryName: l.country.name,
+              countryName: l.country?.name ?? null,
+              realmLabel: l.countryId === null,
+              // A realm label's rank in the ocean-label style (its kind's unless one is stored)
+              rank:
+                l.countryId === null
+                  ? realmLabelRank(l.labelType, storedRealmLabelRank(l.metadata))
+                  : null,
             },
           })),
       };

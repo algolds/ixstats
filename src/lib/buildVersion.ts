@@ -1,4 +1,3 @@
-// ---------------------------------------------------------------------------
 // Version Registry — single source of truth for all platform version info.
 //
 // See revision.md ("IxStates Versioning & Release Architecture"). Every UI,
@@ -15,7 +14,6 @@
 //
 // Components that inherit the platform version (not independently versioned):
 // IxForum, IxTime/IxnayID, Labs, Navigation Hubs.
-// ---------------------------------------------------------------------------
 
 import { BUILD_VERSION } from "./buildVersion.generated";
 
@@ -27,7 +25,7 @@ export type ReleaseChannel = "Developer" | "Alpha" | "Beta" | "Release Candidate
 export const VERSIONS = {
   platform: {
     major: 1,
-    minor: 4,
+    minor: 5,
     patch: 0,
     release: "Lobster Crosby",
     channel: "Release Candidate" as ReleaseChannel,
@@ -35,9 +33,9 @@ export const VERSIONS = {
 
   // Apps — own brand, ship/break independently.
   apps: {
-    ixworld: 2, // v2: Modular authoring suite, responsive unified controls, shared lore atoms, and clean domain boundaries
+    ixworld: 3, // v3: PostGIS vector tiles for terrain, packed map data, ~1 MB first load; v2: modular authoring suite, responsive unified controls, shared lore atoms, and clean domain boundaries
     wikios: 1, // Canvas nests under WikiOS (see subSystems.canvas)
-    ixvault: 2, // v2: type-safe domain models, atomic credit ledger, concurrency locks, and UTC calendar streak engine
+    ixvault: 3, // v3: the collectathon hub (Wallet statement, Achievements, Cards, Store and Lorewards under one app, in the sidebar for everyone), the nightly Vault dividend, trophy cards; v2: type-safe domain models, atomic credit ledger, concurrency locks, and UTC calendar streak engine
   },
 
   // Engines — internal-only simulation cores (surfaced in the Dev panel).
@@ -51,17 +49,17 @@ export const VERSIONS = {
   systems: {
     mycountry: 6, // public-facing executive command UI; v6: dedicated Country Editor architecture with Guided & Power mode toggle, inline click-to-edit fields, live diff indicators, and 10-level undo stack
     builder: 4, // v4: guided wizard stepper, progressive disclosure tiers, and archetype default engine
-    thinkpages: 2, // v2: full component modularization pass (<700 lines/file), domain sub-component suite, and centralized primitives
-    achievements: 2, // incl. LoreWards; v2: automatic collector resync on page load
+    thinkpages: 3, // v3: refined forum (author line with persona chips, prose-scale posts, one unread mark, home pass), Commons leather palette, every legacy URL removed; v2: full component modularization pass (<700 lines/file), domain sub-component suite, and centralized primitives
+    achievements: 3, // incl. LoreWards / Wiki Awards; v3: moved into the Vault, nation achievements rebuilt around live MyCountry systems (real-time floors), new Wiki, Community, Cards, Lorewards and cross-platform achievements, Legacy achievements, tiered Loreward payouts with trophy cards; v2: automatic collector resync on page load
     stash: 1, // save-for-later wiki articles (was "LoreStash")
     repository: 2, // WikiOS Commons image explorer
-    halo: 5, // global contextual overlay (was "Dynamic Island"); v5: modular views directory, comprehensive multi-domain command palette, keyword synonym indexing, and in-palette system execution
+    halo: 6, // global contextual overlay (was "Dynamic Island"); v5: modular views directory, comprehensive multi-domain command palette, keyword synonym indexing, and in-palette system execution; v6: standard chrome glass with no glow
     onoma: 4, // name generation + linguistics studio; v4: codebase modularization, custom studio advanced conlang & phonotactics constraints
   },
 
   // Design system.
   design: {
-    facet: 2, // glass/refraction/depth design language; v2: core UI design system convergence & tactile feedback physics
+    facet: 4, // v4: five layers (canvas, pane, well, chrome, overlay), content types, tinted canvas, one layers.css (docs/reference/facet-design-system.md)
   },
 
   // WikiOS sub-systems (nested, not top-level).
@@ -72,9 +70,7 @@ export const VERSIONS = {
   build: BUILD_VERSION,
 } as const;
 
-// ---------------------------------------------------------------------------
 // Derived display strings — the only thing UI components should import.
-// ---------------------------------------------------------------------------
 
 const p = VERSIONS.platform;
 
@@ -190,11 +186,9 @@ export const FACET_VERSION = String(VERSIONS.design.facet);
 // WikiOS sub-systems.
 export const CANVAS_VERSION = String(VERSIONS.subSystems.canvas);
 
-// ---------------------------------------------------------------------------
 // Welcome / onboarding modal versions (used for localStorage version-gating).
 // These are FEATURE GATES, not product identity — keep them separate from the
 // registry above. Bump one of these to re-show its welcome modal.
-// ---------------------------------------------------------------------------
 
 export const STASHES_WELCOME_VERSION = "1.0";
 export const ATOMIC_WELCOME_VERSION = "1.0";

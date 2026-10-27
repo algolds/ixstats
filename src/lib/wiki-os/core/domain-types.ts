@@ -12,17 +12,11 @@
 export type ArticleId = string & { readonly __brand: unique symbol };
 export type RevisionId = string & { readonly __brand: unique symbol };
 export type ArticleSlug = string & { readonly __brand: unique symbol };
-export type CategoryId = string & { readonly __brand: unique symbol };
-export type UserId = string & { readonly __brand: unique symbol };
-export type AssetId = string & { readonly __brand: unique symbol };
-
 export const toArticleSlug = (slug: string): ArticleSlug =>
   slug.trim().toLowerCase().replace(/ /g, "_").replace(/_{2,}/g, "_") as ArticleSlug;
 
 export const toArticleId = (id: string): ArticleId => id as ArticleId;
 export const toRevisionId = (id: string): RevisionId => id as RevisionId;
-export const toUserId = (id: string): UserId => id as UserId;
-
 /**
  * Public revision reference shared by history, diff and undo: the MediaWiki rev_id for
  * revisions synced from MediaWiki, else the WikiOS revision row id (native edits have no
@@ -35,11 +29,20 @@ export const toRevisionRef = (rev: { id: string; mwRevId?: number | null }): str
 export const parseRevisionRef = (ref: string): { mwRevId: number } | { id: string } =>
   /^\d+$/.test(ref) ? { mwRevId: Number(ref) } : { id: ref };
 
+/** MediaWiki's `rev_id` is a 32-bit integer column: a larger number cannot name a revision. */
+const MAX_MW_REV_ID = 2_147_483_647;
+
+/** Whether `ref` can be a revision reference: a `rev_id` that fits the column, or a row id. */
+export const isRevisionRef = (ref: string): boolean =>
+  /^\d+$/.test(ref)
+    ? ref.length <= 10 && Number(ref) <= MAX_MW_REV_ID
+    : /^[A-Za-z0-9_-]{1,64}$/.test(ref);
+
 // ---------------------------------------------------------------------------
 // Structured Block AST
 // ---------------------------------------------------------------------------
 
-export type WikiBlock =
+type WikiBlock =
   | ParagraphBlock
   | HeadingBlock
   | InfoboxBlock
@@ -49,20 +52,20 @@ export type WikiBlock =
   | TableBlock
   | ImageBlock;
 
-export interface ParagraphBlock {
+interface ParagraphBlock {
   type: "paragraph";
   id: string;
   children: Array<TextNode | WikilinkInline | ExternalLinkInline>;
 }
 
-export interface HeadingBlock {
+interface HeadingBlock {
   type: "heading";
   id: string;
   level: 2 | 3 | 4 | 5 | 6;
   text: string;
 }
 
-export interface InfoboxBlock {
+interface InfoboxBlock {
   type: "infobox";
   id: string;
   templateName: string;
@@ -70,14 +73,14 @@ export interface InfoboxBlock {
   mapCoordinates?: { lat: number; lng: number; zoom?: number };
 }
 
-export interface StatPlaceholderBlock {
+interface StatPlaceholderBlock {
   type: "stat_placeholder";
   id: string;
   key: string; // e.g. "CountryData:Vesper|gdp"
   fallbackValue?: string;
 }
 
-export interface MapEmbedBlock {
+interface MapEmbedBlock {
   type: "map_embed";
   id: string;
   lat: number;
@@ -87,7 +90,7 @@ export interface MapEmbedBlock {
   pinType?: string;
 }
 
-export interface CalloutBlock {
+interface CalloutBlock {
   type: "callout";
   id: string;
   tone: "info" | "warning" | "success" | "neutral";
@@ -95,7 +98,7 @@ export interface CalloutBlock {
   title?: string;
 }
 
-export interface TableBlock {
+interface TableBlock {
   type: "table";
   id: string;
   headers: string[];
@@ -103,7 +106,7 @@ export interface TableBlock {
   caption?: string;
 }
 
-export interface ImageBlock {
+interface ImageBlock {
   type: "image";
   id: string;
   url: string;
@@ -113,7 +116,7 @@ export interface ImageBlock {
   height?: number;
 }
 
-export interface TextNode {
+interface TextNode {
   type: "text";
   text: string;
   bold?: boolean;
@@ -123,7 +126,7 @@ export interface TextNode {
   underline?: boolean;
 }
 
-export interface WikilinkInline {
+interface WikilinkInline {
   type: "wikilink";
   targetSlug: ArticleSlug;
   displayText: string;
@@ -131,7 +134,7 @@ export interface WikilinkInline {
   isBroken?: boolean;
 }
 
-export interface ExternalLinkInline {
+interface ExternalLinkInline {
   type: "external_link";
   url: string;
   displayText: string;
@@ -141,8 +144,8 @@ export interface ExternalLinkInline {
 // Article Payloads & Entities
 // ---------------------------------------------------------------------------
 
-export type WikiContentFormat = "STRUCTURED_JSON" | "MARKDOWN" | "WIKITEXT" | "HTML";
-export type WikiArticleStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED" | "PROTECTED";
+type WikiContentFormat = "STRUCTURED_JSON" | "MARKDOWN" | "WIKITEXT" | "HTML";
+type WikiArticleStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED" | "PROTECTED";
 
 export interface SaveArticleInput {
   slug: string;
@@ -152,14 +155,22 @@ export interface SaveArticleInput {
   contentJson?: WikiBlock[];
   contentHtml?: string;
   wikitext?: string;
-  summary?: string;
+  /** The edit summary ("fixed typo"): stored on the revision only, never as the article's excerpt. */
+  editSummary?: string;
+  /** Overrides the article's excerpt (`WikiArticle.summary`); default: derived from the wikitext. */
+  excerpt?: string;
   minor?: boolean;
+  /**
+   * The edit-conflict check, made atomically inside the save's transaction (under the article's row lock): the
+   * reference (`toRevisionRef`) of the revision the editor based this save on, or null when the editor believes the
+   * page does not exist yet. The save throws `EditConflictError` unless that is the page's latest live (not parked)
+   * revision. Omitted: no check (an upload's description page; a revert and a rollback pass the head they read).
+   */
+  expectedHeadRef?: string | null;
   namespace?: number;
   namespacePrefix?: string | null;
   protectionLevel?: string;
   protectionExpiry?: Date | null;
-  redirectTargetSlug?: string | null;
-  redirectTargetFragment?: string | null;
   infoboxData?: Record<string, unknown>;
   leadImageUrl?: string;
 }
@@ -192,17 +203,30 @@ export interface WikiArticleEntity {
   updatedAt: Date;
 }
 
+/** One row of a page's history: everything but the revision's text. */
 export interface WikiRevisionSummary {
   id: RevisionId;
   /** MediaWiki rev_id; null for native WikiOS edits. */
-  mwRevId?: number | null;
+  mwRevId: number | null;
   articleId: ArticleId;
-  format: WikiContentFormat;
   summary: string | null;
   minor: boolean;
   author: string | null;
-  authorId: string | null;
   createdAt: Date;
   byteSize: number;
-  byteDelta?: number;
+  byteDelta: number;
+  /** MediaWiki's rev_sha1 of the text; null on rows that predate it. */
+  sha1: string | null;
+  /** A MediaWiki edit that was not made on top of the page's head: in the history, never the current text. */
+  parked: boolean;
+  /** MediaWiki revision deletion: what a public reader of the history must not be shown. */
+  textDeleted: boolean;
+  commentDeleted: boolean;
+  userDeleted: boolean;
 }
+
+/**
+ * Where a page of history starts, by revision reference (see `toRevisionRef`): right after the
+ * revision (`before`, the next page of older ones) or at the revision itself (`from`).
+ */
+export type HistoryPosition = { before: string } | { from: string };

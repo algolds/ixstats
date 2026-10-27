@@ -1,27 +1,112 @@
-import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
-import type { Geometry, Position, Feature, Polygon, MultiPolygon } from "geojson";
+import type { GeoJSONSource, LayerSpecification, Map as MapLibreMap } from "maplibre-gl";
+import type {
+  Feature,
+  FeatureCollection,
+  GeoJsonProperties,
+  Geometry,
+  MultiPolygon,
+  Polygon,
+  Position,
+} from "geojson";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { intersect } from "@turf/intersect";
 import { featureCollection } from "@turf/helpers";
-import {
-  getAllRings,
-  rebuildGeometry,
-  projectPointToSegment,
-  distanceDeg,
-} from "~/lib/maps/border-editor";
+import { getAllRings, rebuildGeometry } from "~/lib/maps/border-editor";
 import { distanceKm } from "~/lib/maps/geo-math";
 import { SNAP_LAYER_TYPES } from "~/lib/maps/editor-prefs";
+import { buildSegmentGrid, nearestSegmentPoint, type SegmentGrid } from "~/lib/maps/segment-grid";
 
 export const EMPTY_FC = { type: "FeatureCollection" as const, features: [] as Feature[] };
 
-export const SNAP_GUIDE_SOURCE = "editor-snap-guide";
-export const SNAP_GUIDE_LAYER = "editor-snap-guide-line";
-export const SNAP_GUIDE_POINT_LAYER = "editor-snap-guide-point";
+export const pointFeature = (
+  coordinates: Position,
+  properties: GeoJsonProperties = {}
+): Feature => ({
+  type: "Feature",
+  geometry: { type: "Point", coordinates },
+  properties,
+});
 
-/**
- * Helper to get a typed GeoJSON source from the map
- */
+export const lineFeature = (
+  coordinates: Position[],
+  properties: GeoJsonProperties = {}
+): Feature => ({
+  type: "Feature",
+  geometry: { type: "LineString", coordinates },
+  properties,
+});
+
+/** A point at the middle of each consecutive pair of coordinates. */
+export function midpointFeatures<P extends Position>(
+  points: P[],
+  toProperties: (index: number, a: P, b: P) => GeoJsonProperties
+): Feature[] {
+  return points.slice(1).map((b, i) => {
+    const a = points[i]!;
+    return pointFeature([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], toProperties(i, a, b));
+  });
+}
+
+export const collection = (features: Feature[]): FeatureCollection => ({
+  type: "FeatureCollection",
+  features,
+});
+
+/** Point features for every feature that has coordinates, with the label/marker style properties. */
+export function buildPointFeatures(
+  features: EditorFeature[],
+  override?: { id: string; coordinates: [number, number] }
+) {
+  return features
+    .filter((f) => f.coordinates)
+    .map((f) => ({
+      type: "Feature" as const,
+      geometry: {
+        type: "Point" as const,
+        coordinates: override?.id === f.id ? override.coordinates : f.coordinates!,
+      },
+      properties: {
+        id: f.id,
+        name: f.name,
+        featureType: f.type,
+        isCapital: f.properties.isNationalCapital ?? false,
+        rotation: Number(f.properties.rotation) || 0,
+        opacity: f.properties.opacity !== undefined ? Number(f.properties.opacity) : 1,
+        color: f.properties.color || "#374151",
+        fontSize: Number(f.properties.fontSize) || 11,
+        fontWeight: f.properties.fontWeight || "normal",
+        letterSpacing: Number(f.properties.letterSpacing) || 0,
+      },
+    }));
+}
+
+const SNAP_GUIDE_SOURCE = "editor-snap-guide";
+const SNAP_GUIDE_LAYERS: SourcelessLayer[] = [
+  {
+    id: "editor-snap-guide-line",
+    type: "line",
+    paint: {
+      "line-color": "#06b6d4",
+      "line-width": 1.5,
+      "line-dasharray": [3, 3],
+      "line-opacity": 0.8,
+    },
+  },
+  {
+    id: "editor-snap-guide-point",
+    type: "circle",
+    filter: ["==", "$type", "Point"],
+    paint: {
+      "circle-radius": 5,
+      "circle-color": "#06b6d4",
+      "circle-stroke-color": "#ffffff",
+      "circle-stroke-width": 1.5,
+      "circle-opacity": 0.9,
+    },
+  },
+];
+
 export function getGeoJSONSource(map: MapLibreMap | null, id: string): GeoJSONSource | undefined {
   if (!map) return;
   try {
@@ -29,6 +114,45 @@ export function getGeoJSONSource(map: MapLibreMap | null, id: string): GeoJSONSo
   } catch {
     return undefined;
   }
+}
+
+export type SourcelessLayer = LayerSpecification extends infer L
+  ? L extends unknown
+    ? Omit<L, "source">
+    : never
+  : never;
+
+/** Source options a layer set can need; `promoteId` makes a property the feature id for `updateData`. */
+export interface GeoJSONSourceOptions {
+  promoteId?: string;
+}
+
+/** First call adds the GeoJSON source and its layers (in order); later calls only replace the data. */
+export function upsertGeoJSONLayers(
+  map: MapLibreMap,
+  sourceId: string,
+  data: GeoJSON.GeoJSON,
+  layers: SourcelessLayer[],
+  sourceOptions: GeoJSONSourceOptions = {}
+) {
+  if (map.getSource(sourceId)) {
+    getGeoJSONSource(map, sourceId)?.setData(data);
+    return;
+  }
+  map.addSource(sourceId, { type: "geojson", data, ...sourceOptions });
+  for (const layer of layers) map.addLayer({ ...layer, source: sourceId } as LayerSpecification);
+}
+
+type OpacityProperty = "fill-opacity" | "line-opacity" | "circle-opacity" | "text-opacity";
+
+/** Sets a paint opacity on a layer if it exists. */
+export function setLayerOpacity(
+  map: MapLibreMap,
+  layerId: string,
+  property: OpacityProperty,
+  value: number
+) {
+  if (map.getLayer(layerId)) map.setPaintProperty(layerId, property as "line-opacity", value);
 }
 
 /**
@@ -43,18 +167,20 @@ export function toPolygonGeometry(geom: object | null | undefined): Polygon | Mu
   return null;
 }
 
-/**
- * Helper to safely extract coordinates from a feature's geometry
- */
+/** The vertex run of a route geometry (a LineString, or every part of a MultiLineString). */
+export function routeVertices(geometry: Geometry | null | undefined): [number, number][] {
+  if (geometry?.type === "LineString") return geometry.coordinates as [number, number][];
+  if (geometry?.type === "MultiLineString")
+    return geometry.coordinates.flat() as [number, number][];
+  return [];
+}
+
 export function getFeatureCoords(geometry: Geometry): Position | undefined {
   if (geometry.type === "Point") return geometry.coordinates;
   if (geometry.type === "MultiPoint") return geometry.coordinates[0];
   return undefined;
 }
 
-/**
- * Helper to calculate and cache bounding box recursively for any geometry type
- */
 export interface BoundingBox {
   minLng: number;
   minLat: number;
@@ -101,7 +227,8 @@ export function getGenericBBox(
  * Calculate overlap GeoJSON between a drawn geometry and other subdivisions
  */
 export function calculateOverlapGeoJson(
-  drawnGeom: (Geometry & { coordinates?: Position[][] | Position[][][] }) | Feature | null | undefined,
+  drawnGeom:
+    (Geometry & { coordinates?: Position[][] | Position[][][] }) | Feature | null | undefined,
   allFeatures: EditorFeature[],
   currentFeatureId?: string
 ) {
@@ -173,69 +300,77 @@ export function calculateOverlapGeoJson(
   };
 }
 
-/**
- * Show/hide a snap guide line between drag origin and snap target
- */
+/** Shows (or, with null ends, clears) a snap guide between the drag origin and its snap target. */
 export function updateSnapGuide(map: MapLibreMap, from: Position | null, to: Position | null) {
-  const fc: GeoJSON.FeatureCollection = {
-    type: "FeatureCollection",
-    features:
-      from && to
-        ? [
-            {
-              type: "Feature",
-              geometry: { type: "LineString", coordinates: [from, to] },
-              properties: {},
-            },
-            {
-              type: "Feature",
-              geometry: { type: "Point", coordinates: to },
-              properties: {},
-            },
-          ]
-        : [],
-  };
+  const fc = collection(from && to ? [lineFeature([from, to]), pointFeature(to)] : []);
 
-  const source = map.getSource(SNAP_GUIDE_SOURCE);
-  if (source && "setData" in source) {
-    (source as GeoJSONSource).setData(fc);
-  } else {
-    map.addSource(SNAP_GUIDE_SOURCE, { type: "geojson", data: fc });
-    map.addLayer({
-      id: SNAP_GUIDE_LAYER,
-      type: "line",
-      source: SNAP_GUIDE_SOURCE,
-      paint: {
-        "line-color": "#06b6d4",
-        "line-width": 1.5,
-        "line-dasharray": [3, 3],
-        "line-opacity": 0.8,
-      },
-    });
-    map.addLayer({
-      id: SNAP_GUIDE_POINT_LAYER,
-      type: "circle",
-      source: SNAP_GUIDE_SOURCE,
-      filter: ["==", "$type", "Point"],
-      paint: {
-        "circle-radius": 5,
-        "circle-color": "#06b6d4",
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1.5,
-        "circle-opacity": 0.9,
-      },
-    });
+  upsertGeoJSONLayers(map, SNAP_GUIDE_SOURCE, fc, SNAP_GUIDE_LAYERS);
+}
+
+export const haversineDistance = distanceKm;
+
+/** Every coordinate run (line or ring) a geometry is made of. */
+function coordinateRuns(geom: Geometry): Position[][] {
+  switch (geom.type) {
+    case "LineString":
+      return [geom.coordinates];
+    case "MultiLineString":
+    case "Polygon":
+      return geom.coordinates;
+    case "MultiPolygon":
+      return geom.coordinates.flat();
+    default:
+      return [];
   }
 }
 
+/** Each layer's segment grid, built on first use and kept for as long as that layer data lives. */
+const layerGrids = new WeakMap<FeatureCollection, SegmentGrid>();
+
+function layerGrid(data: FeatureCollection): SegmentGrid {
+  let grid = layerGrids.get(data);
+  if (!grid) {
+    grid = buildSegmentGrid(
+      data.features.flatMap((f) => (f.geometry ? coordinateRuns(f.geometry) : []))
+    );
+    layerGrids.set(data, grid);
+  }
+  return grid;
+}
+
+/** Runs `task` when the browser is idle (after a short timer where it cannot tell); returns its canceller. */
+export function whenIdle(task: () => void): () => void {
+  if ("requestIdleCallback" in window) {
+    const handle = window.requestIdleCallback(task, { timeout: 2000 });
+    return () => window.cancelIdleCallback(handle);
+  }
+  const handle = setTimeout(task, 50);
+  return () => clearTimeout(handle);
+}
+
 /**
- * Distance between two [lng, lat] points in km (haversine, IxEarth radius).
+ * Builds the segment grid of every snap layer ahead of the first snap, one layer per idle period,
+ * so indexing them never stalls the first drag that snaps. Returns a function that stops the work.
  */
-export const haversineDistance = distanceKm;
+export function prebuildSnapGrids(layers: MapLayerData[] | undefined): () => void {
+  const pending = (layers ?? []).filter(
+    (l) => (SNAP_LAYER_TYPES as readonly string[]).includes(l.type) && !layerGrids.has(l.data)
+  );
+  let cancel = () => {};
+  let next = 0;
+  const buildNext = () => {
+    layerGrid(pending[next++]!.data);
+    if (next < pending.length) cancel = whenIdle(buildNext);
+  };
+  if (pending.length > 0) cancel = whenIdle(buildNext);
+  return () => cancel();
+}
 
 /**
  * Snap a coordinate point to visible background features (rivers, lakes, coastline,
  * elevation contour, climate zones). Only layer types present in `visibleLayers` are used.
+ * Each layer is searched through a segment grid, so a drag looks at the segments near the cursor
+ * instead of every segment of every layer on every move.
  */
 export function snapToLayerFeatures(
   point: [number, number],
@@ -245,95 +380,16 @@ export function snapToLayerFeatures(
 ): [number, number] {
   if (!worldMapLayers) return point;
 
-  let bestDist = Infinity;
-  let bestProj: [number, number] = point;
-
+  let best: { point: Position; dist: number } | null = null;
   for (const layerType of SNAP_LAYER_TYPES) {
     if (!visibleLayers.has(layerType)) continue;
-
-    const layer = worldMapLayers.find((l) => l.type === layerType);
-    if (!layer || !layer.data || !layer.data.features) continue;
-
-    for (const feature of layer.data.features) {
-      const geom = feature.geometry;
-      if (!geom) continue;
-
-      // Retrieve cached bbox or compute and store it on feature properties
-      const featWithBBox = feature as Feature & { _bbox?: BoundingBox };
-      let bbox = featWithBBox._bbox;
-      if (!bbox) {
-        bbox = getGenericBBox(geom);
-        featWithBBox._bbox = bbox;
-      }
-
-      // Skip distance checks if point is not within tolerance of feature's bounding box
-      if (
-        point[0] < bbox.minLng - tolerance ||
-        point[0] > bbox.maxLng + tolerance ||
-        point[1] < bbox.minLat - tolerance ||
-        point[1] > bbox.maxLat + tolerance
-      ) {
-        continue;
-      }
-
-      if (geom.type === "LineString") {
-        const coords = geom.coordinates;
-        for (let i = 0; i < coords.length - 1; i++) {
-          const proj = projectPointToSegment(
-            point,
-            coords[i] as Position,
-            coords[i + 1] as Position
-          );
-          const d = distanceDeg(point, proj);
-          if (d < bestDist && d <= tolerance) {
-            bestDist = d;
-            bestProj = proj as [number, number];
-          }
-        }
-      } else if (geom.type === "MultiLineString") {
-        for (const line of geom.coordinates) {
-          for (let i = 0; i < line.length - 1; i++) {
-            const proj = projectPointToSegment(point, line[i] as Position, line[i + 1] as Position);
-            const d = distanceDeg(point, proj);
-            if (d < bestDist && d <= tolerance) {
-              bestDist = d;
-              bestProj = proj as [number, number];
-            }
-          }
-        }
-      } else if (geom.type === "Polygon") {
-        for (const ring of geom.coordinates) {
-          for (let i = 0; i < ring.length - 1; i++) {
-            const proj = projectPointToSegment(point, ring[i] as Position, ring[i + 1] as Position);
-            const d = distanceDeg(point, proj);
-            if (d < bestDist && d <= tolerance) {
-              bestDist = d;
-              bestProj = proj as [number, number];
-            }
-          }
-        }
-      } else if (geom.type === "MultiPolygon") {
-        for (const poly of geom.coordinates) {
-          for (const ring of poly) {
-            for (let i = 0; i < ring.length - 1; i++) {
-              const proj = projectPointToSegment(
-                point,
-                ring[i] as Position,
-                ring[i + 1] as Position
-              );
-              const d = distanceDeg(point, proj);
-              if (d < bestDist && d <= tolerance) {
-                bestDist = d;
-                bestProj = proj as [number, number];
-              }
-            }
-          }
-        }
-      }
-    }
+    const data = worldMapLayers.find((l) => l.type === layerType)?.data;
+    if (!data) continue;
+    const hit = nearestSegmentPoint(layerGrid(data), point, tolerance);
+    // Strictly nearer only: on a tie the earlier layer keeps it
+    if (hit && (!best || hit.dist < best.dist)) best = hit;
   }
-
-  return bestDist <= tolerance ? bestProj : point;
+  return best ? (best.point as [number, number]) : point;
 }
 
 /**

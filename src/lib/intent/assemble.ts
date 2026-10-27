@@ -21,13 +21,13 @@ export interface ChangeLine {
   deptCategory?: string; // budget kind: which GovernmentDepartment.category to move
   deltaPercent?: number; // budget kind: allocatedPercent delta to apply (bounded)
 }
-export interface IntentConsequence {
+interface IntentConsequence {
   targetModel: "Country" | "GovernmentStructure" | "InternalStabilityMetrics";
   targetField: string;
   operation: "add" | "subtract";
   value: number;
 }
-export interface IntentPackage {
+interface IntentPackage {
   tier: Tier;
   title: string;
   blurb: string;
@@ -35,7 +35,13 @@ export interface IntentPackage {
   consequences: IntentConsequence[];
   acceptance: Acceptance;
   risk: "stable" | "volatile" | "high-risk" | "unlocked";
-  civCapCost: number;
+  execBandwidthCost: number;
+  /**
+   * GDP-per-capita growth-rate modifier applied as a StorytellerEffect
+   * ("growth_rate_modifier", like active policies) for GROWTH_EFFECT_YEARS. 0 = none.
+   * This is how the projection moves GDP; the core stats themselves stay Editor-only.
+   */
+  gdpGrowthModifier: number;
   unlockedRequirement?: {
     kind: "broker" | "component";
     name: string;
@@ -44,7 +50,7 @@ export interface IntentPackage {
 }
 
 // Core stats an Intent may never move — Editor-only (locked levers).
-export const FORBIDDEN_FIELDS = new Set([
+const FORBIDDEN_FIELDS = new Set([
   "currentTotalGdp",
   "currentGdpPerCapita",
   "currentPopulation",
@@ -57,7 +63,7 @@ export const FORBIDDEN_FIELDS = new Set([
   "landArea",
 ]);
 
-export function forbiddenFieldsUsed(pkgs: IntentPackage[]): string[] {
+function forbiddenFieldsUsed(pkgs: IntentPackage[]): string[] {
   const hits: string[] = [];
   for (const p of pkgs)
     for (const c of p.consequences)
@@ -119,6 +125,11 @@ const KEYWORDS: Record<Category, string[]> = {
     "healthcare",
     "health",
     "education",
+    "university",
+    "tuition",
+    "teacher",
+    "childcare",
+    "famil",
     "welfare",
     "poverty",
     "pension",
@@ -169,8 +180,14 @@ const KEYWORDS: Record<Category, string[]> = {
   ],
 };
 
+/**
+ * Words that say how a goal is paid for, not what it is about: they count half, so "increase
+ * public education funding" is a social goal, not a fiscal one ("fund" alone still reads fiscal).
+ */
+const WEAK_KEYWORDS = new Set(["fund"]);
+
 // category → real GovernmentDepartment.category (for budget writes)
-export const CATEGORY_TO_DEPT: Record<Category, string> = {
+const CATEGORY_TO_DEPT: Record<Category, string> = {
   defense: "Defense",
   fiscal: "Finance",
   economy: "Commerce",
@@ -187,7 +204,35 @@ export const CATEGORY_TO_BROKER: Record<Category, string | null> = {
   infrastructure: "magnates",
   security: "party",
 };
-export const NOTCH_PERCENT = 1.5; // one budget "notch" = +1.5 allocatedPercent
+const NOTCH_PERCENT = 1.5; // one budget "notch" = +1.5 allocatedPercent
+
+/**
+ * Goals that name a department inside a broad category: their budget line goes to that department
+ * instead of the category's default (social → Health).
+ */
+const DEPARTMENT_FOCUS: { category: Category; keywords: string[]; dept: string }[] = [
+  {
+    category: "social",
+    keywords: ["education", "school", "teacher", "university", "tuition"],
+    dept: "Education",
+  },
+  {
+    category: "social",
+    keywords: ["pension", "welfare", "poverty", "childcare"],
+    dept: "Social Services",
+  },
+];
+
+/** The department a goal's budget line moves, and the line's name. */
+function budgetTargetOf(cat: Category, goal: string): { dept: string; line: string } {
+  const g = goal.toLowerCase();
+  const focus = DEPARTMENT_FOCUS.find(
+    (f) => f.category === cat && f.keywords.some((k) => g.includes(k))
+  );
+  return focus
+    ? { dept: focus.dept, line: focus.dept }
+    : { dept: CATEGORY_TO_DEPT[cat], line: RECIPES[cat].budgetLine };
+}
 
 /** Nudge base acceptance by the aligned broker's disposition. Pure + testable. */
 export function weightAcceptance(
@@ -233,7 +278,10 @@ export function classifyGoal(goal: string): { category: Category } {
   let best: Category | null = null;
   let bestHits = 0;
   for (const cat of Object.keys(KEYWORDS) as Category[]) {
-    const hits = KEYWORDS[cat].filter((k) => g.includes(k)).length;
+    const hits = KEYWORDS[cat].reduce(
+      (sum, k) => (g.includes(k) ? sum + (WEAK_KEYWORDS.has(k) ? 0.5 : 1) : sum),
+      0
+    );
     if (hits > bestHits) {
       bestHits = hits;
       best = cat;
@@ -244,7 +292,7 @@ export function classifyGoal(goal: string): { category: Category } {
   return { category };
 }
 
-// ── category recipe: one budget line, one policy, and which fields move ─────
+// category recipe: one budget line, one policy, and which fields move
 interface Recipe {
   budgetLine: string;
   policyName: string;
@@ -252,6 +300,8 @@ interface Recipe {
   // improves (a good-side field) and strains (a cost-side field)
   improve: IntentConsequence;
   strain: IntentConsequence;
+  /** Base growth-rate modifier (scaled by tier) for growth-oriented categories. */
+  growth?: number;
 }
 const RECIPES: Record<Category, Recipe> = {
   defense: {
@@ -259,8 +309,8 @@ const RECIPES: Record<Category, Recipe> = {
     policyName: "Mobilization Directive",
     statement: "issue a firm statement of resolve",
     improve: {
-      targetModel: "GovernmentStructure",
-      targetField: "politicalStability",
+      targetModel: "InternalStabilityMetrics",
+      targetField: "stabilityScore",
       operation: "add",
       value: 1,
     },
@@ -300,6 +350,7 @@ const RECIPES: Record<Category, Recipe> = {
       value: 0.3,
     },
     strain: { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 0 },
+    growth: 0.01,
   },
   social: {
     budgetLine: "Health & Welfare",
@@ -324,6 +375,7 @@ const RECIPES: Record<Category, Recipe> = {
       value: 1,
     },
     strain: { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 0 },
+    growth: 0.01,
   },
   security: {
     budgetLine: "Interior & Policing",
@@ -365,7 +417,7 @@ export const TIER_RISK: Record<Tier, IntentPackage["risk"]> = {
   broker_unlocked: "unlocked",
   structural_unlocked: "unlocked",
 };
-const TIER_CIVCAP: Record<Tier, number> = {
+const TIER_EXEC_BANDWIDTH: Record<Tier, number> = {
   measured: 5,
   moderate: 12,
   extreme: 25,
@@ -373,13 +425,22 @@ const TIER_CIVCAP: Record<Tier, number> = {
   structural_unlocked: 10,
 };
 
+/** How long a directive's growth modifier stays active, in IxTime years. */
+export const GROWTH_EFFECT_YEARS = 1;
+/**
+ * Ceiling on a directive's relative growth modifier (±5%), before commit() turns it into a GDP
+ * level shift (growthModifierToLevelShift). Policies cap their level shift separately
+ * (lib/policies/effects-sync.ts MAX_GDP_LEVEL_SHIFT).
+ */
+const MAX_GROWTH_MODIFIER = 0.05;
+
 function scale(c: IntentConsequence, f: number): IntentConsequence {
   return { ...c, value: Math.round(c.value * f * 100) / 100 };
 }
 
-// oxlint-disable-next-line typescript/no-unused-vars
-function buildPackage(tier: Tier, cat: Category, goal: string, target?: string): IntentPackage {
+function buildPackage(tier: Tier, cat: Category, goal: string): IntentPackage {
   const r = RECIPES[cat];
+  const budget = budgetTargetOf(cat, goal);
   const f = TIER_SCALE[tier];
   const changes: ChangeLine[] = [];
   const consequences: IntentConsequence[] = [];
@@ -388,9 +449,9 @@ function buildPackage(tier: Tier, cat: Category, goal: string, target?: string):
   const notches = tier === "measured" ? 1 : tier === "moderate" ? 2 : 3;
   changes.push({
     kind: "budget",
-    label: `${r.budgetLine} budget +${notches} notch${notches > 1 ? "es" : ""}`,
-    detail: "reallocated from the general fund",
-    deptCategory: CATEGORY_TO_DEPT[cat],
+    label: `${budget.line} budget +${notches} notch${notches > 1 ? "es" : ""}`,
+    detail: "from spare budget, then the other departments in proportion",
+    deptCategory: budget.dept,
     deltaPercent: notches * NOTCH_PERCENT,
   });
 
@@ -416,10 +477,11 @@ function buildPackage(tier: Tier, cat: Category, goal: string, target?: string):
     });
     consequences.push(scale(r.improve, 2.2));
   } else {
+    // The directive carries the mandate itself; no separate Policy row is created.
     changes.push({
       kind: "policy",
-      label: `Enact "${r.policyName}"`,
-      detail: tier === "extreme" ? "an aggressive mandate" : "a targeted mandate",
+      label: `"${r.policyName}" mandate`,
+      detail: `${tier === "extreme" ? "an aggressive" : "a targeted"} mandate carried by this directive`,
     });
     consequences.push(scale(r.improve, f));
     consequences.push(scale(r.strain, f));
@@ -458,10 +520,14 @@ function buildPackage(tier: Tier, cat: Category, goal: string, target?: string):
     title: titles[tier],
     blurb: blurbs[tier],
     changes: changes.slice(0, 4),
-    consequences,
+    // A zero-value lever (e.g. the "+0 approval" strain) changes nothing: don't show or apply it.
+    consequences: consequences.filter((c) => c.value !== 0),
     acceptance: TIER_ACCEPT[tier],
     risk: TIER_RISK[tier],
-    civCapCost: TIER_CIVCAP[tier],
+    execBandwidthCost: TIER_EXEC_BANDWIDTH[tier],
+    gdpGrowthModifier: r.growth
+      ? Math.min(MAX_GROWTH_MODIFIER, Math.round(r.growth * f * 10000) / 10000)
+      : 0,
   };
 }
 
@@ -483,40 +549,4 @@ export function assemblePackages(goal: string): {
   return { category, packages };
 }
 
-// ── self-check ──────────────────────────────────────────────────────────────
-export function demo() {
-  const assert = (c: boolean, m: string) => {
-    if (!c) throw new Error("assemble demo failed: " + m);
-  };
-  const def = assemblePackages("Build military defenses");
-  assert(def.category === "defense", "defense classification");
-  assert(def.packages.length === 5, "5 packages");
-  for (const p of def.packages) assert(p.changes.length <= 4, "≤4 changes");
-  assert(
-    def.packages[0]!.acceptance === "good" && def.packages[2]!.acceptance === "bad",
-    "acceptance ordering"
-  );
-  assert(forbiddenFieldsUsed(def.packages).length === 0, "no core-stat fields");
-
-  let threw = false;
-  try {
-    assemblePackages("Prepare for war with Burgundie");
-  } catch {
-    threw = true;
-  }
-  assert(threw, "foreign policy is blocked");
-
-  const house = assemblePackages("Make housing affordable");
-  assert(house.category === "economy", "housing→economy");
-  // budget change carries structured dept + delta
-  const b = def.packages[1]!.changes.find((c) => c.kind === "budget")!;
-  assert(b.deptCategory === "Defense" && (b.deltaPercent ?? 0) > 0, "budget change is structured");
-  // acceptance weighting: aligned unlocked broker bumps a hard-sell toward contested
-  assert(
-    weightAcceptance("bad", { brokerUnlocked: true }) === "mid",
-    "broker unlock bumps acceptance"
-  );
-  assert(weightAcceptance("good", { brokerUnlocked: true }) === "good", "acceptance caps at good");
-  assert(weightAcceptance("mid", {}) === "mid", "no broker = unchanged");
-  return "ok";
-}
+// self-check

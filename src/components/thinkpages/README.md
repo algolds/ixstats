@@ -12,9 +12,8 @@ All components are organized into specialized domain sub-directories:
 - `ThinkpagesPost.tsx` (224 lines) — Top-level post router dispatches between `<HeroPostView>` and `<StandardPostView>`.
 - `GlassCanvasComposer.tsx` (424 lines) — Modular post composer container with 100% pixel-perfect original UX & glassmorphism styling.
 - `GlassPlateEditor.tsx` (5 lines) — Re-export shim for the shared editor in `src/components/shared/editor/`.
-- `AccountCreationModal.tsx` (585 lines) — Multi-step persona account creation wizard.
 - `SportsBulletinCard.tsx` (350 lines) — Apple HIG-inspired sports matchday & standings bulletin card.
-- Also at this level: `ThinkPagesAccountHub.tsx` (the `/thinkpages` page), `EnhancedAccountManager.tsx`, `AccountManagerModal.tsx`, `AccountSettingsModal.tsx`, `UnifiedComposerContainer.tsx`, `LiveDataCard.tsx`, `EmojiPicker.tsx`, `GifPicker.tsx`, `ReactionPopup.tsx`, `ReactionsDialog.tsx`, `RepostModal.tsx`.
+- Also at this level: `UnifiedComposerContainer.tsx`, `LiveDataCard.tsx`, `EmojiPicker.tsx`, `GifPicker.tsx`, `ReactionPopup.tsx`, `ReactionsDialog.tsx`, `RepostModal.tsx`.
 
 ---
 
@@ -27,7 +26,7 @@ All components are organized into specialized domain sub-directories:
 - `ThreadReplies.tsx` (106 lines) — Collapsible thread replies container and recursive post mapper.
 - `PostBody.tsx` (97 lines) — Post body content renderer, blurb tags, and sports bulletin card dispatcher.
 - `PostMediaGrid.tsx` (72 lines) — Flexible media attachment grid with lightbox triggers.
-- `PostInlineLinkPreview.tsx` (166 lines) — Smart inline link previews for Wiki, Forum, League, and Club links.
+- `PostInlineLinkPreview.tsx` (117 lines) — Smart inline link previews for Wiki, League, and Club links.
 - `PostModals.tsx` (215 lines) — Delete confirmation, flag/report dialog, reactions dialog, and image lightbox modal.
 - `PostComposers.tsx` (442 lines) — In-line edit composer and reply composer with auto-focus.
 - `useThinkpagesPost.ts` (466 lines) — Custom React hook encapsulating state, tRPC mutations, and handlers.
@@ -50,12 +49,13 @@ The canonical editor suite has been promoted to `src/components/shared/editor/` 
 - `EditorToolbar.tsx` (158 lines) — Formatting toolbar (Bold, Italic, Underline, Lists, Links).
 - `WikiAndStashPopovers.tsx` (368 lines) — Popovers for inserting Wiki links, Wiki embeds, and Lore Stash media.
 - `MentionMenuPortal.tsx` (97 lines) — Portal dropdown for `@` mention autocomplete (citizens, leagues, clubs, wikis).
-- `SlateSerializer.ts` (347 lines) — Bi-directional serializer for Slate AST to HTML, Parsoid HTML, and XenForo BBCode.
+- `SlateSerializer.ts` (354 lines) — Serializes the Slate AST to HTML and reads Parsoid HTML back into Slate, with the composer's wiki link helpers and the mark and block toggles.
 - `useGlassPlateEditor.ts` (580 lines) — React hook managing Plate instance, selection state, and autocompletion.
 
 ---
 
-### 5. Account Suite (`src/components/thinkpages/account/`)
+### 5. Account Suite (moved to `src/components/dashboard/accounts/`)
+The persona hub (`AccountsSection.tsx`, the Dashboard's Accounts section at `/dashboard/accounts`), `EnhancedAccountManager.tsx`, `AccountCreationModal.tsx`, `AccountSettingsModal.tsx`, `AccountManagerModal.tsx`, and the creation form under `form/`:
 - `AccountTypeSelector.tsx` (128 lines) — Persona selection cards (Government, Media, Citizen).
 - `AccountDetailsForm.tsx` (185 lines) — Account form inputs (displayName, username check, bio, profile image picker).
 

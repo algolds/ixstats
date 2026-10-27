@@ -16,7 +16,7 @@ interface CategoryDomainSectionProps {
   domain: "places" | "people" | "organizations" | "culture" | "military";
 }
 
-export function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
+function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
   const config = DOMAIN_CONFIGS[domain];
   const [activeTab, setActiveTab] = useState<NameCategory>(config?.defaultTab || "city");
 
@@ -139,7 +139,6 @@ export function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
         </div>
       </div>
 
-      {/* Redirect Modal for deployment */}
       {useName && (
         <UseNameDialog
           isOpen={!!useName}

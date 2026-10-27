@@ -1,77 +1,63 @@
 "use client";
 
-import React, { memo, useCallback, useState } from "react";
-import {
-  Globe,
-  Hexagon,
-  MapPin,
-  Bank as Landmark,
-  Bookmark as BookMarked,
-  Type as TypeIcon,
-  PathArrow as Route,
-  CloudSunny as CloudSun,
-} from "iconoir-react";
+import React, { memo, useState } from "react";
+import type { Map as MapLibreMap } from "maplibre-gl";
 import { EditorPanel } from "~/components/maps/editor/EditorPanel";
 import { LayerPanel } from "~/components/maps/editor/LayerPanel";
+import {
+  useRealmMapDisplay,
+  useRealmRelief,
+} from "~/components/maps/core/hooks/useRealmMapDisplay";
+import { buildLayers, isMapSwitchedLayer } from "~/components/maps/editor/utils/layer-rows";
+import { RELIEF_LAYER_ID } from "~/lib/maps/raster-tiles";
+import { sidebarTabsFor, worldTabAvailable } from "~/components/maps/editor/utils/world-tab";
 import { LinkageValidationPanel } from "./LinkageValidationPanel";
 import { SovereigntyPanel } from "./SovereigntyPanel";
 import { PropertiesPanelContent } from "./PropertiesPanelContent";
 import { HistoryPanel } from "./HistoryPanel";
 import { EditQueuePanel } from "../panels/EditQueuePanel";
+import { WikiScannerPanel } from "../panels/WikiScannerPanel";
+import { StorylinesPanel } from "../panels/StorylinesPanel";
+import { WorldPanel } from "../panels/WorldPanel";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
 import type { useMapEditorOverlayState } from "../hooks/useMapEditorOverlayState";
-import type {
-  PanelPlacement,
-  PanelConfig,
-  LayerStateRecord,
-  EditorFeature,
-} from "../types/editor-state";
-
-export type { PanelPlacement, PanelConfig, LayerStateRecord };
-
+import type { LayerStateRecord } from "../types/editor-state";
+import { useFeatureActionHandlers } from "./useFeatureActionHandlers";
 export type MapEditorOverlayReturnState = ReturnType<typeof useMapEditorOverlayState>;
 
 interface MapEditorSidebarPanelsProps {
   panelId: "panelA" | "panelB";
   state: MapEditorOverlayReturnState;
-  panelConfigs: {
-    panelA: PanelConfig;
-    panelB: PanelConfig;
-  };
-  setPanelConfigs: React.Dispatch<
-    React.SetStateAction<{ panelA: PanelConfig; panelB: PanelConfig }>
-  >;
-  activeSidebarTab: TabId;
-  setActiveSidebarTab: (tab: TabId) => void;
-  handleMoveTab: (tabId: string, panelId: "panelA" | "panelB") => void;
-  handleChangePanelPlacement: (panelId: "panelA" | "panelB", placement: PanelPlacement) => void;
-  layerStates: Record<string, LayerStateRecord>;
-  setLayerStates: React.Dispatch<React.SetStateAction<Record<string, LayerStateRecord>>>;
-  editorVisibleLayers: Set<string>;
-  toggleEditorLayer: (layerId: string) => void;
-  featureCounts: Record<string, number>;
   brushTargetId: string | null;
   setBrushTargetId: (id: string | null) => void;
+  /** The world map the World tab draws its preview on */
+  worldMap: MapLibreMap | null;
 }
 
 export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
   panelId,
   state,
-  panelConfigs,
-  setPanelConfigs,
-  activeSidebarTab,
-  setActiveSidebarTab,
-  handleMoveTab,
-  handleChangePanelPlacement,
-  layerStates,
-  setLayerStates,
-  editorVisibleLayers,
-  toggleEditorLayer,
-  featureCounts,
   brushTargetId,
   setBrushTargetId,
+  worldMap,
 }: MapEditorSidebarPanelsProps) {
-  const { editor, isWorldMode, panelsLocked, isAdmin } = state;
+  const {
+    editor,
+    isWorldMode,
+    panelsLocked,
+    isAdmin,
+    panelConfigs,
+    setPanelConfigs,
+    activeSidebarTab,
+    setActiveSidebarTab,
+    layerStates,
+    setLayerStates,
+    editorVisibleLayers,
+    toggleEditorLayer,
+    featureCounts,
+  } = state;
+  const display = useRealmMapDisplay();
+  const relief = useRealmRelief(display);
 
   const config = panelConfigs[panelId];
   const isStacked = panelConfigs.panelA.placement === panelConfigs.panelB.placement;
@@ -87,123 +73,50 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
   if (panelId === "panelA" && isWorldMode && isAdmin && !tabs.includes("queue")) {
     tabs = [...tabs, "queue" as TabId];
   }
+  // The World tab: the realm's map editors, never Ixnay.
+  // Saved layouts always carry it, so it is filtered here and never stored.
+  const worldTab = {
+    isWorldMode,
+    canEdit: isAdmin || !!display?.canEdit,
+    isIxnay: display?.isIxnay ?? true,
+  };
+  tabs = sidebarTabsFor(tabs, worldTab);
 
-  const [panelBActiveTab, setPanelBActiveTab] = useState<TabId>(() => {
-    return tabs.includes("properties") ? "properties" : (tabs[0] ?? "properties");
-  });
+  const [panelBActiveTab, setPanelBActiveTab] = useState<TabId>(() =>
+    tabs.includes("properties") ? "properties" : (tabs[0] ?? "properties")
+  );
 
-  const effectiveActiveTab: TabId = panelId === "panelA" ? activeSidebarTab : panelBActiveTab;
+  // A requested tab this panel does not show (`?editor=world` where the World tab is not offered) falls back to its first
+  const requestedTab = panelId === "panelA" ? activeSidebarTab : panelBActiveTab;
+  const effectiveActiveTab: TabId = tabs.includes(requestedTab)
+    ? requestedTab
+    : (tabs[0] ?? requestedTab);
 
-  const handleSelectFeature = useCallback((feat: EditorFeature) => {
-    state.handleSelectFeature?.(feat);
-  }, [state.handleSelectFeature]);
+  const {
+    onSelectFeature: handleSelectFeature,
+    onEditFeature: handleEditFeature,
+    onDeleteFeature: handleDeleteFeature,
+  } = useFeatureActionHandlers(state);
 
-  const handleEditFeature = useCallback((feat: EditorFeature) => {
-    state.handleEditFeature?.(feat);
-  }, [state.handleEditFeature]);
-
-  const handleDeleteFeature = useCallback((feat: EditorFeature) => {
-    state.handleDeleteFeature?.(feat);
-  }, [state.handleDeleteFeature]);
+  const updateLayer = (
+    id: string,
+    patch: (layer: LayerStateRecord | undefined) => Partial<LayerStateRecord>
+  ) => setLayerStates((prev) => ({ ...prev, [id]: { ...prev[id]!, ...patch(prev[id]) } }));
 
   const renderLayersElement = () => (
     <LayerPanel
-      layers={[
-        {
-          id: "border",
-          name: "Country Border",
-          icon: Globe,
-          visible: layerStates.border?.visible ?? true,
-          locked: false,
-        },
-        {
-          id: "climate",
-          name: "Climate Zones",
-          icon: CloudSun,
-          visible: editorVisibleLayers.has("climate"),
-          locked: true,
-        },
-        {
-          id: "regions",
-          name: "Regions",
-          icon: Hexagon,
-          visible: layerStates.regions?.visible ?? true,
-          locked: layerStates.regions?.locked ?? false,
-          opacity: layerStates.regions?.opacity ?? 0.6,
-        },
-        {
-          id: "cities",
-          name: "Cities",
-          icon: MapPin,
-          visible: layerStates.cities?.visible ?? true,
-          locked: layerStates.cities?.locked ?? false,
-          opacity: layerStates.cities?.opacity ?? 1,
-        },
-        {
-          id: "pois",
-          name: "POIs",
-          icon: Landmark,
-          visible: layerStates.pois?.visible ?? true,
-          locked: layerStates.pois?.locked ?? false,
-          opacity: layerStates.pois?.opacity ?? 1,
-        },
-        {
-          id: "stories",
-          name: "Story Pins",
-          icon: BookMarked,
-          visible: layerStates.stories?.visible ?? true,
-          locked: layerStates.stories?.locked ?? false,
-          opacity: layerStates.stories?.opacity ?? 1,
-        },
-        {
-          id: "labels",
-          name: "Labels",
-          icon: TypeIcon,
-          visible: layerStates.labels?.visible ?? true,
-          locked: layerStates.labels?.locked ?? false,
-          opacity: layerStates.labels?.opacity ?? 1,
-        },
-        {
-          id: "routes",
-          name: "Routes",
-          icon: Route,
-          visible: layerStates.routes?.visible ?? true,
-          locked: layerStates.routes?.locked ?? false,
-          opacity: layerStates.routes?.opacity ?? 1,
-        },
-      ]}
+      layers={buildLayers(layerStates, editorVisibleLayers, relief)}
       onToggleVisibility={(id) => {
-        if (id === "climate") {
-          toggleEditorLayer("climate");
-          return;
-        }
-        setLayerStates((prev) => ({
-          ...prev,
-          [id]: {
-            ...prev[id]!,
-            visible: !(prev[id]?.visible ?? true),
-          },
-        }));
+        if (id === "climate") toggleEditorLayer("climate");
+        else if (id === RELIEF_LAYER_ID) relief.toggle();
+        else updateLayer(id, (layer) => ({ visible: !(layer?.visible ?? true) }));
       }}
       onToggleLock={(id) => {
-        if (id === "climate") return;
-        setLayerStates((prev) => ({
-          ...prev,
-          [id]: {
-            ...prev[id]!,
-            locked: !(prev[id]?.locked ?? false),
-          },
-        }));
+        if (!isMapSwitchedLayer(id)) {
+          updateLayer(id, (layer) => ({ locked: !(layer?.locked ?? false) }));
+        }
       }}
-      onOpacityChange={(id, val) => {
-        setLayerStates((prev) => ({
-          ...prev,
-          [id]: {
-            ...prev[id]!,
-            opacity: val,
-          },
-        }));
-      }}
+      onOpacityChange={(id, opacity) => updateLayer(id, () => ({ opacity }))}
       featureCounts={featureCounts}
       features={editor.allFeatures}
       selectedFeature={editor.selectedFeature}
@@ -212,12 +125,15 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
       onDeleteFeature={handleDeleteFeature}
       selectedIds={editor.selectedIds}
       onToggleSelect={editor.toggleSelectId}
+      onSelectIds={(ids) => editor.setSelectedIds(new Set(ids))}
       guides={editor.guides}
       onClearGuides={() => editor.setGuides([])}
       showGuides={state.showGuides}
       onToggleGuidesVisibility={state.setShowGuides}
       onDeleteGuide={(id: string) =>
-        editor.setGuides((prev: { id: string; type: "h" | "v"; value: number }[]) => prev.filter((g) => g.id !== id))
+        editor.setGuides((prev: { id: string; type: "h" | "v"; value: number }[]) =>
+          prev.filter((g) => g.id !== id)
+        )
       }
     />
   );
@@ -250,9 +166,9 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
         }))
       }
       tabs={tabs}
-      onTabDrop={(tabId) => handleMoveTab(tabId, panelId)}
+      onTabDrop={(tabId) => state.handleMoveTab(tabId, panelId)}
       placement={config.placement}
-      onChangePlacement={(placement) => handleChangePanelPlacement(panelId, placement)}
+      onChangePlacement={(placement) => state.handleChangePanelPlacement(panelId, placement)}
       isWorldMode={isWorldMode}
       activeTabOverride={effectiveActiveTab}
       onTabChange={(tab) => {
@@ -262,10 +178,16 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
           setPanelBActiveTab(tab);
         }
       }}
-      linkagesContent={effectiveActiveTab === "linkages" ? <LinkageValidationPanel {...state} /> : undefined}
-      sovereigntyContent={effectiveActiveTab === "sovereignty" ? <SovereigntyPanel {...state} /> : undefined}
+      linkagesContent={
+        effectiveActiveTab === "linkages" ? <LinkageValidationPanel {...state} /> : undefined
+      }
+      sovereigntyContent={
+        effectiveActiveTab === "sovereignty" ? <SovereigntyPanel {...state} /> : undefined
+      }
       historyContent={effectiveActiveTab === "history" ? renderHistoryElement() : undefined}
-      queueContent={effectiveActiveTab === "queue" && isWorldMode && isAdmin ? <EditQueuePanel /> : undefined}
+      queueContent={
+        effectiveActiveTab === "queue" && isWorldMode && isAdmin ? <EditQueuePanel /> : undefined
+      }
       featureCount={editor.allFeatures.length}
       featuresLoading={editor.featuresLoading}
       featureListContent={
@@ -277,14 +199,43 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
             onSelectFeature={handleSelectFeature}
             onEditFeature={handleEditFeature}
             onDeleteFeature={handleDeleteFeature}
-            isLoading={editor.featuresLoading}
             selectedIds={editor.selectedIds}
             onToggleSelect={editor.toggleSelectId}
           />
         ) : undefined
       }
       layersContent={effectiveActiveTab === "layers" ? renderLayersElement() : undefined}
-      propertiesContent={effectiveActiveTab === "properties" ? renderRightPanelContent() : undefined}
+      worldContent={
+        effectiveActiveTab === "world" && worldTabAvailable(worldTab) ? (
+          <WorldPanel map={worldMap} />
+        ) : undefined
+      }
+      wikiContent={
+        effectiveActiveTab === "wiki" ? (
+          <WikiScannerPanel
+            scanner={state.wikiScanner}
+            onFocusFeature={(id) => {
+              const feat = editor.allFeatures.find((f) => f.id === id);
+              if (feat) state.handleSelectFeature?.(feat);
+            }}
+          />
+        ) : undefined
+      }
+      storiesContent={
+        effectiveActiveTab === "stories" && state.activeCountryId ? (
+          <StorylinesPanel
+            countryId={state.activeCountryId}
+            features={editor.allFeatures}
+            onFocusFeature={(id) => {
+              const feat = editor.allFeatures.find((f) => f.id === id);
+              if (feat) state.handleSelectFeature?.(feat);
+            }}
+          />
+        ) : undefined
+      }
+      propertiesContent={
+        effectiveActiveTab === "properties" ? renderRightPanelContent() : undefined
+      }
       isStacked={isStacked}
       panelsLocked={panelsLocked}
     />

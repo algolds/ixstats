@@ -1,45 +1,69 @@
 ---
 title: Lore Cards
-description: Wiki-generated cards with article content, forum links, and holographic effects.
-badge: IxVault & Cards
+description: Cards made from wiki articles, how they're made, their categories, and how to suggest a card or a category.
+badge: Vault, Cards & Rewards
+prevHref: /help/vault/crafting
+prevLabel: Dust, fusion and crafting
+nextHref: /help/vault/ns-import
+nextLabel: Importing NationStates Cards
 ---
 
-## What Are Lore Cards?
+## What lore cards are
 
-Lore Cards are a unique card type generated from IxWiki and IIWiki articles. Each card features an excerpt from a wiki article, a link to the source material, and visual effects based on the article's importance and content quality.
+A lore card is a card made from a wiki article (from the wiki, IIWiki or the AltHistory Wiki): a historical event, a person, an organisation, a place and so on. It shows an excerpt of the article, links to it in WikiOS (IIWiki and AltHistory Wiki articles open there too, read-only), and has a category, often with a subcategory: for example History · Event, or Geography · City or settlement. The categories are Military, Diplomacy, Geography, Religion, Culture, Government, People, Economy, Science, History, Nation and Special; a country's article is a Nation card. A card whose category isn't settled yet reads **Uncategorised** until staff choose one. A few lore cards are made from Wikimedia Commons files instead, and link to the file's page there.
 
-Unlike nation cards which represent countries, lore cards capture the world-building content of the IxWiki — historical events, cultural phenomena, notable figures, organizations, and more.
+Browse every lore card in [Cards → Explore](/vault/cards/explore), realm by realm, each with its art. Until you collect a card, its art is muted and the card shows its number; once you hold a copy, it shows in full colour.
 
-## Finding Articles
+## How lore cards are made
 
-Use the article search to find wiki articles worth turning into cards. Search by title, category, or keyword, and it'll pull matching articles from across IxWiki.
+- **Imports**: admins import articles from the wiki, IIWiki and the AltHistory Wiki, and files from Wikimedia Commons, and a daily import adds a few more from each wiki that has it switched on.
+- **Suggestions** from players (below).
 
-## Generation Process
+Each card's category is worked out from its article: its infobox, the wiki categories it is in, and its title and opening text. When the guess isn't clear enough, staff check it. An article its wiki tags as Abandoned Lore isn't made into a card, and a card made from one before is retired.
 
-> **How Lore Cards Are Created**
->
-> 1. Search for a wiki article on the [Lore Card Generator](/vault/lore-generator) page
-> 2. Submit a request — it costs 50 IxCredits (or a Lore Request Token)
-> 3. An admin reviews the request; if it's rejected, your IxCredits are refunded
-> 4. Once approved, the generator extracts key information from the article and composes the card, with rarity assigned based on article quality and content
-> 5. The new card joins the card pool, where it can turn up in packs and trades
+Every imported card waits for an admin's review before it can drop from packs. A card's rarity comes from the article itself (its length, its references, how many pages link to it, whether it is featured, whether it has an infobox and how many categories it's in), scored against a table set for each wiki; admins can change it. An article whose lead image is licensed for non-commercial use only, or with no changes allowed, is not imported.
 
-## Card Display
+## Suggesting a lore card
 
-- **Wiki Excerpt:** A formatted excerpt from the source article displayed on the card face
-- **Forum Section:** Links to related forum discussions about the article topic
-- **Holographic Effects:** Higher-rarity lore cards feature holographic cover animations with light refraction effects
-- **Source Link:** Direct link back to the original IxWiki article
+1. Open [Cards → Explore](/vault/cards/explore) and choose **Suggest a card**.
+2. Choose the wiki, then search for an article that has no card yet and select it. An article whose card an admin reviewed and turned down can't be suggested again.
+3. Send the suggestion. It's free, and you can send three a day.
+4. An admin reviews it. If it's accepted, the card is made and joins the card pool. If it's declined, your list of suggestions in the same window shows why.
 
-## Collecting Lore Cards
+Paid requests and lore tokens have ended. Requests you had already paid for wait as free suggestions, and everyone with unused lore tokens they bought gets back what they paid, shown as a refund in your Vault's transaction history.
 
-Lore cards can be obtained in three ways:
+## Suggesting a category
 
-- **Card Packs:** Random lore cards may appear in pack openings
-- **Trading:** Trade with other players on the marketplace
-- **Requests:** Ask for a favorite wiki article to become a lore card
+If a lore card's category looks wrong, or it reads Uncategorised, you can suggest a better one.
 
-> **Related Articles**
->
-> - [Vault Overview](/help/vault/overview) - Vault system overview
-> - [Card Packs & Opening](/help/vault/card-packs) - Pack opening and card acquisition
+1. Sign in and open the card. Its category shows in its **About** section.
+2. Choose **Suggest a category**, beside the category.
+3. Pick a category and, if one fits, a subcategory. Add a note if you like, for example why you think it fits.
+4. Choose **Send suggestion**. Staff review it before the card changes.
+
+You can have one suggestion waiting for each card, and send ten a day. If you've already suggested a category for a card and staff haven't answered yet, you're told so.
+
+In [Cards → Explore](/vault/cards/explore) and [Mine](/vault/cards/mine), the type and category filters list only the types and categories that have cards. **Uncategorised** shows lore cards that don't have a category yet.
+
+## Getting lore cards
+
+- From [packs](/help/vault/card-packs) (the Lore Master Elite pack draws only lore cards).
+- From the [daily reward](/help/vault/ixcredits#the-daily-reward) card option.
+- By [auction or trade](/help/vault/trading).
+
+Your passport's **Focus** stat counts how many lore categories your collection covers.
+
+## Takedowns
+
+To ask for a card to be taken down, for example because it uses your work or your nation without your agreement:
+
+- **A NationStates card:** open the card, choose the **(i)** (About NationStates data) at the end of its **About** section, then **Verify & request takedown**. You prove you own the nation the same way as when [importing a deck](/help/vault/ns-import), and the card's art is hidden at once.
+- **Any other card:** sign in, open the card and choose **Request a takedown** in its **About** section. Say why it should come down and, if you like, how staff can reach you. You can also email the staff at [admin@ixwiki.com](mailto:admin@ixwiki.com) with the card's title (or its link: open the card and choose the link button, **Copy link**, at its top) and why it should come down.
+
+Requests for any other card are answered within 14 days, and only staff see who sent one. A card has one request at a time, so if someone has already asked for it you're told so. You can have up to five requests waiting.
+
+A card that's taken down stays in your collection, without its art and with no value.
+
+## Credits
+
+The category marks on card backs are from [game-icons.net](https://game-icons.net), by Lorc, Delapouite and contributors, under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).

@@ -1,11 +1,11 @@
 "use client";
 
+import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useState, useEffect } from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
 import ShieldRenderer from "../renderer/ShieldRenderer";
 import { api } from "~/trpc/react";
-
-import { FacetMaterial } from "~/components/ui/facet";
+import { Card } from "~/components/ui/card";
 
 function ChargeSvgLoader({
   chargeId,
@@ -46,27 +46,26 @@ export default function PreviewPanel() {
   );
 
   return (
-    <FacetMaterial
-      material="satin"
-      className="h-[450px] overflow-hidden rounded-xl border border-white/10"
-    >
+    <Card className="h-[450px] overflow-hidden">
       <div className="flex h-full flex-col p-4">
-        <h2 className="mb-4 border-b border-white/5 pb-2 text-xs font-bold tracking-widest text-zinc-400 uppercase">
-          Live Render
+        <h2 className="border-separator text-label text-headline mb-4 border-b pb-2">
+          Live render
         </h2>
 
-        {/* Render custom loaders */}
         {customChargeIds.map((id) => (
           <ChargeSvgLoader key={id} chargeId={id} onLoaded={handleChargeSvgLoaded} />
         ))}
 
-        {/* Canvas */}
-        <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-lg border border-white/5 bg-zinc-950/40 p-6">
+        <Card
+          variant="well"
+          padding="none"
+          className="relative flex flex-1 items-center justify-center overflow-hidden p-6"
+        >
           <div className="relative flex aspect-square max-h-full max-w-full items-center justify-center">
             {/* External Ornaments placeholders (e.g. Helm) */}
             {composition.externals?.helm && (
               <div className="absolute -top-12 z-20 flex flex-col items-center">
-                <span className="animate-bounce text-3xl duration-1000">🪖</span>
+                <Eyebrow>Helm</Eyebrow>
               </div>
             )}
 
@@ -78,21 +77,20 @@ export default function PreviewPanel() {
               customChargeSvgs={customChargeSvgs}
             />
 
-            {/* Motto scroll placeholder */}
             {composition.externals?.motto && (
               <div
                 className={`pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 ${
                   composition.externals.motto.position === "above" ? "-top-10" : "-bottom-4"
                 }`}
               >
-                <div className="animate-in fade-in zoom-in-95 rounded-md border border-amber-600/30 bg-amber-500/90 px-4 py-1.5 font-serif text-xs font-bold tracking-wider whitespace-nowrap text-zinc-950 uppercase shadow-md duration-200">
-                  📜 {composition.externals.motto.text}
-                </div>
+                <Eyebrow className="animate-in fade-in zoom-in-95 rounded-control-sm bg-surface-elevated text-label shadow-floating block px-4 py-2 whitespace-nowrap duration-200">
+                  {composition.externals.motto.text}
+                </Eyebrow>
               </div>
             )}
           </div>
-        </div>
+        </Card>
       </div>
-    </FacetMaterial>
+    </Card>
   );
 }

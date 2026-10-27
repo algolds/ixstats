@@ -1,0 +1,111 @@
+/* ==========================================================================
+   NAVIGATION SHELL
+
+   The AppSidebar (≥1024px) and TabBar (<1024px) are the only navigation. The
+   sidebar's collapsed state lives on <html> as `data-sidebar="collapsed"`,
+   written before first paint by the inline script in src/app/layout.tsx
+   (src/lib/design/appearance.ts), so the server HTML and the first paint
+   agree and nothing flashes.
+
+   Shell variables (read them; don't redefine them in feature code):
+   --shell-sidebar-width   Width the AppSidebar takes at ≥1024px (16rem / 4rem collapsed; 0 below).
+                           From 1280px it is proportional: 1 unit, clamped to 14rem..18rem.
+   --shell-inspector-width The right-hand column a page with an Inspector reserves from 1280px
+                           (1.25 units, clamped to 18rem..22rem; 0 below, where the Inspector is a
+                           sheet, and 0 on pages without one, which run the full width). The
+                           Inspector pins into it; <main> pads for it (sidebar : content :
+                           inspector = 1 : 4 : 1.25).
+   --shell-unit            100vw / 6.25, the 1 of that ratio. Read-only helper for the two above.
+   --shell-tabbar-height   Space the TabBar takes at the bottom below 1024px (0 at ≥1024px).
+   --shell-top-offset      `top` for sticky rails so they clear the Halo band.
+   --shell-header-top      `top` for a sticky page toolbar (PageHeader).
+   --shell-halo-reserve    Width kept clear in the middle of a page toolbar for Halo.
+
+   Hooks for feature code:
+   [data-shell-page-title] A page's own title (`shellPageTitleProps`). Hidden wherever that
+                           page's <ShellPageHeader> shows (phones, or every width with
+                           phoneOnly={false}), so the title is never shown twice.
+   ========================================================================== */
+
+/* AppSidebar collapsed to icons. */
+@custom-variant sidebar-collapsed (&:where([data-sidebar="collapsed"] *));
+
+@layer base {
+  :root {
+    --shell-sidebar-width: 0px;
+    /* 3.5rem bar + 0.5rem float gap + the home indicator. */
+    --shell-tabbar-height: calc(4rem + env(safe-area-inset-bottom));
+    /* Halo floats in a 3.5rem band at the top; rails start 1rem below it. */
+    --shell-top-offset: calc(4.5rem + env(safe-area-inset-top));
+    --shell-header-top: 0px;
+    --shell-halo-reserve: 11rem;
+    --shell-inspector-width: 0px;
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --shell-sidebar-width: 16rem;
+      --shell-tabbar-height: 0px;
+      --shell-halo-reserve: 25rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    :root {
+      --shell-unit: calc(100vw / 6.25);
+      --shell-sidebar-width: clamp(14rem, var(--shell-unit), 18rem);
+      --shell-inspector-width: clamp(18rem, calc(var(--shell-unit) * 1.25), 22rem);
+    }
+  }
+
+  /* After both width rules so the collapsed rail stays 4rem at every width. */
+  @media (min-width: 1024px) {
+    :root[data-sidebar="collapsed"] {
+      --shell-sidebar-width: 4rem;
+    }
+  }
+
+  /* Chromeless routes (Maps, the full-screen map editors): no sidebar, tab bar or Inspector gutter. */
+  [data-app-shell][data-chromeless] {
+    --shell-sidebar-width: 0px;
+    --shell-tabbar-height: 0px;
+    --shell-inspector-width: 0px;
+  }
+
+  /* Only a page with an Inspector keeps the gutter; every other page runs the full content width.
+     The Inspector's aside is plain server markup, so :has() reads it on first paint (no layout
+     shift), and <main>, Halo and the fixed bars all follow because they read this variable. */
+  [data-app-shell]:not(:has([data-slot="inspector"])) {
+    --shell-inspector-width: 0px;
+  }
+}
+
+@layer components {
+  /* The sidebar pushes content, a page with an Inspector reserves its gutter on the right, and the
+     tab bar reserves the bottom. */
+  [data-shell-main] {
+    padding-left: var(--shell-sidebar-width);
+    padding-right: var(--shell-inspector-width);
+    padding-bottom: var(--shell-tabbar-height);
+  }
+}
+
+@layer utilities {
+  /* A page's own title next to its ShellPageHeader: only one of them shows. */
+  :root:has([data-shell-page-header="all"]) [data-shell-page-title] {
+    display: none;
+  }
+
+  @media (max-width: 1023.98px) {
+    :root:has([data-shell-page-header="phone"]) [data-shell-page-title] {
+      display: none;
+    }
+  }
+
+  /* Halo centres on what the page shows. A page with an Inspector fills the gutter too (the
+     dashboard's trending panel), so Halo centres from the sidebar to the window edge; otherwise the
+     gutter is empty and Halo stays over the content column. */
+  [data-app-shell]:has([data-slot="inspector"]) [data-slot="shell-halo"] {
+    right: 0;
+  }
+}

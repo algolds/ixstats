@@ -4,7 +4,7 @@ import { verifyToken } from "@clerk/backend";
 import type { Socket } from "socket.io";
 import { db } from "~/server/db";
 
-export interface SocketPrincipal {
+interface SocketPrincipal {
   clerkUserId: string;
 }
 
@@ -80,14 +80,24 @@ export async function verifySocketToken(
   }
 }
 
-/** Socket.IO middleware: io.use(createSocketAuthMiddleware()) */
+/**
+ * Socket.IO middleware: io.use(createSocketAuthMiddleware()). A handshake with a token must carry a valid one
+ * (fails closed). One with no token and `anonymous: true` is an anonymous reader: it has no principal, and the server
+ * lets it join public realm board rooms only and emit nothing (the origin policy still applies to it). No token
+ * without the flag is refused.
+ */
 export function createSocketAuthMiddleware(): (
   socket: Socket,
   next: (err?: Error) => void
 ) => void {
   return (socket, next) => {
     const rawToken: string | undefined = socket.handshake.auth?.token;
-    const token = typeof rawToken === "string" ? rawToken : undefined;
+    const token = typeof rawToken === "string" && rawToken !== "" ? rawToken : undefined;
+    // Anonymous only when the client says it is signed out: a signed-in client whose token failed is refused.
+    if (!token && socket.handshake.auth?.anonymous === true) {
+      next();
+      return;
+    }
     void verifySocketToken(token).then((principal) => {
       if (!principal) {
         next(new Error("unauthorized"));
@@ -99,6 +109,7 @@ export function createSocketAuthMiddleware(): (
   };
 }
 
+/** The verified principal, or null for an anonymous reader. */
 export function getPrincipal(socket: Socket): SocketPrincipal | null {
   return principals.get(socket) ?? null;
 }
@@ -112,6 +123,30 @@ export async function canJoinConversation(
     select: { id: true },
   });
   return participant !== null;
+}
+
+/**
+ * Which of `clerkUserIds` are still active members of a conversation or ThinkTank group, in one
+ * query: a room's sockets are re-checked with it before a message is delivered.
+ */
+export async function activeRoomMembers(
+  kind: "conversation" | "group",
+  id: string,
+  clerkUserIds: string[]
+): Promise<Set<string>> {
+  if (clerkUserIds.length === 0) return new Set();
+  const where = { userId: { in: clerkUserIds }, isActive: true };
+  const rows =
+    kind === "conversation"
+      ? await db.conversationParticipant.findMany({
+          where: { ...where, conversationId: id },
+          select: { userId: true },
+        })
+      : await db.thinktankMember.findMany({
+          where: { ...where, groupId: id },
+          select: { userId: true },
+        });
+  return new Set(rows.map((row) => row.userId));
 }
 
 export async function canJoinThinktankGroup(

@@ -3,16 +3,11 @@
  */
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 export const leaguesAdminRouter = createTRPCRouter({
-  getAdminGlobalStats: protectedProcedure.query(async ({ ctx }) => {
+  getAdminGlobalStats: adminProcedure.query(async ({ ctx }) => {
     try {
       const [totalMatches, totalPlayers, totalLeagues, llmPosts] = await Promise.all([
         ctx.db.sportMatch.count(),
@@ -104,7 +99,7 @@ export const leaguesAdminRouter = createTRPCRouter({
       }
     }),
 
-  testLLMNarrator: protectedProcedure
+  testLLMNarrator: adminProcedure
     .input(
       z.object({
         sport: z.string(),

@@ -1,5 +1,7 @@
 # Testing & Type Safety Practices
 
+**Last updated:** 2026-10-21
+
 **Test Runner**: Jest 30.4.2 (@swc/jest, jsdom) · TypeScript 7.0.2 · Bun 1.4 Runtime  
 **Coverage**: Unit Tests, Integration Tests, Wire Audits, Type Partition Gates, Architecture Guards
 
@@ -10,9 +12,6 @@
 ```bash
 # Run all Jest unit and integration tests
 bun run test
-
-# Run src/tests/lib in parallel using Bun's native runner
-bun run test:unit
 
 # CI entrypoint: Jest with the flaky-test quarantine list
 bun run test:ci
@@ -57,19 +56,13 @@ bun run audit:arch
 
 # Cross-reference Prisma models against tRPC router endpoints (coverage gaps, unused models)
 bun run audit:wiring
-
-# Verify CRUD endpoint health
-bun run test:crud
-
-# Verify economic formula correctness and balance limits
-bun run test:economics
 ```
 
 ---
 
 ## 4. Centralized Test Suite Layout (`src/tests/`)
 
-Jest unit and integration test files are centralized in `src/tests/` (320+ files) organized by domain; a few legacy tests remain co-located (`src/app/builder/__tests__/`, `src/lib/sports/analysis.test.ts`):
+Jest unit and integration test files are centralized in `src/tests/` (about 550 test files, 2026-10-05) organized by domain; a few legacy tests remain co-located (`src/app/builder/__tests__/`, `src/lib/sports/analysis.test.ts`):
 
 ```
 src/tests/
@@ -108,6 +101,6 @@ describe("MarkovChain", () => {
 ## 5. Test Suite Invariants & Audit
 
 For the August 2026 audit of the test suite (122 files at the time), value stack rankings (Tiers 0–4), test runner environment notes, and candidates for pruning, see:
-- [**Test Suite Audit & Justification (August 2026)**](../audits/test-suite-audit-and-justification.md)
+- [**Test Suite Audit & Justification (August 2026)**](../history/audits/test-suite-audit-and-justification.md)
 
 

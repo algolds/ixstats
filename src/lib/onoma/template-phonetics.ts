@@ -4,9 +4,7 @@
 import type { LinguisticProfile } from "./types";
 
 export const TEMPLATE_PHONETIC_PROFILES: Record<string, LinguisticProfile> = {
-  // --------------------------------------------------------------------------
   // Fantasy Species
-  // --------------------------------------------------------------------------
   "species:elf": {
     id: "species:elf",
     name: "Elven (Sindarin / Eldarin)",
@@ -176,9 +174,7 @@ export const TEMPLATE_PHONETIC_PROFILES: Record<string, LinguisticProfile> = {
     kokoroVoicePersona: "af_nicole",
   },
 
-  // --------------------------------------------------------------------------
   // Organizations, Taverns & Civic Templates
-  // --------------------------------------------------------------------------
   "organization:tavern": {
     id: "organization:tavern",
     name: "Tavern & Inn Phrasing",
@@ -237,9 +233,7 @@ export const TEMPLATE_PHONETIC_PROFILES: Record<string, LinguisticProfile> = {
     kokoroVoicePersona: "am_adam",
   },
 
-  // --------------------------------------------------------------------------
   // Noble Dynastic & Lineage Conventions
-  // --------------------------------------------------------------------------
   "noble:norman": {
     id: "noble:norman",
     name: "Noble Norman / Anglo-French",

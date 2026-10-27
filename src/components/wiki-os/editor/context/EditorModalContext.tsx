@@ -8,8 +8,6 @@
 import React, { createContext, useContext } from "react";
 import type { StashEntity, StashItemEntity, WikimediaImageMeta, SaveActionType } from "../types";
 
-// ─── Modal & Panel State ────────────────────────────────────────────────────
-
 export interface EditorModalState {
   // Modal visibility
   showImageSearch: boolean;

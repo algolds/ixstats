@@ -7,12 +7,12 @@
 import React from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { GLYPH_CATALOG, type OnomaGlyphName } from "./onoma-glyphs-catalog";
+import { GlyphSvg, type OnomaGlyphName } from "./onoma-glyphs-catalog";
 
 export type OnomaGlyphSize = "xs" | "sm" | "md" | "lg" | "xl" | "display";
 export type OnomaGlyphState = "idle" | "active" | "generating" | "disabled";
 
-export interface OnomaGlyphProps extends React.HTMLAttributes<HTMLDivElement> {
+interface OnomaGlyphProps extends React.HTMLAttributes<HTMLDivElement> {
   name?: OnomaGlyphName;
   variant?: "canonical" | "composed" | "framed";
   size?: OnomaGlyphSize;
@@ -35,6 +35,24 @@ const SIZE_MAP: Record<OnomaGlyphSize, { className: string; defaultStroke: numbe
   display: { className: "w-12 h-12", defaultStroke: 2.0 },
 };
 
+const FRAMED_SIZE_CLASS: Record<OnomaGlyphSize, string> = {
+  xs: "text-caption gap-0.5",
+  sm: "text-caption gap-0.5",
+  md: "text-footnote gap-1",
+  lg: "text-body gap-1",
+  xl: "text-body gap-2",
+  display: "text-title-2 gap-2",
+};
+
+const COMPOSED_SIZE_CLASS: Record<OnomaGlyphSize, string> = {
+  xs: "text-caption gap-1",
+  sm: "text-caption gap-1",
+  md: "text-footnote gap-2",
+  lg: "text-body gap-2",
+  xl: "text-body gap-2",
+  display: "text-title-3 gap-3",
+};
+
 export function OnomaGlyph({
   name = "emerge-engine",
   variant = "canonical",
@@ -50,25 +68,22 @@ export function OnomaGlyph({
   ...rest
 }: OnomaGlyphProps) {
   const shouldReduceMotion = useReducedMotion();
-  const sizeConfig = SIZE_MAP[size] || SIZE_MAP.md;
+  const sizeConfig = SIZE_MAP[size];
   const stroke = strokeWidth || sizeConfig.defaultStroke;
+  const isActive = state === "active";
+  const accentStyle = isActive && accentColor ? { color: accentColor } : undefined;
+  const textTone = isActive ? "text-label font-semibold" : "text-label-secondary";
 
-  // 1. Framed Linguistic Object: ⟨LABEL⟩
   if (variant === "framed" && label) {
     return (
       <span
         className={cn(
-          "inline-flex items-center font-mono font-semibold tracking-tight transition-colors select-none",
-          size === "xs" && "gap-0.5 text-[10px]",
-          size === "sm" && "gap-0.5 text-[11px]",
-          size === "md" && "gap-1 text-xs",
-          size === "lg" && "gap-1 text-sm",
-          size === "xl" && "gap-1.5 text-base",
-          size === "display" && "gap-2 text-xl",
-          state === "active" ? "text-foreground font-bold" : "text-muted-foreground",
+          "inline-flex items-center font-mono font-semibold transition-colors select-none",
+          FRAMED_SIZE_CLASS[size],
+          textTone,
           className
         )}
-        style={state === "active" && accentColor ? { color: accentColor } : undefined}
+        style={accentStyle}
         title={title || `⟨${label}⟩`}
       >
         <span className="opacity-40">⟨</span>
@@ -78,25 +93,19 @@ export function OnomaGlyph({
     );
   }
 
-  // 2. Composed Transformation Expression: from → to
   if (variant === "composed" && from && to) {
     return (
       <span
         className={cn(
-          "inline-flex items-center font-mono transition-all select-none",
-          size === "xs" && "gap-1 text-[10px]",
-          size === "sm" && "gap-1 text-[11px]",
-          size === "md" && "gap-1.5 text-xs",
-          size === "lg" && "gap-2 text-sm",
-          size === "xl" && "gap-2.5 text-base",
-          size === "display" && "gap-3 text-lg",
-          state === "active" ? "text-foreground font-semibold" : "text-muted-foreground",
+          "inline-flex items-center font-mono transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
+          COMPOSED_SIZE_CLASS[size],
+          textTone,
           className
         )}
-        style={state === "active" && accentColor ? { color: accentColor } : undefined}
+        style={accentStyle}
         title={title || `${from} → ${to}`}
       >
-        <span className="text-foreground font-semibold">{from}</span>
+        <span className="text-label font-semibold">{from}</span>
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -108,46 +117,39 @@ export function OnomaGlyph({
         >
           <path d="M4 12h14m-5-5l5 5-5 5" />
         </svg>
-        <span className="text-foreground font-semibold">{to}</span>
+        <span className="text-label font-semibold">{to}</span>
       </span>
     );
   }
-
-  // 3. Canonical Glyph Vector Icon
-  const GlyphRenderer = GLYPH_CATALOG[name] || GLYPH_CATALOG["emerge-engine"];
 
   const content = (
     <div
       className={cn(
         "inline-flex shrink-0 items-center justify-center transition-transform duration-150 select-none",
         sizeConfig.className,
-        state === "idle" && "text-foreground/75 hover:text-foreground",
-        state === "active" && "text-foreground font-bold drop-shadow-xs",
-        state === "disabled" && "text-muted-foreground/30 pointer-events-none",
+        state === "idle" && "text-label-secondary hover:text-label",
+        isActive && "text-label font-semibold drop-shadow-xs",
+        state === "disabled" && "text-label-tertiary pointer-events-none",
         className
       )}
-      style={state === "active" && accentColor ? { color: accentColor } : undefined}
+      style={accentStyle}
       title={title || name}
       {...rest}
     >
-      {GlyphRenderer({ strokeWidth: stroke })}
+      <GlyphSvg name={name} strokeWidth={stroke} />
     </div>
   );
 
-  // Animated generating state
-  if (state === "generating") {
-    return (
-      <motion.div
-        animate={
-          shouldReduceMotion ? { opacity: [0.6, 1, 0.6] } : { rotate: 360, scale: [1, 1.08, 1] }
-        }
-        transition={{ duration: 1.6, repeat: Infinity, ease: "linear" }}
-        className="inline-flex items-center justify-center"
-      >
-        {content}
-      </motion.div>
-    );
-  }
-
-  return content;
+  if (state !== "generating") return content;
+  return (
+    <motion.div
+      animate={
+        shouldReduceMotion ? { opacity: [0.6, 1, 0.6] } : { rotate: 360, scale: [1, 1.08, 1] }
+      }
+      transition={{ duration: 1.6, repeat: Infinity, ease: "linear" }}
+      className="inline-flex items-center justify-center"
+    >
+      {content}
+    </motion.div>
+  );
 }

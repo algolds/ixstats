@@ -11,6 +11,8 @@ import {
   Globe,
   Group as Users,
   City as Building2,
+  MultiplePages,
+  Package,
 } from "iconoir-react";
 
 export type NotificationTab = "alerts" | "messages";
@@ -36,7 +38,7 @@ export interface NotificationItem {
   deliveryMethod?: string | null;
 }
 
-export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   economic: TrendingUp,
   diplomatic: Globe,
   social: Users,
@@ -47,6 +49,9 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
   opportunity: TrendingUp,
   military: AlertTriangle,
   wiki: BookOpen,
+  // Card and pack notices (`CardNoticeCategory`), with the icons the Vault shows for cards and packs.
+  cards: MultiplePages,
+  packs: Package,
   info: Info,
   warning: AlertTriangle,
   success: CheckCircle,
@@ -61,14 +66,14 @@ export function getIcon(n: NotificationItem) {
   );
 }
 
-export const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
-  critical: { bg: "bg-red-500/15", text: "text-red-400" },
-  high: { bg: "bg-rose-500/15", text: "text-rose-400" },
-  medium: { bg: "bg-amber-500/15", text: "text-amber-400" },
-  warning: { bg: "bg-amber-500/15", text: "text-amber-400" },
-  success: { bg: "bg-emerald-500/15", text: "text-emerald-400" },
-  error: { bg: "bg-red-500/15", text: "text-red-400" },
-  info: { bg: "bg-amber-500/15", text: "text-amber-400" },
+const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
+  critical: { bg: "bg-destructive/15", text: "text-destructive" },
+  high: { bg: "bg-warning/15", text: "text-warning" },
+  medium: { bg: "bg-caution/15", text: "text-caution" },
+  warning: { bg: "bg-caution/15", text: "text-caution" },
+  success: { bg: "bg-success/15", text: "text-success" },
+  error: { bg: "bg-destructive/15", text: "text-destructive" },
+  info: { bg: "bg-caution/15", text: "text-caution" },
 };
 
 export function getColors(n: NotificationItem) {

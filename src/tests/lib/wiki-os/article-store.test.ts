@@ -1,15 +1,17 @@
 import { db } from "~/server/db";
+import { installFetchGuard, type FetchGuard } from "~/tests/helpers/fetch-guard";
 import {
   getArticleWikitextShadow,
   getArticleHistoryShadow,
+  getArticleAuthors,
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 
 const mockGetArticleWikitext = jest.fn();
 const mockGetCurrentRevMeta = jest.fn();
-const mockGetPageHistory = jest.fn();
 const mockGetRevisionWikitext = jest.fn();
 
 const mockWikiArticleFindFirst = jest.fn();
+const mockWikiArticleFindMany = jest.fn();
 const mockWikiArticleUpsert = jest.fn();
 const mockWikiArticleDelete = jest.fn();
 const mockWikiArticleDeleteMany = jest.fn();
@@ -17,6 +19,7 @@ const mockWikiRevisionCreate = jest.fn();
 const mockWikiRevisionFindFirst = jest.fn();
 const mockWikiRevisionFindMany = jest.fn();
 const mockTransaction = jest.fn();
+const mockFetchAuthors = jest.fn();
 
 jest.mock("~/server/db", () => ({
   db: {
@@ -24,6 +27,7 @@ jest.mock("~/server/db", () => ({
     wikiArticle: {
       findFirst: (...args: any[]) => mockWikiArticleFindFirst(...args),
       findUnique: (...args: any[]) => mockWikiArticleFindFirst(...args),
+      findMany: (...args: any[]) => mockWikiArticleFindMany(...args),
       upsert: (...args: any[]) => mockWikiArticleUpsert(...args),
       delete: (...args: any[]) => mockWikiArticleDelete(...args),
       deleteMany: (...args: any[]) => mockWikiArticleDeleteMany(...args),
@@ -39,8 +43,11 @@ jest.mock("~/server/db", () => ({
 jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   getArticleWikitext: (...a: unknown[]) => mockGetArticleWikitext(...a),
   getCurrentRevMeta: (...a: unknown[]) => mockGetCurrentRevMeta(...a),
-  getPageHistory: (...a: unknown[]) => mockGetPageHistory(...a),
   getRevisionWikitext: (...a: unknown[]) => mockGetRevisionWikitext(...a),
+}));
+
+jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge/http-reader", () => ({
+  fetchMediaWikiPageAuthorsAndRevisions: (...a: unknown[]) => mockFetchAuthors(...a),
 }));
 
 const row = (overrides: Record<string, unknown> = {}) => ({
@@ -56,7 +63,11 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+/** A request to IxWiki's MediaWiki is recorded (and rejected) even where the code under test would swallow it. */
+let guard: FetchGuard;
+
 beforeEach(() => {
+  guard = installFetchGuard();
   jest.clearAllMocks();
   mockTransaction.mockImplementation(async (cb: (tx: any) => any) => {
     if (typeof cb === "function") {
@@ -65,6 +76,7 @@ beforeEach(() => {
     return Promise.all(cb);
   });
   mockWikiArticleFindFirst.mockResolvedValue(null);
+  mockWikiArticleFindMany.mockResolvedValue([]);
   mockWikiArticleUpsert.mockResolvedValue(row());
   mockWikiArticleDelete.mockResolvedValue(undefined);
   mockWikiArticleDeleteMany.mockResolvedValue(undefined);
@@ -73,99 +85,123 @@ beforeEach(() => {
   mockWikiRevisionFindMany.mockResolvedValue([]);
 });
 
-test("fresh shadow row is served without touching MediaWiki", async () => {
-  mockWikiArticleFindFirst.mockResolvedValue(row({ updatedAt: new Date("2026-06-01T00:00:00Z") }));
-
-  const res = await getArticleWikitextShadow("Foo");
-
-  expect(res).toMatchObject({ wikitext: "shadow body", fromShadow: true, stale: false });
-  expect(mockGetArticleWikitext).not.toHaveBeenCalled();
-});
-
-test("stale/missing shadow refetches from MediaWiki and backfills", async () => {
+afterEach(() => guard.restore());
+test("an IxWiki page Postgres lacks is null: MediaWiki is not asked (plan 418)", async () => {
   mockWikiArticleFindFirst.mockResolvedValue(null);
   mockGetArticleWikitext.mockResolvedValue({ wikitext: "fresh body", pageId: 42, length: 10 });
-  mockGetCurrentRevMeta.mockResolvedValue({ revid: 42, timestamp: "2026-06-01T00:00:00Z" });
-
-  const res = await getArticleWikitextShadow("Foo");
-
-  expect(res).toMatchObject({ wikitext: "fresh body", revid: 42, fromShadow: false });
-});
-
-test("MediaWiki failure falls back to null when not found in DB", async () => {
-  mockWikiArticleFindFirst.mockResolvedValue(null);
-  mockGetArticleWikitext.mockRejectedValue(new Error("ECONNREFUSED"));
-
-  const res = await getArticleWikitextShadow("Foo").catch(() => null);
-
-  expect(res).toBeNull();
-});
-
-test("page deleted on MediaWiki returns null when not in DB", async () => {
-  mockWikiArticleFindFirst.mockResolvedValue(null);
-  mockGetArticleWikitext.mockResolvedValue(null);
 
   const res = await getArticleWikitextShadow("Foo");
 
   expect(res).toBeNull();
+  expect(mockGetArticleWikitext).not.toHaveBeenCalled();
 });
-
-test("history read-through serves local revisions when present", async () => {
+test("history lists ask for parked revisions and get them flagged; everything else never sees them", async () => {
+  mockWikiArticleFindFirst.mockResolvedValue({ id: "art1" });
   mockWikiRevisionFindMany.mockResolvedValue([
     {
-      id: "rev-1",
+      id: "rev-2",
+      mwRevId: 9002,
       articleId: "art1",
-      createdAt: new Date("2026-06-01T00:00:00Z"),
-      author: "bob",
-      summary: "edit",
-      wikitext: "body",
+      createdAt: new Date("2026-06-02T00:00:00Z"),
+      author: "carol",
+      summary: "conflicting edit",
+      wikitext: "other",
       minor: false,
-      byteSize: 4,
-      byteDelta: -2,
-    },
-    {
-      id: "rev-0",
-      mwRevId: 9001,
-      articleId: "art1",
-      createdAt: new Date("2026-05-01T00:00:00Z"),
-      author: "alice",
-      summary: "synced",
-      wikitext: "bodyxx",
-      minor: false,
-      byteSize: 6,
-      byteDelta: 6,
+      byteSize: 5,
+      byteDelta: 1,
+      parked: true,
     },
   ]);
 
-  const res = await getArticleHistoryShadow("Foo", 50);
-
-  // Native edits are referenced by row id, MediaWiki-synced ones by rev_id.
-  expect(res.revisions[0]).toMatchObject({
-    revid: "rev-1",
-    user: "bob",
-    comment: "edit",
-    byteDelta: -2,
+  const res = await getArticleHistoryShadow("Foo", 50, undefined, "ixwiki", {
+    includeParked: true,
   });
-  expect(res.revisions[1]).toMatchObject({ revid: "9001", byteDelta: 6 });
-  expect(mockGetPageHistory).not.toHaveBeenCalled();
+
+  expect(res.revisions[0]).toMatchObject({ revid: "9002", parked: true });
+  expect(guard.calls()).toEqual([]);
+  expect(mockWikiRevisionFindMany).toHaveBeenCalledWith(
+    expect.objectContaining({ where: { articleId: "art1" } })
+  );
 });
+describe("getArticleAuthors: a sister wiki's lookup is cached, single-flight and limited (NEW-5)", () => {
+  const mwData = (title: string) => ({
+    creator: { username: `creator-of-${title}`, timestamp: "2026-01-01T00:00:00Z" },
+    lastEditor: { username: "editor", timestamp: "2026-02-01T00:00:00Z" },
+    revisions: [],
+    contributors: [{ username: "editor", editCount: 1 }],
+    totalContributors: 1,
+  });
+  it("shares one in-flight request between concurrent views", async () => {
+    mockFetchAuthors.mockResolvedValue(mwData("ConcurrentPage"));
 
-test("history read-through falls back to MediaWiki bridge when no local revisions", async () => {
-  mockWikiRevisionFindMany.mockResolvedValue([]);
-  mockGetPageHistory.mockResolvedValue([
-    {
-      rev_id: 7,
-      rev_timestamp: "2026-06-01T00:00:00Z",
-      rev_user_text: "carol",
-      rev_comment: "",
-      rev_len: 10,
-      rev_minor_edit: 0,
-      diff: 3,
-    },
-  ]);
+    await Promise.all([
+      getArticleAuthors("ConcurrentPage", "iiwiki"),
+      getArticleAuthors("ConcurrentPage", "iiwiki"),
+    ]);
 
-  const res = await getArticleHistoryShadow("Foo", 50);
+    expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
+  });
 
-  expect(mockGetPageHistory).toHaveBeenCalled();
-  expect(res.revisions[0]).toMatchObject({ revid: "7", user: "carol", byteDelta: 3 });
+  it("remembers a failed lookup briefly instead of retrying every view", async () => {
+    mockFetchAuthors.mockRejectedValue(new Error("timeout"));
+
+    await getArticleAuthors("DownPage", "iiwiki");
+    await getArticleAuthors("DownPage", "iiwiki");
+
+    expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
+  });
+
+  it("takes the title as already decoded: a '%' in it neither throws nor is decoded again (plan 403)", async () => {
+    mockFetchAuthors.mockResolvedValue(mwData("100% Pure"));
+
+    await expect(getArticleAuthors("100% Pure", "iiwiki")).resolves.toMatchObject({
+      creator: { username: "creator-of-100% Pure" },
+    });
+    await getArticleAuthors("100%25 Pure", "iiwiki");
+
+    expect(mockFetchAuthors).toHaveBeenCalledWith("100% Pure", "iiwiki", 250, 2500);
+    expect(mockFetchAuthors).toHaveBeenCalledWith("100%25 Pure", "iiwiki", 250, 2500);
+  });
+  it("never has more than a few lookups in flight: a further title is answered from Postgres, without an error", async () => {
+    const releases: Array<() => void> = [];
+    mockFetchAuthors.mockImplementation(
+      (title: string) => new Promise((resolve) => releases.push(() => resolve(mwData(title))))
+    );
+    mockWikiArticleFindFirst.mockResolvedValue(null);
+
+    const lookups = Array.from({ length: 7 }, (_, n) =>
+      getArticleAuthors(`Fan out ${n}`, "iiwiki")
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mockFetchAuthors).toHaveBeenCalledTimes(6);
+    releases.forEach((release) => release());
+    const results = await Promise.all(lookups);
+    expect(
+      results
+        .slice(0, 6)
+        .every(
+          (r) =>
+            typeof r.creator === "object" &&
+            r.creator !== null &&
+            r.creator.username.startsWith("creator-of-")
+        )
+    ).toBe(true);
+    expect(results[6]).toMatchObject({ creator: null, totalContributors: 0 });
+  });
+
+  it("holds lookups to a steady rate per process", async () => {
+    mockFetchAuthors.mockImplementation(async (title: string) => mwData(title));
+    mockWikiArticleFindFirst.mockResolvedValue(null);
+    const realNow = Date.now.bind(Date);
+    const nowSpy = jest.spyOn(Date, "now").mockImplementation(() => realNow() + 10 * 60 * 1000);
+    mockFetchAuthors.mockClear();
+
+    const results = [];
+    for (let n = 0; n < 125; n++) results.push(await getArticleAuthors(`Steady ${n}`, "iiwiki"));
+
+    expect(mockFetchAuthors).toHaveBeenCalledTimes(120);
+    expect(results.filter((r) => r.creator === null)).toHaveLength(5);
+    nowSpy.mockRestore();
+  });
 });

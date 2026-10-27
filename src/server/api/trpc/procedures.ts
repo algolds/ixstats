@@ -8,44 +8,48 @@ import {
   timingMiddleware,
   authMiddleware,
   countryOwnerMiddleware,
+  mapFeatureOwnerMiddleware,
   premiumMiddleware,
   adminMiddleware,
   auditLogMiddleware,
+  playAsMoneyMiddleware,
   inputValidationMiddleware,
   rateLimitMiddleware,
   standardMutationRateLimit,
   lightMutationRateLimit,
-  readOnlyRateLimit,
+  perProcedureMutationRateLimit,
   publicRateLimit,
+  readOnlyRateLimit,
+  wikiReadRateLimit,
   standardCacheMiddleware,
-  userCacheMiddleware,
   staticCacheMiddleware,
 } from "./middleware";
 import { userLoggingMiddleware } from "~/lib/logging";
 
-// Base procedures
-export const publicProcedure = t.procedure
-  .use(timingMiddleware)
-  .use(userLoggingMiddleware.standard);
+// Every builder starts here, so a money mutation refuses in play-as whichever builder it is on.
+const procedure = t.procedure.use(playAsMoneyMiddleware);
 
-export const protectedProcedure = t.procedure
+// Base procedures
+export const publicProcedure = procedure.use(timingMiddleware).use(userLoggingMiddleware.standard);
+
+export const protectedProcedure = procedure
   .use(timingMiddleware)
   .use(authMiddleware)
   .use(userLoggingMiddleware.standard);
 
-export const premiumProcedure = t.procedure
+export const premiumProcedure = procedure
   .use(timingMiddleware)
   .use(authMiddleware)
   .use(premiumMiddleware)
   .use(userLoggingMiddleware.withPerformance);
 
-export const countryOwnerProcedure = t.procedure
+export const countryOwnerProcedure = procedure
   .use(timingMiddleware)
   .use(authMiddleware)
   .use(countryOwnerMiddleware)
   .use(userLoggingMiddleware.standard);
 
-export const adminProcedure = t.procedure
+export const adminProcedure = procedure
   .use(authMiddleware)
   .use(adminMiddleware)
   .use(inputValidationMiddleware)
@@ -57,15 +61,36 @@ export const standardMutationCountryOwnerProcedure = countryOwnerProcedure
   .use(standardMutationRateLimit)
   .use(inputValidationMiddleware);
 
+/** countryOwnerProcedure for a nation's map features: the realm's map editors also act for its unclaimed nations. */
+export const mapFeatureOwnerProcedure = procedure
+  .use(timingMiddleware)
+  .use(authMiddleware)
+  .use(mapFeatureOwnerMiddleware)
+  .use(userLoggingMiddleware.standard);
+
+export const standardMutationMapFeatureOwnerProcedure = mapFeatureOwnerProcedure
+  .use(standardMutationRateLimit)
+  .use(inputValidationMiddleware);
+
 export const lightMutationProcedure = protectedProcedure.use(lightMutationRateLimit);
 
-export const readOnlyProcedure = protectedProcedure.use(readOnlyRateLimit);
+/** Signed-in mutations: each procedure rate-limited on its own (60/min per user). */
+export const rateLimitedMutationProcedure = protectedProcedure.use(perProcedureMutationRateLimit);
+
+/** Premium mutations with the same per-procedure limit. */
+export const premiumMutationProcedure = premiumProcedure.use(perProcedureMutationRateLimit);
 
 export const rateLimitedPublicProcedure = publicProcedure.use(publicRateLimit);
+/** Signed-in reads that cost the server something (previews, credentials lists), on the read-only bucket. */
+export const readOnlyProcedure = protectedProcedure.use(readOnlyRateLimit);
+
+/** The same read-only bucket for a read a signed-out visitor may make too (counted by their IP then). */
+export const publicReadOnlyProcedure = publicProcedure.use(readOnlyRateLimit);
+
+/** Public article reads, on their own generous `wiki_read` bucket (see `wikiReadRateLimit`). */
+export const wikiReadProcedure = publicProcedure.use(wikiReadRateLimit);
 
 // Cached procedure variants
 export const cachedPublicProcedure = publicProcedure.use(standardCacheMiddleware);
-
-export const cachedProtectedProcedure = protectedProcedure.use(userCacheMiddleware);
 
 export const cachedStaticProcedure = publicProcedure.use(staticCacheMiddleware);

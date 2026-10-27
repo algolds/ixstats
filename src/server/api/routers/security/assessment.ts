@@ -1,79 +1,26 @@
-// src/server/api/routers/security.ts
-// Comprehensive Security & Defense System Router
+// Security assessment, derived on read (owner decision 4): military strength from the defense
+// model's combat power (realm time D2a) against the nation's neighbours and rivals, threats from its conflicts, the hostile
+// foreign-policy actions against it and its active crises. Nothing is stored.
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-
-// ===========================
-// Input Validation Schemas
-// ===========================
-
-// ===========================
-// Security Router
-// ===========================
+import { threatPictureFor } from "~/server/modules/defense";
 
 export const securityAssessmentRouter = createTRPCRouter({
-  // ===========================
-  // Security Assessment Endpoints
-  // ===========================
-
   getSecurityAssessment: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      let assessment = await ctx.db.securityAssessment.findUnique({
-        where: { countryId: input.countryId },
-      });
-
-      if (!assessment) {
-        // Create default assessment
-        assessment = await ctx.db.securityAssessment.create({
-          data: {
-            countryId: input.countryId,
-            overallSecurityScore: 60,
-            securityLevel: "moderate",
-            securityTrend: "stable",
-            militaryStrength: 60,
-            internalStability: 60,
-            borderSecurity: 60,
-            cybersecurity: 50,
-            counterTerrorism: 55,
-            militaryReadiness: 65,
-            emergencyResponse: 60,
-            disasterPreparedness: 55,
-          },
-        });
-      }
-
-      // Get related data
-      const [internalStability, borderSecurity, activeThreats, militaryBranches] =
-        await Promise.all([
-          ctx.db.internalStabilityMetrics.findUnique({
-            where: { countryId: input.countryId },
-          }),
-          ctx.db.borderSecurity.findUnique({
-            where: { countryId: input.countryId },
-            include: { neighborThreats: true },
-          }),
-          ctx.db.securityThreat.findMany({
-            where: {
-              countryId: input.countryId,
-              isActive: true,
-            },
-          }),
-          ctx.db.militaryBranch.findMany({
-            where: {
-              countryId: input.countryId,
-              isActive: true,
-            },
-          }),
-        ]);
-
+      const picture = await threatPictureFor(ctx.db, input.countryId);
       return {
-        ...assessment,
-        internalStability,
-        borderSecurity,
-        activeThreats,
-        militaryBranches,
+        countryId: input.countryId,
+        overallSecurityScore: picture.overallSecurityScore,
+        securityLevel: picture.securityLevel,
+        militaryStrength: picture.militaryStrength,
+        combatStrength: picture.combatStrength,
+        borderSecurity: picture.borderSecurity,
+        activeThreatCount: picture.activeThreatCount,
+        highSeverityThreats: picture.highSeverityThreats,
+        activeThreats: picture.threats,
       };
     }),
 });

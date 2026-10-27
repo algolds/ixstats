@@ -16,7 +16,7 @@ const {
   f1Drivers: F1_DRIVERS,
 } = sportsData;
 
-export async function seedF1League(prisma: Prisma, userId: string, ixNow: number): Promise<number> {
+export async function seedF1League(prisma: Prisma, userId: string, nowMs: number): Promise<number> {
   let count = 0;
   const leagueSeed = hashString("IRF World Championship");
 
@@ -54,7 +54,7 @@ export async function seedF1League(prisma: Prisma, userId: string, ixNow: number
         name: constructorName,
         shortName,
         color: F1_CONSTRUCTOR_COLORS[i],
-        foundedIxTime: ixNow - 1440 * 365 * (15 + (i % 10)),
+        foundedIxTime: nowMs - 1440 * 365 * (15 + (i % 10)),
       },
     });
     count++;
@@ -91,8 +91,8 @@ export async function seedF1League(prisma: Prisma, userId: string, ixNow: number
     teams.push({ id: team.id, name: constructorName, drivers });
   }
 
-  const seasonStart = ixNow - 259200;
-  const seasonEnd = ixNow - 7200;
+  const seasonStart = nowMs - 259200;
+  const seasonEnd = nowMs - 7200;
   const season = await prisma.sportSeason.create({
     data: {
       leagueId: league.id,

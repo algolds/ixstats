@@ -31,39 +31,44 @@ jobs:
     # This condition seeks to ensure the action is only run when it is triggered by a trusted user.
     # For private repos, users who have access to the repo are considered trusted.
     # For public repos, users who members, owners, or collaborators are considered trusted.
+    # Gemini jobs run only once credentials exist: set the repo variable GEMINI_ENABLED=true
+    # together with the GEMINI_API_KEY secret (or Vertex/GCA settings). Otherwise the job is skipped.
     if: |-
-      github.event_name == 'workflow_dispatch' ||
+      vars.GEMINI_ENABLED == 'true' &&
       (
-        github.event_name == 'issues' && github.event.action == 'opened' &&
-        contains(github.event.issue.body, '@gemini-cli') &&
-        !contains(github.event.issue.body, '@gemini-cli /review') &&
-        !contains(github.event.issue.body, '@gemini-cli /triage') &&
+        github.event_name == 'workflow_dispatch' ||
         (
-          github.event.repository.private == true ||
-          contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.issue.author_association)
-        )
-      ) ||
-      (
+          github.event_name == 'issues' && github.event.action == 'opened' &&
+          contains(github.event.issue.body, '@gemini-cli') &&
+          !contains(github.event.issue.body, '@gemini-cli /review') &&
+          !contains(github.event.issue.body, '@gemini-cli /triage') &&
+          (
+            github.event.repository.private == true ||
+            contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.issue.author_association)
+          )
+        ) ||
         (
-          github.event_name == 'issue_comment' ||
-          github.event_name == 'pull_request_review_comment'
-        ) &&
-        contains(github.event.comment.body, '@gemini-cli') &&
-        !contains(github.event.comment.body, '@gemini-cli /review') &&
-        !contains(github.event.comment.body, '@gemini-cli /triage') &&
+          (
+            github.event_name == 'issue_comment' ||
+            github.event_name == 'pull_request_review_comment'
+          ) &&
+          contains(github.event.comment.body, '@gemini-cli') &&
+          !contains(github.event.comment.body, '@gemini-cli /review') &&
+          !contains(github.event.comment.body, '@gemini-cli /triage') &&
+          (
+            github.event.repository.private == true ||
+            contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+          )
+        ) ||
         (
-          github.event.repository.private == true ||
-          contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
-        )
-      ) ||
-      (
-        github.event_name == 'pull_request_review' &&
-        contains(github.event.review.body, '@gemini-cli') &&
-        !contains(github.event.review.body, '@gemini-cli /review') &&
-        !contains(github.event.review.body, '@gemini-cli /triage') &&
-        (
-          github.event.repository.private == true ||
-          contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)
+          github.event_name == 'pull_request_review' &&
+          contains(github.event.review.body, '@gemini-cli') &&
+          !contains(github.event.review.body, '@gemini-cli /review') &&
+          !contains(github.event.review.body, '@gemini-cli /triage') &&
+          (
+            github.event.repository.private == true ||
+            contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)
+          )
         )
       )
     timeout-minutes: 10

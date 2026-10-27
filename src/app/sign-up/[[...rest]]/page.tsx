@@ -10,7 +10,7 @@ export default function Page() {
       <div className="bg-background flex min-h-screen items-center justify-center p-4">
         <div className="border-border bg-card w-full max-w-md rounded-2xl border p-6 text-center shadow-2xl backdrop-blur-xl">
           <h1 className="text-foreground text-xl font-bold tracking-tight">
-            Authentication Not Configured
+            Authentication not configured
           </h1>
           <p className="text-muted-foreground mt-3 text-xs">
             Clerk publishable keys are not configured for this environment. Add your Clerk keys to
@@ -27,12 +27,12 @@ export default function Page() {
         <SignUp appearance={facetClerkAppearance} />
         <p className="text-muted-foreground text-center text-xs">
           By registering, you confirm you are at least 16 years old and agree to the{" "}
-          <Link href="/terms" className="text-foreground underline hover:text-indigo-400">
-            Terms of Service
+          <Link href="/terms" className="text-foreground underline hover:text-tint">
+            Terms of service
           </Link>{" "}
           and{" "}
-          <Link href="/privacy" className="text-foreground underline hover:text-indigo-400">
-            Privacy Policy
+          <Link href="/privacy" className="text-foreground underline hover:text-tint">
+            Privacy policy
           </Link>
           .
         </p>

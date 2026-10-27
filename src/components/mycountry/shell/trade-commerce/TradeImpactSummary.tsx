@@ -1,81 +1,114 @@
 import React from "react";
-import { CurrencyFlow, PercentageFlow } from "~/components/ui/number-flow";
 import { Globe as Globe2, DeliveryTruck as Ship, Percentage as Percent } from "iconoir-react";
+import { cn } from "~/lib/utils";
 import { formatCompact } from "./trade-commerce-types";
+import { Card } from "~/components/ui/card";
 
 interface TradeImpactSummaryProps {
-  totalTariffRevenue: number;
-  averageTariff: number;
-  tradeBalance: number;
-  totalExports: number;
-  totalImports: number;
-  currencySymbol?: string;
+  /** Planned tariff yield from the (unsaved) tariff planner; null when imports aren't recorded. */
+  plannedTariffRevenue: number | null;
+  /** Weighted average of the planner's sector tariffs; null when the planner has no sectors. */
+  plannedAverageTariff: number | null;
+  /** True when `plannedTariffRevenue` is net of the nation's recorded tax efficiency. */
+  revenueNetOfEfficiency: boolean;
+  tradeBalance: number | null;
+  totalExports: number | null;
+  totalImports: number | null;
+}
+
+/** Trade figures come from GDP, which is in US dollars, so they carry "$" (not the national symbol). */
+function money(value: number | null): string {
+  if (value == null) return "—";
+  const sign = value < 0 ? "-" : "";
+  return `${sign}$${formatCompact(Math.abs(value))}`;
 }
 
 export const TradeImpactSummary = React.memo(function TradeImpactSummary({
-  totalTariffRevenue,
-  averageTariff,
+  plannedTariffRevenue,
+  plannedAverageTariff,
+  revenueNetOfEfficiency,
   tradeBalance,
   totalExports,
   totalImports,
-  currencySymbol = "$",
 }: TradeImpactSummaryProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="space-y-1 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 backdrop-blur-md">
-        <div className="text-muted-foreground flex items-center justify-between text-xs">
-          <span>Tariff Revenue Yield</span>
-          <Percent className="h-4 w-4 text-emerald-400" />
-        </div>
-        <p className="text-foreground text-xl font-bold tracking-tight">
-          {currencySymbol}
-          {formatCompact(totalTariffRevenue)}
-        </p>
-        <span className="text-muted-foreground text-xs">
-          Avg Tariff Rate: {averageTariff.toFixed(2)}%
-        </span>
-      </div>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <ImpactTile
+        label="Planned tariff yield"
+        icon={Percent}
+        value={money(plannedTariffRevenue)}
+        note={
+          <>
+            {plannedAverageTariff != null
+              ? `Planner avg tariff: ${plannedAverageTariff.toFixed(2)}%`
+              : "No sectors in the planner"}
+            {plannedTariffRevenue != null &&
+              !revenueNetOfEfficiency &&
+              " · before collection losses"}
+          </>
+        }
+      />
 
-      <div className="space-y-1 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4 backdrop-blur-md">
-        <div className="text-muted-foreground flex items-center justify-between text-xs">
-          <span>Trade Balance</span>
-          <Ship className="h-4 w-4 text-cyan-400" />
-        </div>
-        <p
-          className={`text-xl font-bold tracking-tight ${tradeBalance >= 0 ? "text-emerald-400" : "text-red-400"}`}
-        >
-          {tradeBalance >= 0 ? "+" : ""}
-          {currencySymbol}
-          {formatCompact(tradeBalance)}
-        </p>
-        <span className="text-muted-foreground text-xs">
-          {tradeBalance >= 0 ? "Trade Surplus" : "Trade Deficit"}
-        </span>
-      </div>
+      <ImpactTile
+        label="Trade balance"
+        icon={Ship}
+        valueClassName={
+          tradeBalance == null ? undefined : tradeBalance >= 0 ? "text-green" : "text-destructive"
+        }
+        value={
+          <>
+            {tradeBalance != null && tradeBalance > 0 && "+"}
+            {money(tradeBalance)}
+          </>
+        }
+        note={
+          tradeBalance == null
+            ? "No trade data recorded"
+            : tradeBalance >= 0
+              ? "Trade surplus"
+              : "Trade deficit"
+        }
+      />
 
-      <div className="border-border/40 bg-card/60 space-y-1 rounded-xl border p-4 backdrop-blur-md">
-        <div className="text-muted-foreground flex items-center justify-between text-xs">
-          <span>Annual Gross Exports</span>
-          <Globe2 className="text-primary h-4 w-4" />
-        </div>
-        <p className="text-foreground text-xl font-bold tracking-tight">
-          {currencySymbol}
-          {formatCompact(totalExports)}
-        </p>
-        <span className="text-muted-foreground text-xs">Outbound goods</span>
-      </div>
+      <ImpactTile
+        label="Annual gross exports"
+        icon={Globe2}
+        value={money(totalExports)}
+        note={totalExports != null ? "From your recorded exports (% of GDP)" : "Not recorded"}
+      />
 
-      <div className="border-border/40 bg-card/60 space-y-1 rounded-xl border p-4 backdrop-blur-md">
-        <div className="text-muted-foreground flex items-center justify-between text-xs">
-          <span>Annual Gross Imports</span>
-          <Ship className="text-muted-foreground h-4 w-4" />
-        </div>
-        <p className="text-foreground text-xl font-bold tracking-tight">
-          {currencySymbol}
-          {formatCompact(totalImports)}
-        </p>
-        <span className="text-muted-foreground text-xs">Inbound goods</span>
-      </div>
+      <ImpactTile
+        label="Annual gross imports"
+        icon={Ship}
+        value={money(totalImports)}
+        note={totalImports != null ? "From your recorded imports (% of GDP)" : "Not recorded"}
+      />
     </div>
   );
 });
+
+/** One headline figure. Opaque: the trade tab also renders inside the drill sheet. */
+function ImpactTile({
+  label,
+  icon: Icon,
+  value,
+  valueClassName,
+  note,
+}: {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  value: React.ReactNode;
+  valueClassName?: string;
+  note: React.ReactNode;
+}) {
+  return (
+    <Card className="rounded-card space-y-1 p-4">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-label-secondary text-footnote">{label}</span>
+        <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
+      </div>
+      <p className={cn("text-title-2 tabular-nums", valueClassName ?? "text-label")}>{value}</p>
+      <p className="text-label-secondary text-footnote">{note}</p>
+    </Card>
+  );
+}

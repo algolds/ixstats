@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [master, development, main, v2, rose-garden]
+    branches: [master, development, rose-garden]
 
 jobs:
   verify:
@@ -15,10 +15,13 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: Generate Prisma client
+        id: prisma
         run: bun run db:generate
 
       # Unit tests are blocking; pre-existing failures live in scripts/verification/test-quarantine.json (shrink-only).
-      # Architecture guard and strict lint stay non-blocking until their measured baselines are green.
+      # Architecture guard and strict lint are blocking (green since 2026-10-05).
+      # The gates after unit tests run once setup succeeded, even after an earlier gate failed, so one red gate
+      # hides no others; the job still fails if any gate fails.
       - name: Fetch base branch for quarantine growth check
         if: github.event_name == 'pull_request'
         env:
@@ -31,31 +34,61 @@ jobs:
         run: bun run test:ci -- --compare-base "$QUARANTINE_BASE"
 
       - name: Quarantine shrink check (reports fixed tests)
+        if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
         run: bun run test:quarantine:verify
         continue-on-error: true
 
       - name: Entrypoint syntax check
+        if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
         run: bun run check:entrypoints
 
-      - name: "Architecture guard (2026-08-20 baseline: non-blocking pending Plan 154 ratchet split)"
+      # Ratchet: no new file over the ceiling, no growth past arch-baseline.json, no cross-router imports.
+      - name: Architecture guard
+        if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
         run: bun run audit:arch
-        continue-on-error: true
 
-      - name: "Lint (Strict) (2026-08-20 baseline: non-blocking pending lint cleanups)"
+      # 0 errors and 24 warnings on 2026-10-05; the limit only ratchets down.
+      - name: Lint (strict)
+        if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
         run: bun run lint:strict
-        continue-on-error: true
 
       - name: Typecheck (UI)
+        if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
         run: bun run typecheck:ui
 
       - name: Typecheck (Server)
+        if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
         run: bun run typecheck:server
 
       - name: Typecheck (tRPC)
+        if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
         run: bun run typecheck:trpc
 
+      - name: Typecheck (DB)
+        if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
+        run: bun run typecheck:db
+
+      - name: Typecheck (scripts, proxy, instrumentation, content)
+        if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
+        run: bun run typecheck:scripts
+
+      - name: Typecheck (tests)
+        if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
+        run: bun run typecheck:tests
+
+      # Exactly what next build's type phase checks; the partitioned configs above can miss a build-breaking error.
+      - name: Typecheck (Next build config)
+        if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
+        run: bunx tsc --noEmit -p tsconfig.json
+
       - name: Validate script targets
+        if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
         run: bun run validate:script-targets
 
+      - name: Package script imports resolve
+        if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
+        run: bun run check:script-imports
+
       - name: Validate reference documentation
+        if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
         run: bun run docs:check

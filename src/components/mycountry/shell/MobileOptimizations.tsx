@@ -12,20 +12,13 @@ import React from "react";
  */
 
 // Mobile-specific CSS injected as a component
-export function MobileOptimizationStyles() {
+function MobileOptimizationStyles() {
   React.useEffect(() => {
     // Inject mobile-specific styles
     const styleSheet = document.createElement("style");
+    // Only touch ergonomics live here; layout, motion and materials come from the primitives.
     styleSheet.textContent = `
-      /* Mobile Optimization Styles */
       .mobile-optimized {
-        /* Touch improvements */
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        -khtml-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
         -webkit-tap-highlight-color: transparent;
       }
 
@@ -34,60 +27,17 @@ export function MobileOptimizationStyles() {
         -webkit-tap-highlight-color: rgba(0,0,0,0);
       }
 
-      /* Mobile-friendly button sizes */
-      @media (max-width: 768px) {
-        .mobile-optimized button {
-          min-height: 44px;
-          min-width: 44px;
-          padding: 12px 16px;
-        }
-
-        .mobile-optimized .facet-hierarchy-child {
-          border-radius: 12px;
-        }
-
-        .mobile-optimized .facet-hierarchy-parent {
-          border-radius: 16px;
-        }
-
-        /* Improved scroll performance */
-        .mobile-optimized .overflow-y-auto {
-          -webkit-overflow-scrolling: touch;
-          overscroll-behavior: contain;
-        }
-
-        /* Better touch targets */
-        .mobile-optimized [role="button"],
+      /* Mobile touch targets: 44px minimum height on touch screens. */
+      @media (max-width: 768px) and (pointer: coarse) {
         .mobile-optimized button,
-        .mobile-optimized .cursor-pointer {
+        .mobile-optimized [role="button"] {
           min-height: 44px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
+      }
 
-        /* Reduce motion for battery life */
-        .mobile-optimized * {
-          animation-duration: 0.2s !important;
-          animation-delay: 0s !important;
-          transition-duration: 0.2s !important;
-        }
-
-        /* Optimize grid layouts for mobile */
-        .mobile-optimized .grid {
-          gap: 1rem;
-        }
-
-        /* Better text readability */
-        .mobile-optimized {
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-        }
-
-        /* Improve focus visibility */
-        .mobile-optimized *:focus {
-          outline: 2px solid rgba(59, 130, 246, 0.5);
-          outline-offset: 2px;
+      @media (max-width: 768px) {
+        .mobile-optimized .overflow-y-auto {
+          overscroll-behavior: contain;
         }
 
         /* Safe area adjustments for notch devices */
@@ -98,51 +48,6 @@ export function MobileOptimizationStyles() {
 
         .mobile-header {
           padding-top: env(safe-area-inset-top);
-        }
-      }
-
-      /* Tablet-specific optimizations */
-      @media (min-width: 768px) and (max-width: 1024px) {
-        .mobile-optimized .grid-cols-1 {
-          grid-template-columns: repeat(2, 1fr);
-        }
-      }
-
-      /* High DPI displays */
-      @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-        .mobile-optimized {
-          /* Sharper borders and shadows */
-          -webkit-transform: translateZ(0);
-          transform: translateZ(0);
-        }
-      }
-
-      /* Reduce motion for users who prefer it */
-      @media (prefers-reduced-motion: reduce) {
-        .mobile-optimized *,
-        .mobile-optimized *::before,
-        .mobile-optimized *::after {
-          animation-duration: 0.01ms !important;
-          animation-iteration-count: 1 !important;
-          transition-duration: 0.01ms !important;
-          scroll-behavior: auto !important;
-        }
-      }
-
-      /* Dark mode optimizations for mobile */
-      @media (prefers-color-scheme: dark) {
-        .mobile-optimized {
-          /* Better contrast ratios */
-          --glass-opacity: 0.1;
-        }
-      }
-
-      /* Battery optimization */
-      @media (max-width: 768px) {
-        .mobile-optimized .facet-hierarchy-parent {
-          /* Reduce blur effects on mobile */
-          backdrop-filter: blur(8px) !important;
-          -webkit-backdrop-filter: blur(8px) !important;
         }
       }
     `;
@@ -158,7 +63,7 @@ export function MobileOptimizationStyles() {
 }
 
 // Touch gesture detection hook
-export function useTouchGestures() {
+function useTouchGestures() {
   const [touchState, setTouchState] = React.useState({
     isTouch: false,
     swipeDirection: null as "left" | "right" | "up" | "down" | null,
@@ -245,7 +150,7 @@ interface NavigatorWithCapabilities {
 }
 
 // Performance optimization hook for mobile
-export function useMobilePerformance() {
+function useMobilePerformance() {
   const [performanceState, setPerformanceState] = React.useState({
     reducedMotion: false,
     lowBattery: false,
@@ -272,10 +177,7 @@ export function useMobilePerformance() {
     };
 
     // Check for slow connection
-    const connection =
-      nav.connection ||
-      nav.mozConnection ||
-      nav.webkitConnection;
+    const connection = nav.connection || nav.mozConnection || nav.webkitConnection;
     const slowConnection =
       connection && (connection.effectiveType === "slow-2g" || connection.effectiveType === "2g");
 

@@ -1,8 +1,8 @@
 export const METRIC_OPTIONS = [
   { value: "gdpGrowth", label: "GDP Growth", unit: "%", lowerIsBetter: false },
-  { value: "unemploymentRate", label: "Unemployment Rate", unit: "%", lowerIsBetter: true },
+  { value: "unemploymentRate", label: "Unemployment rate", unit: "%", lowerIsBetter: true },
   { value: "stability", label: "Stability", unit: "%", lowerIsBetter: false },
-  { value: "taxRevenue", label: "Tax Revenue", unit: "%", lowerIsBetter: false },
+  { value: "taxRevenue", label: "Tax revenue", unit: "%", lowerIsBetter: false },
   { value: "population", label: "Population", unit: "", lowerIsBetter: false },
   { value: "inflation", label: "Inflation", unit: "%", lowerIsBetter: true },
 ] as const;
@@ -50,22 +50,3 @@ export const PRIORITY_OPTIONS = [
   { value: "high", label: "High" },
   { value: "critical", label: "Critical" },
 ] as const;
-
-export function getMatchingDepartmentCategory(policyCategory: string): string {
-  const mapping: Record<string, string> = {
-    fiscal: "finance",
-    monetary: "finance",
-    trade: "commerce",
-    defense: "defense",
-    education: "education",
-    healthcare: "health",
-    infrastructure: "interior",
-    environment: "interior",
-    governance: "interior",
-    security: "interior",
-    social: "interior",
-    foreign: "foreign",
-    diplomatic: "foreign",
-  };
-  return mapping[policyCategory.toLowerCase()] || "interior";
-}

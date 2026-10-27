@@ -1,20 +1,34 @@
 "use client";
-// src/components/wiki-os/reader/useCiteTooltips.ts
 // Hover tooltips for inline citations — shows footnote content on hover
 // without needing to scroll to the references section.
 
 import { useEffect, useState, useCallback, useRef, type RefObject } from "react";
-import { createPortal } from "react-dom";
 import { createElement } from "react";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { VirtualAnchorPopover } from "~/components/ui/popover";
+import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
+import { useLinkTargetPreference } from "./useLinkTargetPreference";
+import { SISTER_ID_PREFIX } from "~/lib/wiki-os/sister-dom";
+
+/** A citation link's note id: `cite_note-…`, or `sister-cite_note-…` on a sister reader page (sister-dom.ts). */
+const CITE_NOTE_HREF = new RegExp(`#((?:${SISTER_ID_PREFIX})?cite_note-.+)`);
 
 interface TooltipState {
   html: string;
-  x: number;
-  y: number;
+  /** The citation link the tooltip points at (a virtual anchor: found by delegation). */
+  anchor: HTMLElement;
+  /** Another wiki's note: its HTML is boxed in as the article is (`.wikios-sister-article`). */
+  sister: boolean;
 }
 
 export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
+  // The renderer wires its link preferences through this hook: "open links in a new tab" ...
+  useLinkTargetPreference(contentRef);
+  // ... and "citation tooltips" (Settings → WikiOS options).
+  const enabled = useWikiSetting("wikios:showCitationTooltips", true);
+  // Kept after closing so the content stays during the exit animation.
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [open, setOpen] = useState(false);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const show = useCallback(
@@ -29,10 +43,9 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
       if (!anchor) return;
 
       const href = anchor.getAttribute("href") ?? "";
-      const match = href.match(/#(cite_note-.+)/);
-      if (!match) return;
+      const noteId = CITE_NOTE_HREF.exec(href)?.[1];
+      if (!noteId) return;
 
-      const noteId = match[1];
       const container = contentRef.current;
       if (!container) return;
 
@@ -47,19 +60,18 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
       const html = clone.innerHTML.trim();
       if (!html) return;
 
-      // Position tooltip above the reference link
-      const rect = anchor.getBoundingClientRect();
-      setTooltip({
-        html,
-        x: rect.left + rect.width / 2,
-        y: rect.top,
-      });
+      // Shown above the reference link
+      setTooltip({ html, anchor, sister: noteId.startsWith(SISTER_ID_PREFIX) });
+      setOpen(true);
     },
     [contentRef]
   );
 
   const hide = useCallback(() => {
-    hideTimeoutRef.current = setTimeout(() => setTooltip(null), 150);
+    // mouseleave fires (capture) for the <a> and its <sup>; an uncleared first timer would still
+    // close the tooltip after the pointer had moved onto it.
+    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    hideTimeoutRef.current = setTimeout(() => setOpen(false), 150);
   }, []);
 
   // Keep tooltip alive when hovering the tooltip itself
@@ -77,6 +89,7 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const container = contentRef.current;
     if (!container) return;
+    if (!enabled) return;
 
     const handleMouseEnter = (e: Event) => {
       const target = e.target as HTMLElement;
@@ -96,31 +109,36 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
       container.removeEventListener("mouseenter", handleMouseEnter, true);
       container.removeEventListener("mouseleave", handleMouseLeave, true);
     };
-  }, [contentRef, show, hide]);
+  }, [contentRef, show, hide, enabled]);
 
-  // Render the tooltip portal
-  const portal = tooltip
-    ? createPortal(
-        createElement(
-          "div",
-          // oxlint-disable-next-line
-          {
-            className: "wikios-cite-tooltip",
-            style: {
-              left: `${tooltip.x}px`,
-              top: `${tooltip.y}px`,
-            },
-            onMouseEnter: tooltipMouseEnter,
-            onMouseLeave: tooltipMouseLeave,
-          },
-          createElement("div", {
-            className: "wikios-cite-tooltip-inner",
-            dangerouslySetInnerHTML: { __html: tooltip.html },
-          })
-        ),
-        document.body
-      )
-    : null;
+  // one object per footnote HTML: a new one each render would write the tooltip's DOM again (React 19)
+  const tooltipMarkup = useHtmlMarkup(tooltip?.html ?? "");
 
-  return portal;
+  // The tooltip: a popover above the citation (flips below near the top of the viewport). The
+  // popover overlay is the only surface; the inner `.wikios-cite-tooltip-inner` just sets the
+  // reading-face footnote type. Another wiki's note sits in the article's containment (content.css).
+  return createElement(
+    VirtualAnchorPopover,
+    {
+      anchor: tooltip?.anchor ?? null,
+      open: open && enabled,
+      onOpenChange: (next: boolean) => {
+        if (!next) setOpen(false);
+      },
+      side: "top",
+      sideOffset: 0,
+      role: "tooltip",
+      className: "z-tooltip max-w-[min(420px,90vw)] px-3.5 py-2.5",
+      onMouseEnter: tooltipMouseEnter,
+      onMouseLeave: tooltipMouseLeave,
+    },
+    tooltip
+      ? createElement("div", {
+          className: tooltip.sister
+            ? "wikios-cite-tooltip-inner wikios-sister-article"
+            : "wikios-cite-tooltip-inner",
+          dangerouslySetInnerHTML: tooltipMarkup,
+        })
+      : null
+  );
 }

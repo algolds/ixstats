@@ -1,18 +1,21 @@
 import { z } from "zod";
-import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { createTRPCRouter, standardMutationMapFeatureOwnerProcedure } from "~/server/api/trpc";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { getTerrainForArea } from "~/lib/country-geo";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { clipAndValidatePolygon, checkNameUniqueness } from "~/lib/maps/geo-validation";
 import { syncGeographicDemographics } from "~/lib/country-geo/sync";
+import { assertFound, assertOwnCountry } from "../../core/shared";
+import { assertOwnerMayEdit } from "~/server/shared/map-feature-lock";
 
 export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
   /**
    * Create a subdivision within the user's country.
    * Auto-approved if polygon is inside country borders.
    */
-  createSubdivision: standardMutationCountryOwnerProcedure
+  createSubdivision: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -25,10 +28,7 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
       // Validate containment + clip polygon to country borders
       const clippedGeometry = await clipAndValidatePolygon(
@@ -60,12 +60,17 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
         },
       });
 
-      // Get terrain breakdown for the subdivision (informational)
+      // Get terrain breakdown for the subdivision from its country's realm (informational)
       let terrainInfo: Awaited<ReturnType<typeof getTerrainForArea>> | null = null;
       try {
+        const country = await ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          select: { realmId: true },
+        });
         terrainInfo = await getTerrainForArea(
           ctx.db as any,
-          alignedGeometry as unknown as import("geojson").Geometry
+          alignedGeometry as unknown as import("geojson").Geometry,
+          country?.realmId ?? DEFAULT_REALM_ID
         );
       } catch {
         // Terrain query failed — non-blocking
@@ -87,7 +92,7 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
   /**
    * Update a subdivision within the user's country.
    */
-  updateSubdivision: standardMutationCountryOwnerProcedure
+  updateSubdivision: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -110,16 +115,36 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
-      const sub = await ctx.db.subdivision.findFirst({
-        where: { id: input.subdivisionId, countryId: input.countryId },
-      });
-      if (!sub) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Subdivision not found" });
+      const existing = assertFound(
+        await ctx.db.subdivision.findFirst({
+          where: { id: input.subdivisionId, countryId: input.countryId },
+        }),
+        "Subdivision not found"
+      );
+      assertOwnerMayEdit(ctx, existing, "subdivision");
+      // A topology cascade may only reshape this country's own subdivisions: the ids come
+      // from the client, so check them (a foreign id would edit another nation's map).
+      const cascaded = [...new Set(input.cascadedNeighbors?.map((n) => n.subdivisionId) ?? [])];
+      if (cascaded.length > 0) {
+        const own = await ctx.db.subdivision.count({
+          where: { id: { in: cascaded }, countryId: input.countryId },
+        });
+        if (own !== cascaded.length) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Cascaded neighbours must be subdivisions of this country",
+          });
+        }
+      }
+      // ...and may not reshape a neighbour the owner cannot edit either
+      if (ctx.country && cascaded.length > 0) {
+        const locked = await ctx.db.subdivision.findFirst({
+          where: { id: { in: cascaded }, editableByOwner: false },
+          select: { editableByOwner: true },
+        });
+        assertOwnerMayEdit(ctx, locked, "neighbouring subdivision");
       }
 
       // Validate new geometry if provided
@@ -165,8 +190,8 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
       if (input.cascadedNeighbors && input.cascadedNeighbors.length > 0) {
         await ctx.db.$transaction(
           input.cascadedNeighbors.map((neighbor) =>
-            ctx.db.subdivision.update({
-              where: { id: neighbor.subdivisionId },
+            ctx.db.subdivision.updateMany({
+              where: { id: neighbor.subdivisionId, countryId: input.countryId },
               data: { geometry: neighbor.geometry as any },
             })
           )
@@ -184,7 +209,7 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
   /**
    * Delete a subdivision from the user's country.
    */
-  deleteSubdivision: standardMutationCountryOwnerProcedure
+  deleteSubdivision: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -192,17 +217,15 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
+      assertOwnCountry(ctx, input.countryId);
 
-      const sub = await ctx.db.subdivision.findFirst({
-        where: { id: input.subdivisionId, countryId: input.countryId },
-      });
-      if (!sub) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Subdivision not found" });
-      }
+      const existing = assertFound(
+        await ctx.db.subdivision.findFirst({
+          where: { id: input.subdivisionId, countryId: input.countryId },
+        }),
+        "Subdivision not found"
+      );
+      assertOwnerMayEdit(ctx, existing, "subdivision");
 
       await ctx.db.subdivision.delete({ where: { id: input.subdivisionId } });
       await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);

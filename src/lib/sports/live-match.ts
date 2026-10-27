@@ -3,8 +3,8 @@
  *
  * Matches resolve instantly in the cron, but the resolver emits a minute-by-minute
  * event `trace`. A "Live Activity" replays that trace over a fixed broadcast window
- * anchored to the match's `resolvedIxTime`. Because IxTime is a shared clock and the
- * trace is deterministic, every client computes the same state with no server ticks
+ * anchored to the match's `resolvedIxTime` (real epoch-ms). Because real time is shared and
+ * the trace is deterministic, every client computes the same state with no server ticks
  * and no WebSocket — just `computeLiveMatchState(now)`.
  */
 
@@ -16,7 +16,7 @@ export interface LiveTraceEvent {
   actorName?: string;
 }
 
-export interface LiveMatchState {
+interface LiveMatchState {
   progress: number; // 0..1 through the broadcast window
   minute: number; // current match minute being shown
   maxMinute: number;
@@ -29,15 +29,15 @@ export interface LiveMatchState {
 export function computeLiveMatchState(args: {
   trace: LiveTraceEvent[];
   resolvedIxTime: number;
-  nowIxTime: number;
+  nowMs: number;
   windowMs: number;
   finalHomeScore?: number;
   finalAwayScore?: number;
 }): LiveMatchState {
-  const { trace, resolvedIxTime, nowIxTime, windowMs } = args;
+  const { trace, resolvedIxTime, nowMs, windowMs } = args;
 
   const maxMinute = trace.reduce((m, e) => Math.max(m, e?.t ?? 0), 0) || 90;
-  const rawProgress = windowMs > 0 ? (nowIxTime - resolvedIxTime) / windowMs : 1;
+  const rawProgress = windowMs > 0 ? (nowMs - resolvedIxTime) / windowMs : 1;
   const progress = Math.min(1, Math.max(0, rawProgress));
   const isFinal = progress >= 1;
   const minute = Math.min(maxMinute, Math.round(progress * maxMinute));

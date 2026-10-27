@@ -1,0 +1,175 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "normalized": [{ "fromencoded": false, "from": "File:Eurth_world_map.svg", "to": "File:Eurth world map.svg" }],
+    "pages": [
+      {
+        "pageid": 5001,
+        "ns": 6,
+        "title": "File:Eurth political map 2024.png",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 9876543,
+            "width": 8192,
+            "height": 4096,
+            "thumburl": "https://iiwiki.com/images/thumb/3/3a/Eurth_political_map_2024.png/320px-Eurth_political_map_2024.png",
+            "thumbwidth": 320,
+            "thumbheight": 160,
+            "url": "https://iiwiki.com/images/3/3a/Eurth_political_map_2024.png",
+            "descriptionurl": "https://iiwiki.com/wiki/File:Eurth_political_map_2024.png",
+            "descriptionshorturl": "https://iiwiki.com/index.php?curid=5001",
+            "sha1": "4F1C6A0E2B6D5C3A9E8F7D6C5B4A39281706F5E4",
+            "mime": "image/png",
+            "extmetadata": {
+              "LicenseShortName": { "value": "CC BY-SA 4.0", "source": "commons-desc-page", "hidden": "" },
+              "LicenseUrl": { "value": "https://creativecommons.org/licenses/by-sa/4.0", "source": "commons-desc-page", "hidden": "" },
+              "Artist": {
+                "value": "<a href=\"/wiki/User:Cartographer_Eurth\" title=\"User:Cartographer Eurth\">Cartographer&nbsp;Eurth</a>",
+                "source": "commons-desc-page"
+              },
+              "Credit": { "value": "<span class=\"int-own-work\">Own work</span>", "source": "commons-desc-page", "hidden": "" },
+              "AttributionRequired": { "value": "true", "source": "commons-desc-page", "hidden": "" }
+            }
+          }
+        ]
+      },
+      {
+        "pageid": 5002,
+        "ns": 6,
+        "title": "File:Eurth physical.jpg",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 4321000,
+            "width": 6000,
+            "height": 3000,
+            "thumburl": "https://iiwiki.com/images/thumb/8/81/Eurth_physical.jpg/320px-Eurth_physical.jpg",
+            "url": "https://iiwiki.com/images/8/81/Eurth_physical.jpg",
+            "descriptionurl": "https://iiwiki.com/wiki/File:Eurth_physical.jpg",
+            "sha1": "0b9a8c7d6e5f40312a2b3c4d5e6f708192a3b4c5",
+            "mime": "image/jpeg",
+            "extmetadata": {
+              "DateTime": { "value": "2023-04-01 10:00:00", "source": "mediawiki-metadata", "hidden": "" }
+            }
+          }
+        ]
+      },
+      {
+        "pageid": 5003,
+        "ns": 6,
+        "title": "File:Eurth locator blank.svg",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 812000,
+            "width": 4096,
+            "height": 2048,
+            "url": "https://iiwiki.com/images/c/c2/Eurth_locator_blank.svg",
+            "descriptionurl": "https://iiwiki.com/wiki/File:Eurth_locator_blank.svg",
+            "sha1": "aa11bb22cc33dd44ee55ff6677889900aabbccdd",
+            "mime": "image/svg+xml"
+          }
+        ]
+      },
+      {
+        "pageid": 5004,
+        "ns": 6,
+        "title": "File:Eurth square sketch.png",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 1500000,
+            "width": 1200,
+            "height": 1200,
+            "url": "https://iiwiki.com/images/d/d4/Eurth_square_sketch.png",
+            "descriptionurl": "https://iiwiki.com/wiki/File:Eurth_square_sketch.png",
+            "sha1": "1234567890abcdef1234567890abcdef12345678",
+            "mime": "image/png"
+          }
+        ]
+      },
+      {
+        "pageid": 5101,
+        "ns": 6,
+        "title": "File:Flag of Aurelia.svg",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 2400,
+            "width": 900,
+            "height": 450,
+            "url": "https://iiwiki.com/images/f/f0/Flag_of_Aurelia.svg",
+            "descriptionurl": "https://iiwiki.com/wiki/File:Flag_of_Aurelia.svg",
+            "sha1": "ffffffffffffffffffffffffffffffffffffffff",
+            "mime": "image/svg+xml"
+          }
+        ]
+      },
+      {
+        "pageid": 5102,
+        "ns": 6,
+        "title": "File:Eurth banner.png",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 300000,
+            "width": 1600,
+            "height": 300,
+            "url": "https://iiwiki.com/images/b/b0/Eurth_banner.png",
+            "descriptionurl": "https://iiwiki.com/wiki/File:Eurth_banner.png",
+            "sha1": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "mime": "image/png"
+          }
+        ]
+      },
+      {
+        "pageid": 5103,
+        "ns": 6,
+        "title": "File:Eurth world map.svg",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 2200000,
+            "width": 4000,
+            "height": 2000,
+            "thumburl": "https://iiwiki.com/images/thumb/7/7c/Eurth_world_map.svg/320px-Eurth_world_map.svg.png",
+            "url": "https://iiwiki.com/images/7/7c/Eurth_world_map.svg",
+            "descriptionurl": "https://iiwiki.com/wiki/File:Eurth_world_map.svg",
+            "sha1": "9f8e7d6c5b4a39281706f5e4d3c2b1a098765432",
+            "mime": "image/svg+xml",
+            "extmetadata": {
+              "Attribution": { "value": "Eurth community map team", "source": "commons-desc-page", "hidden": "" },
+              "UsageTerms": { "value": "Creative Commons Attribution 3.0", "source": "commons-desc-page", "hidden": "" }
+            }
+          }
+        ]
+      },
+      {
+        "pageid": 5201,
+        "ns": 6,
+        "title": "File:Aurelia (orthographic projection).svg",
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 120000,
+            "width": 541,
+            "height": 541,
+            "thumburl": "https://iiwiki.com/images/thumb/2/2b/Aurelia_%28orthographic_projection%29.svg/200px-Aurelia_%28orthographic_projection%29.svg.png",
+            "url": "https://iiwiki.com/images/2/2b/Aurelia_%28orthographic_projection%29.svg",
+            "descriptionurl": "https://iiwiki.com/wiki/File:Aurelia_(orthographic_projection).svg",
+            "sha1": "2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b",
+            "mime": "image/svg+xml"
+          }
+        ]
+      },
+      {
+        "ns": 6,
+        "title": "File:Rostervania locator.png",
+        "missing": true,
+        "known": false,
+        "imagerepository": ""
+      }
+    ]
+  }
+}

@@ -3,6 +3,7 @@
 import { SystemRestart as Loader2, Gym as Dumbbell, Group as Users } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { usePaidActionRequestId } from "~/components/sports/core/usePaidActionRequestId";
 
 interface TeamTrainingButtonProps {
   teamId: string;
@@ -11,32 +12,25 @@ interface TeamTrainingButtonProps {
 }
 
 export function TeamTrainingButton({ teamId, playerCount, onTrained }: TeamTrainingButtonProps) {
-  const utils = api.useUtils();
-
+  const trainingRequest = usePaidActionRequestId();
   const teamTraining = api.sports.teamTraining.useMutation({
-    // oxlint-disable-next-line eslint/no-unused-vars
-    onSuccess: (data) => {
-      utils.sports.getMyClubOverview.invalidate({ teamId });
+    onSuccess: () => {
+      trainingRequest.done();
       onTrained?.();
     },
   });
 
   return (
     <Button
-      onClick={() => teamTraining.mutate({ teamId })}
+      onClick={() => teamTraining.mutate({ teamId, requestId: trainingRequest.idFor(teamId) })}
       disabled={teamTraining.isPending || playerCount === 0}
-      variant="outline"
-      size="sm"
-      className="w-full gap-2 text-xs"
+      variant="secondary"
+      className="w-full"
     >
-      {teamTraining.isPending ? (
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-      ) : (
-        <Dumbbell className="h-3.5 w-3.5" />
-      )}
-      Team Training Session
-      <span className="text-muted-foreground ml-auto">
-        <Users className="mr-0.5 inline h-3 w-3" />
+      {teamTraining.isPending ? <Loader2 className="animate-spin" /> : <Dumbbell />}
+      Team training session
+      <span className="text-label-secondary text-footnote ml-auto tabular-nums">
+        <Users className="mr-0.5 inline size-3.5" aria-hidden />
         {playerCount} &middot; 100c
       </span>
     </Button>

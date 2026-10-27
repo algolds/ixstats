@@ -1,8 +1,80 @@
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { countriesWithWriteAccess } from "~/server/shared/country-authorization";
+import { missionTimeProgress } from "~/lib/diplomacy/embassy-mission-sweep";
+
+const COUNTRY_SELECT = {
+  select: { id: true, name: true, flag: true, slug: true, economicTier: true },
+} as const;
+const LISTING_INCLUDE = { hostCountry: COUNTRY_SELECT, guestCountry: COUNTRY_SELECT } as const;
+
+type ListedEmbassy = Prisma.EmbassyGetPayload<{ include: typeof LISTING_INCLUDE }>;
+type ListedCountry = ListedEmbassy["hostCountry"] | undefined;
+
+const nameOf = (c: ListedCountry) => c?.name ?? "Unknown";
+const flagOf = (c: ListedCountry) => normalizeFlagUrl(c?.flag) ?? null;
+const slugOf = (c: ListedCountry) => c?.slug ?? null;
+
+/** Key of a nation pair, whichever side is first. */
+const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+
+/**
+ * An embassy as the network view lists it, seen from `countryId`. Budget fields only for funders. `strength` is the
+ * pair's relation strength (the one standing scale), null when they have no relation record.
+ */
+function embassyListing(
+  embassy: ListedEmbassy,
+  countryId: string,
+  funders: Set<string>,
+  strengthByPair: Map<string, number>
+) {
+  const isHost = embassy.hostCountryId === countryId;
+  const budgetVisible = funders.has(embassy.guestCountryId);
+  const partnerCountry = isHost ? embassy.guestCountry : embassy.hostCountry;
+  const services: string[] | null = embassy.services ? JSON.parse(embassy.services) : null;
+
+  return {
+    id: embassy.id,
+    name: embassy.name, // Embassy name/title
+    hostCountryId: embassy.hostCountryId,
+    guestCountryId: embassy.guestCountryId,
+    hostCountry: nameOf(embassy.hostCountry),
+    hostCountryFlag: flagOf(embassy.hostCountry),
+    hostCountrySlug: slugOf(embassy.hostCountry),
+    guestCountry: nameOf(embassy.guestCountry),
+    guestCountryFlag: flagOf(embassy.guestCountry),
+    guestCountrySlug: slugOf(embassy.guestCountry),
+    // Economic tiers drive the relative-development badge on the network card.
+    hostCountryTier: embassy.hostCountry?.economicTier ?? null,
+    guestCountryTier: embassy.guestCountry?.economicTier ?? null,
+    countryId: partnerCountry?.id ?? null,
+    country: nameOf(partnerCountry),
+    countryFlag: flagOf(partnerCountry),
+    countrySlug: slugOf(partnerCountry),
+    status: embassy.status,
+    strength: strengthByPair.get(pairKey(embassy.hostCountryId, embassy.guestCountryId)) ?? null,
+    role: isHost ? ("host" as const) : ("guest" as const),
+    ambassadorName: embassy.ambassadorName,
+    location: embassy.location,
+    staffCount: embassy.staffCount,
+    services: services ?? [],
+    establishedAt: embassy.establishedAt.toISOString(),
+    level: embassy.level,
+    experience: embassy.experience,
+    influence: embassy.influence,
+    budget: budgetVisible ? embassy.budget : undefined,
+    maintenanceCost: budgetVisible ? embassy.maintenanceCost : undefined,
+    securityLevel: embassy.securityLevel,
+    specialization: embassy.specialization,
+    specializationLevel: embassy.specializationLevel,
+    lastMaintenance: embassy.lastMaintenancePaid?.toISOString() ?? null,
+    updatedAt: embassy.updatedAt.toISOString(),
+  };
+}
 
 export const diplomaticEmbassiesQueriesEmbassyListingsRouter = createTRPCRouter({
   // Embassy Network Operations
@@ -18,54 +90,35 @@ export const diplomaticEmbassiesQueriesEmbassyListingsRouter = createTRPCRouter(
           OR: [{ hostCountryId: input.countryId }, { guestCountryId: input.countryId }],
         },
         orderBy: { establishedAt: "desc" },
-        include: {
-          hostCountry: { select: { id: true, name: true, flag: true, slug: true } },
-          guestCountry: { select: { id: true, name: true, flag: true, slug: true } },
+        include: LISTING_INCLUDE,
+      });
+
+      // An embassy's budget belongs to the nation that runs it (the guest): only its owner and
+      // privileged roles see `budget` and `maintenanceCost`.
+      const funders = await countriesWithWriteAccess(
+        ctx,
+        embassies.map((e) => e.guestCountryId)
+      );
+
+      const partners = embassies.map((e) =>
+        e.hostCountryId === input.countryId ? e.guestCountryId : e.hostCountryId
+      );
+      const relations = await ctx.db.diplomaticRelation.findMany({
+        where: {
+          OR: [
+            { country1: input.countryId, country2: { in: partners } },
+            { country2: input.countryId, country1: { in: partners } },
+          ],
         },
+        select: { country1: true, country2: true, strength: true },
       });
+      const strengthByPair = new Map(
+        relations.map((r) => [pairKey(r.country1, r.country2), r.strength])
+      );
 
-      return embassies.map((embassy) => {
-        const isHost = embassy.hostCountryId === input.countryId;
-        const partnerCountry = isHost ? embassy.guestCountry : embassy.hostCountry;
-
-        return {
-          id: embassy.id,
-          name: embassy.name, // Embassy name/title
-          hostCountryId: embassy.hostCountryId,
-          guestCountryId: embassy.guestCountryId,
-          hostCountry: embassy.hostCountry?.name ?? "Unknown",
-          hostCountryFlag: normalizeFlagUrl(embassy.hostCountry?.flag) ?? null,
-          hostCountrySlug: embassy.hostCountry?.slug ?? null,
-          guestCountry: embassy.guestCountry?.name ?? "Unknown",
-          guestCountryFlag: normalizeFlagUrl(embassy.guestCountry?.flag) ?? null,
-          guestCountrySlug: embassy.guestCountry?.slug ?? null,
-          countryId: partnerCountry?.id ?? null,
-          country: partnerCountry?.name ?? "Unknown",
-          countryFlag: normalizeFlagUrl(partnerCountry?.flag) ?? null,
-          countrySlug: partnerCountry?.slug ?? null,
-          status: embassy.status,
-          strength: Math.floor(
-            (embassy.staffCount || 5) * 8 +
-              (embassy.services ? JSON.parse(embassy.services).length * 10 : 30)
-          ),
-          role: isHost ? ("host" as const) : ("guest" as const),
-          ambassadorName: embassy.ambassadorName,
-          location: embassy.location,
-          staffCount: embassy.staffCount,
-          services: embassy.services ? JSON.parse(embassy.services) : [],
-          establishedAt: embassy.establishedAt.toISOString(),
-          level: embassy.level,
-          experience: embassy.experience,
-          influence: embassy.influence,
-          budget: embassy.budget,
-          maintenanceCost: embassy.maintenanceCost,
-          securityLevel: embassy.securityLevel,
-          specialization: embassy.specialization,
-          specializationLevel: embassy.specializationLevel,
-          lastMaintenance: embassy.lastMaintenancePaid?.toISOString() ?? null,
-          updatedAt: embassy.updatedAt.toISOString(),
-        };
-      });
+      return embassies.map((embassy) =>
+        embassyListing(embassy, input.countryId, funders, strengthByPair)
+      );
     }),
 
   // Embassy Management
@@ -80,10 +133,6 @@ export const diplomaticEmbassiesQueriesEmbassyListingsRouter = createTRPCRouter(
             orderBy: { createdAt: "desc" },
             take: 10,
           },
-          upgrades: {
-            where: { status: { in: ["available", "in_progress", "completed"] } },
-            orderBy: { createdAt: "desc" },
-          },
           hostCountry: { select: { name: true } },
           guestCountry: { select: { name: true } },
         },
@@ -91,16 +140,23 @@ export const diplomaticEmbassiesQueriesEmbassyListingsRouter = createTRPCRouter(
 
       if (!embassy) throw new TRPCError({ code: "NOT_FOUND", message: "Embassy not found" });
 
+      // The running nation's (guest's) budget: its owner and privileged roles only.
+      const budgetVisible = (await countriesWithWriteAccess(ctx, [embassy.guestCountryId])).has(
+        embassy.guestCountryId
+      );
+
       return {
         ...embassy,
+        budget: budgetVisible ? embassy.budget : undefined,
+        maintenanceCost: budgetVisible ? embassy.maintenanceCost : undefined,
         hostCountryName: embassy.hostCountry?.name,
         guestCountryName: embassy.guestCountry?.name,
-        missions: embassy.missions,
-        upgrades: embassy.upgrades,
-        nextLevelRequirement: embassy.level * 1000 + 500, // Experience needed for next level
+        // Cultural-outreach missions run on a clock; show elapsed time, not the stored 0.
+        missions: embassy.missions.map((m) =>
+          m.status === "active" ? { ...m, progress: missionTimeProgress(m) } : m
+        ),
         maintenanceDue:
           embassy.lastMaintenancePaid < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        canUpgrade: embassy.experience >= embassy.level * 1000 + 500,
         availableMissions: embassy.currentMissions < embassy.maxMissions,
         // Profile fields
         description: embassy.description ?? null,

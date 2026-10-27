@@ -5,14 +5,899 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.4 "Lobster Crosby"**, channel Release Candidate), while Apps / Engines / Systems each carry a single
+**IxStates 1.5 "Lobster Crosby"**, channel Release Candidate), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
-## [Unreleased] — `rose-garden` (1.4 RC2)
+## [Unreleased] — `rose-garden` (1.5)
 
-Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-22 → 2026-09-29) is listed first; the
-2026-08-21 → 2026-09-22 work follows it. The version registry (`src/lib/buildVersion.ts`) still reads 1.4.0 until the
-RC2 cut.
+Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the pre-production audit fixes, 2026-10-26) is listed
+first, then the WikiOS launch hardening (2026-10-24 → 10-26), then the Cards mark and trophy art (2026-10-24), then the ThinkPages forum refresh (2026-10-17), then realm nations (2026-10-15), then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
+work. The version registry (`src/lib/buildVersion.ts`) reads 1.5.0 (the Vault collectathon hub below); the next release candidate is not cut yet.
+
+### 🛡️ Pre-production audit fixes (2026-10-26)
+
+No version or capability integer moves. A full audit of `rose-garden` @ `d913a1e` found the branch could not ship:
+the production build failed, CI had been red for seven pushes, the deploy script broke itself on a second run, and a
+known Next.js RCE was reachable. This block fixes what the audit found.
+
+- **Build and CI.**
+  - The 21 test type errors are fixed (they broke `next build`, which typechecks `tsconfig.json`). The audit-arch
+    fixtures leave the root tsconfig.
+  - CI runs every gate even after one fails, and adds "Typecheck (Next build config)" (`tsc -p tsconfig.json`).
+  - The arch guard is green: eight files are split.
+  - `validate:migrations` is deleted (it read a missing schema file and called `db push --accept-data-loss`).
+  - `package.json` reads 1.5.0.
+- **Schema:** the 49 Prisma models nothing read or wrote are dropped (D9: c15t consent, ScheduledChange, Post, the old
+  archetype, diplomacy, scenario and economy-modelling tables, Territory, the transport segment and media player
+  tables, activity reactions), with the MediaType enum. The deploy's db push drops the empty tables; tables with rows
+  (the old c15t consent records, the elevation legend) are exported to their own dump in the window, then dropped
+  ([drop-unused-models.md](docs/operations/drop-unused-models.md)).
+- **Deploy** (`scripts/deploy-production.sh`; the [release guide](docs/operations/release-guide.md) has the new order).
+  - Every step that can fail runs before the live build is touched. The build moves `.next` to `.next.prev` and puts
+    it back if the build, IxWorld or the reload fails. No more `bun run clean`.
+  - **Additive schema step.** `scripts/deployment/apply-additive-schema.ts` applies only the purely additive part of
+    `prisma migrate diff --from-url` (dry run by default). This breaks the cycle where the pre-push SQL needs tables only
+    the push creates, and the push needs the SQL.
+  - `f-defense.sql` skips the readiness clamp once D2a has dropped the column, so the deploy can run again.
+  - `world_configs` and `territory_claims` are dropped by SQL, and the twelve ThinkPages forum files run before the
+    push.
+  - The legacy notification-link rewrite runs once the new server answers.
+  - `SKIP_SCHEMA_SYNC=1` skips the schema steps. Rollback uses it and never pushes an older schema.
+  - `deploy-ixworld.sh` is pinned to the deploy's commit.
+  - The web server can run under PM2 (`ixstats-web` in `ecosystem.config.example.cjs`). Old servers get SIGTERM before
+    SIGKILL.
+- **Realtime and processes.**
+  - The market socket no longer aborts Socket.IO's websocket upgrades, so ThinkPages realtime (DMs, presence, typing,
+    realm boards) connects again.
+  - The market socket checks Origin, is capped, and no longer broadcasts the bidder's user or Clerk id.
+  - Entry points exit non-zero on failure and on unhandled rejections, so PM2 restarts them.
+  - Cron patterns are bounds-checked.
+  - Map-update SSE streams are capped per process and per client.
+- **Security.**
+  - next 16.4.3, dompurify 3.4.17, and patched sharp, zod, socket.io and engine.io: `bun audit` went from 27 to 6
+    advisories, the rest dev-only or major bumps.
+  - The image optimizer takes no SVGs and only the bundled `/images/*`. This is in both `next.config.js` and the
+    template.
+  - Wiki excerpts in lore cards and feed previews are sanitized; third-party wikitext could draw full-screen overlays.
+  - User HTML (posts, DMs, ThinkTank docs) and first-party article styles lose fixed and overlay positioning.
+  - The Discord and NationStates image proxies are image-only, size-capped and rate-limited, and re-check the host on
+    every redirect. The bot-token refresh runs only for the IxTwitter channel.
+  - Equipment image resolution is admin-only.
+  - Any site may frame only `/maps?embed=true`; on the maps host, IxWiki alone may frame every page but the
+    signed-in tools, which nothing may frame.
+  - Uploads take their type from their bytes.
+  - The hardcoded Giphy key is gone.
+- **Economy.**
+  - Transfer bids settle once under concurrency; parallel accepts or rejects minted Sovereigns. Bids are whole numbers
+    from 1 to 10,000,000, with no bidding on your own player.
+  - Club claims are atomic.
+  - League moves need the target's manager. Deleting a league refunds escrow and prediction stakes, and refuses while
+    other players own clubs; season resets refund stakes.
+  - MyClub ₷ moves honour vault maintenance mode, and its fees charge and write in one transaction (with a per-press
+    request id).
+  - Ticket price is capped at 100.
+  - Pack purchases are serialised per pack, so limits hold.
+  - Dividends are refused during an open primary issue.
+  - Single-choice polls hold under concurrency.
+  - Admin revokes keep the ledger (`revokedAt`).
+- **Privacy and social.**
+  - Shared notifications keep per-user read and dismiss state in `NotificationReceipt` (new table, created by the
+    push). The legacy shared columns are frozen.
+  - Pins need the post's owner or a moderator.
+  - Group adds respect blocks and message settings, and someone who left must accept to come back.
+  - Groups are capped at 50 people and messages at 10,000 characters. Mentions count only names in the text (at most
+    50).
+  - Replies, reposts, reactions and feeds never surface posts the viewer can't read. A reply must be to a message in the
+    same conversation.
+  - Sockets leave a conversation or ThinkTank room when the user does.
+  - One participant can no longer erase a group's history.
+  - Public responses carry no Clerk ids. Blocks stop engagement notices, and new-follower notices are deduplicated for
+    30 days.
+  - Officials' contact details and meeting notes are owner-only.
+  - The public reactions list is rate-limited and cached.
+- **WikiOS and limits.**
+  - The unused public `wikios.getSectionContent` is removed: its heading regex blocked the server for minutes on one
+    crafted line. The section scan behind `countries.getWikiSections` is linear too.
+  - Approved story chains re-check edit rights before writing the wiki.
+  - Sister answers are capped at 16 MB (in the upstream guard, which reads every sister answer), the render cache
+    at 64 MB, and the embed reads that miss the cache per caller (`sisterembed`: 20 a minute for a visitor, 60 signed
+    in; cache hits are free).
+  - Template preview and TemplateData caches are keyed by the canonical title and refresh after edits.
+  - Rate limits or sign-in on the remaining unthrottled writes (annotations, watchlist, stash, usage counters,
+    `getCountryProfile`). `refreshCountryCache` is admin-only.
+  - Onoma clones respect private work.
+
+### 📖 WikiOS launch hardening (2026-10-24 → 10-26)
+
+No version or capability integer moves (owner to confirm).
+
+WikiOS launches as the wiki inside IxStates, and ixwiki.com stays classic MediaWiki, public and editable
+([spec](docs/superpowers/specs/2026-10-24-wikios-launch-hardening-design.md)). The ixwiki.com takeover is deferred:
+its MediaWiki parts apply only with `define( 'WIKIOS_TAKEOVER', true )`, which nothing in the launch sets. None of this
+is deployed; WikiOS editing launches with WikiOS v1.
+
+- **Data safety: last writer wins, never silent.** When WikiOS and classic both change a page from the same base, the
+  later save stands on both wikis; a tie within the same second goes to classic. This covers edits, deletes, moves and
+  undeletes, and replaces "park".
+  - One decision function (`services/conflict-rule.ts`) judges the mirror and the inbound sync, in every mode.
+  - Every overwritten editor is told: an in-app notice (and a Discord DM when linked) with the diff and "Restore my
+    text", a note on their classic talk page, and an edit-summary trail on the winning revision. Each collision is a row
+    of the Conflict log in `/admin/wikios-settings`.
+  - An older classic revision never replaces a newer head. Writes wait for the protections import. An inbound step
+    that keeps failing is quarantined so the sync moves on. Dead mirror jobs leave the queue for an admin to requeue or
+    discard, with an alert when the queue fills.
+  - Rollback and revert save on top of the head the editor read. Saves have their own rate limit per group (8 a minute
+    for new accounts, 30 for autoconfirmed).
+  - Classic is the authority for blocks, groups and `MediaWiki:` messages: no save writes a `MediaWiki:` page, and an
+    XML import accepts only classic's own dumps. The suite runs both modes.
+- **Hosts:**
+  - The sync webhook reaches IxStates. The open `/api/ixwiki-proxy/` reverse proxy is gone.
+  - Server-side MediaWiki calls need the loopback renderer.
+  - In-app wiki links and uploaded images stay under the base path. Feeds, Discord and permalinks are built on the app
+    URL.
+  - IxStates' robots rules cover only its own paths and keep `?source=` pages out of the index, with canonical URLs on
+    classic.
+  - The runbook covers bots on `/w/api.php`.
+- **Sister wikis (iiwiki, AltHistory):**
+  - One per-host breaker and limiter guards every outbound wiki call. A wiki that does not answer shows as "could not be
+    reached", never as "not found" or an empty list.
+  - One sanitizer is the trust boundary for their HTML.
+  - Absolute links to their articles open in the in-app reader with `?source=`, as do the composer's, Discord's, the
+    admin link tools' and media search's.
+  - Hover previews work for sister pages.
+  - `{{Sister|iiwiki|Title}}` shows as a link box on classic. WikiOS shows it as a live embed of the page, a section,
+    the infobox or a card, cached about an hour and up to ten a page; the rest stay link boxes.
+- **Proof and docs:**
+  - `scripts/audit/wikios-proof.ts` runs the editor round trip, render parity and the bench under a local, launch or
+    recurring profile, and checks them against `scripts/audit/wikios-proof-thresholds.json`.
+  - The weekly `wikios-proof` cron job runs it on the server. Every deploy refuses a release whose WikiOS code has no
+    committed passing proof ([docs/audits/wikios-proof/](docs/audits/wikios-proof/README.md)). The local proof passed
+    on 2026-10-27 (commit `528f6b69c`): 12,706 of 12,706 pages byte-identical through the editor, and 99.8% of the 495
+    scored pages (of a 497-page parity sample) at 98 or more (mean 99.97, none below 70). The bench's gated run is the launch run.
+  - A render in which MediaWiki could not show a file (a missing-file link or a failed thumbnail, which classic's
+    Commons lookup can produce for one render and not the next) is rendered again once it is a day old.
+  - The unreachable Margin Inspect tab and a stray log line are gone.
+  - SYSTEM_STATUS, WIKIOS.md and the MediaWiki dependencies doc describe the launch shape.
+
+### 🃏 The Cards Mark, and Trophy Art (2026-10-24)
+
+No version or capability integer moves.
+
+- **IxCards is now Cards.** The back's foot, the pack cover, the Passport's empty collection and the NationStates
+  import screens say Cards.
+- **The Cards mark** (`CardsLogomark`): a perforated stamp in Vault velvet, the platform's first mark of its own for
+  the cards.
+  - Its detailed cut, for 48 px and up, engraves a guilloché seal into the stamp, and the seal's centre is a window onto
+    the card back's lattice.
+  - Its small cut, below 48 px, has five lattice marks cut straight out of the stamp.
+  - On a large card back the detailed cut replaces the Vault mark in the middle, and the lattice window takes the card's
+    rarity colour.
+  - The small cut sits beside "Cards" in the back's foot, on the pack cover and on the Vault's Cards row in the sidebar.
+- **Trophy cards show their article's picture:** each Loreward trophy takes the lead picture of its winning article
+  (the infobox picture, else the first file in the body), read from IxWiki's articles in Postgres, never the wiki's API.
+  - The art is listed in Compliance → Licence review with an unknown licence.
+  - A trophy whose article has no picture keeps its procedural face.
+  - `bun scripts/backfill-loreward-trophy-cards.ts --apply` gives the picture to trophies minted before.
+- **A trophy's back repeats its realm's mark** in its lattice, in place of the Special category icon.
+
+### 💬 ThinkPages Forum Refresh, Material Palette and Old URLs Removed (2026-10-15 → 10-17) — ThinkPages v3
+
+- **Security:** a signed-out `loreCards.searchLoreArchive` call with `source: "stash"` returned every user's stash
+  items, notes and annotations, and `fetchLoreMetadata` read any stash item by id. Both now return only the caller's
+  own items, and a signed-out caller reads none.
+- **Material app palette** (2026-10-15, on `rose-garden` itself, before the forum pull requests): every app's tint
+  is a named material, not a colour picked off a wheel. MyCountry is State gold, Wiki is IxWiki navy, Labs is Uranium
+  glass, ThinkPages is Commons leather (`#115536`), Maps is Chart shallows, Realms is Banner purpure, and Vault is
+  Jewel-case velvet. The default (Home, Help, Settings, Admin) is iron-gall ink (`APP_TINTS`, regenerated tint
+  blocks). Labs pages now carry `data-app="labs"`, and about 40 hard-coded app colours now read the tint.
+- **One author line** (`AuthorLine`) on thread posts, realm board messages, the home feed and the rails.
+  - A member shows their flag and role chip.
+  - A persona shows a neutral Government, Media or Citizen chip, and never a flag or a nation.
+  - An imported post shows its old forum name and an "Old forum" chip.
+  - Times are relative IxTime, and they keep the year once it is a past one.
+- **Thread posts:**
+  - The header is the author line and the `#N` permalink; the shaded band is gone.
+  - The body indents to the name column.
+  - In-character posts are set at 17px with 1.6 leading on the Facet prose scale, and out-of-character posts use
+    body type.
+- **Board pages and unread:**
+  - Board rows are denser.
+  - One sort control: column headers from `md` up, a menu below that.
+  - The board description appears once.
+  - Unread has a single look everywhere (`UnreadMark`): a tint dot before a semibold title.
+- **Home:**
+  - A plain page header with a **New thread** menu that lists only the boards you may start a thread in, leaving out
+    boards a site or category ban closes to you.
+  - Your realm in the main column.
+  - Boards show their last post as an inline column.
+  - **New across ThinkPages** is a feed of new threads with an "In character" chip.
+- **Removed pages:** New posts and Watched (`/thinkpages/new`, `/thinkpages/watched`) and their procedures. The
+  `forum_readers` table and its "mark all read" floor are dropped too.
+- **Old URLs removed.** Every legacy redirect is deleted, and the URLs below now 404:
+  - the old `/thinkpages/*` pages, `/@user/<tab>`, `/id/@user/<tab>` and `/profile`
+  - `/achievements` and `/vault/exchange|marketplace|market|packs|trading|admin`
+  - `/builder/import`, `/mycountry/builder` and `/explore`
+  - `/countries/<slug>/factbook` and its `#section` hashes
+  - the old season, help-article and WikiOS tool URLs
+  - every `/forum/*` path, XenForo thread, post, forum and member links included
+
+  `redirects()` is gone from `next.config.js`. The orphaned PWA files (`manifest.json`, `sw.js`, `offline.html`) are
+  deleted.
+- **Old links still inside IxStates are rewritten** to the current pages:
+  - wiki articles' old profile links, when an article renders (renderer version 4) and when an outdated stored copy
+    of an article is read
+  - saved notifications, by a migration
+  - the XenForo import:
+    - Links in imported posts point at the native page. A link whose target an anonymous reader may not see becomes
+      plain text.
+    - Bridge-era notification links point at the native post or thread, or at `/thinkpages` when nothing public is
+      there.
+    - Bridge-era stash items move to their native thread, whatever its visibility. They are deleted only when the
+      thread was never imported (or when the stash already holds the native thread).
+- **Smaller fixes:**
+  - XenForo `/posts/<id>/` links map to the post.
+  - "Jump to unread" answers a real redirect.
+  - The economy drill's Open page goes to the factbook's economy section.
+  - The unused ThinkTank realm board (`realms.getBoard`) and the old forum link previews are deleted.
+- **Owner deploy steps:**
+  - Run `20261027120000_drop_forum_readers` before `db:push:force`; the deploy scripts now do this.
+  - Run `20261028120000_rewrite_legacy_notification_links` once the code is live (deploy step 5e). It must run before
+    the import's `--apply`.
+  - Run the import runbook's steps 2 to 9 soon after the deploy. Until step 6, bridge-era stash items are hidden and
+    `/forum` notification links answer 404.
+  - Delete the redirect blocks in the hand-edited production `next.config.js`.
+  - After XenForo is decommissioned, forum.ixwiki.com answers a 301 home on `/` and a 410 everywhere else (import
+    runbook step 13).
+
+### 🏰 Realm Nations (2026-10-15)
+
+- **`/countries` is retired:** every nation belongs to a realm, so the nation list is the realm's **Nations** tab
+  (`/r/<realm>/nations`). `/countries` (and `/explore`) redirect there: `?realm=<slug>` to that realm's, otherwise to
+  the active nation's realm, or Ixnay when signed out or without a nation. **My realm** in the sidebar follows the
+  same redirect. Nation profiles stay at `/countries/<name>`.
+- **The card grid is back on the Nations tab:** flag cards (hover for figures, click to expand), search, the tier
+  filter, **Feeling lucky** and the stats strip that filters by continent. Your nations come first, then the rest in an
+  order shuffled once per visit (`orderNations`). A card's top corner holds one button showing the nation's state that morphs
+  into its action while the card is hovered: **Unclaimed** → **Claim**, **Active** → **Leave realm**, **Yours** →
+  **Play as** (`MorphLabel`). **Pending review**, or **Unclaimed** when you can't claim, is a plain badge.
+- **Removed:** the filterable list directory (filter sidebar, sort bar, list cards, pages of nine). Region and
+  population filters and sorting go with it; comparing nations stays on a nation's profile.
+- **Realm pages are full width:** `/r/<realm>/…` and `/realms` drop the `max-w-6xl` column and fill the space beside
+  the sidebar.
+
+### 🗨️ ThinkPages Home Texture and Thread Cards (2026-10-15)
+
+- **Masthead:** the forum home's header sits on a ThinkPages tint wash under a chevron texture (`PageHeader`'s
+  backdrop, through `ForumPage`'s new `backdrop` prop), with the sitewide totals as its subtitle ("7 boards · 1,240
+  threads · 9,830 posts").
+- **Paper grain:** a tint paper grain on the home's page canvas (`ForumPage`'s `paperGrain`), behind the panes so it
+  shows through their glass; textures still never sit on data panes, and the 5% cap and Settings switch apply.
+- **Boards:** large icon tiles, each board with its own sanctioned texture (grid for Rules and Staff, chevron for
+  Announcements and Reports, dots for Find a Realm and Side games, paper grain for General), and a tint rule down the
+  left edge of a board with new threads.
+- **Your realm** moves from the main column to the top of the right rail (`YourRealmPanel`), shown only to realm
+  members, with the realm's uploaded emblem (else its thumbnail) as its tile.
+- **Thread cards:** a board's latest-thread card has a headline title, the last poster's flag as a faded watermark from
+  the right edge, and an arrow that nudges on hover. The old-forum thread link preview in posts uses the same look:
+  one pressable Well with the forum's tint tile (no indigo icon, no "View Thread →" text link). Both cards now draw a
+  keyboard focus ring.
+
+### 🧭 ThinkPages Sidebar, One Stash and Vault Leaderboards (2026-10-15)
+
+- **ThinkPages sidebar:** Forums, ThinkTanks, Accounts, Stashes and Moderation. **Your realm**, **New posts** and
+  **Watched** leave it (`/thinkpages/r/mine`, `/thinkpages/new` and `/thinkpages/watched` still work). With them go
+  the Watched and realm-board count badges (the sidebar no longer polls `navCounts`; the dashboard's Your realm panel
+  and the forum home's realm card still read it), the realm-emblem row icon (`realm-nav-icon.tsx`) and the
+  `realm-member` section gate.
+- **One Stash, in the account menu:** stashed threads live in `/stashes` (its Threads tab), the one stash page,
+  opened from **Stash** in the account menu (beside Your profile and Wiki profile); neither ThinkPages nor Wiki lists
+  it. `/thinkpages/stashed` redirects there. The forum-only listing (`StashedPage`,
+  `thinkpagesForum.stashedThreads`, `listStashedThreads`, `STASHED_HREF`) is removed; the I5 check on readable
+  threads stays tested through `readableThreadTitles`, which `/stashes` uses.
+- **Account menu:** your nation (flag and name) opens its public page, replacing the separate Public country page row;
+  then **Passport** (was Your profile; `/@me`), Stash, the nation switcher, Finish setup (when needed), **Passport
+  settings** (was IxnayID connections; Settings' IxnayID & Passport panel), Manage account and Sign out, with Privacy and Terms below. Wiki profile is
+  gone (its wiki lookup with it).
+- **Wiki sidebar:** Main page, Search, Recent changes, Categories, Repository and Utilities. Random article,
+  Contributions and Watchlist open from the Utilities hub; Stashes moved to the account menu; Blurbs keeps its
+  address, the wiki's main page and the dashboard.
+- **Leaderboards under Vault:** the nation boards (`/leaderboards`) get a **Leaderboards** row in the Vault sidebar,
+  after Achievements, and belong to the Vault app (they left the Realms app's routes).
+- **Achievements page:** the big "Achievements" header (and its Global leaderboards button) and the standing card
+  (unlocked, points, rank) are gone; the page opens on its tabs, titled by a visually hidden `h1`.
+
+### 💎 Vault Collectathon Hub (2026-10-14) — platform 1.5.0
+
+The Vault becomes the platform's collectathon hub: achievements, cards and the IxCredits store under one app, in the
+sidebar for every signed-in player, with Lorewards shared between the Vault and WikiOS. IxCredits are now **pure
+metagame**: they reward platform activity, and a player's country plays no part in them. Design:
+[the Vault hub spec](docs/specs/2026-10-14-vault-collectathon-hub-design.md).
+
+- **Versions:** platform **1.4.1 → 1.5.0** (`VERSIONS.platform.minor`; the release name stays "Lobster Crosby", the channel
+  Release Candidate). **IxVault 2 → 3** (`VERSIONS.apps.ixvault`) and **Achievements 2 → 3**
+  (`VERSIONS.systems.achievements`, which covers Lorewards / Wiki Awards). No other capability integer moves.
+- **Vault in the sidebar for everyone:** the `showCardsTab` navigation setting is gone end to end (the type, the admin
+  switch, the `vaultVisible` plumbing and the stored settings row); the rail wallet and sidebar card show for any
+  signed-in player. The Vault group has five rows: **Wallet**, **Daily reward**, **Achievements**, **Cards** and **Store**.
+  Collections and Import fold into Cards. `/vault/marketplace` is now `/vault/store` (the Store, Auctions and Trading
+  `?tab=` values carry over); `/vault/market`, `/vault/packs` and `/vault/trading` redirect into it. The tint block of
+  `[data-app="vault"]` is defined once, with the `APP_TINTS.vault` values.
+- **Achievements in the Vault:** `/vault/achievements` with four tabs (All, Lorewards, Showcase, Leaderboard); the
+  Leaderboard tab ranks achievement points (`achievements.getPlayerLeaderboard`) and `achievements.getMySummary` feeds
+  the standing card. `/achievements` redirects, keeping `?a=<key>`. The nation boards (GDP, population, density, growth)
+  stay at `/leaderboards`. Unlock notifications, Home-feed unlock items and Halo link to the new page.
+- **Exchange moves to Labs:** `/labs/exchange` (a Labs row in the sidebar); `/vault/exchange` redirects. It is behind the
+  Labs gate, so a user without Labs access gets a 404 there, including from Exchange notification links. **The IxCredits
+  and Sovereigns conversion is cut both ways**: `exchange.convert`, `src/lib/exchange/conversion.ts`, the convert card and
+  the `exchange_convert_*` and `exchange_revenue_*` settings are gone; old `SPEND_EXCHANGE` / `EARN_EXCHANGE` rows stay as
+  history.
+- **Expandable sidebar wallet card:** the card keeps its closed form (balance, "+N today", daily reward) and opens to
+  today's earnings by source, achievement progress (unlocked, points, rank) and links to Cards, Store and Achievements.
+  It shows no dividend figure, and the open state is remembered with the sidebar's expanded set.
+- **The Wallet page (`/vault`) as a bank statement:** an account hero (balance, level, "+N today", net worth, streak, the
+  actions that apply), a statement with a running balance grouped by UTC day (filters All, Earned, Spent; "Show earlier";
+  a Vault dividend row expands to its stored breakdown; Loreward and achievement rows name what they paid for), and a
+  holdings column (Achievements, Lorewards, Cards, Store, and a prompt to link a wiki account). `vault.getTransactions`
+  gains an earned or spent filter and returns each row's metadata. The wallet, collection, yield, recent-activity and
+  showcase cards are removed.
+- **The nightly Vault dividend replaces the country dividend:** one itemised, idempotent payout per user per UTC day from
+  the new `vault-dividend` cron job: collection interest (0.25% of deck value, cap 25, trophy cards excluded), wiki (the
+  Lorewards engine's score for the day, 1 credit per 80 points, cap 30, through a verified wiki link), ThinkPages and
+  forum posts (2 each, cap 20), card activity (2 per pack, 5 per trade, 3 per sale, cap 20), a login-streak bonus on the
+  activity parts (up to +50%), the store's dividend boost, and a total cap of 150. It settles up to 7 missed days and never
+  a day before the recorded start (`vault_dividend_started_on`). Removed with it: the `passive-income` job, the country
+  dividend and its primary-nation rule, the budget multiplier, the missed-day catch-up in `getBalance`, the yield
+  projections and `vault.calculatePassiveIncome`, `vault.getBudgetMultiplier` and `vault.checkDailyCap`, and the dead GDP
+  correlation in the card-value job.
+- **IxCredits earnings from country play removed:** embassy and cultural exchange rewards, diplomatic scenario rewards,
+  the per-post ThinkPages reward, the forum action reward (it supersedes the credit reward in the ThinkPages block above),
+  the wiki-import bonus, and the new-player bonus triggers on country creation and realm claims (the bonus is still paid at
+  account creation and on first Vault open). The phantom "IxCredits awarded" on national issues is gone with
+  `NationalIssue.ixCreditsAwarded` and the `ISSUES_AWARD_CREDITS` flag, and the Vault links in the country actions menu and
+  the embassy card are removed. Kept: the daily claim, achievement unlocks, NS deck import, Loreward payouts, card sales,
+  trades and junking, the nation card royalty (2% of a nation card's auction sale to the nation's owner), and admin
+  grants.
+- **Lorewards, shared:** one `LorewardsView` in two homes: WikiOS `/util/lorewards` (now a real page: today's race,
+  standings, recent winners) and the Vault's Lorewards tab (your trophies, streak, payouts and trophy cards). The Passport
+  modal renders the same view, and the article's "Loreward winner" badge opens that winner's trophies
+  (`/util/lorewards?user=<winner>`). New procedures `lorewards.getTodayRace`, `getStandings`, `getTrophies` and
+  `getMyTrophies`; `wiki.awardHistory` is removed from the passport payload.
+- **Tiered Loreward payouts:** by contest and place, for entries dated 2026-10-15 or later: daily 500 winner / 150
+  runner-up, weekly 1,500 / 400, monthly 4,000 / 1,000 (SystemConfig can override a cell; the single
+  `vault_bonus_loreward` setting is gone). Weekly and monthly runner-ups are not recorded in the data, so only recorded
+  places pay.
+- **Trophy cards:** every recorded Loreward place mints a one-of-one lore card of the winning page (Legendary for a
+  monthly winner, Epic for a weekly winner and a monthly runner-up, Rare otherwise), given to the winner through a
+  verified wiki link or held unowned until one exists. `Card.lorewardEntryId` and `Card.lorewardEdition` are new. They
+  count in the Wallet's deck value and net worth but not in collection interest or deck-value achievements.
+- **Nation achievements rebuilt:** around the live MyCountry systems and long-term play, measured in real time so realms
+  with other clocks are on equal footing. One early milestone per system, then late-stage ones: Executive 16, Politics 8,
+  Diplomacy 10, Defense 2, Nation 12 (including Stewardship I to III on the new `Country.ownedSince`). Gameable keys carry
+  real-time floors. A metric-loader registry (`src/lib/achievements/metrics/`) computes the numbers, and the definitions
+  live in `src/lib/achievements/sets/`.
+- **New platform achievements:** Wiki 7, Social 20, Cards 15, Lorewards 8 and General 16, evaluated at account level
+  (62 of the 114 active achievements need no country). Every icon is an iconoir key rendered through one map.
+- **Legacy achievements:** 47 retired definitions (GDP, GDP per capita and population tiers, unwinnable economic and
+  military ones, embassy-count, treaty, trade and alliance-count tiers, atomic components, government types) stop
+  evaluating but keep their unlocks, points and credits, show greyed out, count toward the "unlock N achievements" tiers
+  and are left out of "N of total".
+- **Docs:** `docs/systems/` (Vault, IxCredits, Achievements with Lorewards, Cards, Exchange, status page, passport), the help
+  articles, the WikiOS route table and the API reference describe the above; the spec gains an Implementation notes
+  section listing where execution departed from its text.
+- **Production steps (in order):** apply `prisma/migrations/20261024120000_vault_hub/migration.sql` **before**
+  `db:push:force` (it adds `Country.ownedSince` and the two `cards` columns, drops `national_issues.ixCreditsAwarded`,
+  deletes the `showCardsTab` row); in `CRON_ENABLED_JOBS` replace `passive-income` with `vault-dividend`; run
+  `bun scripts/backfill-country-owned-since.ts --apply` (after any `audit-leader-ownership.ts` run, which sets owners
+  without `ownedSince`); run `bun scripts/backfill-loreward-trophy-cards.ts --apply`; restart (the boot sync retires the
+  Legacy achievements). An admin cron override saved under `cronSchedule_passiveIncome` is orphaned; re-save it under
+  `cronSchedule_vaultDividend`. The full steps are in `docs/operations/deploy-rose-garden-2026-09.md` (5a, 5d and 7).
+
+### 💬 ThinkPages Becomes the IxStates Forum (2026-10-07 → 10-11)
+
+ThinkPages replaces the XenForo forum: a native sitewide forum plus a NationStates-style regional message board
+(RMB) per realm, tied to the game (plan on the board, act in MyCountry, flavour the result back in the forum).
+No version moves in this block.
+
+- **Replacing XenForo (PRs #64–#72):** native sitewide forum and composer at `/thinkpages`, realm sections and the
+  Realm Board migration, moderation (hide, warn, ban, mod log), the XenForo import tooling, the ThinkPages name freed
+  for the forum (personas live on the Dashboard), and the XenForo bridge deleted. Action-linked posts and story
+  chains (PR #61) are the shared module the forum attaches actions through.
+- **Forum redesign:** the forum uses Home's frame (main column plus the Facet Inspector rail). Forums home and board
+  pages are sortable data tables with last-post info, pinned groups and windowed pagination. Posts use a header
+  postbit (avatar, handle, country flag, role), permalinks, post numbers and quotes. Thread posts are written in the
+  WikiOS Canvas editor; wikitext is canonical and rendered at save through the WikiOS parse pipeline, with a cron
+  that re-renders stale posts. IC boards read as WikiOS articles, and imported XenForo wiki BBCode and quotes render
+  again. The phone layout has board chips and rail panels in a sheet.
+- **Live realm board:** each realm page is its board, with messages delivered in real time (Socket.IO) and typing
+  indicators. Visitors from other realms can post (marked "Visitor") unless officers turn them off. Boards have
+  slow mode, the thread moderation tools, quoted replies, and "Continued in a thread".
+- **Unread, watch and notifications:** unread threads are bold, with jump-to-unread, Mark board read and Mark all
+  read (threads older than 30 days never count). Starting or replying to a thread watches it. The sidebar gains
+  New posts, Watched and Stashed with badges. The IxStates bell receives watched replies, @mentions, quotes and
+  board replies, once per post per person. `@handle` autocompletes in the light composer and links to the profile.
+  Persona posts never reveal their player in any of these, and the realm board stays out of every forum list and count.
+- **Reactions:** the Dashboard reaction set on forum posts and board messages, with live counts and a deduplicated
+  bell notice.
+- **Actions in the forum:** any composer can attach a MyCountry action (directives included). MyCountry gains
+  Share to realm, and actions show where they are "Discussed in". The first public post of an action earns a small
+  credit reward (default 5 credits, at most 3 rewarded actions per country per day, set in Admin > Vault > Forum
+  actions). Persona posts are not listed in "Discussed in".
+- **Find a Realm adverts:** one advert thread per realm, created and managed by officers with the `appearance`
+  power and headed by a live realm card with Join. The realm's Manage page has an Advert row. Adverts of draft,
+  hidden or deleted realms are hidden, and an archived realm's advert is locked.
+- **Across IxStates:** Home feed items for forum threads are real post previews. Home's rail has a Your realm panel
+  (new board messages and the latest three). The Realms directory, realm cards and the realm overview link to the
+  realm's board, and `/r/<realm>/board` opens the live board. On phones, Home's feed tabs scroll instead of
+  overflowing.
+- **Final audit (2026-10-11):** slow mode holds against parallel posts (per-member advisory lock); a link to an
+  old board message pages back to it or says it is older than what is loaded; live board updates reconnect after a
+  dropped connection instead of staying paused; a background tab no longer marks the board read; the Posting as
+  list no longer offers your personal account; a Canvas post whose render shows other action links than its text is
+  refused; the realm slug `mine` is reserved; a watcher who blocks one author still hears about other replies;
+  reaction notices skip reactions already taken back and the reactors list refreshes; the @ menu always picks a
+  highlighted name; editing a post keeps action links whose directive was later withdrawn; a story chain never
+  publishes a withdrawn directive to the wiki; lost unique-key races and records deleted mid-write are recognised
+  through the app's db client (adverts, reactions, rewards); Discussed in counts stay right beside a busy action;
+  realm visitor lookups, the unread badge and the realm directory's forum figures load in constant queries.
+- **Production steps:** apply the pending migrations in order, through `20261018120000_thinkpages_realm_adverts`
+  (the forum adds `20261010120000` → `20261018120000`), run `db:generate`, then restart the web app and `ixstats-ws`
+  together. Existing posts re-render for mention links at about 300 an hour. Credit rewards are live from deploy;
+  to stage them, set the reward or cap to 0 first.
+
+### 🏛️ Realms Audit and Eurth Onboarding (2026-10-07) — platform 1.4.1
+
+- **Platform 1.4.0 → 1.4.1** (`VERSIONS.platform.patch`): fixes and page work, no capability integer moves.
+- **Realm page (`/r/[realm]`):** a **Join** card (nations waiting for a player, a few names, a link to Nations)
+  replaces the full claimable list on Overview. The header shows **Open to claim** and "N played", hides a zero
+  population and says "Administered by IxStats staff". The factbook no longer repeats the description: staff get
+  "Write the factbook", visitors a lore card ("Read the lore on IIWiki"). Empty Officers and Census panels are hidden;
+  the banner placeholder wears the Realms tint. The Nations tab says "No nation has been founded yet" instead of
+  "No nation matches", shows "Pending review" for the viewer's pending claims and loads flags through `assetUrl`.
+  A read-only board no longer invites posting, and the board counts the realm's nations, not its board members.
+- **Base path:** realm and directory links no longer wrap `<Link href>` in `createUrl` (Next adds `basePath`
+  itself, so production got `/projects/ixstates/projects/ixstates/...`) and the active tab is highlighted again.
+  `createUrl` stays only inside `redirect_url`. About 25 other pages (country profile among them) still have the
+  pattern.
+- **Realm fixes:** a failed load shows an error with Try again instead of a 404; claiming waits for the realm's
+  rules to load and refreshes the realm, MyCountry and "Play as"; Manage scrolls to `#factbook`/`#rules` and hides
+  Map in archived realms; Passport never links a realm by id; another realm's map no longer shows IxWorld's notes
+  (IxTime, climate, IxWiki) in its welcome dialog.
+- **Security and correctness (server):**
+  - A board ban or mute binds the player who held the nation, so abandoning or re-claiming it no longer lifts it
+    (`realm-board.ts`, from the claim history; nations never claimed still can't be traced without a schema change).
+  - A wiki page counts as taken by the country that carries it (`wikiSource`/`wikiPageTitle`), not by name, so
+    renaming a nation no longer makes its page claimable again.
+  - Factbook and rules HTML go through `sanitizeRealmContent` (no `style`, `class`, `id`, `data-*`), on save and
+    on read: a full-page overlay could be drawn before.
+  - Map mutations return NOT_FOUND for an unknown or hidden slug instead of falling back to IxWorld; archived
+    realms refuse wiki changes and source syncs; happenings hide draft embassy partners; officers lose their post
+    when an admin reassigns or releases their last nation.
+  - Cached reads key a signed-in viewer's `?realm=` reads per viewer (`cacheRealmKey`), so a draft realm seen by
+    its staff is never served to anyone else; sovereignty relations are listed per realm.
+- **Eurth source sync:**
+  - A map entry's wiki link binds only to one of the realm's pages, directly or through a redirect no other nation
+    lands on ("Salvia" → `Sanctum Imperium Catholicum`; "Deseti" → `Orioni` stays unlinked). Other links leave the
+    nation without a wiki page, so its claim goes to manual review instead of to a stranger.
+  - Roster and map names match across a trailing qualifier ("Nanto (Eurth)" and "Nanto"); likely respellings are
+    held back with a warning. Figures in `secondaryFields` rank below the infobox. NPC entries are created and
+    claimable like any other nation.
+  - A re-run re-reads unclaimed nations whose infobox never landed; map areas use the planet radius; loading a
+    preset again fills only what is missing (`--force-preset` overwrites).
+  - The infobox reader (`fetchNationPagePrefill`, also used by approved claims) follows a redirect once, so a
+    nation whose link names a redirect ("Mito" → `Mitō`, "Pentium" → `Republic of Pentium`) gets its flag, leader
+    and identity.
+  - Runbook (`docs/systems/realms-eurth-onboarding.md`) renumbered and corrected.
+- **Local data:** Eurth synced on the dev database (135 unclaimed nations, 115 borders, 8 alliances), founded
+  9 January 2004 (Portal:Eurth), with links to eurth.org, Portal:Eurth, the NationStates region and the map.
+  `Ymutz Mizlan` carries the roster page `Ymutztlaclan-Mizlanuzco`.
+
+### 🌍 Eurth in IxWorld, and a repeatable realm map pipeline (2026-10-07)
+
+The Eurth community map (`a-seth-harrison/eurth-map`; art © Stijn Vogels & Colucci Giovanni, Alemi Cartographic
+Society, used with permission) now lives in the IxWorld map system and looks and behaves like IxWorld's own map.
+Everything is realm-generic: a realm's map is built from its **map pipeline config** (`Realm.settings.map.pipeline`),
+filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spec:
+`docs/specs/2026-10-07-eurth-map-port.md`; runbook for any realm: `docs/systems/realm-maps.md`.
+
+- **IxWorld style by default:** a realm map opens on the standard vector style, centred on its land; bottom-left is
+  the scale only, and the realm's credit line sits in the standard attribution block. Countries use the map's own
+  colours (the source sync stores them as `properties.fill`). The per-nation legend and the unclaimed hatch are
+  gone (the country panel says "Unclaimed").
+- **Physical layers traced from the art** (PNG layer engine): IxWorld's altitude bands (Eurth's 6 legend bands
+  mapped to IxWorld's 8 and the coast band), rivers (centre lines), lakes, ice caps and Köppen climate zones. A
+  realm's `climateKey` drives the climate legend, the pin readout and the Geography tab. Coasts, borders and zones
+  are smoothed as one coverage (`ST_CoverageSimplify`), so neighbours still share edges; smoothing is stamped and
+  idempotent, and the source sync applies it after writing borders.
+- **Raster art, optional:** the map's art is reprojected into Web Mercator tiles (`MAP_RASTER_DIR`,
+  `/api/map-rasters`); base maps and overlays are switches in the layer panel, off by default, with their keys
+  inside the panel. While a base map is on, country fills show under the pointer only.
+- **Ocean and sea labels:** realm labels render through IxWorld's own ocean-label layer (ranks major, medium,
+  minor); Eurth has 83 from the art.
+- **Borders repaired on write:** valid polygons, no repeated points, no strip shared by two neighbours (Eurth: 70
+  overlapping pairs, 13,055 km², and 6 invalid shapes to none). Neighbour queries use `ST_Intersects` (country
+  panel, geo bundle, national issues), so nations meeting along a repaired border are neighbours.
+- **Map pipeline:** `realms.mapPipeline` (get, save, load preset, start, run, runs, cancel; founder, Map officers and
+  site admins) runs the steps repair, physical, rasters, labels, flags, default view and areas as a `map-pipeline`
+  map import job, with dry runs and history; `/admin/realms` → Map and `/r/<realm>/manage` → Map pipeline.
+  `scripts/realms/build-realm-map.ts` runs the same job; the per-step scripts are thin wrappers.
+- **Nations fit the IxStats economy:** realm nations take growth by economic tier from `Realm.settings.nationDefaults`
+  (defaults: IxWorld's medians), editable in `/admin/realms` → Nations and applied to unclaimed nations with a
+  preview; any country's growth is editable in the admin Country Inspector. A new country's max GDP growth follows
+  the tier rule (it was a flat 5%).
+- **Flags local, like IxWorld's:** realm flags and coats of arms are stored in `public/flags/`
+  (`<realm>--<country>.png`, `scripts/realms/localize-realm-flags.ts`); images a wiki confirms missing are cleared.
+- **Country panel and pages:** the capital shows; a realm nation's wiki intro comes from its own page
+  (`wikiSource`/`wikiPageTitle`, redirects followed); the flag lookup uses the map's realm; no "Unknown" region chip,
+  and new countries store an unknown continent or region as empty, as IxWorld does.
+- **Area measuring:** Distance and Area modes; spherical on the realm's radius, antimeridian and polar rings handled.
+- **Fixes found on the way:**
+  - **Security:** deleted `/api/flags/download` and `/api/flags/save-metadata`, unauthenticated routes that wrote any
+    fetched URL to any path (path traversal) and overwrote the flag metadata. **Production still has them**: deploy.
+  - Infobox parsing fills `{{PAGENAME}}` and ignores commented-out fields (broken flags on 26 Eurth nations).
+  - The WikiOS reader no longer says an article "does not exist" when its wiki failed to answer (only `NOT_FOUND`
+    does; a sister wiki's missing page now returns `NOT_FOUND`).
+  - The infobox reader follows a redirect; a cached read keys a signed-in viewer's `?realm=` per viewer (a draft
+    realm is never served to others); sovereignty relations are listed per realm.
+
+### 🗺️ IxWorld Map Performance (2026-10-07) — IxWorld v3
+
+- **IxWorld 2 → 3** (`VERSIONS.apps.ixworld`). The map welcome dialog shows once more for everyone, since it
+  remembers the version it last showed.
+
+- **Vector tiles for terrain:** `/maps` draws altitudes, rivers and lakes from PostGIS vector tiles
+  (`/api/map-tiles/<realm>/<layer>/<z>/<x>/<y>`, cached for a day) instead of whole-world GeoJSON. The first load's
+  map data drops from about 6 MB of JSON to 0.88 MB plus 196 KB of tiles, and countries appear in about 3.2 s
+  instead of 5.8 s on the dev benchmark. Shapes that cross the antimeridian are split exactly as before. Climate
+  stays GeoJSON and loads when switched on.
+- **Smaller map data:** layers travel in a compact delta-encoded format (`geoCore.getWorldMapPacked`,
+  `getMapBundle`). Cities and subdivisions load once the viewer zooms past 3 (`getMapBundleDetail`).
+- **Map editor:** snapping searches a segment grid instead of every segment of every layer (about 8 ms to under
+  0.01 ms per snap on real data, same answers). Vertex and border drags process at most one move per frame, and
+  mouse-up applies the last one. The country editor draws terrain from the same vector tiles and loads the GeoJSON
+  it snaps to after its map is up: 0.8 MB of map JSON before paint instead of 4.6 MB. Each layer loads on its own,
+  so switching one on fetches only that layer.
+- **Fixes:** a failing city, POI or subdivision query no longer blanks continents, countries, rivers and lakes.
+  Countries no longer vanish on a repeat visit or after a theme change. Points of interest fully uncluster before
+  the map's max zoom. Faded-out country names no longer crowd out visible ones.
+- **Ops:** add a Cloudflare Cache Rule making `/projects/ixstats/api/map-tiles/*` (and `/api/map-tiles/*` on
+  maps.ixwiki.com) eligible for cache, respecting the origin's `Cache-Control`.
+
+### 🧭 Realm Map Import Engine (2026-10-07)
+
+- **Background import jobs** (`MapImportJob`): a realm's political map from a flat-colour PNG/JPEG, an SVG of nations
+  or GeoJSON is uploaded through `/api/admin/map-import/upload` (40 MB, Content-Length checked first, stored by
+  SHA-256 in `MAP_IMPORT_DIR`), analysed off the request path (the new `map-import` cron job, PNG tracing in a worker
+  thread; else in-process in the web server), mapped to the realm's nations, dry-run, applied and rolled back. Progress,
+  stage and Cancel in the wizard. `startMapImport({ realmId, source, options, requestedBy })` is the server entry.
+- **New PNG engine:** decoded once, palette from a colour key or detected by perceptual (CIEDE2000) clustering, pixels
+  snapped through a lookup table, border lines and anti-aliasing removed so neighbours touch, specks merged into their
+  largest neighbour, every boundary traced once into a TopoJSON topology so shared borders stay identical after
+  simplification, several colours per nation. About 2 s for an 8000 × 4000 map with 130 nations (was about 2.5
+  minutes in one request).
+- **Georeferencing** (`Realm.settings.map`: `projection`, `bounds`, `controlPoints`): whole globe, a crop's bounds or
+  three or more control points, equirectangular or Mercator (inverse Mercator applied), with an extent preview.
+- **Realm SVG import** on the province importer's engine (transforms, every shape type, `<title>`/id/label names,
+  arcs, fill rules, holes by containment); **GeoJSON bulk import** with a CRS check, pixel-coordinate detection and a
+  name property; **colour-key legends** (CSV/JSON) fill the mapping by nearest colour; names are checked with the
+  editor's fuzzy matcher.
+- **Dry run, apply, rollback:** the diff (new/changed/unchanged/retired borders, unmatched regions, unknown names,
+  areas on the realm's planet), writes through the realm map writer, land area filled only where a nation has none,
+  adjacency rebuilt, caches dropped, and a `MapImport` snapshot for **Roll back**. `importPipelineResult` is now a
+  thin wrapper over the same writer (validated, batched, named, snapshotted; replace mode retires only the imported
+  layer types).
+- **Who:** site admins, the founder and Map officers (`canImportRealmMap`): the wizard is in Full pipeline and in the
+  realm's Manage tab (**Map import**); **Import this map** on the wiki panel imports the map chosen from the realm's
+  wiki, with its credit line, and shows the wiki's locator maps and capitals as helpers.
+- **Deploy:** `prisma/migrations/20261007150000_map_import_jobs/migration.sql` (additive; `db push` applies it) and,
+  optionally, `map-import` in `CRON_ENABLED_JOBS` (deploy runbook steps 4 and 7).
+
+### 📚 Realm Wikis & IIWiki World Discovery (2026-10-07)
+
+- **Realm wiki settings:** each realm names the sister wiki its lore lives on and how its world is found there
+  (`Realm.settings.wiki`: wiki, root category, keyword, nation roster category, portal page, extra map categories;
+  `src/lib/realms/realm-wiki-settings.ts`). Site admins edit them in `/admin/realms` → **Wiki**, the founder in
+  Manage → **Wiki**. The `eurth-map` preset carries Eurth's values and fills them when the realm has none.
+  `bun scripts/realms/import-realm-lore.ts --realm eurth` alone now works once they are set; flags still win.
+- **World discovery** (`src/lib/realms/sources/iiwiki-discovery.ts`): the roster (lore import's roster rule), each
+  nation's infobox hints (flag, coat of arms, capital and its `{{coord}}`, locator map files), and candidate world
+  maps (the world's map categories, the portal's images and page image) ranked for a flat political map, each with
+  its original URL, size, type, SHA-1, licence and author. Run step by step from the panel with progress; reads are
+  sequential, paced and capped, Retry-After is honoured, and a 403 returns what was gathered with `blocked` instead of
+  an error (Continue resumes). A refused discovery no longer takes the wiki offline for the whole app.
+- **Use this map / Re-check:** the original file is fetched straight from the wiki (never through wsrv.nl, which may
+  re-encode colours), only from that wiki's hosts with every redirect re-checked, at most 40 MB, its SHA-1 checked
+  against the wiki's and its dimensions read from the header (64 megapixels at most) before anything decodes it. The
+  choice is stored as `Realm.settings.map` (`source: { wiki, fileTitle, sha1 }`, `attribution`, `file`) for the map
+  import; Re-check compares the wiki's current SHA-1 (unchanged, changed or missing).
+- **Infobox hints export:** `realms.wiki.infoboxHints` gives each roster nation its capital coordinates and a proxied
+  locator map thumbnail, for the map import's colour to nation step.
+- **One list of MediaWiki hosts:** the sister wikis (iiwiki, AltHistory, Commons) are entries of
+  `src/lib/wiki-os/wiki-hosts.ts`; the proxies' allowlists, `WIKI_SOURCES`, account proof and realm wiki settings are
+  built from it, so adding a host is one entry and no setting can name a URL.
+### 🗺️ Realm-Owned Maps & Map Display (2026-10-07)
+
+- **Map officer power:** a realm officer can hold **Map** ("Edit the realm's map, borders and labels, and import
+  maps"). The world editor's border edit, split, merge, region links, linkage validation, Auto-Match and labels now
+  check the edited realm (`editableMapRealmId`): site admins anywhere, the founder and map officers in their own realm
+  only, IxWorld admin-only, archived realms read-only. Founders and map officers get **World editor** on
+  `/maps?realm=<slug>`. A map officer renames a region, not the nation linked to it.
+- **Realm map settings** (`Realm.settings.map`, `src/lib/maps/realm-map-settings.ts`; Manage → **Map**): planet
+  radius (default 6371 km), base map image (upload or `https://`), credit line, default view (saved from the world
+  editor's new realm menu).
+- **Planet radius:** scales the areas the border editor stores, the editor's area readout, the geo profile's
+  perimeter, coastline, borders and spans, the measure tool and the scale bar. **Recompute areas** re-measures the
+  realm's map (PostGIS geography area × (r/6371)²) and leaves nations' stated land area alone unless the founder ticks
+  **Also set nations' land area from the map**.
+- **Viewer:** the realm's default view, its base image under the borders, its credit line (else the source sync's), a
+  collapsible political legend, unclaimed nations hatched with a legend entry, a scale bar measured on the realm's
+  radius and the cursor's coordinates.
+- **Realm labels:** a realm's map editors label its oceans, seas, regions and continents (size, weight, colour,
+  zoom range); they show from globe view.
+- **Auto-Match:** realm-scoped, read in pages past the 1,000-row guard, and fuzzy (case, accents, hyphens,
+  underscores, "The", state forms like "Republic of", plus the roster's nation pages and the nations' source keys),
+  with a review list of suggested matches and their confidence before anything uncertain is linked.
+- **Nations with several regions:** Auto-Match and claimed nation pages link every region that names the nation,
+  and the nation's outline is the union of its regions (summed area, joint bounding box).
+- **Coordinates embeds** in another wiki's article show the map of the realm whose lore index holds the article.
+- **Fix:** a world editor draft session can only be saved by its own editor.
+- **Schema (additive):** `MapLabel.countryId` optional, `MapLabel.realmId` and `MapLabel.fontStyle`,
+  `MapEditRequest.realmId` (`prisma/migrations/20261007_realm_map_labels.sql`; `db push` applies them, see the
+  deploy runbook).
+
+### 🗺️ Realm Source Sync, Unclaimed Nations & Realm Alliances (2026-10-07)
+
+- **Source sync:** a realm's nations, figures, borders and alliances follow an outside source, a public GitHub
+  repository (`RealmSourceSync`, one per realm). Configure, dry-run (the diff: new nations, figure changes, claimed
+  nations left alone, borders, alliances, missing nations, entries left to staff), apply and see the run history in
+  `/admin/realms` → **Source sync** or the founder's Manage → **Source sync**; or
+  `bun scripts/realms/sync-realm-source.ts --realm <slug> [--preset <id>] [--apply]`. Staff decide per entry: match
+  by hand, exclude, pin a field so it is never overwritten, set an alliance's type. Options: add new nations, add
+  roster nations, read new nations' wiki infobox, update unclaimed nations (on), update claimed nations (off),
+  borders, alliances, continents, list missing nations. Nothing is deleted and no claimed nation changes hands.
+- **Nothing hard-coded:** repository, ref, file paths, field names, wiki link prefixes, alliance type rules,
+  attribution, options and the free-text continent table are the realm's settings; Eurth's ship as the `eurth-map`
+  preset (`src/lib/realms/sources/presets/eurth-map.json`, 115 first-guess continents). Fetched JavaScript is read
+  with a literal-only reader, never evaluated; fetches go only to raw.githubusercontent.com (validated parts, no
+  redirects, timeout, 5 MB cap).
+- **Schedule:** per realm (manual, 6 h, 12 h, daily, weekly, custom); the new `realm-source-sync` cron job runs
+  realms that are due, one at a time, each under its own lease shared with manual runs.
+- **Unclaimed nations:** the sync creates every nation up front, unclaimed, through the claim flow's baseline.
+  They are badged **Unclaimed** with **Claim** on the realm's Nations tab, in the map panel and on the country page
+  (**Claim this nation**). A claim hands the existing nation over and its infobox fills only what is still empty; a
+  nation only on the map always goes to manual review. Precedence: map figures, then the infobox, then defaults.
+- **Realm map writer:** `src/lib/maps/realm-map-writer.ts` upserts features keyed by (realm, layer, key) with
+  geometry checks, batched transactions with an explicit timeout, PostGIS geometry and geography areas written
+  directly, display names and country links. The realm map shows its source's attribution line.
+- **Realm alliances:** `Alliance.realmId`; names are unique per realm, invites and acceptances across realms are
+  refused, and the map's alliance overlay is realm-scoped.
+- **Fix:** re-running the lore import no longer turns a claimed or founded nation page back into lore.
+- **Schema:** `realm_source_syncs`, `realm_sync_runs`, `Country.externalSourceKey`, `Alliance.realmId` and
+  `Alliance.externalSourceKey`, Alliance name uniqueness per realm
+  (`prisma/migrations/20261007120000_realm_source_sync/migration.sql`; apply it before `db push`, see the deploy
+  runbook step 4).
+### 🗺️ Map Safety & Correctness (2026-10-07)
+
+- **Upload bombs:** province imports cap their content at 25 MB (`geoAdmin.parseProvinceUpload`), the PNG province
+  extractor reads the image header first and decodes through the shared 64-megapixel limit (an oversize or corrupt
+  image is `BAD_REQUEST`), and `/api/admin/upload-svg` and `/api/upload-province` answer 413 from the Content-Length
+  before buffering the body.
+- **Lakes stay holes:** the SVG parser (and so PNG maps traced with potrace) and the province importer classify rings
+  by containment instead of winding (`src/lib/maps/ring-assembly.ts`), honour an explicit `fill-rule: nonzero`, and
+  wind output per RFC 7946. A lake no longer becomes the outer ring or a separate filled polygon, a nation with
+  islands keeps its holes, and every approximate-area helper subtracts holes.
+- **Fresh databases get the geometry triggers:** `prisma/migrations/20261007_map_geometry_sync_triggers.sql`
+  (re)creates the triggers that fill `geom_postgis` on `map_layers`, `subdivisions`, `cities` and
+  `points_of_interest`, with a backfill; `db:bootstrap` applies it and the
+  [deploy runbook](./docs/operations/deploy-rose-garden-2026-09.md) runs it after the deploy script (step 5b).
+- **Realm-scoped spatial SQL:** subdivision and city spatial profiles, terrain lookups (`countryGeo.sampleTerrainAt`
+  takes `?realm=`) and country border lookups match the realm of what they measure, so IxWorld's climate,
+  altitudes, rivers and lakes are no longer attributed to other realms.
+- **Border snapping works:** `snapPointToCountryBorder` cast the GeoJSON column to geometry, which PostgreSQL refuses,
+  so points were never snapped; it reads `geom_postgis`.
+- **Style editor sources:** `/api/maps/editor-source/[layer]` is admin-only, serves one realm (`?realm=`, IxWorld by
+  default), is rate limited (`map_editor_source`, 120/min per admin) and privately cacheable.
+- **IxWorld leftovers:** the 56.1842° prime meridian line, home view and R shortcut apply to IxWorld only (other
+  realms centre on the origin); a coordinates embed in an IxWiki article shows IxWorld's map.
+- **Planet figures:** the radius and degree → km factors live in `src/lib/maps/planet.ts` (no behaviour change).
+- **Docs:** [maps.md](./docs/systems/maps.md) (pipeline, runtime requirements),
+  [rate-limiting.md](./docs/operations/rate-limiting.md), [local-dev-setup.md](./docs/operations/local-dev-setup.md).
+
+### 🏰 Realm Links, Rules & In-World Date (2026-10-07)
+
+- **Community links:** founders and `appearance` officers add up to 8 links (forum, Discord, wiki, map, website,
+  other; `https://` only) in Manage → **Links**; they show in a **Community** panel on `/r/[realm]`, opened in a new
+  tab with `rel="noopener noreferrer nofollow"`.
+- **Rules:** a **Rules** tab (`/r/[realm]/rules`) with rules written in Manage → **Rules** (the factbook's WikiOS
+  editor; rendered and sanitized on save). In a realm with rules, the claim list asks for **I have read the realm's
+  rules**, and `realms.claimNationPage` / `realms.claimCountry` refuse a claim without `acceptedRules`
+  (`PRECONDITION_FAILED`); the claim records `rulesAcceptedAt`.
+- **In-world date:** a per-realm calendar label in the header's stats strip (`Realm.settings.inWorldDate`): a fixed
+  label, optionally "as of" a real date, or the real year plus an offset with an era. Display only; IxTime is
+  unchanged. Closes roadmap item 12 (per-realm calendar label).
+- **Schema (additive):** `Realm.communityLinks`, `rulesWikitext`, `rulesHtml`, `rulesUpdatedAt`, `rulesUpdatedBy`,
+  `RealmClaim.rulesAcceptedAt` (`prisma/migrations/20261007_realm_links_rules_calendar.sql`; `db push` applies them).
+### 🏰 Realm Ownership & Claims Officers (2026-10-07)
+
+- **Transfer a realm (site admins):** `/admin/realms` → Realms → **Transfer** hands a realm to an active account
+  (found by nation or Clerk id) or back to IxStats staff, confirmed by typing the realm's slug (checked on the
+  server). `realms.region.adminTransferOwner` replaces `assignFounder`; the Founder column is display-only. IxWorld
+  stays with staff.
+- **Hand over (founders):** Manage → **Hand over** lets a founder pass their realm to an officer or a player who owns
+  a nation in it (`realms.region.handOver`), with the same typed confirmation.
+- **Audit and notices:** every handover writes an `AdminAuditLog` row (`REALM_OWNER_TRANSFERRED`, previous and new
+  owner) and notifies the new founder (and a founder staff replaced). **Keep previous owner as officer** keeps the
+  old founder on as a "Former founder" officer with every power; otherwise they lose the founder's powers.
+- **`claims` officer power:** "Claims: review players' claims on the realm's nations". Officers holding it see the
+  Manage tab's Claims section and approve or reject claims in that realm only (`reviewClaim`, `listClaims`); they
+  can't approve their own claim. The Officers section now describes each power. No schema change (`powers` is a
+  string list).
+- **Docs:** [Eurth onboarding](./docs/systems/realms-eurth-onboarding.md) §4.1–4.2 (hand Eurth to its leaders, give
+  reviewers the Claims power), [realms.md](./docs/systems/realms.md) Governance and the
+  [region design](./docs/specs/2026-10-05-realm-regions-design.md) amendments.
+
+### 🧭 Navigation (2026-10-06)
+
+- **Realms sidebar:** the Realms app opens the realm directory (`/realms`). Its sections are **My realm**
+  (`/countries`, the nations of your realm) and **Explore** (`/realms`); Collections and Leaderboards are no longer
+  listed there (both pages still exist).
+- **My realm** is the filterable directory that was `/explore` (search, tier, continent, region, population, sort,
+  compare), scoped to your realm or `?realm=`. `/explore` redirects to it. The shuffled card grid is retired.
+- **MyCountry icon:** the sidebar and the Halo tray show the MyCountry logo's crown badge (`MyCountryLogo`'s gold
+  disc and crown, in its own colours), drawn as one SVG that scales with the icon box.
+- **Maps and Realms icons:** Maps uses iconoir's solid Compass. Realms has its own mark (`RealmsLogomark`): iconoir's
+  Hexagon, filled, with iconoir's Community figures cut out of it, a realm as people sharing a world. Both take the
+  sidebar tint. Realms' Explore row now uses Search, so the people glyph isn't repeated under the app.
+- **One icon family:** every app now wears a solid mark with a cut-out in its tint. Vault has its own mark
+  (`VaultLogomark`): a collectible card with the ccy-icons BNB glyph cut out (`CurrencyIcon` reads the glyph from it).
+  Forum uses iconoir's solid MultiBubble (sidebar and Halo), Labs its solid RoundFlask. Utilities (Home, Help, Admin,
+  Settings) stay line icons. Realms gets its own tint (`data-app="realms"`) instead of the default.
+- **One colour per app:** the app tints are a palette now, not a list. MyCountry gold and the IxWiki navy (the
+  original logo's `#1d4e89`, replacing indigo) are fixed; every other app sits evenly between them in OKLCH hue at
+  one shared lightness, at least 30 degrees from any other (`app-palette.test.ts`). Labs gets its own green and
+  MyLeague and MyClub wear it; Maps moves to cyan, Forum to red, Vault to raspberry. The default (Home, Help,
+  Settings, Admin) is a warm ink instead of indigo, so the apps carry the colour. The crimson Intel tint is gone (Defense and Intelligence wear MyCountry's gold) and so is Sports'
+  teal. Halo's private colour map is deleted: its tray and accent use the app tints.
+- **MyCountry icon colours:** the crown badge paints with literal colours, so it shows without the app's CSS.
+- **Posting no longer breaks the editor:** after a ThinkPages post (and in every composer on the shared rich
+  editor: Forum, Messages) the editor threw "Cannot resolve a DOM node from Slate node" and stopped taking
+  input. Clearing assigned `editor.children` directly, which Slate never renders; it now uses
+  `editor.tf.setValue`, and a guard test forbids the direct assignment.
+- **Dashboard hero alignment:** from 1280px, where the right-hand panel is pinned, the MyCountry hero starts
+  level with the panel's first card instead of one Halo band (72px) higher.
+- **Coloured sidebar icons:** every sidebar icon wears its tint, not just the current row's: section rows,
+  the Settings and Admin footer links, and every app in the collapsed icon rail. Labels stay in the label colour.
+
+### 🧹 Retirements (2026-10-06)
+
+- **Narrator retired (D10):** the `narrator` router, `src/lib/narrator/`, the admin "AI narrator" Labs panel and the
+  `NARRATOR_LLM_*` env keys are gone. Sports commentary keeps the shared chat client and LLM host allowlist, now in
+  `src/lib/llm/`. The wiki article narrator (text to speech) is unaffected.
+- **Scheduled changes deleted (D11):** the service, the `scheduled-changes` cron job and its HTTP route, the
+  `scheduledChanges` router and `usePendingLocks` (and the budget and revenue form locks it drove) are gone. Remove
+  `scheduled-changes` from `CRON_ENABLED_JOBS` if listed. The Prisma models stay until the D9 schema drop.
+
+### 💎 Vault Cleanup (2026-10-05)
+
+- **Crafting retired for now:** every `crafting.*` call refuses (`CRAFTING_ENABLED = false`); the workbench, its
+  sidebar, Halo and help entries and the admin switch are gone, `/vault/crafting` says crafting is retired, and
+  `db:seed` skips the crafting seed. The schema and rows stay until the schema-drop decision. VT-14 and D6 are moot.
+- **Cosmetics visible to other players (VT-12):** the public, batched `vault.getEquippedCosmeticsFor` returns render
+  data only; the passport photo and name and forum post and thread authors now wear their equipped glow, frame and badge.
+- **Archetype Proposal Token retired:** it never did anything. It is hidden and refused, and
+  `db:refund-retired-store-items -- --apply` refunds each purchase once through the ledger.
+
+### 🛡️ Security, CI, Operations & Cron (2026-10-05)
+
+- **Security:** sports commentary no longer sends the server's LLM or TTS key to a caller-supplied URL (a caller config
+  is used only with its own key and an allowlisted host); `generateMatchCommentary` is rate-limited and only the
+  league's manager can force a regenerate. Lorewards `getCrossValidationHistory` / `getBlacklist` and sports
+  `getAdminGlobalStats` / `testLLMNarrator` are `adminProcedure`. Production CSP drops plain `http:` images and `ws:`
+  sockets.
+- **CI:** `docs:check` is green again (`docs:sync`); new blocking steps `typecheck:db`, `typecheck:scripts` (scripts,
+  `proxy.ts`, `instrumentation.ts`, `content/`) and `check:script-imports`; seven package scripts that failed on import
+  work again. CI and the security scan run on `master`, `development` and `rose-garden`; the scan uses `bun audit`;
+  `image-validation.yml` is deleted. The `audit:arch` baseline holds real line counts, so its ratchet fires; the Facet
+  ratchet locks emoji at 530.
+- **Setup:** `bun run db:bootstrap` (`scripts/setup/bootstrap-dev-db.ts`) and `docker-compose.dev.yml` take a fresh
+  clone to a running app on an empty database (PostGIS, schema push, catalog seeds); `db:setup`, `dev:db` and `fresh`
+  use it. `.env.example` lists every `src/env.ts` key (a test enforces it). The small-arms and Onoma default-dictionary
+  seed data are restored, so `db:seed` runs.
+- **Operations:** `scripts/deployment/rollback-deployment.sh <remote-branch> [--restore <dump>] [--yes]` wraps the
+  release guide's rollback; each deploy appends time, commit and dump to `backups/deploy-history.log`, and a failed PM2
+  reload fails the deploy. `ecosystem.config.example.cjs` is the tracked PM2 template. Env files load in one order
+  everywhere (`.env.production.local` beats `.env.production`), and `verify:environment` fails on missing production
+  secrets. `deploy-to-staging.sh` and the legacy `deploy-to-production.sh` are removed.
+- **Cron:** a lease row (`job_leases`) replaces the advisory lock; every run writes a `CronRun` row, a failed run
+  alerts Discord, and `/api/health` shows each job's last run, status and last success plus Redis state. New
+  `log-retention` job (21 jobs in all).
+- **Realtime:** market WebSocket events go through a Redis bridge (`src/server/market-broadcast-bridge.ts`), so bids,
+  buyouts and cron completions reach every socket. `db.ts` logs when an unbounded `findMany` hits the 1,000-row cap.
+- **Docs:** a docs audit against the code and an ordered action plan
+  ([ACTION_PLAN_2026-10-05.md](docs/roadmap/ACTION_PLAN_2026-10-05.md)); the planning, status, onboarding and ops
+  docs follow the code.
+
+### 🧭 Facet 4 & the Sidebar (2026-10-04 → 10-05)
+
+- **Facet 4:** five layers (canvas, pane, well, chrome, overlay), content types as their own axis, a tinted canvas
+  behind glass panes and no glass on glass; eyebrows, em dashes, emoji, `Sparks` and `hover:scale` are counted by a ratchet that only
+  falls. Facet version 3.1 → 4, Halo 5 → 6 (standard chrome glass, no glow).
+- **Sidebar:** one macOS-style source list (`src/lib/navigation/app-sections.ts`) is the only navigation, with a
+  `TabBar` below 1024px. Per-app sidebars, rails and hidden sub-navigation are gone; admin and settings navigation are
+  the sidebar's area lists; the footer carries the Vault card, version, feedback and legal links.
+- **Shell:** a proportional sidebar / content / Inspector grid; WikiOS articles keep contents and page info in the
+  Inspector, and tool pages take the full width. MyCountry's flag is the header cover banner, the Overview shows
+  domain peeks, and the executive console is URL-driven (`?mode=executive`).
+- Docs: [Facet 4 reference](docs/reference/facet-design-system.md) ·
+  [spec](docs/specs/2026-10-04-facet-4-design.md) ·
+  [sidebar spec](docs/specs/2026-10-04-facet-4-sidebar-design.md). The per-app sweep is in progress.
+
+### 🔁 Seven Audit Loops Closed (PR #49, 2026-09-30)
+
+- **Decisions move stats:** issue GDP and population consequences become phased level effects (±3% / ±1% caps);
+  directives use the same effects and consume CivCap; issue stability deltas survive recalculation. The new
+  `stat-progression` job persists stats and writes monthly `HistoricalDataPoint` rows.
+- **Elections:** a first election is scheduled once a legislature has at least 2 parties; candidates come from the
+  parties, results seat them, follow-up elections resolve, and bills can pass.
+- **Diplomacy inbox:** incoming and outgoing foreign-policy proposals and alliance invites with accept, decline and
+  withdraw, a count badge, notifications and 14-day expiry.
+- **Social loop:** mention, repost and quote notifications; the `thinkpages-trending` job; persona follows with real
+  counts; a personal persona for posting as yourself.
+- **IxnayID economy:** the 5,000 IxC welcome bonus at account creation, 19 account-level achievements, background
+  evaluation (`achievements-evaluate`), a passport showcase and ribbons derived from real unlocks; passport privacy is
+  persisted and enforced on the server.
+- **Realms:** nation caps (realm cap and tier), a realm-aware builder, the nav and passport nation switcher, realm
+  boards (`/r/<realm>/board`), a `/realms` directory and a realm filter on the ThinkPages feed.
+- **True numbers:** Diplomatic Standing computed from the real record, Governmental Efficiency from
+  `governmentEffectiveness`, real CivCap in the Capacity band, and realm-scoped World Census rankings.
+- New jobs `stat-progression`, `thinkpages-trending` and `achievements-evaluate` are off until named in
+  `CRON_ENABLED_JOBS`. Additive schema: `ThinkpagesFollow`, `ThinkpagesPersonalAccount`, `PassportPreference`,
+  `RealmBoard` and new fields.
+
+### 🧰 Audit Fix Batch (PR #48, 2026-09-30)
+
+- Fixes from the 2026-09-30 platform audit (ten parallel branches) plus a 17-item site bug list.
+- **Security and integrity:** ThinkShare thinktank conversations need active membership; ThinkPages account creation
+  needs write access to the country and only admins set `verified`; a WikiOS namespace edit policy; the Narrator LLM
+  URL has an SSRF guard; `IXWIKI_DB_PASSWORD` has no hard-coded fallback; Lorewards pays only verified wiki links.
+- **Economy:** packs, junk payouts and lore-card requests go through the ledger; junk rate 0.25 (capped at 0.5);
+  crafting uses ownership IDs.
+- **Loops:** hostile foreign-policy actions apply their effects; cooperative proposals and alliance invites can be
+  accepted; directives move GDP and stability; ThinkTank Chat and Docs tabs are mounted, with invites by username;
+  sports predictions can be placed.
+- **Honest UI:** no fabricated ribbons; Halo and profile Sign Out sign out; dead Create League/Club links removed; the
+  Approval and Stability bands read real values; one premium definition (`hasPremiumTier`).
+- **Site bugs:** flags and seals, the maps build (the 14 `@turf/*` packages declared, the MapLibre worker shipped),
+  icon stroke width, stashes under the old user ID, Daily Prompt, ThinkPages reposts and MyCountry layout fixes.
+- Schema: `AllianceMember.status`.
+
+### 🎨 Facet 3 Design System, Phases 1–2 (2026-09-30)
+
+- **Foundations:** one token source (`src/styles/facet/tokens.css`) with Apple-HIG colour roles, per-app tints
+  (MyCountry gold, Maps sky, ThinkPages emerald, Vault copper, Forum orange, Wiki ink, Intel crimson, Sports teal),
+  named text styles, concentric radii, glass materials for chrome only, one z-index scale and motion springs. All
+  Facet/theme CSS is layered so Tailwind utilities win; the style layer shrank from ~19.8k to ~12.6k lines.
+- **Appearance:** the theme is applied before first paint (no light flash; follows the system by default), and
+  Settings → Appearance & accessibility adds density, text size, Increase Contrast, Reduce Transparency, Reduce Motion
+  and sound.
+- **Primitives:** Button styles and sizes on the app tint, Badge variants, SegmentedControl, ToggleGroup, Stepper,
+  MenuButton, SearchField; opaque FacetCard, FacetList/FacetRow, Stat, EmptyState; opaque dialogs, glass popovers and
+  menus, a responsive Sheet (bottom sheet with detents on phones); full ARIA for tabs, switches and toggles.
+- **Sound:** Cuelume plays only for meaningful moments and is muted by Reduce Motion or the sound setting.
+- Docs: [Facet 3 reference](docs/reference/facet-design-system.md) · [spec](docs/history/specs/2026-09-30-facet-3-design-system.md)
+  · [audit](docs/audits/FACET_STYLE_AUDIT_2026-09-30.md). Facet version 2 → 3.
+
+### 📚 Admin Reference Catalogs Reach Players (2026-09-30)
+
+- **Economic archetypes**: the builder's archetype picker reads the admin catalog. An empty table is seeded from the
+  built-in archetypes on first read (the seed script's broken import is fixed), rows carry their `key` and `era`, and
+  builder state stores the key, so admin edits and deactivations reach players. The admin form now sends what the
+  router validates (tax rates, revenue efficiency, complexity, component keys).
+- **Military equipment**: the Defense equipment browser lists the active `MilitaryEquipmentCatalog` rows and manufacturers
+  (`militaryEquipment.getPlayerCatalog`), falling back to the built-in list if the table can't be read; empty tables
+  seed themselves. Admin create/update accept the fields the form sends, and the seed script uses the shared seed rows.
+- **Government & economic components**: stay code-defined. Their admin sections are read-only browsers; the stub and
+  unused edit endpoints, form and synergy dialogs are gone, and the catalog endpoints serve the code library with usage
+  counts.
 
 ### 🏰 Realms Phase 1 & Eurth, the First Hosted Realm (2026-09-27 → 09-29)
 
@@ -30,7 +915,7 @@ RC2 cut.
 - **Realm maps**: PNG realm maps run through the Full Pipeline with colour → nation mapping; claimed nations take their
   map region; the map's IndexedDB cache is keyed by the realm the server resolved.
 - **Operations**: throttled `lastSeenAt`, the Phase 1 ownership backfill script (refuses `--apply` while owner
-  collisions remain), an admin-set nation cap, and the [Eurth onboarding runbook](docs/realms/eurth-onboarding.md).
+  collisions remain), an admin-set nation cap, and the [Eurth onboarding runbook](docs/systems/realms-eurth-onboarding.md).
   Spec: [realms-framework-spec.md](docs/architecture/realms-framework-spec.md).
 
 ### 🪪 Identity: Verified Wiki Accounts & Passport (Plan 188)
@@ -682,7 +1567,7 @@ RC2 cut.
   - Added safe timestamp coercion helpers (`IxTime.toTimestamp`, `IxTime.toDate`, `IxTime.toIsoString`) in [`src/lib/ixtime/core.ts`](src/lib/ixtime/core.ts).
 - **Dedicated Test Suites ([`src/tests/lib/ixtime/`](src/tests/lib/ixtime/))**:
   - Added [`core.test.ts`](src/tests/lib/ixtime/core.test.ts) covering epochs, pivot conversions, calendar arithmetic, formatting, pause/overrides, and coercion helpers.
-  - Added [`accuracy.test.ts`](src/tests/lib/ixtime/accuracy.test.ts) running all 11 mathematical verification test suites of `IxTimeAccuracyVerifier`.
+  - Added `accuracy.test.ts` (since folded into [`core.test.ts`](src/tests/lib/ixtime/core.test.ts)) running all 11 mathematical verification test suites of `IxTimeAccuracyVerifier`.
 
 ### 🧪 Test Suite Consolidation, Clean Output & Worker Leak Elimination
 
@@ -713,7 +1598,7 @@ RC2 cut.
   - **System Bibles (`docs/systems/`)**: Canonically documented all 16 platform systems in [`SYSTEM_STATUS.md`](docs/systems/SYSTEM_STATUS.md), along with dedicated sub-suites for Statecraft game loops (`statecraft/`), WikiOS Stage 2b/3 isolation (`wikios/`), Halo v4 plugin system, UPG v2 Voronoi map engine, Onoma brand/voice, and IxVault collectibles.
   - **Operations & Processes (`docs/operations/`, `docs/processes/`)**: Standardized deployment workflows, standalone build outputs, PM2 process management, Discord DM alert infrastructure, Jest testing best practices, and the 4-layer modular refactoring pattern.
   - **Interactive Master Index ([`docs/README.md`](docs/README.md))**: Rebuilt master hub index with verified links across all domains.
-  - Archived superseded PRDs, legacy logs, and completed plans into `docs/archive/` and `plans/archive/`.
+  - Archived superseded PRDs, legacy logs, and completed plans into `docs/archive/` and `plans/archive/` (local-only folders, not in the repository).
 
 ### ✂️ Legacy Country Economy Purge, Flag Hook Deduplication & Type Monolith Condensation (Plan 139)
 
@@ -728,14 +1613,14 @@ RC2 cut.
 - **Flag Hook & RNG Deduplication**:
   - Migrated `MetricCardGrid.tsx` and `achievements/page.tsx` to canonical `useFlag` from `~/hooks/useUnifiedFlags`.
   - Deleted redundant `src/hooks/useSimpleFlag.ts` ($-135\text{L}$).
-  - Pruned unused `useCountryFlagsRouteAware` from [`src/hooks/useCountryFlagRouteAware.ts`](src/hooks/useCountryFlagRouteAware.ts).
+  - Pruned unused `useCountryFlagsRouteAware` from `src/hooks/useCountryFlagRouteAware.ts`.
   - Re-exported [`src/lib/worldgen/rng.ts`](src/lib/worldgen/rng.ts) from canonical `~/lib/worldgen/v2/helpers/rng`.
 
 - **Onoma Library Alignment**:
   - Relocated `language-families.ts` and `markov-naming.ts` into canonical [`src/lib/onoma/`](src/lib/onoma/) and updated worldgen call sites.
 
 - **Economy Builder Type Monolith Condensation**:
-  - Streamlined [`src/types/economy-builder.ts`](src/types/economy-builder.ts) from 1,053 lines down to **397 lines** ($-656\text{L}$).
+  - Streamlined `src/types/economy-builder.ts` from 1,053 lines down to **397 lines** ($-656\text{L}$).
   - Removed `src/types/economy-builder.ts` from `scripts/audit/arch-baseline.json`.
 
 
@@ -756,10 +1641,10 @@ RC2 cut.
 
 - **Builder Monolith Decomposition**:
   - Extracted 2,540 lines of static component lookup tables from `src/app/builder/utils/atomicGovernmentIntegration.ts` into `src/app/builder/data/government-mappings.ts`, shrinking the logic module from 2,953 lines down to 433 lines ($-2,520\text{L}$).
-  - Extracted numeric and government type parsers into [`src/app/builder/lib/builder-parsers.ts`](src/app/builder/lib/builder-parsers.ts).
+  - Extracted numeric and government type parsers into `src/app/builder/lib/builder-parsers.ts`.
 
 - **Country Management Routers Payload Builder**:
-  - Created [`src/server/shared/country-payload-builder.ts`](src/server/shared/country-payload-builder.ts) extracting shared Zod schemas (`countryEconomicInputsSchema`, `countryGovernmentComponentSchema`) across [`create.ts`](src/server/api/routers/countries/management/create.ts) and [`update.ts`](src/server/api/routers/countries/management/update.ts) ($-300\text{L}$).
+  - Created [`src/server/shared/country-payload-builder.ts`](src/server/shared/country-payload-builder.ts) extracting shared Zod schemas (`countryEconomicInputsSchema`, `countryGovernmentComponentSchema`) across [`create.ts`](src/server/api/routers/countries/management/create.ts) and `update.ts` ($-300\text{L}$).
 
 
 ### ✂️ Gold Master Over-Engineering Prune, Dependency Trimming & Sports AST Router Splits (Plans 133–137)
@@ -805,14 +1690,14 @@ RC2 cut.
     - Deleted `src/lib/onoma/tavern-generator.ts` and `tavern-data.ts` (`-362L` non-standard fantasy generator).
   - **Monolith Reductions & Built-in Consolidations**:
     - Refactored [`src/lib/cards/category-enums.ts`](src/lib/cards/category-enums.ts) from 707 lines to 205 lines (`-502L`) using root keywords and algorithmic plural stem expansion.
-    - Created [`src/hooks/useGenericAutoSync.ts`](src/hooks/useGenericAutoSync.ts), consolidating auto-sync debounce logic across `useNationalIdentityAutoSync`, `useEconomyBuilderAutoSync`, and `useBuilderAutoSync` (`-593L` boilerplate reduction).
+    - Created `src/hooks/useGenericAutoSync.ts`, consolidating auto-sync debounce logic across `useNationalIdentityAutoSync`, `useEconomyBuilderAutoSync`, and `useBuilderAutoSync` (`-593L` boilerplate reduction).
 
 - **Strict Type Safety & Compiler Zero-Diagnostic Mandate (`/typescript-pro`, `/typescript-expert`)**:
   - **Eliminated `@ts-nocheck`**: Cleaned and strongly typed [`src/components/mycountry/domains/defense/StabilityPanel.tsx`](src/components/mycountry/domains/defense/StabilityPanel.tsx).
   - **Eliminated `as any` Type Assertions**:
     - [`src/server/api/routers/elections/legislature.ts`](src/server/api/routers/elections/legislature.ts) (strongly typed `ElectoralSystem`).
     - [`src/server/api/routers/thinkpages/feed.ts`](src/server/api/routers/thinkpages/feed.ts) (strongly-typed `hydratePostDates<T>` and purged dead comment stubs).
-    - [`src/app/achievements/page.tsx`](src/app/achievements/page.tsx) (safe property narrowing).
+    - `src/app/achievements/page.tsx` (since removed; safe property narrowing).
   - **Branded Types & Spatial Mesh Assist**:
     - Added `VertexKey = string & { readonly __brand: "VertexKey" }` and `snapToNearestVertex` GeoJSON helper in [`src/lib/maps/topology-engine.ts`](src/lib/maps/topology-engine.ts) and unified `TopologyRef` in [`src/lib/maps/shared-vertex-builder.ts`](src/lib/maps/shared-vertex-builder.ts).
   - **Simulation & Engine Robustness**:
@@ -840,7 +1725,7 @@ RC2 cut.
 - **⟨ONOMA⟩ Glyph System v0.1 & Geometric Vector Brand Identity**:
   - Authored 24 mathematical and linguistic vector glyphs in [`onoma-glyphs-catalog.tsx`](src/app/labs/onoma/components/glyphs/onoma-glyphs-catalog.tsx) and [`OnomaGlyph.tsx`](src/app/labs/onoma/components/glyphs/OnomaGlyph.tsx), replacing generic icons with precise phonological notation across the suite.
   - Replaced generic AI sparkle icon with the Apple Drafting Stylus / Compose mark (`emerge-synthesis`) across creation and synthesis triggers.
-  - Upgraded [`OnomaBrandLogo.tsx`](src/app/labs/onoma/components/shared/OnomaBrandLogo.tsx) with authentic mathematical angle brackets `⟨ONOMA⟩` (U+27E8 / U+27E9) and custom geometric SVG wordmark in `public/images/onoma-logo.svg`.
+  - Upgraded `src/app/labs/onoma/components/shared/OnomaBrandLogo.tsx` with authentic mathematical angle brackets `⟨ONOMA⟩` (U+27E8 / U+27E9) and custom geometric SVG wordmark in `public/images/onoma-logo.svg`.
   - Added interactive `/ˈɒnəmə/` IPA pronunciation button with first-visit ping animation and browser speech fallback.
 
 - **Quick Generator UI/UX Refresh & Always-Expanded Seed Words Editor (`QuickGeneratorControls.tsx`)**:
@@ -923,7 +1808,7 @@ RC2 cut.
 - **Router Consolidation & Deprecation Cleanup**:
   - Eliminated deprecated `src/server/api/routers/wiki/` monolith (`articles.ts`, `discovery.ts`, `index.ts`, `media.ts`, `data.ts`), standardizing 100% of wiki API procedures under `api.wikios.*`.
   - Removed legacy `wiki` router registration from [src/server/api/root.ts](src/server/api/root.ts).
-  - Added Nginx lockdown configs and audit tools ([stage3-nginx-cutover.conf](scripts/ops/stage3-nginx-cutover.conf), [verify-stage3-cutover.ts](scripts/ops/verify-stage3-cutover.ts), [wikios-mw-surface.sh](scripts/audit/wikios-mw-surface.sh)).
+  - Added Nginx lockdown configs and audit tools (stage3-nginx-cutover.conf and verify-stage3-cutover.ts, since renamed [wikios-takeover.conf](scripts/ops/nginx/wikios-takeover.conf) and [verify-wikios-takeover.ts](scripts/ops/verify-wikios-takeover.ts), [wikios-mw-surface.sh](scripts/audit/wikios-mw-surface.sh)).
 
 
 
@@ -968,12 +1853,12 @@ RC2 cut.
   - **Metric Modals**: Aligned `GdpMetricDetailsModal.tsx`, `DebtMetricDetailsModal.tsx`, and `DemographicsHealthModal.tsx`.
 
 - **Phase 2: IxVault & Cards System (28 Components)**:
-  - **IxVault Marketplace & Store**: Aligned [VaultAuctionsTab.tsx](src/components/vault/sections/marketplace/VaultAuctionsTab.tsx), [VaultTradingTab.tsx](src/components/vault/sections/marketplace/VaultTradingTab.tsx), [VaultStoreTab.tsx](src/components/vault/sections/marketplace/VaultStoreTab.tsx), [PackHolographicCard.tsx](src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), [AuctionCardItem.tsx](src/components/vault/sections/marketplace/auctions/AuctionCardItem.tsx), [CreateAuctionModal.tsx](src/components/vault/sections/marketplace/auctions/CreateAuctionModal.tsx), and [StorePurchaseDialog.tsx](src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx).
-  - **Vault Dashboard & Inventory**: Aligned [VaultNetWorthCard.tsx](src/components/vault/sections/dashboard/VaultNetWorthCard.tsx), [VaultYieldProjectionsCard.tsx](src/components/vault/sections/dashboard/VaultYieldProjectionsCard.tsx), [InventorySidebarContent.tsx](src/components/vault/sections/cards/InventorySidebarContent.tsx), [CollectionsSidebarContent.tsx](src/components/vault/sections/cards/CollectionsSidebarContent.tsx), [GallerySidebarContent.tsx](src/components/vault/sections/cards/GallerySidebarContent.tsx), [ImportVerifyStep.tsx](src/components/vault/sections/import/ImportVerifyStep.tsx), and [ImportConfirmStep.tsx](src/components/vault/sections/import/ImportConfirmStep.tsx).
-  - **Cards System & 3D Viewer**: Aligned [CardBack.tsx](src/components/cards/display/CardBack.tsx), [CardDisplay.tsx](src/components/cards/display/CardDisplay.tsx), [CardDetailsModal.tsx](src/components/cards/display/CardDetailsModal.tsx), [CardOverviewTab.tsx](src/components/cards/display/modal/CardOverviewTab.tsx), [CardLoreTab.tsx](src/components/cards/display/modal/CardLoreTab.tsx), [PackHolographicCover.tsx](src/components/cards/pack-opening/PackHolographicCover.tsx), [CraftingWorkbench.tsx](src/components/cards/crafting/CraftingWorkbench.tsx), and [CraftingAnimation.tsx](src/components/cards/crafting/CraftingAnimation.tsx).
+  - **IxVault Marketplace & Store**: Aligned `VaultAuctionsTab.tsx`, `VaultTradingTab.tsx`, [VaultStoreTab.tsx](src/components/vault/sections/marketplace/VaultStoreTab.tsx), [PackHolographicCard.tsx](src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), `AuctionCardItem.tsx`, `CreateAuctionModal.tsx`, and [StorePurchaseDialog.tsx](src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx). `VaultAuctionsTab.tsx`, `VaultTradingTab.tsx`, `AuctionCardItem.tsx` and `CreateAuctionModal.tsx` were removed in the cards refresh (2026-10-17).
+  - **Vault Dashboard & Inventory**: Aligned `src/components/vault/sections/dashboard/VaultNetWorthCard.tsx`, `VaultYieldProjectionsCard.tsx`, `src/components/vault/sections/cards/InventorySidebarContent.tsx`, `src/components/vault/sections/cards/CollectionsSidebarContent.tsx`, `src/components/vault/sections/cards/GallerySidebarContent.tsx`, [ImportVerifyStep.tsx](src/components/vault/sections/import/ImportVerifyStep.tsx), and [ImportConfirmStep.tsx](src/components/vault/sections/import/ImportConfirmStep.tsx).
+  - **Cards System & 3D Viewer**: Aligned `CardBack.tsx`, `CardDisplay.tsx`, `CardDetailsModal.tsx`, `CardOverviewTab.tsx`, `CardLoreTab.tsx`, [PackHolographicCover.tsx](src/components/cards/pack-opening/PackHolographicCover.tsx), `CraftingWorkbench.tsx`, and `CraftingAnimation.tsx` (both removed with crafting, 2026-10-05). `CardBack.tsx`, `CardDisplay.tsx`, `CardDetailsModal.tsx`, `CardOverviewTab.tsx` and `CardLoreTab.tsx` were removed in the cards refresh (2026-10-17).
 
 - **Phase 3: Thinkpages, Sports, MyLeague & Messaging (17 Components)**:
-  - **Thinkpages**: Aligned [SportsBulletinCard.tsx](src/components/thinkpages/SportsBulletinCard.tsx) and [AccountCreationModal.tsx](src/components/thinkpages/AccountCreationModal.tsx).
+  - **Thinkpages**: Aligned [SportsBulletinCard.tsx](src/components/thinkpages/SportsBulletinCard.tsx) and [AccountCreationModal.tsx](src/components/dashboard/accounts/AccountCreationModal.tsx).
   - **Sports Subsystem**: Aligned `Scoreboard1.tsx`, `PlayerMatchup1.tsx`, `PlayerStats1.tsx`, [MatchCommentary.tsx](src/components/sports/MatchCommentary.tsx), `TeamLineup1.tsx`, `MatchSchedule1.tsx`, `PlayerCard1.tsx`, `Standings1.tsx`, and `LatestResults1.tsx`.
   - **MyLeague**: Aligned `MatchDetailModal.tsx`, `TeamRosterModal.tsx`, and `MatchTickerSim.tsx`.
   - **Unified Messaging**: Aligned [MessagesChatPanel.tsx](src/components/messages/MessagesChatPanel.tsx), [MessagesConversationCard.tsx](src/components/messages/MessagesConversationCard.tsx), and [MessagesFolderNav.tsx](src/components/messages/MessagesFolderNav.tsx).
@@ -996,7 +1881,7 @@ RC2 cut.
   - Modernized high-traffic components to semantic design tokens:
     - [src/components/ui/select.tsx](src/components/ui/select.tsx): Replaced legacy slate classes with `bg-popover/95`, `border-border`, `text-foreground`, and backdrop blur.
     - `src/components/profile/WikiPreferencesCard.tsx`: Aligned preference toggle cards to semantic `card`, `secondary`, and `border-border` tokens.
-    - Vault modals & marketplace: [DailyBonusWidget.tsx](src/components/vault/DailyBonusWidget.tsx), [ImportNationStep.tsx](src/components/vault/sections/import/ImportNationStep.tsx), [StorePurchaseDialog.tsx](src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx), [PackHolographicCard.tsx](src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), [CreateAuctionModal.tsx](src/components/vault/sections/marketplace/auctions/CreateAuctionModal.tsx), [VaultParticleExplosionModal.tsx](src/components/vault/VaultParticleExplosionModal.tsx).
+    - Vault modals & marketplace: `src/components/vault/DailyBonusWidget.tsx`, [ImportNationStep.tsx](src/components/vault/sections/import/ImportNationStep.tsx), [StorePurchaseDialog.tsx](src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx), [PackHolographicCard.tsx](src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), `CreateAuctionModal.tsx`, [VaultParticleExplosionModal.tsx](src/components/vault/VaultParticleExplosionModal.tsx). `CreateAuctionModal.tsx` was removed in the cards refresh (2026-10-17).
     - ThinkPages composer & social cards: [SportsBulletinCard.tsx](src/components/thinkpages/SportsBulletinCard.tsx), [GlassCanvasComposer.tsx](src/components/thinkpages/GlassCanvasComposer.tsx), [ComposerPollModal.tsx](src/components/thinkpages/composer/ComposerPollModal.tsx), [ComposerAccountSwitcher.tsx](src/components/thinkpages/composer/ComposerAccountSwitcher.tsx), `MentionMenuPortal.tsx`, `WikiAndStashPopovers.tsx`.
     - Maps & navigation HUDs: [TourHUD.tsx](src/components/maps/core/components/TourHUD.tsx), `NotificationsView.tsx`, `MatchDetailModal.tsx`, [DevCountryViewToolbar.tsx](src/components/dev/DevCountryViewToolbar.tsx).
     - Sports widgets: `PlayerCard1.tsx`, `Scoreboard1.tsx`, `Standings1.tsx`, `LatestResults1.tsx`, `PlayerStats1.tsx`, `MatchSchedule1.tsx`.
@@ -1111,7 +1996,7 @@ RC2 cut.
   - **Wiki & Factbook Parser Package (`src/lib/wiki/`)**: Consolidated wikitext data parser, factbook routes provider, and eligible country service into `src/lib/wiki/` with master barrel export (`index.ts`).
   - **Country Geography & PostGIS Compliance Package (`src/lib/country-geo/`)**: Consolidated geography compliance validator, PostGIS spatial queries, base terrain layer queries, and special stats populator into `src/lib/country-geo/` with master barrel export ([index.ts](src/lib/country-geo/index.ts)).
   - **Authorization & User Management Package (`src/lib/auth/`)**: Consolidated CASL user permissions builder, user management service, and system-owner security constants into `src/lib/auth/` with master barrel export ([index.ts](src/lib/auth/index.ts)).
-  - **AI & Sentiment Analysis Package (`src/lib/ai/`)**: Consolidated sentiment analysis NLP helper into `src/lib/ai/` with master barrel export ([index.ts](src/lib/ai/index.ts)).
+  - **AI & Sentiment Analysis Package (`src/lib/ai/`)**: Consolidated sentiment analysis NLP helper into `src/lib/ai/` with master barrel export (`src/lib/ai/index.ts`).
   - **Clean Codebase-Wide Call Site Migration**: Migrated 60+ import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, `src/tests/`, and `proxy.ts` to import directly from `~/lib/wiki`, `~/lib/country-geo`, `~/lib/auth`, and `~/lib/ai`, completely deleting 11 legacy root files from `src/lib/`.
   - **Root `src/lib/` Purity**: Successfully consolidated and partitioned all domain-specific code into dedicated packages; only global core primitives (`utils.ts`, `logger.ts`, `cache.ts`, `rate-limiter.ts`, `event-bus.ts`, `app-error.ts`, `prisma-error.ts`, `base-path.ts`, formatting, math, and system configurations) remain in the root of `src/lib/`.
   - **Verification**: Verified 100% test pass rate across all unit test suites (558/558 full-platform tests passing across 49 test suites).
@@ -1120,7 +2005,7 @@ RC2 cut.
 
 - **Platform Infrastructure, Themes & Economy Vault Isolation (/ponytail)**:
   - **Media & Image Processing Package (`src/lib/media/`)**: Consolidated image cache services, image color palette extractor, image downloader, Unsplash client, country hero image engine, audio/sound service, and active cosmetic badge helpers into `src/lib/media/` with master barrel export ([index.ts](src/lib/media/index.ts)).
-  - **WebSockets & Real-Time Streaming Package (`src/lib/websocket/`)**: Consolidated marketplace WebSocket client/server, core standalone WebSocket server, socket reconnection wrapper, intelligence live-stream servers, and ThinkPages socket broadcasts into `src/lib/websocket/` with master barrel export ([index.ts](src/lib/websocket/index.ts)).
+  - **WebSockets & Real-Time Streaming Package (`src/lib/websocket/`)**: Consolidated marketplace WebSocket client/server, core standalone WebSocket server, socket reconnection wrapper, intelligence live-stream servers, and ThinkPages socket broadcasts into `src/lib/websocket/` with master barrel export (`src/lib/websocket/index.ts`).
   - **Themes & Visual Design System Package (`src/lib/themes/`)**: Consolidated theme registry, theme utilities, MyCountry custom palette engine, charting color tokens, and holographic card foil shaders into `src/lib/themes/` with master barrel export ([index.ts](src/lib/themes/index.ts)).
   - **Vault & Credits Ledger Package (`src/lib/vault/`)**: Consolidated IxVault service facade, daily login bonuses, streak trackers, credit ledger transactions, vault notifications, passive income distributor, perk cache, type guards, and sovereign exchange configs/services into `src/lib/vault/` with master barrel export (`index.ts`).
   - **Activity Feed & Event Spine Package (`src/lib/activity/`)**: Consolidated player activity generator, activity action hooks, auto-posting service, and country event spine state dispatcher into `src/lib/activity/` with master barrel export ([index.ts](src/lib/activity/index.ts)).
@@ -1153,7 +2038,7 @@ RC2 cut.
 
 - **Simulation & Core Engine Package Isolation (/ponytail)**:
   - **Statecraft Simulation Package (`src/lib/statecraft/`)**: Consolidated simulation calendar, diplomatic intelligence analysis, foreign policy calculations, power broker extraction, reconnaissance reveals, whip vote modeling, stability formulas, cross-pillar engine, synergy calculator, and growth rate normalizers into `src/lib/statecraft/` with master barrel export (`index.ts`).
-  - **Military & Defense Package (`src/lib/military/`)**: Consolidated branch configurations, equipment catalogs, extended defense inventory, catalog helpers, defense integration, and manufacturer utilities into `src/lib/military/` with barrel export ([index.ts](src/lib/military/index.ts)).
+  - **Military & Defense Package (`src/lib/military/`)**: Consolidated branch configurations, equipment catalogs, extended defense inventory, catalog helpers, defense integration, and manufacturer utilities into `src/lib/military/` with barrel export (`src/lib/military/index.ts`).
   - **Intelligence Engine Package (`src/lib/intelligence/`)**: Consolidated core intelligence report generator, vitality metric calculator, intelligence cache, and real-time WebSocket broadcast service into `src/lib/intelligence/` with barrel export (`index.ts`).
   - **Diplomacy & Cultural Simulation Package (`src/lib/diplomacy/`)**: Consolidated relation bands, relative development metrics, choice tracking, drift cron, incident logging, Markov relationship engine, news generator, NPC AI personality system, profile options, cultural compatibility matrices, and cultural participation systems into `src/lib/diplomacy/` with barrel export (`index.ts`).
   - **Clean Call Site Migration**: Migrated all ~65 import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, and `src/tests/` to import directly from `~/lib/statecraft`, `~/lib/military`, `~/lib/intelligence`, and `~/lib/diplomacy`, completely deleting 32 legacy root files from `src/lib/`.
@@ -1163,8 +2048,8 @@ RC2 cut.
 
 - **Domain Package Isolation & Clean Library Architecture (/ponytail)**:
   - **Achievements Package (`src/lib/achievements/`)**: Consolidated definitions, service, real-time sync, tier scaling math, tests, and card rewards from flat root files into `src/lib/achievements/` with internal relative imports and a master barrel export (`index.ts`).
-  - **Discord Package (`src/lib/discord/`)**: Consolidated Discord client, webhook dispatcher, OAuth user sync, interactive poll generator, IxTwitter sync, and Thinkpages social webhook into `src/lib/discord/` with barrel export ([index.ts](src/lib/discord/index.ts)).
-  - **NationStates Package (`src/lib/nationstates/`)**: Consolidated NS API client, import service, sync health monitor, and background delta sync processor into `src/lib/nationstates/` with barrel export ([index.ts](src/lib/nationstates/index.ts)).
+  - **Discord Package (`src/lib/discord/`)**: Consolidated Discord client, webhook dispatcher, OAuth user sync, interactive poll generator, IxTwitter sync, and Thinkpages social webhook into `src/lib/discord/` with barrel export (`src/lib/discord/index.ts`).
+  - **NationStates Package (`src/lib/nationstates/`)**: Consolidated NS API client, import service, sync health monitor, and background delta sync processor into `src/lib/nationstates/` with barrel export (`src/lib/nationstates/index.ts`).
   - **Notifications Package (`src/lib/notifications/`)**: Consolidated dispatch API, event emitter, deduplication guard, events registry, React hooks, and delivery optimizer into `src/lib/notifications/` with barrel export ([index.ts](src/lib/notifications/index.ts)).
   - **Clean Full-Codebase Call Site Migration**: Migrated all ~80 import call sites across components, pages, tRPC routers, server cron jobs, and scripts to import directly from domain packages (`~/lib/achievements`, `~/lib/discord`, `~/lib/nationstates`, `~/lib/notifications`), completely removing 22 legacy root files from `src/lib/`.
   - **Verification**: Verified 100% test pass rate across all migrated domain suites (stability guardrails, discord format, poll payload, achievements scaling, and wiki pipeline).
@@ -1184,27 +2069,27 @@ RC2 cut.
 ### Refactored & Added (Country Profile & Countries Directory Apple Design Redesign)
 
 - **Country Profile & Directory HIG Redesign (/apple-design)**:
-  - **Country Profile Navigation & Header (`/countries/[slug]`)**: Redesigned country header ([CountryHeader.tsx](src/app/countries/[slug]/_components/CountryHeader.tsx)) and tabs ([CountryTabs.tsx](src/app/countries/[slug]/_components/CountryTabs.tsx)) using Apple design principles, eliminating double-stacked pill containers, introducing translucent glass surfaces (`backdrop-blur-2xl`), optical typography tracking, and streamlined 4-tab layout (_Overview_, _Factbook_, _Governance_, _Community_).
-  - **Factbook & Activity Panel Overhaul**: Redesigned [FactbookSidebar.tsx](src/app/countries/[slug]/_components/FactbookSidebar.tsx) and [CountryActivityPanel.tsx](src/app/countries/[slug]/_components/CountryActivityPanel.tsx) with unified card hierarchy, responsive grid view, and type-safe data transformers ([countryDataTransformers.ts](src/app/countries/[slug]/_utils/countryDataTransformers.ts)).
-  - **Countries Directory Hub (`/countries`)**: Upgraded [CountriesHeader.tsx](src/app/countries/_components/CountriesHeader.tsx), [CountriesFocusGridModular.tsx](src/app/countries/_components/CountriesFocusGridModular.tsx), and `CountryFocusCard.tsx` with smooth spring transitions, Apple-style search & filter pills, and clean metric badges.
+  - **Country Profile Navigation & Header (`/countries/[slug]`)**: Redesigned country header (`CountryHeader.tsx`) and tabs (`CountryTabs.tsx`) (both since removed) using Apple design principles, eliminating double-stacked pill containers, introducing translucent glass surfaces (`backdrop-blur-2xl`), optical typography tracking, and streamlined 4-tab layout (_Overview_, _Factbook_, _Governance_, _Community_).
+  - **Factbook & Activity Panel Overhaul**: Redesigned `FactbookSidebar.tsx` (since removed) and `CountryActivityPanel.tsx` (since removed) with unified card hierarchy, responsive grid view, and type-safe data transformers (`src/app/countries/[slug]/_utils/countryDataTransformers.ts`).
+  - **Countries Directory Hub (`/countries`)**: Upgraded `CountriesHeader.tsx`, `CountriesFocusGridModular.tsx`, and `CountryFocusCard.tsx` with smooth spring transitions, Apple-style search & filter pills, and clean metric badges.
   - **Design Specs**: Documented full architecture spec in `2026-08-10-countries-apple-design-redesign.md`.
 
 ### Refactored & Modularized (IxCards & IxVault Architecture Decomposition)
 
 - **Monolithic Vault Component Decomposition**:
-  - **Cards Section Modularization**: Decomposed [VaultCardsSection.tsx](src/components/vault/sections/VaultCardsSection.tsx) into dedicated sub-components under `src/components/vault/sections/cards/` (`CardGrid`, `CardFilterBar`, `DeckStatsHeader`, `CardSortControl`, `DeckViewToggle`).
+  - **Cards Section Modularization**: Decomposed `VaultCardsSection.tsx` into dedicated sub-components under `src/components/vault/sections/cards/` (`CardGrid`, `CardFilterBar`, `DeckStatsHeader`, `CardSortControl`, `DeckViewToggle`). `VaultCardsSection.tsx` and its `sections/cards/` folder were removed in the cards refresh (2026-10-17).
   - **Dashboard Section Modularization**: Decomposed [VaultDashboardSection.tsx](src/components/vault/sections/VaultDashboardSection.tsx) into focused modules under `src/components/vault/sections/dashboard/`.
-  - **Marketplace & Auctions Decomposition**: Decomposed [VaultStoreTab.tsx](src/components/vault/sections/marketplace/VaultStoreTab.tsx) and [VaultAuctionsTab.tsx](src/components/vault/sections/marketplace/VaultAuctionsTab.tsx) into modular sub-components under `sections/marketplace/store/` and `sections/marketplace/auctions/`.
-  - **Card Modal Decomposition**: Modularized [CardDetailsModal.tsx](src/components/cards/display/CardDetailsModal.tsx) into `src/components/cards/display/modal/` (`CardHeader`, `CardImageStage`, `CardStatsPanel`, `CardActions`).
+  - **Marketplace & Auctions Decomposition**: Decomposed [VaultStoreTab.tsx](src/components/vault/sections/marketplace/VaultStoreTab.tsx) and `VaultAuctionsTab.tsx` into modular sub-components under `sections/marketplace/store/` and `sections/marketplace/auctions/`. `VaultAuctionsTab.tsx` was removed in the cards refresh (2026-10-17).
+  - **Card Modal Decomposition**: Modularized `CardDetailsModal.tsx` into `src/components/cards/display/modal/` (`CardHeader`, `CardImageStage`, `CardStatsPanel`, `CardActions`). `CardDetailsModal.tsx` was removed in the cards refresh (2026-10-17).
   - **Vault Service Modularization**: Split `vault-service.ts` into domain services under `src/lib/vault/` (`vault-crud.ts`, `vault-market.ts`, `vault-pricing.ts`, `vault-type-guards.ts`).
   - **NationStates Integration**: Added `NSCardSettingsCard.tsx` settings control, [NationStatesAttribution.tsx](src/components/cards/display/NationStatesAttribution.tsx) attribution widget, image proxy route ([proxy-ns-image/route.ts](src/app/api/proxy-ns-image/route.ts)), and updated [ns-integration.md](docs/systems/ns-integration.md).
 
 ### Refactored (Achievements Page Header Streamlining & Ribbon Racks)
 
 - **Achievements Header Streamlining (`/achievements`)**:
-  - **Visual Hierarchy Refinement**: Simplified [page.tsx](src/app/achievements/page.tsx) header by removing the secondary Lore Score summary card and legendary badges grid, focusing visual hierarchy on core achievement statistics (Unlocked, Achievement Points, Global Rank).
+  - **Visual Hierarchy Refinement**: Simplified the `src/app/achievements/page.tsx` header (since removed) by removing the secondary Lore Score summary card and legendary badges grid, focusing visual hierarchy on core achievement statistics (Unlocked, Achievement Points, Global Rank).
   - **Ribbon Rack Components**: Built [FloatingRibbonRack.tsx](src/components/achievements/FloatingRibbonRack.tsx) and `ForumRibbonRack.tsx` for displaying achievement ribbons across user profiles and forum embeds.
-  - **Documentation**: Updated [src/app/achievements/README.md](src/app/achievements/README.md) to reflect header streamlining and consolidated standalone `/leaderboards` route capabilities.
+  - **Documentation**: Updated [src/app/vault/achievements/README.md](src/app/vault/achievements/README.md) to reflect header streamlining and consolidated standalone `/leaderboards` route capabilities.
 
 ### Refactored (Thinkpages Social Knowledge Suite — Component Modularization & Architecture Audit)
 
@@ -1260,7 +2145,7 @@ RC2 cut.
   - **Automatic Viewport Scroll Positioning**: Added `navRef` and mount effect in `V2CommandSurface.tsx` to automatically position the initial viewport directly below the main navigation bar, with smooth scroll-up to reveal the top nav.
 - **Intent Engine & Executive Console**:
   - **Plain-Language Directive Composer**: Built `V2Console.tsx`, offering 3 pre-computed directive packages (Measured, Moderate, Extreme) + custom policy drafting with show-before-commit diff previews.
-  - **Intent tRPC Backend Router**: Created `intent` router ([intent.ts](src/server/api/routers/intent.ts)) with `suggest`, `preview`, `commit`, `getTree`, and `getStatus` procedures. Implemented policy registry filtering, budget deltas, power broker acceptance checks, locked core stat lever protection, and weekly directive cooldown slot enforcement.
+  - **Intent tRPC Backend Router**: Created `intent` router ([intent](src/server/api/routers/intent/)) with `suggest`, `preview`, `commit`, `getTree`, and `getStatus` procedures. Implemented policy registry filtering, budget deltas, power broker acceptance checks, locked core stat lever protection, and weekly directive cooldown slot enforcement.
   - **Commitments Agenda Rail**: Built `V2Agenda.tsx`, rendering active directive trees, parent-child follow-up chains, and status badges in the right-side rail.
 - **Opportunity Briefing Hero & Priority Engine**:
   - Created `V2OpportunityHero.tsx` as the primary notification & opportunity layer on the dashboard.
@@ -1287,7 +2172,7 @@ RC2 cut.
   - **1-Click Share Confirmation Modal**: Built `ThinkPagesShareModal.tsx` for text editing and 1-click publishing or saving as draft. Added `getDraftPosts` tRPC procedure in [queries.ts](src/server/api/routers/thinkpages/posts/posts/queries.ts).
 - **Final v2 Bible Enhancements**:
   - **Relative-Development Asymmetry in Diplomacy**: Built [relative-development.ts](src/lib/diplomacy/relative-development.ts) to calculate economic tier ratios and asymmetric trade/tariff multipliers (_Superpower Influence_, _Capital Imbalance_, _Resource Synergist_), mounting badges on `EmbassyCard.tsx`.
-  - **Intent Branching Tree Visualizer**: Added `getTree` query procedure in [intent.ts](src/server/api/routers/intent.ts) and built `<IntentBranchingTree />` inside `IntentDetail` in `V2DrillSheets.tsx` rendering parent-child decision tree lineages.
+  - **Intent Branching Tree Visualizer**: Added `getTree` query procedure in [intent](src/server/api/routers/intent/) and built `<IntentBranchingTree />` inside `IntentDetail` in `V2DrillSheets.tsx` rendering parent-child decision tree lineages.
   - **Opt-In Crisis Deliberation Flow**: Added a **"Convene Crisis Cabinet"** button to reactive briefing cards in `V2CommandBriefingHero.tsx`, allowing leaders to launch emergency cabinet deliberation flows on urgent national events.
 - **Executive Home & Directives-Policy Unification (Plans 032–044 & V2 Refinements)**:
   - **Directives (Frontend) / Statecraft (Backend) Architecture Alignment**: Standardized **Directives** as the universal player-facing brand across all UI components, dialogs, and navigation chips (`"Declare Directive"`, `"Tune Custom Directive"`, `"Executive Directive Guide"`), while reserving **Statecraft** for internal engine & simulation backend logic (`Statecraft Engine`, `statecraft-recon`, `deriveBrokers`, `assemble.ts`).
@@ -1296,7 +2181,7 @@ RC2 cut.
   - **Priority Issues Top-of-List Sorting**: Priority Issues (`statusLabel === "PRIORITY ISSUE"`, critical/high severity or urgency > 70) now dynamically sort to the top of the horizon event feed in `V2MyAgenda.tsx`, [useNationalIssues.ts](src/hooks/useNationalIssues.ts), `V2OpportunityHero.tsx`, and `LegislativeIssues.tsx`.
   - **Directives & Policy Unification**: Replaced standalone "Custom Policy" prompt with `"Tune Custom Directive"` in `IntentComposer.tsx`, integrating custom policy parameters (Name, Description, Intensity, Spending Allocation, Department) into the Directive tuning workflow. Expanded directive presets to 64 items across 8 categories with a telemetry-reactive "Surprise Me" prompt engine.
   - **Unified Issue Resolution & Cabinet Meetings**: Added a 4-branch resolution strip in `V2IssueDetail.tsx` (_Delegate_, _Resolve Brief_, _Set Cabinet Meeting_, _Make Directive_). Scheduling a Cabinet Meeting creates an agenda calendar event set for +7 IxTime days, unlocking deep analytical briefings.
-  - **Broker & Structural Response Tiers**: Added `broker_unlocked` and `structural_unlocked` tier types into `assemble.ts` and [intent.ts](src/server/api/routers/intent.ts), enabling Power Broker alignment and specialized Government Components to unlock co-investment deals and structural framework protocols.
+  - **Broker & Structural Response Tiers**: Added `broker_unlocked` and `structural_unlocked` tier types into `assemble.ts` and [intent](src/server/api/routers/intent/), enabling Power Broker alignment and specialized Government Components to unlock co-investment deals and structural framework protocols.
   - **Apple Design Polish**: Enlarged `"Issues & Events"` header typography (`text-base sm:text-lg font-black tracking-tight`), added category color accents (`politics`, `diplomacy`, `defense`, `economy`, `directive`, `issue`), macOS translucent keycap badges (`⏎`), instant physical touch scale feedback (`active:scale-95`), and refined slide-over quick action external links from `"Full Profile Depth"` to clean, direct `"Open Page"` typography with `ArrowUpRight` trailing glyph in `DrillSheets.tsx`.
   - **TypeScript Expert & Advanced Types Performance Pass**: Wrapped `StandingBands`, `ExecutiveAgenda`, `ExecutiveOpportunityHero`, `DomainActionTiles`, `TerritoryMapWidget`, `DomainSurface`, `DomainContextRail`, `PoliticsDrillDown`, `EconomyDrillDown`, and `DrillSheets` in `React.memo`. Memoized telemetry calculations, `tiles`, `tabs`, and `metrics` arrays with `useMemo` hooks. Extracted pure helpers (`getRatingLabel`, `getSeverityRank`, `formatCompact`) outside render scopes with explicit return types and strict interface definitions (`StandingBandsProps`, `ExecutiveAgendaProps`, `ExecutiveOpportunityHeroProps`, `DomainSurfaceProps`, `DomainContextRailProps`, `PoliticsDrillDownProps`, `EconomyDrillDownProps`, `DrillSheetsProps`).
 - **MyCountry V2 Promotion & V1 Cleanup**:
@@ -1315,7 +2200,7 @@ RC2 cut.
 
 - **Map Editor Performance & Responsiveness Overhaul (Plans 106–109)**:
   - **Phase 1 — React State Isolation (`transientStore.ts`)**: Decoupled high-frequency mouse pointer movements, cursor telemetry, and hover tooltips into [transientStore.ts](src/components/maps/editor/utils/transientStore.ts) (`useSyncExternalStore`), eliminating top-level React re-render cascades across Map Editor sidebar panels (`0` re-renders per cursor move).
-  - **Phase 2 — MapLibre Source Diffing Engine (`geoJsonPatcher.ts`)**: Built `GeoJSONPatchEngine` in [geoJsonPatcher.ts](src/components/maps/editor/utils/geoJsonPatcher.ts) supporting targeted feature patch operations (`UPDATE_FEATURE`, `ADD_FEATURE`, `REMOVE_FEATURE`) and MapLibre `setFeatureState` GPU state toggles, replacing full-collection GeoJSON stringification (`JSON.stringify` of 500+ features) and cutting selection/style delay to $<1\text{ms}$.
+  - **Phase 2 — MapLibre Source Diffing Engine (`geoJsonPatcher.ts`)**: Built `GeoJSONPatchEngine` in `src/components/maps/editor/utils/geoJsonPatcher.ts` supporting targeted feature patch operations (`UPDATE_FEATURE`, `ADD_FEATURE`, `REMOVE_FEATURE`) and MapLibre `setFeatureState` GPU state toggles, replacing full-collection GeoJSON stringification (`JSON.stringify` of 500+ features) and cutting selection/style delay to $<1\text{ms}$.
   - **Phase 3 — Web Worker Geometry Offloading (`geometry.worker.ts` & `useGeometryWorker.ts`)**: Offloaded heavy Turf.js spatial operations (`bezierSpline`, `area`, `union`, `difference`) into a dedicated Web Worker (`geometry.worker.ts`) while rendering fast $\mathcal{O}(1)$ polyline drag previews during vertex dragging, keeping editing frame rate locked at 60fps.
   - **Phase 4 — DOM List Virtualization & CSS Containment (`FeatureList.tsx`)**: Applied native CSS `[content-visibility:auto]` containment and extracted memoized `FeatureRowItem` component with custom equality comparators in `FeatureList.tsx`, reducing list item diffing overhead by > 99%.
 - **Map Editor Photoshop-Grade Selection (Plan 120)**:
@@ -1335,7 +2220,7 @@ RC2 cut.
   - **GeoJSON Precision Truncation at the Response Boundary**: `getCountryFeatures` now truncates subdivision geometry to 6 decimal places (~0.11 m) via the new exported `truncateGeometry` in `geojson-compress.ts` — DB keeps full precision, the editor keeps authoritative geometry, payloads shrink.
   - **Shared Geo Cache Invalidation Keys (`trpc-cache.ts`)**: Consolidated scattered inline key arrays into `GEO_FEATURE_INVALIDATE_KEYS` (+ `_WITH_STORY_PINS`, `_WITH_MAP_LABELS`) in `trpc-cache.ts`, applied across all geo feature routers (cities, pois, storyPins, labels, subdivisions) so writes always invalidate the full map-bundle cache set.
 - **Dushy Feedback Addressal**:
-  - **Daily Reward Copy**: Updated reward payout display in [DailyBonusWidget.tsx](src/components/vault/DailyBonusWidget.tsx) from `"1-10k credits"` to `"1 to 10,000 IxCredits scaled by level & streak"`.
+  - **Daily Reward Copy**: Updated reward payout display in `src/components/vault/DailyBonusWidget.tsx` from `"1-10k credits"` to `"1 to 10,000 IxCredits scaled by level & streak"`.
   - **Legislature Seat Cap (Vatican City Rule)**: Lowered minimum legislature seat count validator in [LegislatureConfig.tsx](src/components/executive/politics/LegislatureConfig.tsx) from 10 down to 1 seat.
   - **Map Trash Icon UX & Deletion Bug**: Made feature delete action button always visible, 1.25x larger, and styled in red (`text-rose-500 hover:bg-rose-500/20`) in `FeatureList.tsx`. Added immediate `void refetch()` to feature deletion onSuccess callbacks in [useMapEditor.ts](src/hooks/useMapEditor.ts) to instantly flush state without extra user inputs.
   - **Map Toolbar POI Label**: Updated toolbar button tooltip label to `"POI / Landmark"` in [MapEditorToolbar.tsx](src/components/maps/editor/MapEditorToolbar.tsx).
@@ -1360,7 +2245,7 @@ RC2 cut.
 ### Added
 
 - **Unified Physical Geography Engine (UPG v2 & Atlas Engine v4)**:
-  - **Fixed 100,000-Cell Spatial Mesh**: Locked default mesh resolution to a high-density 100,000-cell Voronoi spatial mesh (`WorldGraph`, 5 Lloyd relaxation passes) in [config.ts](src/lib/worldgen/v2/config.ts) and [page.tsx](src/app/labs/map-pipeline/page.tsx). Removed resolution range sliders from `MapPipelineControls.tsx` and added a `"100K RBF Spline Vector Engine"` telemetry badge.
+  - **Fixed 100,000-Cell Spatial Mesh**: Locked default mesh resolution to a high-density 100,000-cell Voronoi spatial mesh (`WorldGraph`, 5 Lloyd relaxation passes) in [config.ts](src/lib/worldgen/v2/config.ts) and `page.tsx`. Removed resolution range sliders from `MapPipelineControls.tsx` and added a `"100K RBF Spline Vector Engine"` telemetry badge.
   - **Option A 3-Stage IxWorld Vector Synthesis Engine**:
     - **Douglas-Peucker Decimation (`simplifyRing`)**: Integrated `simplifyRing` in [chaikin.ts](src/lib/worldgen/v2/helpers/chaikin.ts) to strip high-frequency Voronoi cell chatter ($120^\circ$ direction flips) before curve calculation.
     - **Control Point Catmull-Rom Subdivision (`catmullRomSmooth`)**: Implemented 3-pass Catmull-Rom spline subdivision ($\tau = 0.5$) through structural control points for continuous, silk-smooth Bezier arcs at all zoom levels without scalloped wave bumps.
@@ -1499,9 +2384,9 @@ RC2 cut.
   - **Named Feature Toolbar & Shortcuts**: Integrated Peaks (shortcut `K`, icon `Mountain`), Rivers (shortcut `Y`, icon `Waves`), and Lakes (shortcut `J`, icon `Droplet`) toolbar items via their respective editor plugins ([PointPlacementPlugin.ts](src/components/maps/editor/plugins/PointPlacementPlugin.ts), [RouteEditPlugin.ts](src/components/maps/editor/plugins/RouteEditPlugin.ts), [SubdivisionDrawPlugin.ts](src/components/maps/editor/plugins/SubdivisionDrawPlugin.ts)).
   - **Drawing & Placement Canvas Integration**: Updated [EditorMap.tsx](src/components/maps/editor/EditorMap.tsx), [useSubdivisionDraw.ts](src/components/maps/editor/hooks/useSubdivisionDraw.ts), and [useMapEditor.ts](src/hooks/useMapEditor.ts) to support polygon drawing for Lakes, click placement coordinates for Peaks, and route waypoints path construction for Rivers.
 - **Achievements Auto-Resync (Achievements System v2)**:
-  - **On-Mount Collector Resync**: Modified the achievements page ([page.tsx](src/app/achievements/page.tsx)) to automatically trigger the `syncMyCollectorAchievements` mutation on mount, evaluating live percentiles against the country distribution and immediately unlocking earned achievements.
+  - **On-Mount Collector Resync**: Modified the achievements page (`src/app/achievements/page.tsx`, since removed) to automatically trigger the `syncMyCollectorAchievements` mutation on mount, evaluating live percentiles against the country distribution and immediately unlocking earned achievements.
 - **Editor Economy Styling Polish**:
-  - **Glassmorphic Transparency**: Polished solid backgrounds in builder demographics indicators ([PopulationSection.tsx](src/app/builder/components/enhanced/tabs/demographics/PopulationSection.tsx)) and geographic region rows ([GeographicSection.tsx](src/app/builder/components/enhanced/tabs/demographics/GeographicSection.tsx)) to match Policy card styling using transparent overlays (`border-white/10 bg-white/[0.02]`).
+  - **Glassmorphic Transparency**: Polished solid backgrounds in builder demographics indicators (PopulationSection.tsx) and geographic region rows (GeographicSection.tsx) to match Policy card styling using transparent overlays (`border-white/10 bg-white/[0.02]`).
 
 ## [1.1.9 Ogma (Alpha)] - 2026-06-29
 
@@ -1674,7 +2559,7 @@ RC2 cut.
 ### Changed
 
 - **Global Navigation & Halo Settings Integration**:
-  - Removed the prominent "Admin" link from the global desktop navigation bar and mobile menu in [useNavigationItems.ts](src/hooks/useNavigationItems.ts).
+  - Removed the prominent "Admin" link from the global desktop navigation bar and mobile menu in `src/hooks/useNavigationItems.ts`.
   - Integrated the Admin Panel link into the Halo (Dynamic Island) settings overlay `SettingsView.tsx`, restricted to signed-in administrators (`isAdmin && isSignedIn`).
 
 ## [1.1.3 Ogma (Alpha)] - 2026-06-26
@@ -1971,7 +2856,7 @@ RC2 cut.
 
 - **Map Editor Real-Time Saving and Ghost Border Elimination**:
   - Hardened all database political borders and subdivision geometry calculations with PostGIS `ST_MakeValid` to auto-repair self-intersections or unclosed rings from imported/edited geometries.
-  - Integrated `ST_MakeValid` directly into geometry triggers (`setup-map-triggers.ts`) and manual update helpers ([upsert.ts](src/lib/country-geo/upsert.ts), [clone-subsystems.ts](src/lib/demo-seed/clone-subsystems.ts), [spatial.ts](src/lib/country-geo/spatial.ts), [provinces.ts](src/server/api/routers/geo/admin/provinces.ts)).
+  - Integrated `ST_MakeValid` directly into geometry triggers (`setup-map-triggers.ts`) and manual update helpers ([upsert.ts](src/lib/country-geo/upsert.ts), `src/lib/demo-seed/clone-subsystems.ts`, [spatial.ts](src/lib/country-geo/spatial.ts), [provinces.ts](src/server/api/routers/geo/admin/provinces.ts)).
   - Reconciled query cache invalidation typo key mismatch: replaced `"geoCore.getCountryGeoBundle"` with the correct `"countryGeo.getCountryGeoBundle"` across all backend routers ([countryGeo.ts](src/server/api/routers/countryGeo.ts), [borders.ts](src/server/api/routers/geo/editor/borders.ts), `linkage.ts`, [cities.ts](src/server/api/routers/geo/admin/cities.ts), [provinces.ts](src/server/api/routers/geo/admin/provinces.ts)).
   - Added missing cache invalidation for `"geoCore.getCountryGeometry"` to border mutations in [borders.ts](src/server/api/routers/geo/editor/borders.ts).
   - Wired client-side query cache updates and local state invalidations upon saving, splitting, and merging borders/subdivisions ([useBorderEditor.ts](src/hooks/useBorderEditor.ts), [useMapEditor.ts](src/hooks/useMapEditor.ts), [useMapLiveSync.ts](src/hooks/useMapLiveSync.ts)) to ensure the editor UI redraws instantly with the latest authoritative shape and eliminates stale ghost borders.
@@ -2568,14 +3453,14 @@ We organized the layout components of the dashboard under a dedicated `src/compo
 
 ##### 1. Moved Components
 
-- **[DashboardSidebarLayout.tsx](src/components/dashboard/sidebar/DashboardSidebarLayout.tsx)**: Main dashboard page grid structure.
-- **[DashboardPlayerWidget.tsx](src/components/dashboard/sidebar/DashboardPlayerWidget.tsx)**: Core player profile card and active alerts indicators.
-- **[DashboardQuickLinks.tsx](src/components/dashboard/sidebar/DashboardQuickLinks.tsx)**: Navigation list to help documents and system status.
-- **[ServerDiscordBadge.tsx](src/components/dashboard/sidebar/ServerDiscordBadge.tsx)**: Server-side wrapper for Discord badge loading.
+- **`src/components/dashboard/sidebar/DashboardSidebarLayout.tsx`**: Main dashboard page grid structure.
+- **`src/components/dashboard/sidebar/DashboardPlayerWidget.tsx`**: Core player profile card and active alerts indicators.
+- **`src/components/dashboard/sidebar/DashboardQuickLinks.tsx`**: Navigation list to help documents and system status.
+- **`src/components/dashboard/sidebar/ServerDiscordBadge.tsx`**: Server-side wrapper for Discord badge loading.
 
 ##### 2. Updated Imports
 
-- Updated imports in [DashboardRouter.tsx](src/components/dashboard/DashboardRouter.tsx), root page [page.tsx](src/app/page.tsx), and vault layout [VaultSidebarLayout.tsx](src/components/vault/VaultSidebarLayout.tsx) to reflect the new paths.
+- Updated imports in [DashboardRouter.tsx](src/components/dashboard/DashboardRouter.tsx), root page [page.tsx](src/app/page.tsx), and vault layout `src/components/vault/VaultSidebarLayout.tsx` to reflect the new paths.
 
 ---
 
@@ -3074,7 +3959,7 @@ We successfully implemented conversation options, groups navigation back-button,
 #### Phase 11: Sidebar Discovery Routing, Group Creation & UI Text Wrapping Fixes
 
 - **Sidebar & Routing Updates**:
-  - Pointed the "Groups" links in the sidebar quick links `DashboardQuickLinks.tsx`, primary navigation config [navigation-config.ts](src/lib/navigation-config.ts), and redirection page [page.tsx](src/app/thinkpages/thinktanks/page.tsx) to `/messages/groups?tab=discover`.
+  - Pointed the "Groups" links in the sidebar quick links `DashboardQuickLinks.tsx`, primary navigation config `src/lib/navigation-config.ts`, and redirection page `src/app/thinkpages/thinktanks/page.tsx` (since removed) to `/messages/groups?tab=discover`.
   - Configured [MessagesRouter.tsx](src/components/messages/MessagesRouter.tsx) to automatically default to opening the groups directory (`groups_directory`) when the Groups folder is loaded without a specific active conversation.
   - Implemented query parameter parsing for `tab` inside `MessagesGroupsPanel.tsx` to automatically highlight the corresponding tab (`discover`, `joined`, or `created`) on mount, and integrated history updates (`pushState`/`replaceState`) when tabs are switched.
 - **Group Creation Integration**:
@@ -3169,7 +4054,7 @@ We resolved several UX and functional issues on the MyCountry dashboard, includi
 
 #### Phase 3: Diplomatic Relations Seeding & Detailed Lists
 
-- **[seed-fallbacks.ts](src/lib/demo-seed/seed-fallbacks.ts)**:
+- **`src/lib/demo-seed/seed-fallbacks.ts`**:
   - Removed the `isDemo: false` selection filter so relationships and embassies seed successfully for demo/dev countries.
 - **`DiplomaticRelationsList.tsx`** [NEW]:
   - Displays country flags, status badges, strength bars, bilateral trade volumes, and last contact dates.
@@ -3362,7 +4247,7 @@ We applied several minor tweaks to ensure stability:
 
 - **`management.ts`**:
   - Stringified the `kpis` array parameters into valid JSON string representations before committing database updates.
-- **[useBuilderState.ts](src/app/builder/hooks/useBuilderState.ts)**:
+- **useBuilderState.ts**:
   - Safely parsed functions and KPI JSON strings back into valid arrays of objects on edit initialization.
 
 #### Phase 3: Wiki & Lore Tab Feature Expansion
@@ -3382,7 +4267,7 @@ We applied several minor tweaks to ensure stability:
 
 #### Phase 5: ThinkPages Account Modal Styling & Layering
 
-- **[AccountCreationModal.tsx](src/components/thinkpages/AccountCreationModal.tsx)** & **[AccountSettingsModal.tsx](src/components/thinkpages/AccountSettingsModal.tsx)**:
+- **[AccountCreationModal.tsx](src/components/dashboard/accounts/AccountCreationModal.tsx)** & **[AccountSettingsModal.tsx](src/components/dashboard/accounts/AccountSettingsModal.tsx)**:
   - Replaced glassmorphic transparent inputs with solid `bg-[var(--color-bg-secondary)]` and high-contrast texts to guarantee legibility.
   - Portaled dialog overlays directly to `document.body` and set `z-index` to `z-[100000]` to render correctly on top of the navigation bar.
 

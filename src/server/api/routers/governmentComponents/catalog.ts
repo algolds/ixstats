@@ -1,19 +1,19 @@
 /**
- * Government Components Router (Phase 4 Migration)
+ * Government Components Router — catalog
  *
- * API layer for atomic government component library and synergy system.
- * Provides public endpoints for component catalog and admin endpoints for management.
- *
- * Database Models: GovernmentComponent, ComponentSynergy (country instances)
- * Fallback Data: ATOMIC_COMPONENTS from ~/lib/atomic-government-data
+ * Serves the atomic government component library. The code library (ATOMIC_COMPONENTS in
+ * ~/lib/government/atomic-data) is the source of truth: the builder, editor and
+ * calculations read it directly, and admins can't edit it. The GovernmentComponentData
+ * table only records how often each component is picked.
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import { globalCache } from "~/lib/cache";
 import { ComponentType } from "@prisma/client";
-import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 
-import { type ParsedComponent, transformDatabaseComponent } from "./serializer";
+import { getAllComponentsSchema, listCatalogComponents } from "~/server/shared/component-catalog";
+import { getLibraryComponents } from "./serializer";
 
 // ============================================================================
 // Input Validation Schemas
@@ -21,30 +21,34 @@ import { type ParsedComponent, transformDatabaseComponent } from "./serializer";
 
 const componentTypeSchema = z.nativeEnum(ComponentType);
 
-const getAllComponentsSchema = z
-  .object({
-    category: z.string().optional(),
-    isActive: z.boolean().optional(),
-  })
-  .optional();
-
 const incrementUsageSchema = z.object({
   componentType: componentTypeSchema,
 });
+
+/**
+ * Whether `userId` already counted the government component `id` today. A pick counts once a day per player, so nobody can inflate the
+ * popularity counters by calling the mutation over and over.
+ */
+async function countedToday(userId: string, id: string): Promise<boolean> {
+  const key = `usage:government-component:${userId}:${id}:${new Date().toISOString().slice(0, 10)}`;
+  if (await globalCache.get(key)) return true;
+  await globalCache.set(key, true, { ttl: 86_400 });
+  return false;
+}
 
 // ============================================================================
 // Helper Functions
 // ============================================================================
 
 /**
- * Ensure database is seeded with government component reference data
+ * Ensure the usage-count table has a row per component
  */
 async function ensureSeeded(db: any) {
   try {
     const count = await db.governmentComponentData.count();
     if (count === 0) {
       console.info("[governmentComponents] Reference database is empty. Seeding components...");
-      const components = getFallbackComponents();
+      const components = getLibraryComponents();
       const dataToInsert = components.map((comp) => ({
         componentType: comp.type,
         name: comp.name,
@@ -75,32 +79,6 @@ async function ensureSeeded(db: any) {
   }
 }
 
-/**
- * Get fallback component data from ATOMIC_COMPONENTS library
- */
-function getFallbackComponents(): ParsedComponent[] {
-  return Object.values(ATOMIC_COMPONENTS)
-    .filter((comp): comp is NonNullable<typeof comp> => comp !== undefined)
-    .map((comp) => ({
-      id: comp.id,
-      type: comp.type,
-      name: comp.name,
-      description: comp.description,
-      effectiveness: comp.effectiveness,
-      synergies: comp.synergies,
-      conflicts: comp.conflicts,
-      implementationCost: comp.implementationCost,
-      maintenanceCost: comp.maintenanceCost,
-      requiredCapacity: comp.requiredCapacity,
-      category: comp.category,
-      prerequisites: comp.prerequisites,
-      color: comp.color,
-      metadata: comp.metadata,
-      usageCount: 0,
-      isActive: true,
-    }));
-}
-
 // ============================================================================
 // Public Endpoints
 // ============================================================================
@@ -110,74 +88,25 @@ export const governmentComponentsCatalogRouter = createTRPCRouter({
    * Get all government components with optional filtering
    * Returns from database if available, falls back to ATOMIC_COMPONENTS
    */
-  getAllComponents: publicProcedure.input(getAllComponentsSchema).query(async ({ ctx, input }) => {
-    try {
-      // Ensure database has reference data
-      await ensureSeeded(ctx.db);
-
-      // Query database
-      const dbComponents = await ctx.db.governmentComponentData.findMany({
-        where: {
-          ...(input?.isActive !== undefined && { isActive: input.isActive }),
-          ...(input?.category && { category: input.category }),
-        },
-        orderBy: [{ category: "asc" }, { usageCount: "desc" }],
-      });
-
-      if (dbComponents.length === 0) {
-        let components = getFallbackComponents();
-
-        // Apply filters
-        if (input?.category) {
-          components = components.filter((comp) => comp.category === input.category);
-        }
-
-        if (input?.isActive !== undefined) {
-          components = components.filter((comp) => comp.isActive === input.isActive);
-        }
-
-        // Sort by category and name
-        components.sort((a, b) => {
-          if (a.category !== b.category) {
-            return a.category.localeCompare(b.category);
-          }
-          return a.name.localeCompare(b.name);
+  getAllComponents: publicProcedure.input(getAllComponentsSchema).query(({ ctx, input }) =>
+    listCatalogComponents({
+      label: "governmentComponents",
+      library: getLibraryComponents,
+      input,
+      loadUsage: async () => {
+        await ensureSeeded(ctx.db);
+        return ctx.db.governmentComponentData.findMany({
+          select: { componentType: true, usageCount: true },
         });
-
-        return {
-          success: true,
-          components,
-          count: components.length,
-          isUsingFallback: true,
-        };
-      }
-
-      // Parse and return database components
-      const components = dbComponents.map(transformDatabaseComponent);
-
-      return {
-        success: true,
-        components,
-        count: components.length,
-        isUsingFallback: false,
-      };
-    } catch (error) {
-      console.error("Error fetching components:", error);
-      const fallbackComponents = getFallbackComponents();
-      return {
-        success: true,
-        components: fallbackComponents,
-        count: fallbackComponents.length,
-        isUsingFallback: true,
-      };
-    }
-  }),
+      },
+    })
+  ),
 
   /**
    * Increment component usage count
-   * This tracks how often components are used across all countries
+   * This tracks how often components are used across all countries: signed in, once a day per player and component
    */
-  incrementComponentUsage: rateLimitedPublicProcedure
+  incrementComponentUsage: rateLimitedMutationProcedure
     .input(incrementUsageSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -193,6 +122,13 @@ export const governmentComponentsCatalogRouter = createTRPCRouter({
             componentType: input.componentType,
             newUsageCount: 0,
             message: "Component not found in database",
+          };
+        }
+        if (await countedToday(ctx.user.id, input.componentType)) {
+          return {
+            success: true,
+            componentType: input.componentType,
+            newUsageCount: existing.usageCount,
           };
         }
 

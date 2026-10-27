@@ -3,8 +3,9 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 import { REACTION_ICONS, getDiscordEmojiUrl } from "./ThinkpagesPostUtils";
+import { parseReactionCounts } from "../primitives/ReactionCacheUpdater";
 
-export interface ReactionPillsProps {
+interface ReactionPillsProps {
   post: any;
   apiDiscordEmojis?: any[];
   onOpenReactionsDialog: () => void;
@@ -15,18 +16,9 @@ export function ReactionPills({
   apiDiscordEmojis,
   onOpenReactionsDialog,
 }: ReactionPillsProps) {
-  let reactionCounts: Record<string, number> = {};
-  try {
-    reactionCounts =
-      typeof post.reactionCounts === "string"
-        ? JSON.parse(post.reactionCounts)
-        : post.reactionCounts || {};
-  } catch (error) {
-    console.warn("Failed to parse reactionCounts in ReactionPills:", error);
-    return null;
-  }
+  const reactionCounts = parseReactionCounts(post.reactionCounts);
 
-  if (!reactionCounts || Object.keys(reactionCounts).length === 0) return null;
+  if (Object.keys(reactionCounts).length === 0) return null;
 
   let hasVisible = false;
   for (const count of Object.values(reactionCounts)) {
@@ -35,7 +27,7 @@ export function ReactionPills({
   if (!hasVisible) return null;
 
   return (
-    <div className="mb-2 flex w-full flex-wrap items-center gap-1.5">
+    <div className="mb-2 flex w-full flex-wrap items-center gap-2">
       {Object.entries(reactionCounts).map(([type, count]) => {
         if ((count as number) <= 0) return null;
 
@@ -45,7 +37,7 @@ export function ReactionPills({
           <div
             key={type}
             className={cn(
-              "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted hover:border-border flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-xs shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-[1.03] dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20 dark:hover:bg-white/10"
+              "bg-fill-4 border-separator text-label-secondary hover:bg-fill-3 hover:border-separator text-footnote flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-[1.03]"
             )}
             onClick={onOpenReactionsDialog}
           >
@@ -57,10 +49,10 @@ export function ReactionPills({
               />
             ) : REACTION_ICONS[type] ? (
               React.createElement(REACTION_ICONS[type]!, {
-                className: "h-3.5 w-3.5 text-blue-400",
+                className: "h-3.5 w-3.5 text-blue",
               })
             ) : (
-              <span className="text-sm">{type}</span>
+              <span className="text-body">{type}</span>
             )}
             <span className="font-medium">{count as number}</span>
           </div>

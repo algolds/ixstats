@@ -16,10 +16,6 @@ import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/
  * Analytics endpoints: Usage statistics and trends
  */
 export const militaryEquipmentManufacturersRouter = createTRPCRouter({
-  // ==========================================
-  // PUBLIC ENDPOINTS
-  // ==========================================
-
   /**
    * Get all manufacturers with optional specialty filter
    */
@@ -50,10 +46,6 @@ export const militaryEquipmentManufacturersRouter = createTRPCRouter({
         });
       }
     }),
-
-  // ==========================================
-  // ADMIN ENDPOINTS
-  // ==========================================
 
   /**
    * Admin: Create manufacturer
@@ -223,10 +215,6 @@ export const militaryEquipmentManufacturersRouter = createTRPCRouter({
         });
       }
     }),
-
-  // ==========================================
-  // ANALYTICS ENDPOINTS
-  // ==========================================
 
   /**
    * Get manufacturer statistics

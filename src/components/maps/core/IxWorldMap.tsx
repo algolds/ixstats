@@ -1,32 +1,25 @@
 "use client";
-
-/**
- * IxWorldMap - Core MapLibre GL JS component for the IxEarth fictional world.
- *
- * Features:
- * - Globe projection at low zoom, transitions to mercator at higher zoom
- * - Renders all map layers from GeoJSON data
- * - Country click/hover interactions
- * - Clean, minimal Google Maps-like visual style
- */
-
-import { useRef, useEffect, forwardRef, useImperativeHandle, useState, memo } from "react";
+import { useRef, useEffect, forwardRef, useImperativeHandle, useState, memo, useMemo } from "react";
 import type { FeatureCollection } from "geojson";
 import type { MapLayerType } from "~/lib/maps/map-config";
-import { MAP_DEFAULTS, buildBaseStyle } from "~/lib/maps/map-config";
+import { MAP_DEFAULTS, buildBaseStyle, mapHomeCenter } from "~/lib/maps/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
+import type { RealmRasterLayer } from "~/lib/maps/realm-map-settings";
+import type { TileSource } from "~/lib/maps/decorative-tiles";
+import { oceanLabelFeatures } from "~/lib/maps/ocean-labels";
 
 import { Suspense } from "react";
-import { acquireSurface } from "~/lib/maps/map-engine";
+import { acquireSurface, setSurfaceWarmKey } from "~/lib/maps/map-engine";
 
 // Overlay components + their wiring
 import { OVERLAY_LIST } from "~/lib/maps/overlay-registry";
 
-// Hooks & Helpers
-import { useWorldMapLayers } from "./hooks/useWorldMapLayers";
+import { forgetLoadedLayers, useWorldMapLayers } from "./hooks/useWorldMapLayers";
 import { useWorldMapInteractions } from "./hooks/useWorldMapInteractions";
 import { useWorldMapOverlayFeatures } from "./hooks/useWorldMapOverlayFeatures";
 import { useWorldMapDataOverlays } from "./hooks/useWorldMapDataOverlays";
+import { useRealmMapLayers } from "./hooks/useRealmMapLayers";
+import { Card } from "~/components/ui/card";
 
 // MapLibre types imported dynamically since the module requires browser APIs
 type MapLibreMap = import("maplibre-gl").Map;
@@ -38,6 +31,15 @@ export interface SelectedCountry {
   centroidLng: number;
   centroidLat: number;
   countryId: string | null;
+}
+
+/** A neighbouring country picked from a panel; centroid is optional (looked up when absent). */
+export interface NeighborTarget {
+  featureId: string;
+  countryId: string | null;
+  displayName: string;
+  centroidLng?: number;
+  centroidLat?: number;
 }
 
 export interface SelectedFeature {
@@ -96,7 +98,7 @@ export interface MapLayerData {
 
 export type OverlayVisibility = Record<string, boolean>;
 
-export interface IxWorldMapProps {
+interface IxWorldMapProps {
   layers: any[];
   theme?: MapTheme;
   capitals?: CapitalsGeoJson;
@@ -119,7 +121,21 @@ export interface IxWorldMapProps {
   onZoomChange?: (zoom: number) => void;
   overlayData?: Record<string, unknown>;
   onRouteClick?: (routeId: string) => void;
+  /** Ixnay's ocean and sea names; off unless the map shows Ixnay (AT-2). A realm's own labels (oceans, seas,
+   * regions, continents from `overlayFeatures.mapLabels`) join them in the same layer and style. */
   showOceanLabels?: boolean;
+  /** The map shows Ixnay: its prime meridian line and home view centre (56.1842°); else the origin. */
+  ixnay?: boolean;
+  /** The realm's base image (full-globe equirectangular), drawn under the political layer. */
+  baseImageUrl?: string | null;
+  /** The realm and map version whose vector tiles draw the decorative layers (altitudes, rivers, lakes). */
+  tileSource?: TileSource;
+  /** The realm whose raster art `rasterLayers` are. */
+  rasterRealmId?: string | null;
+  /** The realm's raster art switched on (base map, overlays), in drawing order. */
+  rasterLayers?: readonly RealmRasterLayer[];
+  /** A base map's art is shown: political fills and borders give way to it. */
+  artMode?: boolean;
 }
 
 export interface IxWorldMapRef {
@@ -153,7 +169,13 @@ const IxWorldMap = memo(
       onZoomChange,
       overlayData,
       onRouteClick,
-      showOceanLabels = true,
+      showOceanLabels = false,
+      ixnay = false,
+      baseImageUrl,
+      tileSource,
+      rasterRealmId,
+      rasterLayers,
+      artMode = false,
     },
     ref
   ) {
@@ -163,10 +185,8 @@ const IxWorldMap = memo(
     const [debugError, setDebugError] = useState<string | null>(null);
 
     const tooltipPopupRef = useRef<any>(null);
-    const fullLayerDataRef = useRef<Map<string, FeatureCollection>>(new Map());
     const labelFeaturesRef = useRef<FeatureCollection | null>(null);
 
-    // Expose imperative methods
     useImperativeHandle(ref, () => ({
       flyTo: (lng: number, lat: number, zoom = 4) => {
         mapRef.current?.flyTo({ center: [lng, lat], zoom, duration: 1500 });
@@ -177,13 +197,27 @@ const IxWorldMap = memo(
       getMap: () => mapRef.current,
     }));
 
-    // ── 1. Hook: Manage Interactions & Event Listeners ──
+    // Theme changes. The map engine already creates (or resets) the map with the current theme, so
+    // only a later change re-applies the style. Declared before the layer hooks so their effects
+    // re-push data after this empties the sources, not before it.
+    const styledThemeRef = useRef(theme);
+    useEffect(() => {
+      const map = mapRef.current;
+      if (!map || !isLoaded || styledThemeRef.current === theme) return;
+      styledThemeRef.current = theme;
+      try {
+        // oxlint-disable-next-line
+        const newStyle = buildBaseStyle(theme, projectionMode);
+        map.setStyle(newStyle as any, { diff: true });
+      } catch (err) {
+        console.warn("[IxWorldMap] setStyle error:", err);
+      }
+    }, [theme, isLoaded]);
+
     const { updateDistanceFade } = useWorldMapInteractions({
       map: mapRef.current,
       isLoaded,
       layers,
-      overlayVisibility,
-      labelsVisible,
       geographyFilter,
       topCountryNames,
       selectedCountryId,
@@ -197,7 +231,13 @@ const IxWorldMap = memo(
       tooltipPopupRef,
     });
 
-    // ── 2. Hook: Manage Base Topography & Boundaries Layers ──
+    // The realm's art prints its own ocean and region names, so its labels give way to it in art mode
+    const realmMapLabels = artMode ? undefined : overlayFeatures?.mapLabels;
+    const oceanLabels = useMemo(
+      () => oceanLabelFeatures(showOceanLabels, realmMapLabels),
+      [showOceanLabels, realmMapLabels]
+    );
+
     useWorldMapLayers({
       map: mapRef.current,
       isLoaded,
@@ -206,12 +246,24 @@ const IxWorldMap = memo(
       topCountryNames,
       updateDistanceFade,
       labelFeaturesRef,
-      fullLayerDataRef,
       theme,
-      showOceanLabels,
+      oceanLabels,
+      showPrimeMeridian: ixnay,
+      labelsVisible,
+      tileSource,
+      artMode,
     });
 
-    // ── 3. Hook: Manage Capitals & subdivisions Overlays ──
+    useRealmMapLayers({
+      map: mapRef.current,
+      isLoaded,
+      layers,
+      theme,
+      baseImageUrl,
+      rasterRealmId,
+      rasterLayers,
+    });
+
     useWorldMapOverlayFeatures({
       map: mapRef.current,
       isLoaded,
@@ -221,7 +273,6 @@ const IxWorldMap = memo(
       selectedCountryId,
     });
 
-    // ── 4. Hook: Manage Story Pins, Labels & Data Overlays ──
     useWorldMapDataOverlays({
       map: mapRef.current,
       isLoaded,
@@ -232,18 +283,11 @@ const IxWorldMap = memo(
       selectedCountryId,
     });
 
-    // Handle theme changes
+    // The parked map shows this realm's data from here on (the realm is known once its map version is)
+    const shownRealmId = tileSource?.realmId;
     useEffect(() => {
-      const map = mapRef.current;
-      if (!map || !isLoaded) return;
-      try {
-        // oxlint-disable-next-line
-        const newStyle = buildBaseStyle(theme, projectionMode);
-        map.setStyle(newStyle as any, { diff: true });
-      } catch (err) {
-        console.warn("[IxWorldMap] setStyle error:", err);
-      }
-    }, [theme, isLoaded]);
+      if (isLoaded && shownRealmId) setSurfaceWarmKey("world", shownRealmId);
+    }, [isLoaded, shownRealmId]);
 
     // Initialize a standalone MapLibre instance for the main world map.
     useEffect(() => {
@@ -254,19 +298,23 @@ const IxWorldMap = memo(
       const init = () => {
         const handle = acquireSurface("world", {
           container: el,
-          initialCenter: initialCenter || MAP_DEFAULTS.center,
+          initialCenter: initialCenter || mapHomeCenter(ixnay),
           initialZoom: initialZoom ?? MAP_DEFAULTS.zoom,
           minZoom: MAP_DEFAULTS.minZoom,
           maxZoom: MAP_DEFAULTS.maxZoom,
           theme,
           projectionMode,
+          // The realm the data is of: a map parked with another realm's data starts clean
+          warmKey: tileSource?.realmId,
           interactive: true,
           onCreate: (map, maplibregl) => {
             map.__mlgl = maplibregl;
             map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
           },
-          onReady: (map) => {
+          onReady: (map, { styleReset }) => {
             mapRef.current = map;
+            // The base style was put back: its sources are empty, so every layer's data goes in again
+            if (styleReset) forgetLoadedLayers(map);
 
             // Remove stale zoomend handlers to prevent setData zoom thrashing
             if (map.__ixZoomHandler) {
@@ -333,23 +381,28 @@ const IxWorldMap = memo(
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
         />
         {debugError && (
-          <div className="absolute inset-0 flex items-center justify-center bg-red-50 p-4">
-            <div className="max-w-lg rounded-lg bg-white p-4 shadow-lg">
-              <p className="font-bold text-red-600">MapLibre import debug:</p>
-              <pre className="text-foreground mt-2 text-xs whitespace-pre-wrap">{debugError}</pre>
-            </div>
+          <div
+            role="alert"
+            className="bg-surface absolute inset-0 flex items-center justify-center p-4"
+          >
+            <Card className="max-w-lg p-4">
+              <p className="text-destructive font-semibold">The map engine failed to start</p>
+              <pre className="text-label text-footnote mt-2 whitespace-pre-wrap">{debugError}</pre>
+            </Card>
           </div>
         )}
         {!isLoaded && !debugError && (
-          <div className="bg-muted absolute inset-0 flex items-center justify-center">
+          <div
+            className="bg-fill-3 absolute inset-0 flex items-center justify-center"
+            role="status"
+          >
             <div className="flex flex-col items-center gap-3">
-              <div className="border-muted-foreground/20 h-8 w-8 animate-spin rounded-full border-4 border-t-blue-500" />
-              <p className="text-muted-foreground text-sm">Loading map...</p>
+              <div className="border-separator border-t-blue h-8 w-8 animate-spin rounded-full border-4" />
+              <p className="text-label-secondary text-body">Loading map...</p>
             </div>
           </div>
         )}
 
-        {/* Dynamic Overlay Components */}
         {isLoaded && (
           <Suspense fallback={null}>
             {OVERLAY_LIST.map((def) => {

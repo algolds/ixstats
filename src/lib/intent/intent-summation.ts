@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-export interface SummationDraftResult {
+interface SummationDraftResult {
   postId: string;
   accountId: string;
   content: string;

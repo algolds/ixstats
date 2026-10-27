@@ -11,9 +11,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 
-// ============================================================
 // Event types and templates
-// ============================================================
 
 export type NewsEventType =
   | "embassy_established"
@@ -31,7 +29,6 @@ export type NewsEventType =
   | "pvp_conflict_proposed"
   | "pvp_conflict_accepted"
   | "pvnpc_conflict_resolved"
-  | "security_event_resolved"
   | "bill_passed"
   | "bill_rejected"
   | "party_support_shift";
@@ -44,7 +41,6 @@ interface NewsContext {
   partyName?: string;
   billName?: string;
   actionType?: string;
-  eventType?: string;
   severity?: string;
   notes?: string;
   seats?: number;
@@ -118,10 +114,6 @@ const NEWS_TEMPLATES: Record<
     content: `Military engagement between ${ctx.countryName} and ${ctx.targetName} concluded. ${ctx.winner ? `${ctx.winner} claims victory.` : "Outcome disputed."}`,
     hashtags: ["Military", "Conflict", "Resolution"],
   }),
-  security_event_resolved: (ctx) => ({
-    content: `${ctx.countryName} has resolved a ${ctx.severity ?? "security"} incident: ${ctx.eventType ?? "security event"}. ${ctx.notes ? `Official statement: "${ctx.notes}"` : "Stability operations concluded successfully."}`,
-    hashtags: ["Security", "Stability", "DomesticAffairs"],
-  }),
   bill_passed: (ctx) => ({
     content: `BREAKING: The ${ctx.countryName} legislature has passed "${ctx.billName ?? "the bill"}"${ctx.percentage ? ` (${ctx.percentage})` : ""}. ${ctx.notes ?? "The measure now takes effect."}`,
     hashtags: ["Politics", "Legislature", "DomesticAffairs"],
@@ -136,9 +128,7 @@ const NEWS_TEMPLATES: Record<
   }),
 };
 
-// ============================================================
 // Main generator function
-// ============================================================
 
 /**
  * Generate a diplomatic news post on ThinkPages.
@@ -220,9 +210,7 @@ export async function generateDiplomaticNews(
   return newsGenerator.generateDiplomaticNews(db, countryId, eventType, context);
 }
 
-// ============================================================
 // Wiki Lore Update News — makes wiki editing a social activity
-// ============================================================
 
 /**
  * Generate a ThinkPages post when a player updates their wiki article.
@@ -233,7 +221,7 @@ export async function generateDiplomaticNews(
  * @param articleTitle - Wiki article title that was edited
  * @param editSummary - Optional edit summary from the wiki
  */
-export async function generateWikiUpdateNews(
+async function generateWikiUpdateNews(
   db: PrismaClient,
   countryId: string,
   articleTitle: string,
@@ -284,9 +272,7 @@ export async function generateWikiUpdateNews(
   }
 }
 
-// ============================================================
 // Story Pin News — announces major/legendary story pins
-// ============================================================
 
 /**
  * Generate a ThinkPages post when a Major or Legendary story pin is created.

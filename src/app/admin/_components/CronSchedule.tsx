@@ -1,4 +1,5 @@
 import * as React from "react";
+import { format } from "date-fns";
 import { cn } from "~/lib/utils";
 import { Eyebrow } from "~/components/ui/eyebrow";
 
@@ -11,23 +12,8 @@ const FIELD_RANGES: [number, number][] = [
   [0, 6],
 ];
 
-const MONTH_NAMES = [
-  "",
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_NAMES = ["", ..."Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")];
+const DAY_NAMES = "Sun Mon Tue Wed Thu Fri Sat".split(" ");
 
 function parseField(field: string, min: number, max: number): number[] {
   const values = new Set<number>();
@@ -123,12 +109,8 @@ function humanReadable(fields: string[]): string {
   return parts.join(", ");
 }
 
-function formatTime(hour: number, minute: number): string {
-  const period = hour >= 12 ? "PM" : "AM";
-  const h = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  const m = minute.toString().padStart(2, "0");
-  return `${h}:${m} ${period}`;
-}
+const formatTime = (hour: number, minute: number) =>
+  format(new Date(2000, 0, 1, hour, minute), "h:mm a");
 
 function joinList(items: string[]): string {
   if (items.length <= 1) return items[0] ?? "";
@@ -186,32 +168,7 @@ function getNextRuns(fields: string[], count: number, from: Date): Date[] {
   return runs;
 }
 
-function formatNextRun(date: Date): string {
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const day = days[date.getDay()];
-  const month = months[date.getMonth()];
-  const d = date.getDate();
-  const h = date.getHours();
-  const m = date.getMinutes().toString().padStart(2, "0");
-  const period = h >= 12 ? "PM" : "AM";
-  const hour = h === 0 ? 12 : h > 12 ? h - 12 : h;
-
-  return `${day}, ${month} ${d} at ${hour}:${m} ${period}`;
-}
+const formatNextRun = (date: Date) => format(date, "EEE, MMM d 'at' h:mm a");
 
 interface CronScheduleProps extends Omit<React.ComponentProps<"div">, "children" | "title"> {
   /** Standard 5-field cron expression (e.g. "0 9 * * 1-5"). */
@@ -239,7 +196,7 @@ function CronSchedule({
       <div
         data-slot="cron-schedule"
         className={cn(
-          "border-destructive/30 bg-destructive/5 text-destructive rounded-xl border px-4 py-3 text-sm",
+          "border-destructive/30 bg-destructive/5 text-destructive rounded-row text-body border px-4 py-3",
           className
         )}
         {...props}
@@ -256,54 +213,46 @@ function CronSchedule({
   return (
     <div
       data-slot="cron-schedule"
-      className={cn(
-        "border-border/60 bg-card overflow-hidden rounded-xl border shadow-sm",
-        className
-      )}
+      className={cn("border-separator bg-surface rounded-row overflow-hidden border", className)}
       {...props}
     >
-      {/* Header */}
-      <div className="border-border/40 flex items-start justify-between gap-3 border-b px-4 py-3">
+      <div className="border-separator flex items-start justify-between gap-3 border-b px-4 py-3">
         <div className="flex flex-col gap-1">
-          {title && <h3 className="text-foreground text-sm font-semibold">{title}</h3>}
-          <p className="text-muted-foreground text-sm">{summary}</p>
+          {title && <h3 className="text-label text-headline">{title}</h3>}
+          <p className="text-label-secondary text-body">{summary}</p>
         </div>
-        <code className="bg-muted text-foreground shrink-0 rounded-md px-2.5 py-1 font-mono text-xs">
+        <code className="bg-fill-3 text-label rounded-control-sm text-footnote shrink-0 px-3 py-1 font-mono">
           {expression}
         </code>
       </div>
 
-      {/* Field breakdown */}
-      <div className="divide-border/40 grid grid-cols-5 divide-x">
+      <div className="divide-separator grid grid-cols-5 divide-x">
         {fields.map((field, i) => {
           const [min, max] = FIELD_RANGES[i];
           const description = describeField(field, i, min, max);
 
           return (
-            <div key={FIELD_NAMES[i]} className="flex flex-col items-center gap-1.5 px-2 py-3">
-              <Eyebrow>
-                {FIELD_NAMES[i]}
-              </Eyebrow>
-              <span className="text-foreground font-mono text-sm font-semibold">{field}</span>
-              <span className="text-muted-foreground text-center text-xs">{description}</span>
+            <div key={FIELD_NAMES[i]} className="flex flex-col items-center gap-2 px-2 py-3">
+              <Eyebrow>{FIELD_NAMES[i]}</Eyebrow>
+              <span className="text-label text-headline tabular-nums">{field}</span>
+              <span className="text-label-secondary text-footnote text-center">{description}</span>
             </div>
           );
         })}
       </div>
 
-      {/* Next runs */}
       {nextRuns.length > 0 && (
-        <div className="border-border/40 border-t px-4 py-3">
-          <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
+        <div className="border-separator border-t px-4 py-3">
+          <p className="text-label-secondary text-eyebrow mb-2">
             Next {nextRuns.length === 1 ? "run" : `${nextRuns.length} runs`}
           </p>
           <ol className="flex flex-col gap-1">
             {nextRuns.map((run, i) => (
-              <li key={run.toISOString()} className="flex items-center gap-2 text-sm">
-                <span className="bg-muted text-muted-foreground flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
+              <li key={run.toISOString()} className="text-body flex items-center gap-2">
+                <span className="bg-fill-3 text-label-secondary text-caption flex size-5 shrink-0 items-center justify-center rounded-full">
                   {i + 1}
                 </span>
-                <span className="text-foreground font-mono text-xs">{formatNextRun(run)}</span>
+                <span className="text-label text-footnote tabular-nums">{formatNextRun(run)}</span>
               </li>
             ))}
           </ol>
@@ -313,4 +262,4 @@ function CronSchedule({
   );
 }
 
-export { CronSchedule, type CronScheduleProps };
+export { CronSchedule };

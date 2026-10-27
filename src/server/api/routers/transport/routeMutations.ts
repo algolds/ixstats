@@ -7,14 +7,8 @@
 
 import { z } from "zod/v4";
 import type { PrismaClient, Prisma } from "@prisma/client";
-import {
-  createTRPCRouter,
-  standardMutationCountryOwnerProcedure,
-} from "~/server/api/trpc";
-import {
-  assertCountryResourceWriteAccess,
-  assertCountryWriteAccess,
-} from "~/server/shared/country-authorization";
+import { createTRPCRouter, standardMutationMapFeatureOwnerProcedure } from "~/server/api/trpc";
+import { assertCountryResourceWriteAccess } from "~/server/shared/country-authorization";
 import { resolveTransportRouteCountryId } from "~/server/shared/country-resource-owner";
 import {
   generateTransportNetwork,
@@ -24,13 +18,13 @@ import {
 } from "~/lib/economy/transport-generator";
 import { calculateRouteCosts } from "~/lib/economy/transport-costs";
 import { syncResourcePoolModifiers } from "~/server/shared/geo-resource-sync";
-import { syncTransportEconomicModifiers } from "~/server/shared/transport-sync";
 import {
   polylineLengthKm,
   normalizeTerrainDifficulty,
   samplePolylinePoints,
 } from "~/lib/maps/geo-math";
 import { getTerrainAtPoint } from "~/lib/country-geo";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonObject = Record<string, JsonPrimitive | JsonPrimitive[] | Record<string, JsonPrimitive>>;
@@ -42,32 +36,51 @@ const lineStringGeometrySchema = z.object({
 
 const routePropertiesSchema = z.record(
   z.string(),
-  z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.null(),
-    z.array(z.string()),
-    z.array(z.number()),
-  ])
+  z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.string()), z.array(z.number())])
 );
+
+/**
+ * Routes are written by the nation's owner and site admins, and by the realm's map editors for its unclaimed nations
+ * (mapFeatureOwnerProcedure grants them the nation as `ctx.country`). A route with no nation stays with site admins.
+ */
+async function assertRouteWriter(
+  ctx: Parameters<typeof assertCountryResourceWriteAccess>[0] & { country?: { id: string } | null },
+  countryId: string | null | undefined
+) {
+  if (countryId && ctx.country?.id === countryId) return;
+  await assertCountryResourceWriteAccess(ctx, countryId, "Transport route");
+}
 
 export const transportRouteMutationsRouter = createTRPCRouter({
   /**
    * Generate transport network procedurally for a country.
    * Available to country owners (generates for their own country) and admins.
    */
-  generateRoutes: standardMutationCountryOwnerProcedure
+  generateRoutes: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
         routeTypes: z
           .array(
             z.enum([
-              "rail", "high_speed_rail", "freight_rail", "commuter_rail",
-              "motorway", "highway", "trunk", "road", "secondary",
-              "shipping_lane", "canal", "air_corridor", "ferry",
-              "pipeline", "power_grid", "fiber", "military_supply", "military_naval",
+              "rail",
+              "high_speed_rail",
+              "freight_rail",
+              "commuter_rail",
+              "motorway",
+              "highway",
+              "trunk",
+              "road",
+              "secondary",
+              "shipping_lane",
+              "canal",
+              "air_corridor",
+              "ferry",
+              "pipeline",
+              "power_grid",
+              "fiber",
+              "military_supply",
+              "military_naval",
             ])
           )
           .default(["rail", "highway"]),
@@ -75,7 +88,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCountryWriteAccess(ctx, input.countryId);
+      await assertRouteWriter(ctx, input.countryId);
 
       // Get country + cities
       const country = await ctx.db.country.findUnique({
@@ -85,6 +98,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
           name: true,
           boundingBox: true,
           coastlineKm: true,
+          realmId: true,
           cities: {
             where: { status: "approved" },
             select: {
@@ -103,6 +117,8 @@ export const transportRouteMutationsRouter = createTRPCRouter({
 
       const bbox = country.boundingBox as [number, number, number, number] | null;
       if (!bbox) throw new Error("Country has no bounding box");
+      // Routes and hubs live in their owner's realm (AT-1), not Ixnay by default.
+      const realmId = country.realmId ?? DEFAULT_REALM_ID;
 
       // Fetch airport POIs for air corridor generation
       const airportPois = input.routeTypes.includes("air_corridor")
@@ -175,6 +191,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         await ctx.db.transportRoute.create({
           data: {
             countryId: input.countryId,
+            realmId,
             routeType: route.routeType,
             name: route.name,
             geometry: route.geometry,
@@ -188,7 +205,8 @@ export const transportRouteMutationsRouter = createTRPCRouter({
             status: "operational",
             terrainDifficulty: route.terrainDifficulty,
             lengthKm: route.lengthKm,
-            speedKmh: typeof route.properties?.speed_kmh === "number" ? route.properties.speed_kmh : null,
+            speedKmh:
+              typeof route.properties?.speed_kmh === "number" ? route.properties.speed_kmh : null,
           } as Prisma.TransportRouteCreateInput,
         });
         created++;
@@ -218,6 +236,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
           data: {
             cityId,
             countryId: input.countryId,
+            realmId,
             hubType,
             name: `${city.name} ${hubType === "port" ? "Port" : "Station"}`,
             coordinates: city.coordinates,
@@ -226,7 +245,6 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         });
       }
 
-      await syncTransportEconomicModifiers(ctx.db, input.countryId);
       await syncResourcePoolModifiers(ctx.db, input.countryId);
 
       return {
@@ -236,7 +254,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       };
     }),
 
-  createRoute: standardMutationCountryOwnerProcedure
+  createRoute: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -249,7 +267,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCountryWriteAccess(ctx, input.countryId);
+      await assertRouteWriter(ctx, input.countryId);
       const coords = input.geometry.coordinates ?? [];
 
       const { lengthKm, terrainDifficulty } = await computeRouteLengthAndDifficulty(
@@ -273,6 +291,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       const route = await ctx.db.transportRoute.create({
         data: {
           countryId: input.countryId,
+          realmId: await countryRealmId(ctx.db, input.countryId),
           routeType: input.routeType,
           name: input.name,
           geometry: input.geometry,
@@ -290,7 +309,6 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         } as Prisma.TransportRouteCreateInput,
       });
 
-      await syncTransportEconomicModifiers(ctx.db, input.countryId);
       await syncResourcePoolModifiers(ctx.db, input.countryId);
 
       return route;
@@ -299,21 +317,19 @@ export const transportRouteMutationsRouter = createTRPCRouter({
   /**
    * Delete a transport route.
    */
-  deleteRoute: standardMutationCountryOwnerProcedure
+  deleteRoute: standardMutationMapFeatureOwnerProcedure
     .input(z.object({ id: z.string(), countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await assertCountryResourceWriteAccess(
+      await assertRouteWriter(
         ctx,
-        await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId),
-        "Transport route"
+        await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId)
       );
       const deleted = await ctx.db.transportRoute.delete({ where: { id: input.id } });
-      await syncTransportEconomicModifiers(ctx.db, input.countryId);
       await syncResourcePoolModifiers(ctx.db, input.countryId);
       return deleted;
     }),
 
-  updateRoute: standardMutationCountryOwnerProcedure
+  updateRoute: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         id: z.string(),
@@ -340,10 +356,9 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCountryResourceWriteAccess(
+      await assertRouteWriter(
         ctx,
-        await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId),
-        "Transport route"
+        await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId)
       );
       const { id, countryId, ...data } = input;
       const updates: Prisma.TransportRouteUpdateInput = {};
@@ -388,7 +403,6 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         data: updates,
       });
 
-      await syncTransportEconomicModifiers(ctx.db, countryId);
       await syncResourcePoolModifiers(ctx.db, countryId);
 
       return updated;
@@ -397,7 +411,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
   /**
    * Update route geometry (path editing).
    */
-  updateRouteGeometry: standardMutationCountryOwnerProcedure
+  updateRouteGeometry: standardMutationMapFeatureOwnerProcedure
     .input(
       z.object({
         id: z.string(),
@@ -406,10 +420,9 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCountryResourceWriteAccess(
+      await assertRouteWriter(
         ctx,
-        await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId),
-        "Transport route"
+        await resolveTransportRouteCountryId(ctx.db, input.id, input.countryId)
       );
       // Recalculate length and terrain difficulty from new geometry
       const coords = input.geometry.coordinates ?? [];
@@ -447,7 +460,6 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         },
       });
 
-      await syncTransportEconomicModifiers(ctx.db, input.countryId);
       await syncResourcePoolModifiers(ctx.db, input.countryId);
 
       return updated;
@@ -481,8 +493,10 @@ async function computeRouteLengthAndDifficulty(
   let terrainDifficulty: number;
   if (samplePoints.length >= 2) {
     try {
+      // Sample the route's own realm only; another realm's altitude layer must not set difficulty
+      const realmId = countryId ? await countryRealmId(db, countryId) : DEFAULT_REALM_ID;
       const results = await Promise.all(
-        samplePoints.map(([lng, lat]) => getTerrainAtPoint(db as PrismaClient, lng, lat))
+        samplePoints.map(([lng, lat]) => getTerrainAtPoint(db as PrismaClient, lng, lat, realmId))
       );
       const elevations = results.map((r) => {
         if (!r.elevationZone) return 0;
@@ -499,6 +513,18 @@ async function computeRouteLengthAndDifficulty(
   }
 
   return { lengthKm, terrainDifficulty };
+}
+
+/** The realm a country's transport belongs to (AT-1); Ixnay when the country can't be read. */
+async function countryRealmId(
+  db: PrismaClient | Prisma.TransactionClient,
+  countryId: string
+): Promise<string> {
+  const country = await db.country.findUnique({
+    where: { id: countryId },
+    select: { realmId: true },
+  });
+  return country?.realmId ?? DEFAULT_REALM_ID;
 }
 
 async function getFallbackDifficulty(

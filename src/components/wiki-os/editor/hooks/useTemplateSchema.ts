@@ -1,7 +1,7 @@
 "use client";
 import { api } from "~/trpc/react";
 
-export interface TemplateParamMeta {
+interface TemplateParamMeta {
   label?: string;
   description?: string;
   type?: string;

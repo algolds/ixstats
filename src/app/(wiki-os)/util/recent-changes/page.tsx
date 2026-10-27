@@ -1,12 +1,12 @@
 "use client";
-// src/app/(wiki-os)/wiki/recent-changes/page.tsx
 // WikiOS Recent Changes — grouped by page, with byte diffs, filters, and collapsible edits.
 
 import { useState, useMemo } from "react";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
+import { OverwrittenBadge } from "~/components/wiki-os/shared/OverwrittenBadge";
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo, parseMWDateObject } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import {
   NavArrowDown as ChevronDown,
@@ -15,10 +15,7 @@ import {
   PagePlus as FilePlus,
   Filter,
 } from "iconoir-react";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+import { Button } from "~/components/ui/button";
 
 interface RawChange {
   title: string;
@@ -28,6 +25,8 @@ interface RawChange {
   type: "edit" | "new" | "log";
   oldLen: number;
   newLen: number;
+  /** Overwritten: a later save on the other wiki replaced it. Listed, but never the page's live text. */
+  parked?: boolean;
 }
 
 interface GroupedPage {
@@ -38,10 +37,6 @@ interface GroupedPage {
   latestUser: string;
   isNew: boolean;
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function byteDelta(change: RawChange): number {
   if (change.oldLen === 0 && change.newLen > 0) {
@@ -79,7 +74,7 @@ function getSemanticAction(change: RawChange): {
     return {
       label: "Created page",
       isPill: true,
-      pillClass: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/25",
+      pillClass: "bg-green/10 text-green border border-green/25",
     };
   }
 
@@ -87,7 +82,7 @@ function getSemanticAction(change: RawChange): {
     return {
       label: `Expanded article (+${delta.toLocaleString()} B)`,
       isPill: true,
-      pillClass: "bg-cyan-500/10 text-cyan-400 border border-cyan-500/25",
+      pillClass: "bg-teal/10 text-teal border border-teal/25",
     };
   }
 
@@ -95,20 +90,16 @@ function getSemanticAction(change: RawChange): {
     return {
       label: `Trimmed content (${delta.toLocaleString()} B)`,
       isPill: true,
-      pillClass: "bg-amber-500/10 text-amber-400 border border-amber-500/25",
+      pillClass: "bg-yellow/10 text-yellow border border-yellow/25",
     };
   }
 
   return {
     label: "Updated content",
     isPill: true,
-    pillClass: "bg-white/5 text-muted-foreground border border-white/10",
+    pillClass: "bg-fill-4 text-label-secondary border border-separator",
   };
 }
-
-// ---------------------------------------------------------------------------
-// Date range options
-// ---------------------------------------------------------------------------
 
 const DATE_RANGES = [
   { label: "24h", hours: 24 },
@@ -118,16 +109,12 @@ const DATE_RANGES = [
   { label: "All", hours: 0 },
 ] as const;
 
-// ---------------------------------------------------------------------------
-// Page component
-// ---------------------------------------------------------------------------
-
 export default function RecentChangesPage() {
   const [dateRange, setDateRange] = useState(168); // 7 days default
   const [expandedPages, setExpandedPages] = useState<Set<string>>(new Set());
 
   const { data: changes, isLoading } = api.wikios.getRecentChanges.useQuery(
-    { limit: 100 },
+    { limit: 100, includeParked: true }, // this page lists a parked edit too, flagged
     { staleTime: 30_000, refetchInterval: 60_000 }
   );
 
@@ -151,14 +138,19 @@ export default function RecentChangesPage() {
       else map.set(c.title, [c]);
     }
 
-    return Array.from(map.entries()).map(([title, edits]) => ({
-      title,
-      edits,
-      totalDelta: edits.reduce((sum, e) => sum + byteDelta(e), 0),
-      latestTimestamp: edits[0]!.timestamp,
-      latestUser: edits[0]!.user,
-      isNew: edits.some((e) => e.type === "new" || e.oldLen === 0),
-    }));
+    return Array.from(map.entries()).map(([title, edits]) => {
+      // A parked edit is listed, but it changed nothing: it is not part of the page's net change or its latest edit.
+      const live = edits.filter((e) => !e.parked);
+      const latest = live[0] ?? edits[0]!;
+      return {
+        title,
+        edits,
+        totalDelta: live.reduce((sum, e) => sum + byteDelta(e), 0),
+        latestTimestamp: latest.timestamp,
+        latestUser: latest.user,
+        isNew: live.some((e) => e.type === "new" || e.oldLen === 0),
+      };
+    });
   }, [filtered]);
 
   const toggleExpand = (title: string) => {
@@ -176,22 +168,18 @@ export default function RecentChangesPage() {
         {/* Toolbar */}
         <div className="wikios-rc-toolbar">
           <div className="wikios-rc-toolbar-left">
-            <Filter className="h-3.5 w-3.5 text-[var(--wikios-text-dim)]" />
-            <span className="text-xs text-[var(--wikios-text-dim)]">Range:</span>
-            {DATE_RANGES.map((r) => (
-              <button
-                key={r.label}
-                onClick={() => setDateRange(r.hours)}
-                className={`wikios-rc-range-btn ${
-                  dateRange === r.hours ? "wikios-rc-range-btn--active" : ""
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
+            <Filter className="text-label-secondary h-3.5 w-3.5" />
+            <span className="text-footnote text-label-secondary">Range:</span>
+            <SegmentedControl
+              aria-label="Range"
+              size="sm"
+              value={String(dateRange)}
+              onValueChange={(v) => setDateRange(Number(v) as typeof dateRange)}
+              options={DATE_RANGES.map((r) => ({ value: String(r.hours), label: r.label }))}
+            />
           </div>
 
-          <div className="text-xs text-[var(--wikios-text-dim)]">
+          <div className="text-footnote text-label-secondary">
             {grouped.length} {grouped.length === 1 ? "page" : "pages"} updated
           </div>
         </div>
@@ -222,21 +210,23 @@ export default function RecentChangesPage() {
                     onClick={() => hasMultiple && toggleExpand(group.title)}
                   >
                     {hasMultiple ? (
-                      <button
-                        type="button"
-                        className="wikios-rc-expand-btn"
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-expanded={isExpanded}
                         aria-label={isExpanded ? "Collapse" : "Expand"}
+                        className="text-label-secondary size-5 shrink-0"
                       >
                         {isExpanded ? (
                           <ChevronDown className="h-3.5 w-3.5" />
                         ) : (
                           <ChevronRight className="h-3.5 w-3.5" />
                         )}
-                      </button>
+                      </Button>
                     ) : (
                       <span className="wikios-rc-expand-btn">
                         {group.isNew ? (
-                          <FilePlus className="h-3.5 w-3.5 text-emerald-400" />
+                          <FilePlus className="text-green h-3.5 w-3.5" />
                         ) : (
                           <FileText className="h-3.5 w-3.5 opacity-40" />
                         )}
@@ -244,9 +234,7 @@ export default function RecentChangesPage() {
                     )}
 
                     <Link
-                      href={withBasePath(
-                        `/wiki/${encodeURIComponent(group.title.replace(/ /g, "_"))}`
-                      )}
+                      href={`/wiki/${encodeURIComponent(group.title.replace(/ /g, "_"))}`}
                       className="wikios-rc-group-title"
                     >
                       {group.title}
@@ -282,9 +270,10 @@ export default function RecentChangesPage() {
                             <span className="wikios-rc-edit-time">
                               {formatMWTimeAgo(edit.timestamp)}
                             </span>
+                            {edit.parked && <OverwrittenBadge />}
                             {action.isPill ? (
                               <span
-                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium tracking-tight ${action.pillClass}`}
+                                className={`text-caption inline-flex items-center rounded-full px-2 py-0.5 ${action.pillClass}`}
                               >
                                 {action.label}
                               </span>
@@ -302,16 +291,20 @@ export default function RecentChangesPage() {
                     group.edits[0] &&
                     (() => {
                       const action = getSemanticAction(group.edits[0]);
+                      const parked = group.edits[0].parked ? <OverwrittenBadge /> : null;
                       return action.isPill ? (
-                        <div className="mt-1 flex items-center gap-1.5 pl-6 text-xs">
+                        <div className="text-footnote mt-1 flex items-center gap-2 pl-6">
                           <span
-                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium tracking-tight ${action.pillClass}`}
+                            className={`text-caption inline-flex items-center rounded-full px-2 py-0.5 ${action.pillClass}`}
                           >
                             {action.label}
                           </span>
+                          {parked}
                         </div>
                       ) : (
-                        <div className="wikios-rc-single-comment">{action.label}</div>
+                        <div className="wikios-rc-single-comment">
+                          {action.label} {parked}
+                        </div>
                       );
                     })()}
                 </div>
@@ -321,7 +314,7 @@ export default function RecentChangesPage() {
         )}
 
         {!isLoading && grouped.length === 0 && (
-          <p className="py-8 text-center text-sm text-[var(--wikios-text-dim)]">
+          <p className="text-body text-label-secondary py-8 text-center">
             No recent changes in this time range.
           </p>
         )}

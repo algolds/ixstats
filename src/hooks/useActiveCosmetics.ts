@@ -10,7 +10,7 @@ export interface AvatarGlowConfig {
   style?: string;
 }
 
-export interface ChatBadgeConfig {
+interface ChatBadgeConfig {
   enabled: boolean;
   icon: string;
   color: string;
@@ -22,7 +22,7 @@ export interface NeonFrameConfig {
   style?: string;
 }
 
-export interface ActiveCosmetics {
+interface ActiveCosmetics {
   avatarGlow: AvatarGlowConfig;
   chatBadge: ChatBadgeConfig;
   neonFrame: NeonFrameConfig;

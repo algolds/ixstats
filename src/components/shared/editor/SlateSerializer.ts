@@ -1,9 +1,74 @@
 // src/components/shared/editor/SlateSerializer.ts
-// Serializer for Slate AST to HTML, Slate AST to BBCode, and Parsoid HTML to Slate.
+// Serializer for Slate AST to HTML, and Parsoid HTML to Slate.
 
-import { Editor, Transforms } from "slate";
+import { Editor, Transforms, type Descendant } from "slate";
+import { getBasePath } from "~/lib/base-path";
+import { parseWikiSource, publicArticleUrl, type WikiSource } from "~/lib/wiki-os/config";
+import {
+  readerLinkPath,
+  wikiLinkTarget,
+  type WikiLinkTarget,
+} from "~/lib/wiki-os/wiki-link-target";
 
-export function escapeAttr(str: string): string {
+/** A composer link to a wiki article: its title and, for a sister wiki, the wiki (IxWiki's links carry none). */
+export interface WikiLinkElement {
+  type: "wikilink";
+  target: string;
+  source?: WikiSource;
+  children: Descendant[];
+}
+
+/** A wiki link node for `target` on `source`, showing `text` (the title when empty). */
+export function wikiLinkElement(target: string, source: WikiSource, text = ""): WikiLinkElement {
+  const children = [{ text: text || target }];
+  return source === "ixwiki"
+    ? { type: "wikilink", target, children }
+    : { type: "wikilink", target, source, children };
+}
+
+/**
+ * The article an `<a href>` names when it is a link the composer writes (`readerLinkPath`, under the base path or
+ * not), else null. A link with a query or a fragment, an absolute URL, a path spelled otherwise or a namespace the
+ * reader does not read as an article (`wikiLinkTarget`: talk, Module, MediaWiki, File…) reads back as a plain link
+ * with its href unchanged, so saving a post again never moves a link.
+ */
+function composerWikiLink(href: string): WikiLinkTarget | null {
+  const basePath = getBasePath();
+  const target = wikiLinkTarget(href, basePath);
+  const path = target && readerLinkPath(target.title, target.wiki);
+  return path && (href === path || href === `${basePath}${path}`) ? target : null;
+}
+
+/** Where a composer wiki link points: `href`, and whether that is the reader (else the page on its wiki's own site). */
+export interface ComposerLinkHref {
+  href: string;
+  reader: boolean;
+}
+
+/**
+ * Where a composer wiki link to `target` on `source` points, written so that reading it back gives what was written:
+ *  - the reader path, when `composerWikiLink` reads it back as this wiki link;
+ *  - otherwise (a page the reader does not read as an article: talk, user, file, special, category, template, module
+ *    or interface pages) that page on its wiki's own site, written as a plain link, which reads back as one;
+ *  - null for a title no link may name (`readerLinkPath`): only the text is kept.
+ */
+export function composerLinkHref(
+  target: string,
+  source: string | undefined
+): ComposerLinkHref | null {
+  const path = readerLinkPath(target, source);
+  if (!path) return null;
+  if (composerWikiLink(path)) return { href: path, reader: true };
+  const title = target.replace(/_/g, " ").trim();
+  return { href: publicArticleUrl(title, parseWikiSource(source)), reader: false };
+}
+
+/** A plain link, as a `link` node is written (a new tab, no referrer). */
+function plainLinkHtml(url: string, children: string): string {
+  return `<a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer">${children}</a>`;
+}
+
+function escapeAttr(str: string): string {
   return str
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
@@ -11,7 +76,7 @@ export function escapeAttr(str: string): string {
     .replace(/>/g, "&gt;");
 }
 
-export function serializeLeaf(node: any): string {
+function serializeLeaf(node: any): string {
   let text: string = (node.text ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -23,7 +88,7 @@ export function serializeLeaf(node: any): string {
   return text;
 }
 
-export function serializeNode(node: any): string {
+function serializeNode(node: any): string {
   if (typeof node.text === "string") {
     return serializeLeaf(node);
   }
@@ -32,11 +97,16 @@ export function serializeNode(node: any): string {
 
   switch (node.type) {
     case "wikiembed":
-      return `<div data-wikiembed="true" data-title="${escapeAttr(node.title || "")}" data-summary="${escapeAttr(node.summary || "")}" data-imageurl="${escapeAttr(node.imageUrl || "")}" data-source="${escapeAttr(node.source || "ixwiki")}"></div>`;
-    case "wikilink":
-      return `<a href="/wiki/${encodeURIComponent((node.target || "").replace(/ /g, "_"))}">${children}</a>`;
+      return `<div data-wikiembed="true" data-title="${escapeAttr(node.title || "")}" data-summary="${escapeAttr(node.summary || "")}" data-imageurl="${escapeAttr(node.imageUrl || "")}" data-source="${parseWikiSource(node.source)}"></div>`;
+    case "wikilink": {
+      const link = composerLinkHref(node.target || "", node.source);
+      if (!link) return children;
+      return link.reader
+        ? `<a href="${escapeAttr(link.href)}">${children}</a>`
+        : plainLinkHtml(link.href, children);
+    }
     case "link":
-      return `<a href="${escapeAttr(node.url || "")}" target="_blank" rel="noopener noreferrer">${children}</a>`;
+      return plainLinkHtml(node.url || "", children);
     case "img":
       return `<img src="${escapeAttr(node.src || "")}" alt="${escapeAttr(node.alt || "")}" />`;
     case "ul":
@@ -53,46 +123,6 @@ export function serializeNode(node: any): string {
 
 export function slateNodesToHtml(nodes: any[]): string {
   return nodes.map((n: any) => serializeNode(n)).join("");
-}
-
-export function serializeNodeToBbcode(node: any): string {
-  if (typeof node.text === "string") {
-    let text = node.text ?? "";
-    if (!text) return "";
-    if (node.bold) text = `[B]${text}[/B]`;
-    if (node.italic) text = `[I]${text}[/I]`;
-    if (node.underline) text = `[U]${text}[/U]`;
-    return text;
-  }
-
-  const children: string = (node.children || []).map((c: any) => serializeNodeToBbcode(c)).join("");
-
-  switch (node.type) {
-    case "wikiembed":
-      return `\n[QUOTE="${node.title || "Wiki"}"]${node.summary || ""}\n${node.imageUrl ? `[IMG]${node.imageUrl}[/IMG]\n` : ""}[URL=/wiki/${encodeURIComponent((node.title || "").replace(/ /g, "_"))}]Read on Wiki[/URL][/QUOTE]\n`;
-    case "wikilink":
-      return `[URL=/wiki/${encodeURIComponent((node.target || "").replace(/ /g, "_"))}]${children || node.target}[/URL]`;
-    case "link":
-      return `[URL=${node.url || ""}]${children || node.url}[/URL]`;
-    case "img":
-      return `[IMG]${node.src || ""}[/IMG]`;
-    case "ul":
-      return `\n[LIST]\n${children}[/LIST]\n`;
-    case "ol":
-      return `\n[LIST=1]\n${children}[/LIST]\n`;
-    case "li":
-      return `[*]${children}\n`;
-    case "p":
-    default:
-      return `${children}\n\n`;
-  }
-}
-
-export function slateNodesToBbcode(nodes: any[]): string {
-  return nodes
-    .map((n: any) => serializeNodeToBbcode(n))
-    .join("")
-    .trim();
 }
 
 export function parsoidHtmlToSlate(htmlContent: string): any[] {
@@ -131,7 +161,7 @@ export function parsoidHtmlToSlate(htmlContent: string): any[] {
             title: elem.getAttribute("data-title") || "",
             summary: elem.getAttribute("data-summary") || "",
             imageUrl: elem.getAttribute("data-imageurl") || "",
-            source: elem.getAttribute("data-source") || "ixwiki",
+            source: parseWikiSource(elem.getAttribute("data-source")),
             children: [{ text: "" }],
           });
           continue;
@@ -197,11 +227,10 @@ export function parsoidHtmlToSlate(htmlContent: string): any[] {
           const href = elem.getAttribute("href") || "";
           const children = deserializeNode(elem);
           const validChildren = children.length > 0 ? children : [{ text: href || "link" }];
-          if (href.startsWith("/wiki/")) {
-            const target = decodeURIComponent(href.replace("/wiki/", "")).replace(/_/g, " ");
+          const wikiLink = composerWikiLink(href);
+          if (wikiLink) {
             result.push({
-              type: "wikilink",
-              target,
+              ...wikiLinkElement(wikiLink.title, wikiLink.wiki),
               children: validChildren,
             });
           } else {
@@ -291,7 +320,7 @@ export function toggleMark(editor: any, mark: string) {
   }
 }
 
-export function isBlockActive(editor: any, type: string): boolean {
+function isBlockActive(editor: any, type: string): boolean {
   try {
     const [match] = Editor.nodes(editor, {
       match: (n: any) => n.type === type,
@@ -322,26 +351,4 @@ export function toggleBlock(editor: any, type: string) {
       match: (n: any) => n.type === "li",
     });
   }
-}
-
-export function detectWikiUrl(
-  url: string
-): { title: string; source: "ixwiki" | "iiwiki" | "althistory" } | null {
-  if (!url) return null;
-  const iiwikiMatch = url.match(/iiwiki\.com\/wiki\/([^#?]+)/i);
-  if (iiwikiMatch && iiwikiMatch[1]) {
-    return { title: decodeURIComponent(iiwikiMatch[1].replace(/_/g, " ")), source: "iiwiki" };
-  }
-  const altMatch = url.match(/althistory\.fandom\.com\/wiki\/([^#?]+)/i);
-  if (altMatch && altMatch[1]) {
-    return { title: decodeURIComponent(altMatch[1].replace(/_/g, " ")), source: "althistory" };
-  }
-  const generalMatch = url.match(/(?:ixwiki\.com)?\/wiki\/([^#?]+)/i);
-  if (generalMatch && generalMatch[1]) {
-    return { title: decodeURIComponent(generalMatch[1].replace(/_/g, " ")), source: "ixwiki" };
-  }
-  if (url.startsWith("wiki/")) {
-    return { title: decodeURIComponent(url.substring(5).replace(/_/g, " ")), source: "ixwiki" };
-  }
-  return null;
 }

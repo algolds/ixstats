@@ -91,7 +91,7 @@ function randomBetween(min: number, max: number): number {
 
 type VariableResolver = (snapshot: CountrySnapshot) => string;
 
-export const BUILT_IN_VARIABLES: Record<string, VariableResolver> = {
+const BUILT_IN_VARIABLES: Record<string, VariableResolver> = {
   countryName: (s) => s.name,
   leaderName: (s) => s.leader || "the Head of State",
   governmentType: (s) => s.governmentType || "the government",
@@ -272,7 +272,7 @@ export async function maybeTriggerStaffingShortage(
           activeComponents: snapshot.activeComponents.length,
           implementingComponents: snapshot.implementingComponents.length,
         }),
-        triggerReason: `Civil service capacity exceeded (${Math.round(
+        triggerReason: `Executive bandwidth exceeded (${Math.round(
           snapshot.consumedStaff
         )} staff required vs. ${Math.round(
           snapshot.civilServiceCapacity

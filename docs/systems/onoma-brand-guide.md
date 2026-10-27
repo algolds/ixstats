@@ -1,5 +1,7 @@
 # 🧪 ⟨ONOMA⟩ Linguistic Studio — Labs Brand Guide
 
+**Last updated:** 2026-09-29
+
 **Parent Layer:** Labs (Experimental & Incubation Studio) (`ONOMA_VERSION = 4`)  
 **Primary Action:** `SYNTHESIZE` | **Domain Accent:** Electric Azure & Deep Indigo (`#0091FF` / `#6366F1`)  
 **Route:** `/labs/onoma` | **Status:** 🧪 Labs Preview  

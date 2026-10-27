@@ -1,12 +1,8 @@
 "use client";
 
-import React, { useRef, useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  Shuffle,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  MediaImage as ImageIcon,
   Star,
   ChatBubble as MessageSquare,
   ArrowUpRight,
@@ -15,47 +11,22 @@ import {
   ClockRotateRight as History,
   NavArrowLeft as ChevronLeft,
   NavArrowRight as ChevronRight,
-  SunLight as Sun,
-  CloudSunny as CloudSun,
-  Cloud,
-  Rain as CloudRain,
-  HalfMoon as Moon,
-  SnowFlake as Snowflake,
   LightBulb as Lightbulb,
   Trophy as IconoirTrophy,
   OpenBook as IconoirOpenBook,
   Folder as IconoirFolder,
 } from "iconoir-react";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { motion, useSpring, AnimatePresence, useReducedMotion } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { withBasePath } from "~/lib/base-path";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 import { IxWikiLogo } from "~/components/wiki-os/shared/IxWikiLogo";
 import { IxWikiWordmark } from "~/components/wiki-os/shared/IxWikiWordmark";
-import { IxTime } from "~/lib/ixtime/core";
-import { getPrimeMeridianWeather, type WeatherIconType } from "~/lib/ixtime/weather";
 import { HeroSpotlightSearch } from "./HeroSpotlightSearch";
-import { FeaturedArticleRefractionCard, FeaturedThumbnailFrame } from "./FeaturedImageRefraction";
+import { FeaturedArticleCard, FeaturedThumbnailFrame } from "./FeaturedArticle";
 import type { WikiHeroProps } from "./types";
-
-// oxlint-disable-next-line eslint/no-unused-vars
-function WeatherIcon({ icon, className }: { icon: WeatherIconType; className?: string }) {
-  switch (icon) {
-    case "Sun":
-      return <Sun className={className} />;
-    case "CloudSun":
-      return <CloudSun className={className} />;
-    case "Cloud":
-      return <Cloud className={className} />;
-    case "CloudRain":
-      return <CloudRain className={className} />;
-    case "Moon":
-      return <Moon className={className} />;
-    case "Snowflake":
-      return <Snowflake className={className} />;
-  }
-}
+import { Button } from "~/components/ui/button";
+import { assetUrl } from "~/lib/base-path";
 
 const CANON_CHRONICLE_EVENTS = [
   {
@@ -99,114 +70,48 @@ const CANON_CHRONICLE_EVENTS = [
   },
 ];
 
-function getCurrentWeekDays(date: Date) {
-  const current = new Date(date);
-  const dayOfWeek = current.getUTCDay();
-  const sunday = new Date(current);
-  sunday.setUTCDate(current.getUTCDate() - dayOfWeek);
-
-  const days = [];
-  const DAY_NAMES = ["S", "M", "T", "W", "T", "F", "S"];
-
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(sunday);
-    d.setUTCDate(sunday.getUTCDate() + i);
-    days.push({
-      dayName: DAY_NAMES[i],
-      dayNum: d.getUTCDate(),
-      isToday: d.toISOString().slice(0, 10) === current.toISOString().slice(0, 10),
-    });
-  }
-  return days;
-}
-
 export function SculptedEmblemHero({
   siteStats,
   activePrompt,
   featuredArticleHtml,
   featuredArticleData,
-  refractionMode = "ambient-underglow",
-  onOpenSearch,
   onOpenBlurbs,
 }: WikiHeroProps) {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const containerRef = useRef<HTMLDivElement>(null);
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [isHovering, setIsHovering] = useState(false);
-  const [clockTime, setClockTime] = useState<Date>(() => new Date(IxTime.getCurrentIxTime()));
   const [chronicleIndex, setChronicleIndex] = useState(0);
   const reduceMotion = useReducedMotion();
 
-  // Live ticking clock with 1-second cadence for IxTime
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setClockTime(new Date(IxTime.getCurrentIxTime()));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  // one object per HTML: a new one each render would write the featured article's DOM again (React 19)
+  const featuredMarkup = useHtmlMarkup(featuredArticleHtml ?? "");
 
-  const hours = String(clockTime.getUTCHours()).padStart(2, "0");
-  const minutes = String(clockTime.getUTCMinutes()).padStart(2, "0");
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const hoursMinutes = `${hours}:${minutes}`;
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const weekdayShort =
-    ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][clockTime.getUTCDay()] || "SAT";
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const monthShort =
-    ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][
-      clockTime.getUTCMonth()
-    ] || "AUG";
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const dayNum = clockTime.getUTCDate();
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const yearNum = clockTime.getUTCFullYear();
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const calendarWeekDays = getCurrentWeekDays(clockTime);
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const weather = useMemo(() => getPrimeMeridianWeather(clockTime), [clockTime]);
-
-  const articleCountStr = siteStats?.articles
-    ? `${siteStats.articles.toLocaleString()}+`
-    : "1,400+";
-
+  // The count is what the database holds; without it the placeholder simply says "articles"
+  const articleCount = siteStats?.articles;
   const searchPlaceholders = useMemo(
-    () => [`Search ${articleCountStr} articles...`],
-    [articleCountStr]
+    () => [
+      articleCount ? `Search ${articleCount.toLocaleString()}+ articles...` : "Search articles...",
+    ],
+    [articleCount]
   );
-
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const handleSearchClick = () => {
-    if (onOpenSearch) {
-      onOpenSearch();
-    } else {
-      window.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true })
-      );
-    }
-  };
 
   return (
     <section
-      aria-label="WikiOS Sculpted Emblem Hero"
+      aria-label="WikiOS sculpted emblem hero"
       className="relative flex w-full flex-col items-center justify-center pt-1 pb-2 text-center select-none sm:pb-3"
     >
-      {/* ── 1. The Free-Standing Canonical Laurel Sphere & Typographic Lockup (Centered) ── */}
       <Link
-        href={withBasePath("/wiki/Main_Page")}
-        className="group/brand mb-1 flex cursor-pointer flex-col items-center justify-center text-center select-none"
+        href="/wiki/Main_Page"
+        aria-label="WikiOS home"
+        className="group/brand rounded-card focus-visible:outline-tint mb-1 flex cursor-pointer flex-col items-center justify-center text-center outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-4"
       >
         <motion.div
           whileHover={reduceMotion ? {} : { scale: 1.04, y: -2 }}
           whileTap={reduceMotion ? {} : { scale: 0.96 }}
           transition={{ type: "spring", stiffness: 360, damping: 24 }}
-          className="relative mb-2.5 flex items-center justify-center sm:mb-3"
-          aria-label="IxWiki Home"
+          className="relative mb-2 flex items-center justify-center sm:mb-3"
         >
           {/* The Canonical Laurel Sphere Logo - Sculpted Emblem View */}
           <IxWikiLogo
             size={96}
-            className="text-wiki relative z-10 h-22 w-22 drop-shadow-[0_4px_20px_rgba(29,78,137,0.2)] transition-transform duration-300 ease-out group-hover/brand:scale-[1.03] sm:h-26 sm:w-26 lg:h-28 lg:w-28 dark:text-blue-400 dark:drop-shadow-[0_4px_24px_rgba(96,165,250,0.38)]"
+            className="wikios-brand-mark relative z-10 h-22 w-22 transition-transform duration-300 ease-out motion-safe:group-hover/brand:scale-[1.03] motion-safe:group-focus-visible/brand:scale-[1.03] motion-reduce:transition-none sm:h-26 sm:w-26 lg:h-28 lg:w-28"
           />
         </motion.div>
 
@@ -214,144 +119,138 @@ export function SculptedEmblemHero({
         <div className="flex max-w-xl flex-col items-center justify-center gap-1 px-4">
           <IxWikiWordmark
             size="hero"
-            className="group-hover/brand:text-foreground/90 leading-none transition-colors"
+            className="group-hover/brand:text-label group-focus-visible/brand:text-label leading-none transition-colors"
           />
-          <div className="mt-1.5 flex items-center justify-center">
-            <span className="text-muted-foreground/75 text-xs leading-none font-semibold tracking-[0.18em] uppercase sm:text-xs">
-              Worldbuilding Encyclopedia
+          <div className="mt-2 flex items-center justify-center">
+            <span className="text-label-secondary text-eyebrow sm:text-footnote leading-none">
+              Worldbuilding encyclopedia
             </span>
           </div>
         </div>
       </Link>
 
-      {/* ── 3. Floating Glass Omnisearch Bar ── */}
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-30 mt-3 w-full max-w-xl px-4 sm:mt-3.5"
+        className="relative z-30 mt-3 w-full max-w-xl px-4 sm:mt-4"
       >
         <HeroSpotlightSearch placeholderHints={searchPlaceholders} />
       </motion.div>
 
-      {/* ── 4. Prestigious Quick Navigation Chips (Non-Sidebar Exploratory Actions) ── */}
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 flex w-full flex-wrap items-center justify-center gap-2 pt-1 pb-2 sm:gap-2.5"
+        className="relative z-10 flex w-full flex-wrap items-center justify-center gap-2 pt-1 pb-2 sm:gap-2"
       >
         {/* Action 1: Award-Winning Lore */}
         <Link
-          href={withBasePath("/wiki/category:featured_articles")}
+          href="/wiki/category:featured_articles"
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
-            "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium",
-            "border border-black/[0.08] dark:border-white/[0.1]",
-            "bg-white/65 backdrop-blur-md dark:bg-zinc-900/65",
-            "shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_2px_6px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_10px_rgba(0,0,0,0.2)]",
-            "hover:border-amber-500/40 hover:bg-amber-500/[0.06] dark:hover:bg-amber-500/[0.1]",
-            "text-muted-foreground hover:text-foreground group transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none active:scale-95"
+            "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
+            "facet-chrome border-separator border",
+            "hover:border-yellow/40 hover:bg-yellow/6",
+            "text-label-secondary hover:text-label group focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
           )}
         >
-          <IconoirTrophy className="h-3.5 w-3.5 text-amber-500 transition-transform group-hover:scale-110" />
+          <IconoirTrophy
+            aria-hidden="true"
+            className="text-yellow h-3.5 w-3.5 transition-transform motion-safe:group-hover:scale-110 motion-safe:group-focus-visible:scale-110"
+          />
           <span>Award-Winning Lore</span>
         </Link>
 
         {/* Action 2: Getting Started */}
         <Link
-          href={withBasePath("/wiki/IxWiki:Getting_Started")}
+          href="/wiki/IxWiki:Getting_Started"
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
-            "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium",
-            "border border-black/[0.08] dark:border-white/[0.1]",
-            "bg-white/65 backdrop-blur-md dark:bg-zinc-900/65",
-            "shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_2px_6px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_10px_rgba(0,0,0,0.2)]",
-            "hover:border-wiki/40 hover:bg-wiki/[0.06] dark:hover:bg-wiki/[0.1]",
-            "text-muted-foreground hover:text-foreground group transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-wiki focus-visible:outline-none active:scale-95"
+            "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
+            "facet-chrome border-separator border",
+            "hover:border-tint/40 hover:bg-tint-fill",
+            "text-label-secondary hover:text-label group focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
           )}
         >
-          <IconoirOpenBook className="h-3.5 w-3.5 text-wiki transition-transform group-hover:scale-110" />
-          <span>Getting Started</span>
+          <IconoirOpenBook
+            aria-hidden="true"
+            className="text-tint h-3.5 w-3.5 transition-transform motion-safe:group-hover:scale-110 motion-safe:group-focus-visible:scale-110"
+          />
+          <span>Getting started</span>
         </Link>
 
         {/* Action 3: Resources */}
         <Link
-          href={withBasePath("/wiki/repository")}
+          href="/util/repository"
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
-            "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium",
-            "border border-black/[0.08] dark:border-white/[0.1]",
-            "bg-white/65 backdrop-blur-md dark:bg-zinc-900/65",
-            "shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_2px_6px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_10px_rgba(0,0,0,0.2)]",
-            "hover:border-emerald-500/40 hover:bg-emerald-500/[0.06] dark:hover:bg-emerald-500/[0.1]",
-            "text-muted-foreground hover:text-foreground group transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none active:scale-95"
+            "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
+            "facet-chrome border-separator border",
+            "hover:border-green/40 hover:bg-green/6",
+            "text-label-secondary hover:text-label group focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
           )}
         >
-          <IconoirFolder className="h-3.5 w-3.5 text-emerald-500 transition-transform group-hover:scale-110" />
+          <IconoirFolder
+            aria-hidden="true"
+            className="text-green h-3.5 w-3.5 transition-transform motion-safe:group-hover:scale-110 motion-safe:group-focus-visible:scale-110"
+          />
           <span>Resources</span>
         </Link>
       </motion.div>
 
-      {/* ── 5. Standardized 2-Column Live Interaction Deck (Timeline & Community Prompt) ── */}
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.16 }}
-        className="relative z-10 mt-4 grid w-full max-w-6xl grid-cols-1 gap-2.5 px-4 sm:mt-5 sm:gap-3 md:grid-cols-2"
+        className="relative z-10 mt-4 grid w-full max-w-6xl grid-cols-1 gap-2 px-4 sm:mt-5 sm:gap-3 md:grid-cols-2"
       >
         {/* Tile: Timeline (Milestones & Canon Historical Events) */}
         <div
           className={cn(
-            "relative flex min-h-[82px] flex-col justify-between overflow-hidden rounded-2xl p-3 sm:min-h-[86px] sm:p-3.5",
-            "border border-black/[0.08] dark:border-white/[0.1]",
-            "bg-white/70 backdrop-blur-xl dark:bg-zinc-900/70",
-            "shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_2px_10px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_14px_rgba(0,0,0,0.2)]",
-            "hover:border-black/20 hover:bg-white/85 hover:shadow-md dark:hover:border-white/20 dark:hover:bg-zinc-900/85",
-            "group text-left transition-colors duration-200"
+            "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-4",
+            "bg-surface border-separator shadow-card border",
+            "group text-left"
           )}
         >
-          <TextureOverlay texture="paperGrain" opacity={0.06} />
           <div className="mb-1 flex w-full items-center justify-between">
-            <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-amber-500 uppercase">
-              <History className="h-3.5 w-3.5" /> Timeline
+            <span className="text-eyebrow text-yellow-ink flex items-center gap-2">
+              <History aria-hidden="true" className="text-yellow h-3.5 w-3.5" /> Timeline
             </span>
-            {/* Apple-grade stepper pill */}
-            <div className="flex items-center gap-0.5 rounded-md border border-black/[0.04] bg-black/[0.04] px-1 py-0.5 dark:border-white/[0.06] dark:bg-white/[0.05]">
-              <button
-                type="button"
+            {/* stepper pill */}
+            <div className="rounded-control-sm border-separator bg-fill-4 flex items-center gap-0.5 border px-1 py-0.5">
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   setChronicleIndex((prev) =>
                     prev === 0 ? CANON_CHRONICLE_EVENTS.length - 1 : prev - 1
                   );
                 }}
-                data-cuelume-press="tick"
-                data-cuelume-hover="tick"
-                className="text-muted-foreground hover:text-foreground cursor-pointer rounded p-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/10 active:scale-90 dark:hover:bg-white/10"
                 aria-label="Previous historical event"
+                className="text-label-secondary size-6"
               >
-                <ChevronLeft className="h-3 w-3" />
-              </button>
-              <span className="text-muted-foreground/80 px-1 text-xs font-medium tabular-nums select-none">
+                <ChevronLeft aria-hidden="true" className="h-3 w-3" />
+              </Button>
+              <span className="text-label-secondary text-caption px-1 tabular-nums select-none">
                 {chronicleIndex + 1}/{CANON_CHRONICLE_EVENTS.length}
               </span>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   setChronicleIndex((prev) => (prev + 1) % CANON_CHRONICLE_EVENTS.length);
                 }}
-                data-cuelume-press="tick"
-                data-cuelume-hover="tick"
-                className="text-muted-foreground hover:text-foreground cursor-pointer rounded p-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/10 active:scale-90 dark:hover:bg-white/10"
                 aria-label="Next historical event"
+                className="text-label-secondary size-6"
               >
-                <ChevronRight className="h-3 w-3" />
-              </button>
+                <ChevronRight aria-hidden="true" className="h-3 w-3" />
+              </Button>
             </div>
           </div>
 
@@ -367,20 +266,20 @@ export function SculptedEmblemHero({
                 className="w-full"
               >
                 <Link
-                  href={withBasePath(`/wiki/${CANON_CHRONICLE_EVENTS[chronicleIndex].slug}`)}
+                  href={`/wiki/${CANON_CHRONICLE_EVENTS[chronicleIndex].slug}`}
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
-                  className="group/event block transition-transform active:scale-[0.98]"
+                  className="group/event rounded-control-sm focus-visible:outline-tint facet-press-subtle block outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span className="py-0.2 shrink-0 rounded border border-amber-500/20 bg-amber-500/10 px-1.5 text-xs font-bold text-amber-600 tabular-nums dark:text-amber-400">
+                  <div className="flex items-center gap-2">
+                    <span className="py-0.2 rounded-control-sm border-yellow/20 bg-yellow/10 text-caption text-yellow-ink shrink-0 border px-2 font-semibold tabular-nums">
                       {CANON_CHRONICLE_EVENTS[chronicleIndex].year}
                     </span>
-                    <span className="text-foreground truncate text-xs leading-tight font-semibold transition-colors group-hover/event:text-amber-500 sm:text-[13px]">
+                    <span className="text-label text-caption group-hover/event:text-yellow-ink group-focus-visible/event:text-yellow-ink sm:text-callout truncate leading-tight font-semibold transition-colors">
                       {CANON_CHRONICLE_EVENTS[chronicleIndex].title}
                     </span>
                   </div>
-                  <span className="text-muted-foreground mt-0.5 line-clamp-1 block text-xs leading-snug font-medium">
+                  <span className="text-label-secondary text-caption mt-0.5 line-clamp-1 block leading-snug">
                     {CANON_CHRONICLE_EVENTS[chronicleIndex].description}
                   </span>
                 </Link>
@@ -397,42 +296,45 @@ export function SculptedEmblemHero({
             data-cuelume-press="droplet"
             data-cuelume-hover="tick"
             className={cn(
-              "relative flex min-h-[82px] flex-col justify-between overflow-hidden rounded-2xl p-3 sm:min-h-[86px] sm:p-3.5",
-              "border border-black/[0.08] dark:border-white/[0.1]",
-              "bg-white/70 backdrop-blur-xl dark:bg-zinc-900/70",
-              "shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_2px_10px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_14px_rgba(0,0,0,0.2)]",
-              "hover:border-black/20 hover:bg-white/85 hover:shadow-md dark:hover:border-white/20 dark:hover:bg-zinc-900/85",
-              "group cursor-pointer text-left transition-colors duration-200 active:scale-[0.98]"
+              "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-4",
+              "bg-surface border-separator shadow-card facet-lift border",
+              "group facet-press facet-press-subtle cursor-pointer text-left"
             )}
           >
-            <TextureOverlay texture="paperGrain" opacity={0.06} />
             <div className="mb-1 flex w-full items-center justify-between">
-              <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-blue-500 uppercase dark:text-blue-400">
-                <MessageSquare className="h-3.5 w-3.5" /> Blurb of the Week
+              <span className="text-eyebrow text-tint flex items-center gap-2">
+                <MessageSquare aria-hidden="true" className="text-tint h-3.5 w-3.5" /> Blurb of the
+                Week
               </span>
               <div className="flex items-center gap-1">
                 {activePrompt._count?.responses !== undefined &&
                 activePrompt._count.responses > 0 ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-xs font-semibold text-blue-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
+                  <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
                     <span className="tabular-nums">{activePrompt._count.responses}</span>
                     <span className="opacity-75">
                       {activePrompt._count.responses === 1 ? "response" : "responses"}
                     </span>
-                    <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+                    <ArrowUpRight
+                      aria-hidden="true"
+                      className="h-2.5 w-2.5 opacity-60 transition-[opacity,translate] duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-focus-visible:translate-x-0.5 motion-safe:group-focus-visible:-translate-y-0.5"
+                    />
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-xs font-semibold text-blue-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
+                  <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
                     <span>Respond now</span>
-                    <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+                    <ArrowUpRight
+                      aria-hidden="true"
+                      className="h-2.5 w-2.5 opacity-60 transition-[opacity,translate] duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-focus-visible:translate-x-0.5 motion-safe:group-focus-visible:-translate-y-0.5"
+                    />
                   </span>
                 )}
               </div>
             </div>
             <div>
-              <span className="text-foreground group-hover:text-foreground block truncate text-xs leading-tight font-semibold transition-colors sm:text-[13px]">
+              <span className="text-label group-hover:text-label text-caption sm:text-callout block truncate leading-tight font-semibold transition-colors">
                 {activePrompt.title}
               </span>
-              <span className="text-muted-foreground mt-0.5 block truncate text-xs font-medium">
+              <span className="text-label-secondary text-caption mt-0.5 block truncate">
                 {activePrompt.question}
               </span>
             </div>
@@ -444,29 +346,29 @@ export function SculptedEmblemHero({
             data-cuelume-press="droplet"
             data-cuelume-hover="tick"
             className={cn(
-              "relative flex min-h-[82px] flex-col justify-between overflow-hidden rounded-2xl p-3 sm:min-h-[86px] sm:p-3.5",
-              "border border-black/[0.08] dark:border-white/[0.1]",
-              "bg-white/70 backdrop-blur-xl dark:bg-zinc-900/70",
-              "shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_2px_10px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_14px_rgba(0,0,0,0.2)]",
-              "hover:border-black/20 hover:bg-white/85 hover:shadow-md dark:hover:border-white/20 dark:hover:bg-zinc-900/85",
-              "group cursor-pointer text-left transition-colors duration-200 active:scale-[0.98]"
+              "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-4",
+              "bg-surface border-separator shadow-card facet-lift border",
+              "group facet-press facet-press-subtle cursor-pointer text-left"
             )}
           >
-            <TextureOverlay texture="paperGrain" opacity={0.06} />
             <div className="mb-1 flex w-full items-center justify-between">
-              <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-blue-500 uppercase dark:text-blue-400">
-                <MessageSquare className="h-3.5 w-3.5" /> Blurb of the Week
+              <span className="text-eyebrow text-tint flex items-center gap-2">
+                <MessageSquare aria-hidden="true" className="text-tint h-3.5 w-3.5" /> Blurb of the
+                Week
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-xs font-semibold text-blue-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
+              <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
                 <span>View prompts</span>
-                <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+                <ArrowUpRight
+                  aria-hidden="true"
+                  className="h-2.5 w-2.5 opacity-60 transition-[opacity,translate] duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-focus-visible:translate-x-0.5 motion-safe:group-focus-visible:-translate-y-0.5"
+                />
               </span>
             </div>
             <div>
-              <span className="text-foreground group-hover:text-foreground block truncate text-xs leading-tight font-semibold transition-colors sm:text-[13px]">
-                Worldbuilding Prompts
+              <span className="text-label group-hover:text-label text-caption sm:text-callout block truncate leading-tight font-semibold transition-colors">
+                Worldbuilding prompts
               </span>
-              <span className="text-muted-foreground mt-0.5 block truncate text-xs font-medium">
+              <span className="text-label-secondary text-caption mt-0.5 block truncate">
                 Share your nation's perspective
               </span>
             </div>
@@ -474,7 +376,6 @@ export function SculptedEmblemHero({
         )}
       </motion.div>
 
-      {/* ── 7. Standardized Embedded Featured Article (Apple Editorial Standard) ── */}
       {(featuredArticleData || featuredArticleHtml) && (
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, y: 10 }}
@@ -482,16 +383,13 @@ export function SculptedEmblemHero({
           transition={{ duration: 0.35, delay: 0.2 }}
           className="relative z-10 mt-4 w-full text-left sm:mt-5"
         >
-          <FeaturedArticleRefractionCard
-            imgSrc={featuredArticleData?.imgSrc ?? null}
-            mode={refractionMode}
-          >
-            {/* Seamless Top Bar (No dividing line, airy editorial flow) */}
-            <div className="relative z-10 mb-3.5 flex items-center justify-between gap-2 sm:mb-4">
+          <FeaturedArticleCard>
+            {/* Top bar */}
+            <div className="relative z-10 mb-4 flex items-center justify-between gap-2 sm:mb-4">
               <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold tracking-tight text-amber-600 dark:text-amber-400">
-                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
-                  <span>Featured Article</span>
+                <div className="border-yellow/20 bg-yellow/10 text-caption text-yellow-ink inline-flex items-center gap-2 rounded-full border px-3 py-0.5 font-semibold">
+                  <Star aria-hidden="true" className="fill-yellow text-yellow h-3.5 w-3.5" />
+                  <span>Featured article</span>
                 </div>
                 {/* Live Author / Editorial Byline */}
                 {(() => {
@@ -500,21 +398,22 @@ export function SculptedEmblemHero({
                     typeof creator === "object" ? (creator as any)?.username : creator;
                   if (!creatorName) return null;
                   return (
-                    <div className="text-muted-foreground hidden items-center gap-1.5 text-xs font-medium sm:flex">
-                      <span className="text-muted-foreground/40 select-none">·</span>
+                    <div className="text-label-secondary text-caption hidden items-center gap-2 sm:flex">
+                      <span className="text-label-secondary select-none">·</span>
                       <span className="flex items-center gap-1">
                         {featuredArticleData?.authorInfo?.creatorAvatar ? (
                           <img
-                            src={featuredArticleData.authorInfo.creatorAvatar}
+                            src={
+                              assetUrl(featuredArticleData.authorInfo.creatorAvatar) ?? undefined
+                            }
                             alt={creatorName}
-                            className="h-3.5 w-3.5 rounded-full border border-black/10 object-cover dark:border-white/20"
+                            className="border-separator h-3.5 w-3.5 rounded-full border object-cover"
                           />
                         ) : (
-                          <User className="text-muted-foreground/70 h-3 w-3" />
+                          <User aria-hidden="true" className="text-label-secondary h-3 w-3" />
                         )}
                         <span>
-                          By{" "}
-                          <strong className="text-foreground font-semibold">{creatorName}</strong>
+                          By <strong className="text-label font-semibold">{creatorName}</strong>
                         </span>
                       </span>
                     </div>
@@ -523,24 +422,24 @@ export function SculptedEmblemHero({
               </div>
 
               {/* Archive & Suggest Links */}
-              <div className="text-muted-foreground flex items-center gap-2 text-xs">
+              <div className="text-label-secondary text-footnote flex items-center gap-2">
                 <Link
-                  href={withBasePath("/wiki/IxWiki:Featured_articles")}
+                  href="/wiki/IxWiki:Featured_articles"
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
-                  className="hover:text-foreground flex items-center gap-1 text-xs font-medium transition-colors"
+                  className="hover:text-label text-caption flex items-center gap-1 transition-colors"
                 >
-                  <History className="h-3 w-3" />
+                  <History aria-hidden="true" className="h-3 w-3" />
                   <span>Archive</span>
                 </Link>
-                <span className="text-muted-foreground/30 select-none">·</span>
+                <span className="text-label-secondary select-none">·</span>
                 <Link
-                  href={withBasePath("/wiki/IxWiki:Featured_article_candidates")}
+                  href="/wiki/IxWiki:Featured_article_candidates"
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
-                  className="flex items-center gap-1 text-xs font-medium transition-colors hover:text-amber-500 dark:hover:text-amber-400"
+                  className="text-caption hover:text-yellow-ink focus-visible:text-yellow-ink flex items-center gap-1 transition-colors"
                 >
-                  <Lightbulb className="h-3 w-3" />
+                  <Lightbulb aria-hidden="true" className="h-3 w-3" />
                   <span>Suggest</span>
                 </Link>
               </div>
@@ -559,39 +458,45 @@ export function SculptedEmblemHero({
                 <div className="flex min-w-0 flex-1 flex-col justify-between self-stretch py-0.5">
                   <div>
                     <Link
-                      href={withBasePath(`/wiki/${featuredArticleData.slug}`)}
+                      href={`/wiki/${featuredArticleData.slug}`}
                       data-cuelume-press="page"
                       data-cuelume-hover="tick"
-                      className="group/title block rounded focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
+                      className="group/title rounded-control-sm focus-visible:ring-tint block focus-visible:ring-2 focus-visible:outline-none"
                     >
-                      <h3 className="text-foreground text-lg leading-snug font-bold tracking-tight transition-colors group-hover/title:text-amber-500 sm:text-xl lg:text-[22px] dark:group-hover/title:text-amber-400">
+                      <h3 className="text-label text-title-3 group-hover/title:text-yellow-ink group-focus-visible/title:text-yellow-ink sm:text-title-2 lg:text-title-1 transition-colors">
                         {featuredArticleData.title}
                       </h3>
                     </Link>
-                    <p className="text-muted-foreground mt-2 line-clamp-3 text-xs leading-relaxed font-normal sm:text-[13.5px]">
+                    <p className="text-label-secondary text-footnote sm:text-callout mt-2 line-clamp-3 leading-relaxed font-normal">
                       {featuredArticleData.summary}
                     </p>
                   </div>
                   <div className="mt-3 flex items-center gap-3 sm:mt-4">
                     <Link
-                      href={withBasePath(`/wiki/${featuredArticleData.slug}`)}
+                      href={`/wiki/${featuredArticleData.slug}`}
                       data-cuelume-press="droplet"
                       data-cuelume-hover="tick"
-                      className="text-foreground group/cta inline-flex items-center gap-1.5 text-xs font-semibold transition-colors hover:text-amber-500 dark:hover:text-amber-400"
+                      className="text-label group/cta text-caption hover:text-yellow-ink focus-visible:text-yellow-ink inline-flex items-center gap-2 font-semibold transition-colors"
                     >
                       <span>Read full article</span>
-                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/cta:translate-x-1" />
+                      <ArrowRight
+                        aria-hidden="true"
+                        className="h-3.5 w-3.5 transition-transform motion-safe:group-hover/cta:translate-x-1 motion-safe:group-focus-visible/cta:translate-x-1"
+                      />
                     </Link>
                   </div>
                 </div>
               </div>
             ) : (
               <div
-                className="wikios-main-featured-content wikios-article-content relative z-10 text-left text-sm leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: featuredArticleHtml ?? "" }}
+                className={cn(
+                  "wikios-main-featured-content wikios-article-content text-body relative z-10 text-left leading-relaxed",
+                  ARTICLE_STYLE_ROOT_CLASS
+                )}
+                dangerouslySetInnerHTML={featuredMarkup}
               />
             )}
-          </FeaturedArticleRefractionCard>
+          </FeaturedArticleCard>
         </motion.div>
       )}
     </section>

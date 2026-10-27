@@ -1,10 +1,10 @@
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import type { NewsEventType } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "./hooks";
+import { ensureInternalStabilityMetrics } from "~/lib/statecraft/stability-store";
 import type { PrismaClient } from "@prisma/client";
-
-// ==================== FIELD BOUNDS ====================
+import { DEFAULT_INFLATION_RATE, DEFAULT_UNEMPLOYMENT_RATE } from "~/lib/economy/calculations";
 
 const FIELD_BOUNDS: Record<string, [number, number]> = {
   // Country fields
@@ -49,6 +49,21 @@ const FIELD_BOUNDS: Record<string, [number, number]> = {
   justiceSystemEfficiency: [0, 100],
 };
 
+/**
+ * Stats the engine reads with a documented default when none is stored (percent). A consequence on
+ * an unset one starts from that default, so a directive's "Inflation -0.6" applies.
+ */
+const NULL_BASE_DEFAULTS: Record<string, number> = {
+  inflationRate: DEFAULT_INFLATION_RATE,
+  unemploymentRate: DEFAULT_UNEMPLOYMENT_RATE,
+};
+
+/** The value a consequence moves from: the stored number, else the engine default, else null. */
+function baseValueOf(field: string, stored: unknown): number | null {
+  if (typeof stored === "number" && Number.isFinite(stored)) return stored;
+  return NULL_BASE_DEFAULTS[field] ?? null;
+}
+
 function clampField(field: string, value: number): number {
   const bounds = FIELD_BOUNDS[field];
   if (!bounds) return value;
@@ -67,7 +82,43 @@ const MODEL_CONFIG: Record<string, { prismaModel: string; lookupField: string }>
   },
 };
 
-export interface ConsequenceInput {
+const OPERATIONS: Record<
+  "add" | "subtract" | "multiply" | "set",
+  (current: number, value: number) => number
+> = {
+  add: (current, value) => current + value,
+  subtract: (current, value) => current - value,
+  multiply: (current, value) => current * value,
+  set: (_current, value) => value,
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  publicApproval: "Public Approval",
+  unemploymentRate: "Unemployment Rate",
+  inflationRate: "Inflation Rate",
+  currentTotalGdp: "GDP",
+  currentGdpPerCapita: "GDP per Capita",
+  infrastructureRating: "Infrastructure Rating",
+  tradeBalance: "Trade Balance",
+  povertyRate: "Poverty Rate",
+  stabilityScore: "Stability Score",
+  crimeRate: "Crime Rate",
+  protestFrequency: "Protest Frequency",
+  riotRisk: "Riot Risk",
+  socialCohesion: "Social Cohesion",
+  ethnicTension: "Ethnic Tension",
+  trustInGovernment: "Trust in Government",
+  politicalStability: "Political Stability",
+  democracyIndex: "Democracy Index",
+  governmentEffectiveness: "Government Effectiveness",
+  corruptionIndex: "Corruption Index",
+  politicalPolarization: "Political Polarization",
+  totalDebtGDPRatio: "Debt-to-GDP Ratio",
+  economicVitality: "Economic Vitality",
+  ruleOfLaw: "Rule of Law",
+};
+
+interface ConsequenceInput {
   targetModel: string;
   targetField: string;
   operation: "add" | "subtract" | "multiply" | "set";
@@ -76,7 +127,7 @@ export interface ConsequenceInput {
   durationDays?: number;
 }
 
-export interface AppliedConsequence {
+interface AppliedConsequence {
   targetModel: string;
   targetField: string;
   previousValue: number;
@@ -86,10 +137,12 @@ export interface AppliedConsequence {
   effectType: string;
 }
 
-export interface RecordEventParams {
+interface RecordEventParams {
   db: PrismaClient;
   countryId: string;
-  sourceType: "issue" | "policy" | "decision" | "diplomacy" | "election" | "other";
+  /** The nation's clock time the event is stamped with (read from its realm when omitted). */
+  now?: number;
+  sourceType: "issue" | "policy" | "decision" | "diplomacy" | "election" | "meeting" | "other";
   sourceId?: string;
   description: string;
   consequences?: ConsequenceInput[];
@@ -120,96 +173,35 @@ export class CountryEventSpine {
       activityHookArgs = [],
     } = params;
 
-    const currentIxTime = IxTime.getCurrentIxTime();
+    const currentIxTime = params.now ?? (await clockForCountry(db, countryId)).now();
     const appliedConsequences: AppliedConsequence[] = [];
 
-    // 1. Process and apply consequences sequentially in transaction or sequence
-    for (const consequence of consequences) {
-      const modelCfg = MODEL_CONFIG[consequence.targetModel];
-      if (!modelCfg) continue;
-
-      const dbTable = (db as any)[modelCfg.prismaModel];
-      if (!dbTable) continue;
-
+    // Most countries have no stability row until an event first touches it; create it from the
+    // formula so the delta has a real value to move instead of being skipped.
+    if (consequences.some((c) => c.targetModel === "InternalStabilityMetrics")) {
       try {
-        // Read current value
-        const record = await dbTable.findUnique({
-          where: { [modelCfg.lookupField]: countryId },
-          select: { [consequence.targetField]: true },
-        });
-
-        if (!record) continue;
-
-        const previousValue = (record[consequence.targetField] as number) ?? 0;
-
-        // Compute new value
-        let newValue: number;
-        switch (consequence.operation) {
-          case "add":
-            newValue = previousValue + consequence.value;
-            break;
-          case "subtract":
-            newValue = previousValue - consequence.value;
-            break;
-          case "multiply":
-            newValue = previousValue * consequence.value;
-            break;
-          case "set":
-            newValue = consequence.value;
-            break;
-          default:
-            continue;
-        }
-
-        // Clamp
-        const rawNewValue = newValue;
-        newValue = clampField(consequence.targetField, newValue);
-        const wasClamped = Math.abs(newValue - rawNewValue) > 0.0001;
-
-        // Update database
-        await dbTable.update({
-          where: { [modelCfg.lookupField]: countryId },
-          data: { [consequence.targetField]: newValue },
-        });
-
-        const delta = newValue - previousValue;
-        let consDescription = this.describeConsequence(
-          consequence.targetField,
-          previousValue,
-          newValue,
-          delta
-        );
-        if (wasClamped) {
-          consDescription += ` [clamped from ${rawNewValue.toFixed(1)} by guardrail]`;
-        }
-
-        appliedConsequences.push({
-          targetModel: consequence.targetModel,
-          targetField: consequence.targetField,
-          previousValue,
-          newValue,
-          delta,
-          description: consDescription,
-          effectType: consequence.effectType ?? "immediate",
-        });
-
-        // 2. Write to CountryChangeLog ledger
-        await (db as any).countryChangeLog?.create?.({
-          data: {
-            countryId,
-            sourceType,
-            sourceId: sourceId ?? null,
-            targetModel: consequence.targetModel,
-            targetField: consequence.targetField,
-            previousValue: JSON.stringify(previousValue),
-            newValue: JSON.stringify(newValue),
-            deltaValue: delta,
-            description: consDescription,
-            appliedIxTime: currentIxTime,
-          },
-        });
+        await ensureInternalStabilityMetrics(db, countryId);
       } catch (err) {
-        console.error(`[Spine] Failed to apply consequence on ${consequence.targetField}:`, err);
+        console.error(`[Spine] Failed to initialise stability metrics for ${countryId}:`, err);
+      }
+    }
+
+    for (const consequence of consequences) {
+      await this.applyConsequence(
+        { db, countryId, sourceType, sourceId, currentIxTime },
+        consequence,
+        appliedConsequences
+      );
+    }
+
+    // A consequence moved a stat: check the country's intelligence alert thresholds against it
+    if (appliedConsequences.length > 0) {
+      try {
+        const { evaluateCountryThresholds } =
+          await import("~/server/shared/intelligence-alert-thresholds");
+        await evaluateCountryThresholds(db, countryId);
+      } catch (err) {
+        console.error(`[Spine] Failed to evaluate alert thresholds for ${countryId}:`, err);
       }
     }
 
@@ -267,6 +259,84 @@ export class CountryEventSpine {
     return appliedConsequences;
   }
 
+  /** Applies one consequence to its stat, records it in `applied` and writes the ledger entry. */
+  private static async applyConsequence(
+    ctx: {
+      db: PrismaClient;
+      countryId: string;
+      sourceType: RecordEventParams["sourceType"];
+      sourceId?: string;
+      currentIxTime: number;
+    },
+    consequence: ConsequenceInput,
+    applied: AppliedConsequence[]
+  ): Promise<void> {
+    const { db, countryId, sourceType, sourceId, currentIxTime } = ctx;
+    const modelCfg = MODEL_CONFIG[consequence.targetModel];
+    if (!modelCfg) return;
+    const dbTable = (db as any)[modelCfg.prismaModel];
+    if (!dbTable) return;
+
+    try {
+      const where = { [modelCfg.lookupField]: countryId };
+      const record = await dbTable.findUnique({
+        where,
+        select: { [consequence.targetField]: true },
+      });
+      if (!record) return;
+
+      // An unset (null) stat moves from the engine's default (inflation 2%, unemployment 5%);
+      // one with no default is skipped, never treated as 0 (that used to write 0% unemployment).
+      const previousValue = baseValueOf(consequence.targetField, record[consequence.targetField]);
+      if (previousValue === null) return;
+
+      const operation = OPERATIONS[consequence.operation];
+      if (!operation) return;
+
+      const rawNewValue = operation(previousValue, consequence.value);
+      const newValue = clampField(consequence.targetField, rawNewValue);
+      const wasClamped = Math.abs(newValue - rawNewValue) > 0.0001;
+
+      await dbTable.update({ where, data: { [consequence.targetField]: newValue } });
+
+      const delta = newValue - previousValue;
+      let description = this.describeConsequence(
+        consequence.targetField,
+        previousValue,
+        newValue,
+        delta
+      );
+      if (wasClamped) description += ` [clamped from ${rawNewValue.toFixed(1)} by guardrail]`;
+
+      applied.push({
+        targetModel: consequence.targetModel,
+        targetField: consequence.targetField,
+        previousValue,
+        newValue,
+        delta,
+        description,
+        effectType: consequence.effectType ?? "immediate",
+      });
+
+      await (db as any).countryChangeLog?.create?.({
+        data: {
+          countryId,
+          sourceType,
+          sourceId: sourceId ?? null,
+          targetModel: consequence.targetModel,
+          targetField: consequence.targetField,
+          previousValue: JSON.stringify(previousValue),
+          newValue: JSON.stringify(newValue),
+          deltaValue: delta,
+          description,
+          appliedIxTime: currentIxTime,
+        },
+      });
+    } catch (err) {
+      console.error(`[Spine] Failed to apply consequence on ${consequence.targetField}:`, err);
+    }
+  }
+
   /**
    * Format delta description.
    */
@@ -276,33 +346,7 @@ export class CountryEventSpine {
     newValue: number,
     delta: number
   ): string {
-    const fieldLabels: Record<string, string> = {
-      publicApproval: "Public Approval",
-      unemploymentRate: "Unemployment Rate",
-      inflationRate: "Inflation Rate",
-      currentTotalGdp: "GDP",
-      currentGdpPerCapita: "GDP per Capita",
-      infrastructureRating: "Infrastructure Rating",
-      tradeBalance: "Trade Balance",
-      povertyRate: "Poverty Rate",
-      stabilityScore: "Stability Score",
-      crimeRate: "Crime Rate",
-      protestFrequency: "Protest Frequency",
-      riotRisk: "Riot Risk",
-      socialCohesion: "Social Cohesion",
-      ethnicTension: "Ethnic Tension",
-      trustInGovernment: "Trust in Government",
-      politicalStability: "Political Stability",
-      democracyIndex: "Democracy Index",
-      governmentEffectiveness: "Government Effectiveness",
-      corruptionIndex: "Corruption Index",
-      politicalPolarization: "Political Polarization",
-      totalDebtGDPRatio: "Debt-to-GDP Ratio",
-      economicVitality: "Economic Vitality",
-      ruleOfLaw: "Rule of Law",
-    };
-
-    const label = fieldLabels[field] || field;
+    const label = FIELD_LABELS[field] || field;
     const direction = delta > 0 ? "increased" : "decreased";
     const absStr = Math.abs(delta).toFixed(1);
 

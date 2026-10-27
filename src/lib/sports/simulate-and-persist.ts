@@ -1,7 +1,7 @@
 /**
  * One path for "simulate a scheduled SportMatch and persist it" (plans 345 Step 1 + 320).
  *
- * The match-day button, the single-match button, the full-season sim and the IxTime
+ * The match-day button, the single-match button, the full-season sim and the auto-advance
  * cron all call simulateAndPersistMatch, so a match scores the same whichever path
  * advances it (knockout bouts go through simulateAndPersistBout, same snapshot + seed):
  *   1. build a replayable SimulationSnapshot (seed, ratings, rosters, morale, tactics,
@@ -9,17 +9,18 @@
  *      so `resolveFromSnapshot(matchStats.simulationSnapshot)` reproduces the result;
  *   2. claim the match atomically (scheduled → completed via a conditional updateMany),
  *      so a double-click, a retry or a cron/button race can never double-count;
- *   3. only when the claim wins: season rating vectors, standings, morale, player stats.
+ *   3. only when the claim wins: season rating vectors, standings, morale, player stats and
+ *      the clubs' rivalry (./rivalry.ts, SL-16).
  * Call it inside `db.$transaction` so the claim and the standings commit together.
  */
 import type { Prisma, StorytellerEffect } from "@prisma/client";
-import { IxTime } from "../ixtime";
 import { resolveMatch } from "./resolver";
 import { createRNG, seedFromString } from "./rng";
 import { computeTeamRatingVector, getTeamModifiers } from "./team-rating";
 import { generateMatchAnalysisFacts, type MatchAnalysisFacts } from "./analysis";
 import { decidedAfterRegulation } from "./match-outcome";
 import { pointsFor, type StandingOutcome } from "./presets";
+import { updateRivalryAfterMatch, type ExistingRivalry } from "./rivalry";
 import type { EventTraceStep, ExtendedMatchResult } from "./types";
 
 const RESOLVER_VERSION = "2.1.0";
@@ -28,11 +29,11 @@ const RULE_VERSION = "1.0.0";
 const MORALE_SWING = 5;
 
 type Db = Prisma.TransactionClient;
-export type EffectsMap = Map<string, StorytellerEffect[]>;
+type EffectsMap = Map<string, StorytellerEffect[]>;
 
-// ─── Inputs (a Prisma SportMatch loaded with SIM_MATCH_INCLUDE satisfies these) ───
+// Inputs (a Prisma SportMatch loaded with SIM_MATCH_INCLUDE satisfies these)
 
-export type SimPlayer = {
+type SimPlayer = {
   id: string;
   firstName: string;
   lastName: string;
@@ -64,7 +65,7 @@ export type SimMatch = {
   awayTeam: SimTeam;
 };
 
-export type SimLeague = { sportPreset: string; archetype: string };
+type SimLeague = { sportPreset: string; archetype: string };
 
 /** Prisma `include` that loads a SportTeam as a SimTeam (active roster + coaches). */
 export const SIM_TEAM_INCLUDE = {
@@ -80,9 +81,9 @@ export const SIM_MATCH_INCLUDE = {
   awayTeam: TEAM_WITH_ROSTER,
 } satisfies Prisma.SportMatchInclude;
 
-// ─── Snapshot contract (stored at SportMatch.matchStats.simulationSnapshot) ───
+// Snapshot contract (stored at SportMatch.matchStats.simulationSnapshot)
 
-export type RatingSnapshot = {
+type RatingSnapshot = {
   overall: number;
   offense: number;
   defense: number;
@@ -91,7 +92,7 @@ export type RatingSnapshot = {
   coaching: number;
 };
 
-export type RosterSnapshot = {
+type RosterSnapshot = {
   id: string;
   firstName: string;
   lastName: string;
@@ -99,7 +100,7 @@ export type RosterSnapshot = {
   ratings: Record<string, number>;
 };
 
-export type TeamSnapshot = {
+type TeamSnapshot = {
   id: string;
   ratingVector: RatingSnapshot;
   /** Mean morale of the active roster before kick-off. */
@@ -110,7 +111,7 @@ export type TeamSnapshot = {
   worldModifiers: { saintName?: string; saintBlessing?: number; countryScandal?: number } | null;
 };
 
-export type SimulationSnapshot = {
+type SimulationSnapshot = {
   seed: number;
   resolverVersion: string;
   ruleVersion: string;
@@ -122,7 +123,7 @@ export type SimulationSnapshot = {
   capturedIxTime: number;
 };
 
-// ─── Pure helpers ───
+// Pure helpers
 
 /** One seed per match, independent of which path (button / full season / cron) runs it. */
 export function matchSeed(match: { id: string; seasonId: string; matchDay: number }): number {
@@ -313,13 +314,10 @@ function simulateFromSnapshot(snapshot: SimulationSnapshot, homeName: string, aw
   return { result, analysisFacts, matchStats: toMatchStats(result, snapshot, analysisFacts) };
 }
 
-// ─── DB steps ───
+// DB steps
 
 /** Active storyteller effects for these nations, keyed by nationId (one query). */
-export async function loadEffectsMap(
-  db: Db,
-  nationIds: Array<string | null>
-): Promise<EffectsMap> {
+export async function loadEffectsMap(db: Db, nationIds: Array<string | null>): Promise<EffectsMap> {
   const ids = Array.from(new Set(nationIds.filter((id): id is string => !!id)));
   const map: EffectsMap = new Map();
   if (ids.length === 0) return map;
@@ -338,7 +336,7 @@ async function buildSimulationSnapshot(
   match: SimMatch,
   league: SimLeague,
   effectsMap?: EffectsMap
-): Promise<SimulationSnapshot> {
+): Promise<{ snapshot: SimulationSnapshot; rivalry: ExistingRivalry | null }> {
   const effects =
     effectsMap ?? (await loadEffectsMap(db, [match.homeTeam.nationId, match.awayTeam.nationId]));
   const homeModifiers = await getTeamModifiers(match.homeTeam, db, effects);
@@ -351,10 +349,10 @@ async function buildSimulationSnapshot(
         { team1Id: match.awayTeamId, team2Id: match.homeTeamId },
       ],
     },
-    select: { intensity: true },
+    select: { id: true, intensity: true },
   });
 
-  return {
+  const snapshot: SimulationSnapshot = {
     seed: matchSeed(match),
     resolverVersion: RESOLVER_VERSION,
     ruleVersion: RULE_VERSION,
@@ -363,8 +361,9 @@ async function buildSimulationSnapshot(
     homeAdvantage: (rivalry?.intensity ?? 0) > 70 ? 65 : 55,
     homeTeamSnapshot: snapshotTeam(match.homeTeam, league.sportPreset, homeModifiers),
     awayTeamSnapshot: snapshotTeam(match.awayTeam, league.sportPreset, awayModifiers),
-    capturedIxTime: IxTime.getCurrentIxTime(),
+    capturedIxTime: Date.now(),
   };
+  return { snapshot, rivalry: rivalry ?? null };
 }
 
 async function applyStanding(
@@ -425,7 +424,7 @@ export async function simulateAndPersistMatch(
   input: { match: SimMatch; league: SimLeague; effectsMap?: EffectsMap }
 ): Promise<SimulatedMatch | null> {
   const { match, league } = input;
-  const snapshot = await buildSimulationSnapshot(db, match, league, input.effectsMap);
+  const { snapshot, rivalry } = await buildSimulationSnapshot(db, match, league, input.effectsMap);
   const { result, analysisFacts, matchStats } = simulateFromSnapshot(
     snapshot,
     match.homeTeam.name,
@@ -482,10 +481,23 @@ export async function simulateAndPersistMatch(
   if (result.winner === "home") await applyMorale(db, homeIds, awayIds);
   if (result.winner === "away") await applyMorale(db, awayIds, homeIds);
 
+  await updateRivalryAfterMatch(db, {
+    matchId: match.id,
+    homeTeamId: match.homeTeamId,
+    awayTeamId: match.awayTeamId,
+    homeNationId: match.homeTeam.nationId,
+    awayNationId: match.awayTeam.nationId,
+    existing: rivalry,
+  });
+
   const playerStats = tallyPlayerStats(result.trace, home.roster, away.roster, snapshot.seed);
   if (playerStats.length > 0) {
     await db.sportMatchStat.createMany({
-      data: playerStats.map((ps) => ({ matchId: match.id, playerId: ps.playerId, stats: ps.stats })),
+      data: playerStats.map((ps) => ({
+        matchId: match.id,
+        playerId: ps.playerId,
+        stats: ps.stats,
+      })),
     });
   }
 
@@ -499,9 +511,9 @@ export async function simulateAndPersistMatch(
   };
 }
 
-// ─── Knockout bouts (SportBracket rows) ───
+// Knockout bouts (SportBracket rows)
 
-export type SimBout = {
+type SimBout = {
   id: string;
   seasonId: string;
   round: number;
@@ -543,7 +555,7 @@ export async function simulateAndPersistBout(
     awayTeam: fighter2,
   };
   const league = { sportPreset: input.sportPreset, archetype: "bracket" };
-  const snapshot = await buildSimulationSnapshot(db, match, league, input.effectsMap);
+  const { snapshot } = await buildSimulationSnapshot(db, match, league, input.effectsMap);
   const { result, matchStats } = simulateFromSnapshot(snapshot, fighter1.name, fighter2.name);
   const winnerId = result.winner === "home" ? bout.fighter1Id : bout.fighter2Id;
   const boutResult: PersistedBoutResult = {

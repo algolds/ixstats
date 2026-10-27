@@ -1,8 +1,10 @@
 # Frontend Architecture
 
+**Last updated:** 2026-10-05
+
 **Framework**: Next.js 16.3.6 App Router · React 19.2.8 · Tailwind CSS 4.3.3 · TypeScript 7.0.2  
-**Design System**: **Facet** (Refraction, Depth Hierarchy, Tactile Feedback)  
-**Location**: `src/app/` (180+ page routes, 40+ API route handlers) · `src/components/` (900+ `.tsx` components) · `src/hooks/` (90+ custom hooks)
+**Design System**: **Facet** (opaque cards, glass only for floating chrome)  
+**Location**: `src/app/` (180+ page routes, 40+ API route handlers) · `src/components/` (900+ `.tsx` components) · `src/hooks/` (95 hook and helper modules)
 
 ---
 
@@ -13,7 +15,7 @@ The frontend is structured around Next.js App Router conventions with strong dom
 ```
 src/
 ├── app/                              # Route tree & server layouts
-│   ├── layout.tsx                    # Root HTML document, fonts, Clerk provider, global providers + <Navigation />
+│   ├── layout.tsx                    # Root HTML document, fonts, Clerk provider, global providers + <AppShell>
 │   ├── page.tsx                      # Root route (splash vs signed-in command center)
 │   ├── mycountry/                    # Single-page executive command suite (/mycountry/*)
 │   ├── dashboard/                    # Signed-in executive overview & feed hub
@@ -22,7 +24,7 @@ src/
 │   ├── maps/                         # Interactive IxWorld map viewer (also maps.ixwiki.com)
 │   ├── countries/                    # Public Factbook country profiles (/countries/[slug])
 │   ├── builder/                      # Nation creation & editing wizard
-│   ├── labs/                         # Experimental suites (Onoma, Vexel, Map Pipeline)
+│   ├── labs/                         # Experimental suites (Onoma, Vexel)
 │   └── admin/                        # 40+ admin CMS interfaces (RBAC guarded)
 ├── components/                       # Shared UI and domain presentation components
 │   ├── ui/                           # Base design primitives (buttons, dialogs, badges)
@@ -36,12 +38,12 @@ src/
 ### Root Layout Providers (`src/app/layout.tsx`)
 1. **`ClerkProvider`**: Authentication context. Required — the root layout throws at render if the Clerk keys are not configured.
 2. **`TRPCReactProvider`**: Client-side query client and cache manager wrapping tRPC hooks (`src/trpc/react.tsx`).
-3. **`ThemeProvider`** (`src/context/theme-context.tsx`): Theme context (light / dark / system), wrapped in a `MotionConfig reducedMotion="user"`.
+3. **`ThemeProvider`** (`src/context/theme-context.tsx`): Theme and preference context (light / dark / system — default system; density, contrast, transparency, motion, text size), wrapped in a `MotionConfig reducedMotion="user"`. The same attributes are applied pre-paint by the inline script in the root layout (see [Tokens](#tokens)).
 4. **`AbilityProvider` → `IxTimeProvider` → `ExecutiveNotificationProvider` → `WikiContextProvider` → `LazyGameProviders`**: Permissions, IxTime clock, executive notifications, wiki context, and lazily loaded gameplay providers.
 5. **`CuelumeSoundProvider`**: Bootstraps the **Cuelume** audio-tactile engine, delegates declarative `data-cuelume-*` listeners globally to the `document`, and plays subtle route transition cues (`soundEffects.arrival()`).
-6. **`<Navigation />`** (`src/app/_components/navigation.tsx`): Global navigation bar, which hosts the Halo `CommandPalette` (`src/components/halo/`).
+6. **`<AppShell>`** (`src/components/shell/AppShell.tsx`): the page frame. It renders `FacetShell` (the `AppSidebar` source list from 1024px up, the `TabBar` below that, and the Halo island, `ShellHalo`) and `<main>`, and paints the canvas in the current app's tint (`data-app`). The navigation source is `src/lib/navigation/app-sections.ts`.
 
-> See **[Facet Design System & Interaction Bible](../reference/facet-design-system.md)** for complete specifications on volumetric Z-depth, compounding blur hierarchy, physical materials, 100% Radix primitive standards, Cuelume audio matrices, and Apple/Emil Kowalski motion physics.
+> See the **[Facet design system reference](../reference/facet-design-system.md)** for colour roles and app tints, text styles, radii, materials, z-index, motion, the primitives (Card, FacetList, controls, Sheet, dialogs), sound, appearance and accessibility preferences, and the guard tests.
 
 ---
 
@@ -73,8 +75,8 @@ To enforce maintainability and performance across 900+ components, complex views
 ```
 
 ### Layer Rules & Responsibilities:
-1. **Business Logic Layer (`src/lib/<domain>/*.ts`)**: Pure functions (e.g. `government/synergy.ts`, `ixtime/core.ts`, `wiki-os/adapters/mediawiki/bridge/`). Never import React or UI elements.
-2. **State Management Layer (`src/hooks/*.ts`, or co-located next to a feature)**: Custom hooks that query tRPC, manage optimistic updates, and wrap timers (e.g. `src/hooks/useUnifiedFlags.ts`, `src/app/builder/components/enhanced/national-identity/useNationalIdentityState.ts`).
+1. **Business Logic Layer (`src/lib/<domain>/*.ts`)**: Pure functions (e.g. `government/synergy-table.ts`, `ixtime/core.ts`, `wiki-os/adapters/mediawiki/bridge/`). Never import React or UI elements.
+2. **State Management Layer (`src/hooks/*.ts`, or co-located next to a feature)**: Custom hooks that query tRPC, manage optimistic updates, and wrap timers (e.g. `src/hooks/useUnifiedFlags.ts`, `src/app/builder/_founding/hooks/useFoundingDraft.ts`).
 3. **Presentation Layer (`src/components/domain/*`)**: Reusable UI components styled with Facet tokens. Memoized with `React.memo` to prevent unnecessary re-renders.
 4. **Orchestration Layer (`src/app/**/page.tsx`)**: Composes hooks and UI components with minimal inline logic.
 
@@ -111,33 +113,48 @@ export function MyCountryRouter() {
 | Hub | Location | Sub-Sections |
 | :--- | :--- | :--- |
 | **`MyCountryRouter`** | [`src/components/mycountry/shell/MyCountryRouter.tsx`](../../src/components/mycountry/shell/MyCountryRouter.tsx) | Overview, Executive, Economy, Diplomacy, Intelligence, Defense, Politics, Map Editor |
-| **`VaultSidebarLayout`** | [`src/app/vault/layout.tsx`](../../src/app/vault/layout.tsx) → [`src/components/vault/VaultSidebarLayout.tsx`](../../src/components/vault/VaultSidebarLayout.tsx) | Dashboard, Cards, Marketplace, Import, Achievements, Leaderboards |
+| **Vault routes** | [`src/app/vault/layout.tsx`](../../src/app/vault/layout.tsx) (guard + page container; navigation is the sidebar's source list) | Dashboard, Cards, Marketplace, Import, Achievements, Leaderboards |
 | **`ThinktankWorkspace`** | [`src/components/thinktanks/ThinktankWorkspace.tsx`](../../src/components/thinktanks/ThinktankWorkspace.tsx) | Feed, Roster |
 | **`MessagesRouter`** | [`src/components/messages/MessagesRouter.tsx`](../../src/components/messages/MessagesRouter.tsx) | Conversations (single folder, conversation list + thread view) |
-| **`ThinkPagesAccountHub`**| [`src/components/thinkpages/ThinkPagesAccountHub.tsx`](../../src/components/thinkpages/ThinkPagesAccountHub.tsx) | Feed, composer (`UnifiedComposerContainer`), accounts |
-| **`DashboardRouter`** | [`src/components/dashboard/DashboardRouter.tsx`](../../src/components/dashboard/DashboardRouter.tsx) (mounted by `src/app/dashboard/DashboardPageClient.tsx`) | Hero + single `UnifiedDashboardSection` in a sidebar layout |
+| **`AccountsSection`** | [`src/components/dashboard/accounts/AccountsSection.tsx`](../../src/components/dashboard/accounts/AccountsSection.tsx) (the Dashboard's Accounts section at `/dashboard/accounts`) | Persona list, create and settings modals |
+| **`DashboardRouter`** | [`src/components/dashboard/DashboardRouter.tsx`](../../src/components/dashboard/DashboardRouter.tsx) (mounted by `src/app/dashboard/DashboardPageClient.tsx`) | Hero + feed (`UnifiedDashboardSection`), or the Accounts section; a two-section single-page router (`useDashboardSection`, `src/lib/dashboard-sections.ts`) |
 
 ---
 
 ## 4. Facet Design System & Styling Rules
 
-The platform UI is built on **Facet** — a tactile, refraction-based design language:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    FACET DEPTH HIERARCHY                    │
-├─────────┬───────────────────┬───────────────────────────────┤
-│ Depth 1 │ Surface Base      │ Flat cards, subtle borders    │
-│ Depth 2 │ Raised Widget     │ Interactive cards, metrics    │
-│ Depth 3 │ Floated Overlay   │ Dropdowns, tooltips, popovers │
-│ Depth 4 │ Modal / Dialog    │ High blur, prominent shadow   │
-└─────────┴───────────────────┴───────────────────────────────┘
-```
+The platform UI is built on **Facet**. Plain opaque cards are the default; glass is for floating chrome only (sidebar, tab bar, sheets, map overlays). Read [facet-design-system.md](../reference/facet-design-system.md) before changing UI.
 
 ### Key UI Primitives:
-- **`FacetCard`** (`src/components/ui/facet-container.tsx`): Container with depth levels (`depth={1..4}`), subtle refraction borders, and optional flag ambient glow.
-- **`FacetTabs`** (`src/components/ui/facet/tabs/FacetTabs.tsx`): Spring-physics tab bar with sliding sheen indicator (`tone: "neutral" | "accent" | "mycountry" | "forum" | "sdi"`).
+- **`Card`** (`src/components/ui/card.tsx`): `variant` `default | inset | hero`, `interactive`, `padding`. The hero variant is glass and is limited to the dashboard and MyCountry heroes.
+- **`SegmentedControl`, `Tabs`, `ToggleGroup`, `RadioCard`** (`src/components/ui/`): Radix-based choice controls.
 - **`BaseMetricDetailsModal`** (`src/components/mycountry/shared/modals/metric-details/BaseMetricDetailsModal.tsx`): Universal 4-tab drilldown modal (Overview, Trends, Comparison, Details).
+
+### Tokens
+
+All design tokens live in one file, **`src/styles/facet/tokens.css`** (imported first by `globals.css`), mirrored in
+TypeScript by `src/lib/design/tokens.ts` (values) and `src/lib/design/motion.ts` (springs). Every token is a CSS
+variable and a Tailwind utility — see the [Facet design system reference](../reference/facet-design-system.md):
+
+- **Colour roles** — `text-label`, `text-label-secondary|tertiary|quaternary`, `bg-background`, `bg-grouped`,
+  `bg-surface`, `bg-surface-secondary|elevated`, `bg-fill` … `bg-fill-4`, `border-separator(-opaque)`; system colours
+  `red`…`pink` with `on-*` pairs; status aliases `destructive|warning|caution|success|info`; `chart-1…8`. The shadcn
+  names (`foreground`, `muted-foreground`, `card`, `border`, `primary`…) are aliases of these roles.
+- **App tint** — `bg-tint`, `text-tint`, `text-on-tint`, `bg-tint-fill`, `bg-tint-hover`; `primary` and `ring` alias
+  the tint. Each app root sets `data-app="mycountry|maps|thinkpages|vault|forum|wiki|intel|sports|admin"`.
+- **Type** — `text-display`, `text-large-title`, `text-title-1|2|3`, `text-headline`, `text-body`, `text-callout`,
+  `text-subhead`, `text-footnote`, `text-caption` (rem × `--text-scale`).
+- **Shape, depth, motion** — `rounded-sheet|card|row|control-lg|control|control-sm`; `material-thin|regular|thick`
+  (floating chrome only); `shadow-card|floating|sheet`; `z-base` … `z-command`; `duration-fast`, `duration-exit`,
+  `ease-out-facet`.
+- **Appearance & accessibility** — one selector, `html[data-theme="light"|"dark"]`, plus `data-density`,
+  `data-contrast="more"`, `data-transparency="reduced"`, `data-motion="reduced"`, `data-sound="off"` and
+  `--text-scale` on `<html>`. A blocking, nonce-carrying inline script (`AppearanceInitScript`, mounted in `src/app/layout.tsx`'s `<head>`
+  and written once into the server HTML's `<head>` with `useServerInsertedHTML`) writes them before
+  first paint (`src/lib/design/appearance.ts`, shared with `ThemeProvider`). The `motion-reduce:`, `contrast-more:`,
+  `transparency-reduced:` and `compact:` variants honour both the media query and the attribute.
+- **Guard** — `src/tests/architecture/token-contrast.test.ts` checks the CSS against the TS values and computes WCAG
+  contrast for every required pair.
 
 ### Styling Best Practices:
 1. **Tailwind CSS v4**: Configured via CSS `@theme` tokens. Avoid legacy Tailwind v3 JavaScript configs.
@@ -146,29 +163,17 @@ The platform UI is built on **Facet** — a tactile, refraction-based design lan
 
 ---
 
-## 5. Universal State & Sync Hooks
+## 5. Saving & Shared Hooks
 
-Form builders and country editors use the canonical auto-sync engine:
-
-```tsx
-import { useGenericAutoSync } from "~/hooks/useGenericAutoSync";
-
-export function useMyBuilderAutoSync(countryId: string, initialData: FormData) {
-  const updateMutation = api.myDomain.update.useMutation();
-
-  return useGenericAutoSync(initialData, {
-    enabled: !!countryId,
-    debounceMs: 2000,
-    syncFn: async (dataToSync) => {
-      return await updateMutation.mutateAsync({ countryId, data: dataToSync });
-    },
-  });
-}
-```
+Edit forms save on an explicit button per section, never by autosave. The country editor
+(`src/app/mycountry/editor/_components/EditorSection.tsx`) is the pattern: each section keeps a local copy of its values,
+its button is disabled until something changed, one mutation per section patches only its own rows, and the mutation
+receives the values the section loaded so a stale tab is refused instead of overwriting. Work-in-progress drafts (the
+founding flow's `builderDraft`, `src/app/builder/_founding/hooks/useFoundingDraft.ts`) save to the server after a short
+pause and show their status.
 
 ### Canonical Hook Directory:
 - **Flags**: `useFlag`, `useBulkFlags`, `useFlagPreloader` (`src/hooks/useUnifiedFlags.ts`) — single source of truth for country flag URLs and SVG badge rendering.
-- **Auto-Sync**: `useGenericAutoSync` (`src/hooks/useGenericAutoSync.ts`) — universal debounced autosave engine.
 - **Notifications**: `useNotify` (`src/hooks/useNotify.ts`) — standardized toast and status messages.
 - **Media / Wiki**: `useWikiScanner` (`src/hooks/useWikiScanner.ts`) — batched IxWiki lookups that flag unlinked pages and map/infobox data conflicts.
 
@@ -184,33 +189,19 @@ To ensure optimal initial load times and eliminate client-side waterfalls, route
 
 ---
 
-## 7. Unified 3-Mode Navigation & Dynamic Repulsion Physics
+## 7. Navigation shell
 
-All frontend routes map to one of three standardized navigation modes:
+There is one navigation: the app sidebar, a source list built from `src/lib/navigation/app-sections.ts`
+(`AppSidebar` / `SourceList` from 1024px up; the `TabBar` and its More sheet below that). Every app is a top-level
+row and the current app discloses its sections; Admin and Settings use area mode. There are no per-app sidebars,
+rails or hidden sub-navigation.
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ Mode 1: DEFAULT (Global Scroll-Hide & Morph)                                │
-│ • Standard pages: Home, MyCountry, Dashboard, Vault, ThinkPages, Forum,     │
-│   Countries, Admin, MyClub/MyLeague, Settings, Changelog, Labs.             │
-│ • Sits in top anchor zone (<50px). Morphs tabs inwards (40px → 100px).     │
-│ • Scroll down hides with cubic-bezier / spring; scroll up reveals instantly.│
-├─────────────────────────────────────────────────────────────────────────────┤
-│ Mode 2: HIDDEN (Immersion & Canvas Focus)                                   │
-│ • Canvas & focus surfaces: /messages, /builder, /mycountry/builder,         │
-│   /mycountry/editor, /wiki/*, /blurbs/*                                     │
-│ • Starts with navbar translated out of view (translateY(-100%)).           │
-│ • Reveals smoothly on upward scroll (>10px) or top-edge hover (<=16px).    │
-│ • WikiHalo or Halo floating capsules remain interactive.                   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ Mode 3: MAPS (Chromeless Standalone Exception)                              │
-│ • Maps & spatial workflows: /maps.                                          │
-│ • Global <Navigation /> returns null; MapDynamicIsland handles controls.    │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+- **Chromeless routes:** `/maps`, `/mycountry/map-editor`, `/admin/maps/editor`, `/admin/maps/style-editor` and `/admin/maps/studio`
+  (`isChromelessPath`) get no canvas wash; Halo hides on `/maps`, where `MapDynamicIsland` takes over.
+- **Page titles:** `PageHeader` (`~/components/shell`) renders the one `<h1>`, a back button and trailing actions in
+  a sticky toolbar that collapses to a compact title on scroll.
+- **Sticky rails** use `top-(--shell-top-offset)`; read the shell layout variables (`--shell-sidebar-width`,
+  `--shell-tabbar-height`, `--shell-top-offset`, …) from `src/styles/facet/shell.css`, never redefine them.
+- **Colour:** semantic tokens only; no arbitrary `[#...]` classes or inline hex colours.
 
-### Dynamic Repulsion Physics & Rail Standards:
-- **Repulsion Progress**: $\text{repulsionProgress} = \text{clamp}(\text{scrollY} / 56, 0, 1)$ drives center branding glides, action button tucks, and ambient refraction glows under the Halo pill via `useNavigationScroll`.
-- **Desktop Sticky Rails Clearance**: Desktop sidebars must use `lg:sticky lg:top-20` (80px) to maintain a clean 16px buffer beneath the 64px floating navbar. Never use `top-6` or `top-0` on page-level sidebars.
-- **Zero Raw Arbitrary Hex Codes**: 100% of styles must utilize semantic Tailwind v4 tokens (`text-foreground`, `bg-card`, `border-border/40`, `text-wiki`, `text-onoma-primary`, `bg-map-ocean`, etc.). Arbitrary `[#...]` classes and inline hex colors are strictly forbidden.
-
+The [Facet design system reference](../reference/facet-design-system.md) has the full rules.

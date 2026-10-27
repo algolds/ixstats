@@ -7,7 +7,7 @@
 import type { TemplateParam } from "~/lib/wiki-os/templates/template-registry";
 
 // Palette presets and builder flows guarantee `name`; refine the canonical type instead of redefining it.
-export type PaletteTemplateParam = TemplateParam & { name: string };
+type PaletteTemplateParam = TemplateParam & { name: string };
 
 export interface MasterTemplatePreset {
   name: string;
@@ -550,7 +550,7 @@ export const MASTER_TEMPLATE_PRESETS: MasterTemplatePreset[] = [
   {
     name: "Coord",
     category: "geographic",
-    description: "Geographic coordinate badge with IxWorld Voronoi spatial mesh projection.",
+    description: "Geographic coordinate badge with Voronoi spatial mesh projection.",
     isCanonical: true,
     params: [
       { name: "1", label: "Latitude", required: true, example: "40.7128" },

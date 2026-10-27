@@ -1,9 +1,11 @@
 import { z } from "zod";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
-import { getZoneByColor } from "~/lib/maps/elevation-config";
+import { getZoneByColor, isLandBand } from "~/lib/maps/elevation-config";
+import { climateZoneLabel, climateZoneOf } from "~/lib/maps/climate-zones";
+import { parseRealmMapSettings, type ClimateKey } from "~/lib/maps/realm-map-settings";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { CLIMATE_COLOR_MAP } from "./shared";
 
@@ -34,6 +36,71 @@ async function withPointQueryTimeout<T>(
     },
     { timeout: POINT_QUERY_TIMEOUT_MS + 4000, maxWait: POINT_QUERY_TIMEOUT_MS + 4000 }
   );
+}
+
+type PointLayer = { properties: Record<string, unknown> };
+
+/**
+ * Elevation zone at the point; stored metadata wins, the fill colour fills in what is missing. A land-only band
+ * (a realm whose art has no elevations) says so instead of claiming the elevations of the band it looks like.
+ */
+function elevationInfo(altitude: PointLayer | undefined) {
+  if (!altitude) return null;
+  const props = altitude.properties ?? {};
+  const fill = (props.fill as string) ?? null;
+  const zone = fill && !isLandBand(props) ? getZoneByColor(fill) : null;
+  return {
+    zoneId: (props.zoneId as string) ?? zone?.zoneId ?? null,
+    zoneName: (props.zoneName as string) ?? zone?.zoneName ?? null,
+    elevationMin: (props.elevationMin as number) ?? zone?.elevationMin ?? null,
+    elevationMax: (props.elevationMax as number) ?? zone?.elevationMax ?? null,
+    elevationLabel:
+      (props.elevationLabel as string) ??
+      (zone ? `${zone.elevationMin}-${zone.elevationMax}m` : null),
+    color: fill ?? zone?.color ?? null,
+  };
+}
+
+/** Climate zone at the point: through the realm's climate key when it has one, else Ixnay's Trewartha colours. */
+function climateInfo(climate: PointLayer | undefined, key: ClimateKey | null) {
+  if (!climate) return null;
+  const props = climate.properties ?? {};
+  const fill = (props.fill as string) ?? null;
+  const zone = key ? climateZoneOf(key, props) : null;
+  if (zone) return { climateId: zone.code, climateName: climateZoneLabel(zone), color: fill };
+  const derivedName = fill && !key ? CLIMATE_COLOR_MAP[fill.toLowerCase()] : null;
+  return {
+    climateId: (props.climateId as string) ?? null,
+    climateName: (props.climateName as string) ?? derivedName ?? null,
+    color: fill,
+  };
+}
+
+/** The realm's climate key, read only when the point has a climate zone to name. */
+async function realmClimateKey(db: PrismaClient, realmId: string): Promise<ClimateKey | null> {
+  const realm = await db.realm.findUnique({ where: { id: realmId }, select: { settings: true } });
+  return parseRealmMapSettings(realm?.settings).climateKey ?? null;
+}
+
+/** The approved subdivision containing the point, or null (also when PostGIS data is not there yet). */
+async function findSubdivisionAt(db: PrismaClient, countryId: string, lng: number, lat: number) {
+  try {
+    const rows = await withPointQueryTimeout(db, (tx) =>
+      tx.$queryRawUnsafe<Array<{ id: string; name: string; type: string | null }>>(
+        `SELECT id, name, type FROM subdivisions
+               WHERE "countryId" = $1 AND status = 'approved'
+                 AND geom_postgis IS NOT NULL
+                 AND ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($2, $3), 4326))
+               LIMIT 1`,
+        countryId,
+        lng,
+        lat
+      )
+    );
+    return rows[0] ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export const pointQueryProcedures = {
@@ -76,83 +143,24 @@ export const pointQueryProcedures = {
           )
         );
 
-        const altitude = layerResults.find((r) => r.layerType === "altitudes");
-        const climate = layerResults.find((r) => r.layerType === "climate");
         const political = layerResults.find((r) => r.layerType === "political");
+        const climate = layerResults.find((r) => r.layerType === "climate");
+        const climateKey = climate ? await realmClimateKey(ctx.db, realmId) : null;
 
-        // If we found a country, also check for subdivision
-        let subdivision: { id: string; name: string; type: string | null } | null = null;
-        let countryInfo: {
-          id: string;
-          name: string;
-          slug: string | null;
-          flag: string | null;
-        } | null = null;
-
+        let subdivision = null;
+        let countryInfo = null;
         if (political?.countryId) {
-          // Get country info
-          const country = await ctx.db.country.findUnique({
+          countryInfo = await ctx.db.country.findUnique({
             where: { id: political.countryId },
             select: { id: true, name: true, slug: true, flag: true },
           });
-          if (country) countryInfo = country;
-
-          // Check for subdivision at this point
-          try {
-            const subResults = await withPointQueryTimeout(ctx.db, (tx) =>
-              tx.$queryRawUnsafe<Array<{ id: string; name: string; type: string | null }>>(
-                `SELECT id, name, type FROM subdivisions
-               WHERE "countryId" = $1 AND status = 'approved'
-                 AND geom_postgis IS NOT NULL
-                 AND ST_Contains(geom_postgis, ST_SetSRID(ST_MakePoint($2, $3), 4326))
-               LIMIT 1`,
-                political.countryId,
-                input.lng,
-                input.lat
-              )
-            );
-            if (subResults.length > 0) subdivision = subResults[0]!;
-          } catch {
-            // Subdivision query failed — no PostGIS data yet
-          }
+          subdivision = await findSubdivisionAt(ctx.db, political.countryId, input.lng, input.lat);
         }
-
-        const altProps = altitude?.properties ?? {};
-        const climProps = climate?.properties ?? {};
-
-        // Derive elevation zone from fill color if metadata not yet enriched
-        const altFill = (altProps.fill as string) ?? null;
-        const derivedZone = altFill ? getZoneByColor(altFill) : null;
-
-        // Derive climate name from fill color if metadata not yet enriched
-        const climFill = (climProps.fill as string) ?? null;
-        const derivedClimate = climFill
-          ? (CLIMATE_COLOR_MAP[climFill.toLowerCase()] ?? null)
-          : null;
 
         return {
           coordinates: { lng: input.lng, lat: input.lat },
-          elevation: altitude
-            ? {
-                zoneId: (altProps.zoneId as string) ?? derivedZone?.zoneId ?? null,
-                zoneName: (altProps.zoneName as string) ?? derivedZone?.zoneName ?? null,
-                elevationMin:
-                  (altProps.elevationMin as number) ?? derivedZone?.elevationMin ?? null,
-                elevationMax:
-                  (altProps.elevationMax as number) ?? derivedZone?.elevationMax ?? null,
-                elevationLabel:
-                  (altProps.elevationLabel as string) ??
-                  (derivedZone ? `${derivedZone.elevationMin}-${derivedZone.elevationMax}m` : null),
-                color: altFill ?? derivedZone?.color ?? null,
-              }
-            : null,
-          climate: climate
-            ? {
-                climateId: (climProps.climateId as string) ?? null,
-                climateName: (climProps.climateName as string) ?? derivedClimate ?? null,
-                color: climFill,
-              }
-            : null,
+          elevation: elevationInfo(layerResults.find((r) => r.layerType === "altitudes")),
+          climate: climateInfo(climate, climateKey),
           country: political
             ? {
                 featureId: political.featureId,

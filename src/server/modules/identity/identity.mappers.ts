@@ -1,35 +1,43 @@
 /**
  * Pure mappers from resolved identity rows to the passport's Realms and History payloads.
  */
-import { isAwardWinner, type LoreAwardRow } from "./identity.feed";
+import { DEFAULT_REALM_ID, IXNAY_SLUG } from "~/lib/realms/realm-ids";
 import type { IdentityCountry } from "./identity.selects";
 import type {
-  AwardHistoryItem,
   IdentityEventPayload,
   IdentityHistoryPage,
   RealmMembership,
+  RealmRole,
   WikiActivityItem,
   WikiActivityType,
 } from "./identity.types";
 
-/** The realm a country belongs to. `realm` is always selected; the FK guarantees the row exists. */
-export function realmOf(country: IdentityCountry): { id: string; name: string; slug: string } {
-  return country.realm ?? { id: country.realmId, name: country.realmId, slug: country.realmId };
+/** The realm a country belongs to; Ixnay is named even when its realm row is missing. */
+function realmOf(country: IdentityCountry): { id: string; name: string; slug: string } {
+  if (country.realm) return country.realm;
+  if (country.realmId === DEFAULT_REALM_ID) {
+    return { id: DEFAULT_REALM_ID, name: "Ixnay", slug: IXNAY_SLUG };
+  }
+  return { id: country.realmId, name: country.realmId, slug: country.realmId };
 }
 
-export function countrySlug(country: { slug: string | null; name: string }): string {
+function countrySlug(country: { slug: string | null; name: string }): string {
   return country.slug ?? country.name.toLowerCase().replace(/ /g, "_");
 }
 
+/** Shared with the forum's realm switcher, which defaults to the primary nation's realm. */
+export { primaryNationOf } from "~/lib/realms/primary-nation";
+
+/** One row per held nation, with the holder's role in its realm (member unless founder or officer). */
 export function toRealmMemberships(
   nations: IdentityCountry[],
-  featuredCountryIds: ReadonlyArray<string>,
-  role: string
+  primaryCountryId: string | null,
+  roles: ReadonlyMap<string, RealmRole>
 ): RealmMembership[] {
   return nations.map((c) => ({
     ...realmOf(c),
-    role,
-    isFeatured: featuredCountryIds.includes(c.id),
+    role: roles.get(c.realmId) ?? "member",
+    isPrimary: c.id === primaryCountryId,
     country: {
       id: c.id,
       name: c.name,
@@ -47,35 +55,10 @@ export function toRealmMemberships(
   }));
 }
 
-/** Memberships inside one realm, matched by slug or id (for `/r/[realm]/[username]`). */
+/** Memberships inside one realm, matched by slug or id (for the realm passport, `/r/{realm}/@{handle}`). */
 export function filterByRealm(memberships: RealmMembership[], realm: string): RealmMembership[] {
   const key = realm.toLowerCase();
   return memberships.filter((m) => m.slug.toLowerCase() === key || m.id.toLowerCase() === key);
-}
-
-export function toAwardHistory(
-  awards: LoreAwardRow[],
-  wikiName: string | null
-): AwardHistoryItem[] {
-  return awards.map((award) => {
-    const isWinner = isAwardWinner(award, wikiName);
-    return {
-      id: award.id,
-      date: award.date,
-      type: award.type,
-      role: isWinner ? "winner" : "runner-up",
-      page:
-        (isWinner ? award.winnerPage : award.runnerUpPage) ||
-        award.winnerPage ||
-        award.runnerUpPage ||
-        null,
-      score:
-        (isWinner ? award.winnerScore : award.runnerUpScore) ||
-        award.winnerScore ||
-        award.runnerUpScore ||
-        null,
-    };
-  });
 }
 
 export interface DirectiveRow {
@@ -96,14 +79,21 @@ const WIKI_VERB: Record<WikiActivityType, string> = {
   minor_edit: "Edited",
 };
 
+/** "Category: … · Tier: … · Status: …", without the category when the directive has none. */
+function directiveDescription(dir: DirectiveRow): string {
+  const parts = [`Tier: ${dir.tier}`, `Status: ${dir.status}`];
+  return (dir.category ? [`Category: ${dir.category}`, ...parts] : parts).join(" · ");
+}
+
 function wikiEventDescription(item: WikiActivityItem): string {
   if (item.summary) return item.summary;
   if (!item.byteDiff) return "WikiOS Contribution";
   return `${item.byteDiff > 0 ? `+${item.byteDiff}` : item.byteDiff} bytes`;
 }
 
-export interface HistorySources {
+interface HistorySources {
   identityId: string;
+  /** The passport handle (`loadPassportHandle`), never the URL segment: the join event links to it. */
   handle: string;
   feed: WikiActivityItem[];
   directives: DirectiveRow[];
@@ -134,7 +124,7 @@ export function buildHistoryEvents(sources: HistorySources): IdentityEventPayloa
       system: "mycountry",
       type: "mycountry.directive_enacted",
       title: `Enacted Directive: ${dir.goal}`,
-      description: `Category: ${dir.category || "Governance"} · Tier: ${dir.tier} · Status: ${dir.status}`,
+      description: directiveDescription(dir),
       timestamp: new Date(dir.createdAt),
       objectId: dir.id,
       objectUrl: "/mycountry",

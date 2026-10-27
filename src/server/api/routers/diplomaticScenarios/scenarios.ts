@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
+import { assertRealmsMatch } from "~/server/shared/same-realm-guard";
 
 /**
  * Diplomatic Scenarios Router
@@ -54,6 +55,8 @@ export const diplomaticScenariosScenariosRouter = createTRPCRouter({
         isActive: z.boolean().optional().default(true),
         country1Id: z.string().optional(),
         country2Id: z.string().optional(),
+        /** Scenarios this nation is in, on either side. */
+        countryId: z.string().optional(),
         limit: z.number().int().min(1).max(100).optional().default(50),
         offset: z.number().int().min(0).optional().default(0),
       })
@@ -61,11 +64,23 @@ export const diplomaticScenariosScenariosRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         const where: any = {};
+        const now = new Date();
 
-        // Status filter (default to active only)
-        if (input.isActive) {
-          where.status = { in: ["active", "pending"] };
-          where.expiresAt = { gt: new Date() }; // Only non-expired scenarios
+        // Open scenarios, or (isActive false) the history: resolved, expired, or open past their deadline
+        where.AND = [
+          input.isActive
+            ? { status: { in: ["active", "pending"] }, expiresAt: { gt: now } }
+            : {
+                OR: [
+                  { status: { in: ["completed", "expired"] } },
+                  { status: { in: ["active", "pending"] }, expiresAt: { lte: now } },
+                ],
+              },
+        ];
+        if (input.countryId) {
+          where.AND.push({
+            OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }],
+          });
         }
 
         // Type filter (stored in database as type field)
@@ -227,6 +242,7 @@ export const diplomaticScenariosScenariosRouter = createTRPCRouter({
             message: "One or both countries not found",
           });
         }
+        assertRealmsMatch(country1.realmId, country2.realmId);
 
         const scenario = await ctx.db.culturalScenario.create({
           data: {

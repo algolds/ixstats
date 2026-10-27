@@ -19,10 +19,11 @@ import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { timeAgo } from "~/lib/format/compact";
 import { getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
 import { type LocalDraft, type PausedSession } from "../types";
+import { Badge } from "~/components/ui/badge";
 
 interface WikiWorkspaceTabProps {
   articleTitle?: string | null;
-  /** The wiki the article lives on; another wiki's page is read-only in WikiOS (ruling E-l′). */
+  /** The wiki the article lives on; another wiki's page is read-only in WikiOS. */
   wikiSource: WikiSource;
   isMainPage?: boolean;
   isSignedIn?: boolean;
@@ -35,7 +36,7 @@ interface WikiWorkspaceTabProps {
     timestamp?: string | null;
   }> | null;
   onClose: () => void;
-  /** Opens the page on its own wiki (IxWiki when none is given) */
+  /** Opens the page on its own wiki (the wiki when none is given) */
   onNavigateToArticle: (title: string, source?: WikiSource) => void;
 }
 
@@ -61,13 +62,13 @@ export function WikiWorkspaceTab({
       {/* Local Drafts Section */}
       {localDrafts.length > 0 && (
         <CollapsibleSection
-          label="Local Drafts"
-          icon={<FileEdit className="h-3 w-3 text-blue-400" />}
+          label="Local drafts"
+          icon={<FileEdit className="text-blue h-3 w-3" />}
           count={localDrafts.length}
           open={draftsOpen}
           onToggle={() => setDraftsOpen(!draftsOpen)}
         >
-          <div className="max-h-[160px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-0.5 overflow-y-auto">
+          <div className="max-h-[160px] scrollbar-thin space-y-0.5 overflow-y-auto">
             {localDrafts.map((draft, idx) => (
               <button
                 key={idx}
@@ -75,26 +76,26 @@ export function WikiWorkspaceTab({
                 onClick={() => {
                   onClose();
                   navigateWithBasePath(
-                    `/wiki/${encodeURIComponent(draft.title.replace(/ /g, "_"))}/edit`,
+                    `/wiki/${encodeURIComponent(draft.title.replace(/ /g, "_"))}?action=edit`,
                     router
                   );
                 }}
-                className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition-colors"
+                className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm focus-visible:outline-tint flex w-full items-center justify-between px-2 py-1 text-left transition-colors focus-visible:outline-2"
               >
                 <div className="flex min-w-0 flex-1 flex-col pr-2">
                   <PreText
-                    className="truncate text-[13px] font-medium text-inherit"
+                    className="text-callout truncate font-medium text-inherit"
                     whiteSpace="nowrap"
                   >
                     {draft.title}
                   </PreText>
-                  <PreText className="text-muted-foreground text-xs" whiteSpace="nowrap">
+                  <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
                     {draft.type === "visual"
-                      ? "Visual Editor (Canvas) Draft"
-                      : "Source Editor Draft"}
+                      ? "Visual editor (Canvas) draft"
+                      : "Source editor draft"}
                   </PreText>
                 </div>
-                <span className="shrink-0 text-xs font-semibold text-blue-400">Resume ›</span>
+                <span className="text-caption text-blue shrink-0 font-semibold">Resume ›</span>
               </button>
             ))}
           </div>
@@ -104,34 +105,34 @@ export function WikiWorkspaceTab({
       {/* Reading Progress / Paused Sessions Section */}
       {pausedSessions.length > 0 && (
         <CollapsibleSection
-          label="Reading Progress"
-          icon={<Clock className="h-3 w-3 text-emerald-400" />}
+          label="Reading progress"
+          icon={<Clock className="text-green h-3 w-3" />}
           count={pausedSessions.length}
           open={sessionsOpen}
           onToggle={() => setSessionsOpen(!sessionsOpen)}
         >
-          <div className="max-h-[160px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-0.5 overflow-y-auto">
+          <div className="max-h-[160px] scrollbar-thin space-y-0.5 overflow-y-auto">
             {pausedSessions.map((session, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => onNavigateToArticle(session.title, session.source)}
-                className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1 text-left transition-colors"
+                className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm focus-visible:outline-tint flex w-full items-center justify-between px-2 py-1 text-left transition-colors focus-visible:outline-2"
               >
                 <div className="flex min-w-0 flex-1 flex-col pr-2">
                   <PreText
-                    className="truncate text-[13px] font-medium text-inherit"
+                    className="text-callout truncate font-medium text-inherit"
                     whiteSpace="nowrap"
                   >
                     {session.title}
                   </PreText>
-                  <PreText className="text-muted-foreground text-xs" whiteSpace="nowrap">
+                  <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
                     {`Last read ${timeAgo(session.updatedAt)}`}
                   </PreText>
                 </div>
-                <span className="text-muted-foreground shrink-0 rounded border border-white/5 bg-white/5 px-1.5 py-0.5 text-xs font-semibold tabular-nums">
+                <Badge variant="default" className="tabular-nums">
                   {session.scrollPercent}%
-                </span>
+                </Badge>
               </button>
             ))}
           </div>
@@ -141,7 +142,7 @@ export function WikiWorkspaceTab({
       {/* Recent Activity — collapsible feed (shown when on wiki index/search) */}
       {!articleTitle && (
         <CollapsibleSection
-          label="Recent Activity"
+          label="Recent activity"
           icon={<Clock className="h-3 w-3" />}
           open={recentOpen}
           onToggle={() => setRecentOpen(!recentOpen)}
@@ -153,19 +154,19 @@ export function WikiWorkspaceTab({
                   key={idx}
                   type="button"
                   onClick={() => onNavigateToArticle(rc.title ?? "")}
-                  className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full flex-col rounded-md px-2 py-1 text-left transition-colors"
+                  className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm flex w-full flex-col px-2 py-1 text-left transition-colors"
                 >
-                  <PreText className="truncate text-[13px] text-inherit" whiteSpace="nowrap">
+                  <PreText className="text-callout truncate text-inherit" whiteSpace="nowrap">
                     {rc.title}
                   </PreText>
-                  <PreText className="text-muted-foreground text-xs" whiteSpace="nowrap">
+                  <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
                     {`${rc.user} · ${formatMWTimeAgo(rc.timestamp)}`}
                   </PreText>
                 </button>
               ))}
             </div>
           ) : (
-            <PreText className="text-muted-foreground px-2 text-xs" whiteSpace="nowrap">
+            <PreText className="text-label-secondary text-footnote px-2" whiteSpace="nowrap">
               Loading...
             </PreText>
           )}
@@ -174,24 +175,25 @@ export function WikiWorkspaceTab({
 
       {/* Page Actions — contextual to current article */}
       {articleTitle && !isMainPage && (
-        <div className="border-border mb-3 border-b pb-3">
-          <SectionHeader label="This Page" />
+        <div className="border-separator mb-3 border-b pb-3">
+          <SectionHeader label="This page" />
           <div className="space-y-0.5">
-            {wikiSource === "ixwiki" && (
+            {wikiSource === "ixwiki" ? (
               <IxWikiPageActions isSignedIn={isSignedIn} slug={slug} onClose={onClose} />
+            ) : (
+              <QuickAction
+                icon={<ExternalLink />}
+                label="View on original wiki"
+                onClick={() => {
+                  onClose();
+                  if (articleTitle) {
+                    const mwBaseUrl = getWikiBaseUrl(wikiSource);
+                    const targetUrl = `${mwBaseUrl.replace(/\/$/, "")}/wiki/${encodeURIComponent(articleTitle.replace(/ /g, "_"))}`;
+                    window.open(targetUrl, "_blank", "noopener,noreferrer");
+                  }
+                }}
+              />
             )}
-            <QuickAction
-              icon={<ExternalLink />}
-              label="View on Original Wiki"
-              onClick={() => {
-                onClose();
-                if (articleTitle) {
-                  const mwBaseUrl = getWikiBaseUrl(wikiSource);
-                  const targetUrl = `${mwBaseUrl.replace(/\/$/, "")}/wiki/${encodeURIComponent(articleTitle.replace(/ /g, "_"))}`;
-                  window.open(targetUrl, "_blank", "noopener,noreferrer");
-                }
-              }}
-            />
           </div>
         </div>
       )}
@@ -199,7 +201,7 @@ export function WikiWorkspaceTab({
   );
 }
 
-/** Edit, History and What links here act on the IxWiki page, so another wiki's page has none. */
+/** Edit, History and What links here act on the wiki's own page, so another wiki's page has none. */
 function IxWikiPageActions({
   isSignedIn,
   slug,
@@ -215,7 +217,7 @@ function IxWikiPageActions({
           shortcut="Tab Tab"
           onClick={() => {
             onClose();
-            navigateWithBasePath(`/wiki/${slug}/edit`, router);
+            navigateWithBasePath(`/wiki/${slug}?action=edit`, router);
           }}
         />
       )}
@@ -224,7 +226,7 @@ function IxWikiPageActions({
         label="History"
         onClick={() => {
           onClose();
-          navigateWithBasePath(`/wiki/history/${slug}`, router);
+          navigateWithBasePath(`/util/history/${slug}`, router);
         }}
       />
       <QuickAction
@@ -232,16 +234,16 @@ function IxWikiPageActions({
         label="What links here"
         onClick={() => {
           onClose();
-          navigateWithBasePath(`/wiki/whatlinkshere/${slug}`, router);
+          navigateWithBasePath(`/util/whatlinkshere/${slug}`, router);
         }}
       />
     </>
   );
 }
 
-export function SectionHeader({ label }: { label: string }) {
+function SectionHeader({ label }: { label: string }) {
   return (
-    <div className="text-muted-foreground mb-1.5 text-xs font-semibold tracking-wider uppercase">
+    <div className="text-label-secondary text-subhead mb-2">
       <PreText whiteSpace="nowrap">{label}</PreText>
     </div>
   );
@@ -263,11 +265,12 @@ export function CollapsibleSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-border mb-3 border-b pb-3">
+    <div className="border-separator mb-3 border-b pb-3">
       <button
         type="button"
         onClick={onToggle}
-        className="text-muted-foreground hover:text-foreground mb-1 flex w-full cursor-pointer items-center justify-between text-xs font-semibold tracking-wider uppercase"
+        aria-expanded={open}
+        className="text-label-secondary hover:text-label text-subhead focus-visible:outline-tint mb-1 flex w-full cursor-pointer items-center justify-between focus-visible:outline-2"
       >
         <span className="flex items-center gap-1">
           {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -277,7 +280,7 @@ export function CollapsibleSection({
           </PreText>
         </span>
         {count !== undefined && (
-          <PreText className="text-muted-foreground/75 inline-block shrink-0" whiteSpace="nowrap">
+          <PreText className="text-label-secondary inline-block shrink-0" whiteSpace="nowrap">
             {String(count)}
           </PreText>
         )}
@@ -287,7 +290,7 @@ export function CollapsibleSection({
   );
 }
 
-export function QuickAction({
+function QuickAction({
   icon,
   label,
   shortcut,
@@ -302,17 +305,17 @@ export function QuickAction({
     <button
       type="button"
       onClick={onClick}
-      className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors"
+      className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm text-body flex w-full items-center justify-between px-2 py-2 text-left transition-colors"
     >
       <span className="flex items-center gap-2">
-        <span className="text-muted-foreground [&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>
+        <span className="text-label-secondary [&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>
         <PreText className="text-inherit" whiteSpace="nowrap">
           {label}
         </PreText>
       </span>
       {shortcut && (
         <PreText
-          className="border-border bg-accent/10 text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-xs"
+          className="border-separator bg-fill-4 text-label-secondary rounded-control-sm text-footnote shrink-0 border px-2 py-0.5"
           whiteSpace="nowrap"
         >
           {shortcut}

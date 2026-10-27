@@ -12,6 +12,8 @@ import type { ComponentType } from "@prisma/client";
 export interface EconomicArchetype {
   id: string;
   name: string;
+  /** Set on archetypes served by the economicArchetypes API and the useArchetypes hook. */
+  era?: "modern" | "historical";
   description: string;
   region: string;
   characteristics: string[];
@@ -42,25 +44,4 @@ export interface EconomicArchetype {
   historicalContext: string;
   modernExamples: string[];
   recommendations: string[];
-}
-
-export interface ArchetypeComparison {
-  archetypes: EconomicArchetype[];
-  comparisonMetrics: {
-    gdpGrowth: Record<string, number>;
-    innovationIndex: Record<string, number>;
-    competitiveness: Record<string, number>;
-    stability: Record<string, number>;
-    taxEfficiency: Record<string, number>;
-  };
-  recommendations: string[];
-}
-
-export enum ArchetypeCategory {
-  MODERN = "MODERN",
-  HISTORICAL = "HISTORICAL",
-  REGIONAL = "REGIONAL",
-  EXPERIMENTAL = "EXPERIMENTAL",
-  EMERGING = "EMERGING",
-  TRADITIONAL = "TRADITIONAL",
 }

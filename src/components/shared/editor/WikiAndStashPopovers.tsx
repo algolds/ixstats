@@ -2,7 +2,7 @@
 // src/components/shared/editor/WikiAndStashPopovers.tsx
 // Search and insertion popovers for MediaWiki articles and Lore Stash assets.
 
-import { Eye, Bookmark, SystemRestart as Loader2, Plus } from "iconoir-react";
+import { Bookmark, SystemRestart as Loader2, Plus } from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -10,23 +10,31 @@ import { Label } from "~/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { EmojiPicker } from "~/components/thinkpages/EmojiPicker";
 import { cn } from "~/lib/utils";
+import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
+import type { WikiSearchResult } from "./useWikiDialogQueries";
+import { WikiEmbedPreview, type WikiEmbedPreviewProps } from "./WikiEmbedPreview";
 
-export interface WikiAndStashPopoversProps {
+/** The wikis the dialog links and embeds from, in the selector's order. */
+const WIKI_SOURCE_OPTIONS: readonly WikiSource[] = ["ixwiki", "iiwiki", "althistory"];
+
+interface WikiAndStashPopoversProps {
   disabled?: boolean;
   isWikiOpen: boolean;
   setIsWikiOpen: (val: boolean) => void;
   wikiInsertMode: "link" | "embed";
   setWikiInsertMode: (mode: "link" | "embed") => void;
-  wikiSource: "ixwiki" | "iiwiki" | "althistory";
-  setWikiSource: (source: "ixwiki" | "iiwiki" | "althistory") => void;
+  wikiSource: WikiSource;
+  setWikiSource: (source: WikiSource) => void;
+  /** Picks a search result: its title and its own wiki. */
+  selectWikiResult: (result: WikiSearchResult) => void;
   wikiTarget: string;
   setWikiTarget: (target: string) => void;
   wikiLabel: string;
   setWikiLabel: (label: string) => void;
-  wikiSearchResults: any[];
+  wikiSearchResults: readonly WikiSearchResult[];
   isSearchingWiki: boolean;
-  wikiIntroQuery: any;
-  wikiImagesQuery: any;
+  wikiIntroQuery: WikiEmbedPreviewProps["introQuery"];
+  wikiImagesQuery: WikiEmbedPreviewProps["imagesQuery"];
   selectedWikiImageUrl: string;
   setSelectedWikiImageUrl: (url: string) => void;
   insertWikiLink: () => void;
@@ -54,6 +62,7 @@ export function WikiAndStashPopovers({
   setWikiInsertMode,
   wikiSource,
   setWikiSource,
+  selectWikiResult,
   wikiTarget,
   setWikiTarget,
   wikiLabel,
@@ -88,13 +97,13 @@ export function WikiAndStashPopovers({
             size="sm"
             disabled={disabled}
             className={cn(
-              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95",
+              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
               isWikiOpen
                 ? "bg-wiki/15 text-wiki ring-wiki/30 ring-1 dark:text-blue-400"
                 : "text-muted-foreground hover:bg-muted hover:text-wiki dark:hover:text-blue-400"
             )}
-            title="Insert Wiki Link or Embed"
-            aria-label="Insert Wiki Link or Embed"
+            title="Insert wiki link or embed"
+            aria-label="Insert wiki link or embed"
           >
             <WikiOSLogomark className="text-wiki h-3.5 w-3.5 dark:text-blue-400" />
           </Button>
@@ -106,7 +115,7 @@ export function WikiAndStashPopovers({
         >
           <div className="space-y-3 text-xs">
             <div className="flex items-center justify-between border-b pb-2">
-              <span className="text-wiki font-semibold">Wiki Integration</span>
+              <span className="text-wiki font-semibold">Wiki integration</span>
               <div className="flex rounded-md bg-neutral-100 p-0.5 dark:bg-white/5">
                 <button
                   type="button"
@@ -114,7 +123,7 @@ export function WikiAndStashPopovers({
                   className={cn(
                     "rounded px-2 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     wikiInsertMode === "link"
-                      ? "bg-white text-wiki shadow-xs dark:bg-wiki dark:text-white"
+                      ? "text-wiki dark:bg-wiki bg-white shadow-xs dark:text-white"
                       : "text-neutral-500 hover:text-neutral-800 dark:text-slate-400"
                   )}
                 >
@@ -126,46 +135,38 @@ export function WikiAndStashPopovers({
                   className={cn(
                     "rounded px-2 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     wikiInsertMode === "embed"
-                      ? "bg-white text-wiki shadow-xs dark:bg-wiki dark:text-white"
+                      ? "text-wiki dark:bg-wiki bg-white shadow-xs dark:text-white"
                       : "text-neutral-500 hover:text-neutral-800 dark:text-slate-400"
                   )}
                 >
-                  Embed Card
+                  Embed card
                 </button>
               </div>
             </div>
 
             {/* Source selector */}
-            <div className="flex gap-1">
-              <button
-                type="button"
-                onClick={() => setWikiSource("ixwiki")}
-                className={cn(
-                  "flex-1 rounded-lg border py-1 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                  wikiSource === "ixwiki"
-                    ? "border-wiki/50 bg-wiki/10 text-wiki"
-                    : "border-neutral-200 text-neutral-500 hover:bg-neutral-50 dark:border-white/5 dark:text-slate-400 dark:hover:bg-white/5"
-                )}
-              >
-                IxWiki
-              </button>
-              <button
-                type="button"
-                onClick={() => setWikiSource("iiwiki")}
-                className={cn(
-                  "flex-1 rounded-lg border py-1 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                  wikiSource === "iiwiki"
-                    ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                    : "border-neutral-200 text-neutral-500 hover:bg-neutral-50 dark:border-white/5 dark:text-slate-400 dark:hover:bg-white/5"
-                )}
-              >
-                IIWiki
-              </button>
+            <div className="flex gap-1" role="group" aria-label="Choose a wiki">
+              {WIKI_SOURCE_OPTIONS.map((source) => (
+                <button
+                  key={source}
+                  type="button"
+                  aria-pressed={wikiSource === source}
+                  onClick={() => setWikiSource(source)}
+                  className={cn(
+                    "flex-1 rounded-lg border py-1 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                    wikiSource === source
+                      ? "border-wiki/50 bg-wiki/10 text-wiki"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  {WIKI_SOURCES[source].name}
+                </button>
+              ))}
             </div>
 
             <div className="space-y-1">
               <Label className="text-xs font-medium text-neutral-500 dark:text-slate-400">
-                Article Title or Search
+                Article title or search
               </Label>
               <Input
                 value={wikiTarget}
@@ -180,14 +181,18 @@ export function WikiAndStashPopovers({
               )}
               {wikiSearchResults.length > 0 && (
                 <div className="max-h-24 overflow-y-auto rounded-lg border border-neutral-200/60 bg-neutral-50/50 p-1 dark:border-white/5 dark:bg-white/5">
-                  {wikiSearchResults.map((res: any) => (
+                  {wikiSearchResults.map((res) => (
                     <button
-                      key={res.title}
+                      key={`${res.source}:${res.title}`}
                       type="button"
-                      onClick={() => setWikiTarget(res.title)}
-                      className="w-full truncate rounded px-1.5 py-1 text-left text-xs hover:bg-neutral-200/50 dark:hover:bg-white/10"
+                      // A result from any wiki is inserted from its own wiki, whatever the selector says.
+                      onClick={() => selectWikiResult(res)}
+                      className="hover:bg-muted flex w-full items-baseline gap-2 rounded px-1.5 py-1 text-left text-xs"
                     >
-                      {res.title}
+                      <span className="min-w-0 flex-1 truncate">{res.title}</span>
+                      <span className="text-muted-foreground shrink-0">
+                        {WIKI_SOURCES[res.source].name}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -209,44 +214,13 @@ export function WikiAndStashPopovers({
             )}
 
             {wikiInsertMode === "embed" && (
-              <div className="space-y-2 rounded-lg border border-border/60 bg-muted/30 p-2">
-                <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
-                  <Eye className="h-3 w-3" /> Live Embed Preview
-                </div>
-                {wikiIntroQuery.isLoading ? (
-                  <div className="py-2 text-center text-xs text-neutral-400">
-                    Loading article preview...
-                  </div>
-                ) : wikiIntroQuery.data ? (
-                  <div className="space-y-1.5">
-                    <p className="line-clamp-2 text-xs text-neutral-600 dark:text-slate-300">
-                      {wikiIntroQuery.data.extract || "No intro text available."}
-                    </p>
-                    {wikiImagesQuery.data?.images && wikiImagesQuery.data.images.length > 0 && (
-                      <div className="flex gap-1 overflow-x-auto py-1">
-                        {wikiImagesQuery.data.images.slice(0, 4).map((img: string) => (
-                          <img
-                            key={img}
-                            src={img}
-                            alt=""
-                            onClick={() =>
-                              setSelectedWikiImageUrl(img === selectedWikiImageUrl ? "" : img)
-                            }
-                            className={cn(
-                              "h-10 w-10 cursor-pointer rounded border object-cover transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                              selectedWikiImageUrl === img
-                                ? "border-wiki ring-2 ring-wiki/50"
-                                : "border-transparent opacity-60 hover:opacity-100"
-                            )}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-xs text-neutral-400">Type an exact title to preview.</p>
-                )}
-              </div>
+              <WikiEmbedPreview
+                source={wikiSource}
+                introQuery={wikiIntroQuery}
+                imagesQuery={wikiImagesQuery}
+                selectedImageUrl={selectedWikiImageUrl}
+                onSelectImage={setSelectedWikiImageUrl}
+              />
             )}
 
             <Button
@@ -270,13 +244,13 @@ export function WikiAndStashPopovers({
             size="sm"
             disabled={disabled}
             className={cn(
-              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95",
+              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
               isStashesOpen
                 ? "bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/30"
                 : "text-muted-foreground hover:bg-muted hover:text-amber-500"
             )}
-            title="Attach Lore Stash Media"
-            aria-label="Attach Lore Stash Media"
+            title="Attach lore stash media"
+            aria-label="Attach lore stash media"
           >
             <Bookmark className="h-3.5 w-3.5" />
           </Button>

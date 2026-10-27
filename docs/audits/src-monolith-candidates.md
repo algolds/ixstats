@@ -4,7 +4,7 @@
 >
 > Recomputed with `find src -name '*.ts*' | xargs wc -l` (≥800 lines). **Every file listed in the June tables below is resolved:** each is gone from its path (deleted, moved to JSON/DB seeds, or split into a directory) or now under 800 lines — e.g. `useBuilderState.ts` 557, `useMapEditor.ts` 630, `sports/resolver.ts` 124, `ThinkpagesPost.tsx` 224, `VaultCardsSection.tsx` 246, `WikiVisualEditor.tsx` 346, `types/ixstats.ts` 788, the two admin `page.tsx` files 8 each. No router ≥1,700 lines remains (largest: `routers/wikios/templates.ts`, 1,298).
 >
-> **Current ≥800-line files (54, of which 2 are tests) — the live tracker:**
+> **Current ≥800-line files (53, of which 2 are tests; `PipelineWizard.tsx` was deleted with the Atlas overhaul, 2026-10) — the live tracker:**
 >
 > | Lines | File | Kind |
 > |------:|------|------|
@@ -25,7 +25,6 @@
 > | 1,225 | `src/components/shared/polls/poll-widget.tsx` | component |
 > | 1,197 | `src/lib/maps/province-importer/parse-provinces.ts` | logic |
 > | 1,157 | `src/app/admin/_components/platform/BotControlCard.tsx` | component |
-> | 1,147 | `src/app/admin/maps/_components/PipelineWizard.tsx` | component |
 > | 1,117 | `src/lib/government/tax/atomic-tax-components.ts` | data |
 > | 1,073 | `src/app/admin/_components/platform/LorewardsBotSection.tsx` | component |
 > | 1,048 | `src/app/admin/cards/NSImportSuiteAdmin.tsx` | component |

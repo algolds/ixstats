@@ -8,20 +8,55 @@
 import { z } from "zod/v4";
 import type { Geometry } from "geojson";
 import type { Prisma } from "@prisma/client";
-import { createTRPCRouter, cachedPublicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  cachedPublicProcedure,
+  publicProcedure,
+  userCacheMiddleware,
+} from "~/server/api/trpc";
+import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import {
   calculateTAMI,
   calculateMaintenanceDegradation,
   calculateModalBreakdown,
   estimateIntercityTravelTimes,
+  infrastructureBudgetBillions,
+  type DegradationResult,
 } from "~/lib/economy/national-mobility";
-import {
-  calculateRouteTravelTime,
-  resolveRouteBaseSpeed,
-} from "~/lib/economy/travel-time";
+import { countryBudgetYear } from "~/lib/government/budget-allocations";
+import { calculateRouteTravelTime, resolveRouteBaseSpeed } from "~/lib/economy/travel-time";
 
 type JsonPrimitive = string | number | boolean | null;
+
+/** Network condition; `fundingRatio` and `budgetedMaintenance` are the owner's only. */
+type MobilityDegradation = Omit<DegradationResult, "fundingRatio"> & {
+  fundingRatio?: number;
+  budgetedMaintenance?: number;
+  requiredMaintenance: number;
+};
+
+/** The network condition from its budget (billions); the budget figures go to the owner only. */
+function maintenanceView(
+  budgeted: number,
+  required: number,
+  ownerView: boolean
+): MobilityDegradation {
+  const { fundingRatio, ...condition } = calculateMaintenanceDegradation({
+    budgetedMaintenance: budgeted,
+    requiredMaintenance: required,
+  });
+  const requiredMaintenance = Math.round(required * 1000) / 1000;
+  return ownerView
+    ? {
+        ...condition,
+        fundingRatio,
+        budgetedMaintenance: Math.round(budgeted * 1000) / 1000,
+        requiredMaintenance,
+      }
+    : { ...condition, requiredMaintenance };
+}
+
 type JsonObject = Record<string, JsonPrimitive | JsonPrimitive[] | Record<string, JsonPrimitive>>;
 
 type JsonGeometry = {
@@ -31,7 +66,7 @@ type JsonGeometry = {
 };
 
 function toGeometry(val: Prisma.JsonValue): Geometry {
-  return (val as JsonGeometry) as Geometry;
+  return val as JsonGeometry as Geometry;
 }
 
 interface RouteProperties {
@@ -97,7 +132,10 @@ export const transportRouteQueriesRouter = createTRPCRouter({
             gdpPerCapita: r.country?.currentGdpPerCapita ?? null,
             economicTier: r.country?.economicTier ?? null,
             population: r.country?.currentPopulation ?? null,
-            speedKmh: (r as { speedKmh?: number | null }).speedKmh ?? (r.properties as JsonObject | null)?.speed_kmh ?? null,
+            speedKmh:
+              (r as { speedKmh?: number | null }).speedKmh ??
+              (r.properties as JsonObject | null)?.speed_kmh ??
+              null,
             ...((r.properties as JsonObject | null) ?? {}),
           },
         })),
@@ -146,7 +184,10 @@ export const transportRouteQueriesRouter = createTRPCRouter({
             routeType: r.routeType,
             status: r.status,
             lengthKm: r.lengthKm,
-            speedKmh: (r as { speedKmh?: number | null }).speedKmh ?? (r.properties as JsonObject | null)?.speed_kmh ?? null,
+            speedKmh:
+              (r as { speedKmh?: number | null }).speedKmh ??
+              (r.properties as JsonObject | null)?.speed_kmh ??
+              null,
             terrainDifficulty: r.terrainDifficulty,
             isInternational: r.isInternational,
             builtYear: r.builtYear,
@@ -221,11 +262,16 @@ export const transportRouteQueriesRouter = createTRPCRouter({
 
   /**
    * Get comprehensive National Mobility & Transit Accessibility profile (Phase 2).
+   * Public (the factbook's geography tab), but the maintenance budget behind the network's
+   * condition (`degradation.budgetedMaintenance`, `degradation.fundingRatio`) goes to the
+   * nation's owner and privileged roles only. Cached per viewer for that reason. The budget is
+   * the transport department's live allocation; `degradation` is null when there is none.
    */
-  getNationalMobilityProfile: cachedPublicProcedure
+  getNationalMobilityProfile: publicProcedure
+    .use(userCacheMiddleware)
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const [routes, hubs, cities, budget, country] = await Promise.all([
+      const [routes, hubs, cities, allocations, budgetYear] = await Promise.all([
         ctx.db.transportRoute.findMany({
           where: { countryId: input.countryId },
           select: {
@@ -248,14 +294,15 @@ export const transportRouteQueriesRouter = createTRPCRouter({
           orderBy: { population: "desc" },
           take: 6,
         }),
-        ctx.db.governmentBudget.findUnique({
-          where: { countryId: input.countryId },
-          select: { spendingCategories: true },
+        ctx.db.budgetAllocation.findMany({
+          where: { governmentStructure: { countryId: input.countryId } },
+          select: {
+            budgetYear: true,
+            allocatedAmount: true,
+            department: { select: { name: true, category: true } },
+          },
         }),
-        ctx.db.country.findUnique({
-          where: { id: input.countryId },
-          select: { id: true, name: true, currentTotalGdp: true, currentPopulation: true },
-        }),
+        countryBudgetYear(ctx.db, input.countryId),
       ]);
 
       let totalOperationalKm = 0;
@@ -270,35 +317,8 @@ export const transportRouteQueriesRouter = createTRPCRouter({
           props.maintenanceCost !== undefined ? Number(props.maintenanceCost) : 0;
       }
 
-      // Resolve budgeted infrastructure maintenance
-      let budgetedInfraMaintenance = 0;
-      if (budget?.spendingCategories) {
-        try {
-          const parsed = JSON.parse(budget.spendingCategories) as Array<{
-            category?: string;
-            amount?: number;
-          }>;
-          if (Array.isArray(parsed)) {
-            const infraCat = parsed.find(
-              (c) =>
-                c.category &&
-                (c.category.toLowerCase().includes("infra") ||
-                  c.category.toLowerCase().includes("transport") ||
-                  c.category.toLowerCase().includes("transit"))
-            );
-            if (infraCat && typeof infraCat.amount === "number") {
-              budgetedInfraMaintenance =
-                infraCat.amount > 100_000_000 ? infraCat.amount / 1e9 : infraCat.amount;
-            }
-          }
-        } catch {
-          // JSON parse fallback
-        }
-      }
-
-      if (budgetedInfraMaintenance <= 0 && country?.currentTotalGdp) {
-        budgetedInfraMaintenance = (country.currentTotalGdp * 0.015) / 1e9;
-      }
+      // The transport department's live allocation (the budget is owner-edited); none, no figure.
+      const budgetedInfraMaintenance = infrastructureBudgetBillions(allocations, budgetYear);
 
       const mobilityRoutes = operationalRoutes.map((r) => ({
         id: r.id,
@@ -321,18 +341,11 @@ export const transportRouteQueriesRouter = createTRPCRouter({
         operationalRouteTypes: operationalRoutes.map((r) => r.routeType),
       });
 
-      const degradation = calculateMaintenanceDegradation({
-        budgetedMaintenance: budgetedInfraMaintenance,
-        requiredMaintenance: totalMaintenanceCost,
-      });
-
       const topCitiesFormatted = cities.map((c) => ({
         id: c.id,
         name: c.name,
         population: c.population,
-        coordinates: Array.isArray(c.coordinates)
-          ? (c.coordinates as [number, number])
-          : null,
+        coordinates: Array.isArray(c.coordinates) ? (c.coordinates as [number, number]) : null,
       }));
 
       const intercityLinks = estimateIntercityTravelTimes(topCitiesFormatted, mobilityRoutes);
@@ -362,14 +375,20 @@ export const transportRouteQueriesRouter = createTRPCRouter({
           };
         });
 
+      // The condition is observable; the budget behind it is the owner's.
+      const degradationOut =
+        budgetedInfraMaintenance == null
+          ? null
+          : maintenanceView(
+              budgetedInfraMaintenance,
+              totalMaintenanceCost,
+              await hasCountryWriteAccess(ctx, input.countryId)
+            );
+
       return {
         countryId: input.countryId,
         tami: tamiResult,
-        degradation: {
-          ...degradation,
-          budgetedMaintenance: Math.round(budgetedInfraMaintenance * 1000) / 1000,
-          requiredMaintenance: Math.round(totalMaintenanceCost * 1000) / 1000,
-        },
+        degradation: degradationOut,
         modalSummary,
         intercityLinks,
         topCorridors,

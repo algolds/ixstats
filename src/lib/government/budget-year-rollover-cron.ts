@@ -1,68 +1,92 @@
 /**
  * Budget-year rollover reminder — cron driver (`budget-year-rollover`, MC-1).
  *
- * The IxTime year rolls over about every six real months. When it does, each owned country's
+ * A nation's budget year is the game year of its realm's clock (Ixnay's rolls over about every
+ * six real months; a faster realm's sooner, a date jump's at once). When it rolls over, each owned country's
  * latest budget stays in effect (see ./budget-allocations), and its owner gets one notification
  * per new year asking them to set the new year's budget from the Economy console, where
- * "Start FY<year> budget" copies the budget in effect forward.
+ * "Start FY <year> budget" copies the budget in effect forward. Years read as the nation's calendar labels them.
  *
  * Idempotent: a country is notified at most once per budget year, and never once it has an
- * allocation for the current year.
+ * allocation for the current year. Each realm's year is read once per run.
  */
 import type { PrismaClient } from "@prisma/client";
 import { db as defaultDb } from "~/server/db";
 import { notificationAPI } from "~/lib/notifications";
+import { formatBudgetYear } from "~/lib/realms/realm-year";
+import { pickClock, realmClocks, realmNowsOnce } from "~/server/shared/realm-time";
 import { currentBudgetYear } from "./budget-year";
 
-export const BUDGET_YEAR_NOTIFICATION_SOURCE = "budgetYear";
+const BUDGET_YEAR_NOTIFICATION_SOURCE = "budgetYear";
 
-export interface BudgetYearRolloverResult {
-  budgetYear: number;
+interface BudgetYearRolloverResult {
+  /** The current budget year of each realm with a nation behind on its budget. */
+  budgetYears: Record<string, number>;
   countriesBehind: number;
   notified: number;
   alreadyNotified: number;
   failed: number;
 }
 
-/** Countries (with an owner) whose latest budget year is before `budgetYear`. */
-export async function findCountriesNeedingBudget(
+interface Behind {
+  countryId: string;
+  realmId: string;
+  latestYear: number;
+  budgetYear: number;
+}
+
+/** Countries (with an owner) whose latest budget year is before their realm's current one. */
+async function findCountriesNeedingBudget(
   db: Pick<PrismaClient, "budgetAllocation" | "governmentStructure">,
-  budgetYear: number
-): Promise<Array<{ countryId: string; latestYear: number }>> {
+  yearOf: (realmId: string) => number
+): Promise<Behind[]> {
   const latestByStructure = await db.budgetAllocation.groupBy({
     by: ["governmentStructureId"],
     _max: { budgetYear: true },
   });
-  const behind = new Map<string, number>();
+  const latest = new Map<string, number>();
   for (const row of latestByStructure) {
-    const latest = row._max.budgetYear;
-    if (latest !== null && latest < budgetYear) behind.set(row.governmentStructureId, latest);
+    if (row._max.budgetYear !== null) latest.set(row.governmentStructureId, row._max.budgetYear);
   }
-  if (behind.size === 0) return [];
+  if (latest.size === 0) return [];
 
   const structures = await db.governmentStructure.findMany({
-    where: { id: { in: [...behind.keys()] }, country: { ownerUserId: { not: null } } },
-    select: { id: true, countryId: true },
+    where: { id: { in: [...latest.keys()] }, country: { ownerUserId: { not: null } } },
+    select: { id: true, countryId: true, country: { select: { realmId: true } } },
   });
-  return structures.map((s) => ({ countryId: s.countryId, latestYear: behind.get(s.id)! }));
+  return structures
+    .map((s) => ({
+      countryId: s.countryId,
+      realmId: s.country.realmId,
+      latestYear: latest.get(s.id)!,
+      budgetYear: yearOf(s.country.realmId),
+    }))
+    .filter((c) => c.latestYear < c.budgetYear);
 }
 
 export async function runBudgetYearRollover(
-  db: PrismaClient = defaultDb,
-  budgetYear: number = currentBudgetYear()
+  db: PrismaClient = defaultDb
 ): Promise<BudgetYearRolloverResult> {
   const result: BudgetYearRolloverResult = {
-    budgetYear,
+    budgetYears: {},
     countriesBehind: 0,
     notified: 0,
     alreadyNotified: 0,
     failed: 0,
   };
 
-  const countries = await findCountriesNeedingBudget(db, budgetYear);
+  const clocks = await realmClocks(db);
+  const nowOf = realmNowsOnce(clocks);
+  // A budget year as the nation's calendar labels it ("FY 1203 AE"), at the run's time of its realm.
+  const fy = (year: number, realmId: string) =>
+    `FY ${formatBudgetYear(year, { now: () => nowOf(realmId), calendar: pickClock(clocks, realmId).calendar })}`;
+  const countries = await findCountriesNeedingBudget(db, (realmId) =>
+    currentBudgetYear(nowOf(realmId))
+  );
   result.countriesBehind = countries.length;
 
-  for (const { countryId, latestYear } of countries) {
+  for (const { countryId, realmId, latestYear, budgetYear } of countries) {
+    result.budgetYears[realmId] = budgetYear;
     try {
       const existing = await db.notification.findFirst({
         where: {
@@ -78,8 +102,8 @@ export async function runBudgetYearRollover(
       }
 
       await notificationAPI.create({
-        title: `FY${budgetYear} budget needed`,
-        message: `A new fiscal year has begun. Your FY${latestYear} budget stays in effect until you set the FY${budgetYear} budget.`,
+        title: `${fy(budgetYear, realmId)} budget needed`,
+        message: `A new fiscal year has begun. Your ${fy(latestYear, realmId)} budget stays in effect until you set the ${fy(budgetYear, realmId)} budget.`,
         countryId,
         category: "economic",
         type: "info",

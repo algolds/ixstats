@@ -1,20 +1,22 @@
 /**
  * Policy → simulation bridge.
  *
- * Active policies were computed but never read by the economic engine. The engine
- * DOES already apply active `StorytellerEffect` rows (see calculations.ts —
- * GROWTH_RATE_MODIFIER multiplies effective growth, loaded live in economy.ts).
- * So we make a policy real by emitting a StorytellerEffect tagged `POLICY:<id>` when
- * it activates, and clearing that tag when it's suspended/repealed/deleted.
- *
- * No calc-engine surgery, no new schema — policies ride the proven effect channel.
+ * An active policy moves the economy through a StorytellerEffect tagged `POLICY:<id>`: its
+ * `gdpEffect` (percent) is a GDP level shift, so +2 means GDP per capita ends 2% higher. The
+ * shift phases in over POLICY_PHASE_IN_YEARS from enactment and is kept while the policy is in
+ * force. Ending the policy unwinds it from then on; the projected past never changes.
  */
 import type { PrismaClient } from "@prisma/client";
+import { StorytellerEffectType } from "~/lib/economy/calculations";
+import { endStorytellerEffects, syncLevelEffects } from "~/lib/economy/storyteller-effects";
 
 const POLICY_TAG = (policyId: string) => `POLICY:${policyId}`;
 
-/** Max growth-rate swing a single policy may exert (±5%), to keep the sim sane. */
-const MAX_GROWTH_SWING = 0.05;
+/** Max GDP level shift a single policy may exert (±5%), to keep the sim sane. */
+const MAX_GDP_LEVEL_SHIFT = 0.05;
+
+/** IxTime years over which a policy's GDP effect phases in. */
+export const POLICY_PHASE_IN_YEARS = 1;
 
 interface PolicyLike {
   id: string;
@@ -23,64 +25,41 @@ interface PolicyLike {
   gdpEffect?: number | null;
 }
 
+/** GDP level shift (decimal) for a policy's `gdpEffect` percent: +2 → 0.02, clamped to ±5%. */
+export function policyGdpLevelShift(gdpEffect: number | null | undefined): number {
+  const raw = (gdpEffect ?? 0) / 100;
+  return Math.max(-MAX_GDP_LEVEL_SHIFT, Math.min(MAX_GDP_LEVEL_SHIFT, raw));
+}
+
 /**
- * Create (or refresh) the active StorytellerEffect for a policy. Idempotent:
- * clears any prior effect for this policy first.
+ * Bring the policy's GDP level effect to its `gdpEffect`. Idempotent: an unchanged policy writes
+ * nothing, a changed one appends the difference from now on (its nation's realm clock).
  */
 export async function applyPolicyEffect(db: PrismaClient, policy: PolicyLike): Promise<void> {
-  await clearPolicyEffect(db, policy.id);
-
-  // gdpEffect is stored as a percentage (e.g. +2 = +2% growth). Convert to a
-  // growth-rate multiplier delta and clamp.
-  const raw = (policy.gdpEffect ?? 0) / 100;
-  const value = Math.max(-MAX_GROWTH_SWING, Math.min(MAX_GROWTH_SWING, raw));
-  if (value === 0) return; // nothing to apply
-
-  await db.storytellerEffect.create({
-    data: {
-      countryId: policy.countryId,
-      ixTimeTimestamp: new Date(),
-      inputType: "growth_rate_modifier",
-      value,
-      description: `Active policy: ${policy.name}`,
-      isActive: true,
-      createdBy: POLICY_TAG(policy.id),
-    },
-  });
+  const value = policyGdpLevelShift(policy.gdpEffect);
+  await syncLevelEffects(
+    db,
+    { createdBy: POLICY_TAG(policy.id) },
+    value === 0
+      ? []
+      : [
+          {
+            countryId: policy.countryId,
+            inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
+            value,
+            duration: POLICY_PHASE_IN_YEARS,
+            description: `Active policy: ${policy.name}`,
+            createdBy: POLICY_TAG(policy.id),
+          },
+        ]
+  );
 }
 
-/** Deactivate the StorytellerEffect(s) tied to a policy. */
-export async function clearPolicyEffect(db: PrismaClient, policyId: string): Promise<void> {
-  await db.storytellerEffect.updateMany({
-    where: { createdBy: POLICY_TAG(policyId), isActive: true },
-    data: { isActive: false },
-  });
-}
-
-/** Helper function to calculate real-time policy effects */
-export async function calculateRealTimePolicyEffects(
-  policy: any,
-  countryId: string,
-  db: PrismaClient
-) {
-  const country = await db.country.findUnique({
-    where: { id: countryId },
-  });
-
-  if (!country) {
-    return {};
-  }
-
-  return {
-    gdpMultiplier: 1 + (policy.gdpEffect ?? 0) / 100,
-    employmentMultiplier: 1 + (policy.employmentEffect ?? 0) / 100,
-    inflationMultiplier: 1 + (policy.inflationEffect ?? 0) / 100,
-    taxRevenueMultiplier: 1 + (policy.taxRevenueEffect ?? 0) / 100,
-    calculatedAt: new Date().toISOString(),
-    baseValues: {
-      currentGdp: country.currentTotalGdp,
-      currentPopulation: country.currentPopulation,
-      currentTaxRevenue: country.taxRevenueGDPPercent,
-    },
-  };
+/** End the StorytellerEffect(s) tied to a policy, unwound from `now` (its nation's clock time). */
+export async function clearPolicyEffect(
+  db: PrismaClient,
+  policyId: string,
+  now: number
+): Promise<void> {
+  await endStorytellerEffects(db, { createdBy: POLICY_TAG(policyId) }, now);
 }

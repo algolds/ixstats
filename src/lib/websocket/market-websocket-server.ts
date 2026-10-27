@@ -8,11 +8,22 @@
  * Uses the `ws` library (not socket.io) for a lightweight transport layer
  * that matches the client's native WebSocket usage.
  *
- * Mounted at /api/market-ws by server.mjs.
+ * Mounted at /api/market-ws by server.mjs and ws-backend.mjs, on the same HTTP server as the ThinkPages Socket.IO
+ * server. It takes only the upgrades for its own path (`noServer`): a `ws` server attached with `{ server, path }`
+ * answers every other upgrade with 400, which killed Socket.IO's websocket transport.
  */
 
-import { Server as HTTPServer, IncomingMessage } from "http";
+import type { Server as HTTPServer, IncomingMessage } from "http";
+import type { Duplex } from "stream";
 import { WebSocketServer, WebSocket } from "ws";
+import { isOriginAllowed } from "./socket-auth";
+
+/** Concurrent market sockets per process; an upgrade past it is refused with 503. */
+export const MARKET_WS_MAX_CONNECTIONS = 2000;
+
+export interface MarketWebSocketOptions {
+  maxConnections?: number;
+}
 
 /** Message types matching the client-side MarketWebSocketMessage union */
 interface MarketBroadcast {
@@ -27,21 +38,58 @@ interface MarketWSStats {
   startedAt: number;
 }
 
-export class MarketWebSocketServerInstance {
+/** Answers a refused upgrade with a plain HTTP status and closes the socket. */
+function refuseUpgrade(socket: Duplex, status: 403 | 503): void {
+  const text = status === 403 ? "Forbidden" : "Service Unavailable";
+  socket.write(`HTTP/1.1 ${status} ${text}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
+  socket.destroy();
+}
+
+/** What a browser may see of a broadcast: a bid without the bidder's internal user id. */
+function publicMessage(message: MarketBroadcast): MarketBroadcast {
+  if (message.type !== "bid" || typeof message.data !== "object" || message.data === null) return message;
+  const { bidderId: _bidderId, ...bid } = message.data as Record<string, unknown>;
+  return { type: "bid", data: bid };
+}
+
+class MarketWebSocketServerInstance {
   private wss: WebSocketServer;
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   private messagesSent = 0;
   private readonly startedAt: number;
+  private readonly server: HTTPServer;
+  private readonly onUpgrade: (req: IncomingMessage, socket: Duplex, head: Buffer) => void;
 
-  constructor(server: HTTPServer, path: string) {
+  constructor(server: HTTPServer, path: string, options: MarketWebSocketOptions = {}) {
     this.startedAt = Date.now();
+    this.server = server;
+    const maxConnections = options.maxConnections ?? MARKET_WS_MAX_CONNECTIONS;
 
     this.wss = new WebSocketServer({
-      server,
-      path,
+      noServer: true,
       // Security: limit max payload to 1 MB to prevent DoS
       maxPayload: 1024 * 1024,
     });
+
+    // Only this path's upgrades: every other one (Socket.IO's /ws/thinkpages) is left to its own listener.
+    this.onUpgrade = (req, socket, head) => {
+      const url = req.url ?? "";
+      const query = url.indexOf("?");
+      if ((query === -1 ? url : url.slice(0, query)) !== path) return;
+      // The ThinkPages socket's browser origin policy (WS_ALLOWED_ORIGINS + NEXT_PUBLIC_APP_URL; a missing Origin only
+      // outside production), so another site cannot hold market sockets open from its visitors' browsers.
+      if (!isOriginAllowed(req.headers.origin)) {
+        refuseUpgrade(socket, 403);
+        return;
+      }
+      if (this.wss.clients.size >= maxConnections) {
+        console.warn(`[MarketWS Server] Refused a connection: ${maxConnections} already open`);
+        refuseUpgrade(socket, 503);
+        return;
+      }
+      this.wss.handleUpgrade(req, socket, head, (ws) => this.wss.emit("connection", ws, req));
+    };
+    server.on("upgrade", this.onUpgrade);
 
     this.setupHandlers();
     this.startHeartbeat();
@@ -92,7 +140,7 @@ export class MarketWebSocketServerInstance {
    * Broadcast a message to all connected clients
    */
   public broadcast(message: MarketBroadcast): void {
-    const payload = JSON.stringify(message);
+    const payload = JSON.stringify(publicMessage(message));
     let sent = 0;
 
     for (const client of this.wss.clients) {
@@ -198,6 +246,8 @@ export class MarketWebSocketServerInstance {
       this.heartbeatInterval = null;
     }
 
+    this.server.off("upgrade", this.onUpgrade);
+
     // Close all client connections
     for (const client of this.wss.clients) {
       client.close(1001, "Server shutting down");
@@ -222,7 +272,7 @@ export class MarketWebSocketServerInstance {
   }
 }
 
-// ─── Singleton & factory ─────────────────────────────────────────────────────
+// Singleton & factory
 
 let instance: MarketWebSocketServerInstance | null = null;
 
@@ -232,14 +282,22 @@ let instance: MarketWebSocketServerInstance | null = null;
  */
 export function initializeMarketWebSocket(
   server: HTTPServer,
-  path: string = "/api/market-ws"
+  path: string = "/api/market-ws",
+  options: MarketWebSocketOptions = {}
 ): MarketWebSocketServerInstance {
   if (instance) {
     console.warn("[MarketWS Server] Already initialized — returning existing instance");
     return instance;
   }
 
-  instance = new MarketWebSocketServerInstance(server, path);
+  instance = new MarketWebSocketServerInstance(server, path, options);
+  // Re-emit events other processes publish (bids from the web app, completions from cron).
+  const local = instance;
+  void import("~/server/market-broadcast-bridge")
+    .then(({ startMarketBroadcastSubscriber }) => startMarketBroadcastSubscriber(local))
+    .catch((error: Error) =>
+      console.warn("[MarketWS Server] Cross-process broadcasts unavailable:", error.message)
+    );
   return instance;
 }
 

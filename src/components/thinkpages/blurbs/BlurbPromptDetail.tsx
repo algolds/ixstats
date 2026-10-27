@@ -4,9 +4,106 @@ import { useState } from "react";
 import Link from "next/link";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import { assetUrl } from "~/lib/base-path";
+
+type LinkedArticle = { title: string; url: string };
+
+function ResponseCard({ response: r }: { response: any }) {
+  const articles: LinkedArticle[] = Array.isArray(r.linkedArticles) ? r.linkedArticles : [];
+
+  return (
+    <div
+      className={`bg-surface rounded-card border p-4 ${
+        r.featured ? "border-yellow/40" : "border-separator"
+      }`}
+    >
+      <div className="mb-2 flex items-center gap-2">
+        {r.country?.flag && (
+          <img
+            src={assetUrl(r.country.flag) ?? undefined}
+            alt=""
+            className="rounded-control-sm h-3.5 w-5 object-cover"
+          />
+        )}
+        <Link
+          href={`/wiki/${encodeURIComponent((r.country?.name ?? "").replace(/ /g, "_"))}`}
+          className="text-headline text-label hover:text-tint transition-colors"
+        >
+          {r.country?.name ?? "Unknown"}
+        </Link>
+        {r.featured && <Badge variant="warning">Featured</Badge>}
+      </div>
+      <p className="text-body text-label-secondary whitespace-pre-wrap">{r.content}</p>
+      {articles.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {articles.map((article, i) => (
+            <Link key={i} href={article.url} className="text-footnote text-tint underline">
+              {article.title}
+            </Link>
+          ))}
+        </div>
+      )}
+      <p className="text-footnote text-label-secondary mt-2">
+        {new Date(r.createdAt).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })}
+      </p>
+    </div>
+  );
+}
+
+function PromptHeader({ prompt }: { prompt: any }) {
+  const count: number = prompt._count.responses;
+  return (
+    <div className="bg-surface rounded-card border-separator border p-5 sm:p-6">
+      <h1 className="text-title-3 text-label sm:text-title-2">{prompt.title}</h1>
+      <p className="text-body text-label-secondary mt-2">{prompt.question}</p>
+      <div className="mt-3 flex items-center gap-3">
+        <Badge variant="default" className="tabular-nums">
+          {count} {count === 1 ? "response" : "responses"}
+        </Badge>
+        {prompt.status === "CLOSED" && <Badge variant="outline">Closed</Badge>}
+      </div>
+    </div>
+  );
+}
+
+/** The submission form, the user's own response, or a sign-in hint. */
+function ResponseSection({
+  prompt,
+  isSignedIn,
+  myResponse,
+}: {
+  prompt: any;
+  isSignedIn: boolean;
+  myResponse?: { content: string } | null;
+}) {
+  const isActive = prompt.status === "ACTIVE";
+  return (
+    <>
+      {isSignedIn && isActive && !myResponse && <BlurbSubmissionForm promptId={prompt.id} />}
+
+      {myResponse && (
+        <div className="bg-tint-fill rounded-card p-4">
+          <p className="text-caption text-tint mb-2">Your response</p>
+          <p className="text-body text-label-secondary whitespace-pre-wrap">{myResponse.content}</p>
+        </div>
+      )}
+
+      {!isSignedIn && isActive && (
+        <div className="bg-surface rounded-card border-separator border p-4 text-center">
+          <p className="text-body text-label-secondary">Sign in to submit your response.</p>
+        </div>
+      )}
+    </>
+  );
+}
 
 /**
  * Single prompt view with all responses and a submission form.
@@ -38,124 +135,32 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
   const responses = responsesData?.pages.flatMap((p) => p.responses) ?? [];
 
   if (promptLoading) {
-    return (
-      <div className="py-12 text-center text-sm text-[var(--wikios-text-dim)]">Loading...</div>
-    );
+    return <div className="text-body text-label-secondary py-12 text-center">Loading...</div>;
   }
 
   if (!prompt) {
     return (
-      <div className="py-12 text-center text-sm text-[var(--wikios-text-dim)]">
-        Prompt not found.
-      </div>
+      <div className="text-body text-label-secondary py-12 text-center">Prompt not found.</div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Prompt header */}
-      <div className="facet-hierarchy-child rounded-xl border border-white/10 p-5 sm:p-6">
-        <h1 className="text-lg font-bold text-[var(--wikios-text)] sm:text-xl">{prompt.title}</h1>
-        <p className="mt-2 text-sm text-[var(--wikios-text-muted)] sm:text-base">
-          {prompt.question}
-        </p>
-        <div className="mt-3 flex items-center gap-3">
-          <Badge variant="secondary" className="text-xs">
-            {prompt._count.responses} {prompt._count.responses === 1 ? "response" : "responses"}
-          </Badge>
-          {prompt.status === "CLOSED" && (
-            <Badge variant="outline" className="text-xs text-[var(--wikios-text-dim)]">
-              Closed
-            </Badge>
-          )}
-        </div>
-      </div>
+      <PromptHeader prompt={prompt} />
 
-      {/* Submission form */}
-      {isSignedIn && prompt.status === "ACTIVE" && !myResponse && (
-        <BlurbSubmissionForm promptId={prompt.id} />
-      )}
+      <ResponseSection prompt={prompt} isSignedIn={!!isSignedIn} myResponse={myResponse} />
 
-      {myResponse && (
-        <div className="facet-hierarchy-child rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-          <p className="mb-2 text-xs font-medium text-emerald-400">Your response</p>
-          <p className="text-sm whitespace-pre-wrap text-[var(--wikios-text-muted)]">
-            {myResponse.content}
-          </p>
-        </div>
-      )}
-
-      {!isSignedIn && prompt.status === "ACTIVE" && (
-        <div className="facet-hierarchy-child rounded-xl border border-white/10 p-4 text-center">
-          <p className="text-sm text-[var(--wikios-text-muted)]">
-            Sign in to submit your response.
-          </p>
-        </div>
-      )}
-
-      {/* Responses list */}
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-[var(--wikios-text-muted)]">Responses</h2>
+        <h2 className="text-headline text-label-secondary">Responses</h2>
 
-        {responsesLoading && (
-          <p className="text-sm text-[var(--wikios-text-dim)]">Loading responses...</p>
-        )}
+        {responsesLoading && <p className="text-body text-label-secondary">Loading responses...</p>}
 
         {!responsesLoading && responses.length === 0 && (
-          <p className="text-sm text-[var(--wikios-text-dim)]">No responses yet. Be the first!</p>
+          <p className="text-body text-label-secondary">No responses yet.</p>
         )}
 
         {responses.map((r) => (
-          <div
-            key={r.id}
-            className={`facet-hierarchy-child rounded-xl border p-4 ${
-              r.featured ? "border-amber-500/30 bg-amber-500/5" : "border-white/10"
-            }`}
-          >
-            <div className="mb-2 flex items-center gap-2">
-              {r.country?.flag && (
-                <img src={r.country.flag} alt="" className="h-3.5 w-5 rounded-sm object-cover" />
-              )}
-              <Link
-                href={withBasePath(
-                  `/wiki/${encodeURIComponent((r.country?.name ?? "").replace(/ /g, "_"))}`
-                )}
-                className="text-sm font-medium text-[var(--wikios-text)] transition-colors hover:text-white"
-              >
-                {r.country?.name ?? "Unknown"}
-              </Link>
-              {r.featured && (
-                <Badge variant="outline" className="border-amber-500/30 text-xs text-amber-400">
-                  Featured
-                </Badge>
-              )}
-            </div>
-            <p className="text-sm whitespace-pre-wrap text-[var(--wikios-text-muted)]">
-              {r.content}
-            </p>
-            {r.linkedArticles &&
-              Array.isArray(r.linkedArticles) &&
-              (r.linkedArticles as { title: string; url: string }[]).length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {(r.linkedArticles as { title: string; url: string }[]).map((article, i) => (
-                    <Link
-                      key={i}
-                      href={withBasePath(article.url)}
-                      className="text-xs text-blue-400 underline hover:text-blue-300"
-                    >
-                      {article.title}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            <p className="mt-2 text-xs text-[var(--wikios-text-dim)]">
-              {new Date(r.createdAt).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </p>
-          </div>
+          <ResponseCard key={r.id} response={r} />
         ))}
 
         {hasNextPage && (
@@ -175,15 +180,11 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Submission form (internal)
-// ---------------------------------------------------------------------------
-
 function BlurbSubmissionForm({ promptId }: { promptId: string }) {
   const [content, setContent] = useState("");
   const [articleTitle, setArticleTitle] = useState("");
   const [articleUrl, setArticleUrl] = useState("");
-  const [linkedArticles, setLinkedArticles] = useState<{ title: string; url: string }[]>([]);
+  const [linkedArticles, setLinkedArticles] = useState<LinkedArticle[]>([]);
 
   const utils = api.useUtils();
 
@@ -213,32 +214,35 @@ function BlurbSubmissionForm({ promptId }: { promptId: string }) {
   };
 
   return (
-    <div className="facet-hierarchy-child rounded-xl border border-white/10 p-4 sm:p-5">
-      <h3 className="mb-3 text-sm font-semibold text-[var(--wikios-text-muted)]">Your response</h3>
-      <textarea
+    <div className="bg-surface rounded-card border-separator border p-4 sm:p-5">
+      <h3 className="text-headline text-label-secondary mb-3">Your response</h3>
+      <Textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Share your country's perspective..."
         maxLength={1000}
         rows={4}
-        className="w-full resize-none rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-3 py-2 text-sm text-[var(--wikios-text)] placeholder:text-[var(--wikios-text-dim)] focus:border-[var(--wikios-accent)] focus:outline-none"
+        aria-label="Your response"
+        className="resize-none"
       />
       <div className="mt-1 flex items-center justify-between">
-        <span className="text-xs text-[var(--wikios-text-dim)]">{content.length}/1000</span>
+        <span className="text-footnote text-label-secondary tabular-nums">
+          {content.length}/1000
+        </span>
       </div>
 
-      {/* Link wiki articles */}
       <div className="mt-3">
-        <p className="mb-1.5 text-xs text-[var(--wikios-text-dim)]">
+        <p className="text-footnote text-label-secondary mb-2">
           Link wiki articles (optional, max 5)
         </p>
         <div className="flex gap-2">
-          <input
+          <Input
             type="text"
             value={articleTitle}
             onChange={(e) => setArticleTitle(e.target.value)}
             placeholder="Article title"
-            className="flex-1 rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-3 py-1.5 text-xs text-[var(--wikios-text)] placeholder:text-[var(--wikios-text-dim)] focus:border-[var(--wikios-accent)] focus:outline-none"
+            aria-label="Article title"
+            className="flex-1"
             onKeyDown={(e) => e.key === "Enter" && addArticle()}
           />
           <Button
@@ -246,22 +250,21 @@ function BlurbSubmissionForm({ promptId }: { promptId: string }) {
             size="sm"
             onClick={addArticle}
             disabled={!articleTitle.trim() || linkedArticles.length >= 5}
-            className="text-xs"
           >
             Add
           </Button>
         </div>
         {linkedArticles.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
+          <div className="mt-2 flex flex-wrap gap-2">
             {linkedArticles.map((a, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-[var(--wikios-text-muted)]"
+                className="bg-fill-3 text-caption text-label-secondary inline-flex items-center gap-1 rounded-full px-2 py-0.5"
               >
                 {a.title}
                 <button
                   onClick={() => removeArticle(i)}
-                  className="ml-0.5 text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text-muted)]"
+                  className="text-label-secondary hover:text-label-secondary ml-0.5"
                 >
                   x
                 </button>
@@ -288,7 +291,7 @@ function BlurbSubmissionForm({ promptId }: { promptId: string }) {
       </div>
 
       {submitMutation.error && (
-        <p className="mt-2 text-xs text-red-400">{submitMutation.error.message}</p>
+        <p className="text-footnote text-red mt-2">{submitMutation.error.message}</p>
       )}
     </div>
   );

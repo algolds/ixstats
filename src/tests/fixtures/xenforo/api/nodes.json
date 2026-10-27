@@ -1,0 +1,53 @@
+{
+  "tree_map": { "0": [1], "1": [12, 13, 14] },
+  "nodes": [
+    {
+      "node_id": 1,
+      "title": "Community",
+      "description": "",
+      "node_type_id": "Category",
+      "parent_node_id": 0,
+      "display_order": 1,
+      "breadcrumbs": [],
+      "type_data": []
+    },
+    {
+      "node_id": 12,
+      "title": "General Discussion",
+      "description": "Talk about anything.",
+      "node_type_id": "Forum",
+      "parent_node_id": 1,
+      "display_order": 10,
+      "breadcrumbs": [{ "node_id": 1, "title": "Community", "node_type_id": "Category" }],
+      "type_data": {
+        "allow_posting": true,
+        "discussion_count": 3,
+        "message_count": 5,
+        "last_post_date": 1700003000,
+        "last_post_id": 1002,
+        "last_post_username": "Admin",
+        "last_thread_title": "Welcome"
+      }
+    },
+    {
+      "node_id": 13,
+      "title": "Staff Room",
+      "description": "Private.",
+      "node_type_id": "Forum",
+      "parent_node_id": 1,
+      "display_order": 20,
+      "breadcrumbs": [],
+      "type_data": { "discussion_count": 0, "message_count": 0 }
+    },
+    {
+      "node_id": 14,
+      "title": "Wiki",
+      "description": "",
+      "node_type_id": "LinkForum",
+      "parent_node_id": 1,
+      "display_order": 30,
+      "breadcrumbs": [],
+      "type_data": { "link_url": "https://wiki.example.test/" }
+    }
+  ]
+}

@@ -1,19 +1,33 @@
 import { z } from "zod";
-import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
-import { TRPCError } from "@trpc/server";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
+import { editableMapRealmId, realmScopeInput } from "~/server/api/trpc/realm-scope";
+import { isSiteAdmin, type RealmActor } from "~/server/modules/realms";
+import { RealmRegionError } from "~/server/modules/realms/realms.region";
+import { renameGeneratedSlot } from "~/server/modules/realms/realms.slot-rename";
+import { createNationFromShape } from "~/server/modules/realms/realms.shape-nation";
 import { invalidateCache } from "~/lib/cache";
+import { TRPCError } from "@trpc/server";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
-import { clearLayerCache } from "../../core";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
-import { IxTime } from "~/lib/ixtime";
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
+import { assertFound, requirePoliticalLayer } from "../../core/shared";
+
+function regionError(error: Error): never {
+  if (error instanceof RealmRegionError)
+    throw new TRPCError({ code: error.code, message: error.message });
+  throw error;
+}
 
 export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
   /**
-   * Admin: Link a map feature to a Country record.
+   * Link a map feature to a Country record (site admins, or the realm's founder and map officers).
    */
-  assignCountryGeometry: adminProcedure
+  assignCountryGeometry: rateLimitedMutationProcedure
     .input(
       z.object({
         featureId: z.string(),
@@ -23,16 +37,8 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Verify feature exists (featureId is unique only within a realm)
-      const realmId = await viewerRealmId(ctx, input.realm);
-      const mapLayer = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, realmId },
-      });
-      if (!mapLayer) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Map feature not found: ${input.featureId}`,
-        });
-      }
+      const realmId = await editableMapRealmId(ctx, input.realm);
+      const mapLayer = await requirePoliticalLayer(ctx.db, input.featureId, realmId);
 
       // Verify the country exists and belongs to the feature's realm
       const country = await assertCountryInFeatureRealm(ctx.db, input.countryId, realmId);
@@ -43,21 +49,13 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         data: { countryId: input.countryId },
       });
 
-      // Update country with geometry + area
-      await syncCountryGeometryFromMapLayer(ctx.db, input.countryId);
-
-      // Invalidate caches
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoCore.listCountries",
-        "geoCore.getWorldMap",
-        "geoEditor.validateLinkage",
-        "geoCore.getCountryLinkage",
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "countryGeo.getCountryGeoBundle",
-      ]);
-      broadcastMapUpdate("linkage", input.countryId);
+      // Update country with geometry + area. The link is stored: the map version moves even if the sync fails.
+      try {
+        await syncCountryGeometryFromMapLayer(ctx.db, input.countryId);
+      } finally {
+        await invalidateRealmMap(ctx.db, realmId);
+      }
+      broadcastMapUpdate("linkage", input.countryId, realmId);
 
       return {
         featureId: input.featureId,
@@ -67,25 +65,13 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
     }),
 
   /**
-   * Admin: Unlink a map feature from a Country record.
+   * Unlink a map feature from a Country record (site admins, the realm's founder and map officers).
    */
-  unlinkCountryGeometry: adminProcedure
+  unlinkCountryGeometry: rateLimitedMutationProcedure
     .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
-      const mapLayer = await ctx.db.mapLayer.findFirst({
-        where: {
-          layerType: "political",
-          featureId: input.featureId,
-          realmId: await viewerRealmId(ctx, input.realm),
-        },
-      });
-
-      if (!mapLayer) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Map feature not found: ${input.featureId}`,
-        });
-      }
+      const realmId = await editableMapRealmId(ctx, input.realm);
+      const mapLayer = await requirePoliticalLayer(ctx.db, input.featureId, realmId);
 
       const previousCountryId = mapLayer.countryId;
 
@@ -94,55 +80,45 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         data: { countryId: null },
       });
 
-      // Clear geometry + area from country
-      if (previousCountryId) {
-        await syncCountryGeometryFromMapLayer(ctx.db, previousCountryId);
+      // Clear geometry + area from country. The unlink is stored: the map version moves even if the sync fails.
+      try {
+        if (previousCountryId) {
+          await syncCountryGeometryFromMapLayer(ctx.db, previousCountryId);
+        }
+      } finally {
+        await invalidateRealmMap(ctx.db, realmId);
       }
-
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoCore.listCountries",
-        "geoCore.getWorldMap",
-        "geoEditor.validateLinkage",
-        "geoCore.getCountryLinkage",
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "countryGeo.getCountryGeoBundle",
-      ]);
-      broadcastMapUpdate("linkage", previousCountryId ?? undefined);
+      broadcastMapUpdate("linkage", previousCountryId ?? undefined, realmId);
 
       return { featureId: input.featureId, previousCountryId };
     }),
 
   /**
-   * Admin: Get all details for a specific map feature.
+   * All details of a map feature (site admins, the realm's founder and map officers).
    */
-  getFeatureDetails: adminProcedure
+  getFeatureDetails: protectedProcedure
     .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .query(async ({ ctx, input }) => {
-      const feature = await ctx.db.mapLayer.findFirst({
-        where: {
-          layerType: "political",
-          featureId: input.featureId,
-          isActive: true,
-          realmId: await viewerRealmId(ctx, input.realm),
-        },
-        include: {
-          country: {
-            select: {
-              id: true,
-              name: true,
-              wikiPageTitle: true,
+      const feature = assertFound(
+        await ctx.db.mapLayer.findFirst({
+          where: {
+            layerType: "political",
+            featureId: input.featureId,
+            isActive: true,
+            realmId: await editableMapRealmId(ctx, input.realm),
+          },
+          include: {
+            country: {
+              select: {
+                id: true,
+                name: true,
+                wikiPageTitle: true,
+              },
             },
           },
-        },
-      });
-      if (!feature) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Feature not found: ${input.featureId}`,
-        });
-      }
+        }),
+        `Feature not found: ${input.featureId}`
+      );
       return {
         id: feature.id,
         featureId: feature.featureId,
@@ -158,9 +134,10 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
     }),
 
   /**
-   * Admin: Update properties (displayName, countryId, properties, wikiPageTitle) of a map feature.
+   * Update properties (displayName, countryId, properties, wikiPageTitle) of a map feature. Renaming the
+   * linked nation (and its wiki page) is for site admins only: realm map editors rename the region.
    */
-  updateFeatureProperties: adminProcedure
+  updateFeatureProperties: rateLimitedMutationProcedure
     .input(
       z.object({
         featureId: z.string(),
@@ -172,16 +149,14 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
-      const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
-      });
-      if (!feature) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Feature not found: ${input.featureId}`,
-        });
-      }
+      const realmId = await editableMapRealmId(ctx, input.realm);
+      const renamesNation = !!ctx.user && isSiteAdmin(ctx.user as RealmActor);
+      const feature = assertFound(
+        await ctx.db.mapLayer.findFirst({
+          where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
+        }),
+        `Feature not found: ${input.featureId}`
+      );
       // A new link (and the rename/wiki/sync writes that follow it) must stay inside the feature's realm
       await assertCountryInFeatureRealm(ctx.db, input.countryId, realmId);
 
@@ -196,119 +171,85 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         updateData.properties = input.properties;
       }
 
-      await ctx.db.mapLayer.update({
-        where: { id: feature.id },
-        data: updateData,
-      });
-
       const targetCountryId = input.countryId !== undefined ? input.countryId : feature.countryId;
+      const newName = input.displayName !== feature.displayName ? input.displayName : undefined;
 
-      // Update Country name and slug if displayName is changed and country is linked
-      if (targetCountryId && input.displayName !== undefined) {
-        const slug = input.displayName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "");
-        await ctx.db.country.update({
-          where: { id: targetCountryId },
-          data: {
-            name: input.displayName,
-            slug,
-          },
-        });
-      }
+      // A generated slot is its country: the nation is renamed first and in the same transaction, so a refused
+      // name (taken) leaves the region as it was
+      const slotRenamed = await ctx.db
+        .$transaction(async (tx) => {
+          const followed = await renameGeneratedSlot(tx, realmId, targetCountryId, newName);
+          await tx.mapLayer.update({ where: { id: feature.id }, data: updateData });
+          return followed;
+        })
+        .catch(regionError);
+      if (slotRenamed) await invalidateCache(["countries."]).catch(() => undefined);
 
-      // Update wikiPageTitle on Country if linked
-      if (targetCountryId && input.wikiPageTitle !== undefined) {
-        await ctx.db.country.update({
-          where: { id: targetCountryId },
-          data: { wikiPageTitle: input.wikiPageTitle },
-        });
+      // The region is stored: the map version moves even if a nation write or sync below fails
+      try {
+        // Update Country name and slug if displayName is changed and country is linked
+        if (renamesNation && targetCountryId && newName !== undefined && !slotRenamed) {
+          const slug = newName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "");
+          await ctx.db.country.update({
+            where: { id: targetCountryId },
+            data: {
+              name: newName,
+              slug,
+            },
+          });
+        }
+
+        // Update wikiPageTitle on Country if linked
+        if (renamesNation && targetCountryId && input.wikiPageTitle !== undefined) {
+          await ctx.db.country.update({
+            where: { id: targetCountryId },
+            data: { wikiPageTitle: input.wikiPageTitle },
+          });
+        }
+
+        if (input.countryId !== undefined) {
+          if (feature.countryId) {
+            await syncCountryGeometryFromMapLayer(ctx.db, feature.countryId);
+          }
+          if (input.countryId) {
+            await syncCountryGeometryFromMapLayer(ctx.db, input.countryId);
+          }
+        }
+      } finally {
+        await invalidateRealmMap(ctx.db, realmId);
       }
 
       if (input.countryId !== undefined) {
-        if (feature.countryId) {
-          await syncCountryGeometryFromMapLayer(ctx.db, feature.countryId);
-        }
-        if (input.countryId) {
-          await syncCountryGeometryFromMapLayer(ctx.db, input.countryId);
-        }
-      }
-
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoCore.listCountries",
-        "geoCore.getWorldMap",
-        "geoEditor.validateLinkage",
-        "geoCore.getCountryLinkage",
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "countryGeo.getCountryGeoBundle",
-      ]);
-
-      if (input.countryId !== undefined) {
-        broadcastMapUpdate("linkage", input.countryId ?? undefined);
+        broadcastMapUpdate("linkage", input.countryId ?? undefined, realmId);
       }
 
       return { ok: true };
     }),
 
   /**
-   * Admin: Create a new Country record from an unclaimed political map feature.
+   * Create a nation from an unclaimed political shape: site admins, or the realm's founder and map officers in their
+   * own realm (audited for site admins).
    */
-  createCountryFromShape: adminProcedure
+  createCountryFromShape: rateLimitedMutationProcedure
     .input(z.object({ featureId: z.string(), name: z.string().min(1), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
-      const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
-      });
-      if (!feature) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Feature not found" });
+      const realmId = await editableMapRealmId(ctx, input.realm);
+      const created = await createNationFromShape(
+        ctx.db,
+        ctx.user as RealmActor,
+        realmId,
+        input
+      ).catch(regionError);
+      // The link is stored: the map version moves even if the sync fails
+      try {
+        await syncCountryGeometryFromMapLayer(ctx.db, created.countryId);
+      } finally {
+        await invalidateRealmMap(ctx.db, realmId);
       }
-      if (feature.countryId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Feature already linked to a country",
-        });
-      }
-      const slug = input.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
-      const ixNow = new Date(IxTime.getCurrentIxTime());
-      const newCountry = await ctx.db.country.create({
-        data: {
-          name: input.name,
-          slug,
-          realmId,
-          geometry: feature.geometry as any,
-          centroid: feature.centroid as any,
-          boundingBox: feature.boundingBox as any,
-          landArea: feature.areaSqKm ?? undefined,
-          areaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : undefined,
-          economicTier: "developing",
-          isDemo: false,
-          baselineDate: ixNow,
-          lastCalculated: ixNow,
-        } as any,
-      });
-      await ctx.db.mapLayer.update({
-        where: { id: feature.id },
-        data: { countryId: newCountry.id },
-      });
-      await syncCountryGeometryFromMapLayer(ctx.db, newCountry.id);
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoCore.listCountries",
-        "geoCore.getWorldMap",
-        "geoEditor.validateLinkage",
-        "geoCore.getCountryLinkage",
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "countryGeo.getCountryGeoBundle",
-      ]);
-      broadcastMapUpdate("linkage", newCountry.id);
-      return { countryId: newCountry.id, name: newCountry.name };
+      broadcastMapUpdate("linkage", created.countryId, realmId);
+      return created;
     }),
 });

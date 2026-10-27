@@ -1,9 +1,11 @@
 # 🏛️ MyCountry Economy Domain & Fiscal Engine
 
+**Last updated:** 2026-09-30
+
 **Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
 **Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
-**Primary Action:** `SIMULATE` | **Domain Accent:** Emerald Green / Amber Gold  
-**Route:** `/mycountry/economy` (Economy Domain) | **Status:** 📀 Gold Master (100% Ready)  
+**Primary Action:** `SIMULATE` | **Domain Accent:** Amber Gold (MyCountry; status colours only otherwise)  
+**Route:** `/mycountry/economy` (Economy Domain) | **Status:** 🟡 Partial: see [SYSTEM_STATUS.md](SYSTEM_STATUS.md); economy decisions largely do not reach the headline stats  
 
 The Economy system models macroeconomic output, fiscal policy built from 42 atomic tax components, sector performance, labor dynamics, trade flows, and long-range statistical projections.
 
@@ -35,11 +37,10 @@ The Economy system models macroeconomic output, fiscal policy built from 42 atom
 
 Defined across `prisma/schema/economy.prisma` (selection):
 - `EconomicProfile`, `LaborMarket`, `FiscalSystem`, `IncomeDistribution`, `GovernmentBudget`, `Demographics`: Per-country economy configuration
-- `EconomicIndicator`: Snapshot of GDP, GDP per capita, growth rate, inflation, unemployment
-- `HistoricalDataPoint` / `VitalityHistory`: Time-series records for trend charts
-- `EconomicModel`, `SectoralOutput`, `PolicyEffect`: Modeling scenarios and projections
-- `TaxSystem`, `TaxCategory`, `TaxBracket`, `TaxExemption`, `TaxDeduction`, `TaxPolicy`, `TaxCalculation`: Tax structure
-- `EconomicComponent`, `TaxComponent`, `CrossBuilderSynergy`, `EconomicArchetype`: Atomic components and presets
+- `HistoricalDataPoint`: Time-series records for trend charts
+- `EconomicModel`: Modeling scenarios and projections
+- `TaxSystem`, `TaxCategory`, `TaxBracket`, `TaxExemption`, `TaxDeduction`: Tax structure
+- `EconomicComponent`, `TaxComponent`, `EconomicArchetype`: Atomic components and presets
 - Trade: `BilateralTrade` (in `prisma/schema/diplomacy.prisma`)
 
 ---
@@ -49,17 +50,20 @@ Defined across `prisma/schema/economy.prisma` (selection):
 ```mermaid
 graph LR
     A[Baseline Indicators] --> B[Atomic Economic Components]
+    B --> G[IxStatsCalculator projection on read]
+    A --> G
+    S[Storyteller Effects] --> G
     B --> C[Tax System & Revenue]
     C --> D[Budget Allocation]
-    D --> E[Passive Income Dividend]
-    E --> F[Storyteller Effects & Growth Tick]
-    F --> A
 ```
 
+There is no growth tick and no loop back into the baseline. Headline population and GDP are a projection computed on read by `IxStatsCalculator` (`src/lib/economy/calculations.ts`, `countries/economy.ts`) from the baseline, `baselineDate`, the adjusted growth inputs and `StorytellerEffect` rows. The `stat-progression` cron job (`src/server/cron/stat-progression.ts`, every 6 h at :23, off unless listed in `CRON_ENABLED_JOBS`; schedule override `cronSchedule_statProgression`) persists that same projection into the stored `current*` columns (population, GDP per capita, total GDP, tiers, densities, `lastCalculated`) for every country, so rankings and vitality read the numbers MyCountry shows. It walks countries in id-cursor batches of 50, skips a country whose stored stats already match (relative tolerance 1e-6, same tiers), never writes a `baseline*` column, and writes one `HistoricalDataPoint` per country per IxTime month (skipped when the month already has one, so reruns are idempotent). The admin `forceRecalculation` (`admin/system.ts`) runs the same job with every country written, under the same `stat-progression` job lock. The projection itself is shared through `projectCountryStats` / `projectedStatsUpdate` in `src/server/shared/country-helpers.ts`. `countries.getByIdWithEconomicData` still synthesises its 5-year history when fewer than 5 points exist; that stops once the job has written 5 months of points. Tax rates (`economics.updateFiscalSystem`), budget allocation and the fiscal calculators do not feed GDP growth. The tax to budget chain above is a separate reporting path; it no longer feeds IxCredits.
+
 1. **Growth Computation**: Evaluates tier-based growth caps, diminishing returns ($>\$60\text{k}$), active policy multipliers, and embassy trade bonuses.
-2. **Fiscal Balancing**: Computes total revenue against department budgets, calculating national surplus/deficit and debt-to-GDP accumulation.
-3. **Vault Integration**: Economic health and budget weights (`BudgetVaultCalculator`, `src/lib/economy/budget-vault-calculator.ts`) feed the passive-income cron (`passive-income-distribution-cron.ts` → `vaultService.earnCreditsOnce`), rewarding sound economic management.
-4. **Legibility & Auditing**: Stat adjustments routed through `CountryEventSpine` are logged to `CountryChangeLog` and surfaced in the MyCountry canon feed (`mycountry.getCanonFeed`).
+2. **Fiscal Balancing** (reference calculation): Computes total revenue against department budgets, calculating national surplus/deficit and debt-to-GDP accumulation.
+3. **No Vault integration**: the economy no longer feeds IxCredits. The country dividend (the passive-income cron, `BudgetVaultCalculator` and the budget multiplier) was removed on 2026-10-14; the Vault dividend is paid from platform activity and card holdings, see [ixcredits.md](./ixcredits.md#1-the-vault-dividend-earn_passive--no-daily-cap).
+4. **Decisions → GDP**: Growth directives (`intent.commit`) add a `gdp_level_adjustment` effect worth the growth their modifier would add at a 3% reference rate over 1 IxTime year (`growthModifierToLevelShift`). National-issue consequences on GDP, GDP per capita, population and GDP growth (`actualGdpGrowth`) become `gdp_level_adjustment` / `population_level_adjustment` effects (`src/lib/national-issues/projection-effects.ts`); see [calculations](./calculations.md#level-effects).
+5. **Legibility & Auditing**: Stat adjustments routed through `CountryEventSpine` are logged to `CountryChangeLog` and surfaced in the MyCountry canon feed (`mycountry.getCanonFeed`).
 
 ---
 

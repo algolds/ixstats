@@ -7,9 +7,7 @@
 
 import { Prisma, type PrismaClient, type VaultTransactionType } from "@prisma/client";
 import { ConflictError } from "~/lib/app-error";
-import { syncUserToForum } from "~/server/modules/forum";
 import {
-  checkDailyCap as ledgerCheckDailyCap,
   earnCredits as ledgerEarnCredits,
   spendCredits as ledgerSpendCredits,
   earnCreditsTx as ledgerEarnCreditsTx,
@@ -17,38 +15,28 @@ import {
   LedgerError,
   type LedgerEarnInput,
   type LedgerSpendInput,
+  type TransactionDirection,
   getBalance as ledgerGetBalance,
   getTransactionHistory as ledgerGetTransactionHistory,
   getEarningsSummary as ledgerGetEarningsSummary,
 } from "./vault-ledger";
 import {
-  claimDailyBonus as bonusClaimDailyBonus,
   claimCombinedDailyClaim as bonusClaimCombinedDailyClaim,
   updateLoginStreak as bonusUpdateLoginStreak,
 } from "./vault-daily-bonus";
-import {
-  calculatePassiveIncome as incomeCalculatePassiveIncome,
-  catchUpPassiveIncome as incomeCatchUpPassiveIncome,
-} from "./vault-passive-income";
 import {
   getPurchasedItemsEffects as perksGetPurchasedItemsEffects,
   clearUserPerksCache as perksClearUserPerksCache,
   getCardCapacityBoost as perksGetCardCapacityBoost,
   getYieldBoostMultiplier as perksGetYieldBoostMultiplier,
-  getLoreTokensBalance as perksGetLoreTokensBalance,
   getVaultConfig,
   invalidateVaultConfigCache,
-  type VaultEffectPerks,
-  type VaultEffectItem,
-  type VaultConfig,
+  type PerksDb,
 } from "./vault-perks";
-
-export type { VaultEffectPerks, VaultEffectItem, VaultConfig };
 export { getVaultConfig, invalidateVaultConfigCache };
 export { LedgerError };
-export type { LedgerEarnInput, LedgerSpendInput };
 
-export interface EarnOnceResult {
+interface EarnOnceResult {
   success: boolean;
   alreadyApplied: boolean;
   newBalance: number;
@@ -74,16 +62,7 @@ export async function earnCreditsOnce(
   input: LedgerEarnInput & { idempotencyKey: string }
 ): Promise<EarnOnceResult> {
   try {
-    const r = await db.$transaction(async (tx) => {
-      const existing = await tx.vaultTransaction.findUnique({
-        where: { idempotencyKey: input.idempotencyKey },
-        select: { balanceAfter: true },
-      });
-      if (existing) return { newBalance: existing.balanceAfter, alreadyApplied: true };
-      const { newBalance } = await ledgerEarnCreditsTx(tx, input);
-      return { newBalance, alreadyApplied: false };
-    });
-    if (!r.alreadyApplied) syncUserToForum(input.userId).catch(() => {});
+    const r = await db.$transaction((tx) => earnCreditsOnceTx(tx, input));
     return { success: true, alreadyApplied: r.alreadyApplied, newBalance: r.newBalance };
   } catch (error) {
     const duplicate =
@@ -108,11 +87,27 @@ export async function earnCreditsOnce(
   }
 }
 
-export class VaultService {
-  checkDailyCap(userId: string, earnType: "EARN_ACTIVE" | "EARN_SOCIAL", db: PrismaClient) {
-    return ledgerCheckDailyCap(userId, earnType, db);
-  }
+/**
+ * `earnCreditsOnce`'s transaction body, for a caller that already holds a transaction (and its locks): a ledger row
+ * carrying the key means nothing is written; otherwise the earn is written with the key. A duplicate raised by the
+ * unique index, or a `LedgerError` (earning switched off, maintenance), throws and rolls the caller's transaction
+ * back, so nothing is written and the key stays free. `earnCreditsOnce` maps those to `alreadyApplied` and to a
+ * failure; the Loreward payout (through `grantBonusTx`) counts a `LedgerError` as a refusal it logs once per run.
+ */
+export async function earnCreditsOnceTx(
+  tx: Prisma.TransactionClient,
+  input: LedgerEarnInput & { idempotencyKey: string }
+): Promise<{ newBalance: number; alreadyApplied: boolean }> {
+  const existing = await tx.vaultTransaction.findUnique({
+    where: { idempotencyKey: input.idempotencyKey },
+    select: { balanceAfter: true },
+  });
+  if (existing) return { newBalance: existing.balanceAfter, alreadyApplied: true };
+  const { newBalance } = await ledgerEarnCreditsTx(tx, input);
+  return { newBalance, alreadyApplied: false };
+}
 
+export class VaultService {
   earnCredits(
     userId: string,
     amount: number,
@@ -160,13 +155,10 @@ export class VaultService {
     db: PrismaClient,
     limit: number = 50,
     offset: number = 0,
-    type?: VaultTransactionType
+    type?: VaultTransactionType,
+    direction?: TransactionDirection
   ) {
-    return ledgerGetTransactionHistory(userId, db, limit, offset, type);
-  }
-
-  claimDailyBonus(userId: string, db: PrismaClient) {
-    return bonusClaimDailyBonus(userId, db);
+    return ledgerGetTransactionHistory(userId, db, limit, offset, type, direction);
   }
 
   claimCombinedDailyClaim(userId: string, choice: "CREDITS" | "CARD", db: PrismaClient) {
@@ -177,19 +169,11 @@ export class VaultService {
     return bonusUpdateLoginStreak(userId, db);
   }
 
-  calculatePassiveIncome(countryId: string, db: PrismaClient) {
-    return incomeCalculatePassiveIncome(countryId, db);
-  }
-
-  catchUpPassiveIncome(userId: string, db: PrismaClient) {
-    return incomeCatchUpPassiveIncome(userId, db);
-  }
-
   getEarningsSummary(userId: string, db: PrismaClient) {
     return ledgerGetEarningsSummary(userId, db);
   }
 
-  getPurchasedItemsEffects(userId: string, db: PrismaClient) {
+  getPurchasedItemsEffects(userId: string, db: PerksDb) {
     return perksGetPurchasedItemsEffects(userId, db);
   }
 
@@ -197,16 +181,12 @@ export class VaultService {
     perksClearUserPerksCache(userId);
   }
 
-  getCardCapacityBoost(userId: string, db: PrismaClient) {
+  getCardCapacityBoost(userId: string, db: PerksDb) {
     return perksGetCardCapacityBoost(userId, db);
   }
 
   getYieldBoostMultiplier(userId: string, db: PrismaClient) {
     return perksGetYieldBoostMultiplier(userId, db);
-  }
-
-  getLoreTokensBalance(userId: string, db: PrismaClient) {
-    return perksGetLoreTokensBalance(userId, db);
   }
 }
 

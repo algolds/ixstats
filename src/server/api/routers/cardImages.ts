@@ -1,15 +1,6 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-
-/**
- * Card Images Router
- *
- * Handles CRUD operations for card background images including:
- * - Get images by country and card type
- * - Upsert custom or preset images
- * - Delete/reset to default preset
- * - Batch operations for multiple cards
- */
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 
 const cardImageTypeSchema = z.enum([
   "national_identity",
@@ -39,16 +30,11 @@ export const cardImagesRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const image = await ctx.db.cardBackgroundImage.findUnique({
+      return ctx.db.cardBackgroundImage.findUnique({
         where: {
-          countryId_cardType: {
-            countryId: input.countryId,
-            cardType: input.cardType,
-          },
+          countryId_cardType: { countryId: input.countryId, cardType: input.cardType },
         },
       });
-
-      return image;
     }),
 
   /**
@@ -79,7 +65,7 @@ export const cardImagesRouter = createTRPCRouter({
   /**
    * Upsert a card background image (create or update)
    */
-  upsert: protectedProcedure
+  upsert: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -90,56 +76,25 @@ export const cardImagesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.auth?.userId) {
-        throw new Error("Not authenticated");
-      }
-
-      // Verify user owns this country
-      const country = await ctx.db.country.findFirst({
-        where: {
-          id: input.countryId,
-          users: {
-            some: {
-              clerkUserId: ctx.auth.userId,
-            },
-          },
-        },
-      });
-
-      if (!country) {
-        throw new Error("Country not found or you do not have permission to modify it");
-      }
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       // Upsert the card image
-      const image = await ctx.db.cardBackgroundImage.upsert({
-        where: {
-          countryId_cardType: {
-            countryId: input.countryId,
-            cardType: input.cardType,
-          },
-        },
-        update: {
-          imageUrl: input.imageUrl,
-          isCustom: input.isCustom,
-          presetKey: input.presetKey,
-          uploadedAt: new Date(),
-        },
-        create: {
-          countryId: input.countryId,
-          cardType: input.cardType,
-          imageUrl: input.imageUrl,
-          isCustom: input.isCustom,
-          presetKey: input.presetKey,
-        },
-      });
+      const { imageUrl, isCustom, presetKey } = input;
+      const fields = { imageUrl, isCustom, presetKey };
 
-      return image;
+      return ctx.db.cardBackgroundImage.upsert({
+        where: {
+          countryId_cardType: { countryId: input.countryId, cardType: input.cardType },
+        },
+        update: { ...fields, uploadedAt: new Date() },
+        create: { countryId: input.countryId, cardType: input.cardType, ...fields },
+      });
     }),
 
   /**
    * Delete a card background image (reset to default)
    */
-  delete: protectedProcedure
+  delete: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -147,25 +102,7 @@ export const cardImagesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.auth?.userId) {
-        throw new Error("Not authenticated");
-      }
-
-      // Verify user owns this country
-      const country = await ctx.db.country.findFirst({
-        where: {
-          id: input.countryId,
-          users: {
-            some: {
-              clerkUserId: ctx.auth.userId,
-            },
-          },
-        },
-      });
-
-      if (!country) {
-        throw new Error("Country not found or you do not have permission to modify it");
-      }
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       // Delete the card image
       await ctx.db.cardBackgroundImage.delete({

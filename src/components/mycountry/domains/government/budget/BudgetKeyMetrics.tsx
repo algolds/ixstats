@@ -1,104 +1,63 @@
 "use client";
 
 import React from "react";
-import { Dollar as DollarSign, StatUp as TrendingUp, StatsReport as BarChart3, Archery as Target } from "iconoir-react";
 import type { BudgetSummary, RevenueSummary } from "~/types/government";
 import { formatNumber } from "~/lib/utils/format-utils";
+import { Card } from "~/components/ui/card";
+import { REVENUE_BASIS_NOTE } from "~/components/mycountry/shell/fiscal/nationalRevenue";
 
 interface BudgetKeyMetricsProps {
   budgetSummary: BudgetSummary;
   revenueSummary: RevenueSummary;
+  /** Policy maintenance spent in the year shown: spending within the year, not a debit. */
+  maintenanceSpent: number;
   formatCurrency: (amount: number) => string;
 }
 
+const shareOf = (part: number, whole: number) =>
+  whole > 0 ? ((part / whole) * 100).toFixed(1) : "0";
+
+/** Four headline budget figures in one card, separated by hairlines rather than tinted tiles. */
 export function BudgetKeyMetrics({
   budgetSummary,
   revenueSummary,
+  maintenanceSpent,
   formatCurrency,
 }: BudgetKeyMetricsProps) {
+  const metrics = [
+    {
+      label: "Total budget",
+      value: formatNumber(budgetSummary.totalBudget),
+      sub: formatCurrency(budgetSummary.totalBudget),
+    },
+    {
+      label: "Allocated",
+      value: formatNumber(budgetSummary.totalAllocated),
+      sub: `${shareOf(budgetSummary.totalAllocated, budgetSummary.totalBudget)}% of total`,
+    },
+    {
+      label: "Policy maintenance",
+      value: formatNumber(maintenanceSpent),
+      sub: `${shareOf(maintenanceSpent, budgetSummary.totalBudget)}% of the year's budget`,
+    },
+    {
+      label: "Revenue",
+      value: formatNumber(revenueSummary.totalRevenue),
+      sub: revenueSummary.basis ? REVENUE_BASIS_NOTE[revenueSummary.basis] : "No tax rates set yet",
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="bg-card/40 rounded-2xl border border-white/10 p-4 shadow-lg backdrop-blur-xl transition-transform duration-200 active:scale-[0.98]">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-              Total Budget
-            </p>
-            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400 tabular-nums">
-              {formatNumber(budgetSummary.totalBudget)}
-            </p>
+    <Card>
+      <dl className="divide-separator grid grid-cols-2 divide-y lg:grid-cols-4 lg:divide-x lg:divide-y-0">
+        {metrics.map((m) => (
+          <div key={m.label} className="min-w-0 p-4">
+            <dt className="text-label-secondary text-footnote">{m.label}</dt>
+            <dd className="text-label text-title-2 mt-1 truncate tabular-nums">{m.value}</dd>
+            <dd className="text-label-secondary text-footnote mt-1 tabular-nums">{m.sub}</dd>
           </div>
-          <DollarSign className="h-6 w-6 shrink-0 text-emerald-400" />
-        </div>
-        <div className="mt-2">
-          <p className="text-muted-foreground font-mono text-xs tabular-nums">
-            {formatCurrency(budgetSummary.totalBudget)}
-          </p>
-        </div>
-      </div>
-
-      <div className="bg-card/40 rounded-2xl border border-white/10 p-4 shadow-lg backdrop-blur-xl transition-transform duration-200 active:scale-[0.98]">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-              Allocated
-            </p>
-            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400 tabular-nums">
-              {formatNumber(budgetSummary.totalAllocated)}
-            </p>
-          </div>
-          <Target className="h-6 w-6 shrink-0 text-cyan-400" />
-        </div>
-        <div className="mt-2">
-          <p className="text-muted-foreground font-mono text-xs tabular-nums">
-            {budgetSummary.totalBudget > 0
-              ? ((budgetSummary.totalAllocated / budgetSummary.totalBudget) * 100).toFixed(1)
-              : 0}
-            % of total
-          </p>
-        </div>
-      </div>
-
-      <div className="bg-card/40 rounded-2xl border border-white/10 p-4 shadow-lg backdrop-blur-xl transition-transform duration-200 active:scale-[0.98]">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-              Utilized
-            </p>
-            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-amber-400 tabular-nums">
-              {formatNumber(budgetSummary.totalSpent)}
-            </p>
-          </div>
-          <TrendingUp className="h-6 w-6 shrink-0 text-amber-400" />
-        </div>
-        <div className="mt-2">
-          <p className="text-muted-foreground font-mono text-xs tabular-nums">
-            {budgetSummary.utilizationRate.toFixed(1)}% utilization
-          </p>
-        </div>
-      </div>
-
-      <div className="bg-card/40 rounded-2xl border border-white/10 p-4 shadow-lg backdrop-blur-xl transition-transform duration-200 active:scale-[0.98]">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-              Revenue
-            </p>
-            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-indigo-400 tabular-nums">
-              {formatNumber(revenueSummary.totalRevenue)}
-            </p>
-          </div>
-          <BarChart3 className="h-6 w-6 shrink-0 text-indigo-400" />
-        </div>
-        <div className="mt-2">
-          <p className="text-muted-foreground font-mono text-xs tabular-nums">
-            {revenueSummary.totalTaxRevenue > 0
-              ? ((revenueSummary.totalTaxRevenue / revenueSummary.totalRevenue) * 100).toFixed(1)
-              : 0}
-            % tax
-          </p>
-        </div>
-      </div>
-    </div>
+        ))}
+      </dl>
+    </Card>
   );
 }

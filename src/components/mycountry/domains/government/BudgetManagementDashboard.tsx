@@ -1,19 +1,27 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { Badge } from "~/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { formatNumber, safeFormatCurrency, toTitleCase } from "~/lib/utils";
 import { currentBudgetYear, latestBudgetYearUpTo } from "~/lib/government/budget-year";
+import { formatBudgetYear } from "~/lib/realms/realm-year";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
+import { useBudgetEditing } from "~/hooks/useBudgetEditing";
+import { useNationClock } from "~/hooks/useNationClock";
+import { Skeleton } from "~/components/ui/skeleton";
 import type {
   GovernmentStructure,
   GovernmentDepartment,
   BudgetAllocation,
   RevenueSource,
-  BudgetSummary,
-  RevenueSummary,
 } from "~/types/government";
 import { api } from "~/trpc/react";
 import {
@@ -24,10 +32,27 @@ import {
   BudgetDepartmentList,
   BudgetRevenueAnalysis,
   BudgetHealthAnalysis,
+  buildDepartmentChartData,
+  buildTrendData,
+  summarizeBudget,
+  summarizeRevenue,
 } from "./budget";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { CreateGovernmentStructureButton } from "./CreateGovernmentStructureButton";
+import type { NationalRevenue } from "~/components/mycountry/shell/fiscal/nationalRevenue";
+
+const VIEW_OPTIONS = [
+  { value: "overview", label: "Overview" },
+  { value: "departments", label: "Departments" },
+  { value: "revenue", label: "Revenue" },
+  { value: "analysis", label: "Analysis" },
+] as const;
+type BudgetView = (typeof VIEW_OPTIONS)[number]["value"];
 
 interface BudgetManagementDashboardProps {
   countryId?: string;
+  /** The nation's one revenue figure (`nationalRevenue`), the same the other Economy tabs show. */
+  revenue: NationalRevenue;
   governmentStructure?: GovernmentStructure;
   departments?: GovernmentDepartment[];
   budgetAllocations?: BudgetAllocation[];
@@ -36,324 +61,330 @@ interface BudgetManagementDashboardProps {
   isReadOnly?: boolean;
 }
 
-export function BudgetManagementDashboard({
+/** A stored budget year as the nation's calendar labels it. */
+type YearLabel = (year: number) => string;
+
+function YearSelect({
+  value,
+  currentYear,
+  onChange,
+  yearLabel,
+}: {
+  value: number;
+  currentYear: number;
+  onChange: (year: number) => void;
+  yearLabel: YearLabel;
+}) {
+  return (
+    <Select value={String(value)} onValueChange={(v) => onChange(parseInt(v, 10))}>
+      <SelectTrigger className="text-footnote h-9 w-28 tabular-nums" aria-label="Budget year">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {Array.from({ length: 5 }, (_, i) => currentYear - i).map((year) => (
+          <SelectItem key={year} value={String(year)} className="tabular-nums">
+            {yearLabel(year)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+/** `startFrom` is the country id when the viewer may start the new year's budget, else undefined. */
+function NewYearBanner({
+  currentYear,
+  effectiveYear,
+  startFrom,
+  onStarted,
+  yearLabel,
+}: {
+  currentYear: number;
+  effectiveYear: number;
+  startFrom?: string;
+  onStarted: (year: number) => void;
+  yearLabel: YearLabel;
+}) {
+  const notify = useNotify();
+  const utils = api.useUtils();
+  const startBudgetYear = api.government.startBudgetYear.useMutation({
+    onSuccess: async (result) => {
+      notify.success(
+        result.fromYear === null
+          ? `FY ${yearLabel(result.toYear)} budget started`
+          : `FY ${yearLabel(result.toYear)} budget started from FY ${yearLabel(result.fromYear)}`
+      );
+      onStarted(result.toYear);
+      await utils.government.getFullByCountryId.invalidate({ countryId: startFrom ?? "" });
+    },
+    onError: (error) => notify.error(error.message),
+  });
+  return (
+    <div
+      role="status"
+      className="rounded-control border-yellow/40 flex flex-wrap items-center justify-between gap-3 border px-4 py-3"
+    >
+      <p className="text-label text-body">
+        A new fiscal year has begun. Your FY {yearLabel(effectiveYear)} budget stays in effect until
+        you set the FY {yearLabel(currentYear)} budget.
+      </p>
+      {startFrom && (
+        <Button
+          size="sm"
+          onClick={() => startBudgetYear.mutate({ countryId: startFrom })}
+          disabled={startBudgetYear.isPending}
+        >
+          {startBudgetYear.isPending
+            ? "Starting…"
+            : `Start FY ${yearLabel(currentYear)} budget from FY ${yearLabel(effectiveYear)}`}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/** For a nation with no departments: the action that creates its form's government. */
+function NoGovernmentBanner({ createFor }: { createFor?: string }) {
+  return (
+    <div
+      role="status"
+      className="rounded-control border-separator flex flex-wrap items-center justify-between gap-3 border px-4 py-3"
+    >
+      <p className="text-label text-body">
+        This government has no departments yet. Create its structure to set a budget and appoint a
+        cabinet.
+      </p>
+      {createFor && <CreateGovernmentStructureButton countryId={createFor} />}
+    </div>
+  );
+}
+
+/**
+ * Props win; otherwise fall back to the country's fetched government. `ownerView` is true when the
+ * fetched budget is the owner's (a visitor's read leaves `totalBudget` out), or when the fetch
+ * found no structure for a country the viewer opened in their console.
+ */
+function useBudgetSources({
   countryId,
+  propStructure,
+  propDepts,
+  propAllocations,
+  propRevenue,
+}: {
+  countryId?: string;
+  propStructure?: GovernmentStructure;
+  propDepts?: GovernmentDepartment[];
+  propAllocations?: BudgetAllocation[];
+  propRevenue?: RevenueSource[];
+}) {
+  const { data: fetchedGov, isSuccess } = api.government.getFullByCountryId.useQuery(
+    { countryId: countryId ?? "" },
+    { enabled: !!countryId && !propStructure }
+  );
+  return {
+    ownerView:
+      !propStructure && isSuccess && (fetchedGov === null || "totalBudget" in (fetchedGov ?? {})),
+    governmentStructure: propStructure ?? fetchedGov,
+    departments: propDepts ?? (fetchedGov?.departments as GovernmentDepartment[] | undefined) ?? [],
+    budgetAllocations:
+      propAllocations ?? (fetchedGov?.budgetAllocations as BudgetAllocation[] | undefined) ?? [],
+    revenueSources:
+      propRevenue ?? (fetchedGov?.revenueSources as RevenueSource[] | undefined) ?? [],
+  };
+}
+
+function BudgetTitle({
+  structure,
+  year,
+  yearLabel,
+}: {
+  structure?: {
+    governmentName?: string | null;
+    governmentType?: string | null;
+    fiscalYear?: string | null;
+  } | null;
+  year: number;
+  yearLabel: YearLabel;
+}) {
+  return (
+    <div className="min-w-0">
+      <h2 className="text-label text-title-2">
+        {structure?.governmentName ?? "National"} Fiscal Budget
+      </h2>
+      <p className="text-label-secondary text-footnote mt-0.5">
+        {structure?.governmentType ? `${toTitleCase(structure.governmentType)} • ` : ""}
+        {yearLabel(year)} {structure?.fiscalYear ?? "FY"}
+      </p>
+    </div>
+  );
+}
+
+/** The National budget, its years counted on the nation's realm clock (a skeleton until it is known). */
+export function BudgetManagementDashboard(props: BudgetManagementDashboardProps) {
+  const clock = useNationClock();
+  if (!clock) return <Skeleton className="rounded-card h-96 w-full" aria-label="Loading budget" />;
+  return (
+    <BudgetManagementBody
+      {...props}
+      currentYear={currentBudgetYear(clock.now())}
+      yearLabel={(year) => formatBudgetYear(year, clock)}
+    />
+  );
+}
+
+function BudgetManagementBody({
+  currentYear,
+  yearLabel,
+  countryId,
+  revenue,
   governmentStructure: propStructure,
   departments: propDepts,
   budgetAllocations: propAllocations,
   revenueSources: propRevenue,
-  onUpdateBudget: _onUpdateBudget,
+  onUpdateBudget,
   isReadOnly = false,
-}: BudgetManagementDashboardProps) {
-  const { data: fetchedGov } = api.government.getFullByCountryId.useQuery(
-    { countryId: countryId ?? "" },
-    { enabled: !!countryId && !propStructure }
-  );
+}: BudgetManagementDashboardProps & { currentYear: number; yearLabel: YearLabel }) {
+  const { ownerView, governmentStructure, departments, budgetAllocations, revenueSources } =
+    useBudgetSources({
+      countryId,
+      propStructure,
+      propDepts,
+      propAllocations,
+      propRevenue,
+    });
 
-  const governmentStructure = propStructure ?? fetchedGov;
-  const departments: GovernmentDepartment[] =
-    propDepts ?? (fetchedGov?.departments as GovernmentDepartment[] | undefined) ?? [];
-  const budgetAllocations: BudgetAllocation[] =
-    propAllocations ?? (fetchedGov?.budgetAllocations as BudgetAllocation[] | undefined) ?? [];
-  const revenueSources: RevenueSource[] =
-    propRevenue ?? (fetchedGov?.revenueSources as RevenueSource[] | undefined) ?? [];
-
-  const [selectedView, setSelectedView] = useState<
-    "overview" | "departments" | "revenue" | "analysis"
-  >("overview");
-  // The budget in effect is the latest year at or before the current IxTime year: after a
-  // rollover the previous year's budget stays in effect until the new one is started.
-  const currentYear = currentBudgetYear();
+  const [selectedView, setSelectedView] = useState<BudgetView>("overview");
+  // The budget in effect is the latest year at or before the nation's current budget year: after
+  // a rollover the previous year's budget stays in effect until the new one is started.
   const effectiveYear =
     latestBudgetYearUpTo(
-      budgetAllocations.map((a: BudgetAllocation) => a.budgetYear),
+      budgetAllocations.map((a) => a.budgetYear),
       currentYear
     ) ?? currentYear;
   const needsNewYearBudget = effectiveYear < currentYear;
   const [chosenYear, setSelectedYear] = useState<number | null>(null);
   const selectedYear = chosenYear ?? effectiveYear;
 
-  const notify = useNotify();
-  const utils = api.useUtils();
-  const startBudgetYear = api.government.startBudgetYear.useMutation({
-    onSuccess: async (result) => {
-      notify.success(`FY${result.toYear} budget started from FY${result.fromYear}`);
-      setSelectedYear(result.toYear);
-      await utils.government.getFullByCountryId.invalidate({ countryId: countryId ?? "" });
-    },
-    onError: (error) => notify.error(error.message),
-  });
   const [overviewChartMode, setOverviewChartMode] = useState<"allocation" | "trend">("allocation");
 
-  // Calculate budget summary
-  const budgetSummary: BudgetSummary = useMemo(() => {
-    const currentYearAllocations = budgetAllocations.filter(
-      (a: BudgetAllocation) => a.budgetYear === selectedYear
-    );
-    const totalAllocated = currentYearAllocations.reduce(
-      (sum: number, a: BudgetAllocation) => sum + (a.allocatedAmount ?? 0),
-      0
-    );
-    const totalSpent = currentYearAllocations.reduce(
-      (sum: number, a: BudgetAllocation) => sum + (a.spentAmount ?? 0),
-      0
-    );
-    const totalAvailable = totalAllocated - totalSpent;
-    const utilizationRate = totalAllocated > 0 ? (totalSpent / totalAllocated) * 100 : 0;
+  const yearAllocations = budgetAllocations.filter((a) => a.budgetYear === selectedYear);
+  const totalBudget = governmentStructure?.totalBudget ?? 0;
+  const budgetSummary = summarizeBudget(yearAllocations, departments, totalBudget);
+  // Owner edits go to the budget in effect, so they are offered only while it is shown.
+  const editableCountry =
+    countryId && ownerView && !isReadOnly && !propAllocations ? countryId : undefined;
+  const editing = useBudgetEditing(
+    editableCountry && governmentStructure && selectedYear === effectiveYear
+      ? editableCountry
+      : undefined,
+    totalBudget,
+    onUpdateBudget
+  );
+  const { data: maintenance } = api.government.getPolicyMaintenance.useQuery(
+    { countryId: editableCountry ?? "" },
+    { enabled: !!editableCountry && !!governmentStructure }
+  );
+  const revenueSummary = summarizeRevenue(revenue, revenueSources);
 
-    const topSpendingDepartments = currentYearAllocations
-      .map((allocation: BudgetAllocation) => {
-        const department = departments.find(
-          (d: GovernmentDepartment) => d.id === allocation.departmentId
-        );
-        return department ? { department, allocation } : null;
-      })
-      .filter((item): item is { department: GovernmentDepartment; allocation: BudgetAllocation } => item !== null)
-      .sort(
-        (a, b) => (b.allocation.allocatedAmount ?? 0) - (a.allocation.allocatedAmount ?? 0)
-      )
-      .slice(0, 5);
+  const formatCurrency = (amount: number) =>
+    safeFormatCurrency(amount, governmentStructure?.budgetCurrency, false, "USD");
 
-    return {
-      totalBudget: governmentStructure?.totalBudget ?? 0,
-      totalAllocated,
-      totalSpent,
-      totalAvailable,
-      utilizationRate,
-      departmentCount: departments.length,
-      topSpendingDepartments,
-    };
-  }, [budgetAllocations, departments, governmentStructure?.totalBudget, selectedYear]);
-
-  // Calculate revenue summary
-  const revenueSummary: RevenueSummary = useMemo(() => {
-    const totalRevenue = revenueSources.reduce(
-      (sum: number, r: RevenueSource) => sum + (r.revenueAmount ?? 0),
-      0
-    );
-    const totalTaxRevenue = revenueSources
-      .filter((r: RevenueSource) => r.category?.includes("Tax"))
-      .reduce((sum: number, r: RevenueSource) => sum + (r.revenueAmount ?? 0), 0);
-    const totalNonTaxRevenue = totalRevenue - totalTaxRevenue;
-
-    const revenueCategories = [
-      "Direct Tax",
-      "Indirect Tax",
-      "Non-Tax Revenue",
-      "Fees and Fines",
-      "Other",
-    ] as const;
-    const revenueBreakdown = revenueCategories
-      .map((category) => {
-        const amount = revenueSources
-          .filter((r: RevenueSource) => r.category === category)
-          .reduce((sum: number, r: RevenueSource) => sum + (r.revenueAmount ?? 0), 0);
-        return {
-          category: category as (typeof revenueCategories)[number],
-          amount,
-          percent: totalRevenue > 0 ? (amount / totalRevenue) * 100 : 0,
-        };
-      })
-      .filter((item) => item.amount > 0);
-
-    const topRevenueSources = [...revenueSources]
-      .sort((a: RevenueSource, b: RevenueSource) => (b.revenueAmount ?? 0) - (a.revenueAmount ?? 0))
-      .slice(0, 5);
-
-    return {
-      totalRevenue,
-      totalTaxRevenue,
-      totalNonTaxRevenue,
-      revenueBreakdown,
-      topRevenueSources,
-    };
-  }, [revenueSources]);
-
-  const formatCurrency = (amount: number) => {
-    return safeFormatCurrency(amount, governmentStructure?.budgetCurrency, false, "USD");
-  };
-
-  // Prepare chart data
-  const departmentChartData = useMemo(() => {
-    return budgetAllocations
-      .filter((a: BudgetAllocation) => a.budgetYear === selectedYear)
-      .map((allocation: BudgetAllocation) => {
-        const department = departments.find(
-          (d: GovernmentDepartment) => d.id === allocation.departmentId
-        );
-        return {
-          name: department?.shortName || department?.name || "Unknown",
-          allocated: allocation.allocatedAmount ?? 0,
-          spent: allocation.spentAmount ?? 0,
-          available: allocation.availableAmount ?? 0,
-          percent: allocation.allocatedPercent ?? 0,
-          color: department?.color || "#6b7280",
-        };
-      })
-      .sort((a, b) => b.allocated - a.allocated);
-  }, [budgetAllocations, departments, selectedYear]);
-
-  const revenueChartData = useMemo(() => {
-    return revenueSummary.revenueBreakdown.map((item, idx) => ({
-      name: item.category,
-      value: item.amount,
-      percent: item.percent,
-      color: REVENUE_CHART_COLORS[idx % REVENUE_CHART_COLORS.length] ?? "#34d399",
-    }));
-  }, [revenueSummary.revenueBreakdown]);
-
-  const budgetTrendData = useMemo(() => {
-    const baseBudget = governmentStructure?.totalBudget ?? 0;
-    return [2020, 2021, 2022, 2023, 2024].map((year) => ({
-      year: year.toString(),
-      budget: baseBudget * (0.95 + (year % 3) * 0.03),
-      spent: baseBudget * (0.85 + (year % 2) * 0.04),
-      revenue: revenueSummary.totalRevenue * (0.9 + (year % 4) * 0.03),
-    }));
-  }, [governmentStructure?.totalBudget, revenueSummary.totalRevenue]);
+  const departmentChartData = buildDepartmentChartData(yearAllocations, departments);
+  const revenueChartData = revenueSummary.revenueBreakdown.map((item, idx) => ({
+    name: item.category,
+    value: item.amount,
+    percent: item.percent,
+    color: REVENUE_CHART_COLORS[idx % REVENUE_CHART_COLORS.length] ?? "var(--color-amber-500)",
+  }));
+  const budgetTrendData = buildTrendData(budgetAllocations).map((item) => ({
+    ...item,
+    year: yearLabel(Number(item.year)),
+  }));
 
   const budgetHealth = getBudgetHealthStatus(
     revenueSummary.totalRevenue,
-    budgetSummary.totalSpent
+    budgetSummary.totalAllocated
   );
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-foreground text-2xl font-bold tracking-tight">
-            {governmentStructure?.governmentName ?? "National"} Fiscal Budget
-          </h1>
-          <p className="text-muted-foreground mt-0.5 text-xs">
-            {toTitleCase(governmentStructure?.governmentType ?? "Democratic Republic")} •{" "}
-            {selectedYear} {governmentStructure?.fiscalYear ?? "FY"}
-          </p>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <BudgetTitle structure={governmentStructure} year={selectedYear} yearLabel={yearLabel} />
         <div className="flex items-center gap-3">
-          <select
+          <YearSelect
             value={selectedYear}
-            onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
-            className="border-border/40 bg-card/60 text-foreground hover:border-border/60 cursor-pointer rounded-xl border px-3 py-1.5 font-mono text-xs font-semibold backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:ring-2 focus:ring-emerald-500/30"
-          >
-            {Array.from({ length: 5 }, (_, i) => currentBudgetYear() - i).map((year) => (
-              <option
-                key={year}
-                value={year}
-                className="bg-popover text-popover-foreground font-mono"
-              >
-                {year}
-              </option>
-            ))}
-          </select>
-          <Badge
-            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${budgetHealth.color}`}
-          >
+            currentYear={currentYear}
+            onChange={setSelectedYear}
+            yearLabel={yearLabel}
+          />
+          <Badge variant="outline" className={budgetHealth.color}>
             {budgetHealth.label}
           </Badge>
         </div>
       </div>
 
+      {ownerView && departments.length === 0 && <NoGovernmentBanner createFor={editableCountry} />}
+
       {needsNewYearBudget && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-          <p className="text-foreground text-sm">
-            A new fiscal year has begun. Your FY{effectiveYear} budget stays in effect until you
-            set the FY{currentYear} budget.
-          </p>
-          {countryId && !isReadOnly && !propAllocations && (
-            <Button
-              size="sm"
-              onClick={() => startBudgetYear.mutate({ countryId })}
-              disabled={startBudgetYear.isPending}
-            >
-              {startBudgetYear.isPending
-                ? "Starting…"
-                : `Start FY${currentYear} budget from FY${effectiveYear}`}
-            </Button>
-          )}
-        </div>
+        <NewYearBanner
+          currentYear={currentYear}
+          effectiveYear={effectiveYear}
+          startFrom={countryId && !isReadOnly && !propAllocations ? countryId : undefined}
+          onStarted={setSelectedYear}
+          yearLabel={yearLabel}
+        />
       )}
 
-      {/* Key Metrics Cards */}
       <BudgetKeyMetrics
         budgetSummary={budgetSummary}
         revenueSummary={revenueSummary}
+        maintenanceSpent={maintenance?.[selectedYear] ?? 0}
         formatCurrency={formatCurrency}
       />
 
-      {/* Main Content Tabs */}
-      <Tabs
-        value={selectedView}
-        onValueChange={(value) =>
-          setSelectedView(value as "overview" | "departments" | "revenue" | "analysis")
+      <div className="space-y-4">
+        <SegmentedControl
+          size="sm"
+          className="w-full"
+          options={VIEW_OPTIONS}
+          value={selectedView}
+          onValueChange={(value) => setSelectedView(value as BudgetView)}
+          asTabs
+        />
+
+        {
+          {
+            overview: (
+              <BudgetOverviewCharts
+                overviewChartMode={overviewChartMode}
+                setOverviewChartMode={setOverviewChartMode}
+                departmentChartData={departmentChartData}
+                budgetTrendData={budgetTrendData}
+                revenueChartData={revenueChartData}
+                formatCurrency={formatCurrency}
+              />
+            ),
+            departments: (
+              <BudgetDepartmentList
+                departments={budgetSummary.departmentAllocations}
+                year={selectedYear}
+                formatNumber={formatNumber}
+                editing={editing}
+              />
+            ),
+            revenue: (
+              <BudgetRevenueAnalysis revenueSummary={revenueSummary} formatNumber={formatNumber} />
+            ),
+            analysis: (
+              <BudgetHealthAnalysis
+                budgetSummary={budgetSummary}
+                revenueSummary={revenueSummary}
+                budgetHealth={budgetHealth}
+              />
+            ),
+          }[selectedView]
         }
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <TabsList className="bg-card/60 border-border/40 grid w-full grid-cols-4 gap-1 rounded-2xl border p-1 shadow-inner backdrop-blur-xl">
-            <TabsTrigger
-              value="overview"
-              className="rounded-xl text-xs font-extrabold data-[state=active]:border data-[state=active]:border-emerald-500/30 data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-400"
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger
-              value="departments"
-              className="rounded-xl text-xs font-extrabold data-[state=active]:border data-[state=active]:border-emerald-500/30 data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-400"
-            >
-              Departments
-            </TabsTrigger>
-            <TabsTrigger
-              value="revenue"
-              className="rounded-xl text-xs font-extrabold data-[state=active]:border data-[state=active]:border-emerald-500/30 data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-400"
-            >
-              Revenue
-            </TabsTrigger>
-            <TabsTrigger
-              value="analysis"
-              className="rounded-xl text-xs font-extrabold data-[state=active]:border data-[state=active]:border-emerald-500/30 data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-400"
-            >
-              Analysis
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
-          <BudgetOverviewCharts
-            overviewChartMode={overviewChartMode}
-            setOverviewChartMode={setOverviewChartMode}
-            departmentChartData={departmentChartData}
-            budgetTrendData={budgetTrendData}
-            revenueChartData={revenueChartData}
-            formatCurrency={formatCurrency}
-          />
-        </TabsContent>
-
-        {/* Departments Tab */}
-        <TabsContent value="departments" className="space-y-3">
-          <BudgetDepartmentList
-            departments={budgetSummary.topSpendingDepartments}
-            formatNumber={formatNumber}
-          />
-        </TabsContent>
-
-        {/* Revenue Tab */}
-        <TabsContent value="revenue" className="space-y-4">
-          <BudgetRevenueAnalysis
-            revenueSummary={revenueSummary}
-            formatNumber={formatNumber}
-          />
-        </TabsContent>
-
-        {/* Analysis Tab */}
-        <TabsContent value="analysis" className="space-y-4">
-          <BudgetHealthAnalysis
-            budgetSummary={budgetSummary}
-            revenueSummary={revenueSummary}
-            budgetHealth={budgetHealth}
-          />
-        </TabsContent>
-      </Tabs>
+      </div>
     </div>
   );
 }

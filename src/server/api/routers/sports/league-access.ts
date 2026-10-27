@@ -13,7 +13,7 @@ interface LeagueManagerCaller {
   auth: { userId: string };
 }
 
-export function canManageLeague(
+function canManageLeague(
   caller: LeagueManagerCaller,
   league: { createdByUserId: string }
 ): boolean {
@@ -37,5 +37,15 @@ export function assertCanManageLeague(
 ): void {
   if (!canManageLeague(caller, league)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this league" });
+  }
+}
+
+/** Same rule as assertCanManageLeague, with the "own" wording the destructive league actions use. */
+export function assertOwnsLeague(
+  caller: LeagueManagerCaller,
+  league: { createdByUserId: string }
+): void {
+  if (!canManageLeague(caller, league)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this league" });
   }
 }

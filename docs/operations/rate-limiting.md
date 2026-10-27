@@ -1,5 +1,7 @@
 # Rate Limiting Configuration Guide
 
+**Last updated:** 2026-10-05
+
 ## Table of Contents
 1. [Overview](#overview)
 2. [Why Rate Limiting is Critical](#why-rate-limiting-is-critical)
@@ -88,7 +90,7 @@ IxStats implements four tRPC rate limiting tiers plus a limit on admin procedure
 |------|-------------|-----------|----------------|
 | **Standard Mutations** | 60 | `mutations` | `standardMutationCountryOwnerProcedure` (country owner required) |
 | **Light Mutations** | 100 | `light_mutations` | `lightMutationProcedure` |
-| **Read-Only** | 120 | `queries` | `readOnlyProcedure` (defined, currently used by no router) |
+| **Read-Only** | 120 | `queries` | `readOnlyRateLimit` middleware only (`trpc/middleware.ts`); there is no `readOnlyProcedure` builder and no router uses it |
 | **Public** | 100 | `public` | `rateLimitedPublicProcedure` |
 | **Admin** | 100 | `default` | `adminProcedure` |
 
@@ -96,13 +98,46 @@ There is no "heavy mutation" tier; `heavyMutationProcedure` and similar builders
 
 Other callers of the limiter:
 - `commons` router (`src/server/api/routers/commons.ts`): its own 100/min `commons` namespace.
-- Route handlers that call `rateLimiter.check()` without explicit limits, so they use `RATE_LIMIT_MAX_REQUESTS`/`RATE_LIMIT_WINDOW_MS` (default 100 per 60s): `/api/wiki/sync-webhook` (`wiki-sync-webhook`), `/api/onoma/tts` (`onoma-tts`), `/api/mediawiki/[wiki]/api.php` (`wiki_proxy`), `/api/upload/image` (`file_upload`).
+- Route handlers that call `rateLimiter.check()` without explicit limits, so they use `RATE_LIMIT_MAX_REQUESTS`/`RATE_LIMIT_WINDOW_MS` (default 100 per 60s): `/api/onoma/tts` (`onoma-tts`), `/api/upload/image` (`file_upload`), and the WikiOS `wiki_proxy` bucket (see [WikiOS buckets](#wikios-buckets)).
+- `/api/maps/editor-source/[layer]` (the style editor's Maputnik preview sources, admins only): its own `map_editor_source` bucket, 120 per minute per admin, since Maputnik loads every source of a style at once.
 
 `publicProcedure`, `protectedProcedure`, `countryOwnerProcedure`, `premiumProcedure` and the `cached*Procedure` builders apply **no** rate limit.
 
+### WikiOS buckets
+
+The WikiOS routes (plans 401, 410, 411, 412, 416) use their own buckets, so a bot reading in bulk does not use up a
+reader's limit. Every key is the trusted client identity (`resolveRateLimitIdentifier`: `ip:<CF-Connecting-IP or
+X-Real-IP>`, never `X-Forwarded-For`) unless the table says otherwise; the login bucket adds a hash of the account
+name. They are set in code, not by `RATE_LIMIT_MAX_REQUESTS` (`wiki_proxy` is the one that takes the default). This
+table lists every bucket the WikiOS code names: grep `rateLimiter.check(` and `deps.rateLimit(` in `src/app/api/wiki`,
+`src/app/api/wikios`, `src/app/api/mediawiki`, `src/lib/wiki-os`, and `SISTER_CALLER_LIMITS` and `enforceRateLimit(` in
+`src/server/api/routers/wikios`, to check it.
+
+| Bucket | Where | Limit | Key |
+|--------|-------|-------|-----|
+| `wiki_api` | every request to `/w/api.php` (`src/lib/wiki-os/api-compat/dispatch.ts`) | 120 per minute anonymous, 600 signed in (bot session or browser user); callers with the `noratelimit` right are skipped | client |
+| `wiki_api_write` | the POST actions of `/w/api.php` (edit, move, delete, undelete, protect, rollback, purge, login, logout), on top of `wiki_api` | 120 per minute | client |
+| `wiki_api_login` | `action=login`, counted once the login token is valid | 10 per 5 minutes; over it the answer is MediaWiki's `Throttled` with a `wait` | client + sha256 of the lower-cased account name (so a name of any length is a fixed-size key) |
+| `wiki_api_render` | the renders api.php causes: `action=parse` of text or an old revision (MediaWiki renders it) for callers without a bot session, 20 per minute; and each page `action=purge` queues for a render, 60 per minute (a request that would pass it is refused whole, `ratelimited`, before any page is purged; accounts with the `noratelimit` right are not counted) | 20 per minute for parse, 60 for purge, one count | client (a signed-in account: `user:<id>`) |
+| `wiki_upload` | uploads: `/api/wiki/upload` (after the signed-in check, before the body is read) and `action=upload` of `/w/api.php` (after the parameters are checked), one count per attempt | 20 per minute | route: the request context's rate-limit identity; api.php: client |
+| `wiki_media` | the two media proxies under `/api/mediawiki/` and the file route `/api/wiki/file/[...name]` (the uploads WikiOS serves itself; a page loads dozens of images) | 600 per minute | client |
+| `wiki_export` | `/api/wiki/export` (Special:Export) | 10 per minute | client or signed-in user |
+| `wiki_raw` | `/api/wiki/raw` (`/wiki/<title>?action=raw`, for bots reading wikitext in bulk) | 300 per minute | client |
+| `wiki_read` | `wikios.getArticleHtml`, the reader's article query (a page load and every hover prefetch; the shared `public` tier of 100 per minute would answer readers with a false 404/busy). Added by the F10 change of the integration sweep | 600 per minute | client |
+| `sistersearch` | `wikios.search` of a sister wiki or of "all" (one opensearch per sister host); an IxWiki-only search is not counted (`SISTER_CALLER_LIMITS.search`, `src/server/api/routers/wikios/search.ts`) | 30 per minute | client (a signed-in account: `user:<id>`) |
+| `sisterintro` | `wikios.getIntro` of a sister wiki's page (a hover preview: one wikitext read); IxWiki intros are not counted (`SISTER_CALLER_LIMITS.intro`) | 60 per minute | client (a signed-in account: `user:<id>`) |
+| `sisterembed` | `wikios.sisterEmbed`, only the embeds that miss its cache (up to two calls to the sister wiki each); a cache hit is free (`EMBED_READS_PER_MINUTE`, `src/server/api/routers/wikios/sister.ts`) | 20 per minute for a visitor, 60 signed in | client (a signed-in account: `user:<id>`) |
+| `wiki_proxy` | the `/api/mediawiki/[wiki]/api.php` proxy | the default (`RATE_LIMIT_MAX_REQUESTS` per `RATE_LIMIT_WINDOW_MS`, 100 per minute) | client |
+| `wiki-sync-webhook` | `/api/wiki/sync-webhook` (MediaWiki pushing a changed page) | 600 per minute with the valid `WIKI_SYNC_WEBHOOK_SECRET`; 10 per minute without it (those answer 401/503) | `secret:<first 16 hex of sha256(secret)>` with the secret, the client without |
+| `wikios-inbound-sync` | `/api/wikios/inbound-sync` (the cron / webhook that runs an inbound sync cycle) | same as `wiki-sync-webhook` | same as `wiki-sync-webhook` |
+
+A client over a `wiki_api*` bucket gets MediaWiki's `ratelimited` error (HTTP 200 with the error in the body, as
+MediaWiki does); the other buckets answer HTTP 429 with `Retry-After`. Redis holds the counters in production
+(in-memory per process otherwise, so a restart resets them).
+
 ### Operation Examples by Tier
 
-**Standard Mutations (60 req/min):** country-owner writes such as `countryGeo.upsertCity`, `countryGeo.populateFromWiki`, `countryGeo.updateGeoRollupMode`.
+**Standard Mutations (60 req/min):** country-owner writes such as `countryGeo.upsertCity`, `countryGeo.upsertSubdivision`, `countryGeo.updateGeoRollupMode`.
 
 **Light Mutations (100 req/min):** `notifications.markAllAsRead`, `notifications.dismissNotification`, `ixnayid` wiki verification, `realms.claimCountry`/`realms.claimNationPage`, `users.setActiveNation`.
 
@@ -332,7 +367,7 @@ When creating or updating tRPC endpoints, select the appropriate procedure type 
 Is this a mutation (creates/updates/deletes data)?
 ├─ NO → Is it public?
 │   ├─ YES → rateLimitedPublicProcedure (100/min)
-│   └─ NO  → readOnlyProcedure (120/min)
+│   └─ NO  → protectedProcedure (unlimited; add a limit with .use(createRateLimitMiddleware(…)))
 └─ YES → Does it write country-owned data?
     ├─ YES → standardMutationCountryOwnerProcedure (60/min, ownership checked)
     └─ NO  → lightMutationProcedure (100/min)
@@ -353,19 +388,12 @@ import { publicProcedure, protectedProcedure } from "~/server/api/trpc";
 // builders are also unlimited.
 ```
 
-#### Read-Only and Public Procedures
+#### Public Procedures
 
 ```typescript
-import { readOnlyProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import { rateLimitedPublicProcedure } from "~/server/api/trpc";
 
 export const dataRouter = createTRPCRouter({
-  // 120/min, signed-in callers (namespace "queries")
-  getCountries: readOnlyProcedure
-    .input(z.object({ limit: z.number().optional() }))
-    .query(async ({ ctx, input }) => {
-      // Query logic here
-    }),
-
   // 100/min, no auth (namespace "public")
   publicSearch: rateLimitedPublicProcedure
     .input(z.object({ query: z.string() }))
@@ -494,7 +522,7 @@ RATE_LIMIT_WINDOW_MS="60000"  # the tRPC tiers use their hard-coded limits
 REDIS_ENABLED="false"  # Use in-memory for testing
 ```
 
-Automated coverage already exists: `src/tests/lib/cache/rate-limiter.test.ts`, `src/tests/server/api/rate-limit-middleware.test.ts` and `src/tests/server/realms/realm-rate-limits.test.ts`.
+Automated coverage already exists: `src/tests/lib/cache/rate-limiter.test.ts` and `src/tests/scenarios/security/security-mutation-burst.test.ts` (every builder's limit and namespace, the realm and article-read buckets, the bucket key).
 
 #### 2. Create a Test Script (sketch — not in the repo)
 
@@ -540,7 +568,7 @@ async function testRateLimit() {
 testRateLimit().catch(console.error);
 ```
 
-Run the test:
+Run it once you have created it:
 
 ```bash
 bun scripts/test-rate-limit.ts
@@ -1071,7 +1099,7 @@ const createRateLimitMiddleware = (options: RateLimitOptions) => {
 
 ### 7. Test Rate Limiting in CI/CD
 
-Unit tests already cover the limiter and middleware (`src/tests/lib/cache/rate-limiter.test.ts`, `src/tests/server/api/rate-limit-middleware.test.ts`, `src/tests/server/realms/realm-rate-limits.test.ts`). An end-to-end sketch against a running server:
+Unit tests already cover the limiter and middleware (`src/tests/lib/cache/rate-limiter.test.ts`, `src/tests/scenarios/security/security-mutation-burst.test.ts`). An end-to-end sketch against a running server:
 
 ```typescript
 // sketch

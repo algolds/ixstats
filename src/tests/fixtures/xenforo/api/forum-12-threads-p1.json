@@ -1,0 +1,68 @@
+{
+  "threads": [
+    {
+      "thread_id": 100,
+      "node_id": 12,
+      "title": "Welcome",
+      "user_id": 7,
+      "username": "Admin",
+      "post_date": 1700000000,
+      "last_post_date": 1700003000,
+      "last_post_id": 1002,
+      "last_post_username": "Admin",
+      "reply_count": 2,
+      "view_count": 40,
+      "first_post_id": 1000,
+      "discussion_open": true,
+      "sticky": true,
+      "discussion_state": "visible",
+      "discussion_type": "discussion",
+      "prefix_id": 0,
+      "Forum": { "node_id": 12, "title": "General Discussion" },
+      "User": {
+        "user_id": 7,
+        "username": "Admin",
+        "avatar_urls": { "s": "https://forum.example.test/a/7.jpg" }
+      }
+    },
+    {
+      "thread_id": 101,
+      "node_id": 12,
+      "title": "Second",
+      "user_id": 8,
+      "username": "Member",
+      "post_date": 1700001000,
+      "last_post_date": 1700001000,
+      "last_post_id": 1010,
+      "last_post_username": "Member",
+      "reply_count": 0,
+      "view_count": 3,
+      "first_post_id": 1010,
+      "discussion_open": true,
+      "sticky": false,
+      "discussion_state": "moderated",
+      "discussion_type": "discussion",
+      "prefix_id": 0
+    }
+  ],
+  "sticky": [
+    {
+      "thread_id": 100,
+      "node_id": 12,
+      "title": "Welcome",
+      "user_id": 7,
+      "username": "Admin",
+      "post_date": 1700000000,
+      "last_post_date": 1700003000,
+      "reply_count": 2,
+      "view_count": 40,
+      "first_post_id": 1000,
+      "discussion_open": true,
+      "sticky": true,
+      "discussion_state": "visible",
+      "discussion_type": "discussion",
+      "prefix_id": 0
+    }
+  ],
+  "pagination": { "current_page": 1, "last_page": 2, "per_page": 2, "shown": 2, "total": 3 }
+}

@@ -11,8 +11,8 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import { UserManagementService } from "../src/lib/user-management-service";
-import { SYSTEM_OWNER_IDS } from "../src/lib/system-owner-constants";
+import { UserManagementService } from "../src/lib/auth/user-management-service";
+import { SYSTEM_OWNER_IDS } from "../src/lib/auth/system-owner-constants";
 
 interface DatabaseInfo {
   name: string;

@@ -1,23 +1,10 @@
 "use client";
 
-/**
- * MapEditorToolbar — Vertical tool rail (left sidebar).
- *
- * Adobe/Photoshop-inspired: thin vertical strip of icon buttons,
- * grouped by function, with tooltips showing name + keyboard shortcut.
- *
- * Groups:
- * 0. Selection (V, M) — Select, Lasso Select
- * 1. Territory & Settlements — Region (R), City (C), POI (P)
- * 2. Infrastructure — Route (T)
- * 3. Geography Features — Peak (K), River (Y), Lake (J)
- * 4. Measurement — Ruler (U)
- *
- * Active tool gets primary color highlight.
- */
-
-import React, { useCallback, useMemo, useState, useRef, memo } from "react";
+import React, { useMemo, useState, useRef, memo } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import { Button } from "~/components/ui/button";
+import { FacetMaterial } from "~/components/ui/facet";
+import { Tooltip } from "~/components/ui/tooltip";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { getPlugins } from "~/components/maps/editor/plugins/registry";
 import type { ToolbarItem } from "~/components/maps/editor/plugins/types";
@@ -37,18 +24,231 @@ interface GroupConfig {
   defaultMode: string;
 }
 
+/** Tools sharing a rail slot: click cycles within the group, hold or right-click opens the list. */
 const GROUPS_CONFIG: GroupConfig[] = [
-  {
-    id: "select-modes",
-    modes: ["view", "lasso-select"],
-    defaultMode: "view",
-  },
+  { id: "select-modes", modes: ["view", "lasso-select"], defaultMode: "view" },
   {
     id: "geography-features",
     modes: ["add-peak", "add-river", "add-lake"],
     defaultMode: "add-peak",
   },
 ];
+
+type RailItem =
+  | {
+      type: "group";
+      id: string;
+      modes: string[];
+      defaultMode: string;
+      activeTool: ToolbarItem | undefined;
+      tools: ToolbarItem[];
+      group: number;
+    }
+  | { type: "single"; tool: ToolbarItem; group: number };
+
+function buildRailItems(sortedTools: ToolbarItem[], activeMode: string): RailItem[] {
+  const result: RailItem[] = [];
+  const processedModes = new Set<string>();
+
+  for (const tool of sortedTools) {
+    if (processedModes.has(tool.mode)) continue;
+
+    const groupConf = GROUPS_CONFIG.find((g) => g.modes.includes(tool.mode));
+    if (!groupConf) {
+      processedModes.add(tool.mode);
+      result.push({ type: "single", tool, group: tool.group });
+      continue;
+    }
+
+    const groupTools = sortedTools.filter((t) => groupConf.modes.includes(t.mode));
+    groupConf.modes.forEach((m) => processedModes.add(m));
+    result.push({
+      type: "group",
+      id: groupConf.id,
+      modes: [...groupConf.modes],
+      defaultMode: groupConf.defaultMode,
+      activeTool:
+        groupTools.find((t) => t.mode === activeMode) ||
+        groupTools.find((t) => t.mode === groupConf.defaultMode) ||
+        groupTools[0],
+      tools: groupTools,
+      group: tool.group,
+    });
+  }
+  return result;
+}
+
+function ToolSeparator({ horizontal }: { horizontal?: boolean }) {
+  return horizontal ? (
+    <div className="bg-separator mx-0.5 h-5 w-px" />
+  ) : (
+    <div className="bg-separator my-0.5 h-px w-5" />
+  );
+}
+
+function toolButtonClass(horizontal: boolean | undefined, isActive: boolean, isDisabled: boolean) {
+  return `${horizontal ? "h-8 w-8" : "h-9 w-9"} ${isActive ? "" : "text-label-secondary"} ${
+    isDisabled ? "opacity-30" : ""
+  }`;
+}
+
+interface RailButtonProps {
+  horizontal?: boolean;
+  activeMode: string;
+  mode: EditorMode;
+  disabled?: boolean;
+  disabledTools: EditorMode[];
+  onModeChange: (mode: EditorMode) => void;
+}
+
+function SingleToolButton({
+  tool,
+  horizontal,
+  activeMode,
+  mode,
+  disabled,
+  disabledTools,
+  onModeChange,
+}: RailButtonProps & { tool: ToolbarItem }) {
+  const Icon = tool.icon;
+  const isActive = activeMode === tool.mode;
+  const isToolDisabled = disabled || disabledTools.includes(tool.mode);
+  const titleText = disabledTools.includes(tool.mode)
+    ? `${tool.label} (Select a country first)`
+    : `${tool.label} (${tool.shortcut})`;
+
+  return (
+    <Tooltip
+      content={tool.label}
+      shortcut={tool.shortcut}
+      side={horizontal ? "top" : "right"}
+      disabled={isToolDisabled}
+    >
+      <Button
+        variant={isActive ? "default" : "ghost"}
+        size="icon"
+        onClick={() => onModeChange(tool.mode === mode ? "view" : tool.mode)}
+        disabled={isToolDisabled}
+        aria-label={titleText}
+        aria-pressed={isActive}
+        className={toolButtonClass(horizontal, isActive, !!isToolDisabled)}
+      >
+        <Icon aria-hidden />
+      </Button>
+    </Tooltip>
+  );
+}
+
+function GroupToolButton({
+  item,
+  activeTool,
+  horizontal,
+  activeMode,
+  mode,
+  disabled,
+  disabledTools,
+  onModeChange,
+}: RailButtonProps & {
+  item: Extract<RailItem, { type: "group" }>;
+  activeTool: ToolbarItem;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearHold = () => {
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    holdTimer.current = null;
+  };
+
+  const Icon = activeTool.icon;
+  const isActive = item.modes.includes(activeMode);
+  const isToolDisabled = disabled || disabledTools.includes(activeTool.mode);
+  const suffix = "Hold/Right-Click for group";
+  const titleText = disabledTools.includes(activeTool.mode)
+    ? `${activeTool.label} (Select a country first - ${suffix})`
+    : `${activeTool.label} (${activeTool.shortcut} - ${suffix})`;
+
+  const handleClick = () => {
+    if (!item.modes.includes(mode)) return onModeChange(activeTool.mode);
+    const next = item.modes[(item.modes.indexOf(mode) + 1) % item.modes.length];
+    onModeChange(next as EditorMode);
+  };
+
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <Tooltip
+        content={activeTool.label}
+        shortcut={activeTool.shortcut}
+        side={horizontal ? "top" : "right"}
+        disabled={isToolDisabled || isOpen}
+      >
+        <PopoverTrigger asChild>
+          <Button
+            variant={isActive ? "default" : "ghost"}
+            size="icon"
+            onClick={handleClick}
+            onMouseDown={() => {
+              clearHold();
+              holdTimer.current = setTimeout(() => setIsOpen(true), 300);
+            }}
+            onMouseUp={clearHold}
+            onMouseLeave={clearHold}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setIsOpen(true);
+            }}
+            disabled={isToolDisabled}
+            aria-label={titleText}
+            aria-pressed={isActive}
+            className={`relative select-none ${toolButtonClass(horizontal, isActive, !!isToolDisabled)}`}
+          >
+            <Icon aria-hidden />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute right-0.5 bottom-0.5 h-0 w-0 border-[3px] border-transparent border-r-current border-b-current opacity-60"
+            />
+          </Button>
+        </PopoverTrigger>
+      </Tooltip>
+      <PopoverContent
+        side={horizontal ? "top" : "right"}
+        align="center"
+        sideOffset={6}
+        className="rounded-row w-40 p-1"
+      >
+        <div className="flex flex-col gap-0.5">
+          {item.tools.map((subTool) => {
+            const SubIcon = subTool.icon;
+            const isSubActive = activeMode === subTool.mode;
+            return (
+              <Button
+                key={subTool.mode}
+                variant={isSubActive ? "default" : "ghost"}
+                size="sm"
+                onClick={() => {
+                  onModeChange(subTool.mode);
+                  setIsOpen(false);
+                }}
+                className={`w-full justify-between px-2 ${isSubActive ? "" : "text-label-secondary"}`}
+              >
+                <div className="flex items-center gap-2">
+                  <SubIcon aria-hidden />
+                  <span>{subTool.label}</span>
+                </div>
+                <span
+                  className={`text-footnote rounded-control-sm px-1 py-0.5 tabular-nums ${
+                    isSubActive ? "bg-on-tint/20 text-on-tint" : "bg-fill-3 text-label-secondary"
+                  }`}
+                >
+                  {subTool.shortcut}
+                </span>
+              </Button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export const MapEditorToolbar = memo(function MapEditorToolbar({
   mode,
@@ -57,289 +257,52 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
   horizontal,
   disabledTools = [],
 }: MapEditorToolbarProps) {
-  const [activePopoverGroupId, setActivePopoverGroupId] = useState<string | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Normalize mode for highlighting (edit-city → view, since edit is panel-based)
+  // Edit modes are panel-based, so they highlight the Select tool
   const activeMode = mode.startsWith("edit-") ? "view" : mode;
 
   const containerClass = horizontal
-    ? "flex h-10 items-center gap-0.5 border-t border-border bg-card px-1"
-    : "flex w-10 flex-col items-center gap-0.5 border-r border-border bg-card py-1";
+    ? "flex h-10 items-center gap-0.5 rounded-none px-1"
+    : "flex h-full w-10 flex-col items-center gap-0.5 rounded-none py-1";
 
-  // Dynamically resolve tools from registered plugins (memoized once)
-  const sortedTools = useMemo(() => {
-    const plugins = getPlugins();
-    const items = plugins.flatMap((p) => p.toolbarItems || []);
-    return [...items].sort((a, b) => {
-      if (a.group !== b.group) return a.group - b.group;
-      return (a.order ?? 0) - (b.order ?? 0);
-    });
-  }, []);
+  const railItems = useMemo(() => {
+    const items = getPlugins().flatMap((p) => p.toolbarItems || []);
+    const sorted = items.sort((a, b) => a.group - b.group || (a.order ?? 0) - (b.order ?? 0));
+    return buildRailItems(sorted, activeMode);
+  }, [activeMode]);
 
-  // Grouped tools calculation
-  const groupedTools = useMemo(() => {
-    const result: Array<
-      | {
-          type: "group";
-          id: string;
-          modes: string[];
-          defaultMode: string;
-          activeTool: ToolbarItem | undefined;
-          tools: ToolbarItem[];
-          group: number;
-        }
-      | {
-          type: "single";
-          tool: ToolbarItem;
-          group: number;
-        }
-    > = [];
-
-    const processedModes = new Set<string>();
-
-    for (const tool of sortedTools) {
-      if (processedModes.has(tool.mode)) continue;
-
-      const groupConf = GROUPS_CONFIG.find((g) => g.modes.includes(tool.mode));
-      if (groupConf) {
-        const groupTools = sortedTools.filter((t) => groupConf.modes.includes(t.mode));
-        groupConf.modes.forEach((m) => processedModes.add(m));
-
-        const activeInGroup =
-          groupTools.find((t) => t.mode === activeMode) ||
-          groupTools.find((t) => t.mode === groupConf.defaultMode) ||
-          groupTools[0];
-
-        result.push({
-          type: "group",
-          id: groupConf.id,
-          modes: [...groupConf.modes],
-          defaultMode: groupConf.defaultMode,
-          activeTool: activeInGroup,
-          tools: groupTools,
-          group: tool.group,
-        });
-      } else {
-        processedModes.add(tool.mode);
-        result.push({
-          type: "single",
-          tool,
-          group: tool.group,
-        });
-      }
-    }
-
-    return result;
-  }, [sortedTools, activeMode]);
-
-  const handleMouseDown = useCallback((groupId: string) => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setActivePopoverGroupId(groupId);
-    }, 300);
-  }, []);
-
-  const handleMouseUpOrLeave = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-  }, []);
-
-  const handleContextMenu = useCallback((e: React.MouseEvent, groupId: string) => {
-    e.preventDefault();
-    setActivePopoverGroupId(groupId);
-  }, []);
-
-  const handleGroupClick = useCallback(
-    (group: { modes: string[]; defaultMode: string }, activeToolMode: EditorMode) => {
-      if (group.modes.includes(mode)) {
-        const idx = group.modes.indexOf(mode);
-        const nextMode = group.modes[(idx + 1) % group.modes.length] as EditorMode;
-        onModeChange(nextMode);
-      } else {
-        onModeChange(activeToolMode);
-      }
-    },
-    [mode, onModeChange]
-  );
-
-  const handleSingleClick = useCallback(
-    (toolMode: EditorMode) => {
-      onModeChange(toolMode === mode ? "view" : toolMode);
-    },
-    [mode, onModeChange]
-  );
-
-  let lastGroup = -1;
+  const buttonProps: RailButtonProps = {
+    horizontal,
+    activeMode,
+    mode,
+    disabled,
+    disabledTools,
+    onModeChange,
+  };
 
   return (
-    <div className={`${containerClass} ${disabled ? "pointer-events-none opacity-50" : ""}`}>
-      {groupedTools.map((item) => {
-        const toolGroup = item.group;
-        const showSep = lastGroup !== -1 && toolGroup !== lastGroup;
-        lastGroup = toolGroup;
+    <FacetMaterial
+      layer="chrome"
+      role="toolbar"
+      aria-label="Editor tools"
+      aria-orientation={horizontal ? "horizontal" : "vertical"}
+      className={`${containerClass} ${disabled ? "pointer-events-none opacity-50" : ""}`}
+    >
+      {railItems.map((item, i) => {
+        const key = item.type === "group" ? item.id : item.tool.mode;
+        if (item.type === "group" && !item.activeTool) return null;
+        const showSeparator = i > 0 && item.group !== railItems[i - 1]!.group;
 
-        if (item.type === "group") {
-          const activeTool = item.activeTool;
-          if (!activeTool) return null;
-          const FallbackIcon = activeTool.icon;
-          const isActive = item.modes.includes(activeMode);
-          const isToolDisabled = disabled || disabledTools.includes(activeTool.mode);
-
-          const titleText = disabledTools.includes(activeTool.mode)
-            ? `${activeTool.label} (Select a country first - Hold/Right-Click for group)`
-            : `${activeTool.label} (${activeTool.shortcut} - Hold/Right-Click for group)`;
-
-          return (
-            <div key={item.id} className={horizontal ? "flex items-center" : ""}>
-              {showSep &&
-                (horizontal ? (
-                  <div className="bg-border mx-0.5 h-5 w-px" />
-                ) : (
-                  <div className="bg-border my-0.5 h-px w-5" />
-                ))}
-              <Popover
-                open={activePopoverGroupId === item.id}
-                onOpenChange={(open) => {
-                  if (!open) setActivePopoverGroupId(null);
-                }}
-              >
-                <PopoverTrigger asChild>
-                  <button
-                    onClick={() => handleGroupClick(item, activeTool.mode)}
-                    onMouseDown={() => handleMouseDown(item.id)}
-                    onMouseUp={handleMouseUpOrLeave}
-                    onMouseLeave={handleMouseUpOrLeave}
-                    onContextMenu={(e) => handleContextMenu(e, item.id)}
-                    disabled={isToolDisabled}
-                    className={`group relative flex items-center justify-center rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out select-none active:scale-[0.98] ${
-                      horizontal ? "h-8 w-8" : "h-9 w-9"
-                    } ${
-                      isActive
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    } ${isToolDisabled ? "pointer-events-none opacity-30" : ""}`}
-                    title={titleText}
-                  >
-                    <FallbackIcon className="h-4 w-4" />
-
-                    <div
-                      className={`pointer-events-none absolute right-0.5 bottom-0.5 h-0 w-0 border-[3px] border-transparent border-r-current border-b-current opacity-60`}
-                    />
-
-                    {!isToolDisabled && activePopoverGroupId !== item.id && (
-                      <div
-                        className={`bg-popover/90 text-popover-foreground ring-border/50 pointer-events-none absolute z-50 hidden rounded px-2 py-1 text-xs font-medium whitespace-nowrap shadow-md ring-1 backdrop-blur-md group-hover:block ${
-                          horizontal
-                            ? "bottom-full left-1/2 mb-1.5 -translate-x-1/2"
-                            : "top-1/2 left-full ml-1.5 -translate-y-1/2"
-                        }`}
-                      >
-                        {activeTool.label}
-                        <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-xs">
-                          {activeTool.shortcut}
-                        </span>
-                      </div>
-                    )}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  side={horizontal ? "top" : "right"}
-                  align="center"
-                  sideOffset={6}
-                  style={{ transformOrigin: "var(--radix-popover-content-transform-origin)" }}
-                  className="bg-popover/90 border-border/60 text-foreground ring-border/50 z-[100] w-36 rounded-lg border p-1 shadow-xl ring-1 backdrop-blur-xl"
-                >
-                  <div className="flex flex-col gap-0.5">
-                    {item.tools.map((subTool) => {
-                      const SubIcon = subTool.icon;
-                      const isSubActive = activeMode === subTool.mode;
-                      return (
-                        <button
-                          key={subTool.mode}
-                          onClick={() => {
-                            onModeChange(subTool.mode);
-                            setActivePopoverGroupId(null);
-                          }}
-                          className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.98] ${
-                            isSubActive
-                              ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                              : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <SubIcon className="h-3.5 w-3.5" />
-                            <span>{subTool.label}</span>
-                          </div>
-                          <span
-                            className={`rounded px-1 py-0.5 font-mono text-xs ${
-                              isSubActive
-                                ? "bg-primary-foreground/20 text-primary-foreground"
-                                : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {subTool.shortcut}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-          );
-        } else {
-          const tool = item.tool;
-          const FallbackIcon = tool.icon;
-          const isActive = activeMode === tool.mode;
-          const isToolDisabled = disabled || disabledTools.includes(tool.mode);
-          const titleText = disabledTools.includes(tool.mode)
-            ? `${tool.label} (Select a country first)`
-            : `${tool.label} (${tool.shortcut})`;
-
-          return (
-            <div key={tool.mode} className={horizontal ? "flex items-center" : ""}>
-              {showSep &&
-                (horizontal ? (
-                  <div className="bg-border mx-0.5 h-5 w-px" />
-                ) : (
-                  <div className="bg-border my-0.5 h-px w-5" />
-                ))}
-              <button
-                onClick={() => handleSingleClick(tool.mode)}
-                disabled={isToolDisabled}
-                className={`group relative flex items-center justify-center rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.98] ${
-                  horizontal ? "h-8 w-8" : "h-9 w-9"
-                } ${
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                } ${isToolDisabled ? "pointer-events-none opacity-30" : ""}`}
-                title={titleText}
-              >
-                <FallbackIcon className="h-4 w-4" />
-
-                {!isToolDisabled && (
-                  <div
-                    className={`bg-popover/90 text-popover-foreground ring-border/50 pointer-events-none absolute z-50 hidden rounded px-2 py-1 text-xs font-medium whitespace-nowrap shadow-md ring-1 backdrop-blur-md group-hover:block ${
-                      horizontal
-                        ? "bottom-full left-1/2 mb-1.5 -translate-x-1/2"
-                        : "top-1/2 left-full ml-1.5 -translate-y-1/2"
-                    }`}
-                  >
-                    {tool.label}
-                    <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 py-0.5 text-xs">
-                      {tool.shortcut}
-                    </span>
-                  </div>
-                )}
-              </button>
-            </div>
-          );
-        }
+        return (
+          <div key={key} className={horizontal ? "flex items-center" : ""}>
+            {showSeparator && <ToolSeparator horizontal={horizontal} />}
+            {item.type === "group" ? (
+              <GroupToolButton item={item} activeTool={item.activeTool!} {...buttonProps} />
+            ) : (
+              <SingleToolButton tool={item.tool} {...buttonProps} />
+            )}
+          </div>
+        );
       })}
-    </div>
+    </FacetMaterial>
   );
 });

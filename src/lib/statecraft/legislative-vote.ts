@@ -29,9 +29,9 @@ export interface VotingBloc {
   seats: number;
 }
 
-export type Vote = "yes" | "no" | "abstain";
+type Vote = "yes" | "no" | "abstain";
 
-export interface PartyVote extends VotingBloc {
+interface PartyVote extends VotingBloc {
   vote: Vote;
   /** ideological distance from the bill, 0 (perfect) … 6 (opposite) */
   distance: number;

@@ -20,7 +20,7 @@ import {
 } from "../../src/lib/wiki-os/adapters/mediawiki/bridge/mysql-pool";
 import { LinkGraphService } from "../../src/lib/wiki-os/core/link-graph-service";
 import { toArticleSlug } from "../../src/lib/wiki-os/core/domain-types";
-import { DEFAULT_USER_AGENT, DEFAULT_MEDIAWIKI_URL } from "../../src/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, mediaWikiOrigin } from "../../src/lib/wiki-os/config";
 import type mysql from "mysql2/promise";
 
 const prisma = new PrismaClient();
@@ -138,7 +138,7 @@ async function streamIngestFromHttpApi(
   limit: number,
   realmArg: string,
   isDryRun: boolean,
-  baseUrl = DEFAULT_MEDIAWIKI_URL
+  baseUrl = mediaWikiOrigin()
 ): Promise<number> {
   const apiUrl = `${baseUrl.replace(/\/$/, "")}/api.php`;
   console.log(`🌐 Connecting to MediaWiki Action API at ${apiUrl}...`);

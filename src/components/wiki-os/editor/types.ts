@@ -1,7 +1,4 @@
-// src/components/wiki-os/editor/types.ts
 // Shared TypeScript types for WikiOS Visual and Source editors.
-
-export type WikiEditorMode = "visual" | "source";
 export type SaveActionType = "publish" | "session";
 
 export interface StashEntity {
@@ -31,10 +28,4 @@ export interface WikimediaImageMeta {
 export interface EditorCursorPos {
   line: number;
   col: number;
-}
-
-export interface EditorDocStats {
-  wordCount: number;
-  lineCount: number;
-  charCount?: number;
 }

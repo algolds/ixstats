@@ -163,7 +163,7 @@ export const EconomicComponentType = {
 export type EconomicComponentType =
   (typeof EconomicComponentType)[keyof typeof EconomicComponentType];
 
-export const TaxComponentType = {
+const TaxComponentType = {
   PROGRESSIVE_TAX: "PROGRESSIVE_TAX",
   FLAT_TAX: "FLAT_TAX",
   REGRESSIVE_TAX: "REGRESSIVE_TAX",
@@ -209,7 +209,7 @@ export const TaxComponentType = {
   TAX_SIMPLIFICATION: "TAX_SIMPLIFICATION",
 } as const;
 
-export type TaxComponentType = (typeof TaxComponentType)[keyof typeof TaxComponentType];
+type TaxComponentType = (typeof TaxComponentType)[keyof typeof TaxComponentType];
 
 // Bidirectional mapping for Tax Components (Frontend ID <-> DB Enum)
 const ID_TO_ENUM_MAP: Record<string, string> = {

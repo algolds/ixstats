@@ -6,7 +6,16 @@ import {
   NextResponse,
 } from "next/server";
 import { isStandaloneRequest } from "~/lib/system/standalone-detection";
+import {
+  WikiStandaloneConfigError,
+  isWikiStandalone,
+  wikiStandaloneRedirect,
+} from "~/lib/system/wikios-standalone";
 import { buildCSPTemplate, renderCsp } from "~/lib/security/csp";
+import { RAW_PATH_HEADER, RAW_ROUTE_PATH } from "~/lib/wiki-os/raw-path";
+import { REQUEST_PATH_HEADER } from "~/lib/countries/slug-redirect";
+import { cardHubIndexRedirectFor, legacyCardRedirectFor } from "~/lib/cards/hub-routes";
+import { movedPageRedirectFor } from "~/lib/navigation/moved-pages";
 
 // Get base path from environment - should match Next.js basePath
 const BASE_PATH = process.env.BASE_PATH || "";
@@ -32,6 +41,9 @@ const isPublicRoute = createRouteMatcher([
   "/api(.*)",
   "/countries",
   "/countries/(.*)",
+  // Feed posts and persona profiles are public (ThinkPages phase 5 moved them under /dashboard).
+  "/dashboard/post/(.*)",
+  "/dashboard/profile/(.*)",
   "/thinkpages",
   "/thinkpages/(.*)",
   "/builder",
@@ -48,47 +60,85 @@ const CSP_TEMPLATE_APP = buildCSPTemplate(false);
 const CSP_TEMPLATE_STANDALONE = buildCSPTemplate(true);
 
 /**
- * Paths that should be embeddable via iframe from any origin:
- * - /maps — map pages with ?embed=true
- * - /wiki/ — WikiOS article pages
- * - /countries/ — country detail pages
+ * Who may frame a page (clickjacking):
+ * - `*`: the chromeless, read-only map viewer (`/maps?embed=true`), which IxWiki, WikiOS (wiki-embed-shared.ts,
+ *   ArticlePlaceholders) and other sites embed;
+ * - IxWiki's origins: on the maps.ixwiki.com host, every page but the signed-in tools. IxWiki (ixwiki.com, another
+ *   origin) frames maps-host pages and root-level nation slugs without `embed=true`. No third-party site may frame
+ *   them, so the host header (trusted from `x-forwarded-host`) can widen this only to IxWiki itself;
+ * - `'self'` (X-Frame-Options SAMEORIGIN): on the app host, the rest of the map viewer, WikiOS articles and country
+ *   pages, which IxWiki shares an origin with;
+ * - `'none'` (DENY): everything else, the signed-in tools (/admin, /settings, /mycountry, the map editors) included.
  */
-function isEmbeddablePathFn(pathname: string): boolean {
-  return (
-    pathname.startsWith("/maps") ||
-    pathname.startsWith("/wiki/") ||
-    pathname.startsWith("/countries/")
+const IXWIKI_FRAME_ANCESTORS = "'self' https://ixwiki.com https://*.ixwiki.com";
+type FrameAncestors = "*" | typeof IXWIKI_FRAME_ANCESTORS | "'self'" | "'none'";
+
+/** Signed-in tools no other page may frame, whatever the host. */
+const SIGNED_IN_PREFIXES = [
+  "/admin",
+  "/settings",
+  "/mycountry",
+  "/dashboard",
+  "/builder",
+  "/vault",
+  "/messages",
+  "/setup",
+  "/sign-in",
+  "/sign-up",
+  "/stashes",
+  "/myclub",
+  "/myleague",
+];
+
+function frameAncestorsFor(req: NextRequest): FrameAncestors {
+  const { pathname, searchParams } = req.nextUrl;
+  const isMapViewer = pathname === "/maps" || pathname === "/maps/";
+  if (isMapViewer && searchParams.get("embed") === "true") return "*";
+  const signedInTool = SIGNED_IN_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
+  if (signedInTool) return "'none'";
+  if (isStandaloneRequest(req.headers)) return IXWIKI_FRAME_ANCESTORS;
+  if (isMapViewer || pathname.startsWith("/wiki/") || pathname.startsWith("/countries/")) {
+    return "'self'";
+  }
+  return "'none'";
 }
 
 /**
- * Add comprehensive security and performance headers to response
+ * Continue to the app with the security headers set (PL-2).
+ *
+ * The per-request CSP nonce goes on the forwarded *request* headers as well as the response:
+ * Next.js reads the nonce from the request's `Content-Security-Policy` to put it on its own
+ * inline scripts, and the root layout reads `x-csp-nonce` to hand it to Clerk. Both are
+ * overwritten here, so a client can't supply its own.
  */
-function enhanceResponse(response: NextResponse, req: NextRequest): NextResponse {
+function nextWithSecurityHeaders(req: NextRequest): NextResponse {
   // Single UUID for both nonce and request tracking (one crypto call instead of two)
   const requestId = crypto.randomUUID();
   const nonce = Buffer.from(requestId).toString("base64");
 
   // Content Security Policy — select template by hostname, inject nonce
-  const isForumWidget = req.nextUrl.pathname.startsWith("/forum/");
-  const isEmbeddablePath =
-    isEmbeddablePathFn(req.nextUrl.pathname) || isStandaloneRequest(req.headers);
+  const frameAncestors = frameAncestorsFor(req);
   const cspTemplate = isStandaloneRequest(req.headers) ? CSP_TEMPLATE_STANDALONE : CSP_TEMPLATE_APP;
   let csp = renderCsp(cspTemplate, nonce);
-  if (isForumWidget) {
-    // Allow iframe embedding from forum.ixwiki.com for widget pages
-    csp = csp.replace("frame-ancestors 'none'", "frame-ancestors https://forum.ixwiki.com");
-  } else if (isEmbeddablePath) {
-    // Allow iframe embedding from any origin for maps, wiki articles, and country pages
-    csp = csp.replace("frame-ancestors 'none'", "frame-ancestors *");
+  if (frameAncestors !== "'none'") {
+    csp = csp.replace("frame-ancestors 'none'", `frame-ancestors ${frameAncestors}`);
   }
+
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("Content-Security-Policy", csp);
+  requestHeaders.set("x-csp-nonce", nonce);
+  // The requested path, for layouts that redirect to the same page elsewhere (renamed countries).
+  requestHeaders.set(REQUEST_PATH_HEADER, `${req.nextUrl.pathname}${req.nextUrl.search}`);
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
-  response.headers.set("X-CSP-Nonce", nonce);
 
   // Security headers
   response.headers.set("X-Content-Type-Options", "nosniff");
-  if (!isForumWidget && !isEmbeddablePath) {
-    response.headers.set("X-Frame-Options", "DENY");
+  // X-Frame-Options can't name IxWiki's origins, so those pages rely on frame-ancestors alone
+  if (frameAncestors === "'self'" || frameAncestors === "'none'") {
+    response.headers.set("X-Frame-Options", frameAncestors === "'self'" ? "SAMEORIGIN" : "DENY");
   }
   response.headers.set("X-XSS-Protection", "1; mode=block");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -129,6 +179,72 @@ function handleStandaloneRouting(req: NextRequest): NextResponse | null {
 }
 
 /**
+ * WikiOS standalone route guard (plan 417). Only active in the WikiOS standalone build: `/` goes to
+ * the Main Page and any path WikiOS does not own goes to IxStates. Relative `Location` values are
+ * valid and keep the public scheme/host that nginx terminates. A build without
+ * NEXT_PUBLIC_IXSTATES_URL cannot redirect: it answers 500 and logs why, instead of guessing a URL.
+ */
+function handleWikiStandaloneRouting(req: NextRequest): NextResponse | null {
+  if (!isWikiStandalone()) return null;
+  try {
+    const target = wikiStandaloneRedirect(req.nextUrl.pathname, req.nextUrl.search);
+    if (!target) return null;
+    return new NextResponse(null, { status: 302, headers: { location: target } });
+  } catch (error) {
+    if (!(error instanceof WikiStandaloneConfigError)) throw error;
+    console.error(`[WikiOS standalone] ${error.message}`);
+    return new NextResponse("WikiOS standalone build is misconfigured", { status: 500 });
+  }
+}
+
+/**
+ * `/wiki/<title>?action=raw` (MediaWiki's raw-wikitext URL, used by bots) is answered by
+ * /api/wiki/raw. The path after `/wiki/` goes in a request header (`x-wikios-raw-path`, see
+ * lib/wiki-os/raw-path.ts): a rewrite keeps the original query string, so a query parameter added
+ * here would never reach the route. The header is set from the incoming headers with any value the
+ * client sent overwritten.
+ */
+function handleWikiRawRewrite(req: NextRequest): NextResponse | null {
+  const { pathname, searchParams } = req.nextUrl;
+  if (!pathname.startsWith("/wiki/") || searchParams.get("action") !== "raw") return null;
+
+  const url = req.nextUrl.clone();
+  url.pathname = RAW_ROUTE_PATH;
+  const headers = new Headers(req.headers);
+  headers.set(RAW_PATH_HEADER, pathname.slice("/wiki/".length));
+  return NextResponse.rewrite(url, { request: { headers } });
+}
+
+/**
+ * Old card addresses move to the cards hub or the Store for good (308), as do pages that moved section (the Vault's
+ * Exchange to Labs), and the bare hub address opens Mine (307). A redirect thrown by a page would stream as a 200
+ * under the Vault's loading boundary, so the proxy answers them.
+ */
+function handleMovedRoutes(req: NextRequest): NextResponse | null {
+  const { pathname, search } = req.nextUrl;
+  const moved = legacyCardRedirectFor(pathname, search) ?? movedPageRedirectFor(pathname, search);
+  const target = moved ?? cardHubIndexRedirectFor(pathname, search);
+  if (!target) return null;
+  const url = req.nextUrl.clone(); // keeps the base path
+  const [path = "/", query = ""] = target.split("?");
+  url.pathname = path;
+  url.search = query;
+  return NextResponse.redirect(url, moved ? 308 : 307);
+}
+
+/**
+ * A direct request to the raw route carrying `x-wikios-raw-path` is a client forging the proxy's
+ * header: continue with it removed (the route needs neither Clerk nor the page security headers).
+ */
+function handleRawPathHeaderStrip(req: NextRequest): NextResponse | null {
+  if (req.nextUrl.pathname !== RAW_ROUTE_PATH || !req.headers.has(RAW_PATH_HEADER)) return null;
+
+  const headers = new Headers(req.headers);
+  headers.delete(RAW_PATH_HEADER);
+  return NextResponse.next({ request: { headers } });
+}
+
+/**
  * /admin and /settings are only gated inside the Clerk callback. When Clerk is
  * unavailable, those routes must fail closed instead of falling through unauthenticated.
  */
@@ -152,8 +268,7 @@ function simpleMiddleware(req: NextRequest) {
   const standaloneRedirect = handleStandaloneRouting(req);
   if (standaloneRedirect) return standaloneRedirect;
 
-  const response = NextResponse.next();
-  return enhanceResponse(response, req);
+  return nextWithSecurityHeaders(req);
 }
 
 // SSE endpoints must bypass Clerk middleware — streaming ReadableStream
@@ -181,8 +296,7 @@ function getClerkMiddleware() {
         // SSE endpoints must bypass Clerk — streaming responses are incompatible
         // with Clerk's session token/cookie rewriting. Return early with headers only.
         if (SSE_ENDPOINTS.some((p) => req.nextUrl.pathname.startsWith(p))) {
-          const response = NextResponse.next();
-          return enhanceResponse(response, req);
+          return nextWithSecurityHeaders(req);
         }
 
         // IxWorld standalone route guard
@@ -193,8 +307,7 @@ function getClerkMiddleware() {
 
         // Allow public routes to pass through without auth
         if (isPublicRoute(req)) {
-          const response = NextResponse.next();
-          return enhanceResponse(response, req);
+          return nextWithSecurityHeaders(req);
         }
 
         // For protected routes, check authentication
@@ -243,8 +356,7 @@ function getClerkMiddleware() {
         }
 
         // For all other routes, continue without auth requirement
-        const response = NextResponse.next();
-        return enhanceResponse(response, req);
+        return nextWithSecurityHeaders(req);
       });
       console.log("[Middleware] Clerk middleware initialized successfully.");
     } catch (error) {
@@ -266,6 +378,15 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
     );
     return new NextResponse("Forbidden", { status: 403 });
   }
+
+  const movedRedirect = handleMovedRoutes(req);
+  if (movedRedirect) return movedRedirect;
+
+  const wikiStandaloneRedirectResponse = handleWikiStandaloneRouting(req);
+  if (wikiStandaloneRedirectResponse) return wikiStandaloneRedirectResponse;
+
+  const wikiRawRewrite = handleWikiRawRewrite(req) ?? handleRawPathHeaderStrip(req);
+  if (wikiRawRewrite) return wikiRawRewrite;
 
   const clerk = getClerkMiddleware();
   if (clerk) {

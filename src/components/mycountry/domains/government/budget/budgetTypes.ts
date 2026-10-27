@@ -1,67 +1,67 @@
-import type {
-  GovernmentDepartment,
-  BudgetAllocation,
-  RevenueSource,
-  BudgetSummary,
-  RevenueSummary,
-} from "~/types/government";
-
 export interface BudgetHealthStatus {
-  status: "surplus" | "balanced" | "moderate" | "deficit";
+  status: "surplus" | "balanced" | "moderate" | "deficit" | "unknown";
+  /** Semantic status classes for an outline `<Badge>` (border + text colour). */
   color: string;
   label: string;
 }
 
-export const REVENUE_CHART_COLORS = [
-  "#34d399",
-  "#38bdf8",
-  "#fbbf24",
-  "#c084fc",
-  "#2dd4bf",
-  "#f43f5e",
-];
+/**
+ * Revenue categories are one measure, so every bar shares the MyCountry accent; the axis label
+ * names the category. Kept as an array so callers can index it by category.
+ */
+export const REVENUE_CHART_COLORS = ["var(--color-amber-500)"];
 
+/** Revenue left after the allocations, as a percent of revenue; null without revenue. */
+export function fiscalBalancePercent(totalRevenue: number, totalAllocated: number): number | null {
+  return totalRevenue > 0 ? ((totalRevenue - totalAllocated) / totalRevenue) * 100 : null;
+}
+
+/**
+ * Fiscal balance of the year's allocations against revenue. Nothing records spending yet, so the
+ * allocations stand for it. Unknown when no revenue is recorded.
+ */
 export function getBudgetHealthStatus(
   totalRevenue: number,
-  totalSpent: number
+  totalAllocated: number
 ): BudgetHealthStatus {
-  const deficit = totalRevenue - totalSpent;
-  const deficitPercent = totalRevenue > 0 ? (deficit / totalRevenue) * 100 : 0;
+  const balancePercent = fiscalBalancePercent(totalRevenue, totalAllocated);
+  if (balancePercent == null) {
+    return { status: "unknown", color: "text-label-secondary", label: "No revenue recorded" };
+  }
 
-  if (deficitPercent > 5) {
+  if (balancePercent > 5) {
     return {
       status: "surplus",
-      color: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono",
+      color: "border-green/30 text-green",
       label: "Surplus",
     };
   }
-  if (deficitPercent > -3) {
+  if (balancePercent > -3) {
     return {
       status: "balanced",
-      color: "bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-mono",
+      color: "text-label-secondary",
       label: "Balanced",
     };
   }
-  if (deficitPercent > -10) {
+  if (balancePercent > -10) {
     return {
       status: "moderate",
-      color: "bg-amber-500/10 text-amber-400 border border-amber-500/30 font-mono",
-      label: "Moderate Deficit",
+      color: "border-yellow/30 text-yellow",
+      label: "Moderate deficit",
     };
   }
   return {
     status: "deficit",
-    color: "bg-red-500/10 text-red-400 border border-red-500/30 font-mono",
-    label: "High Deficit",
+    color: "border-destructive/30 text-destructive",
+    label: "High deficit",
   };
 }
 
 export interface DepartmentChartItem {
   name: string;
+  /** Name and share of the total budget, e.g. "Education 18.0%". */
+  label: string;
   allocated: number;
-  spent: number;
-  available: number;
-  percent: number;
   color: string;
 }
 
@@ -75,6 +75,4 @@ export interface RevenueChartItem {
 export interface BudgetTrendItem {
   year: string;
   budget: number;
-  spent: number;
-  revenue: number;
 }

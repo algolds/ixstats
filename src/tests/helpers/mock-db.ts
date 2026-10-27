@@ -1,7 +1,10 @@
 import type { PrismaClient } from "@prisma/client";
 
+/** Model delegate names (`country`, `user`, ...); excludes client methods such as `$transaction`. */
+type PrismaModelName = Exclude<keyof PrismaClient, `$${string}` | symbol>;
+
 export type MockPrismaProxy = {
-  [K in keyof PrismaClient]: {
+  [K in PrismaModelName]: {
     [M: string]: jest.Mock<any, any>;
   };
 } & {
@@ -17,12 +20,12 @@ export type MockPrismaProxy = {
 export function createMockPrisma(overrides: Record<string, any> = {}): MockPrismaProxy {
   const mockDb: any = {
     $transaction: jest.fn((cb: (tx: any) => any) =>
-      typeof cb === "function" ? cb(mockDb) : Promise.all(cb)
+      typeof cb === "function" ? cb(proxy) : Promise.all(cb)
     ),
     ...overrides,
   };
 
-  return new Proxy(mockDb, {
+  const proxy: MockPrismaProxy = new Proxy(mockDb, {
     get: (target, prop: string) => {
       if (prop in target) return target[prop];
       if (typeof prop === "symbol" || prop.startsWith("@@") || prop === "then") {
@@ -47,6 +50,7 @@ export function createMockPrisma(overrides: Record<string, any> = {}): MockPrism
       return target[prop];
     },
   });
+  return proxy;
 }
 
 export interface TransactionalMockState {

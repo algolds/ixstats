@@ -1,8 +1,6 @@
 "use client";
-// src/components/wiki-os/editor/components/WikiVisualToolbar.tsx
-// Top bar and full formatting toolbar for WikiOS Visual Editor.
 
-import React from "react";
+import { Fragment, useState, type ComponentProps, type ComponentType, type ReactNode } from "react";
 import {
   Bold,
   Italic,
@@ -12,7 +10,7 @@ import {
   ArrowDown as Subscript,
   List,
   NumberedListLeft as ListOrdered,
-  Quote as Quote,
+  Quote,
   Link as Link2,
   LinkSlash as Unlink,
   MediaImage as ImageIcon,
@@ -21,6 +19,7 @@ import {
   Type,
   Undo as Undo2,
   Redo as Redo2,
+  MoreHoriz,
   Erase as RemoveFormatting,
   Table,
   ArrowRight as Indent,
@@ -31,16 +30,16 @@ import { useEditorModalContext } from "../context/EditorModalContext";
 import { StashDropdown } from "./shared/StashDropdown";
 import { TemplateDropdown } from "./shared/TemplateDropdown";
 import { SettingsDropdown } from "./shared/SettingsDropdown";
+import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 import { WikiEditorHeader } from "./WikiEditorHeader";
+import { Button } from "~/components/ui/button";
 
-export interface WikiVisualToolbarProps {
+interface WikiVisualToolbarProps {
   title: string;
   wordCount: number;
   isDirty: boolean;
-  repulsionProgress: number;
   onSwitchToSource?: () => void;
   onCancel: () => void;
-  onSave: () => void;
   handleSaveDraft: () => void;
   activeFormats: Set<string>;
   exec: (cmd: string, val?: string) => void;
@@ -52,17 +51,28 @@ export interface WikiVisualToolbarProps {
   insertTable: () => void;
   insertRef: () => void;
   clearFormatting: () => void;
-  insertHtmlAtCursor: (html: string) => void;
   saveSelection?: () => void;
   restoreSelection?: () => void;
   handleInsertStashedImage: (filename: string) => void;
+  /** Leave out the page title bar (a host that is not editing a page has no title, drafts or save menu). */
+  hideHeader?: boolean;
+  /** Start with the few controls a short post needs; "More" opens the full toolbar. */
+  compact?: boolean;
+}
+
+interface ToolbarButton {
+  title: string;
+  /** Icon component, or a short text label (headings, ref). */
+  icon: ComponentType<{ className?: string }> | string;
+  /** Lit while the selection has any of these formats. */
+  formats?: string[];
+  onClick: () => void;
 }
 
 export function WikiVisualToolbar({
   title,
   wordCount,
   isDirty,
-  repulsionProgress,
   onSwitchToSource,
   onCancel,
   handleSaveDraft,
@@ -76,240 +86,219 @@ export function WikiVisualToolbar({
   insertTable,
   insertRef,
   clearFormatting,
-  insertHtmlAtCursor,
   saveSelection,
   restoreSelection,
   handleInsertStashedImage,
+  hideHeader = false,
+  compact = false,
 }: WikiVisualToolbarProps) {
   const modal = useEditorModalContext();
+  const [expanded, setExpanded] = useState(false);
+
+  const buttonGroups: Array<Array<ToolbarButton | ReactNode>> = [
+    [
+      { icon: Undo2, title: "Undo (Ctrl+Z)", onClick: () => exec("undo") },
+      { icon: Redo2, title: "Redo (Ctrl+Y)", onClick: () => exec("redo") },
+    ],
+    [
+      { icon: Bold, title: "Bold (Ctrl+B)", formats: ["bold"], onClick: () => exec("bold") },
+      {
+        icon: Italic,
+        title: "Italic (Ctrl+I)",
+        formats: ["italic"],
+        onClick: () => exec("italic"),
+      },
+      {
+        icon: Underline,
+        title: "Underline (Ctrl+U)",
+        formats: ["underline"],
+        onClick: () => exec("underline"),
+      },
+      {
+        icon: Strikethrough,
+        title: "Strikethrough (Ctrl+Shift+X)",
+        formats: ["strikethrough", "strike"],
+        onClick: () => exec("strikeThrough"),
+      },
+    ],
+    [
+      {
+        icon: Superscript,
+        title: "Superscript",
+        formats: ["superscript", "sup"],
+        onClick: () => exec("superscript"),
+      },
+      {
+        icon: Subscript,
+        title: "Subscript",
+        formats: ["subscript", "sub"],
+        onClick: () => exec("subscript"),
+      },
+      {
+        icon: Code,
+        title: "Inline code",
+        formats: ["code", "code-block"],
+        onClick: () => exec("code"),
+      },
+    ],
+    [
+      { icon: Type, title: "Normal paragraph", formats: ["p", "paragraph"], onClick: setParagraph },
+      { icon: "H2", title: "Section heading", formats: ["h2"], onClick: () => setHeading(2) },
+      { icon: "H3", title: "Subsection", formats: ["h3"], onClick: () => setHeading(3) },
+      { icon: "H4", title: "Sub-subsection", formats: ["h4"], onClick: () => setHeading(4) },
+    ],
+    [
+      {
+        icon: List,
+        title: "Bullet list",
+        formats: ["ul"],
+        onClick: () => exec("insertUnorderedList"),
+      },
+      {
+        icon: ListOrdered,
+        title: "Numbered list",
+        formats: ["ol"],
+        onClick: () => exec("insertOrderedList"),
+      },
+      {
+        icon: Quote,
+        title: "Blockquote",
+        formats: ["blockquote"],
+        onClick: () => exec("formatBlock", "blockquote"),
+      },
+      { icon: Indent, title: "Indent", onClick: () => exec("indent") },
+      { icon: Outdent, title: "Outdent", onClick: () => exec("outdent") },
+    ],
+    [
+      { icon: Link2, title: "Insert link (Ctrl+K)", formats: ["link"], onClick: insertLink },
+      { icon: Unlink, title: "Remove link", formats: ["link"], onClick: removeLink },
+    ],
+    [
+      {
+        icon: ImageIcon,
+        title: "Insert image",
+        onClick: () => {
+          saveSelection?.();
+          modal.setShowImageSearch(true);
+        },
+      },
+      <StashDropdown
+        key="stash"
+        onInsertImage={(filename) => {
+          restoreSelection?.();
+          handleInsertStashedImage(filename);
+        }}
+        onBeforeOpen={saveSelection}
+      />,
+      { icon: Table, title: "Insert table", formats: ["table"], onClick: insertTable },
+      <TemplateDropdown key="templates" onSelect={restoreSelection} onBeforeOpen={saveSelection} />,
+      { icon: Minus, title: "Horizontal rule", onClick: insertHR },
+      { icon: "ref", title: "Insert reference", onClick: insertRef },
+    ],
+    [{ icon: RemoveFormatting, title: "Clear formatting", onClick: clearFormatting }],
+  ];
+
+  const showAll = !compact || expanded;
+  const groups = showAll ? buttonGroups : compactGroups(buttonGroups);
+
   return (
     <>
-      <WikiEditorHeader
-        title={title}
-        mode="visual"
-        wordCount={wordCount}
-        isDirty={isDirty}
-        repulsionProgress={repulsionProgress}
-        onSwitchMode={onSwitchToSource}
-        onCancel={onCancel}
-        handleSaveDraft={handleSaveDraft}
-        saving={modal.saving}
-        saveDropdownOpen={modal.saveDropdownOpen}
-        setSaveDropdownOpen={modal.setSaveDropdownOpen}
-        setSaveActionType={modal.setSaveActionType}
-        setShowSavePanel={modal.setShowSavePanel}
-        summary={modal.summary}
-        setSummary={modal.setSummary}
-      />
+      {hideHeader ? null : (
+        <ScrollAwareHeader
+          title={title}
+          mode="visual"
+          wordCount={wordCount}
+          isDirty={isDirty}
+          onSwitchMode={onSwitchToSource}
+          onCancel={onCancel}
+          handleSaveDraft={handleSaveDraft}
+          saving={modal.saving}
+          saveDropdownOpen={modal.saveDropdownOpen}
+          setSaveDropdownOpen={modal.setSaveDropdownOpen}
+          setSaveActionType={modal.setSaveActionType}
+          setShowSavePanel={modal.setShowSavePanel}
+          summary={modal.summary}
+          setSummary={modal.setSummary}
+        />
+      )}
 
-      {/* ─── Full Formatting Toolbar ─── */}
       <div className="wikios-ve-toolbar">
-        {/* Undo / Redo */}
-        <div className="wikios-ve-toolbar-group">
-          <VEBtn
-            icon={<Undo2 className="h-3.5 w-3.5" />}
-            title="Undo (Ctrl+Z)"
-            onClick={() => exec("undo")}
-          />
-          <VEBtn
-            icon={<Redo2 className="h-3.5 w-3.5" />}
-            title="Redo (Ctrl+Y)"
-            onClick={() => exec("redo")}
-          />
-        </div>
-        <span className="wikios-ve-toolbar-sep" />
+        {groups.map((group, i) => (
+          <Fragment key={i}>
+            <div className="wikios-ve-toolbar-group">
+              {group.map((item, j) =>
+                isToolbarButton(item) ? (
+                  <VEBtn
+                    key={item.title}
+                    icon={<ButtonIcon icon={item.icon} />}
+                    title={item.title}
+                    active={item.formats?.some((f) => activeFormats.has(f))}
+                    onClick={item.onClick}
+                  />
+                ) : (
+                  <Fragment key={j}>{item}</Fragment>
+                )
+              )}
+            </div>
+            {i < groups.length - 1 && <span className="wikios-ve-toolbar-sep" />}
+          </Fragment>
+        ))}
 
-        {/* Text formatting */}
-        <div className="wikios-ve-toolbar-group">
-          <VEBtn
-            icon={<Bold className="h-3.5 w-3.5" />}
-            title="Bold (Ctrl+B)"
-            active={activeFormats.has("bold")}
-            onClick={() => exec("bold")}
-          />
-          <VEBtn
-            icon={<Italic className="h-3.5 w-3.5" />}
-            title="Italic (Ctrl+I)"
-            active={activeFormats.has("italic")}
-            onClick={() => exec("italic")}
-          />
-          <VEBtn
-            icon={<Underline className="h-3.5 w-3.5" />}
-            title="Underline (Ctrl+U)"
-            active={activeFormats.has("underline")}
-            onClick={() => exec("underline")}
-          />
-          <VEBtn
-            icon={<Strikethrough className="h-3.5 w-3.5" />}
-            title="Strikethrough (Ctrl+Shift+X)"
-            active={activeFormats.has("strikethrough") || activeFormats.has("strike")}
-            onClick={() => exec("strikeThrough")}
-          />
-        </div>
-        <span className="wikios-ve-toolbar-sep" />
-
-        {/* Script / code */}
-        <div className="wikios-ve-toolbar-group">
-          <VEBtn
-            icon={<Superscript className="h-3.5 w-3.5" />}
-            title="Superscript"
-            active={activeFormats.has("superscript") || activeFormats.has("sup")}
-            onClick={() => exec("superscript")}
-          />
-          <VEBtn
-            icon={<Subscript className="h-3.5 w-3.5" />}
-            title="Subscript"
-            active={activeFormats.has("subscript") || activeFormats.has("sub")}
-            onClick={() => exec("subscript")}
-          />
-          <VEBtn
-            icon={<Code className="h-3.5 w-3.5" />}
-            title="Inline code"
-            active={activeFormats.has("code") || activeFormats.has("code-block")}
-            onClick={() => exec("code")}
-          />
-        </div>
-        <span className="wikios-ve-toolbar-sep" />
-
-        {/* Block formatting */}
-        <div className="wikios-ve-toolbar-group">
-          <VEBtn
-            icon={<Type className="h-3.5 w-3.5" />}
-            title="Normal paragraph"
-            active={activeFormats.has("p") || activeFormats.has("paragraph")}
-            onClick={setParagraph}
-          />
-          <VEBtn
-            icon={<span className="wikios-ve-heading-label">H2</span>}
-            title="Section heading"
-            active={activeFormats.has("h2")}
-            onClick={() => setHeading(2)}
-          />
-          <VEBtn
-            icon={<span className="wikios-ve-heading-label">H3</span>}
-            title="Subsection"
-            active={activeFormats.has("h3")}
-            onClick={() => setHeading(3)}
-          />
-          <VEBtn
-            icon={<span className="wikios-ve-heading-label">H4</span>}
-            title="Sub-subsection"
-            active={activeFormats.has("h4")}
-            onClick={() => setHeading(4)}
-          />
-        </div>
-        <span className="wikios-ve-toolbar-sep" />
-
-        {/* Lists & structure */}
-        <div className="wikios-ve-toolbar-group">
-          <VEBtn
-            icon={<List className="h-3.5 w-3.5" />}
-            title="Bullet list"
-            active={activeFormats.has("ul")}
-            onClick={() => exec("insertUnorderedList")}
-          />
-          <VEBtn
-            icon={<ListOrdered className="h-3.5 w-3.5" />}
-            title="Numbered list"
-            active={activeFormats.has("ol")}
-            onClick={() => exec("insertOrderedList")}
-          />
-          <VEBtn
-            icon={<Quote className="h-3.5 w-3.5" />}
-            title="Blockquote"
-            active={activeFormats.has("blockquote")}
-            onClick={() => exec("formatBlock", "blockquote")}
-          />
-          <VEBtn
-            icon={<Indent className="h-3.5 w-3.5" />}
-            title="Indent"
-            onClick={() => exec("indent")}
-          />
-          <VEBtn
-            icon={<Outdent className="h-3.5 w-3.5" />}
-            title="Outdent"
-            onClick={() => exec("outdent")}
-          />
-        </div>
-        <span className="wikios-ve-toolbar-sep" />
-
-        {/* Links */}
-        <div className="wikios-ve-toolbar-group">
-          <VEBtn
-            icon={<Link2 className="h-3.5 w-3.5" />}
-            title="Insert link (Ctrl+K)"
-            active={activeFormats.has("link")}
-            onClick={insertLink}
-          />
-          <VEBtn
-            icon={<Unlink className="h-3.5 w-3.5" />}
-            title="Remove link"
-            active={activeFormats.has("link")}
-            onClick={removeLink}
-          />
-        </div>
-        <span className="wikios-ve-toolbar-sep" />
-
-        {/* Insert objects */}
-        <div className="wikios-ve-toolbar-group">
-          <VEBtn
-            icon={<ImageIcon className="h-3.5 w-3.5" />}
-            title="Insert image"
-            onClick={() => {
-              saveSelection?.();
-              modal.setShowImageSearch(true);
-            }}
-          />
-
-          <StashDropdown
-            onInsertImage={(filename) => {
-              restoreSelection?.();
-              handleInsertStashedImage(filename);
-            }}
-            onBeforeOpen={saveSelection}
-          />
-
-          <VEBtn
-            icon={<Table className="h-3.5 w-3.5" />}
-            title="Insert table"
-            active={activeFormats.has("table")}
-            onClick={insertTable}
-          />
-
-          {/* Templates dropdown */}
-          <TemplateDropdown onSelect={restoreSelection} onBeforeOpen={saveSelection} />
-          <VEBtn
-            icon={<Minus className="h-3.5 w-3.5" />}
-            title="Horizontal rule"
-            onClick={insertHR}
-          />
-          <VEBtn
-            icon={
-              <span className="wikios-ve-heading-label" style={{ fontSize: 9 }}>
-                ref
-              </span>
-            }
-            title="Insert reference"
-            onClick={insertRef}
-          />
-        </div>
-        <span className="wikios-ve-toolbar-sep" />
-
-        {/* Clear */}
-        <div className="wikios-ve-toolbar-group">
-          <VEBtn
-            icon={<RemoveFormatting className="h-3.5 w-3.5" />}
-            title="Clear formatting"
-            onClick={clearFormatting}
-          />
-        </div>
-
-        {/* Far right: Editor Settings */}
-        <div className="ml-auto flex items-center">
-          <SettingsDropdown />
+        {/* Far right: the compact toolbar's More, and Editor Settings */}
+        <div className="ml-auto flex items-center gap-1">
+          {compact ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-expanded={expanded}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setExpanded((open) => !open)}
+              className="text-label-secondary"
+            >
+              <MoreHoriz aria-hidden />
+              {expanded ? "Fewer" : "More"}
+            </Button>
+          ) : null}
+          {showAll ? <SettingsDropdown /> : null}
         </div>
       </div>
     </>
+  );
+}
+
+/** The title bar, which slides away with the page's navigation; only mounted where the bar is shown, so a host without it follows no scrolling. */
+function ScrollAwareHeader(
+  props: Omit<ComponentProps<typeof WikiEditorHeader>, "repulsionProgress">
+) {
+  const { repulsionProgress } = useNavigationScroll();
+  return <WikiEditorHeader {...props} repulsionProgress={repulsionProgress} />;
+}
+
+/** What a short post needs: bold, italic, lists, quote, link (or wiki page) and image; the rest is behind More. */
+const COMPACT_TITLES: ReadonlySet<string> = new Set([
+  "Bold (Ctrl+B)",
+  "Italic (Ctrl+I)",
+  "Bullet list",
+  "Numbered list",
+  "Blockquote",
+  "Insert link (Ctrl+K)",
+  "Insert image",
+]);
+
+function compactGroups(groups: ReadonlyArray<Array<ToolbarButton | ReactNode>>) {
+  return groups
+    .map((group) => group.filter((item) => isToolbarButton(item) && COMPACT_TITLES.has(item.title)))
+    .filter((group) => group.length > 0);
+}
+
+const isToolbarButton = (item: ToolbarButton | ReactNode): item is ToolbarButton =>
+  typeof item === "object" && item !== null && "title" in item && "onClick" in item;
+
+function ButtonIcon({ icon: Icon }: { icon: ToolbarButton["icon"] }) {
+  return typeof Icon === "string" ? (
+    <span className="wikios-ve-heading-label">{Icon}</span>
+  ) : (
+    <Icon className="h-3.5 w-3.5" />
   );
 }
 
@@ -325,20 +314,20 @@ function VEBtn({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      data-cuelume-press="droplet"
+    <Button
+      variant={active ? "secondary" : "ghost"}
+      size="icon-sm"
+      aria-pressed={active}
+      // mousedown (not click) so the editor keeps its selection.
       onMouseDown={(e) => {
         e.preventDefault();
         onClick();
       }}
-      className={cn(
-        "wikios-ve-toolbar-btn active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
-        active && "wikios-ve-toolbar-btn-active font-semibold shadow-xs"
-      )}
+      className={cn("w-8", !active && "text-label-secondary")}
       title={title}
+      aria-label={title}
     >
       {icon}
-    </button>
+    </Button>
   );
 }

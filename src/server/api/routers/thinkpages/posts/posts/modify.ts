@@ -1,25 +1,20 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 // Import the wiki search service
 import { validateNoXSS } from "~/lib/utils";
-import { globalCache } from "~/lib/cache";
-
-const invalidateFeeds = async () => {
-  try {
-    await Promise.all([
-      globalCache.deleteByPattern("thinkpages_feed:*"),
-      globalCache.deleteByPattern("global_activity_feed:*"),
-      globalCache.deleteByPattern("user_following_feed:*"),
-    ]);
-  } catch (error) {
-    console.error("Failed to invalidate feeds:", error);
-  }
-};
+import {
+  invalidateFeeds,
+  loadPostForModeration,
+  postAuthorsInclude,
+  stripDiscordMarker,
+  withoutOwnerIds,
+} from "../../post-utils";
+import { ownHashtags, storedPseudoTags } from "~/server/shared/realm-board";
+import { deleteThinkpagesPost } from "~/server/shared/thinkpages-post-delete";
 
 export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
   // Update post content (edit post)
-  updatePost: protectedProcedure
+  updatePost: rateLimitedMutationProcedure
     .input(
       z.object({
         postId: z.string(),
@@ -36,82 +31,37 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
               message:
                 "Content contains potentially unsafe HTML. Please avoid using script tags, javascript: URLs, or event handlers.",
             }
-          ),
+          )
+          .transform(stripDiscordMarker),
         hashtags: z.array(z.string()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
-      const clerkUserId = ctx.auth?.userId;
+      const post = await loadPostForModeration(
+        db,
+        ctx.auth?.userId,
+        ctx.user?.role?.level,
+        input.postId,
+        "update"
+      );
 
-      if (!clerkUserId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to update posts",
-        });
-      }
-
-      // Verify post exists and user owns it
-      const post = await db.thinkpagesPost.findUnique({
-        where: { id: input.postId },
-        include: { account: true },
-      });
-
-      if (!post) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Post not found",
-        });
-      }
-
-      const isOwner = post.account.clerkUserId === clerkUserId;
-      let isAllowedMod = false;
-
-      if (!isOwner) {
-        const currentUserRoleLevel = ctx.user?.role?.level ?? 100;
-        if (currentUserRoleLevel <= 10) {
-          isAllowedMod = true;
-        } else if (currentUserRoleLevel <= 20) {
-          const targetUser = await db.user.findUnique({
-            where: { clerkUserId: post.account.clerkUserId },
-            include: { role: true },
-          });
-          const targetUserRoleLevel = targetUser?.role?.level ?? 100;
-          if (targetUserRoleLevel >= currentUserRoleLevel) {
-            isAllowedMod = true;
-          }
-        }
-      }
-
-      if (!isOwner && !isAllowedMod) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to update this post",
-        });
-      }
-
-      // Update the post
+      // The post's own Discord marker (set by the IxTwitter sync) is kept; the edit can't add one.
+      const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
       const updatedPost = await db.thinkpagesPost.update({
         where: { id: input.postId },
         data: {
-          content: input.content,
-          hashtags: input.hashtags ? JSON.stringify(input.hashtags) : post.hashtags,
+          content: match ? `${input.content}\n\n${match[0]}` : input.content,
+          // Editing tags keeps the post's board placement and can't add a new one.
+          hashtags: input.hashtags
+            ? JSON.stringify([...storedPseudoTags(post.hashtags), ...ownHashtags(input.hashtags)])
+            : post.hashtags,
           updatedAt: new Date(),
         },
-        include: {
-          account: true,
-          mediaAttachments: true,
-          parentPost: {
-            include: { account: true },
-          },
-          repostOf: {
-            include: { account: true },
-          },
-        },
+        include: { ...postAuthorsInclude, mediaAttachments: true },
       });
 
       // Update Discord message if it exists
-      const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
       if (match && match[1]) {
         try {
           const { editDiscordMessage } = await import("~/lib/discord/ixtwitter-sync");
@@ -125,20 +75,9 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
             },
             updatedPost.account,
             mediaUrls
-          )
-            .then(async (success: boolean) => {
-              if (success) {
-                await db.thinkpagesPost.update({
-                  where: { id: updatedPost.id },
-                  data: {
-                    content: `${input.content}\n\n[DiscordMsg:${match[1]}]`,
-                  },
-                });
-              }
-            })
-            .catch((err: unknown) =>
-              console.error("[ThinkPages] Edit Discord msg promise error:", err)
-            );
+          ).catch((err: unknown) =>
+            console.error("[ThinkPages] Edit Discord msg promise error:", err)
+          );
         } catch (error) {
           console.error("[ThinkPages] Failed to trigger Discord edit:", error);
         }
@@ -146,11 +85,11 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
 
       await invalidateFeeds();
 
-      return updatedPost;
+      return withoutOwnerIds(updatedPost);
     }),
 
-  // Delete post (soft delete)
-  deletePost: protectedProcedure
+  // Delete a post (hard delete; see deleteThinkpagesPost)
+  deletePost: rateLimitedMutationProcedure
     .input(
       z.object({
         postId: z.string(),
@@ -158,111 +97,15 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
-      const clerkUserId = ctx.auth?.userId;
+      const post = await loadPostForModeration(
+        db,
+        ctx.auth?.userId,
+        ctx.user?.role?.level,
+        input.postId,
+        "delete"
+      );
 
-      if (!clerkUserId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to delete posts",
-        });
-      }
-
-      // Verify post exists and user owns it
-      const post = await db.thinkpagesPost.findUnique({
-        where: { id: input.postId },
-        include: { account: true },
-      });
-
-      if (!post) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Post not found",
-        });
-      }
-
-      const isOwner = post.account.clerkUserId === clerkUserId;
-      let isAllowedMod = false;
-
-      if (!isOwner) {
-        const currentUserRoleLevel = ctx.user?.role?.level ?? 100;
-        if (currentUserRoleLevel <= 10) {
-          isAllowedMod = true;
-        } else if (currentUserRoleLevel <= 20) {
-          const targetUser = await db.user.findUnique({
-            where: { clerkUserId: post.account.clerkUserId },
-            include: { role: true },
-          });
-          const targetUserRoleLevel = targetUser?.role?.level ?? 100;
-          if (targetUserRoleLevel >= currentUserRoleLevel) {
-            isAllowedMod = true;
-          }
-        }
-      }
-
-      if (!isOwner && !isAllowedMod) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to delete this post",
-        });
-      }
-
-      // Handle child posts before deletion:
-      // 1. Nullify parentPostId on replies (prevents FK constraint, marks as orphaned)
-      await db.thinkpagesPost.updateMany({
-        where: { parentPostId: input.postId },
-        data: { parentPostId: null },
-      });
-
-      // 2. Delete reposts of this post (reposts have no standalone value)
-      const repostCount = await db.thinkpagesPost.count({
-        where: { repostOfId: input.postId },
-      });
-      if (repostCount > 0) {
-        await db.thinkpagesPost.deleteMany({
-          where: { repostOfId: input.postId },
-        });
-      }
-
-      // Get the message ID before deleting
-      const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
-
-      // Hard delete the post (PostReaction, PostMention, MediaAttachment cascade automatically)
-      const deletedPost = await db.thinkpagesPost.delete({
-        where: { id: input.postId },
-      });
-
-      // If the post had an associated poll, delete it
-      if ((post as any).pollId) {
-        await db.poll
-          .delete({
-            where: { id: (post as any).pollId },
-          })
-          .catch((err) => {
-            console.error("[ThinkPages] Failed to delete associated poll:", err);
-          });
-      }
-
-      // Decrement account post count (include deleted reposts)
-      await db.thinkpagesAccount.update({
-        where: { id: post.accountId },
-        data: {
-          postCount: { decrement: 1 + repostCount },
-        },
-      });
-
-      // Delete Discord message if it exists
-      if (match && match[1]) {
-        try {
-          const { deleteDiscordMessage } = await import("~/lib/discord/ixtwitter-sync");
-          deleteDiscordMessage(match[1]).catch((err: unknown) =>
-            console.error("[ThinkPages] Delete Discord msg promise error:", err)
-          );
-        } catch (error) {
-          console.error("[ThinkPages] Failed to trigger Discord delete:", error);
-        }
-      }
-
-      await invalidateFeeds();
+      const deletedPost = await deleteThinkpagesPost(db, post);
 
       return { success: true, postId: deletedPost.id };
     }),
@@ -270,7 +113,7 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
   // ===== THINKSHARE (MESSAGING) ENDPOINTS =====
 
   // Pin/unpin a post
-  pinPost: protectedProcedure
+  pinPost: rateLimitedMutationProcedure
     .input(
       z.object({
         postId: z.string(),
@@ -280,26 +123,9 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
-
-      // Verify ownership
-      const post = await db.thinkpagesPost.findUnique({
-        where: { id: input.postId },
-        select: { accountId: true },
-      });
-
-      if (!post) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Post not found",
-        });
-      }
-
-      if (post.accountId !== input.accountId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only pin your own posts",
-        });
-      }
+      // The feed lists pinned posts first, so only the post's owner (or a moderator) may pin it;
+      // matching the client's accountId alone let anyone pin any post.
+      await loadPostForModeration(db, ctx.auth?.userId, ctx.user?.role?.level, input.postId, "pin");
 
       const updatedPost = await db.thinkpagesPost.update({
         where: { id: input.postId },

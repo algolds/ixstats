@@ -1,61 +1,64 @@
 ---
-title: IxCredits Economy
-description: Earning, spending, daily caps, and vault leveling — the complete IxCredits guide.
-badge: IxVault & Cards
+title: IxCredits
+description: Every way to earn and spend IxCredits, the daily reward, and the daily caps.
+badge: Vault, Cards & Rewards
+prevHref: /help/vault/overview
+prevLabel: Your Vault
+nextHref: /help/vault/card-packs
+nextLabel: Card Packs
 ---
 
-## What Are IxCredits?
+## What IxCredits are
 
-IxCredits (IxC) are the virtual currency powering the Vault economy. They are earned through gameplay actions and spent on card packs, marketplace purchases, and cosmetic items. Your Vault tracks your balance, lifetime earned/spent totals, vault level, XP, login streak, and daily earnings.
+IxCredits (IxC) are the platform currency, kept in your [Vault](/vault). You earn them from platform activity (writing on the wiki, posting, card activity), a nightly dividend on your card collection, a daily reward, achievements and Lorewards, and spend them on card packs, auctions, trades and shop items. A nation doesn't earn or spend IxCredits. Every change is recorded in your Vault's statement. The amounts below are defaults; admins can tune them.
 
 ## Earning IxCredits
 
-> **Earning Categories**
->
-> - **Passive Income:** Daily dividend based on your GDP per capita. Higher economic tiers earn multipliers (0.5x for Impoverished up to 3.5x for Extravagant). Population and growth bonuses apply.
-> - **Daily Login:** 1-7 IxC scaling with consecutive login streak days. Streak resets after a missed day.
-> - **Achievements:** 100 IxC (Common), 250 IxC (Uncommon), 500 IxC (Rare), 1,000 IxC (Epic), 2,500 IxC (Legendary) per achievement unlock, by default.
-> - **Diplomatic Actions:** Establishing an embassy earns 15 IxC. Organizing a cultural exchange earns 12 IxC.
-> - **Diplomatic Scenarios:** 10 IxC base reward, +5 IxC for high-stakes scenarios, plus a 0-8 IxC risk bonus depending on the response you choose.
-> - **Social Posts:** 1 IxC per ThinkPages post (max 5 per day).
-> - **One-time Bonuses:** 5,000 IxC when you create or claim your first nation, 2,500 IxC for importing your country from a wiki, 50 IxC per card when you import a NationStates deck (up to 5,000 IxC), and 2,500 IxC for winning a Loreward. Administrators can tune these amounts.
+| Source | Amount | Daily cap |
+| --- | --- | --- |
+| Vault dividend, every night | Up to 150 a day (see below) | None |
+| Daily reward, credits option | Random roll, scaled by Vault level and streak | Active cap (100) |
+| Achievements | 100 / 250 / 500 / 1,000 / 2,500 by rarity, once each | None |
+| New account welcome bonus | 5,000, once per account | None |
+| Importing a NationStates deck | 50 per new card, up to 5,000, once per NationStates nation | None |
+| Lorewards | 500 / 150 for a daily win / runner-up, 1,500 / 400 weekly, 4,000 / 1,000 monthly | None |
+| Selling cards and trades | The price you get, minus fees | None |
+| Your nation's card changing hands | 2% of a sale or of a trade's IxC, out of the market fee | None |
+
+## Daily caps
+
+- **Active earnings** (the daily reward's credits): 100 IxC per UTC day.
+- The dividend, achievements, Lorewards and one-time bonuses have no cap.
+
+If an earning would take you over a cap, you get whatever's left of the cap. Caps reset at midnight UTC.
+
+## The daily reward
+
+Once per UTC day, claim either **IxCredits** or **one random card**:
+
+- The credits option rolls a random amount (usually small, occasionally much larger) and scales it up with your streak and your Vault level. The payout is limited to what's left of your 100 IxC active cap for the day, so claim it before other active earnings if you want the most from it. If the cap is already used up, take the card instead.
+- The card option adds one random card to your collection. It needs room in your collection.
+- The prompt opens by itself at most once a day. If you dismiss it, claim later from the Vault widget in the Vault or Dashboard sidebar.
+- Claiming on consecutive UTC days builds your streak. Miss a day and it resets to 1.
+
+## The Vault dividend
+
+Every night (UTC) you can be paid a dividend for the day just ended. It has two kinds of part:
+
+- **Collection interest:** 0.25% of the value of your cards a day, up to 25. Loreward trophy cards don't count.
+- **Activity:** 1 IxCredit for every 80 Loreward score points your wiki edits earned that day (up to 30; edits you make in WikiOS count, and edits made on the classic wiki count once you've [claimed the name](/help/getting-started/ixnayid#claim-your-old-ixwiki-names) they were made under), 2 for each of your ThinkPages posts and forum posts or replies (up to 20), and for card activity 2 per pack opened, 5 per completed trade and 3 per card sold (up to 20).
+
+A login streak raises the activity parts by 5% for each day of streak, up to 10 days (so at most +50%). Account upgrades that boost the dividend multiply the total. The total is at most 150 a day. If a night is missed, the unpaid days from the last week are paid from that day's own activity. Open a **Vault dividend** row in your statement to see how that day's amount was worked out.
 
 ## Spending IxCredits
 
-- **Card Packs:** Purchase packs in the Pack Store with varying prices
-- **Marketplace:** Bid on or buy cards from other players
-- **Crafting:** Combine cards or materials using IxCredits
-- **Account Upgrades:** Extra card capacity and a passive-yield boost
-- **Cosmetics:** Profile glows, frames, and chat badges
-- **Lore Card Requests:** 50 IxC to ask for a wiki article to become a [lore card](/help/vault/lore-cards)
+- **Card packs** in the Store (seeded packs cost 100 to 15,000 IxC). See [Card Packs](/help/vault/card-packs).
+- **Listings and auctions:** buying a listing, bids and buyouts, plus a listing fee of 5 IxC (10 for featured) when you sell. See [Auctions & Trading](/help/vault/trading).
+- **Trades:** you can add IxCredits to either side of a trade offer. The market fee applies to IxCredits that change hands in a trade over 100 IxC.
+- **Crafting** a card costs its realm's dust plus its rarity's floor value in IxCredits. See [Dust, fusion and crafting](/help/vault/crafting).
+- **Lore card suggestions** are free: you can suggest up to 3 wiki articles a day, so there is nothing to refund. See [Lore Cards](/help/vault/lore-cards).
+- **Store items** (cosmetics such as profile glows, frames and badges, card capacity boosts and MyLeague licences) when the shop has them. See [Vault Shop Items](/help/vault/shop-items).
 
-## Daily Earning Caps
+## Vault level
 
-> **Cap Limits**
->
-> Certain earning categories have daily limits to maintain economy balance:
->
-> - **Active Earnings:** 100 IxC per day (embassies, cultural exchanges, diplomatic scenarios)
-> - **Social Earnings:** 50 IxC per day (posts, interactions)
-> - **Bonuses:** No daily cap (achievements, one-time bonuses, Lorewards)
-> - **Passive Income:** No daily cap (based on economic performance)
-> - **Card Earnings:** No daily cap (trading profits, pack rewards)
-
-## Vault Leveling
-
-Your Vault Level represents your overall progression in the card system:
-
-- **XP Rate:** 1 XP earned for every 1 IxCredit earned
-- **Level Threshold:** 1,000 XP per level
-- Your level and progress toward the next one show on your Vault dashboard
-
-> [!WARNING]
-> **Economy Integrity**
->
-> All IxCredits transactions are tracked to keep the economy fair.
-
-> **Related Articles**
->
-> - [Vault Overview](/help/vault/overview) - Vault system overview
-> - [Card Packs & Opening](/help/vault/card-packs) - Spending IxCredits on packs
-> - [Achievements & Progression](/help/gameplay/achievements) - Earning IxCredits through achievements
+You gain 1 XP for each IxCredit earned; every 1,000 XP is a new level. Levels make your daily credit roll larger.

@@ -1,0 +1,227 @@
+/** @jest-environment node */
+/**
+ * Uploaded flags and images are stored without the base path (`/images/uploads/…`, `/flags/…`, see
+ * `src/server/shared/uploaded-assets.ts`). Under production's `/projects/ixstates` a root-relative `src` loads from
+ * classic MediaWiki's root and 404s, so every flag, avatar, profile picture, banner, logo, cover, thumbnail or photo
+ * `src` goes through `assetUrl()` (or `withBasePath()`), which leaves absolute, data: and blob: URLs alone and never
+ * doubles the base path.
+ *
+ * This walks every `.tsx` under `src` and fails on a JSX `src={…}` that names one of those (or holds an
+ * `/images/uploads` literal) without one of the `RESOLVERS`. A value resolved earlier in the file
+ * (`const flagUrl = assetUrl(raw)`) counts as resolved. Components that resolve their own `src` are listed in
+ * `RESOLVING_TAGS`. It also fails on a root-relative `/images/` path given as a `src` unresolved: a literal, or a
+ * name bound to one, in JSX `src={…}` or assigned to `.src` (an `onError` fallback, `img.src = …`).
+ *
+ * OG images (`src/lib/og`) are exempt: `next/og` needs absolute URLs, which their loaders build.
+ */
+import fs from "node:fs";
+import path from "node:path";
+import { ts } from "ts-morph";
+
+const SRC = path.join(process.cwd(), "src");
+/** `assetUrl`, `withBasePath`, and helpers that return an absolute URL or one already carrying the base path. */
+const RESOLVERS = new Set([
+  "assetUrl",
+  "withBasePath",
+  "resolveSrc",
+  "proxyDiscordUrl",
+  "proxyCardArtwork",
+  "proxyNSImage",
+  "getPlayerPhotoUrl",
+  "playerPhotoFallbackUrl",
+  "mediaWikiImageUrl",
+  "getImageUrl",
+]);
+/** Components that pass their `src` through `assetUrl`/`withBasePath` themselves. */
+const RESOLVING_TAGS = new Set([
+  "FlagTile",
+  "FlagBanner",
+  "FlagWatermark",
+  "FlagDot",
+  "AvatarImage",
+  "TeamCrest",
+  "PillImage",
+]);
+const EXEMPT_DIRS = [path.join("src", "lib", "og"), path.join("src", "tests")];
+const PICTURISH =
+  /flag|avatar|profileImage|imageUrl|banner|logo|cover|thumbnail|photo|heroImage|selectedImage|mediaUrl|media\.url/i;
+const UPLOAD_LITERAL = /["'`]\/images\/uploads\//;
+/** A root-relative public image path, such as a stock fallback picture. */
+const IMAGE_LITERAL = /^["'`]\/images\//;
+
+function walk(dir: string, visit: (file: string) => void): void {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) walk(full, visit);
+    else if (entry.name.endsWith(".tsx")) visit(full);
+  }
+}
+
+function callsResolver(node: ts.Node): boolean {
+  if (
+    ts.isCallExpression(node) &&
+    ts.isIdentifier(node.expression) &&
+    RESOLVERS.has(node.expression.text)
+  ) {
+    return true;
+  }
+  return ts.forEachChild(node, callsResolver) ?? false;
+}
+
+/** Names of variables in `sf` whose initializer satisfies `test`. */
+function namesWhere(sf: ts.SourceFile, test: (init: ts.Expression) => boolean): Set<string> {
+  const names = new Set<string>();
+  const visit = (node: ts.Node): void => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      test(node.initializer)
+    ) {
+      names.add(node.name.text);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  return names;
+}
+
+interface FileNames {
+  /** Variables whose initializer calls a resolver. */
+  resolved: Set<string>;
+  /** Variables holding a bare `/images/…` path. */
+  imagePaths: Set<string>;
+}
+
+function isImagePath(expr: ts.Expression, sf: ts.SourceFile, names: FileNames): boolean {
+  if (ts.isIdentifier(expr)) return names.imagePaths.has(expr.text);
+  return IMAGE_LITERAL.test(expr.getText(sf));
+}
+
+function isUnresolved(expr: ts.Expression, sf: ts.SourceFile, names: FileNames): boolean {
+  if (callsResolver(expr)) return false;
+  if (ts.isIdentifier(expr) && names.resolved.has(expr.text)) return false;
+  const text = expr.getText(sf);
+  return PICTURISH.test(text) || UPLOAD_LITERAL.test(text) || isImagePath(expr, sf, names);
+}
+
+/** `x.src = …` */
+function srcAssignment(node: ts.Node): ts.Expression | undefined {
+  if (
+    ts.isBinaryExpression(node) &&
+    node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+    ts.isPropertyAccessExpression(node.left) &&
+    node.left.name.text === "src"
+  ) {
+    return node.right;
+  }
+  return undefined;
+}
+
+/** The `src={…}` attributes in `source` that name a picture (or hold an upload) without resolving it, as `file:line`. */
+function unresolvedAssetSrcs(file: string, source: string): string[] {
+  const sf = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const names: FileNames = {
+    resolved: namesWhere(sf, callsResolver),
+    imagePaths: namesWhere(sf, (init) => IMAGE_LITERAL.test(init.getText(sf))),
+  };
+  const found: string[] = [];
+  const report = (node: ts.Node) => {
+    const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
+    found.push(`${path.relative(process.cwd(), file)}:${line + 1}`);
+  };
+  const visit = (node: ts.Node): void => {
+    const assigned = srcAssignment(node);
+    if (assigned && isUnresolved(assigned, sf, names)) report(node);
+    if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
+      if (!RESOLVING_TAGS.has(node.tagName.getText(sf))) {
+        for (const attr of node.attributes.properties) {
+          if (!ts.isJsxAttribute(attr) || attr.name.getText(sf) !== "src") continue;
+          const init = attr.initializer;
+          const expr = init && ts.isJsxExpression(init) ? init.expression : undefined;
+          const literal = init && ts.isStringLiteral(init) && IMAGE_LITERAL.test(init.getText(sf));
+          if (literal || (expr && isUnresolved(expr, sf, names))) report(attr);
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  return found;
+}
+
+describe("the detector", () => {
+  const scan = (body: string) => unresolvedAssetSrcs("fixture.tsx", body);
+  const jsx = (el: string) => `export const X = ({ c, flagUrl }) => (${el});`;
+
+  it.each([
+    ["<img src={c.flagUrl} />"],
+    ["<img src={c.country?.flag ?? undefined} />"],
+    ["<img src={user.flag} />"],
+    ["<img src={account.profileImageUrl} />"],
+    ["<img src={group.settings.bannerUrl} />"],
+    ["<img src={team.logo} />"],
+    ["<img src={post.mediaUrls[0]} />"],
+    ["<motion.img src={lightboxMedia.url} />"],
+    ['<img src="/images/uploads/x.png" />'],
+    ['<img src="/images/sportyblocks/player-1.png" />'],
+    ["<img src={`/images/uploads/${name}`} />"],
+    ["<img src={normalizeFlagUrl(c.flag) ?? undefined} />"],
+    ['<img src={"/images/sportyblocks/player-1.png"} />'],
+    ['<img onError={(e) => { e.currentTarget.src = "/images/sportyblocks/player-1.png"; }} />'],
+    ["<img onError={(e) => { (e.target as HTMLImageElement).src = `/images/x.png`; }} />"],
+    ["<img onError={(e) => { e.currentTarget.src = c.photoUrl; }} />"],
+  ])("flags %s", (el) => {
+    expect(scan(jsx(el))).toEqual(["fixture.tsx:1"]);
+  });
+
+  it.each([
+    ["<img src={assetUrl(c.flagUrl) ?? undefined} />"],
+    ["<img src={withBasePath(c.flag)} />"],
+    ["<FlagWatermark src={flagUrl} />"],
+    ["<img src={assetUrl(c.avatarUrl) ?? undefined} />"],
+    ["<AvatarImage src={account.profileImageUrl} />"],
+    ["<img src={proxyDiscordUrl(account.profileImageUrl)} />"],
+    ["<img src={gif.images.fixed_height.url} />"],
+    ['<img src="/logo.svg" />'],
+    ['<img onError={(e) => { e.currentTarget.src = withBasePath("/images/x.png"); }} />'],
+    ["<img onError={(e) => { e.currentTarget.src = playerPhotoFallbackUrl(); }} />"],
+  ])("allows %s", (el) => {
+    expect(scan(jsx(el))).toEqual([]);
+  });
+
+  it("flags a bare image path held in a name, used as src or assigned in onError", () => {
+    const body = [
+      'const fallback = "/images/sportyblocks/player-1.png";',
+      "export const X = () => <img src={fallback} />;",
+      "export const Y = () => <img onError={(e) => { e.currentTarget.src = fallback; }} />;",
+      "export const Z = (img) => { img.src = fallback; };",
+    ].join("\n");
+    expect(scan(body)).toEqual(["fixture.tsx:2", "fixture.tsx:3", "fixture.tsx:4"]);
+  });
+
+  it("allows a name resolved earlier in the file", () => {
+    expect(
+      scan("const flagSrc = assetUrl(raw);\nexport const X = () => <img src={flagSrc} />;")
+    ).toEqual([]);
+  });
+});
+
+describe("flag and upload srcs carry the base path", () => {
+  const inside = (file: string, dirs: string[]) =>
+    dirs.some((dir) => path.relative(process.cwd(), file).startsWith(dir));
+  const files: string[] = [];
+  walk(SRC, (file) => {
+    if (!inside(file, EXEMPT_DIRS)) files.push(file);
+  });
+
+  it("every .tsx under src, WikiOS included, resolves a flag, picture or upload src", () => {
+    expect(files.length).toBeGreaterThan(1000); // the walk found the app
+    expect(files.some((file) => inside(file, [path.join("src", "components", "wiki-os")]))).toBe(
+      true
+    );
+    expect(
+      files.flatMap((file) => unresolvedAssetSrcs(file, fs.readFileSync(file, "utf8")))
+    ).toEqual([]);
+  });
+});

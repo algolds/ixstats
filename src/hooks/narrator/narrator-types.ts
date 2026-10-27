@@ -8,13 +8,3 @@ export interface PlaybackBlock {
   sectionId?: string; // Nearest parent heading section ID
   element: HTMLElement;
 }
-
-export interface NarratorState {
-  isPlaying: boolean;
-  activeBlockIndex: number;
-  totalBlocks: number;
-  activeText: string;
-  activeSectionTitle: string;
-  speed: number;
-  voice: string;
-}

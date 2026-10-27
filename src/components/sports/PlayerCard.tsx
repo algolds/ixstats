@@ -1,14 +1,15 @@
 "use client";
 
+import { TeamCrest } from "./TeamCrest";
 import React from "react";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
-import { getPlayerPhotoUrl } from "~/lib/sports/photos";
+import { getPlayerPhotoUrl, playerPhotoFallbackUrl } from "~/lib/sports/photos";
 import { withBasePath } from "~/lib/base-path";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import type { PlayerRatings } from "~/lib/sports/types";
+import { Card } from "~/components/ui/card";
 
-export interface PlayerCardProps {
+interface PlayerCardProps {
   player: {
     id: string;
     firstName: string;
@@ -31,7 +32,7 @@ export interface PlayerCardProps {
 
 export function PlayerCard({ player, team, statistics, className }: PlayerCardProps) {
   const teamColor = team?.color ?? "#3b82f6";
-  const overallRating = player.ratings?.overall ?? 50;
+  const overallRating = player.ratings?.overall;
 
   // Dynamic background gradient based on team color
   const gradientStyle = {
@@ -39,28 +40,24 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
   };
 
   const defaultStats = statistics ?? [
-    { label: "Wins", value: player.ratings?.wins ?? 0 },
-    { label: "Losses", value: player.ratings?.losses ?? 0 },
-    { label: "Overall", value: overallRating },
+    { label: "Wins", value: player.ratings?.wins ?? "—" },
+    { label: "Losses", value: player.ratings?.losses ?? "—" },
+    { label: "Overall", value: overallRating ?? "—" },
   ];
 
   const playerPhoto = getPlayerPhotoUrl(player);
 
   return (
-    <FacetCard
-      depth={2}
-      interactive="hover"
-      className={cn("mx-auto w-[340px] rounded-3xl p-1", className)}
-    >
-      <div className="bg-card/95 border-border/40 rounded-[22px] border p-3.5 backdrop-blur-md">
+    <Card className={cn("rounded-sheet mx-auto w-[340px] p-1", className)}>
+      <div className="bg-surface border-separator rounded-card border p-3">
         <div className="relative overflow-hidden pb-3">
           <div className="overflow-hidden [filter:url('#rounded')]">
             <div
-              className="border-border/30 relative flex h-[320px] items-end justify-center rounded-2xl border"
+              className="border-separator rounded-row relative flex h-[320px] items-end justify-center border"
               style={gradientStyle}
             >
               {/* Big Name Background Overlay */}
-              <div className="pointer-events-none absolute inset-x-0 top-6 -z-10 text-center text-7xl/none font-bold tracking-tighter text-white uppercase italic opacity-25 mix-blend-overlay select-none">
+              <div className="pointer-events-none absolute inset-x-0 top-6 -z-10 text-center text-7xl/none font-semibold text-white uppercase italic opacity-25 mix-blend-overlay select-none">
                 <div>{player.firstName.slice(0, 8)}</div>
                 <div>{player.lastName.slice(0, 8)}</div>
               </div>
@@ -71,7 +68,7 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
                 alt={`${player.firstName} ${player.lastName}`}
                 className="absolute bottom-0 h-[85%] max-w-full object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)]"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/images/sportyblocks/player-1.png";
+                  (e.target as HTMLImageElement).src = playerPhotoFallbackUrl();
                 }}
               />
             </div>
@@ -79,49 +76,34 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
 
           {/* Bottom Badge for Number / Overall */}
           <div
-            className="absolute start-1/2 bottom-0 flex h-12 w-12 -translate-x-1/2 items-center justify-center rounded-2xl border border-white/20 text-2xl/none font-bold tracking-tight text-white tabular-nums shadow-lg"
+            className="rounded-row text-title-1 shadow-card absolute start-1/2 bottom-0 flex h-12 w-12 -translate-x-1/2 items-center justify-center border border-white/30 leading-none text-white tabular-nums"
             style={{ backgroundColor: teamColor }}
           >
-            {player.number ?? overallRating}
+            {player.number ?? overallRating ?? "—"}
           </div>
 
           {/* Top-Left Crest */}
-          <div className="border-border/40 bg-card absolute start-0 top-0 aspect-square w-[64px] -translate-x-1/3 -translate-y-1/3 rounded-full border p-1 shadow-md">
-            {team?.logo ? (
-              <img
-                src={withBasePath(team.logo)}
-                alt={team.name}
-                className="h-full w-full rounded-full object-contain"
-              />
-            ) : (
-              <svg
-                viewBox="0 0 420 420"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-full w-full"
-                style={{ color: teamColor }}
-              >
-                <path
-                  d="M201.646 416.137C144.946 389.951 97.469 343.545 60.543 278.221C30.33 224.771 13.58 169.737 4.849 132.979L0 112.558L20.478 108.517C29.676 106.701 36.353 98.519 36.353 89.064C36.353 87.535 36.171 85.986 35.811 84.46L31.579 64.862L68.813 56.045V18.129L83.947 14.518C125.355 4.884 167.706 0 210.202 0C252.699 0 294.762 4.884 336.17 14.518L351.208 18.129V56.045L388.444 64.862L384.015 84.461C383.657 85.986 383.572 87.538 383.572 89.064C383.572 98.519 390.297 106.701 399.497 108.517L420 112.558L415.161 132.981C406.428 169.739 389.684 224.774 359.473 278.221C322.549 343.545 275.075 389.95 218.367 416.141L210.01 420L201.646 416.137Z"
-                  fill="currentColor"
-                />
-              </svg>
-            )}
+          <div className="border-separator bg-surface shadow-card absolute start-0 top-0 aspect-square w-[64px] -translate-x-1/3 -translate-y-1/3 rounded-full border p-1">
+            <TeamCrest
+              src={team?.logo && withBasePath(team.logo)}
+              alt={team?.name ?? ""}
+              color={teamColor}
+            />
           </div>
         </div>
 
         {/* Player Name and Team Details */}
         <div className="pt-2 text-center">
-          <div className="flex items-center justify-center gap-1.5">
-            <h3 className="text-foreground text-xl font-bold tracking-tight">
+          <div className="flex items-center justify-center gap-2">
+            <h3 className="text-label text-title-2">
               {player.firstName} {player.lastName}
             </h3>
           </div>
-          <div className="text-muted-foreground flex items-center justify-center gap-2 text-xs font-semibold tracking-wider uppercase">
+          <div className="text-label-secondary text-eyebrow flex items-center justify-center gap-2">
             {team?.name && <span>{team.name}</span>}
             {team?.name && <span>•</span>}
             <PositionTooltip position={player.position}>
-              <span className="text-foreground cursor-help font-bold underline decoration-dotted">
+              <span className="text-label cursor-help font-semibold underline decoration-dotted">
                 {player.position}
               </span>
             </PositionTooltip>
@@ -135,19 +117,15 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
         </div>
 
         {/* Statistics Grid */}
-        <div className="bg-muted/40 border-border/30 mt-4 grid grid-cols-3 divide-x divide-white/5 rounded-2xl border p-2.5 shadow-inner">
+        <div className="bg-fill-3 border-separator divide-separator rounded-card mt-4 grid grid-cols-3 divide-x border p-3 shadow-inner">
           {defaultStats.map((stat, idx) => (
             <div key={idx} className="px-1 text-center">
-              <span className="text-muted-foreground block text-xs font-semibold tracking-wider uppercase">
-                {stat.label}
-              </span>
-              <span className="text-foreground text-lg font-bold tabular-nums">{stat.value}</span>
+              <span className="text-label-secondary text-eyebrow block">{stat.label}</span>
+              <span className="text-label text-title-3 tabular-nums">{stat.value}</span>
             </div>
           ))}
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 }
-
-export default PlayerCard;

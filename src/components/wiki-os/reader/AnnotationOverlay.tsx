@@ -1,12 +1,8 @@
 "use client";
-// src/components/wiki-os/reader/AnnotationOverlay.tsx
 // High-performance DOM highlighter for WikiOS article text annotations.
-// Full Apple Design & Facet compliance.
-
 import { useEffect, useCallback, type RefObject } from "react";
-import { soundEffects } from "~/lib/sound/cuelume";
 
-export interface AnnotationItem {
+interface AnnotationItem {
   id: string;
   selectedText: string;
   comment?: string | null;
@@ -32,7 +28,6 @@ export function useAnnotationOverlay({
 }: UseAnnotationOverlayProps) {
   const handleMarkClick = useCallback(
     (id: string) => {
-      soundEffects.press();
       onSelectAnnotation?.(id);
     },
     [onSelectAnnotation]
@@ -77,11 +72,7 @@ export function useAnnotationOverlay({
   return null;
 }
 
-// ---------------------------------------------------------------------------
-// DOM Highlights Helpers
-// ---------------------------------------------------------------------------
-
-export function clearHighlights(container: HTMLElement) {
+function clearHighlights(container: HTMLElement) {
   const marks = container.querySelectorAll(".wikios-annotation-mark");
   marks.forEach((el) => {
     const parent = el.parentNode;
@@ -95,7 +86,7 @@ export function clearHighlights(container: HTMLElement) {
   });
 }
 
-export function applyHighlight(
+function applyHighlight(
   container: HTMLElement,
   annotation: AnnotationItem,
   onClick?: (id: string) => void,

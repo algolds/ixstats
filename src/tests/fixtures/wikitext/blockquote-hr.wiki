@@ -1,0 +1,11 @@
+Intro paragraph.
+
+<blockquote>
+A famous line from the founding charter.
+</blockquote>
+
+----
+
+<blockquote>One-line quote.</blockquote>
+
+Text after the rule.

@@ -96,4 +96,3 @@ export function ExecutiveNotificationProvider({ children }: ExecutiveNotificatio
 }
 
 export { ExecutiveNotificationContext };
-export type { ExecutiveNotification };

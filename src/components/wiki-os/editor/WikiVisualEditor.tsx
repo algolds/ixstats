@@ -1,11 +1,12 @@
 "use client";
-// src/components/wiki-os/editor/WikiVisualEditor.tsx
 // Visual editor on Plate (Slate).
 // Operates on native WikiAST blocks and lossless wikitext serialization.
 
-import React, { useRef, useCallback } from "react";
-import { useNavigationScroll } from "~/hooks/useNavigationScroll";
+import "~/styles/wiki-os/editors.css";
+import "~/styles/wiki-os/mediawiki-editors.css";
+import React, { useEffect, useRef, useCallback } from "react";
 import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
+import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { parseTemplateWikitext } from "~/lib/wiki-os/editor/parse-template-wikitext";
 import { Editor, Transforms, type Descendant } from "slate";
 import { useWikiEditorState } from "./hooks/useWikiEditorState";
@@ -21,7 +22,7 @@ import { serializePlateToWikitext } from "./plate/wiki-wikitext";
 import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images";
 import type { TSlateEditor } from "platejs";
 
-export interface WikiVisualEditorProps {
+interface WikiVisualEditorProps {
   initialHtml?: string;
   initialWikitext?: string;
   title: string;
@@ -35,6 +36,25 @@ export interface WikiVisualEditorProps {
   onSwitchToSource: (dirty: boolean, currentContent: string) => void;
   /** Reports the client-side wikitext serialization after every change. */
   onSerializedWikitext?: (result: WikitextSerializeResult) => void;
+  /**
+   * Hands the host a function that reads the editor's content as wikitext right now (null when some
+   * content has no wikitext yet), and null when the editor goes away.
+   */
+  registerContentReader?: (read: (() => string | null) | null) => void;
+  /**
+   * Whether to start from a local draft of this page when one exists. A host that settles the draft
+   * question itself (the edit bridge) passes false and hands the text to start from as `initialWikitext`.
+   */
+  restoreLocalDraft?: boolean;
+  /**
+   * Hosted inside another surface (the forum composer): no title bar, save panel or status bar, and no
+   * viewport-sized frame; the host owns saving and reads the content through `registerContentReader`.
+   */
+  bare?: boolean;
+  /** Start with a short toolbar (bold, italic, lists, quote, link, image) and a More control for the rest. */
+  compactToolbar?: boolean;
+  /** Hands the host the Plate editor once it is ready (to insert text or blocks from outside). */
+  onEditorReady?: (editor: TSlateEditor) => void;
 }
 
 type PlateEditorLike = TSlateEditor;
@@ -47,14 +67,20 @@ export function WikiVisualEditor({
   onCancel,
   onSwitchToSource,
   onSerializedWikitext,
+  registerContentReader,
+  restoreLocalDraft = true,
+  bare = false,
+  compactToolbar = false,
+  onEditorReady,
 }: WikiVisualEditorProps) {
   const editorRef = useRef<PlateEditorLike | null>(null);
-  const htmlRef = useRef<string>(initialHtml || "");
   const wtRef = useRef<WikitextSerializeResult>({
     wikitext: initialWikitext || "",
     complete: true,
+    notices: [],
   });
-  const { repulsionProgress } = useNavigationScroll();
+  const { user } = useWikiAuth();
+  const userId = user?.id ?? null;
 
   const state = useWikiEditorState({ title, onSave });
   const fmt = useWikiVisualFormatting({
@@ -65,7 +91,7 @@ export function WikiVisualEditor({
 
   // Draft restore prompt
   const initialContent = React.useMemo(() => {
-    const existingDraft = getDraft(title, "ixwiki");
+    const existingDraft = restoreLocalDraft ? getDraft(userId, title, "ixwiki") : null;
     if (existingDraft?.wikitext) {
       return { wikitext: existingDraft.wikitext };
     }
@@ -76,25 +102,32 @@ export function WikiVisualEditor({
       return { wikitext: initialWikitext };
     }
     return { html: fixEditorImageUrls(initialHtml || "") };
-  }, [title, initialHtml, initialWikitext]);
+  }, [userId, title, initialHtml, initialWikitext, restoreLocalDraft]);
 
   const { setIsDirty, setWordCount } = state;
   const onSerializedWikitextRef = useRef(onSerializedWikitext);
   onSerializedWikitextRef.current = onSerializedWikitext;
   const refreshActiveFormats = fmt.refreshActiveFormats;
 
+  // The canvas reports its value once as it mounts (the document as it was opened) and again after every
+  // change: only a later report that differs from the opened document is an edit.
+  const openedWikitextRef = useRef<string | null>(null);
+
   const handleValueChange = useCallback(
-    (nodes: Descendant[], html: string, plainText: string) => {
-      htmlRef.current = html;
-      wtRef.current = serializePlateToWikitext(nodes);
-      onSerializedWikitextRef.current?.(wtRef.current);
-      setIsDirty(true);
+    (nodes: Descendant[], _html: string, plainText: string) => {
+      const serialized = serializePlateToWikitext(nodes);
+      wtRef.current = serialized;
+      onSerializedWikitextRef.current?.(serialized);
+      if (openedWikitextRef.current === null) openedWikitextRef.current = serialized.wikitext;
+      else if (serialized.wikitext !== openedWikitextRef.current) setIsDirty(true);
       setWordCount(plainText.split(/\s+/).filter(Boolean).length);
       refreshActiveFormats();
     },
     [setIsDirty, setWordCount, refreshActiveFormats]
   );
 
+  // What a save writes is the serialized wikitext, even when it is empty: an emptied document is an
+  // empty page, never the HTML of the editor.
   const handleSave = useCallback(async () => {
     // Never save leftover HTML: blocks without canonical wikitext must be fixed in source mode.
     if (!wtRef.current.complete) {
@@ -104,19 +137,28 @@ export function WikiVisualEditor({
       );
       return;
     }
-    const wikitextToSave = wtRef.current.wikitext || htmlRef.current;
-    await state.executeSave(() => wikitextToSave);
-    saveDraft({ title, source: "ixwiki", mode: "visual", wikitext: wikitextToSave });
-  }, [state, title]);
+    const wikitextToSave = wtRef.current.wikitext;
+    // Edits that could not be applied as typed, or a block that had to move: the author is told.
+    for (const notice of wtRef.current.notices)
+      state.notify.warning("Check the saved page", notice);
+    const saved = await state.executeSave(() => wikitextToSave);
+    // A published page needs no draft (executeSave cleared it); a failed save keeps the work as one.
+    if (!saved)
+      saveDraft(userId, { title, source: "ixwiki", mode: "visual", wikitext: wikitextToSave });
+  }, [state, title, userId]);
 
   const handleSaveDraft = useCallback(() => {
-    const wikitextToSave = wtRef.current.wikitext || htmlRef.current;
-    state.executeSaveDraft(() => wikitextToSave, "visual");
+    state.executeSaveDraft(() => wtRef.current.wikitext, "visual");
   }, [state]);
 
   const handleSwitchToSource = useCallback(() => {
-    onSwitchToSource(state.isDirty, wtRef.current.wikitext || htmlRef.current);
+    onSwitchToSource(state.isDirty, wtRef.current.wikitext);
   }, [onSwitchToSource, state.isDirty]);
+
+  useEffect(() => {
+    registerContentReader?.(() => (wtRef.current.complete ? wtRef.current.wikitext : null));
+    return () => registerContentReader?.(null);
+  }, [registerContentReader]);
 
   const handleOpenTemplateEditor = useCallback(
     (id: string) => {
@@ -168,28 +210,6 @@ export function WikiVisualEditor({
       setIsDirty(true);
     },
     [editorRef, fmt, setIsDirty]
-  );
-
-  const handleUpdateInfoboxFields = useCallback(
-    (id: string, fields: Array<{ label: string; value: string }>) => {
-      const editor = editorRef.current;
-      if (!editor) return;
-      const entries = Array.from(
-        Editor.nodes(editor as unknown as import("slate").BaseEditor, {
-          at: [],
-          match: (n) => (n as unknown as { id?: string }).id === id,
-        })
-      );
-      if (entries.length === 0) return;
-      const [, path] = entries[0]!;
-      Transforms.setNodes(
-        editor as unknown as import("slate").BaseEditor,
-        { fields, edited: true } as unknown as Partial<import("slate").Descendant>,
-        { at: path }
-      );
-      setIsDirty(true);
-    },
-    [editorRef, setIsDirty]
   );
 
   // Template and Image Handlers
@@ -261,9 +281,13 @@ export function WikiVisualEditor({
     fmt.removeEditingNode();
   }, [fmt]);
 
+  const onEditorReadyRef = useRef(onEditorReady);
+  onEditorReadyRef.current = onEditorReady;
+
   const handleEditorReady = useCallback(
     (editor: unknown) => {
       editorRef.current = editor as PlateEditorLike;
+      onEditorReadyRef.current?.(editor as PlateEditorLike);
       refreshActiveFormats();
     },
     [refreshActiveFormats]
@@ -276,10 +300,8 @@ export function WikiVisualEditor({
           title={title}
           wordCount={state.wordCount}
           isDirty={state.isDirty}
-          repulsionProgress={repulsionProgress}
           onSwitchToSource={handleSwitchToSource}
           onCancel={onCancel}
-          onSave={handleSave}
           handleSaveDraft={handleSaveDraft}
           activeFormats={fmt.activeFormats}
           exec={fmt.exec}
@@ -291,22 +313,24 @@ export function WikiVisualEditor({
           insertTable={fmt.insertTable}
           insertRef={fmt.insertRef}
           clearFormatting={fmt.clearFormatting}
-          insertHtmlAtCursor={fmt.insertHtmlAtCursor}
           handleInsertStashedImage={handleInsertStashedImage}
+          hideHeader={bare}
+          compact={compactToolbar}
         />
 
-        <WikiEditorSavePanel
-          showSavePanel={state.showSavePanel}
-          summary={state.summary}
-          setSummary={state.setSummary}
-          minor={state.minor}
-          setMinor={state.setMinor}
-          saving={state.saving}
-          saveActionType={state.saveActionType}
-          onSave={handleSave}
-        />
+        {bare ? null : (
+          <WikiEditorSavePanel
+            showSavePanel={state.showSavePanel}
+            summary={state.summary}
+            setSummary={state.setSummary}
+            minor={state.minor}
+            setMinor={state.setMinor}
+            saving={state.saving}
+            saveActionType={state.saveActionType}
+            onSave={handleSave}
+          />
+        )}
 
-        {/* ─── Plate Editor Canvas ─── */}
         <div className="wikios-ve-editor-wrapper">
           <PlateWikiEditor
             initialHtml={initialContent.html}
@@ -316,17 +340,19 @@ export function WikiVisualEditor({
             onSelectionChange={refreshActiveFormats}
             openTemplateEditor={handleOpenTemplateEditor}
             deleteNode={handleDeleteNode}
-            updateInfoboxFields={handleUpdateInfoboxFields}
+            contentClassName={bare ? "p-3 pb-6" : undefined}
           />
         </div>
 
-        <WikiEditorStatusBar
-          cursorPos={{ line: 1, col: 1 }}
-          wordCount={state.wordCount}
-          lineCount={1}
-          formatName="Canvas Block AST"
-          encoding="UTF-8"
-        />
+        {bare ? null : (
+          <WikiEditorStatusBar
+            cursorPos={{ line: 1, col: 1 }}
+            wordCount={state.wordCount}
+            lineCount={1}
+            formatName="Canvas Block AST"
+            encoding="UTF-8"
+          />
+        )}
 
         <WikiEditorModalHost
           onInsertImage={fmt.handleInsertImage}

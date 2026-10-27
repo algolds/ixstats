@@ -1,0 +1,190 @@
+"use client";
+
+import { useState } from "react";
+import { api } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import {
+  isRealmImageUrl,
+  MAX_REALM_TAGS,
+  REALM_TAGS,
+  type RealmTag,
+} from "~/lib/realms/realm-region";
+import { ManageSection } from "./ManageSection";
+import { RealmImageField } from "./RealmImageField";
+
+/**
+ * Banner image, thumbnail, emblem, description and directory tags; site staff also set the founder line and the
+ * founding year.
+ */
+export function AppearanceSection({
+  slug,
+  appearance,
+}: {
+  slug: string;
+  appearance: {
+    bannerUrl: string | null;
+    thumbnail: string | null;
+    emblemUrl: string | null;
+    description: string | null;
+    tags: string[];
+    founderTitle: string | null;
+    foundedYear: number | null;
+    createdYear: number;
+    canSetFounding: boolean;
+  };
+}) {
+  const notify = useNotify();
+  const utils = api.useUtils();
+  const [bannerUrl, setBannerUrl] = useState(appearance.bannerUrl ?? "");
+  const [thumbnail, setThumbnail] = useState(appearance.thumbnail ?? "");
+  const [emblemUrl, setEmblemUrl] = useState(appearance.emblemUrl ?? "");
+  const [description, setDescription] = useState(appearance.description ?? "");
+  const [tags, setTags] = useState<string[]>(appearance.tags);
+  const [founderTitle, setFounderTitle] = useState(appearance.founderTitle ?? "");
+  const [foundedYear, setFoundedYear] = useState(appearance.foundedYear?.toString() ?? "");
+  const thisYear = new Date().getUTCFullYear();
+  const year = foundedYear.trim() === "" ? null : Number(foundedYear);
+  const yearOk = year === null || (Number.isInteger(year) && year >= 1970 && year <= thisYear);
+  const save = api.realms.region.updateAppearance.useMutation({
+    onSuccess: () => {
+      notify.success("Appearance saved");
+      void utils.realms.region.invalidate();
+      void utils.realms.directory.invalidate();
+    },
+    onError: (error) => notify.error("Could not save", error.message),
+  });
+  const imagesOk =
+    isRealmImageUrl(bannerUrl) && isRealmImageUrl(thumbnail) && isRealmImageUrl(emblemUrl);
+
+  return (
+    <ManageSection
+      id="appearance"
+      title="Appearance"
+      description="The banner across the top of the realm page, the thumbnail beside its name, the emblem the forum board and sidebar show for it, its description and the tags the directory filters by."
+    >
+      <div className="flex flex-col gap-4">
+        <RealmImageField
+          id="realm-banner"
+          label="Banner image"
+          value={bannerUrl}
+          onChange={setBannerUrl}
+          previewClassName="h-28 w-full"
+        />
+        <RealmImageField
+          id="realm-thumbnail"
+          label="Thumbnail"
+          value={thumbnail}
+          onChange={setThumbnail}
+          previewClassName="size-20"
+        />
+        <RealmImageField
+          id="realm-emblem"
+          label="Emblem"
+          value={emblemUrl}
+          onChange={setEmblemUrl}
+          previewClassName="size-16"
+        />
+        {appearance.canSetFounding && (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="realm-founder-title">Founder title</Label>
+            <Input
+              id="realm-founder-title"
+              value={founderTitle}
+              onChange={(e) => setFounderTitle(e.target.value)}
+              maxLength={80}
+              placeholder="The realm's creator"
+            />
+            <p className="text-label-secondary text-footnote">
+              Shown as the realm&apos;s founder. Leave empty to show its creator. Only site staff
+              can change it.
+            </p>
+          </div>
+        )}
+        {appearance.canSetFounding && (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="realm-founded-year">Founded</Label>
+            <Input
+              id="realm-founded-year"
+              type="number"
+              inputMode="numeric"
+              min={1970}
+              max={thisYear}
+              value={foundedYear}
+              onChange={(e) => setFoundedYear(e.target.value)}
+              placeholder={String(appearance.createdYear)}
+              aria-invalid={!yearOk}
+              className="w-32"
+            />
+            <p
+              className={
+                yearOk ? "text-label-secondary text-footnote" : "text-destructive text-footnote"
+              }
+            >
+              {yearOk
+                ? "The year the realm began, for one older than its time here (a NationStates region). Leave empty for the year it was created here. Only site staff can change it."
+                : `Use a year from 1970 to ${thisYear}.`}
+            </p>
+          </div>
+        )}
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="realm-description">Description</Label>
+          <Textarea
+            id="realm-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={1000}
+            rows={3}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <span className="text-label text-footnote font-medium" id="realm-tags-label">
+            Tags (up to {MAX_REALM_TAGS})
+          </span>
+          <ToggleGroup
+            type="multiple"
+            variant="pill"
+            size="sm"
+            aria-labelledby="realm-tags-label"
+            value={tags}
+            onValueChange={(next: string[]) => {
+              if (next.length <= MAX_REALM_TAGS) setTags(next);
+            }}
+            className="flex-wrap justify-start"
+          >
+            {REALM_TAGS.map((tag) => (
+              <ToggleGroupItem key={tag} value={tag}>
+                {tag}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </div>
+        <div>
+          <Button
+            disabled={!imagesOk || !yearOk || save.isPending}
+            onClick={() =>
+              save.mutate({
+                slug,
+                bannerUrl: bannerUrl.trim() || null,
+                thumbnail: thumbnail.trim() || null,
+                emblemUrl: emblemUrl.trim() || null,
+                description: description.trim() || null,
+                tags: tags as RealmTag[],
+                ...(appearance.canSetFounding && {
+                  founderTitle: founderTitle.trim() || null,
+                  foundedYear: year,
+                }),
+              })
+            }
+          >
+            Save appearance
+          </Button>
+        </div>
+      </div>
+    </ManageSection>
+  );
+}

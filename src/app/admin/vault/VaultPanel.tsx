@@ -9,20 +9,19 @@ import {
   ClockRotateRight as History,
   Settings,
   Coins,
-  Gift,
 } from "iconoir-react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 // Sub-components
 import { VaultUserDirectory } from "./VaultUserDirectory";
 import { VaultStoreControl } from "./VaultStoreControl";
-import { VaultBonusAdmin } from "./VaultBonusAdmin";
 import { VaultPurchaseLogs } from "./VaultPurchaseLogs";
 import { VaultSystemConfig } from "./VaultSystemConfig";
+import { ExchangeAdmin } from "./ExchangeAdmin";
 
-type VaultTab = "users" | "store" | "bonuses" | "logs" | "config";
+type VaultTab = "users" | "store" | "logs" | "exchange" | "config";
 
 export default function AdminVaultPage() {
   usePageTitle({ title: "Admin - Vault Store & Economy" });
@@ -30,10 +29,9 @@ export default function AdminVaultPage() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Coins}
-        title="Vault & Economy Control Suite"
-        description="Oversee user credit balances, store catalog items, metagame bonuses, and real-time transaction purchase logs."
+      <PageHeader
+        title="Vault and economy"
+        subtitle="User credit balances, store items and purchase logs."
       />
 
       <Tabs
@@ -41,41 +39,26 @@ export default function AdminVaultPage() {
         onValueChange={(val) => setActiveTab(val as VaultTab)}
         className="w-full"
       >
-        <TabsList className="bg-card/40 border-border/40 mb-4 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
-          <TabsTrigger
-            value="users"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
+        <TabsList className="bg-fill-3 rounded-row mb-4 flex w-full flex-wrap justify-start gap-1 p-1">
+          <TabsTrigger value="users" className="text-caption flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Users & Balances
+            Users & balances
           </TabsTrigger>
-          <TabsTrigger
-            value="store"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
+          <TabsTrigger value="store" className="text-caption flex items-center gap-2">
             <ShoppingBag className="h-4 w-4" />
-            Store Inventory
+            Store inventory
           </TabsTrigger>
-          <TabsTrigger
-            value="bonuses"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
-            <Gift className="h-4 w-4" />
-            Metagame Bonuses
-          </TabsTrigger>
-          <TabsTrigger
-            value="logs"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
+          <TabsTrigger value="logs" className="text-caption flex items-center gap-2">
             <History className="h-4 w-4" />
-            Purchase Logs
+            Purchase logs
           </TabsTrigger>
-          <TabsTrigger
-            value="config"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
+          <TabsTrigger value="exchange" className="text-caption flex items-center gap-2">
+            <Coins className="h-4 w-4" />
+            Exchange
+          </TabsTrigger>
+          <TabsTrigger value="config" className="text-caption flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            System Config
+            System config
           </TabsTrigger>
         </TabsList>
 
@@ -87,12 +70,12 @@ export default function AdminVaultPage() {
           <VaultStoreControl />
         </TabsContent>
 
-        <TabsContent value="bonuses" className="mt-4 focus-visible:outline-none">
-          <VaultBonusAdmin />
-        </TabsContent>
-
         <TabsContent value="logs" className="mt-4 focus-visible:outline-none">
           <VaultPurchaseLogs />
+        </TabsContent>
+
+        <TabsContent value="exchange" className="mt-4 focus-visible:outline-none">
+          <ExchangeAdmin />
         </TabsContent>
 
         <TabsContent value="config" className="mt-4 focus-visible:outline-none">

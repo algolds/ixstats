@@ -1,40 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 /**
- * Custom hook to read and reactively sync wiki preferences stored in localStorage.
- * Listens to storage events and a custom 'wikios-settings-changed' event triggered
- * when toggled from the settings panel.
+ * Reads a boolean wiki preference from localStorage and follows it live: the settings controls
+ * (Halo and /settings) dispatch `wikios-settings-changed` in this tab, and `storage` covers other tabs.
  */
 export function useWikiSetting(key: string, defaultValue: boolean): boolean {
   const [value, setValue] = useState(defaultValue);
 
   useEffect(() => {
-    const readValue = () => {
+    const read = () => {
       try {
         const stored = localStorage.getItem(key);
-        if (stored !== null) {
-          setValue(stored === "true");
-        } else {
-          setValue(defaultValue);
-        }
+        setValue(stored === null ? defaultValue : stored === "true");
       } catch {
         setValue(defaultValue);
       }
     };
 
-    // Read initial value
-    readValue();
-
-    // Listen to local changes in the same window/tab
-    window.addEventListener("wikios-settings-changed", readValue);
-    // Listen to changes from other tabs/windows
-    window.addEventListener("storage", readValue);
-
+    read();
+    window.addEventListener("wikios-settings-changed", read);
+    window.addEventListener("storage", read);
     return () => {
-      window.removeEventListener("wikios-settings-changed", readValue);
-      window.removeEventListener("storage", readValue);
+      window.removeEventListener("wikios-settings-changed", read);
+      window.removeEventListener("storage", read);
     };
   }, [key, defaultValue]);
 

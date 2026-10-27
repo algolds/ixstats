@@ -19,6 +19,8 @@ export const env = {
   REDIS_URL: undefined,
   NEXT_PUBLIC_IXWORLD_STANDALONE: false,
   SKIP_ENV_VALIDATION: true,
+  // api.php signs sessions with it and has no fallback key: tests that log in need one.
+  WIKIOS_API_SESSION_SECRET: "jest-wikios-api-session-secret-0123456789" as string | undefined,
 };
 
 export default { env };

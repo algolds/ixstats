@@ -1,24 +1,44 @@
 /**
  * Cards router — split across files by domain (2026-06-13) and recombined here.
  *
- * mergeRouters preserves every procedure at the top level, so the public API path
- * `api.cards.*` is byte-identical to the former monolith — no call sites change.
+ * mergeRouters keeps every player procedure at the top level (`api.cards.*`); the card admin is the nested
+ * `api.cards.admin.<tab>.*` (cards refresh spec §2.4).
  *
  * Domains:
- *  - inventory:  user inventory, NS-import library, admin updates/transfers, junking
- *  - collections: collection CRUD + wiki article excerpt lookup
+ *  - suggestions: free lore card suggestions, and a lore card's category
+ *  - mine:        the caller's copies (the hub's Mine tab)
+ *  - explore:     realm shelves, the catalogue grid, regions
+ *  - sheet:       the card sheet and the wiki excerpt
+ *  - showcases:   free-form showcases by copy, and the player's display
+ *  - mute:        the per-card notice mute
+ *  - takedowns:   a player's takedown request for a card not from NationStates
+ *  - inscriptions: signing a copy and reporting an inscription
+ *  - sheet-economy: your copies' values and actions on the sheet
+ *  - realm-categories: a realm founder's edits to their realm's card categories (`api.cards.realmCategories.*`)
+ *  - admin:       every card admin procedure, one sub-router per admin tab
  */
-import { mergeRouters } from "~/server/api/trpc";
-import { cardsInventoryRouter } from "./inventory";
-import { cardsSettingsRouter } from "./settings";
+import { createTRPCRouter, mergeRouters } from "~/server/api/trpc";
+import { cardsSuggestionsRouter } from "./suggestions";
+import { cardsMineRouter } from "./mine";
+import { cardsExploreRouter } from "./explore";
+import { cardsSheetRouter } from "./sheet";
+import { cardsShowcasesRouter } from "./showcases";
+import { cardsMuteRouter } from "./mute";
+import { cardsTakedownsRouter } from "./takedowns";
+import { cardsInscriptionsRouter } from "./inscriptions";
+import { cardsSheetEconomyRouter } from "./sheet-economy";
+import { cardsRealmCategoriesRouter } from "./realm-categories";
 import { cardsAdminRouter } from "./admin";
-import { cardsCollectionsRouter } from "./collections";
-import { cardsOperationsRouter } from "./operations";
 
 export const cardsRouter = mergeRouters(
-  cardsInventoryRouter,
-  cardsSettingsRouter,
-  cardsAdminRouter,
-  cardsCollectionsRouter,
-  cardsOperationsRouter
+  cardsSuggestionsRouter,
+  cardsMineRouter,
+  cardsExploreRouter,
+  cardsSheetRouter,
+  cardsShowcasesRouter,
+  cardsMuteRouter,
+  cardsTakedownsRouter,
+  cardsInscriptionsRouter,
+  cardsSheetEconomyRouter,
+  createTRPCRouter({ admin: cardsAdminRouter, realmCategories: cardsRealmCategoriesRouter })
 );

@@ -1,30 +1,35 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 export const thinkpagesPostsFlagsRouter = createTRPCRouter({
-  // ===== THINKSHARE (MESSAGING) ENDPOINTS =====
-
-  // Flag a post for moderation
-  flagPost: protectedProcedure
+  /**
+   * Flag a post for moderation. The flag belongs to the signed-in caller (Clerk id); it lands in
+   * the admin flag queue (`admin.listFlaggedPosts`, SL-10) until an admin resolves it.
+   */
+  flagPost: rateLimitedMutationProcedure
     .input(
       z.object({
         postId: z.string(),
-        userId: z.string(),
-        reason: z.string().optional(),
+        /** Ignored: the flagger is always the caller. Kept so older clients still validate. */
+        userId: z.string().optional(),
+        reason: z.string().max(500).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+      const userId = ctx.auth.userId;
 
-      // Check if already flagged by this user
+      const post = await db.thinkpagesPost.findUnique({
+        where: { id: input.postId },
+        select: { id: true },
+      });
+      if (!post) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+      }
+
       const existingFlag = await db.postFlag.findUnique({
-        where: {
-          userId_postId: {
-            postId: input.postId,
-            userId: input.userId,
-          },
-        },
+        where: { userId_postId: { postId: input.postId, userId } },
       });
 
       if (existingFlag) {
@@ -35,11 +40,7 @@ export const thinkpagesPostsFlagsRouter = createTRPCRouter({
       }
 
       await db.postFlag.create({
-        data: {
-          postId: input.postId,
-          userId: input.userId,
-          reason: input.reason,
-        },
+        data: { postId: input.postId, userId, reason: input.reason },
       });
 
       return { success: true };

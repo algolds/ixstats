@@ -1,4 +1,7 @@
-export const COUNTRY_LABEL_OPACITY: unknown = ["coalesce", ["get", "_distFade"], 0];
+import type { Feature } from "geojson";
+import type { ExpressionSpecification, Map as MapLibreMap } from "maplibre-gl";
+
+export const COUNTRY_LABEL_OPACITY: ExpressionSpecification = ["coalesce", ["get", "_distFade"], 0];
 
 /** Escape HTML entities for safe insertion into popup innerHTML */
 export function escHtml(s: string): string {
@@ -42,4 +45,53 @@ export function createStarImage(size: number, fillColor: string, strokeColor: st
   ctx.stroke();
 
   return ctx.getImageData(0, 0, size, size);
+}
+
+/** True when two feature arrays hold the same feature objects in the same order. */
+export function sameFeatureList(a: readonly unknown[] | null, b: readonly unknown[]): boolean {
+  if (!a || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+/**
+ * Push a filtered feature list to a GeoJSON source only when it differs from the list pushed
+ * last time. Zoom-driven filters run on every `zoom` frame; re-sending an unchanged
+ * FeatureCollection makes MapLibre's worker re-tile the whole source each frame, which is
+ * what made zooming stutter. `lastRef` holds the list last sent to this source.
+ */
+export function setFilteredSourceData(
+  source: { setData: (data: GeoJSON.GeoJSON) => unknown } | undefined,
+  features: GeoJSON.Feature[],
+  lastRef: { current: GeoJSON.Feature[] | null },
+  base?: Partial<GeoJSON.FeatureCollection>
+): void {
+  if (!source) return;
+  if (sameFeatureList(lastRef.current, features)) return;
+  lastRef.current = features;
+  source.setData({ ...base, type: "FeatureCollection", features });
+}
+
+/** Whether a feature belongs to the focused country (matched by id, slug or name). */
+export function matchesCountry(f: Feature, countryKey: string): boolean {
+  const p = f.properties;
+  if (!p) return false;
+  return (
+    p.countryId === countryKey ||
+    p.countrySlug === countryKey ||
+    (typeof p.countryName === "string" && p.countryName.toLowerCase() === countryKey.toLowerCase())
+  );
+}
+
+/** Show/hide each of `layerIds` that exists on the map. */
+export function setLayersVisible(
+  map: MapLibreMap,
+  layerIds: string[],
+  visible: boolean | undefined
+) {
+  for (const id of layerIds) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+  }
 }

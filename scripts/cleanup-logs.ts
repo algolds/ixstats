@@ -15,7 +15,7 @@
 import { execSync } from "child_process";
 import { readFileSync, writeFileSync, unlinkSync, statSync, readdirSync } from "fs";
 import { join, dirname } from "path";
-import { UserLogger } from "../src/lib/user-logger";
+import { UserLogger } from "../src/lib/logging/user-logger";
 
 const PROJECT_ROOT = process.cwd();
 const REPORTS_DIR = join(PROJECT_ROOT, "scripts/audit/reports");

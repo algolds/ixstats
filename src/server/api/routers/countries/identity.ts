@@ -5,6 +5,7 @@ import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { countryRefWhere, pickCountryRef } from "./utils";
 
 export const identityProcedures = {
+  // Basic profile for a country: never the geometry (a large polygon blob no caller reads).
   getByIdBasic: rateLimitedPublicProcedure
     .input(z.object({ id: z.string(), ...realmScopeInput.shape }))
     .query(async ({ ctx, input }) => {
@@ -22,8 +23,8 @@ export const identityProcedures = {
           currentTotalGdp: true,
           landArea: true,
           populationDensity: true,
-          geometry: true,
           centroid: true,
+          realmId: true,
         },
       });
       const country = pickCountryRef(rows, input.id);
@@ -43,8 +44,8 @@ export const identityProcedures = {
         currentTotalGdp: country.currentTotalGdp,
         landArea: country.landArea,
         populationDensity: country.populationDensity,
-        geometry: country.geometry,
         centroid: country.centroid,
+        realmId: country.realmId,
       };
     }),
 

@@ -17,7 +17,7 @@ export default function HashtagPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">#{tag}</h2>
+      <h2 className="text-title-1">#{tag}</h2>
       <div className="space-y-4">
         {isLoadingFeed ? (
           <div className="flex items-center justify-center p-8">

@@ -11,13 +11,6 @@ export interface SportsFocus {
   extra?: Record<string, string>;
 }
 
-export type FocusResolutionState =
-  | "VALID"
-  | "NOT_FOUND"
-  | "INVALID_CONTEXT"
-  | "UNAUTHORIZED"
-  | "MALFORMED";
-
 /**
  * Parses a focus parameter string such as "athlete:cm34xabc" or "organization:org123"
  */
@@ -47,81 +40,4 @@ export function parseSportsFocus(param: string | null | undefined): SportsFocus 
 export function serializeSportsFocus(focus: SportsFocus | null | undefined): string | null {
   if (!focus?.type || !focus?.id) return null;
   return `${focus.type}:${focus.id}`;
-}
-
-export interface CompetitionEntity {
-  id: string;
-  name: string;
-  sportPreset: string;
-  archetype: string;
-  teamCount: number;
-  seasonCount: number;
-  status: "active" | "paused" | "completed" | "archived";
-  logo?: string | null;
-  coverImage?: string | null;
-  isCanonical?: boolean;
-}
-
-export interface OrganizationEntity {
-  id: string;
-  name: string;
-  shortName?: string | null;
-  city?: string | null;
-  color?: string | null;
-  logo?: string | null;
-  leagueId: string;
-  leagueName?: string | null;
-  sportPreset?: string | null;
-  budget?: number | null;
-  ownerUserId?: string | null;
-}
-
-export interface AthleteEntity {
-  id: string;
-  firstName: string;
-  lastName: string;
-  position: string;
-  age: number;
-  overallRating: number;
-  potential?: number | null;
-  teamId?: string | null;
-  teamName?: string | null;
-  ratings?: Record<string, number> | null;
-  morale?: number;
-  form?: number;
-  salary?: number;
-  contractYears?: number;
-  careerStage?: "rookie" | "prime" | "veteran" | "declining" | "retired";
-}
-
-export interface MatchEntity {
-  id: string;
-  seasonId: string;
-  matchDay: number;
-  status: "scheduled" | "in_progress" | "completed" | "postponed";
-  homeTeamId: string;
-  awayTeamId: string;
-  homeTeamName: string;
-  awayTeamName: string;
-  homeScore?: number | null;
-  awayScore?: number | null;
-  homeColor?: string | null;
-  awayColor?: string | null;
-  homeLogo?: string | null;
-  awayLogo?: string | null;
-  scheduledIxTime?: number | null;
-}
-
-export interface CanonicalMatchEvent {
-  id: string;
-  matchId: string;
-  minute: number;
-  type: "goal" | "yellow_card" | "red_card" | "substitution" | "injury" | "point" | "knockdown" | "pitstop";
-  teamId: string;
-  primaryAthleteId?: string;
-  secondaryAthleteId?: string;
-  primaryAthleteName?: string;
-  secondaryAthleteName?: string;
-  narrative?: string;
-  metadata?: Record<string, unknown>;
 }

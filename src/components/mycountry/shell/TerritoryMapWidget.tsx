@@ -1,11 +1,14 @@
 "use client";
 
+import { MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { MapPin, EditPencil as Edit3, ArrowUpRight } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Map as MapIcon, EditPencil as Edit3 } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Card, CardHeader } from "~/components/ui/card";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -14,10 +17,14 @@ const CountryMapEmbed = dynamic(
     })),
   {
     ssr: false,
-    loading: () => <div className="bg-muted/40 h-56 animate-pulse rounded-xl" />,
+    loading: () => <Skeleton className="h-60 w-full rounded-none" />,
   }
 );
 
+/**
+ * Territory card: the country on the world map, with its two tools (open the atlas, edit the
+ * territory) always visible in the header rather than hidden behind hover.
+ */
 export const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
   countryId,
 }: {
@@ -26,13 +33,43 @@ export const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
   const router = useRouter();
 
   return (
-    <FacetCard
-      depth={1}
-      interactive="none"
-      className="group/map border-border/80 relative overflow-hidden rounded-2xl p-0 shadow-lg backdrop-blur-xl dark:border-white/10"
-    >
-      {/* Interactive Map Canvas (Full Bleed Edge-to-Edge) */}
-      <div className="relative h-60 w-full overflow-hidden">
+    <Card role="region" aria-labelledby="territory-title" className="rounded-card overflow-hidden">
+      <CardHeader className="flex-row items-start justify-between gap-4 p-4 sm:p-5">
+        <div className="min-w-0">
+          <h2 id="territory-title" className="text-label text-title-3">
+            Territory
+          </h2>
+          <p className="text-label-secondary text-footnote mt-0.5">
+            Your borders, neighbours and cities
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className="text-label-secondary size-11 sm:size-9"
+          >
+            <Link href="/maps" aria-label="Open world maps" title="Open world maps">
+              {/* The door into Maps wears the Maps tint; the button keeps MyCountry's focus ring. */}
+              <MapIcon aria-hidden="true" data-app="maps" className="text-tint" />
+            </Link>
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push(MYCOUNTRY_MAP_EDITOR_PATH)}
+            className="text-label-secondary size-11 sm:size-9"
+            aria-label="Edit territory"
+            title="Edit territory"
+          >
+            <Edit3 aria-hidden="true" className="text-green" />
+          </Button>
+        </div>
+      </CardHeader>
+
+      <div className="border-separator relative h-60 w-full overflow-hidden border-t">
         <CountryMapEmbed
           countryId={countryId}
           height="h-60"
@@ -41,32 +78,7 @@ export const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
           showSubdivisions={false}
           interactive={true}
         />
-
-        {/* Floating Glass Badges (Revealed on Hover/Activation) */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between p-2.5 opacity-0 transition-opacity duration-200 group-focus-within/map:opacity-100 group-hover/map:opacity-100">
-          {/* Top-Left: Open Maps */}
-          <Link
-            href="/maps"
-            className="bg-background/90 text-foreground hover:bg-background group pointer-events-auto flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1 text-xs font-bold shadow-md backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105 active:scale-95 dark:border-white/20 dark:bg-zinc-900/90"
-            title="Open IxWorld Maps"
-          >
-            <MapPin className="h-3.5 w-3.5 text-emerald-600 transition-transform group-hover:scale-110 dark:text-emerald-400" />
-            <span>Open Maps</span>
-            <ArrowUpRight className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </Link>
-
-          {/* Top-Right: Map Editor */}
-          <button
-            type="button"
-            onClick={() => router.push("/mycountry/editor")}
-            className="bg-background/90 text-foreground hover:bg-background group pointer-events-auto flex cursor-pointer items-center gap-1.5 rounded-full border border-black/15 px-3 py-1 text-xs font-bold shadow-md backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105 active:scale-95 dark:border-white/20 dark:bg-zinc-900/90"
-            title="Open Map Editor"
-          >
-            <Edit3 className="h-3.5 w-3.5 text-emerald-600 transition-transform group-hover:scale-110 dark:text-emerald-400" />
-            <span>Map Editor</span>
-          </button>
-        </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 });

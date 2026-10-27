@@ -6,21 +6,19 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import {
-  fetchTemplateData,
-  categorizeTemplate,
-  isNoiseTemplate,
-} from "~/lib/wiki-os/templates/template-registry";
+import { createTRPCRouter, publicProcedure, readOnlyProcedure } from "~/server/api/trpc";
+import { categorizeTemplate, isNoiseTemplate } from "~/lib/wiki-os/templates/template-registry";
+import { templateDataFor } from "~/lib/wiki-os/templates/template-data-cache";
 import { renderTemplateWithRedisCache } from "~/lib/wiki-os/templates/preview-service.server";
+import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import { templatePreviewInput } from "./_shared";
 import { db } from "~/server/db";
-import type { Prisma } from "@prisma/client";
 
 /**
  * Master Polymorphic Canonical Templates Registry.
  * Condenses legacy fragmented templates into unified masters with dynamic variant toggles.
  */
-export const CANONICAL_BUILTIN_TEMPLATES = [
+const CANONICAL_BUILTIN_TEMPLATES = [
   // 1. Sovereign & Geopolitical
   {
     name: "Infobox country",
@@ -262,7 +260,7 @@ export const CANONICAL_BUILTIN_TEMPLATES = [
   },
   {
     name: "Coord",
-    description: "Geographic coordinate badge with IxWorld Voronoi spatial mesh projection.",
+    description: "Geographic coordinate badge with Voronoi spatial mesh projection.",
     category: "geographic",
     paramCount: 4,
     isCanonical: true,
@@ -312,7 +310,7 @@ export const CANONICAL_BUILTIN_TEMPLATES = [
 /**
  * Polymorphic alias map resolving legacy templates to Master canonicals.
  */
-export const CANONICAL_ALIASES_MAP: Record<string, { target: string; variant?: string }> = {
+const CANONICAL_ALIASES_MAP: Record<string, { target: string; variant?: string }> = {
   // Country merges
   "infobox former country": { target: "Infobox country", variant: "former" },
   "infobox subdivision": { target: "Infobox country", variant: "subdivision" },
@@ -372,7 +370,7 @@ export const CANONICAL_ALIASES_MAP: Record<string, { target: string; variant?: s
   "infobox bilateral relations": { target: "Infobox historical era" },
 };
 
-export const BUILTIN_TEMPLATE_SCHEMAS: Record<
+const BUILTIN_TEMPLATE_SCHEMAS: Record<
   string,
   {
     description: string;
@@ -1051,6 +1049,35 @@ export const BUILTIN_TEMPLATE_SCHEMAS: Record<
   },
 };
 
+type TemplateSearchMap = Map<
+  string,
+  {
+    name: string;
+    description: string | null;
+    category: string;
+    paramCount: number;
+    isCanonical: boolean;
+    canonicalTarget: string | null;
+    hasTemplateData: boolean;
+    variants?: string[];
+  }
+>;
+
+function localTemplateFilter(input: { query: string; category?: string; canonicalOnly: boolean }) {
+  const where: {
+    isCanonical?: boolean;
+    category?: string;
+    OR?: Array<{ name: { contains: string; mode: "insensitive" } }>;
+  } = {};
+  if (input.canonicalOnly) where.isCanonical = true;
+  if (input.category && input.category !== "all") where.category = input.category;
+  if (input.query) where.OR = [{ name: { contains: input.query, mode: "insensitive" } }];
+  return where;
+}
+
+const matchesCategoryFilter = (filter: string | undefined, category: string) =>
+  !filter || filter === "all" || filter === category;
+
 export const wikiosTemplatesRouter = createTRPCRouter({
   /**
    * Search templates with noise-rejection filtering and canonical tier promotion.
@@ -1065,20 +1092,7 @@ export const wikiosTemplatesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const templateMap = new Map<
-        string,
-        {
-          name: string;
-          description: string | null;
-          category: string;
-          paramCount: number;
-          isCanonical: boolean;
-          canonicalTarget: string | null;
-          hasTemplateData: boolean;
-          variants?: string[];
-        }
-      >();
-
+      const templateMap: TemplateSearchMap = new Map();
       const queryLower = input.query.trim().toLowerCase();
 
       // 1. Primary: Seed and prioritize Canonical Master Templates
@@ -1088,51 +1102,37 @@ export const wikiosTemplatesRouter = createTRPCRouter({
           !queryLower ||
           key.includes(queryLower) ||
           canonical.description.toLowerCase().includes(queryLower);
-        const matchesCat =
-          !input.category || input.category === "all" || input.category === canonical.category;
-
-        if (matchesQuery && matchesCat) {
+        if (matchesQuery && matchesCategoryFilter(input.category, canonical.category)) {
           templateMap.set(key, canonical);
         }
       }
 
       // 2. Check local WikiTemplate database registry (custom user-registered templates)
-      const where: {
-        isCanonical?: boolean;
-        category?: string;
-        OR?: Array<{ name: { contains: string; mode: "insensitive" } }>;
-      } = {};
-
-      if (input.canonicalOnly) where.isCanonical = true;
-      if (input.category && input.category !== "all") where.category = input.category;
-      if (input.query) where.OR = [{ name: { contains: input.query, mode: "insensitive" } }];
-
       const localTemplates = await db.wikiTemplate.findMany({
-        where,
+        where: localTemplateFilter(input),
         take: input.limit,
         orderBy: [{ isCanonical: "desc" }, { paramCount: "desc" }],
       });
 
       for (const t of localTemplates) {
-        if (isNoiseTemplate(t.name)) continue;
-        const key = t.name.toLowerCase();
-        if (!templateMap.has(key)) {
-          templateMap.set(key, {
-            name: t.name,
-            description: t.description,
-            category: t.category ?? "general",
-            paramCount: t.paramCount,
-            isCanonical: t.isCanonical,
-            canonicalTarget: t.canonicalTarget,
-            hasTemplateData: !!t.templateData,
-          });
-        }
+        const key = t.name.replace(/_/g, " ").trim().toLowerCase(); // rows keyed by raw spellings before
+        if (isNoiseTemplate(t.name) || templateMap.has(key)) continue;
+        templateMap.set(key, {
+          name: t.name,
+          description: t.description,
+          category: t.category ?? "general",
+          paramCount: t.paramCount,
+          isCanonical: t.isCanonical,
+          canonicalTarget: t.canonicalTarget,
+          hasTemplateData: !!t.templateData,
+        });
       }
 
       // 3. Check PostgreSQL WikiArticle table for namespace 10 with strict noise filtering
       if (!input.canonicalOnly && templateMap.size < input.limit) {
         const articleTemplates = await db.wikiArticle.findMany({
           where: {
+            status: "PUBLISHED",
             namespace: 10,
             ...(input.query ? { title: { contains: input.query, mode: "insensitive" } } : {}),
           },
@@ -1142,32 +1142,28 @@ export const wikiosTemplatesRouter = createTRPCRouter({
 
         for (const art of articleTemplates) {
           const cleanName = art.title.replace(/^Template:/i, "").trim();
-          if (isNoiseTemplate(cleanName)) continue;
+          const key = cleanName.toLowerCase();
+          if (isNoiseTemplate(cleanName) || templateMap.has(key)) continue;
+
+          const cat = categorizeTemplate(cleanName, art.summary ?? undefined);
+          if (!matchesCategoryFilter(input.category, cat)) continue;
 
           // Check if it's an alias to a canonical master
-          const alias = CANONICAL_ALIASES_MAP[cleanName.toLowerCase()];
-          const key = cleanName.toLowerCase();
-
-          if (!templateMap.has(key)) {
-            const cat = categorizeTemplate(cleanName, art.summary ?? undefined);
-            if (!input.category || input.category === "all" || input.category === cat) {
-              templateMap.set(key, {
-                name: cleanName,
-                description:
-                  art.summary || (alias ? `Variant of ${alias.target}` : "Registered Template"),
-                category: cat,
-                paramCount: 0,
-                isCanonical: false,
-                canonicalTarget: alias ? alias.target : null,
-                hasTemplateData: false,
-              });
-            }
-          }
+          const alias = CANONICAL_ALIASES_MAP[key];
+          templateMap.set(key, {
+            name: cleanName,
+            description:
+              art.summary || (alias ? `Variant of ${alias.target}` : "Registered Template"),
+            category: cat,
+            paramCount: 0,
+            isCanonical: false,
+            canonicalTarget: alias?.target ?? null,
+            hasTemplateData: false,
+          });
         }
       }
 
-      const templates = Array.from(templateMap.values()).slice(0, input.limit);
-      return { templates };
+      return { templates: Array.from(templateMap.values()).slice(0, input.limit) };
     }),
 
   /**
@@ -1215,84 +1211,16 @@ export const wikiosTemplatesRouter = createTRPCRouter({
         };
       }
 
-      // 1. Check local DB cache
-      let cached = await db.wikiTemplate.findUnique({
-        where: { name: templateName },
-      });
-
-      if (cached?.canonicalTarget) {
-        const target = await db.wikiTemplate.findUnique({
-          where: { name: cached.canonicalTarget },
-        });
-        if (target) cached = target;
-      }
-
-      if (cached?.templateData) {
-        return {
-          name: cached.name,
-          description: cached.description,
-          category: cached.category,
-          isCanonical: cached.isCanonical,
-          templateData: cached.templateData as Record<string, unknown>,
-          cached: true,
-        };
-      }
-
-      // 2. Fetch from MediaWiki API
-      const tdMap = await fetchTemplateData([templateName]);
-      const data = tdMap.get(templateName);
-      if (!data) {
-        return {
-          name: templateName,
-          description: null,
-          category: categorizeTemplate(templateName),
-          templateData: null,
-          cached: false,
-        };
-      }
-
-      // 3. Cache in DB for future requests
-      const category = categorizeTemplate(templateName, data.description);
-      const paramCount = data.params ? Object.keys(data.params).length : 0;
-
-      await db.wikiTemplate.upsert({
-        where: { name: templateName },
-        create: {
-          name: templateName,
-          description: data.description ?? null,
-          category,
-          templateData: (data ?? null) as unknown as Prisma.InputJsonValue,
-          paramCount,
-        },
-        update: {
-          description: data.description ?? null,
-          category,
-          templateData: (data ?? null) as unknown as Prisma.InputJsonValue,
-          paramCount,
-        },
-      });
-
-      return {
-        name: templateName,
-        description: data.description ?? null,
-        category,
-        templateData: data as unknown as Record<string, unknown>,
-        cached: false,
-      };
+      // The registry row, refreshed from the template's stored wikitext once its pages changed
+      return templateDataFor(templateName);
     }),
 
   /**
-   * Get rendered preview of a template with given parameters.
+   * Get rendered preview of a template with given parameters. Signed-in and rate limited: it
+   * forwards to MediaWiki's parser, so a public endpoint would be an anonymous render proxy.
    */
-  getTemplatePreview: publicProcedure
-    .input(
-      z.object({
-        template: z.string().min(1).max(500),
-        params: z.record(z.string(), z.string()),
-      })
-    )
-    .query(async ({ input }) => {
-      const preview = await renderTemplateWithRedisCache(input.template, input.params);
-      return preview.html;
-    }),
+  getTemplatePreview: readOnlyProcedure.input(templatePreviewInput).query(async ({ input }) => {
+    const preview = await renderTemplateWithRedisCache(input.template, input.params);
+    return sanitizeWikiArticleHtml(preview.html);
+  }),
 });

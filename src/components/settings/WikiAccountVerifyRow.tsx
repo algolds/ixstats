@@ -5,12 +5,12 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import type { SisterReaderId } from "~/lib/wiki-os/wiki-hosts";
 
-type Source = "ixwiki" | "iiwiki" | "althistory";
 type WikiLinkView = RouterOutputs["ixnayid"]["listWikiLinks"][number];
 
 interface WikiAccountVerifyRowProps {
-  source: Source;
+  source: SisterReaderId;
   label: string;
   link: WikiLinkView | undefined;
 }
@@ -76,17 +76,11 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
       <div className="flex flex-col gap-2">
         {code && (
           <p className="text-muted-foreground text-xs">
-            Paste{" "}
-            <code className="bg-muted rounded px-1 font-mono">{code.token}</code> anywhere on
+            Paste <code className="bg-muted rounded px-1 font-mono">{code.token}</code> anywhere on
             your {label} user page and save it while logged in as{" "}
-            <strong>{code?.username ?? link?.username}</strong>, then press Verify. The code
-            works for 24 hours.{" "}
-            <a
-              href={code.userPageUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="underline"
-            >
+            <strong>{code?.username ?? link?.username}</strong>, then press Verify. The code works
+            for 24 hours.{" "}
+            <a href={code.userPageUrl} target="_blank" rel="noreferrer" className="underline">
               Open your {label} user page
             </a>
             .
@@ -126,7 +120,11 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
         onChange={(e) => setUsername(e.target.value)}
         placeholder={`${label} username`}
         className="h-8 text-xs"
-        onKeyDown={(e) => e.key === "Enter" && username.trim() && start.mutate({ source, username: username.trim() })}
+        onKeyDown={(e) =>
+          e.key === "Enter" &&
+          username.trim() &&
+          start.mutate({ source, username: username.trim() })
+        }
       />
       <Button
         size="sm"

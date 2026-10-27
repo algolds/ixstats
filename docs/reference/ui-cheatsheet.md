@@ -1,8 +1,10 @@
 # Frontend & UI Component Cheatsheet
 
+**Last updated:** 2026-10-02
+
 > **Quick Reference for IxStates UI Engineering**  
 > **Stack**: Next.js 16 App Router · React 19 · Tailwind CSS v4 · TypeScript 7.0 · Radix UI · Iconoir · Cuelume Haptics  
-> **Design Language**: **Facet** (Depth, Materials, Refraction, Apple Physics)
+> **Design Language**: **Facet** (opaque cards, glass only for floating chrome; see [facet-design-system.md](facet-design-system.md))
 
 ---
 
@@ -12,9 +14,9 @@
 2. **Encapsulated Primitives**: Never import `@radix-ui/*` directly in domain features. Always import from [`src/components/ui/`](../../src/components/ui/).
 3. **Icons Standard**: Use `iconoir-react` exclusively. `lucide-react` is blocked.
 4. **Polymorphic Triggers (`asChild`)**: Always pass `asChild` to Radix triggers (`<DialogTrigger asChild>`, `<DropdownMenuTrigger asChild>`) when wrapping buttons or custom elements to avoid nested `<button>` errors.
-5. **Tactile Physics**: Add mechanical compression on press (`active:scale-[0.98] transition-transform duration-140`). Keep motion under 250ms.
-6. **Audio Haptics (Cuelume)**: Attach declarative attributes (`data-cuelume-press="press"`, `data-cuelume-hover="tick"`, `data-cuelume-toggle`) or call `soundEffects.bloom()`.
-7. **Desktop Sticky Clearance**: Sidebars and sticky rails must strictly use `lg:sticky lg:top-20` (80px) to clear the floating navbar with a 16px buffer.
+5. **Press feedback**: Controls change colour on press. Only pressable cards and tiles scale (`facet-press`, or `<Card interactive>`). Keep motion under 250ms.
+6. **Sound (Cuelume)**: Play only the `soundCues` moments (present, dismiss, success, error, destructive, arrival, reveal, notify). No hover ticks or per-control `data-cuelume-*` attributes.
+7. **Sticky clearance**: Sticky rails use `top-(--shell-top-offset)` so they clear the Halo band.
 
 ---
 
@@ -44,24 +46,20 @@ import { Plus, Trash } from "iconoir-react";
 
 ---
 
-### 2. Tactile Facet Card with Z-Depth
+### 2. Pressable card
 ```tsx
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card";
 import { Spark } from "iconoir-react";
 
-export function FeatureCard({ title, desc }: { title: string; desc: string }) {
+export function FeatureCard({ title, desc, onOpen }: { title: string; desc: string; onOpen: () => void }) {
   return (
-    <Card 
-      className="p-5 transition-all duration-150 hover:border-border/80 cursor-pointer active:scale-[0.98]"
-      data-cuelume-press="press"
-      data-cuelume-hover="tick"
-    >
-      <CardHeader className="p-0 flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-semibold text-foreground">{title}</CardTitle>
-        <Spark className="size-4 text-amber-500" />
+    <Card interactive padding="md" onClick={onOpen}>
+      <CardHeader className="flex flex-row items-center justify-between p-0 pb-2">
+        <CardTitle>{title}</CardTitle>
+        <Spark className="size-4 text-label-secondary" />
       </CardHeader>
       <CardContent className="p-0">
-        <CardDescription className="text-xs text-muted-foreground">{desc}</CardDescription>
+        <CardDescription>{desc}</CardDescription>
       </CardContent>
     </Card>
   );
@@ -94,7 +92,7 @@ export function ConfirmDirectiveModal() {
         <DialogHeader>
           <DialogTitle>Confirm Policy Directive</DialogTitle>
           <DialogDescription>
-            Are you sure you want to allocate CivCap capacity to this measure?
+            Are you sure you want to allocate executive bandwidth capacity to this measure?
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-0 mt-4">
@@ -259,14 +257,16 @@ export function CardSkeleton() {
 
 IxStates applies distinctive ambient color accents across its major platform pillars:
 
-| Domain | Semantic Accent Variable | Tailwind Class | Usage Context |
+| Domain | Scope | Tint (light / dark) | Usage Context |
 |---|---|---|---|
-| **MyCountry** | `--color-amber-500` | `text-amber-500` / `bg-amber-500/10` | Executive command suite, Directives |
-| **Global / Maps** | `--color-blue-500` | `text-blue-500` / `bg-blue-500/10` | World map viewer, Factbook atlas |
-| **ThinkPages** | `--color-emerald-500` | `text-emerald-500` / `bg-emerald-500/10` | Social feeds, ThinkTanks, messages |
-| **IxVault** | `--color-amber-600` | `text-amber-600` / `bg-amber-600/10` | Collectible cards, packs, credits |
-| **Forum** | `--color-orange-500` | `text-orange-500` / `bg-orange-500/10` | Town hall discourse, bulletins |
-| **Defense / Security** | `--color-rose-500` | `text-rose-500` / `bg-rose-500/10` | Threat alerts, readiness monitors |
+| **MyCountry** | `data-app="mycountry"` | State gold `#b45309` / `#fbbf24` | Executive command suite, Directives, Defense |
+| **IxWorld / Maps** | `data-app="maps"` | Chart shallows `#05667a` / `#69cee6` | World map viewer, map editor |
+| **ThinkPages** | `data-app="thinkpages"` | Commons leather `#115536` / `#82d2a8` | Forum, ThinkTanks, Messages |
+| **IxVault** | `data-app="vault"` | Jewel-case velvet `#851f47` / `#f3a3bd` | Cards, packs, credits, achievements |
+| **Realms** | `data-app="realms"` | Banner purpure `#603379` / `#d2acee` | Realms, region pages |
+| **Labs** | `data-app="labs"` | Uranium glass `#5b6c04` / `#c8d84a` | Labs, MyLeague, MyClub |
+
+Use the tint utilities (`text-tint`, `bg-tint-fill`, `border-tint`) inside the app's scope; never the hex. Status colours (red, amber, green) carry meaning and win over the tint.
 
 ---
 

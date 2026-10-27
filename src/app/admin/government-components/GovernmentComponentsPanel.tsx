@@ -8,5 +8,3 @@ export function GovernmentComponentsPanel() {
   usePageTitle({ title: "Admin - Government Components" });
   return <AtomicComponentManager domain="government" />;
 }
-
-export default GovernmentComponentsPanel;

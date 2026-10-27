@@ -4,7 +4,7 @@
 
 import type { Polygon, MultiPolygon } from "geojson";
 
-export type BorderEditAction =
+type BorderEditAction =
   | "move_vertex"
   | "add_vertex"
   | "delete_vertex"
@@ -16,10 +16,17 @@ export type BorderEditAction =
   | "naturalize"
   | "snap";
 
-export interface UndoEntry {
+/** Neighbour outlines an edit moved (shared-vertex drags, brush strokes), keyed by feature id. */
+export type NeighborChanges = Record<
+  string,
+  { before: Polygon | MultiPolygon; after: Polygon | MultiPolygon }
+>;
+
+interface UndoEntry {
   action: BorderEditAction;
   previousGeometry: Polygon | MultiPolygon;
   resultGeometry: Polygon | MultiPolygon;
+  neighbors?: NeighborChanges;
 }
 
 export interface UndoStack {
@@ -37,11 +44,17 @@ export function pushUndo(
   stack: UndoStack,
   action: BorderEditAction,
   previousGeometry: Polygon | MultiPolygon,
-  resultGeometry?: Polygon | MultiPolygon
+  resultGeometry?: Polygon | MultiPolygon,
+  neighbors?: NeighborChanges
 ): UndoStack {
   // Truncate any redo entries
   const entries = stack.entries.slice(0, stack.position + 1);
-  entries.push({ action, previousGeometry, resultGeometry: resultGeometry ?? previousGeometry });
+  entries.push({
+    action,
+    previousGeometry,
+    resultGeometry: resultGeometry ?? previousGeometry,
+    ...(neighbors && { neighbors }),
+  });
 
   // Cap history to prevent unbounded memory growth with complex polygons
   if (entries.length > MAX_UNDO) {

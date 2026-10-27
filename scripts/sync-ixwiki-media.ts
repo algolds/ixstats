@@ -5,13 +5,10 @@
  * Enables instant deterministic O(1) detection of Local Uploads vs Wikimedia Commons.
  */
 
+import "./lib/load-env"; // first: the config below reads process.env when it loads
 import { PrismaClient } from "@prisma/client";
-import dotenv from "dotenv";
 import { MediaAssetService } from "../src/lib/wiki-os/core/media-asset-service";
-
-dotenv.config({ path: ".env.local.dev" });
-dotenv.config({ path: ".env.local" });
-dotenv.config({ path: ".env" });
+import { DEFAULT_USER_AGENT, mediaWikiApiUrl, mediaWikiOrigin } from "../src/lib/wiki-os/config";
 
 const prisma = new PrismaClient({
   datasources: {
@@ -21,9 +18,8 @@ const prisma = new PrismaClient({
   },
 });
 
-const DEFAULT_USER_AGENT = "IxStats-Builder";
-const MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-const API_URL = `${MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php`;
+// The wiki's address comes from the one WikiOS config object (src/lib/wiki-os/config.ts).
+const API_URL = mediaWikiApiUrl({ internal: true });
 
 async function main() {
   console.log("==================================================================");
@@ -82,7 +78,7 @@ async function main() {
 
         const { hash, fullPath } = MediaAssetService.getMd5ShardPath(cleanName);
         const slug = cleanName.toLowerCase();
-        const base = MEDIAWIKI_URL.replace(/\/+$/, "");
+        const base = mediaWikiOrigin();
 
         try {
           await (prisma as any).wikiAsset.upsert({

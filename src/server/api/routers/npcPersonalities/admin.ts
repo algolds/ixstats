@@ -23,6 +23,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { archetypeEnum, parsePersonalityJSON } from "./shared";
 
 // ==================== VALIDATION SCHEMAS ====================
 
@@ -36,15 +37,6 @@ const traitSchema = z.object({
   militarism: z.number().min(0).max(100),
   isolationism: z.number().min(0).max(100),
 });
-
-const archetypeEnum = z.enum([
-  "aggressive_expansionist",
-  "peaceful_merchant",
-  "cautious_isolationist",
-  "cultural_diplomat",
-  "pragmatic_realist",
-  "ideological_hardliner",
-]);
 
 // ==================== TRPC ROUTER ====================
 
@@ -279,25 +271,6 @@ export const npcPersonalitiesAdminRouter = createTRPCRouter({
 });
 
 // ==================== HELPER FUNCTIONS ====================
-
-/**
- * Parse JSON fields from database personality record
- */
-function parsePersonalityJSON(personality: any) {
-  return {
-    ...personality,
-    traitDescriptions: personality.traitDescriptions
-      ? JSON.parse(personality.traitDescriptions)
-      : {},
-    culturalProfile: personality.culturalProfile ? JSON.parse(personality.culturalProfile) : null,
-    toneMatrix: personality.toneMatrix ? JSON.parse(personality.toneMatrix) : {},
-    responsePatterns: personality.responsePatterns ? JSON.parse(personality.responsePatterns) : [],
-    scenarioResponses: personality.scenarioResponses
-      ? JSON.parse(personality.scenarioResponses)
-      : {},
-    eventModifiers: personality.eventModifiers ? JSON.parse(personality.eventModifiers) : {},
-  };
-}
 
 /**
  * Log admin action to database audit log

@@ -4,7 +4,7 @@ import paperStyleTemplate from "./paper.json";
 
 export type MapTheme = "standard" | "dark" | "paper";
 
-export interface FontConfig {
+interface FontConfig {
   regular: string[];
   bold: string[];
   sans: string[];

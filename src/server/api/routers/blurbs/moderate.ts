@@ -36,7 +36,10 @@ export const blurbsModerateRouter = createTRPCRouter({
   // Admin endpoints
   // ---------------------------------------------------------------------------
 
-  /** Create a new prompt. */
+  /**
+   * Create a new prompt. Prompts open and close by status only: nothing acts on the
+   * `scheduledFor` / `closedAt` / `isRecurring` columns, so they are not accepted here.
+   */
   createPrompt: adminProcedure
     .input(
       z.object({
@@ -48,9 +51,6 @@ export const blurbsModerateRouter = createTRPCRouter({
           .max(100)
           .regex(/^[a-z0-9-]+$/),
         status: z.enum(["DRAFT", "ACTIVE"]).default("DRAFT"),
-        scheduledFor: z.string().datetime().optional(),
-        closedAt: z.string().datetime().optional(),
-        isRecurring: z.boolean().default(false),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -61,16 +61,13 @@ export const blurbsModerateRouter = createTRPCRouter({
           question: input.question,
           slug: input.slug,
           status: input.status,
-          scheduledFor: input.scheduledFor ? new Date(input.scheduledFor) : null,
-          closedAt: input.closedAt ? new Date(input.closedAt) : null,
-          isRecurring: input.isRecurring,
           publishedAt: input.status === "ACTIVE" ? new Date() : null,
           createdBy: userId,
         },
       });
     }),
 
-  /** Update a prompt (status, question, close date, etc.). */
+  /** Update a prompt's title, question or status. */
   updatePrompt: adminProcedure
     .input(
       z.object({
@@ -78,17 +75,12 @@ export const blurbsModerateRouter = createTRPCRouter({
         title: z.string().min(1).max(200).optional(),
         question: z.string().min(1).max(500).optional(),
         status: z.enum(["DRAFT", "ACTIVE", "CLOSED", "ARCHIVED"]).optional(),
-        closedAt: z.string().datetime().nullable().optional(),
-        isRecurring: z.boolean().optional(),
       })
     )
     .mutation(async ({ input }) => {
       const data: Record<string, unknown> = {};
       if (input.title !== undefined) data.title = input.title;
       if (input.question !== undefined) data.question = input.question;
-      if (input.isRecurring !== undefined) data.isRecurring = input.isRecurring;
-      if (input.closedAt !== undefined)
-        data.closedAt = input.closedAt ? new Date(input.closedAt) : null;
 
       if (input.status !== undefined) {
         data.status = input.status;

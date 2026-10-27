@@ -15,49 +15,26 @@
  * Run as PM2 app "ixstats-ws". Scheduled jobs run only in the separate
  * "ixstats-cron" process (cron-runner.mjs).
  *
+ * Either server failing to start, an unhandled rejection or an uncaught exception
+ * exits non-zero, so PM2 restarts the process instead of leaving it half up.
+ *
  * NOTE: no top-level await — PM2's Bun fork container `require()`s this file,
  * which fails on top-level await. Everything runs inside main().
  */
 import { createServer } from "http";
-import { existsSync, readFileSync } from "fs";
-import { resolve } from "path";
+import { loadEnvVariables } from "./load-env.mjs";
 
-function loadEnvVariables() {
-  const cwd = process.cwd();
-  const mode = process.env.NODE_ENV || "development";
-  const envFiles =
-    mode === "production"
-      ? [".env.production", ".env.local", ".env.production.local"]
-      : [".env.local.dev", ".env.local"];
-  envFiles.push(".env");
-  for (const file of envFiles) {
-    const absolutePath = resolve(cwd, file);
-    if (!existsSync(absolutePath)) continue;
-    try {
-      for (const rawLine of readFileSync(absolutePath, "utf8").split(/\r?\n/)) {
-        const line = rawLine.trim();
-        if (!line || line.startsWith("#")) continue;
-        const eq = line.indexOf("=");
-        if (eq === -1) continue;
-        const key = line.slice(0, eq).trim();
-        let value = line.slice(eq + 1).trim();
-        if (
-          (value.startsWith('"') && value.endsWith('"')) ||
-          (value.startsWith("'") && value.endsWith("'"))
-        ) {
-          value = value.slice(1, -1);
-        }
-        if (Object.prototype.hasOwnProperty.call(process.env, key)) continue;
-        process.env[key] = value;
-      }
-    } catch (error) {
-      console.warn(`[WS] Failed to load env file ${file}:`, error.message);
-    }
-  }
-}
+process.on("unhandledRejection", (reason) => {
+  console.error("[WS] Unhandled rejection, exiting:", reason);
+  process.exit(1);
+});
+process.on("uncaughtException", (error) => {
+  console.error("[WS] Uncaught exception, exiting:", error);
+  process.exit(1);
+});
 
 async function main() {
-  loadEnvVariables();
+  loadEnvVariables("[WS]");
   const port = Number(process.env.WS_BACKEND_PORT || 3551);
 
   // Plain HTTP server; WS servers hook its "upgrade" event. Non-WS requests get
@@ -72,26 +49,49 @@ async function main() {
     res.end("WebSocket endpoint — upgrade required");
   });
 
+  // This process exists only for these two servers: either failing exits non-zero (PM2 restarts it).
+  let shutdownThinkPages;
   try {
-    const { initializeWebSocketServer } = await import("./src/server/websocket-server.js");
+    const { initializeWebSocketServer, shutdownWebSocketServer } =
+      await import("./src/server/websocket-server.js");
     await initializeWebSocketServer(httpServer); // ThinkPages (/ws/thinkpages)
+    shutdownThinkPages = shutdownWebSocketServer;
     console.log("[WS] ✓ ThinkPages WebSocket initialized");
   } catch (error) {
-    console.error("[WS] ✗ ThinkPages init failed:", error.message);
+    console.error("[WS] ✗ ThinkPages init failed:", error);
+    process.exit(1);
   }
 
+  let market;
   try {
     const { initializeMarketWebSocket } =
       await import("./src/lib/websocket/market-websocket-server.js");
-    initializeMarketWebSocket(httpServer, "/api/market-ws");
+    market = initializeMarketWebSocket(httpServer, "/api/market-ws");
     console.log("[WS] ✓ Market WebSocket initialized at /api/market-ws");
   } catch (error) {
-    console.error("[WS] ✗ Market WebSocket init failed:", error.message);
+    console.error("[WS] ✗ Market WebSocket init failed:", error);
+    process.exit(1);
   }
 
   httpServer.listen(port, () => {
     console.log(`[WS] Standalone WebSocket backend listening on :${port}`);
   });
+
+  let stopping = false;
+  const shutdown = async () => {
+    if (stopping) return;
+    stopping = true;
+    console.log("[WS] Shutting down...");
+    setTimeout(() => process.exit(0), 5000).unref();
+    const within = (promise) => Promise.race([promise, new Promise((r) => setTimeout(r, 3000))]);
+    await within(market.shutdown()).catch((error) => console.error("[WS] Market close failed:", error));
+    await within(shutdownThinkPages()).catch((error) =>
+      console.error("[WS] ThinkPages close failed:", error)
+    );
+    process.exit(0);
+  };
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 }
 
 main().catch((error) => {

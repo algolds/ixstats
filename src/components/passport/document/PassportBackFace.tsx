@@ -1,160 +1,271 @@
 "use client";
 
-import React from "react";
-import { motion } from "motion/react";
-import { Check, EditPencil as Edit3, RotateCameraLeft as RotateCcw } from "iconoir-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Check, EditPencil as Edit3, Pin, RotateCameraLeft as RotateCcw } from "iconoir-react";
+import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { Switch } from "~/components/ui/switch";
-import { GuillochePattern } from "../cards/GuillochePattern";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { TooltipProvider } from "~/components/ui/tooltip";
+import { RibbonBar } from "~/components/achievements/FloatingRibbonRack";
 import { IxnayPassportSeal } from "../cards/IxnayPassportSeal";
 import type { PassportVisibility } from "../types";
+import { Card } from "~/components/ui/card";
 
-const VISIBILITY_TOGGLES: Array<{ key: keyof PassportVisibility; title: string; hint: string }> = [
-  { key: "accolades", title: "Civic Accolades", hint: "Show Lorewards score & rank" },
-  { key: "impact", title: "Focus", hint: "Show category breadth" },
-  { key: "forumStats", title: "Forum Discussions", hint: "Show message & reaction counters" },
-  { key: "vaultCards", title: "IxCredits", hint: "Show IxCredits & collection" },
-  { key: "historyStream", title: "Activity History", hint: "Allow public activity stream" },
+const VISIBILITY_TOGGLES: Array<{
+  key: keyof PassportVisibility;
+  title: string;
+  hint: string;
+  ariaLabel?: string;
+}> = [
+  {
+    key: "achievements",
+    title: "Achievements",
+    hint: "Achievements and ribbons (also on the country page)",
+  },
+  { key: "accolades", title: "Civic accolades", hint: "Lorewards score, rank and laurels" },
+  { key: "impact", title: "Focus", hint: "Collection category breadth" },
+  { key: "forumStats", title: "Forum activity", hint: "Message and thread counts" },
+  { key: "vaultCards", title: "IxCredits", hint: "IxCredits balance and collection" },
+  { key: "historyStream", title: "Activity history", hint: "Your activity stream" },
 ];
+
+/** Sharing controls: they change how the link looks elsewhere, not which sections it shows. */
+const SHARING_TOGGLES: Array<{
+  key: keyof PassportVisibility;
+  title: string;
+  hint: string;
+  ariaLabel?: string;
+}> = [
+  {
+    key: "linkPreview",
+    title: "Link previews",
+    hint: "Show your card when your link is shared",
+    ariaLabel: "Show link previews",
+  },
+];
+
+/** Signature ribbon slots on the passport's showcase shelf. */
+const MAX_PINS = 3;
+const MAX_SIGNATURE = 60;
 
 interface PassportBackFaceProps {
   isFlipped: boolean;
-  shouldReduceMotion: boolean;
   displayName: string;
-  signature: string;
-  onSignatureChange: (signature: string) => void;
-  visibility: PassportVisibility;
-  onVisibilityChange: (key: keyof PassportVisibility, value: boolean) => void;
+  /** Only the owner can flip the passport; settings are loaded for the owner only. */
+  isOwner: boolean;
   onDone: () => void;
 }
 
-/** Back face of the passport: signature inscription and visibility toggles (owner only). */
+/**
+ * Back face of the passport (owner only): signature inscription, which sections the public passport
+ * shows, and which ribbons sit on the signature shelf. Every change is saved to the owner's
+ * `PassportPreference`; hidden sections are stripped from the passport server-side.
+ */
 export const PassportBackFace = React.memo(function PassportBackFace({
   isFlipped,
-  shouldReduceMotion,
   displayName,
-  signature,
-  onSignatureChange,
-  visibility,
-  onVisibilityChange,
+  isOwner,
   onDone,
 }: PassportBackFaceProps) {
-  return (
-    <motion.div
-      className={cn(
-        "bg-card/70 dark:bg-card/60 absolute inset-0 min-h-full w-full space-y-6 overflow-y-auto rounded-3xl border border-black/10 p-6 shadow-2xl saturate-[180%] backdrop-blur-[20px] [backface-visibility:hidden] sm:p-8 dark:border-white/15",
-        !isFlipped ? "pointer-events-none" : ""
-      )}
-      style={
-        shouldReduceMotion
-          ? undefined
-          : ({
-              transform: "rotateY(180deg)",
-              willChange: "transform, opacity",
-            } as React.CSSProperties)
-      }
-      animate={{ opacity: isFlipped ? 1 : 0 }}
-      transition={shouldReduceMotion ? { duration: 0.2 } : { duration: 0.15 }}
-    >
-      <GuillochePattern opacity={0.05} />
+  const doneRef = useRef<HTMLButtonElement>(null);
+  // The front face goes inert on flip, which drops focus; hand it to the back face instead.
+  useEffect(() => {
+    if (isFlipped) doneRef.current?.focus({ preventScroll: true });
+  }, [isFlipped]);
 
-      <div className="relative z-10 space-y-6">
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/8 pb-4 dark:border-white/10">
+  const utils = api.useUtils();
+  const settings = api.ixnayid.getPassportSettings.useQuery(undefined, { enabled: isOwner });
+  const savedSignature = settings.data?.signature ?? "";
+  const [signature, setSignature] = useState(savedSignature);
+  // Reset the draft whenever the saved signature changes (first load, or after a save).
+  const [syncedSignature, setSyncedSignature] = useState(savedSignature);
+  if (syncedSignature !== savedSignature) {
+    setSyncedSignature(savedSignature);
+    setSignature(savedSignature);
+  }
+
+  const update = api.ixnayid.updatePassportSettings.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.ixnayid.getPassportSettings.invalidate(),
+        utils.ixnayid.getPassport.invalidate(),
+        utils.ixnayid.getWork.invalidate(),
+        utils.ixnayid.getHistory.invalidate(),
+        utils.ixnayid.getRibbons.invalidate(),
+        utils.ixnayid.getCountryRibbons.invalidate(),
+      ]);
+    },
+  });
+
+  const visibility = settings.data?.visibility;
+  const ribbons = settings.data?.ribbons ?? [];
+  const pinned = settings.data?.pinnedRibbonKeys ?? [];
+  const busy = update.isPending || settings.isFetching;
+
+  const togglePin = (key: string) => {
+    const next = pinned.includes(key) ? pinned.filter((k) => k !== key) : [...pinned, key];
+    if (next.length > MAX_PINS) return;
+    update.mutate({ pinnedRibbonKeys: next });
+  };
+
+  const handleDone = () => {
+    const trimmed = signature.trim();
+    if (trimmed !== savedSignature) update.mutate({ signature: trimmed || null });
+    onDone();
+  };
+
+  const renderToggle = (toggle: (typeof SHARING_TOGGLES)[number]) => (
+    <FacetRow
+      key={toggle.key}
+      title={toggle.title}
+      subtitle={toggle.hint}
+      trailing={
+        <Switch
+          aria-label={toggle.ariaLabel ?? `Show ${toggle.title}`}
+          checked={visibility?.[toggle.key] ?? true}
+          disabled={!visibility || busy}
+          onCheckedChange={(value) => update.mutate({ visibility: { [toggle.key]: value } })}
+        />
+      }
+    />
+  );
+
+  return (
+    <Card
+      data-testid="passport-back-face"
+      inert={!isFlipped}
+      className={cn(
+        "absolute inset-0 min-h-full w-full [transform:rotateY(180deg)] space-y-6 overflow-y-auto p-6 [backface-visibility:hidden] sm:p-8",
+        "motion-reduce:[transform:none] motion-reduce:transition-opacity motion-reduce:duration-150",
+        !isFlipped && "motion-reduce:pointer-events-none motion-reduce:opacity-0"
+      )}
+    >
+      <div className="relative space-y-6">
+        <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-4">
           <div className="flex items-center gap-3">
             <IxnayPassportSeal size="sm" />
             <div>
-              <span className="text-foreground block font-mono text-xs font-bold tracking-[0.2em] uppercase sm:text-xs">
-                PASSPORT CONFIGURATION
-              </span>
-              <span className="text-muted-foreground font-mono text-xs tracking-wider uppercase">
-                SIGNATURE & PRIVACY CONTROLS
-              </span>
+              <h2 className="text-label text-title-3">Passport configuration</h2>
+              <p className="text-label-secondary text-footnote">
+                Signature, privacy and pinned ribbons
+              </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onDone}
-            data-cuelume-press="soft"
-            className="bg-foreground text-background inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.97]"
-          >
-            <Check className="h-3.5 w-3.5 text-emerald-400" />
+          <Button ref={doneRef} type="button" variant="default" onClick={handleDone}>
+            <Check aria-hidden />
             <span>Done</span>
-          </button>
+          </Button>
         </div>
 
-        {/* Signature Inscription & Telemetry Toggles Grid */}
+        {update.error && (
+          <p role="alert" className="text-destructive text-footnote">
+            Could not save: {update.error.message}
+          </p>
+        )}
+
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Editable Signature Block */}
-          <div className="space-y-3.5 rounded-2xl border border-black/8 bg-black/[0.015] p-5 dark:border-white/10 dark:bg-white/[0.02]">
+          {/* Editable signature */}
+          <Card variant="well" className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 font-mono text-xs font-bold tracking-wider text-stone-400 uppercase">
-                <Edit3 className="h-3 w-3 text-blue-500" />
-                <span>Signature Inscription</span>
-              </span>
-              <span className="text-muted-foreground font-mono text-xs">Front Biometric Panel</span>
+              <h3 className="text-subhead text-label flex items-center gap-2">
+                <Edit3 aria-hidden className="text-label-secondary size-4" />
+                <span>Signature inscription</span>
+              </h3>
+              <span className="text-label-secondary text-footnote">Saved on Done</span>
             </div>
 
             <div className="space-y-2">
-              <input
+              <Input
                 type="text"
                 value={signature}
-                onChange={(e) => onSignatureChange(e.target.value)}
+                maxLength={MAX_SIGNATURE}
+                onChange={(e) => setSignature(e.target.value)}
                 placeholder={displayName}
-                className="text-foreground placeholder:text-muted-foreground w-full rounded-xl border border-black/10 bg-black/[0.02] px-3.5 py-2 font-serif text-sm tracking-wide italic transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-2 focus:ring-blue-500/30 focus:outline-none dark:border-white/15 dark:bg-white/[0.03]"
+                aria-label="Signature inscription"
+                className="bg-surface font-serif italic"
               />
-              <div className="text-muted-foreground flex items-center justify-between text-xs">
-                <span>Calligraphic Preview:</span>
-                <span className="text-foreground font-serif font-semibold italic">
-                  {signature || displayName}
+              <div className="text-label-secondary text-footnote flex items-center justify-between gap-2">
+                <span>Preview:</span>
+                <span className="text-label text-body truncate font-serif italic">
+                  {signature.trim() || displayName}
                 </span>
               </div>
             </div>
-          </div>
+          </Card>
 
-          {/* Telemetry Visibility Toggles */}
-          <div className="space-y-3.5 rounded-2xl border border-black/8 bg-black/[0.015] p-5 dark:border-white/10 dark:bg-white/[0.02]">
-            <span className="block font-mono text-xs font-bold tracking-wider text-stone-400 uppercase">
-              Passport Visibility Toggles
-            </span>
-
-            <div className="space-y-3 text-xs">
-              {VISIBILITY_TOGGLES.map((toggle, idx) => (
-                <div
-                  key={toggle.key}
-                  className={cn(
-                    "flex items-center justify-between",
-                    idx > 0 && "border-t border-black/6 pt-2 dark:border-white/8"
-                  )}
-                >
-                  <div className="space-y-0.5">
-                    <p className="text-foreground font-semibold">{toggle.title}</p>
-                    <p className="text-muted-foreground text-xs">{toggle.hint}</p>
-                  </div>
-                  <Switch
-                    checked={visibility[toggle.key]}
-                    onCheckedChange={(value) => onVisibilityChange(toggle.key, value)}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+          <FacetList>
+            <FacetListSection
+              header="Public passport sections"
+              footer="Saved to your account. A hidden section is not sent to anyone viewing your passport, including you."
+            >
+              {VISIBILITY_TOGGLES.map(renderToggle)}
+            </FacetListSection>
+            <FacetListSection header="Sharing">
+              {SHARING_TOGGLES.map(renderToggle)}
+            </FacetListSection>
+          </FacetList>
         </div>
 
-        {/* Action Footer */}
+        {/* Ribbon picker */}
+        <Card variant="well" className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-subhead text-label flex items-center gap-2">
+              <Pin aria-hidden className="text-label-secondary size-4" />
+              <span>Signature ribbons</span>
+            </h3>
+            <span className="text-label-secondary text-footnote tabular-nums">
+              {pinned.length}/{MAX_PINS} pinned
+            </span>
+          </div>
+          {ribbons.length === 0 ? (
+            <p className="text-label-secondary text-footnote">
+              Unlock achievements to earn ribbons. Without pins, your rarest ribbons lead the shelf.
+            </p>
+          ) : (
+            <TooltipProvider delayDuration={100}>
+              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {ribbons.map((ribbon) => {
+                  const isPinned = pinned.includes(ribbon.key);
+                  const full = !isPinned && pinned.length >= MAX_PINS;
+                  return (
+                    <li key={ribbon.key}>
+                      <button
+                        type="button"
+                        onClick={() => togglePin(ribbon.key)}
+                        disabled={busy || full}
+                        aria-pressed={isPinned}
+                        className={cn(
+                          "rounded-row text-footnote duration-fast ease-out-facet focus-visible:outline-tint flex w-full cursor-pointer items-center gap-2 border p-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                          isPinned
+                            ? "border-tint bg-tint-fill"
+                            : "bg-surface border-separator hover:bg-fill-4"
+                        )}
+                      >
+                        <RibbonBar ribbon={ribbon} />
+                        <span className="text-label text-headline min-w-0 flex-1 truncate">
+                          {ribbon.title}
+                        </span>
+                        {isPinned && <Pin aria-hidden className="text-tint size-3.5 shrink-0" />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </TooltipProvider>
+          )}
+        </Card>
+
         <div className="flex items-center justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onDone}
-            data-cuelume-press="soft"
-            className="bg-foreground text-background inline-flex cursor-pointer items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-semibold shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.97]"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            <span>Return to Passport</span>
-          </button>
+          <Button type="button" variant="secondary" onClick={handleDone}>
+            <RotateCcw aria-hidden />
+            <span>Return to passport</span>
+          </Button>
         </div>
       </div>
-    </motion.div>
+    </Card>
   );
 });

@@ -1,74 +1,30 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Shield,
-  Community as Handshake,
-  ScaleFrameEnlarge as Scale,
-  StatUp as TrendingUp,
-  KeyCommand as Command,
-  ArrowUpRight,
-  Compass,
-  WarningCircle as AlertCircle,
-  Xmark as X,
-} from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Compass, Xmark as X } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
-import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/DrillSheets";
-import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
-import { soundEffects } from "~/lib/sound/cuelume";
+import {
+  type CountryIntentItem,
+  type CountryIssueItem,
+  type Opportunity,
+  type OpportunityDrill,
+  deriveOpportunity,
+} from "./opportunityRules";
+import { STATUS_TEXT } from "./status-tone";
+import { Card } from "~/components/ui/card";
 
-interface Opportunity {
-  id: string;
-  domain: "defense" | "diplomacy" | "politics" | "economy" | "intent";
-  title: string;
-  subtitle: string;
-  description: string;
-  metricLabel?: string;
-  metricValue?: string;
-  directiveGoal: string;
-  icon: typeof Shield;
-  badgeCls: string;
-  borderCls: string;
-  buttonCls: string;
-  bgImage?: string;
-  intentId?: string;
-  drillKind?: Exclude<V2Drill, { kind: "intent" } | null>;
-}
-
-interface CountryIssueItem {
-  id: string;
-  title: string;
-  description?: string | null;
-  severity?: string | null;
-  urgency?: number | null;
-  category?: string | null;
-  status?: string | null;
-}
-
-interface CountryIntentItem {
-  id: string;
-  goal?: string | null;
-  status?: string | null;
-  tier?: string | null;
-  category?: string | null;
-}
-
-export interface ExecutiveOpportunityHeroProps {
+interface ExecutiveOpportunityHeroProps {
   countryId: string;
-  onDeclare?: (prefilled?: string) => void;
-  onNavigate?: (section: MyCountrySection) => void;
-  onOpenDrill?: (drill: Exclude<DrillSheetKind, { kind: "intent" } | null>) => void;
+  onOpenDrill?: (drill: OpportunityDrill) => void;
   onOpenIntent?: (intentId: string) => void;
 }
 
 function ExecutiveOpportunityHeroComponent({
   countryId,
-  onDeclare,
-  onNavigate,
   onOpenDrill,
   onOpenIntent,
 }: ExecutiveOpportunityHeroProps): React.JSX.Element | null {
@@ -87,7 +43,6 @@ function ExecutiveOpportunityHeroComponent({
 
   const handleDismiss = React.useCallback(
     (id: string) => {
-      soundEffects.whisper();
       setDismissedIds((prev) => {
         const next = prev.includes(id) ? prev : [...prev, id];
         if (typeof window !== "undefined" && storageKey) {
@@ -103,410 +58,108 @@ function ExecutiveOpportunityHeroComponent({
     [storageKey]
   );
 
-  // Queries for opportunity priority evaluation
   const intentTree = api.intent.getTree.useQuery({ countryId }, { enabled: !!countryId });
-  const civilService = api.government.getCivilServiceStatus.useQuery(
+  const execBandwidth = api.policies.getPolicyReconContext.useQuery(
     { countryId },
-    { enabled: !!countryId }
+    { enabled: !!countryId, refetchInterval: 20_000 }
   );
   const issuesData = api.nationalIssues.getMyIssues.useQuery(
     { countryId: countryId ?? "", status: "active" },
     { enabled: !!countryId, staleTime: 60_000 }
   );
 
-  // Dynamic Priority Engine calculation
-  const opportunity = useMemo<Opportunity | null>(() => {
-    const readiness = country?.militaryReadiness ?? country?.readiness ?? 94;
-    const posture = country?.defensePosture ?? country?.posture ?? "Defensive";
-
-    const embassies = country?.activeEmbassiesCount ?? country?.embassies?.length ?? 12;
-    const dipStance = country?.diplomaticStance ?? "Active Alliance";
-
-    const rawStab = country?.currentStability ?? country?.stability ?? 0.78;
-    const stabPct = Math.round(rawStab > 1 ? rawStab : rawStab * 100);
-
-    const rawGrowth = country?.gdpGrowth ?? country?.currentGdpGrowth ?? 0.034;
-    const growthPct = (rawGrowth > 1 ? rawGrowth : rawGrowth * 100).toFixed(1);
-
-    // Custom country header/banner fallback if present
-    const customHeader =
-      country?.headerImageUrl || country?.flagUrl || country?.flag;
-
-    // 0. Active National Issue / Crisis (Priority 0 - Critical & Urgent issues first)
-    const rawActiveIssues = (issuesData.data?.issues ?? []) as CountryIssueItem[];
-    const activeIssues = [...rawActiveIssues].sort((a: CountryIssueItem, b: CountryIssueItem) => {
-      const aSev = String(a.severity ?? "").toLowerCase();
-      const bSev = String(b.severity ?? "").toLowerCase();
-      const sevRank = (s: string) =>
-        s === "critical" ? 4 : s === "high" ? 3 : s === "medium" ? 2 : 1;
-      const scoreA = sevRank(aSev) * 100 + (a.urgency ?? 0);
-      const scoreB = sevRank(bSev) * 100 + (b.urgency ?? 0);
-      return scoreB - scoreA;
-    });
-
-    const availableIssues = activeIssues.filter(
-      (iss: CountryIssueItem) => !dismissedIds.includes(`issue-${iss.id}`)
-    );
-
-    if (availableIssues.length > 0) {
-      const topIssue = availableIssues[0]!;
-      const sev = String(topIssue.severity ?? "").toLowerCase();
-      const isUrgent = sev === "critical" || sev === "high" || (topIssue.urgency ?? 0) > 70;
-
-      return {
-        id: `issue-${topIssue.id}`,
-        domain: "politics",
-        title: `National Issue: ${topIssue.title}`,
-        subtitle: isUrgent ? "Priority National Issue" : "Active Policy Issue",
-        description:
-          topIssue.description ||
-          "An urgent national policy issue requires immediate executive attention and cabinet policy guidance.",
-        directiveGoal: `Resolve national policy issue: ${topIssue.title}`,
-        icon: AlertCircle,
-        badgeCls: "bg-red-500/15 text-red-800 dark:text-red-300 border-red-500/30 font-bold",
-        borderCls: "border-red-500/40 dark:border-red-500/30",
-        buttonCls:
-          "bg-red-500/20 hover:bg-red-500/30 text-red-950 dark:text-red-100 border-red-500/40 shadow-xs",
-        bgImage:
-          customHeader ||
-          "https://images.unsplash.com/photo-1555848962-6e79363ec58f?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
-        drillKind: { kind: "issue", issueId: topIssue.id },
-      };
-    }
-
-    // 1. Defense Crisis / Low Readiness (Priority 1)
-    if (readiness < 85 && !dismissedIds.includes("defense-readiness")) {
-      return {
-        id: "defense-readiness",
-        domain: "defense",
-        title: "Military Readiness Alert",
-        subtitle: "Defense Sector Warning",
-        description:
-          "Armed forces readiness has dropped below optimal operational thresholds. Strategic supply reallocation and defensive posture adjustments are urgently recommended.",
-        metricLabel: "Combat Readiness",
-        metricValue: `${readiness}% (${posture})`,
-        directiveGoal: "Rebalance military readiness and reinforce defensive border posture",
-        icon: Shield,
-        badgeCls: "bg-red-500/15 text-red-900 dark:text-red-300 border-red-500/30",
-        borderCls: "border-red-500/40 dark:border-red-500/30",
-        buttonCls:
-          "bg-red-500/20 hover:bg-red-500/30 text-red-950 dark:text-red-200 border-red-500/40",
-        bgImage:
-          customHeader ||
-          "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
-        drillKind: { kind: "defense" },
-      };
-    }
-
-    // 2. Civil Service Over-Capacity (Priority 2)
-    if (civilService.data?.overCapacity && !dismissedIds.includes("civil-service-overcap")) {
-      return {
-        id: "civil-service-overcap",
-        domain: "politics",
-        title: "Civil Service Bottleneck",
-        subtitle: "Governance Alert",
-        description:
-          "Administrative personnel utilization is over-capacity. Executive policy direction is required to expand operational slots or rebalance staff allocations.",
-        metricLabel: "Staff Utilization",
-        metricValue: `${civilService.data.utilizationPercent}% Over-Capacity`,
-        directiveGoal:
-          "Authorize civil service staffing expansion and administrative restructuring",
-        icon: Scale,
-        badgeCls: "bg-indigo-500/15 text-indigo-900 dark:text-indigo-300 border-indigo-500/30",
-        borderCls: "border-indigo-500/40 dark:border-indigo-500/30",
-        buttonCls:
-          "bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-950 dark:text-indigo-200 border-indigo-500/40",
-        bgImage:
-          customHeader ||
-          "https://images.unsplash.com/photo-1555848962-6e79363ec58f?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
-        drillKind: { kind: "politics" },
-      };
-    }
-
-    // 3. Active Intent Directive in Progress (Priority 3)
-    const intentsList = (
-      Array.isArray(intentTree.data)
-        ? intentTree.data
-        : (intentTree.data?.allIntents ?? [])
-    ) as CountryIntentItem[];
-    const activeIntents = intentsList.filter(
-      (i: CountryIntentItem) => i.status?.toLowerCase() === "active" && !dismissedIds.includes(`intent-${i.id}`)
-    );
-    if (activeIntents.length > 0) {
-      const topIntent = activeIntents[0]!;
-      return {
-        id: `intent-${topIntent.id}`,
-        domain: "intent",
-        title: `Directive: ${topIntent.goal}`,
-        subtitle: "Executive Focus",
-        description:
-          "Your government is actively executing this strategic directive. Monitor key implementation milestones or issue follow-up policies.",
-        metricLabel: "Directive Status",
-        metricValue: `${topIntent.tier?.toUpperCase() ?? "ACTIVE"} • ${topIntent.category ?? "Executive"}`,
-        directiveGoal: `Accelerate implementation of ${topIntent.goal}`,
-        icon: Command,
-        badgeCls: "bg-amber-500/15 text-amber-900 dark:text-amber-300 border-amber-500/30",
-        borderCls: "border-amber-500/40 dark:border-amber-500/30",
-        buttonCls:
-          "bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-amber-500/40",
-        bgImage:
-          customHeader ||
-          "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
-        intentId: topIntent.id,
-      };
-    }
-
-    // 4. Diplomatic Opportunity (Priority 4)
-    if (embassies > 0 && !dismissedIds.includes("diplomacy-opportunity")) {
-      return {
-        id: "diplomacy-opportunity",
-        domain: "diplomacy",
-        title: "Bilateral Alliance Opportunity",
-        subtitle: "Diplomatic Horizon",
-        description:
-          "Regional diplomatic conditions favor establishing strategic bilateral accords and expanding international trade pacts across allied nations.",
-        metricLabel: "Active Embassies",
-        metricValue: `${embassies} Embassies • ${dipStance}`,
-        directiveGoal:
-          "Establish bilateral economic trade agreement and expand diplomatic alliances",
-        icon: Handshake,
-        badgeCls: "bg-cyan-500/15 text-cyan-900 dark:text-cyan-300 border-cyan-500/30",
-        borderCls: "border-cyan-500/40 dark:border-cyan-500/30",
-        buttonCls:
-          "bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-950 dark:text-cyan-200 border-cyan-500/40",
-        bgImage:
-          customHeader ||
-          "https://images.unsplash.com/photo-1529180979161-06b8b6d6f2be?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
-        drillKind: { kind: "relations" },
-      };
-    }
-
-    // 5. Default Macroeconomic Growth Opportunity (Priority 5)
-    if (!dismissedIds.includes("economy-growth")) {
-      return {
-        id: "economy-growth",
-        domain: "economy",
-        title: "Economic Expansion Target",
-        subtitle: "Macroeconomic Horizon",
-        description:
-          "National economic telemetry indicates favorable conditions for targeted industrial investment and fiscal policy stimulus.",
-        metricLabel: "GDP Growth",
-        metricValue: `+${growthPct}% Growth (${stabPct}% Stability)`,
-        directiveGoal:
-          "Implement targeted macroeconomic development directive and tax incentive package",
-        icon: TrendingUp,
-        badgeCls: "bg-emerald-500/15 text-emerald-900 dark:text-emerald-300 border-emerald-500/30",
-        borderCls: "border-emerald-500/40 dark:border-emerald-500/30",
-        buttonCls:
-          "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-950 dark:text-emerald-200 border-emerald-500/40",
-        bgImage:
-          customHeader ||
-          "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
-        drillKind: { kind: "economy" },
-      };
-    }
-
-    return null;
-  }, [country, intentTree.data, civilService.data, issuesData.data, dismissedIds]);
+  const opportunity = deriveOpportunity({
+    country,
+    issues: (issuesData.data?.issues ?? []) as CountryIssueItem[],
+    intents: (Array.isArray(intentTree.data)
+      ? intentTree.data
+      : (intentTree.data?.allIntents ?? [])) as CountryIntentItem[],
+    execBandwidth: execBandwidth.data,
+    isDismissed: (id) => dismissedIds.includes(id),
+  });
 
   if (!opportunity) return null;
 
   const Icon = opportunity.icon;
+  const { drillKind, intentId } = opportunity;
+  const action = intentId
+    ? { label: "View directive", run: () => onOpenIntent?.(intentId) }
+    : drillKind
+      ? {
+          label:
+            drillKind.kind === "issue"
+              ? "Open issue brief"
+              : `View ${DRILL_LABEL[opportunity.domain]}`,
+          run: () => onOpenDrill?.(drillKind),
+        }
+      : null;
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.section
         key={opportunity.id}
-        initial={{ opacity: 0, y: 10, scale: 0.99 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -6, scale: 0.98, transition: { duration: 0.18, ease: "easeOut" } }}
-        transition={{ type: "spring", stiffness: 450, damping: 30 }}
+        aria-labelledby="priority-title"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -4, transition: { duration: 0.15, ease: "easeOut" } }}
+        transition={{ type: "spring", stiffness: 450, damping: 32 }}
         className="w-full"
       >
-        <FacetCard
-          depth={2}
-          interactive="none"
-          className={cn(
-            "bg-card/40 dark:bg-card/30 relative overflow-hidden border p-5 shadow-lg backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:shadow-2xl",
-            opportunity.borderCls
-          )}
-        >
-          {/* Top-Right Dismiss Button (Apple Design & Tactile Physics) */}
-          <button
+        <Card className="p-5 sm:p-6">
+          <Button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDismiss(opportunity.id);
-            }}
-            className="text-muted-foreground/60 hover:text-foreground absolute top-3.5 right-3.5 z-20 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-transparent transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-white/10 hover:bg-white/10 active:scale-[0.92] dark:hover:bg-white/10"
-            title="Dismiss this priority card"
-            aria-label="Dismiss priority card"
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDismiss(opportunity.id)}
+            className="text-label-secondary absolute top-2 right-2 z-10 size-11 rounded-full sm:top-3 sm:right-3 sm:size-8"
+            aria-label="Dismiss this priority for now"
+            title="Dismiss for this session"
           >
-            <X className="h-4 w-4" />
-          </button>
+            <X aria-hidden="true" />
+          </Button>
 
-          {/* Cinematic Context-Aware Photography Background Overlay */}
-          {opportunity.bgImage && (
-            <div className="pointer-events-none absolute inset-0 overflow-hidden select-none">
-              <img
-                src={opportunity.bgImage}
-                alt=""
-                className="h-full w-full scale-105 object-cover object-right opacity-35 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-700 sm:object-center dark:opacity-45"
-              />
-              <div className="from-card via-card/80 dark:from-card dark:via-card/75 absolute inset-0 bg-gradient-to-r to-transparent dark:to-transparent" />
-            </div>
-          )}
-
-
-          {/* Ambient Watermark Glyph */}
-          <Icon className="text-foreground pointer-events-none absolute -right-6 -bottom-6 h-40 w-40 stroke-[1] opacity-[0.04] select-none" />
-
-          <div className="relative z-10 flex flex-col justify-between gap-4 pr-6 lg:flex-row lg:items-center">
-            {/* Left: Badge, Title & Description */}
-            <div className="max-w-2xl space-y-2.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={cn(
-                    "flex items-center rounded-full border px-3 py-1 text-xs font-extrabold tracking-wider uppercase shadow-2xs backdrop-blur-md",
-                    opportunity.badgeCls
-                  )}
-                >
-                  <span>{opportunity.subtitle}</span>
-                </span>
-
-                {opportunity.metricLabel && opportunity.metricValue && (
-                  <span className="border-border/60 bg-card/60 text-muted-foreground rounded-full border px-2.5 py-1 font-mono text-xs font-semibold shadow-2xs dark:border-white/10 dark:bg-white/5">
-                    {opportunity.metricLabel}:{" "}
-                    <strong className="text-foreground">{opportunity.metricValue}</strong>
-                  </span>
-                )}
-              </div>
-
-              <h2 className="text-foreground text-lg leading-snug font-bold tracking-tight sm:text-xl">
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl min-w-0 space-y-3 pr-10">
+              <p className="text-footnote flex items-center gap-2 font-semibold">
+                <Icon
+                  aria-hidden="true"
+                  className={cn("size-4 shrink-0", STATUS_TEXT[opportunity.tone])}
+                />
+                {opportunity.subtitle}
+              </p>
+              <h2 id="priority-title" className="text-label text-title-2 sm:text-title-1">
                 {opportunity.title}
               </h2>
-
-              <p className="text-muted-foreground text-xs leading-relaxed font-normal sm:text-sm">
+              <p className="text-label-secondary text-body line-clamp-3 leading-relaxed">
                 {opportunity.description}
               </p>
-            </div>
-
-            {/* Right: Focused Action CTA */}
-            <div className="flex shrink-0 flex-col gap-2.5 sm:flex-row lg:flex-col">
-              {opportunity.drillKind?.kind === "issue" ? (
-                <motion.button
-                  type="button"
-                  whileHover={{
-                    scale: 1.015,
-                    transition: { type: "spring", stiffness: 450, damping: 25 },
-                  }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => {
-                    soundEffects.press();
-                    onOpenDrill?.(opportunity.drillKind!);
-                  }}
-                  className={cn(
-                    "group relative flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-5 py-3 text-xs font-extrabold shadow-md transition-colors active:scale-[0.98]",
-                    opportunity.buttonCls
-                  )}
-                >
-                  <Compass className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
-                  <span>Open Issue Brief</span>
-                  <ArrowUpRight className="h-4 w-4 shrink-0 opacity-70 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
-                </motion.button>
-              ) : (
-                <>
-                  <motion.button
-                    type="button"
-                    whileHover={{
-                      scale: 1.015,
-                      transition: { type: "spring", stiffness: 450, damping: 25 },
-                    }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => {
-                      soundEffects.bloom();
-                      onDeclare?.(opportunity.directiveGoal);
-                    }}
-                    className={cn(
-                      "group relative flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-3 text-xs font-extrabold shadow-md transition-colors active:scale-[0.98]",
-                      opportunity.buttonCls
-                    )}
-                  >
-                    <Command className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
-                    <span>Declare Directive to Resolve</span>
-                    <ArrowUpRight className="h-4 w-4 shrink-0 opacity-70 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
-                  </motion.button>
-
-                  {opportunity.intentId ? (
-                    <motion.button
-                      type="button"
-                      whileHover={{
-                        scale: 1.01,
-                        transition: { type: "spring", stiffness: 450, damping: 25 },
-                      }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => {
-                        soundEffects.press();
-                        onOpenIntent?.(opportunity.intentId!);
-                      }}
-                      className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-900 shadow-xs transition-colors hover:bg-amber-500/20 active:scale-[0.98] dark:text-amber-300"
-                    >
-                      <Compass className="h-3.5 w-3.5" />
-                      <span>Inspect Directive Tree</span>
-                    </motion.button>
-                  ) : opportunity.drillKind ? (
-                    <motion.button
-                      type="button"
-                      whileHover={{
-                        scale: 1.01,
-                        transition: { type: "spring", stiffness: 450, damping: 25 },
-                      }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => {
-                        soundEffects.press();
-                        onOpenDrill?.(opportunity.drillKind!);
-                      }}
-                      className="border-border/80 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold shadow-xs transition-colors active:scale-[0.98] dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-                    >
-                      <Compass className="h-3.5 w-3.5" />
-                      <span>
-                        {`Inspect ${
-                          opportunity.domain === "defense"
-                            ? "Defense"
-                            : opportunity.domain === "diplomacy"
-                              ? "Relations"
-                              : opportunity.domain === "politics"
-                                ? "Politics"
-                                : "Economy"
-                        } Details`}
-                      </span>
-                    </motion.button>
-                  ) : opportunity.domain ? (
-                    <motion.button
-                      type="button"
-                      whileHover={{
-                        scale: 1.01,
-                        transition: { type: "spring", stiffness: 450, damping: 25 },
-                      }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => {
-                        soundEffects.press();
-                        onNavigate?.(opportunity.domain as MyCountrySection);
-                      }}
-                      className="border-border/80 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold shadow-xs transition-colors active:scale-[0.98] dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-                    >
-                      <Compass className="h-3.5 w-3.5" />
-                      <span>Open Domain Surface</span>
-                    </motion.button>
-                  ) : null}
-                </>
+              {opportunity.metricLabel && opportunity.metricValue && (
+                <p className="flex flex-col gap-0.5">
+                  <span className="text-caption">{opportunity.metricLabel}</span>
+                  <span className="text-label text-headline tabular-nums">
+                    {opportunity.metricValue}
+                  </span>
+                </p>
               )}
             </div>
+
+            {action && (
+              <Button type="button" size="lg" onClick={action.run} className="h-11 shrink-0">
+                <Compass aria-hidden="true" />
+                {action.label}
+              </Button>
+            )}
           </div>
-        </FacetCard>
-      </motion.div>
+        </Card>
+      </motion.section>
     </AnimatePresence>
   );
 }
+
+const DRILL_LABEL: Record<Opportunity["domain"], string> = {
+  politics: "politics",
+  economy: "economy",
+  intent: "details",
+};
 
 export const ExecutiveOpportunityHero = React.memo(ExecutiveOpportunityHeroComponent);

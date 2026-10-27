@@ -59,8 +59,9 @@ export const SCANNED_ROOTS: ScannedRoot[] = [
 /** Files that legitimately stay as a single large file (data tables / core type defs). */
 export const RELAXED_FILES = new Set<string>([
   "src/types/ixstats.ts",
-  "src/types/economy-builder.ts",
   "src/server/api/routers/taxSystem/crud.ts",
+  // Navigation data: one table of every app section, row per route.
+  "src/lib/navigation/app-sections.ts",
 ]);
 
 /**
@@ -162,7 +163,19 @@ export type Baseline = Record<string, number>;
 export function loadBaseline(rootDir = DEFAULT_ROOT, baselinePath = BASELINE_PATH): Baseline {
   const abs = path.join(rootDir, baselinePath);
   if (!fs.existsSync(abs)) return {};
-  return JSON.parse(fs.readFileSync(abs, "utf8")) as Baseline;
+  const parsed = JSON.parse(fs.readFileSync(abs, "utf8")) as Record<string, unknown>;
+  // A non-number entry makes `lines > allowed` always false, which silently turns the
+  // ratchet off (the 2026-10 baseline held `{}` for every file). Refuse to run on one.
+  const invalid = Object.entries(parsed).filter(
+    ([, value]) => typeof value !== "number" || !Number.isFinite(value)
+  );
+  if (invalid.length > 0) {
+    throw new Error(
+      `${baselinePath} has ${invalid.length} non-numeric line counts (e.g. ${invalid[0]![0]}). ` +
+        "Each entry must be the file's allowed line count."
+    );
+  }
+  return parsed as Baseline;
 }
 
 export function sortBaseline(baseline: Baseline): Baseline {

@@ -1,0 +1,124 @@
+import * as React from "react";
+import { ArrowDown, ArrowUp, Minus } from "iconoir-react";
+import { cn } from "~/lib/utils/cn";
+
+/**
+ * A figure, its label below it, an optional delta and hint.
+ *
+ *   <Stat label="GDP" value="$1.2T" delta={{ value: "+2.4%", direction: "up" }} hint="vs. last year" />
+ *
+ * `icon` is a decorative 14px glyph in the label row (`iconPlacement="trailing"` pins it to the
+ * row's end). The delta pairs its colour with an arrow icon and screen-reader text; `sentiment`
+ * decides the colour when "up" is bad (e.g. debt).
+ */
+type StatDeltaDirection = "up" | "down" | "neutral";
+
+export interface StatDelta {
+  /** Display text, e.g. "+2.4%" or "−120". */
+  value: React.ReactNode;
+  direction: StatDeltaDirection;
+  /** Colour meaning; defaults to up = positive, down = negative, neutral = neutral. */
+  sentiment?: "positive" | "negative" | "neutral";
+  /** Screen-reader text; defaults to "Up", "Down" or "No change". */
+  label?: string;
+}
+
+interface StatProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
+  label: React.ReactNode;
+  value: React.ReactNode;
+  delta?: StatDelta;
+  hint?: React.ReactNode;
+  /** `md` (default): `text-title-1` value. `sm`: `text-title-3` value for dense grids. `lg`: `text-large-title` value for a card's lead figure. */
+  size?: "sm" | "md" | "lg";
+  /** Decorative glyph in the label row (14px, `aria-hidden`). */
+  icon?: React.ReactNode;
+  /** `leading` (default): before the label. `trailing`: at the end of the label row. */
+  iconPlacement?: "leading" | "trailing";
+}
+
+const VALUE_SIZE = { sm: "text-title-3", md: "text-title-1", lg: "text-large-title" } as const;
+const DIRECTION_ICON = { up: ArrowUp, down: ArrowDown, neutral: Minus } as const;
+const DIRECTION_LABEL = { up: "Up", down: "Down", neutral: "No change" } as const;
+const DEFAULT_SENTIMENT = { up: "positive", down: "negative", neutral: "neutral" } as const;
+const SENTIMENT_CLASS = {
+  positive: "text-success",
+  negative: "text-destructive",
+  neutral: "text-label-secondary",
+} as const;
+
+function StatDeltaBadge({ delta, className }: { delta: StatDelta; className?: string }) {
+  const Icon = DIRECTION_ICON[delta.direction];
+  const sentiment = delta.sentiment ?? DEFAULT_SENTIMENT[delta.direction];
+  return (
+    <span
+      data-slot="stat-delta"
+      className={cn(
+        "text-footnote inline-flex items-center gap-1 font-medium tabular-nums",
+        SENTIMENT_CLASS[sentiment],
+        className
+      )}
+    >
+      <Icon aria-hidden className="size-3.5 shrink-0" />
+      <span className="sr-only">{delta.label ?? DIRECTION_LABEL[delta.direction]} </span>
+      {delta.value}
+    </span>
+  );
+}
+
+export const Stat = React.forwardRef<HTMLDivElement, StatProps>(
+  (
+    {
+      label,
+      value,
+      delta,
+      hint,
+      size = "md",
+      icon,
+      iconPlacement = "leading",
+      className,
+      ...props
+    },
+    ref
+  ) => (
+    <div
+      ref={ref}
+      data-slot="stat"
+      className={cn("flex min-w-0 flex-col gap-1", className)}
+      {...props}
+    >
+      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+        <span
+          data-slot="stat-value"
+          className={cn("text-tint min-w-0 truncate tabular-nums", VALUE_SIZE[size])}
+        >
+          {value}
+        </span>
+        {delta && <StatDeltaBadge delta={delta} />}
+      </div>
+      <span
+        data-slot="stat-label-row"
+        className={cn(
+          "flex min-w-0 items-center gap-2",
+          iconPlacement === "trailing" && "flex-row-reverse justify-between"
+        )}
+      >
+        {icon != null && icon !== false && (
+          <span
+            aria-hidden
+            data-slot="stat-icon"
+            className="text-label-secondary inline-flex shrink-0 [:where(&)_svg]:size-3.5"
+          >
+            {icon}
+          </span>
+        )}
+        <span className="text-footnote text-label-secondary block min-w-0 truncate">{label}</span>
+      </span>
+      {hint != null && hint !== false && (
+        <span data-slot="stat-hint" className="text-footnote text-label-tertiary">
+          {hint}
+        </span>
+      )}
+    </div>
+  )
+);
+Stat.displayName = "Stat";

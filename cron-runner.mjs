@@ -8,8 +8,8 @@
  * Jobs are defined in src/server/cron/jobs.ts. At startup every job module is imported and
  * the process exits non-zero if any import fails. Only the jobs named in CRON_ENABLED_JOBS
  * (comma-separated job names, or "*" for all; unset/empty = none) are scheduled. Each run
- * holds the Postgres advisory lock from src/lib/system/job-lock.ts, so a slow run, a second
- * runner or a manual trigger skips instead of double-applying.
+ * holds the lease from src/lib/system/job-lock.ts, so a slow run, a second runner or a manual
+ * trigger skips instead of double-applying, and is recorded as a CronRun row.
  *
  * ixtwitter sync is intentionally not a job here: it runs as the separate
  * "ixstats-ixtwitter" PM2 process.
@@ -17,64 +17,41 @@
  * NOTE: no top-level await — PM2's Bun fork container `require()`s this entry
  * file, which fails on top-level await. Everything runs inside main().
  */
-import { existsSync, readFileSync } from "fs";
-import { resolve } from "path";
+import { loadEnvVariables } from "./load-env.mjs";
 
-function loadEnvVariables() {
-  const cwd = process.cwd();
-  const mode = process.env.NODE_ENV || "development";
-  const envFiles =
-    mode === "production"
-      ? // .env.production.local holds the prod secrets (same list as ws-backend.mjs); first file wins.
-        [".env.production", ".env.local", ".env.production.local"]
-      : [".env.local.dev", ".env.local"];
-  envFiles.push(".env");
-
-  for (const file of envFiles) {
-    const absolutePath = resolve(cwd, file);
-    if (!existsSync(absolutePath)) continue;
-    try {
-      for (const rawLine of readFileSync(absolutePath, "utf8").split(/\r?\n/)) {
-        const line = rawLine.trim();
-        if (!line || line.startsWith("#")) continue;
-        const eq = line.indexOf("=");
-        if (eq === -1) continue;
-        const key = line.slice(0, eq).trim();
-        let value = line.slice(eq + 1).trim();
-        if (
-          (value.startsWith('"') && value.endsWith('"')) ||
-          (value.startsWith("'") && value.endsWith("'"))
-        ) {
-          value = value.slice(1, -1);
-        }
-        if (Object.prototype.hasOwnProperty.call(process.env, key)) continue;
-        process.env[key] = value;
-      }
-    } catch (error) {
-      console.warn(`[Cron] Failed to load env file ${file}:`, error.message);
-    }
-  }
-}
+// A rejection or exception nothing handled leaves the runner in an unknown state: log it and exit, PM2 restarts it.
+process.on("unhandledRejection", (reason) => {
+  console.error("[Cron] Unhandled rejection, exiting:", reason);
+  process.exit(1);
+});
+process.on("uncaughtException", (error) => {
+  console.error("[Cron] Uncaught exception, exiting:", error);
+  process.exit(1);
+});
 
 async function main() {
   if (typeof Bun === "undefined") {
     console.error("[Cron] cron-runner.mjs must run under Bun");
     process.exit(1);
   }
-  loadEnvVariables();
+  loadEnvVariables("[Cron]");
 
   const [
     { CRON_JOBS, resolveEnabledJobs, resolveSchedule, summarizeResult },
     { startScheduler },
     { withJobLock },
+    { recordCronRun, alertCronFailure },
     { db },
     { env },
+    { refreshSharedClock },
   ] = await Promise.all([
     import("./src/server/cron/jobs.js"),
     import("./src/server/cron/scheduler.js"),
     import("./src/lib/system/job-lock.js"),
+    import("./src/lib/system/cron-runs.js"),
     import("./src/server/db.js"),
     import("./src/env.js"),
+    import("./src/lib/ixtime/shared-clock.js"),
   ]);
 
   // Fail loudly: every job module must import, enabled or not, so a broken path can never
@@ -115,20 +92,40 @@ async function main() {
     }
   }
 
-  // Cross-process single-flight for every job (plan 328): a Postgres advisory lock via the
-  // shared db singleton. A run that finds the lock held is skipped.
+  // Cross-process single-flight for every job (plan 328): a lease row via the shared db
+  // singleton. A run that finds the lease held is skipped. Every run is recorded as a CronRun
+  // row (read by /api/health), and a failure also alerts the Discord webhook.
   const runLocked = async (job) => {
-    const startedAt = Date.now();
-    const outcome = await withJobLock(db, job.lockName, runs.get(job.name), {
-      timeoutMs: job.timeoutMs,
-    });
-    if (!outcome.ran) {
-      console.log(`[Cron] ${job.name} skipped — another run holds the "${job.lockName}" lock`);
-      return;
+    const startedAt = new Date();
+    try {
+      // Run on the Discord bot's clock as the web process adopted it, not this process's own
+      await refreshSharedClock(db, { force: true });
+      const outcome = await withJobLock(db, job.lockName, runs.get(job.name), {
+        timeoutMs: job.timeoutMs,
+      });
+      const finishedAt = new Date();
+      if (!outcome.ran) {
+        console.log(`[Cron] ${job.name} skipped — another run holds the "${job.lockName}" lease`);
+        await recordCronRun(db, { job: job.name, status: "skipped", startedAt, finishedAt });
+        return;
+      }
+      const summary = summarizeResult(outcome.result);
+      console.log(`[Cron] ${job.name} done in ${finishedAt - startedAt}ms: ${summary}`);
+      await recordCronRun(db, { job: job.name, status: "success", startedAt, finishedAt, summary });
+    } catch (error) {
+      const detail = error instanceof Error ? (error.stack ?? error.message) : String(error);
+      // recordCronRun and alertCronFailure never throw (src/lib/system/cron-runs.ts): a database that is down still
+      // gets its Discord alert, and the job's own error is what the scheduler logs.
+      await recordCronRun(db, {
+        job: job.name,
+        status: "failed",
+        startedAt,
+        finishedAt: new Date(),
+        error: detail,
+      });
+      await alertCronFailure(job.name, detail);
+      throw error; // the scheduler logs it
     }
-    console.log(
-      `[Cron] ${job.name} done in ${Date.now() - startedAt}ms: ${summarizeResult(outcome.result)}`
-    );
   };
 
   const tasks = enabled.map((job) => {

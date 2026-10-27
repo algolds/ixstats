@@ -1,5 +1,5 @@
 /**
- * IxTime Sports Season Auto-Advance Cron
+ * Sports Season Auto-Advance Cron (real time: sports are platform-wide)
  *
  * Runs periodically (every 6 hours in production) to advance in-progress
  * sports seasons by one match day, race, or bracket round.
@@ -8,8 +8,8 @@
  */
 
 import { type PrismaClient } from "@prisma/client";
-import { IxTime } from "../ixtime";
-import { resolveRace, createRNG, seedFromString } from "./resolver";
+import { resolveRace, loadLeagueDrivers, createRNG, seedFromString } from "./resolver";
+import { BRACKET_ROUND_GAP_MS } from "./scheduler";
 import { transitionToNextStage } from "./transition";
 import { postMatchDayBulletin } from "./feed-post";
 import { notifyClubMatchResult } from "./club-notify";
@@ -24,17 +24,17 @@ import type { MatchDayResultLine } from "./feed-bulletins";
 
 type Prisma = PrismaClient;
 
-// ─── Season completion ──────────────────────────────────────────────
+// Season completion
 
 async function completeSeason(
   prisma: Prisma,
   season: { id: string; leagueId: string; league: { archetype: string; sportPreset: string } }
 ): Promise<void> {
-  const ixNow = IxTime.getCurrentIxTime();
+  const nowMs = Date.now();
 
   await prisma.sportSeason.update({
     where: { id: season.id },
-    data: { status: "completed", endIxTime: ixNow },
+    data: { status: "completed", endIxTime: nowMs },
   });
 
   // Determine champion based on archetype
@@ -181,7 +181,7 @@ async function completeSeason(
   }
 }
 
-// ─── League / Division Conference advance ───────────────────────────
+// League / Division Conference advance
 
 async function advanceLeagueMatchDay(
   prisma: Prisma,
@@ -208,8 +208,8 @@ async function advanceLeagueMatchDay(
   const targetMatchDay = scheduledMatches[0]!.matchDay;
   const scheduledTime = scheduledMatches[0]!.scheduledIxTime;
 
-  // Only advance if the scheduled IxTime has arrived
-  if (scheduledTime > IxTime.getCurrentIxTime()) {
+  // Only advance once the scheduled time has arrived
+  if (scheduledTime > Date.now()) {
     return false;
   }
 
@@ -349,7 +349,7 @@ async function advanceLeagueMatchDay(
   return true;
 }
 
-// ─── Circuit advance ────────────────────────────────────────────────
+// Circuit advance
 
 async function advanceCircuitRace(
   prisma: Prisma,
@@ -371,51 +371,12 @@ async function advanceCircuitRace(
 
   if (!race) return false;
 
-  // Only advance if the scheduled IxTime has arrived
-  if (race.raceIxTime && race.raceIxTime > IxTime.getCurrentIxTime()) {
+  // Only advance once the scheduled time has arrived
+  if (race.raceIxTime && race.raceIxTime > Date.now()) {
     return false;
   }
 
-  // Get all drivers for the season's teams
-  const teams = await prisma.sportTeam.findMany({
-    where: {
-      leagueId: season.leagueId,
-      players: { some: { position: "driver", isActive: true } },
-    },
-    include: {
-      players: {
-        where: { position: "driver", isActive: true },
-        select: { id: true, ratings: true },
-      },
-    },
-  });
-
-  const allDrivers: Array<{
-    driverId: string;
-    teamId: string;
-    pace: number;
-    consistency: number;
-    wetSkill: number;
-    overtaking: number;
-    tyreManagement: number;
-    starts: number;
-  }> = [];
-
-  for (const team of teams) {
-    for (const driver of team.players) {
-      const r = (driver.ratings ?? {}) as Record<string, number>;
-      allDrivers.push({
-        driverId: driver.id,
-        teamId: team.id,
-        pace: r.pace ?? 50,
-        consistency: r.consistency ?? 50,
-        wetSkill: r.wetSkill ?? 50,
-        overtaking: r.overtaking ?? 50,
-        tyreManagement: r.tyreManagement ?? 50,
-        starts: r.starts ?? 50,
-      });
-    }
-  }
+  const allDrivers = await loadLeagueDrivers(prisma, season.leagueId);
 
   if (allDrivers.length === 0) return false;
 
@@ -429,13 +390,13 @@ async function advanceCircuitRace(
     isWet,
   });
 
-  const ixNow = IxTime.getCurrentIxTime();
+  const nowMs = Date.now();
 
   await prisma.sportRace.update({
     where: { id: race.id },
     data: {
       status: "completed",
-      raceIxTime: race.raceIxTime ?? ixNow,
+      raceIxTime: race.raceIxTime ?? nowMs,
       grid:
         race.grid ??
         JSON.stringify(
@@ -462,7 +423,7 @@ async function advanceCircuitRace(
   return true;
 }
 
-// ─── Bracket advance ────────────────────────────────────────────────
+// Bracket advance
 
 async function advanceBracketRound(
   prisma: Prisma,
@@ -485,8 +446,8 @@ async function advanceBracketRound(
   const targetRound = scheduledBrackets[0]!.round;
   const scheduledTime = scheduledBrackets[0]!.scheduledIxTime;
 
-  // Only advance if the scheduled IxTime has arrived
-  if (scheduledTime > IxTime.getCurrentIxTime()) {
+  // Only advance once the scheduled time has arrived
+  if (scheduledTime > Date.now()) {
     return false;
   }
 
@@ -546,7 +507,7 @@ async function advanceBracketRound(
     // If more than one winner, create next round
     if (winners.length >= 2) {
       const nextRound = targetRound + 1;
-      const ixNow = IxTime.getCurrentIxTime();
+      const nowMs = Date.now();
 
       // Cross-pair winners: 1st vs last, 2nd vs 2nd-last
       const pow2 = Math.pow(2, Math.ceil(Math.log2(winners.length)));
@@ -563,7 +524,7 @@ async function advanceBracketRound(
               fighter1Id: a,
               fighter2Id: b,
               status: "scheduled",
-              scheduledIxTime: ixNow + 2 * 24 * 60 * 60 * 1000,
+              scheduledIxTime: nowMs + BRACKET_ROUND_GAP_MS,
               stage: (season as any).activeStage ?? 1,
             } as any,
           });
@@ -581,7 +542,7 @@ async function advanceBracketRound(
   return true;
 }
 
-// ─── Main Entry Point ───────────────────────────────────────────────
+// Main Entry Point
 
 export async function advanceSportsSeasons(prisma: Prisma): Promise<number> {
   let advanced = 0;
@@ -609,7 +570,7 @@ export async function advanceSportsSeasons(prisma: Prisma): Promise<number> {
       }
 
       // ponytail: bounded catch-up loop — drain every matchday/race/round already
-      // due in IxTime, capped at MAX_STEPS_PER_RUN so a long-idle cron can't
+      // due in real time, capped at MAX_STEPS_PER_RUN so a long-idle cron can't
       // stampede the DB in one tick. Each step re-queries and self-gates on
       // scheduledIxTime, so it stops as soon as nothing is due. Stage transitions
       // mid-run are deferred to the next cron tick (rare; keeps this simple).

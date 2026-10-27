@@ -1,17 +1,12 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "motion/react";
+import React, { useState } from "react";
 import {
   UserPlus,
   UserXmark as UserMinus,
   ChatBubble as MessageSquare,
   City as Building2,
   Heart,
-  Xmark as X,
-  SystemRestart as Loader2,
-  Sparks as Sparkles,
   Community as Handshake,
   Shield,
   ScaleFrameEnlarge as Scale,
@@ -23,34 +18,186 @@ import {
   Page as ScrollText,
   Tournament as Swords,
   Map,
-  Wallet,
   Trophy,
   Calendar,
+  EditPencil,
 } from "iconoir-react";
-import { api } from "~/trpc/react";
+import { editorHref, MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
+import { api, type RouterInputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
+import { useCountryDiplomacyActions } from "./useCountryDiplomacyActions";
+import { SAME_REALM_MESSAGE } from "~/lib/realms/same-realm";
+import { useViewerPostingAccount } from "~/hooks/useViewerPostingAccount";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { createUrl } from "~/lib/utils";
 import { WikiLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
+import { Button, buttonVariants } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import dynamic from "next/dynamic";
+import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Card } from "~/components/ui/card";
+
+// The scheduler is a dialog nobody has opened yet when the menu mounts: its chunk is fetched when it is first
+// opened (plan 415, F19), not with every page that shows the menu (the wiki's sidebar widget does).
+const MeetingScheduler = dynamic(
+  () => import("~/components/executive/actions/MeetingScheduler").then((m) => m.MeetingScheduler),
+  { ssr: false }
+);
 
 interface CountryActionsMenuProps {
   targetCountryId: string;
   targetCountryName: string;
+  /** The target's realm, when known: its diplomacy rows need the viewer's nation in the same realm. */
+  targetRealmId?: string | null;
   viewerCountryId?: string;
   isOpen: boolean;
   onClose: () => void;
   isOwnCountry?: boolean;
 }
 
-type ForeignPolicyType = "free_trade" | "military_alliance" | "sanction" | "embargo";
+type IconType = React.ComponentType<{ className?: string }>;
+type DiplomacyActions = ReturnType<typeof useCountryDiplomacyActions>;
+type ForeignPolicy = Parameters<DiplomacyActions["proposeForeignPolicy"]>[0];
+type CongratulationPost = RouterInputs["thinkpages"]["createPost"];
+
+const MANAGEMENT_LINKS: Array<[icon: IconType, label: string, path: string]> = [
+  [Building2, "MyCountry dashboard", "/mycountry"],
+  [ScrollText, "Executive actions", "/mycountry/executive"],
+  [Handshake, "Manage diplomacy", "/mycountry/diplomacy"],
+  [EditPencil, "Country editor", editorHref("identity")],
+  [Map, "Map and territory editor", MYCOUNTRY_MAP_EDITOR_PATH],
+  [Scale, "Politics & elections", "/mycountry/politics"],
+];
+
+const DIPLOMACY_PROPOSALS: Array<[icon: IconType, label: string, policy: ForeignPolicy]> = [
+  [Handshake, "Propose free trade", "free_trade"],
+  [Shield, "Propose military alliance", "military_alliance"],
+];
+
+const HOSTILE_PROPOSALS: Array<[icon: IconType, label: string, policy: ForeignPolicy]> = [
+  [Scale, "Impose sanctions", "sanction"],
+  [Swords, "Declare embargo", "embargo"],
+];
+
+const profileUrl = (countryName: string) =>
+  `${window.location.origin}${createUrl(`/countries/${countryName.replace(/\s/g, "_")}`)}`;
+
+function followLabel(diplomacy: DiplomacyActions): string {
+  if (diplomacy.isFollowPending) return diplomacy.isFollowing ? "Unfollowing…" : "Following…";
+  return diplomacy.isFollowing ? "Unfollow Nation" : "Follow Nation";
+}
+
+/** Pick a recent achievement and post a congratulation to the nation's feed. */
+function CongratulateRow({
+  targetCountryName,
+  achievements,
+  viewerCountryId,
+  postingAccountId,
+  disabled,
+  sending,
+  onSend,
+}: {
+  targetCountryName: string;
+  achievements: Array<{ id: string; title: string; description?: string | null }>;
+  viewerCountryId: string | undefined;
+  /** The viewer's ThinkPages account that posts for their nation. */
+  postingAccountId: string | null;
+  /** Another action in the menu is in flight (the row's own sending state is `sending`). */
+  disabled: boolean;
+  sending: boolean;
+  onSend: (post: CongratulationPost) => void;
+}) {
+  const notify = useNotify();
+  const [selected, setSelected] = useState("");
+
+  const congratulate = () => {
+    if (!viewerCountryId) {
+      notify.error("You need to sign in to send congratulations");
+      return;
+    }
+    if (!postingAccountId) {
+      notify.error("Create a ThinkPages account to post congratulations");
+      return;
+    }
+    if (!selected) {
+      notify.error("Please select an achievement to congratulate");
+      return;
+    }
+    const achievement = achievements.find((a) => a.id === selected);
+    if (!achievement) return;
+
+    onSend({
+      accountId: postingAccountId,
+      content:
+        `Congratulations to ${targetCountryName} on ${achievement.title}. ${achievement.description ?? ""}`.trim(),
+      visibility: "public" as const,
+      hashtags: ["achievement", targetCountryName.replace(/\s/g, "")],
+    });
+  };
+
+  return (
+    <Card variant="well" padding="none" className="flex flex-wrap items-center gap-2 p-2 pl-4">
+      <Heart className="text-label-secondary h-4 w-4 shrink-0" />
+      <Select value={selected} onValueChange={setSelected}>
+        <SelectTrigger
+          size="sm"
+          className="text-footnote min-w-[140px] flex-1"
+          aria-label="Achievement to congratulate"
+        >
+          <SelectValue placeholder="Select achievement…" />
+        </SelectTrigger>
+        <SelectContent>
+          {achievements.map((achievement) => (
+            <SelectItem key={achievement.id} value={achievement.id}>
+              {achievement.title}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={congratulate}
+        disabled={!viewerCountryId || disabled || sending || !selected}
+      >
+        {sending ? "Sending…" : "Congratulate"}
+      </Button>
+    </Card>
+  );
+}
 
 export function CountryActionsMenu({
   targetCountryId,
   targetCountryName,
+  targetRealmId,
   viewerCountryId,
   isOpen,
   onClose,
@@ -58,571 +205,197 @@ export function CountryActionsMenu({
 }: CountryActionsMenuProps) {
   const notify = useNotify();
   const router = useRouter();
-  const [selectedAchievement, setSelectedAchievement] = useState<string>("");
   const [copiedLink, setCopiedLink] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [schedulerOpen, setSchedulerOpen] = useState(false);
+  const schedulerMounted = useMountOnFirstOpen(schedulerOpen);
 
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setMounted(true);
-  }, []);
+  const diplomacy = useCountryDiplomacyActions({
+    viewerCountryId,
+    targetCountryId,
+    targetCountryName,
+    targetRealmId,
+    followStatusEnabled: !!viewerCountryId,
+    onProposed: onClose,
+  });
 
-  const { data: followStatus, refetch: refetchFollowStatus } =
-    api.diplomaticCore.getFollowStatus.useQuery(
-      { viewerCountryId: viewerCountryId || "", targetCountryId },
-      { enabled: !!viewerCountryId }
-    );
+  const congratulation = api.thinkpages.createPost.useMutation({
+    onSuccess: () => {
+      notify.success(`Congratulations sent to ${targetCountryName}`);
+      onClose();
+    },
+    onError: (error) => notify.error(`Failed to send congratulations: ${error.message}`),
+  });
+
+  const postingAccountId = useViewerPostingAccount(viewerCountryId, isOpen && !isOwnCountry);
 
   const { data: recentAchievements } = api.achievements.getRecentByCountry.useQuery(
     { countryId: targetCountryId, limit: 5 },
     { enabled: isOpen }
   );
 
-  const followMutation = api.diplomaticCore.followCountry.useMutation({
-    onSuccess: () => {
-      notify.success(`Now following ${targetCountryName}`);
-      void refetchFollowStatus();
-    },
-    onError: (error) => notify.error(`Failed to follow: ${error.message}`),
-  });
-
-  const unfollowMutation = api.diplomaticCore.unfollowCountry.useMutation({
-    onSuccess: () => {
-      notify.success(`Unfollowed ${targetCountryName}`);
-      void refetchFollowStatus();
-    },
-    onError: (error) => notify.error(`Failed to unfollow: ${error.message}`),
-  });
-
-  const establishEmbassyMutation = api.diplomaticEmbassies.establishEmbassy.useMutation({
-    onSuccess: () => {
-      notify.success(`Embassy construction initiated with ${targetCountryName}`);
-      onClose();
-    },
-    onError: (error) => notify.error(`Failed to establish embassy: ${error.message}`),
-  });
-
-  const foreignPolicyMutation = api.diplomaticPolicies.proposeForeignPolicyAction.useMutation({
-    onSuccess: (_, variables) => {
-      const labels: Record<string, string> = {
-        free_trade: "Free trade agreement",
-        military_alliance: "Military alliance",
-        sanction: "Sanctions",
-        embargo: "Trade embargo",
-      };
-      notify.success(
-        `${labels[variables.actionType] ?? "Action"} proposed to ${targetCountryName}`
-      );
-      onClose();
-    },
-    onError: (error) => notify.error(`Failed: ${error.message}`),
-  });
-
-  const congratulateMutation = api.thinkpages.createPost.useMutation({
-    onSuccess: () => {
-      notify.success(`Congratulations sent to ${targetCountryName}!`);
-      setSelectedAchievement("");
-      onClose();
-    },
-    onError: (error) => notify.error(`Failed to send congratulations: ${error.message}`),
-  });
-
-  const handleFollowToggle = useCallback(() => {
-    if (!viewerCountryId) {
-      notify.error("You must be logged in to follow countries");
-      return;
-    }
-    if (followStatus?.isFollowing) {
-      unfollowMutation.mutate({
-        followerCountryId: viewerCountryId,
-        followedCountryId: targetCountryId,
-      });
-    } else {
-      followMutation.mutate({
-        followerCountryId: viewerCountryId,
-        followedCountryId: targetCountryId,
-      });
-    }
-  }, [viewerCountryId, followStatus, targetCountryId, followMutation, unfollowMutation, notify]);
-
-  const handleDiplomaticMessage = useCallback(() => {
-    router.push(createUrl(`/messages?country=${targetCountryId}`));
+  const go = (path: string) => {
+    router.push(path);
     onClose();
-  }, [router, targetCountryId, onClose]);
+  };
 
-  const handleEstablishEmbassy = useCallback(() => {
-    if (!viewerCountryId) {
-      notify.error("You must be logged in to establish embassies");
-      return;
-    }
-    establishEmbassyMutation.mutate({
-      hostCountryId: targetCountryId,
-      guestCountryId: viewerCountryId,
-      name: `Embassy in ${targetCountryName}`,
-      location: "Capital District",
-    });
-  }, [viewerCountryId, targetCountryId, targetCountryName, establishEmbassyMutation, notify]);
-
-  const handleForeignPolicy = useCallback(
-    (actionType: ForeignPolicyType) => {
-      if (!viewerCountryId) {
-        notify.error("You must be logged in to propose foreign policy");
-        return;
-      }
-      foreignPolicyMutation.mutate({ targetId: targetCountryId, actionType, severity: "moderate" });
-    },
-    [viewerCountryId, targetCountryId, foreignPolicyMutation, notify]
-  );
-
-  const handleCongratulate = useCallback(() => {
-    if (!viewerCountryId) {
-      notify.error("You need to sign in to send congratulations");
-      return;
-    }
-    if (!selectedAchievement) {
-      notify.error("Please select an achievement to congratulate");
-      return;
-    }
-    const achievement = recentAchievements?.find(
-      (a: { id: string }) => a.id === selectedAchievement
-    );
-    if (!achievement) return;
-
-    congratulateMutation.mutate({
-      accountId: viewerCountryId,
-      content: `🎉 Congratulations to ${targetCountryName} on achieving: ${achievement.title}! ${achievement.description || "A remarkable accomplishment!"}`,
-      visibility: "public" as const,
-      hashtags: ["achievement", targetCountryName.replace(/\s/g, "")],
-    });
-  }, [
-    viewerCountryId,
-    targetCountryName,
-    selectedAchievement,
-    recentAchievements,
-    congratulateMutation,
-    notify,
-  ]);
-
-  const handleCopyLink = useCallback(() => {
-    const slug = targetCountryName.replace(/\s/g, "_");
-    const url = `${window.location.origin}${createUrl(`/countries/${slug}`)}`;
-    void navigator.clipboard.writeText(url).then(() => {
+  const copyLink = () => {
+    void navigator.clipboard.writeText(profileUrl(targetCountryName)).then(() => {
       setCopiedLink(true);
       notify.success("Link copied to clipboard");
       setTimeout(() => setCopiedLink(false), 2000);
     });
-  }, [targetCountryName, notify]);
+  };
 
-  const isLoading =
-    followMutation.isPending ||
-    unfollowMutation.isPending ||
-    establishEmbassyMutation.isPending ||
-    congratulateMutation.isPending ||
-    foreignPolicyMutation.isPending;
+  const shareProfile = () => {
+    const url = profileUrl(targetCountryName);
+    if (navigator.share) {
+      void navigator.share({ title: targetCountryName, url });
+    } else {
+      void navigator.clipboard.writeText(url);
+      notify.success("Link copied");
+    }
+    onClose();
+  };
 
-  const actionButtonClass = (colors: string) =>
-    `flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 disabled:opacity-50 ${colors}`;
+  const requestMeeting = () => {
+    if (!viewerCountryId) {
+      notify.error("You must be logged in to request a meeting");
+      return;
+    }
+    setSchedulerOpen(true);
+  };
 
-  if (!mounted) return null;
+  // A sending congratulation also locks the diplomacy rows so nothing is double-submitted.
+  const isBusy = diplomacy.isPending || congratulation.isPending;
+  const needsViewer = !viewerCountryId || isBusy;
+  // Country-to-country rows need both nations in one realm; following and messages stay open.
+  const needsSameRealm = needsViewer || diplomacy.crossRealm;
 
   return (
     <>
-      {createPortal(
-        <AnimatePresence>
-          {isOpen && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={onClose}
-                className="fixed inset-0 z-[100010] bg-black/60 backdrop-blur-xl"
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{isOwnCountry ? "Country Management" : "Country Actions"}</DialogTitle>
+            <DialogDescription>{targetCountryName}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            {isOwnCountry ? (
+              <ActionGroup label="Management">
+                {MANAGEMENT_LINKS.map(([icon, label, path]) => (
+                  <ActionRow key={path} icon={icon} label={label} onClick={() => go(path)} />
+                ))}
+              </ActionGroup>
+            ) : (
+              <>
+                <ActionGroup label="Social">
+                  <ActionRow
+                    icon={diplomacy.isFollowing ? UserMinus : UserPlus}
+                    label={followLabel(diplomacy)}
+                    onClick={diplomacy.toggleFollow}
+                    disabled={needsViewer}
+                  />
+                  <ActionRow
+                    icon={MessageSquare}
+                    label="Secure message"
+                    onClick={() => go(`/messages?country=${targetCountryId}`)}
+                    disabled={!viewerCountryId}
+                  />
+                  {recentAchievements && recentAchievements.length > 0 && (
+                    <CongratulateRow
+                      targetCountryName={targetCountryName}
+                      achievements={recentAchievements}
+                      viewerCountryId={viewerCountryId}
+                      postingAccountId={postingAccountId}
+                      disabled={isBusy}
+                      sending={congratulation.isPending}
+                      onSend={congratulation.mutate}
+                    />
+                  )}
+                </ActionGroup>
+
+                <ActionGroup label="Diplomacy">
+                  {diplomacy.crossRealm && (
+                    <p className="text-label-secondary text-footnote px-1">
+                      {SAME_REALM_MESSAGE} for embassies, meetings and proposals.
+                    </p>
+                  )}
+                  <ActionRow
+                    icon={Building2}
+                    label={diplomacy.isEmbassyPending ? "Constructing…" : "Construct Embassy"}
+                    onClick={diplomacy.establishEmbassy}
+                    disabled={needsSameRealm}
+                  />
+                  <ActionRow
+                    icon={Calendar}
+                    label="Request meeting"
+                    onClick={requestMeeting}
+                    disabled={needsSameRealm}
+                  />
+                  {DIPLOMACY_PROPOSALS.map(([icon, label, policy]) => (
+                    <ActionRow
+                      key={policy}
+                      icon={icon}
+                      label={label}
+                      onClick={() => diplomacy.proposeForeignPolicy(policy)}
+                      disabled={needsSameRealm}
+                    />
+                  ))}
+                </ActionGroup>
+
+                <ActionGroup label="Foreign policy">
+                  {HOSTILE_PROPOSALS.map(([icon, label, policy]) => (
+                    <HostileActionRow
+                      key={policy}
+                      icon={icon}
+                      label={label}
+                      targetCountryName={targetCountryName}
+                      onConfirm={() => diplomacy.proposeForeignPolicy(policy)}
+                      disabled={needsSameRealm}
+                    />
+                  ))}
+                </ActionGroup>
+              </>
+            )}
+
+            <ActionGroup label="Quick links">
+              <ActionRow
+                icon={Trophy}
+                label="Leaderboards"
+                onClick={() => go("/leaderboards")}
               />
+              <WikiLinkPreview title={targetCountryName}>
+                <Link
+                  href={titleToWikiOSRoute(targetCountryName)}
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "lg" }),
+                    ACTION_ROW_CLASS
+                  )}
+                  onClick={onClose}
+                >
+                  <Globe className="text-label-secondary h-4 w-4" />
+                  View on the wiki
+                  <ExternalLink className="text-label-secondary ml-auto h-3.5 w-3.5" />
+                </Link>
+              </WikiLinkPreview>
+              <ActionRow
+                icon={copiedLink ? Check : Copy}
+                label={copiedLink ? "Link Copied" : "Copy Profile Link"}
+                onClick={copyLink}
+              />
+              <ActionRow icon={Share2} label="Share profile" onClick={shareProfile} />
+            </ActionGroup>
 
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="fixed top-1/2 left-1/2 z-[100011] mx-4 w-full max-w-md -translate-x-1/2 -translate-y-1/2"
-              >
-                <div className="relative max-h-[85vh] [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent] overflow-y-auto rounded-2xl border border-white/20 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-6 shadow-2xl backdrop-blur-2xl dark:from-black/40 dark:via-black/20 dark:to-transparent [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15 hover:[&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent">
-                  <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 to-transparent dark:from-white/5 dark:to-transparent" />
-
-                  <div className="relative z-10">
-                    {/* Header */}
-                    <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-4">
-                      <div>
-                        <h3 className="flex items-center gap-2 text-base font-bold text-white">
-                          <Sparkles className="h-5 w-5 text-blue-400" />
-                          {isOwnCountry ? "Country Management" : "Country Actions"}
-                        </h3>
-                        <p className="mt-1 text-sm text-white/60">{targetCountryName}</p>
-                      </div>
-                      <button
-                        onClick={onClose}
-                        className="group rounded-xl p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/10"
-                        aria-label="Close"
-                      >
-                        <X className="h-5 w-5 text-white/60 transition-colors group-hover:text-white" />
-                      </button>
-                    </div>
-
-                    {/* Own Country Actions */}
-                    {isOwnCountry && (
-                      <div className="space-y-2.5">
-                        <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
-                          Management
-                        </p>
-
-                        <button
-                          onClick={() => {
-                            router.push(createUrl("/mycountry"));
-                            onClose();
-                          }}
-                          className={actionButtonClass(
-                            "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
-                          )}
-                        >
-                          <Building2 className="h-4 w-4" />
-                          MyCountry Dashboard
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            router.push(createUrl("/mycountry/executive"));
-                            onClose();
-                          }}
-                          className={actionButtonClass(
-                            "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
-                          )}
-                        >
-                          <ScrollText className="h-4 w-4" />
-                          Executive Actions
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            router.push(createUrl("/mycountry/diplomacy"));
-                            onClose();
-                          }}
-                          className={actionButtonClass(
-                            "border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 hover:bg-cyan-500/20"
-                          )}
-                        >
-                          <Handshake className="h-4 w-4" />
-                          Manage Diplomacy
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            router.push(createUrl("/mycountry/editor"));
-                            onClose();
-                          }}
-                          className={actionButtonClass(
-                            "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/20"
-                          )}
-                        >
-                          <Map className="h-4 w-4" />
-                          Map & Territory Editor
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            router.push(createUrl("/vault"));
-                            onClose();
-                          }}
-                          className={actionButtonClass(
-                            "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
-                          )}
-                        >
-                          <Wallet className="h-4 w-4" />
-                          IxVault Cards & Market
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            router.push(createUrl("/mycountry/politics"));
-                            onClose();
-                          }}
-                          className={actionButtonClass(
-                            "border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/20"
-                          )}
-                        >
-                          <Scale className="h-4 w-4" />
-                          Politics & Elections
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Other Country: Social Actions */}
-                    {!isOwnCountry && (
-                      <>
-                        <div className="space-y-2.5">
-                          <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
-                            Social
-                          </p>
-
-                          <button
-                            onClick={handleFollowToggle}
-                            disabled={!viewerCountryId || isLoading}
-                            className={cn(
-                              actionButtonClass(""),
-                              followStatus?.isFollowing
-                                ? "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-300 hover:bg-red-500/20"
-                                : "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-300 hover:bg-blue-500/20"
-                            )}
-                          >
-                            {followMutation.isPending || unfollowMutation.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : followStatus?.isFollowing ? (
-                              <UserMinus className="h-4 w-4" />
-                            ) : (
-                              <UserPlus className="h-4 w-4" />
-                            )}
-                            {followStatus?.isFollowing ? "Unfollow Nation" : "Follow Nation"}
-                          </button>
-
-                          <button
-                            onClick={handleDiplomaticMessage}
-                            disabled={!viewerCountryId}
-                            className={actionButtonClass(
-                              "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-300 hover:bg-blue-500/20"
-                            )}
-                          >
-                            <MessageSquare className="h-4 w-4" />
-                            Secure Message
-                          </button>
-
-                          {recentAchievements && recentAchievements.length > 0 && (
-                            <div className="group relative">
-                              <button
-                                onClick={handleCongratulate}
-                                disabled={!viewerCountryId || isLoading || !selectedAchievement}
-                                className={actionButtonClass(
-                                  "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/20"
-                                )}
-                              >
-                                <div className="flex items-center gap-3">
-                                  {congratulateMutation.isPending ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Heart className="h-4 w-4" />
-                                  )}
-                                  <span>Congratulate</span>
-                                </div>
-                                <select
-                                  value={selectedAchievement}
-                                  onChange={(e) => setSelectedAchievement(e.target.value)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="border-border/60 bg-card/80 text-foreground hover:bg-card hover:border-border min-w-[140px] cursor-pointer rounded-lg border px-3 py-1.5 text-xs backdrop-blur-md transition-colors focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
-                                >
-                                  <option value="" className="bg-popover text-popover-foreground">
-                                    Select achievement...
-                                  </option>
-                                  {recentAchievements.map(
-                                    (achievement: {
-                                      id: string;
-                                      icon?: string | null;
-                                      title: string;
-                                    }) => (
-                                      <option
-                                        key={achievement.id}
-                                        value={achievement.id}
-                                        className="bg-popover text-popover-foreground"
-                                      >
-                                        {achievement.icon} {achievement.title}
-                                      </option>
-                                    )
-                                  )}
-                                </select>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Diplomatic Actions */}
-                        <div className="mt-4 space-y-2.5">
-                          <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
-                            Diplomacy
-                          </p>
-
-                          <button
-                            onClick={handleEstablishEmbassy}
-                            disabled={!viewerCountryId || isLoading}
-                            className={actionButtonClass(
-                              "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
-                            )}
-                          >
-                            {establishEmbassyMutation.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Building2 className="h-4 w-4" />
-                            )}
-                            Construct Embassy
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              if (!viewerCountryId) {
-                                notify.error("You must be logged in to request a meeting");
-                                return;
-                              }
-                              setSchedulerOpen(true);
-                            }}
-                            disabled={!viewerCountryId || isLoading}
-                            className={actionButtonClass(
-                              "border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/20"
-                            )}
-                          >
-                            <Calendar className="h-4 w-4" />
-                            Request Meeting
-                          </button>
-
-                          <button
-                            onClick={() => handleForeignPolicy("free_trade")}
-                            disabled={!viewerCountryId || isLoading}
-                            className={actionButtonClass(
-                              "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/20"
-                            )}
-                          >
-                            {foreignPolicyMutation.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Handshake className="h-4 w-4" />
-                            )}
-                            Propose Free Trade
-                          </button>
-
-                          <button
-                            onClick={() => handleForeignPolicy("military_alliance")}
-                            disabled={!viewerCountryId || isLoading}
-                            className={actionButtonClass(
-                              "border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 hover:bg-cyan-500/20"
-                            )}
-                          >
-                            <Shield className="h-4 w-4" />
-                            Propose Military Alliance
-                          </button>
-                        </div>
-
-                        {/* Foreign Policy (Adversarial) */}
-                        <div className="mt-4 space-y-2.5">
-                          <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
-                            Foreign Policy
-                          </p>
-
-                          <button
-                            onClick={() => handleForeignPolicy("sanction")}
-                            disabled={!viewerCountryId || isLoading}
-                            className={actionButtonClass(
-                              "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
-                            )}
-                          >
-                            <Scale className="h-4 w-4" />
-                            Impose Sanctions
-                          </button>
-
-                          <button
-                            onClick={() => handleForeignPolicy("embargo")}
-                            disabled={!viewerCountryId || isLoading}
-                            className={actionButtonClass(
-                              "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-300 hover:bg-red-500/20"
-                            )}
-                          >
-                            <Swords className="h-4 w-4" />
-                            Declare Embargo
-                          </button>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Quick Links (always shown) */}
-                    <div className="mt-4 space-y-2.5">
-                      <p className="px-1 text-xs font-semibold tracking-widest text-white/40 uppercase">
-                        Quick Links
-                      </p>
-
-                      <button
-                        onClick={() => {
-                          router.push(createUrl("/leaderboards"));
-                          onClose();
-                        }}
-                        className={actionButtonClass(
-                          "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:bg-amber-500/20"
-                        )}
-                      >
-                        <Trophy className="h-4 w-4" />
-                        Global Leaderboard
-                      </button>
-
-                      <WikiLinkPreview title={targetCountryName}>
-                        <Link
-                          href={titleToWikiOSPath(targetCountryName)}
-                          className={actionButtonClass(
-                            "border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
-                          )}
-                          onClick={onClose}
-                        >
-                          <Globe className="h-4 w-4" />
-                          View on IxWiki
-                          <ExternalLink className="ml-auto h-3.5 w-3.5 text-white/40" />
-                        </Link>
-                      </WikiLinkPreview>
-
-                      <button
-                        onClick={handleCopyLink}
-                        className={actionButtonClass(
-                          "border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
-                        )}
-                      >
-                        {copiedLink ? (
-                          <Check className="h-4 w-4 text-emerald-400" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                        {copiedLink ? "Link Copied!" : "Copy Profile Link"}
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          const slug = targetCountryName.replace(/\s/g, "_");
-                          const url = `${window.location.origin}${createUrl(`/countries/${slug}`)}`;
-                          if (navigator.share) {
-                            void navigator.share({ title: targetCountryName, url });
-                          } else {
-                            void navigator.clipboard.writeText(url);
-                            notify.success("Link copied");
-                          }
-                          onClose();
-                        }}
-                        className={actionButtonClass(
-                          "border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
-                        )}
-                      >
-                        <Share2 className="h-4 w-4" />
-                        Share Profile
-                      </button>
-                    </div>
-
-                    {/* Footer */}
-                    {!viewerCountryId && !isOwnCountry && (
-                      <div className="mt-4 border-t border-white/10 pt-4">
-                        <p className="text-center text-xs text-white/50">
-                          Login required to perform diplomatic actions
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
-      {viewerCountryId && (
+            {!viewerCountryId && !isOwnCountry && (
+              <p className="border-separator text-label-secondary text-footnote border-t pt-4 text-center">
+                Login required to perform diplomatic actions
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      {viewerCountryId && schedulerMounted && (
         <MeetingScheduler
           countryId={viewerCountryId}
           open={schedulerOpen}
@@ -631,5 +404,99 @@ export function CountryActionsMenu({
         />
       )}
     </>
+  );
+}
+
+/** Action rows: large (44px) bordered Facet buttons, label-aligned. */
+const ACTION_ROW_CLASS = "w-full justify-start gap-3";
+
+/** A titled group of action rows. */
+function ActionGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-2" aria-label={label}>
+      <Eyebrow className="block px-1">{label}</Eyebrow>
+      {children}
+    </section>
+  );
+}
+
+/** A sanction or embargo takes effect at once, so its row asks first. */
+function HostileActionRow({
+  icon: Icon,
+  label,
+  targetCountryName,
+  onConfirm,
+  disabled,
+}: {
+  icon: IconType;
+  label: string;
+  targetCountryName: string;
+  onConfirm: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          disabled={disabled}
+          className={cn(ACTION_ROW_CLASS, "text-destructive")}
+        >
+          <Icon className="text-destructive h-4 w-4" />
+          {label}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {label} on {targetCountryName}?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            It takes effect at once, with no consent needed: both economies take the hit, phased in
+            over four years, and relations cool. You can lift it later from your diplomacy inbox.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className={buttonVariants({ variant: "destructive" })}
+            onClick={onConfirm}
+          >
+            {label}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+/** One full-width action: a plain icon and label on an opaque row (the dialog already blurs). */
+function ActionRow({
+  icon: Icon,
+  label,
+  onClick,
+  disabled,
+  destructive,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  destructive?: boolean;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="lg"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(ACTION_ROW_CLASS, destructive && "text-destructive")}
+    >
+      <Icon className={cn("h-4 w-4", destructive ? "text-destructive" : "text-label-secondary")} />
+      {label}
+    </Button>
   );
 }

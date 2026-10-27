@@ -1,5 +1,6 @@
 "use client";
-
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React, { memo, useMemo } from "react";
 import {
   Check,
@@ -11,6 +12,8 @@ import {
 import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
 import { polylineLengthKm } from "~/lib/maps/geo-math";
 import { calculateRouteTravelTime } from "~/lib/economy/travel-time";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { Card } from "~/components/ui/card";
 
 interface RouteWaypointListProps {
   routeWaypoints: [number, number][];
@@ -56,112 +59,111 @@ export const RouteWaypointList = memo(function RouteWaypointList({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Route Name & Properties
-        </label>
+        <Eyebrow className="block">Route name & properties</Eyebrow>
         <input
           type="text"
           placeholder="e.g. Trans-National Highway 1"
           value={routeName}
           onChange={(e) => setRouteName(e.target.value)}
-          className="border-border/40 bg-background/50 text-foreground placeholder:text-muted-foreground focus:border-primary w-full rounded-md border px-3 py-1.5 text-xs focus:outline-none"
+          className="border-separator bg-surface text-label placeholder:text-label-secondary focus:border-tint rounded-control-sm text-footnote w-full border px-3 py-2 focus:outline-none"
         />
 
-        <label className="text-muted-foreground block pt-1 text-xs font-semibold tracking-wider uppercase">
-          Route Type
-        </label>
-        <select
+        <Eyebrow className="block pt-1">Route type</Eyebrow>
+        <OptionSelect
+          aria-label="Route type"
           value={manualRouteType}
-          onChange={(e) => setManualRouteType(e.target.value)}
-          className="border-border/40 bg-background/50 text-foreground focus:border-primary w-full rounded-md border px-2 py-1.5 text-xs focus:outline-none"
-        >
-          {ROUTE_TYPE_KEYS.map((key) => (
-            <option key={key} value={key}>
-              {ROUTE_STYLES[key]?.label ?? key}
-            </option>
-          ))}
-        </select>
+          onValueChange={(v) => setManualRouteType(v)}
+          options={ROUTE_TYPE_KEYS.map((key) => ({
+            value: key,
+            label: ROUTE_STYLES[key]?.label ?? key,
+          }))}
+          size="sm"
+          className="w-full"
+        />
       </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-              Waypoints ({waypointCount})
-            </span>
+            <Eyebrow>Waypoints ({waypointCount})</Eyebrow>
             {waypointCount >= 2 && (
               <div className="flex items-center gap-1">
-                <span className="border-border/40 bg-muted/40 text-foreground font-mono text-xs tabular-nums rounded px-1.5 py-0.5 border">
+                <span className="border-separator bg-fill-3 text-label text-footnote rounded-control-sm border px-2 py-0.5 tabular-nums">
                   {liveLengthKm.toFixed(1)} km
                 </span>
                 {liveDuration && (
-                  <span className="border-primary/20 bg-primary/10 text-primary font-mono text-xs tabular-nums rounded px-1.5 py-0.5 border font-medium">
+                  <span className="border-tint/20 bg-tint-fill text-tint text-caption rounded-control-sm border px-2 py-0.5 tabular-nums">
                     ~{liveDuration}
                   </span>
                 )}
               </div>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {onUndoWaypoint && waypointCount > 0 && (
-              <button
+              <Button
+                variant="ghost"
+                size="xs"
+                className="text-label-secondary"
                 type="button"
                 onClick={onUndoWaypoint}
-                className="text-muted-foreground hover:bg-muted flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition active:scale-[0.98]"
                 title="Undo last waypoint"
               >
                 <Undo2 className="h-3 w-3" /> Undo
-              </button>
+              </Button>
             )}
             {onClearWaypoints && waypointCount > 0 && (
-              <button
+              <Button
+                variant="ghost"
+                size="xs"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                 type="button"
                 onClick={onClearWaypoints}
-                className="text-destructive hover:bg-destructive/10 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition active:scale-[0.98]"
                 title="Clear all waypoints"
               >
                 <Trash2 className="h-3 w-3" /> Clear
-              </button>
+              </Button>
             )}
           </div>
         </div>
 
         {waypointCount === 0 ? (
-          <div className="border-border/60 text-muted-foreground rounded-md border border-dashed p-4 text-center text-xs">
+          <div className="border-separator text-label-secondary rounded-control-sm text-footnote border border-dashed p-4 text-center">
             Click on the map or snap to settlements to place path nodes.
           </div>
         ) : (
-          <div className="border-border/30 bg-muted/10 max-h-48 space-y-1 overflow-y-auto rounded-md border p-1.5">
+          <Card className="max-h-48 space-y-1 overflow-y-auto p-2">
             {routeWaypoints.map((pt, idx) => (
               <div
                 key={idx}
-                className="bg-background/40 flex items-center justify-between rounded px-2 py-1 text-xs"
+                className="bg-surface text-footnote rounded-control-sm flex items-center justify-between px-2 py-1"
               >
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="text-primary h-3 w-3 shrink-0" />
-                  <span className="text-muted-foreground font-mono tabular-nums">#{idx + 1}</span>
+                <div className="flex items-center gap-2">
+                  <MapPin className="text-tint h-3 w-3 shrink-0" />
+                  <span className="text-label-secondary font-mono tabular-nums">#{idx + 1}</span>
                 </div>
-                <span className="text-muted-foreground font-mono text-xs tabular-nums">
+                <span className="text-label-secondary text-footnote font-mono tabular-nums">
                   {pt[0].toFixed(4)}°, {pt[1].toFixed(4)}°
                 </span>
               </div>
             ))}
-          </div>
+          </Card>
         )}
       </div>
 
       {manualError && (
-        <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-md border p-2 text-xs">
+        <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-control-sm text-footnote border p-2">
           {manualError}
         </div>
       )}
 
       {onFinishRoute && (
-        <button
+        <Button
+          size="sm"
+          className="w-full justify-center"
           type="button"
           disabled={waypointCount < 2 || isSavingManual}
           onClick={() => onFinishRoute(manualRouteType, routeName)}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-1.5 rounded-md py-2 text-xs font-semibold shadow transition active:scale-[0.98] disabled:opacity-50"
         >
           {isSavingManual ? (
             <>
@@ -174,7 +176,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
               <span>Commit Route ({waypointCount} points)</span>
             </>
           )}
-        </button>
+        </Button>
       )}
     </div>
   );

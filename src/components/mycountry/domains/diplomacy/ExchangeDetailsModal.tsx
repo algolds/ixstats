@@ -21,60 +21,29 @@ import {
 } from "iconoir-react";
 
 import React from "react";
-import { cn } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Progress } from "~/components/ui/progress";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "~/components/ui/sheet";
+import { Card } from "~/components/ui/card";
+import type { CulturalExchange, ExchangeTypeConfig } from "./cultural-exchange-types";
+import { assetUrl } from "~/lib/base-path";
 
-interface CulturalExchange {
-  id: string;
-  title: string;
-  type:
-    | "festival"
-    | "exhibition"
-    | "education"
-    | "cuisine"
-    | "arts"
-    | "sports"
-    | "technology"
-    | "diplomacy";
-  description: string;
-  hostCountry: {
-    id: string;
-    name: string;
-    flagUrl?: string;
-  };
-  participatingCountries: Array<{
-    id: string;
-    name: string;
-    flagUrl?: string;
-    role: "co-host" | "participant" | "observer";
-  }>;
-  status: "planning" | "active" | "completed" | "cancelled";
-  startDate: string;
-  endDate: string;
-  metrics: {
-    participants: number;
-    culturalImpact: number;
-    socialEngagement: number;
-  };
-  culturalArtifacts: Array<{
-    id: string;
-    type: "photo" | "video" | "document" | "artwork" | "recipe" | "music";
-    title: string;
-    thumbnailUrl?: string;
-  }>;
-  // Optional program details (columns on the CulturalExchange model).
+/** Optional program details (columns on the CulturalExchange model). */
+type ExchangeDetails = CulturalExchange & {
   narrative?: string | null;
   /** JSON-encoded string[] */
   objectives?: string | null;
   isPublic?: boolean;
   maxParticipants?: number | null;
-}
+};
 
 interface NPCResponse {
   countryId: string;
@@ -98,7 +67,7 @@ interface NPCResponse {
 interface ExchangeDetailsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  exchange: CulturalExchange | null;
+  exchange: ExchangeDetails | null;
   onJoin: (exchangeId: string, role: "participant" | "observer") => void;
   onShare: () => void;
   onUploadArtifact: () => void;
@@ -112,544 +81,436 @@ interface ExchangeDetailsModalProps {
     name: string;
   };
   npcResponses?: NPCResponse[];
-  exchangeTypes: Record<
-    string,
-    {
-      icon: React.ComponentType<{ className?: string }>;
-      label: string;
-      color: string;
-      emoji: string;
-    }
-  >;
+  exchangeTypes: Record<string, Pick<ExchangeTypeConfig, "icon" | "label">>;
   isGeneratingScenario?: boolean;
   isSharing?: boolean;
   isCancelling?: boolean;
   isCalculating?: boolean;
 }
 
-export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
-  ({
-    open,
-    onOpenChange,
-    exchange,
-    onJoin,
-    onShare,
-    onUploadArtifact,
-    onCancel,
-    onEdit,
-    onCalculateImpact,
-    onViewArtifact,
-    onGenerateScenario,
-    primaryCountry,
-    npcResponses,
-    exchangeTypes,
-    isGeneratingScenario = false,
-    isSharing = false,
-    isCancelling = false,
-    isCalculating = false,
-  }) => {
-    if (!exchange) return null;
+/** A section inside the dialog: an opaque Facet surface so blur never stacks on the dialog. */
+function DetailSection({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className="p-4">
+      <h6 className="text-label text-headline mb-3 flex items-center gap-2">
+        <Icon className="text-label-secondary h-4 w-4" />
+        {title}
+      </h6>
+      {children}
+    </Card>
+  );
+}
 
-    const typeConfig = exchangeTypes[exchange.type];
-    const objectives: string[] = exchange.objectives ? JSON.parse(exchange.objectives) : [];
+function SectionHeading({
+  icon: Icon,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+}) {
+  return (
+    <h6 className="text-label text-headline flex items-center gap-2">
+      <Icon className="text-label-secondary h-4 w-4" />
+      {children}
+    </h6>
+  );
+}
 
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <Globe className="h-6 w-6 text-amber-500 dark:text-amber-400" />
-              Exchange Details
-            </DialogTitle>
-            <DialogDescription>Comprehensive view of cultural exchange program</DialogDescription>
-          </DialogHeader>
+function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="text-body flex items-center justify-between">
+      <span className="text-label-secondary">{label}</span>
+      {children}
+    </div>
+  );
+}
 
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              {/* Exchange Overview */}
-              <div className="space-y-4">
-                <div>
-                  <h5 className="text-foreground mb-2 text-lg font-bold">{exchange.title}</h5>
-                  <div className="mb-3 flex items-center gap-2">
-                    {React.createElement(typeConfig.icon, {
-                      className: cn("h-5 w-5", typeConfig.color),
-                    })}
-                    <span className="text-muted-foreground">{typeConfig.label}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{exchange.description}</p>
-                </div>
+function CountryHeader({
+  name,
+  flagUrl,
+  badge,
+}: {
+  name: string;
+  flagUrl?: string;
+  badge: React.ReactNode;
+}) {
+  return (
+    <div className="mb-2 flex items-center gap-2">
+      {flagUrl && (
+        <img
+          src={assetUrl(flagUrl) ?? undefined}
+          alt={`${name} flag`}
+          className="border-separator h-3 w-5 rounded-xs border object-cover"
+        />
+      )}
+      <span className="text-label text-body font-medium">{name}</span>
+      {badge}
+    </div>
+  );
+}
 
-                {/* Narrative */}
-                {exchange.narrative && (
-                  <div className="facet-hierarchy-child rounded-lg border border-white/10 p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      <EditPencil className="h-4 w-4 text-indigo-400" />
-                      <h6 className="text-foreground font-medium">Exchange Narrative</h6>
-                    </div>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      {exchange.narrative}
-                    </p>
-                  </div>
-                )}
+function PercentMeter({
+  label,
+  value,
+  indicatorClassName,
+}: {
+  label: string;
+  value: number;
+  indicatorClassName?: string;
+}) {
+  return (
+    <>
+      <div className="text-footnote flex items-center justify-between">
+        <span className="text-label-secondary">{label}</span>
+        <span className="text-label font-medium tabular-nums">{Math.round(value)}%</span>
+      </div>
+      <Progress value={value} className="h-1.5" indicatorClassName={indicatorClassName} />
+    </>
+  );
+}
 
-                {/* Objectives */}
-                {objectives.length > 0 && (
-                  <div className="facet-hierarchy-child rounded-lg border border-white/10 p-4">
-                    <div className="mb-3 flex items-center gap-2">
-                      <WhiteFlag className="h-4 w-4 text-green-400" />
-                      <h6 className="text-foreground font-medium">Program Objectives</h6>
-                    </div>
-                    <div className="space-y-2">
-                      {objectives.map((objective, idx) => (
-                        <div key={idx} className="flex items-start gap-2">
-                          <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-400" />
-                          <span className="text-sm text-muted-foreground">{objective}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+function enthusiasmColor(level: number) {
+  if (level > 70) return "bg-green";
+  return level > 50 ? "bg-yellow" : "bg-destructive";
+}
 
-                {/* AI Diplomatic Analysis */}
-                <div className="facet-hierarchy-child rounded-lg border border-cyan-500/30 bg-cyan-500/5 p-4">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Brain className="h-4 w-4 text-cyan-400" />
-                    <h6 className="text-foreground font-medium">Diplomatic Analysis</h6>
-                  </div>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="mb-2 text-xs text-muted-foreground">Predicted Impact</p>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Cultural Alignment</span>
-                          <span className="font-medium text-cyan-400">
-                            // oxlint-disable-next-line
-                            {Math.round(60 + Math.random() * 30)}%
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Diplomatic Benefit</span>
-                          <span className="font-medium text-emerald-400">High</span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Success Probability</span>
-                          <span className="font-medium text-cyan-400">
-                            // oxlint-disable-next-line
-                            {Math.round(65 + Math.random() * 25)}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="border-t border-white/10 pt-2">
-                      <p className="text-xs text-cyan-400/80 italic">
-                        "This {typeConfig.label.toLowerCase()} between {exchange.hostCountry.name}{" "}
-                        and participating nations shows strong potential for cultural
-                        bridge-building and long-term diplomatic cooperation."
-                      </p>
-                    </div>
-                  </div>
-                </div>
+function NpcResponseCard({ response }: { response: NPCResponse }) {
+  return (
+    <Card variant="well" className="p-3">
+      <CountryHeader
+        name={response.countryName}
+        flagUrl={response.flagUrl}
+        badge={
+          <Badge
+            variant={response.willParticipate ? "success" : "destructive"}
+            className="ml-auto capitalize"
+          >
+            {response.role}
+          </Badge>
+        }
+      />
+      <div className="space-y-2">
+        <p className="text-label-secondary text-footnote">
+          <span className="text-label">{response.personality.archetype}</span> ·{" "}
+          {response.responseTimeline} response
+        </p>
+        <PercentMeter
+          label="Enthusiasm"
+          value={response.enthusiasmLevel}
+          indicatorClassName={enthusiasmColor(response.enthusiasmLevel)}
+        />
+        <PercentMeter label="Resource commitment" value={response.resourceCommitment} />
+        <p className="text-label-secondary text-footnote mt-2 italic">
+          &ldquo;{response.responseMessage}&rdquo;
+        </p>
+        {response.conditions && response.conditions.length > 0 && (
+          <div className="border-separator mt-2 border-t pt-2">
+            <Eyebrow>Conditions</Eyebrow>
+            <ul className="text-label-secondary text-footnote mt-1 list-disc space-y-0.5 pl-4">
+              {response.conditions.map((condition, idx) => (
+                <li key={idx}>{condition}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {!response.willParticipate && response.alternativeProposal && (
+          <div className="border-separator mt-2 border-t pt-2">
+            <Eyebrow>Alternative proposal</Eyebrow>
+            <p className="text-label-secondary text-footnote mt-1">
+              {response.alternativeProposal.reasoning}
+            </p>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
 
-                {/* Metrics */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="rounded-lg bg-white/5 p-3 text-center">
-                    <div className="text-lg font-bold text-cyan-400">
-                      {exchange.metrics.participants}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Participants</div>
-                  </div>
-                  <div className="rounded-lg bg-white/5 p-3 text-center">
-                    <div className="text-lg font-bold text-amber-500 dark:text-amber-400">
-                      {exchange.metrics.culturalImpact}%
-                    </div>
-                    <div className="text-xs text-muted-foreground">Impact</div>
-                  </div>
-                  <div className="rounded-lg bg-white/5 p-3 text-center">
-                    <div className="text-lg font-bold text-blue-400">
-                      {exchange.metrics.socialEngagement}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Engagement</div>
-                  </div>
-                </div>
+function ExchangeActions({
+  exchange,
+  isHost,
+  props: p,
+}: {
+  exchange: ExchangeDetails;
+  isHost: boolean;
+  props: ExchangeDetailsModalProps;
+}) {
+  const { status } = exchange;
+  const shareButton = (
+    <Button variant="outline" className="flex-1" onClick={p.onShare} disabled={p.isSharing}>
+      <ShareAndroid className="h-4 w-4" />
+      {p.isSharing ? "Sharing…" : "Share"}
+    </Button>
+  );
+  const bar = "border-separator flex flex-col gap-2 border-t pt-4 sm:flex-row";
 
-                {/* Schedule & Settings */}
-                <div className="facet-hierarchy-child rounded-lg border border-white/10 p-4">
-                  <h6 className="text-foreground mb-3 flex items-center gap-2 font-medium">
-                    <Settings className="h-4 w-4" />
-                    Program Details
-                  </h6>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Duration</span>
-                      <div className="text-foreground flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        <span>
-                          {new Date(exchange.startDate).toLocaleDateString()} -{" "}
-                          {new Date(exchange.endDate).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Visibility</span>
-                      <span className="text-foreground flex items-center gap-1">
-                        {exchange.isPublic !== false ? (
-                          <>
-                            <Eye className="h-3.5 w-3.5 text-green-400" />
-                            Public
-                          </>
-                        ) : (
-                          <>
-                            <EyeClosed className="h-3.5 w-3.5 text-orange-400" />
-                            Private
-                          </>
-                        )}
-                      </span>
-                    </div>
-                    {exchange.maxParticipants && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Max Participants</span>
-                        <span className="text-foreground">{exchange.maxParticipants}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+  return (
+    <>
+      {status === "active" && (
+        <div className={bar}>
+          {!isHost && (
+            <>
+              <Button className="flex-1" onClick={() => p.onJoin(exchange.id, "participant")}>
+                <User aria-hidden="true" className="h-4 w-4" />
+                Join as participant
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => p.onJoin(exchange.id, "observer")}
+              >
+                <Eye className="h-4 w-4" />
+                Observe exchange
+              </Button>
+            </>
+          )}
+          <Button variant="outline" className="flex-1" onClick={p.onUploadArtifact}>
+            <Camera className="h-4 w-4" />
+            Upload artifact
+          </Button>
+        </div>
+      )}
+      {status === "completed" && isHost && exchange.participatingCountries.length > 0 && (
+        <div className={bar}>
+          <Button
+            variant="secondary"
+            className="flex-1"
+            onClick={p.onCalculateImpact}
+            disabled={p.isCalculating}
+          >
+            <StatsReport className="h-4 w-4" />
+            {p.isCalculating ? "Calculating…" : "Calculate impact"}
+          </Button>
+        </div>
+      )}
+      <div className={bar}>
+        {isHost ? (
+          <>
+            <Button variant="outline" className="flex-1" onClick={p.onEdit}>
+              <EditPencil className="h-4 w-4" />
+              Edit
+            </Button>
+            {shareButton}
+            {status === "planning" && (
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={p.onCancel}
+                disabled={p.isCancelling}
+              >
+                <Xmark className="h-4 w-4" />
+                {p.isCancelling ? "Cancelling…" : "Cancel"}
+              </Button>
+            )}
+          </>
+        ) : (
+          shareButton
+        )}
+      </div>
+    </>
+  );
+}
 
-                {/* NPC Participant Responses */}
-                {exchange.participatingCountries.length > 0 && (
-                  <div className="space-y-3">
-                    <h6 className="text-foreground flex items-center gap-2 font-medium">
-                      <MicrophoneSpeaking className="h-4 w-4" />
-                      NPC Responses (
-                      {npcResponses?.length || exchange.participatingCountries.length})
-                    </h6>
-                    <div className="max-h-64 space-y-2 overflow-y-auto">
-                      {npcResponses && npcResponses.length > 0
-                        ? // Real AI-generated responses
-                          npcResponses.map((response) => (
-                            <div
-                              key={response.countryId}
-                              className="facet-hierarchy-child rounded-lg border border-white/10 p-3"
-                            >
-                              <div className="mb-2 flex items-center gap-2">
-                                {response.flagUrl && (
-                                  <img
-                                    src={response.flagUrl}
-                                    alt={`${response.countryName} flag`}
-                                    className="h-3 w-5 rounded border border-white/20 object-cover"
-                                  />
-                                )}
-                                <span className="text-foreground text-sm font-medium">
-                                  {response.countryName}
-                                </span>
-                                <span
-                                  className={cn(
-                                    "ml-auto rounded-full px-2 py-0.5 text-xs",
-                                    response.willParticipate
-                                      ? "bg-green-500/20 text-green-400"
-                                      : "bg-red-500/20 text-red-400"
-                                  )}
-                                >
-                                  {response.role.charAt(0).toUpperCase() + response.role.slice(1)}
-                                </span>
-                              </div>
-                              <div className="space-y-2">
-                                {/* Personality Archetype */}
-                                <div className="flex items-center gap-2 text-xs">
-                                  <span className="text-indigo-400">
-                                    {response.personality.archetype}
-                                  </span>
-                                  <span className="text-muted-foreground">•</span>
-                                  <span className="text-muted-foreground">
-                                    {response.responseTimeline} response
-                                  </span>
-                                </div>
+export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>((props) => {
+  const { open, onOpenChange, exchange, onViewArtifact, npcResponses, exchangeTypes } = props;
+  if (!exchange) return null;
 
-                                {/* Enthusiasm Level */}
-                                <div className="flex items-center justify-between text-xs">
-                                  <span className="text-muted-foreground">Enthusiasm</span>
-                                  <span className="text-foreground font-medium">
-                                    {Math.round(response.enthusiasmLevel)}%
-                                  </span>
-                                </div>
-                                <div className="h-1.5 w-full rounded-full bg-white/10">
-                                  <div
-                                    className={cn(
-                                      "h-1.5 rounded-full",
-                                      response.enthusiasmLevel > 70
-                                        ? "bg-green-400"
-                                        : response.enthusiasmLevel > 50
-                                          ? "bg-yellow-400"
-                                          : "bg-orange-400"
-                                    )}
-                                    style={{ width: `${response.enthusiasmLevel}%` }}
-                                  />
-                                </div>
+  const typeConfig = exchangeTypes[exchange.type];
+  const objectives: string[] = exchange.objectives ? JSON.parse(exchange.objectives) : [];
 
-                                {/* Resource Commitment */}
-                                <div className="flex items-center justify-between text-xs">
-                                  <span className="text-muted-foreground">Resource Commitment</span>
-                                  <span className="text-foreground font-medium">
-                                    {Math.round(response.resourceCommitment)}%
-                                  </span>
-                                </div>
-                                <div className="h-1.5 w-full rounded-full bg-white/10">
-                                  <div
-                                    className="h-1.5 rounded-full bg-blue-400"
-                                    style={{ width: `${response.resourceCommitment}%` }}
-                                  />
-                                </div>
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent size="wide" className="overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Globe className="text-label-secondary h-5 w-5" />
+            Exchange details
+          </SheetTitle>
+          <SheetDescription>Cultural exchange program details</SheetDescription>
+        </SheetHeader>
 
-                                {/* AI Response Message */}
-                                <p className="mt-2 text-xs text-muted-foreground italic">
-                                  "{response.responseMessage}"
-                                </p>
-
-                                {/* Conditions (if any) */}
-                                {response.conditions && response.conditions.length > 0 && (
-                                  <div className="mt-2 border-t border-white/5 pt-2">
-                                    <span className="text-xs font-medium text-orange-400">
-                                      Conditions:
-                                    </span>
-                                    <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                                      {response.conditions.map((condition, idx) => (
-                                        <li key={idx} className="flex items-start gap-1">
-                                          <span className="text-orange-400">•</span>
-                                          <span>{condition}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-
-                                {/* Alternative Proposal (if rejected) */}
-                                {!response.willParticipate && response.alternativeProposal && (
-                                  <div className="mt-2 border-t border-white/5 pt-2">
-                                    <span className="text-xs font-medium text-cyan-400">
-                                      Alternative Proposal:
-                                    </span>
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                      {response.alternativeProposal.reasoning}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))
-                        : // Loading state or fallback
-                          exchange.participatingCountries.map((country) => (
-                            <div
-                              key={country.id}
-                              className="facet-hierarchy-child rounded-lg border border-white/10 p-3"
-                            >
-                              <div className="mb-2 flex items-center gap-2">
-                                {country.flagUrl && (
-                                  <img
-                                    src={country.flagUrl}
-                                    alt={`${country.name} flag`}
-                                    className="h-3 w-5 rounded border border-white/20 object-cover"
-                                  />
-                                )}
-                                <span className="text-foreground text-sm font-medium">
-                                  {country.name}
-                                </span>
-                                <span className="ml-auto rounded-full bg-gray-500/20 px-2 py-0.5 text-xs text-gray-400">
-                                  {country.role.charAt(0).toUpperCase() + country.role.slice(1)}
-                                </span>
-                              </div>
-                              <p className="text-xs text-muted-foreground italic">
-                                Analyzing response...
-                              </p>
-                            </div>
-                          ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Scenario Generation */}
-                {exchange.status === "active" && (
-                  <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-4">
-                    <div className="flex items-start gap-3">
-                      <Flash className="mt-0.5 h-5 w-5 shrink-0 text-cyan-400" />
-                      <div className="flex-1">
-                        <h6 className="text-foreground mb-1 font-medium">Generate Scenario</h6>
-                        <p className="mb-3 text-xs text-muted-foreground">
-                          Create a dynamic cultural exchange scenario with narrative choices and
-                          predicted outcomes
-                        </p>
-                        <button
-                          onClick={onGenerateScenario}
-                          disabled={isGeneratingScenario}
-                          className="flex w-full items-center justify-center gap-2 rounded-lg bg-cyan-500/20 px-3 py-2 text-sm font-medium text-cyan-400 transition-colors hover:bg-cyan-500/30 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {isGeneratingScenario ? (
-                            <>
-                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-cyan-400/20 border-t-cyan-400" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <LightBulb className="h-4 w-4" />
-                              Generate Scenario
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Cultural Artifacts Preview */}
-                {exchange.culturalArtifacts.length > 0 && (
-                  <div className="space-y-3">
-                    <h6 className="text-foreground flex items-center gap-2 font-medium">
-                      <Camera className="h-4 w-4" />
-                      Cultural Artifacts ({exchange.culturalArtifacts.length})
-                    </h6>
-                    <div className="grid grid-cols-2 gap-2">
-                      {exchange.culturalArtifacts.slice(0, 4).map((artifact) => (
-                        <div
-                          key={artifact.id}
-                          onClick={() => onViewArtifact?.(artifact.id)}
-                          className="flex aspect-square cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-white/5 transition-colors hover:border-amber-500/30"
-                        >
-                          {artifact.thumbnailUrl ? (
-                            <img
-                              src={artifact.thumbnailUrl}
-                              alt={artifact.title}
-                              className="h-full w-full rounded-lg object-cover"
-                            />
-                          ) : (
-                            <Camera className="h-6 w-6 text-muted-foreground" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <h5 className="text-label text-title-3 mb-2">{exchange.title}</h5>
+              <div className="text-body mb-3 flex items-center gap-2">
+                {React.createElement(typeConfig.icon, {
+                  className: "text-label-secondary h-4 w-4",
+                })}
+                <span className="text-label-secondary">{typeConfig.label}</span>
               </div>
-
-              {/* Actions */}
-              <div className="space-y-3 border-t border-white/10 pt-4">
-                {exchange.status === "active" && (
-                  <>
-                    <button
-                      onClick={() => onJoin(exchange.id, "participant")}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-500/20 px-4 py-3 font-medium text-amber-500 dark:text-amber-400 transition-colors hover:bg-amber-500/30"
-                    >
-                      <User className="h-4 w-4" />
-                      Join as Participant
-                    </button>
-                    <button
-                      onClick={() => onJoin(exchange.id, "observer")}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-500/20 px-4 py-3 font-medium text-blue-400 transition-colors hover:bg-blue-500/30"
-                    >
-                      <Eye className="h-4 w-4" />
-                      Observe Exchange
-                    </button>
-                    <button
-                      onClick={onUploadArtifact}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-500/20 px-4 py-3 font-medium text-green-400 transition-colors hover:bg-green-500/30"
-                    >
-                      <Camera className="h-4 w-4" />
-                      Upload Artifact
-                    </button>
-                  </>
-                )}
-
-                {exchange.status === "completed" && (
-                  <button
-                    onClick={onCalculateImpact}
-                    disabled={isCalculating}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-500/20 px-4 py-3 font-medium text-orange-400 transition-colors hover:bg-orange-500/30 disabled:opacity-50"
-                  >
-                    {isCalculating ? (
-                      <>
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-orange-400/20 border-t-orange-400" />
-                        Calculating...
-                      </>
-                    ) : (
-                      <>
-                        <StatsReport className="h-4 w-4" />
-                        Calculate Impact
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
+              <p className="text-label-secondary text-body">{exchange.description}</p>
             </div>
-            {/* Action Buttons */}
-            <div className="flex gap-3 border-t border-white/10 pt-4">
-              {exchange.hostCountry.id === primaryCountry.id ? (
-                <>
-                  <button
-                    onClick={onEdit}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-amber-500/20 px-4 py-3 font-medium text-amber-500 dark:text-amber-400 transition-colors hover:bg-amber-500/30"
-                  >
-                    <EditPencil className="h-4 w-4" />
-                    Edit
-                  </button>
-                  <button
-                    onClick={onShare}
-                    disabled={isSharing}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-500/20 px-4 py-3 font-medium text-blue-400 transition-colors hover:bg-blue-500/30 disabled:opacity-50"
-                  >
-                    {isSharing ? (
-                      <>
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-400/20 border-t-blue-400" />
-                        Sharing...
-                      </>
+
+            {exchange.narrative && (
+              <DetailSection icon={EditPencil} title="Exchange narrative">
+                <p className="text-label-secondary text-body leading-relaxed">
+                  {exchange.narrative}
+                </p>
+              </DetailSection>
+            )}
+
+            {objectives.length > 0 && (
+              <DetailSection icon={WhiteFlag} title="Program objectives">
+                <ul className="space-y-2">
+                  {objectives.map((objective, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <CheckCircle className="text-green mt-0.5 h-4 w-4 shrink-0" />
+                      <span className="text-label-secondary text-body">{objective}</span>
+                    </li>
+                  ))}
+                </ul>
+              </DetailSection>
+            )}
+
+            <DetailSection icon={Brain} title="Diplomatic outlook">
+              <p className="text-label-secondary text-body italic">
+                This {typeConfig.label.toLowerCase()} between {exchange.hostCountry.name} and
+                participating nations shows potential for cultural bridge-building and long-term
+                diplomatic cooperation.
+              </p>
+            </DetailSection>
+
+            <dl className="grid grid-cols-3 gap-3">
+              {[
+                { label: "Participants", value: String(exchange.metrics.participants) },
+                { label: "Impact", value: `${exchange.metrics.culturalImpact}%` },
+                { label: "Engagement", value: String(exchange.metrics.socialEngagement) },
+              ].map((m) => (
+                <div key={m.label} className="bg-fill-3 rounded-row p-3 text-center">
+                  <dd className="text-label text-title-3 tabular-nums">{m.value}</dd>
+                  <dt>
+                    <span className="text-caption text-label-secondary">{m.label}</span>
+                  </dt>
+                </div>
+              ))}
+            </dl>
+
+            <DetailSection icon={Settings} title="Program details">
+              <div className="space-y-2">
+                <DetailRow label="Duration">
+                  <span className="text-label flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {new Date(exchange.startDate).toLocaleDateString(undefined, {
+                      timeZone: "UTC",
+                    })}{" "}
+                    –{" "}
+                    {new Date(exchange.endDate).toLocaleDateString(undefined, { timeZone: "UTC" })}
+                  </span>
+                </DetailRow>
+                <DetailRow label="Visibility">
+                  <span className="text-label flex items-center gap-1">
+                    {exchange.isPublic !== false ? (
+                      <Eye className="text-label-secondary h-3.5 w-3.5" />
                     ) : (
-                      <>
-                        <ShareAndroid className="h-4 w-4" />
-                        Share
-                      </>
+                      <EyeClosed className="text-label-secondary h-3.5 w-3.5" />
                     )}
-                  </button>
-                  {exchange.status === "planning" && (
+                    {exchange.isPublic !== false ? "Public" : "Private"}
+                  </span>
+                </DetailRow>
+                {exchange.maxParticipants && (
+                  <DetailRow label="Max participants">
+                    <span className="text-label tabular-nums">{exchange.maxParticipants}</span>
+                  </DetailRow>
+                )}
+              </div>
+            </DetailSection>
+
+            {exchange.participatingCountries.length > 0 && (
+              <div className="space-y-3">
+                <SectionHeading icon={MicrophoneSpeaking}>
+                  NPC Responses ({npcResponses?.length || exchange.participatingCountries.length})
+                </SectionHeading>
+                <div className="max-h-64 space-y-2 overflow-y-auto">
+                  {npcResponses && npcResponses.length > 0
+                    ? npcResponses.map((response) => (
+                        <NpcResponseCard key={response.countryId} response={response} />
+                      ))
+                    : exchange.participatingCountries.map((country) => (
+                        <Card variant="well" key={country.id} className="p-3">
+                          <CountryHeader
+                            name={country.name}
+                            flagUrl={country.flagUrl}
+                            badge={
+                              <Badge variant="outline" className="ml-auto capitalize">
+                                {country.role}
+                              </Badge>
+                            }
+                          />
+                          <p className="text-label-secondary text-footnote italic">
+                            Analyzing response…
+                          </p>
+                        </Card>
+                      ))}
+                </div>
+              </div>
+            )}
+
+            {exchange.status === "active" && (
+              <DetailSection icon={Flash} title="Generate scenario">
+                <p className="text-label-secondary text-footnote mb-3">
+                  Create a dynamic cultural exchange scenario with narrative choices and predicted
+                  outcomes
+                </p>
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={props.onGenerateScenario}
+                  disabled={props.isGeneratingScenario}
+                >
+                  <LightBulb className="h-4 w-4" />
+                  {props.isGeneratingScenario ? "Generating…" : "Generate Scenario"}
+                </Button>
+              </DetailSection>
+            )}
+
+            {exchange.culturalArtifacts.length > 0 && (
+              <div className="space-y-3">
+                <SectionHeading icon={Camera}>
+                  Cultural Artifacts ({exchange.culturalArtifacts.length})
+                </SectionHeading>
+                <div className="grid grid-cols-2 gap-2">
+                  {exchange.culturalArtifacts.slice(0, 4).map((artifact) => (
                     <button
-                      onClick={onCancel}
-                      disabled={isCancelling}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-500/20 px-4 py-3 font-medium text-red-400 transition-colors hover:bg-red-500/30 disabled:opacity-50"
+                      key={artifact.id}
+                      type="button"
+                      onClick={() => onViewArtifact?.(artifact.id)}
+                      aria-label={`View ${artifact.title}`}
+                      className="border-separator bg-fill-3 hover:border-ring focus-visible:ring-tint rounded-row flex aspect-square cursor-pointer items-center justify-center overflow-hidden border transition-colors outline-none focus-visible:ring-2"
                     >
-                      {isCancelling ? (
-                        <>
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-400/20 border-t-red-400" />
-                          Cancelling...
-                        </>
+                      {artifact.thumbnailUrl ? (
+                        <img
+                          src={assetUrl(artifact.thumbnailUrl) ?? undefined}
+                          alt={artifact.title}
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
-                        <>
-                          <Xmark className="h-4 w-4" />
-                          Cancel
-                        </>
+                        <Camera className="text-label-secondary h-6 w-6" />
                       )}
                     </button>
-                  )}
-                </>
-              ) : (
-                <button
-                  onClick={onShare}
-                  disabled={isSharing}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-500/20 px-4 py-3 font-medium text-blue-400 transition-colors hover:bg-blue-500/30 disabled:opacity-50"
-                >
-                  {isSharing ? (
-                    <>
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-400/20 border-t-blue-400" />
-                      Sharing...
-                    </>
-                  ) : (
-                    <>
-                      <ShareAndroid className="h-4 w-4" />
-                      Share
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-);
+
+          <ExchangeActions
+            exchange={exchange}
+            isHost={exchange.hostCountry.id === props.primaryCountry.id}
+            props={props}
+          />
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+});
 
 ExchangeDetailsModal.displayName = "ExchangeDetailsModal";

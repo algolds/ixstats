@@ -3,7 +3,7 @@
 
 import type { NameCategory, GenerateOptions } from "./types";
 
-export type LexiconCat =
+type LexiconCat =
   | "country"
   | "city"
   | "province"

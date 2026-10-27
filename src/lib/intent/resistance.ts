@@ -12,7 +12,7 @@
  * governance, security, infrastructure, …). This mapping bridges the two.
  */
 
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { NationalIssuesEngine } from "~/lib/national-issues";
 import { getNationalIssuesConfig } from "~/lib/national-issues";
 import type { Category } from "~/lib/intent/assemble";
@@ -34,7 +34,7 @@ export const INTENT_CATEGORY_TO_TEMPLATE: Record<Category, string[]> = {
   security: ["political", "governance"],
 };
 
-export interface SpawnIntentResistanceParams {
+interface SpawnIntentResistanceParams {
   db: PrismaClient;
   countryId: string;
   intent: {
@@ -42,9 +42,11 @@ export interface SpawnIntentResistanceParams {
     category: string;
     tier: string;
   };
+  /** The nation's clock time (read from its realm when omitted): template cooldowns count on it. */
+  now?: number;
 }
 
-export interface SpawnResistanceForIntentParams extends SpawnIntentResistanceParams {
+interface SpawnResistanceForIntentParams extends SpawnIntentResistanceParams {
   /** Explicit template domain/category tokens to match (cron passes its own policy mapping). */
   tokens: string[];
 }
@@ -62,6 +64,7 @@ export async function spawnResistanceForIntent({
   countryId,
   intent,
   tokens,
+  now: nowMs,
 }: SpawnResistanceForIntentParams): Promise<string | null> {
   if (!tokens || tokens.length === 0) return null;
 
@@ -82,7 +85,7 @@ export async function spawnResistanceForIntent({
   });
   if (templates.length === 0) return null;
 
-  const now = IxTime.getCurrentIxTime();
+  const now = nowMs ?? (await clockForCountry(db, countryId)).now();
 
   for (const template of templates) {
     const [linkedOpen, active, recent] = await Promise.all([
@@ -149,13 +152,14 @@ export async function spawnIntentResistance({
   db,
   countryId,
   intent,
+  now,
 }: SpawnIntentResistanceParams): Promise<string | null> {
   try {
     const config = getNationalIssuesConfig();
     if (config.spawnMode !== "deterministic") return null;
 
     const tokens = INTENT_CATEGORY_TO_TEMPLATE[intent.category as Category];
-    return await spawnResistanceForIntent({ db, countryId, intent, tokens });
+    return await spawnResistanceForIntent({ db, countryId, intent, tokens, now });
   } catch (err) {
     console.warn("[IntentResistance] Spawn failed (never blocks commit):", err);
     return null;

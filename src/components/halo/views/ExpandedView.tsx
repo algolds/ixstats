@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { AnimatePresence } from "motion/react";
-import { DynamicContainer } from "../HaloPrimitives";
+import { HaloContainer } from "../HaloPrimitives";
 import { SearchView } from "./SearchView";
 import { NotificationsView } from "./NotificationsView";
 import { SettingsView } from "./SettingsView";
 import { MyCountryView } from "../plugins/mycountry";
 import type { ExpandedViewProps, DIPlugin } from "../types";
+import { Button } from "~/components/ui/button";
 
 function ExpandedViewComponent({
   mode,
@@ -48,27 +49,24 @@ function ExpandedViewComponent({
       style={{ scrollbarWidth: "thin" }}
     >
       {isImpersonating && (
-        <div className="flex items-center justify-between border-b border-red-500/20 bg-red-500/10 px-4 py-2.5 text-xs text-red-600 dark:text-red-400">
+        <div className="border-red/20 bg-red/10 text-footnote text-red flex items-center justify-between border-b px-4 py-3">
           <div className="flex items-center gap-2 font-medium">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
+              <span className="bg-red absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
+              <span className="bg-red relative inline-flex h-2 w-2 rounded-full"></span>
             </span>
             <span>
               Playing as: <span className="font-mono">{targetUser}</span>
             </span>
           </div>
-          <button
-            onClick={handleStopImpersonating}
-            className="rounded bg-red-600 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-red-700"
-          >
+          <Button type="button" variant="destructive" size="sm" onClick={handleStopImpersonating}>
             Stop
-          </button>
+          </Button>
         </div>
       )}
       <AnimatePresence mode="wait">
         {mode === "search" && (
-          <DynamicContainer key="search" className="w-full">
+          <HaloContainer key="search" className="w-full">
             <SearchView
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
@@ -78,22 +76,22 @@ function ExpandedViewComponent({
               searchResults={searchResults}
               closeDropdown={onClose}
             />
-          </DynamicContainer>
+          </HaloContainer>
         )}
         {mode === "notifications" && (
-          <DynamicContainer key="notifications" className="w-full">
+          <HaloContainer key="notifications" className="w-full">
             <NotificationsView onClose={onClose} />
-          </DynamicContainer>
+          </HaloContainer>
         )}
         {mode === "settings" && (
-          <DynamicContainer key="settings" className="w-full">
+          <HaloContainer key="settings" className="w-full">
             <SettingsView onClose={onClose} />
-          </DynamicContainer>
+          </HaloContainer>
         )}
         {mode === "mycountry" && (
-          <DynamicContainer key="mycountry" className="w-full">
+          <HaloContainer key="mycountry" className="w-full">
             <MyCountryView onClose={onClose} />
-          </DynamicContainer>
+          </HaloContainer>
         )}
 
         {/* Plugin-provided expanded views */}
@@ -104,14 +102,14 @@ function ExpandedViewComponent({
             const PluginView = activePlugin?.expandedViews?.[viewName];
             if (!PluginView) return null;
             return (
-              <DynamicContainer key={mode} className="w-full">
+              <HaloContainer key={mode} className="w-full">
                 <PluginView
                   onClose={onClose}
                   onSwitchMode={onSwitchMode}
                   filter={activePlugin?.filter}
                   context={activePlugin?.context}
                 />
-              </DynamicContainer>
+              </HaloContainer>
             );
           })()}
       </AnimatePresence>

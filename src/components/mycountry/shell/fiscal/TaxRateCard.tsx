@@ -5,37 +5,95 @@ import { Lock, LockSlash as Unlock } from "iconoir-react";
 import { Slider } from "~/components/ui/slider";
 import { CurrencyFlow, PercentageFlow } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
 import {
-  type TaxChannel,
-  ACCENT_BORDER,
-  ACCENT_BG,
-  SLIDER_RANGE_COLOR,
-  SLIDER_THUMB_COLOR,
-} from "./taxChannels";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
+import { type TaxChannel, ACCENT_BG } from "./taxChannels";
+import { Card } from "~/components/ui/card";
+import { RateInput } from "../RateInput";
 
 interface TaxRateCardProps {
   channel: TaxChannel;
-  rate: number;
-  yieldValue: number;
-  totalYield: number;
+  /** The saved or edited rate; null when the nation hasn't set this tax. */
+  rate: number | null;
+  /** True when the rate comes from builder brackets: read-only (top rate) until flattened. */
+  bracketed: boolean;
+  yieldValue: number | null;
+  totalYield: number | null;
   onChange: (value: number) => void;
   onCommit: (value: number) => void;
+}
+
+/** Replaces a bracket list with one flat rate (the top bracket's, within the slider's range). */
+function FlattenBracketsButton({
+  channel,
+  topRate,
+  onConfirm,
+}: {
+  channel: TaxChannel;
+  topRate: number;
+  onConfirm: (flatRate: number) => void;
+}) {
+  const flatRate = Math.min(Math.max(topRate, channel.min), channel.max);
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button type="button" variant="outline" size="sm" className="h-11 sm:h-7">
+          Use one rate
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Replace the brackets with one rate?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {channel.label} becomes a flat {flatRate}%
+            {flatRate === topRate ? ", the top bracket rate" : `, the most this tax allows`}, which
+            you can then change. The bracket list is replaced and cannot be restored here.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Keep brackets</AlertDialogCancel>
+          <AlertDialogAction onClick={() => onConfirm(flatRate)}>Use one rate</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }
 
 function TaxRateCardComponent({
   channel,
   rate,
+  bracketed,
   yieldValue,
   totalYield,
   onChange,
   onCommit,
 }: TaxRateCardProps) {
   const [isLocked, setIsLocked] = useState(true);
-  const contributionPct = totalYield > 0 ? (yieldValue / totalYield) * 100 : 0;
+  // Flattened in this session: editable at once, before the refetched record drops the brackets.
+  const [flattened, setFlattened] = useState(false);
+  const isBracketed = bracketed && !flattened;
+  const contributionPct =
+    yieldValue != null && totalYield != null && totalYield > 0
+      ? (yieldValue / totalYield) * 100
+      : 0;
+  // An unset tax shows "Not set"; its slider starts at the channel minimum.
+  const sliderValue = rate ?? channel.min;
 
   const handleToggleLock = () => {
+    if (isBracketed) return;
     if (!isLocked) {
-      onCommit(rate);
+      if (rate != null) onCommit(rate);
       setIsLocked(true);
     } else {
       setIsLocked(false);
@@ -43,88 +101,118 @@ function TaxRateCardComponent({
   };
 
   return (
-    <div
-      className={cn(
-        "bg-muted/10 relative space-y-2.5 rounded-xl border p-3 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-        isLocked
-          ? (ACCENT_BORDER[channel.accent] ?? "border-border/30")
-          : "border-amber-500/50 bg-amber-500/[0.03] ring-1 ring-amber-500/30"
-      )}
-    >
+    <Card className={cn("rounded-row space-y-2 p-3", !isLocked && "ring-yellow/50 ring-1")}>
       {/* Header: lock toggle + label + rate */}
-      <div className="flex items-center justify-between pt-0.5">
-        <div className="flex items-center gap-2">
-          <button
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={handleToggleLock}
+            disabled={isBracketed}
+            aria-pressed={!isLocked}
+            aria-label={
+              isBracketed
+                ? `${channel.label} is set by tax brackets`
+                : isLocked
+                  ? `Edit ${channel.label} rate`
+                  : `Save and lock ${channel.label} rate`
+            }
             title={
-              isLocked
-                ? "Locked (Saved) — click to edit rate"
-                : "Editing — click to save & lock rate"
+              isBracketed
+                ? "Set by tax brackets"
+                : isLocked
+                  ? "Locked. Click to edit the rate"
+                  : "Editing. Click to save and lock the rate"
             }
             className={cn(
-              "flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
-              isLocked
-                ? "border-border/40 bg-muted/30 text-muted-foreground/70 hover:border-border/70 hover:text-foreground"
-                : "border-amber-500/50 bg-amber-500/20 text-amber-400 shadow-xs shadow-amber-500/30"
+              "h-11 w-11 shrink-0 sm:h-7 sm:w-7",
+              isLocked ? "text-label-secondary" : "text-tint"
             )}
           >
-            {isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
-          </button>
-          <span className="text-muted-foreground text-xs font-semibold">{channel.label}</span>
+            {isLocked ? <Lock aria-hidden="true" /> : <Unlock aria-hidden="true" />}
+          </Button>
+          <span
+            aria-hidden="true"
+            className={cn("h-2 w-2 shrink-0 rounded-full", ACCENT_BG[channel.accent])}
+          />
+          <span className="text-label text-caption truncate">{channel.label}</span>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {!isLocked && (
-            <span className="text-xs font-semibold tracking-wider text-amber-400 uppercase">
-              Editing
+        <div className="flex shrink-0 items-center gap-2">
+          {!isLocked && <span className="text-tint text-footnote">Editing</span>}
+          {rate != null ? (
+            <span className="text-label text-title-3 tabular-nums">
+              {isBracketed && <span className="text-label-secondary text-footnote mr-1">Top</span>}
+              <PercentageFlow value={rate} decimalPlaces={1} />
             </span>
+          ) : (
+            <Badge variant="warning">Not set</Badge>
           )}
-          <span className={cn("font-mono text-base font-bold tabular-nums", channel.accentClass)}>
-            <PercentageFlow value={rate} decimalPlaces={1} />
-          </span>
         </div>
       </div>
 
-      {/* Radix Slider */}
+      {/* Rate slider */}
       <div
         className={cn(
-          "relative transition-opacity duration-200",
-          isLocked && "pointer-events-none opacity-50"
+          "flex items-center gap-3 transition-opacity duration-200",
+          isLocked && "opacity-50"
         )}
       >
         <Slider
           min={channel.min}
           max={channel.max}
           step={channel.step}
-          value={[rate]}
+          value={[sliderValue]}
           disabled={isLocked}
           onValueChange={([v]) => v !== undefined && onChange(v)}
           onValueCommit={([v]) => v !== undefined && onCommit(v)}
-          className={cn(
-            "w-full",
-            SLIDER_RANGE_COLOR[channel.accent],
-            SLIDER_THUMB_COLOR[channel.accent]
-          )}
+          aria-label={`${channel.label} rate`}
+          className="w-full"
+        />
+        <RateInput
+          value={sliderValue}
+          min={channel.min}
+          max={channel.max}
+          step={channel.step}
+          disabled={isLocked}
+          onCommit={onCommit}
+          aria-label={`${channel.label} rate, percent`}
         />
       </div>
 
-      {/* Internal Weight Progress Bar */}
-      <div className="bg-muted/20 h-1 w-full overflow-hidden rounded-full">
+      {/* Share of total revenue (keyed to the revenue composition chart colour) */}
+      <div className="bg-fill-3 h-1 w-full overflow-hidden rounded-full">
         <div
-          className={cn("h-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 ease-out", ACCENT_BG[channel.accent])}
+          className={cn("h-full rounded-full", ACCENT_BG[channel.accent])}
           style={{ width: `${Math.min(contributionPct, 100)}%` }}
         />
       </div>
 
+      {isBracketed && rate != null && (
+        <div className="text-footnote flex flex-wrap items-center justify-between gap-2">
+          <span className="text-label-secondary">Set by tax brackets</span>
+          <FlattenBracketsButton
+            channel={channel}
+            topRate={rate}
+            onConfirm={(flatRate) => {
+              setFlattened(true);
+              setIsLocked(false);
+              onCommit(flatRate);
+            }}
+          />
+        </div>
+      )}
+
       {/* Yield preview */}
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground font-medium">Yield Contribution</span>
-        <span className={cn("font-mono font-bold", channel.accentClass)}>
-          <CurrencyFlow value={yieldValue} decimalPlaces={1} className={channel.accentClass} />
+      <div className="text-footnote flex items-center justify-between gap-2">
+        <span className="text-label-secondary">Yield contribution</span>
+        <span className="text-label font-semibold tabular-nums">
+          {yieldValue != null ? <CurrencyFlow value={yieldValue} decimalPlaces={1} /> : "—"}
         </span>
       </div>
-    </div>
+    </Card>
   );
 }
 

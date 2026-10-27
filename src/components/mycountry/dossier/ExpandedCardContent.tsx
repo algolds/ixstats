@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
 import { FadeIn } from "~/components/ui/text-reveal";
-import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useRouter } from "next/navigation";
-import { cn, createUrl } from "~/lib/utils";
+import Link from "next/link";
+import { cn } from "~/lib/utils";
 import {
   UserPlus,
   UserXmark as UserMinus,
@@ -18,12 +17,17 @@ import {
   Tournament as Swords,
   SystemRestart as Loader2,
   Globe,
-  OpenNewWindow as ExternalLink,
+  NavArrowRight,
   Crown,
   Calendar,
 } from "iconoir-react";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
 import { type CountryCardData } from "./CountryFocusCard";
+import { useCountryDiplomacyActions, type ForeignPolicyType } from "./useCountryDiplomacyActions";
 
 interface ExpandedCardContentProps {
   country: CountryCardData;
@@ -31,8 +35,6 @@ interface ExpandedCardContentProps {
   isOwnCountry: boolean;
   onCountryClick?: (countryId: string, countryName: string) => void;
 }
-
-type ForeignPolicyType = "free_trade" | "military_alliance" | "sanction" | "embargo";
 
 export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
   ({ country, viewerCountryId, isOwnCountry }) => {
@@ -42,82 +44,25 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
     const targetCountryName = country.name;
     const [schedulerOpen, setSchedulerOpen] = useState(false);
 
-    // Follow status query - only when viewer has a country and it's not their own
-    const { data: followStatus, refetch: refetchFollowStatus } =
-      api.diplomaticCore.getFollowStatus.useQuery(
-        {
-          viewerCountryId: viewerCountryId || "",
-          targetCountryId,
-        },
-        {
-          enabled: !!viewerCountryId && !isOwnCountry,
-        }
-      );
-
-    const followMutation = api.diplomaticCore.followCountry.useMutation({
-      onSuccess: () => {
-        notify.success(`Now following ${targetCountryName}`);
-        void refetchFollowStatus();
-      },
-      onError: (error) => notify.error(`Failed to follow: ${error.message}`),
-    });
-
-    const unfollowMutation = api.diplomaticCore.unfollowCountry.useMutation({
-      onSuccess: () => {
-        notify.success(`Unfollowed ${targetCountryName}`);
-        void refetchFollowStatus();
-      },
-      onError: (error) => notify.error(`Failed to unfollow: ${error.message}`),
-    });
-
-    const establishEmbassyMutation = api.diplomaticEmbassies.establishEmbassy.useMutation({
-      onSuccess: () => {
-        notify.success(`Embassy construction initiated with ${targetCountryName}`);
-      },
-      onError: (error) => notify.error(`Failed to establish embassy: ${error.message}`),
-    });
-
-    const foreignPolicyMutation = api.diplomaticPolicies.proposeForeignPolicyAction.useMutation({
-      onSuccess: (_, variables) => {
-        const labels: Record<string, string> = {
-          free_trade: "Free trade agreement",
-          military_alliance: "Military alliance",
-          sanction: "Sanctions",
-          embargo: "Trade embargo",
-        };
-        notify.success(
-          `${labels[variables.actionType] ?? "Action"} proposed to ${targetCountryName}`
-        );
-      },
-      onError: (error) => notify.error(`Failed: ${error.message}`),
+    const diplomacy = useCountryDiplomacyActions({
+      viewerCountryId,
+      targetCountryId,
+      targetCountryName,
+      followStatusEnabled: !!viewerCountryId && !isOwnCountry,
     });
 
     const handleFollowToggle = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!viewerCountryId) {
-          notify.error("You must be logged in to follow countries");
-          return;
-        }
-        if (followStatus?.isFollowing) {
-          unfollowMutation.mutate({
-            followerCountryId: viewerCountryId,
-            followedCountryId: targetCountryId,
-          });
-        } else {
-          followMutation.mutate({
-            followerCountryId: viewerCountryId,
-            followedCountryId: targetCountryId,
-          });
-        }
+        diplomacy.toggleFollow();
       },
-      [viewerCountryId, followStatus, targetCountryId, followMutation, unfollowMutation, notify]
+      [diplomacy.toggleFollow]
     );
 
     const handleSendMessage = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
-        router.push(createUrl(`/messages?country=${targetCountryId}`));
+        router.push(`/messages?country=${targetCountryId}`);
       },
       [router, targetCountryId]
     );
@@ -125,93 +70,57 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
     const handleEstablishEmbassy = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!viewerCountryId) {
-          notify.error("You must be logged in to establish embassies");
-          return;
-        }
-        establishEmbassyMutation.mutate({
-          hostCountryId: targetCountryId,
-          guestCountryId: viewerCountryId,
-          name: `Embassy in ${targetCountryName}`,
-          location: "Capital District",
-        });
+        diplomacy.establishEmbassy();
       },
-      [viewerCountryId, targetCountryId, targetCountryName, establishEmbassyMutation, notify]
+      [diplomacy.establishEmbassy]
     );
 
     const handleForeignPolicy = useCallback(
       (e: React.MouseEvent, actionType: ForeignPolicyType) => {
         e.stopPropagation();
-        if (!viewerCountryId) {
-          notify.error("You must be logged in to propose foreign policy");
-          return;
-        }
-        foreignPolicyMutation.mutate({
-          targetId: targetCountryId,
-          actionType,
-          severity: "moderate",
-        });
+        diplomacy.proposeForeignPolicy(actionType);
       },
-      [viewerCountryId, targetCountryId, foreignPolicyMutation, notify]
+      [diplomacy.proposeForeignPolicy]
     );
 
     const handleGoToMyCountry = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
-        router.push(createUrl("/mycountry"));
+        router.push("/mycountry");
       },
       [router]
     );
 
-    const isLoading =
-      followMutation.isPending ||
-      unfollowMutation.isPending ||
-      establishEmbassyMutation.isPending ||
-      foreignPolicyMutation.isPending;
+    const isLoading = diplomacy.isPending;
 
-    const buttonClass = (extra = "") =>
-      cn(
-        "flex w-full items-center gap-2.5 rounded-xl border border-border/70 bg-muted/40 px-3.5 py-2.5 text-xs font-semibold text-foreground shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-muted/80 hover:border-border active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40",
-        extra
-      );
+    // Action rows: Facet `Button`s at the large (44px) size, label-aligned.
+    const actionClass = "w-full justify-start";
 
     return (
-      <div className="relative min-h-[320px] w-full bg-card/95 p-4 text-card-foreground backdrop-blur-2xl dark:bg-slate-950/95 sm:p-5">
+      <div className="bg-surface text-label relative min-h-[320px] w-full p-4 sm:p-5">
         <div className="relative z-10 space-y-4">
           {/* Header */}
           <FadeIn direction="up" delay={0.1}>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                Country Actions
-              </span>
-              {country.continent && (
-                <span className="rounded-full border border-border/80 bg-muted/60 px-2.5 py-0.5 text-xs font-semibold text-foreground">
-                  {country.continent}
-                </span>
-              )}
-              {country.region && (
-                <span className="rounded-full border border-border/80 bg-muted/30 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                  {country.region}
-                </span>
-              )}
+              <Eyebrow>Country actions</Eyebrow>
+              {country.continent && <Badge variant="default">{country.continent}</Badge>}
+              {country.region && <Badge variant="outline">{country.region}</Badge>}
             </div>
           </FadeIn>
 
           {/* Own Country Action */}
           {isOwnCountry && (
             <FadeIn direction="up" delay={0.15}>
-              <motion.button
+              <Button
+                type="button"
                 onClick={handleGoToMyCountry}
-                data-cuelume-press="tick"
-                className={buttonClass(
-                  "border-transparent bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
-                )}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
+                variant="default"
+                size="lg"
+                className={actionClass}
               >
                 <Crown className="h-4 w-4" />
-                Go to MyCountry Dashboard
-              </motion.button>
+                Go to MyCountry dashboard
+              </Button>
             </FadeIn>
           )}
 
@@ -219,64 +128,63 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
           {!isOwnCountry && (
             <div className="space-y-4">
               {/* Social */}
-              <div className="space-y-1.5">
-                <p className="px-1 text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                  Social
-                </p>
+              <div className="space-y-2">
+                <Eyebrow className="block px-1">Social</Eyebrow>
                 <div className="grid grid-cols-2 gap-2">
-                  <button
+                  <Button
+                    type="button"
                     onClick={handleFollowToggle}
                     disabled={!viewerCountryId || isLoading}
-                    data-cuelume-press="tick"
-                    className={buttonClass(
-                      followStatus?.isFollowing
-                        ? "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20"
-                        : "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300 hover:bg-blue-500/20"
-                    )}
+                    variant="outline"
+                    size="lg"
+                    className={cn(actionClass, diplomacy.isFollowing && "text-destructive")}
                   >
-                    {followMutation.isPending || unfollowMutation.isPending ? (
+                    {diplomacy.isFollowPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : followStatus?.isFollowing ? (
-                      <UserMinus className="h-3.5 w-3.5 text-destructive" />
+                    ) : diplomacy.isFollowing ? (
+                      <UserMinus className="text-destructive h-3.5 w-3.5" />
                     ) : (
-                      <UserPlus className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
+                      <UserPlus className="text-label-secondary h-3.5 w-3.5" />
                     )}
-                    {followStatus?.isFollowing ? "Unfollow" : "Follow"}
-                  </button>
+                    {diplomacy.isFollowing ? "Unfollow" : "Follow"}
+                  </Button>
 
-                  <button
+                  <Button
+                    type="button"
                     onClick={handleSendMessage}
                     disabled={!viewerCountryId}
-                    data-cuelume-press="tick"
-                    className={buttonClass()}
+                    variant="outline"
+                    size="lg"
+                    className={actionClass}
                   >
-                    <MessageSquare className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    <MessageSquare className="text-label-secondary h-3.5 w-3.5" />
                     Message
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               {/* Diplomacy */}
-              <div className="space-y-1.5">
-                <p className="px-1 text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                  Diplomacy
-                </p>
+              <div className="space-y-2">
+                <Eyebrow className="block px-1">Diplomacy</Eyebrow>
                 <div className="flex flex-col gap-2">
-                  <button
+                  <Button
+                    type="button"
                     onClick={handleEstablishEmbassy}
                     disabled={!viewerCountryId || isLoading}
-                    data-cuelume-press="tick"
-                    className={buttonClass()}
+                    variant="outline"
+                    size="lg"
+                    className={actionClass}
                   >
-                    {establishEmbassyMutation.isPending ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-600 dark:text-amber-400" />
+                    {diplomacy.isEmbassyPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Building2 className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                      <Building2 className="text-label-secondary h-3.5 w-3.5" />
                     )}
                     Construct Embassy
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (!viewerCountryId) {
@@ -286,92 +194,90 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                       setSchedulerOpen(true);
                     }}
                     disabled={!viewerCountryId || isLoading}
-                    data-cuelume-press="tick"
-                    className={buttonClass()}
+                    variant="outline"
+                    size="lg"
+                    className={actionClass}
                   >
-                    <Calendar className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-                    Request Meeting
-                  </button>
+                    <Calendar className="text-label-secondary h-3.5 w-3.5" />
+                    Request meeting
+                  </Button>
 
                   <div className="grid grid-cols-2 gap-2">
-                    <button
+                    <Button
+                      type="button"
                       onClick={(e) => handleForeignPolicy(e, "free_trade")}
                       disabled={!viewerCountryId || isLoading}
-                      data-cuelume-press="tick"
-                      className={buttonClass()}
+                      variant="outline"
+                      size="lg"
+                      className={actionClass}
                     >
-                      <Handshake className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                      Free Trade
-                    </button>
+                      <Handshake className="text-label-secondary h-3.5 w-3.5" />
+                      Free trade
+                    </Button>
 
-                    <button
+                    <Button
+                      type="button"
                       onClick={(e) => handleForeignPolicy(e, "military_alliance")}
                       disabled={!viewerCountryId || isLoading}
-                      data-cuelume-press="tick"
-                      className={buttonClass()}
+                      variant="outline"
+                      size="lg"
+                      className={actionClass}
                     >
-                      <Shield className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                      <Shield className="text-label-secondary h-3.5 w-3.5" />
                       Alliance
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
 
               {/* Foreign Policy (Sanctions & Embargo) */}
-              <div className="space-y-1.5">
-                <p className="px-1 text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                  Foreign Policy
-                </p>
+              <div className="space-y-2">
+                <Eyebrow className="block px-1">Foreign policy</Eyebrow>
                 <div className="grid grid-cols-2 gap-2">
-                  <button
+                  <Button
+                    type="button"
                     onClick={(e) => handleForeignPolicy(e, "sanction")}
                     disabled={!viewerCountryId || isLoading}
-                    data-cuelume-press="tick"
-                    className={buttonClass(
-                      "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:border-destructive/40"
-                    )}
+                    variant="outline"
+                    size="lg"
+                    className={cn(actionClass, "text-destructive")}
                   >
-                    <Scale className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    <Scale className="text-label-secondary h-3.5 w-3.5" />
                     Sanctions
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
+                    type="button"
                     onClick={(e) => handleForeignPolicy(e, "embargo")}
                     disabled={!viewerCountryId || isLoading}
-                    data-cuelume-press="tick"
-                    className={buttonClass(
-                      "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:border-destructive/40"
-                    )}
+                    variant="outline"
+                    size="lg"
+                    className={cn(actionClass, "text-destructive")}
                   >
-                    <Swords className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+                    <Swords className="text-label-secondary h-3.5 w-3.5" />
                     Embargo
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               {/* Quick Links */}
-              <div className="space-y-1.5">
-                <p className="px-1 text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                  Quick Links
-                </p>
-                <a
-                  href={`/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`}
-                  onClick={(e) => e.stopPropagation()}
-                  data-cuelume-press="tick"
-                  className={buttonClass()}
-                >
-                  <Globe className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                  View on IxWiki
-                  <ExternalLink className="ml-auto h-3 w-3 text-muted-foreground" />
-                </a>
+              <div className="space-y-2">
+                <Eyebrow className="block px-1">Quick links</Eyebrow>
+                <Button asChild variant="outline" size="lg" className={actionClass}>
+                  <Link href={wikiReaderPath(country.name)} onClick={(e) => e.stopPropagation()}>
+                    <Globe className="text-label-secondary h-3.5 w-3.5" />
+                    View on the wiki
+                    <NavArrowRight className="text-label-secondary ml-auto h-3 w-3" />
+                  </Link>
+                </Button>
               </div>
             </div>
           )}
 
           {/* Login warning */}
           {!viewerCountryId && !isOwnCountry && (
-            <div className="mt-3 border-t border-border/60 pt-3">
-              <p className="text-center text-xs font-medium text-muted-foreground">
+            <div className="border-separator mt-3 border-t pt-3">
+              <p className="text-label-secondary text-caption text-center">
                 Login required to perform actions
               </p>
             </div>

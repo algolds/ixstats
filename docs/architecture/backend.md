@@ -1,7 +1,9 @@
 # Backend Architecture
 
+**Last updated:** 2026-10-05
+
 **Framework**: tRPC 11.18.0 · Prisma 6.19.3 · Next.js 16 route handlers + custom Node `http` server (`server.mjs`) · TypeScript 7.0.2  
-**Location**: `src/server/api/` (77 routers registered in `root.ts`, ~900 procedures — see [`api-complete.md`](../reference/api-complete.md)) · `src/server/db.ts` · `src/server/shared/`
+**Location**: `src/server/api/` (<!-- BEGIN_DOCS:COUNT:routers -->79<!-- END_DOCS:COUNT:routers --> routers registered in `root.ts`, <!-- BEGIN_DOCS:COUNT:procedures -->1,081<!-- END_DOCS:COUNT:procedures --> procedures — the generated count is in [`api-complete.md`](../reference/api-complete.md)) · `src/server/db.ts` · `src/server/shared/`
 
 ---
 
@@ -15,7 +17,7 @@ src/server/
 ├── shared/                           # Shared cross-router primitives (layer-cache, helpers)
 └── api/
     ├── trpc/                         # tRPC context, middleware, and procedure builders (index.ts re-exports)
-    ├── root.ts                       # Master appRouter composing all 77 routers
+    ├── root.ts                       # Master appRouter composing every router
     └── routers/                      # Domain routers (flat or subdir-organized)
         ├── countries/                # Countries router (crud, metrics, forecasts, search)
         ├── government/               # Government structure, departments, cabinet, legislation
@@ -55,12 +57,14 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
 | Builder | Access Level | Description |
 | :--- | :--- | :--- |
 | **`publicProcedure`** | Unauthenticated | Open to public queries (cached reads, public stats, factbook data). |
-| **`cachedPublicProcedure`** | Public + Cache | Realm-aware response cache, 60s TTL (`cachedStaticProcedure`: 1h; `cachedProtectedProcedure`: 30s per user). TTLs live in `src/lib/cache/trpc-cache.ts`. |
+| **`cachedPublicProcedure`** | Public + Cache | Realm-aware response cache, 60s TTL (`cachedStaticProcedure`: 1h). There is no cached protected builder: per-user caching is `.use(userCacheMiddleware)` (30s) on a protected procedure. TTLs live in `cacheConfigs` in `src/lib/cache/trpc-cache.ts`. |
 | **`rateLimitedPublicProcedure`** | Public + Rate Limit | Public procedure with the public rate-limit bucket. |
-| **`protectedProcedure`** | Authenticated User | Requires valid Clerk session; guarantees `ctx.auth.userId` and `ctx.user` are non-null. Variants: `lightMutationProcedure`, `readOnlyProcedure` (rate-limited). |
+| **`protectedProcedure`** | Authenticated User | Requires valid Clerk session; guarantees `ctx.auth.userId` and `ctx.user` are non-null. Variant: `lightMutationProcedure` (rate-limited mutations). |
 | **`countryOwnerProcedure`** | Country Owner | Authenticated + owns the target country (`standardMutationCountryOwnerProcedure` adds rate limiting and input validation). |
 | **`premiumProcedure`** | Premium User | Authenticated + premium membership. |
 | **`adminProcedure`** | System Owner / Admin | System owner bypass, else role name `owner`/`admin`/`staff` or role level ≤ 20; blocked while impersonating (play-as). Adds rate limiting and audit logging. |
+
+Every builder starts with `playAsMoneyMiddleware`: while an admin plays as another user, a mutation on a `PLAY_AS_MONEY_ROUTES` path (`src/server/api/trpc/impersonation.ts`: the Vault, cards, packs, market, workshop, trades, the Exchange, NS imports, achievement payouts and the Sovereign moves in sports) is refused with `FORBIDDEN`; reads stay allowed.
 
 ---
 
@@ -101,7 +105,7 @@ When multiple routers need to share common server-side logic (caching, batching,
 - **`layer-cache.ts`**: In-memory cache for assembled map FeatureCollections (populated by the geo router, invalidated by the countries router).
 - **`country-helpers.ts`**: Shared numeric/field validation helpers for country data.
 - **`country-authorization.ts`**: Shared country write-permission checks (`COUNTRY_WRITE_ROLES`).
-- **`realm-link-guard.ts`**, **`geo-resource-sync.ts`**, **`transport-sync.ts`**, **`mycountry-helpers.ts`**: other cross-domain helpers.
+- **`realm-link-guard.ts`**, **`geo-resource-sync.ts`**, **`mycountry-helpers.ts`**: other cross-domain helpers.
 
 The tRPC response cache (key generation + TTLs for `cachedPublicProcedure` and friends) lives in `src/lib/cache/trpc-cache.ts`, not under `src/server/shared/`.
 

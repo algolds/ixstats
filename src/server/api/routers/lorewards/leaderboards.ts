@@ -6,8 +6,28 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
+import { findEntriesNewestFirst } from "~/lib/lorewards/entry-feed";
 
 export const lorewardsLeaderboardsRouter = createTRPCRouter({
+  /** The all-time standings: the top wiki users by total Loreward score. */
+  getStandings: publicProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(50).default(10) }))
+    .query(async ({ ctx, input }) => {
+      const top = await ctx.db.lorewardUserStats.findMany({
+        orderBy: [{ totalScore: "desc" }, { username: "asc" }],
+        take: input.limit,
+      });
+      return top.map((s, i) => ({
+        rank: i + 1,
+        username: s.username,
+        totalScore: s.totalScore,
+        dailyWins: s.dailyWins,
+        weeklyWins: s.weeklyWins,
+        monthlyWins: s.monthlyWins,
+        currentStreak: s.currentStreak,
+      }));
+    }),
+
   /** Stats for a specific user. */
   getUserStats: publicProcedure
     .input(z.object({ username: z.string().min(1).max(200) }))
@@ -75,18 +95,17 @@ export const lorewardsLeaderboardsRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const entries = await db.lorewardEntry.findMany({
-        where: {
+      const entries = await findEntriesNewestFirst(
+        db,
+        {
           OR: [
             { winnerUser: { equals: input.username, mode: "insensitive" } },
             { runnerUpUser: { equals: input.username, mode: "insensitive" } },
           ],
           status: "approved",
         },
-        orderBy: { date: "desc" },
-        take: input.limit,
-        skip: input.offset,
-      });
+        { take: input.limit, skip: input.offset }
+      );
 
       const total = await db.lorewardEntry.count({
         where: {

@@ -4,19 +4,49 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import { Undo as RotateCcw } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUserCountry } from "~/hooks/useUserCountry";
+import { usePaidActionRequestId } from "~/components/sports/core/usePaidActionRequestId";
 import { generateTeamRoster, generateCoach, type SportPresetKey } from "~/lib/sports";
+import { LeagueSeasonPicker } from "./LeagueSeasonPicker";
 import { getPlayerOverall } from "../sports-labs-utils";
+
+function PlayerRow({
+  player,
+}: {
+  player: {
+    firstName: string;
+    lastName: string;
+    position: string;
+    age: number;
+    careerStage: string;
+    ratings: Parameters<typeof getPlayerOverall>[0];
+  };
+}) {
+  return (
+    <div className="rounded-control-sm text-footnote flex items-center justify-between border p-2">
+      <div>
+        <p className="font-semibold">
+          {player.firstName} {player.lastName}
+        </p>
+        <p className="text-label-secondary text-footnote flex items-center gap-1">
+          <PositionTooltip position={player.position}>
+            <span className="hover:text-label cursor-help font-medium transition-colors">
+              {player.position}
+            </span>
+          </PositionTooltip>{" "}
+          &middot; Age {player.age} &middot; {player.careerStage}
+        </p>
+      </div>
+      <Badge variant="outline" className="font-semibold tabular-nums">
+        {getPlayerOverall(player.ratings)}
+      </Badge>
+    </div>
+  );
+}
 
 interface RostersInspectorNodeProps {
   isSandbox: boolean;
@@ -41,7 +71,6 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
   const [selectedSaint, setSelectedSaint] = useState("Saint Rais");
 
   // DB queries
-  const { data: dbLeagues } = api.sports.getLeagues.useQuery({});
   const { data: dbLeague } = api.sports.getLeague.useQuery(
     { id: selectedLeagueId },
     { enabled: !!selectedLeagueId }
@@ -54,8 +83,10 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
   const { userProfile } = useUserCountry();
   const isOwner = dbTeam && userProfile && dbTeam.ownerUserId === userProfile.id;
 
+  const saintRequest = usePaidActionRequestId();
   const invokeSaintMutation = api.sports.invokePatronSaint.useMutation({
     onSuccess: () => {
+      saintRequest.done();
       alert("Patron Saint successfully invoked! Blessing created.");
       void refetchTeam();
     },
@@ -66,7 +97,11 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
 
   const handleInvokeSaint = () => {
     if (!dbTeam) return;
-    invokeSaintMutation.mutate({ teamId: dbTeam.id, saintName: selectedSaint });
+    invokeSaintMutation.mutate({
+      teamId: dbTeam.id,
+      saintName: selectedSaint,
+      requestId: saintRequest.idFor(`${dbTeam.id}:${selectedSaint}`),
+    });
   };
 
   const handleGenerateRoster = () => {
@@ -81,28 +116,28 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
       <div className="space-y-4">
         <div className="flex gap-2">
           <div className="flex-1 space-y-1">
-            <Label>Generator Seed</Label>
+            <Label>Generator seed</Label>
             <Input
               type="number"
               value={seed}
               onChange={(e) => setSeed(parseInt(e.target.value) || 0)}
             />
           </div>
-          <Button className="mt-6 gap-1.5" onClick={handleGenerateRoster}>
+          <Button className="mt-6 gap-2" onClick={handleGenerateRoster}>
             <RotateCcw className="h-4 w-4" />
             Generate
           </Button>
         </div>
 
         {mockCoach && (
-          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs">
-            <p className="font-semibold text-emerald-400">
+          <div className="rounded-control border-green/20 bg-green/5 text-footnote border p-3">
+            <p className="text-green font-semibold">
               Head Coach: {mockCoach.firstName} {mockCoach.lastName}
             </p>
-            <p className="text-muted-foreground text-xs capitalize">
+            <p className="text-label-secondary text-footnote capitalize">
               {mockCoach.role} &middot; Age {mockCoach.age} &middot; {mockCoach.careerStage}
             </p>
-            <div className="mt-2 grid grid-cols-2 gap-1.5 font-mono text-xs">
+            <div className="text-footnote mt-2 grid grid-cols-2 gap-2 tabular-nums">
               <div>Strat: {mockCoach.ratings.strategy}</div>
               <div>Dev: {mockCoach.ratings.development}</div>
             </div>
@@ -111,36 +146,15 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
 
         {mockRoster.length > 0 ? (
           <div className="thin-scrollbar max-h-[300px] space-y-2 overflow-y-auto pr-1">
-            <p className="text-muted-foreground text-xs">{mockRoster.length} Players Generated</p>
-            {mockRoster.map((p, i) => {
-              const overall = getPlayerOverall(p.ratings);
-              return (
-                <div
-                  key={i}
-                  className="flex items-center justify-between rounded border p-2 text-xs"
-                >
-                  <div>
-                    <p className="font-semibold">
-                      {p.firstName} {p.lastName}
-                    </p>
-                    <p className="text-muted-foreground flex items-center gap-1 text-xs">
-                      <PositionTooltip position={p.position}>
-                        <span className="hover:text-foreground cursor-help font-medium transition-colors">
-                          {p.position}
-                        </span>
-                      </PositionTooltip>{" "}
-                      &middot; Age {p.age} &middot; {p.careerStage}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="font-bold">
-                    {overall}
-                  </Badge>
-                </div>
-              );
-            })}
+            <p className="text-label-secondary text-footnote">
+              {mockRoster.length} Players Generated
+            </p>
+            {mockRoster.map((p, i) => (
+              <PlayerRow key={i} player={p} />
+            ))}
           </div>
         ) : (
-          <p className="text-muted-foreground py-6 text-center text-xs">
+          <p className="text-label-secondary text-footnote py-6 text-center">
             Click Generate to build a sandbox roster.
           </p>
         )}
@@ -151,97 +165,64 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
   // DB Mode
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
-        <Label>Select League</Label>
-        <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
-          <SelectTrigger>
-            <SelectValue placeholder="Choose league" />
-          </SelectTrigger>
-          <SelectContent>
-            {dbLeagues?.map((l) => (
-              <SelectItem key={l.id} value={l.id}>
-                {l.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <LeagueSeasonPicker
+        selectedLeagueId={selectedLeagueId}
+        setSelectedLeagueId={setSelectedLeagueId}
+      />
 
       {dbLeague && (
-        <div className="space-y-1.5">
-          <Label>Select Team</Label>
-          <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose team" />
-            </SelectTrigger>
-            <SelectContent>
-              {dbLeague.teams?.map((t) => (
-                <SelectItem key={t.id} value={t.id}>
-                  {t.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="space-y-2">
+          <Label>Select team</Label>
+          <ValueSelect
+            value={selectedTeamId}
+            onValueChange={setSelectedTeamId}
+            options={dbLeague.teams?.map((t) => [t.id, t.name] as const) ?? []}
+            placeholder="Choose team"
+          />
         </div>
       )}
 
       {dbTeam && (
         <div className="space-y-3">
-          <div className="bg-muted/40 relative overflow-hidden rounded-lg border p-3 text-xs">
-            <h5 className="text-foreground font-bold">{dbTeam.name}</h5>
-            <p className="text-muted-foreground text-xs">
+          <div className="bg-fill-3 rounded-control text-footnote relative overflow-hidden border p-3">
+            <h5 className="text-label font-semibold">{dbTeam.name}</h5>
+            <p className="text-label-secondary text-footnote">
               {dbTeam.shortName} &middot; HSL Color: {dbTeam.color}
             </p>
             {dbTeam.coaches && dbTeam.coaches.length > 0 && (
-              <p className="mt-1 font-semibold text-cyan-400">
+              <p className="text-teal mt-1 font-semibold">
                 Head Coach: {dbTeam.coaches[0]?.firstName} {dbTeam.coaches[0]?.lastName}
               </p>
             )}
             {(dbTeam as any).patronSaint && (
-              <p className="mt-1.5 flex items-center gap-1 font-semibold text-amber-400">
-                🙏 Patron Saint:{" "}
-                <Badge
-                  variant="secondary"
-                  className="border-amber-500/20 bg-amber-500/10 text-xs text-amber-400"
-                >
-                  {(dbTeam as any).patronSaint}
-                </Badge>
+              <p className="text-yellow mt-2 flex items-center gap-1 font-semibold">
+                🙏 Patron Saint: <Badge variant="warning">{(dbTeam as any).patronSaint}</Badge>
               </p>
             )}
           </div>
 
           {isOwner && (
-            <Card className="border-amber-500/20 bg-amber-500/5 backdrop-blur-md">
+            <Card className="border-yellow/20 bg-yellow/5 flex flex-col gap-6 py-6">
               <CardContent className="space-y-2 p-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold tracking-wider text-amber-400 uppercase">
-                    Patron Saint Ritual (Cost: ₷100)
-                  </p>
-                  <Badge
-                    variant="outline"
-                    className="border-amber-500/30 text-xs text-amber-300"
-                  >
-                    BLESSING BOOST: +5 ELO
-                  </Badge>
+                  <p className="text-eyebrow text-yellow">Patron Saint Ritual (Cost: ₷100)</p>
+                  <Badge variant="warning">BLESSING BOOST: +5 ELO</Badge>
                 </div>
                 <div className="flex gap-2">
-                  <Select value={selectedSaint} onValueChange={setSelectedSaint}>
-                    <SelectTrigger className="bg-background/50 h-8 border-amber-500/20 text-xs">
-                      <SelectValue placeholder="Select Saint" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Saint Rais">Saint Rais (Light Blessing)</SelectItem>
-                      <SelectItem value="Saint Inonsia">
-                        Saint Inonsia (Fortitude Blessing)
-                      </SelectItem>
-                      <SelectItem value="Saint Magador">
-                        Saint Magador (Victory Blessing)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <ValueSelect
+                    value={selectedSaint}
+                    onValueChange={setSelectedSaint}
+                    options={[
+                      ["Saint Rais", "Saint Rais (Light Blessing)"],
+                      ["Saint Inonsia", "Saint Inonsia (Fortitude Blessing)"],
+                      ["Saint Magador", "Saint Magador (Victory Blessing)"],
+                    ]}
+                    size="sm"
+                    placeholder="Select saint"
+                  />
                   <Button
                     size="sm"
-                    className="h-8 shrink-0 bg-amber-500 px-3 text-xs font-bold text-black hover:bg-amber-600"
+                    className="shrink-0"
                     onClick={handleInvokeSaint}
                     disabled={invokeSaintMutation.isPending}
                   >
@@ -252,36 +233,13 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
             </Card>
           )}
 
-          <div className="thin-scrollbar max-h-[300px] space-y-1.5 overflow-y-auto">
-            <h6 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+          <div className="thin-scrollbar max-h-[300px] space-y-2 overflow-y-auto">
+            <h6 className="text-label-secondary text-subhead">
               Active Roster ({dbTeam.players.length})
             </h6>
-            {dbTeam.players.map((p) => {
-              const overall = getPlayerOverall(p.ratings);
-              return (
-                <div
-                  key={p.id}
-                  className="flex items-center justify-between rounded border p-2 text-xs"
-                >
-                  <div>
-                    <p className="font-semibold">
-                      {p.firstName} {p.lastName}
-                    </p>
-                    <p className="text-muted-foreground flex items-center gap-1 text-xs">
-                      <PositionTooltip position={p.position}>
-                        <span className="hover:text-foreground cursor-help font-medium transition-colors">
-                          {p.position}
-                        </span>
-                      </PositionTooltip>{" "}
-                      &middot; Age {p.age} &middot; {p.careerStage}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="font-mono">
-                    {overall}
-                  </Badge>
-                </div>
-              );
-            })}
+            {dbTeam.players.map((p) => (
+              <PlayerRow key={p.id} player={p} />
+            ))}
           </div>
         </div>
       )}

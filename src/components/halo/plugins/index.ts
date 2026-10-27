@@ -10,7 +10,6 @@
  */
 
 export * from "./mycountry";
-export * from "./forum";
 export * from "./wiki";
 export * from "./builder";
 export * from "./sports";

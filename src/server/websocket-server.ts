@@ -1,5 +1,4 @@
-// Next.js WebSocket Server Integration
-// Integrates WebSocket server with Next.js custom server (server.mjs)
+// Integrates the ThinkPages WebSocket server with the Next.js custom server (server.mjs).
 
 import type { Server as HTTPServer } from "http";
 import type { ThinkPagesWebSocketServer } from "~/lib/websocket/thinkpages-websocket-server";
@@ -10,12 +9,13 @@ import {
   type MessageBroadcaster,
 } from "~/server/thinkpages-broadcast-bridge";
 
-// Global instance
 let thinkPagesServer: ThinkPagesWebSocketServer | null = null;
 let broadcastSubscriber: BroadcastSubscriber | null = null;
 
 /**
- * Initialize WebSocket server with HTTP server
+ * Starts the ThinkPages Socket.IO server on `httpServer`. A failure is logged and rethrown, so the caller reports it
+ * (ws-backend.mjs exits non-zero for PM2 to restart it; server.mjs carries on without the socket). The caller calls
+ * shutdownWebSocketServer() on SIGTERM / SIGINT.
  */
 export async function initializeWebSocketServer(httpServer: HTTPServer): Promise<void> {
   if (thinkPagesServer) {
@@ -30,17 +30,26 @@ export async function initializeWebSocketServer(httpServer: HTTPServer): Promise
     const { ThinkPagesWebSocketServer } =
       await import("~/lib/websocket/thinkpages-websocket-server");
 
-    thinkPagesServer = new ThinkPagesWebSocketServer(httpServer);
+    // The socket server (src/lib) cannot import server modules: the forum's board room checks are handed in.
+    const [{ db }, { boardTypingName, canJoinRealmBoard, canTypeOnBoard }] = await Promise.all([
+      import("~/server/db"),
+      import("~/server/modules/thinkpages-forum/board-socket"),
+    ]);
+    thinkPagesServer = new ThinkPagesWebSocketServer(httpServer, {
+      canJoinRealmBoard: (clerkUserId, realmId) => canJoinRealmBoard(db, clerkUserId, realmId),
+      canTypeOnBoard: (clerkUserId, realmId) => canTypeOnBoard(db, clerkUserId, realmId),
+      boardTypingName: (clerkUserId, personaId) => boardTypingName(db, clerkUserId, personaId),
+    });
     // Deliver broadcasts published by other processes (the Next.js web process in production).
     broadcastSubscriber = startThinkPagesBroadcastSubscriber(thinkPagesServer);
 
     console.log("WebSocket Server initialized successfully");
-
-    // Graceful shutdown handling
-    process.on("SIGTERM", handleShutdown);
-    process.on("SIGINT", handleShutdown);
   } catch (error) {
     console.error("Failed to initialize WebSocket server:", error);
+    // Not closed: closing Socket.IO would close the caller's HTTP server too. Broadcasts fall back to Redis.
+    thinkPagesServer = null;
+    broadcastSubscriber = null;
+    throw error;
   }
 }
 
@@ -50,9 +59,11 @@ export function getThinkPagesBroadcaster(): MessageBroadcaster {
 }
 
 /**
- * Handle graceful shutdown
+ * Closes the broadcast subscriber and the Socket.IO server (which also starts closing the HTTP server it is attached
+ * to). A no-op when nothing runs, so calling it twice is safe.
  */
-async function handleShutdown(): Promise<void> {
+export async function shutdownWebSocketServer(): Promise<void> {
+  if (!broadcastSubscriber && !thinkPagesServer) return;
   console.log("Shutting down WebSocket services...");
 
   if (broadcastSubscriber) {

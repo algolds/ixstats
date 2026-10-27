@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/reader/StickyToc.tsx
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
@@ -10,11 +9,14 @@ import {
 } from "iconoir-react";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
+import { Button } from "~/components/ui/button";
+import { scrollToHeading } from "~/components/wiki-os/reader/ArticleToc";
 
 interface StickyTocProps {
   entries: TocEntry[];
   contentRef: React.RefObject<HTMLElement | null>;
-  isCollapsed?: boolean;
+  /** After a heading was picked: the Inspector sheet closes itself here. */
+  onNavigate?: () => void;
 }
 
 function highlightText(element: HTMLElement, query: string) {
@@ -58,7 +60,7 @@ function highlightText(element: HTMLElement, query: string) {
   }
 }
 
-export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTocProps) {
+export function StickyToc({ entries, contentRef, onNavigate }: StickyTocProps) {
   const { activeSectionId } = useWikiContext();
   const activeId = activeSectionId;
   const [showSearch, setShowSearch] = useState(false);
@@ -146,8 +148,6 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
     setCurrentMatchIndex((prev: number) => (prev - 1 + matchCount) % matchCount);
   };
 
-  if (isCollapsed) return null;
-
   return (
     <nav
       className="wikios-sticky-toc transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out select-none"
@@ -184,45 +184,53 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
               )}
             </div>
             <div className="wikios-sticky-toc-search-nav">
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Previous match"
                 onClick={handlePrev}
                 disabled={matchCount === 0}
-                className="wikios-sticky-toc-search-nav-btn"
                 title="Previous match"
-                type="button"
+                className="text-label-secondary size-6 shrink-0"
               >
                 <ChevronUp className="h-3 w-3" />
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Next match"
                 onClick={handleNext}
                 disabled={matchCount === 0}
-                className="wikios-sticky-toc-search-nav-btn"
                 title="Next match"
-                type="button"
+                className="text-label-secondary size-6 shrink-0"
               >
                 <ChevronDown className="h-3 w-3" />
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Close search"
                 onClick={handleCloseSearch}
-                className="wikios-sticky-toc-search-close"
                 title="Close search"
-                type="button"
+                className="text-label-secondary hover:text-red size-6 shrink-0"
               >
                 <X className="h-3 w-3" />
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
           <>
             <span>On this page</span>
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Find on page"
               onClick={() => setShowSearch(true)}
-              className="wikios-sticky-toc-search-btn"
               title="Find on page"
-              type="button"
+              className="text-label-secondary size-6 shrink-0"
             >
               <Search className="h-3 w-3" />
-            </button>
+            </Button>
           </>
         )}
       </div>
@@ -231,6 +239,12 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
           <a
             key={item.id}
             href={`#${item.id}`}
+            onClick={(e) => {
+              // The default jump would park the heading under the Halo band.
+              e.preventDefault();
+              scrollToHeading(item.id);
+              onNavigate?.();
+            }}
             className={`wikios-sticky-toc-item ${activeId === item.id ? "wikios-sticky-toc-item--active" : ""}`}
             style={{ paddingLeft: `${(item.level - 2) * 12 + 12}px` }}
           >

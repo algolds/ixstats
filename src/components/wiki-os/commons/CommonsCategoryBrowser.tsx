@@ -1,14 +1,18 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useDebounce } from "~/hooks/useDebounce";
+import { useState, useEffect, useMemo } from "react";
 import {
   NavArrowRight as ChevronRight,
   NavArrowDown as ChevronDown,
+  Check,
   Folder,
+  Plus,
   Search,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
 
 // Curated worldbuilding-relevant categories organized by theme
 interface CategoryGroup {
@@ -19,7 +23,7 @@ interface CategoryGroup {
 
 const CATEGORY_GROUPS: CategoryGroup[] = [
   {
-    label: "Government & Royalty",
+    label: "Government & royalty",
     categories: [
       "Royal residences by country",
       "Coats of arms by country",
@@ -32,7 +36,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    label: "Architecture & Places",
+    label: "Architecture & places",
     categories: [
       "Castles by country",
       "Cathedrals by country",
@@ -45,7 +49,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    label: "Military & Warfare",
+    label: "Military & warfare",
     categories: [
       "Military uniforms by country",
       "Battles by country",
@@ -58,7 +62,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    label: "People & Culture",
+    label: "People & culture",
     categories: [
       "Portrait paintings",
       "National costumes by country",
@@ -70,7 +74,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    label: "Geography & Nature",
+    label: "Geography & nature",
     categories: [
       "Landscapes by country",
       "Mountains by country",
@@ -81,7 +85,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    label: "Economy & Trade",
+    label: "Economy & trade",
     categories: [
       "Markets by country",
       "Ships by country",
@@ -104,7 +108,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
 
 const THEMATIC_GROUPS = [
   {
-    label: "Government & Royalty",
+    label: "Government & royalty",
     keywords: [
       "government",
       "royal",
@@ -121,7 +125,7 @@ const THEMATIC_GROUPS = [
     ],
   },
   {
-    label: "Architecture & Places",
+    label: "Architecture & places",
     keywords: [
       "architecture",
       "building",
@@ -138,7 +142,7 @@ const THEMATIC_GROUPS = [
     ],
   },
   {
-    label: "Military & Warfare",
+    label: "Military & warfare",
     keywords: [
       "military",
       "uniform",
@@ -154,7 +158,7 @@ const THEMATIC_GROUPS = [
     ],
   },
   {
-    label: "People & Culture",
+    label: "People & culture",
     keywords: [
       "people",
       "costume",
@@ -170,7 +174,7 @@ const THEMATIC_GROUPS = [
     ],
   },
   {
-    label: "Geography & Nature",
+    label: "Geography & nature",
     keywords: [
       "geography",
       "map",
@@ -189,7 +193,7 @@ const THEMATIC_GROUPS = [
     ],
   },
   {
-    label: "Economy & Trade",
+    label: "Economy & trade",
     keywords: [
       "economy",
       "market",
@@ -227,7 +231,7 @@ const mapLocalCategories = (categoriesList: Array<{ name: string; fileCount: num
   }));
 
   const generalGroup = {
-    label: "General & Misc",
+    label: "General & misc",
     categories: [] as string[],
     counts: {} as Record<string, number>,
   };
@@ -264,14 +268,11 @@ const mapLocalCategories = (categoriesList: Array<{ name: string; fileCount: num
 interface CommonsCategoryBrowserProps {
   activeCategories: string[];
   browsingCategory: string | null;
-  onToggleCategory: (category: string) => void;
+  /** Absent when categories cannot be used as filters (the wiki sources): rows then only browse. */
+  onToggleCategory?: (category: string) => void;
   onBrowseCategory: (category: string) => void;
   wiki?: "commons" | "ixwiki" | "iiwiki";
 }
-
-// Flatten all categories for the batch info query (max 20 per call)
-// oxlint-disable-next-line eslint/no-unused-vars
-const ALL_CATEGORIES = CATEGORY_GROUPS.flatMap((g) => g.categories);
 
 export function CommonsCategoryBrowser({
   activeCategories,
@@ -282,10 +283,11 @@ export function CommonsCategoryBrowser({
 }: CommonsCategoryBrowserProps) {
   const isCommons = wiki === "commons";
 
-  const { data: localDynamicCats } = api.wikios.getCategories.useQuery(
-    { wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
-    { enabled: !isCommons, staleTime: 30 * 60 * 1000 }
-  );
+  const { data: localDynamicCats, isError: localCategoriesFailed } =
+    api.wikios.getCategories.useQuery(
+      { wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
+      { enabled: !isCommons, staleTime: 30 * 60 * 1000 }
+    );
 
   const groups = useMemo(() => {
     if (isCommons) {
@@ -303,17 +305,9 @@ export function CommonsCategoryBrowser({
   }, [groups]);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const debouncedQuery = useDebounce(searchQuery, 300);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(
-    () => () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    },
-    []
-  );
 
   // Reset expansion states when wiki source changes or groups load
   useEffect(() => {
@@ -342,12 +336,6 @@ export function CommonsCategoryBrowser({
     }
   }, [browsingCategory, groups, allCats]);
 
-  const handleSearch = useCallback((val: string) => {
-    setSearchQuery(val);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setDebouncedQuery(val), 300);
-  }, []);
-
   const isSearching = debouncedQuery.length >= 2;
 
   // Autocomplete when searching
@@ -360,6 +348,14 @@ export function CommonsCategoryBrowser({
     { prefix: debouncedQuery, limit: 15, wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
     { enabled: !isCommons && isSearching, staleTime: 60_000 }
   );
+
+  const emptyMessage = isCommons
+    ? null
+    : localCategoriesFailed
+      ? "Could not load categories."
+      : localDynamicCats && localDynamicCats.length === 0
+        ? "No file categories on this wiki yet. Search by file name instead."
+        : null;
 
   const autocompleteResults = isCommons ? commonsAutocomplete : localAutocomplete;
   const safeAutocompleteResults = useMemo(
@@ -386,20 +382,21 @@ export function CommonsCategoryBrowser({
   const searchCounts = isCommons ? commonsSearchCounts : localSearchCounts;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto py-2">
+    <div className="flex h-full flex-col overflow-y-auto py-2">
       {/* Search */}
-      <div className="flex items-center gap-1.5 mx-2 mb-2 px-2.5 py-1.5 rounded-lg bg-muted/40 border border-border/40 focus-within:border-border transition-colors">
-        <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+      <div className="rounded-control bg-fill-3 border-separator focus-within:border-separator mx-2 mb-2 flex items-center gap-2 border px-3 py-2 transition-colors">
+        <Search className="text-label-secondary h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         <input
           type="text"
           value={searchQuery}
-          onChange={(e) => handleSearch(e.target.value)}
+          onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search categories..."
-          className="flex-1 bg-transparent border-none outline-none text-xs text-foreground placeholder:text-muted-foreground"
+          aria-label="Search categories"
+          className="text-footnote text-label placeholder:text-label-secondary flex-1 border-none bg-transparent outline-none"
         />
       </div>
 
-      <div className="px-1.5 overflow-y-auto space-y-0.5">
+      <div className="space-y-0.5 overflow-y-auto px-2">
         {isSearching ? (
           /* Autocomplete search results */
           <>
@@ -411,7 +408,7 @@ export function CommonsCategoryBrowser({
                 isActive={activeCategories.includes(cat)}
                 isExpanded={!!expanded[cat]}
                 browsingCategory={browsingCategory}
-                onToggle={() => onToggleCategory(cat)}
+                onToggle={onToggleCategory ? () => onToggleCategory(cat) : undefined}
                 onBrowse={(catToBrowse) => {
                   onBrowseCategory(catToBrowse);
                   if (!expanded[cat]) {
@@ -423,9 +420,13 @@ export function CommonsCategoryBrowser({
               />
             ))}
             {(!autocompleteResults || autocompleteResults.length === 0) && (
-              <p className="text-xs text-muted-foreground py-4 text-center">No categories found</p>
+              <p className="text-footnote text-label-secondary py-4 text-center">
+                No categories found
+              </p>
             )}
           </>
+        ) : emptyMessage ? (
+          <p className="text-footnote text-label-secondary py-4 text-center">{emptyMessage}</p>
         ) : (
           groups.map((group) => (
             <CategoryGroupSection
@@ -450,10 +451,6 @@ export function CommonsCategoryBrowser({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Category group section with lazy-loaded counts
-// ---------------------------------------------------------------------------
-
 interface CategoryGroupSectionProps {
   group: CategoryGroup;
   isGroupOpen: boolean;
@@ -461,7 +458,7 @@ interface CategoryGroupSectionProps {
   activeCategories: string[];
   expanded: Record<string, boolean>;
   browsingCategory: string | null;
-  onToggleCategory: (category: string) => void;
+  onToggleCategory?: (category: string) => void;
   onBrowseCategory: (category: string) => void;
   setExpanded: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   wiki?: "commons" | "ixwiki" | "iiwiki";
@@ -490,13 +487,16 @@ function CategoryGroupSection({
 
   return (
     <div className="mb-1">
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-expanded={isGroupOpen}
         onClick={onToggleGroup}
-        className="flex items-center gap-1.5 w-full px-2 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground cursor-pointer rounded-md transition-colors active:scale-[0.98]"
+        className="text-eyebrow text-label-secondary hover:text-label h-auto w-full justify-start px-2 py-1"
       >
         {isGroupOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         <span>{group.label}</span>
-      </button>
+      </Button>
       {isGroupOpen &&
         group.categories.map((cat) => (
           <CategoryRow
@@ -506,7 +506,7 @@ function CategoryGroupSection({
             isActive={activeCategories.includes(cat)}
             isExpanded={!!expanded[cat]}
             browsingCategory={browsingCategory}
-            onToggle={() => onToggleCategory(cat)}
+            onToggle={onToggleCategory ? () => onToggleCategory(cat) : undefined}
             onBrowse={(catToBrowse) => {
               onBrowseCategory(catToBrowse);
               if (!expanded[cat]) {
@@ -520,10 +520,6 @@ function CategoryGroupSection({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Category row with optional subcategory expansion
-// ---------------------------------------------------------------------------
 
 function CategoryRow({
   name,
@@ -541,7 +537,7 @@ function CategoryRow({
   isActive: boolean;
   isExpanded: boolean;
   browsingCategory: string | null;
-  onToggle: () => void;
+  onToggle?: () => void;
   onBrowse: (categoryName: string) => void;
   onExpand: () => void;
   wiki?: "commons" | "ixwiki" | "iiwiki";
@@ -566,64 +562,83 @@ function CategoryRow({
     <div>
       <div
         className={cn(
-          "group/row flex items-center gap-1.5 px-2 py-1 rounded-md transition-colors text-xs hover:bg-muted/40 select-none",
-          isActive && "bg-primary/10 text-primary",
-          isBrowsingThisCat && "bg-muted/60 font-semibold text-foreground"
+          "group/row rounded-control-sm text-footnote hover:bg-fill-3 flex items-center gap-2 px-2 py-1 transition-colors select-none",
+          isActive && "bg-tint-fill text-tint",
+          isBrowsingThisCat && "bg-fill-3 text-label font-semibold"
         )}
       >
-        <button
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-expanded={isExpanded}
           onClick={onExpand}
-          className="h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0 rounded cursor-pointer active:scale-90 transition-transform"
           aria-label={isExpanded ? "Collapse subcategories" : "Expand subcategories"}
+          className="text-label-secondary hover:text-label size-5"
         >
           {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-current={isBrowsingThisCat ? "true" : undefined}
           onClick={() => onBrowse(name)}
-          className="flex-1 text-left text-xs text-muted-foreground hover:text-foreground truncate cursor-pointer select-none transition-colors"
           title={`Browse ${name}`}
+          className="text-footnote text-label-secondary hover:text-label h-auto min-w-0 flex-1 justify-start truncate px-0 font-normal hover:bg-transparent"
         >
           {name}
-        </button>
+        </Button>
         {totalCount != null && totalCount > 0 && (
-          <span className="text-xs text-muted-foreground/70 shrink-0 mr-1 tabular-nums">
+          <span className="text-footnote text-label-secondary mr-1 shrink-0 tabular-nums">
             {totalCount.toLocaleString()}
           </span>
         )}
-        <button
-          onClick={onToggle}
-          className={cn(
-            "h-5 w-5 flex items-center justify-center rounded border border-border/40 text-xs text-muted-foreground hover:border-primary hover:text-primary shrink-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer active:scale-95",
-            isActive && "bg-primary/15 border-primary/40 text-primary font-bold"
-          )}
-          title={isActive ? "Remove filter" : "Add as filter"}
-          aria-label={isActive ? `Remove ${name} filter` : `Add ${name} filter`}
-        >
-          {isActive ? "✓" : "+"}
-        </button>
+        {onToggle && (
+          <Button
+            variant="outline"
+            size="icon-sm"
+            aria-pressed={isActive}
+            onClick={onToggle}
+            className={cn(
+              "text-footnote text-label-secondary hover:border-tint hover:text-tint size-5 shrink-0",
+              isActive && "bg-tint-fill border-tint/40 text-tint font-semibold"
+            )}
+            title={isActive ? "Remove filter" : "Add as filter"}
+            aria-label={isActive ? `Remove ${name} filter` : `Add ${name} filter`}
+          >
+            {isActive ? (
+              <Check className="h-3 w-3" aria-hidden="true" />
+            ) : (
+              <Plus className="h-3 w-3" aria-hidden="true" />
+            )}
+          </Button>
+        )}
       </div>
 
       {isExpanded && subcats && subcats.length > 0 && (
-        <div className="pl-5 pr-1 py-0.5 space-y-0.5">
+        <div className="space-y-0.5 py-0.5 pr-1 pl-5">
           {subcats.map((sub) => {
             const isSubActive = browsingCategory === sub;
             return (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-current={isSubActive ? "true" : undefined}
                 key={sub}
                 onClick={() => onBrowse(sub)}
                 className={cn(
-                  "flex w-full items-center gap-1.5 py-1 px-1.5 text-left text-xs rounded transition-colors hover:bg-muted/30 active:scale-[0.98] cursor-pointer",
-                  isSubActive
-                    ? "font-semibold text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                  "text-footnote h-auto w-full justify-start px-2 py-1 font-normal",
+                  isSubActive ? "text-tint font-semibold" : "text-label-secondary hover:text-label"
                 )}
                 title={`Browse ${sub}`}
               >
                 <Folder
-                  className={cn("h-2.5 w-2.5 shrink-0", isSubActive ? "text-primary opacity-100" : "opacity-40")}
+                  className={cn(
+                    "h-2.5 w-2.5 shrink-0",
+                    isSubActive ? "text-tint opacity-100" : "opacity-40"
+                  )}
                 />
                 <span className="truncate">{sub}</span>
-              </button>
+              </Button>
             );
           })}
         </div>

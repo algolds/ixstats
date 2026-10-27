@@ -25,7 +25,7 @@ export const ArtifactUploadModal = React.memo<ArtifactUploadModalProps>(
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl">
           <DialogHeader className="sr-only">
-            <DialogTitle>Upload Cultural Artifact</DialogTitle>
+            <DialogTitle>Upload cultural artifact</DialogTitle>
           </DialogHeader>
           <ArtifactUploadForm
             onSubmit={onSubmit}

@@ -3,6 +3,6 @@
  */
 
 export * from "./registry";
-export * from "./recommender";
 export * from "./maintenance-cron";
 export * from "./effects-sync";
+export * from "./lifecycle";

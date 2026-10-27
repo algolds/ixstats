@@ -1,0 +1,167 @@
+/* Facet layers. The only stylesheet that paints glass, blur or elevation. Utilities paint only:
+   no position, z-index, radius, margin or letter-spacing (the component owns those). Anything
+   that mixes --tint is composed here at the element, so each [data-app] scope resolves its own
+   tint. The scalars live in tokens.css and go opaque under Reduce Transparency and Increase
+   Contrast. */
+
+/* 0 · The page background: a static wash of the app tint so panes have colour to sit on. */
+@utility facet-canvas {
+  background-color: var(--color-background-grouped);
+  background-image: radial-gradient(
+    120% 80% at 50% -10%,
+    color-mix(in srgb, var(--tint) var(--canvas-wash), transparent),
+    transparent 70%
+  );
+  background-attachment: fixed;
+}
+
+/* 1 · Content. Translucent over the canvas; no backdrop-filter because only the soft static wash
+   is behind it, so blur would cost GPU for no visible change. */
+@utility facet-pane {
+  background-color: color-mix(in srgb, var(--color-surface) var(--pane-fill), transparent);
+  background-image: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--facet-accent, var(--tint)) var(--pane-wash), transparent),
+    transparent 55%
+  );
+  border: 1px solid var(--glass-hairline);
+  --tw-shadow: var(--shadow-card);
+  box-shadow:
+    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow, 0 0 #0000);
+}
+
+/* 2 · Inside a pane. Solid so glass never stacks; a little tint keeps it in the app's colour. */
+@utility facet-well {
+  background-color: color-mix(
+    in srgb,
+    var(--facet-accent, var(--tint)) var(--well-tint),
+    var(--color-surface-secondary)
+  );
+}
+
+/* 2b · Pressed into the chrome: the mark of the current app, section or page in navigation. Deeper tint
+   than a well, an inset shadow and a tint hairline, so the current place reads as a key held down. */
+@utility facet-recess {
+  background-color: color-mix(in srgb, var(--tint) 20%, var(--color-background-grouped));
+  /* Light from above, so the top edge shades; alpha × --shadow-strength, as every elevation. */
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--tint) 28%, transparent),
+    inset 0 1px 3px 0 rgb(0 0 0 / calc(0.28 * var(--shadow-strength, 1))),
+    inset 0 -1px 0 0 rgb(255 255 255 / calc(0.06 * var(--shadow-strength, 1)));
+}
+
+/* 3 · Floating navigation over scrolling content. Secondary labels use the vibrant role because
+   anything can scroll underneath. */
+@utility facet-chrome {
+  --color-label-secondary: var(--color-label-vibrant-secondary);
+  background-color: color-mix(in srgb, var(--color-surface) var(--chrome-fill), transparent);
+  -webkit-backdrop-filter: blur(var(--chrome-blur)) saturate(170%);
+  backdrop-filter: blur(var(--chrome-blur)) saturate(170%);
+  border: 1px solid var(--glass-hairline);
+  --tw-shadow: var(--shadow-floating);
+  box-shadow:
+    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow, 0 0 #0000);
+  /* The scalars zero the blur, but a blur(0) filter still creates a backdrop root. */
+  @variant transparency-reduced {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  @variant contrast-more {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* 4 · Dialogs, sheets, popovers, menus and tooltips. Dialogs and sheets sit over a scrim;
+   popovers, menus and tooltips float without one. */
+@utility facet-overlay {
+  background-color: color-mix(
+    in srgb,
+    var(--color-surface-elevated) var(--overlay-fill),
+    transparent
+  );
+  -webkit-backdrop-filter: blur(var(--overlay-blur)) saturate(180%);
+  backdrop-filter: blur(var(--overlay-blur)) saturate(180%);
+  border: 1px solid var(--glass-hairline);
+  --tw-shadow: var(--shadow-sheet);
+  box-shadow:
+    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow, 0 0 #0000);
+  /* The scalars zero the blur, but a blur(0) filter still creates a backdrop root. */
+  @variant transparency-reduced {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  @variant contrast-more {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Content types. A surface declares what it holds with data-content (Card's content prop); the
+   type sets reading width, figures and density. Types not listed here get their standard from a
+   primitive. */
+@layer components {
+  [data-content="prose"] > * {
+    max-width: 70ch;
+    margin-inline: auto;
+  }
+  [data-content="prose"] {
+    font-size: calc(1.0625rem * var(--text-scale, 1));
+    line-height: 1.6;
+  }
+  [data-content="prose"] a {
+    /* The tint ink, composed here so it resolves the surrounding [data-app] tint. The bare tint
+       falls under 4.5:1 on the washed pane in light MyCountry. */
+    color: color-mix(in srgb, var(--tint) 80%, var(--color-label));
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+
+  [data-content="data"] {
+    font-variant-numeric: tabular-nums;
+  }
+  [data-content="data"] tbody tr:hover,
+  [data-content="data"] [data-row]:hover {
+    background-color: var(--color-fill-4);
+  }
+
+  [data-content="visualization"] {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  [data-content="feed"] > * + * {
+    border-top: 1px solid var(--color-separator);
+  }
+}
+
+/* Fills carry the app tint. The neutral fills (Input, the SegmentedControl track and thumb, secondary and ghost
+   buttons, hovers, toolbars) read as sterile grey on the tinted canvas; here each is the same strength of an ink that
+   is the tint pulled toward the label, recomposed at every [data-app] scope as --tint-fill is in tokens.css. Light
+   fills darken toward ink, dark fills lighten toward it. Under Increase Contrast the tint is already stronger. */
+@layer base {
+  :root,
+  [data-app] {
+    --fill-ink: color-mix(in srgb, var(--tint) 40%, rgb(9 9 11));
+    --color-fill: color-mix(in srgb, var(--fill-ink) 16%, transparent);
+    --color-fill-2: color-mix(in srgb, var(--fill-ink) 12%, transparent);
+    --color-fill-3: color-mix(in srgb, var(--fill-ink) 8%, transparent);
+    --color-fill-4: color-mix(in srgb, var(--fill-ink) 5%, transparent);
+    --color-control-thumb: color-mix(in srgb, var(--tint) 6%, #ffffff);
+  }
+  :root[data-theme="dark"],
+  :root[data-theme="dark"] [data-app] {
+    --fill-ink: color-mix(in srgb, var(--tint) 45%, rgb(244 244 245));
+    --color-fill: color-mix(in srgb, var(--fill-ink) 24%, transparent);
+    --color-fill-2: color-mix(in srgb, var(--fill-ink) 18%, transparent);
+    --color-fill-3: color-mix(in srgb, var(--fill-ink) 12%, transparent);
+    --color-fill-4: color-mix(in srgb, var(--fill-ink) 8%, transparent);
+    --color-control-thumb: color-mix(in srgb, var(--fill-ink) 26%, transparent);
+  }
+}

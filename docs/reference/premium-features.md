@@ -13,6 +13,8 @@ This document provides a comprehensive breakdown of features available in the Ba
 > | Defense domain renders as a read-only preview with an Upgrade banner for non-premium users (`/mycountry/intelligence` resolves to the same Defense domain) | `PremiumPreviewFrame`, `DomainSurface.tsx`, `ability.can("access", "MyCountryFeature", "defense")` |
 > | Intelligence/Defense nav items locked or hidden for non-premium users | `MyCountrySidebarNav.tsx` |
 >
+> **Test switch.** `NEXT_PUBLIC_PREMIUM_FOR_ALL="true"` grants premium to every signed-in user: `hasPremiumTier()` in `src/lib/auth/premium.ts` is the one definition used by `premiumMiddleware`, `defineAbilityFor` and `users.getMembershipStatus`. It is off unless set; keep it off in production. It is inlined into the client bundle, so changing it needs a rebuild (see `.env.example`).
+>
 > **Not implemented:** payments/subscriptions (no Stripe or checkout; no $9.99 billing), a separate 5-tab Intelligence Dashboard, tiered API rate limits (everyone gets the same limits, e.g. 100 req/min on `rateLimitMiddleware`), export quotas, 30-day history limits, custom reports, document/scenario/alert quotas, and premium ThinkPages limits (every user is capped at **25** ThinkPages accounts). Vault's `premiumMultiplier` is display-only. Owners/admins/staff pass the client-side ability check (`src/lib/auth/ability.ts`) but not `premiumMiddleware`, which checks `membershipTier` only.
 
 ---
@@ -91,7 +93,7 @@ interface PremiumFeatures {
 | → Diplomatic Events | Event responses | ✅ | ✅ | Crisis responses available |
 | → Intelligence Page | **Analytics dashboard** | ⚠️ Limited | ✅ Full | Nav-gated; route resolves to Defense domain |
 | → Defense & Security | Force management | ⚠️ Read-only preview | ✅ | **PREMIUM GATED** (enforced) |
-| → Map Editor | Territory editing | ✅ | ✅ | `ability.ts` marks it premium, but no UI/route enforces it |
+| → Map Editor | Territory editing | ✅ | ✅ | Free for every owner; geo writes are owner-checked |
 | → Editor | Country editor page | ✅ | ✅ | Available to all |
 | | | | | |
 | **Country Builder** | | | | |
@@ -342,7 +344,7 @@ export const militaryRouter = createTRPCRouter({
 });
 ```
 
-Current `premiumProcedure` users: `security/military.ts`, `security/operations.ts`, `security/conflicts.ts`, `security/stability.ts`.
+Current `premiumProcedure` users: `security/military.ts`, `security/operations.ts`, `security/conflicts/`, `security/stability.ts`.
 
 ---
 
@@ -358,7 +360,7 @@ Current `premiumProcedure` users: `security/military.ts`, `security/operations.t
 ### Intelligence & Defense Page Behavior
 
 **Basic Users:**
-- Intelligence/Defense nav items are hidden unless an admin enables `showIntelligenceTab` / `showDefenseTab`, in which case they show as locked "(Premium)" teasers
+- The sidebar's Defense row is hidden (it shows only for MyCountry Premium users and beta testers); Intelligence has no row of its own. The admin `showIntelligenceTab` / `showDefenseTab` switches were removed on 2026-10-05
 - `/mycountry/defense` (and `/mycountry/intelligence`, which resolves to the Defense domain) renders a read-only live preview with an Upgrade banner (links to `/help/getting-started/welcome`)
 - Defense mutations are rejected server-side
 
@@ -447,7 +449,7 @@ IxStats follows a **generous freemium model**:
 - [Intelligence System Documentation](../systems/intelligence.md)
 - [API Catalog](./api-complete.md)
 - [Rate Limiting Guide](../operations/rate-limiting.md)
-- [User Profile Utils](./user-profile-utils.md)
+- [User Profile Utils](../history/reference/user-profile-utils.md)
 
 ---
 

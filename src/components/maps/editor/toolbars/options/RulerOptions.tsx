@@ -3,7 +3,7 @@
 import React, { memo } from "react";
 import { Ruler, Trash as Trash2 } from "iconoir-react";
 import { formatDistanceMetrics } from "~/lib/maps/geo-analytics";
-import { ToolLabel, btnClass, dividerClass, labelClass } from "./CoordinateSnappingControls";
+import { ToolLabel, ToolbarButton, dividerClass } from "./CoordinateSnappingControls";
 
 interface RulerOptionsProps {
   rulerPoints?: [number, number][];
@@ -22,24 +22,24 @@ export const RulerOptions = memo(function RulerOptions({
   return (
     <>
       <ToolLabel icon={Ruler} label="Ruler / Distance" />
-      <span className={labelClass}>
-        {pointsCount < 2 ? "Click on the map to place measurement points." : "Total Distance:"}
+      <span className="text-label-secondary text-footnote">
+        {pointsCount < 2 ? "Click on the map to place measurement points." : "Total distance:"}
       </span>
       {pointsCount >= 2 && (
         <>
-          <span className="font-mono text-xs font-semibold text-cyan-500">{metrics.km} km</span>
-          <span className="text-muted-foreground text-xs">
+          <span className="text-caption text-cyan font-semibold tabular-nums">{metrics.km} km</span>
+          <span className="text-label-secondary text-footnote">
             ({metrics.mi} mi / {metrics.nm} nm)
           </span>
-          <span className="text-muted-foreground text-xs">• {pointsCount} points</span>
+          <span className="text-label-secondary text-footnote">• {pointsCount} points</span>
         </>
       )}
       {pointsCount > 0 && onClearRuler && (
         <>
           <div className={dividerClass} />
-          <button onClick={onClearRuler} className={btnClass} title="Clear measurement">
+          <ToolbarButton onClick={onClearRuler} title="Clear measurement">
             <Trash2 className="h-3 w-3" /> Clear
-          </button>
+          </ToolbarButton>
         </>
       )}
     </>

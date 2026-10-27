@@ -10,12 +10,11 @@
 
 import {
   calculateRouteTravelTime,
-  resolveRouteBaseSpeed,
-  formatTravelDuration,
+  resolveRouteBaseSpeed
 } from "./travel-time";
 import { distanceKmLatLng } from "~/lib/maps/geo-math";
 
-export interface TAMICalculationInput {
+interface TAMICalculationInput {
   totalLengthKm: number;
   landAreaKm2?: number | null;
   effectiveAverageSpeedKmh: number;
@@ -25,7 +24,7 @@ export interface TAMICalculationInput {
   operationalRouteTypes: string[];
 }
 
-export interface TAMIResult {
+interface TAMIResult {
   tamiScore: number; // 0 to 100
   rating: "world_class" | "advanced" | "developing" | "underdeveloped";
   ratingLabel: string;
@@ -36,7 +35,7 @@ export interface TAMIResult {
   diversityScore: number; // 0 to 100
 }
 
-export interface DegradationInput {
+interface DegradationInput {
   budgetedMaintenance: number; // Annual currency/credits budgeted
   requiredMaintenance: number; // Annual currency/credits required
 }
@@ -64,7 +63,7 @@ export interface RouteForMobility {
   properties?: Record<string, unknown> | null;
 }
 
-export interface ModalGroupMetrics {
+interface ModalGroupMetrics {
   count: number;
   totalKm: number;
   avgSpeedKmh: number;
@@ -72,7 +71,7 @@ export interface ModalGroupMetrics {
   color: string;
 }
 
-export interface ModalVelocitySummary {
+interface ModalVelocitySummary {
   modalGroups: Record<string, ModalGroupMetrics>;
   overallWeightedSpeedKmh: number;
   fastestRoute: { name: string; speedKmh: number; routeType: string } | null;
@@ -87,7 +86,7 @@ export interface CityNode {
   coordinates?: [number, number] | null;
 }
 
-export interface IntercityTransitLink {
+interface IntercityTransitLink {
   originName: string;
   destName: string;
   distanceKm: number;
@@ -443,4 +442,35 @@ export function estimateIntercityTravelTimes(
   }
 
   return links;
+}
+
+interface DepartmentAllocation {
+  budgetYear: number;
+  allocatedAmount: number;
+  department: { name: string; category: string };
+}
+
+const INFRASTRUCTURE_DEPARTMENT = /infra|transport|transit/i;
+
+/**
+ * The yearly budget for maintaining the transport network, in billions of dollars: what the
+ * transport or infrastructure departments are allocated in the budget in effect (the latest
+ * year at or before `currentYear`). Null when the budget has no such department.
+ */
+export function infrastructureBudgetBillions(
+  allocations: readonly DepartmentAllocation[],
+  currentYear: number
+): number | null {
+  const infra = allocations.filter(
+    (a) =>
+      INFRASTRUCTURE_DEPARTMENT.test(a.department.category) ||
+      INFRASTRUCTURE_DEPARTMENT.test(a.department.name)
+  );
+  const years = infra.map((a) => a.budgetYear).filter((year) => year <= currentYear);
+  if (years.length === 0) return null;
+  const year = Math.max(...years);
+  const total = infra
+    .filter((a) => a.budgetYear === year)
+    .reduce((sum, a) => sum + a.allocatedAmount, 0);
+  return total / 1e9;
 }

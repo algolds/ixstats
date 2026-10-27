@@ -4,12 +4,7 @@
 // Onoma Lab — Real-Time IPA Formant & Acoustic Spectrogram Visualizer
 
 import { useState, useMemo, useRef, useEffect } from "react";
-// oxlint-disable-next-line eslint/no-unused-vars
-import {
-  SoundHigh as AudioWaveform,
-  InfoCircle as Info,
-  AntennaSignal as Radio,
-} from "iconoir-react";
+import { AntennaSignal as Radio } from "iconoir-react";
 import {
   CARDINAL_VOWEL_GRID,
   extractVowelsFromIpa,
@@ -18,19 +13,16 @@ import {
   calculateAcousticCenter,
   type VowelFormant,
 } from "~/lib/onoma/vowel-formants";
-import { cn } from "~/lib/utils";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface AcousticFormantVisualizerProps {
   currentIpa: string;
-  currentName?: string;
   accentColor?: string;
 }
 
 export function AcousticFormantVisualizer({
   currentIpa,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  currentName,
-  accentColor = "#0091ff",
+  accentColor = "var(--tint)",
 }: AcousticFormantVisualizerProps) {
   const [activeTab, setActiveTab] = useState<"quadrilateral" | "spectrogram">("quadrilateral");
   const [hoveredVowel, setHoveredVowel] = useState<VowelFormant | null>(null);
@@ -64,6 +56,15 @@ export function AcousticFormantVisualizer({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Canvas can't read CSS variables: resolve role colours (e.g. `var(--tint)`) once per draw loop.
+    const resolveColor = (color: string) => {
+      const match = /^var\((--[\w-]+)\)$/.exec(color);
+      return match ? getComputedStyle(canvas).getPropertyValue(match[1]).trim() || "gray" : color;
+    };
+    const waveColor = resolveColor(accentColor);
+    const gridColor = resolveColor("var(--color-separator)");
+    const altBarColor = resolveColor("var(--color-purple)");
+
     let phase = 0;
 
     const render = () => {
@@ -72,7 +73,7 @@ export function AcousticFormantVisualizer({
       ctx.clearRect(0, 0, width, height);
 
       // Background subtle grid
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
+      ctx.strokeStyle = gridColor;
       ctx.lineWidth = 1;
       for (let x = 0; x < width; x += 30) {
         ctx.beginPath();
@@ -95,9 +96,9 @@ export function AcousticFormantVisualizer({
 
       // Animated Waveform Layer
       ctx.beginPath();
-      ctx.strokeStyle = accentColor;
+      ctx.strokeStyle = waveColor;
       ctx.lineWidth = 2;
-      ctx.shadowColor = accentColor;
+      ctx.shadowColor = waveColor;
       ctx.shadowBlur = 8;
 
       const sliceWidth = width / 128;
@@ -149,8 +150,10 @@ export function AcousticFormantVisualizer({
         const barX = 20 + b * barWidth;
         const barY = height - 10 - finalH;
 
-        ctx.fillStyle = b % 2 === 0 ? "rgba(0, 145, 255, 0.4)" : "rgba(139, 92, 246, 0.4)";
+        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = b % 2 === 0 ? waveColor : altBarColor;
         ctx.fillRect(barX, barY, barWidth - 2, finalH);
+        ctx.globalAlpha = 1;
       }
 
       phase += 0.04;
@@ -208,89 +211,67 @@ export function AcousticFormantVisualizer({
   }, "");
 
   return (
-    <div className="border-border/40 bg-card/30 space-y-4 rounded-2xl border p-4 shadow-sm backdrop-blur-sm sm:p-5">
-      {/* Header with Switcher */}
+    <div className="bg-surface-secondary rounded-row space-y-4 p-4 sm:p-5">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div className="space-y-0.5 text-left">
           <div className="flex items-center gap-2">
-            <Radio className="text-onoma-primary h-4 w-4" />
-            <h4 className="text-foreground text-sm font-bold tracking-tight">
-              Acoustic Phonetics & Formant Space
+            <Radio className="text-tint h-4 w-4" />
+            <h4 className="text-label text-body font-semibold">
+              Acoustic phonetics & formant space
             </h4>
           </div>
-          <p className="text-muted-foreground text-[11px]">
-            Real-time vowel height ($F_1$) vs frontness ($F_2$) trajectory and FFT resonance.
+          <p className="text-label-secondary text-caption">
+            Vowel height ($F_1$) vs frontness ($F_2$) trajectory and FFT resonance.
           </p>
         </div>
 
-        {/* View Switcher Tabs */}
-        <div className="border-border/40 bg-secondary/20 flex items-center gap-1 rounded-lg border p-1">
-          <button
-            type="button"
-            onClick={() => setActiveTab("quadrilateral")}
-            className={cn(
-              "cursor-pointer rounded-md px-2.5 py-1 text-xs font-semibold transition-all active:scale-95",
-              activeTab === "quadrilateral"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            IPA Vowel Quadrilateral
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("spectrogram")}
-            className={cn(
-              "cursor-pointer rounded-md px-2.5 py-1 text-xs font-semibold transition-all active:scale-95",
-              activeTab === "spectrogram"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Acoustic FFT Spectrum
-          </button>
-        </div>
+        <SegmentedControl
+          size="sm"
+          asTabs
+          aria-label="Acoustic view"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          options={[
+            { value: "quadrilateral", label: "IPA Vowel Quadrilateral" },
+            { value: "spectrogram", label: "Acoustic FFT Spectrum" },
+          ]}
+        />
       </div>
 
-      {/* Main Visualizer Container */}
       {activeTab === "quadrilateral" ? (
         <div className="space-y-3">
-          <div className="border-border/30 bg-background/50 relative overflow-hidden rounded-xl border p-2">
-            {/* Axis Labels */}
-            <div className="text-muted-foreground absolute top-2 left-3 font-mono text-[9px] font-bold tracking-wider uppercase">
+          <div className="border-separator bg-surface rounded-row relative overflow-hidden border p-2">
+            <div className="text-label-secondary text-eyebrow absolute top-2 left-3 font-mono">
               ← Front ($F_2$ High)
             </div>
-            <div className="text-muted-foreground absolute top-2 right-3 font-mono text-[9px] font-bold tracking-wider uppercase">
+            <div className="text-label-secondary text-eyebrow absolute top-2 right-3 font-mono">
               Back ($F_2$ Low) →
             </div>
-            <div className="text-muted-foreground absolute bottom-2 left-3 font-mono text-[9px] font-bold tracking-wider uppercase">
+            <div className="text-label-secondary text-eyebrow absolute bottom-2 left-3 font-mono">
               Close / High ($F_1$ Low) ↑
             </div>
-            <div className="text-muted-foreground absolute right-3 bottom-2 font-mono text-[9px] font-bold tracking-wider uppercase">
+            <div className="text-label-secondary text-eyebrow absolute right-3 bottom-2 font-mono">
               ↓ Open / Low ($F_1$ High)
             </div>
 
-            {/* SVG IPA Quadrilateral */}
             <svg
               viewBox={`0 0 ${svgWidth} ${svgHeight}`}
               className="mx-auto h-auto w-full max-w-[500px] select-none"
             >
-              {/* Background IPA Trapezoid */}
               <path
                 d={trapezoidPath}
-                fill="rgba(0, 145, 255, 0.02)"
-                stroke="rgba(255, 255, 255, 0.15)"
+                fill="var(--color-fill-4)"
+                stroke="var(--color-separator-opaque)"
                 strokeWidth="1.5"
                 strokeDasharray="4 3"
               />
 
-              {/* Central horizontal dividing lines */}
               <line
                 x1={f2ToX(2150, svgWidth, pad)}
                 y1={f1ToY(420, svgHeight, pad)}
                 x2={f2ToX(880, svgWidth, pad)}
                 y2={f1ToY(420, svgHeight, pad)}
-                stroke="rgba(255, 255, 255, 0.08)"
+                stroke="var(--color-separator)"
                 strokeWidth="1"
               />
               <line
@@ -298,21 +279,19 @@ export function AcousticFormantVisualizer({
                 y1={f1ToY(580, svgHeight, pad)}
                 x2={f2ToX(920, svgWidth, pad)}
                 y2={f1ToY(580, svgHeight, pad)}
-                stroke="rgba(255, 255, 255, 0.08)"
+                stroke="var(--color-separator)"
                 strokeWidth="1"
               />
 
-              {/* Central vertical dividing line */}
               <line
                 x1={f2ToX(1500, svgWidth, pad)}
                 y1={f1ToY(250, svgHeight, pad)}
                 x2={f2ToX(1300, svgWidth, pad)}
                 y2={f1ToY(780, svgHeight, pad)}
-                stroke="rgba(255, 255, 255, 0.08)"
+                stroke="var(--color-separator)"
                 strokeWidth="1"
               />
 
-              {/* All Cardinal Background Vowels */}
               {CARDINAL_VOWEL_GRID.map((v) => {
                 const cx = f2ToX(v.f2, svgWidth, pad);
                 const cy = f1ToY(v.f1, svgHeight, pad);
@@ -329,8 +308,8 @@ export function AcousticFormantVisualizer({
                       cx={cx}
                       cy={cy}
                       r={isActive ? 6 : 3.5}
-                      fill={isActive ? accentColor : "rgba(255, 255, 255, 0.2)"}
-                      className={cn("transition-all", isActive && "animate-pulse shadow-lg")}
+                      fill={isActive ? accentColor : "var(--color-label-quaternary)"}
+                      className="transition-[r,fill] duration-150"
                     />
                     <text
                       x={cx + 8}
@@ -338,7 +317,7 @@ export function AcousticFormantVisualizer({
                       fontSize="11"
                       fontFamily="monospace"
                       fontWeight={isActive ? "bold" : "normal"}
-                      fill={isActive ? "#0091ff" : "rgba(255, 255, 255, 0.4)"}
+                      fill={isActive ? "var(--tint)" : "var(--color-label-tertiary)"}
                     >
                       /{v.ipa}/
                     </text>
@@ -346,7 +325,6 @@ export function AcousticFormantVisualizer({
                 );
               })}
 
-              {/* Active Trajectory Line */}
               {activePoints.length > 1 && (
                 <path
                   d={activeTrajectoryPath}
@@ -359,7 +337,6 @@ export function AcousticFormantVisualizer({
                 />
               )}
 
-              {/* Active Vowel Highlight Rings */}
               {activePoints.map((pt, idx) => (
                 <g key={idx}>
                   <circle
@@ -369,76 +346,66 @@ export function AcousticFormantVisualizer({
                     fill="none"
                     stroke={accentColor}
                     strokeWidth="1.5"
-                    className="animate-pulse opacity-70"
+                    className="opacity-70"
                     style={{
                       transformBox: "fill-box",
                       transformOrigin: "center",
                     }}
                   />
-                  <circle cx={pt.x} cy={pt.y} r="4" fill="#ffffff" />
+                  <circle cx={pt.x} cy={pt.y} r="4" fill="var(--color-surface)" />
                 </g>
               ))}
 
-              {/* Acoustic Center Marker */}
               {acousticCenter && activeVowels.length > 0 && (
                 <g>
                   <circle
                     cx={f2ToX(acousticCenter.f2, svgWidth, pad)}
                     cy={f1ToY(acousticCenter.f1, svgHeight, pad)}
                     r="5"
-                    fill="#f59e0b"
+                    fill="var(--color-yellow)"
                   />
                   <text
                     x={f2ToX(acousticCenter.f2, svgWidth, pad) + 8}
                     y={f1ToY(acousticCenter.f1, svgHeight, pad) - 4}
                     fontSize="9"
                     fontFamily="monospace"
-                    fill="#f59e0b"
+                    fill="var(--color-yellow)"
                     fontWeight="bold"
                   >
-                    Center of Gravity
+                    Center of gravity
                   </text>
                 </g>
               )}
             </svg>
           </div>
 
-          {/* Metrics Summary Strip */}
           <div className="grid grid-cols-2 gap-2 text-left sm:grid-cols-4">
-            <div className="border-border/30 bg-secondary/10 rounded-lg border p-2">
-              <div className="text-muted-foreground text-[10px] font-bold uppercase">
-                Active Vowels
-              </div>
-              <div className="text-foreground font-mono text-xs font-bold">
+            <div className="border-separator bg-fill-4 rounded-control border p-2">
+              <div className="text-label-secondary text-eyebrow">Active vowels</div>
+              <div className="text-label text-footnote font-mono font-semibold">
                 {activeVowels.length > 0
                   ? activeVowels.map((v) => `/${v.ipa}/`).join(" ")
                   : "No vowels detected"}
               </div>
             </div>
 
-            <div className="border-border/30 bg-secondary/10 rounded-lg border p-2">
-              <div className="text-muted-foreground text-[10px] font-bold uppercase">
-                Acoustic Center
-              </div>
-              <div className="text-onoma-primary font-mono text-xs font-bold">
+            <div className="border-separator bg-fill-4 rounded-control border p-2">
+              <div className="text-label-secondary text-eyebrow">Acoustic center</div>
+              <div className="text-tint text-footnote font-mono font-semibold">
                 {acousticCenter ? `${acousticCenter.f1}Hz / ${acousticCenter.f2}Hz` : "—"}
               </div>
             </div>
 
-            <div className="border-border/30 bg-secondary/10 rounded-lg border p-2">
-              <div className="text-muted-foreground text-[10px] font-bold uppercase">
-                Front / Back Ratio
-              </div>
-              <div className="text-foreground font-mono text-xs font-bold">
+            <div className="border-separator bg-fill-4 rounded-control border p-2">
+              <div className="text-label-secondary text-eyebrow">Front / Back Ratio</div>
+              <div className="text-label text-footnote font-mono font-semibold">
                 {frontnessCount.front}F · {frontnessCount.central}C · {frontnessCount.back}B
               </div>
             </div>
 
-            <div className="border-border/30 bg-secondary/10 rounded-lg border p-2">
-              <div className="text-muted-foreground text-[10px] font-bold uppercase">
-                Hovered Formant
-              </div>
-              <div className="font-mono text-xs font-bold text-emerald-500">
+            <div className="border-separator bg-fill-4 rounded-control border p-2">
+              <div className="text-label-secondary text-eyebrow">Hovered formant</div>
+              <div className="text-footnote text-green font-mono font-semibold">
                 {hoveredVowel
                   ? `/${hoveredVowel.ipa}/ (${hoveredVowel.f1}Hz, ${hoveredVowel.f2}Hz)`
                   : "Hover point"}
@@ -449,16 +416,16 @@ export function AcousticFormantVisualizer({
       ) : (
         /* FFT Audio Spectrogram Canvas */
         <div className="space-y-3">
-          <div className="border-border/30 bg-background/50 relative overflow-hidden rounded-xl border p-2">
+          <div className="border-separator bg-surface rounded-row relative overflow-hidden border p-2">
             <canvas
               ref={canvasRef}
               width={600}
               height={240}
-              className="h-[220px] w-full rounded-lg"
+              className="rounded-control h-[220px] w-full"
             />
           </div>
 
-          <div className="text-muted-foreground flex items-center justify-between px-1 font-mono text-[11px]">
+          <div className="text-label-secondary text-caption flex items-center justify-between px-1 font-mono">
             <span>0 Hz (Fundamental $F_0$)</span>
             <span>1500 Hz (Vowel Formant Resonance Band)</span>
             <span>3000 Hz (Fricative / Sibilant Treble)</span>
@@ -468,5 +435,3 @@ export function AcousticFormantVisualizer({
     </div>
   );
 }
-
-export default AcousticFormantVisualizer;

@@ -13,6 +13,9 @@ import {
   getGeoJSONSource,
   calculateOverlapGeoJson,
   EMPTY_FC,
+  collection,
+  lineFeature,
+  pointFeature,
   snapToLayerFeatures,
 } from "../utils/map-helpers";
 import { traceTerrainPath } from "../utils/terrain-trace";
@@ -21,6 +24,13 @@ import { isKeyboardInputTarget } from "./drag-utils";
 
 /** A click counts as "on" a river/coastline when within this fraction of the snap tolerance. */
 const TRACE_TOLERANCE_RATIO = 0.1;
+
+const closedPolygon = (vertices: [number, number][]): Polygon => ({
+  type: "Polygon",
+  coordinates: [[...vertices, vertices[0]!]],
+});
+
+const isDrawMode = (mode: EditorMode) => mode === "add-subdivision" || mode === "add-lake";
 
 /** Country border plus every non-empty subdivision, for vertex/edge snapping. */
 function collectSnapGeometries(
@@ -66,7 +76,6 @@ interface UseSubdivisionDrawProps {
   onDrawComplete: (geometry: object) => void;
   worldMapLayers?: MapLayerData[];
   editorVisibleLayers?: Set<string>;
-  guides?: { id: string; type: "h" | "v"; value: number }[];
   snapEnabled?: boolean;
   snapTolerance?: number;
   snapPoint?: (coords: [number, number]) => [number, number];
@@ -81,8 +90,6 @@ export function useSubdivisionDraw({
   onDrawComplete,
   worldMapLayers,
   editorVisibleLayers,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  guides,
   snapEnabled,
   snapTolerance,
   snapPoint,
@@ -92,63 +99,24 @@ export function useSubdivisionDraw({
   const clickSizesRef = useRef<number[]>([]);
   const [drawVertices, setDrawVertices] = useState<[number, number][]>([]);
 
-  // Update draw polygon visualization
   const updateDrawVisualization = useCallback(() => {
     if (!map) return;
 
     const vertices = drawVerticesRef.current;
+    const polygon = vertices.length >= 3 ? closedPolygon(vertices) : null;
+    const polyData = polygon
+      ? collection([{ type: "Feature", geometry: polygon, properties: {} }])
+      : vertices.length >= 2
+        ? collection([lineFeature(vertices)])
+        : EMPTY_FC;
 
-    const verticesGeoJson = {
-      type: "FeatureCollection" as const,
-      features: vertices.map((v) => ({
-        type: "Feature" as const,
-        geometry: { type: "Point" as const, coordinates: v },
-        properties: {},
-      })),
-    };
-    getGeoJSONSource(map, "editor-draw-vertices")?.setData(verticesGeoJson);
-
-    if (vertices.length >= 3) {
-      const polyGeoJson = {
-        type: "FeatureCollection" as const,
-        features: [
-          {
-            type: "Feature" as const,
-            geometry: {
-              type: "Polygon" as const,
-              coordinates: [[...vertices, vertices[0]]],
-            },
-            properties: {},
-          },
-        ],
-      };
-      getGeoJSONSource(map, "editor-draw-polygon")?.setData(polyGeoJson);
-      const drawnGeom = {
-        type: "Polygon" as const,
-        coordinates: [[...vertices, vertices[0]]],
-      };
-      const overlapGeoJson = calculateOverlapGeoJson(drawnGeom, features);
-      getGeoJSONSource(map, "editor-overlap-highlight")?.setData(overlapGeoJson);
-    } else if (vertices.length >= 2) {
-      const lineGeoJson = {
-        type: "FeatureCollection" as const,
-        features: [
-          {
-            type: "Feature" as const,
-            geometry: {
-              type: "LineString" as const,
-              coordinates: vertices,
-            },
-            properties: {},
-          },
-        ],
-      };
-      getGeoJSONSource(map, "editor-draw-polygon")?.setData(lineGeoJson);
-      getGeoJSONSource(map, "editor-overlap-highlight")?.setData(EMPTY_FC);
-    } else {
-      getGeoJSONSource(map, "editor-draw-polygon")?.setData(EMPTY_FC);
-      getGeoJSONSource(map, "editor-overlap-highlight")?.setData(EMPTY_FC);
-    }
+    getGeoJSONSource(map, "editor-draw-vertices")?.setData(
+      collection(vertices.map((v) => pointFeature(v)))
+    );
+    getGeoJSONSource(map, "editor-draw-polygon")?.setData(polyData);
+    getGeoJSONSource(map, "editor-overlap-highlight")?.setData(
+      polygon ? calculateOverlapGeoJson(polygon, features) : EMPTY_FC
+    );
   }, [map, features]);
 
   const undoLastVertex = useCallback(() => {
@@ -168,29 +136,20 @@ export function useSubdivisionDraw({
   }, [updateDrawVisualization]);
 
   const saveDraw = useCallback(() => {
-    if (drawVerticesRef.current.length >= 3) {
-      const vertices = drawVerticesRef.current;
-      let geometry: Polygon | MultiPolygon = {
-        type: "Polygon" as const,
-        coordinates: [[...vertices, vertices[0]]],
-      };
-      const border = countryGeometry;
-      if (border) {
-        const { geometry: clipped } = clipGeometryToBorder(geometry, border);
-        geometry = clipped as Polygon | MultiPolygon;
-      }
-      onDrawComplete(geometry);
-      clearDraw();
-    }
+    if (drawVerticesRef.current.length < 3) return;
+    const polygon = closedPolygon(drawVerticesRef.current);
+    onDrawComplete(
+      countryGeometry ? clipGeometryToBorder(polygon, countryGeometry).geometry : polygon
+    );
+    clearDraw();
   }, [countryGeometry, onDrawComplete, clearDraw]);
 
-  // Bind mouse/touch map clicks for subdivision drawing
   useEffect(() => {
     if (!map || !isLoaded) return;
 
     const onClick = (e: MapLayerMouseEvent & { routeClicked?: boolean }) => {
       if (e.routeClicked || e.defaultPrevented) return;
-      if (mode !== "add-subdivision" && mode !== "add-lake") return;
+      if (!isDrawMode(mode)) return;
 
       let clickPoint: [number, number] = [e.lngLat.lng, e.lngLat.lat];
 
@@ -208,7 +167,6 @@ export function useSubdivisionDraw({
         clickPoint = snapPointToGeometries(clickPoint, snapGeoms, snapTol) as [number, number];
       }
 
-      // Snap to guides if enabled and guides are present
       if (snapOn && snapPoint) {
         clickPoint = snapPoint(clickPoint);
       }
@@ -228,7 +186,7 @@ export function useSubdivisionDraw({
     };
 
     const onDblClick = (e: MapLayerMouseEvent) => {
-      if (mode !== "add-subdivision" && mode !== "add-lake") return;
+      if (!isDrawMode(mode)) return;
       if (drawVerticesRef.current.length >= 3) {
         e.preventDefault();
         saveDraw();
@@ -260,7 +218,7 @@ export function useSubdivisionDraw({
   // Keyboard undo & cancel listener (Backspace/Delete/Ctrl+Z to undo vertex, Escape to cancel drawing)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (mode !== "add-subdivision" && mode !== "add-lake") return;
+      if (!isDrawMode(mode)) return;
       if (isKeyboardInputTarget(e.target) || isKeyboardInputTarget(document.activeElement)) return;
 
       if (e.key === "Escape" && drawVerticesRef.current.length > 0) {
@@ -281,9 +239,8 @@ export function useSubdivisionDraw({
     return () => window.removeEventListener("keydown", handler);
   }, [mode, undoLastVertex, clearDraw]);
 
-  // Clear draw state when mode changes away from add-subdivision
   useEffect(() => {
-    if (mode !== "add-subdivision" && mode !== "add-lake") {
+    if (!isDrawMode(mode)) {
       // oxlint-disable-next-line
       clearDraw();
     }

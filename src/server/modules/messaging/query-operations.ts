@@ -7,82 +7,203 @@
 
 import {
   type GetConversationsByFolderInput,
-  type GetConversationsLegacyInput,
   type GetConversationMessagesInput,
   type SearchUsersInput,
   type MessagingDependencies,
 } from "./contracts";
-import { MessagingForbiddenError } from "./errors";
-import { formatMessagesConversation, formatThinkpagesConversation } from "./formatters";
+import { MessagingForbiddenError, MessagingNotFoundError } from "./errors";
+import { formatMessagesConversation } from "./formatters";
 import { recordMessagingTelemetry } from "./telemetry";
 import { batchResolveMessagingAccounts } from "./account-resolver";
+import { blockedUserClerkIds } from "~/server/shared/user-blocks";
+import { usersWithSwitchOff } from "~/server/shared/privacy-permissions";
+import { visibleOnlineUserIds } from "~/server/shared/presence";
+import { enrollThinktankMember } from "./thinktank-enrollment";
+
+const FOLDER_SOURCES = new Set(["diplomatic", "wiki", "forum"]);
+const COUNTED_SOURCES = ["thinktank", "diplomatic", "wiki", "forum"] as const;
+
+const CONVERSATION_DETAIL_INCLUDE = {
+  participants: { where: { isActive: true } },
+  thinktankGroup: { include: { members: { where: { isActive: true } } } },
+  messages: { take: 1, orderBy: { ixTimeTimestamp: "desc" } },
+} as const;
 
 export class MessagingQueryOperations {
   private db: any;
-  private forumBridge?: any;
   private wikiBridge?: any;
   private telemetry?: any;
 
   constructor(dependencies: MessagingDependencies) {
     this.db = dependencies.db;
-    this.forumBridge = dependencies.forumBridge;
     this.wikiBridge = dependencies.wikiBridge;
     this.telemetry = dependencies.telemetry;
   }
 
-  public async getConversationsByFolder(actorId: string, input: GetConversationsByFolderInput) {
+  /** Accounts for the actor, every listed participant and every last-message sender. */
+  private resolveListAccounts(conversations: any[], actorId: string) {
+    const userIds: string[] = [actorId];
+    for (const conv of conversations) {
+      for (const p of conv.participants) userIds.push(p.userId);
+      if (conv.messages?.[0]) userIds.push(conv.messages[0].userId);
+    }
+    return batchResolveMessagingAccounts(userIds, this.db);
+  }
+
+  /**
+   * Unread message count per conversation (messages from others after the actor's last read).
+   * In group conversations, messages from `blocked` senders are hidden from the actor, so they
+   * are not counted either.
+   */
+  private async unreadCounts(
+    conversationIds: string[],
+    actorId: string,
+    groupIds: ReadonlySet<string> = new Set(),
+    blocked: readonly string[] = []
+  ) {
+    const unreadMap = new Map<string, number>();
+    if (conversationIds.length === 0) return unreadMap;
+
+    const myParticipants =
+      (await this.db.conversationParticipant.findMany({
+        where: { conversationId: { in: conversationIds }, userId: actorId },
+      })) ?? [];
+    for (const mp of myParticipants) unreadMap.set(mp.conversationId, 0);
+    if (myParticipants.length === 0) return unreadMap;
+
+    const unreadMessages =
+      (await this.db.thinkshareMessage.findMany({
+        where: {
+          OR: myParticipants.map((mp: any) => ({
+            conversationId: mp.conversationId,
+            ixTimeTimestamp: { gt: mp.lastReadAt || new Date(0) },
+            ...(blocked.length > 0 &&
+              groupIds.has(mp.conversationId) && { userId: { notIn: [...blocked] } }),
+          })),
+          userId: { not: actorId },
+          deletedAt: null,
+        },
+        select: { conversationId: true },
+      })) ?? [];
+    for (const msg of unreadMessages) {
+      unreadMap.set(msg.conversationId, (unreadMap.get(msg.conversationId) ?? 0) + 1);
+    }
+    return unreadMap;
+  }
+
+  /** Runs a list query and records its success/failure telemetry. */
+  private async withTelemetry<T>(
+    surface: "messages" | "thinkpages",
+    procedure: string,
+    actorId: string,
+    run: () => Promise<T>
+  ): Promise<T> {
     const startTime = Date.now();
+    const record = (authenticated: boolean, success: boolean) =>
+      recordMessagingTelemetry(
+        { surface, procedure, authenticated, success, durationMs: Date.now() - startTime },
+        this.telemetry
+      );
+
     try {
-      if (this.forumBridge?.syncInbound) {
-        await this.forumBridge.syncInbound(actorId, this.db).catch(() => {});
-      }
+      const result = await run();
+      record(true, true);
+      return result;
+    } catch (err) {
+      record(Boolean(actorId), false);
+      throw err;
+    }
+  }
+
+  /** Swaps a group conversation's preview for its latest message from a sender not in `blocked`. */
+  private async replaceBlockedPreviews(groups: any[], blocked: readonly string[]) {
+    const hidden = new Set(blocked);
+    await Promise.all(
+      groups
+        .filter((conv) => conv.messages?.[0] && hidden.has(conv.messages[0].userId))
+        .map(async (conv) => {
+          const visible = await this.db.thinkshareMessage.findFirst({
+            where: { conversationId: conv.id, userId: { notIn: [...blocked] } },
+            orderBy: { ixTimeTimestamp: "desc" },
+          });
+          conv.messages = visible ? [visible] : [];
+        })
+    );
+  }
+
+  /** The other participants of direct conversations who are online and let others see it. */
+  private onlineDirectParticipants(conversations: any[], actorId: string) {
+    const ids = conversations
+      .filter((c) => c.type === "direct")
+      .flatMap((c) => (c.participants ?? []).map((p: any) => p.userId as string))
+      .filter((id) => id !== actorId);
+    return visibleOnlineUserIds(this.db, ids);
+  }
+
+  /**
+   * Read receipts (SL-4): in a direct conversation, when the other participant last read it.
+   * Null unless both people allow read receipts, and while the other person holds the
+   * conversation as an unanswered message request. A message counts as seen when it was sent
+   * before `seenAt`.
+   */
+  public async getSeenState(actorId: string, conversationId: string) {
+    const conv = await this.db.thinkshareConversation.findUnique({
+      where: { id: conversationId },
+      select: {
+        type: true,
+        participants: {
+          where: { isActive: true },
+          select: { userId: true, lastReadAt: true, requestStatus: true },
+        },
+      },
+    });
+    if (!conv) throw new MessagingNotFoundError();
+    const participants: Array<{ userId: string; lastReadAt: Date; requestStatus?: string }> =
+      conv.participants ?? [];
+    if (!participants.some((p) => p.userId === actorId)) throw new MessagingForbiddenError();
+
+    const other = conv.type === "direct" ? participants.find((p) => p.userId !== actorId) : null;
+    if (!other || other.requestStatus === "pending") return { seenAt: null };
+    try {
+      const off = await usersWithSwitchOff(this.db, [actorId, other.userId], "dmReadReceipts");
+      return { seenAt: off.size > 0 ? null : other.lastReadAt };
+    } catch {
+      return { seenAt: null };
+    }
+  }
+
+  /** Removes the look-ahead row from a `limit + 1` page and returns its lastActivity as the next cursor. */
+  private popNextCursor(conversations: any[], limit: number): string | undefined {
+    if (conversations.length <= limit) return undefined;
+    return conversations.pop()!.lastActivity?.toISOString();
+  }
+
+  public getConversationsByFolder(actorId: string, input: GetConversationsByFolderInput) {
+    return this.withTelemetry("messages", "getConversationsByFolder", actorId, async () => {
       if (this.wikiBridge?.syncInbound) {
         await this.wikiBridge.syncInbound(actorId, this.db).catch(() => {});
       }
 
       const limit = input.limit ?? 20;
       const { folder, cursor } = input;
+      const isMember = { userId: actorId, isActive: true };
 
-      const where: any = {};
-
-      if (folder === "thinktank" || folder === "groups") {
-        where.source = "thinktank";
-        where.OR = [
-          {
-            participants: {
-              some: {
-                userId: actorId,
-                isActive: true,
-              },
-            },
-          },
-          {
-            thinktankGroup: {
-              members: {
-                some: {
-                  userId: actorId,
-                  isActive: true,
-                },
-              },
-            },
-          },
-        ];
-      } else {
-        where.participants = {
-          some: {
-            userId: actorId,
-            isActive: true,
-          },
-        };
-        where.source = { not: "thinktank" };
-        if (folder === "diplomatic") {
-          where.source = "diplomatic";
-        } else if (folder === "wiki") {
-          where.source = "wiki";
-        } else if (folder === "forum") {
-          where.source = "forum";
-        }
-      }
+      // Message requests (SL-4) sit in their own folder, out of every other one.
+      const where: any =
+        folder === "thinktank" || folder === "groups"
+          ? {
+              source: "thinktank",
+              OR: [
+                { participants: { some: isMember } },
+                { thinktankGroup: { members: { some: isMember } } },
+              ],
+            }
+          : folder === "requests"
+            ? { participants: { some: { ...isMember, requestStatus: "pending" } } }
+            : {
+                participants: { some: { ...isMember, requestStatus: { not: "pending" } } },
+                source: FOLDER_SOURCES.has(folder) ? folder : { not: "thinktank" },
+              };
 
       if (cursor) {
         where.lastActivity = { lt: new Date(cursor) };
@@ -102,99 +223,45 @@ export class MessagingQueryOperations {
         },
       });
 
-      let nextCursor: string | null = null;
-      if (conversations.length > limit) {
-        const nextItem = conversations.pop()!;
-        nextCursor = nextItem.lastActivity ? nextItem.lastActivity.toISOString() : null;
-      }
+      const nextCursor = this.popNextCursor(conversations, limit) ?? null;
 
-      const userIdsToResolve: string[] = [actorId];
-      const conversationIds = conversations.map((c: any) => c.id);
+      // Messages from accounts the viewer blocked are hidden in group conversations, so they
+      // neither preview nor count as unread there.
+      const groups = conversations.filter((c: any) => c.type !== "direct");
+      const blocked = groups.length > 0 ? await blockedUserClerkIds(this.db, actorId) : [];
+      if (blocked.length > 0) await this.replaceBlockedPreviews(groups, blocked);
 
-      for (const conv of conversations) {
-        for (const p of conv.participants) userIdsToResolve.push(p.userId);
-        if (conv.messages?.[0]) userIdsToResolve.push(conv.messages[0].userId);
-      }
-
-      const accountMap = await batchResolveMessagingAccounts(userIdsToResolve, this.db);
-
-      const unreadMap = new Map<string, number>();
-      if (conversationIds.length > 0) {
-        const myParticipants =
-          (await this.db.conversationParticipant.findMany({
-            where: {
-              conversationId: { in: conversationIds },
-              userId: actorId,
-            },
-          })) ?? [];
-
-        for (const mp of myParticipants) {
-          unreadMap.set(mp.conversationId, 0);
-        }
-
-        if (myParticipants.length > 0) {
-          const unreadMessages =
-            (await this.db.thinkshareMessage.findMany({
-              where: {
-                OR: myParticipants.map((mp: any) => ({
-                  conversationId: mp.conversationId,
-                  ixTimeTimestamp: { gt: mp.lastReadAt || new Date(0) },
-                })),
-                userId: { not: actorId },
-                deletedAt: null,
-              },
-              select: { conversationId: true },
-            })) ?? [];
-
-          for (const msg of unreadMessages) {
-            unreadMap.set(msg.conversationId, (unreadMap.get(msg.conversationId) ?? 0) + 1);
-          }
-        }
-      }
-
-      const formatted = conversations.map((conv: any) =>
-        formatMessagesConversation(conv, actorId, accountMap, unreadMap.get(conv.id) ?? 0)
-      );
-
-      recordMessagingTelemetry(
-        {
-          surface: "messages",
-          procedure: "getConversationsByFolder",
-          authenticated: true,
-          success: true,
-          durationMs: Date.now() - startTime,
-        },
-        this.telemetry
-      );
+      const accountMap = await this.resolveListAccounts(conversations, actorId);
+      const [unreadMap, online] = await Promise.all([
+        this.unreadCounts(
+          conversations.map((c: any) => c.id),
+          actorId,
+          new Set(groups.map((c: any) => c.id)),
+          blocked
+        ),
+        this.onlineDirectParticipants(conversations, actorId),
+      ]);
 
       return {
-        conversations: formatted,
+        conversations: conversations.map((conv: any) =>
+          formatMessagesConversation(conv, actorId, accountMap, unreadMap.get(conv.id) ?? 0, online)
+        ),
         nextCursor,
       };
-    } catch (err) {
-      recordMessagingTelemetry(
-        {
-          surface: "messages",
-          procedure: "getConversationsByFolder",
-          authenticated: Boolean(actorId),
-          success: false,
-          durationMs: Date.now() - startTime,
-        },
-        this.telemetry
-      );
-      throw err;
-    }
+    });
   }
 
   public async getFolderCounts(actorId: string) {
     // ConversationParticipant has no archive/trash state (archive and mute are client-side
     // only), so those folders carry no counts.
+    // `requests` is the number of pending message requests; their messages count nowhere else.
     const counts = {
       inbox: 0,
       thinktank: 0,
       diplomatic: 0,
       wiki: 0,
       forum: 0,
+      requests: 0,
     };
 
     if (!actorId) return counts;
@@ -207,6 +274,13 @@ export class MessagingQueryOperations {
     });
 
     if (activeParticipants.length === 0) return counts;
+    counts.requests = activeParticipants.filter(
+      (p: { requestStatus?: string }) => p.requestStatus === "pending"
+    ).length;
+
+    // Messages from accounts the actor blocked are hidden in group conversations, so they
+    // don't count there.
+    const blocked = await blockedUserClerkIds(this.db, actorId);
 
     // Count unread per conversation in SQL: loading every received message row hit the
     // 1000-row findMany guard and undercounted badges for busy users.
@@ -217,9 +291,12 @@ export class MessagingQueryOperations {
         ON p."conversationId" = m."conversationId"
        AND p."userId" = ${actorId}
        AND p."isActive" = true
+       AND p."requestStatus" <> 'pending'
+      JOIN "ThinkshareConversation" c ON c."id" = m."conversationId"
       WHERE m."userId" <> ${actorId}
         AND m."deletedAt" IS NULL
         AND m."ixTimeTimestamp" > p."lastReadAt"
+        AND (c."type" = 'direct' OR m."userId" <> ALL(${blocked}::text[]))
       GROUP BY m."conversationId"
     `;
     const convUnreadCounts = new Map(rows.map((r) => [r.conversationId, Number(r.unread)]));
@@ -229,10 +306,7 @@ export class MessagingQueryOperations {
       if (unread === 0) continue;
       counts.inbox += unread;
       const src = p.conversation?.source;
-      if (src === "thinktank") counts.thinktank += unread;
-      else if (src === "diplomatic") counts.diplomatic += unread;
-      else if (src === "wiki") counts.wiki += unread;
-      else if (src === "forum") counts.forum += unread;
+      if (COUNTED_SOURCES.includes(src)) counts[src as (typeof COUNTED_SOURCES)[number]] += unread;
     }
 
     return counts;
@@ -248,18 +322,7 @@ export class MessagingQueryOperations {
           { thinktankGroup: { conversationId: conversationId } },
         ],
       },
-      include: {
-        participants: { where: { isActive: true } },
-        thinktankGroup: {
-          include: {
-            members: { where: { isActive: true } },
-          },
-        },
-        messages: {
-          take: 1,
-          orderBy: { ixTimeTimestamp: "desc" },
-        },
-      },
+      include: CONVERSATION_DETAIL_INCLUDE,
     });
 
     // Auto-create/heal ThinkTank conversation if missing
@@ -297,39 +360,19 @@ export class MessagingQueryOperations {
 
         conv = await this.db.thinkshareConversation.findUnique({
           where: { id: newConv.id },
-          include: {
-            participants: { where: { isActive: true } },
-            thinktankGroup: {
-              include: {
-                members: { where: { isActive: true } },
-              },
-            },
-            messages: {
-              take: 1,
-              orderBy: { ixTimeTimestamp: "desc" },
-            },
-          },
+          include: CONVERSATION_DETAIL_INCLUDE,
         });
       }
     }
 
     if (!conv) return null;
 
-    // Ensure actor is in participants if group is public or user is already a member
+    // Only participants see a conversation; a ThinkTank member is joined to their group's chat.
     if (
-      actorId &&
       !conv.participants.some((p: any) => p.userId === actorId) &&
-      (conv.source === "thinktank" || conv.type === "group")
+      !(await enrollThinktankMember(this.db, actorId, conv.id))
     ) {
-      await this.db.conversationParticipant
-        .create({
-          data: {
-            conversationId: conv.id,
-            userId: actorId,
-            role: "participant",
-          },
-        })
-        .catch(() => {});
+      throw new MessagingForbiddenError();
     }
 
     const userIdsToResolve: string[] = [actorId];
@@ -341,115 +384,18 @@ export class MessagingQueryOperations {
 
     const accountMap = await batchResolveMessagingAccounts(userIdsToResolve, this.db);
 
-    const unreadCount = await this.db.thinkshareMessage.count({
-      where: {
-        conversationId: conv.id,
-        userId: { not: actorId },
-        deletedAt: null,
-      },
-    });
-
-    return formatMessagesConversation(conv, actorId, accountMap, unreadCount);
-  }
-
-  public async getConversationsLegacy(actorId: string, input: GetConversationsLegacyInput) {
-    const startTime = Date.now();
-    try {
-      const limit = input.limit ?? 20;
-      const where: any = {
-        participants: {
-          some: { userId: actorId, isActive: true },
+    const [unreadCount, online] = await Promise.all([
+      this.db.thinkshareMessage.count({
+        where: {
+          conversationId: conv.id,
+          userId: { not: actorId },
+          deletedAt: null,
         },
-        source: { not: "thinktank" },
-      };
+      }),
+      this.onlineDirectParticipants([conv], actorId),
+    ]);
 
-      if (input.cursor) {
-        where.lastActivity = { lt: new Date(input.cursor) };
-      }
-
-      const conversations = await this.db.thinkshareConversation.findMany({
-        where,
-        take: limit + 1,
-        orderBy: { lastActivity: "desc" },
-        include: {
-          participants: { where: { isActive: true } },
-          messages: {
-            take: 1,
-            orderBy: { ixTimeTimestamp: "desc" },
-          },
-        },
-      });
-
-      let nextCursor: string | undefined = undefined;
-      if (conversations.length > limit) {
-        const nextItem = conversations.pop()!;
-        nextCursor = nextItem.lastActivity ? nextItem.lastActivity.toISOString() : undefined;
-      }
-
-      const userIdsToResolve: string[] = [actorId];
-      const conversationIds = conversations.map((c: any) => c.id);
-
-      for (const conv of conversations) {
-        for (const p of conv.participants) userIdsToResolve.push(p.userId);
-        if (conv.messages?.[0]) userIdsToResolve.push(conv.messages[0].userId);
-      }
-
-      const accountMap = await batchResolveMessagingAccounts(userIdsToResolve, this.db);
-
-      const unreadMap = new Map<string, number>();
-      if (conversationIds.length > 0) {
-        const myParticipants = await this.db.conversationParticipant.findMany({
-          where: {
-            conversationId: { in: conversationIds },
-            userId: actorId,
-          },
-        });
-
-        for (const mp of myParticipants) {
-          const count = await this.db.thinkshareMessage.count({
-            where: {
-              conversationId: mp.conversationId,
-              ixTimeTimestamp: { gt: mp.lastReadAt || new Date(0) },
-              userId: { not: actorId },
-              deletedAt: null,
-            },
-          });
-          unreadMap.set(mp.conversationId, count);
-        }
-      }
-
-      const formatted = conversations.map((conv: any) =>
-        formatThinkpagesConversation(conv, actorId, accountMap, unreadMap.get(conv.id) ?? 0)
-      );
-
-      recordMessagingTelemetry(
-        {
-          surface: "thinkpages",
-          procedure: "getConversations",
-          authenticated: true,
-          success: true,
-          durationMs: Date.now() - startTime,
-        },
-        this.telemetry
-      );
-
-      return {
-        conversations: formatted,
-        nextCursor,
-      };
-    } catch (err) {
-      recordMessagingTelemetry(
-        {
-          surface: "thinkpages",
-          procedure: "getConversations",
-          authenticated: Boolean(actorId),
-          success: false,
-          durationMs: Date.now() - startTime,
-        },
-        this.telemetry
-      );
-      throw err;
-    }
+    return formatMessagesConversation(conv, actorId, accountMap, unreadCount, online);
   }
 
   public async getConversationMessages(actorId: string, input: GetConversationMessagesInput) {
@@ -467,28 +413,22 @@ export class MessagingQueryOperations {
 
     const targetConvId = conv?.id || conversationId;
 
-    let participant = await this.db.conversationParticipant.findFirst({
-      where: { conversationId: targetConvId, userId: actorId, isActive: true },
-    });
-
-    // For ThinkTank groups or public discussions, auto-enroll or allow read
-    if (!participant && conv && (conv.source === "thinktank" || conv.type === "group")) {
-      participant = await this.db.conversationParticipant
-        .create({
-          data: {
-            conversationId: targetConvId,
-            userId: actorId,
-            role: "participant",
-          },
-        })
-        .catch(() => null);
-    }
+    const participant =
+      (await this.db.conversationParticipant.findFirst({
+        where: { conversationId: targetConvId, userId: actorId, isActive: true },
+      })) ?? (conv ? await enrollThinktankMember(this.db, actorId, targetConvId) : null);
 
     if (!participant) {
       throw new MessagingForbiddenError();
     }
 
     const where: any = { conversationId: targetConvId };
+
+    // In group conversations, messages from accounts the viewer blocked are hidden from them.
+    if (conv && conv.type !== "direct") {
+      const blocked = await blockedUserClerkIds(this.db, actorId);
+      if (blocked.length > 0) where.userId = { notIn: blocked };
+    }
 
     if (cursor) {
       where.ixTimeTimestamp =
@@ -547,25 +487,5 @@ export class MessagingQueryOperations {
       profileImageUrl: u.country?.flag ?? null,
       accountType: "country" as const,
     }));
-  }
-
-  public async getPresenceForUsers(userIds: string[]) {
-    if (userIds.length === 0) return {};
-
-    const presenceList = await this.db.userPresence.findMany({
-      where: { userId: { in: userIds } },
-    });
-
-    const result: Record<string, any> = {};
-    for (const p of presenceList) {
-      result[p.userId] = {
-        status: p.status,
-        lastSeenAt: p.lastSeenAt,
-        currentCountryId: p.currentCountryId,
-        customStatus: p.customStatus,
-      };
-    }
-
-    return result;
   }
 }

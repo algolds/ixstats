@@ -12,7 +12,7 @@ export function useAbility(): AppAbility {
   return useContext(AbilityContext);
 }
 
-export interface CanProps {
+interface CanProps {
   I: Actions;
   a: Subjects;
   field?: any;

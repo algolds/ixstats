@@ -14,14 +14,13 @@ interface UserProfile {
 }
 
 interface IxnayIdData {
-  wikiUsername?: string | null;
   forumUsername?: string | null;
   discordUsername?: string | null;
 }
 
 /**
  * Resolves the display identity based on the conversation's folder context.
- * Diplomatic channels show country name, wiki discussions show wiki username, etc.
+ * Diplomatic channels show the country name, forum discussions the forum username.
  */
 export function resolveIdentity(
   displayName: string,
@@ -39,15 +38,8 @@ export function resolveIdentity(
       displayName: userProfile?.country?.name ?? displayName,
       avatar: userProfile?.country?.flag ?? avatarUrl,
       badgeIcon: Globe,
-      badgeColor: "text-amber-500",
+      badgeColor: "text-yellow",
       sourceLabel: "Diplomatic",
-    };
-  }
-
-  if (source === "wiki") {
-    return {
-      displayName: ixnayId?.wikiUsername ?? displayName,
-      avatar: null,
     };
   }
 
@@ -75,12 +67,8 @@ export function MessagesIdentityBadge({ identity, size = "sm" }: MessagesIdentit
 
   return (
     <span className="inline-flex items-center gap-1">
-      {Icon && <Icon className={`${iconSize} ${identity.badgeColor ?? "text-muted-foreground"}`} />}
-      {identity.sourceLabel && (
-        <Eyebrow>
-          {identity.sourceLabel}
-        </Eyebrow>
-      )}
+      {Icon && <Icon className={`${iconSize} ${identity.badgeColor ?? "text-label-secondary"}`} />}
+      {identity.sourceLabel && <Eyebrow>{identity.sourceLabel}</Eyebrow>}
     </span>
   );
 }

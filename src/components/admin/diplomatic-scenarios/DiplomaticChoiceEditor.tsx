@@ -46,48 +46,42 @@ export function DiplomaticChoiceEditor({
 
   return (
     <div className="space-y-4">
-      {/* Choices List */}
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <label className="text-foreground text-sm font-medium">
+          <label className="text-label text-body font-medium">
             Response Choices ({responseOptions.length})
           </label>
-          <Button
-            size="sm"
-            type="button"
-            onClick={onAddChoice}
-            className="bg-red-500/20 text-red-500 hover:bg-red-500/30"
-          >
+          <Button variant="destructive" size="sm" type="button" onClick={onAddChoice}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Choice
+            Add choice
           </Button>
         </div>
 
         {responseOptions.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-white/10 py-8 text-center">
-            <p className="text-muted-foreground text-sm">No choices added yet</p>
+          <div className="rounded-control border-separator border border-dashed py-8 text-center">
+            <p className="text-label-secondary text-body">No choices added yet</p>
           </div>
         ) : (
           <div className="space-y-2">
             {responseOptions.map((choice, index) => (
-              <Card key={choice.id || index} className="facet-card-child p-3">
+              <Card key={choice.id || index} className="flex flex-col gap-6 p-3 py-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="mb-1 flex items-center gap-2">
-                      <span className="text-foreground text-sm font-medium">{choice.label}</span>
+                      <span className="text-label text-body font-medium">{choice.label}</span>
                       <span
-                        className={`rounded px-2 py-0.5 text-xs ${
+                        className={`rounded-control-sm text-footnote px-2 py-0.5 ${
                           RISK_LEVELS.find((r) => r.value === choice.riskLevel)?.color ||
-                          "text-gray-400"
-                        } bg-white/5`}
+                          "text-label-secondary"
+                        } bg-fill-4`}
                       >
                         {choice.riskLevel}
                       </span>
                     </div>
-                    <p className="text-muted-foreground line-clamp-2 text-xs">
+                    <p className="text-label-secondary text-footnote line-clamp-2">
                       {choice.description}
                     </p>
-                    <div className="text-muted-foreground mt-2 flex items-center gap-3 text-xs">
+                    <div className="text-label-secondary text-footnote mt-2 flex items-center gap-3">
                       <span>
                         Skill: {choice.skillRequired} ({choice.skillLevel})
                       </span>
@@ -97,32 +91,32 @@ export function DiplomaticChoiceEditor({
                       (choice.predictedOutcomes &&
                         Object.keys(choice.predictedOutcomes).length > 0)) && (
                       <details className="mt-2">
-                        <summary className="text-muted-foreground hover:text-foreground mb-1 cursor-pointer text-xs font-semibold tracking-wider uppercase select-none">
-                          View Effects & Outcomes
+                        <summary className="text-label-secondary hover:text-label text-subhead mb-1 cursor-pointer select-none">
+                          View effects & outcomes
                         </summary>
-                        <div className="mt-1.5 grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
                           {choice.effects && Object.keys(choice.effects).length > 0 && (
                             <div>
-                              <span className="text-muted-foreground mb-1 block text-xs font-medium uppercase">
+                              <span className="text-label-secondary text-eyebrow mb-1 block">
                                 Effects
                               </span>
                               <JsonViewer
                                 data={choice.effects}
                                 defaultExpanded={1}
-                                className="border-border/30 bg-card/20 backdrop-blur-md"
+                                className="border-separator bg-surface"
                               />
                             </div>
                           )}
                           {choice.predictedOutcomes &&
                             Object.keys(choice.predictedOutcomes).length > 0 && (
                               <div>
-                                <span className="text-muted-foreground mb-1 block text-xs font-medium uppercase">
-                                  Predicted Outcomes
+                                <span className="text-label-secondary text-eyebrow mb-1 block">
+                                  Predicted outcomes
                                 </span>
                                 <JsonViewer
                                   data={choice.predictedOutcomes}
                                   defaultExpanded={1}
-                                  className="border-border/30 bg-card/20 backdrop-blur-md"
+                                  className="border-separator bg-surface"
                                 />
                               </div>
                             )}
@@ -140,7 +134,6 @@ export function DiplomaticChoiceEditor({
                         setOutcomesJson(JSON.stringify(choice.predictedOutcomes || {}, null, 2));
                         onEditChoice(index);
                       }}
-                      className="text-xs"
                     >
                       <Pencil className="h-3 w-3" />
                     </Button>
@@ -149,7 +142,7 @@ export function DiplomaticChoiceEditor({
                       variant="ghost"
                       type="button"
                       onClick={() => onDeleteChoice(index)}
-                      className="text-xs text-red-400"
+                      className="text-destructive"
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>
@@ -161,15 +154,14 @@ export function DiplomaticChoiceEditor({
         )}
       </div>
 
-      {/* Choice Editor Sub-Card */}
       {editingChoiceIndex !== null && (
-        <Card className="facet-card-parent border-2 border-red-500/30 p-4">
-          <h4 className="text-foreground mb-3 text-sm font-medium">
+        <Card className="border-red/30 flex flex-col gap-6 border-2 p-4 py-6">
+          <h4 className="text-label text-body mb-3 font-medium">
             {editingChoiceIndex < responseOptions.length ? "Edit Choice" : "Add New Choice"}
           </h4>
           <div className="space-y-3">
             <div>
-              <label className="text-foreground mb-2 block text-sm font-medium">Label *</label>
+              <label className="text-label text-body mb-2 block font-medium">Label *</label>
               <Input
                 value={choiceFormData.label}
                 onChange={(e) => setChoiceFormData((prev) => ({ ...prev, label: e.target.value }))}
@@ -178,9 +170,7 @@ export function DiplomaticChoiceEditor({
             </div>
 
             <div>
-              <label className="text-foreground mb-2 block text-sm font-medium">
-                Description *
-              </label>
+              <label className="text-label text-body mb-2 block font-medium">Description *</label>
               <Textarea
                 value={choiceFormData.description}
                 onChange={(e) =>
@@ -193,8 +183,8 @@ export function DiplomaticChoiceEditor({
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div>
-                <label className="text-foreground mb-2 block text-sm font-medium">
-                  Skill Required
+                <label className="text-label text-body mb-2 block font-medium">
+                  Skill required
                 </label>
                 <Input
                   value={choiceFormData.skillRequired}
@@ -205,9 +195,7 @@ export function DiplomaticChoiceEditor({
                 />
               </div>
               <div>
-                <label className="text-foreground mb-2 block text-sm font-medium">
-                  Skill Level
-                </label>
+                <label className="text-label text-body mb-2 block font-medium">Skill level</label>
                 <Input
                   type="number"
                   value={choiceFormData.skillLevel}
@@ -222,7 +210,7 @@ export function DiplomaticChoiceEditor({
                 />
               </div>
               <div>
-                <label className="text-foreground mb-2 block text-sm font-medium">Risk Level</label>
+                <label className="text-label text-body mb-2 block font-medium">Risk level</label>
                 <Select
                   value={choiceFormData.riskLevel}
                   onValueChange={(value) =>
@@ -244,9 +232,7 @@ export function DiplomaticChoiceEditor({
             </div>
 
             <div>
-              <label className="text-foreground mb-2 block text-sm font-medium">
-                Effects (JSON)
-              </label>
+              <label className="text-label text-body mb-2 block font-medium">Effects (JSON)</label>
               <Textarea
                 value={effectsJson}
                 onChange={(e) => {
@@ -260,12 +246,12 @@ export function DiplomaticChoiceEditor({
                 }}
                 placeholder='{"relationshipChange": 10, "culturalImpact": 5}'
                 rows={3}
-                className="font-mono text-xs"
+                className="md:text-footnote font-mono"
               />
             </div>
 
             <div>
-              <label className="text-foreground mb-2 block text-sm font-medium">
+              <label className="text-label text-body mb-2 block font-medium">
                 Predicted Outcomes (JSON)
               </label>
               <Textarea
@@ -281,19 +267,14 @@ export function DiplomaticChoiceEditor({
                 }}
                 placeholder='{"shortTerm": "Improved relations", "longTerm": "Trade agreement signed"}'
                 rows={3}
-                className="font-mono text-xs"
+                className="md:text-footnote font-mono"
               />
             </div>
 
             <div className="flex items-center gap-2 pt-2">
-              <Button
-                size="sm"
-                type="button"
-                onClick={onSaveChoice}
-                className="bg-red-500/20 text-red-500 hover:bg-red-500/30"
-              >
+              <Button variant="destructive" size="sm" type="button" onClick={onSaveChoice}>
                 <Check className="mr-2 h-4 w-4" />
-                Save Choice
+                Save choice
               </Button>
               <Button size="sm" variant="ghost" type="button" onClick={onCancelChoiceEdit}>
                 Cancel

@@ -41,35 +41,40 @@ jobs:
     # This condition seeks to ensure the action is only run when it is triggered by a trusted user.
     # For private repos, users who have access to the repo are considered trusted.
     # For public repos, users who members, owners, or collaborators are considered trusted.
+    # Gemini jobs run only once credentials exist: set the repo variable GEMINI_ENABLED=true
+    # together with the GEMINI_API_KEY secret (or Vertex/GCA settings). Otherwise the job is skipped.
     if: |-
-      github.event_name == 'workflow_dispatch' ||
+      vars.GEMINI_ENABLED == 'true' &&
       (
-        github.event_name == 'pull_request' &&
+        github.event_name == 'workflow_dispatch' ||
         (
-          github.event.repository.private == true ||
-          contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association)
-        )
-      ) ||
-      (
+          github.event_name == 'pull_request' &&
+          (
+            github.event.repository.private == true ||
+            contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association)
+          )
+        ) ||
         (
           (
-            github.event_name == 'issue_comment' &&
-            github.event.issue.pull_request
-          ) ||
-          github.event_name == 'pull_request_review_comment'
-        ) &&
-        contains(github.event.comment.body, '@gemini-cli /review') &&
+            (
+              github.event_name == 'issue_comment' &&
+              github.event.issue.pull_request
+            ) ||
+            github.event_name == 'pull_request_review_comment'
+          ) &&
+          contains(github.event.comment.body, '@gemini-cli /review') &&
+          (
+            github.event.repository.private == true ||
+            contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+          )
+        ) ||
         (
-          github.event.repository.private == true ||
-          contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
-        )
-      ) ||
-      (
-        github.event_name == 'pull_request_review' &&
-        contains(github.event.review.body, '@gemini-cli /review') &&
-        (
-          github.event.repository.private == true ||
-          contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)
+          github.event_name == 'pull_request_review' &&
+          contains(github.event.review.body, '@gemini-cli /review') &&
+          (
+            github.event.repository.private == true ||
+            contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)
+          )
         )
       )
     timeout-minutes: 5
@@ -112,7 +117,8 @@ jobs:
           echo "pr_data=${PR_DATA}" >> "${GITHUB_OUTPUT}"
 
           # Get file changes
-          CHANGED_FILES="$(gh pr diff "${PR_NUMBER}" --name-only)"
+          # The files API has no diff-size limit (`gh pr diff` fails with HTTP 406 past 20,000 lines).
+          CHANGED_FILES="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" --jq '.[].filename')"
           {
             echo "changed_files<<EOF"
             echo "${CHANGED_FILES}"
@@ -144,7 +150,8 @@ jobs:
           echo "pr_data=${PR_DATA}" >> "${GITHUB_OUTPUT}"
 
           # Get file changes
-          CHANGED_FILES="$(gh pr diff "${PR_NUMBER}" --name-only)"
+          # The files API has no diff-size limit (`gh pr diff` fails with HTTP 406 past 20,000 lines).
+          CHANGED_FILES="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" --jq '.[].filename')"
           {
             echo "changed_files<<EOF"
             echo "${CHANGED_FILES}"

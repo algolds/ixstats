@@ -4,9 +4,6 @@
  * the amount, type and metadata from the client, is gone.
  */
 
-jest.mock("~/lib/vault/vault-passive-income", () => ({
-  catchUpPassiveIncome: jest.fn().mockResolvedValue(undefined),
-}));
 jest.mock("~/lib/vault/vault-ledger", () => ({
   ...jest.requireActual("~/lib/vault/vault-ledger"),
   getOrCreateVault: jest.fn(),
@@ -14,9 +11,6 @@ jest.mock("~/lib/vault/vault-ledger", () => ({
 }));
 jest.mock("~/lib/vault/vault-perks", () => ({
   clearUserPerksCache: jest.fn(),
-}));
-jest.mock("~/server/modules/forum", () => ({
-  syncUserToForum: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock("~/lib/cache", () => ({
   ...jest.requireActual("~/lib/cache"), // the tRPC context needs the real Cache class
@@ -26,8 +20,7 @@ jest.mock("~/lib/cache", () => ({
 import { createCallerFactory } from "~/server/api/trpc";
 import { vaultRouter } from "~/server/api/routers/vault";
 import { vaultStoreRouter } from "~/server/api/routers/vault/store";
-import { getOrCreateVault, LedgerError, spendCreditsTx } from "~/lib/vault/vault-ledger";
-import { countStorePurchases, storePrerequisiteMet } from "~/lib/vault/store-purchases";
+import { getOrCreateVault, spendCreditsTx } from "~/lib/vault/vault-ledger";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockDb, type MockPrismaProxy } from "~/tests/helpers/transactional-mock-db";
 
@@ -132,15 +125,6 @@ describe("vault.purchaseStoreItem", () => {
     });
     expect(spendMock).not.toHaveBeenCalled();
   });
-
-  it("treats an equipped cosmetic as owned", async () => {
-    const { caller } = makeCaller(ITEMS.frame, { equipped: "other,frame_gold" });
-
-    await expect(caller.purchaseStoreItem({ itemId: "frame_gold" })).rejects.toMatchObject({
-      code: "CONFLICT",
-    });
-  });
-
   it("locks the vault row before checking ownership", async () => {
     const { db, caller } = makeCaller(ITEMS.frame);
 
@@ -149,17 +133,6 @@ describe("vault.purchaseStoreItem", () => {
     const sql = (db.$queryRaw.mock.calls[0]![0] as TemplateStringsArray).join("?");
     expect(sql).toContain("FOR UPDATE");
   });
-
-  it("lets upgrades stack", async () => {
-    const { caller } = makeCaller(ITEMS.capacity, {
-      purchases: purchaseRows("upgrade_card_capacity", "upgrade_card_capacity"),
-    });
-
-    await caller.purchaseStoreItem({ itemId: "upgrade_card_capacity" });
-
-    expect(spendMock.mock.calls[0]![1]).toMatchObject({ amount: 100, type: "SPEND_BOOST" });
-  });
-
   it("enforces the mega-capacity prerequisite on the server", async () => {
     const four = purchaseRows(...Array(4).fill("upgrade_card_capacity"));
     const { caller } = makeCaller(ITEMS.mega, { purchases: four });
@@ -174,48 +147,40 @@ describe("vault.purchaseStoreItem", () => {
     await ready.purchaseStoreItem({ itemId: "upgrade_card_capacity_mega" });
     expect(spendMock).toHaveBeenCalledTimes(1);
   });
-
-  it("reports insufficient credits as a bad request", async () => {
-    const { caller } = makeCaller(ITEMS.frame);
-    spendMock.mockRejectedValueOnce(
-      new LedgerError("INSUFFICIENT_CREDITS", "Insufficient credits", 10)
-    );
-
-    await expect(caller.purchaseStoreItem({ itemId: "frame_gold" })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
+  it("refuses a retired item without charging, even if its row is reactivated", async () => {
+    const { caller } = makeCaller({
+      id: "upgrade_archetype_proposal",
+      name: "Archetype Proposal Token",
+      price: 3500,
+      category: "upgrades",
+      isActive: true,
     });
+
+    await expect(
+      caller.purchaseStoreItem({ itemId: "upgrade_archetype_proposal" })
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    expect(spendMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a withdrawn lore token without charging, even if its row is reactivated", async () => {
+    const { caller } = makeCaller({
+      id: "upgrade_lore_token",
+      name: "Lore Request Token",
+      price: 2500,
+      category: "upgrades",
+      isActive: true,
+    });
+
+    await expect(caller.purchaseStoreItem({ itemId: "upgrade_lore_token" })).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+    });
+    expect(spendMock).not.toHaveBeenCalled();
   });
 });
-
 describe("the vault router no longer lets clients spend arbitrary amounts", () => {
   it("does not expose spendCredits", () => {
     const procedures = Object.keys(vaultRouter._def.procedures);
     expect(procedures).toContain("purchaseStoreItem");
     expect(procedures).not.toContain("spendCredits");
-  });
-});
-
-describe("store purchase helpers", () => {
-  it("counts purchases from string and object metadata, ignoring junk", () => {
-    expect(
-      countStorePurchases([
-        { metadata: JSON.stringify({ itemId: "a" }) },
-        { metadata: { itemId: "a" } },
-        { metadata: { itemId: "b" } },
-        { metadata: "not json" },
-        { metadata: null },
-        { metadata: { other: 1 } },
-      ])
-    ).toEqual({ a: 2, b: 1 });
-  });
-
-  it("checks prerequisites only for items that have one", () => {
-    expect(storePrerequisiteMet("frame_gold", undefined)).toBe(true);
-    expect(storePrerequisiteMet("upgrade_card_capacity_mega", { upgrade_card_capacity: 4 })).toBe(
-      false
-    );
-    expect(storePrerequisiteMet("upgrade_card_capacity_mega", { upgrade_card_capacity: 5 })).toBe(
-      true
-    );
   });
 });

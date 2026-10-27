@@ -1,0 +1,17 @@
+{
+  "user": {
+    "user_id": 7,
+    "username": "Admin",
+    "user_title": "Administrator",
+    "message_count": 120,
+    "reaction_score": 30,
+    "trophy_points": 12,
+    "register_date": 1600000000,
+    "last_activity": 1700003000,
+    "is_staff": true,
+    "is_admin": true,
+    "is_moderator": true,
+    "avatar_urls": { "o": "https://forum.example.test/a/7.jpg" },
+    "location": "Somewhere"
+  }
+}

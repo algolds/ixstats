@@ -2,6 +2,22 @@
  * Helper utilities for optimistic reaction updates in tRPC query caches.
  */
 
+/** A post's per-type reaction counts, stored either as a JSON string or as an object. */
+export function parseReactionCounts(
+  raw: string | Record<string, number> | null | undefined
+): Record<string, number> {
+  if (typeof raw !== "string") return raw ?? {};
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    // "null", numbers, strings and arrays are valid JSON but not a counts map.
+    return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+      ? (parsed as Record<string, number>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
 export const updateReactionsInCacheData = (
   oldData: any,
   postId: string,
@@ -15,15 +31,7 @@ export const updateReactionsInCacheData = (
     if (!post || post.id !== postId) return post;
 
     const reactions = [...(post.reactions ?? [])];
-    let reactionCounts: Record<string, number> = {};
-    try {
-      reactionCounts =
-        typeof post.reactionCounts === "string"
-          ? JSON.parse(post.reactionCounts)
-          : { ...(post.reactionCounts ?? {}) };
-    } catch {
-      reactionCounts = {};
-    }
+    const reactionCounts = { ...parseReactionCounts(post.reactionCounts) };
 
     const existingIndex = reactions.findIndex((r: any) => r.accountId === accountId);
 

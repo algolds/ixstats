@@ -2,39 +2,18 @@
 
 import React from "react";
 import { useInternalStability } from "~/hooks/useInternalStability";
-import {
-  StabilityMetricsCard,
-  SecurityEventsCard,
-} from "~/components/mycountry/domains/defense/stability";
+import { StabilityMetricsCard } from "~/components/mycountry/domains/defense/stability";
 
-export interface StabilityPanelProps {
+interface StabilityPanelProps {
   countryId: string;
 }
 
 export function StabilityPanel({ countryId }: StabilityPanelProps) {
-  const {
-    metrics,
-    activeEvents,
-    resolveEvent,
-    getStabilityColor,
-    getStabilityBg,
-    getTrendIcon,
-    getSeverityColor,
-  } = useInternalStability({ countryId });
+  const { metrics } = useInternalStability({ countryId });
 
   return (
     <div className="space-y-4">
-      <StabilityMetricsCard
-        metrics={metrics}
-        getStabilityColor={getStabilityColor}
-        getStabilityBg={getStabilityBg}
-        getTrendIcon={getTrendIcon}
-      />
-      <SecurityEventsCard
-        activeEvents={activeEvents}
-        resolveEvent={resolveEvent}
-        getSeverityColor={getSeverityColor}
-      />
+      <StabilityMetricsCard metrics={metrics} />
     </div>
   );
 }

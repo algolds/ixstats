@@ -1,11 +1,15 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { notificationAPI } from "~/lib/notifications/api";
+import { applyRelationshipImpact } from "~/lib/diplomacy/relationship-impact";
+
+/** Severing relations costs this much relation strength. */
+const SEVER_RELATIONSHIP_IMPACT = -30;
 
 export const diplomaticEmbassiesLifecycleSeveranceRouter = createTRPCRouter({
-  deleteEmbassy: protectedProcedure
+  deleteEmbassy: rateLimitedMutationProcedure
     .input(
       z.object({
         embassyId: z.string(),
@@ -46,6 +50,13 @@ export const diplomaticEmbassiesLifecycleSeveranceRouter = createTRPCRouter({
         where: { id: input.embassyId },
       });
 
+      await applyRelationshipImpact(
+        ctx.db,
+        embassy.guestCountryId,
+        embassy.hostCountryId,
+        SEVER_RELATIONSHIP_IMPACT
+      );
+
       // Create diplomatic event
       await ctx.db.diplomaticEvent.create({
         data: {
@@ -54,8 +65,9 @@ export const diplomaticEmbassiesLifecycleSeveranceRouter = createTRPCRouter({
           eventType: "embassy_severed",
           title: "Diplomatic Relations Severed",
           description: `${embassy.name} has been permanently dismantled and diplomatic relations severed.`,
-          ixTimeTimestamp: IxTime.getCurrentIxTime(),
-          relationshipImpact: -30,
+          // The severing nation's clock. Severing is not guarded, so an embassy from before the realm rule can go.
+          ixTimeTimestamp: (await clockForCountry(ctx.db, ctx.user.countryId)).now(),
+          relationshipImpact: SEVER_RELATIONSHIP_IMPACT,
           severity: "critical",
         },
       });

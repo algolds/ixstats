@@ -42,13 +42,24 @@ export function useMapEditorSync({ countryId, skipLinkageGate = false }: UseMapE
   } = api.transport.getCountryRoutes.useQuery({ countryId: countryId! }, { enabled: !!countryId });
 
   // Invalidation & Refetch
-  const invalidateAllMapData = useCallback(() => {
+  //
+  // Feature edits never change the country border or its linkage, so the cheap
+  // path only invalidates features + routes, and bursts (bulk ops, undo chains)
+  // coalesce into one refetch. `refetchFeatures` stays a full, immediate reload.
+  const invalidateFeatureQueries = useCallback(() => {
     if (!countryId) return;
     void utils.geoCore.getCountryFeatures.invalidate({ countryId });
     void utils.transport.getCountryRoutes.invalidate({ countryId });
-    void utils.geoCore.getCountryGeometry.invalidate({ countryId });
-    void utils.geoCore.getCountryLinkage.invalidate({ countryId });
   }, [countryId, utils]);
+
+  const debouncedInvalidate = useMemo(
+    () => debounce(invalidateFeatureQueries, 150),
+    [invalidateFeatureQueries]
+  );
+
+  const invalidateAllMapData = useCallback(() => {
+    debouncedInvalidate();
+  }, [debouncedInvalidate]);
 
   const refetchFeatures = useCallback(() => {
     void refetchGeoFeatures();
@@ -57,7 +68,9 @@ export function useMapEditorSync({ countryId, skipLinkageGate = false }: UseMapE
     void refetchCountryLinkage();
   }, [refetchGeoFeatures, refetchRoutes, refetchCountryGeo, refetchCountryLinkage]);
 
-  const debouncedRefetch = useMemo(() => debounce(refetchFeatures, 200), [refetchFeatures]);
+  // Kept for callers that pair it with invalidateAllMapData — both now share one
+  // debounced invalidation, so a mutation triggers a single refetch.
+  const debouncedRefetch = debouncedInvalidate;
 
   // Aggregate All Features
   const allFeatures: EditorFeature[] = useMemo(() => {
@@ -150,7 +163,10 @@ export function useMapEditorSync({ countryId, skipLinkageGate = false }: UseMapE
         type: "route",
         name: f.properties.name || "Route",
         geometry: f.geometry || undefined,
-        properties: f.properties as Record<string, string | number | boolean | null | undefined | object>,
+        properties: f.properties as Record<
+          string,
+          string | number | boolean | null | undefined | object
+        >,
       });
     });
 

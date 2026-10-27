@@ -16,7 +16,7 @@ IxStates (dev codename: IxStats) is an alternate-history and nation-simulation p
 | Nation Executive | Real-time intel, compliance, defense posture, elections | `/mycountry`, `/mycountry/intelligence`, `/mycountry/politics` |
 | Game Master | Monitoring, audit scripts, environment management | `/admin`, `scripts/audit` |
 | Analyst / Researcher | Economic stats, diplomacy data, exports | `/dashboard`, `/leaderboards`, `/thinkpages` |
-| Collector / Trader | Card packs, trading, IxVault management, marketplace | `/vault`, `/vault/cards`, `/vault/marketplace` |
+| Collector / Trader | Card packs, trading, IxVault management, marketplace | `/vault`, `/vault/cards`, `/vault/store` |
 | New Player | Guided onboarding, documentation, tutorials | `/setup`, `/help`, `/help/getting-started/*`, docs in `docs/overview` |
 
 ## Release Cadence & Versioning
@@ -26,22 +26,22 @@ IxStates follows an OS-inspired model (`Major.Minor.Patch` + permanent epoch **r
 <!-- BEGIN_DOCS:VERSION_MATRIX -->
 | Capability Domain | Component / Layer | Version / Release | Channel / Granularity |
 | :--- | :--- | :---: | :--- |
-| **Platform** | **IxStates (Lobster Crosby)** | **1.4.0 "Lobster Crosby"** | **Release Candidate** |
-| **Apps** | IxWorld | v2 | Standalone & Embedded Maps Engine |
+| **Platform** | **IxStates (Lobster Crosby)** | **1.5.0 "Lobster Crosby"** | **Release Candidate** |
+| **Apps** | IxWorld | v3 | Standalone & Embedded Maps Engine |
 | | WikiOS | v1 | Headless Wiki & Canvas Architecture |
-| | IxVault | v2 | Cards, Credits & Marketplace |
+| | IxVault | v3 | Wallet, Achievements, Cards & Store |
 | **Engines** | MyCountry Engine | v4 | Deterministic Nation Simulation |
 | | Concord Engine | v2 | Living World Simulation & Events |
 | | Atlas Engine | v5 | Spatial Math & Geometry Pipeline |
 | **Systems** | MyCountry UI | v6 | 4-Tier Command Architecture |
 | | Nation Builder | v4 | Statecraft & Tax Builder Subsystems |
-| | ThinkPages | v2 | Social Knowledge & Feed Components |
-| | Achievements | v2 | Awards & LoreWards Resync |
+| | ThinkPages | v3 | Social Knowledge & Feed Components |
+| | Achievements | v3 | Achievements, Lorewards & Legacy |
 | | Stash | v1 | Article Stashing (was LoreStash) |
 | | Repository | v2 | Commons Media Explorer |
-| | Halo | v5 | Contextual Overlay System |
+| | Halo | v6 | Contextual Overlay System |
 | | Onoma | v4 | Conlang & Linguistics Studio |
-| **Design** | Facet | v2 | Refraction / Depth Design System |
+| **Design** | Facet | v4 | Refraction / Depth Design System |
 <!-- END_DOCS:VERSION_MATRIX -->
 
 ### Active Frameworks & Tooling
@@ -49,13 +49,13 @@ IxStates follows an OS-inspired model (`Major.Minor.Patch` + permanent epoch **r
 <!-- BEGIN_DOCS:FRAMEWORK_MATRIX -->
 | Package / Layer | Version | Notes |
 | :--- | :---: | :--- |
-| **Next.js** | 16.3.6 | App Router architecture, Turbopack |
+| **Next.js** | 16.4.3 | App Router architecture, Turbopack |
 | **React** | 19.2.8 | React 19 concurrent features |
 | **TypeScript** | 7.0.2 | Native Go Engine concurrency |
 | **Prisma** | 6.19.3 | Multi-file schema partitioning |
 | **tRPC** | 11.18.0 | Domain-split modular routers |
 | **Tailwind CSS** | 4.3.3 | v4 CSS-first theme configuration |
-| **Zod** | 4.4.3 | Schema validation |
+| **Zod** | 4.6.7 | Schema validation |
 | **Oxlint** | 1.80.0 | Flat config, TS 7 native (50-100× faster) |
 | **Jest** | 30.4.2 | Unit and characterization suites |
 | **Runtime** | Bun 1.4+ | Native concurrency & virtual store |
@@ -93,21 +93,21 @@ This section inventories the primary code areas for auditing coverage, mapping d
 
 ### App Router (`src/app`)
 
-**IxVault (Integrated Product):** `/vault` — cards, collections, crafting, trading, marketplace, packs, lore cards, NS import.
+**IxVault (Integrated Product):** `/vault` — the cards hub (Mine, Sets with showcases, Market with auctions and trades, Explore), packs, lore cards, NS import.
 
-**MyCountry (Core System):** `/mycountry` (executive command suite), `/mycountry/executive`, `/mycountry/economy`, `/mycountry/diplomacy`, `/mycountry/intelligence`, `/mycountry/defense`, `/mycountry/politics`, `/mycountry/map-editor`, `/mycountry/editor`, `/mycountry/builder`.
+**MyCountry (Core System):** `/mycountry` (executive command suite), `/mycountry/executive`, `/mycountry/economy`, `/mycountry/diplomacy`, `/mycountry/intelligence`, `/mycountry/defense`, `/mycountry/politics`, `/mycountry/map-editor`, `/mycountry/editor`.
 
-**ThinkPages (Core System):** `/thinkpages` — social knowledge sharing (ThinkShare, ThinkTanks, IxTwitter).
+**ThinkPages (Core System):** `/thinkpages` — the community forum (sitewide and realm boards, moderation). The persona feed and Accounts are on the Dashboard (`/dashboard`, `/dashboard/accounts`); ThinkShare messaging is `/messages`, ThinkTanks `/thinktanks`, and the IxTwitter sync mirrors the feed to Discord.
 
-**Achievements & Awards (Core System):** `/achievements` — achievement explorer and detail views.
+**Achievements & Awards (Core System):** `/vault/achievements` — achievement explorer, Lorewards, showcase and leaderboard, inside the Vault.
 
 **MyCountry Builder (Core System):** `/builder` — nation creation and editor flows.
 
-**Admin CMS (Core System):** `/admin` — administrative dashboards and tooling; `/admin/maps` — map management, SVG upload, world generation.
+**Admin CMS (Core System):** `/admin` — administrative dashboards and tooling; `/admin/maps` — Atlas, the admin home for every realm's map; `/admin/maps/studio` — World Studio for designing worlds.
 
-**Navigation Hubs:** `/` (auth-aware landing), `/dashboard` (signed-in overview), `/explore`, `/countries`, `/feed`, `/leaderboards`.
+**Navigation Hubs:** `/` (auth-aware landing), `/dashboard` (signed-in overview), `/countries`, `/feed`, `/leaderboards`.
 
-**Other routes:** `/(forum)/forum` (IxForum), `/(wiki-os)/wiki` (WikiOS), `/blurbs`, `/messages`, `/myclub` + `/myleague` (sports), `/labs/onoma`, `/labs/vexel`, `/labs/map-pipeline`, `/admin/realms` (Realms admin).
+**Other routes:** `/(wiki-os)/wiki` (WikiOS), `/blurbs`, `/messages`, `/myclub` + `/myleague` (sports), `/labs/onoma`, `/labs/vexel`, `/admin/realms` (Realms admin).
 
 **IxWorld (Integrated Product):** `/maps` — world map viewer (standalone at maps.ixwiki.com).
 
@@ -130,23 +130,23 @@ Hooks in `src/hooks` and `src/app/**/hooks` coordinate client state (e.g., `useM
 
 ### tRPC Routers
 
-**77 routers registered in `appRouter` / ~900 procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
+**<!-- BEGIN_DOCS:COUNT:routers -->79<!-- END_DOCS:COUNT:routers --> routers registered in `appRouter` / <!-- BEGIN_DOCS:COUNT:procedures -->1,081<!-- END_DOCS:COUNT:procedures --> procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
 
 Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 
-**IxVault:** `vault/`, `cards/`, `card-packs/`, `card-market/`, `cardImages.ts`, `crafting/`, `trading/`, `lore-cards/`, `ns-import/`
+**IxVault:** `vault/`, `cards/`, `card-packs/`, `card-market/`, `cardImages.ts`, `trading/`, `lore-cards/`, `ns-import/`
 
-**MyCountry & Subsystems:** `mycountry/`, `intelligence/`, `diplomacy/` (core, embassies, policies, cultural), `diplomaticScenarios/`, `npcPersonalities/`, `security/` (operations, military, assessment, stability, borders, conflicts, defense), `militaryEquipment/`, `smallArmsEquipment/`, `government/`, `atomicGovernment.ts`, `governmentComponents/`, `elections/`, `legislation.ts`, `economics/`, `economicComponents/`, `economicArchetypes/`, `taxSystem/`, `resources.ts`, `transport/`, `meetings/`, `national-issues/`, `intent.ts`, `crisis-events.ts`, `policies/`, `scheduledChanges.ts`, `quickactions/`, `historical/`, `countryGeo.ts`, `customTypes.ts`
+**MyCountry & Subsystems:** `mycountry/`, `intelligence/`, `diplomacy/` (core, embassies, policies, cultural), `diplomaticScenarios/`, `npcPersonalities/`, `security/` (operations, military, assessment, stability, borders, conflicts, defense), `militaryEquipment/`, `smallArmsEquipment/`, `government/`, `atomicGovernment.ts`, `governmentComponents/`, `elections/`, `legislation.ts`, `economics/`, `economicComponents/`, `economicArchetypes/`, `taxSystem/`, `resources.ts`, `transport/`, `meetings/`, `national-issues/`, `intent.ts`, `crisis-events.ts`, `policies/`, `quickactions/`, `historical/`, `countryGeo.ts`
 
 **Maps & Realms:** `geo/` (core, features, editor, admin, sovereignty, wiki), `realms/`
 
-**Wiki & Social:** `wikios/`, `wikiCache.ts`, `lorewards/`, `commons.ts`, `heraldry/`, `blurbs/`, `thinkpages/` (posts, accounts, feed, thinktanks), `messages/`, `polls/`, `forum/`, `ixnayid/`, `sports/`, `narrator/`, `onoma/`
+**Wiki & Social:** `wikios/`, `wikiCache.ts`, `lorewards/`, `commons.ts`, `heraldry/`, `blurbs/`, `thinkpages/` (posts, accounts, feed, thinktanks), `messages/`, `polls/`, `forum/`, `ixnayid/`, `sports/`, `onoma/`
 
-**Other:** `achievements/`, `activities/` (feed, follows, trending, activities), `admin/` (countries, wiki, worldEvents, system, users, cron, bot, stash, thinkpages), `countries/` (list, economy, identity, management, wiki, atomic, flags), `formulas.ts`, `notifications/`, `users/`, `user-logging.ts`, `system.ts`, `system-validation.ts`, `cache.ts`, `demo-mode.ts`, `builderDraft.ts`, `autosaveHistory.ts`, `autosaveMonitoring.ts`
+**Other:** `achievements/`, `activities/` (feed, follows, trending, activities), `admin/` (countries, wiki, worldEvents, system, users, cron, bot, stash, thinkpages), `countries/` (list, economy, identity, management, editor, wiki, atomic, flags), `formulas.ts`, `notifications/`, `users/`, `user-logging.ts`, `system.ts`, `system-validation.ts`, `cache.ts`, `demo-mode.ts`, `builderDraft.ts`, `autosaveMonitoring.ts`
 
 ### Database & Data Flow
 
-- Prisma schema: 332 models across 18 files (`prisma/schema/`)
+- Prisma schema: <!-- BEGIN_DOCS:COUNT:models -->334<!-- END_DOCS:COUNT:models --> models across <!-- BEGIN_DOCS:COUNT:schemaFiles -->24<!-- END_DOCS:COUNT:schemaFiles --> files (`prisma/schema/`)
 - Seed scripts: `scripts/setup/`
 - ETL & audits: `scripts/audit/` (wiring verifier, CRUD sweeps, economic calculators)
 - PostgreSQL database: `localhost:5433/ixstats` (migrated from SQLite October 2025)

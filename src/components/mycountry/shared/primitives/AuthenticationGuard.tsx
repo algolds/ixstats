@@ -1,15 +1,17 @@
 "use client";
 
+import { Skeleton } from "~/components/ui/skeleton";
 import { useUser } from "~/context/auth-context";
 import { useEffect } from "react";
 import { Crown, Globe, Activity } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { createAbsoluteUrl } from "~/lib/utils";
+import { createAbsoluteUrl, createUrl } from "~/lib/utils";
 
 interface AuthenticationGuardProps {
   children: React.ReactNode;
-  redirectPath: string;
+  /** Where signing in returns to. Omitted, it is the address the visitor opened: its path and query. */
+  redirectPath?: string;
 }
 
 // Check if Clerk is configured
@@ -23,7 +25,9 @@ export function AuthenticationGuard({ children, redirectPath }: AuthenticationGu
 
   useEffect(() => {
     if (isLoaded && !user && isClerkConfigured) {
-      const returnUrl = encodeURIComponent(createAbsoluteUrl(redirectPath));
+      const back = redirectPath ?? `${window.location.pathname}${window.location.search}`;
+      // createUrl: the redirect_url is a plain URL, so it carries the base path.
+      const returnUrl = encodeURIComponent(createUrl(back));
       const signInUrl = createAbsoluteUrl("/sign-in");
       window.location.href = `${signInUrl}?redirect_url=${returnUrl}`;
     }
@@ -33,27 +37,27 @@ export function AuthenticationGuard({ children, redirectPath }: AuthenticationGu
   if (!isClerkConfigured) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Card className="facet-hierarchy-parent mx-auto max-w-2xl">
+        <Card className="mx-auto flex max-w-2xl flex-col gap-6 py-6">
           <CardHeader className="text-center">
-            <Crown className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <CardTitle className="text-2xl font-bold">Authentication Not Configured</CardTitle>
+            <Crown className="text-label-secondary mx-auto mb-4 h-12 w-12" />
+            <CardTitle className="text-title-1">Authentication not configured</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-muted-foreground mb-6">
+            <p className="text-label-secondary mb-6">
               User authentication is not set up for this application. Please contact an
               administrator to configure authentication or browse countries without signing in.
             </p>
             <div className="flex justify-center gap-4">
               <Button onClick={() => (window.location.href = createAbsoluteUrl("/countries"))}>
                 <Globe className="mr-2 h-4 w-4" />
-                Browse Countries
+                Browse countries
               </Button>
               <Button
                 variant="outline"
                 onClick={() => (window.location.href = createAbsoluteUrl("/dashboard"))}
               >
                 <Activity className="mr-2 h-4 w-4" />
-                View Dashboard
+                View dashboard
               </Button>
             </div>
           </CardContent>
@@ -66,8 +70,9 @@ export function AuthenticationGuard({ children, redirectPath }: AuthenticationGu
   if (!isLoaded) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="flex min-h-[400px] items-center justify-center">
-          <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-blue-600"></div>
+        <div className="space-y-4" role="status" aria-label="Checking your session">
+          <Skeleton className="h-12 w-72" />
+          <Skeleton className="rounded-card h-64" />
         </div>
       </div>
     );
@@ -78,7 +83,7 @@ export function AuthenticationGuard({ children, redirectPath }: AuthenticationGu
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex min-h-[400px] items-center justify-center">
-          <Card className="mx-auto max-w-md">
+          <Card className="mx-auto flex max-w-md flex-col gap-6 py-6">
             <CardContent className="p-6 text-center">
               <p>Redirecting to sign in...</p>
             </CardContent>

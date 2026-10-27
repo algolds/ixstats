@@ -3,25 +3,14 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
-import {
-  City as Building2,
-  MapPin,
-  User,
-  Dollar as DollarSign,
-  SystemRestart as Loader2,
-  NavArrowDown as ChevronDown,
-} from "iconoir-react";
+import { City as Building2, MapPin, User } from "iconoir-react";
+import { CountrySearchSelect } from "./CountrySearchSelect";
+import { Card } from "~/components/ui/card";
 
 interface EmbassyCreatorSheetProps {
   countryId: string;
@@ -29,43 +18,6 @@ interface EmbassyCreatorSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: () => void;
-}
-
-function CountrySelector({
-  onSelect,
-  excludeCountryId,
-  selectedCountryId,
-}: {
-  onSelect: (countryId: string, countryName: string) => void;
-  excludeCountryId: string;
-  selectedCountryId: string;
-}) {
-  const { data: countriesData } = api.countries.getAll.useQuery(
-    { limit: 200, offset: 0 },
-    { staleTime: 5 * 60 * 1000 }
-  );
-
-  const countries = (countriesData?.countries ?? [])
-    .filter((c) => c.id !== excludeCountryId)
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  return (
-    <select
-      value={selectedCountryId}
-      onChange={(e) => {
-        const country = countries.find((c) => c.id === e.target.value);
-        if (country) onSelect(country.id, country.name);
-      }}
-      className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
-    >
-      <option value="">Select a country...</option>
-      {countries.map((c) => (
-        <option key={c.id} value={c.id}>
-          {c.name}
-        </option>
-      ))}
-    </select>
-  );
 }
 
 export function EmbassyCreatorSheet({
@@ -81,13 +33,6 @@ export function EmbassyCreatorSheet({
   const [embassyName, setEmbassyName] = useState("");
   const [location, setLocation] = useState("");
   const [ambassadorName, setAmbassadorName] = useState("");
-  const [showCostBreakdown, setShowCostBreakdown] = useState(false);
-
-  const { data: costData, isLoading: costLoading } =
-    api.diplomaticEmbassies.calculateEstablishmentCost.useQuery(
-      { hostCountryId, guestCountryId: countryId },
-      { enabled: !!hostCountryId }
-    );
 
   const resetForm = () => {
     setHostCountryId("");
@@ -95,7 +40,6 @@ export function EmbassyCreatorSheet({
     setEmbassyName("");
     setLocation("");
     setAmbassadorName("");
-    setShowCostBreakdown(false);
   };
 
   const handleCountrySelect = (id: string, name: string) => {
@@ -139,56 +83,42 @@ export function EmbassyCreatorSheet({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="sm:max-w-lg"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 0,
-          padding: 0,
-          maxHeight: "85vh",
-          overflow: "hidden",
-        }}
-      >
-        <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 shrink-0 text-cyan-500" />
-            Establish New Embassy
-          </DialogTitle>
-          <p className="text-muted-foreground text-sm">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="flex flex-col gap-0 overflow-hidden p-0">
+        <SheetHeader className="px-6 pt-6 pb-0">
+          <SheetTitle className="flex items-center gap-2">
+            <Building2 className="text-label-secondary h-5 w-5 shrink-0" />
+            Establish new embassy
+          </SheetTitle>
+          <p className="text-label-secondary text-body">
             Establish diplomatic presence in another nation.
           </p>
-        </DialogHeader>
+        </SheetHeader>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
-          {/* Host Country */}
           <div>
-            <Label className="mb-1.5 block text-xs font-medium">Host Country</Label>
-            <CountrySelector
+            <Label className="text-caption mb-2 block">Host country</Label>
+            <CountrySearchSelect
+              value={hostCountryId}
               onSelect={handleCountrySelect}
-              excludeCountryId={countryId}
-              selectedCountryId={hostCountryId}
+              excludeIds={[countryId]}
+              label="Host country"
             />
             {hostCountryId && (
-              <div className="mt-2 rounded-md border border-cyan-500/30 bg-cyan-500/10 p-2.5 text-sm">
-                Selected:{" "}
-                <span className="font-semibold text-cyan-600 dark:text-cyan-400">
-                  {hostCountryName}
-                </span>
-              </div>
+              <p className="text-label-secondary text-body mt-2">
+                Selected: <span className="text-label font-semibold">{hostCountryName}</span>
+              </p>
             )}
           </div>
 
           <Separator />
 
-          {/* Embassy Details */}
           <div>
-            <Label className="mb-1.5 block text-xs font-medium">
-              Embassy Name <span className="text-destructive">*</span>
+            <Label className="text-caption mb-2 block">
+              Embassy name <span className="text-destructive">*</span>
             </Label>
             <div className="relative">
-              <Building2 className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <Building2 className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 value={embassyName}
                 onChange={(e) => setEmbassyName(e.target.value)}
@@ -199,9 +129,9 @@ export function EmbassyCreatorSheet({
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-xs font-medium">Location (Optional)</Label>
+            <Label className="text-caption mb-2 block">Location (optional)</Label>
             <div className="relative">
-              <MapPin className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <MapPin className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
@@ -212,9 +142,9 @@ export function EmbassyCreatorSheet({
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-xs font-medium">Ambassador (Optional)</Label>
+            <Label className="text-caption mb-2 block">Ambassador (optional)</Label>
             <div className="relative">
-              <User className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <User className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 value={ambassadorName}
                 onChange={(e) => setAmbassadorName(e.target.value)}
@@ -224,80 +154,13 @@ export function EmbassyCreatorSheet({
             </div>
           </div>
 
-          {/* Cost Preview */}
-          {hostCountryId && (
-            <>
-              <Separator />
-              <div>
-                <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold">
-                  <DollarSign className="h-3.5 w-3.5 text-cyan-500" />
-                  Establishment Cost
-                </h4>
-                {costLoading ? (
-                  <div className="text-muted-foreground flex items-center gap-2 py-4 text-sm">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Calculating...
-                  </div>
-                ) : costData ? (
-                  <div className="border-border bg-muted/30 rounded-md border p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Total</span>
-                      <span className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
-                        ${costData.totalCost.toLocaleString()}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setShowCostBreakdown(!showCostBreakdown)}
-                      className="text-muted-foreground hover:text-foreground mt-1 flex items-center gap-1 text-xs"
-                    >
-                      <ChevronDown
-                        className={`h-3 w-3 transition-transform ${showCostBreakdown ? "rotate-180" : ""}`}
-                      />
-                      {showCostBreakdown ? "Hide" : "Show"} breakdown
-                    </button>
-                    {showCostBreakdown && (
-                      <div className="border-border text-muted-foreground mt-2 space-y-1 border-t pt-2 text-xs">
-                        <div className="flex justify-between">
-                          <span>Base cost</span>
-                          <span>${costData.baseCost.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Economic tier</span>
-                          <span>&times;{costData.economicTierMultiplier.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Relationship</span>
-                          <span>&times;{costData.relationshipMultiplier.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    )}
-                    {costData.requirements && (
-                      <div className="border-border text-muted-foreground mt-2 border-t pt-2 text-xs">
-                        <p className="text-foreground mb-1 font-medium">Requirements:</p>
-                        <ul className="list-inside list-disc space-y-0.5">
-                          <li>Min. relationship: {costData.requirements.minimumRelationship}</li>
-                          {costData.requirements.requiredDocuments.map(
-                            (doc: string, idx: number) => (
-                              <li key={idx}>{doc}</li>
-                            )
-                          )}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            </>
-          )}
-
-          {/* Info notice */}
-          <div className="text-muted-foreground rounded-md border border-blue-500/20 bg-blue-500/5 p-2.5 text-xs">
-            Both countries will be notified of the embassy establishment. The host country can view
-            your embassy details.
-          </div>
+          <Card variant="well" padding="none" className="text-label-secondary text-footnote p-2">
+            The embassy opens at once and starts formal relations with the host. Both countries are
+            notified, and the host can view your embassy details.
+          </Card>
         </div>
 
-        <DialogFooter className="border-border/50 border-t px-6 py-4">
+        <SheetFooter className="border-separator border-t px-6 py-4">
           <Button
             variant="outline"
             size="sm"
@@ -310,15 +173,15 @@ export function EmbassyCreatorSheet({
           </Button>
           <Button
             size="sm"
-            className="gap-1.5"
+            className="gap-2"
             onClick={handleSubmit}
             disabled={!hostCountryId || !embassyName.trim() || establishEmbassy.isPending}
           >
             <Building2 className="h-3 w-3" />
-            {establishEmbassy.isPending ? "Establishing..." : "Establish Embassy"}
+            {establishEmbassy.isPending ? "Establishing…" : "Establish embassy"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -1,43 +1,19 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import {
   Bank as Landmark,
   Dollar as DollarSign,
   StatsReport as BarChart3,
-  GraphUp as LineChart,
-  Globe,
   InfoCircle as Info,
   WarningTriangle as AlertTriangle,
   ScaleFrameEnlarge as Scale,
-  CreditCard,
   Percentage as Percent,
 } from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
-import { api } from "~/trpc/react";
-import { cn } from "~/lib/utils/cn";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import { Skeleton } from "~/components/ui/skeleton";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
-import {
-  LineChart as RechartsLineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
-import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
+import { BaseMetricDetailsModal } from "./BaseMetricDetailsModal";
+import type { MetricModalTab } from "./types";
 import { MetricModalLayout } from "./MetricModalLayout";
-import type { TimeRange, ChartType } from "./types";
-import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
 
 interface DebtAnalysisModalProps {
   isOpen: boolean;
@@ -48,10 +24,160 @@ interface DebtAnalysisModalProps {
 
 const TABS: MetricModalTab[] = [
   { id: "overview", label: "Overview", icon: BarChart3 },
-  { id: "trends", label: "Trends", icon: LineChart },
-  { id: "comparison", label: "Comparison", icon: Globe },
   { id: "details", label: "Details", icon: Info },
 ];
+
+const RISK_LEVELS = [
+  { below: 40, label: "Low risk", color: "text-green" },
+  { below: 60, label: "Moderate", color: "text-yellow" },
+  { below: 100, label: "Elevated", color: "text-yellow" },
+  { below: Infinity, label: "High risk", color: "text-destructive" },
+];
+
+type EconomicData = ReturnType<typeof useCountryEconomicData>;
+type DebtViewProps = Pick<EconomicData, "countryData"> & {
+  fiscal: NonNullable<EconomicData["economyData"]>["fiscal"] | undefined;
+};
+
+function DebtOverview({ fiscal, countryData }: DebtViewProps) {
+  const debtToGdp = fiscal?.totalDebtGDPRatio || 0;
+  const interest = fiscal?.debtServiceCosts || 0;
+  const gdp = countryData?.currentTotalGdp || 0;
+  const publicDebt = gdp * (debtToGdp / 100);
+  const population = countryData?.currentPopulation || 1;
+  const riskLevel = RISK_LEVELS.find((level) => debtToGdp < level.below) ?? RISK_LEVELS[0]!;
+
+  return (
+    <MetricModalLayout variant="economy">
+      <MetricModalLayout.MainArea>
+        <MetricModalLayout.Panel
+          icon={Scale}
+          title="Fiscal position"
+          subtitle="Debt sustainability and interest burden indicators."
+          contentClassName="flex flex-1 flex-col justify-center"
+        >
+          <MetricModalLayout.TileGrid>
+            <MetricModalLayout.Tile
+              value={`$${(interest / 1e9).toFixed(1)}B`}
+              label="Annual interest"
+            />
+            <MetricModalLayout.Tile
+              value={`${((interest / (gdp || 1)) * 100).toFixed(2)}%`}
+              label="Interest/GDP"
+            />
+            <MetricModalLayout.Tile
+              tone="text-green"
+              value={`${((interest / (fiscal?.governmentRevenueTotal || 1)) * 100).toFixed(1)}%`}
+              label="Interest/Rev"
+            />
+            <MetricModalLayout.Tile
+              tone={riskLevel.color}
+              value={riskLevel.label}
+              label="Assessment"
+              labelStyle="eyebrow"
+            />
+          </MetricModalLayout.TileGrid>
+
+          <MetricModalLayout.Note icon={Info}>
+            National public debt indicates cumulative fiscal deficits. Highly elevated Debt-to-GDP
+            ratios place pressure on currency stability and crowd out private investment through
+            interest service fees, while low debt reserves can limit stimulus capability during
+            crises.
+          </MetricModalLayout.Note>
+        </MetricModalLayout.Panel>
+      </MetricModalLayout.MainArea>
+
+      <MetricModalLayout.Sidebar>
+        <MetricModalLayout.StatCard
+          label="Public debt"
+          value={publicDebt / 1e12}
+          prefix="$"
+          suffix=" T"
+          decimalPlaces={2}
+          icon={Landmark}
+          variant="economy"
+        />
+        <MetricModalLayout.StatCard
+          label="Debt-to-GDP"
+          value={debtToGdp}
+          suffix="%"
+          decimalPlaces={1}
+          icon={Percent}
+          variant="economy"
+        />
+        <MetricModalLayout.StatCard
+          label="Debt per capita"
+          value={publicDebt / population}
+          prefix="$"
+          decimalPlaces={0}
+          icon={DollarSign}
+          variant="economy"
+        />
+        <MetricModalLayout.Classification
+          label="Risk classification"
+          value={riskLevel.label}
+          tone={riskLevel.color}
+          icon={AlertTriangle}
+          description="Calculated rating based on macroeconomic capacity parameters."
+        />
+      </MetricModalLayout.Sidebar>
+    </MetricModalLayout>
+  );
+}
+
+function DebtDetails({ fiscal }: Pick<DebtViewProps, "fiscal">) {
+  const internalPct = fiscal?.internalDebtGDPPercent || 0;
+  const externalPct = fiscal?.externalDebtGDPPercent || 0;
+  const totalPct = internalPct + externalPct;
+  const share = (pct: number) => (totalPct > 0 ? `${((pct / totalPct) * 100).toFixed(0)}%` : "—");
+
+  return (
+    <MetricModalLayout variant="economy">
+      <MetricModalLayout.MainArea>
+        <MetricModalLayout.Panel
+          title="Debt composition"
+          subtitle="Breakdown of public debt by category"
+        >
+          <MetricModalLayout.TileGrid columns="grid-cols-2">
+            <MetricModalLayout.Tile
+              value={share(internalPct)}
+              label="Domestic debt"
+              labelStyle="footnote"
+            />
+            <MetricModalLayout.Tile
+              value={share(externalPct)}
+              label="External debt"
+              labelStyle="footnote"
+            />
+          </MetricModalLayout.TileGrid>
+
+          <MetricModalLayout.Note>
+            Domestic debt is typically denominated in national currency and held by local
+            institutions, presenting lower external default risk. External debt relies on global
+            capital markets and exposes the nation to foreign exchange and trade vulnerability.
+          </MetricModalLayout.Note>
+        </MetricModalLayout.Panel>
+      </MetricModalLayout.MainArea>
+
+      <MetricModalLayout.Sidebar>
+        <MetricModalLayout.SidePanel
+          title="Debt servicing"
+          subtitle="Annual interest costs and rates"
+        >
+          <MetricModalLayout.Metric
+            label="Annual interest"
+            tone="text-destructive"
+            value={`$${((fiscal?.debtServiceCosts || 0) / 1e9).toFixed(1)}B`}
+          />
+          <MetricModalLayout.Metric
+            label="Average interest rate"
+            value={fiscal?.interestRates ? `${fiscal.interestRates.toFixed(2)}%` : "—"}
+          />
+        </MetricModalLayout.SidePanel>
+      </MetricModalLayout.Sidebar>
+    </MetricModalLayout>
+  );
+}
 
 export function DebtAnalysisModal({
   isOpen,
@@ -59,631 +185,16 @@ export function DebtAnalysisModal({
   countryId,
   countryName,
 }: DebtAnalysisModalProps) {
-  // Fetch country data + mapped economyData
   const {
     countryData,
     economyData,
     isLoading: countryLoading,
-    refetch,
   } = useCountryEconomicData(countryId, isOpen);
+  const fiscal = economyData?.fiscal;
 
-  // Fetch historical data
-  const { data: historicalData, isLoading: historicalLoading } =
-    api.historical.getCountryHistory.useQuery({ countryId }, { enabled: !!countryId && isOpen });
-
-  // Fetch global stats for comparison
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { data: globalStats, isLoading: globalLoading } = api.countries.getGlobalStats.useQuery(
-    undefined,
-    { enabled: isOpen }
-  );
-
-  const isLoading = countryLoading || historicalLoading || globalLoading;
-
-  // Process historical data for charts
-  const processHistoricalData = (timeRange: TimeRange) => {
-    if (!historicalData || historicalData.length === 0) return [];
-
-    const fiscal = economyData?.fiscal;
-    const currentDebtRatio = fiscal?.totalDebtGDPRatio || 50;
-    const currentInterestRate = fiscal?.interestRates || 3.5;
-
-    return filterAndSortHistory(historicalData, timeRange, (point, formattedDate, timestamp) => {
-      const gdp = point.totalGdp || 0;
-      const publicDebt = gdp * (currentDebtRatio / 100);
-      const interestPayments = publicDebt * (currentInterestRate / 100);
-      return {
-        date: formattedDate,
-        timestamp,
-        publicDebt: publicDebt / 1e12,
-        debtToGdp: currentDebtRatio,
-        interestPayments: interestPayments / 1e9,
-      };
-    });
-  };
-
-  const chartConfig = {
-    publicDebt: { label: "Public Debt (T)", color: "#fbbf24" },
-    debtToGdp: { label: "Debt-to-GDP %", color: "#f59e0b" },
-    interestPayments: { label: "Interest (B)", color: "#ef4444" },
-  };
-
-  const getDebtRiskLevel = (
-    debtToGdp: number
-  ): {
-    label: string;
-    color: string;
-    bg: string;
-    border: string;
-    variant: "default" | "secondary" | "destructive";
-  } => {
-    if (debtToGdp < 40)
-      return {
-        label: "Low Risk",
-        color: "text-green-400",
-        bg: "bg-green-500/10",
-        border: "border-green-500/20",
-        variant: "default",
-      };
-    if (debtToGdp < 60)
-      return {
-        label: "Moderate",
-        color: "text-amber-400",
-        bg: "bg-amber-500/10",
-        border: "border-amber-500/20",
-        variant: "secondary",
-      };
-    if (debtToGdp < 100)
-      return {
-        label: "Elevated",
-        color: "text-orange-400",
-        bg: "bg-orange-500/10",
-        border: "border-orange-500/20",
-        variant: "secondary",
-      };
-    return {
-      label: "High Risk",
-      color: "text-red-400",
-      bg: "bg-red-500/10",
-      border: "border-red-500/20",
-      variant: "destructive",
-    };
-  };
-
-  const defaultProcessedData = useMemo(
-    // oxlint-disable-next-line
-    () => processHistoricalData("1y"),
-    // oxlint-disable-next-line
-    [historicalData, economyData]
-  );
-  const debtStats = useMemo(() => {
-    if (!defaultProcessedData || defaultProcessedData.length === 0) return null;
-    const ratios = defaultProcessedData.map((p) => p.debtToGdp);
-    const debts = defaultProcessedData.map((p) => p.publicDebt);
-
-    return {
-      maxRatio: Math.max(...ratios),
-      minDebt: Math.min(...debts),
-      dataPoints: defaultProcessedData.length,
-    };
-  }, [defaultProcessedData]);
-
-  const renderTabContent = (activeTab: string, timeRange: TimeRange, chartType: ChartType) => {
-    switch (activeTab) {
-      case "overview":
-        return renderOverviewTab();
-      case "trends":
-        return renderTrendsTab(timeRange, chartType);
-      case "comparison":
-        return renderComparisonTab();
-      case "details":
-        return renderDetailsTab();
-      default:
-        return null;
-    }
-  };
-
-  const renderOverviewTab = () => {
-    if (isLoading) {
-      return (
-        <MetricModalLayout variant="economy">
-          <MetricModalLayout.MainArea>
-            <Skeleton className="h-[300px] w-full" />
-          </MetricModalLayout.MainArea>
-          <MetricModalLayout.Sidebar>
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-          </MetricModalLayout.Sidebar>
-        </MetricModalLayout>
-      );
-    }
-
-    const fiscal = economyData?.fiscal;
-    const debtToGdp = fiscal?.totalDebtGDPRatio || 0;
-    const gdp = countryData?.currentTotalGdp || 0;
-    const publicDebt = gdp * (debtToGdp / 100);
-    const population = countryData?.currentPopulation || 1;
-    const riskLevel = getDebtRiskLevel(debtToGdp);
-
-    return (
-      <MetricModalLayout variant="economy">
-        <MetricModalLayout.MainArea>
-          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="flex items-center gap-2">
-                <Scale className="h-5 w-5 text-amber-500" />
-                Fiscal Position
-              </CardTitle>
-              <CardDescription>Debt sustainability and interest burden indicators.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-1 flex-col justify-center p-0">
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-amber-400">
-                    ${((fiscal?.debtServiceCosts || 0) / 1e9).toFixed(1)}B
-                  </div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
-                    Annual Interest
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-cyan-400">
-                    {(
-                      ((fiscal?.debtServiceCosts || 0) / (countryData?.currentTotalGdp || 1)) *
-                      100
-                    ).toFixed(2)}
-                    %
-                  </div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
-                    Interest/GDP
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-green-400">
-                    {(
-                      ((fiscal?.debtServiceCosts || 0) / (fiscal?.governmentRevenueTotal || 1)) *
-                      100
-                    ).toFixed(1)}
-                    %
-                  </div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
-                    Interest/Rev
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className={cn("text-lg font-bold", riskLevel.color)}>{riskLevel.label}</div>
-                  <div className="text-muted-foreground mt-1 text-xs font-semibold uppercase">
-                    Assessment
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-muted-foreground mt-6 flex items-start gap-3 rounded-lg border border-amber-500/10 bg-amber-500/5 p-4 text-xs">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-                <p className="leading-relaxed">
-                  National public debt indicates cumulative fiscal deficits. Highly elevated
-                  Debt-to-GDP ratios place pressure on currency stability and crowd out private
-                  investment through interest service fees, while low debt reserves can limit
-                  stimulus capability during crises.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </MetricModalLayout.MainArea>
-
-        <MetricModalLayout.Sidebar>
-          <MetricModalLayout.StatCard
-            label="Public Debt"
-            value={publicDebt / 1e12}
-            prefix="$"
-            suffix=" T"
-            decimalPlaces={2}
-            icon={Landmark}
-            variant="economy"
-          />
-          <MetricModalLayout.StatCard
-            label="Debt-to-GDP"
-            value={debtToGdp}
-            suffix="%"
-            decimalPlaces={1}
-            icon={Percent}
-            variant="economy"
-          />
-          <MetricModalLayout.StatCard
-            label="Debt per Capita"
-            value={publicDebt / population}
-            prefix="$"
-            decimalPlaces={0}
-            icon={DollarSign}
-            variant="economy"
-          />
-
-          <div
-            className={`facet-refraction relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden rounded-xl border p-4 ${riskLevel.bg} ${riskLevel.border}`}
-          >
-            <div>
-              <span className="text-muted-foreground block text-xs font-medium tracking-wider uppercase">
-                Risk Classification
-              </span>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className={`text-lg font-bold tracking-tight ${riskLevel.color}`}>
-                  {riskLevel.label}
-                </span>
-              </div>
-            </div>
-            <p className="text-muted-foreground mt-4 flex items-center gap-1.5 text-xs leading-relaxed">
-              <AlertTriangle className="h-3 w-3 shrink-0" />
-              Calculated rating based on macroeconomic capacity parameters.
-            </p>
-          </div>
-        </MetricModalLayout.Sidebar>
-      </MetricModalLayout>
-    );
-  };
-
-  const renderTrendsTab = (timeRange: TimeRange, chartType: ChartType) => {
-    const processedData = processHistoricalData(timeRange);
-
-    if (historicalLoading) {
-      return (
-        <MetricModalLayout variant="economy">
-          <MetricModalLayout.MainArea>
-            <Skeleton className="h-[350px] w-full" />
-          </MetricModalLayout.MainArea>
-          <MetricModalLayout.Sidebar>
-            <Skeleton className="h-full w-full" />
-          </MetricModalLayout.Sidebar>
-        </MetricModalLayout>
-      );
-    }
-
-    if (processedData.length === 0) {
-      return (
-        <Card className="facet-refraction border-white/5">
-          <CardContent className="py-12 text-center">
-            <LineChart className="text-muted-foreground mx-auto mb-4 h-12 w-12 opacity-50" />
-            <p className="text-muted-foreground">No historical data available</p>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    const ChartComponent =
-      chartType === "area" ? AreaChart : chartType === "bar" ? BarChart : RechartsLineChart;
-
-    return (
-      <MetricModalLayout variant="economy">
-        <MetricModalLayout.MainArea>
-          <Card className="facet-refraction border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle>Debt Trends</CardTitle>
-              <CardDescription>Historical public debt and debt-to-GDP ratio</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ChartContainer config={chartConfig} className="h-[320px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ChartComponent data={processedData}>
-                    <defs>
-                      <linearGradient id="debtGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                    <XAxis dataKey="date" stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
-                    <YAxis stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent className="facet-floating facet-refraction rounded-xl border border-white/10 bg-black/80" />
-                      }
-                    />
-                    {chartType === "area" ? (
-                      <Area
-                        type="monotone"
-                        dataKey="debtToGdp"
-                        stroke="#fbbf24"
-                        fillOpacity={1}
-                        fill="url(#debtGrad)"
-                        strokeWidth={2}
-                        name="Debt-to-GDP %"
-                      />
-                    ) : chartType === "bar" ? (
-                      <Bar
-                        dataKey="publicDebt"
-                        fill="#fbbf24"
-                        name="Public Debt (T)"
-                        radius={[4, 4, 0, 0]}
-                      />
-                    ) : (
-                      <>
-                        <Line
-                          type="monotone"
-                          dataKey="publicDebt"
-                          stroke="#fbbf24"
-                          strokeWidth={2}
-                          dot={false}
-                          name="Public Debt (T)"
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="debtToGdp"
-                          stroke="#f59e0b"
-                          strokeWidth={2}
-                          dot={false}
-                          name="Debt-to-GDP %"
-                        />
-                      </>
-                    )}
-                  </ChartComponent>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </MetricModalLayout.MainArea>
-
-        <MetricModalLayout.Sidebar>
-          <div className="flex flex-1 flex-col gap-4">
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Peak Debt-to-GDP
-              </span>
-              <span className="text-xl font-bold text-amber-500">
-                {debtStats?.maxRatio ? `${debtStats.maxRatio.toFixed(1)}%` : "N/A"}
-              </span>
-            </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Minimum Public Debt
-              </span>
-              <span className="text-xl font-bold text-green-400">
-                {debtStats?.minDebt ? `$${debtStats.minDebt.toFixed(3)} T` : "N/A"}
-              </span>
-            </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Data Points
-              </span>
-              <span className="text-xl font-bold text-blue-400">{debtStats?.dataPoints || 0}</span>
-            </div>
-          </div>
-        </MetricModalLayout.Sidebar>
-      </MetricModalLayout>
-    );
-  };
-
-  const renderComparisonTab = () => {
-    if (isLoading) {
-      return (
-        <MetricModalLayout variant="economy">
-          <MetricModalLayout.MainArea>
-            <Skeleton className="h-[350px] w-full" />
-          </MetricModalLayout.MainArea>
-          <MetricModalLayout.Sidebar>
-            <Skeleton className="h-full w-full" />
-          </MetricModalLayout.Sidebar>
-        </MetricModalLayout>
-      );
-    }
-
-    const fiscal = economyData?.fiscal;
-    const debtToGdp = fiscal?.totalDebtGDPRatio || 0;
-    const globalAvgDebt = 80.0;
-    // oxlint-disable-next-line eslint/no-unused-vars
-    const riskLevel = getDebtRiskLevel(debtToGdp);
-
-    const compData = [
-      {
-        name: "Debt-to-GDP",
-        "Your Country": debtToGdp,
-        "Global Average": globalAvgDebt,
-      },
-    ];
-
-    return (
-      <MetricModalLayout variant="economy">
-        <MetricModalLayout.MainArea>
-          <Card className="facet-refraction flex-1 border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-amber-500" />
-                Global Fiscal Benchmark
-              </CardTitle>
-              <CardDescription>
-                Compare public debt accumulation levels against global baselines.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={compData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
-                    <XAxis dataKey="name" stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
-                    <YAxis stroke="rgba(255, 255, 255, 0.3)" tickLine={false} unit="%" />
-                    <Tooltip
-                      contentStyle={{
-                        background: "rgba(18, 20, 24, 0.8)",
-                        backdropFilter: "blur(8px)",
-                        borderColor: "rgba(255, 255, 255, 0.1)",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <Bar dataKey="Your Country" fill="#fbbf24" radius={[4, 4, 0, 0]} />
-                    <Bar
-                      dataKey="Global Average"
-                      fill="rgba(255, 255, 255, 0.15)"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </MetricModalLayout.MainArea>
-
-        <MetricModalLayout.Sidebar>
-          <div className="flex h-full flex-col justify-between gap-4">
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                vs Global Average
-              </span>
-              <span className="text-xl font-bold text-amber-500">
-                {debtToGdp < globalAvgDebt ? "Below Average" : "Above Average"}
-              </span>
-              <span className="text-muted-foreground mt-1 text-xs">
-                Ratio: {debtToGdp.toFixed(1)}% vs {globalAvgDebt}% global avg
-              </span>
-            </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Estimated Rating
-              </span>
-              <span className="flex items-center gap-1.5 text-xl font-bold text-green-400">
-                <CreditCard className="h-4 w-4" />
-                {debtToGdp < 40
-                  ? "AAA"
-                  : debtToGdp < 60
-                    ? "AA"
-                    : debtToGdp < 80
-                      ? "A"
-                      : debtToGdp < 100
-                        ? "BBB"
-                        : "BB"}
-              </span>
-              <span className="text-muted-foreground mt-1 text-xs">
-                Creditworthiness index estimate
-              </span>
-            </div>
-            <div className="facet-refraction flex flex-1 flex-col justify-center rounded-xl border border-white/5 bg-white/5 p-4">
-              <span className="text-muted-foreground mb-1 block text-xs font-semibold tracking-wider uppercase">
-                Sustainability Status
-              </span>
-              <span
-                className={cn(
-                  "text-xl font-bold",
-                  debtToGdp < 60
-                    ? "text-emerald-400"
-                    : debtToGdp < 100
-                      ? "text-amber-400"
-                      : "text-red-400"
-                )}
-              >
-                {debtToGdp < 60 ? "Sustainable" : debtToGdp < 100 ? "Manageable" : "Critical"}
-              </span>
-              <span className="text-muted-foreground mt-1 text-xs">
-                Risk assessment index status
-              </span>
-            </div>
-          </div>
-        </MetricModalLayout.Sidebar>
-      </MetricModalLayout>
-    );
-  };
-
-  const renderDetailsTab = () => {
-    if (isLoading) {
-      return (
-        <MetricModalLayout variant="economy">
-          <MetricModalLayout.MainArea>
-            <Skeleton className="h-[350px] w-full" />
-          </MetricModalLayout.MainArea>
-          <MetricModalLayout.Sidebar>
-            <Skeleton className="h-full w-full" />
-          </MetricModalLayout.Sidebar>
-        </MetricModalLayout>
-      );
-    }
-
-    const fiscal = economyData?.fiscal;
-    const internalPct = fiscal?.internalDebtGDPPercent || 0;
-    const externalPct = fiscal?.externalDebtGDPPercent || 0;
-    const totalPct = internalPct + externalPct;
-    const domesticShare = totalPct > 0 ? (internalPct / totalPct) * 100 : 60;
-    const externalShare = totalPct > 0 ? (externalPct / totalPct) * 100 : 40;
-
-    return (
-      <MetricModalLayout variant="economy">
-        <MetricModalLayout.MainArea>
-          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-6">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle>Debt Composition</CardTitle>
-              <CardDescription>Breakdown of public debt by category</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 p-0">
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-semibold text-blue-400">
-                    {domesticShare.toFixed(0)}%
-                  </div>
-                  <div className="text-muted-foreground mt-1 text-xs">Domestic Debt</div>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-semibold text-indigo-400">
-                    {externalShare.toFixed(0)}%
-                  </div>
-                  <div className="text-muted-foreground mt-1 text-xs">External Debt</div>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-semibold text-emerald-400">25%</div>
-                  <div className="text-muted-foreground mt-1 text-xs">Short-Term</div>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-semibold text-amber-400">75%</div>
-                  <div className="text-muted-foreground mt-1 text-xs">Long-Term</div>
-                </div>
-              </div>
-
-              <div className="text-muted-foreground mt-6 rounded-lg border border-amber-500/10 bg-amber-500/5 p-4 text-xs">
-                <p className="leading-relaxed">
-                  Domestic debt is typically denominated in national currency and held by local
-                  institutions, presenting lower external default risk. External debt relies on
-                  global capital markets and exposes the nation to foreign exchange and trade
-                  vulnerability.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </MetricModalLayout.MainArea>
-
-        <MetricModalLayout.Sidebar>
-          <Card className="facet-refraction flex flex-1 flex-col justify-between border-white/5 p-4">
-            <CardHeader className="mb-4 p-0">
-              <CardTitle className="text-sm font-semibold">Debt Servicing</CardTitle>
-              <CardDescription className="text-xs">
-                Annual interest costs and durations
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 p-0">
-              <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-xs font-semibold uppercase">
-                  Annual Interest
-                </span>
-                <div className="mt-1 text-lg font-bold text-red-400">
-                  ${((fiscal?.debtServiceCosts || 0) / 1e9).toFixed(1)}B
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-xs font-semibold uppercase">
-                  Average Interest Rate
-                </span>
-                <div className="text-amber-450 mt-1 text-lg font-bold">
-                  {(fiscal?.interestRates || 3.5).toFixed(2)}%
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-                <span className="text-muted-foreground text-xs font-semibold uppercase">
-                  Average Maturity
-                </span>
-                <div className="mt-1 text-lg font-bold font-semibold text-cyan-400">8.5 Years</div>
-              </div>
-            </CardContent>
-          </Card>
-        </MetricModalLayout.Sidebar>
-      </MetricModalLayout>
-    );
+  const tabs = {
+    overview: <DebtOverview fiscal={fiscal} countryData={countryData} />,
+    details: <DebtDetails fiscal={fiscal} />,
   };
 
   return (
@@ -692,18 +203,25 @@ export function DebtAnalysisModal({
       onClose={onClose}
       countryId={countryId}
       countryName={countryName}
-      title="Public Debt Analysis"
+      title="Public debt analysis"
       description="Debt sustainability and fiscal health metrics"
       icon={Landmark}
-      iconColor="text-amber-500"
+      iconColor="text-yellow"
       tabs={TABS}
-      isLoading={isLoading}
-      onRefresh={() => refetch()}
+      isLoading={countryLoading}
       variant="economy"
     >
-      {renderTabContent}
+      {(tab) =>
+        countryLoading ? (
+          <MetricModalLayout.Loading
+            variant="economy"
+            mainHeight={tab === "overview" ? 300 : 350}
+            sidebarCards={tab === "overview" ? 4 : 0}
+          />
+        ) : (
+          (tabs[tab as keyof typeof tabs] ?? null)
+        )
+      }
     </BaseMetricDetailsModal>
   );
 }
-
-export default DebtAnalysisModal;

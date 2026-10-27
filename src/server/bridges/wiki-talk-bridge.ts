@@ -1,65 +1,24 @@
 /**
- * Wiki Notifications Bridge — Syncs MediaWiki notifications/alerts into ThinkShare.
- *
- * Inbound:  Fetches watchlist changes and user talk page notifications → creates ThinkShare messages
- * Outbound: Not applicable for notifications (read-only sync)
+ * Wiki talk bridge — surfaces a user's MediaWiki talk page as a ThinkShare conversation.
+ * Inbound only; replies go through the WikiOS talk page UI. (Watchlist and wiki activity live in the
+ * pinned LoreBot channel.)
  */
 
 import type { PrismaClient } from "@prisma/client";
-import type { BridgeAdapter, BridgeSyncResult } from "~/server/shared/bridge-types";
+import type { BridgeAdapter, BridgeSyncResult } from "./bridge-types";
 
-import { getArticleWikitext, getRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { getArticleWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { primaryNameOf } from "~/lib/identity/wiki-names";
 
-/** Fetch recent changes to pages (watchlist proxy). */
-// oxlint-disable-next-line typescript/no-unused-vars
-async function getUserWatchlistChanges(
-  wikiUsername: string,
-  limit = 20
-): Promise<
-  {
-    title: string;
-    user: string;
-    timestamp: string;
-    comment: string;
-    type: string;
-    newLen: number;
-    oldLen: number;
-  }[]
-> {
+/** Whether the user's talk page has any content (treated as new messages). */
+async function userTalkPageHasMessages(wikiName: string): Promise<boolean> {
   try {
-    const changes = await getRecentChanges(limit);
-    return (changes || [])
-      .filter((rc) => rc.user !== wikiUsername)
-      .map((rc) => ({
-        title: rc.title,
-        user: rc.user,
-        timestamp: rc.timestamp,
-        comment: rc.comment || "",
-        type: rc.type || "edit",
-        newLen: rc.newLen || 0,
-        oldLen: rc.oldLen || 0,
-      }));
+    const article = await getArticleWikitext(`User talk:${wikiName.replace(/ /g, "_")}`, "ixwiki");
+    return Boolean(article?.wikitext);
   } catch {
-    return [];
+    return false;
   }
 }
-
-/** Check if user's talk page has new messages. */
-async function getUserTalkPageMessages(
-  wikiUsername: string
-): Promise<{ hasMessages: boolean; content: string | null }> {
-  try {
-    const talkTitle = `User talk:${wikiUsername.replace(/ /g, "_")}`;
-    const article = await getArticleWikitext(talkTitle, "ixwiki");
-    const wikitext = article?.wikitext ?? "";
-    if (!wikitext) return { hasMessages: false, content: null };
-    return { hasMessages: wikitext.length > 0, content: wikitext };
-  } catch {
-    return { hasMessages: false, content: null };
-  }
-}
-
-// ─── Bridge Implementation ───────────────────────────────────────
 
 export const wikiTalkBridge: BridgeAdapter = {
   async syncInbound(userId: string, db: PrismaClient): Promise<BridgeSyncResult> {
@@ -69,20 +28,17 @@ export const wikiTalkBridge: BridgeAdapter = {
       messagesCreated: 0,
     };
 
-    // Get user's wiki username
+    // The user's own inbox: their first approved claim (a hidden one too), else their passport handle
     const user = await db.user.findFirst({
       where: { clerkUserId: userId },
-      select: { wikiUsername: true },
+      select: { id: true, handle: true },
     });
+    const wikiName = user ? ((await primaryNameOf(db, user.id)) ?? user.handle) : null;
 
-    if (!user?.wikiUsername) return result;
+    if (!wikiName) return result;
 
-    // (Note: Watchlist and wiki activity stream have been promoted to the dedicated pinned LoreBot channel)
-
-    // ── Check user talk page for new messages ──
-    const talkPage = await getUserTalkPageMessages(user.wikiUsername);
-    if (talkPage.hasMessages && talkPage.content) {
-      const talkSourceId = `wiki-talk:${user.wikiUsername}`;
+    if (await userTalkPageHasMessages(wikiName)) {
+      const talkSourceId = `wiki-talk:${wikiName}`;
       let talkConv = await db.thinkshareConversation.findFirst({
         where: { source: "wiki", sourceId: talkSourceId },
       });
@@ -91,7 +47,7 @@ export const wikiTalkBridge: BridgeAdapter = {
         talkConv = await db.thinkshareConversation.create({
           data: {
             type: "direct",
-            name: `Talk: ${user.wikiUsername}`,
+            name: `Talk: ${wikiName}`,
             source: "wiki",
             sourceId: talkSourceId,
             isActive: true,

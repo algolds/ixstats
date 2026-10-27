@@ -1,0 +1,9 @@
+[[File:x.png|thumb|upright=1.2|left|alt=A|link=B|Caption with [[link]]]]
+
+The harbour at dawn: [[File:Harbour.jpg|thumb|200px|right|Vilena harbour]] and more text after the image.
+
+A captionless image: [[File:Flag of Vesperia.svg|40px]] follows.
+
+Legacy syntax: [[Image:Old_Map.png|frameless|300px|border]] and [[file:lowercase.png|center|A centred [[Vilena]] picture]].
+
+[[:File:Not_embedded.png]] is only a link, as is [[Media:Sound.ogg]].

@@ -6,10 +6,74 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { adminProcedure, createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
+import { getWikiPermissions } from "~/lib/wiki-os/rights";
 import { getSiteStats } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { getInboundSyncStatus } from "~/lib/wiki-os/services/auto-sync-service";
+import {
+  deadJobTitle,
+  discardDeadJobs,
+  discardMirrorJob,
+  getMirrorStatus,
+  requeueDeadJobs,
+  requeueMirrorJob,
+} from "~/lib/wiki-os/services/mirror-admin";
+import { getEditingStatus, setEditing } from "~/lib/wiki-os/services/editing-admin";
+import { conflictLogPage } from "~/lib/wiki-os/services/conflict-log-view";
+import {
+  dismissQuarantined,
+  listQuarantined,
+  resyncQuarantined,
+  retryQuarantined,
+} from "~/lib/wiki-os/services/inbound-dead-letters";
+import { refusals } from "~/lib/wiki-os/permissions";
+import { auditWikiosAdmin, type WikiosAdminActor } from "~/lib/wiki-os/services/wikios-admin-audit";
+
+/** The administrator an audit row names. */
+const actorOf = (user: {
+  id: string;
+  clerkUserId: string;
+  handle: string | null;
+}): WikiosAdminActor => ({
+  id: user.id,
+  name: user.handle ?? user.clerkUserId,
+});
+
+/** A mirror job or a quarantined sync step, by id. */
+const rowIdInput = z.object({ id: z.string().min(1).max(64) });
+/** The dead jobs of one title, or every dead job when no title is given. */
+const deadJobsInput = z.object({ title: z.string().min(1).max(255).optional() });
+
+const DiagnosticListInput = z.object({
+  realm: z.string().default("ixwiki"),
+  limit: z.number().min(1).max(200).default(50),
+});
+const ArticleRankInput = z.object({
+  realm: z.string().default("ixwiki"),
+  limit: z.number().min(1).max(100).default(25),
+});
+const ArchivedInput = z.object({
+  realm: z.string().default("ixwiki"),
+  limit: z.number().min(1).max(100).default(50),
+});
+
+/** Published, non-redirect main-namespace articles ordered by word count. */
+const articlesByWordCount = (realm: string, limit: number, order: "asc" | "desc") =>
+  db.wikiArticle.findMany({
+    where: { source: realm, status: "PUBLISHED", namespace: 0, redirectTargetSlug: null },
+    orderBy: { wordCount: order },
+    take: limit,
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      wordCount: true,
+      readingTime: true,
+      updatedAt: true,
+    },
+  });
 
 export const wikiosUtilitiesRouter = createTRPCRouter({
   /**
@@ -30,6 +94,7 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
         orphans,
         deadEnds,
         brokenRedirects,
+        inboundSync,
       ] = await Promise.all([
         db.wikiArticle
           .count({
@@ -55,6 +120,14 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
         PageManagementService.getOrphanPages(10, realm),
         PageManagementService.getDeadEndPages(10, realm),
         PageManagementService.getBrokenRedirects(10, realm),
+        getInboundSyncStatus().catch(() => ({
+          status: "UNKNOWN" as const,
+          lastRunAt: null,
+          failures: 0,
+          lastError: null,
+          conflictsPending: 0,
+          quarantined: 0,
+        })),
       ]);
 
       const totalArticles = Math.max(siteStats.articles || 0, pgArticles || 0);
@@ -72,148 +145,190 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
         orphanCount: orphans.length,
         deadEndCount: deadEnds.length,
         brokenRedirectCount: brokenRedirects.length,
-        inboundSyncStatus: "ACTIVE",
+        inboundSyncStatus: inboundSync.status,
+        inboundSync,
         integrityScore:
           brokenRedirects.length === 0 ? 100 : Math.max(90, 100 - brokenRedirects.length),
       };
     }),
 
   /**
-   * Diagnostic: Orphan Articles (0 incoming links)
+   * The outbound mirror's outbox for administrators: jobs by state, how long the oldest has waited, whether
+   * the worker is stopped or has no bot account, and the last dead jobs (MediaWiki is out of sync for those titles).
    */
-  getOrphanArticles: publicProcedure
+  getMirrorStatus: adminProcedure.query(() => getMirrorStatus()),
+
+  /** Try a dead mirror job again from its first attempt. Audited. */
+  requeueMirrorJob: adminProcedure.input(rowIdInput).mutation(async ({ ctx, input }) => {
+    await refusals(requeueMirrorJob(input.id));
+    await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
+      action: "wikios.mirror.requeue",
+      targetId: input.id,
+      changes: { id: input.id },
+    });
+    return { success: true as const };
+  }),
+
+  /** Give up on a dead mirror job, so the jobs behind it for its title can run. Audited. */
+  discardMirrorJob: adminProcedure.input(rowIdInput).mutation(async ({ ctx, input }) => {
+    await refusals(discardMirrorJob(input.id));
+    await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
+      action: "wikios.mirror.discard",
+      targetId: input.id,
+      changes: { id: input.id },
+    });
+    return { success: true as const };
+  }),
+
+  /** Try every dead mirror job of a title (or every dead job) again from its first attempt. Audited. */
+  requeueDeadMirrorJobs: adminProcedure.input(deadJobsInput).mutation(async ({ ctx, input }) => {
+    const count = await requeueDeadJobs(input);
+    const matched = input.title === undefined ? null : deadJobTitle(input.title);
+    await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
+      action: "wikios.mirror.requeue-bulk",
+      targetId: matched ?? "all",
+      changes: { title: matched, count },
+    });
+    return { count };
+  }),
+
+  /** Give up on every dead mirror job of a title (or every dead job), so the jobs behind them can run. Audited. */
+  discardDeadMirrorJobs: adminProcedure.input(deadJobsInput).mutation(async ({ ctx, input }) => {
+    const count = await discardDeadJobs(input);
+    const matched = input.title === undefined ? null : deadJobTitle(input.title);
+    await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
+      action: "wikios.mirror.discard-bulk",
+      targetId: matched ?? "all",
+      changes: { title: matched, count },
+    });
+    return { count };
+  }),
+
+  /** The conflict log, newest first: every collision, what won, what it overwrote and who was told. */
+  listConflicts: adminProcedure
     .input(
       z.object({
-        realm: z.string().default("ixwiki"),
-        limit: z.number().min(1).max(200).default(50),
+        cursor: z.string().max(64).optional(),
+        limit: z.number().int().min(1).max(100).default(50),
+        articleId: z.string().max(64).optional(),
       })
     )
-    .query(async ({ input }) => {
-      return PageManagementService.getOrphanPages(input.limit, input.realm);
-    }),
+    .query(({ input }) => conflictLogPage(input)),
+
+  /** The inbound sync's quarantined steps (failed in five cycles, the sync moved past them), oldest first. */
+  getQuarantinedSyncSteps: adminProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(200).default(50) }).optional())
+    .query(({ input }) => listQuarantined(input?.limit ?? 50)),
+
+  /**
+   * Apply a quarantined step again, through the same conflict rule as a cycle: "skipped" when MediaWiki no longer has
+   * it, "failed" counts the attempt; CONFLICT when a later classic change of its page or user was applied. Audited.
+   */
+  retryQuarantinedSyncStep: adminProcedure.input(rowIdInput).mutation(async ({ ctx, input }) => {
+    const outcome = await refusals(retryQuarantined(input.id));
+    await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
+      action: "wikios.quarantine.retry",
+      targetId: input.id,
+      changes: { id: input.id, outcome },
+    });
+    return { outcome };
+  }),
+
+  /** For a quarantined edit: bring its page over from classic as it is now, judged like a cycle's revision. Audited. */
+  resyncQuarantinedPage: adminProcedure.input(rowIdInput).mutation(async ({ ctx, input }) => {
+    const outcome = await refusals(resyncQuarantined(input.id));
+    await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
+      action: "wikios.quarantine.resync",
+      targetId: input.id,
+      changes: { id: input.id, outcome },
+    });
+    return { outcome };
+  }),
+
+  /** Give up on a quarantined step: it leaves the list, and WikiOS keeps what it has for that page. Audited. */
+  dismissQuarantinedSyncStep: adminProcedure.input(rowIdInput).mutation(async ({ ctx, input }) => {
+    await refusals(dismissQuarantined(input.id));
+    await auditWikiosAdmin(ctx.db, actorOf(ctx.user), {
+      action: "wikios.quarantine.dismiss",
+      targetId: input.id,
+      changes: { id: input.id },
+    });
+    return { success: true as const };
+  }),
+
+  /** The admin WikiOS editing switch: on/off, forced by WIKIOS_V1_ENABLED, and whether the mirror can write. */
+  getEditingStatus: adminProcedure.query(() => getEditingStatus()),
+
+  /** Turn WikiOS editing on or off; queued mirror jobs keep draining after off. Audited and DMed to the admin. */
+  setEditing: adminProcedure.input(z.object({ enabled: z.boolean() })).mutation(({ ctx, input }) =>
+    setEditing(
+      ctx.db,
+      {
+        id: ctx.user.id,
+        clerkUserId: ctx.user.clerkUserId,
+        name: ctx.user.handle ?? ctx.user.clerkUserId,
+      },
+      input.enabled
+    )
+  ),
+
+  /**
+   * Diagnostic: Orphan Articles (0 incoming links)
+   */
+  getOrphanArticles: publicProcedure.input(DiagnosticListInput).query(async ({ input }) => {
+    return PageManagementService.getOrphanPages(input.limit, input.realm);
+  }),
 
   /**
    * Diagnostic: Dead-End Articles (0 outgoing links)
    */
-  getDeadEndArticles: publicProcedure
-    .input(
-      z.object({
-        realm: z.string().default("ixwiki"),
-        limit: z.number().min(1).max(200).default(50),
-      })
-    )
-    .query(async ({ input }) => {
-      return PageManagementService.getDeadEndPages(input.limit, input.realm);
-    }),
+  getDeadEndArticles: publicProcedure.input(DiagnosticListInput).query(async ({ input }) => {
+    return PageManagementService.getDeadEndPages(input.limit, input.realm);
+  }),
 
   /**
    * Diagnostic: Broken Redirects
    */
-  getBrokenRedirects: publicProcedure
-    .input(
-      z.object({
-        realm: z.string().default("ixwiki"),
-        limit: z.number().min(1).max(200).default(50),
-      })
-    )
-    .query(async ({ input }) => {
-      return PageManagementService.getBrokenRedirects(input.limit, input.realm);
-    }),
+  getBrokenRedirects: publicProcedure.input(DiagnosticListInput).query(async ({ input }) => {
+    return PageManagementService.getBrokenRedirects(input.limit, input.realm);
+  }),
 
   /**
    * Diagnostic: Shortest Published Articles (<150 bytes)
    */
   getShortestArticles: publicProcedure
-    .input(
-      z.object({
-        realm: z.string().default("ixwiki"),
-        limit: z.number().min(1).max(100).default(25),
-      })
-    )
-    .query(async ({ input }) => {
-      const articles = await db.wikiArticle.findMany({
-        where: {
-          source: input.realm,
-          status: "PUBLISHED",
-          namespace: 0,
-          redirectTargetSlug: null,
-        },
-        orderBy: { wordCount: "asc" },
-        take: input.limit,
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          wordCount: true,
-          readingTime: true,
-          updatedAt: true,
-        },
-      });
-
-      return articles;
-    }),
+    .input(ArticleRankInput)
+    .query(({ input }) => articlesByWordCount(input.realm, input.limit, "asc")),
 
   /**
    * Diagnostic: Longest Published Articles
    */
   getLongestArticles: publicProcedure
-    .input(
-      z.object({
-        realm: z.string().default("ixwiki"),
-        limit: z.number().min(1).max(100).default(25),
-      })
-    )
-    .query(async ({ input }) => {
-      const articles = await db.wikiArticle.findMany({
-        where: {
-          source: input.realm,
-          status: "PUBLISHED",
-          namespace: 0,
-          redirectTargetSlug: null,
-        },
-        orderBy: { wordCount: "desc" },
-        take: input.limit,
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          wordCount: true,
-          readingTime: true,
-          updatedAt: true,
-        },
-      });
-
-      return articles;
-    }),
+    .input(ArticleRankInput)
+    .query(({ input }) => articlesByWordCount(input.realm, input.limit, "desc")),
 
   /**
    * Governance: Soft-Deleted & Archived Articles
    */
-  getArchivedArticles: publicProcedure
-    .input(
-      z.object({
-        realm: z.string().default("ixwiki"),
-        limit: z.number().min(1).max(100).default(50),
-      })
-    )
-    .query(async ({ input }) => {
-      return db.wikiArticle.findMany({
-        where: {
-          source: input.realm,
-          status: "ARCHIVED",
-        },
-        orderBy: { updatedAt: "desc" },
-        take: input.limit,
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          summary: true,
-          lastEditorId: true,
-          updatedAt: true,
-        },
-      });
-    }),
+  getArchivedArticles: publicProcedure.input(ArchivedInput).query(async ({ input, ctx }) => {
+    // The list of deleted pages is for those who may browse them; everyone else sees none.
+    if (!(await getWikiPermissions(ctx)).rights.has("browsearchive")) return [];
+    return db.wikiArticle.findMany({
+      where: {
+        source: input.realm,
+        status: "ARCHIVED",
+      },
+      orderBy: { updatedAt: "desc" },
+      take: input.limit,
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        summary: true,
+        updatedAt: true,
+      },
+    });
+  }),
 
   /**
    * Governance: System Event & Action Audit Logs
@@ -238,6 +353,17 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
           orderBy: { createdAt: "desc" },
           take: input.limit,
           skip: input.offset,
+          // Public: the actor is named by `actorName`; never the internal `userId` (plan 409 writes it).
+          select: {
+            id: true,
+            logType: true,
+            action: true,
+            title: true,
+            actorName: true,
+            comment: true,
+            params: true,
+            createdAt: true,
+          },
         }),
         db.wikiLog.count({ where }),
       ]);

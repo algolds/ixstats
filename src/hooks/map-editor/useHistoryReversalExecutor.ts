@@ -1,9 +1,18 @@
 "use client";
 
-import { useCallback } from "react";
-import { api } from "~/trpc/react";
+/**
+ * useHistoryReversalExecutor — applies editor history actions against the server.
+ *
+ * Updates are *partial* patches (only the recorded keys are sent), so undoing a
+ * move never renames a city or clears its capital flag. Re-created features get
+ * new ids; an alias map keeps later history entries pointing at the live id.
+ */
+
+import { useCallback, useRef } from "react";
 import type { FeatureType } from "./editor-types";
-import type { EditorAction } from "./useMapHistory";
+import { createFeatureOps } from "./feature-ops";
+import { useFeatureMutations } from "./feature-mutations";
+import type { EditorAction, HistoryData } from "./useMapHistory";
 
 interface UseHistoryReversalExecutorProps {
   countryId?: string;
@@ -11,266 +20,91 @@ interface UseHistoryReversalExecutorProps {
   debouncedRefetch: () => void;
 }
 
-export function useHistoryReversalExecutor({
-  countryId,
-  invalidateAllMapData,
-  debouncedRefetch,
-}: UseHistoryReversalExecutorProps) {
-  const createCity = api.geoFeatures.createCity.useMutation();
-  const updateCity = api.geoFeatures.updateCity.useMutation();
-  const deleteCity = api.geoFeatures.deleteCity.useMutation();
+export function useHistoryReversalExecutor({ countryId }: UseHistoryReversalExecutorProps) {
+  const mutations = useFeatureMutations();
 
-  const createSubdivision = api.geoFeatures.createSubdivision.useMutation();
-  const updateSubdivision = api.geoFeatures.updateSubdivision.useMutation();
-  const deleteSubdivision = api.geoFeatures.deleteSubdivision.useMutation();
+  // Recorded id → live id, for features re-created by undo/redo.
+  const aliasRef = useRef(new Map<string, string>());
 
-  const createPOI = api.geoFeatures.createPOI.useMutation();
-  const updatePOI = api.geoFeatures.updatePOI.useMutation();
-  const deletePOI = api.geoFeatures.deletePOI.useMutation();
+  const resolveId = useCallback((id: string): string => {
+    let current = id;
+    const seen = new Set<string>();
+    while (aliasRef.current.has(current) && !seen.has(current)) {
+      seen.add(current);
+      current = aliasRef.current.get(current)!;
+    }
+    return current;
+  }, []);
 
-  const createPeak = api.geoFeatures.createPeak.useMutation();
-  const updatePeak = api.geoFeatures.updatePeak.useMutation();
-  const deletePeak = api.geoFeatures.deletePeak.useMutation();
+  const recordAlias = useCallback((recordedId: string, liveId: string | undefined) => {
+    if (liveId && liveId !== recordedId) aliasRef.current.set(recordedId, liveId);
+  }, []);
 
-  const createRiver = api.geoFeatures.createNamedRiver.useMutation();
-  const deleteRiver = api.geoFeatures.deleteNamedRiver.useMutation();
+  const featureOps = (cid: string) => createFeatureOps(mutations, cid, resolveId);
 
-  const createLake = api.geoFeatures.createNamedLake.useMutation();
-  const deleteLake = api.geoFeatures.deleteNamedLake.useMutation();
+  const deleteFeatureById = async (featureType: FeatureType, recordedId: string) => {
+    if (!countryId) return;
+    await featureOps(countryId)[featureType]?.remove(resolveId(recordedId));
+  };
 
-  const createRoute = api.transport.createRoute.useMutation();
-  const updateRouteGeometry = api.transport.updateRouteGeometry.useMutation();
-  const deleteRoute = api.transport.deleteRoute.useMutation();
+  /** Creates a feature from a snapshot and returns its new id. */
+  const recreateFeature = async (
+    featureType: FeatureType,
+    data: HistoryData
+  ): Promise<string | undefined> => {
+    if (!countryId) return undefined;
+    return featureOps(countryId)[featureType]?.create(data);
+  };
 
-  const deleteFeatureById = useCallback(
-    async (featureType: FeatureType, featureId: string) => {
-      if (!countryId) return;
-      switch (featureType) {
-        case "city":
-          await deleteCity.mutateAsync({ countryId, cityId: featureId });
-          break;
-        case "subdivision":
-          await deleteSubdivision.mutateAsync({ countryId, subdivisionId: featureId });
-          break;
-        case "poi":
-        case "storyPin":
-        case "mapLabel":
-          await deletePOI.mutateAsync({ countryId, poiId: featureId });
-          break;
-        case "peak":
-          await deletePeak.mutateAsync({ countryId, peakId: featureId });
-          break;
-        case "river":
-          await deleteRiver.mutateAsync({ countryId, riverId: featureId });
-          break;
-        case "lake":
-          await deleteLake.mutateAsync({ countryId, lakeId: featureId });
-          break;
-        case "route":
-          await deleteRoute.mutateAsync({ countryId, id: featureId });
-          break;
+  /** Applies a partial snapshot to an existing feature (only the keys present are sent). */
+  const restoreFeatureData = async (
+    featureType: FeatureType,
+    recordedId: string,
+    data: HistoryData,
+    cascaded?: EditorAction["cascadedUpdates"],
+    side: "previousData" | "newData" = "previousData"
+  ) => {
+    if (!countryId) return;
+    await featureOps(countryId)[featureType]?.restore(resolveId(recordedId), data, cascaded, side);
+  };
+
+  /** Undo (inverse) or redo (forward) one action; batches undo in reverse order. */
+  const applyAction = async (
+    action: EditorAction,
+    direction: "inverse" | "forward"
+  ): Promise<void> => {
+    if (action.type === "batch") {
+      const subActions = action.subActions ?? [];
+      for (const sub of direction === "inverse" ? [...subActions].reverse() : subActions) {
+        await applyAction(sub, direction);
       }
-    },
-    [
-      countryId,
-      deleteCity,
-      deleteSubdivision,
-      deletePOI,
-      deletePeak,
-      deleteRiver,
-      deleteLake,
-      deleteRoute,
-    ]
-  );
+      return;
+    }
 
-  const recreateFeature = useCallback(
-    async (
-      featureType: FeatureType,
-      data: Record<string, string | number | boolean | object | null | undefined>
-    ) => {
-      if (!countryId) return;
-      switch (featureType) {
-        case "city":
-          await createCity.mutateAsync({
-            countryId,
-            name: (data.name as string) || "Restored City",
-            cityType: (data.cityType as string) || "city",
-            coordinates: (data.coordinates as [number, number]) || [0, 0],
-            population: typeof data.population === "number" ? data.population : undefined,
-            isNationalCapital: !!data.isNationalCapital,
-            isSubdivisionCapital: !!data.isSubdivisionCapital,
-            subdivisionId: (data.subdivisionId as string) || undefined,
-          });
-          break;
-        case "subdivision":
-          await createSubdivision.mutateAsync({
-            countryId,
-            name: (data.name as string) || "Restored Region",
-            type: (data.type as string) || "region",
-            level: typeof data.level === "number" ? data.level : 1,
-            geometry: data.geometry as Parameters<
-              typeof createSubdivision.mutateAsync
-            >[0]["geometry"],
-            capital: (data.capital as string) || undefined,
-            population: typeof data.population === "number" ? data.population : undefined,
-          });
-          break;
-        case "poi":
-        case "storyPin":
-        case "mapLabel":
-          await createPOI.mutateAsync({
-            countryId,
-            name: (data.name as string) || (data.title as string) || "Restored POI",
-            category: (data.category as string) || "general",
-            coordinates: (data.coordinates as [number, number]) || [0, 0],
-            description: (data.description as string) || undefined,
-          });
-          break;
-        case "peak":
-          await createPeak.mutateAsync({
-            countryId,
-            name: (data.name as string) || "Restored Peak",
-            coordinates: (data.coordinates as [number, number]) || [0, 0],
-            elevation: typeof data.elevation === "number" ? data.elevation : 1000,
-            prominence: typeof data.prominence === "number" ? data.prominence : undefined,
-          });
-          break;
-        case "river":
-          await createRiver.mutateAsync({
-            countryId,
-            name: (data.name as string) || "Restored River",
-            geometry: data.geometry as Parameters<typeof createRiver.mutateAsync>[0]["geometry"],
-          });
-          break;
-        case "lake":
-          await createLake.mutateAsync({
-            countryId,
-            name: (data.name as string) || "Restored Lake",
-            geometry: data.geometry as Parameters<typeof createLake.mutateAsync>[0]["geometry"],
-          });
-          break;
-        case "route":
-          await createRoute.mutateAsync({
-            countryId,
-            name: (data.name as string) || "Restored Route",
-            routeType: (data.routeType as string) || "road",
-            geometry: data.geometry as Parameters<typeof createRoute.mutateAsync>[0]["geometry"],
-          });
-          break;
-      }
-    },
-    [
-      countryId,
-      createCity,
-      createSubdivision,
-      createPOI,
-      createPeak,
-      createRiver,
-      createLake,
-      createRoute,
-    ]
-  );
-
-  const restoreFeatureData = useCallback(
-    async (
-      featureType: FeatureType,
-      featureId: string,
-      data: Record<string, string | number | boolean | object | null | undefined>
-    ) => {
-      if (!countryId) return;
-      switch (featureType) {
-        case "city":
-          await updateCity.mutateAsync({
-            countryId,
-            cityId: featureId,
-            name: (data.name as string) || "Updated City",
-            cityType: (data.cityType as string) || "city",
-            coordinates: (data.coordinates as [number, number]) || [0, 0],
-            population: typeof data.population === "number" ? data.population : undefined,
-            isNationalCapital: !!data.isNationalCapital,
-            isSubdivisionCapital: !!data.isSubdivisionCapital,
-          });
-          break;
-        case "subdivision":
-          await updateSubdivision.mutateAsync({
-            countryId,
-            subdivisionId: featureId,
-            name: (data.name as string) || "Updated Region",
-            type: (data.type as string) || "region",
-            level: typeof data.level === "number" ? data.level : 1,
-            capital: (data.capital as string) || undefined,
-            population: typeof data.population === "number" ? data.population : undefined,
-          });
-          break;
-        case "poi":
-        case "storyPin":
-        case "mapLabel":
-          await updatePOI.mutateAsync({
-            countryId,
-            poiId: featureId,
-            name: (data.name as string) || "Updated POI",
-            category: (data.category as string) || "general",
-            coordinates: (data.coordinates as [number, number]) || [0, 0],
-            description: (data.description as string) || undefined,
-          });
-          break;
-        case "peak":
-          await updatePeak.mutateAsync({
-            countryId,
-            peakId: featureId,
-            name: (data.name as string) || "Updated Peak",
-            coordinates: (data.coordinates as [number, number]) || [0, 0],
-            elevation: typeof data.elevation === "number" ? data.elevation : 1000,
-            prominence: typeof data.prominence === "number" ? data.prominence : undefined,
-          });
-          break;
-        case "route":
-          if (data.geometry) {
-            await updateRouteGeometry.mutateAsync({
-              countryId,
-              id: featureId,
-              geometry: data.geometry as Parameters<
-                typeof updateRouteGeometry.mutateAsync
-              >[0]["geometry"],
-            });
-          }
-          break;
-      }
-    },
-    [countryId, updateCity, updateSubdivision, updatePOI, updatePeak, updateRouteGeometry]
-  );
-
-  const applyInverseAction = useCallback(
-    async (action: EditorAction) => {
-      if (action.type === "create") {
-        await deleteFeatureById(action.featureType, action.featureId);
-      } else if (action.type === "delete" && action.previousData) {
-        await recreateFeature(action.featureType, action.previousData);
-      } else if (action.type === "update" && action.previousData) {
-        await restoreFeatureData(action.featureType, action.featureId, action.previousData);
-      }
-    },
-    [deleteFeatureById, recreateFeature, restoreFeatureData]
-  );
-
-  const applyForwardAction = useCallback(
-    async (action: EditorAction) => {
-      if (action.type === "create" && action.newData) {
-        await recreateFeature(action.featureType, action.newData);
-      } else if (action.type === "delete") {
-        await deleteFeatureById(action.featureType, action.featureId);
-      } else if (action.type === "update" && action.newData) {
-        await restoreFeatureData(action.featureType, action.featureId, action.newData);
-      }
-    },
-    [recreateFeature, deleteFeatureById, restoreFeatureData]
-  );
+    const inverse = direction === "inverse";
+    const restoreData = inverse ? action.previousData : action.newData;
+    // Undoing a create / redoing a delete removes the feature; the other two kinds re-create it.
+    if (action.type === (inverse ? "create" : "delete")) {
+      await deleteFeatureById(action.featureType, action.featureId);
+    } else if (action.type === (inverse ? "delete" : "create") && restoreData) {
+      recordAlias(action.featureId, await recreateFeature(action.featureType, restoreData));
+    } else if (action.type === "update" && restoreData) {
+      await restoreFeatureData(
+        action.featureType,
+        action.featureId,
+        restoreData,
+        action.cascadedUpdates,
+        inverse ? "previousData" : "newData"
+      );
+    }
+  };
 
   return {
+    resolveId,
     deleteFeatureById,
     recreateFeature,
     restoreFeatureData,
-    applyInverseAction,
-    applyForwardAction,
+    applyInverseAction: (action: EditorAction) => applyAction(action, "inverse"),
+    applyForwardAction: (action: EditorAction) => applyAction(action, "forward"),
   };
 }

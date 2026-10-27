@@ -1,357 +1,286 @@
-import type { EventTraceStep } from "../types";
 import type { SportResolverContext, SportMatchOutcome, RosterPlayer } from "./types";
+import { createTrace, otherSide, sideLabel, type Side } from "./common";
 import { getPlayerOverall, getRosterPlayerByRoleWeight, getCardPlayerWeight } from "./helpers";
 import { clamp } from "~/lib/utils";
 
+interface TeamState {
+  side: Side;
+  roster?: RosterPlayer[];
+  offense: number;
+  defense: number;
+  tactic: string;
+  score: number;
+  redCards: number;
+}
+
+type Named = { id: string; name: string };
+
+const PASSIVE_EVENTS = [
+  "Midfield battle intensifies as both teams contest possession.",
+  "A patient build-up play in the middle third by the home side.",
+  "Solid defensive shape prevents any progression into the penalty area.",
+  "Strong tackles flying in from both sides in a high-intensity period.",
+  "A long cross into the box is confidently collected by the goalkeeper.",
+  "The home team spreads the play wide, trying to pull the defense apart.",
+  "A quick counter-attack opportunity is shut down by a tactical interception.",
+  "Crowd rises as the ball shifts rapidly between the penalty boxes.",
+  "Excellent pressing forces a hurried clearance into touch.",
+  "Strategic passes are swapped along the back line as players seek an opening.",
+];
+
+const GOAL_TEXT = {
+  home: {
+    goal: "finds the back of the net!",
+    shot: "fires a powerful shot, but the keeper makes a diving save!",
+  },
+  away: {
+    goal: "strikes a clinical finish!",
+    shot: "tests the goalkeeper from distance, but it's held safely.",
+  },
+} as const;
+
 export function runSoccerMatch(ctx: SportResolverContext): SportMatchOutcome {
-  const {
-    rng,
-    homeOffense,
-    homeDefense,
-    awayOffense,
-    awayDefense,
-    homeTactical: initialHomeTactical,
-    awayTactical: initialAwayTactical,
-    isPlayoff,
-    archetype,
-    homeRoster,
-    awayRoster,
-  } = ctx;
+  const { rng } = ctx;
+  const { trace, push } = createTrace();
 
-  let homeTactical = initialHomeTactical;
-  let awayTactical = initialAwayTactical;
-
-  const trace: EventTraceStep[] = [];
-  let homeScore = 0;
-  let awayScore = 0;
-
-  trace.push({
-    t: 0,
-    type: "tactic_shift",
-    description: `Match begins. Home team using ${homeTactical.replace(/_/g, " ")} tactics. Away team using ${awayTactical.replace(/_/g, " ")} tactics.`,
-    team: "home",
-  });
-
-  const playerYellowCards = new Map<string, number>();
-  const sentOffPlayers = new Set<string>();
-  let homeRedCardsCount = 0;
-  let awayRedCardsCount = 0;
-
-  const selectActivePlayer = (
+  const makeTeam = (
+    side: Side,
     roster: RosterPlayer[] | undefined,
-    defaultName: string
-  ): { id: string; name: string } => {
+    offense: number,
+    defense: number,
+    tactic: string
+  ): TeamState => ({
+    side,
+    roster,
+    offense,
+    defense,
+    tactic,
+    score: 0,
+    redCards: 0,
+  });
+  const home = makeTeam("home", ctx.homeRoster, ctx.homeOffense, ctx.homeDefense, ctx.homeTactical);
+  const away = makeTeam("away", ctx.awayRoster, ctx.awayOffense, ctx.awayDefense, ctx.awayTactical);
+  const teams = [home, away] as const;
+  const byName = { home, away };
+
+  push(
+    0,
+    "tactic_shift",
+    `Match begins. Home team using ${home.tactic.replace(/_/g, " ")} tactics. Away team using ${away.tactic.replace(/_/g, " ")} tactics.`,
+    "home"
+  );
+
+  const yellowCards = new Map<string, number>();
+  const sentOff = new Set<string>();
+
+  const selectActivePlayer = (roster: RosterPlayer[] | undefined, defaultName: string): Named => {
     if (!roster || roster.length === 0) return { id: "generic", name: defaultName };
-    const available = roster.filter((p) => !sentOffPlayers.has(p.id));
-    if (available.length === 0)
+    const available = roster.filter((p) => !sentOff.has(p.id));
+    if (available.length === 0) {
       return { id: roster[0]!.id, name: `${roster[0]!.firstName} ${roster[0]!.lastName}` };
+    }
     return getRosterPlayerByRoleWeight(available, defaultName, rng);
   };
 
-  const selectActiveCardPlayer = (
-    roster: RosterPlayer[] | undefined
-  ): { id: string; name: string } | null => {
-    if (!roster || roster.length === 0) return null;
-    const available = roster.filter((p) => !sentOffPlayers.has(p.id));
-    if (available.length === 0) return null;
-    return getCardPlayerWeight(available, rng);
+  const selectActiveCardPlayer = (roster: RosterPlayer[] | undefined): Named | null => {
+    const available = roster?.filter((p) => !sentOff.has(p.id));
+    return available?.length ? getCardPlayerWeight(available, rng) : null;
   };
 
-  const runSoccerTick = (t: number) => {
-    const initialTraceLength = trace.length;
-    if (t === 60) {
-      if (homeScore > awayScore && awayTactical !== "all_out_attack") {
-        awayTactical = "all_out_attack";
-        trace.push({
+  const sendOff = (team: TeamState, player: Named) => {
+    sentOff.add(player.id);
+    team.redCards++;
+  };
+
+  /** Late-game tactical switches: the trailing side goes all-out at 60', a 2+ goal leader parks the bus at 75'. */
+  const adjustTactics = (t: number) => {
+    for (const team of teams) {
+      const opponent = byName[otherSide(team.side)];
+      const label = sideLabel(team.side);
+      if (t === 60 && opponent.score > team.score && team.tactic !== "all_out_attack") {
+        team.tactic = "all_out_attack";
+        push(
           t,
-          type: "tactic_shift",
-          description: `Tactical Shift: Away team switches to All-Out Attack to chase the game!`,
-          team: "away",
-        });
-      } else if (awayScore > homeScore && homeTactical !== "all_out_attack") {
-        homeTactical = "all_out_attack";
-        trace.push({
+          "tactic_shift",
+          `Tactical Shift: ${label} team switches to All-Out Attack to chase the game!`,
+          team.side
+        );
+        return;
+      }
+      if (t === 75 && team.score - opponent.score >= 2 && team.tactic !== "park_the_bus") {
+        team.tactic = "park_the_bus";
+        push(
           t,
-          type: "tactic_shift",
-          description: `Tactical Shift: Home team switches to All-Out Attack to chase the game!`,
-          team: "home",
-        });
+          "tactic_shift",
+          `Tactical Shift: ${label} team switches to Park the Bus to lock down the victory.`,
+          team.side
+        );
+        return;
       }
     }
-    if (t === 75) {
-      if (homeScore - awayScore >= 2 && homeTactical !== "park_the_bus") {
-        homeTactical = "park_the_bus";
-        trace.push({
-          t,
-          type: "tactic_shift",
-          description: `Tactical Shift: Home team switches to Park the Bus to lock down the victory.`,
-          team: "home",
-        });
-      } else if (awayScore - homeScore >= 2 && awayTactical !== "park_the_bus") {
-        awayTactical = "park_the_bus";
-        trace.push({
-          t,
-          type: "tactic_shift",
-          description: `Tactical Shift: Away team switches to Park the Bus to lock down the victory.`,
-          team: "away",
-        });
-      }
-    }
+  };
 
-    const homeOffScale = Math.pow(0.9, homeRedCardsCount);
-    const homeDefScale = Math.pow(0.85, homeRedCardsCount);
-    const awayOffScale = Math.pow(0.9, awayRedCardsCount);
-    const awayDefScale = Math.pow(0.85, awayRedCardsCount);
-
-    const baseGoalProb = 0.13;
-    const homeGoalProb =
-      ((homeOffense * homeOffScale) / (homeOffense * homeOffScale + awayDefense * awayDefScale)) *
-        baseGoalProb +
-      (homeTactical === "all_out_attack" ? 0.015 : 0);
-    const awayGoalProb =
-      ((awayOffense * awayOffScale) / (awayOffense * awayOffScale + homeDefense * homeDefScale)) *
-        baseGoalProb +
-      (awayTactical === "all_out_attack" ? 0.015 : 0);
-
-    if (rng() < homeGoalProb) {
-      homeScore++;
-      const scorer = selectActivePlayer(homeRoster, "Home Striker");
-      trace.push({
-        t,
-        type: "goal",
-        description: `GOAL! ${scorer.name} finds the back of the net! Score: Home ${homeScore} - Away ${awayScore}`,
-        actorId: scorer.id,
-        actorName: scorer.name,
-        team: "home",
-      });
-    } else {
-      if (rng() < 0.1) {
-        const shooter = selectActivePlayer(homeRoster, "Home Attacker");
-        trace.push({
-          t,
-          type: "tactic_shift",
-          description: `Shot! ${shooter.name} fires a powerful shot, but the keeper makes a diving save!`,
-          actorId: shooter.id,
-          actorName: shooter.name,
-          team: "home",
-        });
-      }
-    }
-
-    if (rng() < awayGoalProb) {
-      awayScore++;
-      const scorer = selectActivePlayer(awayRoster, "Away Striker");
-      trace.push({
-        t,
-        type: "goal",
-        description: `GOAL! ${scorer.name} strikes a clinical finish! Score: Home ${homeScore} - Away ${awayScore}`,
-        actorId: scorer.id,
-        actorName: scorer.name,
-        team: "away",
-      });
-    } else {
-      if (rng() < 0.1) {
-        const shooter = selectActivePlayer(awayRoster, "Away Attacker");
-        trace.push({
-          t,
-          type: "tactic_shift",
-          description: `Shot! ${shooter.name} tests the goalkeeper from distance, but it's held safely.`,
-          actorId: shooter.id,
-          actorName: shooter.name,
-          team: "away",
-        });
-      }
-    }
-
+  const discipline = (t: number) => {
     if (rng() < 0.03) {
-      const cardTeam = rng() < 0.5 ? "home" : "away";
-      const roster = cardTeam === "home" ? homeRoster : awayRoster;
-      const player = selectActiveCardPlayer(roster);
+      const team = byName[rng() < 0.5 ? "home" : "away"];
+      const player = selectActiveCardPlayer(team.roster);
       if (player) {
-        const yellows = (playerYellowCards.get(player.id) ?? 0) + 1;
-        playerYellowCards.set(player.id, yellows);
-
+        const yellows = (yellowCards.get(player.id) ?? 0) + 1;
+        yellowCards.set(player.id, yellows);
         if (yellows === 2) {
-          sentOffPlayers.add(player.id);
-          if (cardTeam === "home") homeRedCardsCount++;
-          else awayRedCardsCount++;
-
-          trace.push({
+          sendOff(team, player);
+          push(
             t,
-            type: "card",
-            description: `RED CARD! ${player.name} is sent off after receiving a second yellow card!`,
-            actorId: player.id,
-            actorName: player.name,
-            team: cardTeam,
-          });
+            "card",
+            `RED CARD! ${player.name} is sent off after receiving a second yellow card!`,
+            team.side,
+            player
+          );
         } else {
-          trace.push({
+          push(
             t,
-            type: "card",
-            description: `Yellow Card shown to ${player.name} for a rough tactical challenge.`,
-            actorId: player.id,
-            actorName: player.name,
-            team: cardTeam,
-          });
+            "card",
+            `Yellow Card shown to ${player.name} for a rough tactical challenge.`,
+            team.side,
+            player
+          );
         }
       }
     }
 
     if (rng() < 0.0015) {
-      const cardTeam = rng() < 0.5 ? "home" : "away";
-      const roster = cardTeam === "home" ? homeRoster : awayRoster;
-      const player = selectActiveCardPlayer(roster);
+      const team = byName[rng() < 0.5 ? "home" : "away"];
+      const player = selectActiveCardPlayer(team.roster);
       if (player) {
-        sentOffPlayers.add(player.id);
-        if (cardTeam === "home") homeRedCardsCount++;
-        else awayRedCardsCount++;
-
-        trace.push({
+        sendOff(team, player);
+        push(
           t,
-          type: "card",
-          description: `STRAIGHT RED CARD! ${player.name} is sent off for violent conduct!`,
-          actorId: player.id,
-          actorName: player.name,
-          team: cardTeam,
-        });
+          "card",
+          `STRAIGHT RED CARD! ${player.name} is sent off for violent conduct!`,
+          team.side,
+          player
+        );
       }
     }
 
     if (rng() < 0.005) {
-      const injuryTeam = rng() < 0.5 ? "home" : "away";
-      const roster = injuryTeam === "home" ? homeRoster : awayRoster;
-      if (roster && roster.length > 0) {
-        const player = selectActivePlayer(
-          roster,
-          `${injuryTeam === "home" ? "Home" : "Away"} Player`
-        );
-        if (player && player.id !== "generic") {
-          sentOffPlayers.add(player.id);
-          trace.push({
+      const team = byName[rng() < 0.5 ? "home" : "away"];
+      if (team.roster && team.roster.length > 0) {
+        const player = selectActivePlayer(team.roster, `${sideLabel(team.side)} Player`);
+        if (player.id !== "generic") {
+          sentOff.add(player.id);
+          push(
             t,
-            type: "injury",
-            description: `INJURY: ${player.name} is forced off the field with an injury!`,
-            actorId: player.id,
-            actorName: player.name,
-            team: injuryTeam,
-          });
+            "injury",
+            `INJURY: ${player.name} is forced off the field with an injury!`,
+            team.side,
+            player
+          );
         }
-      }
-    }
-
-    if (trace.length === initialTraceLength) {
-      if (rng() < 0.5) {
-        const passiveEvents = [
-          "Midfield battle intensifies as both teams contest possession.",
-          "A patient build-up play in the middle third by the home side.",
-          "Solid defensive shape prevents any progression into the penalty area.",
-          "Strong tackles flying in from both sides in a high-intensity period.",
-          "A long cross into the box is confidently collected by the goalkeeper.",
-          "The home team spreads the play wide, trying to pull the defense apart.",
-          "A quick counter-attack opportunity is shut down by a tactical interception.",
-          "Crowd rises as the ball shifts rapidly between the penalty boxes.",
-          "Excellent pressing forces a hurried clearance into touch.",
-          "Strategic passes are swapped along the back line as players seek an opening.",
-        ];
-        const desc = passiveEvents[Math.floor(rng() * passiveEvents.length)]!;
-        trace.push({
-          t,
-          type: "tactic_shift",
-          description: desc,
-          team: rng() < 0.5 ? "home" : "away",
-        });
       }
     }
   };
 
-  for (let t = 5; t <= 90; t += 5) {
-    runSoccerTick(t);
-  }
+  const tick = (t: number) => {
+    const eventsBefore = trace.length;
+    adjustTactics(t);
 
-  const isPlayoffOrBracket = archetype === "bracket" || isPlayoff;
-  if (isPlayoffOrBracket && homeScore === awayScore) {
-    trace.push({
-      t: 90,
-      type: "tactic_shift",
-      description: `END OF REGULATION: Tied at ${homeScore}-${awayScore}. Proceeding to 30 minutes of Extra Time.`,
-      team: "home",
-    });
+    const goalProb = (off: TeamState, def: TeamState) => {
+      const attack = off.offense * Math.pow(0.9, off.redCards);
+      const defend = def.defense * Math.pow(0.85, def.redCards);
+      return (attack / (attack + defend)) * 0.13 + (off.tactic === "all_out_attack" ? 0.015 : 0);
+    };
+    const probs = { home: goalProb(home, away), away: goalProb(away, home) };
 
-    for (let t = 95; t <= 120; t += 5) {
-      runSoccerTick(t);
+    for (const team of teams) {
+      const text = GOAL_TEXT[team.side];
+      if (rng() < probs[team.side]) {
+        team.score++;
+        const scorer = selectActivePlayer(team.roster, `${sideLabel(team.side)} Striker`);
+        push(
+          t,
+          "goal",
+          `GOAL! ${scorer.name} ${text.goal} Score: Home ${home.score} - Away ${away.score}`,
+          team.side,
+          scorer
+        );
+      } else if (rng() < 0.1) {
+        const shooter = selectActivePlayer(team.roster, `${sideLabel(team.side)} Attacker`);
+        push(t, "tactic_shift", `Shot! ${shooter.name} ${text.shot}`, team.side, shooter);
+      }
     }
+
+    discipline(t);
+
+    if (trace.length === eventsBefore && rng() < 0.5) {
+      const description = PASSIVE_EVENTS[Math.floor(rng() * PASSIVE_EVENTS.length)]!;
+      push(t, "tactic_shift", description, rng() < 0.5 ? "home" : "away");
+    }
+  };
+
+  const tied = () => home.score === away.score;
+  const knockout = ctx.archetype === "bracket" || ctx.isPlayoff;
+
+  for (let t = 5; t <= 90; t += 5) tick(t);
+
+  if (knockout && tied()) {
+    push(
+      90,
+      "tactic_shift",
+      `END OF REGULATION: Tied at ${home.score}-${away.score}. Proceeding to 30 minutes of Extra Time.`,
+      "home"
+    );
+    for (let t = 95; t <= 120; t += 5) tick(t);
   }
 
-  if (isPlayoffOrBracket && homeScore === awayScore) {
-    trace.push({
-      t: 120,
-      type: "tactic_shift",
-      description: `END OF EXTRA TIME: Still tied at ${homeScore}-${awayScore}. Proceeding to Penalty Shootout!`,
-      team: "home",
-    });
+  if (knockout && tied()) {
+    push(
+      120,
+      "tactic_shift",
+      `END OF EXTRA TIME: Still tied at ${home.score}-${away.score}. Proceeding to Penalty Shootout!`,
+      "home"
+    );
+    const goals = { home: 0, away: 0 };
 
-    let homeShootoutGoals = 0;
-    let awayShootoutGoals = 0;
-
-    const runPenaltyKick = (team: "home" | "away", roundNum: number): boolean => {
-      const roster = team === "home" ? homeRoster : awayRoster;
-      const shooter = selectActivePlayer(roster, `${team === "home" ? "Home" : "Away"} Shooter`);
-      const shooterRating =
-        shooter.id !== "generic" && roster
-          ? getPlayerOverall(roster.find((p) => p.id === shooter.id))
+    const penaltyKick = (team: TeamState, round: number) => {
+      const shooter = selectActivePlayer(team.roster, `${sideLabel(team.side)} Shooter`);
+      const rating =
+        shooter.id !== "generic" && team.roster
+          ? getPlayerOverall(team.roster.find((p) => p.id === shooter.id))
           : 65;
-      const keeperRating = 70;
-      const pkProb = clamp(0.75 + (shooterRating - keeperRating) / 600, 0.5, 0.95);
-
-      const scored = rng() < pkProb;
-      trace.push({
-        t: 121 + roundNum,
-        type: scored ? "goal" : "card",
-        description: `PENALTY KICK (Round ${roundNum}): ${shooter.name} ${scored ? "SCORES" : "MISSES"} for the ${team} team!`,
-        actorId: shooter.id,
-        actorName: shooter.name,
-        team,
-      });
-      return scored;
+      const scored = rng() < clamp(0.75 + (rating - 70) / 600, 0.5, 0.95);
+      if (scored) goals[team.side]++;
+      push(
+        121 + round,
+        scored ? "goal" : "card",
+        `PENALTY KICK (Round ${round}): ${shooter.name} ${scored ? "SCORES" : "MISSES"} for the ${team.side} team!`,
+        team.side,
+        shooter
+      );
     };
 
-    let activeRound = 1;
-    for (; activeRound <= 5; activeRound++) {
-      if (runPenaltyKick("home", activeRound)) homeShootoutGoals++;
-      if (runPenaltyKick("away", activeRound)) awayShootoutGoals++;
-
-      const homeRemaining = 5 - activeRound;
-      const awayRemaining = 5 - activeRound;
-      if (homeShootoutGoals > awayShootoutGoals + awayRemaining) break;
-      if (awayShootoutGoals > homeShootoutGoals + homeRemaining) break;
+    let round = 1;
+    for (; round <= 5; round++) {
+      penaltyKick(home, round);
+      penaltyKick(away, round);
+      const remaining = 5 - round;
+      if (Math.abs(goals.home - goals.away) > remaining) break;
+    }
+    while (goals.home === goals.away && round < 15) {
+      round++;
+      penaltyKick(home, round);
+      penaltyKick(away, round);
     }
 
-    while (homeShootoutGoals === awayShootoutGoals && activeRound < 15) {
-      activeRound++;
-      const homeScored = runPenaltyKick("home", activeRound);
-      const awayScored = runPenaltyKick("away", activeRound);
-      if (homeScored) homeShootoutGoals++;
-      if (awayScored) awayShootoutGoals++;
-    }
-
-    if (homeShootoutGoals > awayShootoutGoals) {
-      homeScore++;
-      trace.push({
-        t: 140,
-        type: "goal",
-        description: `Shootout finished: Home team wins the shootout ${homeShootoutGoals}-${awayShootoutGoals}!`,
-        team: "home",
-      });
-    } else {
-      awayScore++;
-      trace.push({
-        t: 140,
-        type: "goal",
-        description: `Shootout finished: Away team wins the shootout ${awayShootoutGoals}-${homeShootoutGoals}!`,
-        team: "away",
-      });
-    }
+    const winner = goals.home > goals.away ? home : away;
+    winner.score++;
+    push(
+      140,
+      "goal",
+      `Shootout finished: ${sideLabel(winner.side)} team wins the shootout ${goals[winner.side]}-${goals[otherSide(winner.side)]}!`,
+      winner.side
+    );
   }
 
-  return { homeScore, awayScore, trace };
+  return { homeScore: home.score, awayScore: away.score, trace };
 }

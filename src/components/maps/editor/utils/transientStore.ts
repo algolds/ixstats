@@ -1,40 +1,48 @@
 /**
- * Transient Map Editor Store (Phase 1: React State Isolation)
- *
- * Decouples high-frequency mouse pointer movements, hover tooltips,
- * and transient drag coordinates from React state to eliminate top-level
- * re-render cascades across the map editor tree.
+ * Keeps high-frequency pointer state (hover, cursor coordinates, zoom) out of React state so it
+ * never re-renders the editor tree. Writes update the snapshot immediately but subscribers are
+ * notified at most once per animation frame, so a 120 Hz pointer costs leaf readers (status bar,
+ * hover tooltip) at most one render per frame.
  */
 
 import { useSyncExternalStore } from "react";
 
-export interface LiveTerrainInfo {
+interface LiveTerrainInfo {
   elevation?: string | null;
   elevationMeters?: number | null;
   climate?: string | null;
   biomeColor?: string | null;
 }
 
-export interface TransientEditorState {
+interface TransientEditorState {
   hoveredFeatureId: string | null;
   cursorCoords: [number, number] | null;
-  activeVertexIndex: number | null;
+  /** Cursor position in map-container pixels (for tooltips that follow the pointer). */
+  cursorScreen: { x: number; y: number } | null;
   terrainInfo: LiveTerrainInfo | null;
+  /** Current map zoom (updated on zoom end). */
+  zoom: number | null;
+  /** Area of the border being dragged, live until the drag commits (km², null when idle). */
+  borderAreaKm2: number | null;
+  /** A generated world covers the map as a draft; `message` is the stage being made ("" when it is done). */
+  worldDraft: { message: string } | null;
 }
 
 class TransientStore {
   private state: TransientEditorState = {
     hoveredFeatureId: null,
     cursorCoords: null,
-    activeVertexIndex: null,
+    cursorScreen: null,
     terrainInfo: null,
+    zoom: null,
+    borderAreaKm2: null,
+    worldDraft: null,
   };
 
   private listeners = new Set<() => void>();
+  private frame: number | null = null;
 
-  public getSnapshot = (): TransientEditorState => {
-    return this.state;
-  };
+  public getSnapshot = (): TransientEditorState => this.state;
 
   public subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
@@ -47,16 +55,30 @@ class TransientStore {
     this.emitChange();
   };
 
-  public setCursorCoords = (coords: [number, number] | null): void => {
-    if (
-      this.state.cursorCoords &&
-      coords &&
-      this.state.cursorCoords[0] === coords[0] &&
-      this.state.cursorCoords[1] === coords[1]
-    ) {
-      return;
-    }
-    this.state = { ...this.state, cursorCoords: coords };
+  public setCursorCoords = (
+    coords: [number, number] | null,
+    screen?: { x: number; y: number } | null
+  ): void => {
+    const { cursorCoords, cursorScreen } = this.state;
+    const nextScreen = screen === undefined ? cursorScreen : screen;
+    const sameCoords =
+      cursorCoords === coords ||
+      (!!cursorCoords &&
+        !!coords &&
+        cursorCoords[0] === coords[0] &&
+        cursorCoords[1] === coords[1]);
+    const sameScreen =
+      cursorScreen === nextScreen ||
+      (!!cursorScreen &&
+        !!nextScreen &&
+        cursorScreen.x === nextScreen.x &&
+        cursorScreen.y === nextScreen.y);
+    if (sameCoords && sameScreen) return;
+    this.state = {
+      ...this.state,
+      cursorCoords: coords,
+      cursorScreen: coords === null ? null : nextScreen,
+    };
     this.emitChange();
   };
 
@@ -66,26 +88,54 @@ class TransientStore {
     this.emitChange();
   };
 
-  public setActiveVertexIndex = (index: number | null): void => {
-    if (this.state.activeVertexIndex === index) return;
-    this.state = { ...this.state, activeVertexIndex: index };
+  public setZoom = (zoom: number | null): void => {
+    if (this.state.zoom === zoom) return;
+    this.state = { ...this.state, zoom };
+    this.emitChange();
+  };
+
+  public setBorderAreaKm2 = (area: number | null): void => {
+    if (this.state.borderAreaKm2 === area) return;
+    this.state = { ...this.state, borderAreaKm2: area };
+    this.emitChange();
+  };
+
+  public setWorldDraft = (draft: { message: string } | null): void => {
+    const current = this.state.worldDraft;
+    if (current === draft || (current && draft && current.message === draft.message)) return;
+    this.state = { ...this.state, worldDraft: draft };
     this.emitChange();
   };
 
   private emitChange(): void {
+    if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+      this.flush();
+      return;
+    }
+    if (this.frame !== null) return;
+    this.frame = window.requestAnimationFrame(() => {
+      this.frame = null;
+      this.flush();
+    });
+  }
+
+  private flush(): void {
     this.listeners.forEach((listener) => listener());
   }
 }
 
 export const transientMapStore = new TransientStore();
 
-/**
- * Hook to subscribe to transient map editor state changes cleanly.
- */
+/** The selector must return a primitive or a reference held by the store. */
 export function useTransientMapStore<T>(selector: (state: TransientEditorState) => T): T {
   return useSyncExternalStore(
     transientMapStore.subscribe,
     () => selector(transientMapStore.getSnapshot()),
     () => selector(transientMapStore.getSnapshot())
   );
+}
+
+/** The border area to show: the live one while a vertex is dragged, else the committed one. */
+export function useLiveBorderArea(committed: number | null): number | null {
+  return useTransientMapStore((s) => s.borderAreaKm2) ?? committed;
 }

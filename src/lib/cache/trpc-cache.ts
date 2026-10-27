@@ -1,7 +1,7 @@
 /**
  * tRPC Server-Side Cache Middleware
  *
- * Provides Redis-backed (with in-memory fallback) caching for tRPC query results.
+ * Provides Redis-backed (with a byte-bounded in-memory fallback) caching for tRPC query results.
  * This dramatically reduces database load for frequently accessed, read-heavy endpoints.
  *
  * Features:
@@ -22,23 +22,21 @@ import type { SuperJSONResult } from "superjson";
 import type { createTRPCContext } from "~/server/api/trpc";
 import { memoryConfig } from "~/lib/system/dev-memory-config";
 import { getSharedRedis, isRedisReady, deleteKeysByPattern } from "./redis-client";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { roundToIxDay } from "~/lib/ixtime/day";
+import { ByteBoundedCache } from "./byte-bounded-cache";
 
 // Type for the tRPC middleware context
 type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
 
-// In-memory cache with TTL support
-interface MemoryCacheEntry {
-  data: unknown;
-  expiry: number;
-}
-
-const memoryCache = new Map<string, MemoryCacheEntry>();
-
-if (process.env.NODE_ENV === "development") {
-  memoryCache.clear(); // HMR cache bust trigger
-}
-
-const MAX_MEMORY_CACHE_SIZE = memoryConfig.trpc.maxCacheSize;
+/**
+ * The memory fallback: each entry is the serialised result, so the cache is sized by what it holds (a map layer
+ * read is megabytes) and a hit is a fresh copy, like a Redis hit. UTF-16 strings take two bytes per character.
+ */
+const memoryCache = new ByteBoundedCache<string>({
+  maxBytes: memoryConfig.trpc.maxCacheBytes,
+  defaultTtlMs: memoryConfig.trpc.defaultTTLSeconds * 1000,
+});
 
 // Clean up expired entries periodically
 let cleanupInterval: NodeJS.Timeout | null = null;
@@ -48,15 +46,7 @@ function startMemoryCacheCleanup() {
   if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") return;
 
   cleanupInterval = setInterval(() => {
-    const now = Date.now();
-    let deleted = 0;
-
-    for (const [key, entry] of memoryCache.entries()) {
-      if (entry.expiry < now) {
-        memoryCache.delete(key);
-        deleted++;
-      }
-    }
+    const deleted = memoryCache.deleteExpired();
 
     if (deleted > 0 && process.env.NODE_ENV === "development") {
       console.log(`[TRPC_CACHE] Cleaned up ${deleted} expired memory cache entries`);
@@ -73,7 +63,7 @@ startMemoryCacheCleanup();
 /**
  * Cache options for the middleware
  */
-export interface TrpcCacheOptions {
+interface TrpcCacheOptions {
   /** Time to live in seconds */
   ttlSeconds: number;
   /** Cache namespace (optional, defaults to 'default') */
@@ -85,11 +75,13 @@ export interface TrpcCacheOptions {
 }
 
 /**
- * Safe JSON stringify that handles circular references and filters out database/client pointers
+ * Safe JSON stringify that handles circular references and filters out database/client pointers. An `ixTime`
+ * is written as its IxTime day: scrubbing through time would otherwise add a cache entry per position.
  */
 function safeJsonStringify(obj: unknown): string {
   const seen = new WeakSet();
   return JSON.stringify(obj, (key, value) => {
+    if (key === "ixTime" && typeof value === "number") return roundToIxDay(value);
     if (typeof value === "object" && value !== null) {
       if (seen.has(value)) {
         return "[Circular]";
@@ -102,6 +94,21 @@ function safeJsonStringify(obj: unknown): string {
     }
     return value;
   });
+}
+
+/**
+ * The realm part of a cached read's key. The viewer's active realm, unless it is Ixnay (ruling E-q). When the
+ * input names a realm, a signed-in caller gets their own entry: a draft realm's slug resolves for its staff but
+ * falls back to Ixnay for everyone else (AT-6), so one shared entry would serve one the other's answer.
+ */
+export function cacheRealmKey(opts: {
+  activeRealmId?: string;
+  realmSlug?: string;
+  userId?: string;
+}): string | undefined {
+  const active = opts.activeRealmId === DEFAULT_REALM_ID ? undefined : opts.activeRealmId;
+  const viewer = opts.realmSlug && opts.userId ? `v:${opts.userId}` : undefined;
+  return [active, viewer].filter(Boolean).join(":") || undefined;
 }
 
 /**
@@ -125,7 +132,7 @@ function generateCacheKey(
   return `trpc:${namespace}:${path}${userPart}${realmPart}:${inputHash}`;
 }
 
-export type TrpcProcedureType = "query" | "mutation" | "subscription";
+type TrpcProcedureType = "query" | "mutation" | "subscription";
 
 /**
  * Only queries are cached; custom skip patterns can exclude specific query paths.
@@ -139,11 +146,14 @@ export function shouldSkipCache(
   return skipPatterns?.some((p) => p.test(path)) ?? false;
 }
 
-/** Parse a Redis value written as JSON.stringify(superjson.serialize(v)); null for legacy/invalid values. */
-function parseRedisPayload(raw: string): SuperJSONResult | null {
+/** A cached value as stored (the Redis value, and the memory entry). */
+const encodePayload = <T>(value: T): string => JSON.stringify(superjson.serialize(value));
+
+/** Decode a value written by encodePayload; null for legacy/invalid payloads. */
+function decodePayload<T>(raw: string): T | null {
   const parsed: SuperJSONResult | null = JSON.parse(raw);
   if (parsed === null || typeof parsed !== "object" || !("json" in parsed)) return null;
-  return parsed;
+  return superjson.deserialize<T | undefined>(parsed) ?? null;
 }
 
 /**
@@ -156,39 +166,26 @@ async function getCachedValue<T>(key: string): Promise<T | null> {
   if (isRedisReady(redisClient)) {
     try {
       const raw = await redisClient.get(key);
-      if (raw === null) return null;
-      const payload = parseRedisPayload(raw);
-      if (!payload) return null;
-      const value = superjson.deserialize<T | undefined>(payload);
-      return value === undefined ? null : value;
+      return raw === null ? null : decodePayload<T>(raw);
     } catch (err) {
       console.warn("[TRPC_CACHE] Redis get error, falling back to memory:", err);
     }
   }
 
   // Try memory cache
-  const memEntry = memoryCache.get(key);
-  if (memEntry && memEntry.expiry > Date.now()) {
-    return memEntry.data as T;
-  }
-
-  // Clean up expired entry
-  if (memEntry) {
-    memoryCache.delete(key);
-  }
-
-  return null;
+  const entry = memoryCache.get(key);
+  return entry === undefined ? null : decodePayload<T>(entry);
 }
 
 /**
- * Set cached value in Redis when ready, otherwise in the size-capped memory cache.
+ * Set cached value in Redis when ready, otherwise in the byte-capped memory cache.
  */
 async function setCachedValue<T>(key: string, value: T, ttlSeconds: number): Promise<void> {
   const redisClient = getSharedRedis();
 
   if (isRedisReady(redisClient)) {
     try {
-      await redisClient.setex(key, ttlSeconds, JSON.stringify(superjson.serialize(value)));
+      await redisClient.setex(key, ttlSeconds, encodePayload(value));
     } catch (err) {
       // Includes unserializable (e.g. circular) values: skip caching rather than failing the request
       console.warn("[TRPC_CACHE] Redis set error, value not cached:", err);
@@ -196,21 +193,19 @@ async function setCachedValue<T>(key: string, value: T, ttlSeconds: number): Pro
     return;
   }
 
-  // Enforce max size with LRU-style eviction
-  if (memoryCache.size >= MAX_MEMORY_CACHE_SIZE) {
-    // Delete oldest entries (first 10%)
-    const entriesToDelete = Math.floor(MAX_MEMORY_CACHE_SIZE * 0.1);
-    const keys = Array.from(memoryCache.keys()).slice(0, entriesToDelete);
-    for (const k of keys) {
-      memoryCache.delete(k);
-    }
+  try {
+    const payload = encodePayload(value);
+    memoryCache.set(key, payload, payload.length * 2, ttlSeconds * 1000);
+  } catch (err) {
+    // Unserializable (e.g. circular) values: skip caching rather than failing the request
+    console.warn("[TRPC_CACHE] Memory set error, value not cached:", err);
   }
-
-  memoryCache.set(key, {
-    data: value,
-    expiry: Date.now() + ttlSeconds * 1000,
-  });
 }
+
+// tRPC's `middlewareMarker` (not exported from a stable entrypoint).
+const MIDDLEWARE_MARKER = "middlewareMarker";
+
+type CachedData = NonNullable<unknown>;
 
 /** tRPC's next() resolves to { ok: false, error } when the procedure throws. */
 function isFailedResult<T>(result: T): boolean {
@@ -232,7 +227,7 @@ export function createCacheMiddlewareFactory(options: TrpcCacheOptions) {
     type: TrpcProcedureType;
     input: unknown;
     next: () => Promise<T>;
-    /** The viewer's realm when it isn't IxWorld (computed by the tRPC middleware, ruling E-q). */
+    /** The viewer's realm when it isn't Ixnay (computed by the tRPC middleware, ruling E-q). */
     realmKey?: string;
   }): Promise<T> {
     const { ctx, path, type, input, next, realmKey } = opts;
@@ -248,20 +243,23 @@ export function createCacheMiddlewareFactory(options: TrpcCacheOptions) {
     const cacheKey = generateCacheKey(path, input, userId, namespace, realmKey);
 
     // Check cache
-    const cached = await getCachedValue<T>(cacheKey);
+    const cached = await getCachedValue<CachedData>(cacheKey);
     if (cached !== null) {
       if (process.env.NODE_ENV === "development") {
         console.log(`[TRPC_CACHE] HIT: ${path}`);
       }
-      return cached;
+      // Rebuilt around the current request's ctx: the stored payload is only the procedure's data.
+      return { marker: MIDDLEWARE_MARKER, ok: true, data: cached, ctx } as T;
     }
 
     // Execute procedure
     const result = await next();
 
     // Cache result (never a failed one, or the error would be replayed for the whole TTL)
+    // Only `data` is stored: the result envelope carries ctx (Prisma client, headers, auth),
+    // which superjson rejects ("Detected property constructor") and must never be replayed.
     if (!isFailedResult(result)) {
-      await setCachedValue(cacheKey, result, ttlSeconds);
+      await setCachedValue(cacheKey, (result as { data?: CachedData }).data, ttlSeconds);
     }
 
     if (process.env.NODE_ENV === "development") {
@@ -294,33 +292,13 @@ export async function invalidateCache(patterns: string[]): Promise<void> {
   }
 
   // Clear from memory cache
-  let deleted = 0;
-  for (const [key] of memoryCache.entries()) {
-    for (const pattern of patterns) {
-      if (key.includes(pattern)) {
-        memoryCache.delete(key);
-        deleted++;
-        break;
-      }
-    }
-  }
+  const deleted = memoryCache.deleteWhere((key) =>
+    patterns.some((pattern) => key.includes(pattern))
+  );
 
   if (deleted > 0) {
     console.log(`[TRPC_CACHE] Invalidated ${deleted} memory cache entries`);
   }
-}
-
-/**
- * Get cache statistics
- */
-export function getCacheStats(): {
-  memoryCacheSize: number;
-  redisConnected: boolean;
-} {
-  return {
-    memoryCacheSize: memoryCache.size,
-    redisConnected: isRedisReady(getSharedRedis()),
-  };
 }
 
 // Pre-configured cache middleware factories for common use cases
@@ -340,8 +318,9 @@ export const cacheConfigs = {
 // Shared invalidation key sets for geo feature writes (Plan 119 §2.3)
 export const GEO_FEATURE_INVALIDATE_KEYS: string[] = [
   "geoCore.getCountryFeatures",
-  "geoCore.getMapBundle",
-  "geoCore.getWorldMap",
+  "geoCore.getMapBundleMarkers",
+  "geoCore.getMapBundleDetail",
+  "geoCore.getWorldMapAsOf",
   "geoCore.getAllMapFeatures",
   "countryGeo.getCountryGeoBundle",
 ];
@@ -357,6 +336,6 @@ export const GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS: string[] = [
 ];
 
 export function clearTrpcMemoryCache(): void {
-  memoryCache.clear();
+  memoryCache.deleteWhere(() => true);
   console.log("[TRPC_CACHE] Module-level memory cache cleared manually");
 }

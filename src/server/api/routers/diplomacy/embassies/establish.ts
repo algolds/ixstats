@@ -1,14 +1,16 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 // oxlint-disable-next-line typescript/no-unused-vars
-import { vaultService } from "~/lib/vault/vault-service";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "~/lib/activity";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { assertSameRealm } from "~/server/shared/same-realm-guard";
+import { OPENING_RELATION_STRENGTH, getStandingBand } from "~/lib/diplomacy/relation-bands";
 
 export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
-  establishEmbassy: protectedProcedure
+  establishEmbassy: rateLimitedMutationProcedure
     .input(
       z.object({
         hostCountryId: z.string(),
@@ -19,14 +21,15 @@ export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.countryId) {
-        throw new Error("You must be associated with a country to establish embassies.");
+      // Verify user owns the guest country (the one establishing the embassy); any owned nation counts
+      await assertCountryWriteAccess(ctx, input.guestCountryId);
+      if (input.hostCountryId === input.guestCountryId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "A nation cannot open an embassy in itself.",
+        });
       }
-
-      // Verify user owns the guest country (the one establishing the embassy)
-      if (ctx.user.countryId !== input.guestCountryId) {
-        throw new Error("You can only establish embassies for your own country.");
-      }
+      await assertSameRealm(ctx.db, input.guestCountryId, input.hostCountryId);
 
       // One embassy per guest↔host pair (enforced by a composite unique). Guard here
       // so a re-try / double-submit returns a clear message instead of a raw P2002.
@@ -105,39 +108,6 @@ export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
         // Don't fail the embassy creation if notifications fail
       }
 
-      // 💰 Award IxCredits for embassy establishment
-      let creditsEarned = 0;
-      if (ctx.auth?.userId) {
-        try {
-          const creditReward = 15; // 15 IxC for establishing an embassy
-
-          const earnResult = await vaultService.earnCredits(
-            ctx.auth.userId,
-            creditReward,
-            "EARN_ACTIVE",
-            "embassy_established",
-            ctx.db,
-            {
-              embassyId: embassy.id,
-              embassyName: input.name,
-              hostCountryId: input.hostCountryId,
-              guestCountryId: input.guestCountryId,
-              hostCountryName,
-              guestCountryName,
-            }
-          );
-
-          if (earnResult.success) {
-            creditsEarned = creditReward;
-            console.log(
-              `[Diplomatic] Awarded ${creditReward} IxC to ${ctx.auth.userId} for embassy establishment`
-            );
-          }
-        } catch (error) {
-          console.error("[Diplomatic] Failed to award embassy establishment credits:", error);
-        }
-      }
-
       // 🤝 Ensure a DiplomaticRelation exists between the two countries.
       // Establishing an embassy is what opens formal relations — without this,
       // the Relations list and the Foreign Policy target dropdown stay empty.
@@ -157,8 +127,8 @@ export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
             data: {
               country1: input.guestCountryId,
               country2: input.hostCountryId,
-              relationship: "neutral",
-              strength: 25, // baseline goodwill from opening an embassy
+              relationship: getStandingBand(OPENING_RELATION_STRENGTH).key,
+              strength: OPENING_RELATION_STRENGTH,
               status: "active",
               lastContact: new Date(),
               diplomaticChannels: JSON.stringify(["embassy"]),
@@ -191,7 +161,6 @@ export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
         ...embassy,
         hostCountryName,
         guestCountryName,
-        creditsEarned,
       };
     }),
 });

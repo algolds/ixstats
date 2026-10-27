@@ -15,10 +15,19 @@ import { withJobLock } from "~/lib/system/job-lock";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import * as path from "path";
-import { DOMParser } from "@xmldom/xmldom";
 import { buildDiscordPollObject } from "./poll";
-import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
+import { ordinal, parseSportsBulletin, type SportsBulletinData } from "~/lib/sports/feed-bulletins";
 import { cleanPostContent } from "./thinkpages-feed";
+import { htmlToDiscordMarkdown } from "./markdown";
+import { appUrl } from "~/lib/app-url";
+import { withBasePath } from "~/lib/base-path";
+import { APP_TINTS } from "~/lib/design/tokens";
+
+// Callers and tests import the converter from here.
+export { htmlToDiscordMarkdown };
+
+/** ThinkPages posts on Discord wear the ThinkPages tint; the dark value reads on Discord's dark embeds. */
+const THINKPAGES_EMBED_COLOR = parseInt(APP_TINTS.thinkpages.dark.tint.slice(1), 16);
 
 const IXTWITTER_CHANNEL_ID = process.env.DISCORD_IXTWITTER_CHANNEL_ID || "557223534418722818";
 // IxTwitter is one-way (Discord → feed only). The dedicated ThinkPages channel handles feed → Discord.
@@ -26,15 +35,6 @@ const IXTWITTER_CHANNEL_ID = process.env.DISCORD_IXTWITTER_CHANNEL_ID || "557223
 const FEED_TO_IXTWITTER_ENABLED = false;
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const DISCORD_API_BASE = "https://discord.com/api/v10";
-const BASE_PATH = process.env.BASE_PATH || process.env.NEXT_PUBLIC_BASE_PATH || "";
-const APP_URL = (
-  process.env.APP_URL ||
-  process.env.NEXT_PUBLIC_APP_URL ||
-  "https://maps.ixwiki.com"
-).replace(/\/$/, "");
-const CLEAN_BASE_PATH = BASE_PATH
-  ? (BASE_PATH.startsWith("/") ? BASE_PATH : `/${BASE_PATH}`).replace(/\/$/, "")
-  : "";
 
 const DEFAULT_COUNTRY_ID = process.env.DISCORD_POST_COUNTRY_ID || "";
 
@@ -55,7 +55,7 @@ async function downloadDiscordImage(
     const filename = `discord_${messageId}_${index}.${ext}`;
     const filePath = path.join(DISCORD_IMAGE_DIR, filename);
 
-    if (existsSync(filePath)) return `${CLEAN_BASE_PATH}/images/discord/${filename}`;
+    if (existsSync(filePath)) return withBasePath(`/images/discord/${filename}`);
 
     const response = await fetch(url, {
       headers: {
@@ -69,7 +69,7 @@ async function downloadDiscordImage(
     const buffer = Buffer.from(await response.arrayBuffer());
     writeFileSync(filePath, buffer);
 
-    return `${CLEAN_BASE_PATH}/images/discord/${filename}`;
+    return withBasePath(`/images/discord/${filename}`);
   } catch {
     return url;
   }
@@ -190,27 +190,6 @@ async function fetchDiscordMessages(after?: string, before?: string): Promise<Di
   return res.json() as Promise<DiscordMessage[]>;
 }
 
-async function fetchAllDiscordMessages(before?: string): Promise<DiscordMessage[]> {
-  const allMessages: DiscordMessage[] = [];
-  let currentBefore = before;
-  let batchCount = 0;
-
-  while (batchCount < 50) {
-    const batch = await fetchDiscordMessages(undefined, currentBefore);
-    if (batch.length === 0) break;
-
-    allMessages.push(...batch);
-    currentBefore = batch[batch.length - 1]!.id;
-    batchCount++;
-
-    if (batch.length < 100) break;
-
-    await new Promise((r) => setTimeout(r, 1200));
-  }
-
-  return allMessages;
-}
-
 function getDiscordAvatarUrl(author: DiscordMessage["author"]): string | null {
   if (!author.avatar) return null;
   const ext = author.avatar.startsWith("a_") ? "gif" : "png";
@@ -234,7 +213,7 @@ function formatPostContent(message: DiscordMessage): string {
 
 async function loadCountryIdCache(db: PrismaClient) {
   const countryNames = Array.from(new Set(Object.values(DISCORD_COUNTRY_MAP)));
-  // The Discord map names IxWorld nations; names repeat across realms (ruling E-p).
+  // The Discord map names Ixnay nations; names repeat across realms (ruling E-p).
   const countries = await db.country.findMany({
     where: { realmId: DEFAULT_REALM_ID, name: { in: countryNames } },
     select: { name: true, id: true },
@@ -369,32 +348,6 @@ async function getOrCreateHandleAccount(
 }
 
 // oxlint-disable-next-line typescript/no-unused-vars
-async function getOrCreateBotAccount(db: PrismaClient) {
-  let botAccount = await db.thinkpagesAccount.findUnique({
-    where: { username: "ixtwitter_bot" },
-  });
-
-  if (!botAccount) {
-    console.log("[DiscordPoster] Creating IxTwitter bot account...");
-    botAccount = await db.thinkpagesAccount.create({
-      data: {
-        username: "ixtwitter_bot",
-        displayName: "IxTwitter",
-        firstName: "Ix",
-        lastName: "Twitter",
-        accountType: "media",
-        clerkUserId: "system_ixtwitter_bot",
-        countryId: DEFAULT_COUNTRY_ID || (await getDefaultCountryId(db)),
-        verified: true,
-        isActive: true,
-        bio: "Auto-posted from the IxTwitter Discord channel",
-      },
-    });
-    console.log(`[DiscordPoster] Created bot account: ${botAccount.id}`);
-  }
-
-  return botAccount;
-}
 
 async function getPostedMessageIds(db: PrismaClient): Promise<Map<string, string>> {
   const postedIds = new Map<string, string>();
@@ -424,62 +377,55 @@ async function getPostedMessageIds(db: PrismaClient): Promise<Map<string, string
   return postedIds;
 }
 
+/** Unicode / short-name reactions per IxStats react type. */
+const REACTION_ALIASES: Record<string, string[]> = {
+  like: ["❤️", "❤", "like", "heart"],
+  laugh: ["😂", "😆", "😄", "😀", "laugh", "smile"],
+  angry: ["😡", "😠", "angry"],
+  fire: ["🔥", "fire"],
+  thumbsup: ["👍", "thumbsup"],
+  thumbsdown: ["👎", "thumbsdown"],
+};
+const REACTION_TYPES: Record<string, string> = Object.fromEntries(
+  Object.entries(REACTION_ALIASES).flatMap(([type, names]) => names.map((name) => [name, type]))
+);
+
 function mapDiscordReactions(reactions?: DiscordMessage["reactions"]): Record<string, number> {
   const counts: Record<string, number> = {};
-  if (!reactions || reactions.length === 0) return counts;
+  for (const { emoji, count } of reactions ?? []) {
+    // Custom Discord emoji are keyed discord:name:id; anything unmapped keeps its unicode character
+    const type = emoji.id
+      ? `discord:${emoji.name}:${emoji.id}`
+      : (REACTION_TYPES[emoji.name] ?? emoji.name);
+    counts[type] = (counts[type] || 0) + count;
+  }
+  return counts;
+}
 
-  for (const react of reactions) {
-    let type: string;
-    const name = react.emoji.name;
+const IMAGE_URL_PATTERN = /\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i;
 
-    if (react.emoji.id) {
-      // Custom Discord emoji (format: discord:name:id)
-      type = `discord:${name}:${react.emoji.id}`;
-    } else {
-      // Standard emoji or custom string-based mapping
-      switch (name) {
-        case "❤️":
-        case "❤":
-        case "like":
-        case "heart":
-          type = "like";
-          break;
-        case "😂":
-        case "😆":
-        case "😄":
-        case "😀":
-        case "laugh":
-        case "smile":
-          type = "laugh";
-          break;
-        case "😡":
-        case "😠":
-        case "angry":
-          type = "angry";
-          break;
-        case "🔥":
-        case "fire":
-          type = "fire";
-          break;
-        case "👍":
-        case "thumbsup":
-          type = "thumbsup";
-          break;
-        case "👎":
-        case "thumbsdown":
-          type = "thumbsdown";
-          break;
-        default:
-          // Fallback to standard unicode character directly
-          type = name;
-          break;
-      }
+/** Up to four distinct images from a message's attachments and embeds (GIF embeds included). */
+function collectMedia(message: DiscordMessage): { url: string; mimeType: string }[] {
+  const media: { url: string; mimeType: string }[] = [];
+
+  for (const a of message.attachments ?? []) {
+    if (a.content_type?.startsWith("image/") || IMAGE_URL_PATTERN.test(a.url)) {
+      media.push({ url: a.url, mimeType: a.content_type ?? "image/jpeg" });
     }
-
-    counts[type] = (counts[type] || 0) + react.count;
   }
 
-  return counts;
+  // Embeds such as Tenor/Giphy GIFs or linked images
+  for (const embed of message.embeds ?? []) {
+    const url = embed.image?.url || embed.thumbnail?.url;
+    const isMediaEmbed = embed.type === "image" || embed.type === "gifv";
+    if (url && (isMediaEmbed || IMAGE_URL_PATTERN.test(url))) {
+      const isGif = embed.type === "gifv" || url.includes(".gif");
+      media.push({ url, mimeType: isGif ? "image/gif" : "image/jpeg" });
+    }
+  }
+
+  const seen = new Set<string>();
+  return media.filter((m) => !seen.has(m.url) && seen.add(m.url)).slice(0, 4);
 }
 
 async function createPostFromMessage(
@@ -555,48 +501,7 @@ async function createPostFromMessage(
     return true;
   }
 
-  // Extract media from both attachments and embeds
-  const mediaUrls: { url: string; mimeType: string }[] = [];
-
-  // 1. Process attachments
-  if (message.attachments) {
-    for (const a of message.attachments) {
-      if (
-        a.content_type?.startsWith("image/") ||
-        /\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i.test(a.url)
-      ) {
-        mediaUrls.push({
-          url: a.url,
-          mimeType: a.content_type ?? "image/jpeg",
-        });
-      }
-    }
-  }
-
-  // 2. Process embeds (like Tenor/Giphy GIFs or embedded links)
-  if (message.embeds) {
-    for (const embed of message.embeds) {
-      const isMediaEmbed = embed.type === "image" || embed.type === "gifv";
-      const targetUrl = embed.image?.url || embed.thumbnail?.url;
-      if (targetUrl && (isMediaEmbed || /\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i.test(targetUrl))) {
-        const isGif = embed.type === "gifv" || targetUrl.includes(".gif");
-        mediaUrls.push({
-          url: targetUrl,
-          mimeType: isGif ? "image/gif" : "image/jpeg",
-        });
-      }
-    }
-  }
-
-  // Deduplicate and limit to 4
-  const seen = new Set<string>();
-  const uniqueMedia = mediaUrls
-    .filter((m) => {
-      if (seen.has(m.url)) return false;
-      seen.add(m.url);
-      return true;
-    })
-    .slice(0, 4);
+  const uniqueMedia = collectMedia(message);
 
   const mediaEntries = await Promise.all(
     uniqueMedia.map(async (m, index) => {
@@ -712,102 +617,13 @@ async function runIxTwitterSync(db: PrismaClient): Promise<{ posted: number; ski
   }
 }
 
-export async function backfillIxTwitterToThinkPages(): Promise<{
-  posted: number;
-  skipped: number;
-  alreadyPosted: number;
-}> {
-  if (!DISCORD_BOT_TOKEN) {
-    console.warn("[DiscordPoster] DISCORD_BOT_TOKEN not set, skipping backfill");
-    return { posted: 0, skipped: 0, alreadyPosted: 0 };
-  }
-
-  const db = sharedDb;
-
-  try {
-    await loadCountryIdCache(db);
-
-    console.log("[DiscordPoster] Fetching all messages from Discord channel...");
-    const allMessages = await fetchAllDiscordMessages();
-    console.log(`[DiscordPoster] Fetched ${allMessages.length} total messages`);
-
-    const postedIds = await getPostedMessageIds(db);
-    console.log(`[DiscordPoster] Found ${postedIds.size} already-posted message IDs`);
-
-    // oxlint-disable-next-line typescript/no-unused-vars
-    const validMessages = allMessages
-      .filter((m) => !m.author.bot && m.content.trim().length > 0 && !postedIds.has(m.id))
-      .reverse();
-
-    let posted = 0;
-    let skipped = 0;
-    let alreadyPosted = 0;
-
-    for (const message of allMessages.filter((m) => !m.author.bot && m.content.trim().length > 0)) {
-      if (postedIds.has(message.id)) {
-        alreadyPosted++;
-        continue;
-      }
-
-      try {
-        const handle = extractPrimaryHandle(message.content);
-        const displayName = extractDisplayName(message.content, message.author.username);
-
-        // Ensure the main Discord user account exists
-        await getOrCreateDiscordAccount(db, message.author.username, message, displayName);
-
-        let accountId: string;
-        if (handle) {
-          const handleAccountId = await getOrCreateHandleAccount(
-            db,
-            handle,
-            message.author.username,
-            displayName
-          );
-          accountId =
-            handleAccountId ||
-            (await getOrCreateDiscordAccount(db, message.author.username, message, displayName))
-              .accountId;
-        } else {
-          accountId = (
-            await getOrCreateDiscordAccount(db, message.author.username, message, displayName)
-          ).accountId;
-        }
-
-        const ok = await createPostFromMessage(db, accountId, message);
-        if (ok) {
-          posted++;
-          if (posted % 50 === 0) {
-            console.log(
-              `[DiscordPoster] Backfill progress: ${posted} posted, ${skipped} skipped, ${alreadyPosted} already posted`
-            );
-          }
-        } else {
-          skipped++;
-        }
-      } catch (error) {
-        console.error(`[DiscordPoster] Failed to post message ${message.id}:`, error);
-        skipped++;
-      }
-    }
-
-    console.log(
-      `[DiscordPoster] Backfill complete: ${posted} posted, ${skipped} skipped, ${alreadyPosted} already posted`
-    );
-    return { posted, skipped, alreadyPosted };
-  } catch (error) {
-    console.error("[DiscordPoster] Backfill failed:", error);
-    return { posted: 0, skipped: 0, alreadyPosted: 0 };
-  }
-}
-
 async function getDefaultCountryId(db: PrismaClient): Promise<string> {
   const country = await db.country.findFirst({ select: { id: true } });
   if (country) return country.id;
   throw new Error("No country found in database for bot account");
 }
 
-export function mapThinkpagesReactionToDiscord(reactionType: string): string {
+function mapThinkpagesReactionToDiscord(reactionType: string): string {
   if (reactionType.startsWith("discord:")) {
     const parts = reactionType.split(":");
     const name = parts[1] || "";
@@ -836,12 +652,6 @@ export function mapThinkpagesReactionToDiscord(reactionType: string): string {
   }
 }
 
-function ordinal(n: number): string {
-  const s = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
-}
-
 function formatCodeBlockTable(results: any[]): string {
   if (!results || results.length === 0) return "";
   const maxHomeLen = Math.max(...results.map((r) => String(r.home?.name || "").length), 10);
@@ -855,6 +665,68 @@ function formatCodeBlockTable(results: any[]): string {
   return `\`\`\`\n${lines.join("\n")}\n\`\`\``;
 }
 
+/** Built per embed, not at import: the app URL is read when a link is made (app-url.ts). */
+const feedFooter = () => ({
+  text: "Shared from IxStats",
+  icon_url: appUrl("/thinkpages-logo.svg"),
+});
+
+const SPORT_EMBED_COLORS: Record<string, number> = {
+  "⚽": 0x22c55e,
+  "🏀": 0xf97316,
+  "🏒": 0x38bdf8,
+  "🏈": 0x8b5cf6,
+};
+
+/** The embed plus one image-only embed per extra media URL (Discord shows several images that way). */
+function withMedia(embed: Record<string, any>, mediaUrls?: string[]): any[] {
+  // appUrl keeps an absolute URL and gives a root path the base path once (uploads are stored without it).
+  const urls = (mediaUrls ?? []).map((u) => appUrl(u));
+  if (urls.length === 0) return [embed];
+  embed.image = { url: urls[0] };
+  return [embed, ...urls.slice(1).map((image) => ({ url: embed.url, image: { url: image } }))];
+}
+
+function sportsEmbedTitle(sports: SportsBulletinData): string {
+  const { sportEmoji, league } = sports;
+  if (sports.isChampionBulletin) return `🏆 ${league.name} CHAMPION CROWNED!`;
+  if (sports.isPlayoffBulletin)
+    return `${sportEmoji} ${league.name} Playoff ${sports.roundName} Results`;
+  if (sports.matchDay) return `${sportEmoji} ${league.name} — Matchday ${sports.matchDay}`;
+  return `${sportEmoji} ${league.name}`;
+}
+
+function sportsEmbedBody(sports: SportsBulletinData): { description: string; fields: any[] } {
+  const summary = (name: string) =>
+    sports.llmSummary ? [{ name, value: `*${sports.llmSummary}*`, inline: false }] : [];
+
+  if (sports.isChampionBulletin) {
+    return {
+      description: `Congratulations to **${sports.championName}** for winning the championship!`,
+      fields: summary("📝 Season Summary"),
+    };
+  }
+
+  const movers = sports.movers?.length
+    ? [
+        {
+          name: "📈 Table Movers",
+          value: sports.movers
+            .map((m) => {
+              const diff = m.oldRank - m.newRank;
+              return `${m.newRank < m.oldRank ? "▲" : "▼"} **${m.name}** (${diff > 0 ? "+" : ""}${diff} spots, ${ordinal(m.oldRank)} → ${ordinal(m.newRank)})`;
+            })
+            .join("\n"),
+          inline: false,
+        },
+      ]
+    : [];
+  return {
+    description: sports.results?.length ? formatCodeBlockTable(sports.results) : "",
+    fields: [...movers, ...summary("📝 Summary")],
+  };
+}
+
 export function formatThinkPagesEmbed(
   post: { id: string; content: string; ixTimeTimestamp?: Date | string },
   account: {
@@ -865,169 +737,46 @@ export function formatThinkPagesEmbed(
   },
   mediaUrls?: string[]
 ): any[] {
-  const url = `${APP_URL}${CLEAN_BASE_PATH}/thinkpages/post/${post.id}`;
+  const url = appUrl(`/dashboard/post/${post.id}`);
+  const author = {
+    name: `${account.displayName} (@${account.username})${account.verified ? " \u2705" : ""}`,
+    icon_url: account.profileImageUrl
+      ? appUrl(account.profileImageUrl)
+      : "https://via.placeholder.com/150/4F46E5/FFFFFF?text=User",
+    url,
+  };
+  const timestamp = (
+    post.ixTimeTimestamp ? new Date(post.ixTimeTimestamp) : new Date()
+  ).toISOString();
 
-  const authorName = `${account.displayName} (@${account.username})${account.verified ? " \u2705" : ""}`;
-
-  const avatarUrl = account.profileImageUrl
-    ? account.profileImageUrl.startsWith("http")
-      ? account.profileImageUrl
-      : `${APP_URL}${account.profileImageUrl}`
-    : "https://via.placeholder.com/150/4F46E5/FFFFFF?text=User";
-
-  const timestamp = post.ixTimeTimestamp
-    ? new Date(post.ixTimeTimestamp).toISOString()
-    : new Date().toISOString();
-
-  // Try to parse sports bulletin
   const sports = parseSportsBulletin(post.content);
-  if (sports && sports.league && sports.league.name) {
-    let embedColor = 0xf59e0b; // default gold/yellow
-    if (sports.isPlayoffBulletin) {
-      embedColor = 0x06b6d4; // cyan
-    } else {
-      const emoji = sports.sportEmoji;
-      if (emoji === "⚽") embedColor = 0x22c55e;
-      else if (emoji === "🏀") embedColor = 0xf97316;
-      else if (emoji === "🏒") embedColor = 0x38bdf8;
-      else if (emoji === "🏈") embedColor = 0x8b5cf6;
-    }
-
-    let title = `${sports.sportEmoji} ${sports.league.name}`;
-    if (sports.isChampionBulletin) {
-      title = `🏆 ${sports.league.name} CHAMPION CROWNED!`;
-    } else if (sports.isPlayoffBulletin) {
-      title = `${sports.sportEmoji} ${sports.league.name} Playoff ${sports.roundName} Results`;
-    } else if (sports.matchDay) {
-      title = `${sports.sportEmoji} ${sports.league.name} — Matchday ${sports.matchDay}`;
-    }
-
-    let description = "";
-    const fields: any[] = [];
-
-    if (sports.isChampionBulletin) {
-      description = `Congratulations to **${sports.championName}** for winning the championship!`;
-      if (sports.llmSummary) {
-        fields.push({
-          name: "📝 Season Summary",
-          value: `*${sports.llmSummary}*`,
-          inline: false,
-        });
-      }
-    } else {
-      if (sports.results && sports.results.length > 0) {
-        description = formatCodeBlockTable(sports.results);
-      }
-
-      if (sports.movers && sports.movers.length > 0) {
-        fields.push({
-          name: "📈 Table Movers",
-          value: sports.movers
-            .map((m) => {
-              const up = m.newRank < m.oldRank;
-              const arrow = up ? "▲" : "▼";
-              const diff = m.oldRank - m.newRank;
-              const sign = diff > 0 ? "+" : "";
-              return `${arrow} **${m.name}** (${sign}${diff} spots, ${ordinal(m.oldRank)} → ${ordinal(m.newRank)})`;
-            })
-            .join("\n"),
-          inline: false,
-        });
-      }
-
-      if (sports.llmSummary) {
-        fields.push({
-          name: "📝 Summary",
-          value: `*${sports.llmSummary}*`,
-          inline: false,
-        });
-      }
-    }
-
-    const leagueUrl = sports.league.id
-      ? `${APP_URL}${CLEAN_BASE_PATH}/myleague/${sports.league.id}`
-      : url;
-
-    // Append direct link back to league page
-    if (description) {
-      description += `\n🔗 [View Matchday & Standings on IxStates](${leagueUrl})`;
-    } else {
-      description = `🔗 [View Matchday & Standings on IxStates](${leagueUrl})`;
-    }
-
-    const embeds: any[] = [
+  if (sports?.league?.name) {
+    const leagueUrl = sports.league.id ? appUrl(`/myleague/${sports.league.id}`) : url;
+    const { description, fields } = sportsEmbedBody(sports);
+    const link = `🔗 [View Matchday & Standings on IxStates](${leagueUrl})`;
+    return withMedia(
       {
         url: leagueUrl,
-        author: {
-          name: authorName,
-          icon_url: avatarUrl,
-          url,
-        },
-        title,
-        description,
+        author,
+        title: sportsEmbedTitle(sports),
+        description: description ? `${description}\n${link}` : link,
         fields,
-        color: embedColor,
-        footer: {
-          text: "ThinkPages · Shared via IxStates",
-          icon_url: `${APP_URL}${CLEAN_BASE_PATH}/thinkpages-logo.svg`,
-        },
+        color: sports.isPlayoffBulletin
+          ? 0x06b6d4 // cyan
+          : (SPORT_EMBED_COLORS[sports.sportEmoji] ?? 0xf59e0b), // default gold
+        footer: feedFooter(),
         timestamp,
       },
-    ];
-
-    if (mediaUrls && mediaUrls.length > 0) {
-      const urls = mediaUrls.map((u) => (u.startsWith("http") ? u : `${APP_URL}${u}`));
-      embeds[0].image = { url: urls[0] };
-      for (let i = 1; i < urls.length; i++) {
-        embeds.push({
-          url: leagueUrl,
-          image: { url: urls[i] },
-        });
-      }
-    }
-
-    return embeds;
+      mediaUrls
+    );
   }
-
-  // Fallback to normal posts
-  const embedColor = 0x9835ff;
 
   let description = htmlToDiscordMarkdown(cleanPostContent(post.content));
-  if (description.length > 4000) {
-    description = description.slice(0, 3997) + "...";
-  }
-
-  const embeds: any[] = [
-    {
-      url,
-      author: {
-        name: authorName,
-        icon_url: avatarUrl,
-        url,
-      },
-      description,
-      color: embedColor,
-      footer: {
-        text: "ThinkPages · Shared via IxStates",
-        icon_url: `${APP_URL}${CLEAN_BASE_PATH}/thinkpages-logo.svg`,
-      },
-      timestamp,
-    },
-  ];
-
-  if (mediaUrls && mediaUrls.length > 0) {
-    const urls = mediaUrls.map((u) => (u.startsWith("http") ? u : `${APP_URL}${u}`));
-    embeds[0].image = { url: urls[0] };
-
-    for (let i = 1; i < urls.length; i++) {
-      embeds.push({
-        url,
-        image: { url: urls[i] },
-      });
-    }
-  }
-
-  return embeds;
+  if (description.length > 4000) description = description.slice(0, 3997) + "...";
+  return withMedia(
+    { url, author, description, color: THINKPAGES_EMBED_COLOR, footer: feedFooter(), timestamp },
+    mediaUrls
+  );
 }
 
 export async function postThinkPagesToDiscord(
@@ -1221,215 +970,4 @@ export async function removeDiscordReaction(
     );
     return false;
   }
-}
-
-export function decodeHtmlEntities(str: string): string {
-  if (!str) return "";
-  return str
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&nbsp;/g, " ");
-}
-
-export function autoCloseHtmlTags(html: string): string {
-  const tags = [
-    "strong",
-    "b",
-    "em",
-    "i",
-    "u",
-    "s",
-    "del",
-    "strike",
-    "code",
-    "pre",
-    "p",
-    "a",
-    "ul",
-    "ol",
-    "li",
-  ];
-  let closedHtml = html;
-
-  for (const tag of tags) {
-    const openCount = (closedHtml.match(new RegExp(`<${tag}\\b[^>]*>`, "gi")) || []).length;
-    const closeCount = (closedHtml.match(new RegExp(`</${tag}>`, "gi")) || []).length;
-
-    if (openCount > closeCount) {
-      const missing = openCount - closeCount;
-      closedHtml += `</${tag}>`.repeat(missing);
-    }
-  }
-
-  return closedHtml;
-}
-
-export function htmlToDiscordMarkdown(html: string): string {
-  if (!html) return "";
-
-  const closedHtml = autoCloseHtmlTags(html);
-
-  try {
-    const parser = new DOMParser({
-      onError: (level, message) => {
-        if (level === "fatalError") {
-          throw new Error(message);
-        }
-      },
-    });
-
-    const doc = parser.parseFromString(`<div>${closedHtml}</div>`, "text/xml");
-    const root = doc.documentElement;
-    if (root) {
-      const result = convertNodeToMarkdown(root).trim();
-      return result.replace(/\n{3,}/g, "\n\n");
-    }
-  } catch (err) {
-    console.warn("[htmlToDiscordMarkdown] XML parsing failed, using regex fallback:", err);
-  }
-
-  return fallbackHtmlToMarkdown(closedHtml);
-}
-
-function convertNodeToMarkdown(node: any): string {
-  if (!node) return "";
-
-  // Text Node
-  if (node.nodeType === 3) {
-    return decodeHtmlEntities(node.nodeValue || "");
-  }
-
-  // Element Node
-  if (node.nodeType === 1) {
-    const tagName = node.tagName.toLowerCase();
-    const children = Array.from(node.childNodes || [])
-      .map((child) => convertNodeToMarkdown(child))
-      .join("");
-
-    switch (tagName) {
-      case "div":
-        if (node.getAttribute && node.getAttribute("data-wikiembed") === "true") {
-          const title = node.getAttribute("data-title") || "";
-          const summary = node.getAttribute("data-summary") || "";
-          const source = node.getAttribute("data-source") || "ixwiki";
-          const wikiUrl = `${APP_URL}${CLEAN_BASE_PATH}/wiki/${encodeURIComponent(
-            title.replace(/ /g, "_")
-          )}`;
-          return `\n**Wiki Embed: [${title}](${wikiUrl})**\n*Source: ${source}*\n> ${summary}\n`;
-        }
-        return children;
-      case "p":
-        return `\n${children}\n`;
-      case "strong":
-      case "b":
-        return `**${children}**`;
-      case "em":
-      case "i":
-        return `*${children}*`;
-      case "u":
-        return `__${children}__`;
-      case "s":
-      case "del":
-      case "strike":
-        return `~~${children}~~`;
-      case "code":
-        return `\`${children}\``;
-      case "pre":
-        return `\`\`\`\n${children}\n\`\`\``;
-      case "ul":
-      case "ol":
-        return `\n${children}\n`;
-      case "li":
-        return `- ${children.trim()}\n`;
-      case "br":
-        return "\n";
-      case "a": {
-        const href = node.getAttribute ? node.getAttribute("href") || "" : "";
-        let url = href;
-        if (href.startsWith("/wiki/")) {
-          url = `${APP_URL}${CLEAN_BASE_PATH}${href}`;
-        } else if (href.startsWith("/") && !href.startsWith("//")) {
-          url = `${APP_URL}${CLEAN_BASE_PATH}${href}`;
-        }
-        return `[${children}](${url})`;
-      }
-      case "img": {
-        const src = node.getAttribute ? node.getAttribute("src") || "" : "";
-        const alt = node.getAttribute ? node.getAttribute("alt") || "" : "";
-        return `[Image: ${alt || "image"}](${src})`;
-      }
-      default:
-        return children;
-    }
-  }
-
-  return "";
-}
-
-function fallbackHtmlToMarkdown(html: string): string {
-  let text = html;
-
-  // Wiki embed cards replacement
-  text = text.replace(
-    /<div[^>]*data-wikiembed="true"[^>]*data-title="([^"]+)"[^>]*data-summary="([^"]*)"[^>]*data-source="([^"]*)"[^>]*><\/div>/gi,
-    (_, title, summary, source) => {
-      const decodedTitle = decodeHtmlEntities(title);
-      const decodedSummary = decodeHtmlEntities(summary);
-      const decodedSource = decodeHtmlEntities(source || "ixwiki");
-      const wikiUrl = `${APP_URL}${CLEAN_BASE_PATH}/wiki/${encodeURIComponent(
-        decodedTitle.replace(/ /g, "_")
-      )}`;
-      return `\n**Wiki Embed: [${decodedTitle}](${wikiUrl})**\n*Source: ${decodedSource}*\n> ${decodedSummary}\n`;
-    }
-  );
-
-  // Structural elements
-  text = text.replace(/<br\s*\/?>/gi, "\n");
-  text = text.replace(/<p[^>]*>/gi, "\n").replace(/<\/p>/gi, "\n");
-  text = text.replace(/<ul[^>]*>/gi, "\n").replace(/<\/ul>/gi, "\n");
-  text = text.replace(/<ol[^>]*>/gi, "\n").replace(/<\/ol>/gi, "\n");
-  text = text.replace(/<li[^>]*>/gi, "- ").replace(/<\/li>/gi, "\n");
-
-  // Formatting inline tags
-  text = text.replace(/<strong[^>]*>(.*?)<\/strong>/gi, "**$1**");
-  text = text.replace(/<b[^>]*>(.*?)<\/b>/gi, "**$1**");
-  text = text.replace(/<em[^>]*>(.*?)<\/em>/gi, "*$1*");
-  text = text.replace(/<i[^>]*>(.*?)<\/i>/gi, "*$1*");
-  text = text.replace(/<u[^>]*>(.*?)<\/u>/gi, "__$1__");
-  text = text.replace(/<s[^>]*>(.*?)<\/s>/gi, "~~$1~~");
-  text = text.replace(/<del[^>]*>(.*?)<\/del>/gi, "~~$1~~");
-  text = text.replace(/<strike[^>]*>(.*?)<\/strike>/gi, "~~$1~~");
-  text = text.replace(/<code[^>]*>(.*?)<\/code>/gi, "`$1`");
-  text = text.replace(/<pre[^>]*>(.*?)<\/pre>/gi, "```\n$1\n```");
-
-  // Links formatting
-  text = text.replace(/<a[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi, (_, href, content) => {
-    let url = href;
-    if (href.startsWith("/wiki/")) {
-      url = `${APP_URL}${CLEAN_BASE_PATH}${href}`;
-    } else if (href.startsWith("/") && !href.startsWith("//")) {
-      url = `${APP_URL}${CLEAN_BASE_PATH}${href}`;
-    }
-    return `[${content}](${url})`;
-  });
-
-  // Img formatting
-  text = text.replace(/<img[^>]*src="([^"]+)"[^>]*alt="([^"]*)"[^>]*\/?>/gi, (_, src, alt) => {
-    return `[Image: ${alt || "image"}](${src})`;
-  });
-
-  // Strip remaining HTML tags
-  text = text.replace(/<[^>]+>/g, "");
-
-  // Decode entities
-  text = decodeHtmlEntities(text);
-
-  // Clean up spacing
-  text = text.replace(/\n{3,}/g, "\n\n");
-
-  return text.trim();
 }

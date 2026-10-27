@@ -8,9 +8,42 @@
 import type { UserAccount } from "./contracts";
 import { UNKNOWN_DISPLAY_NAME } from "~/server/shared/display-names";
 
-// ─── Formatters for `api.messages` ───────────────────────────────────────────
+const toDate = (value: Date | string | number | null | undefined) => new Date(value || Date.now());
 
-export interface MessagesConversationResult {
+/** Stand-in account for a participant the account lookup did not resolve. */
+function fallbackAccount(userId: string) {
+  return {
+    id: userId,
+    username: userId,
+    displayName: userId.startsWith("forum:")
+      ? "Forum User"
+      : userId.startsWith("wiki:")
+        ? "Wiki User"
+        : UNKNOWN_DISPLAY_NAME,
+    profileImageUrl: null,
+    countryFlag: null,
+    countryName: null,
+    accountType: "country" as const,
+  };
+}
+
+function formatLastMessage(conv: any, accountMap: Map<string, UserAccount>) {
+  const lastMsg = conv.messages?.[0] || conv.lastMessage;
+  if (!lastMsg) return null;
+  const senderAccount = accountMap.get(lastMsg.userId);
+  const isDeleted = Boolean(lastMsg.deletedAt || lastMsg.isDeleted);
+  return {
+    id: lastMsg.id,
+    content: isDeleted ? "This message was deleted" : lastMsg.content,
+    senderId: lastMsg.userId,
+    senderName: senderAccount?.displayName ?? lastMsg.senderName ?? "Unknown",
+    senderAvatar: senderAccount?.profileImageUrl ?? lastMsg.senderAvatar ?? null,
+    createdAt: toDate(lastMsg.ixTimeTimestamp || lastMsg.createdAt),
+    isDeleted,
+  };
+}
+
+interface MessagesConversationResult {
   id: string;
   type: string;
   name: string | null;
@@ -30,6 +63,10 @@ export interface MessagesConversationResult {
   isActive: boolean;
   participantCount: number;
   unreadCount: number;
+  /** The actor holds this conversation as an unanswered message request (SL-4). */
+  isRequest: boolean;
+  /** Another participant has not yet accepted it as a message request. */
+  awaitingAcceptance: boolean;
   otherParticipants: any[];
   otherParticipant?: any;
   lastMessage?: {
@@ -43,260 +80,61 @@ export interface MessagesConversationResult {
   } | null;
 }
 
+function conversationDescriptor(conv: any) {
+  return {
+    id: conv.id,
+    name: conv.name ?? conv.subject ?? conv.thinktankGroup?.name ?? null,
+    avatar: conv.avatar ?? conv.thinktankGroup?.avatar ?? null,
+    subject: conv.subject ?? null,
+    channelId: conv.channelId ?? null,
+    sourceId: conv.sourceId ?? conv.thinktankGroup?.id ?? null,
+    conversationType: conv.conversationType ?? null,
+    diplomaticClassification: conv.diplomaticClassification ?? null,
+    priority: conv.priority ?? null,
+  };
+}
+
 export function formatMessagesConversation(
   conv: any,
   actorId: string,
   accountMap: Map<string, UserAccount>,
-  unreadCount = 0
+  unreadCount = 0,
+  /** Participants shown as online (presence.ts already applied their privacy setting). */
+  online: ReadonlySet<string> = new Set()
 ): MessagesConversationResult {
   const participants: any[] = conv.participants || [];
-  const otherParts = participants.filter((p) => p.userId !== actorId);
+  const others = participants.filter((p) => p.userId !== actorId);
 
-  const otherAccounts: any[] = otherParts.map((p) => {
-    const acc = accountMap.get(p.userId) || {
-      id: p.userId,
-      username: p.userId,
-      displayName: p.userId.startsWith("forum:")
-        ? "Forum User"
-        : p.userId.startsWith("wiki:")
-          ? "Wiki User"
-          : UNKNOWN_DISPLAY_NAME,
-      profileImageUrl: null,
-      countryFlag: null,
-      countryName: null,
-      accountType: "country" as const,
-    };
+  const otherAccounts: any[] = others.map((p) => {
+    const acc = accountMap.get(p.userId) || fallbackAccount(p.userId);
     return {
       ...acc,
       id: p.id || p.userId,
       accountId: p.userId,
       account: acc,
+      isOnline: online.has(p.userId),
     };
   });
 
-  // If no account found but other participants exist, generate fallback
-  if (otherAccounts.length === 0 && otherParts.length > 0) {
-    const firstId = otherParts[0]!.userId;
-    const fallbackAcc = {
-      id: firstId,
-      username: firstId,
-      displayName: firstId.startsWith("forum:")
-        ? "Forum User"
-        : firstId.startsWith("wiki:")
-          ? "Wiki User"
-          : UNKNOWN_DISPLAY_NAME,
-      profileImageUrl: null,
-      countryFlag: null,
-      countryName: null,
-      accountType: "country" as const,
-    };
-    otherAccounts.push({
-      ...fallbackAcc,
-      id: firstId,
-      accountId: firstId,
-      account: fallbackAcc,
-    });
-  }
-
-  let lastMessageFormatted = null;
-  const lastMsg = conv.messages?.[0] || conv.lastMessage;
-  if (lastMsg) {
-    const senderAccount = accountMap.get(lastMsg.userId);
-    const isDeleted = Boolean(lastMsg.deletedAt || lastMsg.isDeleted);
-    lastMessageFormatted = {
-      id: lastMsg.id,
-      content: isDeleted ? "This message was deleted" : lastMsg.content,
-      senderId: lastMsg.userId,
-      senderName: senderAccount?.displayName ?? lastMsg.senderName ?? "Unknown",
-      senderAvatar: senderAccount?.profileImageUrl ?? lastMsg.senderAvatar ?? null,
-      createdAt: new Date(lastMsg.ixTimeTimestamp || lastMsg.createdAt || Date.now()),
-      isDeleted,
-    };
-  }
-
   const isGroupConv = conv.type === "group" || conv.source === "thinktank" || Boolean(conv.isGroup);
+  const lastActivity = toDate(conv.lastActivity || conv.updatedAt);
 
   return {
-    id: conv.id,
+    ...conversationDescriptor(conv),
     type: isGroupConv ? "group" : (conv.type ?? "direct"),
-    name: conv.name ?? conv.subject ?? conv.thinktankGroup?.name ?? null,
-    avatar: conv.avatar ?? conv.thinktankGroup?.avatar ?? null,
-    subject: conv.subject ?? null,
     isGroup: isGroupConv,
-    channelId: conv.channelId ?? null,
-    createdAt: new Date(conv.createdAt || Date.now()),
-    updatedAt: new Date(conv.updatedAt || Date.now()),
-    lastActivity: new Date(conv.lastActivity || conv.updatedAt || Date.now()),
-    lastMessageAt: new Date(conv.lastActivity || conv.updatedAt || Date.now()),
+    createdAt: toDate(conv.createdAt),
+    updatedAt: toDate(conv.updatedAt),
+    lastActivity,
+    lastMessageAt: lastActivity,
     source: conv.source || "thinkshare",
-    sourceId: conv.sourceId ?? conv.thinktankGroup?.id ?? null,
-    conversationType: conv.conversationType ?? null,
-    diplomaticClassification: conv.diplomaticClassification ?? null,
-    priority: conv.priority ?? null,
     isActive: conv.isActive ?? true,
     participantCount: participants.length,
     unreadCount,
+    isRequest: participants.some((p) => p.userId === actorId && p.requestStatus === "pending"),
+    awaitingAcceptance: others.some((p) => p.requestStatus === "pending"),
     otherParticipants: otherAccounts,
     otherParticipant: otherAccounts[0]?.account ?? otherAccounts[0],
-    lastMessage: lastMessageFormatted,
-  };
-}
-
-export function formatMessagesMessage(
-  msg: any,
-  actorId: string,
-  accountMap: Map<string, UserAccount>
-) {
-  const senderAccount = accountMap.get(msg.userId) ?? {
-    id: msg.userId,
-    username: msg.userId,
-    displayName: msg.senderName || "Unknown",
-    profileImageUrl: msg.senderAvatar || null,
-    accountType: "country" as const,
-  };
-
-  const isDeleted = Boolean(msg.deletedAt || msg.isDeleted);
-  const isEdited = Boolean(msg.editedAt || msg.isEdited);
-  const timestamp = new Date(msg.ixTimeTimestamp || msg.createdAt || Date.now());
-
-  let replyToFormatted = undefined;
-  if (msg.replyTo) {
-    const replySender = accountMap.get(msg.replyTo.userId);
-    const replyDeleted = Boolean(msg.replyTo.deletedAt || msg.replyTo.isDeleted);
-    replyToFormatted = {
-      id: msg.replyTo.id,
-      content: replyDeleted ? "This message was deleted" : msg.replyTo.content,
-      senderName: replySender?.displayName ?? msg.replyTo.senderName ?? "Unknown",
-    };
-  }
-
-  const rawReactions = msg.reactions
-    ? typeof msg.reactions === "string"
-      ? JSON.parse(msg.reactions)
-      : msg.reactions
-    : {};
-  const reactions = Object.entries(rawReactions).map(([emoji, count]) => ({
-    emoji,
-    count: count as number,
-    users: [],
-    hasReacted: false,
-  }));
-
-  return {
-    id: msg.id,
-    conversationId: msg.conversationId,
-    senderId: msg.userId,
-    sender: senderAccount,
-    content: isDeleted ? "This message was deleted" : msg.content,
-    attachments: msg.attachments
-      ? typeof msg.attachments === "string"
-        ? JSON.parse(msg.attachments)
-        : msg.attachments
-      : [],
-    reactions,
-    replyTo: replyToFormatted,
-    isDeleted,
-    isEdited,
-    createdAt: timestamp,
-    updatedAt: new Date(msg.editedAt || msg.ixTimeTimestamp || Date.now()),
-    source: msg.source || "thinkshare",
-    isOwn: msg.userId === actorId,
-  };
-}
-
-// ─── Formatters for `api.thinkpages.messaging` ───────────────────────────────
-
-export function formatThinkpagesConversation(
-  conv: any,
-  actorId: string,
-  accountMap: Map<string, UserAccount>,
-  unreadCount = 0
-) {
-  const participants: any[] = conv.participants || [];
-  const otherParts = participants.filter((p) => p.userId !== actorId);
-
-  const otherAccounts: UserAccount[] = otherParts
-    .map((p) => accountMap.get(p.userId))
-    .filter((a): a is UserAccount => Boolean(a));
-
-  const actorAccount = accountMap.get(actorId) ?? {
-    id: actorId,
-    username: actorId,
-    displayName: "Current User",
-    profileImageUrl: null,
-    accountType: "country" as const,
-  };
-
-  let lastMessageFormatted = null;
-  const lastMsg = conv.messages?.[0] || conv.lastMessage;
-  if (lastMsg) {
-    const senderAccount = accountMap.get(lastMsg.userId);
-    const isDeleted = Boolean(lastMsg.deletedAt || lastMsg.isDeleted);
-    lastMessageFormatted = {
-      id: lastMsg.id,
-      content: isDeleted ? "This message was deleted" : lastMsg.content,
-      senderId: lastMsg.userId,
-      senderName: senderAccount?.displayName ?? lastMsg.senderName ?? "Unknown",
-      senderAvatar: senderAccount?.profileImageUrl ?? lastMsg.senderAvatar ?? null,
-      createdAt: new Date(lastMsg.ixTimeTimestamp || lastMsg.createdAt || Date.now()),
-      isDeleted,
-    };
-  }
-
-  return {
-    id: conv.id,
-    createdAt: new Date(conv.createdAt || Date.now()),
-    updatedAt: new Date(conv.updatedAt || Date.now()),
-    lastMessageAt: new Date(conv.lastActivity || conv.updatedAt || Date.now()),
-    channelId: conv.channelId ?? undefined,
-    isGroup: Boolean(conv.isGroup),
-    subject: conv.subject ?? undefined,
-    otherParticipants: otherAccounts,
-    lastMessage: lastMessageFormatted,
-    unreadCount,
-    accountId: actorId,
-    account: actorAccount,
-  };
-}
-
-export function formatThinkpagesMessage(
-  msg: any,
-  _actorId: string,
-  accountMap: Map<string, UserAccount>
-) {
-  const senderAccount = accountMap.get(msg.userId);
-  const isDeleted = Boolean(msg.deletedAt || msg.isDeleted);
-  const isEdited = Boolean(msg.editedAt || msg.isEdited);
-  const timestamp = new Date(msg.ixTimeTimestamp || msg.createdAt || Date.now());
-
-  let replyToFormatted = undefined;
-  if (msg.replyTo) {
-    const replySender = accountMap.get(msg.replyTo.userId);
-    const replyDeleted = Boolean(msg.replyTo.deletedAt || msg.replyTo.isDeleted);
-    replyToFormatted = {
-      id: msg.replyTo.id,
-      content: replyDeleted ? "This message was deleted" : msg.replyTo.content,
-      senderName: replySender?.displayName ?? msg.replyTo.senderName ?? "Unknown",
-    };
-  }
-
-  return {
-    id: msg.id,
-    conversationId: msg.conversationId,
-    userId: msg.userId,
-    content: isDeleted ? "This message was deleted" : msg.content,
-    attachments: msg.attachments
-      ? typeof msg.attachments === "string"
-        ? JSON.parse(msg.attachments)
-        : msg.attachments
-      : [],
-    replyToId: msg.replyToId ?? undefined,
-    isDeleted,
-    isEdited,
-    createdAt: timestamp,
-    updatedAt: new Date(msg.editedAt || msg.ixTimeTimestamp || Date.now()),
-    senderName: senderAccount?.displayName ?? msg.senderName ?? "Unknown",
-    senderAvatar: senderAccount?.profileImageUrl ?? msg.senderAvatar ?? null,
-    replyTo: replyToFormatted,
+    lastMessage: formatLastMessage(conv, accountMap),
   };
 }

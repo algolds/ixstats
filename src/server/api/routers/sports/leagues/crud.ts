@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import {
   getPreset,
@@ -12,9 +12,22 @@ import {
   teamIndexHash,
   type SportPresetKey,
 } from "~/lib/sports";
-import { exchangeService } from "~/lib/vault/exchange-service";
+import { lockWallet } from "~/lib/vault/exchange-service";
 import { isSystemOwner } from "~/lib/auth";
-import { viewerCanManageLeague } from "~/server/api/routers/sports/league-access";
+import {
+  assertCanManageLeague,
+  assertOwnsLeague,
+  viewerCanManageLeague,
+} from "~/server/api/routers/sports/league-access";
+import { assertSportsEconomyOpen, sportsRequestId } from "~/server/api/routers/sports/_shared";
+import { chargeSportsFeeTx } from "~/server/api/routers/sports/fees";
+import { refundOpenPredictionsTx, refundTransferBidTx } from "~/server/api/routers/sports/escrow";
+
+/** Most clubs a league holds: the largest league a charter founds. */
+const MAX_LEAGUE_TEAMS = 64;
+
+/** A 64-club charter writes about 200 rows in its transaction. */
+const CHARTER_TRANSACTION = { timeout: 30_000, maxWait: 10_000 };
 
 export const leaguesCrudRouter = createTRPCRouter({
   getLeagues: publicProcedure
@@ -134,15 +147,16 @@ export const leaguesCrudRouter = createTRPCRouter({
     }
   }),
 
-  createLeague: protectedProcedure
+  createLeague: rateLimitedMutationProcedure
     .input(
       z.object({
         name: z.string().min(1).max(200),
         sportPreset: z.string().min(1),
-        teamCount: z.number().int().min(2).max(64),
+        teamCount: z.number().int().min(2).max(MAX_LEAGUE_TEAMS),
         nationAffiliation: z.string().nullable().optional(),
         settings: z.record(z.string(), z.unknown()),
         isCanonical: z.boolean().optional().default(false),
+        requestId: sportsRequestId,
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -155,78 +169,83 @@ export const leaguesCrudRouter = createTRPCRouter({
           });
         }
 
-        const spend = await exchangeService.spend(
-          ctx.user.id,
-          500,
-          "CHARTER_FEE",
-          `LEAGUE_CREATE:${input.name}`,
-          ctx.db as any
-        );
-        if (!spend.success) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: spend.message ?? "Insufficient balance to charter a league",
-          });
-        }
-
+        await assertSportsEconomyOpen(ctx.db);
         const archetype = preset.archetype;
 
         // Only system owners may mint a canonical (official/canon) league.
         // Non-owners requesting isCanonical:true silently get a non-canonical league.
         const canonical = input.isCanonical === true && isSystemOwner(ctx.auth.userId);
 
-        const league = await ctx.db.sportLeague.create({
-          data: {
-            name: input.name,
-            sportPreset: input.sportPreset,
-            archetype,
-            teamCount: input.teamCount,
-            nationAffiliation: input.nationAffiliation,
-            isCanonical: canonical,
-            settings: input.settings as any,
-            createdByUserId: ctx.user.id,
-            status: "active",
-          },
-        });
+        // The charter fee and the league, its clubs, coaches and rosters commit together: a
+        // failed write refunds nothing because nothing was charged
+        return await ctx.db.$transaction(async (tx) => {
+          if (input.requestId) {
+            // A retried charter waits for the first behind the wallet lock, then gets its league
+            await lockWallet(tx, ctx.user.id);
+            const charged = await tx.exchangeTransaction.findUnique({
+              where: { idempotencyKey: `sports:charter:${ctx.user.id}:${input.requestId}` },
+              select: { metadata: true },
+            });
+            const leagueId = (charged?.metadata as { leagueId?: unknown } | null)?.leagueId;
+            if (typeof leagueId === "string") {
+              const { teams, ...league } = await tx.sportLeague.findUniqueOrThrow({
+                where: { id: leagueId },
+                include: { teams: { orderBy: { createdAt: "asc" } } },
+              });
+              return { ...league, teams };
+            }
+          }
 
-        const teams = [];
-        for (let i = 0; i < input.teamCount; i++) {
-          const team = await ctx.db.sportTeam.create({
+          const league = await tx.sportLeague.create({
             data: {
-              leagueId: league.id,
-              name: `${input.name} Team ${i + 1}`,
-              shortName: `${input.name.slice(0, 3).toUpperCase()}${i + 1}`,
-              color: `hsl(${(i * 360) / input.teamCount}, 70%, 50%)`,
-              nationId: input.nationAffiliation ?? null,
+              name: input.name,
+              sportPreset: input.sportPreset,
+              archetype,
+              teamCount: input.teamCount,
+              nationAffiliation: input.nationAffiliation,
+              isCanonical: canonical,
+              settings: input.settings as any,
+              createdByUserId: ctx.user.id,
+              status: "active",
             },
           });
 
-          // Generate coach
-          const seed = teamIndexHash(league.id, i, 0);
-          const coachData = generateCoach({ seed });
-          await ctx.db.sportCoach.create({
-            data: {
-              teamId: team.id,
-              firstName: coachData.firstName,
-              lastName: coachData.lastName,
-              role: coachData.role ?? "Head Coach",
-              age: coachData.age ?? 45,
-              ratings: coachData.ratings as any,
-              careerStage: coachData.careerStage ?? "prime",
-              isActive: true,
-            },
-          });
-
-          // Generate roster
-          const roster = generateTeamRoster({
-            sport: input.sportPreset as SportPresetKey,
-            rosterSize: preset.rosterSize,
-            seed,
-          });
-          for (let j = 0; j < roster.length; j++) {
-            const p = roster[j];
-            await ctx.db.sportPlayer.create({
+          const teams = [];
+          for (let i = 0; i < input.teamCount; i++) {
+            const team = await tx.sportTeam.create({
               data: {
+                leagueId: league.id,
+                name: `${input.name} Team ${i + 1}`,
+                shortName: `${input.name.slice(0, 3).toUpperCase()}${i + 1}`,
+                color: `hsl(${(i * 360) / input.teamCount}, 70%, 50%)`,
+                nationId: input.nationAffiliation ?? null,
+              },
+            });
+
+            // Generate coach
+            const seed = teamIndexHash(league.id, i, 0);
+            const coachData = generateCoach({ seed });
+            await tx.sportCoach.create({
+              data: {
+                teamId: team.id,
+                firstName: coachData.firstName,
+                lastName: coachData.lastName,
+                role: coachData.role ?? "Head Coach",
+                age: coachData.age ?? 45,
+                ratings: coachData.ratings as any,
+                careerStage: coachData.careerStage ?? "prime",
+                isActive: true,
+              },
+            });
+
+            // Generate roster
+            const roster = generateTeamRoster({
+              sport: input.sportPreset as SportPresetKey,
+              rosterSize: preset.rosterSize,
+              seed,
+            });
+            await tx.sportPlayer.createMany({
+              data: roster.map((p, j) => ({
                 teamId: team.id,
                 firstName: p.firstName ?? `Player`,
                 lastName: p.lastName ?? `${j + 1}`,
@@ -236,17 +255,28 @@ export const leaguesCrudRouter = createTRPCRouter({
                 careerStage: p.careerStage ?? "rookie",
                 ratings: (p.ratings as any) ?? {},
                 isActive: true,
-              },
+              })),
             });
+
+            teams.push(team);
           }
 
-          teams.push(team);
-        }
+          await chargeSportsFeeTx(tx, {
+            userId: ctx.user.id,
+            amount: 500,
+            type: "CHARTER_FEE",
+            source: `LEAGUE_CREATE:${input.name}`,
+            action: "charter",
+            requestId: input.requestId,
+            metadata: { leagueId: league.id },
+            failure: "Insufficient balance to charter a league",
+          });
 
-        return {
-          ...league,
-          teams,
-        };
+          return {
+            ...league,
+            teams,
+          };
+        }, CHARTER_TRANSACTION);
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -256,7 +286,7 @@ export const leaguesCrudRouter = createTRPCRouter({
       }
     }),
 
-  updateLeague: protectedProcedure
+  updateLeague: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),
@@ -280,9 +310,7 @@ export const leaguesCrudRouter = createTRPCRouter({
         if (!league) {
           throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
         }
-        if (league.createdByUserId !== ctx.user.id && !isSystemOwner(ctx.auth.userId)) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this league" });
-        }
+        assertOwnsLeague(ctx, league);
 
         // Only system owners can modify isCanonical
         const isCanonical =
@@ -307,7 +335,7 @@ export const leaguesCrudRouter = createTRPCRouter({
       }
     }),
 
-  deleteLeague: protectedProcedure
+  deleteLeague: rateLimitedMutationProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -321,9 +349,7 @@ export const leaguesCrudRouter = createTRPCRouter({
         if (!league) {
           throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
         }
-        if (league.createdByUserId !== ctx.user.id && !isSystemOwner(ctx.auth.userId)) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this league" });
-        }
+        assertOwnsLeague(ctx, league);
 
         if (league.seasons.length > 0) {
           throw new TRPCError({
@@ -332,8 +358,46 @@ export const leaguesCrudRouter = createTRPCRouter({
           });
         }
 
-        // Prisma cascade will handle teams > players > coaches
-        await ctx.db.sportLeague.delete({ where: { id: input.id } });
+        await assertSportsEconomyOpen(ctx.db);
+        await ctx.db.$transaction(async (tx) => {
+          // Clubs, then their players (the transfer market's lock order), so no claim, bid or
+          // answer lands between the checks below and the delete
+          await tx.$queryRaw`SELECT id FROM "sport_teams" WHERE "leagueId" = ${league.id} FOR UPDATE`;
+          await tx.$queryRaw`SELECT id FROM "sport_players" WHERE "teamId" IN (SELECT id FROM "sport_teams" WHERE "leagueId" = ${league.id}) FOR UPDATE`;
+          const teams = await tx.sportTeam.findMany({
+            where: { leagueId: league.id },
+            select: { id: true, ownerUserId: true },
+          });
+          // Clubs are claimed with Sovereigns and can't exist outside a league: the league stays
+          // while another player owns one (they can move it out between seasons)
+          if (teams.some((t) => t.ownerUserId && t.ownerUserId !== league.createdByUserId)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Cannot delete a league while other players own clubs in it",
+            });
+          }
+
+          // Hand back the escrow of every open bid the cascade would take with it: bids on these
+          // clubs' players, and bids these clubs placed elsewhere
+          const teamIds = teams.map((t) => t.id);
+          const openBids = await tx.sportTransferBid.findMany({
+            where: {
+              status: "pending",
+              OR: [
+                { bidderTeamId: { in: teamIds } },
+                { listing: { player: { teamId: { in: teamIds } } } },
+              ],
+            },
+          });
+          for (const bid of openBids) {
+            await refundTransferBidTx(tx, bid, "expired");
+          }
+          // ...and the stakes on its unplayed matches
+          await refundOpenPredictionsTx(tx, { leagueId: league.id });
+
+          // Prisma cascade will handle teams > players > coaches
+          await tx.sportLeague.delete({ where: { id: league.id } });
+        });
 
         return { success: true };
       } catch (error) {
@@ -402,11 +466,14 @@ export const leaguesCrudRouter = createTRPCRouter({
       }
     }),
 
-  transferTeam: protectedProcedure
+  transferTeam: rateLimitedMutationProcedure
     .input(z.object({ teamId: z.string(), targetLeagueId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
+        const team = await ctx.db.sportTeam.findUnique({
+          where: { id: input.teamId },
+          include: { league: { select: { sportPreset: true } } },
+        });
         if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
         if (team.ownerUserId !== ctx.user.id && !isSystemOwner(ctx.auth.userId)) {
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
@@ -414,9 +481,35 @@ export const leaguesCrudRouter = createTRPCRouter({
 
         const targetLeague = await ctx.db.sportLeague.findUnique({
           where: { id: input.targetLeagueId },
+          include: { _count: { select: { teams: true } } },
         });
         if (!targetLeague)
           throw new TRPCError({ code: "NOT_FOUND", message: "Target league not found" });
+        if (targetLeague.id === team.leagueId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "The team is already in that league",
+          });
+        }
+        // Leagues have no open entry: a club joins only a league its mover runs (the creator or a
+        // system owner), the rule that already guards every other league change
+        assertCanManageLeague(ctx, targetLeague);
+        if (targetLeague.sportPreset !== team.league.sportPreset) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "That league plays another sport" });
+        }
+        if (targetLeague._count.teams >= MAX_LEAGUE_TEAMS) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "That league is full" });
+        }
+        // Fixtures and standings name the club: it changes leagues only between seasons
+        const midSeason = await ctx.db.sportSeason.count({
+          where: { leagueId: { in: [team.leagueId, targetLeague.id] }, status: "in_progress" },
+        });
+        if (midSeason > 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Clubs cannot change leagues while either league has a season in progress",
+          });
+        }
 
         return ctx.db.sportTeam.update({
           where: { id: input.teamId },

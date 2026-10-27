@@ -1,9 +1,7 @@
 "use client";
-// src/components/wiki-os/stashes/StashImagesGrid.tsx
 // Saved Wikimedia Commons media grid with interactive lightbox modal.
 
-import { useState, useMemo, useEffect } from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 import {
   ZoomIn,
   SystemRestart as Loader2,
@@ -14,9 +12,18 @@ import {
   Download,
   Trash as Trash2,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import type { CommonsImage } from "./types";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
+import { WikiZoomDialog } from "~/components/wiki-os/shared/WikiZoomDialog";
+import {
+  CopyFormatSelector,
+  copyFormatText,
+  copyFormatsFor,
+  type CopyFormat,
+} from "~/components/wiki-os/media-search/CopyFormatSelector";
+import type { CommonsImage } from "~/components/wiki-os/media-search/types";
 
 interface StashedItemMedia {
   id: string;
@@ -34,7 +41,7 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {items.map((item) => {
           const imgInfo = resolvedImagesMap.get(item.pageTitle);
           const cleanTitle = item.pageTitle.replace(/^commons:File:/, "").replace(/_/g, " ");
@@ -42,15 +49,15 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
           return (
             <div
               key={item.id}
-              className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--wikios-border)]/80 hover:bg-[var(--wikios-surface)]/90 hover:shadow-md"
+              className="group rounded-card border-separator bg-surface duration-fast hover:shadow-card relative flex cursor-pointer flex-col overflow-hidden border transition-shadow"
               onClick={() => imgInfo && setSelectedImage(imgInfo)}
             >
-              <div className="relative aspect-4/3 w-full overflow-hidden border-b border-[var(--wikios-border)]/60 bg-white/5">
+              <div className="border-separator bg-fill-4 relative aspect-4/3 w-full overflow-hidden border-b">
                 {imgInfo ? (
                   <img
                     src={imgInfo.thumbUrl}
                     alt={cleanTitle}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="h-full w-full object-cover transition-transform duration-300"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
@@ -59,34 +66,36 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
                 )}
 
                 {/* Hover overlay button */}
-                <div className="backdrop-blur-2xs absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/40 bg-white/20 shadow-md">
-                    <ZoomIn className="h-4 w-4" />
+                <div className="duration-fast absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="bg-surface-elevated text-label shadow-floating flex size-8 items-center justify-center rounded-full">
+                    <ZoomIn className="size-4" aria-hidden="true" />
                   </div>
                 </div>
 
                 {/* Remove button */}
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  size="icon-sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     onUnstash(item.pageTitle);
                   }}
-                  className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-lg border border-white/20 bg-black/60 text-white opacity-0 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:opacity-100 hover:border-rose-500 hover:bg-rose-500/80"
                   title="Remove from stash"
+                  aria-label="Remove from stash"
+                  className="bg-surface-elevated text-label-secondary shadow-floating hover:bg-red hover:text-on-red absolute top-2 right-2 size-7 rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                 >
-                  <X className="h-3 w-3" />
-                </button>
+                  <X className="size-3.5" aria-hidden="true" />
+                </Button>
               </div>
 
-              <div className="flex flex-1 flex-col justify-between gap-1 p-2.5">
+              <div className="flex flex-1 flex-col justify-between gap-1 p-3">
                 <span
-                  className="truncate text-xs font-bold text-[var(--wikios-text)] transition-colors group-hover:text-[var(--wikios-accent)]"
+                  className="text-caption text-label group-hover:text-tint truncate font-semibold transition-colors"
                   title={cleanTitle}
                 >
                   {cleanTitle}
                 </span>
-                <span className="font-mono text-xs text-[var(--wikios-text-dim)]">
+                <span className="text-footnote text-label-secondary tabular-nums">
                   {imgInfo ? `${imgInfo.width} × ${imgInfo.height}` : "..."}
                 </span>
               </div>
@@ -97,6 +106,7 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
 
       {selectedImage && (
         <StashedImageModal
+          key={selectedImage.url}
           image={selectedImage}
           onClose={() => setSelectedImage(null)}
           onUnstash={() => {
@@ -109,7 +119,7 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
   );
 }
 
-export function StashedImageModal({
+function StashedImageModal({
   image,
   onClose,
   onUnstash,
@@ -118,7 +128,9 @@ export function StashedImageModal({
   onClose: () => void;
   onUnstash: () => void;
 }) {
-  const [format, setFormat] = useState<"thumb" | "embed" | "raw" | "url">("thumb");
+  // The modal is keyed by the image, so a new image starts again on its first allowed format.
+  const formats = copyFormatsFor(image);
+  const [format, setFormat] = useState<CopyFormat>(formats[0]);
   const [copied, setCopied] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const [copiedImage, setCopiedImage] = useState(false);
@@ -192,22 +204,9 @@ export function StashedImageModal({
     }
   };
 
-  const formatText = useMemo(() => {
-    switch (format) {
-      case "thumb":
-        return `[[${image.title}|thumb|${cleanTitle}]]`;
-      case "embed":
-        return `[[${image.title}|250px]]`;
-      case "raw":
-        return `[[${image.title}]]`;
-      case "url":
-        return image.url;
-    }
-  }, [format, image, cleanTitle]);
-
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(formatText);
+      await navigator.clipboard.writeText(copyFormatText(format, image));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -215,183 +214,92 @@ export function StashedImageModal({
     }
   };
 
-  useEffect(() => {
-    const originalStyle = window.getComputedStyle(document.body).overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = originalStyle;
-    };
-  }, []);
-
-  return createPortal(
-    <div
-      className="animate-in fade-in fixed inset-0 z-[120002] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md duration-200"
-      onClick={onClose}
-    >
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 cursor-pointer rounded-full border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/80 p-2.5 text-[var(--wikios-text)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-border)]"
-        title="Close Lightbox"
-        type="button"
+  return (
+    <Sheet open onOpenChange={(open) => !open && onClose()}>
+      <SheetContent
+        className="flex flex-col gap-4 overflow-y-auto sm:max-w-md"
+        aria-describedby={undefined}
       >
-        <X className="h-5 w-5" />
-      </button>
+        <div className="pr-8">
+          <Eyebrow>Stashed media</Eyebrow>
+          <SheetTitle className="text-title-3 mt-0.5 break-words">{cleanTitle}</SheetTitle>
+        </div>
 
-      <div
-        className="animate-in zoom-in-95 relative flex max-h-[95vh] w-full max-w-4xl flex-col gap-6 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-6 shadow-2xl backdrop-blur-xl duration-200 md:flex-row"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Left: Image Container */}
-        <div
-          className="group relative flex min-h-[300px] flex-1 cursor-zoom-in items-center justify-center overflow-hidden rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-bg)]/40 md:min-h-0"
+        <button
+          type="button"
+          className="group rounded-row border-separator bg-surface-secondary relative flex min-h-[200px] cursor-zoom-in items-center justify-center overflow-hidden border"
           onClick={() => setIsZoomed(true)}
           title="Click to view fullscreen"
+          aria-label="View fullscreen"
         >
           <img
             src={image.url}
             alt={cleanTitle}
-            className="max-h-[50vh] max-w-full rounded object-contain transition-transform duration-200 group-hover:scale-[1.01] md:max-h-[70vh]"
+            className="max-h-[50vh] max-w-full object-contain"
           />
-          <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-200 group-hover:bg-black/30">
-            <div className="rounded-full bg-black/60 p-3 text-white opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
-              <ZoomIn className="h-6 w-6" />
-            </div>
-          </div>
-        </div>
+          <span className="duration-fast absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/30">
+            <span className="bg-surface-elevated text-label shadow-floating duration-fast rounded-full p-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+              <ZoomIn className="size-5" aria-hidden="true" />
+            </span>
+          </span>
+        </button>
 
-        {/* Right: Info and Actions */}
-        <div className="flex w-full flex-col justify-between gap-4 md:w-80">
-          <div className="flex flex-col gap-3">
-            <div>
-              <span className="text-xs font-bold tracking-wider text-[var(--wikios-accent)] uppercase">
-                Stashed Media
-              </span>
-              <h2 className="mt-0.5 text-lg leading-tight font-bold break-words text-[var(--wikios-text)]">
-                {cleanTitle}
-              </h2>
-            </div>
+        <dl className="border-separator text-footnote grid grid-cols-2 gap-y-1 border-y py-3">
+          <dt className="text-label-secondary">Dimensions:</dt>
+          <dd className="text-label text-right tabular-nums">
+            {image.width} × {image.height}
+          </dd>
+          <dt className="text-label-secondary">Type:</dt>
+          <dd className="text-label text-right">
+            {image.mime.split("/")[1]?.toUpperCase() ?? "Unknown"}
+          </dd>
+          {image.license && (
+            <>
+              <dt className="text-label-secondary">License:</dt>
+              <dd className="text-label truncate text-right" title={image.license}>
+                {image.license}
+              </dd>
+            </>
+          )}
+        </dl>
 
-            <div className="grid grid-cols-2 gap-y-1 border-y border-[var(--wikios-border)] py-3 text-xs text-[var(--wikios-text-dim)]">
-              <div>Dimensions:</div>
-              <div className="text-right text-[var(--wikios-text-muted)]">
-                {image.width} × {image.height}
-              </div>
-              <div>Type:</div>
-              <div className="text-right text-[var(--wikios-text-muted)]">
-                {image.mime.split("/")[1]?.toUpperCase() ?? "Unknown"}
-              </div>
-              {image.license && (
-                <>
-                  <div>License:</div>
-                  <div
-                    className="truncate text-right text-[var(--wikios-text-muted)]"
-                    title={image.license}
-                  >
-                    {image.license}
-                  </div>
-                </>
+        <CopyFormatSelector formats={formats} value={format} onValueChange={setFormat} />
+
+        <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-3 gap-2">
+            <Button onClick={handleCopy} className="col-span-2">
+              {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+              {copied ? "Copied" : format === "url" ? "Copy URL" : "Copy wikitext"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleCopyImage}
+              disabled={isCopyingImage}
+              title="Copy image to clipboard"
+            >
+              {isCopyingImage ? (
+                <Loader2 className="animate-spin" aria-hidden="true" />
+              ) : copiedImage ? (
+                <Check aria-hidden="true" />
+              ) : (
+                <ImageIcon aria-hidden="true" />
               )}
-            </div>
-
-            {/* Wikitext formats */}
-            <div>
-              <span className="mb-1.5 block text-xs font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
-                Wikitext Copy Format
-              </span>
-              <div className="wikios-filter-group grid grid-cols-4">
-                {(["thumb", "embed", "raw", "url"] as const).map((fmt) => (
-                  <button
-                    key={fmt}
-                    type="button"
-                    onClick={() => setFormat(fmt)}
-                    className={cn(
-                      "wikios-filter-btn",
-                      format === fmt && "wikios-filter-btn--active"
-                    )}
-                  >
-                    {fmt === "thumb"
-                      ? "Thumb"
-                      : fmt === "embed"
-                        ? "Embed"
-                        : fmt === "raw"
-                          ? "File"
-                          : "URL"}
-                  </button>
-                ))}
-              </div>
-            </div>
+              {copiedImage ? "Copied" : "Image"}
+            </Button>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={handleCopy}
-                className="col-span-2 flex items-center justify-center gap-1.5 rounded-lg bg-[var(--wikios-accent)] py-2 text-sm font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.98]"
-              >
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {copied ? "Copied!" : format === "url" ? "Copy URL" : "Copy Wikitext"}
-              </button>
-              <button
-                type="button"
-                onClick={handleCopyImage}
-                disabled={isCopyingImage}
-                className="col-span-1 flex items-center justify-center gap-1.5 rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] py-2 text-sm font-semibold text-[var(--wikios-text)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-border)] active:scale-[0.98] disabled:opacity-50"
-                title="Copy Image to Clipboard"
-              >
-                {isCopyingImage ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : copiedImage ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  <ImageIcon className="h-4 w-4" />
-                )}
-                {copiedImage ? "Copied!" : "Image"}
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => window.open(image.url, "_blank")}
-                className="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] py-2 text-xs font-semibold text-[var(--wikios-text)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-border)]"
-              >
-                <Download className="h-3.5 w-3.5" /> Download
-              </button>
-              <button
-                type="button"
-                onClick={onUnstash}
-                className="flex items-center justify-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 py-2 text-xs font-semibold text-red-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-red-500/20 dark:text-red-400"
-              >
-                <Trash2 className="h-3.5 w-3.5" /> Unstash
-              </button>
-            </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" onClick={() => window.open(image.url, "_blank")}>
+              <Download aria-hidden="true" /> Download
+            </Button>
+            <Button variant="destructive" onClick={onUnstash}>
+              <Trash2 aria-hidden="true" /> Unstash
+            </Button>
           </div>
         </div>
-      </div>
+      </SheetContent>
 
-      {/* Full Screen Image Lightbox */}
-      {isZoomed && (
-        <div
-          className="animate-in fade-in fixed inset-0 z-[120003] flex cursor-zoom-out items-center justify-center bg-black/95 backdrop-blur-md duration-200"
-          onClick={() => setIsZoomed(false)}
-        >
-          <button
-            onClick={() => setIsZoomed(false)}
-            className="absolute top-4 right-4 cursor-pointer rounded-full border border-white/10 bg-white/10 p-2.5 text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/20"
-            title="Exit Fullscreen"
-            type="button"
-          >
-            <X className="h-5 w-5" />
-          </button>
-          <img
-            src={image.url}
-            alt={cleanTitle}
-            className="animate-in zoom-in-95 max-h-[95vh] max-w-[95vw] rounded object-contain shadow-2xl duration-200"
-          />
-        </div>
-      )}
-    </div>,
-    document.body
+      <WikiZoomDialog open={isZoomed} onOpenChange={setIsZoomed} src={image.url} alt={cleanTitle} />
+    </Sheet>
   );
 }

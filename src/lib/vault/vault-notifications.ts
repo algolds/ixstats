@@ -25,7 +25,7 @@ interface VaultNotificationOptions {
  * Send a vault notification through the Dynamic Island toast system.
  * Call directly (not a hook) — safe from any component or function.
  */
-export function sendVaultNotification({
+function sendVaultNotification({
   title,
   message,
   type,
@@ -43,7 +43,7 @@ export function sendVaultNotification({
   });
 }
 
-// ─── Convenience helpers for common vault events ────────────────────
+// Convenience helpers for common vault events
 
 export const vaultNotify = {
   packPurchased: () =>
@@ -79,14 +79,6 @@ export const vaultNotify = {
       message: `Ownership of ${nation} verified successfully`,
       type: "success",
       category: "system",
-    }),
-
-  dailyBonusClaimed: (message: string) =>
-    sendVaultNotification({
-      title: "Daily Bonus",
-      message,
-      type: "success",
-      category: "achievement",
     }),
 
   tradeCompleted: (action: string) =>

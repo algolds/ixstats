@@ -1,1 +1,1 @@
-export { SportsLiveHalo, SportsLiveDIPlugin } from "./SportsLiveHalo";
+export { SportsLiveHalo } from "./SportsLiveHalo";

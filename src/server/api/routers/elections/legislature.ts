@@ -1,80 +1,16 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { notificationAPI } from "~/lib/notifications/api";
+import {
+  ensureUpcomingElection,
+  type EnsureElectionResult,
+} from "~/lib/government/election-lifecycle";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { parseChambers } from "~/lib/government/election-simulation";
 
 // ============================================================
 // Election System Router - Extension of Government Sub-System
 // ============================================================
-
-// How a chamber's members are chosen. Lore-first: not every legislature is party-elected
-// (Caphiria's Senate is appointed, Drasenia fills seats by lot, Faneria's upper house is
-// ex-officio). Stored as the 4th positional field of the serialized chamberType blob.
-// See plans/mycountry-lore-alignment*.md.
-export type SelectionMethod =
-  "elected" | "appointed" | "sortition" | "hereditary" | "ex-officio" | "corporatist";
-
-export type ElectoralSystem = "proportional" | "fptp" | "mixed";
-
-export interface ChamberConfig {
-  name: string;
-  seats: number;
-  electoralSystem: ElectoralSystem;
-  selectionMethod: SelectionMethod;
-}
-
-export function toElectoralSystem(val?: string): ElectoralSystem {
-  if (val === "fptp" || val === "mixed" || val === "proportional") return val;
-  return "proportional";
-}
-
-export function parseChambers(
-  chamberType: string,
-  legislatureName: string,
-  totalSeats: number,
-  globalElectoralSystem: string
-): ChamberConfig[] {
-  if (chamberType.includes("|")) {
-    const [, serialized] = chamberType.split("|");
-    if (serialized) {
-      const parts = serialized.split(";").filter(Boolean);
-      return parts.map((part) => {
-        const [name, seatsStr, system, selection] = part.split(":");
-        return {
-          name: name || "Chamber",
-          seats: Number(seatsStr) || 100,
-          electoralSystem: toElectoralSystem(system || globalElectoralSystem),
-          selectionMethod: (selection || "elected") as SelectionMethod,
-        };
-      });
-    }
-  }
-
-  // Fallbacks
-  const system = toElectoralSystem(globalElectoralSystem);
-  if (chamberType === "bicameral") {
-    const senateSeats = Math.max(10, Math.floor(totalSeats * 0.4));
-    const houseSeats = Math.max(10, totalSeats - senateSeats);
-    return [
-      {
-        name: "House of Representatives",
-        seats: houseSeats,
-        electoralSystem: system,
-        selectionMethod: "elected",
-      },
-      { name: "Senate", seats: senateSeats, electoralSystem: system, selectionMethod: "elected" },
-    ];
-  }
-
-  return [
-    {
-      name: legislatureName || "National Assembly",
-      seats: totalSeats,
-      electoralSystem: system,
-      selectionMethod: "elected",
-    },
-  ];
-}
 
 export const electionsLegislatureRouter = createTRPCRouter({
   // ─── Legislature ───────────────────────────────────────
@@ -93,7 +29,7 @@ export const electionsLegislatureRouter = createTRPCRouter({
       });
     }),
 
-  configureLegislature: protectedProcedure
+  configureLegislature: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -106,12 +42,7 @@ export const electionsLegislatureRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user?.countryId !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only manage legislature for your own country",
-        });
-      }
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       const chambers = parseChambers(
         input.chamberType,
@@ -121,56 +52,48 @@ export const electionsLegislatureRouter = createTRPCRouter({
       );
       const computedTotalSeats = chambers.reduce((acc, c) => acc + c.seats, 0);
 
-      let legislature = await ctx.db.legislature.findUnique({
-        where: { countryId: input.countryId },
-      });
-
-      if (legislature) {
-        legislature = await ctx.db.legislature.update({
-          where: { countryId: input.countryId },
-          data: {
-            name: input.name,
-            chamberType: input.chamberType,
-            totalSeats: computedTotalSeats,
-            electoralSystem: input.electoralSystem,
-            termLength: input.termLength,
-            electionCycle: input.electionCycle,
-          },
-        });
-      } else {
-        legislature = await ctx.db.legislature.create({
-          data: {
-            countryId: input.countryId,
-            name: input.name,
-            chamberType: input.chamberType,
-            totalSeats: computedTotalSeats,
-            electoralSystem: input.electoralSystem,
-            termLength: input.termLength,
-            electionCycle: input.electionCycle,
-          },
-        });
-      }
-
-      await ctx.db.legislativeSeat.deleteMany({
-        where: { legislatureId: legislature.id },
-      });
-
-      const seatsToCreate = [];
-      let seatNumber = 1;
-      for (const chamber of chambers) {
-        for (let i = 0; i < chamber.seats; i++) {
-          seatsToCreate.push({
-            legislatureId: legislature.id,
+      const settings = {
+        name: input.name,
+        chamberType: input.chamberType,
+        totalSeats: computedTotalSeats,
+        electoralSystem: input.electoralSystem,
+        termLength: input.termLength,
+        electionCycle: input.electionCycle,
+      };
+      const seatsFor = (legislatureId: string) => {
+        let seatNumber = 1;
+        return chambers.flatMap((chamber) =>
+          Array.from({ length: chamber.seats }, () => ({
+            legislatureId,
             seatNumber: seatNumber++,
             region: chamber.name,
             isActive: true,
-          });
-        }
-      }
+          }))
+        );
+      };
 
-      await ctx.db.legislativeSeat.createMany({
-        data: seatsToCreate,
+      // One transaction: a failure part-way never leaves the chamber without its seats.
+      const legislature = await ctx.db.$transaction(async (tx) => {
+        const row = await tx.legislature.upsert({
+          where: { countryId: input.countryId },
+          update: settings,
+          create: { countryId: input.countryId, ...settings },
+        });
+        await tx.legislativeSeat.deleteMany({ where: { legislatureId: row.id } });
+        await tx.legislativeSeat.createMany({ data: seatsFor(row.id) });
+        return row;
       });
+
+      // MC-2: the seats above are vacant. Schedule the first election — or, when the
+      // legislature is being reconfigured (dissolved), pull the next one forward as a snap
+      // election — so the chamber gets seated and bills can reach a vote. The elections
+      // cron sweep retries this if it fails here.
+      let election: EnsureElectionResult | null = null;
+      try {
+        election = await ensureUpcomingElection(ctx.db, input.countryId, { snap: true });
+      } catch (e) {
+        console.warn("[Elections] configureLegislature: could not schedule an election:", e);
+      }
 
       try {
         await notificationAPI.create({
@@ -187,6 +110,6 @@ export const electionsLegislatureRouter = createTRPCRouter({
         console.warn("[Notifications] elections.configureLegislature:", e);
       }
 
-      return legislature;
+      return { ...legislature, election };
     }),
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Settings,
   Shield,
@@ -9,23 +9,18 @@ import {
   SystemRestart as Loader2,
   Trophy,
   Refresh,
-  Trash,
-  CheckCircle,
-  Eye,
-  Flash,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 import { cn } from "~/lib/utils";
 
-export interface LeagueControlDeckProps {
+interface LeagueControlDeckProps {
   leagueId: string;
   canManageLeague: boolean;
-  isCanonical?: boolean;
   activeSeason?: {
     id: string;
     seasonNumber: number;
@@ -36,10 +31,8 @@ export interface LeagueControlDeckProps {
     seasonNumber: number;
     status: string;
   } | null;
-  nextMatchDay?: number | null;
   hasMatchesPlayed?: boolean;
   onOpenSettings?: () => void;
-  onSimulateMatchDay?: () => void;
   isSimulatingMatchDay?: boolean;
   onSimulateFullSeason?: () => void;
   isSimulatingFullSeason?: boolean;
@@ -53,13 +46,10 @@ export interface LeagueControlDeckProps {
 export function LeagueControlDeck({
   leagueId,
   canManageLeague,
-  isCanonical = false,
   activeSeason,
   latestSeason,
-  nextMatchDay,
   hasMatchesPlayed = false,
   onOpenSettings,
-  onSimulateMatchDay,
   isSimulatingMatchDay = false,
   onSimulateFullSeason,
   isSimulatingFullSeason = false,
@@ -80,8 +70,10 @@ export function LeagueControlDeck({
 
   const setFeaturedMutation = api.sports.setFeaturedLeague.useMutation({
     onSuccess: () => {
-      soundEffects.bloom();
-      notify.success(isFeatured ? "League removed from lobby showcase" : "League pinned to lobby showcase");
+      soundCues.success();
+      notify.success(
+        isFeatured ? "League removed from lobby showcase" : "League pinned to lobby showcase"
+      );
       void utils.sports.getFeaturedLeagueId.invalidate();
     },
     onError: (err) => {
@@ -92,7 +84,7 @@ export function LeagueControlDeck({
   // Purge cache live mutation
   const clearCacheMutation = api.sports.clearSportsCache.useMutation({
     onSuccess: () => {
-      soundEffects.bloom();
+      soundCues.success();
       notify.success("Sports cache purged");
       void utils.sports.getLeague.invalidate({ id: leagueId });
       void utils.sports.getStandings.invalidate();
@@ -106,7 +98,7 @@ export function LeagueControlDeck({
   // Regenerate schedule live mutation
   const regenerateScheduleMutation = api.sports.regenerateSchedule.useMutation({
     onSuccess: () => {
-      soundEffects.bloom();
+      soundCues.success();
       notify.success("Schedule regenerated and shuffled");
       if (activeSeason) {
         void utils.sports.getSchedule.invalidate({ seasonId: activeSeason.id });
@@ -126,59 +118,49 @@ export function LeagueControlDeck({
   return (
     <div
       className={cn(
-        "facet-hierarchy-child rounded-2xl border border-border/40 bg-card/80 p-4 shadow-lg backdrop-blur-2xl space-y-4",
+        "bg-surface-secondary border-separator rounded-card bg-surface shadow-card space-y-4 border p-4",
         className
       )}
     >
-      {/* ─── 1. Header: Commissioner Identity ─── */}
-      <div className="flex items-center justify-between border-b border-border/20 pb-3">
+      {/* 1. Header: Commissioner Identity */}
+      <div className="border-separator flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary">
+          <div className="rounded-control border-tint/30 bg-tint-fill text-tint flex h-7 w-7 items-center justify-center border">
             <Shield className="h-4 w-4" />
           </div>
           <div>
-            <h4 className="text-xs font-black text-foreground uppercase tracking-wider">
-              Admin Controls
-            </h4>
-            <span className="text-xs text-muted-foreground font-semibold">
-              Commissioner
-            </span>
+            <h4 className="text-eyebrow text-label">Admin controls</h4>
+            <span className="text-footnote text-label-secondary font-semibold">Commissioner</span>
           </div>
         </div>
 
-        <Badge
-          variant="outline"
-          className="border-emerald-500/40 bg-emerald-500/10 text-xs font-black uppercase text-emerald-400 tracking-wider"
-        >
+        <Badge variant="outline" className="border-green/40 bg-green/10 text-eyebrow text-green">
           Admin
         </Badge>
       </div>
 
-      {/* ─── 2. Live Lobby Featured Toggle ─── */}
-      <div className="flex items-center justify-between rounded-xl border border-border/30 bg-muted/20 p-2.5">
+      {/* 2. Live Lobby Featured Toggle */}
+      <div className="rounded-row border-separator bg-fill-4 flex items-center justify-between border p-3">
         <div className="space-y-0.5">
-          <span className="text-xs font-bold text-foreground block">
-            Feature on Sports Page
+          <span className="text-footnote text-label block font-semibold">
+            Feature on sports page
           </span>
-          <span className="text-xs text-muted-foreground block">
+          <span className="text-footnote text-label-secondary block">
             Show at top of leagues list
           </span>
         </div>
         <Switch
           checked={isFeatured}
           onCheckedChange={(checked) => {
-            soundEffects.press();
             setFeaturedMutation.mutate({ leagueId: checked ? leagueId : null });
           }}
           disabled={setFeaturedMutation.isPending}
         />
       </div>
 
-      {/* ─── 3. Simulation & Season Runtime ─── */}
-      <div className="space-y-2 pt-1 border-t border-border/20">
-        <span className="text-xs font-black uppercase tracking-wider text-muted-foreground block">
-          Season Controls
-        </span>
+      {/* 3. Simulation & Season Runtime */}
+      <div className="border-separator space-y-2 border-t pt-1">
+        <span className="text-eyebrow text-label-secondary block">Season controls</span>
 
         {/* Fast-Forward Full Season */}
         {isSeasonActive && onSimulateFullSeason && (
@@ -186,12 +168,10 @@ export function LeagueControlDeck({
             size="sm"
             variant="outline"
             onClick={() => {
-              soundEffects.press();
               onSimulateFullSeason();
             }}
             disabled={isSimulatingFullSeason || isSimulatingMatchDay}
-            data-cuelume-press="subtle"
-            className="w-full h-8.5 justify-start gap-2 rounded-xl border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-500 hover:bg-amber-500/20 active:scale-[0.98] cursor-pointer"
+            className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-yellow hover:bg-yellow/20 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
           >
             {isSimulatingFullSeason ? (
               <>
@@ -201,7 +181,7 @@ export function LeagueControlDeck({
             ) : (
               <>
                 <FastForward className="h-3.5 w-3.5" />
-                <span>Simulate Rest of Season</span>
+                <span>Simulate rest of season</span>
               </>
             )}
           </Button>
@@ -213,12 +193,10 @@ export function LeagueControlDeck({
             size="sm"
             variant="outline"
             onClick={() => {
-              soundEffects.press();
               regenerateScheduleMutation.mutate({ seasonId: activeSeason.id });
             }}
             disabled={regenerateScheduleMutation.isPending}
-            data-cuelume-press="subtle"
-            className="w-full h-8.5 justify-start gap-2 rounded-xl border-border/40 bg-card/60 text-xs font-bold text-foreground hover:bg-muted/30 active:scale-[0.98] cursor-pointer"
+            className="rounded-row border-separator bg-surface text-footnote text-label hover:bg-fill-4 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
           >
             {regenerateScheduleMutation.isPending ? (
               <>
@@ -227,8 +205,8 @@ export function LeagueControlDeck({
               </>
             ) : (
               <>
-                <Refresh className="h-3.5 w-3.5 text-muted-foreground" />
-                <span>Regenerate Schedule</span>
+                <Refresh className="text-label-secondary h-3.5 w-3.5" />
+                <span>Regenerate schedule</span>
               </>
             )}
           </Button>
@@ -240,12 +218,10 @@ export function LeagueControlDeck({
             size="sm"
             variant="outline"
             onClick={() => {
-              soundEffects.press();
               onTransitionSeason();
             }}
             disabled={isTransitioningSeason}
-            data-cuelume-press="subtle"
-            className="w-full h-8.5 justify-start gap-2 rounded-xl border-emerald-500/30 bg-emerald-500/10 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 active:scale-[0.98] cursor-pointer"
+            className="rounded-row border-green/30 bg-green/10 text-footnote text-green hover:bg-green/20 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
           >
             {isTransitioningSeason ? (
               <>
@@ -267,12 +243,10 @@ export function LeagueControlDeck({
             size="sm"
             variant="outline"
             onClick={() => {
-              soundEffects.press();
               onStartSeason();
             }}
             disabled={isStartingSeason}
-            data-cuelume-press="subtle"
-            className="w-full h-8.5 justify-start gap-2 rounded-xl border-emerald-500/30 bg-emerald-500/10 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 active:scale-[0.98] cursor-pointer"
+            className="rounded-row border-green/30 bg-green/10 text-footnote text-green hover:bg-green/20 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
           >
             {isStartingSeason ? (
               <>
@@ -289,11 +263,9 @@ export function LeagueControlDeck({
         )}
       </div>
 
-      {/* ─── 4. Administration & Utilities ─── */}
-      <div className="space-y-2 pt-1 border-t border-border/20">
-        <span className="text-xs font-black uppercase tracking-wider text-muted-foreground block">
-          League Settings
-        </span>
+      {/* 4. Administration & Utilities */}
+      <div className="border-separator space-y-2 border-t pt-1">
+        <span className="text-eyebrow text-label-secondary block">League settings</span>
 
         {/* Open Settings Modal */}
         {onOpenSettings && (
@@ -301,14 +273,12 @@ export function LeagueControlDeck({
             size="sm"
             variant="outline"
             onClick={() => {
-              soundEffects.press();
               onOpenSettings();
             }}
-            data-cuelume-press="subtle"
-            className="w-full h-8.5 justify-start gap-2 rounded-xl border-border/50 bg-card/60 text-xs font-bold text-foreground hover:bg-muted/40 active:scale-[0.98] cursor-pointer"
+            className="rounded-row border-separator bg-surface text-footnote text-label hover:bg-fill-3 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
           >
-            <Settings className="h-3.5 w-3.5 text-muted-foreground" />
-            <span>Rules and Teams</span>
+            <Settings className="text-label-secondary h-3.5 w-3.5" />
+            <span>Rules and teams</span>
           </Button>
         )}
 
@@ -317,19 +287,15 @@ export function LeagueControlDeck({
           size="sm"
           variant="outline"
           onClick={() => {
-            soundEffects.press();
             clearCacheMutation.mutate();
           }}
           disabled={clearCacheMutation.isPending}
-          data-cuelume-press="subtle"
-          className="w-full h-8.5 justify-start gap-2 rounded-xl border-border/40 bg-card/60 text-xs font-bold text-muted-foreground hover:text-foreground active:scale-[0.98] cursor-pointer"
+          className="rounded-row border-separator bg-surface text-footnote text-label-secondary hover:text-label h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
         >
           <Refresh className={cn("h-3.5 w-3.5", clearCacheMutation.isPending && "animate-spin")} />
-          <span>Clear Cache</span>
+          <span>Clear cache</span>
         </Button>
       </div>
     </div>
   );
 }
-
-export default LeagueControlDeck;

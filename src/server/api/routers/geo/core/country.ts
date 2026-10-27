@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { cachedPublicProcedure, adminProcedure } from "~/server/api/trpc";
+import { cachedPublicProcedure } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { TRPCError } from "@trpc/server";
 import type { Geometry } from "geojson";
@@ -72,12 +72,8 @@ export const countryProcedures = {
         });
       }
 
-      if (!mapLayer) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Country not found`,
-        });
-      }
+      // A nation without drawn territory has no geometry yet: that is a state, not an error.
+      if (!mapLayer) return null;
 
       const rawC = mapLayer.centroid as
         [number, number] | { coordinates?: [number, number] } | null;
@@ -239,10 +235,6 @@ export const countryProcedures = {
       };
     }),
 
-  // ──────────────────────────────────────────────
-  // Map Pipeline Endpoints
-  // ──────────────────────────────────────────────
-
   /**
    * Get shared vertices for a specific feature (used by border editor).
    */
@@ -262,7 +254,8 @@ export const countryProcedures = {
         return [];
       }
 
-      // Use PostGIS to find touching/intersecting features
+      // Neighbours share an edge. ST_Intersects, not ST_Touches: shapes traced one by one (realm maps) overlap by
+      // rounding slivers along a shared border, and ST_Touches is false for any overlap.
       // Uses pre-computed centroid JSON field instead of ST_Centroid()
       try {
         const neighbors = await ctx.db.$queryRawUnsafe<
@@ -284,7 +277,7 @@ export const countryProcedures = {
              AND ml2.id != ml1.id
              AND ml1.geom_postgis IS NOT NULL
              AND ml2.geom_postgis IS NOT NULL
-             AND ST_Touches(ml1.geom_postgis, ml2.geom_postgis)
+             AND ST_Intersects(ml1.geom_postgis, ml2.geom_postgis)
            WHERE ml1.id = $1`,
           mapLayer.id
         );
@@ -300,51 +293,5 @@ export const countryProcedures = {
         // PostGIS query failed
         return [];
       }
-    }),
-
-  /**
-   * Get all geographic features for a specific country.
-   * Includes subdivisions, cities, and points of interest.
-   */
-  getNeighborGeometries: adminProcedure
-    .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
-    .query(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
-      const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
-        select: { boundingBox: true },
-      });
-      if (!feature) return [];
-
-      const bbox = feature.boundingBox as number[] | null;
-      if (!bbox || bbox.length !== 4) return [];
-
-      const pad = 1;
-      const neighbors = await ctx.db.mapLayer.findMany({
-        where: {
-          layerType: "political",
-          featureId: { not: input.featureId },
-          isActive: true,
-          realmId,
-        },
-        select: { featureId: true, displayName: true, geometry: true, boundingBox: true },
-      });
-
-      return neighbors
-        .filter((l) => {
-          const nb = l.boundingBox as number[] | null;
-          if (!nb || nb.length !== 4) return false;
-          return (
-            nb[0]! < bbox[2]! + pad &&
-            nb[2]! > bbox[0]! - pad &&
-            nb[1]! < bbox[3]! + pad &&
-            nb[3]! > bbox[1]! - pad
-          );
-        })
-        .map((l) => ({
-          featureId: l.featureId,
-          displayName: l.displayName,
-          geometry: l.geometry,
-        }));
     }),
 };

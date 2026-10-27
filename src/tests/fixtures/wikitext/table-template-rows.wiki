@@ -1,0 +1,21 @@
+== Member states ==
+
+{| class="wikitable sortable"
+! State !! Capital !! Joined
+{{Member row|Vesperia|Vilena|1950}}
+{{Member row|Ostrava|Ostravia|1952}}
+|-
+| [[Solcordia]] || [[Solcor]] || 1961
+|}
+
+{| class="wikitable"
+|-
+! Name
+! Score
+|-
+| Alpha
+| 12
+|-
+| Beta
+| 15
+|}

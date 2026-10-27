@@ -1,8 +1,6 @@
 "use client";
 
 import React from "react";
-import { FacetCard } from "~/components/ui/facet-container";
-import { cn } from "~/lib/utils";
 import {
   PieChart,
   Pie,
@@ -18,11 +16,9 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import type {
-  DepartmentChartItem,
-  RevenueChartItem,
-  BudgetTrendItem,
-} from "./budgetTypes";
+import type { DepartmentChartItem, RevenueChartItem, BudgetTrendItem } from "./budgetTypes";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Card } from "~/components/ui/card";
 
 interface BudgetOverviewChartsProps {
   overviewChartMode: "allocation" | "trend";
@@ -44,63 +40,52 @@ export function BudgetOverviewCharts({
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       {/* Togglable Budget Allocation vs Historical Trend Chart */}
-      <FacetCard
-        depth={1}
-        className="bg-card/40 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
-      >
-        <div className="border-border/20 flex items-center justify-between border-b pb-2">
-          <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
+      <Card className="space-y-3 p-4">
+        <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+          <h4 className="text-label text-headline">
             {overviewChartMode === "allocation"
-              ? "Budget Allocation by Department"
-              : "Budget vs Revenue Historical Trend"}
+              ? "Budget allocation by department"
+              : "Budget by year"}
           </h4>
-          <div className="bg-muted/20 border-border/30 flex items-center gap-1 rounded-lg border p-0.5">
-            <button
-              type="button"
-              onClick={() => setOverviewChartMode("allocation")}
-              className={cn(
-                "cursor-pointer rounded-md px-2 py-0.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
-                overviewChartMode === "allocation"
-                  ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Allocation
-            </button>
-            <button
-              type="button"
-              onClick={() => setOverviewChartMode("trend")}
-              className={cn(
-                "cursor-pointer rounded-md px-2 py-0.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
-                overviewChartMode === "trend"
-                  ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Trend
-            </button>
-          </div>
+          <SegmentedControl
+            aria-label="Chart"
+            size="sm"
+            options={[
+              { value: "allocation", label: "Allocation" },
+              { value: "trend", label: "Trend" },
+            ]}
+            value={overviewChartMode}
+            onValueChange={(id) => setOverviewChartMode(id as "allocation" | "trend")}
+          />
         </div>
 
         <div className="h-72">
-          {overviewChartMode === "allocation" ? (
+          {overviewChartMode === "allocation" && departmentChartData.length === 0 ? (
+            <p className="text-label-secondary text-footnote flex h-full items-center justify-center text-center">
+              No department has an allocation this year. Set each department's share under
+              Departments.
+            </p>
+          ) : overviewChartMode === "trend" && budgetTrendData.length < 2 ? (
+            <p className="text-label-secondary text-footnote flex h-full items-center justify-center text-center">
+              The trend appears once budgets are recorded for two or more years.
+            </p>
+          ) : overviewChartMode === "allocation" ? (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={departmentChartData.slice(0, 8)}
+                  data={departmentChartData}
                   cx="50%"
-                  cy="50%"
-                  outerRadius={90}
+                  cy="45%"
+                  outerRadius="70%"
                   dataKey="allocated"
-                  label={({ name, percent }: { name?: string; percent?: number }) =>
-                    `${name ?? ""}: ${((percent ?? 0) * 100).toFixed(1)}%`
-                  }
+                  nameKey="label"
                 >
-                  {departmentChartData.slice(0, 8).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  {departmentChartData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
               </PieChart>
             </ResponsiveContainer>
           ) : (
@@ -110,68 +95,64 @@ export function BudgetOverviewCharts({
                 <XAxis
                   dataKey="year"
                   stroke="currentColor"
-                  className="text-muted-foreground text-xs"
+                  className="text-label-secondary text-footnote"
                 />
-                <YAxis stroke="currentColor" className="text-muted-foreground text-xs" />
+                <YAxis
+                  stroke="currentColor"
+                  className="text-label-secondary text-footnote"
+                  width={72}
+                  tickFormatter={(value: number) => formatCurrency(value)}
+                />
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Legend />
                 <Line
                   type="monotone"
                   dataKey="budget"
-                  stroke="#38bdf8"
-                  name="Budget"
-                  strokeWidth={2}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="spent"
-                  stroke="#f43f5e"
-                  name="Spending"
-                  strokeWidth={2}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#34d399"
-                  name="Revenue"
+                  stroke="var(--color-amber-500)"
+                  name="Allocated"
                   strokeWidth={2}
                 />
               </LineChart>
             </ResponsiveContainer>
           )}
         </div>
-      </FacetCard>
+      </Card>
 
-      {/* Revenue Sources Chart */}
-      <FacetCard
-        depth={1}
-        className="bg-card/40 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
-      >
-        <div className="border-border/20 border-b pb-2">
-          <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
-            Revenue Sources
-          </h4>
+      <Card className="space-y-3 p-4">
+        <div className="border-separator border-b pb-3">
+          <h4 className="text-label text-headline">Revenue sources</h4>
         </div>
         <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={revenueChartData}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-              <XAxis
-                dataKey="name"
-                stroke="currentColor"
-                className="text-muted-foreground text-xs"
-              />
-              <YAxis stroke="currentColor" className="text-muted-foreground text-xs" />
-              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-              <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                {revenueChartData.map((entry, index) => (
-                  <Cell key={`revenue-cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          {revenueChartData.length === 0 ? (
+            <p className="text-label-secondary text-footnote flex h-full items-center justify-center text-center">
+              No revenue sources are recorded for this government yet.
+            </p>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={revenueChartData}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                <XAxis
+                  dataKey="name"
+                  stroke="currentColor"
+                  className="text-label-secondary text-footnote"
+                />
+                <YAxis
+                  stroke="currentColor"
+                  className="text-label-secondary text-footnote"
+                  width={72}
+                  tickFormatter={(value: number) => formatCurrency(value)}
+                />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  {revenueChartData.map((entry, index) => (
+                    <Cell key={`revenue-cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

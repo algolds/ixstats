@@ -1,10 +1,11 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { applyExchangeCancellation } from "~/lib/diplomacy/exchange-cancellation";
 
 export const diplomaticCulturalLifecycleManagementRouter = createTRPCRouter({
   // Update cultural exchange (only title and description)
-  updateCulturalExchange: protectedProcedure
+  updateCulturalExchange: rateLimitedMutationProcedure
     .input(
       z.object({
         exchangeId: z.string(),
@@ -46,13 +47,8 @@ export const diplomaticCulturalLifecycleManagementRouter = createTRPCRouter({
     }),
 
   // Cancel cultural exchange (with diplomatic penalties)
-  cancelCulturalExchange: protectedProcedure
-    .input(
-      z.object({
-        exchangeId: z.string(),
-        hostCountryId: z.string(),
-      })
-    )
+  cancelCulturalExchange: rateLimitedMutationProcedure
+    .input(z.object({ exchangeId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Verify ownership
       const exchange = await ctx.db.culturalExchange.findUnique({
@@ -83,73 +79,12 @@ export const diplomaticCulturalLifecycleManagementRouter = createTRPCRouter({
         });
       }
 
-      // Calculate penalties based on participants and status
-      const participantCount = exchange.participatingCountries.length;
-      const baseReputationLoss = -10;
-      const perParticipantPenalty = -5;
-      const reputationLoss = baseReputationLoss + participantCount * perParticipantPenalty;
-
-      // Relationship penalty for each participant
-      const relationshipPenalty = Math.min(20, 5 + participantCount * 3);
-
-      // Update exchange status to cancelled
       await ctx.db.culturalExchange.update({
         where: { id: input.exchangeId },
-        data: {
-          status: "cancelled",
-          updatedAt: new Date(),
-        },
+        data: { status: "cancelled", updatedAt: new Date() },
       });
 
-      // Apply relationship penalties to all participating countries
-      for (const participant of exchange.participatingCountries) {
-        try {
-          // Find or create relationship
-          const relationship = await ctx.db.diplomaticRelation.findFirst({
-            where: {
-              OR: [
-                { country1: input.hostCountryId, country2: participant.countryId },
-                { country1: participant.countryId, country2: input.hostCountryId },
-              ],
-            },
-          });
-
-          if (relationship) {
-            // Apply penalty
-            await ctx.db.diplomaticRelation.update({
-              where: { id: relationship.id },
-              data: {
-                strength: Math.max(0, relationship.strength - relationshipPenalty),
-                culturalExchange:
-                  relationship.culturalExchange === "High"
-                    ? "Medium"
-                    : relationship.culturalExchange,
-                updatedAt: new Date(),
-              },
-            });
-          }
-        } catch (error) {
-          console.error(`Failed to apply penalty to ${participant.countryId}:`, error);
-        }
-      }
-
-      // Send notifications to participants
-      for (const participant of exchange.participatingCountries) {
-        try {
-          // Note: Notification system would go here
-          console.log(`Should notify ${participant.countryId} about cancellation`);
-        } catch (error) {
-          console.error(`Failed to notify ${participant.countryId}:`, error);
-        }
-      }
-
-      return {
-        success: true,
-        penalties: {
-          reputationLoss,
-          relationshipPenalty,
-          affectedCountries: participantCount,
-        },
-      };
+      const penalties = await applyExchangeCancellation(ctx.db, exchange);
+      return { success: true, penalties };
     }),
 });

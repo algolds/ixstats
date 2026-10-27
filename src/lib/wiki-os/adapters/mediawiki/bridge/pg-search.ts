@@ -8,10 +8,6 @@ import { db } from "~/server/db";
 import { NativeSearchService } from "~/lib/wiki-os/core";
 import type { WikiSearchResult } from "./types";
 
-// ---------------------------------------------------------------------------
-// Search & Spotlight
-// ---------------------------------------------------------------------------
-
 export async function ixwikiSearch(query: string, limit: number = 10): Promise<WikiSearchResult[]> {
   try {
     const results = await NativeSearchService.spotlightSearch(query, "ixwiki", limit);
@@ -25,7 +21,7 @@ export async function ixwikiSearch(query: string, limit: number = 10): Promise<W
   }
 }
 
-export interface FullTextSearchResult {
+interface FullTextSearchResult {
   results: Array<{
     title: string;
     namespace: number;
@@ -77,6 +73,7 @@ export async function ixwikiSearchTemplates(query: string, limit: number = 10): 
     const articles = await (db as any).wikiArticle.findMany({
       where: {
         source: "ixwiki",
+        status: "PUBLISHED",
         namespace: 10,
         title: { contains: query, mode: "insensitive" },
       },

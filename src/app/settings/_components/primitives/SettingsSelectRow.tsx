@@ -8,7 +8,7 @@ import {
 } from "~/components/ui/select";
 import { SettingsRow } from "./SettingsRow";
 
-export interface SelectOption {
+interface SelectOption {
   value: string;
   label: string;
   description?: string;
@@ -47,7 +47,7 @@ export function SettingsSelectRow({
         <SelectTrigger className={triggerClassName}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
-        <SelectContent className="facet-modal">
+        <SelectContent className="facet-overlay">
           {options.map((option) => (
             <SelectItem key={option.value} value={option.value} description={option.description}>
               {option.label}

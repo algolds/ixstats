@@ -30,7 +30,7 @@ export interface ThinkShareClientState {
 /**
  * Typing indicator for real-time collaboration
  */
-export interface TypingIndicator {
+interface TypingIndicator {
   /** Unique identifier for this typing indicator */
   id: string;
 
@@ -48,38 +48,9 @@ export interface TypingIndicator {
 }
 
 /**
- * State for individual conversation
- */
-export interface ConversationState {
-  /** Conversation ID */
-  id: string;
-
-  /** Whether conversation is currently selected/active */
-  isSelected: boolean;
-
-  /** Whether user is typing in this conversation */
-  isTyping: boolean;
-
-  /** Draft message content */
-  draftMessage: string;
-
-  /** Unread message count */
-  unreadCount: number;
-
-  /** Last read timestamp */
-  lastReadAt?: Date;
-
-  /** Whether conversation is muted */
-  isMuted: boolean;
-
-  /** Whether conversation is pinned */
-  isPinned: boolean;
-}
-
-/**
  * ThinkShare account information
  */
-export interface ThinkShareAccount {
+interface ThinkShareAccount {
   id: string;
   username: string;
   displayName: string;
@@ -92,7 +63,7 @@ export interface ThinkShareAccount {
 /**
  * ThinkShare conversation participant
  */
-export interface ThinkShareParticipant {
+interface ThinkShareParticipant {
   id: string;
   accountId: string;
   account: ThinkShareAccount;
@@ -101,12 +72,14 @@ export interface ThinkShareParticipant {
   isActive: boolean;
   joinedAt?: Date;
   lastReadAt?: Date;
+  /** Online and showing it (server presence, SL-4). */
+  isOnline?: boolean;
 }
 
 /**
  * ThinkShare message
  */
-export interface ThinkShareMessage {
+interface ThinkShareMessage {
   id: string;
   conversationId: string;
   accountId: string;
@@ -132,7 +105,7 @@ export interface ThinkShareMessage {
 /**
  * Message reaction (emoji, like, etc.)
  */
-export interface MessageReaction {
+interface MessageReaction {
   id: string;
   messageId: string;
   accountId: string;
@@ -143,7 +116,7 @@ export interface MessageReaction {
 /**
  * Message mention (@username)
  */
-export interface MessageMention {
+interface MessageMention {
   id: string;
   messageId: string;
   accountId: string;
@@ -154,7 +127,7 @@ export interface MessageMention {
 /**
  * Message attachment (file, image, etc.)
  */
-export interface MessageAttachment {
+interface MessageAttachment {
   id: string;
   messageId: string;
   url: string;
@@ -167,7 +140,7 @@ export interface MessageAttachment {
 /**
  * Message read receipt
  */
-export interface MessageReadReceipt {
+interface MessageReadReceipt {
   id: string;
   messageId: string;
   accountId: string;
@@ -193,47 +166,10 @@ export interface ThinkShareConversation {
   lastMessage?: ThinkShareMessage;
   lastReadAt?: Date;
   unreadCount: number;
+  /** The viewer holds this as an unanswered message request (SL-4). */
+  isRequest?: boolean;
+  /** Another participant has not accepted it as a message request yet. */
+  awaitingAcceptance?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
-
-/**
- * Conversation list filters
- */
-export interface ConversationFilters {
-  searchQuery: string;
-  showArchived: boolean;
-  showMuted: boolean;
-  filterByType?: "direct" | "group" | "channel";
-  sortBy: "recent" | "unread" | "alphabetical";
-}
-
-/**
- * ThinkShare notification
- */
-export interface ThinkShareNotification {
-  id: string;
-  accountId: string;
-  type: "message" | "mention" | "reaction" | "invitation";
-  conversationId?: string;
-  messageId?: string;
-  content: string;
-  isRead: boolean;
-  createdAt: Date;
-}
-
-/**
- * Real-time event types for ThinkShare
- */
-export type ThinkShareEvent =
-  | { type: "message.new"; data: ThinkShareMessage }
-  | { type: "message.edited"; data: ThinkShareMessage }
-  | { type: "message.deleted"; data: { messageId: string; conversationId: string } }
-  | { type: "typing.start"; data: TypingIndicator }
-  | { type: "typing.stop"; data: { accountId: string; conversationId: string } }
-  | {
-      type: "presence.update";
-      data: { accountId: string; status: ThinkShareClientState["presenceStatus"] };
-    }
-  | { type: "conversation.updated"; data: ThinkShareConversation }
-  | { type: "read.receipt"; data: MessageReadReceipt };

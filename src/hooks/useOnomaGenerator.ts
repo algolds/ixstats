@@ -50,12 +50,6 @@ export function useOnomaGenerator() {
   const utils = api.useUtils();
   const logActivityMutation = api.onoma.logGeneration.useMutation();
   const logHistoryMutation = api.onoma.logEvent.useMutation();
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const sessionIdRef = useRef(
-    typeof crypto !== "undefined" && crypto.randomUUID
-      ? crypto.randomUUID()
-      : Math.random().toString(36).substring(2, 15)
-  );
 
   // Lazy-load the prebuilt lexicon dictionary for the active category.
   const lexiconCat = mapCategoryForLexicon(category, subType);
@@ -225,7 +219,7 @@ export function useOnomaGenerator() {
 
     // Asynchronously log generation activity in feed
     if (results.length > 0) {
-      const runHash = `onoma-${Math.random().toString(36).substring(2, 7)}${Date.now().toString(36).slice(-4)}`;
+      const runHash = `onoma-${crypto.randomUUID().slice(0, 5)}${Date.now().toString(36).slice(-4)}`;
 
       logActivityMutation
         .mutateAsync({
@@ -241,7 +235,7 @@ export function useOnomaGenerator() {
           names: results,
           category,
           culturalProfile: culture,
-          trainingMode: includeWorldData ? "ixworld" : "preset",
+          trainingMode: includeWorldData ? "ixnay" : "preset",
           parameters: options as Record<string, unknown>,
           count: results.length,
         })

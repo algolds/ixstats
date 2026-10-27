@@ -1,36 +1,43 @@
 "use client";
 // src/components/shared/editor/GlassPlateEditor.tsx
-// Unified PlateJS Glass Editor supporting full mode, compact mode, and BBCode serialization.
+// Unified PlateJS Glass Editor supporting full mode and compact mode.
 
-import React, { useCallback, useImperativeHandle, forwardRef } from "react";
+import React, { useCallback, useImperativeHandle, useRef, useState, forwardRef } from "react";
+import dynamic from "next/dynamic";
+import { MediaImage } from "iconoir-react";
 import { Plate, PlateContent } from "platejs/react";
 import { Transforms, Node as SlateNode } from "slate";
 import { ReactEditor } from "slate-react";
 import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
 import { EditorToolbar } from "./EditorToolbar";
-import {
-  slateNodesToHtml,
-  slateNodesToBbcode,
-  isMarkActive,
-  toggleMark,
-  toggleBlock,
-} from "./SlateSerializer";
+import { slateNodesToHtml, isMarkActive, toggleMark, toggleBlock } from "./SlateSerializer";
+import { POST_IMAGE_CLASSES } from "./postImageClasses";
 import { MentionMenuPortal } from "./MentionMenuPortal";
+import type { MentionSource } from "./mention-source";
 import { useGlassPlateEditor } from "./useGlassPlateEditor";
 import { WikiAndStashPopovers } from "./WikiAndStashPopovers";
+import { altFromImageUrl } from "./imageAlt";
+
+const MediaSearchModal = dynamic(
+  () =>
+    import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
+  { ssr: false }
+);
 
 export interface GlassPlateEditorRef {
   insertText: (text: string) => void;
   clear: () => void;
   focus: () => void;
+  /** Focus, first putting the caret at the end of the document when nothing is selected. */
+  focusEnd: () => void;
   getContent: () => string;
   getPlainText: () => string;
-  getBbcode: () => string;
 }
 
-export interface GlassPlateEditorProps {
+interface GlassPlateEditorProps {
   value?: string;
-  onChange?: (htmlContent: string, plainText: string, bbcode: string) => void;
+  onChange?: (htmlContent: string, plainText: string) => void;
   placeholder?: string;
   disabled?: boolean;
   onFocus?: () => void;
@@ -45,6 +52,10 @@ export interface GlassPlateEditorProps {
   hideToolbar?: boolean;
   variant?: "default" | "seamless";
   actionRight?: React.ReactNode;
+  /** Show the "Insert image" picker button. Off by default; only composers that store HTML images opt in. */
+  allowImageInsert?: boolean;
+  /** Where the @ menu gets its names; absent, it lists the member's own personas. */
+  mentionSource?: MentionSource;
 }
 
 export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditorProps>(
@@ -66,20 +77,11 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       hideToolbar = false,
       variant = "default",
       actionRight,
+      allowImageInsert = false,
+      mentionSource,
     },
     ref
   ) => {
-    const handleValueChange = useCallback(
-      (html: string, plainText: string) => {
-        if (onChange) {
-          // oxlint-disable-next-line
-          const bbcode = slateNodesToBbcode(editor.children || []);
-          onChange(html, plainText, bbcode);
-        }
-      },
-      [onChange]
-    );
-
     const {
       editor,
       version: _version,
@@ -99,11 +101,8 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       setSelectedWikiSource,
       selectedWikiImageUrl,
       setSelectedWikiImageUrl,
-      // oxlint-disable-next-line eslint/no-unused-vars
-      wikiSearchQuery,
-      // oxlint-disable-next-line eslint/no-unused-vars
-      setWikiSearchQuery,
       wikiSearch,
+      selectWikiResult,
       wikiIntroQuery,
       wikiImagesQuery,
       insertWikiLink,
@@ -111,7 +110,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       mentionResults,
       mentionSelectedIndex,
       mentionQuery,
-      mentionSearch,
+      mentionLoading,
       handleSelectMention,
       isStashesOpen,
       setIsStashesOpen,
@@ -123,15 +122,17 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       imageItems,
       resolvedImages,
       insertStashedImage,
+      insertImageUrl,
       setIsEmojiOpen,
       handleSelectEmoji,
     } = useGlassPlateEditor({
       value,
-      onChange: handleValueChange,
+      onChange,
       onFocus,
       onBlur,
       onSubmit,
       submitOnEnter,
+      mentionSource,
     });
 
     useImperativeHandle(
@@ -141,12 +142,23 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
           Transforms.insertText(editor as any, text);
         },
         clear: () => {
-          editor.children = [{ type: "p", children: [{ text: "" }] }];
+          editor.tf.setValue([{ type: "p", children: [{ text: "" }] }]);
           ReactEditor.focus(editor as any);
         },
         focus: () => {
           try {
             ReactEditor.focus(editor as any);
+          } catch {
+            // ignore if not mounted
+          }
+        },
+        focusEnd: () => {
+          try {
+            // Focus the DOM node synchronously: ReactEditor.focus defers while operations are
+            // pending, and keystrokes in that gap would reach the previously focused field.
+            editor.api.toDOMNode(editor)?.focus({ preventScroll: true });
+            const end = editor.selection ? undefined : editor.api.end([]);
+            if (end) editor.tf.select(end);
           } catch {
             // ignore if not mounted
           }
@@ -160,11 +172,25 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
             .join("\n")
             .trim();
         },
-        getBbcode: () => {
-          return slateNodesToBbcode(editor.children || []);
-        },
       }),
       [editor]
+    );
+
+    const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
+    const savedSelection = useRef(editor.selection);
+
+    const openImagePicker = useCallback(() => {
+      savedSelection.current = editor.selection;
+      setIsImagePickerOpen(true);
+    }, [editor]);
+
+    const handleImageSelect = useCallback(
+      (url: string) => {
+        setIsImagePickerOpen(false);
+        if (savedSelection.current) Transforms.select(editor as any, savedSelection.current);
+        insertImageUrl(url, altFromImageUrl(url));
+      },
+      [editor, insertImageUrl]
     );
 
     const activeMarks = {
@@ -239,6 +265,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
               onKeyDown={handleKeyDown}
               className={cn(
                 "prose dark:prose-invert text-foreground placeholder:text-muted-foreground max-w-none text-sm outline-none select-text focus:outline-none",
+                POST_IMAGE_CLASSES,
                 italicPlaceholder && "placeholder:italic",
                 contentClassName
               )}
@@ -264,6 +291,20 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
               />
 
               <div className="flex items-center gap-2">
+                {allowImageInsert && !disabled && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:bg-muted h-7 w-7 rounded-xl p-0"
+                    title="Insert image"
+                    aria-label="Insert image"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={openImagePicker}
+                  >
+                    <MediaImage className="h-3.5 w-3.5" />
+                  </Button>
+                )}
                 <WikiAndStashPopovers
                   disabled={disabled}
                   isWikiOpen={isWikiOpen}
@@ -272,6 +313,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
                   setWikiInsertMode={setWikiInsertMode}
                   wikiSource={selectedWikiSource}
                   setWikiSource={setSelectedWikiSource}
+                  selectWikiResult={selectWikiResult}
                   wikiTarget={wikiTarget}
                   setWikiTarget={setWikiTarget}
                   wikiLabel={wikiText}
@@ -303,6 +345,14 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
           )}
         </Plate>
 
+        {allowImageInsert && isImagePickerOpen && (
+          <MediaSearchModal
+            isOpen={isImagePickerOpen}
+            onClose={() => setIsImagePickerOpen(false)}
+            onImageSelect={handleImageSelect}
+          />
+        )}
+
         {/* Mention autocomplete floating portal */}
         {mentionCoords && (
           <MentionMenuPortal
@@ -311,7 +361,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
             selectedIndex={mentionSelectedIndex}
             onSelect={handleSelectMention}
             query={mentionQuery}
-            isLoading={mentionSearch.isLoading}
+            isLoading={mentionLoading}
           />
         )}
       </div>

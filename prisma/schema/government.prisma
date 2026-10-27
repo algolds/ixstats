@@ -57,7 +57,8 @@ model GovernmentStructure {
   totalBudget             Float                  @default(0)
   fiscalYear              String                 @default("Calendar Year")
   budgetCurrency          String                 @default("USD")
-  politicalStability      Float?                 @default(0.5)
+  /// 0-100, like the other political metrics.
+  politicalStability      Float?                 @default(50)
   politicalPolarization   Float?                 @default(50)
   democracyIndex          Float?                 @default(50)
   electionCycle           Int?                   @default(4)
@@ -65,6 +66,9 @@ model GovernmentStructure {
   ruleOfLaw               Float?                 @default(50)
   corruptionIndex         Float?                 @default(50)
   politicalMetricsUpdated DateTime?
+  /// JSON: the shift government components last applied to each political metric (politics-drift
+  /// carries event deltas by removing it before applying the new one).
+  componentMetricsSnapshot String?
   createdAt               DateTime               @default(now())
   updatedAt               DateTime               @updatedAt
   budgetAllocations       BudgetAllocation[]
@@ -364,7 +368,7 @@ model Policy {
   priority                    String            @default("medium")
   riskRating                  String            @default("stable")
   origin                      String            @default("personal")
-  civCapCost                  Float             @default(0)
+  execBandwidthCost                  Float             @default(0) @map("civCapCost")
   objectives                  String?
   targetMetrics               String?
   implementationCost          Float             @default(0)
@@ -499,21 +503,6 @@ model GovernmentComponentData {
   @@index([category, isActive])
   @@index([componentType])
   @@index([usageCount])
-}
-
-model GovernmentSynergy {
-  id           String        @id @default(cuid())
-  component1   ComponentType
-  component2   ComponentType
-  synergyType  String
-  bonusPercent Int
-  description  String
-  isActive     Boolean       @default(true)
-
-  @@unique([component1, component2])
-  @@index([component1])
-  @@index([component2])
-  @@index([synergyType])
 }
 
 model PoliticalParty {
@@ -712,7 +701,6 @@ model NationalIssue {
   // See plans/statecraft-stage1.md.
   reconReadyIxTime    Float?
   createdIxTime       Float
-  ixCreditsAwarded    Int       @default(0)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
@@ -851,7 +839,7 @@ model StorytellerEffect {
 model CountryChangeLog {
   id              String   @id @default(cuid())
   countryId       String
-  sourceType      String   // "issue" | "policy" | "decision" | "diplomacy" | "election" | "other"
+  sourceType      String   // "issue" | "policy" | "decision" | "diplomacy" | "election" | "meeting" | "other"
   sourceId        String?
   targetModel     String?  // "Country" | "GovernmentStructure" | "InternalStabilityMetrics"
   targetField     String?
@@ -887,6 +875,7 @@ model Intent {
   progress      Float    @default(0)            // cached 0-100, updated as linked resistance issues resolve
   parentId      String?                         // tree dependency (bible: no full DAG)
   cooldownUntil Float?                           // IxTime ms — next intent allowed after this
+  execBandwidthCost    Int?                             @map("civCapCost") // Executive bandwidth reserved while the directive executes (lib/government/exec-bandwidth.ts); null on legacy rows
   createdIxTime Float
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

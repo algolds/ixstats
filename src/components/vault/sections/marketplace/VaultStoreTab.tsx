@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { springSmooth } from "~/lib/design/motion";
+import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-// oxlint-disable-next-line eslint/no-unused-vars
 import {
   Package,
   Sparks as Sparkles,
-  Gift,
   Shop as Store,
   Crown,
   Cpu,
@@ -48,7 +48,8 @@ import {
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { storePrerequisiteMet } from "~/lib/vault/store-purchases";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { cardSheetHref } from "~/lib/cards/face/sheet-link";
+import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
@@ -58,12 +59,10 @@ import { PackHolographicCard, type PackItem } from "./store/PackHolographicCard"
 import { StoreCategoryHeader } from "./store/StoreCategoryHeader";
 import { StorePurchaseDialog } from "./store/StorePurchaseDialog";
 import { VaultParticleExplosionModal } from "~/components/vault/VaultParticleExplosionModal";
+import { Card, CardTitle } from "~/components/ui/card";
 
-const PackOpeningSequence = dynamic(
-  () =>
-    import("~/components/cards/pack-opening/PackOpeningSequence").then(
-      (m) => m.PackOpeningSequence
-    ),
+const PackReveal = dynamic(
+  () => import("~/components/cards/reveal/PackReveal").then((m) => m.PackReveal),
   { ssr: false }
 );
 
@@ -106,57 +105,46 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
   User,
 };
 
-// oxlint-disable-next-line eslint/no-unused-vars
-interface Particle {
-  id: number;
-  x: number;
-  y: number;
-  rotate: number;
-  scale: number;
-}
-
 const STORE_TABS = [
-  { id: "my-packs" as const, label: "My Packs", icon: Package },
-  { id: "boosters" as const, label: "Marketplace", icon: Store },
+  { id: "my-packs" as const, label: "My packs", icon: Package },
+  { id: "packs" as const, label: "Packs", icon: Store },
   { id: "cosmetics" as const, label: "Cosmetics", icon: Sparkles },
-  { id: "upgrades" as const, label: "Account Upgrades", icon: TrendingUp },
+  { id: "upgrades" as const, label: "Account upgrades", icon: TrendingUp },
 ];
 
-export function VaultStoreTab() {
-  const notify = useNotify();
+type StoreView = (typeof STORE_TABS)[number]["id"];
 
-  const [storeTab, setStoreTab] = useState<"my-packs" | "boosters" | "cosmetics" | "upgrades">(
-    "boosters"
-  );
-  const [openingPack, setOpeningPack] = useState<{ id: string; packType: string } | null>(null);
+/** The store sub-tab a `view` URL param names; Packs by default (old `boosters` links included). */
+export function resolveStoreView(view: string | null | undefined): StoreView {
+  return STORE_TABS.find((tab) => tab.id === view)?.id ?? "packs";
+}
+
+export function VaultStoreTab({ initialView }: { initialView?: string | null }) {
+  const notify = useNotify();
+  const router = useRouter();
+
+  const [storeTab, setStoreTab] = useState<StoreView>(() => resolveStoreView(initialView));
+  const [opening, setOpening] = useState<{ id: string; pack: PackItem } | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [activeCheckoutItem, setActiveCheckoutItem] = useState<StoreItem | null>(null);
   const [purchasingItemId, setPurchasingItemId] = useState<string | null>(null);
+  const sections = useRef<HTMLDivElement>(null);
 
   const utils = api.useUtils();
 
-  const {
-    data: myPacksData,
-    isLoading: myPacksLoading,
-    refetch: refetchMyPacks,
-  } = api.cardPacks.getMyPacks.useQuery();
+  const { data: myPacksData, isLoading: myPacksLoading } = api.cardPacks.getMyPacks.useQuery({
+    isOpened: false,
+  });
   const { data: packsData, isLoading: packsLoading } = api.cardPacks.getAvailablePacks.useQuery();
   const { data: storeItemsData, isLoading: itemsLoading } = api.vault.listStoreItems.useQuery();
   const { data: ownedData } = api.vault.getPurchasedItems.useQuery();
 
   const purchasePackMutation = api.cardPacks.purchasePack.useMutation({
-    onSuccess: (data: any) => {
-      notify.success("Card pack purchased successfully!");
+    onSuccess: (data) => {
+      notify.success("Card pack purchased");
       void utils.vault.getBalance.invalidate();
       void utils.cardPacks.getMyPacks.invalidate();
-      const userPackId = data.userPack?.id || data.userPackId;
-      const packType = data.userPack?.pack?.packType || data.userPack?.packType || data.packType;
-      if (userPackId && packType) {
-        setOpeningPack({
-          id: userPackId,
-          packType,
-        });
-      }
+      setOpening({ id: data.userPack.id, pack: data.userPack.pack });
     },
     onError: (err: { message?: string }) => {
       notify.error(err.message || "Failed to purchase card pack.");
@@ -165,7 +153,7 @@ export function VaultStoreTab() {
 
   const purchaseStoreItemMutation = api.vault.purchaseStoreItem.useMutation({
     onSuccess: () => {
-      notify.success("Item unlocked successfully!");
+      notify.success("Item unlocked");
       void utils.vault.getBalance.invalidate();
       void utils.vault.getPurchasedItems.invalidate();
       setActiveCheckoutItem(null);
@@ -182,11 +170,11 @@ export function VaultStoreTab() {
     },
   });
 
-  const packs: any[] = (packsData as any)?.packs || (Array.isArray(packsData) ? packsData : []);
-  const myPacks: any[] =
-    (myPacksData as any)?.packs || (Array.isArray(myPacksData) ? myPacksData : []);
+  const packs = packsData?.packs ?? [];
+  const myPacks = myPacksData?.packs ?? [];
+  const nextWaiting = myPacks.find((p) => p.id !== opening?.id) ?? null;
 
-  const cosmeticItems: StoreItem[] = ((storeItemsData || []) as any[])
+  const cosmeticItems: StoreItem[] = (storeItemsData ?? [])
     .filter((item) => item.category === "cosmetics")
     .map((item) => ({
       id: item.id,
@@ -194,13 +182,12 @@ export function VaultStoreTab() {
       description: item.description || "",
       price: item.price,
       icon: ICON_MAP[item.icon] || Sparkles,
-      glowColor: item.glowColor || "rgba(168,85,247,0.35)",
       quality: item.quality || "standard",
       badgeText: item.badgeText || "Cosmetic",
       category: item.category,
     }));
 
-  const upgradeItems: StoreItem[] = ((storeItemsData || []) as any[])
+  const upgradeItems: StoreItem[] = (storeItemsData ?? [])
     .filter((item) => item.category === "upgrades")
     .filter((item) => storePrerequisiteMet(item.id, ownedData?.purchaseCounts))
     .map((item) => ({
@@ -209,7 +196,6 @@ export function VaultStoreTab() {
       description: item.description || "",
       price: item.price,
       icon: ICON_MAP[item.icon] || Sparkles,
-      glowColor: item.glowColor || "rgba(245,158,11,0.35)",
       quality: item.quality || "standard",
       badgeText: item.badgeText || "Custom",
       category: item.category,
@@ -222,101 +208,62 @@ export function VaultStoreTab() {
   };
 
   const isLoading =
-    storeTab === "my-packs"
-      ? myPacksLoading
-      : storeTab === "boosters"
-        ? packsLoading
-        : itemsLoading;
+    storeTab === "my-packs" ? myPacksLoading : storeTab === "packs" ? packsLoading : itemsLoading;
 
   const activeConfig = {
     "my-packs": {
-      title: "My Unopened Packs",
-      icon: <Package className="h-4 w-4 text-blue-500" />,
-      description: "Packs you own that are ready to rip open. Reveal rare and legendary cards!",
-      badgeStyle: "border-blue-500/20 text-blue-500 dark:text-blue-400 bg-blue-500/5",
+      title: "My unopened packs",
+      icon: <Package className="text-blue h-4 w-4" />,
+      description: "Packs you own that are ready to open.",
+      badgeStyle: "border-blue/20 text-blue bg-blue/5",
       statusText: "Inventory",
     },
-    boosters: {
-      title: "Booster Packs",
-      icon: <Store className="h-4 w-4 text-amber-500" />,
-      description: "Purchase new card packs to expand your collection.",
-      badgeStyle: "border-amber-500/20 text-amber-600 dark:text-amber-400 bg-amber-500/5",
-      statusText: "Marketplace",
+    packs: {
+      title: "Packs",
+      icon: <Store className="text-tint h-4 w-4" />,
+      description: "Packs from every realm. Each shows its odds.",
+      badgeStyle: "border-yellow/20 text-yellow bg-yellow/5",
+      statusText: "Packs",
     },
     cosmetics: {
-      title: "Profile Customizations",
-      icon: <Sparkles className="h-4 w-4 text-indigo-500" />,
+      title: "Profile customizations",
+      icon: <Sparkles className="text-indigo h-4 w-4" />,
       description:
         "Exclusive decorations, neon frames, and elite name tags to customize your profile presence.",
-      badgeStyle: "border-indigo-500/20 text-indigo-600 dark:text-indigo-400 bg-indigo-500/5",
+      badgeStyle: "border-indigo/20 text-indigo bg-indigo/5",
       statusText: "Cosmetics",
     },
     upgrades: {
-      title: "Vault System Upgrades",
-      icon: <TrendingUp className="h-4 w-4 text-emerald-500" />,
-      description:
-        "Permanent collection expansion, passive credit yield buffs, and wiki lore submission tokens.",
-      badgeStyle: "border-emerald-500/20 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5",
-      statusText: "Account Upgrades",
+      title: "Vault system upgrades",
+      icon: <TrendingUp className="text-green h-4 w-4" />,
+      description: "Permanent card space and passive credit yield.",
+      badgeStyle: "border-green/20 text-green bg-green/5",
+      statusText: "Account upgrades",
     },
   }[storeTab];
-
-  const tabColors = {
-    "my-packs": {
-      text: "text-blue-600 dark:text-blue-400",
-      bg: "bg-blue-500/10 dark:bg-blue-500/15 border-blue-500/20",
-      icon: "text-blue-500",
-    },
-    boosters: {
-      text: "text-amber-600 dark:text-amber-400",
-      bg: "bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/20",
-      icon: "text-amber-500",
-    },
-    cosmetics: {
-      text: "text-indigo-600 dark:text-indigo-400",
-      bg: "bg-indigo-500/10 dark:bg-indigo-500/15 border-indigo-500/20",
-      icon: "text-indigo-500",
-    },
-    upgrades: {
-      text: "text-emerald-600 dark:text-emerald-400",
-      bg: "bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500/20",
-      icon: "text-emerald-500",
-    },
-  };
-
-  const activeColor = tabColors[storeTab];
 
   return (
     <div className="pb-10">
       {/* Large Storefront Showcase Window */}
-      <div className="facet-surface facet-refraction border-border/40 relative min-h-[380px] w-full overflow-hidden rounded-2xl border bg-gradient-to-b from-white/[0.01] to-black/5 p-6 shadow-xl backdrop-blur-md dark:to-black/40">
-        <TextureOverlay texture="dots" opacity={0.03} />
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:24px_24px] opacity-40" />
-
+      <Card className="relative min-h-[380px] w-full overflow-hidden p-6">
         {/* Category Sub-Tabs Selector */}
-        <StoreCategoryHeader
-          tabs={STORE_TABS}
-          activeTab={storeTab}
-          onTabChange={setStoreTab}
-          activeColor={activeColor}
-          tabColors={tabColors}
-          myPacksCount={myPacks?.length}
-        />
+        <div ref={sections}>
+          <StoreCategoryHeader
+            tabs={STORE_TABS}
+            activeTab={storeTab}
+            onTabChange={setStoreTab}
+            myPacksCount={myPacks.length}
+          />
+        </div>
 
         {/* Storefront Window Header */}
-        <div className="border-border/50 mb-4 flex flex-col items-start justify-between gap-2 border-b pb-4 sm:flex-row sm:items-center dark:border-white/5">
+        <div className="border-separator mb-4 flex flex-col items-start justify-between gap-2 border-b pb-4 sm:flex-row sm:items-center">
           <div>
-            <h3 className="flex items-center gap-2 text-xs font-bold tracking-wide text-slate-900 uppercase dark:text-white">
-              {activeConfig.icon}
-              {activeConfig.title}
-            </h3>
-            <p className="text-muted-foreground mt-1 text-xs">{activeConfig.description}</p>
+            <CardTitle icon={activeConfig.icon}>{activeConfig.title}</CardTitle>
+            <p className="text-label-secondary text-footnote mt-1">{activeConfig.description}</p>
           </div>
           <span
-            className={cn(
-              "rounded-full border px-2 py-0.5 text-xs font-semibold tracking-wider uppercase",
-              activeConfig.badgeStyle
-            )}
+            className={cn("text-caption rounded-full border px-2 py-0.5", activeConfig.badgeStyle)}
           >
             {activeConfig.statusText}
           </span>
@@ -326,7 +273,7 @@ export function VaultStoreTab() {
         {isLoading ? (
           <div className="flex flex-wrap justify-center gap-8 py-6">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-[280px] w-44 shrink-0 rounded-2xl bg-white/5" />
+              <Skeleton key={i} className="rounded-card bg-fill-4 h-[280px] w-44 shrink-0" />
             ))}
           </div>
         ) : (
@@ -336,14 +283,14 @@ export function VaultStoreTab() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.2 }}
+              transition={springSmooth}
               className="relative"
             >
               {storeTab === "my-packs" &&
-                (myPacks && myPacks.length > 0 ? (
+                (myPacks.length > 0 ? (
                   <div className="flex flex-wrap justify-center gap-8 py-6">
-                    {myPacks.map((userPack: any) => {
-                      const packData = userPack.pack as PackItem;
+                    {myPacks.map((userPack) => {
+                      const packData = userPack.pack;
                       return (
                         <div key={userPack.id} className="shrink-0">
                           <PackHolographicCard
@@ -351,15 +298,10 @@ export function VaultStoreTab() {
                             actionButton={
                               <Button
                                 size="sm"
-                                onClick={() =>
-                                  setOpeningPack({
-                                    id: userPack.id,
-                                    packType: packData.packType,
-                                  })
-                                }
-                                className="h-7 w-full border-none bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-md hover:from-blue-500 hover:to-indigo-500"
+                                onClick={() => setOpening({ id: userPack.id, pack: packData })}
+                                className="h-7 w-full"
                               >
-                                Rip Open Pack
+                                Rip open pack
                               </Button>
                             }
                           />
@@ -369,33 +311,28 @@ export function VaultStoreTab() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Package className="text-muted-foreground/20 mb-3 h-12 w-12" />
-                    <h4 className="text-foreground text-sm font-bold">No Unopened Packs</h4>
-                    <p className="text-muted-foreground mt-1 mb-4 max-w-xs text-xs">
-                      You don't have any packs in your inventory right now. Head over to the
-                      marketplace to get some!
+                    <Package className="text-label-tertiary mb-3 h-12 w-12" />
+                    <h4 className="text-label text-headline">No unopened packs</h4>
+                    <p className="text-label-secondary text-footnote mt-1 mb-4 max-w-xs">
+                      You have no unopened packs. Buy one from Packs.
                     </p>
-                    <Button
-                      size="sm"
-                      onClick={() => setStoreTab("boosters")}
-                      className="border-none bg-gradient-to-r from-amber-600 to-yellow-600 text-xs font-bold text-white shadow-md"
-                    >
-                      <Store className="mr-1.5 h-3.5 w-3.5" /> Browse Marketplace
+                    <Button size="sm" onClick={() => setStoreTab("packs")}>
+                      <Store className="mr-2 h-3.5 w-3.5" /> Browse packs
                     </Button>
                   </div>
                 ))}
 
-              {storeTab === "boosters" &&
-                (packs && packs.length > 0 ? (
+              {storeTab === "packs" &&
+                (packs.length > 0 ? (
                   <div className="flex flex-wrap justify-center gap-8 py-6">
-                    {packs.map((pack: any) => {
+                    {packs.map((pack) => {
                       const isPending =
                         purchasePackMutation.isPending &&
                         purchasePackMutation.variables?.packId === pack.id;
                       return (
                         <div key={pack.id} className="shrink-0">
                           <PackHolographicCard
-                            pack={pack as PackItem}
+                            pack={pack}
                             actionButton={
                               <Button
                                 size="sm"
@@ -405,13 +342,13 @@ export function VaultStoreTab() {
                                   })
                                 }
                                 disabled={isPending}
-                                className="h-7 w-full border-none bg-gradient-to-r from-amber-600 to-yellow-600 text-xs font-bold text-white shadow-md hover:from-amber-500 hover:to-yellow-500"
+                                className="h-7 w-full"
                               >
                                 {isPending ? (
                                   "Buying..."
                                 ) : (
-                                  <span className="flex items-center gap-1 font-mono">
-                                    <IxCreditsSymbol className="h-3 w-3 shrink-0 text-white" />
+                                  <span className="flex items-center gap-1 tabular-nums">
+                                    <IxCreditsSymbol className="text-label h-3 w-3 shrink-0" />
                                     Buy ({pack.priceCredits})
                                   </span>
                                 )}
@@ -424,9 +361,9 @@ export function VaultStoreTab() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Store className="text-muted-foreground/20 mb-3 h-12 w-12" />
-                    <h4 className="text-foreground text-sm font-bold">No Packs Available</h4>
-                    <p className="text-muted-foreground mt-1 text-xs">
+                    <Store className="text-label-tertiary mb-3 h-12 w-12" />
+                    <h4 className="text-label text-headline">No packs available</h4>
+                    <p className="text-label-secondary text-footnote mt-1">
                       Check back later for new pack drops and special seasonal releases.
                     </p>
                   </div>
@@ -448,10 +385,10 @@ export function VaultStoreTab() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Sparkles className="text-muted-foreground/20 mb-3 h-12 w-12" />
-                    <h4 className="text-foreground text-sm font-bold">No Cosmetics Listed</h4>
-                    <p className="text-muted-foreground mt-1 text-xs">
-                      Profile customization cosmetics will appear here soon.
+                    <Sparkles className="text-label-tertiary mb-3 h-12 w-12" />
+                    <h4 className="text-label text-headline">No cosmetics listed</h4>
+                    <p className="text-label-secondary text-footnote mt-1">
+                      No cosmetics are for sale right now.
                     </p>
                   </div>
                 ))}
@@ -473,17 +410,17 @@ export function VaultStoreTab() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <TrendingUp className="text-muted-foreground/20 mb-3 h-12 w-12" />
-                    <h4 className="text-foreground text-sm font-bold">No Upgrades Listed</h4>
-                    <p className="text-muted-foreground mt-1 text-xs">
-                      Account system upgrades will appear here soon.
+                    <TrendingUp className="text-label-tertiary mb-3 h-12 w-12" />
+                    <h4 className="text-label text-headline">No upgrades listed</h4>
+                    <p className="text-label-secondary text-footnote mt-1">
+                      No upgrades are for sale right now.
                     </p>
                   </div>
                 ))}
             </motion.div>
           </AnimatePresence>
         )}
-      </div>
+      </Card>
 
       <StorePurchaseDialog
         item={activeCheckoutItem}
@@ -496,27 +433,31 @@ export function VaultStoreTab() {
 
       <VaultParticleExplosionModal
         open={showCelebration}
-        title="Item Unlocked!"
-        subtitle="Your purchase was successful. Check your account settings to apply your new unlock!"
+        title="Item added"
+        subtitle="Apply it from your account settings."
       />
 
-      {/* Booster pack opening overlay */}
-      {openingPack && (
-        <div className="fixed inset-0 z-50">
-          <PackOpeningSequence
-            userPackId={openingPack.id}
-            packType={openingPack.packType as any}
-            onComplete={() => {
-              setOpeningPack(null);
-              purchasePackMutation.reset();
-              void refetchMyPacks();
-            }}
-            onCancel={() => {
-              setOpeningPack(null);
-              purchasePackMutation.reset();
-            }}
-          />
-        </div>
+      {opening && (
+        <PackReveal
+          key={opening.id}
+          open
+          userPackId={opening.id}
+          pack={opening.pack}
+          nextPack={nextWaiting ? { id: nextWaiting.id, name: nextWaiting.pack.name } : null}
+          onOpenNext={() =>
+            nextWaiting && setOpening({ id: nextWaiting.id, pack: nextWaiting.pack })
+          }
+          onOpenCard={(cardId) => {
+            setOpening(null);
+            router.push(cardSheetHref(CARD_HUB_PATHS.mine, cardId));
+          }}
+          onClose={() => setOpening(null)}
+          // An opened pack's "Rip open pack" button leaves My packs, so focus goes back to the section's tab.
+          returnFocus={() =>
+            sections.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]') ??
+            null
+          }
+        />
       )}
     </div>
   );

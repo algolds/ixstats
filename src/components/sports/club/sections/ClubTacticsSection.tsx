@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { Slider } from "~/components/ui/slider";
 import { LineupBuilder } from "~/components/sports/club/LineupBuilder";
-import { SPORT_PRESETS, type SportPreset } from "~/lib/sports/presets";
+import { SPORT_PRESETS } from "~/lib/sports/presets";
 import { cn } from "~/lib/utils";
 
 const TACTICAL_INTENTS = [
@@ -87,7 +88,7 @@ const TACTICAL_INTENTS = [
   },
 ];
 
-export interface ClubTacticsSectionProps {
+interface ClubTacticsSectionProps {
   team: {
     id: string;
     name: string;
@@ -117,6 +118,45 @@ export interface ClubTacticsSectionProps {
   onSavedLineup?: () => void;
 }
 
+/** Circular gauge (stroke-dashoffset over a 26px-radius ring) with a title and caption. */
+function BiasRing({
+  offset,
+  value,
+  title,
+  description,
+}: {
+  offset: string;
+  value: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex w-full items-center justify-start gap-4">
+      <div className="relative h-16 w-16 shrink-0">
+        <svg className="h-full w-full -rotate-90">
+          <circle cx="32" cy="32" r="26" className="stroke-fill-2 fill-none" strokeWidth="6" />
+          <circle
+            cx="32"
+            cy="32"
+            r="26"
+            className="stroke-tint ease-out-facet fill-none transition-[stroke-dashoffset] duration-500"
+            strokeWidth="6"
+            strokeDasharray="163.3"
+            strokeDashoffset={offset}
+          />
+        </svg>
+        <div className="text-footnote text-label absolute inset-0 flex items-center justify-center font-semibold tabular-nums">
+          {value}
+        </div>
+      </div>
+      <div>
+        <h5 className="text-headline text-label">{title}</h5>
+        <p className="text-label-secondary text-footnote mt-0.5">{description}</p>
+      </div>
+    </div>
+  );
+}
+
 export function ClubTacticsSection({
   team,
   onUpdateTactics,
@@ -134,10 +174,10 @@ export function ClubTacticsSection({
     <div className="grid gap-6 lg:grid-cols-3">
       {/* Tactical Shapes / Presets */}
       <div className="lg:col-span-2">
-        <Card className="facet-hierarchy-child bg-card/45 border-border">
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
-            <CardTitle>Team Tactics & Strategy</CardTitle>
-            <CardDescription className="text-muted-foreground">
+            <CardTitle>Team tactics & strategy</CardTitle>
+            <CardDescription className="text-label-secondary">
               Select your default tactical intent. Underlying formulas adjust offense, defense, and
               match volatility ratings.
             </CardDescription>
@@ -146,22 +186,16 @@ export function ClubTacticsSection({
             {TACTICAL_INTENTS.map((tactic) => {
               const isActive = (team.tacticalIntent || "neutral") === tactic.key;
               return (
-                <div
+                <button
+                  type="button"
                   key={tactic.key}
-                  style={
-                    isActive
-                      ? {
-                          borderColor: teamColor,
-                          backgroundColor: `${teamColor}15`,
-                          boxShadow: `0 0 0 2px ${teamColor}20`,
-                        }
-                      : {}
-                  }
+                  aria-pressed={isActive}
+                  disabled={isUpdatingTactics}
                   className={cn(
-                    "cursor-pointer rounded-2xl border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+                    "focus-visible:outline-tint rounded-row duration-fast ease-out-facet border p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait",
                     isActive
-                      ? "scale-[1.01] border-transparent"
-                      : "border-border/50 bg-muted/40 hover:bg-muted/80 text-foreground"
+                      ? "border-tint bg-tint-fill"
+                      : "border-separator bg-surface-secondary hover:bg-fill-4 cursor-pointer"
                   )}
                   onClick={() => {
                     if (isUpdatingTactics) return;
@@ -173,20 +207,11 @@ export function ClubTacticsSection({
                   }}
                 >
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-bold">{tactic.name}</h4>
-                    {isActive && (
-                      <Badge
-                        style={{ backgroundColor: teamColor }}
-                        className="font-bold text-white"
-                      >
-                        Active
-                      </Badge>
-                    )}
+                    <h4 className="text-headline text-label">{tactic.name}</h4>
+                    {isActive && <Badge variant="secondary">Active</Badge>}
                   </div>
-                  <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
-                    {tactic.description}
-                  </p>
-                </div>
+                  <p className="text-label-secondary text-callout mt-2">{tactic.description}</p>
+                </button>
               );
             })}
           </CardContent>
@@ -195,115 +220,49 @@ export function ClubTacticsSection({
 
       {/* Strategic Weighting & Sliders */}
       <div>
-        <Card className="facet-hierarchy-child bg-card/40 border-border">
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
-            <CardTitle className="text-base font-bold">Strategic Weighting</CardTitle>
+            <CardTitle>Strategic weighting</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-stretch space-y-6 py-6">
-            {/* Offense Ring */}
-            <div className="flex w-full items-center justify-start gap-4">
-              <div className="relative h-16 w-16 shrink-0">
-                <svg className="h-full w-full -rotate-90">
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="26"
-                    className="stroke-muted/30 fill-none"
-                    strokeWidth="6"
-                  />
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="26"
-                    className="fill-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
-                    style={{ stroke: teamColor }}
-                    strokeWidth="6"
-                    strokeDasharray="163.3"
-                    strokeDashoffset={activeIntent.offenseOffset}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center font-mono text-xs font-bold">
-                  {activeIntent.offenseVal}
-                </div>
-              </div>
-              <div>
-                <h5 className="text-sm leading-none font-bold">Offense Bias</h5>
-                <p className="text-muted-foreground mt-1 text-xs leading-tight">
-                  Adjusts match scoring chances
-                </p>
-              </div>
-            </div>
-
-            {/* Defense Ring */}
-            <div className="flex w-full items-center justify-start gap-4">
-              <div className="relative h-16 w-16 shrink-0">
-                <svg className="h-full w-full -rotate-90">
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="26"
-                    className="stroke-muted/30 fill-none"
-                    strokeWidth="6"
-                  />
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="26"
-                    className="fill-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
-                    style={{ stroke: teamColor }}
-                    strokeWidth="6"
-                    strokeDasharray="163.3"
-                    strokeDashoffset={activeIntent.defenseOffset}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center font-mono text-xs font-bold">
-                  {activeIntent.defenseVal}
-                </div>
-              </div>
-              <div>
-                <h5 className="text-sm leading-none font-bold">Defense Bias</h5>
-                <p className="text-muted-foreground mt-1 text-xs leading-tight">
-                  Concede probability coefficient
-                </p>
-              </div>
-            </div>
+            <BiasRing
+              offset={activeIntent.offenseOffset}
+              value={activeIntent.offenseVal}
+              title="Offense bias"
+              description="Adjusts match scoring chances"
+            />
+            <BiasRing
+              offset={activeIntent.defenseOffset}
+              value={activeIntent.defenseVal}
+              title="Defense bias"
+              description="Concede probability coefficient"
+            />
 
             {/* Custom Sliders */}
-            <div className="my-4 space-y-4 border-t border-white/10 pt-4">
-              <h5 className="text-foreground text-xs font-extrabold tracking-widest uppercase">
-                Custom Sliders
-              </h5>
+            <div className="border-separator my-4 space-y-4 border-t pt-4">
+              <h5 className="text-subhead text-label-secondary">Custom sliders</h5>
 
               {/* Attack Focus Slider */}
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-muted-foreground">Attack Focus</span>
-                  <span style={{ color: teamColor }}>{attackFocus}%</span>
+              <div className="space-y-2">
+                <div className="text-footnote flex justify-between font-medium">
+                  <span className="text-label-secondary">Attack focus</span>
+                  <span className="text-tint tabular-nums">{attackFocus}%</span>
                 </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={attackFocus}
-                  onChange={(e) => setAttackFocus(Number(e.target.value))}
-                  onMouseUp={() => {
+                <Slider
+                  min={0}
+                  max={100}
+                  value={[attackFocus]}
+                  aria-label="Attack focus"
+                  onValueChange={([v]) => setAttackFocus(v ?? 0)}
+                  onValueCommit={([v]) => {
                     onUpdateTactics({
                       tacticalIntent: team.tacticalIntent ?? "neutral",
-                      attackFocus,
+                      attackFocus: v ?? 0,
                       teamIntensity,
                     });
                   }}
-                  onTouchEnd={() => {
-                    onUpdateTactics({
-                      tacticalIntent: team.tacticalIntent ?? "neutral",
-                      attackFocus,
-                      teamIntensity,
-                    });
-                  }}
-                  className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-slate-800"
-                  style={{ accentColor: teamColor }}
                 />
-                <div className="text-muted-foreground/60 flex justify-between text-xs">
+                <div className="text-label-tertiary text-footnote flex justify-between">
                   <span>Defensive (-8 Off)</span>
                   <span>Balanced</span>
                   <span>Attacking (+8 Off)</span>
@@ -311,35 +270,26 @@ export function ClubTacticsSection({
               </div>
 
               {/* Team Intensity Slider */}
-              <div className="space-y-1.5 pt-2">
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-muted-foreground">Team Intensity</span>
-                  <span style={{ color: teamColor }}>{teamIntensity}%</span>
+              <div className="space-y-2 pt-2">
+                <div className="text-footnote flex justify-between font-medium">
+                  <span className="text-label-secondary">Team intensity</span>
+                  <span className="text-tint tabular-nums">{teamIntensity}%</span>
                 </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={teamIntensity}
-                  onChange={(e) => setTeamIntensity(Number(e.target.value))}
-                  onMouseUp={() => {
+                <Slider
+                  min={0}
+                  max={100}
+                  value={[teamIntensity]}
+                  aria-label="Team intensity"
+                  onValueChange={([v]) => setTeamIntensity(v ?? 0)}
+                  onValueCommit={([v]) => {
                     onUpdateTactics({
                       tacticalIntent: team.tacticalIntent ?? "neutral",
+                      teamIntensity: v ?? 0,
                       attackFocus,
-                      teamIntensity,
                     });
                   }}
-                  onTouchEnd={() => {
-                    onUpdateTactics({
-                      tacticalIntent: team.tacticalIntent ?? "neutral",
-                      attackFocus,
-                      teamIntensity,
-                    });
-                  }}
-                  className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-slate-800"
-                  style={{ accentColor: teamColor }}
                 />
-                <div className="text-muted-foreground/60 flex justify-between text-xs">
+                <div className="text-label-tertiary text-footnote flex justify-between">
                   <span>Conservative (-0.5 Vol)</span>
                   <span>Standard</span>
                   <span>Intense (+0.5 Vol)</span>
@@ -356,16 +306,14 @@ export function ClubTacticsSection({
           teamId={team.id}
           teamName={team.name}
           teamColor={teamColor}
-          players={
-            (team.players ?? []).map((p) => ({
-              id: p.id,
-              firstName: p.firstName,
-              lastName: p.lastName,
-              position: p.position,
-              number: p.number,
-              ratings: p.ratings as Record<string, number | undefined> | undefined,
-            }))
-          }
+          players={(team.players ?? []).map((p) => ({
+            id: p.id,
+            firstName: p.firstName,
+            lastName: p.lastName,
+            position: p.position,
+            number: p.number,
+            ratings: p.ratings as Record<string, number | undefined> | undefined,
+          }))}
           presets={SPORT_PRESETS}
           sportPreset={team.league?.sportPreset ?? ""}
           currentLineup={team.lineup as { starters?: string[]; captainId?: string } | undefined}
@@ -375,5 +323,3 @@ export function ClubTacticsSection({
     </div>
   );
 }
-
-export default ClubTacticsSection;

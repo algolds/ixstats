@@ -4,7 +4,7 @@
  */
 
 import type { ComponentType, PrismaClient } from "@prisma/client";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
 import {
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
@@ -23,6 +23,7 @@ function fetchCountryCore(countryId: string, db: PrismaClient) {
     where: { id: countryId },
     select: {
       id: true,
+      realmId: true,
       name: true,
       leader: true,
       governmentType: true,
@@ -71,6 +72,12 @@ function fetchCountryCore(countryId: string, db: PrismaClient) {
       },
       activeAlliances: true,
       activeTreaties: true,
+      // The realised growth rate stat progression stores each IxTime month (effectiveGdpGrowth)
+      historicalData: {
+        orderBy: { ixTimeTimestamp: "desc" },
+        take: 1,
+        select: { gdpGrowthRate: true },
+      },
     },
   });
 }
@@ -201,6 +208,12 @@ function parseActivePolicies(policies: Array<{ name: string; calculatedEffects: 
   return { activePoliciesList, policySettings };
 }
 
+/** `Country.actualGdpGrowth` (a decimal) as percent, rounded to avoid float noise (0.07 → 7). */
+export function growthDecimalToPercent(growth: number | null | undefined): number {
+  if (typeof growth !== "number" || !Number.isFinite(growth)) return 0;
+  return Math.round(growth * 100 * 1e6) / 1e6;
+}
+
 function coreFields(country: CountryCoreRow) {
   return {
     id: country.id,
@@ -214,7 +227,12 @@ function coreFields(country: CountryCoreRow) {
     currentPopulation: country.currentPopulation,
     currentGdpPerCapita: country.currentGdpPerCapita,
     currentTotalGdp: country.currentTotalGdp,
-    actualGdpGrowth: country.actualGdpGrowth ?? 0,
+    // The realised growth (the latest history point's effective rate), falling back to the founding
+    // `actualGdpGrowth` before stat progression has written one. Both are decimals (0.03 = 3%);
+    // trigger conditions and the {{gdpGrowth}} variable use percent, like every other rate here.
+    actualGdpGrowth: growthDecimalToPercent(
+      country.historicalData?.[0]?.gdpGrowthRate ?? country.actualGdpGrowth
+    ),
     unemploymentRate: country.unemploymentRate ?? 0,
     inflationRate: country.inflationRate ?? 0,
     tradeBalance: country.tradeBalance ?? 0,
@@ -278,12 +296,13 @@ function groundedFields(grounded: GroundedSnapshot | null | undefined) {
 }
 
 /**
- * Build a flattened snapshot of all relevant country data.
+ * Build a flattened snapshot of all relevant country data, at `nowMs` (its realm clock's now when omitted).
  * Single optimized query - all template evaluations share this.
  */
 export async function buildCountrySnapshot(
   countryId: string,
-  db: PrismaClient
+  db: PrismaClient,
+  nowMs?: number
 ): Promise<CountrySnapshot | null> {
   const country = await fetchCountryCore(countryId, db);
   if (!country) return null;
@@ -302,7 +321,7 @@ export async function buildCountrySnapshot(
     neighbors,
   ] = await fetchSnapshotRelations(countryId, db);
 
-  const currentIxTime = IxTime.getCurrentIxTime();
+  const currentIxTime = nowMs ?? (await clockForCountry(db, country)).now();
   const ixDate = new Date(currentIxTime);
   const components = classifyComponents(govComps, econComps, taxComps, ixDate);
   const civilServiceCapacity = calculateCivilServiceCapacity(

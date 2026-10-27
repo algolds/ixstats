@@ -1,21 +1,40 @@
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { invalidateConfigCache } from "~/lib/config-service";
 import { generateSlug } from "~/lib/utils";
 import { invalidateCache } from "~/lib/cache";
-import { scoreDailyWikiOS } from "~/lib/lorewards";
-import type { ScoringWeights } from "~/lib/lorewards";
-import { fetchTemplateData, categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
-import { readConfigKeys, writeConfigKeys } from "./_config-kv";
+import {
+  DEFAULT_WEIGHTS,
+  loadScoringWeights,
+  lorewardWeightKey,
+  scoreDailyWikiOS,
+  TUNABLE_WEIGHTS,
+} from "~/lib/lorewards";
+import { categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
+import { fetchTemplateData } from "~/lib/wiki-os/templates/template-engine.server";
+import { tellBotOfOverride } from "~/lib/lorewards/bot-client";
+import { overrideDateSchema } from "~/lib/lorewards/override-form";
+import { adminActor } from "~/server/shared/admin-actor";
+import { overrideLorewardEntry } from "~/server/modules/cards/cards.trophies";
+import { searchLegacyNames } from "~/server/modules/identity/identity.name-search";
+import { fetchClassicWikiUsers } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import type { WikiSource } from "~/lib/wiki-os/config";
+import { writeConfigKeys } from "./_config-kv";
 
-const LOREWARD_WEIGHT_DEFAULTS: Record<string, number> = {
-  lorewardWeight_bytesAdded: 1.0,
-  lorewardWeight_proseRatio: 1.5,
-  lorewardWeight_editDepth: 1.2,
-  lorewardWeight_collaborationBonus: 1.3,
-  lorewardWeight_newArticleBonus: 1.5,
-};
+/** The scorer's tunable weights (WK-8): prose weight is a 0-1 blend, the rest bonuses/multipliers. */
+const TunableWeightsInput = z.object({
+  proseWeight: z.number().min(0).max(1),
+  depthMaxBonus: z.number().min(0).max(5),
+  noveltyBonus: z.number().min(0).max(5),
+  importanceMaxBonus: z.number().min(0).max(5),
+  listPenalty: z.number().min(0).max(5),
+  minorOnlyPenalty: z.number().min(0).max(5),
+}) satisfies z.ZodType<Record<(typeof TUNABLE_WEIGHTS)[number], number>>;
+
+/** The wiki a country's page is on: any wiki WikiOS reads (the reader procedures' `wikiSourceSchema`). */
+const linkSourceSchema = z
+  .enum(["ixwiki", "iiwiki", "althistory"] as const satisfies readonly WikiSource[])
+  .default("ixwiki");
 
 export const adminWikiRouter = createTRPCRouter({
   setWikiLink: adminProcedure
@@ -23,7 +42,7 @@ export const adminWikiRouter = createTRPCRouter({
       z.object({
         countryId: z.string(),
         wikiPageTitle: z.string().nullable(),
-        wikiSource: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
+        wikiSource: linkSourceSchema,
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -48,7 +67,7 @@ export const adminWikiRouter = createTRPCRouter({
             z.object({
               countryId: z.string(),
               wikiPageTitle: z.string(),
-              wikiSource: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
+              wikiSource: linkSourceSchema,
             })
           )
           .max(100),
@@ -118,7 +137,7 @@ export const adminWikiRouter = createTRPCRouter({
   saveLorewardWinnerOverride: adminProcedure
     .input(
       z.object({
-        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        date: overrideDateSchema,
         type: z.enum(["daily", "weekly", "monthly"]).default("daily"),
         winnerUser: z.string(),
         winnerPage: z.string(),
@@ -131,98 +150,20 @@ export const adminWikiRouter = createTRPCRouter({
         status: z.string().default("approved"),
       })
     )
+    // The scored result is an override like any other: its places' trophies follow, no sync writes over it, and the
+    // bot is told, to announce it, as `lorewards.overrideWinner` tells it (`botSynced` false when it could not be;
+    // the override stands)
     .mutation(async ({ ctx, input }) => {
-      const entry = await ctx.db.lorewardEntry.upsert({
-        where: {
-          date_type: {
-            date: input.date,
-            type: input.type,
-          },
-        },
-        create: {
-          date: input.date,
-          type: input.type,
-          winnerUser: input.winnerUser,
-          winnerPage: input.winnerPage,
-          winnerScore: input.winnerScore ?? null,
-          winnerBytes: input.winnerBytes ?? null,
-          runnerUpUser: input.runnerUpUser ?? null,
-          runnerUpPage: input.runnerUpPage ?? null,
-          runnerUpScore: input.runnerUpScore ?? null,
-          runnerUpBytes: input.runnerUpBytes ?? null,
-          status: input.status,
-        },
-        update: {
-          winnerUser: input.winnerUser,
-          winnerPage: input.winnerPage,
-          winnerScore: input.winnerScore ?? null,
-          winnerBytes: input.winnerBytes ?? null,
-          runnerUpUser: input.runnerUpUser ?? null,
-          runnerUpPage: input.runnerUpPage ?? null,
-          runnerUpScore: input.runnerUpScore ?? null,
-          runnerUpBytes: input.runnerUpBytes ?? null,
-          status: input.status,
-          syncedAt: new Date(),
-        },
+      const { date, type, status, ...fields } = input;
+      const result = await overrideLorewardEntry(ctx.db, adminActor(ctx), {
+        date,
+        type,
+        fields,
+        status,
       });
       await invalidateCache(["lorewards."]);
-      return entry;
-    }),
-
-  pushLorewardToBot: adminProcedure
-    .input(
-      z.object({
-        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        winner: z.object({
-          user: z.string(),
-          page: z.string(),
-          score: z.number(),
-          bytesAdded: z.number(),
-        }),
-        runnerUp: z
-          .object({
-            user: z.string(),
-            page: z.string(),
-            score: z.number(),
-            bytesAdded: z.number(),
-          })
-          .optional()
-          .nullable(),
-        candidates: z
-          .array(
-            z.object({
-              user: z.string(),
-              page: z.string(),
-              score: z.number(),
-              bytesAdded: z.number(),
-            })
-          )
-          .optional(),
-        editCount: z.number().optional(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const botUrl = process.env.IXTIME_BOT_URL || "http://localhost:3001";
-      try {
-        const response = await fetch(`${botUrl}/bot/lorewards/announce`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(input),
-        });
-        if (!response.ok) {
-          throw new Error(`Bot API returned HTTP ${response.status}`);
-        }
-        const data = await response.json();
-        return { success: true, data };
-      } catch (error) {
-        console.error("Failed to push loreward to bot:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to notify bot: ${error instanceof Error ? error.message : "Unknown error"}`,
-        });
-      }
+      const botSynced = await tellBotOfOverride({ date: result.day, type, ...result.written });
+      return { ...result, botSynced };
     }),
 
   purgeWikiCache: adminProcedure
@@ -250,25 +191,22 @@ export const adminWikiRouter = createTRPCRouter({
     return templates;
   }),
 
+  /** The weights daily scoring uses (stored values over the scorer's defaults). */
   getLorewardWeights: adminProcedure.query(async ({ ctx }) => {
-    const stored = await readConfigKeys(ctx.db, Object.keys(LOREWARD_WEIGHT_DEFAULTS));
-    const weights: Record<string, number> = { ...LOREWARD_WEIGHT_DEFAULTS };
-    for (const [key, value] of Object.entries(stored)) weights[key] = parseFloat(value);
-    return weights;
+    const weights = await loadScoringWeights(ctx.db);
+    return Object.fromEntries(TUNABLE_WEIGHTS.map((f) => [f, weights[f]])) as Record<
+      (typeof TUNABLE_WEIGHTS)[number],
+      number
+    >;
   }),
 
   saveLorewardWeights: adminProcedure
-    .input(
-      z.object({
-        lorewardWeight_bytesAdded: z.number(),
-        lorewardWeight_proseRatio: z.number(),
-        lorewardWeight_editDepth: z.number(),
-        lorewardWeight_collaborationBonus: z.number(),
-        lorewardWeight_newArticleBonus: z.number(),
-      })
-    )
+    .input(TunableWeightsInput)
     .mutation(async ({ ctx, input }) => {
-      const updates = Object.entries(input).map(([key, value]) => ({ key, value: String(value) }));
+      const updates = TUNABLE_WEIGHTS.map((field) => ({
+        key: lorewardWeightKey(field),
+        value: String(input[field]),
+      }));
       await writeConfigKeys(ctx.db, updates, (key) => `Loreward weight parameter for ${key}`);
       invalidateConfigCache();
       return { success: true };
@@ -399,29 +337,10 @@ export const adminWikiRouter = createTRPCRouter({
     }),
 
   previewLorewardScoring: adminProcedure
-    .input(
-      z.object({
-        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        proseWeight: z.number(),
-        collaborativeBonus: z.number(),
-        depthMaxBonus: z.number(),
-        noveltyBonus: z.number(),
-        importanceMaxBonus: z.number(),
-      })
-    )
+    .input(TunableWeightsInput.extend({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
     .query(async ({ input }) => {
-      const tempWeights: ScoringWeights = {
-        proseWeight: input.proseWeight,
-        collaborativeBonus: input.collaborativeBonus,
-        depthMaxBonus: input.depthMaxBonus,
-        noveltyBonus: input.noveltyBonus,
-        importanceMaxBonus: input.importanceMaxBonus,
-        listPenalty: 0.3,
-        minorOnlyPenalty: 0.2,
-        minSingleEdit: 1000,
-      };
-      const result = await scoreDailyWikiOS(input.date, tempWeights);
-      return result;
+      const { date, ...tunable } = input;
+      return scoreDailyWikiOS(date, { ...DEFAULT_WEIGHTS, ...tunable });
     }),
 
   syncWikiTemplateByName: adminProcedure
@@ -547,36 +466,13 @@ export const adminWikiRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const clean = input.query.trim();
-      const users = await ctx.db.user.findMany({
-        where: {
-          wikiUsername: { contains: clean, mode: "insensitive" },
-        },
-        take: input.limit,
-        select: {
-          wikiUsername: true,
-        },
-      });
-
-      const stats = await ctx.db.lorewardUserStats.findMany({
-        where: {
-          username: { contains: clean, mode: "insensitive" },
-        },
-        take: input.limit,
-        select: { username: true, totalScore: true },
-      });
-
-      const resultsMap = new Map<string, number>();
-      for (const u of users) {
-        if (u.wikiUsername) resultsMap.set(u.wikiUsername, 0);
-      }
-      for (const s of stats) {
-        resultsMap.set(s.username, s.totalScore);
-      }
-
-      return Array.from(resultsMap.entries()).map(([username, editCount]) => ({
-        username,
-        editCount,
-      }));
+      // The Lorewards bot section's picker: the legacy name search, with each name's Lorewards total as before
+      const names = await searchLegacyNames(
+        ctx.db,
+        { fetchClassicUsers: fetchClassicWikiUsers },
+        input.query,
+        input.limit
+      );
+      return names.map((e) => ({ username: e.name, editCount: e.lorewards?.totalScore ?? 0 }));
     }),
 });

@@ -1,37 +1,140 @@
 "use client";
 
+import { editorHref } from "~/lib/mycountry/routes";
 import React from "react";
-import { formatCompactCurrency, formatExactCurrency } from "~/lib/utils";
-import { motion, AnimatePresence } from "motion/react";
+import { CollapsibleSection } from "./CollapsibleSection";
 import {
-  StatUp as TrendingUp,
-  StatDown as TrendingDown,
-  Building,
-} from "iconoir-react";
-import { NavArrowRight as ChevronRight } from "iconoir-react";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { Card, CardContent } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
-import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import {
-  SectorBreakdownCard,
-  MetricCardGrid,
-  useCountryData,
-} from "~/components/mycountry/shared/primitives";
-import type { CardImageType } from "~/lib/cards/image-presets";
-import Link from "next/link";
-import { createUrl } from "~/lib/utils";
-import { InlineHelpIcon } from "~/components/ui/help-icon";
-import { smartNormalizeGrowthRate } from "~/lib/statecraft/growth-calculations";
-import type {
-  CountryWithEconomicData,
-  MappedEconomyData,
-} from "~/components/mycountry/shared/primitives/CountryDataProvider";
-import type { extractCountryImageData } from "~/lib/media";
-import type { MyCountryMetricView } from "~/hooks/useMyCountryMetrics";
-import type { MetricType } from "~/hooks/useMetricDetailsModal";
+  type DataTabProps,
+  GrowthBadge,
+  type MetricProps,
+  MetricToggleGrid,
+  TabShell,
+  ToggleMetric,
+  toggleView,
+  useAccordion,
+} from "./tabParts";
+import { formatCompactCurrency, formatExactCurrency, formatPercent } from "~/lib/utils";
+import { StatUp as TrendingUp, Building } from "iconoir-react";
+import { SectorBreakdownCard } from "~/components/mycountry/shared/primitives";
+import { tradeFigures } from "~/lib/economy/trade-figures";
+import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
 import { EconomyTradeSection } from "./EconomyTradeSection";
-import { EconomyBusinessSection } from "./EconomyBusinessSection";
+import { EmptyState } from "~/components/ui/empty-state";
+
+const SECTOR_COLORS = ["green", "blue", "purple", "cyan", "amber", "indigo"];
+
+function GdpMetric({
+  country,
+  economyData,
+  currency,
+  metricView,
+  setMetricViewAction,
+  openMetricModalAction,
+}: MetricProps) {
+  const gdpPerCapita = formatExactCurrency(economyData?.core.gdpPerCapita ?? 0, currency);
+  const compactGdp = formatCompactCurrency(economyData?.core.nominalGDP ?? 0, "N/A", currency);
+  const isPerCapita = metricView.economyGdp === "perCapita";
+
+  return (
+    <ToggleMetric
+      variant="button"
+      label={isPerCapita ? "GDP per Capita" : "Total GDP"}
+      valueKey={metricView.economyGdp}
+      value={isPerCapita ? gdpPerCapita : compactGdp}
+      aside={<GrowthBadge value={(country.calculatedStats?.gdpGrowth ?? 0) * 100} />}
+      detail={
+        isPerCapita
+          ? `${country.economicTier ? `${country.economicTier} · ` : ""}${compactGdp} total`
+          : `Per capita: ${gdpPerCapita}`
+      }
+      onToggle={() => toggleView(setMetricViewAction, "economyGdp", "perCapita", "total")}
+      onValueClick={() =>
+        openMetricModalAction(isPerCapita ? "gdp-per-capita" : "total-gdp", country.id)
+      }
+    />
+  );
+}
+
+function FiscalMetric({
+  country,
+  economyData,
+  currency,
+  metricView,
+  setMetricViewAction,
+  openMetricModalAction,
+}: MetricProps) {
+  const budgetBalance = economyData?.fiscal?.budgetDeficitSurplus ?? 0;
+  const isBalance = metricView.fiscal === "balance";
+
+  return (
+    <ToggleMetric
+      variant="button"
+      label={isBalance ? "Budget Balance" : "Tax Revenue"}
+      valueKey={metricView.fiscal}
+      value={
+        isBalance
+          ? formatCompactCurrency(budgetBalance, "N/A", currency)
+          : formatPercent(economyData?.fiscal?.taxRevenueGDPPercent ?? 0)
+      }
+      detail={
+        isBalance
+          ? budgetBalance >= 0
+            ? "Fiscal Surplus"
+            : "Fiscal Deficit"
+          : "Tax revenue % of GDP"
+      }
+      onToggle={() => toggleView(setMetricViewAction, "fiscal", "balance", "revenue")}
+      onValueClick={() => openMetricModalAction("government-spending", country.id)}
+    />
+  );
+}
+
+function TradeMetric({
+  country,
+  economyData,
+  currency,
+  metricView,
+  setMetricViewAction,
+  openMetricModalAction,
+}: MetricProps) {
+  const trade = tradeFigures(economyData?.core);
+  const isImports = metricView.trade === "imports";
+  const amount = isImports ? trade.imports : trade.exports;
+
+  return (
+    <ToggleMetric
+      variant="button"
+      label={isImports ? "Total Imports" : "Total Exports"}
+      valueKey={metricView.trade}
+      value={
+        amount == null ? (
+          <span role="img" aria-label="Not recorded">
+            —
+          </span>
+        ) : (
+          formatCompactCurrency(amount, "N/A", currency)
+        )
+      }
+      detail={
+        trade.balance == null
+          ? "Net balance not recorded"
+          : `Net balance: ${trade.balance >= 0 ? "Surplus" : "Deficit"}`
+      }
+      onToggle={() => toggleView(setMetricViewAction, "trade", "imports", "exports")}
+      onValueClick={() => openMetricModalAction("total-gdp", country.id)}
+    />
+  );
+}
+
+function EconomyMetrics(props: MetricProps) {
+  return (
+    <MetricToggleGrid variant="button">
+      <GdpMetric {...props} />
+      <FiscalMetric {...props} />
+      <TradeMetric {...props} />
+    </MetricToggleGrid>
+  );
+}
 
 export function EconomyTab({
   country,
@@ -41,360 +144,60 @@ export function EconomyTab({
   openMetricModalAction,
   metricView,
   setMetricViewAction,
-}: {
-  country: CountryWithEconomicData;
-  economyData: MappedEconomyData;
-  countryImageData: ReturnType<typeof extractCountryImageData>;
-  setImageUploadModalAction: (state: { isOpen: boolean; cardType: CardImageType }) => void;
-  openMetricModalAction: (metricType: MetricType, countryId: string) => void;
-  metricView: MyCountryMetricView;
-  setMetricViewAction: React.Dispatch<React.SetStateAction<MyCountryMetricView>>;
-}) {
-  const [expandedSection, setExpandedSection] = React.useState<string | null>("sectors");
+}: DataTabProps) {
+  const section = useAccordion("sectors");
   const currency = country?.nationalIdentity?.currency || "USD";
-  const { isPublicReadOnly } = useCountryData();
-
-  const toggleSection = (sectionId: string) => {
-    setExpandedSection(expandedSection === sectionId ? null : sectionId);
-  };
+  const sectors = parseSectorBreakdown(economyData?.core.sectorBreakdown);
+  const gdp = economyData?.core.nominalGDP ?? 0;
 
   return (
-    <Card className="facet-surface facet-refraction bg-gradient-economy border-border relative overflow-hidden">
-      {/* Background wash system (desaturated flag wash + radial dot mesh) */}
-      <MetricCardGrid
-        metrics={[]} // empty metrics to just render background
-        theme="economy"
-        backgroundImage={{
-          countryId: country.id,
-          cardType: "economic_indicators",
-          showEditButton: !isPublicReadOnly,
-          onEditClick: () =>
-            setImageUploadModalAction({ isOpen: true, cardType: "economic_indicators" }),
-          autoFallback: true,
-          countryImageData: countryImageData ?? undefined,
-          countryName: country.name,
-        }}
-        cardWrapper="card"
-        className="pointer-events-none absolute inset-0 z-0"
-      />
-
-      <CardContent className="relative z-10 space-y-4 pt-4 pb-4">
-        {/* ── Compact Header ── */}
-        <div className="border-border/10 flex items-center justify-between border-b pb-3">
-          <div>
-            <div className="flex items-center gap-1.5">
-              <h3 className="text-foreground text-sm font-bold tracking-wide uppercase">
-                Economic Overview
-              </h3>
-              <InlineHelpIcon
-                title="Economic Overview"
-                content="View key economic indicators, sectors, trade balances, and business environments. Toggles allow you to view detailed stats per capita or in totals."
-              />
-            </div>
-            <p className="text-muted-foreground/80 text-xs">
-              GDP, trade, and sector analysis for {country.name}
-            </p>
-          </div>
-          {!isPublicReadOnly && (
-            <Link href={createUrl("/mycountry/editor")}>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 cursor-pointer gap-1.5 border-emerald-500/20 bg-emerald-500/5 text-xs text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
-              >
-                <TrendingUp className="h-3.5 w-3.5" />
-                <span>Open Editor</span>
-              </Button>
-            </Link>
-          )}
-        </div>
-
-        {/* ── 3-Column Metric Toggle Grid ── */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="grid grid-cols-3 gap-3">
-              {/* Metric 1: GDP */}
-              <button
-                onClick={() =>
-                  setMetricViewAction((v: MyCountryMetricView) => ({
-                    ...v,
-                    economyGdp: v.economyGdp === "perCapita" ? "total" : "perCapita",
-                  }))
-                }
-                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
-              >
-                <p className="text-muted-foreground/80 text-xs font-extrabold tracking-wider uppercase">
-                  {metricView.economyGdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
-                </p>
-                <div
-                  className="flex items-center gap-1.5"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openMetricModalAction(
-                      metricView.economyGdp === "perCapita" ? "gdp-per-capita" : "total-gdp",
-                      country.id
-                    );
-                  }}
-                >
-                  <AnimatePresence mode="wait">
-                    <motion.p
-                      key={metricView.economyGdp}
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                      className="text-foreground flex items-center text-base font-bold tracking-tight hover:underline"
-                    >
-                      {metricView.economyGdp === "perCapita"
-                        ? formatExactCurrency(economyData?.core.gdpPerCapita ?? 0, currency)
-                        : formatCompactCurrency(economyData?.core.nominalGDP ?? 0, "N/A", currency)}
-                    </motion.p>
-                  </AnimatePresence>
-                  {(() => {
-                    const gdpGrowth = smartNormalizeGrowthRate(
-                      country.realGDPGrowthRate || country.adjustedGdpGrowth,
-                      0
-                    );
-                    if (gdpGrowth > 0)
-                      return (
-                        <span className="flex items-center gap-0.5 text-xs font-semibold text-emerald-500">
-                          <TrendingUp className="inline h-3 w-3" /> +{gdpGrowth.toFixed(1)}%
-                        </span>
-                      );
-                    if (gdpGrowth < 0)
-                      return (
-                        <span className="flex items-center gap-0.5 text-xs font-semibold text-red-500">
-                          <TrendingDown className="inline h-3 w-3" /> {gdpGrowth.toFixed(1)}%
-                        </span>
-                      );
-                    return <span className="text-muted-foreground text-xs">0.0%</span>;
-                  })()}
-                </div>
-                <p className="text-muted-foreground truncate text-xs font-medium">
-                  {metricView.economyGdp === "perCapita"
-                    ? `${country.economicTier || "Developing"} · ${formatCompactCurrency(economyData?.core.nominalGDP ?? 0, "N/A", currency)} total`
-                    : `Per capita: ${formatExactCurrency(economyData?.core.gdpPerCapita ?? 0, currency)}`}
-                </p>
-              </button>
-
-              {/* Metric 2: Fiscal */}
-              <button
-                onClick={() =>
-                  setMetricViewAction((v: MyCountryMetricView) => ({
-                    ...v,
-                    fiscal: v.fiscal === "balance" ? "revenue" : "balance",
-                  }))
-                }
-                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
-              >
-                <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
-                  {metricView.fiscal === "balance" ? "Budget Balance" : "Tax Revenue"}
-                </p>
-                <div
-                  className="mt-0.5 flex items-center gap-1.5"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openMetricModalAction("government-spending", country.id);
-                  }}
-                >
-                  <AnimatePresence mode="wait">
-                    <motion.p
-                      key={metricView.fiscal}
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                      className="text-foreground text-lg font-bold tracking-tight hover:underline"
-                    >
-                      {metricView.fiscal === "balance"
-                        ? formatCompactCurrency(
-                            economyData?.fiscal?.budgetDeficitSurplus ?? 0,
-                            "N/A",
-                            currency
-                          )
-                        : `${(economyData?.fiscal?.taxRevenueGDPPercent ?? 0).toFixed(1)}%`}
-                    </motion.p>
-                  </AnimatePresence>
-                </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-xs">
-                  {metricView.fiscal === "balance"
-                    ? (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0
-                      ? "Fiscal Surplus"
-                      : "Fiscal Deficit"
-                    : `Tax revenue % of GDP`}
-                </p>
-              </button>
-
-              {/* Metric 3: Trade */}
-              <button
-                onClick={() =>
-                  setMetricViewAction((v: MyCountryMetricView) => ({
-                    ...v,
-                    trade: v.trade === "imports" ? "exports" : "imports",
-                  }))
-                }
-                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
-              >
-                <p className="text-muted-foreground/80 text-xs font-extrabold tracking-wider uppercase">
-                  {metricView.trade === "imports" ? "Total Imports" : "Total Exports"}
-                </p>
-                <div
-                  className="mt-0.5 flex items-center gap-1.5"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openMetricModalAction("total-gdp", country.id);
-                  }}
-                >
-                  <AnimatePresence mode="wait">
-                    <motion.p
-                      key={metricView.trade}
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                      className="text-foreground text-lg font-bold tracking-tight hover:underline"
-                    >
-                      {metricView.trade === "imports"
-                        ? formatCompactCurrency(
-                            (economyData?.core.nominalGDP ?? 0) * 0.32,
-                            "N/A",
-                            currency
-                          )
-                        : formatCompactCurrency(
-                            (economyData?.core.nominalGDP ?? 0) * 0.35,
-                            "N/A",
-                            currency
-                          )}
-                    </motion.p>
-                  </AnimatePresence>
-                </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-xs">
-                  Net Balance: +3.0% (Surplus)
-                </p>
-              </button>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs">
-            Click metric value to view history, click headers to toggle views
-          </TooltipContent>
-        </Tooltip>
-
-        {/* ── Sub-Tabs Content (Folder Dossier Accordion Stack) ── */}
-        <div className="border-border/10 space-y-3 border-t pt-3">
-          {/* Dossier Section 1: Sectors */}
-          <div className="flex flex-col">
-            <div className="flex">
-              <button
-                onClick={() => toggleSection("sectors")}
-                className={`relative z-10 flex cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-xs font-bold tracking-wider uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
-                  expandedSection === "sectors"
-                    ? "text-foreground border-white/10 bg-white/10 dark:bg-white/[0.04]"
-                    : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
-                }`}
-              >
-                <Building
-                  className={`h-3.5 w-3.5 ${expandedSection === "sectors" ? "text-emerald-500" : "text-muted-foreground/60"}`}
-                />
-                <span>Sectors & Distribution</span>
-                <motion.div
-                  animate={{ rotate: expandedSection === "sectors" ? 90 : 0 }}
-                  transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                  className="ml-1"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </motion.div>
-              </button>
-            </div>
-            <motion.div
-              initial={false}
-              animate={{ height: expandedSection === "sectors" ? "auto" : 0 }}
-              transition={{ type: "spring", bounce: 0, duration: 0.35 }}
-              className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
-                expandedSection === "sectors"
-                  ? "border border-white/10"
-                  : "border border-transparent"
-              }`}
-            >
-              <TextureOverlay
-                texture="paperGrain"
-                opacity={0.06}
-                className="pointer-events-none absolute inset-0 z-0"
-              />
-              <div className="relative z-10 space-y-4 p-4">
-                <SectorBreakdownCard
-                  title="Economic Structure"
-                  subtitle="GDP distribution across major economic sectors"
-                  layout="grid"
-                  showTrends={true}
-                  showSectorImages={true}
-                  cardWrapper="panel"
-                  accent="emerald"
-                  sectors={[
-                    {
-                      id: "primary",
-                      name: "Primary Sector",
-                      value: (economyData?.core.nominalGDP ?? 0) * 0.05,
-                      percentage: 5.0,
-                      color: "green",
-                      trend: "stable",
-                      description: "Agriculture, Mining",
-                      imageKeyword: "economy_primary",
-                    },
-                    {
-                      id: "secondary",
-                      name: "Secondary Sector",
-                      value: (economyData?.core.nominalGDP ?? 0) * 0.25,
-                      percentage: 25.0,
-                      color: "blue",
-                      trend: "up",
-                      trendValue: 1.2,
-                      description: "Manufacturing",
-                      imageKeyword: "economy_secondary",
-                    },
-                    {
-                      id: "tertiary",
-                      name: "Tertiary Sector",
-                      value: (economyData?.core.nominalGDP ?? 0) * 0.55,
-                      percentage: 55.0,
-                      color: "purple",
-                      trend: "up",
-                      trendValue: 2.1,
-                      description: "Services",
-                      imageKeyword: "economy_tertiary",
-                    },
-                    {
-                      id: "quaternary",
-                      name: "Quaternary Sector",
-                      value: (economyData?.core.nominalGDP ?? 0) * 0.15,
-                      percentage: 15.0,
-                      color: "cyan",
-                      trend: "up",
-                      trendValue: 3.5,
-                      description: "Knowledge, Tech",
-                      imageKeyword: "economy_quaternary",
-                    },
-                  ]}
-                  totalValue={economyData?.core.nominalGDP ?? 0}
-                />
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Dossier Section 2: Trade */}
-          <EconomyTradeSection
-            isExpanded={expandedSection === "trade"}
-            onToggle={() => toggleSection("trade")}
-            economyData={economyData}
-            currency={currency}
+    <TabShell
+      country={country}
+      countryImageData={countryImageData}
+      setImageUploadModalAction={setImageUploadModalAction}
+      cardType="economic_indicators"
+      title="Economic overview"
+      help="View key economic indicators, sectors, trade balances, and business environments. Toggles allow you to view detailed stats per capita or in totals."
+      subtitle={`GDP, trade, and sector analysis for ${country.name}`}
+      editorIcon={TrendingUp}
+      editor={{ href: editorHref("size"), label: "Edit size and wealth" }}
+      metrics={
+        <EconomyMetrics
+          country={country}
+          economyData={economyData}
+          currency={currency}
+          metricView={metricView}
+          setMetricViewAction={setMetricViewAction}
+          openMetricModalAction={openMetricModalAction}
+        />
+      }
+    >
+      <CollapsibleSection icon={Building} title="Sectors & distribution" {...section("sectors")}>
+        {sectors.length > 0 ? (
+          <SectorBreakdownCard
+            title="Economic structure"
+            subtitle="Recorded share of GDP by sector"
+            layout="grid"
+            showTrends={false}
+            sectors={sectors.map((sector, i) => ({
+              id: sector.name,
+              name: sector.name,
+              value: (gdp * sector.share) / 100,
+              percentage: sector.share,
+              color: SECTOR_COLORS[i % SECTOR_COLORS.length]!,
+            }))}
+            totalValue={gdp}
           />
-
-          {/* Dossier Section 3: Business & Innovation */}
-          <EconomyBusinessSection
-            isExpanded={expandedSection === "business"}
-            onToggle={() => toggleSection("business")}
+        ) : (
+          <EmptyState
+            compact
+            title="No sector breakdown recorded"
+            message="This nation has not recorded how its GDP splits across sectors."
           />
-        </div>
-      </CardContent>
-    </Card>
+        )}
+      </CollapsibleSection>
+
+      <EconomyTradeSection {...section("trade")} economyData={economyData} currency={currency} />
+    </TabShell>
   );
 }

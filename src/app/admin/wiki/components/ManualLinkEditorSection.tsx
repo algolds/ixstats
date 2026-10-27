@@ -2,9 +2,11 @@
 // src/app/admin/wiki/components/ManualLinkEditorSection.tsx
 // Manual wiki article link editor with live test preview.
 
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import {
@@ -16,21 +18,54 @@ import {
   FloppyDisk as Save,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { Card } from "~/components/ui/card";
+import type { WikiSource } from "~/lib/wiki-os/config";
+import { isWikiOutage, unreachableText } from "~/lib/wiki-os/wiki-outage";
+import { countryRows, WIKI_SOURCE_OPTIONS, type CountriesData } from "./types";
 
-export function ManualLinkEditorSection({ countriesData }: { countriesData: any }) {
+/**
+ * What testing a link found: the page (with its intro), no such page, a wiki that did not answer, or a check that
+ * failed some other way (which says nothing about the page).
+ */
+type TestResult =
+  | { status: "found"; intro: string }
+  | { status: "missing" }
+  | { status: "unreachable"; wiki: WikiSource }
+  | { status: "unchecked" };
+
+interface IntroRead {
+  data?: { intro: string; missing: boolean } | null;
+  error?: { data?: { code?: string } | null } | null;
+}
+
+/**
+ * Only a real "missing" answer (or NOT_FOUND) is "not found". An outage is not: the page may well exist. Nor is any
+ * other failure, which only says the link could not be checked.
+ */
+function testResultOf(read: IntroRead, wiki: WikiSource): TestResult {
+  if (read.data)
+    return read.data.missing ? { status: "missing" } : { status: "found", intro: read.data.intro };
+  if (isWikiOutage(read.error)) return { status: "unreachable", wiki };
+  return read.error?.data?.code === "NOT_FOUND" ? { status: "missing" } : { status: "unchecked" };
+}
+
+/** What a failed test says. */
+function failureText(result: Exclude<TestResult, { status: "found" }>): string {
+  if (result.status === "unreachable") return `${unreachableText(result.wiki)} Try again.`;
+  if (result.status === "unchecked") return "The link could not be checked. Try again.";
+  return "Article not found. Check the title and source.";
+}
+
+export function ManualLinkEditorSection({ countriesData }: { countriesData: CountriesData }) {
   const [countrySearch, setCountrySearch] = useState("");
   const [selectedCountryId, setSelectedCountryId] = useState<string | null>(null);
   const [wikiPageTitle, setWikiPageTitle] = useState("");
-  const [wikiSource, setWikiSource] = useState<"ixwiki" | "iiwiki">("ixwiki");
-  const [testResult, setTestResult] = useState<{ success: boolean; intro?: string } | null>(null);
+  const [wikiSource, setWikiSource] = useState<WikiSource>("ixwiki");
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const countries = useMemo(() => {
-    const list = countriesData?.countries ?? countriesData ?? [];
-    if (!Array.isArray(list)) return [];
-    return list as Array<{ id: string; name: string }>;
-  }, [countriesData]);
+  const countries = useMemo(() => countryRows(countriesData), [countriesData]);
 
   const filteredCountries = useMemo(() => {
     if (!countrySearch.trim()) return countries.slice(0, 20);
@@ -59,22 +94,13 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
     setIsTesting(true);
     setTestResult(null);
     try {
-      const result = (await wikiIntroQuery.refetch()) as any;
-      if (result.data) {
-        setTestResult({
-          success: true,
-          intro:
-            typeof result.data === "string" ? result.data : (result.data.text ?? "Article found"),
-        });
-      } else {
-        setTestResult({ success: false });
-      }
+      setTestResult(testResultOf(await wikiIntroQuery.refetch(), wikiSource));
     } catch {
-      setTestResult({ success: false });
+      setTestResult({ status: "unchecked" });
     } finally {
       setIsTesting(false);
     }
-  }, [wikiPageTitle, wikiIntroQuery]);
+  }, [wikiPageTitle, wikiIntroQuery, wikiSource]);
 
   const handleSave = useCallback(() => {
     if (!selectedCountryId || !wikiPageTitle.trim()) return;
@@ -82,15 +108,14 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
   }, [selectedCountryId, wikiPageTitle, wikiSource, setWikiLinkMutation]);
 
   return (
-    <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-      <div className="border-border/20 flex items-center gap-2 border-b pb-3">
-        <Globe className="h-4 w-4 text-blue-400" />
-        <h3 className="text-foreground text-xs font-bold">Manual Link Editor</h3>
+    <Card className="space-y-4 p-5">
+      <div className="border-separator flex items-center gap-2 border-b pb-3">
+        <Globe className="text-blue h-4 w-4" />
+        <h3 className="text-label text-caption">Manual link editor</h3>
       </div>
       <div className="space-y-4">
-        {/* Country Selector */}
-        <div className="space-y-1.5">
-          <label className="text-foreground text-xs font-medium">Country</label>
+        <div className="space-y-2">
+          <label className="text-label text-caption">Country</label>
           <div className="relative">
             <Input
               placeholder="Search for a country..."
@@ -101,75 +126,60 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
                 setShowDropdown(true);
               }}
               onFocus={() => setShowDropdown(true)}
-              className="border-border/30 bg-background/50 h-8 rounded-xl text-xs backdrop-blur-md"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
             />
             {showDropdown && filteredCountries.length > 0 && !selectedCountry && (
-              <div className="border-border/40 bg-popover/95 text-popover-foreground absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border p-1 shadow-lg backdrop-blur-md">
+              <FacetListSection
+                variant="plain"
+                aria-label="Countries"
+                className="border-separator bg-surface-elevated text-label rounded-row shadow-floating absolute z-50 mt-1 max-h-48 w-full overflow-y-auto border"
+              >
                 {filteredCountries.map((c) => (
-                  <button
+                  <FacetRow
                     key={c.id}
                     onClick={() => {
                       setSelectedCountryId(c.id);
                       setCountrySearch("");
                       setShowDropdown(false);
                     }}
-                    className="hover:bg-muted/50 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-xs font-medium"
-                  >
-                    <span>{c.name}</span>
-                    <span className="text-muted-foreground font-mono text-xs">
-                      {c.id.slice(0, 8)}...
-                    </span>
-                  </button>
+                    title={c.name}
+                    trailing={
+                      <span className="text-label-secondary text-footnote font-mono">
+                        {c.id.slice(0, 8)}...
+                      </span>
+                    }
+                  />
                 ))}
-              </div>
+              </FacetListSection>
             )}
           </div>
         </div>
 
         {/* Wiki Source & Page Title */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="space-y-1.5">
-            <label className="text-foreground text-xs font-medium">Wiki Source</label>
-            <div className="bg-card/40 border-border/40 flex rounded-xl border p-1 backdrop-blur-md">
-              <button
-                type="button"
-                onClick={() => setWikiSource("ixwiki")}
-                className={cn(
-                  "flex-1 rounded-lg py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-                  wikiSource === "ixwiki"
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                IxWiki
-              </button>
-              <button
-                type="button"
-                onClick={() => setWikiSource("iiwiki")}
-                className={cn(
-                  "flex-1 rounded-lg py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-                  wikiSource === "iiwiki"
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                IIWiki
-              </button>
-            </div>
+          <div className="space-y-2">
+            <label className="text-label text-caption">Wiki source</label>
+            <SegmentedControl
+              size="sm"
+              fullWidth
+              aria-label="Wiki source"
+              value={wikiSource}
+              onValueChange={setWikiSource}
+              options={WIKI_SOURCE_OPTIONS}
+            />
           </div>
 
-          <div className="space-y-1.5 sm:col-span-2">
-            <label className="text-foreground text-xs font-medium">Wiki Page Title</label>
+          <div className="space-y-2 sm:col-span-2">
+            <label className="text-label text-caption">Wiki page title</label>
             <Input
               placeholder="e.g. United_States or Grand_Duchy_of_..."
               value={wikiPageTitle}
               onChange={(e) => setWikiPageTitle(e.target.value)}
-              className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs backdrop-blur-md"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
             />
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
@@ -177,14 +187,13 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
             size="sm"
             onClick={handleTestLink}
             disabled={isTesting || !wikiPageTitle.trim()}
-            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             {isTesting ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
             ) : (
-              <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+              <ExternalLink className="mr-2 h-3.5 w-3.5" />
             )}
-            Test Link
+            Test link
           </Button>
 
           <Button
@@ -192,44 +201,42 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
             size="sm"
             onClick={handleSave}
             disabled={!selectedCountryId || !wikiPageTitle.trim()}
-            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
-            <Save className="mr-1.5 h-3.5 w-3.5" />
-            Save Link
+            <Save className="mr-2 h-3.5 w-3.5" />
+            Save link
           </Button>
         </div>
 
-        {/* Test Result */}
         {testResult && (
           <div
             className={cn(
-              "rounded-xl border p-3 text-xs",
-              testResult.success
-                ? "text-foreground border-emerald-500/30 bg-emerald-500/10"
-                : "border-red-500/30 bg-red-500/10 text-red-400"
+              "rounded-row text-footnote border p-3",
+              testResult.status === "found"
+                ? "text-label border-green/30 bg-green/10"
+                : "border-red/30 bg-red/10 text-red"
             )}
           >
-            {testResult.success ? (
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5 font-semibold text-emerald-400">
+            {testResult.status === "found" ? (
+              <div className="space-y-2">
+                <div className="text-green flex items-center gap-2 font-semibold">
                   <CheckCircle className="h-4 w-4" />
                   Article found
                 </div>
                 {testResult.intro && (
-                  <p className="text-muted-foreground line-clamp-3 text-xs">
+                  <p className="text-label-secondary text-footnote line-clamp-3">
                     {testResult.intro}
                   </p>
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <XCircle className="h-4 w-4" />
-                Article not found. Check the title and source.
+                {failureText(testResult)}
               </div>
             )}
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }

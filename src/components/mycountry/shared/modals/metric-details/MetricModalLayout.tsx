@@ -4,6 +4,9 @@ import React from "react";
 import { cn } from "~/lib/utils/cn";
 import { ArrowUpRight, ArrowDownRight } from "iconoir-react";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 export type MetricThemeVariant = "economy" | "social" | "demographics" | "labor" | "default";
 
@@ -26,39 +29,25 @@ export function MetricModalLayout({
   );
 }
 
-// Helper theme mappings
+const accent = (token: string) => ({
+  chartColor: token,
+  gradientStop: `color-mix(in srgb, ${token} 15%, transparent)`,
+});
+
+const NEUTRAL_THEME = { cardClass: "bg-fill-3", textHighlight: "text-label-secondary" };
+
+// Economy carries the MyCountry accent; the rest stay neutral so the chart series, not the
+// chrome, carry colour.
+const THEMES: Record<MetricThemeVariant, ReturnType<typeof accent> & typeof NEUTRAL_THEME> = {
+  economy: { ...NEUTRAL_THEME, textHighlight: "text-yellow", ...accent("var(--color-amber-500)") },
+  social: { ...NEUTRAL_THEME, ...accent("var(--chart-2)") },
+  demographics: { ...NEUTRAL_THEME, ...accent("var(--chart-2)") },
+  labor: { ...NEUTRAL_THEME, ...accent("var(--color-blue-500)") },
+  default: { ...NEUTRAL_THEME, ...accent("var(--color-tint)") },
+};
+
 export function getThemeClasses(variant: MetricThemeVariant) {
-  switch (variant) {
-    case "economy":
-      return {
-        cardClass: "facet-mycountry border-yellow-500/20 bg-yellow-500/5",
-        textHighlight: "text-amber-500",
-        chartColor: "#fbbf24",
-        gradientStop: "rgba(251, 191, 36, 0.15)",
-      };
-    case "social":
-    case "demographics":
-      return {
-        cardClass: "facet-global border-cyan-500/20 bg-cyan-500/5",
-        textHighlight: "text-cyan-500",
-        chartColor: "#06b6d4",
-        gradientStop: "rgba(6, 182, 212, 0.15)",
-      };
-    case "labor":
-      return {
-        cardClass: "facet-global border-blue-500/20 bg-blue-500/5",
-        textHighlight: "text-blue-500",
-        chartColor: "#3b82f6",
-        gradientStop: "rgba(59, 130, 246, 0.15)",
-      };
-    default:
-      return {
-        cardClass: "facet-surface border-white/5 bg-white/5",
-        textHighlight: "text-primary",
-        chartColor: "var(--color-primary)",
-        gradientStop: "rgba(255, 255, 255, 0.1)",
-      };
-  }
+  return THEMES[variant];
 }
 
 // 1. Main Area Component
@@ -85,6 +74,34 @@ MetricModalLayout.Sidebar = function MetricModalSidebar({
   children: React.ReactNode;
 }) {
   return <div className={cn("flex flex-col space-y-6 lg:col-span-1", className)}>{children}</div>;
+};
+
+// Loading skeleton: a main panel plus either `sidebarCards` stat cards or one full-height panel.
+MetricModalLayout.Loading = function MetricModalLoading({
+  variant,
+  mainHeight,
+  sidebarCards,
+}: {
+  variant: MetricThemeVariant;
+  mainHeight: number;
+  sidebarCards: number;
+}) {
+  return (
+    <MetricModalLayout variant={variant}>
+      <MetricModalLayout.MainArea>
+        <Skeleton className="w-full" style={{ height: mainHeight }} />
+      </MetricModalLayout.MainArea>
+      <MetricModalLayout.Sidebar>
+        {sidebarCards > 0 ? (
+          Array.from({ length: sidebarCards }, (_, i) => (
+            <Skeleton key={i} className="h-24 w-full" />
+          ))
+        ) : (
+          <Skeleton className="h-full w-full" />
+        )}
+      </MetricModalLayout.Sidebar>
+    </MetricModalLayout>
+  );
 };
 
 // 3. Stat Card Component
@@ -115,21 +132,13 @@ MetricModalLayout.StatCard = function MetricModalStatCard({
   const isPositive = trend !== undefined && trend >= 0;
 
   return (
-    <div
-      className={cn(
-        "facet-refraction relative overflow-hidden rounded-xl border p-4",
-        theme.cardClass,
-        className
-      )}
-    >
+    <div className={cn("rounded-row relative overflow-hidden p-4", theme.cardClass, className)}>
       <div className="flex items-center justify-between">
-        <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-          {label}
-        </span>
+        <span className="text-caption text-label-secondary">{label}</span>
         <Icon className={cn("h-4 w-4", theme.textHighlight)} />
       </div>
       <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-2xl font-bold tracking-tight">
+        <span className="text-label text-title-1 tabular-nums">
           {prefix}
           <NumberFlowDisplay value={value} decimalPlaces={decimalPlaces} className="inline" />
           {suffix}
@@ -137,8 +146,8 @@ MetricModalLayout.StatCard = function MetricModalStatCard({
         {trend !== undefined && (
           <span
             className={cn(
-              "inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold",
-              isPositive ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
+              "rounded-control-sm text-caption inline-flex items-center gap-0.5 px-2 py-0.5 font-semibold",
+              isPositive ? "bg-fill-3 text-green" : "bg-fill-3 text-destructive"
             )}
           >
             {isPositive ? (
@@ -151,5 +160,249 @@ MetricModalLayout.StatCard = function MetricModalStatCard({
         )}
       </div>
     </div>
+  );
+};
+
+type IconType = React.ComponentType<{ className?: string }>;
+
+// 4. Panels: the large main card and the narrower sidebar card.
+MetricModalLayout.Panel = function MetricModalPanel({
+  icon: Icon,
+  title,
+  titleExtra,
+  subtitle,
+  className = "flex flex-1 flex-col justify-between",
+  contentClassName = "flex-1",
+  children,
+}: {
+  icon?: IconType;
+  title: string;
+  titleExtra?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  className?: string;
+  contentClassName?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className={cn("p-6", className)}>
+      <CardHeader className="mb-4 p-0">
+        <h3 className={cn("text-label text-title-3", Icon && "flex items-center gap-2")}>
+          {Icon && <Icon className="text-label-secondary h-5 w-5" />}
+          {title}
+          {titleExtra}
+        </h3>
+        {subtitle && <p className="text-label-secondary text-body">{subtitle}</p>}
+      </CardHeader>
+      <CardContent className={cn("p-0", contentClassName)}>{children}</CardContent>
+    </Card>
+  );
+};
+
+MetricModalLayout.SidePanel = function MetricModalSidePanel({
+  title,
+  subtitle,
+  className,
+  contentClassName = "space-y-4",
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  className?: string;
+  contentClassName?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className={cn("flex flex-1 flex-col justify-between p-4", className)}>
+      <CardHeader className="mb-4 p-0">
+        <h3 className="text-label text-title-3 text-headline">{title}</h3>
+        {subtitle && <p className="text-label-secondary text-footnote">{subtitle}</p>}
+      </CardHeader>
+      <CardContent className={cn("p-0", contentClassName)}>{children}</CardContent>
+    </Card>
+  );
+};
+
+// 5. Centered figure tile, shown in a grid inside a main panel.
+const TILE_LABEL = {
+  stat: "text-caption text-label-secondary mt-1 block",
+  footnote: "text-label-secondary text-footnote mt-1",
+} as const;
+
+MetricModalLayout.Tile = function MetricModalTile({
+  value,
+  label,
+  tone = "text-label",
+  valueClassName,
+  labelStyle = "stat",
+}: {
+  value: React.ReactNode;
+  label: string;
+  tone?: string;
+  valueClassName?: string;
+  labelStyle?: keyof typeof TILE_LABEL | "eyebrow";
+}) {
+  return (
+    <Card variant="well" padding="none" className="p-4 text-center">
+      <div className={cn("text-title-3", tone, valueClassName)}>{value}</div>
+      {labelStyle === "eyebrow" ? (
+        <Eyebrow className="mt-1 block">{label}</Eyebrow>
+      ) : labelStyle === "stat" ? (
+        <span className={TILE_LABEL.stat}>{label}</span>
+      ) : (
+        <div className={TILE_LABEL.footnote}>{label}</div>
+      )}
+    </Card>
+  );
+};
+
+MetricModalLayout.TileGrid = function MetricModalTileGrid({
+  columns = "grid-cols-2 md:grid-cols-4",
+  children,
+}: {
+  columns?: string;
+  children: React.ReactNode;
+}) {
+  return <div className={cn("grid gap-4", columns)}>{children}</div>;
+};
+
+// 6. Compact label/value row for sidebar panels.
+MetricModalLayout.Metric = function MetricModalMetric({
+  label,
+  value,
+  tone = "text-label",
+}: {
+  label: string;
+  value: React.ReactNode;
+  tone?: string;
+}) {
+  return (
+    <Card variant="well" padding="none" className="p-3">
+      <span className="text-caption text-label-secondary">{label}</span>
+      <div className={cn("text-title-3 mt-1", tone)}>{value}</div>
+    </Card>
+  );
+};
+
+// 7. Explanatory paragraph under a tile grid.
+MetricModalLayout.Note = function MetricModalNote({
+  icon: Icon,
+  children,
+}: {
+  icon?: IconType;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card
+      variant="well"
+      padding="none"
+      className={cn(
+        "text-label-secondary text-footnote mt-6 p-4",
+        Icon && "flex items-start gap-3"
+      )}
+    >
+      {Icon && <Icon className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />}
+      <p className="leading-relaxed">{children}</p>
+    </Card>
+  );
+};
+
+// 8. Sidebar card that names a computed classification (risk, health, tier) and what it means.
+MetricModalLayout.Classification = function MetricModalClassification({
+  label,
+  value,
+  tone,
+  icon: Icon,
+  description,
+  bordered = true,
+  children,
+}: {
+  label: React.ReactNode;
+  value?: string;
+  tone?: string;
+  icon?: IconType;
+  description: string;
+  bordered?: boolean;
+  /** Replaces the plain `value` text, e.g. with a badge. */
+  children?: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "bg-fill-3 rounded-row relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden p-4",
+        bordered && "border-separator border"
+      )}
+    >
+      <div>
+        {typeof label === "string" ? (
+          <span className="text-caption text-label-secondary block">{label}</span>
+        ) : (
+          label
+        )}
+        <div className="mt-2">
+          {children ?? <span className={cn("text-title-3", tone)}>{value}</span>}
+        </div>
+      </div>
+      <p
+        className={cn(
+          "text-label-secondary text-footnote mt-4 leading-relaxed",
+          Icon && "flex items-center gap-2"
+        )}
+      >
+        {Icon && <Icon className="h-3 w-3 shrink-0" />}
+        {description}
+      </p>
+    </div>
+  );
+};
+
+// A sidebar column of large highlighted figures.
+MetricModalLayout.Highlights = function MetricModalHighlights({
+  className = "flex flex-1 flex-col gap-4",
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return <div className={className}>{children}</div>;
+};
+
+MetricModalLayout.Highlight = function MetricModalHighlight({
+  label,
+  value,
+  tone = "text-label",
+  note,
+}: {
+  label: string;
+  value: React.ReactNode;
+  tone?: string;
+  note?: string;
+}) {
+  return (
+    <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
+      <span className="text-caption text-label-secondary mb-1 block">{label}</span>
+      <span className={cn("text-title-2", tone)}>{value}</span>
+      {note && <span className="text-label-secondary text-footnote mt-1">{note}</span>}
+    </div>
+  );
+};
+
+// 9. Placeholder card for a tab with nothing to chart.
+MetricModalLayout.Empty = function MetricModalEmpty({
+  icon: Icon,
+  message,
+  hint,
+}: {
+  icon: IconType;
+  message: string;
+  hint?: string;
+}) {
+  return (
+    <Card>
+      <CardContent className="py-12 text-center">
+        <Icon className="text-label-secondary mx-auto mb-4 h-12 w-12 opacity-50" />
+        <p className="text-label-secondary">{message}</p>
+        {hint && <p className="text-label-secondary text-body">{hint}</p>}
+      </CardContent>
+    </Card>
   );
 };

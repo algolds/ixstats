@@ -12,7 +12,12 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, lightMutationProcedure, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  lightMutationProcedure,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
 import { LedgerError, getOrCreateVault, spendCreditsTx } from "~/lib/vault/vault-ledger";
 import { clearUserPerksCache } from "~/lib/vault/vault-perks";
@@ -22,26 +27,22 @@ import {
   storePrerequisiteMet,
 } from "~/lib/vault/store-purchases";
 import { globalCache } from "~/lib/cache";
+import {
+  RETIRED_STORE_ITEM_IDS,
+  RETIRED_STORE_ITEM_MESSAGE,
+} from "~/lib/vault/retired-store-items";
+import { LORE_TOKEN_ITEM_IDS } from "~/lib/vault/lore-token-refunds";
 import { type VaultTransactionType } from "@prisma/client";
 import { resolveVaultUserId } from "./_resolveUserId";
+import { toggleEquippedCosmetic } from "./_equippedCosmetics";
+import { vaultTransactionTypeEnum } from "./_transactionType";
 
 const STORE_SPEND_TYPES: VaultTransactionType[] = ["SPEND_COSMETIC", "SPEND_BOOST"];
-
-/**
- * Vault transaction type enum for validation
- */
-const vaultTransactionTypeEnum = z.enum([
-  "EARN_PASSIVE",
-  "EARN_ACTIVE",
-  "EARN_CARDS",
-  "EARN_SOCIAL",
-  "SPEND_PACKS",
-  "SPEND_MARKET",
-  "SPEND_CRAFT",
-  "SPEND_BOOST",
-  "SPEND_COSMETIC",
-  "ADMIN_ADJUSTMENT",
-]);
+/** Never sold again: the retired items and the lore tokens withdrawn with paid lore requests. */
+const UNSOLD_STORE_ITEM_IDS: readonly string[] = [
+  ...RETIRED_STORE_ITEM_IDS,
+  ...LORE_TOKEN_ITEM_IDS,
+];
 
 export const vaultStoreRouter = createTRPCRouter({
   /**
@@ -53,6 +54,7 @@ export const vaultStoreRouter = createTRPCRouter({
         limit: z.number().min(1).max(100).optional().default(50),
         offset: z.number().min(0).optional().default(0),
         type: vaultTransactionTypeEnum.optional(),
+        direction: z.enum(["earned", "spent"]).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -63,10 +65,11 @@ export const vaultStoreRouter = createTRPCRouter({
 
         const transactions = await vaultService.getTransactionHistory(
           ctx.auth.userId,
-          ctx.db as any,
+          ctx.db,
           input.limit,
           input.offset,
-          input.type as VaultTransactionType | undefined
+          input.type as VaultTransactionType | undefined,
+          input.direction
         );
 
         return {
@@ -135,6 +138,10 @@ export const vaultStoreRouter = createTRPCRouter({
       const item = await ctx.db.vaultStoreItem.findUnique({ where: { id: input.itemId } });
       if (!item || !item.isActive) {
         throw new TRPCError({ code: "NOT_FOUND", message: "This item is not available." });
+      }
+      // Retired and withdrawn items stay refused even if an admin reactivates the row.
+      if (UNSOLD_STORE_ITEM_IDS.includes(item.id)) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: RETIRED_STORE_ITEM_MESSAGE });
       }
 
       const userId = await resolveVaultUserId(ctx);
@@ -205,7 +212,7 @@ export const vaultStoreRouter = createTRPCRouter({
   listStoreItems: protectedProcedure.query(async ({ ctx }) => {
     try {
       const items = await ctx.db.vaultStoreItem.findMany({
-        where: { isActive: true },
+        where: { isActive: true, id: { notIn: [...UNSOLD_STORE_ITEM_IDS] } },
         orderBy: { price: "asc" },
       });
       return items;
@@ -241,7 +248,7 @@ export const vaultStoreRouter = createTRPCRouter({
   /**
    * Toggle equipped status of a cosmetic item for the logged-in user
    */
-  toggleEquipCosmetic: protectedProcedure
+  toggleEquipCosmetic: rateLimitedMutationProcedure
     .input(z.object({ itemId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -259,17 +266,7 @@ export const vaultStoreRouter = createTRPCRouter({
           select: { metadata: true },
         });
 
-        const ownsItem = transactions.some((tx) => {
-          let meta = tx.metadata;
-          if (typeof meta === "string") {
-            try {
-              meta = JSON.parse(meta);
-            } catch {
-              // non-JSON metadata — treated as no item match
-            }
-          }
-          return meta && typeof meta === "object" && (meta as any).itemId === input.itemId;
-        });
+        const ownsItem = (countStorePurchases(transactions)[input.itemId] ?? 0) > 0;
 
         // 2. Fetch current equipped list
         const vault = await ctx.db.myVault.findUnique({
@@ -289,30 +286,7 @@ export const vaultStoreRouter = createTRPCRouter({
           throw new Error("You do not own this cosmetic item");
         }
 
-        const equipped = vault.equippedCosmetics
-          ? vault.equippedCosmetics.split(",").filter(Boolean)
-          : [];
-
-        const index = equipped.indexOf(input.itemId);
-        let isEquipped = false;
-        if (index > -1) {
-          equipped.splice(index, 1);
-        } else {
-          equipped.push(input.itemId);
-          isEquipped = true;
-        }
-
-        const nextEquipped = equipped.join(",");
-        await ctx.db.myVault.update({
-          where: { id: vault.id },
-          data: { equippedCosmetics: nextEquipped },
-        });
-
-        return {
-          success: true,
-          isEquipped,
-          equipped,
-        };
+        return await toggleEquippedCosmetic(ctx.db, vault, input.itemId);
       } catch (error) {
         console.error("[Vault Router] toggleEquipCosmetic error:", error);
         throw new Error(

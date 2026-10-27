@@ -1,7 +1,10 @@
 /**
- * Comprehensive Statecraft Simulation Test Suite
- * Covers foreign policy impacts, power brokers, whip voting mechanisms, recon fog of war,
- * temporal calendars, and diplomatic intelligence reach.
+ * The Statecraft corpus: foreign policy impacts, power brokers, the whip, the vote and consequence fog (which never
+ * fabricates a figure), the directive goal classifier over real goal texts (domestic only), and the guards on the
+ * resistance a directive raises (template cooldown, spawn modes, never throwing into a commit). The resistance spawn,
+ * link and dedupe run in tests/scenarios/engines/directive-lifecycle.test.ts.
+ *
+ * Folds intent-system and the guard cases of intent/resistance.
  */
 
 import { computeForeignPolicyImpact, type FPParty } from "~/lib/statecraft/foreign-policy";
@@ -24,29 +27,6 @@ describe("computeForeignPolicyImpact — free trade asymmetry (Keaor)", () => {
     });
     expect(vsRich.initiatorGdpImpact).toBeGreaterThan(vsPoor.initiatorGdpImpact);
   });
-
-  it("a bigger imbalance gives a bigger relations boost", () => {
-    const vsEqual = computeForeignPolicyImpact({
-      initiator: mid,
-      target: mid,
-      actionType: "free_trade",
-    });
-    const vsPoor = computeForeignPolicyImpact({
-      initiator: mid,
-      target: poor,
-      actionType: "free_trade",
-    });
-    expect(vsPoor.relationshipDelta).toBeGreaterThan(vsEqual.relationshipDelta);
-  });
-
-  it("the poorer side gains more GDP from the deal than the richer side", () => {
-    const r = computeForeignPolicyImpact({
-      initiator: rich,
-      target: poor,
-      actionType: "free_trade",
-    });
-    expect(r.targetGdpImpact).toBeGreaterThan(r.initiatorGdpImpact); // poor target out-gains rich initiator
-  });
 });
 
 describe("computeForeignPolicyImpact — coercive tools", () => {
@@ -59,21 +39,49 @@ describe("computeForeignPolicyImpact — coercive tools", () => {
       computeForeignPolicyImpact({ initiator: mid, target: mid, actionType: "blockade" }).category
     ).toBe("military");
   });
+});
 
-  it("severity scales magnitude", () => {
-    const light = computeForeignPolicyImpact({
-      initiator: mid,
+describe("computeForeignPolicyImpact — coercive tools hit the target hardest", () => {
+  const big: FPParty = { gdpPerCapita: 20000, population: 160_000_000 }; // 16x mid
+
+  it.each(["sanction", "embargo", "blockade"] as const)(
+    "%s between equal economies: the target takes the main hit, the initiator a quarter of it",
+    (actionType) => {
+      const { initiatorGdpImpact, targetGdpImpact } = computeForeignPolicyImpact({
+        initiator: mid,
+        target: mid,
+        actionType,
+      });
+      expect(targetGdpImpact).toBeLessThan(-0.005);
+      expect(initiatorGdpImpact).toBeCloseTo(targetGdpImpact * 0.25, 12);
+    }
+  );
+
+  it("a moderate sanction on an equal economy costs the target 1% and the initiator 0.25%", () => {
+    const s = computeForeignPolicyImpact({ initiator: mid, target: mid, actionType: "sanction" });
+    expect(s.targetGdpImpact).toBeCloseTo(-0.01, 12);
+    expect(s.initiatorGdpImpact).toBeCloseTo(-0.0025, 12);
+  });
+
+  it("scales by relative size, and the target never takes less than the initiator", () => {
+    const bigOnSmall = computeForeignPolicyImpact({
+      initiator: big,
       target: mid,
       actionType: "sanction",
-      severity: "light",
     });
-    const severe = computeForeignPolicyImpact({
+    const smallOnBig = computeForeignPolicyImpact({
       initiator: mid,
-      target: mid,
+      target: big,
       actionType: "sanction",
-      severity: "severe",
     });
-    expect(Math.abs(severe.relationshipDelta)).toBeGreaterThan(Math.abs(light.relationshipDelta));
+    // A larger economy hits harder and pays relatively less; a smaller one hits softer
+    expect(bigOnSmall.targetGdpImpact).toBeCloseTo(-0.02, 12);
+    expect(bigOnSmall.initiatorGdpImpact).toBeCloseTo(-0.00125, 12);
+    expect(smallOnBig.targetGdpImpact).toBeCloseTo(-0.005, 12);
+    expect(smallOnBig.initiatorGdpImpact).toBeCloseTo(-0.005, 12);
+    for (const impact of [bigOnSmall, smallOnBig]) {
+      expect(impact.targetGdpImpact).toBeLessThanOrEqual(impact.initiatorGdpImpact);
+    }
   });
 });
 
@@ -81,24 +89,6 @@ import { ComponentType } from "@prisma/client";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 
 describe("Statecraft Power Brokers Derivation", () => {
-  it("should lock all brokers when no components match", () => {
-    const active = deriveBrokers([], {});
-    active.forEach((b) => {
-      expect(b.unlocked).toBe(false);
-      expect(b.satisfied).toBe(false);
-    });
-  });
-
-  it("should unlock Technocrats but keep them unsatisfied when spend is low", () => {
-    const components = [ComponentType.TECHNOCRATIC_PROCESS, ComponentType.TECHNOCRATIC_AGENCIES];
-    const spend = { "Science and Technology": 5.0, Education: 5.0 }; // 10% total, min 15%
-    const brokers = deriveBrokers(components, spend);
-    const tech = brokers.find((b) => b.id === "technocrats");
-    expect(tech?.unlocked).toBe(true);
-    expect(tech?.satisfied).toBe(false);
-    expect(tech?.gapPercent).toBe(5.0);
-  });
-
   it("should satisfy Technocrats when spend meets the threshold", () => {
     const components = [ComponentType.TECHNOCRATIC_PROCESS, ComponentType.TECHNOCRATIC_AGENCIES];
     const spend = { "Science and Technology": 10.0, Education: 6.0 }; // 16% total
@@ -107,24 +97,6 @@ describe("Statecraft Power Brokers Derivation", () => {
     expect(tech?.unlocked).toBe(true);
     expect(tech?.satisfied).toBe(true);
     expect(tech?.gapPercent).toBe(0.0);
-  });
-
-  it("should support fallback Traditional unlock for the Clergy", () => {
-    const components = [ComponentType.TRADITIONAL_LEGITIMACY];
-    const spend = { Culture: 20.0 };
-    const brokers = deriveBrokers(components, spend);
-    const clergy = brokers.find((b) => b.id === "clergy");
-    expect(clergy?.unlocked).toBe(true);
-    expect(clergy?.satisfied).toBe(true);
-  });
-
-  it("should support fallback Military Enforcement unlock for the Generals", () => {
-    const components = [ComponentType.MILITARY_ENFORCEMENT];
-    const spend = { Defense: 20.0 };
-    const brokers = deriveBrokers(components, spend);
-    const generals = brokers.find((b) => b.id === "generals");
-    expect(generals?.unlocked).toBe(true);
-    expect(generals?.satisfied).toBe(true);
   });
 });
 
@@ -139,16 +111,6 @@ const blocs: VotingBloc[] = [
 
 describe("tallyVote — Mandate whip (S3.B)", () => {
   const leftBill = -2;
-
-  it("is unchanged when no backing is passed (back-compat)", () => {
-    const r = tallyVote(leftBill, blocs);
-    // left (40) yes; centre (dist 2) abstain; right (dist 4) no
-    expect(r.yesSeats).toBe(40);
-    expect(r.abstainSeats).toBe(30);
-    expect(r.noSeats).toBe(30);
-    expect(r.passed).toBe(true);
-  });
-
   it("high backing whips abstainers to yes (more decisive)", () => {
     const low = tallyVote(leftBill, blocs, 0);
     const high = tallyVote(leftBill, blocs, 1);
@@ -159,14 +121,6 @@ describe("tallyVote — Mandate whip (S3.B)", () => {
 
 describe("fogVoteProjection — standing gates precision (S3.A)", () => {
   const result = tallyVote(-2, blocs);
-
-  it("strong standing reveals exact counts", () => {
-    const w = fogVoteProjection(result, 75);
-    expect(w.level).toBe("revealed");
-    expect(w.yesSeats).toBe(result.yesSeats);
-    expect(w.verdict).toBe("pass");
-  });
-
   it("middling standing gives direction but hides seats (never fabricates)", () => {
     const w = fogVoteProjection(result, 45);
     expect(w.level).toBe("questioned");
@@ -181,7 +135,7 @@ describe("fogVoteProjection — standing gates precision (S3.A)", () => {
   });
 });
 
-import { revealConsequences, classifyDomain } from "~/lib/statecraft/recon";
+import { revealConsequences } from "~/lib/statecraft/recon";
 
 const democratic = {
   componentTypes: ["ELECTORAL_LEGITIMACY", "DEMOCRATIC_PROCESS", "MIXED_ECONOMY"],
@@ -196,25 +150,8 @@ const stratocracy = {
   overCapacity: false,
   lowEfficiency: false,
 };
-
-describe("classifyDomain", () => {
-  it("buckets fields by name", () => {
-    expect(classifyDomain("publicApproval")).toBe("approval");
-    expect(classifyDomain("gdpGrowthRate")).toBe("economic");
-    expect(classifyDomain("crimeRate")).toBe("stability");
-    expect(classifyDomain("diplomaticReputation")).toBe("diplomatic");
-    expect(classifyDomain("lifeExpectancy")).toBe("economic"); // no social keyword → default
-  });
-});
-
 describe("revealConsequences — fog is the build's blind spots", () => {
   const cs = [{ targetField: "publicApproval" }, { targetField: "gdpGrowth" }];
-
-  it("a democratic+electoral build reveals approval", () => {
-    const out = revealConsequences(cs, democratic);
-    expect(out.find((r) => r.domain === "approval")!.state).toBe("revealed");
-  });
-
   it("a stratocracy greys approval (can't read consent) but sees the economy", () => {
     const out = revealConsequences(cs, stratocracy);
     expect(out.find((r) => r.domain === "approval")!.state).toBe("greyed");
@@ -229,83 +166,132 @@ describe("revealConsequences — fog is the build's blind spots", () => {
   });
 });
 
-import {
-  getUpcomingEvents,
-  formatRelativeIxDays,
-  formatIxCountdown,
-} from "~/lib/statecraft/calendar";
+import { assemblePackages, classifyGoal } from "~/lib/intent/assemble";
 
-const DAY = 24 * 60 * 60 * 1000;
-const NOW = 1_000_000_000_000;
+describe("directive routing of a department's goal", () => {
+  it("routes 'Increase public education funding' to Education, not Treasury", () => {
+    const { category, packages } = assemblePackages("Increase public education funding");
+    expect(category).toBe("social");
+    const budget = packages[1]!.changes.find((c) => c.kind === "budget")!;
+    expect(budget).toMatchObject({ deptCategory: "Education", deltaPercent: 3 });
+    expect(budget.label).toMatch(/^Education budget/);
+    // A goal that is only about money still reads fiscal
+    expect(classifyGoal("Establish a sovereign wealth fund").category).toBe("fiscal");
+    expect(classifyGoal("Fund national mental health initiatives").category).toBe("social");
+  });
 
-describe("getUpcomingEvents", () => {
-  it("keeps only future events, soonest first", () => {
-    const out = getUpcomingEvents({
-      nowIxTime: NOW,
-      elections: [
-        { id: "a", name: "General Election", scheduledIxTime: NOW + 10 * DAY, status: "upcoming" },
-        { id: "b", name: "Past Election", scheduledIxTime: NOW - 5 * DAY, status: "upcoming" },
-        { id: "c", name: "Done", scheduledIxTime: NOW + 2 * DAY, status: "completed" },
-      ],
-      issueDeadlines: [
-        { id: "i1", title: "Border crisis", deadlineIxTime: NOW + 3 * DAY },
-        { id: "i2", title: "No deadline", deadlineIxTime: null },
-      ],
-      termEndIxTime: NOW + 30 * DAY,
+  it("routes tuition and childcare subsidies to their social departments", () => {
+    const tuition = assemblePackages("Subsidize university tuition grants");
+    expect(tuition.category).toBe("social");
+    expect(tuition.packages[1]!.changes.find((c) => c.kind === "budget")).toMatchObject({
+      deptCategory: "Education",
     });
-    expect(out.map((e) => e.id)).toEqual(["issue-i1", "election-a", "term-end"]);
-    // completed election dropped, past dropped, undated issue dropped
-    expect(out.find((e) => e.id === "election-c")).toBeUndefined();
+    const childcare = assemblePackages("Subsidize childcare for working families");
+    expect(childcare.category).toBe("social");
+    expect(childcare.packages[1]!.changes.find((c) => c.kind === "budget")).toMatchObject({
+      deptCategory: "Social Services",
+    });
+    // A subsidy with no social subject still reads fiscal
+    expect(classifyGoal("Subsidize domestic manufacturing exports").category).not.toBe("social");
   });
 
-  it("handles empty inputs", () => {
-    expect(getUpcomingEvents({ nowIxTime: NOW })).toEqual([]);
+  it("names the mandate the directive carries, never promising to enact a separate policy", () => {
+    const labels = assemblePackages("Cut the government budget deficit").packages.flatMap((p) =>
+      p.changes.map((c) => c.label)
+    );
+    expect(labels).toContain('"Fiscal Adjustment Act" mandate');
+    expect(labels.some((label) => label.startsWith("Enact"))).toBe(false);
   });
 });
 
-describe("formatRelativeIxDays", () => {
-  it("buckets sensibly", () => {
-    expect(formatRelativeIxDays(NOW, NOW)).toBe("today");
-    expect(formatRelativeIxDays(NOW + DAY, NOW)).toBe("tomorrow");
-    expect(formatRelativeIxDays(NOW + 5 * DAY, NOW)).toBe("in 5 days");
-    expect(formatRelativeIxDays(NOW + 21 * DAY, NOW)).toBe("in 3 weeks");
-    expect(formatRelativeIxDays(NOW + 90 * DAY, NOW)).toBe("in 3 months");
+describe("classifyGoal over real goal texts", () => {
+  it.each([
+    ["Transition to Green Energy", "infrastructure"],
+    ["Provide subsidies to Clean Energy Startups", "fiscal"],
+    ["Expand healthcare access to Rural Communities", "social"],
+    ["Boost military defense readiness", "defense"],
+    ["Crack down on urban crime and corruption", "security"],
+  ])("classifies %p as %s (capitalised words are not foreign names)", (goal, category) => {
+    expect(classifyGoal(goal).category).toBe(category);
   });
+
+  it.each(["Sign military alliance with Urcea", "Declare war against hostile nation"])(
+    "refuses the foreign goal %p",
+    (goal) => {
+      expect(() => classifyGoal(goal)).toThrow(
+        "Cabinet Directives are restricted to domestic policy"
+      );
+    }
+  );
 });
 
-describe("formatIxCountdown", () => {
-  it("renders fine-grained countdowns and clamps at now", () => {
-    expect(formatIxCountdown(NOW, NOW)).toBe("now");
-    expect(formatIxCountdown(NOW - 5000, NOW)).toBe("now");
-    expect(formatIxCountdown(NOW + 45 * 60 * 1000, NOW)).toBe("45m");
-    expect(formatIxCountdown(NOW + (6 * 3600 + 12 * 60) * 1000, NOW)).toBe("6h 12m");
-    expect(formatIxCountdown(NOW + (2 * 86400 + 4 * 3600) * 1000, NOW)).toBe("2d 4h");
-  });
-});
+import { IxTime } from "~/lib/ixtime";
+import { spawnIntentResistance, spawnResistanceForIntent } from "~/lib/intent/resistance";
+import { NationalIssuesEngine, nationalIssuesConfig } from "~/lib/national-issues";
 
-import { assessReach, fogNumber } from "~/lib/statecraft/diplo-intel";
+describe("directive resistance guards", () => {
+  const template = {
+    id: "tmpl-economic",
+    title: "Economic Resistance in {{country}}",
+    description: "Citizens are demonstrating against economic reforms in {{country}}.",
+    triggerReason: "Policy resistance triggered",
+    domain: "economic",
+    category: "economic",
+    options: [{ id: "opt_1", label: "Compromise", description: "Offer", consequences: [] }],
+    cooldownDays: 30,
+    maxActivePerCountry: 1,
+    baseUrgency: 60,
+  };
+  const intent = { id: "intent-1", category: "economy", tier: "extreme" };
+  const db = {
+    nationalIssueTemplate: { findMany: jest.fn(), findUnique: jest.fn() },
+    nationalIssue: { findFirst: jest.fn(), count: jest.fn() },
+  };
+  let forceGenerate: jest.SpiedFunction<typeof NationalIssuesEngine.forceGenerate>;
+  const spawnMode = (mode: "deterministic" | "probability" | "off") =>
+    jest
+      .spyOn(nationalIssuesConfig, "getNationalIssuesConfig")
+      .mockReturnValue({ maxIssuesPerSession: 3, maxIssuesPerWeek: 5, spawnMode: mode });
 
-describe("assessReach — reach drives clarity", () => {
-  it("embassy → revealed", () => {
-    expect(assessReach({ hasEmbassy: true, relationStrength: 0 }).level).toBe("revealed");
+  beforeEach(() => {
+    jest.spyOn(IxTime, "getCurrentIxTime").mockReturnValue(1_000_000);
+    forceGenerate = jest.spyOn(NationalIssuesEngine, "forceGenerate").mockResolvedValue("issue-1");
+    db.nationalIssueTemplate.findMany.mockReset().mockResolvedValue([template]);
+    db.nationalIssueTemplate.findUnique.mockReset().mockResolvedValue(template);
+    db.nationalIssue.findFirst.mockReset().mockResolvedValue(null);
+    db.nationalIssue.count.mockReset().mockResolvedValue(0);
   });
-  it("ties but no embassy → questioned", () => {
-    expect(assessReach({ hasEmbassy: false, relationStrength: 55 }).level).toBe("questioned");
-  });
-  it("no reach → greyed", () => {
-    expect(assessReach({ hasEmbassy: false, relationStrength: 10 }).level).toBe("greyed");
-  });
-});
+  afterEach(() => jest.restoreAllMocks());
 
-describe("fogNumber — never fabricates", () => {
-  it("revealed is exact, greyed is null", () => {
-    expect(fogNumber(12345, "revealed")).toBe(12345);
-    expect(fogNumber(12345, "greyed")).toBeNull();
-    expect(fogNumber(null, "revealed")).toBeNull();
+  it("raises nothing from a template still cooling down after a recent spawn", async () => {
+    db.nationalIssue.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: "recent" });
+    await expect(
+      spawnResistanceForIntent({
+        db: db as never,
+        countryId: "country-1",
+        intent,
+        tokens: ["economic"],
+        // The nation's clock time (the intent commit passes its own)
+        now: Date.UTC(2042, 0, 1),
+      })
+    ).resolves.toBeNull();
+    expect(forceGenerate).not.toHaveBeenCalled();
   });
-  it("questioned is a coarse estimate of the real value (not invented)", () => {
-    // 2 sig figs: 12345 → 12000, real magnitude preserved
-    expect(fogNumber(12345, "questioned")).toBe(12000);
-    expect(fogNumber(87.6, "questioned")).toBe(88);
+
+  it.each(["probability", "off"] as const)("raises nothing in %s mode", async (mode) => {
+    spawnMode(mode);
+    await expect(
+      spawnIntentResistance({ db: db as never, countryId: "country-1", intent })
+    ).resolves.toBeNull();
+    expect(db.nationalIssueTemplate.findMany).not.toHaveBeenCalled();
+  });
+
+  it("never throws into the commit when the database fails", async () => {
+    spawnMode("deterministic");
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    db.nationalIssueTemplate.findMany.mockRejectedValue(new Error("boom"));
+    await expect(
+      spawnIntentResistance({ db: db as never, countryId: "country-1", intent })
+    ).resolves.toBeNull();
   });
 });

@@ -4,7 +4,7 @@
 
 import { globalCache } from "~/lib/cache";
 
-export type CacheType = "critical" | "standard" | "historical" | "static";
+type CacheType = "critical" | "standard" | "historical" | "static";
 
 // TTL mapping by CacheType (in seconds, for globalCache)
 const TTL_BY_TYPE: Record<CacheType, number> = {
@@ -112,36 +112,3 @@ class IntelligenceCacheFacade {
 
 // Global cache instance — no Map, no setInterval
 export const intelligenceCache = new IntelligenceCacheFacade();
-
-/**
- * Cache utilities for common intelligence patterns
- */
-export const CacheUtils = {
-  generateKey: (type: string, id: string, suffix?: string): string => {
-    return suffix ? `${type}:${id}:${suffix}` : `${type}:${id}`;
-  },
-
-  setWithInvalidation: (key: string, data: any, type: CacheType, _countryId?: string): void => {
-    intelligenceCache.set(key, data, type);
-  },
-
-  setBatch: (entries: Array<{ key: string; data: any; type: CacheType }>): void => {
-    entries.forEach(({ key, data, type }) => {
-      intelligenceCache.set(key, data, type);
-    });
-  },
-
-  getWithFallback: async <T>(
-    key: string,
-    fallbackFn: () => Promise<T>,
-    type: CacheType = "standard"
-  ): Promise<T> => {
-    const cached = intelligenceCache.get(key);
-    if (cached !== null) {
-      return cached;
-    }
-    const fresh = await fallbackFn();
-    intelligenceCache.set(key, fresh, type);
-    return fresh;
-  },
-};

@@ -2,6 +2,7 @@
 // Public dispatchers routing requests across PostgreSQL (IxWiki) and HTTP (IIWiki/AltHistory).
 
 import { parseInfobox, parseCoordTemplate } from "~/lib/wiki-os/transformers/infobox-parser";
+import { matchHeading } from "~/lib/wiki-os/wikitext/line-patterns";
 import {
   type WikiSource,
   type WikiSearchResult,
@@ -22,7 +23,6 @@ import {
   ixwikiGetWikitext,
   ixwikiSearch,
   ixwikiRecentChanges,
-  ixwikiGetHistory,
   ixwikiGetUserContribs,
   ixwikiGetUserCreatedPages,
   ixwikiGetUserInfo,
@@ -33,21 +33,16 @@ import {
   ixwikiResolveRedirect,
   ixwikiGetRevisionWikitext,
   ixwikiGetCurrentRevMeta,
-  ixwikiGetNamespacedWikitext,
   ixwikiSearchTemplates,
   ixwikiFullTextSearch,
   ixwikiGetParentCategories,
   ixwikiGetCategoryInfo,
-  ixwikiGetPageProps,
-  ixwikiGetPageProtection,
   ixwikiGetImageMeta,
-  ixwikiGetPageLog,
+  ixwikiGetPageImages,
 } from "./pg-reader";
 import {
-  iiwikiGetWikitext,
-  iiwikiSearch,
-  althistoryGetWikitext,
-  althistorySearch,
+  readSisterWikitext,
+  searchSisterWiki,
   fetchPageImagesHttp as httpGetPageImages,
   httpGetCategoryMembers,
 } from "./http-reader";
@@ -58,7 +53,10 @@ export { getImageUrl } from "~/lib/wiki-os/transformers/image-url";
 const wikitextPromises = new Map<string, Promise<WikiArticle | null>>();
 
 /**
- * Get raw article wikitext. Uses PostgreSQL (<2ms) for ixwiki, HTTP for iiwiki/althistory.
+ * Get raw article wikitext. Uses PostgreSQL (<2ms) for ixwiki, HTTP for iiwiki/althistory. Null only for a missing
+ * page: a sister wiki that cannot be reached throws WikiUnavailableError (upstream-guard.ts), and so does everything
+ * below that reads a sister page through it. Callers outside WikiOS's read surfaces that read a missing page and an
+ * unreachable wiki alike wrap the call in `unlessUnavailable`.
  */
 export async function getArticleWikitext(
   title: string,
@@ -75,8 +73,7 @@ export async function getArticleWikitext(
   if (!promise) {
     promise = (async () => {
       try {
-        if (wiki === "althistory") return await althistoryGetWikitext(title);
-        return await iiwikiGetWikitext(title);
+        return await readSisterWikitext(wiki, title);
       } finally {
         wikitextPromises.delete(key);
       }
@@ -88,7 +85,8 @@ export async function getArticleWikitext(
 
 /**
  * Get article intro (first paragraph, stripped of markup).
- * Parses wikitext directly — no PHP processing needed.
+ * Parses wikitext directly — no PHP processing needed. Null for a missing page; an unreachable sister wiki throws
+ * WikiUnavailableError (`getArticleWikitext`).
  */
 export async function getArticleIntro(
   title: string,
@@ -108,7 +106,8 @@ export async function getArticleIntro(
 }
 
 /**
- * Search wiki pages by title prefix. Fast path via PostgreSQL (<1.5ms).
+ * Search wiki pages by title prefix. Fast path via PostgreSQL (<1.5ms). A sister wiki with no match answers an empty
+ * list; one that cannot be reached throws WikiUnavailableError.
  */
 export async function searchPages(
   query: string,
@@ -130,8 +129,7 @@ export async function searchPages(
     }
     return ixwikiSearch(query, limit);
   }
-  if (wiki === "althistory") return althistorySearch(query, limit);
-  return iiwikiSearch(query, limit);
+  return searchSisterWiki(wiki, query, limit);
 }
 
 /**
@@ -155,35 +153,33 @@ export async function getPageSections(
 ): Promise<WikiSection[]> {
   const article = await getArticleWikitext(title, wiki);
   if (!article) return [];
+  return extractSectionsFromWikitext(article.wikitext);
+}
 
+/**
+ * The `== Heading ==` lines (levels 2 to 6) of `wikitext`, in order. A line at a time, without a regular
+ * expression: `/^(={2,6})\s*(.+?)\s*\1$/gm` read a line of `==` and a long blank run cubically many times
+ * over (4,000 blanks took 26 s).
+ */
+export function extractSectionsFromWikitext(wikitext: string): WikiSection[] {
   const sections: WikiSection[] = [];
-  const headingRegex = /^(={2,6})\s*(.+?)\s*\1$/gm;
-  let match;
-  let index = 0;
-
-  while ((match = headingRegex.exec(article.wikitext)) !== null) {
-    sections.push({
-      level: match[1]!.length,
-      title: match[2]!.trim(),
-      index: index++,
-    });
+  for (const line of wikitext.split("\n")) {
+    const heading = matchHeading(line, 2, true);
+    if (!heading) continue;
+    sections.push({ level: heading.level, title: heading.title, index: sections.length });
   }
-
   return sections;
 }
 
 /**
- * Get recent changes from IxWiki.
+ * Get recent changes from IxWiki: the edits that went live, plus the parked ones (flagged) when
+ * `includeParked`.
  */
-export async function getRecentChanges(limit: number = 20): Promise<WikiRecentChange[]> {
-  return ixwikiRecentChanges(limit);
-}
-
-/**
- * Get page revision history via direct MySQL.
- */
-export async function getPageHistory(title: string, limit?: number, offset?: number) {
-  return ixwikiGetHistory(title, limit, offset);
+export async function getRecentChanges(
+  limit: number = 20,
+  options: { includeParked?: boolean } = {}
+): Promise<WikiRecentChange[]> {
+  return ixwikiRecentChanges(limit, options);
 }
 
 /**
@@ -199,14 +195,14 @@ export async function getUserContribs(
 }
 
 /**
- * Get all pages created by a user via direct MySQL.
+ * Get all pages created by a user from PostgreSQL.
  */
 export async function getUserCreatedPages(username: string, limit?: number) {
   return ixwikiGetUserCreatedPages(username, limit);
 }
 
 /**
- * Get user info via direct MySQL.
+ * Get user info from PostgreSQL.
  */
 export async function getUserInfo(username: string) {
   return ixwikiGetUserInfo(username);
@@ -246,7 +242,8 @@ export interface CategoryMembersResult {
 }
 
 /**
- * Get category members via PostgreSQL for IxWiki or HTTP bridge for sister wikis.
+ * Get category members via PostgreSQL for IxWiki or HTTP bridge for sister wikis. A sister wiki that cannot be
+ * reached throws WikiUnavailableError, never an empty list.
  */
 export async function getCategoryMembers(
   category: string,
@@ -332,21 +329,21 @@ export async function getCategoryMembers(
 }
 
 /**
- * Get site statistics via direct MySQL.
+ * Get site statistics from PostgreSQL.
  */
 export async function getSiteStats() {
   return ixwikiGetSiteStats();
 }
 
 /**
- * Get a random article title via direct MySQL.
+ * Get a random article title from PostgreSQL.
  */
 export async function getRandomPage() {
   return ixwikiGetRandomPage();
 }
 
 /**
- * Resolve redirects via direct MySQL (up to 5 hops).
+ * Resolve a redirect from Postgres (up to 2 hops): the page to show plus the target fragment.
  */
 export async function resolveRedirect(title: string) {
   return ixwikiResolveRedirect(title);
@@ -360,28 +357,21 @@ export async function getRevisionWikitext(ref: string) {
 }
 
 /**
- * Get current revision metadata (revid + timestamp) via direct MySQL.
+ * Get current revision metadata (revid + timestamp) from PostgreSQL.
  */
 export async function getCurrentRevMeta(title: string) {
   return ixwikiGetCurrentRevMeta(title);
 }
 
 /**
- * Get wikitext from any namespace via direct MySQL.
- */
-export async function getNamespacedWikitext(title: string, namespace: number) {
-  return ixwikiGetNamespacedWikitext(title, namespace);
-}
-
-/**
- * Search templates by prefix via direct MySQL.
+ * Search templates by prefix from PostgreSQL.
  */
 export async function searchTemplates(query: string, limit?: number) {
   return ixwikiSearchTemplates(query, limit);
 }
 
 /**
- * Full-text search via MySQL searchindex table.
+ * Full-text search of IxWiki's articles (PostgreSQL).
  */
 export async function fullTextSearch(
   query: string,
@@ -393,31 +383,17 @@ export async function fullTextSearch(
 }
 
 /**
- * Get parent categories via direct MySQL.
+ * Get parent categories from PostgreSQL.
  */
 export async function getParentCategories(title: string) {
   return ixwikiGetParentCategories(title);
 }
 
 /**
- * Get category info with subcategories via direct MySQL.
+ * Get category info with subcategories from PostgreSQL.
  */
 export async function getCategoryInfo(category: string) {
   return ixwikiGetCategoryInfo(category);
-}
-
-/**
- * Get page properties via direct MySQL.
- */
-export async function getPageProps(pageId: number) {
-  return ixwikiGetPageProps(pageId);
-}
-
-/**
- * Get page protection status via direct MySQL.
- */
-export async function getPageProtection(title: string) {
-  return ixwikiGetPageProtection(title);
 }
 
 /**
@@ -445,13 +421,6 @@ export async function getImageMeta(filename: string) {
 }
 
 /**
- * Get page action log (stub — returns [] until wikiLog is implemented).
- */
-export async function getPageLog(title: string, limit?: number) {
-  return ixwikiGetPageLog(title, limit);
-}
-
-/**
  * Extract coordinates from article wikitext.
  */
 export async function getCoordinates(
@@ -464,7 +433,10 @@ export async function getCoordinates(
 }
 
 /**
- * Get images referenced on a wiki page with thumbnail URLs.
+ * Get images referenced on a wiki page with thumbnail URLs. An IxWiki page's come from Postgres (its
+ * redirect followed, as MediaWiki's own image query did); a sister wiki's page asks its own wiki, and
+ * no title is ever tried on a wiki it does not belong to. Null means no images; an unreachable sister wiki
+ * throws WikiUnavailableError.
  */
 export async function getPageImages(
   title: string,
@@ -472,13 +444,17 @@ export async function getPageImages(
     excludePatterns?: RegExp[];
     thumbWidth?: number;
     limit?: number;
+    wiki?: WikiSource;
   }
 ) {
-  return httpGetPageImages(title, opts);
+  const wiki = opts?.wiki ?? "ixwiki";
+  if (wiki !== "ixwiki") return httpGetPageImages(title, wiki, opts);
+  const { title: shown } = await ixwikiResolveRedirect(title);
+  return ixwikiGetPageImages(shown, opts);
 }
 
 /**
- * Search with fallback: try ixwiki first, then iiwiki.
+ * Search with fallback: try ixwiki first, then iiwiki (which throws WikiUnavailableError when it cannot be reached).
  */
 export async function searchWithFallback(
   query: string,

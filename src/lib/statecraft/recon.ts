@@ -10,17 +10,17 @@
  * Pure: no React, no DB. Caller passes the country's active components/departments.
  */
 
-export type ReconState = "revealed" | "greyed" | "questioned";
-export type ReconDomain = "approval" | "economic" | "stability" | "diplomatic" | "social";
+type ReconState = "revealed" | "greyed" | "questioned";
+type ReconDomain = "approval" | "economic" | "stability" | "diplomatic" | "social";
 
-export interface ReconInput {
+interface ReconInput {
   componentTypes: string[]; // active GovernmentComponent.componentType values
   departmentCategories: string[]; // active GovernmentDepartment.category values
   overCapacity: boolean; // recon spend exceeded the weekly Capacity pool
   lowEfficiency: boolean; // governmentEffectiveness below threshold
 }
 
-export interface ReconReveal {
+interface ReconReveal {
   targetField: string;
   domain: ReconDomain;
   state: ReconState;
@@ -132,7 +132,7 @@ export function revealConsequences(
         domain,
         state: "questioned",
         reason: input.overCapacity
-          ? "Civil service over capacity — estimate may be inaccurate"
+          ? "Executive bandwidth over capacity. Estimate may be inaccurate"
           : "Low government efficiency — estimate may be inaccurate",
       };
     }

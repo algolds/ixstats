@@ -8,19 +8,21 @@
  * Much lighter than MapContainer (2-4 sources vs 10+).
  */
 
+import { useEffect } from "react";
+import { useReducedMotion } from "motion/react";
 import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
 
-// Extracted subcomponents, hooks, and helpers
+import { geometryBounds } from "~/components/maps/widgets/embed-map-layers";
 import { useCountryMapEmbedState } from "~/components/maps/widgets/hooks/useCountryMapEmbedState";
 import { useCountryMapEmbedLayers } from "~/components/maps/widgets/hooks/useCountryMapEmbedLayers";
 
 /** A clicked map feature, identified by kind + record id. */
-export interface CountryMapFeature {
+interface CountryMapFeature {
   kind: "city" | "subdivision";
   id: string;
 }
 
-export interface CountryMapEmbedProps {
+interface CountryMapEmbedProps {
   countryId: string;
   height?: string;
   className?: string;
@@ -35,7 +37,12 @@ export interface CountryMapEmbedProps {
   boundsPadding?: number;
   highlightCountryIds?: string[];
   highlightCountryNames?: string[];
+  /** Fly the map to one subdivision (fit its bounds) or one point, once the map is ready. */
+  focus?: MapFocus | null;
 }
+
+export type MapFocus =
+  { kind: "subdivision"; id: string } | { kind: "point"; lng: number; lat: number };
 
 export function CountryMapEmbed({
   countryId,
@@ -51,6 +58,7 @@ export function CountryMapEmbed({
   boundsPadding = 40,
   highlightCountryIds,
   highlightCountryNames,
+  focus,
 }: CountryMapEmbedProps) {
   const state = useCountryMapEmbedState({
     countryId,
@@ -71,23 +79,36 @@ export function CountryMapEmbed({
     boundsPadding,
   });
 
-  // ── Loading state ──
+  const reduceMotion = useReducedMotion();
+  const { mapRef, mapReady, subdivisions } = state;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!focus || !map || !mapReady) return;
+    const duration = reduceMotion ? 0 : 600;
+    if (focus.kind === "point") {
+      map.flyTo({ center: [focus.lng, focus.lat], zoom: 7, duration });
+      return;
+    }
+    const sub = subdivisions.find((s) => s.id === focus.id);
+    const bounds = sub?.geometry ? geometryBounds(sub.geometry) : null;
+    if (bounds) map.fitBounds(bounds, { padding: 40, duration });
+  }, [focus, mapReady, mapRef, reduceMotion, subdivisions]);
+
   if (state.isLoading) {
     return (
-      <div className={`bg-muted flex items-center justify-center ${height} ${className}`}>
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+      <div className={`bg-fill-3 flex items-center justify-center ${height} ${className}`}>
+        <Loader2 className="text-label-secondary h-5 w-5 animate-spin" />
       </div>
     );
   }
 
-  // ── No geometry fallback ──
   if (!state.hasGeometry) {
     return (
       <div
-        className={`bg-muted flex flex-col items-center justify-center gap-2 ${height} ${className}`}
+        className={`bg-fill-3 flex flex-col items-center justify-center gap-2 ${height} ${className}`}
       >
-        <MapPin className="text-muted-foreground h-6 w-6" />
-        <span className="text-muted-foreground text-xs">No map data available</span>
+        <MapPin className="text-label-secondary h-6 w-6" />
+        <span className="text-label-secondary text-footnote">No map data available</span>
       </div>
     );
   }
@@ -99,10 +120,9 @@ export function CountryMapEmbed({
         className="absolute inset-0"
         style={{ width: "100%", height: "100%" }}
       />
-      // oxlint-disable-next-line
       {!state.mapReady && (
-        <div className="bg-muted absolute inset-0 flex items-center justify-center">
-          <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+        <div className="bg-fill-3 absolute inset-0 flex items-center justify-center">
+          <Loader2 className="text-label-secondary h-5 w-5 animate-spin" />
         </div>
       )}
     </div>

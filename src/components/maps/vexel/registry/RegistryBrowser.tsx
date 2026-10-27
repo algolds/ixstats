@@ -1,8 +1,20 @@
 "use client";
-
-import React, { useState } from "react";
+import { SearchField } from "~/components/ui/search-field";
+import { Button } from "~/components/ui/button";
+import { useState } from "react";
 import { api } from "~/trpc/react";
 import AchievementCard from "./AchievementCard";
+import { Card } from "~/components/ui/card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { LoadingBlock } from "../LoadingBlock";
+
+const REGISTRY_TABS = [
+  { value: "ALL", label: "All" },
+  { value: "COUNTRY", label: "Country" },
+  { value: "DYNASTY", label: "Dynasty" },
+  { value: "INSTITUTION", label: "Institution" },
+  { value: "CHARACTER", label: "Character" },
+] as const;
 
 export default function RegistryBrowser() {
   const [activeTab, setActiveTab] = useState<
@@ -11,7 +23,6 @@ export default function RegistryBrowser() {
   const [search, setSearch] = useState("");
   const [limit, setLimit] = useState(16);
 
-  // Fetch from router
   const { data, isLoading } = api.heraldry.getRegistry.useQuery({
     subjectType: activeTab === "ALL" ? undefined : activeTab,
     limit,
@@ -20,7 +31,6 @@ export default function RegistryBrowser() {
   const achievements = data?.items ?? [];
   const totalCount = data?.total ?? 0;
 
-  // Client side search filter
   const filteredAchievements = achievements.filter((ach) => {
     if (!search) return true;
     const query = search.toLowerCase();
@@ -33,48 +43,33 @@ export default function RegistryBrowser() {
 
   return (
     <div className="space-y-6">
-      {/* Sub-navigation & search toolbar */}
-      <div className="flex flex-col justify-between gap-4 rounded-xl border border-white/5 bg-zinc-900/60 p-4 backdrop-blur-md md:flex-row md:items-center">
-        {/* Filter Tabs */}
-        <div className="flex flex-wrap gap-1 text-xs">
-          {(["ALL", "COUNTRY", "DYNASTY", "INSTITUTION", "CHARACTER"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => {
-                setActiveTab(tab);
-                setLimit(16); // reset
-              }}
-              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                activeTab === tab
-                  ? "border-amber-500/20 bg-amber-500/10 text-amber-400"
-                  : "border-transparent bg-transparent text-zinc-400 hover:text-zinc-200"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+      <Card className="flex flex-col justify-between gap-4 p-4 md:flex-row md:items-center">
+        <SegmentedControl
+          options={[...REGISTRY_TABS]}
+          value={activeTab}
+          onValueChange={(tab) => {
+            setActiveTab(tab as (typeof REGISTRY_TABS)[number]["value"]);
+            setLimit(16); // reset
+          }}
+          size="sm"
+          asTabs
+        />
 
-        {/* Search */}
-        <div className="w-full text-xs md:w-72">
-          <input
-            type="text"
+        <div className="text-footnote w-full md:w-72">
+          <SearchField
+            aria-label="Search the registry"
             placeholder="Search by title or blazon..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-zinc-950 p-2 text-zinc-300 focus:border-amber-500 focus:outline-none"
+            onClear={() => setSearch("")}
           />
         </div>
-      </div>
+      </Card>
 
-      {/* Grid List */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-32 text-xs text-zinc-500">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-          <span>Consulting the Heraldic rolls...</span>
-        </div>
+        <LoadingBlock message="Consulting the Heraldic rolls..." />
       ) : filteredAchievements.length === 0 ? (
-        <div className="rounded-xl border border-white/5 bg-zinc-900/10 p-20 text-center text-xs text-zinc-500 italic">
+        <div className="border-separator bg-fill-3 text-label-secondary rounded-row text-footnote border p-20 text-center italic">
           No achievements registered.
         </div>
       ) : (
@@ -85,15 +80,11 @@ export default function RegistryBrowser() {
             ))}
           </div>
 
-          {/* Load More */}
           {totalCount > limit && (
             <div className="flex justify-center pt-4">
-              <button
-                onClick={() => setLimit((prev) => prev + 16)}
-                className="rounded-lg border border-white/10 bg-zinc-900/40 px-6 py-2 text-xs font-bold tracking-wider text-zinc-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none hover:border-amber-500/20 hover:bg-zinc-800/40 hover:text-amber-400"
-              >
+              <Button variant="outline" size="sm" onClick={() => setLimit((prev) => prev + 16)}>
                 Load More Registry Items ({totalCount - limit} remaining)
-              </button>
+              </Button>
             </div>
           )}
         </div>

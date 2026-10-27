@@ -1,0 +1,112 @@
+/**
+ * How the card surfaces name players (card sheets, showcases, trades and their history), many at once, by one rule
+ * (`playerDisplayName`). One read of the players, then one of the shown claimed ixwiki names and one of the nations of
+ * those with no stored handle, however many rows name them; only the handle chain's resolve-back check runs per player.
+ */
+import { namesOfUsers, type ClaimedName } from "~/lib/identity/wiki-names";
+import { db } from "~/server/db";
+import { loadPassportHandles, type PassportHandleUser } from "./identity.passport-handle";
+import { LISTED_NATION_WHERE, NATIONS_LARGEST_FIRST } from "./identity.selects";
+
+/** A player as the card surfaces name them. */
+export interface PlayerName {
+  /** Their passport handle (`loadPassportHandle`), for a Passport link: it may be their Clerk id, which still resolves. */
+  handle: string;
+  /** What other players read (`playerDisplayName`); null reads "a player". */
+  displayName: string | null;
+}
+
+/**
+ * The one rule naming a player to others: "@handle" while their passport handle is a real name (anything but their
+ * own Clerk id, the chain's last link), else the nation they hold, else null ("a player").
+ */
+export function playerDisplayName(player: {
+  handle: string;
+  clerkUserId: string;
+  nation: string | null;
+}): string | null {
+  if (player.handle !== player.clerkUserId) return `@${player.handle}`;
+  return player.nation || null;
+}
+
+/** The first value each user has, in the rows' order. */
+function firstPerUser(rows: ReadonlyArray<readonly [string | null, string]>): Map<string, string> {
+  const first = new Map<string, string>();
+  for (const [userId, value] of rows) {
+    if (userId && !first.has(userId)) first.set(userId, value);
+  }
+  return first;
+}
+
+/**
+ * The first approved claim each player shows (as `loadClaimedWikiName` takes it); a hidden claim names nobody, and a
+ * failed read names none.
+ */
+async function claimedWikiNames(userIds: readonly string[]): Promise<Map<string, string>> {
+  if (userIds.length === 0) return new Map();
+  const names = await namesOfUsers(db, userIds, { shown: true }).catch(
+    () => new Map<string, ClaimedName[]>()
+  );
+  return new Map(
+    [...names].flatMap(([userId, [first]]): Array<[string, string]> =>
+      first ? [[userId, first.name]] : []
+    )
+  );
+}
+
+/** The nation each player's passport lists first (as `resolveIdentityNations` lists them); a failed read names none. */
+async function nationNames(userIds: readonly string[]): Promise<Map<string, string>> {
+  if (userIds.length === 0) return new Map();
+  const nations = await db.country
+    .findMany({
+      where: { ownerUserId: { in: [...userIds] }, ...LISTED_NATION_WHERE },
+      select: { ownerUserId: true, name: true },
+      orderBy: NATIONS_LARGEST_FIRST,
+    })
+    .catch(() => []);
+  return firstPerUser(nations.map((nation) => [nation.ownerUserId, nation.name] as const));
+}
+
+/** The name of each player with one of these ids; an id that names no player is left out. */
+export async function loadPlayerNames(
+  userIds: readonly string[]
+): Promise<Map<string, PlayerName>> {
+  const ids = [...new Set(userIds)];
+  if (ids.length === 0) return new Map();
+  const users: PassportHandleUser[] = await db.user.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, clerkUserId: true, handle: true, forumUsername: true },
+  });
+  // Only a player with no stored handle reaches the wiki name, or past it to the Clerk id and their nation.
+  const unhandled = users.filter((u) => !u.handle).map((u) => u.id);
+  const [wikiNames, nations] = await Promise.all([
+    claimedWikiNames(unhandled),
+    nationNames(unhandled),
+  ]);
+  const handles = await loadPassportHandles(users, wikiNames);
+  return new Map(
+    users.map((user, i): [string, PlayerName] => {
+      const handle = handles[i]!;
+      const nation = nations.get(user.id) ?? null;
+      return [
+        user.id,
+        {
+          handle,
+          displayName: playerDisplayName({ handle, clerkUserId: user.clerkUserId, nation }),
+        },
+      ];
+    })
+  );
+}
+
+/**
+ * A player named for staff: the name other players read, else their passport handle (staff need to know who it is
+ * even when other players read "a player"). No Vault cards switch applies to staff.
+ */
+export const staffName = (name: PlayerName) => name.displayName ?? name.handle;
+
+/** Players named for staff, in one read (the card admin's queues, and the inscription queue's `StaffNames`). */
+export async function staffNames(userIds: readonly string[]): Promise<Map<string, string>> {
+  const names = await loadPlayerNames(userIds);
+  return new Map([...names].map(([id, name]) => [id, staffName(name)]));
+}

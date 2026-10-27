@@ -3,14 +3,25 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  adminProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { validateNoXSS } from "~/lib/utils";
-import { createMessagingService } from "~/server/modules/messaging";
-import { notificationAPI } from "~/lib/notifications/api";
-import { getThinkPagesBroadcaster } from "~/server/websocket-server";
-import { forumBridge } from "~/server/modules/forum";
-import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
+import { MAX_MESSAGE_LENGTH } from "~/server/modules/messaging";
+import { messagingFor, mapMessagingErrors } from "./_service";
+
+/** A message body: bounded like a ThinkPages post, and refused (BAD_REQUEST) when it carries unsafe HTML. */
+const MessageContent = z
+  .string()
+  .min(1)
+  .max(MAX_MESSAGE_LENGTH)
+  .refine((content) => validateNoXSS(content).valid, {
+    message:
+      "Message contains potentially unsafe HTML. Please avoid using script tags, javascript: URLs, or event handlers.",
+  });
 
 export const messagesMessagingRouter = createTRPCRouter({
   /**
@@ -26,95 +37,84 @@ export const messagesMessagingRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
-      try {
-        const result = await messagingService.getConversationMessages(ctx.auth.userId, {
-          conversationId: input.conversationId,
-          limit: input.limit,
-          cursor: input.cursor,
-        });
-
-        const messages = result.messages.map((m: any) => ({
-          id: m.id,
-          conversationId: m.conversationId,
-          accountId: m.userId,
-          account: result.accountMap.get(m.userId) ?? {
-            id: m.userId,
-            username: m.userId,
-            displayName: "Unknown",
-            profileImageUrl: null,
-            accountType: "country" as const,
-          },
-          content: m.deletedAt ? "This message was deleted" : m.content,
-          messageType: m.messageType || "text",
-          replyToId: m.replyToId,
-          replyTo: m.replyTo
-            ? {
-                id: m.replyTo.id,
-                accountId: m.replyTo.userId,
-                content: m.replyTo.deletedAt ? "This message was deleted" : m.replyTo.content,
-                ixTimeTimestamp: m.replyTo.ixTimeTimestamp,
-              }
-            : null,
-          reactions: m.reactions
-            ? typeof m.reactions === "string"
-              ? JSON.parse(m.reactions)
-              : m.reactions
-            : {},
-          mentions: m.mentions
-            ? typeof m.mentions === "string"
-              ? JSON.parse(m.mentions)
-              : m.mentions
-            : [],
-          attachments: m.attachments
-            ? typeof m.attachments === "string"
-              ? JSON.parse(m.attachments)
-              : m.attachments
-            : [],
-          isSystem: Boolean(m.isSystem),
-          ixTimeTimestamp: m.ixTimeTimestamp,
-          createdAt: m.ixTimeTimestamp,
-          editedAt: m.editedAt,
-          deletedAt: m.deletedAt,
-          source: m.source || "thinkshare",
-          classification: m.classification,
-          priority: m.priority,
-          subject: m.subject,
-          readReceipts: (m.readReceipts || []).map((r: any) => ({
-            id: r.id,
-            accountId: r.userId,
-            readAt: r.readAt,
-          })),
-        }));
-
-        return { messages, nextCursor: result.nextCursor };
-      } catch (err: any) {
-        if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You are not a participant in this conversation",
+      return await mapMessagingErrors(
+        async () => {
+          const result = await messagingService.getConversationMessages(ctx.auth.userId, {
+            conversationId: input.conversationId,
+            limit: input.limit,
+            cursor: input.cursor,
           });
-        }
-        throw err;
-      }
+
+          const messages = result.messages.map((m: any) => ({
+            id: m.id,
+            conversationId: m.conversationId,
+            accountId: m.userId,
+            account: result.accountMap.get(m.userId) ?? {
+              id: m.userId,
+              username: m.userId,
+              displayName: "Unknown",
+              profileImageUrl: null,
+              accountType: "country" as const,
+            },
+            content: m.deletedAt ? "This message was deleted" : m.content,
+            messageType: m.messageType || "text",
+            replyToId: m.replyToId,
+            replyTo: m.replyTo
+              ? {
+                  id: m.replyTo.id,
+                  accountId: m.replyTo.userId,
+                  content: m.replyTo.deletedAt ? "This message was deleted" : m.replyTo.content,
+                  ixTimeTimestamp: m.replyTo.ixTimeTimestamp,
+                }
+              : null,
+            reactions: m.reactions
+              ? typeof m.reactions === "string"
+                ? JSON.parse(m.reactions)
+                : m.reactions
+              : {},
+            mentions: m.mentions
+              ? typeof m.mentions === "string"
+                ? JSON.parse(m.mentions)
+                : m.mentions
+              : [],
+            attachments: m.attachments
+              ? typeof m.attachments === "string"
+                ? JSON.parse(m.attachments)
+                : m.attachments
+              : [],
+            isSystem: Boolean(m.isSystem),
+            ixTimeTimestamp: m.ixTimeTimestamp,
+            createdAt: m.ixTimeTimestamp,
+            editedAt: m.editedAt,
+            deletedAt: m.deletedAt,
+            source: m.source || "thinkshare",
+            classification: m.classification,
+            priority: m.priority,
+            subject: m.subject,
+            readReceipts: (m.readReceipts || []).map((r: any) => ({
+              id: r.id,
+              accountId: r.userId,
+              readAt: r.readAt,
+            })),
+          }));
+
+          return { messages, nextCursor: result.nextCursor };
+        },
+        { forbidden: "You are not a participant in this conversation" }
+      );
     }),
 
   /**
    * Send a message (source-aware).
    */
-  sendMessage: protectedProcedure
+  sendMessage: rateLimitedMutationProcedure
     .input(
       z.object({
         conversationId: z.string(),
         userId: z.string().optional().default(""),
-        content: z.string().min(1),
+        content: MessageContent,
         messageType: z.enum(["text", "image", "file", "system"]).default("text"),
         replyToId: z.string().optional(),
         mentions: z.array(z.string()).optional(),
@@ -137,122 +137,72 @@ export const messagesMessagingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      validateNoXSS(input.content);
+      const messagingService = messagingFor(ctx);
 
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
-
-      try {
-        return await messagingService.sendMessage(ctx.auth.userId, {
-          conversationId: input.conversationId,
-          content: input.content,
-          replyToId: input.replyToId,
-          attachments: input.attachments,
-          subject: input.subject,
-        });
-      } catch (err: any) {
-        if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You are not a participant in this conversation",
-          });
-        }
-        throw err;
-      }
+      return await mapMessagingErrors(
+        () =>
+          messagingService.sendMessage(ctx.auth.userId, {
+            conversationId: input.conversationId,
+            content: input.content,
+            replyToId: input.replyToId,
+            attachments: input.attachments,
+            subject: input.subject,
+          }),
+        { forbidden: "You are not a participant in this conversation" }
+      );
     }),
 
   /**
    * Edit a message.
    */
-  editMessage: protectedProcedure
+  editMessage: rateLimitedMutationProcedure
     .input(
       z.object({
         messageId: z.string(),
-        content: z.string().min(1),
+        content: MessageContent,
       })
     )
     .mutation(async ({ ctx, input }) => {
-      validateNoXSS(input.content);
+      const messagingService = messagingFor(ctx);
 
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
-
-      try {
-        await messagingService.editMessage(ctx.auth.userId, {
-          messageId: input.messageId,
-          content: input.content,
-        });
-        return { success: true };
-      } catch (err: any) {
-        if (err.name === "MessagingNotFoundError") {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
-        }
-        if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You can only edit your own messages",
+      return await mapMessagingErrors(
+        async () => {
+          await messagingService.editMessage(ctx.auth.userId, {
+            messageId: input.messageId,
+            content: input.content,
           });
-        }
-        throw err;
-      }
+          return { success: true };
+        },
+        { forbidden: "You can only edit your own messages", notFound: "Message not found" }
+      );
     }),
 
   /**
    * Delete a message (soft delete).
    */
-  deleteMessage: protectedProcedure
+  deleteMessage: rateLimitedMutationProcedure
     .input(z.object({ messageId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
-      try {
-        await messagingService.deleteMessage(ctx.auth.userId, {
-          messageId: input.messageId,
-        });
-        return { success: true };
-      } catch (err: any) {
-        if (err.name === "MessagingNotFoundError") {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
-        }
-        if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You can only delete your own messages",
+      return await mapMessagingErrors(
+        async () => {
+          await messagingService.deleteMessage(ctx.auth.userId, {
+            messageId: input.messageId,
           });
-        }
-        throw err;
-      }
+          return { success: true };
+        },
+        { forbidden: "You can only delete your own messages", notFound: "Message not found" }
+      );
     }),
 
   /**
    * Clear all system notifications for a user.
    */
-  clearAllSystemNotifications: protectedProcedure
+  clearAllSystemNotifications: rateLimitedMutationProcedure
     .input(z.object({ userId: z.string().optional().default("") }))
     .mutation(async ({ ctx }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
       return await messagingService.clearAllSystemNotifications(ctx.auth.userId);
     }),
@@ -260,7 +210,7 @@ export const messagesMessagingRouter = createTRPCRouter({
   /**
    * Add reaction to a message.
    */
-  addReaction: protectedProcedure
+  addReaction: rateLimitedMutationProcedure
     .input(
       z.object({
         messageId: z.string(),
@@ -269,37 +219,25 @@ export const messagesMessagingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
-      try {
-        return await messagingService.addReaction(ctx.auth.userId, {
-          messageId: input.messageId,
-          emoji: input.reaction,
-        });
-      } catch (err: any) {
-        if (err.name === "MessagingNotFoundError") {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
+      return await mapMessagingErrors(
+        () =>
+          messagingService.addReaction(ctx.auth.userId, {
+            messageId: input.messageId,
+            emoji: input.reaction,
+          }),
+        {
+          forbidden: "You are not a participant in this conversation",
+          notFound: "Message not found",
         }
-        if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You are not a participant in this conversation",
-          });
-        }
-        throw err;
-      }
+      );
     }),
 
   /**
    * Remove reaction from a message.
    */
-  removeReaction: protectedProcedure
+  removeReaction: rateLimitedMutationProcedure
     .input(
       z.object({
         messageId: z.string(),
@@ -308,31 +246,19 @@ export const messagesMessagingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
-      try {
-        return await messagingService.removeReaction(ctx.auth.userId, {
-          messageId: input.messageId,
-          emoji: input.reaction,
-        });
-      } catch (err: any) {
-        if (err.name === "MessagingNotFoundError") {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
+      return await mapMessagingErrors(
+        () =>
+          messagingService.removeReaction(ctx.auth.userId, {
+            messageId: input.messageId,
+            emoji: input.reaction,
+          }),
+        {
+          forbidden: "You are not a participant in this conversation",
+          notFound: "Message not found",
         }
-        if (err.name === "MessagingForbiddenError") {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You are not a participant in this conversation",
-          });
-        }
-        throw err;
-      }
+      );
     }),
 
   /**
@@ -356,13 +282,7 @@ export const messagesMessagingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
       const actorId = ctx.auth?.userId || "system-admin";
       return await messagingService.sendAdminBroadcast(actorId, input);
@@ -389,13 +309,7 @@ export const messagesMessagingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       validateNoXSS(input.content);
 
-      const messagingService = createMessagingService({
-        db: ctx.db,
-        notifications: notificationAPI,
-        websocket: getThinkPagesBroadcaster(),
-        forumBridge,
-        wikiBridge: wikiTalkBridge,
-      });
+      const messagingService = messagingFor(ctx);
 
       const actorId = ctx.auth?.userId || "system-admin";
       return await messagingService.sendAdminMessage(actorId, input);

@@ -1,5 +1,4 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { getArticleIntro } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
 /**
  * A public country reference — id, slug or display name. Ids and slugs are globally unique; a name is
@@ -33,52 +32,10 @@ export async function resolveCountryRefId(
   return pickCountryRef(rows, ref)?.id ?? null;
 }
 
-// Cache helpers
-export function getCacheKey(operation: string, params: any): string {
-  return `countries:${operation}:${JSON.stringify(params)}`;
-}
-
 export {
-  validateGrowthRate,
-  validateNumber,
   prepareBaseCountryData,
   getCountryComponentsStatsData,
 } from "~/server/shared/country-helpers";
-
-// Static relation inclusion definition (PostgreSQL schema is consolidated)
-const STATIC_RELATIONS: Record<string, boolean> = {
-  economicProfile: true,
-  laborMarket: true,
-  fiscalSystem: true,
-  incomeDistribution: true,
-  governmentBudget: true,
-  demographics: true,
-  nationalIdentity: true,
-};
-
-export const safelyIncludeRelations = async (_db?: any) => {
-  return STATIC_RELATIONS;
-};
-
-/** Fetch a single wiki intro from ixwiki or iiwiki fallback. */
-export async function fetchWikiIntro(
-  name: string
-): Promise<{ extract: string; wikiSource: "ixwiki" | "iiwiki"; wikiUrl: string } | null> {
-  for (const wiki of ["ixwiki", "iiwiki"] as const) {
-    const result = await getArticleIntro(name, wiki);
-    if (result?.text) {
-      return {
-        extract: result.text,
-        wikiSource: wiki,
-        wikiUrl:
-          wiki === "ixwiki"
-            ? `/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`
-            : `https://iiwiki.com/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`,
-      };
-    }
-  }
-  return null;
-}
 
 export function getGrowthRates(arr: any[], key: string): number[] {
   const rates: number[] = [];
@@ -92,8 +49,11 @@ export function getGrowthRates(arr: any[], key: string): number[] {
   return rates;
 }
 
+export function mean(arr: number[]): number {
+  return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+}
+
 export function stddev(arr: number[]): number {
-  if (!arr.length) return 0;
-  const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
-  return Math.sqrt(arr.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / arr.length);
+  const avg = mean(arr);
+  return Math.sqrt(mean(arr.map((v) => (v - avg) ** 2)));
 }

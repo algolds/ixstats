@@ -22,7 +22,7 @@ export interface HealthInput {
 }
 
 /** Fields read from a `bilateralTrade` row. */
-export interface BilateralTradeRow {
+interface BilateralTradeRow {
   country1Id: string;
   country2Id: string;
   exportsFrom1?: number | null;

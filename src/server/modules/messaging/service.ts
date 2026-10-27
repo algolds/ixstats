@@ -6,14 +6,10 @@
  */
 
 import {
-  DEFAULT_USER_MESSAGE_CAP,
   type MessagingDependencies,
-  type UserAccount,
   type GetConversationsByFolderInput,
-  type GetConversationsLegacyInput,
   type GetConversationMessagesInput,
   type CreateConversationInput,
-  type CreateConversationByCountriesInput,
   type SendMessageInput,
   type EditMessageInput,
   type DeleteMessageInput,
@@ -22,12 +18,11 @@ import {
   type RemoveReactionInput,
   type AddParticipantInput,
   type LeaveConversationInput,
+  type RespondToRequestInput,
   type SearchUsersInput,
-  type UpdatePresenceInput,
   type SendAdminBroadcastInput,
   type SendAdminMessageInput,
 } from "./contracts";
-import { batchResolveMessagingAccounts } from "./account-resolver";
 import { MessagingQueryOperations } from "./query-operations";
 import { MessagingMessageOperations } from "./message-operations";
 import { MessagingConversationOperations } from "./conversation-operations";
@@ -45,14 +40,6 @@ export class MessagingService {
     this.conversations = new MessagingConversationOperations(dependencies);
   }
 
-  // ─── Identity & Account Resolution ─────────────────────────────────────────
-
-  public async batchResolveUsers(userIds: string[]): Promise<Map<string, UserAccount>> {
-    return await batchResolveMessagingAccounts(userIds, this.db);
-  }
-
-  // ─── Query Operations ──────────────────────────────────────────────────────
-
   public async getConversationsByFolder(actorId: string, input: GetConversationsByFolderInput) {
     return await this.queries.getConversationsByFolder(actorId, input);
   }
@@ -65,10 +52,6 @@ export class MessagingService {
     return await this.queries.getConversation(actorId, conversationId);
   }
 
-  public async getConversationsLegacy(actorId: string, input: GetConversationsLegacyInput) {
-    return await this.queries.getConversationsLegacy(actorId, input);
-  }
-
   public async getConversationMessages(actorId: string, input: GetConversationMessagesInput) {
     return await this.queries.getConversationMessages(actorId, input);
   }
@@ -76,12 +59,6 @@ export class MessagingService {
   public async searchUsers(actorId: string, input: SearchUsersInput) {
     return await this.queries.searchUsers(actorId, input);
   }
-
-  public async getPresenceForUsers(userIds: string[]) {
-    return await this.queries.getPresenceForUsers(userIds);
-  }
-
-  // ─── Message Operations ────────────────────────────────────────────────────
 
   public async sendMessage(actorId: string, input: SendMessageInput) {
     return await this.messages.sendMessage(actorId, input);
@@ -111,31 +88,8 @@ export class MessagingService {
     return await this.messages.removeReaction(actorId, input);
   }
 
-  public async pruneOldMessagesForUser(
-    userId: string,
-    cap: number = DEFAULT_USER_MESSAGE_CAP
-  ): Promise<number> {
-    return await this.messages.pruneOldMessagesForUser(userId, cap);
-  }
-
-  public async pruneConversationMessages(
-    conversationId: string,
-    cap: number = DEFAULT_USER_MESSAGE_CAP
-  ): Promise<number> {
-    return await this.messages.pruneConversationMessages(conversationId, cap);
-  }
-
-  // ─── Conversation Operations ───────────────────────────────────────────────
-
   public async createConversation(actorId: string, input: CreateConversationInput) {
     return await this.conversations.createConversation(actorId, input);
-  }
-
-  public async createConversationByCountries(
-    actorId: string,
-    input: CreateConversationByCountriesInput
-  ) {
-    return await this.conversations.createConversationByCountries(actorId, input);
   }
 
   public async addParticipant(actorId: string, input: AddParticipantInput) {
@@ -146,16 +100,16 @@ export class MessagingService {
     return await this.conversations.leaveConversation(actorId, input);
   }
 
+  public async respondToRequest(actorId: string, input: RespondToRequestInput) {
+    return await this.conversations.respondToRequest(actorId, input);
+  }
+
+  public async getSeenState(actorId: string, conversationId: string) {
+    return await this.queries.getSeenState(actorId, conversationId);
+  }
+
   public async clearAllSystemNotifications(actorId: string) {
     return await this.conversations.clearAllSystemNotifications(actorId);
-  }
-
-  public async updatePresence(actorId: string, input: UpdatePresenceInput) {
-    return await this.conversations.updatePresence(actorId, input);
-  }
-
-  public async syncDiscussions(actorId: string) {
-    return await this.conversations.syncDiscussions(actorId);
   }
 
   public async sendAdminBroadcast(_actorId: string, input: SendAdminBroadcastInput) {

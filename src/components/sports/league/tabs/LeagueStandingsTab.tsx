@@ -4,7 +4,7 @@ import React from "react";
 import { StandingsTable, type StandingsRow } from "~/components/sports/StandingsTable";
 import { Skeleton } from "~/components/ui/skeleton";
 
-export interface LeagueStandingsTabProps {
+interface LeagueStandingsTabProps {
   standings?: StandingsRow[];
   isLoading?: boolean;
   promotionCount?: number | null;
@@ -27,7 +27,7 @@ export function LeagueStandingsTab({
     return (
       <div className="space-y-3 py-6">
         <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-64 w-full rounded-2xl" />
+        <Skeleton className="rounded-card h-64 w-full" />
       </div>
     );
   }
@@ -45,5 +45,3 @@ export function LeagueStandingsTab({
     </div>
   );
 }
-
-export default LeagueStandingsTab;

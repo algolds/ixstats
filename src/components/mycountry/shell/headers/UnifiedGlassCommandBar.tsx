@@ -1,202 +1,140 @@
 "use client";
 
-import React from "react";
-import { useRouter } from "next/navigation";
+import React, { useState } from "react";
 import Link from "next/link";
-import {
-  ViewGrid as LayoutGrid,
-  KeyCommand as Command,
-  EditPencil as Edit3,
-  User,
-  ArrowUpRight,
-} from "iconoir-react";
-import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
-import { FacetContainer, FacetCard } from "~/components/ui/facet-container";
+import { KeyCommand as Command, User } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
-import { useTheme } from "~/context/theme-context";
-import { soundEffects } from "~/lib/sound/cuelume";
-import { DOMAIN_TILES } from "../ExecutiveHome";
-import type { CommandNavMode } from "../CommandNavToggle";
+import type { CommandNavMode } from "../command-nav-mode";
+import { PageHeader, BACKDROP_PLATE } from "~/components/shell/PageHeader";
+import { assetUrl } from "~/lib/base-path";
+import { CountryIdentityStrip } from "~/components/country-profile/CountryIdentityStrip";
+import { FlagTile } from "~/components/country-profile/HeroMedia";
+import { CountryOwnerRibbonRack } from "~/components/achievements/FloatingRibbonRack";
+import { stripHtml } from "~/lib/utils/sanitize-html";
+import { NationDateLine } from "~/components/realms/NationDateLine";
+import { EditMorphButton } from "./EditMorphButton";
+import { FlagBanner } from "./FlagBanner";
+
+/** Ghost actions over the flag get the title plate's strength, with an opaque hover and press. */
+const ACTION_PLATE = cn(
+  BACKDROP_PLATE,
+  "hover:bg-surface-secondary active:bg-surface-secondary rounded-full"
+);
 
 interface UnifiedGlassCommandBarProps {
   mode: CommandNavMode;
-  activeSection: string;
   onChangeMode: (mode: CommandNavMode) => void;
-  onNavigate?: (section: string) => void;
   onDeclare?: () => void;
 }
 
+function str(value: string | null | undefined): string | null {
+  return value?.trim() || null;
+}
+
+/** "CONSTITUTIONAL_MONARCHY" → "Constitutional monarchy"; ordinary text passes through. */
+function humanizeEnum(value: string): string {
+  if (!/^[A-Z0-9_]+$/.test(value)) return value;
+  const words = value.toLowerCase().replace(/_/g, " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/**
+ * The MyCountry page header: the country's name and identity over its flag as cover art, and a
+ * toolbar (Profile, Edit, and the one Declare Directive button). Identity follows the country
+ * profile hero: the flag tile, realm and IxnayID strip, ribbons and motto. The banner is cover art
+ * (no small flag beside the title) and collapses with the header. Section switching is the global
+ * source list.
+ */
 export function UnifiedGlassCommandBar({
   mode,
-  activeSection,
   onChangeMode,
-  onNavigate,
   onDeclare,
 }: UnifiedGlassCommandBarProps) {
-  const router = useRouter();
-  const { compactMode } = useTheme();
   const { country } = useCountryData();
 
   const profileHref = country?.slug ? `/countries/${country.slug}` : "/countries";
 
   const isExecutiveMode = mode === "executive";
-  const isOverview = !isExecutiveMode && (activeSection === "overview" || !activeSection);
+
+  const name = country?.name ?? "MyCountry";
+  const motto = str(country?.nationalIdentity?.motto);
+  const governmentType = str(country?.governmentType);
+  const realm = country?.realm
+    ? {
+        name: country.realm.name,
+        slug: country.realm.slug,
+        logoUrl: country.realm.emblemUrl ?? country.realm.thumbnail,
+      }
+    : null;
+  const owner = country?.owner;
+  const sovereign = owner
+    ? {
+        username: str(owner.handle) ?? str(owner.forumUsername),
+        roleName: str(owner.role?.displayName) ?? str(owner.role?.name),
+        avatarUrl: owner.avatarUrl,
+        role: owner.clerkRole ?? str(owner.role?.name),
+      }
+    : null;
+  const flagUrl = assetUrl(country?.flagUrl || country?.flag);
+  // The flag whose image failed to load; a different flag is tried afresh. The plates behind the
+  // title and the action pills exist only to sit over the art, so they follow whether it shows.
+  const [failedFlag, setFailedFlag] = useState<string | null>(null);
+  const bannerShowing = Boolean(flagUrl) && failedFlag !== flagUrl;
+  // Pills only over the visible art: not in the compact bar (its own chrome is the backdrop there).
+  const plate = (collapsed: boolean) => (bannerShowing && !collapsed ? ACTION_PLATE : undefined);
 
   return (
-    <FacetContainer
-      depth={2}
-      interactive="none"
-      enableRefraction={false}
-      className="border-border bg-card/70 relative flex w-full flex-col gap-3.5 rounded-2xl border p-3.5 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
-    >
-      {/* Top Executive Navigation Row */}
-      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
-        {/* Left: Brand Identity & Prominent Logo */}
-        <div className="flex items-center gap-2">
-          <div className="flex shrink-0 items-center px-1 py-0.5">
-            <MyCountryLogo size="md" variant="full" animated={true} />
+    <PageHeader
+      title={name}
+      className="group/hero"
+      leading={<FlagTile src={flagUrl ?? null} name={name} />}
+      // Always present, so the header's padding never jumps when the flag arrives late or fails.
+      backdrop={
+        <FlagBanner src={bannerShowing ? flagUrl : null} onError={() => setFailedFlag(flagUrl)} />
+      }
+      backdropVisible={bannerShowing}
+      subtitle={
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <CountryIdentityStrip realm={realm} sovereign={sovereign} />
+            {country?.slug && <CountryOwnerRibbonRack countrySlug={country.slug} />}
           </div>
+          {motto && (
+            <p className="text-pretty">
+              <span className="sr-only">Motto: </span>&ldquo;{stripHtml(motto)}&rdquo;
+            </p>
+          )}
+          {governmentType && <p className="text-footnote">{humanizeEnum(governmentType)}</p>}
+          <NationDateLine className="text-footnote" />
         </div>
-
-        {/* Right: Statecraft Actions & Tools */}
-        <div className="flex items-center gap-2">
-          {/* Public Profile Button */}
-          <Link
-            href={profileHref}
-            className="text-muted-foreground hover:text-foreground hover:bg-card/80 flex items-center gap-1.5 rounded-xl border border-transparent px-2.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/10 active:scale-[0.98]"
-            title="Open Sovereign Public Profile"
-            onClick={() => soundEffects.press()}
-          >
-            <User className="h-3.5 w-3.5" />
-            <span>Profile</span>
-          </Link>
-
-          {/* Map Editor Tool */}
-          <button
+      }
+      actions={({ collapsed }) => (
+        <>
+          <Button asChild variant="ghost" className={cn("text-label-secondary", plate(collapsed))}>
+            <Link href={profileHref} aria-label="Open public profile" title="Open public profile">
+              <User aria-hidden="true" />
+              <span className="hidden md:inline">Profile</span>
+            </Link>
+          </Button>
+          <EditMorphButton plate={plate(collapsed)} />
+          <Button
             type="button"
+            aria-pressed={isExecutiveMode}
             onClick={() => {
-              soundEffects.press();
-              router.push("/mycountry/editor");
-            }}
-            className="text-muted-foreground hover:text-foreground hover:bg-card/80 flex cursor-pointer items-center gap-1.5 rounded-xl border border-transparent px-2.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/10 active:scale-[0.98]"
-            title="Open Territory Map Editor"
-          >
-            <Edit3 className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
-            <span>Editor</span>
-          </button>
-
-          {/* Primary Action Button: Declare a Directive */}
-          <button
-            type="button"
-            onClick={() => {
-              soundEffects.bloom();
-              if (onDeclare) {
-                onDeclare();
-              } else {
-                onChangeMode("executive");
-              }
+              if (onDeclare) onDeclare();
+              else onChangeMode("executive");
             }}
             className={cn(
-              "flex cursor-pointer items-center gap-2 rounded-xl border px-3.5 py-1.5 text-xs font-bold shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-[0.98]",
-              isExecutiveMode
-                ? "border-amber-500/50 bg-amber-500 font-extrabold text-black shadow-md"
-                : "border-amber-500/40 bg-amber-500/15 text-amber-900 hover:bg-amber-500/25 dark:text-amber-300 dark:hover:bg-amber-500/20"
+              isExecutiveMode && "ring-offset-surface ring-tint/40 ring-2 ring-offset-2"
             )}
           >
-            <Command className="h-3.5 w-3.5" />
+            <Command aria-hidden="true" />
             <span>Declare Directive</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Integrated Lower Deck: The 4 Domain Action Tiles (on Overview) or Segmented Domain Switcher (on Domain Sub-surfaces) */}
-      {isOverview ? (
-        <div className="grid grid-cols-2 gap-2.5 pt-1 sm:grid-cols-4">
-          {DOMAIN_TILES.map(({ id, title, icon: Icon, graphic: Graphic, badgeCls, getPeek }) => (
-            <FacetCard
-              key={id}
-              depth={1}
-              interactive="none"
-              onClick={() => {
-                soundEffects.press();
-                onNavigate?.(id);
-              }}
-              className="group border-border/70 bg-card/60 hover:border-border hover:bg-card/90 relative flex w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-xl border p-2.5 shadow-2xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98]"
-            >
-              {/* Subtle Natural Architectural Watermark */}
-              <Graphic />
-
-              {/* Left: Themed Icon Badge + Text */}
-              <div className="relative z-10 flex min-w-0 items-center gap-2.5">
-                <div
-                  className={cn(
-                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-transform duration-150 group-hover:scale-105",
-                    badgeCls
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5 shrink-0" />
-                </div>
-                <div className="flex min-w-0 flex-col gap-0.5 text-left">
-                  <span className="text-foreground truncate text-xs leading-tight font-bold tracking-tight">
-                    {title}
-                  </span>
-                  <span className="text-muted-foreground truncate text-xs leading-tight font-medium tracking-tight">
-                    {getPeek(country)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Right: Arrow indicator */}
-              <ArrowUpRight className="text-muted-foreground group-hover:text-foreground relative z-10 h-3 w-3 shrink-0 opacity-60 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
-            </FacetCard>
-          ))}
-        </div>
-      ) : (
-        /* Domain Sub-surface Breadcrumb & Switcher Strip */
-        <div className="bg-muted/40 flex items-center justify-between rounded-xl p-1 backdrop-blur-md dark:bg-white/[0.04]">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                soundEffects.press();
-                onChangeMode("home");
-                onNavigate?.("overview");
-              }}
-              className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.25 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5 active:scale-[0.98]"
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-              <span>Overview</span>
-            </button>
-            <span className="text-muted-foreground/40 text-xs">/</span>
-            {DOMAIN_TILES.map(({ id, title, icon: Icon }) => {
-              const isActive = activeSection === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => {
-                    soundEffects.press();
-                    if (isExecutiveMode) {
-                      onChangeMode("home");
-                    }
-                    onNavigate?.(id);
-                  }}
-                  className={cn(
-                    "flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.25 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.98]",
-                    isActive
-                      ? "bg-card text-foreground border-border/70 border font-bold shadow-xs dark:border-white/15 dark:bg-white/10"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5 shrink-0" />
-                  <span>{title}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+          </Button>
+        </>
       )}
-    </FacetContainer>
+    />
   );
 }

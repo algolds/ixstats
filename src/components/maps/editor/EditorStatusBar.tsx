@@ -1,54 +1,89 @@
 "use client";
 
-/**
- * EditorStatusBar — Thin bottom bar showing live context while editing.
- *
- * Displays cursor coordinates, terrain info, current mode/instructions, and zoom level.
- * Inspired by Photoshop/Figma status bars — always visible, compact, informational.
- */
-
-import { ModernTv as Mountain } from "iconoir-react";
+import { useEffect, useState } from "react";
+import {
+  ModernTv as Mountain,
+  CheckCircle,
+  WarningTriangle,
+  SystemRestart as Spinner,
+  Xmark,
+  KeyCommand,
+} from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
+import { Badge } from "~/components/ui/badge";
 import { useTransientMapStore } from "~/components/maps/editor/utils/transientStore";
+import { timeAgo } from "~/lib/format/compact";
+import { Button } from "~/components/ui/button";
 
 interface EditorStatusBarProps {
   /** Optional override cursor coordinates [lng, lat] */
   cursorCoords?: [number, number] | null;
   /** Current editor mode */
   mode: EditorMode;
-  /** Terrain info at cursor (from getPointInfo, debounced) */
+  /** Optional override terrain info (defaults to the transient store's cursor probe) */
   terrainInfo?: {
     elevation?: string | null;
     climate?: string | null;
   } | null;
-  /** Current map zoom level */
+  /** Optional override zoom (defaults to the transient store) */
   zoom?: number;
   /** Total feature count */
   featureCount?: number;
+  /** Number of multi-selected features */
+  selectedCount?: number;
+  /** A write is in flight */
+  isSaving?: boolean;
+  /** When the last write finished */
+  lastSavedAt?: Date | null;
+  /** Leaving now would lose work (drawing in progress, unsaved reshape, …) */
+  hasUnsavedChanges?: boolean;
+  /** Last mutation error, shown until dismissed */
+  error?: string | null;
+  onDismissError?: () => void;
+  onShowShortcuts?: () => void;
+}
+
+/** Re-renders every 30 s so "Saved 2m ago" stays current. */
+function useMinuteTick(active: boolean) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const id = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, [active]);
 }
 
 const MODE_LABELS: Partial<Record<EditorMode, { label: string; hint: string }>> = {
   view: { label: "Select", hint: "Click a feature to edit" },
-  "add-city": { label: "Add City", hint: "Click map to place" },
-  "add-subdivision": { label: "Draw Region", hint: "Click to add vertices, double-click to close" },
+  "add-city": { label: "Add city", hint: "Click map to place" },
+  "add-subdivision": { label: "Draw region", hint: "Click to add vertices, double-click to close" },
   "add-poi": { label: "Add POI", hint: "Click map to place" },
-  "edit-city": { label: "Edit City", hint: "Modify properties in the panel" },
-  "edit-subdivision": { label: "Edit Region", hint: "Drag vertices to reshape" },
+  "edit-city": { label: "Edit city", hint: "Modify properties in the panel" },
+  "edit-subdivision": {
+    label: "Edit region",
+    hint: "Drag vertices · click a midpoint to add · right-click removes · Save to keep",
+  },
   "edit-poi": { label: "Edit POI", hint: "Modify properties in the panel" },
   "import-provinces": { label: "Import", hint: "Follow the import wizard" },
-  "import-cities": { label: "Import Cities", hint: "Follow the import wizard" },
-  "add-route": { label: "Route", hint: "Generate or draw transport routes" },
-  "edit-route": { label: "Edit Route", hint: "Modify route waypoints" },
-  paint: { label: "Paint", hint: "Click regions to view stats, use panel to switch map modes" },
-  "add-peak": { label: "Add Peak", hint: "Click map to place mountain peak" },
-  "edit-peak": { label: "Edit Peak", hint: "Modify peak properties in the panel" },
-  "add-river": { label: "Draw River", hint: "Click to add river path, double-click to close" },
-  "edit-river": { label: "Edit River", hint: "Modify river properties in the panel" },
-  "add-lake": { label: "Draw Lake", hint: "Click to draw lake polygon, double-click to close" },
-  "edit-lake": { label: "Edit Lake", hint: "Modify lake properties in the panel" },
-  "split-subdivision": { label: "Split Region", hint: "Draw line across region to split" },
-  "lasso-select": { label: "Lasso Select", hint: "Draw lasso loop to select features" },
-  ruler: { label: "Ruler", hint: "Click two points to measure distance" },
+  "import-cities": { label: "Import cities", hint: "Follow the import wizard" },
+  "add-route": { label: "Route", hint: "Click to add waypoints · Enter to finish" },
+  "edit-route": { label: "Edit route", hint: "Modify route waypoints" },
+  paint: { label: "Paint", hint: "Click regions to view stats" },
+  "add-peak": { label: "Add peak", hint: "Click map to place mountain peak" },
+  "edit-peak": { label: "Edit peak", hint: "Modify peak properties in the panel" },
+  "add-river": {
+    label: "Draw river",
+    hint: "Click along the river's course, then save from the panel",
+  },
+  "edit-river": { label: "Edit river", hint: "Modify river properties in the panel" },
+  "add-lake": { label: "Draw lake", hint: "Click to draw lake polygon, double-click to close" },
+  "edit-lake": { label: "Edit lake", hint: "Modify lake properties in the panel" },
+  "split-subdivision": {
+    label: "Split region",
+    hint: "Click across the region edge to edge · Enter to split",
+  },
+  "lasso-select": { label: "Lasso select", hint: "Draw lasso loop to select features" },
+  ruler: { label: "Ruler", hint: "Click points to measure distance and elevation" },
 };
 
 function formatCoord(value: number, posLabel: string, negLabel: string): string {
@@ -57,22 +92,100 @@ function formatCoord(value: number, posLabel: string, negLabel: string): string 
   return `${abs.toFixed(3)}°${dir}`;
 }
 
+function SaveState({
+  error,
+  isSaving,
+  hasUnsavedChanges,
+  lastSavedAt,
+  onDismissError,
+}: Pick<
+  EditorStatusBarProps,
+  "error" | "isSaving" | "hasUnsavedChanges" | "lastSavedAt" | "onDismissError"
+>) {
+  if (error) {
+    return (
+      <span
+        className="text-destructive ml-2 flex max-w-[40%] shrink items-center gap-1 truncate"
+        title={error}
+      >
+        <WarningTriangle className="h-3 w-3 shrink-0" />
+        <span className="truncate">{error}</span>
+        {onDismissError && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={onDismissError}
+            aria-label="Dismiss error"
+            className="hover:bg-destructive/10 rounded-control-sm size-5"
+          >
+            <Xmark className="h-3 w-3" />
+          </Button>
+        )}
+      </span>
+    );
+  }
+  if (isSaving) {
+    return (
+      <span className="text-yellow ml-2 flex shrink-0 items-center gap-1">
+        <Spinner className="h-3 w-3 animate-spin" />
+        Saving…
+      </span>
+    );
+  }
+  if (hasUnsavedChanges) {
+    return (
+      <span
+        className="text-yellow ml-2 flex shrink-0 items-center gap-1"
+        title="Finish or cancel the current drawing/edit before leaving"
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
+        Unsaved
+      </span>
+    );
+  }
+  if (!lastSavedAt) return null;
+  return (
+    <span
+      className="text-green ml-2 hidden shrink-0 items-center gap-1 sm:flex"
+      title={lastSavedAt.toLocaleString()}
+    >
+      <CheckCircle className="h-3 w-3" />
+      Saved {timeAgo(lastSavedAt)}
+    </span>
+  );
+}
+
 export function EditorStatusBar({
   cursorCoords: propCoords,
   mode,
   terrainInfo,
-  zoom,
+  zoom: propZoom,
   featureCount,
+  selectedCount = 0,
+  isSaving = false,
+  lastSavedAt,
+  hasUnsavedChanges = false,
+  error,
+  onDismissError,
+  onShowShortcuts,
 }: EditorStatusBarProps) {
   const transientCoords = useTransientMapStore((s) => s.cursorCoords);
   const transientTerrain = useTransientMapStore((s) => s.terrainInfo);
+  const transientZoom = useTransientMapStore((s) => s.zoom);
+  const worldDraft = useTransientMapStore((s) => s.worldDraft);
   const activeCoords = propCoords ?? transientCoords;
   const activeTerrain = terrainInfo?.elevation ? terrainInfo : transientTerrain;
+  const zoom = propZoom ?? transientZoom ?? undefined;
   const modeInfo = MODE_LABELS[mode] ?? { label: "Edit", hint: "Select or edit map features" };
+  useMinuteTick(!!lastSavedAt && !isSaving);
 
   return (
-    <div className="border-border bg-card text-muted-foreground flex h-7 items-center border-t px-2 text-xs">
-      {/* Coordinates */}
+    <div
+      className="border-separator bg-surface text-label-secondary text-footnote flex h-7 shrink-0 items-center border-t px-2"
+      role="status"
+      aria-live="polite"
+    >
       <div className="flex min-w-[140px] items-center gap-1 font-mono">
         {activeCoords ? (
           <>
@@ -81,20 +194,18 @@ export function EditorStatusBar({
             <span>{formatCoord(activeCoords[0], "E", "W")}</span>
           </>
         ) : (
-          <span className="text-muted-foreground/50">— , —</span>
+          <span className="text-label-secondary">— , —</span>
         )}
       </div>
 
-      {/* Separator */}
-      <div className="bg-border mx-2 h-3 w-px" />
+      <div className="bg-separator mx-2 h-3 w-px" />
 
-      {/* Altitude + Climate */}
-      <div className="hidden min-w-[120px] items-center gap-1.5 sm:flex">
-        <Mountain className="text-muted-foreground/60 h-3 w-3 shrink-0" />
+      <div className="hidden min-w-[120px] items-center gap-2 md:flex">
+        <Mountain className="text-label-secondary h-3 w-3 shrink-0" />
         {activeTerrain?.elevation ? (
           <span className="truncate">{activeTerrain.elevation}</span>
         ) : (
-          <span className="text-muted-foreground/50">—</span>
+          <span className="text-label-secondary">—</span>
         )}
         {activeTerrain?.climate && (
           <>
@@ -104,30 +215,66 @@ export function EditorStatusBar({
         )}
       </div>
 
-      {/* Separator */}
-      <div className="bg-border mx-2 hidden h-3 w-px sm:block" />
+      <div className="bg-separator mx-2 hidden h-3 w-px md:block" />
 
-      {/* Mode + hint (takes remaining space) */}
-      <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
-        <span className="bg-primary/10 text-primary shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold">
+      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+        <Badge variant="default" className="shrink-0">
           {modeInfo.label}
+        </Badge>
+        {worldDraft && (
+          <Badge variant="warning" className="shrink-0">
+            Draft
+          </Badge>
+        )}
+        {selectedCount > 0 && (
+          <Badge variant="info" className="shrink-0">
+            {selectedCount} selected
+          </Badge>
+        )}
+        <span className="text-label-secondary hidden truncate sm:inline">
+          {worldDraft
+            ? worldDraft.message || "Preview of a generated world, not saved"
+            : modeInfo.hint}
         </span>
-        <span className="text-muted-foreground/70 hidden truncate sm:inline">{modeInfo.hint}</span>
       </div>
 
-      {/* Feature count */}
+      <SaveState
+        error={error}
+        isSaving={isSaving}
+        hasUnsavedChanges={hasUnsavedChanges}
+        lastSavedAt={lastSavedAt}
+        onDismissError={onDismissError}
+      />
+
       {featureCount !== undefined && (
         <>
-          <div className="bg-border mx-2 h-3 w-px" />
-          <span className="tabular-nums">{featureCount} features</span>
+          <div className="bg-separator mx-2 hidden h-3 w-px sm:block" />
+          <span className="hidden tabular-nums sm:inline">{featureCount} features</span>
         </>
       )}
 
-      {/* Zoom */}
       {zoom !== undefined && (
         <>
-          <div className="bg-border mx-2 h-3 w-px" />
-          <span className="font-mono tabular-nums">z{zoom.toFixed(1)}</span>
+          <div className="bg-separator mx-2 h-3 w-px" />
+          <span className="tabular-nums">z{zoom.toFixed(1)}</span>
+        </>
+      )}
+
+      {onShowShortcuts && (
+        <>
+          <div className="bg-separator mx-2 hidden h-3 w-px sm:block" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onShowShortcuts}
+            title="Keyboard shortcuts (?)"
+            aria-label="Keyboard shortcuts"
+            className="text-label-secondary hover:text-label hidden h-6 gap-1 px-1 sm:inline-flex"
+          >
+            <KeyCommand className="h-3 w-3" />
+            <span>?</span>
+          </Button>
         </>
       )}
     </div>

@@ -4,10 +4,10 @@ import React from "react";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tournament as Swords } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { BracketView } from "~/components/sports/league/BracketView";
+import { Card } from "~/components/ui/card";
 
-export interface LeagueBracketTabProps {
+interface LeagueBracketTabProps {
   leagueId: string;
   activeSeasonId?: string;
   latestSeasonId?: string;
@@ -28,31 +28,35 @@ export function LeagueBracketTab({
 
   if (!seasonId) {
     return (
-      <FacetCard depth={2} className="rounded-3xl border border-border/40 bg-card/60 p-12 text-center backdrop-blur-xl space-y-3">
-        <Swords className="mx-auto h-12 w-12 text-muted-foreground/40" />
-        <h4 className="text-base font-bold text-foreground">No Season Initialized</h4>
-        <p className="text-xs text-muted-foreground">Start a season in the Command overview to generate the championship tournament bracket.</p>
-      </FacetCard>
+      <Card className="space-y-3 p-12 text-center">
+        <Swords className="text-label-tertiary mx-auto h-12 w-12" />
+        <h4 className="text-headline text-label">No season initialized</h4>
+        <p className="text-footnote text-label-secondary">
+          Start a season in the Command overview to generate the championship tournament bracket.
+        </p>
+      </Card>
     );
   }
 
   if (isLoading) {
     return (
-      <FacetCard depth={2} className="rounded-3xl border border-border/40 bg-card/60 p-8 backdrop-blur-xl space-y-4">
+      <Card className="space-y-4 p-8">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+          <Skeleton key={i} className="rounded-card h-16 w-full" />
         ))}
-      </FacetCard>
+      </Card>
     );
   }
 
   if (!brackets || brackets.length === 0) {
     return (
-      <FacetCard depth={2} className="rounded-3xl border border-border/40 bg-card/60 p-12 text-center backdrop-blur-xl space-y-3">
-        <Swords className="mx-auto h-12 w-12 text-muted-foreground/40" />
-        <h4 className="text-base font-bold text-foreground">No Bracket Matches Generated</h4>
-        <p className="text-xs text-muted-foreground">Tournament brackets will display once qualifying matches are seeded.</p>
-      </FacetCard>
+      <Card className="space-y-3 p-12 text-center">
+        <Swords className="text-label-tertiary mx-auto h-12 w-12" />
+        <h4 className="text-headline text-label">No bracket matches generated</h4>
+        <p className="text-footnote text-label-secondary">
+          Tournament brackets will display once qualifying matches are seeded.
+        </p>
+      </Card>
     );
   }
 
@@ -69,5 +73,3 @@ export function LeagueBracketTab({
 
   return <BracketView brackets={mapped} onTeamClick={onTeamClick} />;
 }
-
-export default LeagueBracketTab;

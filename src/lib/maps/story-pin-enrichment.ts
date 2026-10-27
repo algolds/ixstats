@@ -14,7 +14,7 @@ import {
   getPageSections,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
-export interface WikiEnrichment {
+interface WikiEnrichment {
   intro: string | null;
   thumbnailUrl: string | null;
   images: Array<{ title: string; url: string; thumbUrl: string; width: number; height: number }>;

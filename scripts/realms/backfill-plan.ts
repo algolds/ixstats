@@ -30,7 +30,7 @@ export interface LayerKeyRow {
 }
 
 /**
- * NULL-realm map layers that share a (layerType, featureId): moving them all to IxWorld would break the
+ * NULL-realm map layers that share a (layerType, featureId): moving them all to Ixnay would break the
  * realm-scoped unique key half-way through the update, so they must be resolved first.
  */
 export function findDuplicateLayerKeys(rows: LayerKeyRow[]): Array<Omit<LayerKeyRow, "id"> & { ids: string[] }> {
@@ -44,18 +44,18 @@ export function findDuplicateLayerKeys(rows: LayerKeyRow[]): Array<Omit<LayerKey
   return [...groups.values()].filter((g) => g.ids.length > 1);
 }
 
-/** The IxWorld realm's owner: no player — site admins moderate its claims. */
-export const IXWORLD_REALM_OWNER = "system";
+/** The Ixnay realm's owner: no player — site admins moderate its claims. */
+export const IXNAY_REALM_OWNER = "system";
 
 /**
- * Why `--apply` must refuse before any write (ruling F-5): owner collisions still unresolved, or an IxWorld realm
- * owned by anyone but "system" (its owner would moderate every IxWorld claim). Empty = safe to apply.
+ * Why `--apply` must refuse before any write (ruling F-5): owner collisions still unresolved, or an Ixnay realm
+ * owned by anyone but "system" (its owner would moderate every Ixnay claim). Empty = safe to apply.
  */
-export function applyBlockers(input: { ixworldOwnerId: string; ownerCollisions: number }): string[] {
+export function applyBlockers(input: { ixnayOwnerId: string; ownerCollisions: number }): string[] {
   const blockers: string[] = [];
-  if (input.ixworldOwnerId !== IXWORLD_REALM_OWNER) {
+  if (input.ixnayOwnerId !== IXNAY_REALM_OWNER) {
     blockers.push(
-      `IxWorld realm ownerId is "${input.ixworldOwnerId}", expected "${IXWORLD_REALM_OWNER}" — set realms.ownerId back to "${IXWORLD_REALM_OWNER}" first`
+      `Ixnay realm ownerId is "${input.ixnayOwnerId}", expected "${IXNAY_REALM_OWNER}" — set realms.ownerId back to "${IXNAY_REALM_OWNER}" first`
     );
   }
   if (input.ownerCollisions > 0) {

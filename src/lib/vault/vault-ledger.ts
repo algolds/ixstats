@@ -1,9 +1,8 @@
 import { type Prisma, type PrismaClient, type VaultTransactionType } from "@prisma/client";
-import { syncUserToForum } from "~/server/modules/forum";
 import { getVaultConfig, type VaultConfig } from "~/lib/vault/vault-perks";
-import { catchUpPassiveIncome } from "~/lib/vault/vault-passive-income";
+import { computeNextStreak } from "~/lib/vault/daily-roll";
 
-export type LedgerErrorCode =
+type LedgerErrorCode =
   | "MAINTENANCE"
   | "EARNING_DISABLED"
   | "STORE_DISABLED"
@@ -41,7 +40,7 @@ export interface LedgerEarnInput {
 
 export type LedgerSpendInput = Omit<LedgerEarnInput, "createdAt">;
 
-export interface LedgerTxResult {
+interface LedgerTxResult {
   newBalance: number;
   amount: number;
 }
@@ -87,7 +86,7 @@ export async function getOrCreateVault(userIdOrClerkId: string, db: Prisma.Trans
 /**
  * Reset daily earning totals if it's a new day
  */
-export async function checkAndResetDailyEarnings(
+async function checkAndResetDailyEarnings(
   vault: { id: string; lastDailyReset: Date },
   db: Prisma.TransactionClient
 ) {
@@ -160,14 +159,26 @@ export async function checkDailyCap(
   }
 }
 
+/**
+ * Earn types the global earning kill switch stops. REFUND is deliberately exempt: a refund
+ * returns credits the user already paid, it doesn't mint new ones, so it must still land
+ * while earning is off. ADMIN_ADJUSTMENT stays open so admins can still correct balances.
+ * EARN_EXCHANGE (Sovereigns converted back to IxCredits) is stopped too.
+ */
+const KILL_SWITCHED_EARN_TYPES: ReadonlySet<VaultTransactionType> = new Set([
+  "EARN_ACTIVE",
+  "EARN_SOCIAL",
+  "EARN_PASSIVE",
+  "EARN_BONUS",
+  "EARN_CARDS",
+  "EARN_EXCHANGE",
+]);
+
 function assertEarnAllowed(config: VaultConfig, type: VaultTransactionType): void {
   if (config.isMaintenanceMode) {
     throw new LedgerError("MAINTENANCE", "Vault economy is currently in maintenance mode.");
   }
-  if (
-    !config.isEarningEnabled &&
-    (type === "EARN_ACTIVE" || type === "EARN_SOCIAL" || type === "EARN_PASSIVE")
-  ) {
+  if (!config.isEarningEnabled && KILL_SWITCHED_EARN_TYPES.has(type)) {
     throw new LedgerError("EARNING_DISABLED", "Earning credits is currently disabled globally.");
   }
 }
@@ -177,7 +188,10 @@ function assertSpendAllowed(config: VaultConfig, type: VaultTransactionType): vo
     throw new LedgerError("MAINTENANCE", "Vault economy is currently in maintenance mode.");
   }
   if (!config.isStoreEnabled && (type === "SPEND_COSMETIC" || type === "SPEND_BOOST")) {
-    throw new LedgerError("STORE_DISABLED", "Storefront purchases are currently disabled globally.");
+    throw new LedgerError(
+      "STORE_DISABLED",
+      "Storefront purchases are currently disabled globally."
+    );
   }
   if (!config.isPacksEnabled && type === "SPEND_PACKS") {
     throw new LedgerError("PACKS_DISABLED", "Card pack purchases are currently disabled globally.");
@@ -188,7 +202,7 @@ function assertSpendAllowed(config: VaultConfig, type: VaultTransactionType): vo
  * Earn IxCredits inside the caller's transaction.
  *
  * Throws LedgerError on any business failure so the surrounding transaction
- * rolls back. Does not call syncUserToForum (the transaction has not committed).
+ * rolls back.
  */
 export async function earnCreditsTx(
   tx: Prisma.TransactionClient,
@@ -222,13 +236,16 @@ export async function earnCreditsTx(
 
   await checkAndResetDailyEarnings(vault, tx);
 
+  // Sovereigns converted back are the user's own credits returning, not play: no XP, not
+  // "earned today" (otherwise round trips through the Exchange would buy vault levels).
+  const counts = type !== "EARN_EXCHANGE";
   const updatedVault = await tx.myVault.update({
     where: { id: vault.id },
     data: {
       credits: { increment: amount },
       lifetimeEarned: { increment: amount },
-      todayEarned: { increment: amount },
-      vaultXp: { increment: Math.floor(amount) },
+      todayEarned: { increment: counts ? amount : 0 },
+      vaultXp: { increment: counts ? Math.floor(amount) : 0 },
     },
   });
 
@@ -241,7 +258,7 @@ export async function earnCreditsTx(
       source,
       metadata: metadata ? (JSON.stringify(metadata) as any) : null,
       createdAt: createdAt ?? new Date(),
-          idempotencyKey: input.idempotencyKey ?? null,
+      idempotencyKey: input.idempotencyKey ?? null,
     },
   });
 
@@ -301,6 +318,7 @@ export async function spendCreditsTx(
       type,
       source,
       metadata: metadata ? (JSON.stringify(metadata) as any) : null,
+      idempotencyKey: input.idempotencyKey ?? null,
     },
   });
 
@@ -328,8 +346,6 @@ export async function earnCredits(
     console.log(
       `[Vault Service] User ${userId} earned ${r.amount} IxC (${type}) - New balance: ${r.newBalance}`
     );
-
-    syncUserToForum(userId).catch(() => {});
 
     return { success: true, newBalance: r.newBalance };
   } catch (error) {
@@ -362,8 +378,6 @@ export async function spendCredits(
       `[Vault Service] User ${userId} spent ${r.amount} IxC (${type}) - New balance: ${r.newBalance}`
     );
 
-    syncUserToForum(userId).catch(() => {});
-
     return { success: true, newBalance: r.newBalance };
   } catch (error) {
     if (error instanceof LedgerError) {
@@ -381,8 +395,6 @@ export async function getBalance(userId: string, db: PrismaClient) {
   try {
     const vault = await getOrCreateVault(userId, db);
     await checkAndResetDailyEarnings(vault, db);
-
-    await catchUpPassiveIncome(userId, db);
 
     const updatedVault =
       (await db.myVault.findUnique({
@@ -416,6 +428,8 @@ export async function getBalance(userId: string, db: PrismaClient) {
       vaultXp: updatedVault.vaultXp,
       loginStreak: updatedVault.loginStreak,
       canClaimDailyBonus,
+      /** The streak today's claim will have (the credit roll's streak boost uses it). */
+      claimStreak: computeNextStreak(lastLoginDate, updatedVault.loginStreak, now),
       premiumMultiplier: vaultCfg.premiumMultiplier,
       isPremium: false,
     };
@@ -429,22 +443,33 @@ export async function getBalance(userId: string, db: PrismaClient) {
       vaultLevel: 1,
       vaultXp: 0,
       loginStreak: 0,
-      canClaimDailyBonus: true,
+      // A failed read cannot know whether today's claim was taken, so never offer one.
+      canClaimDailyBonus: false,
+      claimStreak: 0,
       premiumMultiplier: 1.0,
       isPremium: false,
     };
   }
 }
 
+export type TransactionDirection = "earned" | "spent";
+
+const DIRECTION_FILTER = {
+  earned: { gt: 0 },
+  spent: { lt: 0 },
+} as const;
+
 /**
- * Get transaction history with pagination
+ * Get transaction history with pagination. `direction` keeps only credits in (`earned`) or out
+ * (`spent`); spends are stored negative.
  */
 export async function getTransactionHistory(
   userId: string,
   db: PrismaClient,
   limit: number = 50,
   offset: number = 0,
-  type?: VaultTransactionType
+  type?: VaultTransactionType,
+  direction?: TransactionDirection
 ) {
   try {
     const vault = await getOrCreateVault(userId, db);
@@ -453,6 +478,7 @@ export async function getTransactionHistory(
       where: {
         vaultId: vault.id,
         ...(type ? { type } : {}),
+        ...(direction ? { credits: DIRECTION_FILTER[direction] } : {}),
       },
       orderBy: { createdAt: "desc" },
       take: Math.min(limit, 100),
@@ -466,7 +492,7 @@ export async function getTransactionHistory(
       balanceAfter: tx.balanceAfter,
       type: tx.type,
       source: tx.source,
-      metadata: tx.metadata as Record<string, unknown> | null,
+      metadata: tx.metadata,
       createdAt: new Date(tx.createdAt),
     }));
   } catch (error) {

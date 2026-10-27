@@ -9,7 +9,7 @@
 import { appendFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
 
-export interface FeedbackLogEntry {
+interface FeedbackLogEntry {
   timestamp: string;
   userId: string;
   username?: string;

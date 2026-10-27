@@ -1,19 +1,11 @@
 // IxStates — Core platform models (Country, User, system infrastructure)
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([name])
-}
-
 model Country {
   id                          String                    @id @default(cuid())
   name                        String
   slug                        String?                   @unique
   isDemo                      Boolean                   @default(false)
+  ownedSince                  DateTime?
   continent                   String?
   region                      String?
   governmentType              String?
@@ -96,26 +88,23 @@ model Country {
   usesAtomicGovernment        Boolean                   @default(true)
   hideDiplomaticOps           Boolean                   @default(false)
   hideStratcommIntel          Boolean                   @default(false)
+  /// When the owner hid MyCountry's "First steps" card for this nation; null while it shows.
+  firstStepsDismissedAt       DateTime?
   lastCalculated              DateTime                  @default(now())
-  baselineDate                DateTime                  @default(now())
+  /// IxTime the projection starts from; every create sets it (no wall-clock default).
+  baselineDate                DateTime
   createdAt                   DateTime                  @default(now())
   updatedAt                   DateTime                  @updatedAt
   geom_postgis                Unsupported("geometry")?
-  atomicEconomicImpacts       AtomicEconomicImpact[]    @relation("AtomicEconomicImpacts")
   atomicEffectiveness         AtomicEffectiveness?
-  borderSecurity              BorderSecurity?           @relation("CountryBorderSecurity")
   budgetScenarios             BudgetScenario[]          @relation("CountryBudgetScenarios")
   componentChanges            ComponentChangeLog[]      @relation("CountryComponentChanges")
   changeLogs                  CountryChangeLog[]        @relation("CountryChangeLogs")
   intents                     Intent[]                  @relation("CountryIntents")
   componentSynergies          ComponentSynergy[]        @relation("CountrySynergies")
-  archetypeMatches            CountryArchetypeMatch[]   @relation("CountryArchetypes")
   followers                   CountryFollow[]           @relation("CountryFollowing")
   following                   CountryFollow[]           @relation("CountryFollowers")
-  moodMetrics                 CountryMoodMetric[]
   polls                       Poll[]                    @relation("CountryPolls")
-  crossBuilderSynergies       CrossBuilderSynergy[]     @relation("CountryCrossBuilderSynergies")
-  defenseBudget               DefenseBudget?            @relation("CountryDefenseBudget")
   demographics                Demographics?
   storytellerEffects          StorytellerEffect[]
   economicComponents          EconomicComponent[]       @relation("CountryEconomicComponents")
@@ -123,7 +112,6 @@ model Country {
   economicProfile             EconomicProfile?
   embassiesGuest              Embassy[]                 @relation("GuestCountryEmbassies")
   embassiesHosting            Embassy[]                 @relation("HostCountryEmbassies")
-  fiscalPolicies              FiscalPolicy[]            @relation("CountryFiscalPolicies")
   policies                    Policy[]                  @relation("CountryPolicies")
   fiscalSystem                FiscalSystem?
   governmentBudget            GovernmentBudget?
@@ -134,11 +122,10 @@ model Country {
   stabilityMetrics            InternalStabilityMetrics? @relation("CountryStabilityMetrics")
   laborMarket                 LaborMarket?
   militaryBranches            MilitaryBranch[]          @relation("CountryMilitaryBranches")
+  defensePolicy               DefensePolicy?            @relation("CountryDefensePolicy")
   personalityAssignment       NPCPersonalityAssignment?
   nationalIdentity            NationalIdentity?
-  securityAssessment          SecurityAssessment?       @relation("CountrySecurityAssessment")
-  securityEvents              SecurityEvent[]           @relation("CountrySecurityEvents")
-  securityThreats             SecurityThreat[]          @relation("CountrySecurityThreats")
+  slugRedirects               CountrySlugRedirect[]
   taxComponents               TaxComponent[]            @relation("CountryTaxComponents")
   taxSystem                   TaxSystem?
   thinkpagesAccounts          ThinkpagesAccount[]       @relation("ThinkpagesAccounts")
@@ -151,7 +138,6 @@ model Country {
   storylines                  Storyline[]               @relation("CountryStorylines")
   mapLabels                   MapLabel[]                @relation("CountryMapLabels")
   subdivisions                Subdivision[]             @relation("CountrySubdivisions")
-  territories                 Territory[]
   politicalParties            PoliticalParty[]             @relation("CountryPoliticalParties")
   legislature                 Legislature?                 @relation("CountryLegislature")
   elections                   Election[]                   @relation("CountryElections")
@@ -175,8 +161,6 @@ model Country {
   geographicResources         GeographicResource[]         @relation("CountryGeographicResources")
   transportRoutes             TransportRoute[]              @relation("CountryTransportRoutes")
   transportHubs               TransportHub[]                @relation("CountryTransportHubs")
-  transportNodes              TransportNode[]               @relation("CountryTransportNodes")
-  transportSegments           TransportSegment[]            @relation("CountryTransportSegments")
   peaks                       Peak[]                        @relation("CountryPeaks")
   namedRivers                 NamedRiver[]                  @relation("CountryNamedRivers")
   namedLakes                  NamedLake[]                   @relation("CountryNamedLakes")
@@ -186,10 +170,22 @@ model Country {
   nameBankEntries             NameBank[]                    @relation("CountryNameBank")
   languagePacks               LanguagePack[]                @relation("CountryLanguagePacks")
   ownerUserId                 String?
+  /// When the inactivity notice went to the owner (ToS §2.8); cleared when they return or the nation is released.
+  inactivityNoticeAt          DateTime?
+  materialHold                NationMaterialHold?
   owner                       User?                         @relation("CountryOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
   realmClaims                 RealmClaim[]
+  loreAuthors                 CountryLoreAuthor[]
+  lorePages                   CountryLorePage[]
+  /// The nation's key in its realm's outside source (RealmSourceSync), e.g. a community map's nation id
+  externalSourceKey           String?
+  /// A nation slot the world generator made (Atlas Release A): its figures are derived from the map, not the realm table.
+  worldgen                    Boolean                       @default(false)
+  /// False for a generated slot nobody may claim (scenery): claims, counts and listings of open nations skip it.
+  claimable                   Boolean                       @default(true)
 
   @@unique([realmId, name])
+  @@unique([realmId, externalSourceKey])
   @@index([name])
   @@index([economicTier])
   @@index([populationTier])
@@ -228,42 +224,42 @@ model User {
   isActive            Boolean                  @default(true)
   createdAt           DateTime                 @default(now())
   updatedAt           DateTime                 @updatedAt
-  totalCards          Int                      @default(0)
-  deckValue           Float                    @default(0)
-  collectorLevel      Int                      @default(1)
-  collectorXp         Int                      @default(0)
   AuctionBid          AuctionBid[]
   CardAuction         CardAuction[]
   CardCollection      CardCollection[]
-  CollectionLike      CollectionLike[]
-  CollectionComment   CollectionComment[]
   CardOwnership       CardOwnership[]
-  scheduledChanges    ScheduledChange[]        @relation("UserScheduledChanges")
   country             Country?                 @relation("UserCountry", fields: [countryId], references: [id])
   role                Role?                    @relation(fields: [roleId], references: [id])
-  archetypeSelections UserArchetypeSelection[] @relation("UserArchetypes")
   vault               MyVault?
   nsVerifications     NSVerification[]
-  craftingHistory     CraftingHistory[]
   tradesInitiated     TradeOffer[]             @relation("TradeInitiator")
   tradesReceived      TradeOffer[]             @relation("TradeRecipient")
   forumUserId         Int?
   forumUsername        String?
+  /// IxStates Passport handle (lowercase, 3-24 of a-z0-9_). Null until claimed or backfilled.
+  handle               String?                  @unique
+  handleChangedAt      DateTime?
   lastForumSync       DateTime?
-  // IxnayID: Wiki account linking
-  wikiUserId          Int?
-  wikiUsername         String?
-  lastWikiSync        DateTime?
+  // ponytail: the legacy IxWiki columns stay one release, unread (@ignore), so the old app keeps working while the new
+  // one builds; the next release deletes these three lines and drops the columns before its push (ixnayid-passport.md).
+  wikiUserId          Int?      @ignore
+  wikiUsername        String?   @ignore
+  lastWikiSync        DateTime? @ignore
   lastSeenAt          DateTime?
   ownedCountries      Country[]                @relation("CountryOwner")
   wikiAccountLinks    WikiAccountLink[]
+  wikiNameClaims      WikiNameClaim[]          @relation("WikiNameClaims")
   realmClaims         RealmClaim[]
+  forumPostReactions  ForumPostReaction[]
   // IxnayID: Discord account linking
   discordUserId       String?                  @unique
   discordUsername      String?
   lastDiscordSync     DateTime?
   blurbResponses      BlurbResponse[]          @relation("UserBlurbResponses")
   CardWatchlist       CardWatchlist[]
+  cardListings          CardListing[]          @relation("CardListingSeller")
+  cardDustBalances      CardDustBalance[]
+  cardNotificationMutes CardNotificationMute[]
   // Exchange (market & corporate system)
   exchangeWallet      ExchangeWallet?
   companiesFounded    Company[]                @relation("UserCompaniesFounded")
@@ -286,6 +282,7 @@ model User {
   uploadedAssets      WikiAsset[]              @relation("WikiAssetUploader")
   wikiWatchlists      WikiWatchlist[]          @relation("UserWikiWatchlists")
   wikiLogs            WikiLog[]                @relation("UserWikiLogs")
+  loreAuthorships     CountryLoreAuthor[]
 
   @@index([clerkUserId])
   @@index([countryId])
@@ -294,32 +291,7 @@ model User {
   @@index([isActive])
   @@index([forumUserId])
   @@index([forumUsername])
-  @@index([wikiUserId])
   @@index([discordUserId])
-}
-
-model ScheduledChange {
-  id           String    @id @default(cuid())
-  userId       String
-  countryId    String
-  changeType   String
-  impactLevel  String
-  fieldPath    String
-  oldValue     String
-  newValue     String
-  scheduledFor DateTime
-  appliedAt    DateTime?
-  status       String    @default("pending")
-  warnings     String?
-  metadata     String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  user         User      @relation("UserScheduledChanges", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([countryId])
-  @@index([status])
-  @@index([scheduledFor])
 }
 
 model SystemConfig {
@@ -331,6 +303,33 @@ model SystemConfig {
   updatedAt   DateTime @updatedAt
 
   @@index([key])
+}
+
+/// Lease that single-flights a scheduled job across processes (src/lib/system/job-lock.ts).
+/// A row exists only while a run holds it; an expired row is taken over by the next run.
+model JobLease {
+  name       String   @id
+  holder     String
+  acquiredAt DateTime @default(now())
+  expiresAt  DateTime
+
+  @@map("job_leases")
+}
+
+/// One row per scheduled-job run (cron-runner.mjs), read by /api/health. Pruned by log-retention.
+model CronRun {
+  id         String    @id @default(cuid())
+  job        String
+  /// success | failed | skipped
+  status     String
+  startedAt  DateTime
+  finishedAt DateTime?
+  durationMs Int?
+  summary    String?
+  error      String?
+
+  @@index([job, startedAt])
+  @@index([startedAt])
 }
 
 model AdminAuditLog {
@@ -406,11 +405,29 @@ model Notification {
   deliveryMethod String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  /// Per-user read/dismiss state for a shared (global or country-wide, userId null) row; a personal
+  /// row keeps its own `read`/`dismissed` columns.
+  receipts       NotificationReceipt[]
 
   @@index([userId, read, dismissed])
   @@index([countryId, read, dismissed])
   @@index([createdAt])
   @@index([priority, read])
+}
+
+/// One user's read/dismiss state for a shared notification. `userId` is the Clerk id (as in PushSubscription).
+model NotificationReceipt {
+  id             String       @id @default(cuid())
+  notificationId String
+  userId         String
+  readAt         DateTime?
+  dismissedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, userId])
+  @@index([userId])
 }
 
 model UserPreferences {
@@ -425,9 +442,29 @@ model UserPreferences {
   notificationLevel  String   @default("medium")
   wikiAutoScan       Boolean  @default(true)
   wikiSourcePriority String   @default("ixwiki")
-  wikiDisplayMode    String   @default("inline")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  wikiDisplayMode    String    @default("inline")
+  /// Email delivery is opt-in (SL-5): set when the user turns email on, cleared when they turn it off.
+  /// A stored `emailNotifications: true` from before delivery existed does not count without it.
+  emailEnabledAt     DateTime?
+  /// One daily summary email instead of an email per important notification.
+  emailDigest        Boolean   @default(false)
+  lastEmailDigestAt  DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+/// A browser's Web Push subscription (SL-5). Keyed by the push service endpoint; `userId` is the Clerk id.
+model PushSubscription {
+  id         String    @id @default(cuid())
+  userId     String
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
 
   @@index([userId])
 }
@@ -599,17 +636,6 @@ model SystemLog {
   @@index([requestId])
 }
 
-model LogRetentionPolicy {
-  id               String   @id @default(cuid())
-  logLevel         String   @unique
-  retentionDays    Int
-  archiveAfterDays Int?
-  deleteAfterDays  Int
-  enabled          Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-}
-
 model ExternalApiCache {
   id               String   @id @default(cuid())
   key              String   @unique
@@ -634,42 +660,6 @@ model ExternalApiCache {
   @@index([lastValidatedAt])
   @@index([validationStatus])
   @@index([countryName])
-}
-
-model EncryptionKey {
-  id                         String    @id
-  countryId                  String
-  publicKey                  String
-  encryptedPrivateKey        String
-  signingPublicKey           String
-  encryptedSigningPrivateKey String
-  version                    String    @default("v1")
-  status                     String    @default("ACTIVE")
-  expiresAt                  DateTime
-  createdAt                  DateTime  @default(now())
-  revokedAt                  DateTime?
-
-  @@index([countryId])
-  @@index([status])
-  @@index([expiresAt])
-}
-
-model EncryptionAuditLog {
-  id             String   @id @default(cuid())
-  countryId      String
-  operation      String
-  classification String
-  success        Boolean
-  errorMessage   String?
-  metadata       String?
-  userId         String?
-  ipAddress      String?
-  userAgent      String?
-  createdAt      DateTime @default(now())
-
-  @@index([countryId])
-  @@index([operation])
-  @@index([createdAt])
 }
 
 model UserConnection {
@@ -736,87 +726,6 @@ model UserAchievement {
   @@index([unlockedAt])
 }
 
-model CountryActivity {
-  id        String   @id @default(cuid())
-  countryId String
-  type      String
-  data      String
-  timestamp DateTime @default(now())
-
-  @@index([countryId])
-  @@index([type])
-  @@index([timestamp])
-}
-
-model ArchetypeCategory {
-  id            String      @id @default(cuid())
-  name          String      @unique
-  description   String
-  color         String
-  maxSelectable Int         @default(2)
-  priority      Int         @default(0)
-  isActive      Boolean     @default(true)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  archetypes    Archetype[]
-
-  @@index([priority])
-  @@index([isActive])
-}
-
-model Archetype {
-  id             String                   @id @default(cuid())
-  name           String                   @unique
-  description    String
-  categoryId     String
-  iconName       String
-  color          String
-  gradient       String
-  priority       Int                      @default(0)
-  isSelectable   Boolean                  @default(true)
-  isActive       Boolean                  @default(true)
-  tags           String?
-  filterRules    String
-  createdAt      DateTime                 @default(now())
-  updatedAt      DateTime                 @updatedAt
-  category       ArchetypeCategory        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  countryMatches CountryArchetypeMatch[]
-  userSelections UserArchetypeSelection[]
-
-  @@index([categoryId])
-  @@index([priority])
-  @@index([isSelectable])
-  @@index([isActive])
-}
-
-model UserArchetypeSelection {
-  id          String    @id @default(cuid())
-  userId      String
-  archetypeId String
-  selectedAt  DateTime  @default(now())
-  archetype   Archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
-  user        User      @relation("UserArchetypes", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, archetypeId])
-  @@index([userId])
-  @@index([archetypeId])
-}
-
-model CountryArchetypeMatch {
-  id          String    @id @default(cuid())
-  countryId   String
-  archetypeId String
-  matchScore  Float     @default(1.0)
-  lastChecked DateTime  @default(now())
-  archetype   Archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
-  country     Country   @relation("CountryArchetypes", fields: [countryId], references: [id], onDelete: Cascade)
-
-  @@unique([countryId, archetypeId])
-  @@index([countryId])
-  @@index([archetypeId])
-  @@index([matchScore])
-}
-
 model NationalIdentity {
   id                   String   @id @default(cuid())
   countryId            String   @unique
@@ -856,6 +765,7 @@ model NationalIdentity {
   nationalDrink        String?
   nationalInstrument   String?
   nationalSymbol       String?
+  nationalAnimal       String?
   nationalAnimalImage  String?
   nationalBirdImage    String?
   nationalFishImage    String?
@@ -872,6 +782,18 @@ model NationalIdentity {
   country              Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
   capitalCityRef       City?    @relation("NationalCapital", fields: [capitalCityId], references: [id])
   largestCityRef       City?    @relation("NationalLargestCity", fields: [largestCityId], references: [id])
+
+  @@index([countryId])
+}
+
+/// An address a country had before it was renamed: `/countries/<oldSlug>` redirects permanently to the
+/// country's current slug. Removed when a country takes the slug again.
+model CountrySlugRedirect {
+  id        String   @id @default(cuid())
+  oldSlug   String   @unique
+  countryId String
+  createdAt DateTime @default(now())
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
 
   @@index([countryId])
 }
@@ -907,18 +829,25 @@ model CustomFieldValue {
   @@index([usageCount])
 }
 
-/// A wiki account (ixwiki / iiwiki / althistory) linked to a user. `verifiedAt` is set only after the
-/// user proved control by placing `token` on their wiki user page. See docs/architecture/realms-framework-spec.md.
+/// A sister-wiki account (iiwiki / althistory) linked to a user. `verifiedAt` is set only after the user proved
+/// control by placing `token` on their wiki user page. Old IxWiki names reach an account only through
+/// `WikiNameClaim`. See docs/architecture/realms-framework-spec.md.
 model WikiAccountLink {
   id             String    @id @default(cuid())
   userId         String
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  source         String    // ixwiki | iiwiki | althistory
+  source         String    // iiwiki | althistory
   username       String    // MediaWiki-normalised (spaces, first letter upper-case)
   wikiUserId     Int?
   token          String?
   tokenExpiresAt DateTime?
   verifiedAt     DateTime?
+  /// null = proven by the account's own token on its wiki user page; an older row may hold the user id of
+  /// the admin who confirmed the link.
+  verifiedById   String?
+  /// The wiki account's registration date and edit count when the link was proven (autoconfirmed rule).
+  mwRegisteredAt DateTime?
+  mwEditCount    Int?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 

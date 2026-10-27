@@ -1,24 +1,44 @@
 "use client";
 
 import * as React from "react";
+import * as TogglePrimitive from "@radix-ui/react-toggle";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "~/lib/utils/cn";
+import { focusRing, hitSlop } from "~/components/ui/button";
 
+/**
+ * A two-state button (`aria-pressed`) on Radix Toggle. Off is a plain label, on is the tint at fill
+ * strength. Variants: `default` (no chrome), `outline` (hairline), `pill` (rounded filter chip).
+ */
 const toggleVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium hover:bg-muted hover:text-muted-foreground disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground [&_svg]:pointer-events-none [:where(&)_svg]:size-4 [&_svg]:shrink-0 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none transition-[color,box-shadow] whitespace-nowrap cursor-pointer",
+  [
+    "relative inline-flex cursor-pointer items-center justify-center gap-2 font-medium whitespace-nowrap select-none",
+    "text-label-secondary hover:bg-fill-4 hover:text-label",
+    "data-[state=on]:bg-tint-fill data-[state=on]:text-tint data-[state=on]:hover:bg-tint/20",
+    "facet-press",
+    focusRing,
+    hitSlop,
+    "disabled:pointer-events-none disabled:opacity-50",
+    "[&_svg]:pointer-events-none [&_svg]:shrink-0 [:where(&)_svg]:size-4",
+  ].join(" "),
   {
     variants: {
       variant: {
         default: "bg-transparent",
-        outline:
-          "border border-input bg-transparent shadow-xs hover:bg-accent hover:text-accent-foreground",
+        outline: "border border-separator bg-transparent data-[state=on]:border-transparent",
+        pill: "rounded-full border border-separator bg-transparent data-[state=on]:border-transparent",
       },
       size: {
-        default: "h-9 px-2 min-w-9",
-        sm: "h-8 px-1.5 min-w-8",
-        lg: "h-10 px-2.5 min-w-10",
+        sm: "h-(--control-height-sm) min-w-(--control-height-sm) rounded-control-sm px-2 text-footnote",
+        default: "h-(--control-height) min-w-(--control-height) rounded-control px-3 text-body",
+        lg: "h-(--control-height-lg) min-w-(--control-height-lg) rounded-control-lg px-3 text-body",
       },
     },
+    compoundVariants: [
+      { variant: "pill", size: "sm", className: "rounded-full px-3" },
+      { variant: "pill", size: "default", className: "rounded-full px-4" },
+      { variant: "pill", size: "lg", className: "rounded-full px-4" },
+    ],
     defaultVariants: {
       variant: "default",
       size: "default",
@@ -26,32 +46,13 @@ const toggleVariants = cva(
   }
 );
 
-interface ToggleProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof toggleVariants> {
-  pressed?: boolean;
-  onPressedChange?: (pressed: boolean) => void;
-}
+type ToggleProps = React.ComponentProps<typeof TogglePrimitive.Root> &
+  VariantProps<typeof toggleVariants>;
 
-function Toggle({
-  className,
-  variant,
-  size,
-  pressed,
-  onPressedChange,
-  onClick,
-  ...props
-}: ToggleProps) {
+function Toggle({ className, variant, size, ...props }: ToggleProps) {
   return (
-    <button
-      type="button"
+    <TogglePrimitive.Root
       data-slot="toggle"
-      data-cuelume-toggle=""
-      data-state={pressed ? "on" : "off"}
-      aria-pressed={pressed}
-      onClick={(e) => {
-        onClick?.(e);
-        onPressedChange?.(!pressed);
-      }}
       className={cn(toggleVariants({ variant, size, className }))}
       {...props}
     />

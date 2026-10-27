@@ -59,10 +59,9 @@
  *    another router. The one exception is the helper re-export pattern (item
  *    3 above), which is a one-way sharing of a helper through the
  *    destination router's `index.ts`.
- * 5. PARITY VERIFICATION MUST BE AST-BASED, not line-grep. The
- *    `verify-router-splits.ts` script uses ts-morph to walk
- *    `createTRPCRouter({...})` properties and compare sets. Always run it
- *    after a split.
+ * 5. PARITY VERIFICATION MUST BE AST-BASED, not line-grep. The parity
+ *    step at the end of this script uses ts-morph to walk
+ *    `createTRPCRouter({...})` properties and compare sets; never skip it.
  * 6. MEMORY SAFETY: agents running this script should NOT run a full
  *    `tsc --noEmit` (8GB servers OOM). The agent does the split + parity
  *    check; the orchestrator runs one consolidated `bun run typecheck:trpc`

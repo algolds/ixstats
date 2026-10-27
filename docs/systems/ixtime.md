@@ -1,8 +1,10 @@
 # ⚙️ IxTime: Concord Living-World Temporal Engine
 
+**Last updated:** 2026-10-02
+
 **Parent Engine:** Concord Simulation Engine (`CONCORD_ENGINE_VERSION = 2`)  
 **Platform Pillar:** Temporal Master World Clock & Simulation Ticks  
-**Role:** Living-World Simulation Backend | **Status:** 📀 Gold Master (100% Ready)  
+**Role:** Living-World Simulation Backend | **Status:** ✅ Live; see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
 **Single Source of Truth:** `src/lib/ixtime/` · `src/stores/ixtime-store.ts` · `src/context/IxTimeContext.tsx`
 
 ---
@@ -34,7 +36,7 @@ IxTime features bidirectional mathematical time conversion, cross-service synchr
 │ 2. MASTER TEMPORAL ENGINE (src/lib/ixtime/)                                           │
 │    • core.ts (IxTime)                 — Synchronous epoch math & pivot conversions     │
 │    • sync.ts (IxTimeSyncManager)      — 15s daemon polling & automated drift correction│
-│    • accuracy.ts                      — 12 mathematical verification test suites       │
+│    • accuracy.ts                      — 12 verification suites (Jest only; not run at runtime)│
 ├────────────────────────────────────────────────────────────────────────────────────────┤
 │ 3. API & GATEWAY LAYER                                                                │
 │    • tRPC Routers                     — api.system.getCurrentIxTime, api.admin.bot.*   │
@@ -73,7 +75,7 @@ IxTime maps real-world UTC timestamps to game-world UTC timestamps through a pie
 > **Canonical Benchmark vs. Engine Configurability**  
 > The specific epoch dates (October 2020, January 2028), speed pivot (July 2025 $\equiv$ January 2040), and dilation ratios (4.0x $\to$ 2.0x) detailed below reflect our personal **canonical configuration**, which established the platform's production benchmark.  
 > 
-> IxTime is one shared clock for every realm. A realm can show its own calendar year through a display offset (`Realm.settings.yearOffset`, realms Phase 2); the simulation always uses the shared clock.
+> IxTime is one shared clock for every realm. A realm can show its own in-world date in its region header (`Realm.settings.inWorldDate`: a fixed label, or the real year plus an offset with an era; see [realms.md §4](realms.md#4-realm-page-rrealm)); the simulation always uses the shared clock.
 
 ### 1. Fundamental Anchors
 
@@ -140,6 +142,9 @@ The `IxTime` class provides synchronous static methods for fast in-process time 
 - `IxTime.convertFromIxTime(ixTime)`: Calculates the real-world physical timestamp when an in-game IxTime event will arrive.
 - `IxTime.predictIxTimeAfterRealHours(realHours, multiplier?)`: Forward-predicts in-game timestamp given real hours elapsed.
 - `IxTime.setNaturalMultiplier(multiplier)`: Restores speed to the canonical era multiplier or flags custom manual override.
+
+### Shared clock across processes (`shared-clock.ts`)
+The bot pushes its clock to one web process (`/api/ixtime/sync-from-bot`, the admin sync and set-override/set-natural routes), which adopts it in memory and persists the override state (`IxTime.getClockState()`) to the `ixtime_clock_state` SystemConfig row. Every other server process loads it with `refreshSharedClock(db)`: the tRPC context at most once per 30 s, and the cron runner before every job (forced). So stored stats, history months, elections, budget years and drift run on the same "now" as MyCountry's on-read numbers, and a restarted web process picks the override up again without waiting for the bot. No row (the bot never pushed an override) leaves each process on the canonical clock. Server-only; the browser keeps using `IxTime` alone.
 
 ### 2. `sync.ts` — Synchronization Manager (`IxTimeSyncManager`)
 A server-side singleton managing cross-service consistency:
@@ -237,7 +242,7 @@ To prevent CPU degradation and avoid re-rendering entire React component subtree
                            │
       ┌────────────────────┼────────────────────┐
       ▼                    ▼                    ▼
-useIxTimeTimestamp()   useIxTimeFormatted()  useIxTimeGameYear()
+s => s.ixTimeTimestamp  s => s.ixTimeFormatted  s => s.gameYear
 (Subscribers only re-render when their specific slice changes)
 ```
 
@@ -253,25 +258,18 @@ $$\text{CurrentIxTime} = \text{referenceTimestamp} + \Big((\text{Date.now}() - \
 - **1,000ms Tick**: Drives local time interpolation in the Zustand store.
 - **30,000ms Sync**: Fetches authoritative time from `/api/ixtime/current` to eliminate any client clock skew.
 
-### 3. Granular Selector Hooks
+### 3. Granular Selectors
 
-Components subscribe only to the exact temporal slice they require:
+Components subscribe only to the exact temporal slice they require, via a selector on the store:
 
 ```typescript
-import { 
-  useIxTimeTimestamp, 
-  useIxTimeFormatted, 
-  useIxTimeGameYear, 
-  useIxTimeMultiplier,
-  useIxTimeIsPaused,
-  useIxTime, // composite hook (re-renders on any slice change)
-} from "~/context/IxTimeContext";
+import { useIxTimeStore } from "~/stores/ixtime-store";
 
 // Component that needs timestamp (re-renders every tick):
-const timestamp = useIxTimeTimestamp();
+const timestamp = useIxTimeStore((s) => s.ixTimeTimestamp);
 
 // Component that only cares about the current game year (re-renders once every 6 real months):
-const gameYear = useIxTimeGameYear();
+const gameYear = useIxTimeStore((s) => s.gameYear);
 ```
 
 ---
@@ -346,7 +344,7 @@ pm2 restart ixwiki-discord-bot
 
 - `delete` **`src/app/api/ixtime/set-override-direct/`**: ✅ Deleted unreferenced legacy duplicate route handler. All overrides cleanly route to authenticated `POST /api/ixtime/set-override`.
 - `shrink` **`src/app/api/ixtime-status/route.ts`**: ✅ Cleaned up into a concise, lightweight status proxy.
-- `shrink` **`src/context/IxTimeContext.tsx`**: ✅ Purged redundant wrapper functions; directly re-exports granular Zustand selectors (`useIxTimeTimestamp`, `useIxTimeFormatted`, `useIxTimeGameYear`, `useIxTimeMultiplier`, `useIxTimeIsPaused`) alongside the composite `useIxTime()` hook for $O(1)$ selective component re-rendering.
+- `shrink` **`src/context/IxTimeContext.tsx`**: ✅ Purged redundant wrapper functions; exports only `IxTimeProvider`; components needing one slice select it directly from `useIxTimeStore` for $O(1)$ selective re-rendering.
 - `yagni` **`src/lib/ixtime/accuracy.ts` runtime invocation in `updateMasterState()`**: ✅ Eliminated recurring execution of 12 dynamic test suites from the 15s server sync loop. Verification tests now execute exclusively in dedicated Jest suites.
 - `shrink` **`src/lib/ixtime/core.ts` legacy fallbacks**: ✅ Removed uncalled `getCurrentIxTimeInternal()` duplicate and simplified override logic.
 

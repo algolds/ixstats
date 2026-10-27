@@ -1,15 +1,21 @@
 // src/server/api/routers/government.ts
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { detectGovernmentConflicts } from "~/server/services/builderIntegrationService";
-import { GovernmentBuilderStateSchema } from "~/types/government";
-import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
-import { rollBudgetForward } from "~/lib/government/budget-allocations";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import {
+  assertCountryWriteAccess,
+  hasCountryWriteAccess,
+} from "~/server/shared/country-authorization";
+import { countryBudgetYear, rollBudgetForward } from "~/lib/government/budget-allocations";
+import { redactGovernmentBudget } from "~/lib/country/public-record";
 
 export const governmentCrudRouter = createTRPCRouter({
-  // Get government structure by country ID with configurable includes
-  // Phase 1 optimization: Added limits to prevent unbounded data fetching
+  /**
+   * Government structure by country ID with configurable includes (limits keep nested data
+   * bounded). Public: offices, leaders, branches and departments. The budget (`totalBudget`,
+   * allocations, sub-budgets, revenue sources) is served to the nation's owner and privileged
+   * roles only; anyone else gets it redacted (`redactGovernmentBudget`).
+   */
   getByCountryId: publicProcedure
     .input(
       z.object({
@@ -63,10 +69,12 @@ export const governmentCrudRouter = createTRPCRouter({
         return null;
       }
 
-      return governmentStructure;
+      if (await hasCountryWriteAccess(ctx, countryId)) return governmentStructure;
+      return redactGovernmentBudget(governmentStructure);
     }),
 
-  // Get full government structure without limits (admin/export use cases)
+  // Full government structure without limits (admin/export, the budget dashboard); the budget
+  // is redacted for non-owners as in getByCountryId.
   getFullByCountryId: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -95,30 +103,23 @@ export const governmentCrudRouter = createTRPCRouter({
         },
       });
 
-      return governmentStructure;
-    }),
-
-  // Check for conflicts before creating/updating
-  checkConflicts: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        data: GovernmentBuilderStateSchema,
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const warnings = await detectGovernmentConflicts(ctx.db as any, input.countryId, input.data);
-      return { warnings };
+      if (!governmentStructure) return governmentStructure;
+      if (await hasCountryWriteAccess(ctx, input.countryId)) return governmentStructure;
+      return redactGovernmentBudget(governmentStructure);
     }),
 
   /**
-   * Start the current IxTime year's budget by copying the budget in effect (MC-1). Departments
+   * Start the nation's current budget year (on its realm's clock) by copying the budget in effect (MC-1). Departments
    * that already have an allocation for the year keep it.
    */
-  startBudgetYear: protectedProcedure
+  startBudgetYear: rateLimitedMutationProcedure
     .input(z.object({ countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
-      return rollBudgetForward(ctx.db, input.countryId);
+      return rollBudgetForward(
+        ctx.db,
+        input.countryId,
+        await countryBudgetYear(ctx.db, input.countryId)
+      );
     }),
 });

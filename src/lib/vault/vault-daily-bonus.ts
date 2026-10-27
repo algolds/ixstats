@@ -1,33 +1,18 @@
-import { type Prisma, type PrismaClient } from "@prisma/client";
+import { type CardFinish, type Prisma, type PrismaClient } from "@prisma/client";
 import { earnCreditsTx, getOrCreateVault, LedgerError } from "~/lib/vault/vault-ledger";
-import { getVaultConfig } from "~/lib/vault/vault-perks";
 import { grantCardXp } from "~/lib/cards/xp-utils";
-import { allocateSerialNumberTx } from "~/lib/cards/serial-number";
-import { syncUserToForum } from "~/server/modules/forum";
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-function utcDayNumber(date: Date): number {
-  return Math.floor(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) / MS_PER_DAY
-  );
-}
-
-/**
- * Streak after a claim at `now`: +1 on the next UTC calendar day, reset to 1 after
- * a missed day, unchanged on the same day. No previous login starts at 1.
- */
-export function computeNextStreak(
-  lastLoginDate: Date | null,
-  currentStreak: number,
-  now: Date
-): number {
-  if (!lastLoginDate) return 1;
-  const daysDiff = utcDayNumber(now) - utcDayNumber(new Date(lastLoginDate));
-  if (daysDiff === 1) return currentStreak + 1;
-  if (daysDiff > 1) return 1;
-  return currentStreak;
-}
+import { assertCapacityTx, CapacityError } from "~/lib/cards/capacity";
+import { dailyRarityOdds, getEconomyConfig } from "~/lib/cards/economy-config";
+import { mintCopy } from "~/lib/cards/mint";
+import {
+  createPoolDrawer,
+  DAILY_POOL_WHERE,
+  oddsWithCards,
+  rollRarity,
+  tierCounts,
+} from "~/lib/cards/pool-draw";
+import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
+import { computeNextStreak, levelMultiplier, streakMultiplier } from "~/lib/vault/daily-roll";
 
 export function startOfUtcDay(now: Date): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
@@ -114,56 +99,12 @@ async function claimSlotAndEarn(
       return { status: "paid", streak: slot.streak, amount: earned.amount };
     });
 
-    if (payout.status === "paid") syncUserToForum(userId).catch(() => {});
     return payout;
   } catch (error) {
     if (error instanceof LedgerError) {
       return { status: "earn-failed", streak: vault.loginStreak, message: error.message };
     }
     throw error;
-  }
-}
-
-/**
- * Claim daily login bonus with streak tracking
- */
-export async function claimDailyBonus(
-  userId: string,
-  db: PrismaClient
-): Promise<{ success: boolean; bonus: number; streak: number; message?: string }> {
-  try {
-    const vault = await getOrCreateVault(userId, db);
-    const vaultCfg = await getVaultConfig(db);
-
-    const payout = await claimSlotAndEarn(db, userId, vault, new Date(), "DAILY_LOGIN", (streak) =>
-      Math.min(streak, vaultCfg.maxStreakBonus)
-    );
-
-    if (payout.status === "already-claimed") {
-      return {
-        success: false,
-        bonus: 0,
-        streak: payout.streak,
-        message: "Daily bonus already claimed today",
-      };
-    }
-    if (payout.status === "earn-failed") {
-      return { success: false, bonus: 0, streak: payout.streak, message: payout.message };
-    }
-
-    console.log(
-      `[Vault Service] User ${userId} claimed daily bonus: ${payout.amount} IxC (streak: ${payout.streak})`
-    );
-
-    return { success: true, bonus: payout.amount, streak: payout.streak };
-  } catch (error) {
-    console.error(`[Vault Service] Failed to claim daily login bonus for ${userId}:`, error);
-    return {
-      success: false,
-      bonus: 0,
-      streak: 0,
-      message: "Failed to claim daily bonus",
-    };
   }
 }
 
@@ -180,20 +121,56 @@ function rollDailyCredits(streak: number, vaultLevel: number): number {
     baseCredits = Math.floor(Math.random() * 190) + 10;
   }
 
-  const streakMultiplier = 1 + Math.min(streak * 0.05, 1.5);
-  const levelMultiplier = 1 + Math.min(vaultLevel * 0.02, 1.0);
-  return Math.min(10000, Math.floor(baseCredits * streakMultiplier * levelMultiplier));
+  return Math.min(
+    10000,
+    Math.floor(baseCredits * streakMultiplier(streak) * levelMultiplier(vaultLevel))
+  );
 }
 
-/** Random non-retired card, falling back to any card; null when none exist. */
-async function pickRandomCard(db: PrismaClient) {
-  const activeCount = await db.card.count({ where: { isRetired: false } });
-  const total = activeCount > 0 ? activeCount : await db.card.count();
-  if (total === 0) return null;
+/** No card can be drawn (an empty pool); the claim is kept. */
+class DailyCardError extends Error {}
 
-  return db.card.findFirst({
-    where: activeCount > 0 ? { isRetired: false } : {},
-    skip: Math.floor(Math.random() * total),
+type DailyVault = Awaited<ReturnType<typeof getOrCreateVault>>;
+
+/**
+ * The daily card in one transaction: today's slot, capacity under the owner's lock (before the mint's serial lock), a
+ * draw from any realm by the daily odds shared over the rarities that have cards (cards refresh §4, Q3), a copy with a
+ * rolled finish, its XP and the ledger marker. A full collection or an empty pool throws, which rolls the slot back, so
+ * the player can still take credits today.
+ */
+async function claimDailyCard(db: PrismaClient, vault: DailyVault, now: Date) {
+  return db.$transaction(async (tx) => {
+    const slot = await claimDailySlot(tx, vault, now);
+    if (!slot.claimed) return null;
+    await assertCapacityTx(tx, vault.userId, 1);
+    const counts = await tierCounts(tx, DAILY_POOL_WHERE);
+    const odds = oddsWithCards(dailyRarityOdds(await getEconomyConfig(tx)), counts);
+    const card = await createPoolDrawer(tx, DAILY_POOL_WHERE, counts).draw(rollRarity(odds));
+    if (!card) {
+      throw new DailyCardError("There is no card to draw right now. Take the credits instead.");
+    }
+    const copy = await mintCopy(tx, {
+      cardId: card.id,
+      ownerId: vault.userId,
+      source: "DAILY_CLAIM",
+    });
+    await grantCardXp(tx, copy.id, "DAILY_CLAIM", JSON.stringify({ cardId: card.id }), now);
+    // The balance as it stands in this transaction, not as read before it began
+    const { credits } = await tx.myVault.findUniqueOrThrow({
+      where: { id: vault.id },
+      select: { credits: true },
+    });
+    await tx.vaultTransaction.create({
+      data: {
+        vaultId: vault.id,
+        credits: 0,
+        balanceAfter: credits,
+        type: "EARN_ACTIVE",
+        source: "DAILY_LOGIN_CARD",
+        metadata: JSON.stringify({ cardId: card.id, cardTitle: card.title, finish: copy.finish }),
+      },
+    });
+    return { streak: slot.streak, card, copy };
   });
 }
 
@@ -208,7 +185,14 @@ export async function claimCombinedDailyClaim(
   success: boolean;
   rewardType: "credits" | "card";
   creditsAwarded?: number;
-  cardAwarded?: { id: string; title: string; rarity: string; artwork: string };
+  cardAwarded?: {
+    id: string;
+    ownershipId: string;
+    title: string;
+    rarity: string;
+    artwork: string;
+    finish: CardFinish;
+  };
   streak: number;
   message?: string;
 }> {
@@ -247,75 +231,28 @@ export async function claimCombinedDailyClaim(
       };
     }
 
-    const card = await pickRandomCard(db);
-    if (!card) {
-      return {
-        success: false,
-        rewardType,
-        streak: vault.loginStreak,
-        message: "No cards exist in the database to award.",
-      };
+    let outcome: Awaited<ReturnType<typeof claimDailyCard>>;
+    try {
+      outcome = await claimDailyCard(db, vault, now);
+    } catch (error) {
+      if (error instanceof CapacityError || error instanceof DailyCardError) {
+        return { success: false, rewardType, streak: vault.loginStreak, message: error.message };
+      }
+      throw error;
     }
+    if (outcome === null) return alreadyClaimed;
 
-    // Slot, serial allocation, ownership, transfer event, XP and ledger row: one transaction
-    const streak = await db.$transaction(async (tx) => {
-      const slot = await claimDailySlot(tx, vault, now);
-      if (!slot.claimed) return null;
-
-      const serialNumber = await allocateSerialNumberTx(tx, card.id);
-
-      const ownership = await tx.cardOwnership.create({
-        data: {
-          id: `co_${Date.now()}_${vault.userId}_${card.id}`,
-          userId: vault.userId,
-          cardId: card.id,
-          ownerId: vault.userId,
-          serialNumber,
-          level: 1,
-          experience: 0,
-        },
-      });
-
-      await tx.cardTransferEvent.create({
-        data: {
-          ownershipId: ownership.id,
-          toUserId: vault.userId,
-          action: "DAILY_CLAIM",
-        },
-      });
-
-      await grantCardXp(
-        tx as PrismaClient,
-        ownership.id,
-        10,
-        "DAILY_CLAIM",
-        JSON.stringify({ cardId: card.id })
-      );
-
-      await tx.vaultTransaction.create({
-        data: {
-          vaultId: vault.id,
-          credits: 0,
-          balanceAfter: vault.credits,
-          type: "EARN_ACTIVE",
-          source: "DAILY_LOGIN_CARD",
-          metadata: JSON.stringify({ cardId: card.id, cardTitle: card.title }),
-        },
-      });
-
-      return slot.streak;
-    });
-
-    if (streak === null) return alreadyClaimed;
-
+    const { card, copy, streak } = outcome;
     return {
       success: true,
       rewardType,
       cardAwarded: {
         id: card.id,
+        ownershipId: copy.id,
         title: card.title,
         rarity: card.rarity,
-        artwork: card.artwork || "/images/cards/placeholder-nation.png",
+        artwork: card.artwork || CARD_ARTWORK_PLACEHOLDER,
+        finish: copy.finish,
       },
       streak,
       message: `Claimed daily card: ${card.title}!`,

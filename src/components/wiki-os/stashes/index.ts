@@ -1,4 +1,3 @@
-// src/components/wiki-os/stashes/index.ts
 // Unified barrel export for Stash components.
 
 export * from "./types";

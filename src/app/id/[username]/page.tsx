@@ -1,129 +1,26 @@
-"use client";
+import { permanentRedirect } from "next/navigation";
+import { passportSegmentHandleOrRaw } from "~/lib/passport/passport-segment";
+import { needsCanonicalRedirect } from "~/server/modules/identity/identity.handle";
+import { resolveCanonicalHandle } from "~/server/modules/identity/identity.resolve";
+import { PassportPageClient } from "./PassportPageClient";
 
-import React, { use, useCallback, useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import { api } from "~/trpc/react";
-import { usePageTitle } from "~/hooks/usePageTitle";
-import { Skeleton } from "~/components/ui/skeleton";
-import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
-import { WarningTriangle as AlertTriangle } from "iconoir-react";
-import { useUser } from "~/context/auth-context";
-import { MidRibbonPassportDocument } from "~/components/passport/MidRibbonPassportDocument";
-import { DEFAULT_PASSPORT_TAB, parsePassportTab } from "~/components/passport/passport-tabs";
-import type { PassportTabType } from "~/components/passport/types";
-
-export default function UnifiedIxnayIdProfilePage({
-  params,
-}: {
+interface PassportPageProps {
   params: Promise<{ username: string }>;
-}) {
-  const { username: rawUsername } = use(params);
-  const cleanUsername = decodeURIComponent(rawUsername).replace(/^@/, "");
-
-  return <IxnayIdPassportCanvas cleanUsername={cleanUsername} />;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
-  const { user: currentClerkUser } = useUser();
-  const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<PassportTabType>(
-    () => parsePassportTab(searchParams.get("tab")) ?? DEFAULT_PASSPORT_TAB
-  );
-
-  // Sync tab from URL if present
-  useEffect(() => {
-    const tab = parsePassportTab(searchParams.get("tab"));
-    if (tab) setActiveTab(tab);
-  }, [searchParams]);
-
-  const { data, isLoading, error } = api.ixnayid.getPassport.useQuery(
-    { handle: cleanUsername },
-    { enabled: Boolean(cleanUsername) }
-  );
-
-  const isOwner = Boolean(data?.account.isOwner);
-
-  // Authoritatively sync Display Name & Avatar exclusively from Clerk
-  const displayName =
-    (isOwner && currentClerkUser ? currentClerkUser.fullName || currentClerkUser.username : null) ||
-    data?.account.clerkDisplayName ||
-    data?.account.clerkUsername ||
-    cleanUsername;
-
-  const avatarUrl =
-    (isOwner && currentClerkUser ? currentClerkUser.imageUrl : null) ||
-    data?.account.clerkImageUrl ||
-    null;
-
-  usePageTitle({
-    title: `${displayName} (@${cleanUsername}) · Identity Passport`,
-  });
-
-  const handleSelectTab = useCallback((tab: PassportTabType) => {
-    setActiveTab(tab);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      if (tab === DEFAULT_PASSPORT_TAB) {
-        url.searchParams.delete("tab");
-      } else {
-        url.searchParams.set("tab", tab);
-      }
-      window.history.replaceState({}, "", url.toString());
-    }
-  }, []);
-
-  if (isLoading) {
-    return (
-      <DashboardSidebarLayout disableCollapse={true}>
-        <div className="mx-auto w-full max-w-5xl space-y-8 px-4 py-6 sm:px-6">
-          <div className="flex items-start gap-6">
-            <Skeleton className="h-24 w-24 shrink-0 rounded-3xl" />
-            <div className="flex-1 space-y-3">
-              <Skeleton className="h-8 w-64 rounded-xl" />
-              <Skeleton className="h-4 w-40 rounded-lg" />
-              <Skeleton className="h-16 w-full max-w-xl rounded-2xl" />
-            </div>
-          </div>
-          <Skeleton className="h-10 w-80 rounded-2xl" />
-          <div className="space-y-4">
-            <Skeleton className="h-32 w-full rounded-3xl" />
-            <Skeleton className="h-48 w-full rounded-3xl" />
-          </div>
-        </div>
-      </DashboardSidebarLayout>
-    );
+/**
+ * A legacy passport URL (forum name, wiki name, Clerk id, user id) 308s to `/@{handle}` once the
+ * holder has a stored handle, keeping `?tab=`. The redirect lives here, not in the layout, because
+ * only a page receives `searchParams`. `/@me` never redirects.
+ */
+export default async function PassportPage({ params, searchParams }: PassportPageProps) {
+  const segment = passportSegmentHandleOrRaw((await params).username);
+  const canonical = await resolveCanonicalHandle(segment).catch(() => null);
+  if (canonical && needsCanonicalRedirect(segment, canonical.handle)) {
+    const { tab } = await searchParams;
+    const query = typeof tab === "string" && tab ? `?tab=${encodeURIComponent(tab)}` : "";
+    permanentRedirect(`/@${canonical.handle}${query}`);
   }
-
-  if (error || !data) {
-    return (
-      <DashboardSidebarLayout disableCollapse={true}>
-        <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
-          <div className="space-y-4 rounded-3xl border border-black/8 bg-black/[0.015] p-8 text-center dark:border-white/10 dark:bg-white/[0.02]">
-            <AlertTriangle className="mx-auto h-10 w-10 text-amber-500" />
-            <h2 className="text-foreground text-xl font-bold">Identity Not Found</h2>
-            <p className="text-muted-foreground mx-auto max-w-md text-sm">
-              Could not resolve a public passport or registered identity for @{cleanUsername}.
-            </p>
-          </div>
-        </div>
-      </DashboardSidebarLayout>
-    );
-  }
-
-  return (
-    <DashboardSidebarLayout disableCollapse={true}>
-      <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
-        {/* Mid-Ribbon Integrated Polycarbonate Passport Document */}
-        <MidRibbonPassportDocument
-          cleanUsername={cleanUsername}
-          displayName={displayName}
-          avatarUrl={avatarUrl}
-          data={data}
-          isOwner={isOwner}
-          activeTab={activeTab}
-          onSelectTab={handleSelectTab}
-        />
-      </div>
-    </DashboardSidebarLayout>
-  );
+  return <PassportPageClient handle={segment} />;
 }

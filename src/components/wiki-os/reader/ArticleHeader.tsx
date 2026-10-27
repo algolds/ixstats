@@ -1,6 +1,8 @@
 "use client";
 
+import { cn } from "~/lib/utils";
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { preload } from "react-dom";
 import Link from "next/link";
 import {
   Trophy,
@@ -11,15 +13,18 @@ import {
 } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { CategoryBreadcrumb } from "./CategoryBreadcrumb";
-import { withBasePath } from "~/lib/base-path";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { detectMediaType } from "~/lib/wiki-os/transformers/media-theme";
-import type { ActiveCountryData } from "~/components/wiki-os/shared/ActiveCountryUnifiedWidget";
+import { heroImage } from "~/lib/wiki-os/transformers/image-url";
+import { assetUrl } from "~/lib/base-path";
 import type { FlagColors } from "~/lib/flags/flag-color-extractor";
+import { TocButton } from "./ArticleToc";
 import { EditorialMastheadHeader } from "./headers/EditorialMastheadHeader";
 import { WatchButton } from "./WatchButton";
+import { AwardTrophyLinks } from "./AwardTrophyLinks";
+import { focusRing } from "~/components/ui/button";
 
-export type ArticleThemeColors =
+type ArticleThemeColors =
   | FlagColors
   | {
       primary: string;
@@ -48,8 +53,10 @@ export interface ArticleHeaderProps {
   title: string;
   lastModified: string | null;
   wikiSource?: string;
-  countryData?: ActiveCountryData | Record<string, unknown> | null;
+  countryData?: Record<string, unknown> | null;
   featuredImageUrl?: string | null;
+  /** The size of the lead image's file, when the article's HTML says (it fixes the hero's shape from the first paint). */
+  featuredImageFile?: { width: number | null; height: number | null } | null;
   themeColors?: ArticleThemeColors | null;
   authorInfo?: ArticleAuthorInfo | null;
   awardsData?: {
@@ -63,10 +70,66 @@ export interface ArticleHeaderProps {
       recipientUsers: string[];
       awardedAt: string;
       metadata: string | null;
+      /** A Loreward win's trophy card, once minted. */
+      trophyCardId?: string | null;
     }>;
   } | null;
-  tocLength: number;
-  onTocClick: () => void;
+  /** Number of headings in the article; the Contents button hides at 0. */
+  tocLength?: number;
+  onTocClick?: () => void;
+}
+
+const YELLOW_BADGE = "border-yellow/20 bg-yellow/10 text-yellow-ink hover:bg-yellow/20";
+
+/** Badge and list styling per award category; `listIconColor` overrides `iconColor` in the popover list. */
+const AWARD_STYLES: Record<
+  string,
+  { Icon: typeof Trophy; text: string; classes: string; iconColor: string; listIconColor?: string }
+> = {
+  LOREWARD: {
+    Icon: Trophy,
+    text: "Loreward winner",
+    classes: YELLOW_BADGE,
+    iconColor: "text-yellow",
+  },
+  FEATURED: {
+    Icon: Star,
+    text: "Featured article",
+    classes: YELLOW_BADGE,
+    iconColor: "text-yellow",
+  },
+  COLLABORATION: {
+    Icon: Users,
+    text: "Collaborative work",
+    classes: "border-green/20 bg-green/10 text-green-ink hover:bg-green/20",
+    iconColor: "text-green",
+  },
+  PEER_REVIEW: {
+    Icon: CheckCircle2,
+    text: "Peer reviewed",
+    classes: "border-tint/20 bg-tint/10 text-tint hover:bg-tint/20",
+    iconColor: "text-blue",
+    listIconColor: "text-tint",
+  },
+  EDITOR_MILESTONE: {
+    Icon: Sparkles,
+    text: "Editor milestone",
+    classes: "border-indigo/20 bg-indigo/10 text-indigo-ink hover:bg-indigo/20",
+    iconColor: "text-indigo",
+  },
+};
+
+const awardStyle = (category: string) =>
+  AWARD_STYLES[category] ?? {
+    Icon: Trophy,
+    text: "Wiki award",
+    classes: YELLOW_BADGE,
+    iconColor: "text-yellow",
+  };
+/** The hero card's shape: its picture's, kept within a banner's range; 3.2 when the size is not known. */
+function heroAspectRatio(width: number | null, height: number | null): number {
+  if (!width || !height) return 3.2;
+  return Math.max(2.2, Math.min(4.0, width / height));
 }
 
 export function WikiOSHeader({
@@ -75,32 +138,54 @@ export function WikiOSHeader({
   wikiSource,
   countryData,
   featuredImageUrl,
+  featuredImageFile,
   themeColors,
   authorInfo,
   awardsData,
-  _tocLength,
-  _onTocClick,
-}: ArticleHeaderProps & { _tocLength?: number; _onTocClick?: () => void }) {
-  const rawBackdropUrl: string | null =
+  tocLength = 0,
+  onTocClick,
+}: ArticleHeaderProps) {
+  // An uploaded flag or a proxied image is a root path stored without the base path: it gets it here.
+  const rawBackdropUrl = assetUrl(
     typeof countryData?.flagUrl === "string"
       ? countryData.flagUrl
       : typeof featuredImageUrl === "string"
         ? featuredImageUrl
-        : null;
+        : null
+  );
 
-  const backdropUrl = useMemo(() => {
+  // The hero's picture: a thumbnail 1280 px wide of a larger photo (never the full file, which
+  // was the page's biggest download), else the file itself; and its shape, known before any pixel.
+  const hero = useMemo(() => {
     if (!rawBackdropUrl) return null;
-    const thumbMatch = rawBackdropUrl.match(/\/thumb(\/[^/]+\/[^/]+\/[^/]+)\//);
-    if (thumbMatch) {
-      return rawBackdropUrl.replace(/\/thumb(\/[^/]+\/[^/]+\/[^/]+)\/[^/]+$/, "$1");
+    // the file size is the lead image's: a country's flag backdrop has no size we know
+    const file = typeof countryData?.flagUrl === "string" ? null : featuredImageFile;
+    return heroImage(rawBackdropUrl, file?.width ?? null, file?.height ?? null);
+  }, [rawBackdropUrl, countryData?.flagUrl, featuredImageFile]);
+  const backdropUrl = hero?.original ?? null;
+  // A thumbnail the server cannot make falls back to the file, in the same box
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const heroSrc = hero ? (failedSrc === hero.src ? hero.original : hero.src) : null;
+  if (heroSrc) {
+    // the browser starts fetching it with the HTML, before the page's scripts have run
+    preload(heroSrc, { as: "image", fetchPriority: "high", referrerPolicy: "no-referrer" });
+  }
+  const onHeroError = () => {
+    if (hero && hero.src !== hero.original) setFailedSrc(hero.src);
+  };
+  // A thumbnail that failed before hydration fired no React `onError`: the picture is already
+  // "complete" with no pixels. Look once the page is interactive, and fall back the same way.
+  const backdropRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const picture = backdropRef.current?.querySelector("img");
+    if (picture?.complete && picture.naturalWidth === 0 && hero && failedSrc !== hero.src) {
+      // reads the DOM's state (an external system) after hydration, which no render can know
+      // oxlint-disable-next-line
+      if (hero.src !== hero.original) setFailedSrc(hero.src);
     }
-    return rawBackdropUrl;
-  }, [rawBackdropUrl]);
+  }, [hero, failedSrc]);
 
   const cardRef = useRef<HTMLDivElement>(null);
-  const [coords, setCoords] = useState({ x: 0, y: 0 });
-  const [isHovered, setIsHovered] = useState(false);
-  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const [showPopover, setShowPopover] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -114,24 +199,6 @@ export function WikiOSHeader({
     }
     return;
   }, [awardsData]);
-
-  // Capture natural image dimensions to adjust card aspect ratio dynamically
-  useEffect(() => {
-    if (!backdropUrl) {
-      // oxlint-disable-next-line
-      setAspectRatio(null);
-      return;
-    }
-    const img = new Image();
-    img.src = backdropUrl;
-    img.referrerPolicy = "no-referrer";
-    img.onload = () => {
-      if (img.naturalWidth && img.naturalHeight) {
-        const ratio = img.naturalWidth / img.naturalHeight;
-        setAspectRatio(Math.max(2.2, Math.min(4.0, ratio)));
-      }
-    };
-  }, [backdropUrl]);
 
   const primaryAward = useMemo(() => {
     if (!awardsData?.awards || awardsData.awards.length === 0) return null;
@@ -149,105 +216,22 @@ export function WikiOSHeader({
     return sorted[0]!;
   }, [awardsData]);
 
-  const badgeConfig = useMemo(() => {
-    if (!primaryAward) return null;
-    switch (primaryAward.category) {
-      case "LOREWARD":
-        return {
-          Icon: Trophy,
-          text: "Loreward Winner",
-          classes:
-            "border-amber-600/20 bg-amber-600/10 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/25 hover:bg-amber-600/20",
-          iconColor: "text-amber-600 dark:text-amber-400",
-        };
-      case "FEATURED":
-        return {
-          Icon: Star,
-          text: "Featured Article",
-          classes:
-            "border-yellow-500/20 bg-yellow-500/10 text-yellow-700 dark:border-yellow-500/30 dark:bg-yellow-500/15 dark:text-yellow-400 dark:hover:bg-yellow-500/25 hover:bg-yellow-500/20",
-          iconColor: "text-yellow-600 dark:text-yellow-400",
-        };
-      case "COLLABORATION":
-        return {
-          Icon: Users,
-          text: "Collaborative Work",
-          classes:
-            "border-green-600/20 bg-green-600/10 text-green-800 dark:border-green-500/30 dark:bg-green-500/15 dark:text-green-400 dark:hover:bg-green-500/25 hover:bg-green-600/20",
-          iconColor: "text-green-600 dark:text-green-400",
-        };
-      case "PEER_REVIEW":
-        return {
-          Icon: CheckCircle2,
-          text: "Peer Reviewed",
-          classes:
-            "border-blue-600/20 bg-blue-600/10 text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-400 dark:hover:bg-blue-500/25 hover:bg-blue-600/20",
-          iconColor: "text-blue-600 dark:text-blue-400",
-        };
-      case "EDITOR_MILESTONE":
-        return {
-          Icon: Sparkles,
-          text: "Editor Milestone",
-          classes:
-            "border-indigo-600/20 bg-indigo-600/10 text-indigo-800 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-400 dark:hover:bg-indigo-500/25 hover:bg-indigo-600/20",
-          iconColor: "text-indigo-600 dark:text-indigo-400",
-        };
-      default:
-        return {
-          Icon: Trophy,
-          text: "Wiki Award",
-          classes:
-            "border-amber-600/20 bg-amber-600/10 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/25 hover:bg-amber-600/20",
-          iconColor: "text-amber-600 dark:text-amber-400",
-        };
-    }
-  }, [primaryAward]);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setCoords({ x, y });
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    setCoords({ x: 0, y: 0 });
-  };
-
-  const tiltStyle = isHovered
-    ? {
-        transform: `perspective(1200px) rotateY(${coords.x * 12}deg) rotateX(${-coords.y * 12}deg) scale3d(1.015, 1.015, 1.015)`,
-        transition: "transform 0.1s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease",
-      }
-    : {
-        transform: `perspective(1200px) rotateY(0deg) rotateX(0deg) scale3d(1, 1, 1)`,
-        transition: "transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease",
-      };
-
-  const sheenStyle = isHovered
-    ? {
-        background: `radial-gradient(circle 250px at ${(coords.x + 0.5) * 100}% ${(coords.y + 0.5) * 100}%, rgba(255, 255, 255, 0.18), transparent)`,
-        mixBlendMode: "overlay" as const,
-      }
-    : {
-        background: "transparent",
-      };
+  const badgeConfig = primaryAward ? awardStyle(primaryAward.category) : null;
 
   const containerStyle = {
-    ...tiltStyle,
-    transformStyle: "preserve-3d" as const,
-    aspectRatio: aspectRatio ? `${aspectRatio}` : "3.2",
+    aspectRatio: String(heroAspectRatio(hero?.width ?? null, hero?.height ?? null)),
     minHeight: "150px",
     maxHeight: "260px",
   } as React.CSSProperties;
 
-  const { getImageStyle } = useWikiMediaTheme();
+  // The picture's kind (and its own mode, if it has one) as attributes: foundations.css themes it
+  // from <html>, so the server and the first client render agree and no theme's frame is shown to
+  // the other's reader (an inline `filter` computed here from the theme was not the same twice).
+  const { getImageAttributes } = useWikiMediaTheme();
   const heroMediaType = useMemo(() => detectMediaType(backdropUrl), [backdropUrl]);
-  const heroMediaStyle = useMemo(
-    () => getImageStyle(backdropUrl || "", heroMediaType),
-    [backdropUrl, heroMediaType, getImageStyle]
+  const heroMedia = useMemo(
+    () => getImageAttributes(backdropUrl || "", heroMediaType),
+    [backdropUrl, heroMediaType, getImageAttributes]
   );
 
   const isSvg = useMemo(() => {
@@ -275,8 +259,8 @@ export function WikiOSHeader({
         themeColors={themeColors}
         authorInfo={authorInfo}
         awardsData={awardsData}
-        tocLength={_tocLength ?? 0}
-        onTocClick={_onTocClick ?? (() => {})}
+        tocLength={tocLength}
+        onTocClick={onTocClick}
         primaryAward={primaryAward}
         badgeConfig={badgeConfig}
         showCelebration={showCelebration}
@@ -289,69 +273,54 @@ export function WikiOSHeader({
   return (
     <div
       ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={handleMouseLeave}
       style={containerStyle}
-      className="wikios-header facet-surface facet-refraction relative z-10 mb-6 flex w-full cursor-default flex-col justify-end overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 select-none"
+      className="wikios-header rounded-card shadow-card relative z-10 mb-6 flex w-full cursor-default flex-col justify-end overflow-hidden select-none"
     >
       {/* Backdrop: Centered & Contained Vector Artwork for SVGs / Full-Bleed for Photos */}
       {backdropUrl ? (
         <div
+          ref={backdropRef}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden rounded-2xl select-none"
-          style={
-            heroMediaStyle.backgroundColor
-              ? { backgroundColor: heroMediaStyle.backgroundColor }
-              : undefined
-          }
+          className="rounded-card pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden select-none"
+          {...heroMedia}
         >
           {isSvg ? (
             <>
-              {/* Subtle Chromatic Radial Underglow */}
-              <div
-                className="pointer-events-none absolute inset-0 -z-10 opacity-25 blur-3xl dark:opacity-15"
-                style={{
-                  background: `radial-gradient(circle at 60% 50%, ${themeColors?.primary ?? "#3b82f6"} 0%, transparent 65%)`,
-                }}
-              />
               <img
-                src={backdropUrl}
+                src={heroSrc ?? backdropUrl}
+                width={hero?.width ?? undefined}
+                height={hero?.height ?? undefined}
                 alt=""
-                className="h-full max-h-[85%] w-full max-w-[92%] object-contain object-center p-3 drop-shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:p-5 md:p-6"
-                style={{
-                  ...(heroMediaStyle.filter ? { filter: heroMediaStyle.filter } : {}),
-                  ...(heroMediaStyle.backgroundColor
-                    ? { backgroundColor: heroMediaStyle.backgroundColor }
-                    : {}),
-                  ...(heroMediaStyle.borderRadius
-                    ? { borderRadius: heroMediaStyle.borderRadius }
-                    : {}),
-                  ...(heroMediaStyle.padding ? { padding: heroMediaStyle.padding } : {}),
-                }}
+                className="h-full max-h-[85%] w-full max-w-[92%] object-contain object-center p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:p-5 md:p-6"
+                {...heroMedia}
                 loading="eager"
+                fetchPriority="high"
                 referrerPolicy="no-referrer"
+                onError={onHeroError}
               />
             </>
           ) : (
             <img
-              src={backdropUrl}
+              src={heroSrc ?? backdropUrl}
+              width={hero?.width ?? undefined}
+              height={hero?.height ?? undefined}
               alt=""
-              className="absolute inset-0 h-full w-full object-cover object-center saturate-110 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
-              style={heroMediaStyle.filter ? { filter: heroMediaStyle.filter } : undefined}
+              className="absolute inset-0 h-full w-full object-cover object-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
               loading="eager"
+              fetchPriority="high"
               referrerPolicy="no-referrer"
+              onError={onHeroError}
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent dark:from-black/75 dark:via-black/25 dark:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
         </div>
       ) : (
         <div
           aria-hidden="true"
-          className="bg-card pointer-events-none absolute inset-0 z-0 rounded-2xl select-none"
+          className="bg-surface rounded-card pointer-events-none absolute inset-0 z-0 select-none"
         >
           <div
-            className="absolute inset-0 bg-gradient-to-br"
+            className="absolute inset-0"
             style={{
               background: `linear-gradient(135deg, ${themeColors?.primary ?? "#3b82f6"}08 0%, transparent 100%)`,
             }}
@@ -359,39 +328,33 @@ export function WikiOSHeader({
         </div>
       )}
 
-      {/* Floating Glass HUD Box */}
-      <div
-        className="relative z-10 m-3 max-w-xl self-start sm:m-4"
-        style={{
-          transform: "translateZ(30px)",
-          transformStyle: "preserve-3d" as const,
-        }}
-      >
-        <div className="facet-surface facet-refraction space-y-2.5 rounded-2xl border border-black/15 bg-white/95 p-4 text-left shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-2xl sm:p-5 dark:border-white/10 dark:bg-zinc-950/80 dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+      {/* Title card floating over the lead image */}
+      <div className="relative z-10 m-3 max-w-xl self-start sm:m-4">
+        <div className="facet-overlay text-label relative isolate space-y-2 overflow-hidden rounded-2xl p-4 text-left sm:p-5">
           {/* Breadcrumb Path */}
-          <div className="text-muted-foreground flex items-center gap-1 text-xs font-semibold tracking-wider uppercase">
+          <div className="text-label-secondary text-eyebrow flex items-center gap-1">
             <CategoryBreadcrumb title={title} />
           </div>
 
           {/* Title & Award Badge */}
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-foreground text-xl leading-tight font-bold tracking-tight sm:text-2xl">
-              {title.replace(/_/g, " ")}
-            </h1>
+            <h1 className="text-label text-title-2 sm:text-title-1">{title.replace(/_/g, " ")}</h1>
 
             <WatchButton title={title} wikiSource={wikiSource} />
+            <TocButton tocLength={tocLength} onClick={onTocClick} />
 
             {awardsData?.hasAwards && primaryAward && badgeConfig && (
               <Popover open={showPopover} onOpenChange={setShowPopover}>
                 <PopoverTrigger asChild>
                   <button
-                    className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:shadow-md active:scale-95 ${
-                      badgeConfig.classes
-                    } ${
-                      showCelebration && primaryAward.category === "LOREWARD"
-                        ? "loreward-badge-celebrate"
-                        : ""
-                    }`}
+                    className={cn(
+                      "group text-caption duration-fast relative flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 transition-[background-color,border-color]",
+                      focusRing,
+                      badgeConfig.classes,
+                      showCelebration &&
+                        primaryAward.category === "LOREWARD" &&
+                        "loreward-badge-celebrate"
+                    )}
                   >
                     {showCelebration && primaryAward.category === "LOREWARD" && (
                       <div className="pointer-events-none absolute inset-0 overflow-visible">
@@ -404,11 +367,12 @@ export function WikiOSHeader({
                       </div>
                     )}
                     <badgeConfig.Icon
-                      className={`h-3.5 w-3.5 shrink-0 group-hover:animate-bounce ${badgeConfig.iconColor}`}
+                      aria-hidden="true"
+                      className={cn("size-3.5 shrink-0", badgeConfig.iconColor)}
                     />
 
                     {awardsData.awards.length > 1 && (
-                      <span className="text-xs leading-none font-bold tabular-nums opacity-80">
+                      <span className="text-caption leading-none font-semibold tabular-nums">
                         +{awardsData.awards.length - 1}
                       </span>
                     )}
@@ -416,50 +380,40 @@ export function WikiOSHeader({
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="font-ui w-72 p-3" align="start">
-                  <div className="mb-2 flex items-center justify-between border-b border-zinc-100 pb-2 dark:border-white/5">
-                    <span className="text-foreground text-xs font-bold">Lorewards & Accolades</span>
-                    <span className="text-muted-foreground text-xs font-medium">
+                  <div className="border-separator mb-2 flex items-center justify-between border-b pb-2">
+                    <span className="text-label text-caption font-semibold">
+                      Lorewards & accolades
+                    </span>
+                    <span className="text-label-secondary text-caption">
                       {awardsData.awards.length} awarded
                     </span>
                   </div>
                   <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
                     {awardsData.awards.map((award: any, idx: number) => {
                       const date = new Date(award.awardedAt || award.createdAt);
-                      let AwardIcon = Trophy;
-                      let iconColor = "text-amber-500";
-                      if (award.category === "LOREWARD") {
-                        AwardIcon = Trophy;
-                        iconColor = "text-amber-500";
-                      } else if (award.category === "FEATURED") {
-                        AwardIcon = Star;
-                        iconColor = "text-yellow-500";
-                      } else if (award.category === "COLLABORATION") {
-                        AwardIcon = Users;
-                        iconColor = "text-green-500";
-                      } else if (award.category === "PEER_REVIEW") {
-                        AwardIcon = CheckCircle2;
-                        iconColor = "text-blue-500";
-                      } else if (award.category === "EDITOR_MILESTONE") {
-                        AwardIcon = Sparkles;
-                        iconColor = "text-indigo-500";
-                      }
+                      const style = awardStyle(award.category);
+                      const AwardIcon = style.Icon;
+                      const iconColor = style.listIconColor ?? style.iconColor;
 
                       return (
                         <div
                           key={award.id || idx}
-                          className="flex items-start gap-2 border-b border-zinc-100 pb-2 last:border-0 last:pb-0 dark:border-white/5"
+                          className="border-separator flex items-start gap-2 border-b pb-2 last:border-0 last:pb-0"
                         >
-                          <AwardIcon className={`mt-0.5 h-4 w-4 shrink-0 ${iconColor}`} />
+                          <AwardIcon
+                            aria-hidden="true"
+                            className={`mt-0.5 h-4 w-4 shrink-0 ${iconColor}`}
+                          />
                           <div className="flex flex-col text-left">
-                            <span className="text-foreground text-xs font-semibold">
+                            <span className="text-label text-caption font-semibold">
                               {award.name}
                             </span>
                             {award.description && (
-                              <span className="text-muted-foreground mt-0.5 text-xs leading-normal">
+                              <span className="text-label-secondary text-footnote mt-0.5 leading-normal">
                                 {award.description}
                               </span>
                             )}
-                            <span className="text-muted-foreground/60 mt-0.5 text-xs">
+                            <span className="text-label-secondary text-footnote mt-0.5">
                               {date.toLocaleDateString(undefined, {
                                 month: "short",
                                 day: "numeric",
@@ -471,12 +425,13 @@ export function WikiOSHeader({
                       );
                     })}
                   </div>
-                  <div className="flex justify-end border-t border-zinc-100 pt-2 dark:border-white/5">
+                  <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-2">
+                    <AwardTrophyLinks awards={awardsData.awards} />
                     <Link
-                      href={withBasePath("/wiki/lorewards")}
-                      className="text-xs font-bold text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                      href="/util/lorewards"
+                      className="text-caption text-tint duration-fast hover:text-tint-hover ml-auto transition-colors"
                     >
-                      View Leaderboard &rarr;
+                      View leaderboard &rarr;
                     </Link>
                   </div>
                 </PopoverContent>
@@ -485,12 +440,6 @@ export function WikiOSHeader({
           </div>
         </div>
       </div>
-
-      {/* Dynamic Cursor Sheen Overlay */}
-      <div
-        className="pointer-events-none absolute inset-0 z-20 rounded-2xl transition-opacity duration-300"
-        style={sheenStyle}
-      />
     </div>
   );
 }

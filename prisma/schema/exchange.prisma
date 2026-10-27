@@ -5,7 +5,9 @@
 //   - cuid() string ids, createdAt/updatedAt wall-clock audit columns
 //   - String columns for type/status/direction (allowed values documented inline),
 //     matching VaultTransaction.type / CardAuction.status
-//   - *IxTime columns are Float epoch-ms from IxTime.getCurrentIxTime() (game time)
+//   - *IxTime / ixTime columns are Float epoch-ms of REAL time (Date.now()) since the realm time
+//     switch (2026-10, scripts/migrations/2026-10-realm-time/t3-platform-real-time.sql); the names
+//     are historical. The exchange is platform-wide, so it runs on no realm's clock.
 //   - Sovereign wallet is isolated from MyVault to protect the IxCredits economy
 
 /// Per-user Sovereign (₷) wallet — Exchange's own currency, isolated from MyVault/IxCredits.
@@ -25,17 +27,20 @@ model ExchangeWallet {
 }
 
 /// Sovereign transaction ledger. type: CONVERT_IN | CONVERT_OUT | CHARTER_FEE |
-/// SHARE_BUY | SHARE_SELL | CONTRACT_PAYOUT | SECTOR_BUY | SECTOR_SELL | ADMIN_ADJUSTMENT
+/// COMPANY_DEPOSIT | COMPANY_WITHDRAW | SHARE_BUY | SHARE_SELL | CONTRACT_PAYOUT |
+/// SECTOR_BUY | SECTOR_SELL | ADMIN_ADJUSTMENT, plus the MyClub types in exchange-service.ts.
+/// idempotencyKey: a retried move with the same key is applied once (NULL for ordinary rows).
 model ExchangeTransaction {
-  id           String         @id @default(cuid())
-  walletId     String
-  sovereigns   Float
-  balanceAfter Float
-  type         String
-  source       String
-  metadata     Json?
-  ixTime       Float
-  createdAt    DateTime       @default(now())
+  id             String         @id @default(cuid())
+  walletId       String
+  sovereigns     Float
+  balanceAfter   Float
+  type           String
+  source         String
+  metadata       Json?
+  ixTime         Float
+  createdAt      DateTime       @default(now())
+  idempotencyKey String?        @unique
   wallet       ExchangeWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
 
   @@index([walletId, createdAt])
@@ -56,6 +61,10 @@ model Company {
   sharesIssued       Int                   @default(0)
   sharesOutstanding  Int                   @default(0)
   contractsWonValue  Float                 @default(0)
+  /// Founder control: new listings and share purchases are allowed only while true.
+  tradingOpen        Boolean               @default(false)
+  /// Fair value added by applied EXPAND decisions (see CompanyDecision).
+  decisionValue      Float                 @default(0)
   status             String                @default("ACTIVE")
   createdIxTime      Float
   createdAt          DateTime              @default(now())
@@ -66,6 +75,9 @@ model Company {
   shareholdings      Shareholding[]
   decisions          CompanyDecision[]
   bids               ContractBid[]
+  issuedContracts    Contract[]            @relation("ContractIssuer")
+  shareListings      ShareListing[]
+  dividends          CompanyDividend[]
 
   @@index([founderId])
   @@index([sectorKey])
@@ -104,6 +116,49 @@ model ShareIssuance {
   @@map("exchange_share_issuances")
 }
 
+/// A fixed-price sell order for a company's shares. sellerUserId NULL is a primary issue
+/// (new shares sold by the company, proceeds to its capital); otherwise a holder's secondary
+/// listing, whose shares are escrowed out of their Shareholding until sold or cancelled.
+/// status: OPEN | FILLED | CANCELLED. `shares` is what is left to sell.
+model ShareListing {
+  id             String   @id @default(cuid())
+  companyId      String
+  sellerUserId   String?
+  shares         Int
+  sharesListed   Int
+  pricePerShare  Float
+  status         String   @default("OPEN")
+  createdIxTime  Float
+  idempotencyKey String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status])
+  @@index([sellerUserId])
+  @@index([status])
+  @@map("exchange_share_listings")
+}
+
+/// A dividend paid from a company's capital pro rata to its shareholders. `amount` is what
+/// was paid: the declared amount less the sub-cent remainder, which stays in capital.
+model CompanyDividend {
+  id               String   @id @default(cuid())
+  companyId        String
+  declaredByUserId String
+  declared         Float
+  amount           Float
+  shareCount       Int
+  holderCount      Int
+  ixTime           Float
+  idempotencyKey   String   @unique
+  createdAt        DateTime @default(now())
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, createdAt])
+  @@map("exchange_company_dividends")
+}
+
 /// A player's holding in a company's shares.
 model Shareholding {
   id          String   @id @default(cuid())
@@ -132,6 +187,10 @@ model SectorIndex {
   baseTotal     Float?
   dmModifier    Float    @default(0)
   computedIxTime Float?
+  /// The sector fund: ₷ held for SectorPosition holders and the units they own. Each index
+  /// update rebalances the four funds by relative index performance; no ₷ is created.
+  fundSovereigns   Float @default(0)
+  unitsOutstanding Float @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now()) @updatedAt
 
@@ -179,6 +238,8 @@ model ConversionLog {
   fee        Float
   ixTime     Float
   createdAt  DateTime @default(now())
+  /// A retried conversion with the same key is applied once.
+  idempotencyKey String? @unique
   user       User     @relation("UserConversionLogs", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
@@ -186,7 +247,7 @@ model ConversionLog {
   @@map("exchange_conversion_logs")
 }
 
-/// A periodic strategic decision queued by a founder, resolved on the IxTime tick.
+/// A periodic strategic decision queued by a founder, resolved on the market tick (real time).
 /// type: EXPAND | RND | ENTER_SECTOR | ACQUIRE | LOBBY | PRICE
 model CompanyDecision {
   id           String   @id @default(cuid())
@@ -204,7 +265,10 @@ model CompanyDecision {
   @@map("exchange_company_decisions")
 }
 
-/// A B2G/B2B contract companies can bid on. type: B2G | B2B. status: OPEN | AWARDED | CLOSED
+/// A B2G/B2B contract companies can bid on. type: B2G | B2B.
+/// status: OPEN | AWARDED | COMPLETED | CANCELLED | DISPUTED (see
+/// docs/specs/2026-10-06-exchange-economy-design.md). A B2B contract is issued by a company
+/// whose capital funds `escrow` at creation; the winning bid's amount is paid out of escrow.
 model Contract {
   id          String        @id @default(cuid())
   type        String
@@ -217,7 +281,28 @@ model Contract {
   createdIxTime Float
   createdAt   DateTime      @default(now())
   bids        ContractBid[]
+  issuerCompanyId  String?
+  issuerUserId     String?
+  description      String?
+  escrow           Float    @default(0)
+  awardedBidId     String?
+  disputeReason    String?
+  disputedByUserId String?
+  resolutionNote   String?
+  closedIxTime     Float?
+  idempotencyKey   String?  @unique
+  updatedAt        DateTime @default(now()) @updatedAt
+  /// B2G: the nation the tender is issued for (its owner posts and funds it).
+  issuerCountryId  String?
+  /// Where escrow came from and returns to: COMPANY (issuer capital) | WALLET (issuer's wallet).
+  /// NULL on MVP rows, which are all COMPANY.
+  fundedBy         String?
+  issuerCompany    Company? @relation("ContractIssuer", fields: [issuerCompanyId], references: [id], onDelete: SetNull)
 
+  @@index([issuerCompanyId])
+  @@index([issuerCountryId])
+  @@index([status, endIxTime])
+  @@index([winnerCompanyId])
   @@index([status])
   @@index([sectorKey])
   @@index([endIxTime])

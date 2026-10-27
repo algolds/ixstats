@@ -10,7 +10,7 @@ import {
   type SoundName,
 } from "~/lib/sound/cuelume";
 
-export interface SoundSettingsState {
+interface SoundSettingsState {
   enabled: boolean;
   volume: number;
   setEnabled: (enabled: boolean) => void;

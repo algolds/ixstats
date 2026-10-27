@@ -4,7 +4,7 @@
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { createPlateEditor, ParagraphPlugin } from "platejs/react";
-import { Transforms, Editor, Range, Node as SlateNode } from "slate";
+import { Transforms, Editor, Point, Range, Text, Node as SlateNode } from "slate";
 import { ReactEditor } from "slate-react";
 import { api } from "~/trpc/react";
 import {
@@ -19,7 +19,19 @@ import {
   WikiEmbedPlugin,
   ImagePlugin,
 } from "./EditorPlugins";
-import { slateNodesToHtml, parsoidHtmlToSlate, toggleMark } from "./SlateSerializer";
+import {
+  slateNodesToHtml,
+  parsoidHtmlToSlate,
+  toggleMark,
+  wikiLinkElement,
+} from "./SlateSerializer";
+import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
+import { userMentionItems, type MentionSource } from "./mention-source";
+import {
+  useSportsMentionSearch,
+  useWikiDialogQueries,
+  useWikiMentionSearch,
+} from "./useWikiDialogQueries";
 
 function getMentionItemIcon(name: string, type: "league" | "club") {
   const lower = name.toLowerCase();
@@ -34,13 +46,31 @@ function getMentionItemIcon(name: string, type: "league" | "club") {
   return type === "league" ? "🏆" : "🛡️";
 }
 
-export interface UseGlassPlateEditorProps {
+/** The server's mention rule (`MENTION_PATTERN`): an `@` not preceded by a name character or another `@`, then the name so far. */
+const TYPED_MENTION = /(?<![A-Za-z0-9_@])@[A-Za-z0-9_]*$/;
+
+/**
+ * The `@name` being typed before `cursor`, or null. Slate's word unit stops at `@` and at `_`, so it cannot find a
+ * name: read the text node up to the cursor instead and apply the server's rule for where a mention may start. The
+ * server parses text nodes too, so a link or a mark right before the `@` counts as the start of the text.
+ */
+function typedMentionRange(editor: Editor, cursor: Point): Range | null {
+  const node = SlateNode.get(editor, cursor.path);
+  if (!Text.isText(node)) return null;
+  const typed = TYPED_MENTION.exec(node.text.slice(0, cursor.offset))?.[0];
+  if (!typed) return null;
+  return { anchor: { path: cursor.path, offset: cursor.offset - typed.length }, focus: cursor };
+}
+
+interface UseGlassPlateEditorProps {
   value?: string;
   onChange?: (html: string, text: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
   onSubmit?: () => void;
   submitOnEnter?: boolean;
+  /** Replaces the member's own personas in the @ menu (wiki and sports entries stay). */
+  mentionSource?: MentionSource;
 }
 
 export function useGlassPlateEditor({
@@ -50,6 +80,7 @@ export function useGlassPlateEditor({
   onBlur,
   onSubmit,
   submitOnEnter = false,
+  mentionSource,
 }: UseGlassPlateEditorProps) {
   const [_version, setVersion] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
@@ -64,43 +95,27 @@ export function useGlassPlateEditor({
   const [wikiInsertMode, setWikiInsertMode] = useState<"link" | "embed">("link");
   const [wikiTarget, setWikiTarget] = useState("");
   const [wikiText, setWikiText] = useState("");
-  const [selectedWikiSource, setSelectedWikiSource] = useState<"ixwiki" | "iiwiki" | "althistory">(
-    "ixwiki"
-  );
+  const [selectedWikiSource, setSelectedWikiSource] = useState<WikiSource>("ixwiki");
   const [selectedWikiImageUrl, setSelectedWikiImageUrl] = useState("");
-  const [wikiSearchQuery, setWikiSearchQuery] = useState("");
 
   const [isEmojiOpen, setIsEmojiOpen] = useState(false);
 
-  // Wiki search queries
-  const wikiSearch = api.wikios.search.useQuery(
-    { query: wikiSearchQuery, limit: 5, wikiSource: "all" },
-    { enabled: isWikiOpen && wikiSearchQuery.trim().length > 1, staleTime: 10_000 }
-  );
-
-  const wikiIntroQuery = api.wikios.getIntro.useQuery(
-    { title: wikiTarget, wiki: selectedWikiSource },
-    { enabled: isWikiOpen && wikiInsertMode === "embed" && !!wikiTarget.trim(), staleTime: 30_000 }
-  );
-
-  const wikiImagesQuery = api.wikios.getPageImages.useQuery(
-    { title: wikiTarget },
-    { enabled: isWikiOpen && wikiInsertMode === "embed" && !!wikiTarget.trim(), staleTime: 30_000 }
-  );
-
-  useEffect(() => {
-    if (wikiImagesQuery.data && wikiImagesQuery.data.length > 0) {
-      setSelectedWikiImageUrl(wikiImagesQuery.data[0].thumbUrl || wikiImagesQuery.data[0].url);
-    } else {
-      setSelectedWikiImageUrl("");
-    }
-  }, [wikiImagesQuery.data]);
-
-  useEffect(() => {
-    if (!isWikiOpen) {
-      setWikiSearchQuery("");
-    }
-  }, [isWikiOpen]);
+  // The dialog's search across every wiki and its embed preview, asked once typing pauses (useWikiDialogQueries).
+  const {
+    search: wikiSearch,
+    selectResult: selectWikiResult,
+    title: settledWikiTitle,
+    intro: wikiIntroQuery,
+    images: wikiImagesQuery,
+  } = useWikiDialogQueries({
+    target: wikiTarget,
+    source: selectedWikiSource,
+    open: isWikiOpen,
+    embed: wikiInsertMode === "embed",
+    setTarget: setWikiTarget,
+    setSource: setSelectedWikiSource,
+    setImage: setSelectedWikiImageUrl,
+  });
 
   // Mention State
   const [mentionQuery, setMentionQuery] = useState("");
@@ -108,51 +123,41 @@ export function useGlassPlateEditor({
   const [mentionRange, setMentionRange] = useState<Range | null>(null);
   const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0);
 
+  // The member's own personas, unless a source replaces them (a source also makes the menu people only).
   const mentionSearch = api.thinkpages.getMyAccounts.useQuery(undefined, {
     staleTime: 60_000,
+    enabled: !mentionSource,
   });
+  const hasMentionSource = !!mentionSource;
+  const onMentionQueryChange = mentionSource?.onQueryChange;
+  useEffect(() => {
+    onMentionQueryChange?.(mentionQuery);
+  }, [mentionQuery, onMentionQueryChange]);
+  // A new query is a new list: start on its first row.
+  useEffect(() => {
+    setMentionSelectedIndex(0);
+  }, [mentionQuery]);
 
-  const wikiSearchForMention = api.wikios.search.useQuery(
-    { query: mentionQuery, limit: 3, wikiSource: "all" },
-    { enabled: mentionQuery.trim().length > 1, staleTime: 10_000 }
-  );
+  const wikiSearchForMention = useWikiMentionSearch(mentionQuery, !mentionSource);
 
-  const sportsMentionSearch = api.sports.searchSportsEntities.useQuery(
-    { query: mentionQuery },
-    { enabled: mentionQuery.trim().length > 1, staleTime: 10_000 }
-  );
+  const sportsMentionSearch = useSportsMentionSearch(mentionQuery, !mentionSource);
 
   const mentionResults = useMemo(() => {
-    const q = mentionQuery.toLowerCase().trim();
     const results: Array<{
       type: "user" | "wiki" | "league" | "club";
       id: string;
       name: string;
       description: string;
       icon: string;
+      /** A wiki row's wiki: its link opens the article there. */
+      source?: WikiSource;
       raw: any;
     }> = [];
 
-    if (mentionSearch.data) {
-      for (const acc of mentionSearch.data) {
-        if (
-          !q ||
-          acc.username.toLowerCase().includes(q) ||
-          acc.displayName?.toLowerCase().includes(q)
-        ) {
-          results.push({
-            type: "user",
-            id: acc.id,
-            name: `@${acc.username}`,
-            description: acc.displayName || acc.username,
-            icon: "👤",
-            raw: acc,
-          });
-        }
-      }
-    }
+    results.push(...userMentionItems(mentionSource, mentionSearch.data, mentionQuery));
 
-    if (sportsMentionSearch.data) {
+    // A disabled query still returns what react-query cached for its key, so a forum menu must not read them.
+    if (!mentionSource && sportsMentionSearch.data) {
       for (const l of sportsMentionSearch.data.leagues || []) {
         results.push({
           type: "league",
@@ -175,21 +180,28 @@ export function useGlassPlateEditor({
       }
     }
 
-    if (wikiSearchForMention.data) {
+    if (!mentionSource && wikiSearchForMention.data) {
       for (const w of wikiSearchForMention.data) {
         results.push({
           type: "wiki",
           id: w.title,
           name: `[[${w.title}]]`,
-          description: `${w.source.toUpperCase()} Article`,
+          description: `${WIKI_SOURCES[w.source].name} article`,
           icon: "📖",
+          source: w.source,
           raw: w,
         });
       }
     }
 
     return results.slice(0, 6);
-  }, [mentionQuery, mentionSearch.data, wikiSearchForMention.data, sportsMentionSearch.data]);
+  }, [
+    mentionQuery,
+    mentionSource,
+    mentionSearch.data,
+    wikiSearchForMention.data,
+    sportsMentionSearch.data,
+  ]);
 
   // Lore Stash State
   const [isStashesOpen, setIsStashesOpen] = useState(false);
@@ -268,7 +280,7 @@ export function useGlassPlateEditor({
   useEffect(() => {
     if (!value || value === "") {
       if (lastEmittedHtmlRef.current !== "" && lastEmittedPlainRef.current !== "") {
-        editor.children = [{ type: "p", children: [{ text: "" }] }];
+        editor.tf.setValue([{ type: "p", children: [{ text: "" }] }]);
         lastEmittedHtmlRef.current = "";
         lastEmittedPlainRef.current = "";
         setVersion((v) => v + 1);
@@ -279,7 +291,7 @@ export function useGlassPlateEditor({
     if (value !== lastEmittedHtmlRef.current && value !== lastEmittedPlainRef.current) {
       try {
         const newNodes = parsoidHtmlToSlate(value);
-        editor.children = newNodes;
+        editor.tf.setValue(newNodes);
         lastEmittedHtmlRef.current = value;
         setVersion((v) => v + 1);
       } catch (e) {
@@ -307,11 +319,14 @@ export function useGlassPlateEditor({
       const { selection } = editor;
       if (selection && Range.isCollapsed(selection)) {
         const [start] = Range.edges(selection);
-        const wordRange = Editor.range(
-          editor as any,
-          Editor.before(editor as any, start, { unit: "word" }) || start,
-          start
-        );
+        // Only the forum's source reads the typed name; every other editor keeps opening on a bare `@`.
+        const wordRange = hasMentionSource
+          ? (typedMentionRange(editor as never, start) ?? Editor.range(editor as any, start, start))
+          : Editor.range(
+              editor as any,
+              Editor.before(editor as any, start, { unit: "word" }) || start,
+              start
+            );
         const wordText = Editor.string(editor as any, wordRange);
 
         if (wordText.startsWith("@")) {
@@ -338,7 +353,7 @@ export function useGlassPlateEditor({
       setMentionRange(null);
       setMentionQuery("");
     },
-    [editor, onChange]
+    [editor, onChange, hasMentionSource]
   );
 
   // Mention selection
@@ -350,14 +365,7 @@ export function useGlassPlateEditor({
       Transforms.select(editor as any, mentionRange);
 
       if (item.type === "wiki") {
-        Transforms.insertNodes(
-          editor as any,
-          {
-            type: "wikilink",
-            target: item.id,
-            children: [{ text: item.id }],
-          } as any
-        );
+        Transforms.insertNodes(editor as never, wikiLinkElement(item.id, item.source ?? "ixwiki"));
       } else {
         Transforms.insertText(editor as any, `${item.name} `);
       }
@@ -365,6 +373,7 @@ export function useGlassPlateEditor({
       setMentionCoords(null);
       setMentionRange(null);
       setMentionQuery("");
+      setMentionSelectedIndex(0);
       ReactEditor.focus(editor as any);
     },
     [editor, mentionRange, mentionResults]
@@ -388,7 +397,7 @@ export function useGlassPlateEditor({
         }
         if (e.key === "Enter" || e.key === "Tab") {
           e.preventDefault();
-          handleSelectMention(mentionSelectedIndex);
+          handleSelectMention(Math.min(mentionSelectedIndex, mentionResults.length - 1));
           return;
         }
         if (e.key === "Escape") {
@@ -460,26 +469,23 @@ export function useGlassPlateEditor({
   const insertWikiLink = useCallback(() => {
     if (!wikiTarget.trim()) return;
     if (wikiInsertMode === "embed") {
+      // The preview's summary and image are this title's only once typing has settled on it.
+      const previewed = settledWikiTitle === wikiTarget.trim();
       Transforms.insertNodes(
         editor as any,
         {
           type: "wikiembed",
           title: wikiTarget.trim(),
-          summary: wikiIntroQuery.data?.intro || "",
-          imageUrl: selectedWikiImageUrl || "",
+          summary: (previewed && wikiIntroQuery.data?.intro) || "",
+          imageUrl: (previewed && selectedWikiImageUrl) || "",
           source: selectedWikiSource,
           children: [{ text: "" }],
         } as any
       );
     } else {
-      const textToInsert = wikiText.trim() || wikiTarget.trim();
       Transforms.insertNodes(
-        editor as any,
-        {
-          type: "wikilink",
-          target: wikiTarget.trim(),
-          children: [{ text: textToInsert }],
-        } as any
+        editor as never,
+        wikiLinkElement(wikiTarget.trim(), selectedWikiSource, wikiText.trim())
       );
     }
     setIsWikiOpen(false);
@@ -495,23 +501,31 @@ export function useGlassPlateEditor({
     selectedWikiImageUrl,
     selectedWikiSource,
     wikiText,
+    settledWikiTitle,
   ]);
 
-  const insertStashedImage = useCallback(
-    (url: string, title: string) => {
+  const insertImageUrl = useCallback(
+    (url: string, alt = "") => {
       Transforms.insertNodes(
         editor as any,
         {
           type: "img",
           src: url,
-          alt: title,
+          alt,
           children: [{ text: "" }],
         } as any
       );
-      setIsStashesOpen(false);
       ReactEditor.focus(editor as any);
     },
     [editor]
+  );
+
+  const insertStashedImage = useCallback(
+    (url: string, title: string) => {
+      insertImageUrl(url, title);
+      setIsStashesOpen(false);
+    },
+    [insertImageUrl]
   );
 
   const handleSelectEmoji = useCallback(
@@ -551,9 +565,8 @@ export function useGlassPlateEditor({
     setSelectedWikiSource,
     selectedWikiImageUrl,
     setSelectedWikiImageUrl,
-    wikiSearchQuery,
-    setWikiSearchQuery,
     wikiSearch,
+    selectWikiResult,
     wikiIntroQuery,
     wikiImagesQuery,
     insertWikiLink,
@@ -562,6 +575,7 @@ export function useGlassPlateEditor({
     mentionSelectedIndex,
     mentionQuery,
     mentionSearch,
+    mentionLoading: mentionSource ? mentionSource.isLoading : mentionSearch.isLoading,
     handleSelectMention,
     isStashesOpen,
     setIsStashesOpen,
@@ -573,6 +587,7 @@ export function useGlassPlateEditor({
     imageItems,
     resolvedImages,
     insertStashedImage,
+    insertImageUrl,
     isEmojiOpen,
     setIsEmojiOpen,
     handleSelectEmoji,

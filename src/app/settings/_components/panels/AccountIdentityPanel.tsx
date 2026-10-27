@@ -18,6 +18,7 @@ import {
   OpenNewWindow as ExternalLink,
   ShieldCheck,
   Crown,
+  AtSign,
 } from "iconoir-react";
 import type { UserResource } from "@clerk/types";
 import { UserButton } from "~/context/auth-context";
@@ -27,10 +28,16 @@ import { useUserCountry } from "~/hooks/useUserCountry";
 import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsRow } from "../primitives";
 import { WikiAccountVerifyRow } from "~/components/settings/WikiAccountVerifyRow";
-import { ForumAccountVerify } from "~/components/settings/ForumAccountVerify";
+import { WikiNameClaims } from "~/components/settings/WikiNameClaims";
+import { oldForumAccountText } from "~/components/settings/OldForumAccount";
 import { cn } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import { formatMembershipTier } from "~/lib/tier-utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { Card } from "~/components/ui/card";
+import { assetUrl } from "~/lib/base-path";
 
 interface AccountIdentityPanelProps {
   user: UserResource | null | undefined;
@@ -48,17 +55,17 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
   const [showLinkedAccounts, setShowLinkedAccounts] = useState(false);
   const [copiedHandle, setCopiedHandle] = useState(false);
 
-  // Forum link state
-  const [showForumInput, setShowForumInput] = useState(false);
+  const [handleDraft, setHandleDraft] = useState("");
 
   // Mutations
 
-  const unlinkForum = api.ixnayid.unlinkForum.useMutation({
-    onSuccess: () => {
-      notify.success("Forum unlinked");
+  const setHandle = api.ixnayid.setHandle.useMutation({
+    onSuccess: ({ handle }) => {
+      notify.success(`Your passport is now at @${handle}`);
+      setHandleDraft("");
       void utils.ixnayid.getStatus.invalidate();
     },
-    onError: (err) => notify.error(err.message || "Failed to unlink Forum"),
+    onError: (err) => notify.error(err.message || "Failed to change handle"),
   });
 
   const unlinkDiscord = api.ixnayid.unlinkDiscord.useMutation({
@@ -69,31 +76,32 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
     onError: (err) => notify.error(err.message || "Failed to unlink Discord"),
   });
 
-  const passportHandle =
-    status?.passportHandle ||
-    status?.forum?.username ||
-    status?.wiki?.username ||
-    (user?.username ? user.username.replace(/_$/, "") : null) ||
-    user?.username ||
-    "me";
-  const passportUrl = `/@${passportHandle}`;
+  // The stored handle only: no other name makes the link (a wiki name may be a claim its owner hides)
+  const passportUrl = status?.handle ? `/@${status.handle}` : null;
+  const canChangeHandle = status?.canChangeHandle ?? false;
+  const draftHandle = handleDraft.trim().replace(/^@/, "").toLowerCase();
+  const canSaveHandle =
+    canChangeHandle && !setHandle.isPending && draftHandle !== "" && draftHandle !== status?.handle;
   const countryFactbookUrl = userProfile?.country?.slug
     ? `/countries/${userProfile.country.slug}`
     : null;
 
-  const handleCopyPassport = (e: React.MouseEvent) => {
+  const handleCopyPassport = (e: React.MouseEvent, url: string) => {
     e.preventDefault();
-    const fullUrl = `${window.location.origin}${passportUrl}`;
+    const fullUrl = `${window.location.origin}${url}`;
     navigator.clipboard.writeText(fullUrl);
     setCopiedHandle(true);
     notify.success("Profile link copied");
     setTimeout(() => setCopiedHandle(false), 2000);
   };
 
-  // Connected accounts counter
+  // Connected accounts counter: a verified sister wiki is the wiki service (IxWiki names are claims now)
+  const sisterWikiVerified = Boolean(
+    linkFor("iiwiki")?.verified || linkFor("althistory")?.verified
+  );
   const linkedServicesCount =
     (status?.forum.linked ? 1 : 0) +
-    (status?.wiki.linked ? 1 : 0) +
+    (sisterWikiVerified ? 1 : 0) +
     (status?.discord.linked ? 1 : 0);
 
   const totalConnectedCount = linkedServicesCount + (userProfile?.countryId ? 1 : 0);
@@ -101,61 +109,63 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
   return (
     <div className="space-y-6">
       <SettingsHeader
-        title="IxnayID & Digital Passport"
-        category="Profile & Identity"
-        description="Public passport presentation and connected community accounts."
+        title="IxnayID & passport"
+        category="Profile & identity"
+        description="Your public passport and connected community accounts."
         actions={
-          <Link
-            href={passportUrl}
-            data-cuelume-press="soft"
-            className="facet-interactive flex items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2 text-xs font-bold text-indigo-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-indigo-500/20 active:scale-[0.98] dark:text-indigo-400"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-            <span>View Public Passport</span>
-          </Link>
+          passportUrl && (
+            <Button asChild variant="secondary" size="sm">
+              <Link href={passportUrl}>
+                <ExternalLink aria-hidden />
+                <span>View public passport</span>
+              </Link>
+            </Button>
+          )
         }
       />
 
-      {/* Identity Card */}
-      <div className="border-border/50 via-card/70 relative overflow-hidden rounded-2xl border bg-gradient-to-br from-indigo-500/[0.08] to-purple-500/[0.08] p-5 shadow-xs backdrop-blur-xl">
+      <Card padding="md">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="border-border/60 bg-muted relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border shadow-xs">
+            <div className="border-separator bg-fill-3 rounded-row relative size-14 shrink-0 overflow-hidden border">
               {user?.imageUrl ? (
                 <img
-                  src={user.imageUrl}
+                  src={assetUrl(user.imageUrl) ?? undefined}
                   alt={user.username || "User"}
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="text-muted-foreground flex h-full w-full items-center justify-center">
-                  <User className="h-6 w-6" />
+                <div className="text-label-secondary flex h-full w-full items-center justify-center">
+                  <User aria-hidden className="size-6" />
                 </div>
               )}
-              <div className="border-background absolute right-1 bottom-1 h-3 w-3 rounded-full border-2 bg-emerald-500 shadow-xs" />
+              <span
+                aria-hidden
+                className="bg-success ring-surface absolute right-1 bottom-1 size-3 rounded-full ring-2"
+              />
             </div>
 
             <div className="min-w-0 flex-1 space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-foreground text-base font-bold tracking-tight">
-                  @{passportHandle}
+                <span className="text-label text-title-3">
+                  {status?.handle ? `@${status.handle}` : "No handle yet"}
                 </span>
-                <span className="inline-flex items-center gap-1 rounded-md border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                  <ShieldCheck className="h-3 w-3" />
+                <Badge variant="secondary">
+                  <ShieldCheck aria-hidden />
                   Verified
-                </span>
-                <span className="inline-flex items-center rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                  {totalConnectedCount}/4 Connected
-                </span>
+                </Badge>
+                <Badge variant="success">
+                  <span className="tabular-nums">{totalConnectedCount}/4</span> connected
+                </Badge>
               </div>
 
-              <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
+              <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-2">
                 {userProfile?.country ? (
                   <Link
                     href={countryFactbookUrl || "/mycountry"}
-                    className="text-foreground flex items-center gap-1.5 font-medium hover:underline"
+                    className="text-label flex items-center gap-1.5 font-medium hover:underline"
                   >
-                    <div className="border-border/40 h-3.5 w-5 overflow-hidden rounded-[2px] border">
+                    <div className="border-separator h-3.5 w-5 overflow-hidden rounded-xs border">
                       <UnifiedCountryFlag
                         countryName={userProfile.country.name}
                         flagUrl={userProfile.country.flagUrl}
@@ -165,26 +175,18 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                     <span>{userProfile.country.name}</span>
                   </Link>
                 ) : (
-                  <Link
-                    href="/setup"
-                    className="font-semibold text-amber-600 hover:underline dark:text-amber-400"
-                  >
-                    + Link Country
+                  <Link href="/setup" className="text-tint font-medium hover:underline">
+                    + Link country
                   </Link>
                 )}
                 {userProfile?.membershipTier &&
                   (() => {
                     const tierInfo = formatMembershipTier(userProfile.membershipTier);
                     return (
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-semibold tracking-tight",
-                          tierInfo.badgeClass
-                        )}
-                      >
-                        {tierInfo.isPremium && <Crown className="h-2.5 w-2.5 shrink-0" />}
+                      <Badge variant={tierInfo.isPremium ? "warning" : "default"}>
+                        {tierInfo.isPremium && <Crown aria-hidden />}
                         {tierInfo.label}
-                      </span>
+                      </Badge>
                     );
                   })()}
               </div>
@@ -192,67 +194,117 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={handleCopyPassport}
-              data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-card/60 text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold active:scale-[0.98]"
-            >
-              {copiedHandle ? (
-                <>
-                  <Check className="h-3.5 w-3.5 text-emerald-500" />
-                  <span className="text-emerald-600 dark:text-emerald-400">Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="text-muted-foreground h-3.5 w-3.5" />
-                  <span>Copy Link</span>
-                </>
-              )}
-            </button>
-            <div className="border-border/50 bg-card/60 rounded-xl border p-0.5">
+            {passportUrl && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={(e) => handleCopyPassport(e, passportUrl)}
+              >
+                {copiedHandle ? (
+                  <>
+                    <Check aria-hidden className="text-success" />
+                    <span>Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy aria-hidden />
+                    <span>Copy link</span>
+                  </>
+                )}
+              </Button>
+            )}
+            <div className="border-separator bg-surface rounded-row border p-0.5">
               <UserButton
                 appearance={{
                   elements: {
-                    avatarBox: "h-7 w-7 rounded-lg",
+                    avatarBox: "h-7 w-7 rounded-control",
                   },
                 }}
               />
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
-      {/* Account Credentials & Linked Accounts */}
+      {/* Passport handle: one self-service change */}
       <SettingsGroup
-        title="Account Credentials"
-        description="Login details, security settings, and connected community accounts."
+        title="Passport handle"
+        description="The address of your IxStates Passport."
+        footer={
+          status &&
+          (canChangeHandle
+            ? "You can change your handle once. Links to your old handle stop working."
+            : "You have used your one handle change.")
+        }
+      >
+        <SettingsRow
+          label={status?.handle ? `@${status.handle}` : "No handle yet"}
+          description="3 to 24 lowercase letters, numbers or underscores."
+          icon={AtSign}
+          glyphClass="bg-tint/15 text-tint"
+        >
+          <form
+            className="flex items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (canSaveHandle) setHandle.mutate({ handle: draftHandle });
+            }}
+          >
+            <Input
+              value={handleDraft}
+              onChange={(e) => setHandleDraft(e.target.value)}
+              placeholder={status?.handle ?? "new_handle"}
+              aria-label="New passport handle"
+              maxLength={25}
+              disabled={!canChangeHandle || setHandle.isPending}
+              className="h-8 w-44"
+            />
+            <Button type="submit" variant="secondary" size="sm" disabled={!canSaveHandle}>
+              {setHandle.isPending ? "Saving..." : "Change"}
+            </Button>
+          </form>
+        </SettingsRow>
+      </SettingsGroup>
+
+      <SettingsGroup
+        title="Old IxWiki names"
+        description="Names you edited the classic wiki under. An administrator checks each one before it joins your account."
+      >
+        <WikiNameClaims />
+      </SettingsGroup>
+
+      {/* Account credentials & linked accounts */}
+      <SettingsGroup
+        title="Account credentials"
+        description="Login details and connected community accounts."
         action={
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
+            aria-pressed={showSensitive}
             onClick={() => setShowSensitive((prev) => !prev)}
-            data-cuelume-press="soft"
-            className="facet-interactive border-border/40 bg-card/60 text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           >
             {showSensitive ? (
               <>
-                <EyeOff className="text-muted-foreground h-3.5 w-3.5" />
+                <EyeOff aria-hidden />
                 <span>Hide</span>
               </>
             ) : (
               <>
-                <Eye className="text-muted-foreground h-3.5 w-3.5" />
+                <Eye aria-hidden />
                 <span>Show</span>
               </>
             )}
-          </button>
+          </Button>
         }
-        footer="Click your avatar to change your password, turn on two-step verification, or manage active sessions."
+        footer="Select your avatar to change your password, turn on two-step verification or manage sessions."
       >
-        <SettingsRow label="Username" icon={Key} glyphClass="bg-purple-500/15 text-purple-500">
+        <SettingsRow label="Username" icon={Key} glyphClass="bg-purple/15 text-purple">
           <span
             className={cn(
-              "text-foreground text-xs font-semibold transition-[filter,opacity] duration-200",
+              "text-label text-body duration-fast transition-[filter,opacity]",
               showSensitive ? "opacity-100 blur-none" : "opacity-60 blur-[4px] select-none"
             )}
           >
@@ -260,10 +312,10 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           </span>
         </SettingsRow>
 
-        <SettingsRow label="Primary Email" icon={Mail} glyphClass="bg-amber-500/15 text-amber-500">
+        <SettingsRow label="Primary email" icon={Mail} glyphClass="bg-yellow/15 text-yellow">
           <span
             className={cn(
-              "text-foreground text-xs font-semibold transition-[filter,opacity] duration-200",
+              "text-label text-body duration-fast transition-[filter,opacity]",
               showSensitive ? "opacity-100 blur-none" : "opacity-60 blur-[4px] select-none"
             )}
           >
@@ -272,90 +324,53 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           </span>
         </SettingsRow>
 
-        {/* Linked Accounts Collapsible Row */}
+        {/* Linked accounts (collapsible) */}
         <SettingsRow
-          label="Linked Accounts"
+          label="Linked accounts"
           description={
             status
-              ? `${linkedServicesCount} of 3 connected (Forum, wikis, Discord)`
-              : "Connect your Forum, wikis, and Discord accounts"
+              ? `${linkedServicesCount} of 3 connected (old forum, sister wikis, Discord)`
+              : "Connect your sister wiki and Discord accounts"
           }
           icon={LinkIcon}
-          glyphClass="bg-indigo-500/15 text-indigo-500"
+          glyphClass="bg-indigo/15 text-indigo"
         >
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
+            aria-expanded={showLinkedAccounts}
             onClick={() => setShowLinkedAccounts((prev) => !prev)}
-            data-cuelume-press="soft"
-            className="facet-interactive border-border/60 bg-card/60 text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold active:scale-[0.98]"
           >
             <span>{showLinkedAccounts ? "Hide" : "Manage"}</span>
             <NavArrowDown
+              aria-hidden
               className={cn(
-                "h-3.5 w-3.5 transition-transform duration-200",
+                "duration-fast ease-out-facet transition-transform",
                 showLinkedAccounts ? "rotate-180" : ""
               )}
             />
-          </button>
+          </Button>
         </SettingsRow>
 
-        {/* Expanded Linked Accounts Subsection */}
+        {/* Expanded linked accounts */}
         {showLinkedAccounts && (
-          <div className="divide-border/20 bg-muted/15 border-border/20 divide-y border-t">
-            {/* Forum */}
+          <div className="divide-separator bg-surface-secondary border-separator divide-y border-t">
+            {/* Old forum: read-only since phase 4b (staff attribute imported posts) */}
             <SettingsRow
-              label="Community Forum"
-              description={
-                status?.forum.linked
-                  ? `Connected as @${status.forum.username}`
-                  : "Connect your XenForo account to sync forum activity"
-              }
+              label="Old forum"
+              description={oldForumAccountText(status?.forum ?? { linked: false, username: null })}
               icon={MessageSquare}
-              glyphClass="bg-orange-500/15 text-orange-500"
-            >
-              {status?.forum.linked ? (
-                <div className="flex items-center gap-2">
-                  <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    Connected
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => unlinkForum.mutate()}
-                    disabled={unlinkForum.isPending}
-                    className="facet-interactive border-border/60 rounded-xl border px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-500/10 active:scale-[0.98] dark:text-rose-400"
-                  >
-                    {unlinkForum.isPending ? "Unlinking..." : "Unlink"}
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowForumInput((prev) => !prev)}
-                  data-cuelume-press="soft"
-                  className="facet-interactive border-border/60 bg-card text-foreground hover:bg-muted rounded-xl border px-3 py-1.5 text-xs font-bold active:scale-[0.98]"
-                >
-                  {showForumInput ? "Cancel" : "Connect"}
-                </button>
-              )}
-            </SettingsRow>
+              glyphClass="bg-fill-3 text-label-secondary"
+            />
 
-            {showForumInput && !status?.forum.linked && (
-              <div className="bg-muted/20 space-y-3 p-4">
-                {/* A code on the forum profile proves the account (WK-1) */}
-                <ForumAccountVerify onLinked={() => setShowForumInput(false)} />
-              </div>
-            )}
-
-            {/* Wiki accounts (verified by user-page token) */}
+            {/* Sister wikis (verified by user-page token); IxWiki names are claims, above */}
             <div className="flex items-start gap-3 p-4">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-blue-500/15 text-blue-500">
-                <BookOpen className="h-4 w-4" />
+              <div className="bg-blue/15 text-blue rounded-control-sm flex size-7 shrink-0 items-center justify-center">
+                <BookOpen aria-hidden className="size-4" />
               </div>
               <div className="min-w-0 flex-1 space-y-3">
-                <div className="text-foreground text-sm font-semibold tracking-tight">
-                  Wikis
-                </div>
-                <WikiAccountVerifyRow source="ixwiki" label="IxWiki" link={linkFor("ixwiki")} />
+                <div className="text-label text-headline">Sister wikis</div>
                 <WikiAccountVerifyRow source="iiwiki" label="IIWiki" link={linkFor("iiwiki")} />
                 <WikiAccountVerifyRow
                   source="althistory"
@@ -370,29 +385,29 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
               label="Discord"
               description={
                 status?.discord.linked
-                  ? "Connected to Discord community server"
+                  ? "Connected to Discord"
                   : "Connect your Discord account to receive bot alerts"
               }
               icon={Disc}
-              glyphClass="bg-indigo-500/15 text-indigo-500"
+              glyphClass="bg-indigo/15 text-indigo"
             >
               {status?.discord.linked ? (
                 <div className="flex items-center gap-2">
-                  <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    Connected
-                  </span>
-                  <button
+                  <Badge variant="success">Connected</Badge>
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive"
                     onClick={() => unlinkDiscord.mutate()}
                     disabled={unlinkDiscord.isPending}
-                    className="facet-interactive border-border/60 rounded-xl border px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-500/10 active:scale-[0.98] dark:text-rose-400"
                   >
                     {unlinkDiscord.isPending ? "Unlinking..." : "Unlink"}
-                  </button>
+                  </Button>
                 </div>
               ) : (
-                <span className="text-muted-foreground text-xs font-medium">
-                  Sign in with Discord on Clerk
+                <span className="text-label-secondary text-footnote">
+                  Sign in with Discord to connect
                 </span>
               )}
             </SettingsRow>

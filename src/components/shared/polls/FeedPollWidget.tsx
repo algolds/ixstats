@@ -36,8 +36,7 @@ interface FeedPollWidgetProps {
 
 export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
   const notify = useNotify();
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn } = useUser();
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(
     poll.userVotedOptionIds || []
   );
@@ -53,8 +52,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
 
   // tRPC mutation to cast a vote
   const voteMutation = api.polls.vote.useMutation({
-    // oxlint-disable-next-line eslint/no-unused-vars
-    onSuccess: (data) => {
+    onSuccess: () => {
       // Sync state with server response (which triggered db update)
       // Refetch details to get precise real-time synchronization
       refetchDetails();
@@ -122,7 +120,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
         pollId: poll.id,
         optionIds: targetIds,
       });
-      notify.success("Vote recorded!");
+      notify.success("Vote recorded");
     });
   };
 
@@ -165,9 +163,6 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
     });
   };
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const showResults = pollState.hasVoted || isExpired;
-
   // 1. Choice Poll or Feature Poll Render
   if (poll.pollType === "choice" || poll.pollType === "feature-poll") {
     const pollOptions = poll.options.map((opt) => ({
@@ -177,7 +172,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
     }));
 
     return (
-      <div className="facet-hierarchy-child/40 mt-4 rounded-xl border p-4 sm:p-5">
+      <div className="facet-pane rounded-row mt-4 border p-4 sm:p-5">
         <PollWidget
           question={poll.question}
           description={poll.description || undefined}
@@ -191,7 +186,6 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
           votes={pollState.votes}
           hasVoted={pollState.hasVoted}
           onVote={(ids) => handleVoteSubmit(ids)}
-          mode="inline"
         >
           <PollWidget.Content>
             <PollWidget.Question />
@@ -220,7 +214,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
 
   // 3. Feature Voting Render
   return (
-    <div className="facet-hierarchy-child/40 mt-4 space-y-4 rounded-xl border p-4 sm:p-5">
+    <div className="facet-pane rounded-row mt-4 space-y-4 border p-4 sm:p-5">
       <div className="flex flex-col gap-1">
         <h3 className="text-foreground text-base font-semibold sm:text-lg">{poll.question}</h3>
         {poll.description && (
@@ -263,7 +257,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
                 onClick={() => handleFeatureToggleVote(opt.id)}
                 disabled={isDisabled || !isSignedIn}
                 className={cn(
-                  "flex h-12 min-w-[3.5rem] flex-col items-center justify-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95",
+                  "flex h-12 min-w-[3.5rem] flex-col items-center justify-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                   hasVotedOpt
                     ? "border-poll bg-poll hover:bg-poll/90 text-white shadow-xs"
                     : "border-border/80 bg-background hover:bg-muted text-muted-foreground hover:text-foreground"

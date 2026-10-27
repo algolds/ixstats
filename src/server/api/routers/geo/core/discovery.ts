@@ -3,9 +3,8 @@ import { cachedPublicProcedure } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import type { LayerInfoItemDto } from "~/types/geo.dto";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
-import { MAP_LAYER_TYPES } from "~/lib/maps/map-config";
-import { computeVisualCenter } from "./geometry";
-import { getColorForFeature } from "./layer-loader";
+import { centroidLngLat, computeVisualCenter } from "~/server/modules/maps/layer-geometry";
+import { getColorForFeature } from "~/server/modules/maps/layer-loader";
 
 export const discoveryProcedures = {
   listCountries: cachedPublicProcedure
@@ -37,16 +36,7 @@ export const discoveryProcedures = {
           areaSqKm: number | null;
           centroid: unknown;
         }) => {
-          const raw = l.centroid as [number, number] | { coordinates?: [number, number] } | null;
-          let cLng = 0,
-            cLat = 0;
-          if (Array.isArray(raw) && raw.length >= 2) {
-            cLng = raw[0];
-            cLat = raw[1];
-          } else if (raw && "coordinates" in raw && Array.isArray(raw.coordinates)) {
-            cLng = raw.coordinates[0];
-            cLat = raw.coordinates[1];
-          }
+          const [cLng, cLat] = centroidLngLat(l.centroid);
           return {
             featureId: l.featureId,
             displayName: l.displayName || featureIdToDisplayName(l.featureId),
@@ -59,29 +49,6 @@ export const discoveryProcedures = {
           };
         }
       );
-    }),
-
-  /**
-   * Get available layer types and their metadata.
-   */
-  getLayerInfo: cachedPublicProcedure
-    .input(realmScopeInput.optional())
-    .query(async ({ ctx, input }) => {
-      const counts = (await (ctx.db as any).mapLayer.groupBy({
-        by: ["layerType"],
-        where: { isActive: true, realmId: await viewerRealmId(ctx, input?.realm) },
-        _count: { id: true },
-      })) as Array<{ layerType: string; _count: { id: number } }>;
-
-      const countMap = new Map(
-        counts.map((c: { layerType: string; _count: { id: number } }) => [c.layerType, c._count.id])
-      );
-
-      return MAP_LAYER_TYPES.map((type) => ({
-        type,
-        featureCount: (countMap.get(type) as number) || 0,
-        available: ((countMap.get(type) as number) || 0) > 0,
-      }));
     }),
 
   /**
@@ -133,16 +100,7 @@ export const discoveryProcedures = {
         });
 
         for (const f of features) {
-          const raw = f.centroid as [number, number] | { coordinates?: [number, number] } | null;
-          let cLng = 0,
-            cLat = 0;
-          if (Array.isArray(raw) && raw.length >= 2) {
-            cLng = raw[0];
-            cLat = raw[1];
-          } else if (raw && "coordinates" in raw && Array.isArray(raw.coordinates)) {
-            cLng = raw.coordinates[0];
-            cLat = raw.coordinates[1];
-          }
+          const [cLng, cLat] = centroidLngLat(f.centroid);
           results.push({
             type: "country",
             id: f.featureId,

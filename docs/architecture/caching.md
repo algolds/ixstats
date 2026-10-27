@@ -1,5 +1,7 @@
 # Caching & Rate Limiting Architecture
 
+**Last updated:** 2026-10-05
+
 **Location**: `src/lib/cache/` (`trpc-cache.ts`, `rate-limiter.ts`, `redis-client.ts`, `external-api-cache.ts`, `advanced-cache-system.ts`) · `src/server/shared/layer-cache.ts` · `src/lib/wiki-os/adapters/mediawiki/bridge/`  
 **Layers**: In-process Maps · Redis (shared client, in-memory fallback) · PostgreSQL stores (`ExternalApiCache`, `WikiCache`, `WikiArticle`, `WikiRevision`)
 
@@ -36,7 +38,7 @@ IxStates employs a 3-tier caching hierarchy to deliver sub-millisecond response 
 ## 2. Procedure & In-Memory Caches
 
 ### 2.1 tRPC Procedure Cache (`src/lib/cache/trpc-cache.ts`)
-Redis-backed (in-memory fallback only while Redis is not ready) and realm-aware. Used by `cachedPublicProcedure` (60s), `cachedStaticProcedure` (1h) and `cachedProtectedProcedure` (30s, per user):
+Redis-backed (in-memory fallback only while Redis is not ready) and realm-aware. Used by `cachedPublicProcedure` (60s) and `cachedStaticProcedure` (1h); per-user reads add `.use(userCacheMiddleware)` (30s) to a protected procedure (there is no `cachedProtectedProcedure`):
 ```typescript
 import { cachedPublicProcedure } from "~/server/api/trpc";
 

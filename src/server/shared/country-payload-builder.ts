@@ -1,17 +1,13 @@
 import { z } from "zod";
 
-/**
- * Robust JSON primitive and recursive value types for structured payloads.
- * Zero "any" or "unknown" types adhering to strict codebase quality constraints.
- */
-export type JsonPrimitive = string | number | boolean | null;
 // Object values may be undefined: superjson preserves `undefined` keys from the client
 // (e.g. `parentDepartmentId: undefined`); JSON serialization drops them on write.
-export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue | undefined };
+type JsonValue =
+  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue | undefined };
 
-export const jsonLiteralSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+const jsonLiteralSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
 
-export const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
   z.union([
     jsonLiteralSchema,
     z.array(jsonValueSchema),
@@ -19,7 +15,58 @@ export const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
   ])
 );
 
-export const jsonRecordSchema = z.record(z.string(), jsonValueSchema.optional());
+const jsonRecordSchema = z.record(z.string(), jsonValueSchema.optional());
+
+/** National identity fields shared by the builder payload and country creation. */
+const nationalIdentityFieldsSchema = z.object({
+  countryName: z.string().optional(),
+  officialName: z.string().optional(),
+  governmentType: z.string().optional(),
+  motto: z.string().optional(),
+  mottoNative: z.string().optional(),
+  capitalCity: z.string().optional(),
+  largestCity: z.string().optional(),
+  demonym: z.string().optional(),
+  nationalReligion: z.string().optional(),
+  currency: z.string().optional(),
+  currencySymbol: z.string().optional(),
+  officialLanguages: z.string().optional(),
+  nationalLanguage: z.string().optional(),
+  nationalAnthem: z.string().optional(),
+  nationalDay: z.string().optional(),
+  nationalSport: z.string().optional(),
+  nationalAnimal: z.string().optional(),
+  nationalBird: z.string().optional(),
+  nationalFish: z.string().optional(),
+  founders: z.string().optional(),
+  nationalFlower: z.string().optional(),
+  nationalDish: z.string().optional(),
+  nationalFruit: z.string().optional(),
+  nationalDrink: z.string().optional(),
+  nationalInstrument: z.string().optional(),
+  nationalSymbol: z.string().optional(),
+  nationalAnimalImage: z.string().optional(),
+  nationalBirdImage: z.string().optional(),
+  nationalFishImage: z.string().optional(),
+  foundersImage: z.string().optional(),
+  nationalFlowerImage: z.string().optional(),
+  nationalDishImage: z.string().optional(),
+  nationalFruitImage: z.string().optional(),
+  nationalDrinkImage: z.string().optional(),
+  nationalInstrumentImage: z.string().optional(),
+  nationalSymbolImage: z.string().optional(),
+  callingCode: z.string().optional(),
+  internetTLD: z.string().optional(),
+  drivingSide: z.string().optional(),
+  timeZone: z.string().optional(),
+  isoCode: z.string().optional(),
+  coordinatesLatitude: z.string().optional(),
+  coordinatesLongitude: z.string().optional(),
+  emergencyNumber: z.string().optional(),
+  postalCodeFormat: z.string().optional(),
+  weekStartDay: z.string().optional(),
+  leader: z.string().optional(),
+});
 
 /**
  * Shared Zod schema for economic inputs submitted through Country Builder / Editor.
@@ -149,58 +196,7 @@ export const countryEconomicInputsSchema = z
       })
       .passthrough()
       .optional(),
-    nationalIdentity: z
-      .object({
-        countryName: z.string().optional(),
-        officialName: z.string().optional(),
-        governmentType: z.string().optional(),
-        motto: z.string().optional(),
-        mottoNative: z.string().optional(),
-        capitalCity: z.string().optional(),
-        largestCity: z.string().optional(),
-        demonym: z.string().optional(),
-        nationalReligion: z.string().optional(),
-        currency: z.string().optional(),
-        currencySymbol: z.string().optional(),
-        officialLanguages: z.string().optional(),
-        nationalLanguage: z.string().optional(),
-        nationalAnthem: z.string().optional(),
-        nationalDay: z.string().optional(),
-        nationalSport: z.string().optional(),
-        nationalAnimal: z.string().optional(),
-        nationalBird: z.string().optional(),
-        nationalFish: z.string().optional(),
-        founders: z.string().optional(),
-        nationalFlower: z.string().optional(),
-        nationalDish: z.string().optional(),
-        nationalFruit: z.string().optional(),
-        nationalDrink: z.string().optional(),
-        nationalInstrument: z.string().optional(),
-        nationalSymbol: z.string().optional(),
-        nationalAnimalImage: z.string().optional(),
-        nationalBirdImage: z.string().optional(),
-        nationalFishImage: z.string().optional(),
-        foundersImage: z.string().optional(),
-        nationalFlowerImage: z.string().optional(),
-        nationalDishImage: z.string().optional(),
-        nationalFruitImage: z.string().optional(),
-        nationalDrinkImage: z.string().optional(),
-        nationalInstrumentImage: z.string().optional(),
-        nationalSymbolImage: z.string().optional(),
-        callingCode: z.string().optional(),
-        internetTLD: z.string().optional(),
-        drivingSide: z.string().optional(),
-        timeZone: z.string().optional(),
-        isoCode: z.string().optional(),
-        coordinatesLatitude: z.string().optional(),
-        coordinatesLongitude: z.string().optional(),
-        emergencyNumber: z.string().optional(),
-        postalCodeFormat: z.string().optional(),
-        weekStartDay: z.string().optional(),
-        leader: z.string().optional(),
-      })
-      .passthrough()
-      .optional(),
+    nationalIdentity: nationalIdentityFieldsSchema.passthrough().optional(),
     geography: z
       .object({
         continent: z.string().optional(),
@@ -225,37 +221,6 @@ export const countryGovernmentComponentSchema = z
     notes: z.string().optional(),
   })
   .passthrough();
-
-export const countryTaxBracketInputSchema = z
-  .object({
-    bracketName: z.string().optional(),
-    minIncome: z.number().nullable().optional(),
-    maxIncome: z.number().nullable().optional(),
-    rate: z.number().optional(),
-    isActive: z.boolean().optional(),
-  })
-  .passthrough();
-
-export const countryTaxCategoryInputSchema = z
-  .object({
-    categoryName: z.string().optional(),
-    categoryType: z.string().optional(),
-    description: z.string().optional(),
-    isActive: z.boolean().optional(),
-    baseRate: z.number().optional(),
-    calculationMethod: z.string().optional(),
-    minimumAmount: z.number().optional(),
-    maximumAmount: z.number().optional(),
-    exemptionAmount: z.number().optional(),
-    deductionAllowed: z.boolean().optional(),
-    standardDeduction: z.number().optional(),
-    priority: z.number().optional(),
-    color: z.string().optional(),
-    icon: z.string().optional(),
-    brackets: z.array(countryTaxBracketInputSchema).optional(),
-  })
-  .passthrough();
-
 export const countryTaxSystemInputSchema = z
   .object({
     taxSystemName: z.string().optional(),
@@ -319,4 +284,3 @@ export const countryEconomyBuilderStateSchema = z
     version: z.string().optional(),
   })
   .passthrough();
-

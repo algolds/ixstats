@@ -22,7 +22,7 @@ interface SportsFocusContextValue {
 
 const SportsFocusContext = createContext<SportsFocusContextValue | null>(null);
 
-export interface SportsFocusProviderProps {
+interface SportsFocusProviderProps {
   children: React.ReactNode;
   initialFocus?: SportsFocus | null;
 }
@@ -134,7 +134,16 @@ export function SportsFocusProvider({ children, initialFocus = null }: SportsFoc
       clearFocus,
       isFocused,
     }),
-    [focus, setFocus, focusAthlete, focusMatch, focusOrganization, focusCompetition, clearFocus, isFocused]
+    [
+      focus,
+      setFocus,
+      focusAthlete,
+      focusMatch,
+      focusOrganization,
+      focusCompetition,
+      clearFocus,
+      isFocused,
+    ]
   );
 
   return <SportsFocusContext.Provider value={value}>{children}</SportsFocusContext.Provider>;

@@ -5,15 +5,15 @@ import {
   Tournament as Swords,
   Check,
   Xmark as X,
-  SystemRestart as Loader2,
   Trophy,
-  Emoji as Skull,
   Community as HandshakeIcon,
 } from "iconoir-react";
+import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import {
   Dialog,
   DialogContent,
@@ -29,37 +29,218 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
+import { Card } from "~/components/ui/card";
+import { useCanEdit } from "~/context/MyCountryEditModeContext";
+import { useNotify } from "~/hooks/useNotify";
+import { PVP_UNFOUGHT, isUnfoughtConflict } from "~/lib/military/pvp-proposals";
+import { useNationClock } from "~/hooks/useNationClock";
+import { formatStampAsClockDate } from "~/lib/realms/nation-time";
+import { BAND_LABELS, type OutcomeBand } from "~/lib/military/combat";
+import { EngagementPlanner } from "./EngagementPlanner";
+import { CombatResult } from "./CombatResult";
 
 interface PvPConflictPanelProps {
   countryId: string;
 }
 
+function Alert({ message }: { message?: string }) {
+  return message ? (
+    <div role="alert" className="text-destructive text-body">
+      {message}
+    </div>
+  ) : null;
+}
+
+interface TargetDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  trigger: string;
+  title: string;
+  description: string;
+  targetLabel: string;
+  placeholder: string;
+  reasonPlaceholder: string;
+  options: { id: string; name: string }[];
+  targetId: string;
+  onTargetChange: (id: string) => void;
+  reason: string;
+  onReasonChange: (reason: string) => void;
+  notices?: React.ReactNode;
+  mode: "strike" | "pvp";
+  submitLabel: string;
+  pendingLabel: string;
+  confirmText: string;
+  pending: boolean;
+  onSubmit: (commitment: number) => void;
+}
+
+function TargetDialog(p: TargetDialogProps) {
+  return (
+    <Dialog open={p.open} onOpenChange={p.onOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          {p.trigger}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{p.title}</DialogTitle>
+          <DialogDescription>{p.description}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label>{p.targetLabel}</Label>
+            <Select value={p.targetId} onValueChange={p.onTargetChange}>
+              <SelectTrigger>
+                <SelectValue placeholder={p.placeholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {p.options.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Reason</Label>
+            <Textarea
+              value={p.reason}
+              onChange={(e) => p.onReasonChange(e.target.value)}
+              placeholder={p.reasonPlaceholder}
+              rows={2}
+            />
+          </div>
+          {p.notices}
+          {p.targetId && (
+            <EngagementPlanner
+              key={p.targetId}
+              mode={p.mode}
+              targetId={p.targetId}
+              commitLabel={p.submitLabel}
+              pendingLabel={p.pendingLabel}
+              confirmText={p.confirmText}
+              pending={p.pending}
+              onCommit={p.onSubmit}
+            />
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type Conflict = NonNullable<RouterOutputs["security"]["getConflicts"]>[number];
+
+const opponentOf = (c: Conflict, countryId: string) =>
+  c.initiatorId === countryId ? c.defender : c.initiator;
+
+const UNFOUGHT_LABELS: Record<string, string> = {
+  [PVP_UNFOUGHT.declined]: "Declined",
+  [PVP_UNFOUGHT.withdrawn]: "Withdrawn",
+  [PVP_UNFOUGHT.expired]: "Expired",
+};
+
+const CONFLICT_TYPE_LABELS: Record<string, string> = { pvp: "PvP", pvnpc: "PvNPC" };
+
+/** Result badge/icon for a resolved conflict from `countryId`'s point of view. */
+function conflictOutcome(c: Conflict, countryId: string) {
+  if (c.winner === "draw" || isUnfoughtConflict(c.winner)) {
+    return {
+      icon: <HandshakeIcon aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />,
+      variant: "default" as const,
+      label: UNFOUGHT_LABELS[c.winner ?? ""] ?? "Draw",
+    };
+  }
+  return c.winner === countryId
+    ? {
+        icon: <Trophy aria-hidden="true" className="text-green h-3.5 w-3.5" />,
+        variant: "success" as const,
+        label: "Victory",
+      }
+    : {
+        icon: <X aria-hidden="true" className="text-destructive h-3.5 w-3.5" />,
+        variant: "destructive" as const,
+        label: "Defeat",
+      };
+}
+
+function ConflictGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <Eyebrow className="block">{title}</Eyebrow>
+      {children}
+    </div>
+  );
+}
+
+function PastConflictRow({ conflict: c, countryId }: { conflict: Conflict; countryId: string }) {
+  const outcome = conflictOutcome(c, countryId);
+  // Casualties go to the conflict's parties only (undefined for anyone else).
+  const casualties =
+    (c.initiatorId === countryId ? c.initiatorCasualties : c.defenderCasualties) ?? 0;
+  return (
+    <div className="border-separator rounded-control text-body border p-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {outcome.icon}
+          <span>vs {opponentOf(c, countryId)?.name ?? "Unknown"}</span>
+          <Badge variant={outcome.variant}>{outcome.label}</Badge>
+        </div>
+        {!c.outcomeBand && casualties > 0 && (
+          <span className="text-label-secondary text-footnote">{casualties} casualties</span>
+        )}
+      </div>
+      <CombatResult
+        band={c.outcomeBand}
+        days={c.engagementDays}
+        casualties={c.outcomeBand ? casualties : null}
+        seed={c.seed}
+        attacker={c.initiatorId === countryId}
+      />
+    </div>
+  );
+}
+
+const bandSuffix = (band: string | null) =>
+  band && band in BAND_LABELS ? ` (${BAND_LABELS[band as OutcomeBand].toLowerCase()})` : "";
+
 export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
+  // Initiating (challenge, strike) is premium; answering, withdrawing and concluding are not.
+  const { canEdit } = useCanEdit();
+  const notify = useNotify();
+  const clock = useNationClock();
   const [challengeOpen, setChallengeOpen] = useState(false);
   const [strikeOpen, setStrikeOpen] = useState(false);
   const [targetId, setTargetId] = useState("");
   const [reason, setReason] = useState("");
+  // Outcome of the last PvNPC strike, shown after the dialog closes.
+  const [strikeResult, setStrikeResult] = useState<{
+    target: string;
+    won: boolean;
+    band: string | null;
+  } | null>(null);
 
   const { data: conflicts, refetch } = api.security.getConflicts.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
-  const { data: relationships } = api.diplomaticCore.getRelationships.useQuery(
-    { countryId },
-    { enabled: challengeOpen }
-  );
+  // Only player nations among the caller's relations; NPC nations cannot answer a challenge.
+  const pvpTargetsQuery = api.security.getPvPTargets.useQuery(undefined, {
+    enabled: challengeOpen,
+    retry: false,
+  });
+  const targetCountries = pvpTargetsQuery.data ?? [];
 
   // Only unclaimed (NPC) related nations; resolvePvNPCConflict rejects player nations.
-  const { data: npcTargets } = api.security.getPvNPCTargets.useQuery(undefined, {
+  const npcTargetsQuery = api.security.getPvNPCTargets.useQuery(undefined, {
     enabled: strikeOpen,
+    retry: false,
   });
-
-  const handleStrikeOpenChange = (open: boolean) => {
-    setStrikeOpen(open);
-    setTargetId("");
-  };
+  const npcTargets = npcTargetsQuery.data;
 
   const proposeMutation = api.security.proposePvPConflict.useMutation({
     onSuccess: () => {
@@ -72,287 +253,264 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
 
   const respondMutation = api.security.respondToConflict.useMutation({
     onSuccess: () => void refetch(),
+    onError: (error) => notify.error(`Could not answer the challenge: ${error.message}`),
   });
 
-  const resolvePvNPCMutation = api.security.resolvePvNPCConflict.useMutation({
+  const withdrawMutation = api.security.withdrawPvPConflict.useMutation({
+    onSuccess: () => void refetch(),
+    onError: (error) => notify.error(`Could not withdraw the challenge: ${error.message}`),
+  });
+
+  const concludeMutation = api.security.concludePvPConflict.useMutation({
     onSuccess: () => void refetch(),
   });
 
-  const targetCountries = relationships
-    ? [
-        ...new Map(
-          relationships.map((r) => [
-            r.targetCountryId,
-            { id: r.targetCountryId, name: r.targetCountry ?? r.targetCountryId },
-          ])
-        ).values(),
-      ]
-    : [];
+  const resolvePvNPCMutation = api.security.resolvePvNPCConflict.useMutation({
+    onSuccess: (conflict) => {
+      setStrikeResult({
+        target: conflict.defender?.name ?? "the target",
+        won: conflict.winner === countryId,
+        band: conflict.outcomeBand ?? null,
+      });
+      setStrikeOpen(false);
+      setTargetId("");
+      setReason("");
+      void refetch();
+    },
+  });
 
-  const pendingForMe =
-    conflicts?.filter((c) => c.defenderId === countryId && c.status === "proposed") ?? [];
+  const handleStrikeOpenChange = (open: boolean) => {
+    setStrikeOpen(open);
+    setTargetId("");
+    if (open) resolvePvNPCMutation.reset();
+  };
 
-  const activeConflicts =
-    conflicts?.filter((c) => c.status === "active" || c.status === "proposed") ?? [];
+  const allConflicts = conflicts ?? [];
+  const pendingForMe = allConflicts.filter(
+    (c) => c.defenderId === countryId && c.status === "proposed"
+  );
+  const activeConflicts = allConflicts.filter(
+    (c) => c.status === "active" || c.status === "proposed"
+  );
+  const resolvedConflicts = allConflicts.filter((c) => c.status === "resolved");
+  const noNpcTargets = npcTargets?.length === 0;
 
-  const resolvedConflicts = conflicts?.filter((c) => c.status === "resolved") ?? [];
+  // An active PvP conflict runs until `endsAt`; then either side may conclude it.
+  const concludeControl = (conflict: Conflict) => {
+    const endsAt = new Date(conflict.endsAt!);
+    if (endsAt.getTime() > Date.now()) {
+      return (
+        <span className="text-label-secondary text-footnote">
+          Ends {formatStampAsClockDate(endsAt, clock)}
+        </span>
+      );
+    }
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        className="ml-auto"
+        onClick={() => concludeMutation.mutate({ conflictId: conflict.id, countryId })}
+        disabled={concludeMutation.isPending}
+      >
+        {concludeMutation.isPending ? "Resolving…" : "Resolve conflict"}
+      </Button>
+    );
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="flex items-center gap-2 text-sm font-semibold">
-          <Swords className="h-4 w-4" />
-          Military Conflicts
+        <h3 className="text-label text-headline flex items-center gap-2">
+          <Swords aria-hidden="true" className="text-red h-4 w-4" />
+          Military conflicts
         </h3>
-        <div className="flex gap-2">
-          {/* PvNPC quick action */}
-          <Dialog open={strikeOpen} onOpenChange={handleStrikeOpenChange}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                PvNPC Strike
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>PvNPC Military Strike</DialogTitle>
-                <DialogDescription>
-                  Automatically resolve a military engagement against an NPC nation. Outcome is
-                  calculated based on relative military strength.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label>Target NPC Nation</Label>
-                  <Select value={targetId} onValueChange={setTargetId}>
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          npcTargets?.length === 0
-                            ? "No NPC nations among your relations"
-                            : "Select target..."
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(npcTargets ?? []).map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Reason</Label>
-                  <Textarea
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="Casus belli..."
-                    rows={2}
-                  />
-                </div>
-                <Button
-                  onClick={() =>
-                    resolvePvNPCMutation.mutate({
-                      targetCountryId: targetId,
-                      reason: reason || undefined,
-                    })
-                  }
-                  disabled={!targetId || resolvePvNPCMutation.isPending}
-                  className="w-full"
-                >
-                  {resolvePvNPCMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Engage
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* PvP challenge */}
-          <Dialog open={challengeOpen} onOpenChange={setChallengeOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="border-red-500/50 text-red-500">
-                PvP Challenge
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Challenge Player Nation</DialogTitle>
-                <DialogDescription>
-                  Both sides must agree to rules before combat begins. This prevents metagaming.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label>Target Nation</Label>
-                  <Select value={targetId} onValueChange={setTargetId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select target..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {targetCountries.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Reason</Label>
-                  <Textarea
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="Explain the conflict..."
-                    rows={2}
-                  />
-                </div>
-                {proposeMutation.error && (
-                  <div className="text-sm text-red-500">{proposeMutation.error.message}</div>
-                )}
-                <Button
-                  onClick={() =>
-                    proposeMutation.mutate({
-                      defenderId: targetId,
-                      reason: reason || undefined,
-                    })
-                  }
-                  disabled={!targetId || proposeMutation.isPending}
-                  className="w-full"
-                >
-                  {proposeMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Send Challenge
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+        {canEdit && (
+          <div className="flex gap-2">
+            <TargetDialog
+              open={strikeOpen}
+              onOpenChange={handleStrikeOpenChange}
+              trigger="PvNPC strike"
+              title="PvNPC military strike"
+              description="Strike an NPC nation that defends with forces from its economy. Read the odds first: the result is rolled once when you commit."
+              targetLabel="Target NPC nation"
+              placeholder={
+                noNpcTargets ? "No NPC nations among your relations" : "Select target..."
+              }
+              reasonPlaceholder="Casus belli..."
+              options={npcTargets ?? []}
+              targetId={targetId}
+              onTargetChange={setTargetId}
+              reason={reason}
+              onReasonChange={setReason}
+              notices={
+                <>
+                  <Alert message={npcTargetsQuery.error?.message} />
+                  {noNpcTargets && (
+                    <p className="text-label-secondary text-footnote">
+                      Strikes target NPC (unclaimed) nations you have diplomatic relations with.
+                      Open relations with one under Diplomacy first.
+                    </p>
+                  )}
+                  <Alert message={resolvePvNPCMutation.error?.message} />
+                </>
+              }
+              mode="strike"
+              submitLabel="Commit strike"
+              pendingLabel="Striking…"
+              confirmText="The strike is rolled once from a seed sealed with these orders. It cannot be rerolled, and both sides take their losses."
+              pending={resolvePvNPCMutation.isPending}
+              onSubmit={(commitment) =>
+                resolvePvNPCMutation.mutate({
+                  targetCountryId: targetId,
+                  reason: reason || undefined,
+                  commitment,
+                })
+              }
+            />
+            <TargetDialog
+              open={challengeOpen}
+              onOpenChange={setChallengeOpen}
+              trigger="PvP challenge"
+              title="Challenge player nation"
+              description="Both sides must agree to rules before combat begins. This prevents metagaming."
+              targetLabel="Target nation"
+              reasonPlaceholder="Explain the conflict..."
+              options={targetCountries}
+              targetId={targetId}
+              onTargetChange={setTargetId}
+              reason={reason}
+              onReasonChange={setReason}
+              placeholder={
+                pvpTargetsQuery.data?.length === 0
+                  ? "No player nations among your relations"
+                  : "Select target..."
+              }
+              notices={
+                <>
+                  <Alert message={pvpTargetsQuery.error?.message} />
+                  <Alert message={proposeMutation.error?.message} />
+                </>
+              }
+              mode="pvp"
+              submitLabel="Send challenge"
+              pendingLabel="Sending…"
+              confirmText="Your committed share goes into the orders. When the defender accepts, the seed is sealed; the battle resolves on it when the conflict ends."
+              pending={proposeMutation.isPending}
+              onSubmit={(commitment) =>
+                proposeMutation.mutate({
+                  defenderId: targetId,
+                  reason: reason || undefined,
+                  commitment,
+                })
+              }
+            />
+          </div>
+        )}
       </div>
 
-      {/* Pending challenges that need response */}
+      {strikeResult && (
+        <div
+          role="status"
+          className={cn(
+            "rounded-control text-body border p-3",
+            strikeResult.won
+              ? "border-green/30 text-green"
+              : "border-destructive/30 text-destructive"
+          )}
+        >
+          {strikeResult.won
+            ? `Your strike on ${strikeResult.target} took ground${bandSuffix(strikeResult.band)}. See past conflicts for losses and the seed.`
+            : `Your strike on ${strikeResult.target} was repulsed${bandSuffix(strikeResult.band)}. See past conflicts for losses and the seed.`}
+        </div>
+      )}
+
       {pendingForMe.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-xs font-semibold text-yellow-500">Incoming Challenges</h4>
+        <ConflictGroup title="Incoming challenges">
           {pendingForMe.map((c) => (
-            <div key={c.id} className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3">
-              <div className="flex items-center justify-between">
+            <Card variant="well" key={c.id} className="border-yellow/40 border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <span className="text-sm font-medium">{c.initiator?.name ?? "Unknown"}</span>
-                  <span className="text-muted-foreground ml-2 text-xs">challenges you</span>
+                  <span className="text-label text-body font-medium">
+                    {c.initiator?.name ?? "Unknown"}
+                  </span>
+                  <span className="text-label-secondary text-footnote ml-2">challenges you</span>
                   {c.reason && (
-                    <p className="text-muted-foreground mt-1 text-xs">&quot;{c.reason}&quot;</p>
+                    <p className="text-label-secondary text-footnote mt-1">
+                      &quot;{c.reason}&quot;
+                    </p>
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-green-500/50 text-green-500"
-                    onClick={() => respondMutation.mutate({ conflictId: c.id, accept: true })}
-                    disabled={respondMutation.isPending}
-                  >
-                    <Check className="mr-1 h-3 w-3" /> Accept
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-red-500/50 text-red-500"
-                    onClick={() => respondMutation.mutate({ conflictId: c.id, accept: false })}
-                    disabled={respondMutation.isPending}
-                  >
-                    <X className="mr-1 h-3 w-3" /> Decline
-                  </Button>
+                  {[
+                    { accept: true, label: "Accept", Icon: Check, variant: "default" },
+                    { accept: false, label: "Decline", Icon: X, variant: "outline" },
+                  ].map(({ accept, label, Icon, variant }) => (
+                    <Button
+                      key={label}
+                      size="sm"
+                      variant={variant as "default" | "outline"}
+                      onClick={() => respondMutation.mutate({ conflictId: c.id, accept })}
+                      disabled={respondMutation.isPending}
+                    >
+                      <Icon className="mr-1 h-3 w-3" /> {label}
+                    </Button>
+                  ))}
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
-        </div>
+        </ConflictGroup>
       )}
 
-      {/* Active conflicts */}
+      <Alert message={concludeMutation.error?.message} />
+
       {activeConflicts.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-xs font-semibold text-red-500">Active Conflicts</h4>
+        <ConflictGroup title="Active conflicts">
           {activeConflicts
             .filter((c) => !pendingForMe.some((p) => p.id === c.id))
-            .map((c) => {
-              const isInitiator = c.initiatorId === countryId;
-              const opponent = isInitiator ? c.defender : c.initiator;
-              return (
-                <div key={c.id} className="rounded-lg border border-red-500/20 p-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Swords className="h-3 w-3 text-red-500" />
-                    <span>
-                      vs <span className="font-medium">{opponent?.name ?? "Unknown"}</span>
+            .map((c) => (
+              <Card variant="well" key={c.id} className="text-body p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Swords aria-hidden="true" className="text-red h-3.5 w-3.5" />
+                  <span>
+                    vs{" "}
+                    <span className="font-medium">
+                      {opponentOf(c, countryId)?.name ?? "Unknown"}
                     </span>
-                    <Badge variant="outline" className="text-xs">
-                      {c.type.toUpperCase()}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {c.status}
-                    </Badge>
-                  </div>
-                </div>
-              );
-            })}
-        </div>
-      )}
-
-      {/* Resolved conflicts */}
-      {resolvedConflicts.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-muted-foreground text-xs font-semibold">Past Conflicts</h4>
-          {resolvedConflicts.slice(0, 3).map((c) => {
-            const isInitiator = c.initiatorId === countryId;
-            const opponent = isInitiator ? c.defender : c.initiator;
-            const won = c.winner === countryId;
-            const draw = c.winner === "draw" || c.winner === "declined";
-
-            return (
-              <div key={c.id} className="rounded-lg border p-3 text-sm opacity-70">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {draw ? (
-                      <HandshakeIcon className="h-3 w-3 text-gray-500" />
-                    ) : won ? (
-                      <Trophy className="h-3 w-3 text-yellow-500" />
-                    ) : (
-                      <Skull className="h-3 w-3 text-red-500" />
-                    )}
-                    <span>vs {opponent?.name ?? "Unknown"}</span>
-                    <Badge
+                  </span>
+                  <Badge variant="outline">{CONFLICT_TYPE_LABELS[c.type] ?? c.type}</Badge>
+                  <Badge variant="outline" className="capitalize">
+                    {c.status}
+                  </Badge>
+                  {c.endsAt && concludeControl(c)}
+                  {c.status === "proposed" && c.initiatorId === countryId && (
+                    <Button
+                      size="sm"
                       variant="outline"
-                      className={`text-xs ${
-                        draw ? "text-gray-500" : won ? "text-green-500" : "text-red-500"
-                      }`}
+                      className="ml-auto"
+                      onClick={() => withdrawMutation.mutate({ conflictId: c.id })}
+                      disabled={withdrawMutation.isPending}
                     >
-                      {draw
-                        ? c.winner === "declined"
-                          ? "Declined"
-                          : "Draw"
-                        : won
-                          ? "Victory"
-                          : "Defeat"}
-                    </Badge>
-                  </div>
-                  {(c.initiatorCasualties > 0 || c.defenderCasualties > 0) && (
-                    <span className="text-muted-foreground text-xs">
-                      {isInitiator ? c.initiatorCasualties : c.defenderCasualties} casualties
-                    </span>
+                      Withdraw
+                    </Button>
                   )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              </Card>
+            ))}
+        </ConflictGroup>
       )}
 
-      {(!conflicts || conflicts.length === 0) && (
-        <p className="text-muted-foreground py-4 text-center text-xs">
+      {resolvedConflicts.length > 0 && (
+        <ConflictGroup title="Past conflicts">
+          {resolvedConflicts.slice(0, 3).map((c) => (
+            <PastConflictRow key={c.id} conflict={c} countryId={countryId} />
+          ))}
+        </ConflictGroup>
+      )}
+
+      {allConflicts.length === 0 && (
+        <p className="text-label-secondary text-footnote py-4 text-center">
           No conflict history. Challenge other nations or engage NPC targets.
         </p>
       )}

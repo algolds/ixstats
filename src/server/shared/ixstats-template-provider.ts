@@ -1,4 +1,3 @@
-// src/server/shared/ixstats-template-provider.ts
 // IxStats host-app template data provider for WikiOS (Workstream C4).
 // Resolves CountryData, MyCountry, and BusinessData via canonical placeholder resolver.
 

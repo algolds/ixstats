@@ -1,6 +1,6 @@
 "use client";
 // src/app/admin/_components/AdminRouter.tsx
-// Central pushState single-page router for all 47 Admin interfaces
+// Central pushState single-page router for the admin sections (see renderContent)
 
 import React from "react";
 import dynamic from "next/dynamic";
@@ -9,21 +9,21 @@ import { BotIntegrationCenter } from "./BotIntegrationCenter";
 import { NotificationsAdmin } from "./NotificationsAdmin";
 import { StashSettingsContent } from "./StashSettingsContent";
 import { ThinkPagesSettingsContent } from "./ThinkPagesSettingsContent";
-import { Settings } from "iconoir-react";
-import { AdminHeader } from "./AdminHeader";
+
+import { PageHeader } from "~/components/shell/PageHeader";
 import { useAdminNavigation } from "./AdminNavigationContext";
 import { Skeleton } from "~/components/ui/skeleton";
 
 // Loader wireframe
 const Loader = () => (
   <div className="space-y-6">
-    <Skeleton className="h-32 w-full rounded-2xl" />
+    <Skeleton className="rounded-card h-32 w-full" />
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <Skeleton key={i} className="h-24 rounded-xl" />
+        <Skeleton key={i} className="rounded-row h-24" />
       ))}
     </div>
-    <Skeleton className="h-96 w-full rounded-2xl" />
+    <Skeleton className="rounded-card h-96 w-full" />
   </div>
 );
 
@@ -78,10 +78,10 @@ const NationalIssuesPanel = dynamic(
   { loading: Loader, ssr: false }
 );
 
-const WorldStudioPanel = dynamic(() => import("../maps/WorldStudioPanel").then((m) => m.default), {
-  loading: Loader,
-  ssr: false,
-});
+const AtlasPanel = dynamic(
+  () => import("../maps/_components/atlas/AtlasPanel").then((m) => m.AtlasPanel),
+  { loading: Loader, ssr: false }
+);
 
 const CalculationEditor = dynamic(
   () => import("../calculations/CalculationEditor").then((m) => m.CalculationEditor),
@@ -105,11 +105,6 @@ const FacetLabPanel = dynamic(
 
 const MyLeagueAdminPanel = dynamic(
   () => import("../myleague/MyLeagueAdminPanel").then((m) => m.default),
-  { loading: Loader, ssr: false }
-);
-
-const NarratorAdminPanel = dynamic(
-  () => import("../narrator/NarratorPanel").then((m) => m.NarratorPanel),
   { loading: Loader, ssr: false }
 );
 
@@ -228,9 +223,7 @@ export function AdminRouter() {
       case "realms":
         return <RealmsPanel defaultTab="realms" />;
       case "maps":
-        return <WorldStudioPanel />;
-      case "style-editor":
-        return <WorldStudioPanel initialTab="settings" />;
+        return <AtlasPanel />;
       case "cards":
         return <CardsPanel />;
       case "vault":
@@ -244,10 +237,9 @@ export function AdminRouter() {
       case "calculations":
         return (
           <div className="space-y-6">
-            <AdminHeader
-              icon={Settings}
-              title="Calculation Formula Editor"
-              description="Interactive editor for world-sim economic equations and projection formulas."
+            <PageHeader
+              title="Calculation formula editor"
+              subtitle="Edit world-sim economic equations and projection formulas."
             />
             <CalculationEditor />
           </div>
@@ -294,8 +286,6 @@ export function AdminRouter() {
       // Labs
       case "myleague":
         return <MyLeagueAdminPanel />;
-      case "narrator":
-        return <NarratorAdminPanel />;
       case "onoma":
         return <OnomaAdminPanel />;
       case "facet-lab":
@@ -312,5 +302,3 @@ export function AdminRouter() {
 
   return renderContent();
 }
-
-export default AdminRouter;

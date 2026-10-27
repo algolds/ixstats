@@ -11,6 +11,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { parseAffectedCountries } from "~/lib/maps/crisis-affected-countries";
 
 export const crisisEventsRouter = createTRPCRouter({
   /**
@@ -37,12 +38,14 @@ export const crisisEventsRouter = createTRPCRouter({
     }),
 
   /**
-   * Get crisis event statistics
+   * Get crisis event statistics, world-wide or (with `countryId`) only for crises that list
+   * that country among their affected countries.
    */
   getStatistics: publicProcedure
     .input(
       z.object({
         timeframe: z.enum(["week", "month", "quarter", "year", "all"]).default("month"),
+        countryId: z.string().min(1).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -67,24 +70,28 @@ export const crisisEventsRouter = createTRPCRouter({
           break;
       }
 
-      const events = await db.crisisEvent.findMany({
-        where:
-          input.timeframe !== "all"
-            ? {
-                timestamp: {
-                  gte: dateThreshold,
-                },
-              }
-            : undefined,
+      const rows = await db.crisisEvent.findMany({
+        where: {
+          ...(input.timeframe !== "all" ? { timestamp: { gte: dateThreshold } } : {}),
+          // `affectedCountries` is a string (JSON array or legacy comma list), so the database can
+          // only narrow by substring; the exact-id check below drops "c10" matching "c1".
+          ...(input.countryId ? { affectedCountries: { contains: input.countryId } } : {}),
+        },
       });
+      const { countryId } = input;
+      const events = countryId
+        ? rows.filter((e) => parseAffectedCountries(e.affectedCountries).includes(countryId))
+        : rows;
 
       // Calculate statistics
       const totalEvents = events.length;
       const criticalEvents = events.filter((e) => e.severity === "critical").length;
       const highSeverityEvents = events.filter((e) => e.severity === "high").length;
-      const activeEvents = events.filter((e) =>
+      const active = events.filter((e) =>
         ["pending", "in_progress", "monitoring"].includes(e.responseStatus || "")
-      ).length;
+      );
+      const activeEvents = active.length;
+      const activeCriticalEvents = active.filter((e) => e.severity === "critical").length;
       const resolvedEvents = events.filter((e) => e.responseStatus === "resolved").length;
       const totalCasualties = events.reduce((sum, e) => sum + (e.casualties || 0), 0);
       const totalEconomicImpact = events.reduce((sum, e) => sum + (e.economicImpact || 0), 0);
@@ -106,6 +113,7 @@ export const crisisEventsRouter = createTRPCRouter({
         criticalEvents,
         highSeverityEvents,
         activeEvents,
+        activeCriticalEvents,
         resolvedEvents,
         totalCasualties,
         totalEconomicImpact,

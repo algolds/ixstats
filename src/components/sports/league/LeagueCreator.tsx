@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -16,6 +16,7 @@ import {
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { usePaidMutateAsync } from "~/components/sports/core/usePaidActionRequestId";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -27,8 +28,17 @@ import {
   DialogTitle,
   DialogDescription,
 } from "~/components/ui/dialog";
-import { withBasePath } from "~/lib/base-path";
+import { assetUrl } from "~/lib/base-path";
+import { useLeagueCoverImage } from "~/hooks/useLeagueCoverImage";
+import { springSmooth } from "~/lib/design/motion";
 import type { ArchetypeType } from "~/lib/sports";
+import { DEFAULT_MATCH_INTERVAL_DAYS } from "~/lib/sports/scheduler";
+import {
+  archetypeLabels,
+  cardVariants,
+  intervalLabel,
+  stepVariants,
+} from "./league-creator-config";
 
 const MediaSearchModal = dynamic(
   () =>
@@ -36,47 +46,12 @@ const MediaSearchModal = dynamic(
   { ssr: false }
 );
 
-const archetypeLabels: Record<ArchetypeType, string> = {
-  league: "League",
-  division_conference: "Division / Conference",
-  bracket: "Bracket",
-  circuit: "Circuit",
-};
-
-// ─── Types ──────────────────────────────────────────────────────────────────
-
 interface LeagueCreatorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: (leagueId: string) => void;
   isCanonical?: boolean;
 }
-
-// ─── Animation variants ─────────────────────────────────────────────────────
-
-const stepVariants = {
-  enter: { opacity: 0, x: 40, scale: 0.98 },
-  center: { opacity: 1, x: 0, scale: 1 },
-  exit: { opacity: 0, x: -40, scale: 0.98 },
-};
-
-const cardVariants = {
-  rest: { scale: 1 },
-  hover: { scale: 1.02, transition: { duration: 0.2 } },
-  tap: { scale: 0.98 },
-};
-
-const SPORT_COMMONS_CATEGORIES: Record<string, string> = {
-  soccer: "Association football stadiums",
-  football: "American football stadiums",
-  hockey: "Ice hockey arenas",
-  basketball: "Basketball venues",
-  baseball: "Baseball stadiums",
-  f1: "Formula One circuits",
-  boxing: "Boxing matches",
-};
-
-// ─── Component ──────────────────────────────────────────────────────────────
 
 export function LeagueCreator({
   open,
@@ -86,16 +61,15 @@ export function LeagueCreator({
 }: LeagueCreatorProps) {
   const notify = useNotify();
 
-  // ── Presets query ───────────────────────────────────────────────────────
   const { data: presets, isLoading: presetsLoading } = api.sports.getSportPresets.useQuery(
     undefined,
     { enabled: open }
   );
 
-  // ── Create league mutation ──────────────────────────────────────────────
   const createMutation = api.sports.createLeague.useMutation();
+  const charter = usePaidMutateAsync(createMutation.mutateAsync); // one charge per press
 
-  // ── Wizard state ────────────────────────────────────────────────────────
+  // Wizard state
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedPresetKey, setSelectedPresetKey] = useState<string | null>(null);
   const [createdLeagueId, setCreatedLeagueId] = useState<string | null>(null);
@@ -106,71 +80,21 @@ export function LeagueCreator({
   const [divisions, setDivisions] = useState(2);
   const [weightClassesRaw, setWeightClassesRaw] = useState("");
   const [raceCount, setRaceCount] = useState(20);
-  const [matchIntervalDays, setMatchIntervalDays] = useState(1);
+  const [matchIntervalDays, setMatchIntervalDays] = useState(DEFAULT_MATCH_INTERVAL_DAYS);
 
-  // Cover image suggestion states
-  const [coverImage, setCoverImage] = useState<string | null>(null);
-  const [autoSelectedForPreset, setAutoSelectedForPreset] = useState<string | null>(null);
+  // Cover image: a Commons suggestion for the sport, shuffle, remove, or a picked file
+  const {
+    coverImage,
+    setCoverImage,
+    commonsData,
+    commonsLoading,
+    handleShuffleCover,
+    handleRemoveCover,
+    resetCover,
+  } = useLeagueCoverImage({ open, selectedPresetKey, currentStep });
   const [mediaSearchOpen, setMediaSearchOpen] = useState(false);
 
-  // Commons category query
-  const activeCategory = selectedPresetKey ? SPORT_COMMONS_CATEGORIES[selectedPresetKey] : null;
-  const { data: commonsData, isLoading: commonsLoading } = api.commons.getCategoryFiles.useQuery(
-    {
-      category: activeCategory ?? "",
-      limit: 35,
-    },
-    {
-      enabled: !!open && !!activeCategory && currentStep >= 2,
-    }
-  );
-
-  useEffect(() => {
-    if (selectedPresetKey !== autoSelectedForPreset) {
-      setAutoSelectedForPreset(null);
-    }
-  }, [selectedPresetKey, autoSelectedForPreset]);
-
-  useEffect(() => {
-    if (
-      commonsData?.images &&
-      commonsData.images.length > 0 &&
-      selectedPresetKey &&
-      autoSelectedForPreset !== selectedPresetKey &&
-      !coverImage
-    ) {
-      const randomIndex = Math.floor(Math.random() * commonsData.images.length);
-      const suggestedImage = commonsData.images[randomIndex]?.url ?? null;
-      if (suggestedImage) {
-        setCoverImage(suggestedImage);
-        setAutoSelectedForPreset(selectedPresetKey);
-      }
-    }
-  }, [commonsData, selectedPresetKey, autoSelectedForPreset, coverImage]);
-
-  const handleShuffleCover = useCallback(() => {
-    if (!commonsData?.images || commonsData.images.length === 0) return;
-    const available = commonsData.images.filter((img) => img.url !== coverImage);
-    if (available.length > 0) {
-      const randomIndex = Math.floor(Math.random() * available.length);
-      const newUrl = available[randomIndex]?.url;
-      if (newUrl) {
-        setCoverImage(newUrl);
-      }
-    } else {
-      const randomIndex = Math.floor(Math.random() * commonsData.images.length);
-      const newUrl = commonsData.images[randomIndex]?.url;
-      if (newUrl) {
-        setCoverImage(newUrl);
-      }
-    }
-  }, [commonsData, coverImage]);
-
-  const handleRemoveCover = useCallback(() => {
-    setCoverImage(null);
-  }, []);
-
-  // ── Derived ─────────────────────────────────────────────────────────────
+  // Derived
   const selectedPreset = useMemo(() => {
     if (!presets || !selectedPresetKey) return null;
     return presets.find((p) => p.key === selectedPresetKey) ?? null;
@@ -180,8 +104,6 @@ export function LeagueCreator({
   const archetypeLabel = archetype ? archetypeLabels[archetype] : null;
 
   const isDivisionConference = archetype === "division_conference";
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const isBracket = archetype === "bracket";
   const isCircuit = archetype === "circuit";
   // Boxing has bracket archetype
   const isBoxing = selectedPresetKey === "boxing";
@@ -190,7 +112,6 @@ export function LeagueCreator({
   const canNextStep2 =
     leagueName.trim().length > 0 && teamCount >= (selectedPreset?.minTeamCount ?? 2);
 
-  // ── Handlers ────────────────────────────────────────────────────────────
   const handleSportSelect = useCallback(
     (key: string) => {
       setSelectedPresetKey(key);
@@ -215,10 +136,9 @@ export function LeagueCreator({
     setDivisions(2);
     setWeightClassesRaw("");
     setRaceCount(20);
-    setCoverImage(null);
-    setAutoSelectedForPreset(null);
+    resetCover();
     setMediaSearchOpen(false);
-  }, []);
+  }, [resetCover]);
 
   const handleCreateAnother = useCallback(() => {
     resetForm();
@@ -251,11 +171,11 @@ export function LeagueCreator({
       settings.raceCount = raceCount;
     }
 
-    // IxTime days between matchdays — drives the background auto-advance cadence.
+    // Real days between matchdays: drives the background auto-advance cadence.
     settings.matchIntervalDays = matchIntervalDays;
 
     try {
-      const result = await createMutation.mutateAsync({
+      const result = await charter({
         name: leagueName.trim(),
         sportPreset: selectedPreset.key,
         teamCount,
@@ -283,7 +203,7 @@ export function LeagueCreator({
     isDivisionConference,
     isBoxing,
     isCircuit,
-    createMutation,
+    charter,
     notify,
     onCreated,
     coverImage,
@@ -299,7 +219,7 @@ export function LeagueCreator({
     [onOpenChange, resetForm]
   );
 
-  // ── Step indicator ──────────────────────────────────────────────────────
+  // Step indicator
   const totalSteps = 4;
 
   const stepIndicator = (
@@ -313,18 +233,17 @@ export function LeagueCreator({
             {i > 0 && (
               <div
                 className={cn(
-                  "h-px w-6 transition-colors duration-300",
-                  isDone ? "bg-primary/60" : "bg-border"
+                  "duration-fast h-px w-6 transition-colors",
+                  isDone ? "bg-tint" : "bg-separator"
                 )}
               />
             )}
             <div
               className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
-                isActive &&
-                  "bg-primary text-primary-foreground ring-primary/40 ring-offset-background shadow-md ring-2 ring-offset-2",
-                isDone && "bg-primary/20 text-primary",
-                !isActive && !isDone && "bg-muted text-muted-foreground"
+                "text-footnote duration-fast flex size-7 items-center justify-center rounded-full font-medium tabular-nums transition-colors",
+                isActive && "bg-tint text-on-tint",
+                isDone && "bg-tint-fill text-tint",
+                !isActive && !isDone && "bg-fill-3 text-label-secondary"
               )}
             >
               {isDone ? <Check className="h-3.5 w-3.5" /> : step}
@@ -335,7 +254,7 @@ export function LeagueCreator({
     </div>
   );
 
-  // ── Step 1: Pick Sport ─────────────────────────────────────────────────
+  // Step 1: Pick Sport
   const renderStep1 = () => (
     <motion.div
       key="step-1"
@@ -343,14 +262,14 @@ export function LeagueCreator({
       initial="enter"
       animate="center"
       exit="exit"
-      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      transition={springSmooth}
       className="space-y-4"
     >
       <DialogDescription>Choose a sport to build your league around.</DialogDescription>
 
       {presetsLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+          <Loader2 className="text-label-secondary h-8 w-8 animate-spin" />
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -365,18 +284,19 @@ export function LeagueCreator({
                 whileHover="hover"
                 whileTap="tap"
                 onClick={() => handleSportSelect(preset.key)}
+                aria-pressed={isSelected}
                 className={cn(
-                  "facet-hierarchy-interactive group focus:ring-primary/30 relative cursor-pointer rounded-xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-2 focus:outline-none",
+                  "group focus-visible:outline-tint rounded-row duration-fast ease-out-facet relative cursor-pointer border p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
                   isSelected
-                    ? "border-primary/60 bg-primary/5 ring-primary ring-2"
-                    : "border-border/60 bg-card/50 hover:border-border hover:bg-card/80"
+                    ? "border-tint bg-tint-fill"
+                    : "border-separator bg-surface hover:bg-fill-4"
                 )}
               >
                 <div className="flex items-start gap-3">
-                  <span className="mt-0.5 text-3xl leading-none">{preset.icon}</span>
+                  <span className="text-large-title mt-0.5 leading-none">{preset.icon}</span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-foreground text-sm font-semibold">{preset.name}</span>
+                      <span className="text-label text-headline">{preset.name}</span>
                     </div>
                   </div>
                 </div>
@@ -395,7 +315,7 @@ export function LeagueCreator({
     </motion.div>
   );
 
-  // ── Step 2: Configure League ────────────────────────────────────────────
+  // Step 2: Configure League
   const renderStep2 = () => (
     <motion.div
       key="step-2"
@@ -403,16 +323,16 @@ export function LeagueCreator({
       initial="enter"
       animate="center"
       exit="exit"
-      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      transition={springSmooth}
       className="space-y-5"
     >
       <DialogDescription>
         Configure the details for your {selectedPreset?.icon} {selectedPreset?.name} league.
       </DialogDescription>
 
-      {/* League Name */}
-      <div className="space-y-1.5">
-        <Label htmlFor="league-name">League Name</Label>
+      {/* League name */}
+      <div className="space-y-2">
+        <Label htmlFor="league-name">League name</Label>
         <Input
           id="league-name"
           placeholder="Enter league name"
@@ -420,11 +340,11 @@ export function LeagueCreator({
           onChange={(e) => setLeagueName(e.target.value.slice(0, 100))}
           maxLength={100}
         />
-        <p className="text-muted-foreground text-xs">{leagueName.length}/100 characters</p>
+        <p className="text-label-secondary text-footnote">{leagueName.length}/100 characters</p>
       </div>
 
       {/* Team Count */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="team-count">
           Number of Teams ({selectedPreset?.minTeamCount}–{selectedPreset?.maxTeamCount})
         </Label>
@@ -451,34 +371,32 @@ export function LeagueCreator({
 
       {/* Match cadence (table-based archetypes) */}
       {!isCircuit && !isBoxing && (
-        <div className="space-y-1.5">
-          <Label htmlFor="match-interval">IxDays Between Matchdays</Label>
+        <div className="space-y-2">
+          <Label htmlFor="match-interval">Days between matchdays</Label>
           <Input
             id="match-interval"
             type="number"
-            min={1}
+            min={0.5}
             max={30}
+            step={0.5}
             value={matchIntervalDays}
             onChange={(e) => {
-              const val = parseInt(e.target.value, 10);
-              if (!isNaN(val)) setMatchIntervalDays(Math.min(30, Math.max(1, val)));
+              const val = parseFloat(e.target.value);
+              if (!isNaN(val)) setMatchIntervalDays(Math.min(30, Math.max(0.5, val)));
               else if (e.target.value === "") setMatchIntervalDays(0);
             }}
           />
-          <p className="text-muted-foreground text-xs">
-            Matches auto-resolve in the background on the IxTime clock. {matchIntervalDays} IxDay
-            {matchIntervalDays === 1 ? "" : "s"} ≈ {(matchIntervalDays / 2).toLocaleString()}{" "}
-            real-world day
-            {matchIntervalDays === 2 ? "" : "s"} between matchdays. Use 7 for a weekly (in-world)
-            schedule.
+          <p className="text-label-secondary text-footnote">
+            Matches auto-resolve in the background, {intervalLabel(matchIntervalDays)} apart. Use 7
+            for a weekly schedule.
           </p>
         </div>
       )}
 
       {/* Divisions (only for division_conference) */}
       {isDivisionConference && (
-        <div className="space-y-1.5">
-          <Label htmlFor="divisions">Number of Divisions</Label>
+        <div className="space-y-2">
+          <Label htmlFor="divisions">Number of divisions</Label>
           <Input
             id="divisions"
             type="number"
@@ -491,7 +409,7 @@ export function LeagueCreator({
               else if (e.target.value === "") setDivisions(0);
             }}
           />
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             Teams will be split across {divisions} divisions for the regular season.
           </p>
         </div>
@@ -499,21 +417,21 @@ export function LeagueCreator({
 
       {/* Weight Classes (only for boxing/bracket sports marked as boxing) */}
       {isBoxing && (
-        <div className="space-y-1.5">
-          <Label htmlFor="weight-classes">Weight Classes</Label>
+        <div className="space-y-2">
+          <Label htmlFor="weight-classes">Weight classes</Label>
           <Input
             id="weight-classes"
             placeholder="Heavyweight, Middleweight, Welterweight"
             value={weightClassesRaw}
             onChange={(e) => setWeightClassesRaw(e.target.value)}
           />
-          <p className="text-muted-foreground text-xs">Comma-separated weight class names.</p>
+          <p className="text-label-secondary text-footnote">Comma-separated weight class names.</p>
         </div>
       )}
 
       {/* Race Count (only for circuit/F1) */}
       {isCircuit && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label htmlFor="race-count">Number of Races (16–22)</Label>
           <Input
             id="race-count"
@@ -530,7 +448,7 @@ export function LeagueCreator({
               }
             }}
           />
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             Points championship across {raceCount} race weekends.
           </p>
         </div>
@@ -538,27 +456,26 @@ export function LeagueCreator({
 
       {/* League Cover Image */}
       <div className="space-y-2">
-        <Label>League Cover Image</Label>
+        <Label>League cover image</Label>
 
         {commonsLoading && !coverImage ? (
-          <div className="border-border bg-muted/30 flex h-40 w-full items-center justify-center rounded-lg border border-dashed">
-            <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
-            <span className="text-muted-foreground ml-2 text-xs">Fetching suggestion...</span>
+          <div className="border-separator bg-fill-4 rounded-control flex h-40 w-full items-center justify-center border border-dashed">
+            <Loader2 className="text-label-secondary h-6 w-6 animate-spin" />
+            <span className="text-label-secondary text-footnote ml-2">Fetching suggestion...</span>
           </div>
         ) : coverImage ? (
-          <div className="group border-border relative h-40 w-full overflow-hidden rounded-lg border">
+          <div className="group border-separator rounded-control relative h-40 w-full overflow-hidden border">
             <img
-              src={withBasePath(coverImage)}
-              alt="Suggested Cover"
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              src={assetUrl(coverImage) ?? undefined}
+              alt="Suggested cover"
+              className="h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-            <div className="absolute right-3 bottom-3 flex items-center gap-1.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <div className="duration-fast absolute inset-0 bg-black/40 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100" />
+            <div className="duration-fast absolute right-3 bottom-3 flex items-center gap-2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
-                className="h-8 gap-1 text-xs"
                 onClick={handleShuffleCover}
                 disabled={!commonsData?.images || commonsData.images.length <= 1}
               >
@@ -569,49 +486,35 @@ export function LeagueCreator({
                 type="button"
                 variant="secondary"
                 size="sm"
-                className="h-8 gap-1 text-xs"
                 onClick={() => setMediaSearchOpen(true)}
               >
                 <ImageIcon className="h-3 w-3" />
                 Browse
               </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                className="h-8 gap-1 text-xs"
-                onClick={handleRemoveCover}
-              >
+              <Button type="button" variant="destructive" size="sm" onClick={handleRemoveCover}>
                 <Trash2 className="h-3 w-3" />
                 Remove
               </Button>
             </div>
           </div>
         ) : (
-          <div className="border-border bg-muted/30 flex h-40 w-full flex-col items-center justify-center rounded-lg border border-dashed p-4">
-            <ImageIcon className="text-muted-foreground/60 mb-2 h-8 w-8" />
-            <p className="text-muted-foreground mb-3 text-xs">No cover image selected</p>
+          <div className="border-separator bg-fill-4 rounded-control flex h-40 w-full flex-col items-center justify-center border border-dashed p-4">
+            <ImageIcon className="text-label-tertiary mb-2 h-8 w-8" />
+            <p className="text-label-secondary text-footnote mb-3">No cover image selected</p>
             <div className="flex items-center gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 gap-1 text-xs"
                 onClick={() => setMediaSearchOpen(true)}
               >
                 <ImageIcon className="h-3 w-3" />
-                Browse Media
+                Browse media
               </Button>
               {commonsData?.images && commonsData.images.length > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 gap-1 text-xs"
-                  onClick={handleShuffleCover}
-                >
+                <Button type="button" variant="outline" size="sm" onClick={handleShuffleCover}>
                   <RotateCcw className="h-3 w-3" />
-                  Suggest Image
+                  Suggest image
                 </Button>
               )}
             </div>
@@ -621,10 +524,10 @@ export function LeagueCreator({
 
       {/* Archetype preview */}
       {archetypeLabel && (
-        <div className="border-border/50 bg-muted/50 rounded-lg border px-3 py-2.5">
-          <p className="text-muted-foreground text-xs leading-relaxed">
-            <span className="text-foreground font-medium">{archetypeLabel}</span>
-            {" — "}
+        <div className="border-separator bg-fill-3 rounded-control border px-3 py-3">
+          <p className="text-label-secondary text-footnote leading-relaxed">
+            <span className="text-label font-medium">{archetypeLabel}</span>
+            {" · "}
             {selectedPreset?.federationName}
           </p>
         </div>
@@ -643,7 +546,7 @@ export function LeagueCreator({
     </motion.div>
   );
 
-  // ── Step 3: Review & Create ─────────────────────────────────────────────
+  // Step 3: Review & Create
   const renderStep3 = () => {
     const weightClasses = isBoxing
       ? weightClassesRaw
@@ -659,70 +562,69 @@ export function LeagueCreator({
         initial="enter"
         animate="center"
         exit="exit"
-        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        transition={springSmooth}
         className="space-y-5"
       >
         <DialogDescription>Review your league configuration before creating it.</DialogDescription>
 
-        <Card className="facet-hierarchy-child border-border/60 bg-card/50 overflow-hidden">
+        <Card className="flex flex-col gap-6 overflow-hidden py-6">
           {coverImage && (
             <div className="relative h-36 w-full overflow-hidden">
               <img
-                src={withBasePath(coverImage)}
-                alt="League Cover"
+                src={assetUrl(coverImage) ?? undefined}
+                alt="League cover"
                 className="h-full w-full object-cover"
               />
-              <div className="from-background/90 via-background/45 absolute inset-0 bg-gradient-to-t to-transparent" />
             </div>
           )}
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
-              <span className="text-3xl">{selectedPreset?.icon}</span>
+              <span className="text-large-title">{selectedPreset?.icon}</span>
               <div>
-                <CardTitle className="text-base">{leagueName || "(unnamed league)"}</CardTitle>
-                <p className="text-muted-foreground text-sm">{selectedPreset?.name}</p>
+                <CardTitle>{leagueName || "(unnamed league)"}</CardTitle>
+                <p className="text-label-secondary text-body">{selectedPreset?.name}</p>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-border/60 h-px" />
+            <div className="bg-separator h-px" />
 
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="text-body grid grid-cols-2 gap-3">
               <div>
-                <span className="text-muted-foreground text-xs">Archetype</span>
-                <p className="text-foreground font-medium">{archetypeLabel ?? "—"}</p>
+                <span className="text-label-secondary text-footnote">Archetype</span>
+                <p className="text-label font-medium">{archetypeLabel ?? "—"}</p>
               </div>
               <div>
-                <span className="text-muted-foreground text-xs">Teams</span>
-                <p className="text-foreground font-medium">{teamCount}</p>
+                <span className="text-label-secondary text-footnote">Teams</span>
+                <p className="text-label font-medium">{teamCount}</p>
               </div>
 
               {isDivisionConference && (
                 <div>
-                  <span className="text-muted-foreground text-xs">Divisions</span>
-                  <p className="text-foreground font-medium">{divisions}</p>
+                  <span className="text-label-secondary text-footnote">Divisions</span>
+                  <p className="text-label font-medium">{divisions}</p>
                 </div>
               )}
 
               {isBoxing && weightClasses && weightClasses.length > 0 && (
                 <div className="col-span-2">
-                  <span className="text-muted-foreground text-xs">Weight Classes</span>
-                  <p className="text-foreground font-medium">{weightClasses.join(", ")}</p>
+                  <span className="text-label-secondary text-footnote">Weight classes</span>
+                  <p className="text-label font-medium">{weightClasses.join(", ")}</p>
                 </div>
               )}
 
               {isCircuit && (
                 <div>
-                  <span className="text-muted-foreground text-xs">Races</span>
-                  <p className="text-foreground font-medium">{raceCount}</p>
+                  <span className="text-label-secondary text-footnote">Races</span>
+                  <p className="text-label font-medium">{raceCount}</p>
                 </div>
               )}
             </div>
 
-            <div className="bg-border/60 h-px" />
+            <div className="bg-separator h-px" />
 
             <div>
-              <span className="text-muted-foreground text-xs">
+              <span className="text-label-secondary text-footnote">
                 {isBoxing
                   ? "Each weight class runs a single-elimination bracket."
                   : isCircuit
@@ -753,7 +655,7 @@ export function LeagueCreator({
             ) : (
               <>
                 <Trophy className="h-4 w-4" />
-                Create League
+                Create league
               </>
             )}
           </Button>
@@ -762,7 +664,7 @@ export function LeagueCreator({
     );
   };
 
-  // ── Step 4: Created! ───────────────────────────────────────────────────
+  // Step 4: Created!
   const renderStep4 = () => (
     <motion.div
       key="step-4"
@@ -770,7 +672,7 @@ export function LeagueCreator({
       initial="enter"
       animate="center"
       exit="exit"
-      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      transition={springSmooth}
       className="space-y-6"
     >
       <div className="flex flex-col items-center justify-center py-6 text-center">
@@ -778,35 +680,32 @@ export function LeagueCreator({
           initial={{ scale: 0, rotate: -10 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: "spring", stiffness: 200, damping: 15 }}
-          className="bg-primary/10 mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+          className="bg-tint-fill mb-4 flex h-16 w-16 items-center justify-center rounded-full"
         >
-          <span className="text-4xl">{selectedPreset?.icon}</span>
+          <span className="text-large-title">{selectedPreset?.icon}</span>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h3 className="text-foreground text-lg font-semibold">League Created!</h3>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <h3 className="text-label text-title-3 font-semibold">League created</h3>
+          <p className="text-label-secondary text-body mt-1">
             {leagueName} is now active and ready for configuration.
           </p>
         </motion.div>
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-        <Button onClick={handleViewLeague} className="gap-2">
-          View League
-        </Button>
-        <Button variant="outline" onClick={handleCreateAnother} className="gap-2">
+        <Button onClick={handleViewLeague}>View league</Button>
+        <Button variant="outline" onClick={handleCreateAnother}>
           <RotateCcw className="h-4 w-4" />
-          Create Another
+          Create another
         </Button>
       </div>
     </motion.div>
   );
 
-  // ── Render ──────────────────────────────────────────────────────────────
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -823,7 +722,7 @@ export function LeagueCreator({
           }}
         >
           <DialogHeader className="shrink-0 px-6 pt-6 pb-0">
-            <DialogTitle>{currentStep === 4 ? "All Set!" : "Create a League"}</DialogTitle>
+            <DialogTitle>Create a league</DialogTitle>
           </DialogHeader>
 
           <div className="shrink-0 px-6 pt-4 pb-0">{stepIndicator}</div>

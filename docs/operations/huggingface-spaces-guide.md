@@ -1,5 +1,7 @@
 # Hugging Face Spaces & AI Resource Offloading Guide
 
+**Last updated:** 2026-09-29
+
 This guide describes how to deploy the Kokoro TTS engine to a free Hugging Face Space to completely offload its PyTorch memory (1.6 GB) and CPU cycles from your 8GB VPS. It also outlines other AI services that can be offloaded there.
 
 ---
@@ -53,7 +55,7 @@ Hugging Face Spaces provides a **CPU Basic** hardware tier that is **16 GB RAM /
 
 ## 2. Other AI Workloads to Offload to Hugging Face Spaces
 
-You can repeat the same process to offload other heavy machine learning tasks from your local VPS. These are options, not current integrations: nothing in IxStates calls a Whisper endpoint today, and the only LLM clients are the narrator and sports commentary (`NARRATOR_LLM_*` / `SPORTS_LLM_*` env vars; an OpenAI-compatible Space could be used by setting `NARRATOR_LLM_PROVIDER=openai` and `NARRATOR_LLM_API_URL` to the Space URL).
+You can repeat the same process to offload other heavy machine learning tasks from your local VPS. These are options, not current integrations: nothing in IxStates calls a Whisper endpoint today, and the only LLM client is sports commentary (`SPORTS_LLM_*` env vars; an OpenAI-compatible Space could be used by setting `SPORTS_LLM_PROVIDER=openai` and `SPORTS_LLM_API_URL` to the Space URL, as long as its host is added to the allowlist in `src/lib/llm/url.ts`).
 
 ### A. Whisper (Speech-to-Text / Transcription)
 

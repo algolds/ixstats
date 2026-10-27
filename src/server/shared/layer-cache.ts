@@ -1,15 +1,12 @@
 import type { FeatureCollection } from "geojson";
 
-// ──────────────────────────────────────────────
 // Shared in-memory cache for assembled map FeatureCollections.
 //
 // This is a cross-domain primitive: the geo router populates/reads it, and the
 // countries router invalidates it when borders/identity change. It lives in
 // src/server/shared so neither router imports the other (arch.md: no
 // cross-router imports). Geo-specific TTL/compression config stays in
-// routers/geo/core/cache.ts, which re-exports these for its siblings.
-// ──────────────────────────────────────────────
-
+// src/server/modules/maps/layer-lod.ts.
 export const layerCache = new Map<string, { data: FeatureCollection; timestamp: number }>();
 
 /** In-flight layer builds keyed like layerCache, so concurrent requests share one build. */
@@ -36,6 +33,19 @@ export function clearLayerCache(layerType?: string): void {
   for (const map of [layerCache, layerInflight]) {
     for (const key of map.keys()) {
       if (matchesLayer(key, layerType)) map.delete(key);
+    }
+  }
+}
+
+/**
+ * Drop one realm's assembled layers and in-flight builds, every layer and zoom bucket. Keys end with the realm id
+ * (`${layer}:z${bucket}:${realmId}`, layer-loader.ts); realm ids hold no colon.
+ */
+export function clearRealmLayerCache(realmId: string): void {
+  const suffix = `:${realmId}`;
+  for (const map of [layerCache, layerInflight]) {
+    for (const key of map.keys()) {
+      if (key.endsWith(suffix)) map.delete(key);
     }
   }
 }

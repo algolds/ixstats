@@ -6,7 +6,7 @@ import { IxTime } from "./core";
  */
 import type { TimeRange } from "~/types/ixtime";
 
-export const TIME_RANGE_TO_MONTHS: Record<TimeRange, number> = {
+const TIME_RANGE_TO_MONTHS: Record<TimeRange, number> = {
   "3m": 3,
   "6m": 6,
   "1y": 12,
@@ -28,21 +28,4 @@ export function getIxCutoff(range: TimeRange, nowIxTime: number): number {
   // IxTime.addMonths correctly handles year wrap
   const cutoff = IxTime.addMonths(nowIxTime, -months);
   return cutoff;
-}
-
-/**
- * Filter historical points by IxTime cutoff.
- * Points must have ixTimeTimestamp (Date|number).
- */
-export function filterByIxRange<T extends { ixTimeTimestamp: Date | number | string }>(
-  data: T[],
-  range: TimeRange,
-  nowIxTime: number = IxTime.getCurrentIxTime()
-): T[] {
-  if (range === "all") return data;
-  const cutoff = getIxCutoff(range, nowIxTime);
-  return data.filter((p) => {
-    const ts = IxTime.toTimestamp(p.ixTimeTimestamp as any);
-    return ts !== null && ts >= cutoff;
-  });
 }

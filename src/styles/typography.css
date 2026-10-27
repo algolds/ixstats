@@ -1,7 +1,5 @@
-/* ==========================================================================
-   IxStates Typography System — National, Modernist Swiss, WikiOS & Onoma
-   Calibrated with Optical x-Height, Cap-Height & Baseline Overrides
-   ========================================================================== */
+/* Font faces and the wiki / Onoma / IPA stacks. The UI stacks (`--font-sans/-mono/-serif/-display`)
+   live in `@theme` in facet/tokens.css. */
 
 /* --- 1. National (Klim Type Foundry / Kris Sowersby) --- */
 @font-face {
@@ -172,53 +170,7 @@
   line-gap-override: 0%;
 }
 
-/* --- 3. DINPro (FontFont / German Industrial Standard) --- */
-@font-face {
-  font-family: "DINPro";
-  src: url("/fonts/DINPro-Light.otf") format("opentype");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-  size-adjust: 90%;
-  ascent-override: 88%;
-  descent-override: 22%;
-  line-gap-override: 0%;
-}
-@font-face {
-  font-family: "DINPro";
-  src: url("/fonts/DINPro-Regular.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-  size-adjust: 90%;
-  ascent-override: 88%;
-  descent-override: 22%;
-  line-gap-override: 0%;
-}
-@font-face {
-  font-family: "DINPro";
-  src: url("/fonts/DINPro-Medium.otf") format("opentype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-  size-adjust: 90%;
-  ascent-override: 88%;
-  descent-override: 22%;
-  line-gap-override: 0%;
-}
-@font-face {
-  font-family: "DINPro";
-  src: url("/fonts/DINPro-Bold.otf") format("opentype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-  size-adjust: 90%;
-  ascent-override: 88%;
-  descent-override: 22%;
-  line-gap-override: 0%;
-}
-
-/* --- 4. Akzidenz-Grotesk (Berthold Foundry) --- */
+/* --- 3. Akzidenz-Grotesk (Berthold Foundry) --- */
 @font-face {
   font-family: "Akzidenz-Grotesk";
   src: url("/fonts/AkzidGroStdReg.otf") format("opentype");
@@ -264,7 +216,18 @@
   line-gap-override: 0%;
 }
 
-/* --- 5. Schibsted Grotesk --- */
+/* --- 4. Schibsted Grotesk --- */
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/Schibsted Grotesk-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  ascent-override: 96%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
 @font-face {
   font-family: "Schibsted Grotesk";
   src: url("/fonts/Schibsted Grotesk-500.ttf") format("truetype");
@@ -298,19 +261,66 @@
   descent-override: 24%;
   line-gap-override: 0%;
 }
-
-/* --- 6. Azeret Mono --- */
 @font-face {
-  font-family: "Azeret Mono";
-  src: url("/fonts/Azeret Mono-400.ttf") format("truetype");
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/Schibsted Grotesk-800.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  ascent-override: 96%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
+/* Schibsted's `tnum` widens . , : to figure width. These subsets carry no layout tables, so
+   `tabular-nums` aligns digits while punctuation keeps its normal width. Declared last to win. */
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/schibsted-punct-400.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  size-adjust: 91%;
-  ascent-override: 90%;
-  descent-override: 22%;
-  line-gap-override: 0%;
+  size-adjust: 98%;
+  unicode-range: U+002C, U+002E, U+003A;
 }
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/schibsted-punct-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  unicode-range: U+002C, U+002E, U+003A;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/schibsted-punct-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  unicode-range: U+002C, U+002E, U+003A;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/schibsted-punct-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  unicode-range: U+002C, U+002E, U+003A;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/schibsted-punct-800.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  unicode-range: U+002C, U+002E, U+003A;
+}
+
+/* --- 5. Azeret Mono --- */
 @font-face {
   font-family: "Azeret Mono";
   src: url("/fonts/Azeret Mono-500.ttf") format("truetype");
@@ -345,141 +355,17 @@
   line-gap-override: 0%;
 }
 
-/* ==========================================================================
-   Typography Blueprint Presets & Fallback Chains
-   ========================================================================== */
+@layer base {
+  :root {
+    --font-wiki-sans: "Host Grotesk", "Schibsted Grotesk", ui-sans-serif, sans-serif;
+    --font-onoma: "Schibsted Grotesk", ui-sans-serif, sans-serif;
+    --font-ipa: "Charis SIL", "Gentium Plus", "Doulos SIL", "Lucida Sans Unicode", ui-serif, serif;
+  }
 
-/* Blueprint 2: Modernist Swiss (Akzidenz-Grotesk + Schibsted Grotesk + Azeret Mono - Default) */
-:root,
-[data-typography="swiss"] {
-  --font-preset-sans: "Schibsted Grotesk", "Akzidenz-Grotesk", ui-sans-serif, sans-serif;
-  --font-sans: "Schibsted Grotesk", "Akzidenz-Grotesk", ui-sans-serif, sans-serif;
-  --font-display: "Akzidenz-Grotesk", "Schibsted Grotesk", ui-sans-serif, sans-serif;
-  --font-mono: "Azeret Mono", "DINPro", ui-monospace, monospace;
-  --font-serif: "Baskerville 10 Pro", "Baskerville", ui-serif, Georgia, serif;
-  --font-wiki-sans: "Host Grotesk", "Schibsted Grotesk", ui-sans-serif, sans-serif;
-  --font-onoma: "Schibsted Grotesk", ui-sans-serif, sans-serif;
-  --font-ipa: "Charis SIL", "Gentium Plus", "Doulos SIL", "Lucida Sans Unicode", ui-serif, serif;
-}
-
-/* Blueprint 1: Klim National (Sovereign Editorial Modernism) */
-[data-typography="national"],
-[data-typography="sovereign"] {
-  --font-preset-sans: "National", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-sans: "National", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Neutraface 2", "Neutraface Text", ui-sans-serif, sans-serif;
-  --font-mono: "DINPro", ui-monospace, monospace;
-  --font-serif: "Baskerville 10 Pro", "Baskerville", ui-serif, Georgia, serif;
-  --font-wiki-sans: "Host Grotesk", "National", ui-sans-serif, sans-serif;
-  --font-onoma: "National", ui-sans-serif, sans-serif;
-  --font-ipa: "Charis SIL", "Gentium Plus", "Doulos SIL", "Lucida Sans Unicode", ui-serif, serif;
-}
-
-/* ==========================================================================
-   Scale Tokens (Composed via Custom Property --ls)
-   ========================================================================== */
-
-.text-display-hero {
-  font-size: clamp(32px, 4vw, 40px);
-  line-height: 1.10;
-  --ls: -0.015em;
-}
-
-.text-section-title {
-  font-size: clamp(20px, 2.5vw, 24px);
-  line-height: 1.20;
-  --ls: -0.008em;
-}
-
-.text-card-header {
-  font-size: 15px;
-  line-height: 1.30;
-  --ls: 0em;
-}
-
-.text-body-standard {
-  font-size: 13px;
-  line-height: 1.45;
-  --ls: 0em;
-}
-
-.text-ui-compact {
-  font-size: 11.5px;
-  line-height: 1.35;
-  --ls: 0.020em;
-}
-
-.text-micro-badge {
-  font-size: 9.5px;
-  line-height: 1.00;
-  --ls: 0.045em;
-  text-transform: uppercase;
-}
-
-.text-telemetry {
-  font-size: 15px;
-  line-height: 1.00;
-  --ls: 0.015em;
-}
-
-.text-map-label {
-  font-size: 12px;
-  line-height: 1.00;
-  --ls: 0.20em;
-  text-transform: uppercase;
-}
-
-/* ==========================================================================
-   Family Classes (Font + Weight Defaults, Tracking from --ls)
-   ========================================================================== */
-
-body {
-  font-family: var(--font-sans);
-  letter-spacing: var(--ls, 0em);
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.font-display {
-  font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: var(--ls, -0.008em);
-}
-
-.font-sans {
-  font-family: var(--font-sans);
-  letter-spacing: var(--ls, 0em);
-}
-
-.font-mono {
-  font-family: var(--font-mono);
-  font-feature-settings: "tnum" 1, "zero" 1;
-  letter-spacing: var(--ls, 0.015em);
-}
-
-.font-serif {
-  font-family: var(--font-serif);
-  letter-spacing: var(--ls, 0.010em);
-}
-
-.font-wiki-sans {
-  font-family: var(--font-wiki-sans);
-  letter-spacing: var(--ls, 0em);
-}
-
-.font-onoma {
-  font-family: var(--font-onoma);
-  letter-spacing: var(--ls, 0em);
-}
-
-.font-ipa {
-  font-family: var(--font-ipa);
-  font-style: normal;
-  letter-spacing: var(--ls, 0.02em);
-}
-
-/* Tabular Numerals Utility */
-.tabular-nums {
-  font-feature-settings: "tnum" 1, "zero" 1;
+  body {
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }

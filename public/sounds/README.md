@@ -1,8 +1,6 @@
 # Sound Assets for IxCards System
 
-This directory is reserved for optional MP3 sound effects for the IxCards experience.
-
-> **Status (September 2026): legacy / dormant.** Platform UI audio is now **Cuelume** — 17 synthesized Web Audio cues (`press`, `release`, `toggle`, `tick`, `chime`, `whisper`, `bloom`, `droplet`, `page`, `scan`, `loading`, `ready`, `arrival`, `pulse`, `sparkle`, `success`, `error`) exposed via `soundEffects` in `src/lib/sound/cuelume.ts`, which needs no audio files. The MP3-based `SoundService` described below still exists at `src/lib/media/sound-service.ts` but has no callers, and the pack-opening sound hooks in `src/lib/cards/pack-opening-service.ts` are intentionally silenced no-ops. `/public/sounds/cards/` contains only a `.gitkeep`.
+This directory contains sound effects for the complete IxCards experience.
 
 ## Directory Structure
 
@@ -118,7 +116,7 @@ Search terms:
 
 ## Implementation Notes
 
-The pack opening service (`src/lib/cards/pack-opening-service.ts`) was designed to handle missing files as follows (its sound methods are currently silenced no-ops):
+The pack opening service (`src/lib/pack-opening-service.ts`) automatically handles missing files:
 - If a sound file is missing, it logs a warning to console
 - The animation continues without audio
 - No user-facing errors are shown
@@ -134,7 +132,7 @@ The pack opening service (`src/lib/cards/pack-opening-service.ts`) was designed 
 
 ## Sound Service Features
 
-The legacy sound system (`src/lib/media/sound-service.ts`, currently unused) provides:
+The sound system (`src/lib/sound-service.ts`) provides:
 
 - **Volume Controls**: Master, SFX, and Music volume sliders (0-100%)
 - **Individual Muting**: Toggle specific sounds on/off
@@ -146,7 +144,7 @@ The legacy sound system (`src/lib/media/sound-service.ts`, currently unused) pro
 ## Usage in Components
 
 ```typescript
-import { getSoundService } from "~/lib/media/sound-service";
+import { getSoundService } from "~/lib/sound-service";
 
 const soundService = getSoundService();
 
@@ -169,8 +167,13 @@ soundService.setEnabled(false);
 
 ## Settings UI
 
-The legacy `SoundSettings.tsx` component no longer exists. Platform sound on/off and volume are controlled from the Halo Settings view (`src/components/halo/views/SettingsView.tsx`, via `useSoundSettings`) and persisted under `ixstates:sound-enabled` / `ixstates:sound-volume` in localStorage.
+Access sound settings through the Settings component:
+- Location: `src/components/settings/SoundSettings.tsx`
+- Features: Volume sliders, sound previews, reset to defaults
+- Persistence: Auto-saves to localStorage
 
 ## Current Status
 
-🔴 No sound files present, and no code path currently plays them. Adding MP3 files to `/public/sounds/cards/` will not enable audio until `SoundService` is wired back in (or the cues are ported to Cuelume).
+🔴 No sound files present - system running in silent mode (graceful fallback)
+
+Add MP3 files to `/public/sounds/cards/` to enable audio.

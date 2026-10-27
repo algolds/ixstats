@@ -54,12 +54,6 @@ export function getCountryPath(country: {
  * Convenience function for direct name-to-URL conversion
  */
 export function getNationUrl(countryName: string): string {
-  // oxlint-disable-next-line typescript/no-unused-vars
-  const isStandalone =
-    typeof window !== "undefined"
-      ? window.location.hostname === "maps.ixwiki.com"
-      : process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true";
-
   const slug = generateSlug(countryName);
   return `/countries/${slug}`;
 }

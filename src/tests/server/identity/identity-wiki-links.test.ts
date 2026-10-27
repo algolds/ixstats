@@ -1,4 +1,14 @@
-import { createWikiLinkService, WikiLinkError } from "~/server/modules/identity/identity.wiki-links";
+/**
+ * Sister wiki link verification (`createWikiLinkService`): a player proves an IIWiki or AltHistory account by saving
+ * a one-time code on their User: page, and only a first appearance by the account itself counts (a planted, laundered
+ * or unattributable token never does); a username another player verified is refused inside the transaction. IxWiki
+ * is not a source here: an old IxWiki name joins an account through a name claim, so the service never reads or
+ * writes the user row.
+ */
+import {
+  createWikiLinkService,
+  WikiLinkError,
+} from "~/server/modules/identity/identity.wiki-links";
 
 const NOW = new Date("2026-09-27T12:00:00Z");
 const TOKEN = "ixstates-verify-abcdef1234";
@@ -7,27 +17,40 @@ const rev = (content: string | null, author: string | null): Rev => ({ content, 
 /** The User: page revisions saved since the code was issued, oldest first; `complete` = the window is not truncated. */
 const history = (revisions: Rev[], complete = true) => ({ revisions, complete });
 
-function setup(overrides: Partial<Record<string, any>> = {}) {
-  const db: any = {
-    $transaction: jest.fn((cb: any) => cb(db)),
+/** What a transaction callback is handed: link rows only. */
+type LinkTx = { wikiAccountLink: Record<string, jest.Mock> };
+type TxCallback = (tx: LinkTx) => Promise<void>;
+
+/** The db holds link rows only: a user-row write would throw, so every test also proves the service never makes one. */
+function setup() {
+  const db = {
+    $transaction: jest.fn(),
     wikiAccountLink: {
       findUnique: jest.fn().mockResolvedValue(null),
       findMany: jest.fn().mockResolvedValue([]),
-      upsert: jest.fn().mockImplementation(({ create }: any) => Promise.resolve({ id: "l1", ...create })),
+      upsert: jest
+        .fn()
+        .mockImplementation(({ create }: { create: object }) =>
+          Promise.resolve({ id: "l1", ...create })
+        ),
       update: jest.fn().mockResolvedValue({}),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
-    user: { update: jest.fn().mockResolvedValue({}), updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
-    ...overrides,
   };
+  db.$transaction.mockImplementation((cb: TxCallback) => cb(db));
   const deps = {
-    fetchWikiUser: jest.fn().mockResolvedValue({ username: "Kir", userId: 7 }),
+    fetchWikiUser: jest.fn().mockResolvedValue({
+      username: "Kir",
+      userId: 7,
+      registration: new Date("2026-01-01T00:00:00Z"),
+      editCount: 42,
+    }),
     fetchUserPageHistory: jest.fn().mockResolvedValue(history([rev(`Hello ${TOKEN}`, "Kir")])),
     now: () => NOW,
     newToken: () => "ixstates-verify-abcdef1234",
   };
-  return { db, deps, service: createWikiLinkService(db, deps) };
+  return { db, deps, service: createWikiLinkService(db as never, deps) };
 }
 
 describe("wiki link verification — start()", () => {
@@ -65,8 +88,14 @@ describe("wiki link verification — start()", () => {
     // Outer (pre-tx) client sees no holder; only the tx-scoped client sees the verified one, so this
     // only passes if the TAKEN check runs via `tx`, not via `db` before $transaction is entered.
     db.wikiAccountLink.findUnique.mockResolvedValue(null);
-    const tx = { wikiAccountLink: { findUnique: jest.fn().mockResolvedValue({ userId: "other", verifiedAt: NOW }), deleteMany: jest.fn(), upsert: jest.fn() } };
-    db.$transaction.mockImplementation((cb: any) => cb(tx));
+    const tx = {
+      wikiAccountLink: {
+        findUnique: jest.fn().mockResolvedValue({ userId: "other", verifiedAt: NOW }),
+        deleteMany: jest.fn(),
+        upsert: jest.fn(),
+      },
+    };
+    db.$transaction.mockImplementation((cb: TxCallback) => cb(tx));
     await expect(service.start("u1", "iiwiki", "Kir")).rejects.toMatchObject({ code: "TAKEN" });
     expect(tx.wikiAccountLink.upsert).not.toHaveBeenCalled();
   });
@@ -86,52 +115,57 @@ describe("wiki link verification — start()", () => {
   it("rejects a wiki user that does not exist", async () => {
     const { deps, service } = setup();
     deps.fetchWikiUser.mockResolvedValue(null);
-    await expect(service.start("u1", "iiwiki", "ghost")).rejects.toMatchObject({ code: "WIKI_USER_NOT_FOUND" });
+    await expect(service.start("u1", "iiwiki", "ghost")).rejects.toMatchObject({
+      code: "WIKI_USER_NOT_FOUND",
+    });
+  });
+
+  it("names the sister wiki in an error, never the raw source id", async () => {
+    const { deps, service } = setup();
+    deps.fetchWikiUser.mockResolvedValue(null);
+    await expect(service.start("u1", "iiwiki", "ghost")).rejects.toMatchObject({
+      message: 'No IIWiki user named "ghost"',
+    });
+    await expect(service.start("u1", "althistory", "ghost")).rejects.toMatchObject({
+      message: 'No AltHistory user named "ghost"',
+    });
   });
 
   it("maps a wiki lookup failure to WIKI_UNREACHABLE", async () => {
     const { deps, service } = setup();
     deps.fetchWikiUser.mockRejectedValue(new Error("cloudflare"));
-    await expect(service.start("u1", "iiwiki", "Kir")).rejects.toMatchObject({ code: "WIKI_UNREACHABLE" });
-  });
-
-  it("never reads or writes the legacy User columns — a legacy squatter cannot block it", async () => {
-    const { db, service } = setup();
-    // A different user holds the legacy `User.wikiUsername` squat; start() must never consult it.
-    await service.start("u1", "ixwiki", "Kir");
-    expect(db.user.update).not.toHaveBeenCalled();
-    expect(db.user.updateMany).not.toHaveBeenCalled();
+    await expect(service.start("u1", "iiwiki", "Kir")).rejects.toMatchObject({
+      code: "WIKI_UNREACHABLE",
+    });
   });
 });
 
 describe("wiki link verification — confirm()", () => {
-  it("verifies when the token is on the user page saved by its own author, and writes the ixwiki legacy columns", async () => {
+  it("verifies when the token is on the user page saved by its own author", async () => {
     const { db, service } = setup();
     db.wikiAccountLink.findUnique.mockResolvedValue({
       id: "l1",
       userId: "u1",
-      source: "ixwiki",
+      source: "althistory",
       username: "Kir",
       wikiUserId: 7,
       token: "ixstates-verify-abcdef1234",
       tokenExpiresAt: new Date(NOW.getTime() + 1000),
       verifiedAt: null,
     });
-    await expect(service.confirm("u1", "ixwiki")).resolves.toEqual({ username: "Kir" });
+    await expect(service.confirm("u1", "althistory")).resolves.toEqual({ username: "Kir" });
     expect(db.wikiAccountLink.updateMany).toHaveBeenCalledWith({
       where: { id: "l1", userId: "u1", token: "ixstates-verify-abcdef1234", verifiedAt: null },
-      data: { verifiedAt: NOW, token: null, tokenExpiresAt: null },
+      data: {
+        verifiedAt: NOW,
+        token: null,
+        tokenExpiresAt: null,
+        // self-service proof: nobody confirmed it by authority, and the account's age and edits are recorded
+        verifiedById: null,
+        mwRegisteredAt: new Date("2026-01-01T00:00:00Z"),
+        mwEditCount: 42,
+      },
     });
-    expect(db.user.updateMany).toHaveBeenCalledWith({
-      where: { wikiUsername: "Kir", id: { not: "u1" } },
-      data: { wikiUsername: null, wikiUserId: null },
-    });
-    expect(db.user.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: "u1" },
-        data: expect.objectContaining({ wikiUsername: "Kir", wikiUserId: 7 }),
-      })
-    );
   });
 
   it("fails with TOKEN_NOT_FOUND / EXPIRED / NO_PENDING", async () => {
@@ -146,11 +180,19 @@ describe("wiki link verification — confirm()", () => {
     };
     db.wikiAccountLink.findUnique.mockResolvedValueOnce(null);
     await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({ code: "NO_PENDING" });
-    db.wikiAccountLink.findUnique.mockResolvedValueOnce({ ...pending, tokenExpiresAt: new Date(NOW.getTime() - 1) });
+    db.wikiAccountLink.findUnique.mockResolvedValueOnce({
+      ...pending,
+      tokenExpiresAt: new Date(NOW.getTime() - 1),
+    });
     await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({ code: "EXPIRED" });
-    db.wikiAccountLink.findUnique.mockResolvedValueOnce({ ...pending, tokenExpiresAt: new Date(NOW.getTime() + 1000) });
+    db.wikiAccountLink.findUnique.mockResolvedValueOnce({
+      ...pending,
+      tokenExpiresAt: new Date(NOW.getTime() + 1000),
+    });
     deps.fetchUserPageHistory.mockResolvedValueOnce(history([rev("no token here", "Kir")]));
-    await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({ code: "TOKEN_NOT_FOUND" });
+    await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({
+      code: "TOKEN_NOT_FOUND",
+    });
   });
 
   it("rejects with TOKEN_NOT_FOUND when the token is present but was saved by someone else", async () => {
@@ -166,12 +208,14 @@ describe("wiki link verification — confirm()", () => {
     });
     // Anyone can edit a stock MediaWiki user page — the token alone doesn't prove control.
     deps.fetchUserPageHistory.mockResolvedValue(history([rev(`Hello ${TOKEN}`, "SomeoneElse")]));
-    await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({ code: "TOKEN_NOT_FOUND" });
+    await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({
+      code: "TOKEN_NOT_FOUND",
+    });
     expect(db.wikiAccountLink.updateMany).not.toHaveBeenCalled();
   });
 
   it("does not verify when the row was re-owned or the token changed underneath it (race)", async () => {
-    const { db, deps, service } = setup();
+    const { db, service } = setup();
     db.wikiAccountLink.findUnique.mockResolvedValue({
       id: "l1",
       userId: "u1",
@@ -181,12 +225,10 @@ describe("wiki link verification — confirm()", () => {
       tokenExpiresAt: new Date(NOW.getTime() + 1000),
       verifiedAt: null,
     });
-    // The token check outside the tx passed, but by the time the tx runs, another start() re-owned
+    // The token check passed, but by the time the compare-and-swap runs another start() re-owned
     // the row (or it already got verified) — updateMany finds no matching row.
     db.wikiAccountLink.updateMany.mockResolvedValueOnce({ count: 0 });
     await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({ code: "NO_PENDING" });
-    expect(db.user.update).not.toHaveBeenCalled();
-    expect(db.user.updateMany).not.toHaveBeenCalled();
   });
 
   it("maps wiki outages to WIKI_UNREACHABLE", async () => {
@@ -202,23 +244,52 @@ describe("wiki link verification — confirm()", () => {
     });
     deps.fetchUserPageHistory.mockRejectedValue(new Error("cloudflare"));
     await expect(service.confirm("u1", "iiwiki")).rejects.toBeInstanceOf(WikiLinkError);
-    await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({ code: "WIKI_UNREACHABLE" });
+    await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({
+      code: "WIKI_UNREACHABLE",
+    });
   });
 
-  it("leaves user.* untouched for a non-ixwiki confirm", async () => {
-    const { db, service } = setup();
+  it("verifies nothing when the wiki cannot be asked for the account's age and edits", async () => {
+    const { db, deps, service } = setup();
     db.wikiAccountLink.findUnique.mockResolvedValue({
       id: "l1",
       userId: "u1",
-      source: "althistory",
+      source: "iiwiki",
       username: "Kir",
       token: "ixstates-verify-abcdef1234",
       tokenExpiresAt: new Date(NOW.getTime() + 1000),
       verifiedAt: null,
     });
-    await expect(service.confirm("u1", "althistory")).resolves.toEqual({ username: "Kir" });
-    expect(db.user.update).not.toHaveBeenCalled();
-    expect(db.user.updateMany).not.toHaveBeenCalled();
+    deps.fetchWikiUser.mockRejectedValue(new Error("cloudflare"));
+    await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({
+      code: "WIKI_UNREACHABLE",
+    });
+    expect(db.wikiAccountLink.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("records no age or edit count for an account the wiki does not say them for", async () => {
+    const { db, deps, service } = setup();
+    db.wikiAccountLink.findUnique.mockResolvedValue({
+      id: "l1",
+      userId: "u1",
+      source: "iiwiki",
+      username: "Kir",
+      token: "ixstates-verify-abcdef1234",
+      tokenExpiresAt: new Date(NOW.getTime() + 1000),
+      verifiedAt: null,
+    });
+    deps.fetchWikiUser.mockResolvedValue({
+      username: "Kir",
+      userId: 7,
+      registration: null,
+      editCount: null,
+    });
+    await service.confirm("u1", "iiwiki");
+    expect(db.wikiAccountLink.updateMany.mock.calls[0]?.[0].data).toMatchObject({
+      verifiedById: null,
+      mwRegisteredAt: null,
+      mwEditCount: null,
+    });
   });
 });
 
@@ -244,7 +315,11 @@ describe("wiki link verification — confirm(): the token's first appearance sin
   it("reads the revisions saved since the code was issued (tokenExpiresAt − 24h), less a 5-minute clock-skew margin", async () => {
     const { deps, service } = pendingSetup();
     await expect(service.confirm("u1", "iiwiki")).resolves.toEqual({ username: "Kir" });
-    expect(deps.fetchUserPageHistory).toHaveBeenCalledWith("iiwiki", "Kir", new Date(ISSUED.getTime() - 5 * 60_000));
+    expect(deps.fetchUserPageHistory).toHaveBeenCalledWith(
+      "iiwiki",
+      "Kir",
+      new Date(ISSUED.getTime() - 5 * 60_000)
+    );
   });
 
   it("a wiki clock running behind ours: the account's save stamped 2 minutes before issue is still found and accepted", async () => {
@@ -257,7 +332,11 @@ describe("wiki link verification — confirm(): the token's first appearance sin
     ];
     // The wiki answers rvdir=newer&rvstart=<since>: every revision stamped at or after `since`, oldest first.
     deps.fetchUserPageHistory.mockImplementation((_source: string, _user: string, since: Date) =>
-      Promise.resolve(history(page.filter((r) => r.at >= since).map(({ content, author }) => rev(content, author))))
+      Promise.resolve(
+        history(
+          page.filter((r) => r.at >= since).map(({ content, author }) => rev(content, author))
+        )
+      )
     );
     await expect(service.confirm("u1", "iiwiki")).resolves.toEqual({ username: "Kir" });
   });
@@ -283,14 +362,20 @@ describe("wiki link verification — confirm(): the token's first appearance sin
         rev(`My page <!-- ${TOKEN} -->`, "Kir"), // Kir's revert restores the planted token
       ])
     );
-    await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({ code: "TOKEN_NOT_FOUND" });
+    await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({
+      code: "TOKEN_NOT_FOUND",
+    });
     expect(db.wikiAccountLink.updateMany).not.toHaveBeenCalled();
   });
 
   it("accepts a token the account saved itself, even if someone edited the page after", async () => {
     const { db, deps, service } = pendingSetup();
     deps.fetchUserPageHistory.mockResolvedValue(
-      history([rev("My page", "Mallory"), rev(`My page ${TOKEN}`, "Kir"), rev(`Tidied ${TOKEN}`, "TidyBot")])
+      history([
+        rev("My page", "Mallory"),
+        rev(`My page ${TOKEN}`, "Kir"),
+        rev(`Tidied ${TOKEN}`, "TidyBot"),
+      ])
     );
     await expect(service.confirm("u1", "iiwiki")).resolves.toEqual({ username: "Kir" });
     expect(db.wikiAccountLink.updateMany).toHaveBeenCalledTimes(1);
@@ -298,7 +383,9 @@ describe("wiki link verification — confirm(): the token's first appearance sin
 
   it("accepts a user page the account created with the token", async () => {
     const { deps, service } = pendingSetup();
-    deps.fetchUserPageHistory.mockResolvedValue(history([rev(TOKEN, "Kir"), rev(`Hi ${TOKEN}`, "Kir")]));
+    deps.fetchUserPageHistory.mockResolvedValue(
+      history([rev(TOKEN, "Kir"), rev(`Hi ${TOKEN}`, "Kir")])
+    );
     await expect(service.confirm("u1", "iiwiki")).resolves.toEqual({ username: "Kir" });
   });
 
@@ -327,78 +414,52 @@ describe("wiki link verification — confirm(): the token's first appearance sin
 
   it("still requires the LATEST revision to contain the token", async () => {
     const { deps, service } = pendingSetup();
-    deps.fetchUserPageHistory.mockResolvedValue(history([rev(TOKEN, "Kir"), rev("removed", "Mallory")]));
-    await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({ code: "TOKEN_NOT_FOUND" });
+    deps.fetchUserPageHistory.mockResolvedValue(
+      history([rev(TOKEN, "Kir"), rev("removed", "Mallory")])
+    );
+    await expect(service.confirm("u1", "iiwiki")).rejects.toMatchObject({
+      code: "TOKEN_NOT_FOUND",
+    });
     const empty = pendingSetup();
     empty.deps.fetchUserPageHistory.mockResolvedValue(history([]));
-    await expect(empty.service.confirm("u1", "iiwiki")).rejects.toMatchObject({ code: "TOKEN_NOT_FOUND" });
-  });
-});
-
-describe("wiki link verification — adminVerify() (admin authority substitutes for the token)", () => {
-  it("refuses when another user already holds a verified row — checked inside the transaction, not before it", async () => {
-    const { db, service } = setup();
-    // Same trap as start()'s equivalent test: only the tx-scoped client sees the verified holder.
-    db.wikiAccountLink.findUnique.mockResolvedValue(null);
-    const tx = { wikiAccountLink: { findUnique: jest.fn().mockResolvedValue({ userId: "other", verifiedAt: NOW }), deleteMany: jest.fn(), upsert: jest.fn() }, user: { updateMany: jest.fn(), update: jest.fn() } };
-    db.$transaction.mockImplementation((cb: any) => cb(tx));
-    await expect(service.adminVerify("u1", "ixwiki", "Kir", 7)).rejects.toMatchObject({ code: "TAKEN" });
-    expect(tx.wikiAccountLink.upsert).not.toHaveBeenCalled();
-  });
-
-  it("writes a verified row and the ixwiki legacy columns without ever issuing a token", async () => {
-    const { db, service } = setup();
-    await expect(service.adminVerify("u1", "ixwiki", "kir", 7)).resolves.toEqual({ username: "Kir" });
-    expect(db.wikiAccountLink.upsert).toHaveBeenCalledWith({
-      where: { source_username: { source: "ixwiki", username: "Kir" } },
-      update: { userId: "u1", wikiUserId: 7, verifiedAt: NOW, token: null, tokenExpiresAt: null },
-      create: { userId: "u1", source: "ixwiki", username: "Kir", wikiUserId: 7, verifiedAt: NOW },
+    await expect(empty.service.confirm("u1", "iiwiki")).rejects.toMatchObject({
+      code: "TOKEN_NOT_FOUND",
     });
-    expect(db.user.updateMany).toHaveBeenCalledWith({
-      where: { wikiUsername: "Kir", id: { not: "u1" } },
-      data: { wikiUsername: null, wikiUserId: null },
-    });
-    expect(db.user.update).toHaveBeenCalledWith({
-      where: { id: "u1" },
-      data: { wikiUsername: "Kir", wikiUserId: 7, lastWikiSync: NOW },
-    });
-  });
-
-  it("accepts a null wikiUserId (PostgreSQL fast-path lookups hard-code id 1, which is not real)", async () => {
-    const { db, service } = setup();
-    await expect(service.adminVerify("u1", "ixwiki", "Kir", null)).resolves.toEqual({ username: "Kir" });
-    expect(db.wikiAccountLink.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ create: expect.objectContaining({ wikiUserId: null }) })
-    );
   });
 });
 
 describe("wiki link verification — unlink() and list()", () => {
-  it("clears the ixwiki legacy columns on unlink", async () => {
+  it("unlink deletes the account's link on that sister wiki and nothing else", async () => {
     const { db, service } = setup();
-    await service.unlink("u1", "ixwiki");
-    expect(db.wikiAccountLink.deleteMany).toHaveBeenCalledWith({ where: { userId: "u1", source: "ixwiki" } });
-    expect(db.user.update).toHaveBeenCalledWith({
-      where: { id: "u1" },
-      data: { wikiUsername: null, wikiUserId: null, lastWikiSync: null },
+    await service.unlink("u1", "iiwiki");
+    expect(db.wikiAccountLink.deleteMany).toHaveBeenCalledWith({
+      where: { userId: "u1", source: "iiwiki" },
     });
   });
 
-  it("leaves the legacy columns untouched when unlinking a non-ixwiki source", async () => {
+  it("lists the sister wiki links only: a leftover IxWiki row is not a link any more", async () => {
     const { db, service } = setup();
-    await service.unlink("u1", "iiwiki");
-    expect(db.wikiAccountLink.deleteMany).toHaveBeenCalledWith({ where: { userId: "u1", source: "iiwiki" } });
-    expect(db.user.update).not.toHaveBeenCalled();
+    await service.list("u1");
+    expect(db.wikiAccountLink.findMany).toHaveBeenCalledWith({
+      where: { userId: "u1", source: { in: ["iiwiki", "althistory"] } },
+      orderBy: { source: "asc" },
+    });
   });
 
   it("maps verified/pending flags for each linked source", async () => {
     const { db, service } = setup();
     db.wikiAccountLink.findMany.mockResolvedValue([
-      { source: "ixwiki", username: "Kir", verifiedAt: NOW, token: null, tokenExpiresAt: null },
-      { source: "iiwiki", username: "Kir", verifiedAt: null, token: "t", tokenExpiresAt: new Date(NOW.getTime() + 1000) },
+      { source: "althistory", username: "Kir", verifiedAt: NOW, token: null, tokenExpiresAt: null },
+      {
+        source: "iiwiki",
+        username: "Kir",
+        verifiedAt: null,
+        token: "t",
+        tokenExpiresAt: new Date(NOW.getTime() + 1000),
+      },
     ]);
     await expect(service.list("u1")).resolves.toEqual([
-      { source: "ixwiki", username: "Kir", verified: true, pending: false },
+      { source: "althistory", username: "Kir", verified: true, pending: false },
       { source: "iiwiki", username: "Kir", verified: false, pending: true },
     ]);
   });
@@ -406,7 +467,13 @@ describe("wiki link verification — unlink() and list()", () => {
   it("an expired code is not pending (ruling F-4) — the row offers a fresh start instead of a dead Verify", async () => {
     const { db, service } = setup();
     db.wikiAccountLink.findMany.mockResolvedValue([
-      { source: "iiwiki", username: "Kir", verifiedAt: null, token: "t", tokenExpiresAt: new Date(NOW.getTime() - 1) },
+      {
+        source: "iiwiki",
+        username: "Kir",
+        verifiedAt: null,
+        token: "t",
+        tokenExpiresAt: new Date(NOW.getTime() - 1),
+      },
       { source: "althistory", username: "Kir", verifiedAt: null, token: "t", tokenExpiresAt: null },
     ]);
     await expect(service.list("u1")).resolves.toEqual([

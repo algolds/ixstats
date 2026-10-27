@@ -1,56 +1,39 @@
 ---
-title: Military Equipment Catalog
-description: Browse and manage 500+ military equipment items across all domains with detailed specifications, manufacturers, and acquisition options.
+title: Procurement and the Catalog
+description: Order real-world aircraft, ships, vehicles and weapons, built at home or imported.
 badge: Defense
+prevHref: /help/defense/forces
+prevLabel: How Your Forces Are Built
+nextHref: /help/defense/stability
+nextLabel: Internal Stability
 ---
 
-> [!WARNING]
-> **Preview feature**
->
-> Defense is a MyCountry Premium feature in preview. Every nation can open the **Defense** tile in MyCountry, but without Premium it's a read-only preview — building forces and launching operations need Premium.
+## What the catalog is
 
-## Equipment Categories
+The equipment catalog is a shared library of real-world military hardware: aircraft (fighters, attack aircraft, bombers, transports, helicopters), ships (carriers, destroyers, frigates, submarines, amphibious ships), ground vehicles (tanks, infantry fighting vehicles, armoured personnel carriers, artillery, rocket launchers) and weapon systems. Each item has its manufacturer, era, cost and specifications. You browse it under [MyCountry → Defense](/mycountry/defense) → **Procurement**.
 
-- **Ground Forces:** Main battle tanks, armored vehicles, artillery systems, air defense platforms, infantry weapons (500+ items).
-- **Naval Forces:** Aircraft carriers, destroyers, submarines, patrol craft, amphibious vessels, support ships.
-- **Air Forces:** Fighter jets, bombers, helicopters, transport aircraft, reconnaissance platforms, drones.
-- **Support Systems:** Communications, logistics, medical, engineering, intelligence equipment.
+## Ordering equipment
 
-## Equipment Data & Specifications
+1. Open **Procurement** and find an item; filter by domain or search by name.
+2. Choose **Order**, pick the branch it goes to, the quantity, and whether to build it at home or import it.
+3. Check the quote: unit cost, total, what is paid now and each month, and the delivery date on your realm's calendar.
 
-> **What the Catalog Includes**
->
-> - **Technical Specs:** Weight, dimensions, crew size, range, speed, armament, protection levels.
-> - **Manufacturer Info:** Origin country, production dates, variants, license production agreements.
-> - **Operational Data:** Maintenance costs, fuel consumption, reliability ratings, upgrade paths.
-> - **Acquisition Options:** Purchase, license production, joint development, leasing, donations.
+Only branches whose domain can hold the item are offered: ships go to sea or marine branches, vehicles to land or marine branches.
 
-## Small Arms Equipment
+**Build at home or import.** Domestic orders are built within your industry's monthly capacity (set by the size of your economy) and its technology: designs newer than your industry can build must be imported until research closes the gap. Imports need neither, but cost 15% more and take half as long again.
 
-- **Infantry Weapons:** Rifles, carbines, designated marksman rifles, sniper systems, machine guns.
-- **Crew-Served Weapons:** Heavy machine guns, mortars, anti-tank guided missiles, man-portable air defense.
-- **Sidearms & Special:** Pistols, submachine guns, shotguns, grenade launchers, less-lethal systems.
-- The full small arms catalog is searchable with detailed specifications for every item.
+**Paying for it.** An order pays 15% when placed and the rest monthly from the procurement line until delivery. If the line runs short, the order **slips** a month and its price rises 0.5% for each month it slips; the open order shows how many months it has slipped.
 
-## How to Browse Equipment
+**Delivery.** When its lead time has passed on your realm's clock and it is paid, the equipment enters service in its branch, adding to its equipment and quality. A paused realm's orders wait.
 
-> **Browsing & Filtering**
->
-> - Browse the full catalog with filters by type, origin country, era, and capabilities.
-> - View detailed specs for any specific equipment item.
-> - Search manufacturers and production facilities.
-> - Browse infantry weapons by caliber, weight, and rate of fire.
-> - See your currently equipped units and inventory levels.
+**Cancelling.** You can cancel an open order, but what you have paid so far is sunk and not refunded.
 
-## Integration with Defense Systems
+Ordering and cancelling need [Premium](/help/getting-started/premium); without it you can browse but not order.
 
-- Equipment selections drive force composition calculations in MyCountry defense dashboards.
-- Acquisition costs feed into budget system; maintenance expenses affect operating budgets.
-- Equipment capabilities determine readiness scores and operational effectiveness ratings.
-- Link equipment to specific military branches, units, and deployment zones for comprehensive tracking.
+## Equipment in service
 
-> **Related Documentation**
->
-> - [Reference Data Management](/help/admin/reference-data) — Managing equipment catalogs (admin).
-> - [Military Units & Assets](/help/defense/units) — Assigning equipment to military units.
-> - [Force Customization](/help/defense/customization) — Tailoring your forces with the right equipment.
+A branch's equipment is listed when you expand it under **Branches**. You can mark an item operational, in maintenance or in reserve, or scrap it: scrapping removes its value from the branch and refunds nothing. Assets can be committed to [operations](/help/mycountry/defense#operations).
+
+## For admins
+
+The catalog is edited at `/admin/military-equipment`, and the procurement catalog shows the active items there. See [Reference Data](/help/admin/reference-data).

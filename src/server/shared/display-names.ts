@@ -1,18 +1,19 @@
 /**
  * Display names for signed-in users, resolved from their linked identities.
  *
- * Order: nation name, forum username, wiki username, then the user's first active ThinkPages
- * account. Never an ID fragment: anyone with no linked name reads as UNKNOWN_DISPLAY_NAME.
+ * Order: nation name, forum username, passport handle, then the user's first active ThinkPages
+ * account. Never an ID fragment: anyone with no linked name reads as UNKNOWN_DISPLAY_NAME. An old
+ * wiki name is never a display name: it is a name claim, shown on the passport.
  */
 import type { PrismaClient } from "@prisma/client";
 
 /** Shown when a user has no linked name anywhere. */
 export const UNKNOWN_DISPLAY_NAME = "Unknown user";
 
-export interface DisplayNameSources {
+interface DisplayNameSources {
   country?: { name: string | null } | null;
   forumUsername?: string | null;
-  wikiUsername?: string | null;
+  handle?: string | null;
   thinkpagesDisplayName?: string | null;
 }
 
@@ -21,18 +22,18 @@ export function pickDisplayName(sources: DisplayNameSources): string | null {
   return (
     sources.country?.name ||
     sources.forumUsername ||
-    sources.wikiUsername ||
+    sources.handle ||
     sources.thinkpagesDisplayName ||
     null
   );
 }
 
-/** The two delegates the resolver reads; accepts the Prisma client or a transaction client. */
-export type DisplayNameDb = Pick<PrismaClient, "user" | "thinkpagesAccount">;
+/** The delegates the resolver reads; accepts the Prisma client or a transaction client. */
+type DisplayNameDb = Pick<PrismaClient, "user" | "thinkpagesAccount">;
 
 /**
- * Batch-resolve display names for Clerk user IDs: one users query, plus one ThinkPages query
- * only for IDs that still have no name. Every requested ID is in the returned map.
+ * Batch-resolve display names for Clerk user IDs: one users query, plus one ThinkPages query only
+ * for IDs that still have no name. Every requested ID is in the returned map.
  */
 export async function resolveDisplayNames(
   db: DisplayNameDb,
@@ -47,7 +48,7 @@ export async function resolveDisplayNames(
     select: {
       clerkUserId: true,
       forumUsername: true,
-      wikiUsername: true,
+      handle: true,
       country: { select: { name: true } },
     },
   });

@@ -5,10 +5,12 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { isSystemOwner } from "~/lib/auth";
+import { countStorePurchases } from "~/lib/vault/store-purchases";
+import { assertSportsEconomyOpen } from "~/server/api/routers/sports/_shared";
 
 export const sportsTeamsRouter = createTRPCRouter({
   getTeam: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
@@ -43,7 +45,7 @@ export const sportsTeamsRouter = createTRPCRouter({
     }
   }),
 
-  updateTeam: protectedProcedure
+  updateTeam: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),
@@ -85,7 +87,7 @@ export const sportsTeamsRouter = createTRPCRouter({
       }
     }),
 
-  claimTeam: protectedProcedure
+  claimTeam: rateLimitedMutationProcedure
     .input(z.object({ teamId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -104,27 +106,18 @@ export const sportsTeamsRouter = createTRPCRouter({
           });
         }
 
-        // Fetch user's SPEND_BOOST transactions to verify purchased store upgrades
+        // Fetch user's SPEND_BOOST transactions to verify purchased store upgrades (a purchase
+        // an admin revoked no longer counts)
         const userTxs = await ctx.db.vaultTransaction.findMany({
           where: {
             vault: { userId: ctx.user.id },
             type: "SPEND_BOOST",
           },
+          select: { metadata: true },
         });
-
-        const checkUpgradeOwned = (upgradeId: string): boolean => {
-          return userTxs.some((tx) => {
-            let meta = tx.metadata;
-            if (typeof meta === "string") {
-              try {
-                meta = JSON.parse(meta);
-              } catch {
-                // non-JSON metadata — treated as no item match
-              }
-            }
-            return meta && typeof meta === "object" && (meta as { itemId?: string }).itemId === upgradeId;
-          });
-        };
+        const upgradesOwned = countStorePurchases(userTxs);
+        const checkUpgradeOwned = (upgradeId: string): boolean =>
+          (upgradesOwned[upgradeId] ?? 0) > 0;
 
         // 1. Verify MyClub Team License
         const ownsClubLicense = checkUpgradeOwned("upgrade_myclub_license");
@@ -148,23 +141,33 @@ export const sportsTeamsRouter = createTRPCRouter({
           }
         }
 
-        const spend = await exchangeService.spend(
-          ctx.user.id,
-          50,
-          "CHARTER_FEE",
-          `TEAM_CLAIM:${input.teamId}`,
-          ctx.db
-        );
-        if (!spend.success) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: spend.message ?? "Insufficient balance to claim team",
+        await assertSportsEconomyOpen(ctx.db);
+        return await ctx.db.$transaction(async (tx) => {
+          // Take the club only while it is still unowned, in the transaction that charges for
+          // it: of two concurrent claimers one matches nothing, pays nothing and is refused
+          const claimed = await tx.sportTeam.updateMany({
+            where: { id: input.teamId, ownerUserId: null },
+            data: { ownerUserId: ctx.user.id },
           });
-        }
+          if (claimed.count !== 1) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Team is already claimed" });
+          }
 
-        return ctx.db.sportTeam.update({
-          where: { id: input.teamId },
-          data: { ownerUserId: ctx.user.id },
+          const spend = await exchangeService.spend(
+            ctx.user.id,
+            50,
+            "CHARTER_FEE",
+            `TEAM_CLAIM:${input.teamId}`,
+            tx
+          );
+          if (!spend.success) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: spend.message ?? "Insufficient balance to claim team",
+            });
+          }
+
+          return tx.sportTeam.findUniqueOrThrow({ where: { id: input.teamId } });
         });
       } catch (error) {
         if (error instanceof TRPCError) throw error;

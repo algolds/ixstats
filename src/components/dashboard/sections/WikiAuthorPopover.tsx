@@ -11,7 +11,8 @@ import {
 import { OpenBook as BookOpen, Clock, Globe, Map as MapIcon, Group as Users } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
-import { createUrl } from "~/lib/utils";
+import { Skeleton } from "~/components/ui/skeleton";
+import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
 
 export function WikiAuthorPopover({ username }: { username: string }) {
   const [open, setOpen] = useState(false);
@@ -22,25 +23,38 @@ export function WikiAuthorPopover({ username }: { username: string }) {
     { enabled: open, staleTime: 60_000 }
   );
 
-  const wikiUserUrl = createUrl(`/wiki/user/${username}`);
-  const wikiContribsUrl = createUrl(`/wiki/contributions/${username}`);
+  const wikiUserUrl = getWikiProfilePath(username);
+  const wikiContribsUrl = `/util/contributions/${username}`;
+  const country = author?.country;
+  const links = [
+    { href: wikiUserUrl, icon: BookOpen, label: "Wiki user page" },
+    { href: wikiContribsUrl, icon: Clock, label: "Contributions" },
+    ...(country?.slug
+      ? [
+          { href: `/countries/${country.slug}`, icon: Globe, label: "Country page" },
+          { href: `/maps?country=${country.id}`, icon: MapIcon, label: "View on map" },
+        ]
+      : []),
+  ];
 
   return (
     <HoverCard open={open} onOpenChange={setOpen} openDelay={300} closeDelay={100}>
       <HoverCardTrigger asChild>
-        <button className="text-foreground/80 hover:text-foreground cursor-pointer font-medium underline decoration-dotted underline-offset-2 transition-colors">
+        <button
+          type="button"
+          className="text-label-secondary hover:text-label focus-visible:outline-tint rounded-control-sm cursor-pointer font-medium underline decoration-dotted underline-offset-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
           {username}
         </button>
       </HoverCardTrigger>
       <HoverCardContent side="top" align="start" sideOffset={4} className="w-56 p-3">
         {isLoading ? (
           <div className="space-y-2">
-            <div className="bg-muted h-4 w-24 animate-pulse rounded" />
-            <div className="bg-muted/60 h-3 w-32 animate-pulse rounded" />
+            <Skeleton className="rounded-control-sm h-4 w-24" />
+            <Skeleton className="rounded-control-sm h-3 w-32" />
           </div>
         ) : (
           <div className="space-y-2">
-            {/* Header */}
             <div className="flex items-center gap-2">
               {author?.country?.flag ? (
                 <UnifiedCountryFlag
@@ -50,14 +64,14 @@ export function WikiAuthorPopover({ username }: { username: string }) {
                   className="shrink-0"
                 />
               ) : (
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-wiki/10">
-                  <Users className="h-3 w-3 text-wiki" />
+                <div className="bg-fill-3 rounded-control-sm flex size-6 shrink-0 items-center justify-center">
+                  <Users aria-hidden className="text-label-secondary size-3.5" />
                 </div>
               )}
               <div className="min-w-0">
-                <p className="text-foreground truncate text-xs font-semibold">{username}</p>
+                <p className="text-label text-headline truncate">{username}</p>
                 {author?.country && (
-                  <p className="text-muted-foreground truncate text-xs">
+                  <p className="text-label-secondary text-footnote truncate">
                     {author.country.name}
                     {author.country.continent ? ` · ${author.country.continent}` : ""}
                   </p>
@@ -65,59 +79,33 @@ export function WikiAuthorPopover({ username }: { username: string }) {
               </div>
             </div>
 
-            {/* Country info badge */}
             {author?.country?.economicTier && (
-              <div className="text-muted-foreground text-xs">
-                <span className="text-foreground/70 font-medium">
-                  {author.country.economicTier}
-                </span>
+              <div className="text-label-secondary text-footnote">
+                <span className="font-medium">{author.country.economicTier}</span>
                 {author.country.leader && <span> · Led by {author.country.leader}</span>}
               </div>
             )}
 
-            {/* Quick links */}
-            <div className="border-border/30 flex flex-col gap-0.5 border-t pt-1.5">
-              <Link
-                href={wikiUserUrl}
-                className="text-muted-foreground hover:text-foreground hover:bg-muted/30 flex items-center gap-1.5 rounded px-1.5 py-1 text-xs transition-colors"
-              >
-                <BookOpen className="h-3 w-3 shrink-0 text-wiki" />
-                Wiki User Page
-              </Link>
-              <Link
-                href={wikiContribsUrl}
-                className="text-muted-foreground hover:text-foreground hover:bg-muted/30 flex items-center gap-1.5 rounded px-1.5 py-1 text-xs transition-colors"
-              >
-                <Clock className="h-3 w-3 shrink-0 text-wiki" />
-                Contributions
-              </Link>
-              {author?.country?.slug && (
-                <>
-                  <Link
-                    href={createUrl(`/countries/${author.country.slug}`)}
-                    className="text-muted-foreground hover:text-foreground hover:bg-muted/30 flex items-center gap-1.5 rounded px-1.5 py-1 text-xs transition-colors"
-                  >
-                    <Globe className="h-3 w-3 shrink-0 text-blue-400" />
-                    Country Page
-                  </Link>
-                  <Link
-                    href={createUrl(`/maps?country=${author.country.id}`)}
-                    className="text-muted-foreground hover:text-foreground hover:bg-muted/30 flex items-center gap-1.5 rounded px-1.5 py-1 text-xs transition-colors"
-                  >
-                    <MapIcon className="h-3 w-3 shrink-0 text-emerald-400" />
-                    View on Map
-                  </Link>
-                </>
-              )}
+            <div className="border-separator flex flex-col gap-0.5 border-t pt-2">
+              {links.map(({ href, icon: Icon, label }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-footnote flex items-center gap-2 px-2 py-1 transition-colors"
+                >
+                  <Icon aria-hidden className="size-3.5 shrink-0" />
+                  {label}
+                </Link>
+              ))}
               {!author?.country && !isLoading && (
-                <span className="text-muted-foreground/50 px-1.5 py-0.5 text-xs italic">
+                <span className="text-label-secondary text-footnote px-2 py-0.5">
                   No linked IxStats country
                 </span>
               )}
             </div>
           </div>
         )}
-        <HoverCardArrow className="fill-popover" />
+        <HoverCardArrow className="fill-surface-elevated" />
       </HoverCardContent>
     </HoverCard>
   );

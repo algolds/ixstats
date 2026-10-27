@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Settings,
   Group,
@@ -13,22 +13,25 @@ import {
   MediaImage,
   Xmark,
 } from "iconoir-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { MediaSearchModal } from "~/components/wiki-os/media-search/MediaSearchModal";
 import { api } from "~/trpc/react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
+import { THINKTANK_CATEGORIES, ThinktankDialogHeader, ThinktankField } from "./ThinktankFormParts";
+import { assetUrl } from "~/lib/base-path";
 
 interface ThinktankSettingsModalProps {
   isOpen: boolean;
@@ -45,8 +48,249 @@ interface ThinktankSettingsModalProps {
     bannerUrl?: string;
     themeAccent?: string;
   };
-  currentUserId?: string;
   onDeleteSuccess?: () => void;
+}
+
+const CATEGORIES = ["General", ...THINKTANK_CATEGORIES];
+
+interface BrandingSectionProps {
+  name: string;
+  bannerUrl: string;
+  avatarUrl: string;
+  onPick: (target: "avatar" | "banner") => void;
+  onClearBanner: () => void;
+  onClearAvatar: () => void;
+}
+
+function BrandingSection({
+  name,
+  bannerUrl,
+  avatarUrl,
+  onPick,
+  onClearBanner,
+  onClearAvatar,
+}: BrandingSectionProps) {
+  return (
+    <div className="bg-surface-secondary rounded-row space-y-3 p-4">
+      <div className="flex items-center justify-between">
+        <span className="text-subhead text-label">Branding & artwork</span>
+        <span className="text-label-secondary text-footnote">Media repository</span>
+      </div>
+
+      <div className="border-separator bg-fill-4 rounded-control relative h-24 w-full overflow-hidden border">
+        {bannerUrl ? (
+          <img
+            src={assetUrl(bannerUrl) ?? undefined}
+            alt="Group banner"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="text-footnote text-label-secondary flex size-full items-center justify-center">
+            No banner set
+          </div>
+        )}
+        <div className="absolute top-2 right-2 flex items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => onPick("banner")}
+            className="facet-chrome"
+          >
+            <MediaImage />
+            {bannerUrl ? "Change Banner" : "Choose Banner"}
+          </Button>
+          {bannerUrl && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={onClearBanner}
+              className="facet-chrome text-label-secondary hover:text-label size-7 p-0"
+              title="Remove banner"
+            >
+              <Xmark />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 pt-1">
+        <Avatar className="border-separator rounded-control size-12 border">
+          <AvatarImage src={avatarUrl || undefined} alt={name} />
+          <AvatarFallback className="rounded-control bg-tint-fill text-headline text-tint">
+            {name.slice(0, 2).toUpperCase() || "TT"}
+          </AvatarFallback>
+        </Avatar>
+
+        <div className="flex-1 space-y-1">
+          <div className="flex items-center gap-2">
+            <Button type="button" size="sm" variant="outline" onClick={() => onPick("avatar")}>
+              <MediaImage className="text-tint" />
+              Select logo from repository
+            </Button>
+            {avatarUrl && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={onClearAvatar}
+                className="text-label-secondary hover:text-label"
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+          <p className="text-label-secondary text-footnote">
+            Upload a custom emblem or choose from Wiki Commons & Unsplash.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type InviteTarget = { userId: string; username: string; displayName: string };
+
+/** Search a ThinkPages player by username / display name, then send them an invitation. */
+function InviteMembersSection({ groupId, isOpen }: { groupId: string; isOpen: boolean }) {
+  const notify = useNotify();
+  const [inviteInput, setInviteInput] = useState("");
+  const [inviteTarget, setInviteTarget] = useState<InviteTarget | null>(null);
+  const [inviteQuery, setInviteQuery] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setInviteQuery(inviteInput.trim().replace(/^@/, "")), 250);
+    return () => clearTimeout(t);
+  }, [inviteInput]);
+
+  const { data: inviteResults } = api.thinkpages.searchInvitableUsers.useQuery(
+    { groupId, query: inviteQuery },
+    { enabled: isOpen && inviteQuery.length >= 2 && !inviteTarget, staleTime: 10000 }
+  );
+
+  const inviteMutation = api.thinkpages.inviteToThinktank.useMutation({
+    onSuccess: (result) => {
+      if (result.skipped > 0 && result.count === 0) {
+        soundEffects.error();
+        notify.error("This user can't be invited (their privacy settings don't allow it).");
+        return;
+      }
+      soundEffects.success();
+      notify.success(`Invitation sent to ${inviteTarget?.displayName ?? inviteInput.trim()}!`);
+      setInviteInput("");
+      setInviteTarget(null);
+    },
+    onError: (err) => {
+      soundEffects.error();
+      notify.error(err.message || "Failed to send invitation");
+    },
+  });
+
+  const handleSendInvite = () => {
+    if (!inviteTarget) return;
+    soundEffects.press();
+    inviteMutation.mutate({ groupId, userIds: [inviteTarget.userId] });
+  };
+
+  return (
+    <div className="bg-surface-secondary rounded-row space-y-2 p-4">
+      <div className="flex items-center gap-2">
+        <Plus className="text-tint size-4" aria-hidden="true" />
+        <span className="text-subhead text-label">Invite members</span>
+      </div>
+      <p className="text-footnote text-label-secondary">
+        Search for a player by their ThinkPages username or display name, then send an invitation.
+      </p>
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Search by username (e.g., @jane)"
+          value={
+            inviteTarget ? `${inviteTarget.displayName} (@${inviteTarget.username})` : inviteInput
+          }
+          onChange={(e) => {
+            setInviteTarget(null);
+            setInviteInput(e.target.value);
+          }}
+          className="flex-1"
+        />
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleSendInvite}
+          disabled={inviteMutation.isPending || !inviteTarget}
+        >
+          <Send />
+          Invite
+        </Button>
+      </div>
+      {!inviteTarget && inviteResults && inviteResults.length > 0 && (
+        <ul className="border-separator bg-surface divide-separator rounded-control max-h-40 divide-y overflow-y-auto border">
+          {inviteResults.map((u) => (
+            <li key={u.userId}>
+              <button
+                type="button"
+                onClick={() => {
+                  soundEffects.press();
+                  setInviteTarget({
+                    userId: u.userId,
+                    username: u.username,
+                    displayName: u.displayName,
+                  });
+                }}
+                className="hover:bg-fill-4 text-footnote flex w-full items-center gap-2 px-3 py-2 text-left"
+              >
+                <Avatar className="size-6">
+                  <AvatarImage src={u.profileImageUrl || undefined} alt="" />
+                  <AvatarFallback className="text-footnote">
+                    {u.displayName.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-label font-medium">{u.displayName}</span>
+                <span className="text-label-secondary">@{u.username}</span>
+                {u.countryName && (
+                  <span className="text-label-secondary ml-auto">{u.countryName}</span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {!inviteTarget && inviteQuery.length >= 2 && inviteResults?.length === 0 && (
+        <p className="text-label-secondary text-footnote">No invitable users found.</p>
+      )}
+      <InviteCodeRow groupId={groupId} />
+    </div>
+  );
+}
+
+/** A single-use invite code, valid for a week, that anyone can enter under "Invite code". */
+function InviteCodeRow({ groupId }: { groupId: string }) {
+  const notify = useNotify();
+  const createCode = api.thinkpages.createThinktankInviteCode.useMutation({
+    onError: (err) => {
+      soundEffects.error();
+      notify.error(err.message || "Failed to create an invite code");
+    },
+  });
+  return (
+    <div className="border-separator flex items-center justify-between gap-2 border-t pt-2">
+      <p className="text-footnote text-label-secondary">
+        {createCode.data
+          ? `Code ${createCode.data.code}: single use, valid for 7 days.`
+          : "Or share a single-use invite code."}
+      </p>
+      <Button
+        type="button"
+        size="sm"
+        variant="secondary"
+        disabled={createCode.isPending}
+        onClick={() => createCode.mutate({ groupId })}
+      >
+        New code
+      </Button>
+    </div>
+  );
 }
 
 export function ThinktankSettingsModal({
@@ -59,7 +303,6 @@ export function ThinktankSettingsModal({
   initialCategory,
   initialAvatar,
   initialSettings,
-  currentUserId = "",
   onDeleteSuccess,
 }: ThinktankSettingsModalProps) {
   const notify = useNotify();
@@ -75,19 +318,13 @@ export function ThinktankSettingsModal({
     Boolean(initialSettings?.allowPersonaPosting)
   );
   const [rules, setRules] = useState(initialSettings?.rules || "");
-
-  // Media repository modal state
   const [mediaTarget, setMediaTarget] = useState<"avatar" | "banner" | null>(null);
 
-  // Invite user state
-  const [inviteInput, setInviteInput] = useState("");
-
-  // Mutations
   const updateGroupMutation = api.thinkpages.updateThinktank.useMutation();
   const updateSettingsMutation = api.thinkpages.updateGroupSettings.useMutation({
     onSuccess: () => {
       soundEffects.success();
-      notify.success("Group settings updated successfully!");
+      notify.success("Group settings updated");
       void utils.thinkpages.getThinktankById.invalidate({ groupId });
       void utils.thinkpages.getThinktanks.invalidate();
       onClose();
@@ -95,18 +332,6 @@ export function ThinktankSettingsModal({
     onError: (err) => {
       soundEffects.error();
       notify.error(err.message || "Failed to update settings");
-    },
-  });
-
-  const inviteMutation = api.thinkpages.inviteToThinktank.useMutation({
-    onSuccess: () => {
-      soundEffects.success();
-      notify.success(`Invitation sent to ${inviteInput.trim()}!`);
-      setInviteInput("");
-    },
-    onError: (err) => {
-      soundEffects.error();
-      notify.error(err.message || "Failed to send invitation");
     },
   });
 
@@ -128,7 +353,6 @@ export function ThinktankSettingsModal({
     e.preventDefault();
     soundEffects.press();
 
-    // 1. Update basic info & avatar
     await updateGroupMutation.mutateAsync({
       groupId,
       name: name.trim(),
@@ -138,7 +362,6 @@ export function ThinktankSettingsModal({
       type: type as any,
     });
 
-    // 2. Update settings (including banner and multi-persona toggle)
     updateSettingsMutation.mutate({
       groupId,
       allowPersonaPosting,
@@ -147,213 +370,71 @@ export function ThinktankSettingsModal({
     });
   };
 
-  const handleSendInvite = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inviteInput.trim()) return;
-
-    soundEffects.press();
-    inviteMutation.mutate({
-      groupId,
-      userIds: [inviteInput.trim()],
-    });
-  };
-
-  const categories = [
-    "General",
-    "Economics",
-    "Diplomacy",
-    "History & Lore",
-    "Military & Defense",
-    "Culture & Society",
-    "Science & Technology",
-  ];
+  const isPublic = type === "public";
 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="border-border/50 bg-card/95 dark:bg-card/95 max-h-[90vh] max-w-xl overflow-y-auto rounded-2xl p-6 shadow-2xl backdrop-blur-2xl dark:border-white/10">
-          <DialogHeader>
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <Settings className="h-5 w-5" />
-              </div>
-              <div>
-                <DialogTitle className="text-foreground text-base font-bold">
-                  Group Settings
-                </DialogTitle>
-                <DialogDescription className="text-muted-foreground text-xs">
-                  Configure group identity, branding imagery, and member access.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
+        <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
+          <ThinktankDialogHeader
+            icon={<Settings className="size-5" aria-hidden="true" />}
+            title="Group settings"
+            description="Configure group identity, branding imagery, and member access."
+          />
 
           <form onSubmit={handleSave} className="space-y-4 pt-2">
-            {/* ── Visual Branding: Banner & Logo ── */}
-            <div className="border-border/40 bg-muted/20 space-y-3 rounded-2xl border p-3.5">
-              <div className="flex items-center justify-between">
-                <span className="text-foreground text-xs font-bold">Branding & Artwork</span>
-                <span className="text-muted-foreground text-xs">Media Repository</span>
-              </div>
+            <BrandingSection
+              name={name}
+              bannerUrl={bannerUrl}
+              avatarUrl={avatarUrl}
+              onPick={setMediaTarget}
+              onClearBanner={() => setBannerUrl("")}
+              onClearAvatar={() => setAvatarUrl("")}
+            />
 
-              {/* Banner Preview */}
-              <div className="border-border/50 bg-muted/50 relative h-24 w-full overflow-hidden rounded-xl border">
-                {bannerUrl ? (
-                  <img src={bannerUrl} alt="Group banner" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="text-muted-foreground flex h-full w-full items-center justify-center bg-emerald-500/5 text-xs">
-                    No banner set
-                  </div>
-                )}
-                <div className="absolute top-2 right-2 flex items-center gap-1.5">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => setMediaTarget("banner")}
-                    className="bg-background/80 h-7 rounded-lg px-2.5 text-xs font-semibold shadow-xs backdrop-blur-md"
-                  >
-                    <MediaImage className="mr-1 h-3 w-3" />
-                    {bannerUrl ? "Change Banner" : "Choose Banner"}
-                  </Button>
-                  {bannerUrl && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setBannerUrl("")}
-                      className="text-muted-foreground hover:text-foreground bg-background/80 h-7 w-7 rounded-lg p-0 backdrop-blur-md"
-                      title="Remove Banner"
-                    >
-                      <Xmark className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </div>
-              </div>
+            <ThinktankField label="Name">
+              <Input value={name} onChange={(e) => setName(e.target.value)} required />
+            </ThinktankField>
 
-              {/* Logo / Avatar Preview */}
-              <div className="flex items-center gap-3 pt-1">
-                <Avatar className="border-border/50 h-12 w-12 rounded-xl border shadow-xs">
-                  <AvatarImage src={avatarUrl || undefined} alt={name} />
-                  <AvatarFallback className="rounded-xl bg-emerald-500/10 text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                    {name.slice(0, 2).toUpperCase() || "TT"}
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setMediaTarget("avatar")}
-                      className="h-7.5 rounded-lg px-2.5 text-xs font-semibold"
-                    >
-                      <MediaImage className="mr-1.5 h-3.5 w-3.5 text-emerald-500" />
-                      Select Logo from Repository
-                    </Button>
-                    {avatarUrl && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setAvatarUrl("")}
-                        className="text-muted-foreground hover:text-foreground h-7 text-xs"
-                      >
-                        Clear
-                      </Button>
-                    )}
-                  </div>
-                  <p className="text-muted-foreground text-xs">
-                    Upload a custom emblem or choose from Wiki Commons & Unsplash.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Name */}
-            <div className="space-y-1.5">
-              <label className="text-foreground text-xs font-semibold">Name</label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="bg-background/50 border-border/40 h-9 rounded-xl text-xs"
-                required
-              />
-            </div>
-
-            {/* Description */}
-            <div className="space-y-1.5">
-              <label className="text-foreground text-xs font-semibold">Description</label>
+            <ThinktankField label="Description">
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="bg-background/50 border-border/40 min-h-[60px] rounded-xl text-xs"
+                className="min-h-[60px]"
               />
-            </div>
+            </ThinktankField>
 
-            {/* Category */}
-            <div className="space-y-1.5">
-              <label className="text-foreground text-xs font-semibold">Category</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="border-border/40 bg-background/50 text-foreground w-full rounded-xl border px-3 py-2 text-xs focus:outline-none"
-              >
-                {categories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <ThinktankField label="Category" labelId="thinktank-category-label">
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger aria-labelledby="thinktank-category-label" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </ThinktankField>
 
-            {/* Rules & Guidelines */}
-            <div className="space-y-1.5">
-              <label className="text-foreground text-xs font-semibold">Rules & Guidelines</label>
+            <ThinktankField label="Rules & guidelines">
               <Textarea
                 placeholder="Optional guidelines for posting and discussions..."
                 value={rules}
                 onChange={(e) => setRules(e.target.value)}
-                className="bg-background/50 border-border/40 placeholder:text-muted-foreground/60 min-h-[50px] rounded-xl text-xs"
+                className="min-h-[50px]"
               />
-            </div>
+            </ThinktankField>
 
-            {/* ── Invite Users Section ── */}
-            <div className="border-border/40 bg-card/60 space-y-2.5 rounded-2xl border p-3.5">
-              <div className="flex items-center gap-1.5">
-                <Plus className="h-4 w-4 text-emerald-500" />
-                <span className="text-foreground text-xs font-bold">Invite Members</span>
-              </div>
-              <p className="text-muted-foreground text-xs leading-snug">
-                Send an invitation to a player or collaborator by user ID or handle.
-              </p>
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Enter User ID (e.g., user_2abc...)"
-                  value={inviteInput}
-                  onChange={(e) => setInviteInput(e.target.value)}
-                  className="bg-background/50 border-border/40 placeholder:text-muted-foreground/60 h-8.5 flex-1 rounded-xl text-xs"
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleSendInvite}
-                  disabled={inviteMutation.isPending || !inviteInput.trim()}
-                  className="h-8.5 rounded-xl bg-emerald-600 px-3 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500"
-                >
-                  <Send className="mr-1 h-3 w-3" />
-                  Invite
-                </Button>
-              </div>
-            </div>
+            <InviteMembersSection groupId={groupId} isOpen={isOpen} />
 
-            {/* Multi-Persona Posting Toggle (Replaced Sparkle Icon) */}
-            <div className="space-y-2 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3.5">
+            <div className="bg-surface-secondary rounded-row space-y-2 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Group className="h-4 w-4 text-indigo-500" />
-                  <span className="text-foreground text-xs font-bold">Multi-Persona Posting</span>
+                  <Group className="text-label-secondary size-4" aria-hidden="true" />
+                  <span className="text-subhead text-label">Multi-Persona Posting</span>
                 </div>
                 <Switch
                   checked={allowPersonaPosting}
@@ -363,34 +444,33 @@ export function ThinktankSettingsModal({
                   }}
                 />
               </div>
-              <p className="text-muted-foreground text-xs leading-relaxed">
+              <p className="text-label-secondary text-footnote leading-relaxed">
                 When enabled, members can choose to publish notes under their country's Government,
                 Media, or Citizen personas. When disabled, all members post under authentic national
                 accounts.
               </p>
             </div>
 
-            {/* Privacy Toggle */}
-            <div className="border-border/40 bg-muted/20 flex items-center justify-between rounded-xl border p-3.5">
+            <div className="border-separator bg-fill-4 rounded-row flex items-center justify-between border p-4">
               <div className="flex items-center gap-2">
-                {type === "public" ? (
-                  <Globe className="h-4 w-4 text-emerald-500" />
+                {isPublic ? (
+                  <Globe className="text-label-secondary size-4" aria-hidden="true" />
                 ) : (
-                  <Lock className="h-4 w-4 text-amber-500" />
+                  <Lock className="text-label-secondary size-4" aria-hidden="true" />
                 )}
                 <div>
-                  <span className="text-foreground text-xs font-bold">
-                    {type === "public" ? "Public Group" : "Private Group"}
+                  <span className="text-subhead text-label">
+                    {isPublic ? "Public Group" : "Private Group"}
                   </span>
-                  <p className="text-muted-foreground text-xs">
-                    {type === "public"
+                  <p className="text-label-secondary text-footnote">
+                    {isPublic
                       ? "Anyone can discover and join this group."
                       : "Invite-only membership."}
                   </p>
                 </div>
               </div>
               <Switch
-                checked={type === "public"}
+                checked={isPublic}
                 onCheckedChange={(checked) => {
                   soundEffects.press();
                   setType(checked ? "public" : "private");
@@ -398,8 +478,7 @@ export function ThinktankSettingsModal({
               />
             </div>
 
-            {/* Actions & Disband */}
-            <div className="border-border/30 flex items-center justify-between border-t pt-3">
+            <div className="border-separator flex items-center justify-between border-t pt-3">
               <Button
                 type="button"
                 variant="ghost"
@@ -414,30 +493,23 @@ export function ThinktankSettingsModal({
                   }
                 }}
                 disabled={deleteGroupMutation.isPending}
-                className="h-8.5 rounded-xl text-xs text-red-500 hover:bg-red-500/10 hover:text-red-600"
+                className="text-red hover:bg-red/10 hover:text-red h-8.5"
               >
-                <Trash className="mr-1.5 h-3.5 w-3.5" />
-                Delete Group
+                <Trash />
+                Delete group
               </Button>
 
               <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onClose}
-                  className="h-8.5 rounded-xl text-xs"
-                >
+                <Button type="button" variant="outline" size="sm" onClick={onClose}>
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   size="sm"
                   disabled={updateSettingsMutation.isPending || updateGroupMutation.isPending}
-                  className="h-8.5 rounded-xl bg-emerald-600 px-4 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500"
                 >
-                  <Check className="mr-1.5 h-3.5 w-3.5" />
-                  Save Settings
+                  <Check />
+                  Save settings
                 </Button>
               </div>
             </div>
@@ -445,17 +517,16 @@ export function ThinktankSettingsModal({
         </DialogContent>
       </Dialog>
 
-      {/* ── Platform Media Repository Modal ── */}
       {mediaTarget && (
         <MediaSearchModal
-          isOpen={Boolean(mediaTarget)}
+          isOpen
           onClose={() => setMediaTarget(null)}
           onImageSelect={(imageUrl) => {
             soundEffects.success();
             if (mediaTarget === "avatar") {
               setAvatarUrl(imageUrl);
               notify.success("Emblem updated from repository");
-            } else if (mediaTarget === "banner") {
+            } else {
               setBannerUrl(imageUrl);
               notify.success("Banner updated from repository");
             }

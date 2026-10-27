@@ -10,7 +10,19 @@ export function getBasePath(): string {
     : process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
 }
 
-export const BASE_PATH = getBasePath();
+const BASE_PATH = getBasePath();
+
+/**
+ * An image/asset URL ready for `src`: absolute (http/https, protocol-relative), data: and blob:
+ * URLs pass through; app-relative paths such as uploaded flags (`/images/uploads/…`) get the
+ * base path. Returns null for an empty value.
+ */
+export function assetUrl(url: string | null | undefined): string | null {
+  const trimmed = url?.trim();
+  if (!trimmed) return null;
+  if (/^(https?:|data:|blob:|\/\/)/i.test(trimmed)) return trimmed;
+  return withBasePath(trimmed);
+}
 
 /**
  * Prepends the BASE_PATH to a given path
@@ -61,6 +73,23 @@ export function withBasePath(path: string): string {
 }
 
 /**
+ * A path as Next's `<Link>` and router (`push`/`replace`/`prefetch`) take it. They add the base path themselves and
+ * never check for one, so a path that already carries it (from `withBasePath`, `createUrl`, `ixstatesHref`) loses it
+ * again, once; `/base`, `/base?x` and `/base#x` become `/`, `/?x` and `/#x`. An absolute URL, a path without the base
+ * path, a remainder that would read as another host (`//` or `/\`) and every path where the deployment has no base
+ * path stay as they are.
+ */
+export function toRouterPath(path: string): string {
+  const base = getBasePath();
+  if (!base || !path.startsWith(base)) return path;
+  const rest = path.slice(base.length);
+  if (rest === "" || rest.startsWith("?") || rest.startsWith("#")) return `/${rest}`;
+  // `/base//evil.com/x` would become the protocol-relative `//evil.com/x`: leave such a path as it is.
+  if (!rest.startsWith("/") || rest.startsWith("//") || rest.startsWith("/\\")) return path;
+  return rest;
+}
+
+/**
  * Navigates to a path using the Next.js router or window.location for external URLs.
  */
 export function navigateWithBasePath(path: string, router: any) {
@@ -68,7 +97,7 @@ export function navigateWithBasePath(path: string, router: any) {
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("//")) {
     window.location.href = url;
   } else {
-    router.push(url);
+    router.push(toRouterPath(url));
   }
 }
 

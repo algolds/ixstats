@@ -1,0 +1,244 @@
+"use client";
+
+import { memo, useState } from "react";
+import Link from "next/link";
+import { ArrowRight, Reply as ReplyIcon, Quote } from "iconoir-react";
+import type { ActionCardData } from "~/components/action-links";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { ContextMenu, ContextMenuTrigger } from "~/components/ui/context-menu";
+import { countedPostId } from "~/lib/discussed-in";
+import { timeAgo } from "~/lib/format/compact";
+import { realmBoardHref, threadHref } from "~/lib/thinkpages-forum/links";
+import { cn } from "~/lib/utils/cn";
+import { AuthorLine } from "../AuthorMark";
+import { ForumAvatar } from "../ForumAvatar";
+import type { ModeratorTools } from "../ModeratorMenu";
+import { ReactionBar } from "../reactions";
+import { canReactToMessage } from "../reactions/can-react";
+import { PostBody } from "../thread/PostBody";
+import type { PostStyle } from "../thread/types";
+import { MessageEditor } from "./MessageEditor";
+import { hasMessageActions, MessageMenu } from "./MessageMenu";
+import type { BoardAccess, BoardMessageData, BoardRealm } from "./types";
+
+interface BoardMessageProps {
+  message: BoardMessageData;
+  realm: BoardRealm;
+  access: BoardAccess;
+  /** The board lets the viewer react (the board read's `canReact`); narrowed here per message. */
+  canReact: boolean;
+  signedIn: boolean;
+  /** Cards for the page of messages this one is on (see useThreadActionCards). */
+  cards: ReadonlyMap<string, ActionCardData>;
+  cardsReady: boolean;
+  cardsErrored: boolean;
+  tools: ModeratorTools | null;
+  className?: string;
+  onReply: (message: BoardMessageData) => void;
+  onQuote: (message: BoardMessageData) => void;
+  /** An edit, a moderation action or a continue changed the message: refresh the board. */
+  onChanged: () => void;
+}
+
+/** Who edits it now: its author, or a moderator (whose save needs a note for the log). */
+type Editing = "author" | "moderator" | null;
+
+/** Board messages read as compact prose, out of character. */
+const BOARD_STYLE: PostStyle = "ooc";
+
+const ROLE_LABEL = { staff: "Staff", officer: "Officer" } as const;
+
+const repliesOf = (count: number) => (count === 1 ? "1 reply" : `${count} replies`);
+
+function MessageAuthor({ message }: { message: BoardMessageData }) {
+  const { author, role, isVisitor, visitorRealm, createdAt, editedAt } = message;
+  return (
+    <AuthorLine
+      name={author.name}
+      personaUsername={author.persona ? author.handle : null}
+      personaType={author.personaType ?? null}
+      flagUrl={author.flagUrl}
+    >
+      {role === "staff" || role === "officer" ? (
+        <Badge variant="secondary">{ROLE_LABEL[role]}</Badge>
+      ) : null}
+      {isVisitor ? (
+        <Badge variant="outline">
+          {visitorRealm ? `Visitor · ${visitorRealm.name}` : "Visitor"}
+        </Badge>
+      ) : null}
+      {message.hidden === true ? <Badge variant="warning">Hidden</Badge> : null}
+      <time
+        dateTime={createdAt.toISOString()}
+        className="text-footnote text-label-secondary tabular-nums"
+      >
+        {timeAgo(createdAt, { suffix: false })}
+      </time>
+      {editedAt ? <span className="text-footnote text-label-secondary">edited</span> : null}
+    </AuthorLine>
+  );
+}
+
+function ContinuedLine({ continued }: { continued: NonNullable<BoardMessageData["continued"]> }) {
+  const replies = continued.replies === null ? "" : ` · ${repliesOf(continued.replies)}`;
+  if (!continued.threadId) {
+    return <p className="text-footnote text-label-secondary">{continued.title}</p>;
+  }
+  return (
+    <Link
+      href={threadHref(continued.threadId)}
+      className="text-footnote text-tint inline-flex items-center gap-1.5 hover:underline pointer-coarse:min-h-11"
+    >
+      <ArrowRight aria-hidden className="size-3.5 shrink-0" />
+      {`Continued in a thread: ${continued.title}${replies}`}
+    </Link>
+  );
+}
+
+/** Hidden until the message is hovered or focused, for a fine pointer. */
+const REVEAL =
+  "pointer-fine:opacity-0 pointer-fine:group-hover/message:opacity-100 pointer-fine:group-focus-within/message:opacity-100 transition-opacity duration-fast";
+
+const ACTION = "text-label-secondary hover:text-label pointer-coarse:min-h-11";
+
+/**
+ * One message in the realm board's feed, anchored at `#post-<id>` for permalinks: a compact row with the author
+ * (persona-first, as the server sent it), the message, the message it answers, where it continued, and its actions.
+ * A message continued in a thread is only a link to it.
+ */
+export const BoardMessage = memo(function BoardMessage({
+  message,
+  realm,
+  access,
+  canReact,
+  signedIn,
+  cards,
+  cardsReady,
+  cardsErrored,
+  tools,
+  className,
+  onReply,
+  onQuote,
+  onChanged,
+}: BoardMessageProps) {
+  const [editing, setEditing] = useState<Editing>(null);
+  const { author, replyTo, continued } = message;
+  const placeholder = continued !== null;
+
+  return (
+    <ContextMenu>
+      {/* The editor keeps the browser's menu (spellcheck), and so does a message with nothing to offer. */}
+      <ContextMenuTrigger
+        asChild
+        disabled={
+          editing !== null || placeholder || !hasMessageActions(message, access, signedIn, tools)
+        }
+      >
+        <article
+          id={`post-${message.id}`}
+          aria-label={`Message from ${author.name}, ${timeAgo(message.createdAt)}`}
+          data-hidden={message.hidden ? "" : undefined}
+          className={cn(
+            "group/message hover:bg-fill-4 flex scroll-mt-24 gap-3.5 px-4 py-4 transition-colors sm:px-5",
+            message.hidden && "bg-fill-4 opacity-70",
+            className
+          )}
+        >
+          <ForumAvatar
+            name={author.name}
+            avatarUrl={author.avatarUrl}
+            size="md"
+            className="mt-0.5"
+          />
+          {editing ? (
+            <MessageEditor
+              message={message}
+              asModerator={editing === "moderator"}
+              tools={tools}
+              onSaved={() => {
+                setEditing(null);
+                onChanged();
+              }}
+              onCancel={() => setEditing(null)}
+            />
+          ) : (
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <MessageAuthor message={message} />
+              {replyTo ? (
+                <Link
+                  href={realmBoardHref(realm.slug, replyTo.postId)}
+                  className="text-footnote text-label-secondary hover:text-label flex min-w-0 items-center gap-1.5"
+                >
+                  <ReplyIcon aria-hidden className="size-3.5 shrink-0" />
+                  <span className="min-w-0 truncate">
+                    Replying to <span className="text-label">{replyTo.authorName}</span>
+                    {`: "${replyTo.excerpt}"`}
+                  </span>
+                </Link>
+              ) : null}
+              {placeholder ? null : (
+                <PostBody
+                  html={message.contentHtml}
+                  style={BOARD_STYLE}
+                  cards={cards}
+                  cardsReady={cardsReady}
+                  cardsErrored={cardsErrored}
+                  postId={countedPostId({ id: message.id, persona: author.persona })}
+                />
+              )}
+              {continued ? <ContinuedLine continued={continued} /> : null}
+              {placeholder ? null : (
+                <div className="flex flex-wrap items-center gap-1">
+                  <ReactionBar
+                    postId={message.id}
+                    counts={message.reactions}
+                    mine={message.myReaction}
+                    canReact={canReactToMessage(canReact, message)}
+                  />
+                  {/* With a mouse, Reply, Quote and the menu show on hover or focus, so a long board reads as messages,
+                  not rows of buttons; reactions with counts always show. Touch keeps them visible. */}
+                  {access.canPost ? (
+                    <span className={cn("flex items-center gap-1", REVEAL)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={ACTION}
+                        onClick={() => onReply(message)}
+                      >
+                        <ReplyIcon aria-hidden />
+                        Reply
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={ACTION}
+                        onClick={() => onQuote(message)}
+                      >
+                        <Quote aria-hidden />
+                        Quote
+                      </Button>
+                    </span>
+                  ) : null}
+                  <span className="flex-1" />
+                  <span className={REVEAL}>
+                    <MessageMenu
+                      message={message}
+                      access={access}
+                      signedIn={signedIn}
+                      tools={tools}
+                      onEdit={(asModerator) => setEditing(asModerator ? "moderator" : "author")}
+                      onChanged={onChanged}
+                      onReply={access.canPost ? () => onReply(message) : undefined}
+                      onQuote={access.canPost ? () => onQuote(message) : undefined}
+                    />
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </article>
+      </ContextMenuTrigger>
+    </ContextMenu>
+  );
+});

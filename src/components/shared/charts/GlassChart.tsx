@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
 import { chartColorPalette } from "~/lib/builder";
@@ -17,83 +17,6 @@ interface GlassChartProps {
   error?: string;
   actions?: React.ReactNode;
   theme?: "default" | "gold" | "blue" | "emerald" | "indigo" | "purple" | "cyan" | "red";
-}
-
-interface ChartSkeletonProps {
-  height?: number | string;
-  type?: "bar" | "line" | "pie" | "area" | "scatter";
-}
-
-// oxlint-disable-next-line eslint/no-unused-vars
-function ChartSkeleton({ height = 300, type = "bar" }: ChartSkeletonProps) {
-  const elements = useMemo((): React.ReactElement | React.ReactElement[] => {
-    switch (type) {
-      case "bar":
-        return Array.from({ length: 6 }, (_, i) => (
-          <motion.div
-            key={i}
-            className="rounded-sm bg-[var(--color-bg-secondary)]/30"
-            style={{
-              // oxlint-disable-next-line
-              height: `${Math.random() * 60 + 20}%`,
-              width: "12%",
-              marginLeft: i === 0 ? "0" : "2%",
-            }}
-            initial={{ height: 0 }}
-            // oxlint-disable-next-line
-            animate={{ height: `${Math.random() * 60 + 20}%` }}
-            transition={{ delay: i * 0.1, duration: 0.5, ease: "easeOut" }}
-          />
-        ));
-      case "line":
-        return (
-          <motion.svg
-            className="h-full w-full"
-            viewBox="0 0 400 200"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-          >
-            <motion.path
-              d="M20,150 Q100,100 200,120 T380,80"
-              stroke="hsl(var(--color-brand-primary-hsl))"
-              strokeWidth="3"
-              fill="none"
-              strokeLinecap="round"
-              className="opacity-60"
-            />
-          </motion.svg>
-        );
-      case "pie":
-        return (
-          <motion.div
-            className="mx-auto h-32 w-32 rounded-full"
-            style={{
-              background: `conic-gradient(
-                hsl(var(--color-brand-primary-hsl)) 0deg 120deg,
-                hsl(var(--color-success-hsl)) 120deg 200deg,
-                hsl(var(--color-warning-hsl)) 200deg 280deg,
-                hsl(var(--color-error-hsl)) 280deg 360deg
-              )`,
-            }}
-            initial={{ scale: 0.8, opacity: 0, rotate: 0 }}
-            animate={{ scale: 1, opacity: 1, rotate: 360 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-          />
-        );
-      default:
-        return [];
-    }
-  }, [type]);
-
-  return (
-    <div
-      className="flex items-end justify-center p-6"
-      style={{ height: typeof height === "number" ? `${height}px` : height }}
-    >
-      {elements}
-    </div>
-  );
 }
 
 export function GlassChart({
@@ -147,7 +70,6 @@ export function GlassChart({
         className
       )}
     >
-      {/* Header */}
       {(title || description || actions) && (
         <div className="border-b border-[var(--color-border-primary)]/50 p-4">
           <div className="flex items-start justify-between">
@@ -198,7 +120,7 @@ export function GlassChart({
                   />
                 </svg>
               </div>
-              <p className="text-sm text-[var(--color-error)]">Chart Error</p>
+              <p className="text-sm text-[var(--color-error)]">Chart error</p>
               <p className="text-xs text-[var(--color-text-muted)]">{error}</p>
             </div>
           </div>
@@ -216,24 +138,22 @@ export function GlassChart({
 export const chartTheme = {
   colors: chartColorPalette,
   text: {
-    primary: "hsl(var(--color-text-primary-hsl))",
-    secondary: "hsl(var(--color-text-secondary-hsl))",
-    muted: "hsl(var(--color-text-muted-hsl))",
+    primary: "var(--color-text-primary)",
+    secondary: "var(--color-text-secondary)",
+    muted: "var(--color-text-muted)",
   },
   grid: {
-    stroke: "hsl(var(--color-border-primary-hsl))",
+    stroke: "var(--color-border-primary)",
     strokeWidth: 1,
     opacity: 0.3,
   },
   tooltip: {
-    background: "hsl(var(--color-bg-secondary-hsl))",
-    border: "hsl(var(--color-border-primary-hsl))",
-    text: "hsl(var(--color-text-primary-hsl))",
+    background: "var(--color-bg-secondary)",
+    border: "var(--color-border-primary)",
+    text: "var(--color-text-primary)",
   },
   legend: {
-    text: "hsl(var(--color-text-secondary-hsl))",
+    text: "var(--color-text-secondary)",
     fontSize: 12,
   },
 };
-
-export default GlassChart;

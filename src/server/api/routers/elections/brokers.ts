@@ -1,12 +1,20 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 export const electionsBrokersRouter = createTRPCRouter({
-  getPowerBrokers: publicProcedure
+  /**
+   * The power brokers and how far the budget satisfies each (spend share by favoured
+   * department category). Derived from the budget, so owner/privileged only (FORBIDDEN
+   * otherwise); the one consumer is the MyCountry politics drill-down.
+   */
+  getPowerBrokers: protectedProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
       // Load active components
       const components = await ctx.db.governmentComponent.findMany({
         where: { countryId: input.countryId, isActive: true },

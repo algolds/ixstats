@@ -3,7 +3,7 @@
  * Phase 9 Migration - October 2025
  *
  * This script migrates hardcoded small arms equipment data from
- * src/lib/small-arms-equipment.ts to the database.
+ * prisma/seeds/data/small-arms-equipment.ts to the database.
  *
  * Total items: 238 weapons and equipment
  * Categories: 11 main types
@@ -17,7 +17,7 @@ import {
   SMALL_ARMS_MANUFACTURERS,
   WEAPON_ERAS,
   type SmallArmsItem,
-} from "../../src/lib/small-arms-equipment";
+} from "./data/small-arms-equipment";
 
 const prisma = new PrismaClient();
 

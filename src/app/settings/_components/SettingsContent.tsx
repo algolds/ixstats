@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { Button } from "~/components/ui/button";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -10,11 +11,10 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import { useUserCountry } from "~/hooks/useUserCountry";
 
-import { SettingsSidebarNav } from "./SettingsSidebarNav";
 import { SettingsSkeleton } from "./SettingsSkeleton";
-import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
-import { Backlight } from "~/components/ui/backlight";
-import { type SettingSectionId } from "../_lib/sections";
+import { DashboardColumn } from "~/components/dashboard/DashboardColumn";
+import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
+import { SETTINGS_TAB_IDS, type SettingSectionId } from "../_lib/sections";
 
 export { SettingsSkeleton };
 
@@ -22,14 +22,14 @@ export { SettingsSkeleton };
 function PanelSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="border-border/40 bg-card/40 h-20 animate-pulse rounded-2xl border backdrop-blur-md" />
+      <div className="border-separator bg-surface rounded-card h-20 animate-pulse border" />
       <div className="space-y-3">
         <div className="bg-muted/40 h-4 w-32 animate-pulse rounded-md" />
-        <div className="border-border/40 bg-card/40 h-48 animate-pulse rounded-2xl border backdrop-blur-md" />
+        <div className="border-separator bg-surface rounded-card h-48 animate-pulse border" />
       </div>
       <div className="space-y-3">
         <div className="bg-muted/40 h-4 w-40 animate-pulse rounded-md" />
-        <div className="border-border/40 bg-card/40 h-40 animate-pulse rounded-2xl border backdrop-blur-md" />
+        <div className="border-separator bg-surface rounded-card h-40 animate-pulse border" />
       </div>
     </div>
   );
@@ -44,8 +44,8 @@ const CountryNationPanel = dynamic(
   () => import("./panels/CountryNationPanel").then((m) => m.CountryNationPanel),
   { loading: PanelSkeleton }
 );
-const AppearanceThemePanel = dynamic(
-  () => import("./panels/AppearanceThemePanel").then((m) => m.AppearanceThemePanel),
+const AppearanceAccessibilityPanel = dynamic(
+  () => import("./panels/AppearanceAccessibilityPanel").then((m) => m.AppearanceAccessibilityPanel),
   { loading: PanelSkeleton }
 );
 const WikiOSOptionsPanel = dynamic(
@@ -79,18 +79,7 @@ const NationStatesCardsPanel = dynamic(
 
 const isClerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_"));
 
-const VALID_TABS = new Set<SettingSectionId>([
-  "account",
-  "country",
-  "appearance",
-  "wikios",
-  "notifications",
-  "social",
-  "privacy",
-  "vault",
-  "cosmetics",
-  "cards",
-]);
+const VALID_TABS = new Set<SettingSectionId>(SETTINGS_TAB_IDS);
 
 export function SettingsContent() {
   usePageTitle({ title: "Settings" });
@@ -104,7 +93,6 @@ export function SettingsContent() {
   const initialSection = tabParam && VALID_TABS.has(tabParam) ? tabParam : "account";
 
   const [activeSection, setActiveSection] = useState<SettingSectionId>(initialSection);
-  const [heroCollapsed, setHeroCollapsed] = useState(true);
 
   // Sync state if URL query param changes
   useEffect(() => {
@@ -112,13 +100,6 @@ export function SettingsContent() {
       setActiveSection(tabParam);
     }
   }, [tabParam, activeSection]);
-
-  const handleSelectSection = useCallback((id: SettingSectionId) => {
-    setActiveSection(id);
-    const url = new URL(window.location.href);
-    url.searchParams.set("tab", id);
-    window.history.replaceState({}, "", url.toString());
-  }, []);
 
   const setupStatus: "loading" | "unauthenticated" | "needs-setup" | "complete" =
     !isLoaded || profileLoading
@@ -135,11 +116,11 @@ export function SettingsContent() {
         <div className="mx-auto max-w-2xl rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <User className="mx-auto mb-4 h-12 w-12 text-gray-400" />
           <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
-            Authentication Not Configured
+            Authentication is not configured
           </h1>
           <p className="mb-6 text-gray-600 dark:text-gray-300">
-            User authentication is not set up for this application. Please contact an administrator
-            to configure authentication or browse the public dashboard.
+            Sign-in is not set up for this deployment. Contact an administrator, or browse the
+            public dashboard.
           </p>
           <div className="flex justify-center gap-4">
             <Link
@@ -147,14 +128,14 @@ export function SettingsContent() {
               className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700"
             >
               <BarChart3 className="mr-2 h-4 w-4" />
-              View Dashboard
+              View dashboard
             </Link>
             <Link
               href="/countries"
               className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
             >
               <Globe className="mr-2 h-4 w-4" />
-              Browse Countries
+              Browse countries
             </Link>
           </div>
         </div>
@@ -170,20 +151,10 @@ export function SettingsContent() {
     <>
       <SignedIn>
         <div className="relative flex min-h-full w-full flex-1 flex-col">
-          {/* Subtle Backlight background wrapper */}
-          <Backlight blur={60} className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-            <div className="relative h-full w-full">
-              <div className="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-indigo-500/10 dark:bg-indigo-500/15" />
-              <div className="absolute top-[20%] -right-[5%] h-[30%] w-[30%] rounded-full bg-blue-500/10 dark:bg-blue-500/10" />
-              <div className="absolute -bottom-[10%] left-[20%] h-[40%] w-[40%] rounded-full bg-purple-500/10 dark:bg-purple-500/15" />
-            </div>
-          </Backlight>
+          {/* Phone title under the new navigation shell (nothing with the flag off). */}
+          <ShellPageHeader title="Settings" className="relative" />
 
-          <DashboardSidebarLayout
-            heroCollapsed={heroCollapsed}
-            onHeroExpand={() => setHeroCollapsed(false)}
-            disableCollapse={true}
-          >
+          <DashboardColumn>
             {/* Incomplete Setup Banner */}
             {setupStatus === "needs-setup" && (
               <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
@@ -191,83 +162,62 @@ export function SettingsContent() {
                   <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
                   <div className="flex-1">
                     <h3 className="text-xs font-bold text-amber-900 dark:text-amber-200">
-                      Country Setup Required
+                      Country setup required
                     </h3>
                     <p className="text-xs text-amber-700 dark:text-amber-300">
-                      Link your account to a country or create a new nation to unlock all features.
+                      Link your account to a country or create one to use every setting.
                     </p>
                   </div>
-                  <Link
-                    href="/setup"
-                    className="facet-interactive rounded-xl bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-amber-700 active:scale-[0.98]"
-                  >
-                    Complete Setup
-                  </Link>
+                  <Button asChild variant="default" size="sm">
+                    <Link href="/setup">Complete setup</Link>
+                  </Button>
                 </div>
               </div>
             )}
 
-            {/* Two-Pane Layout: Left Main Viewport (8 cols), Right Navigation Rail (4 cols) */}
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-              {/* Left Column: Active Settings Viewport */}
-              <main className="min-w-0 lg:col-span-8">
-                {activeSection === "account" && <AccountIdentityPanel user={user} />}
+            {/* The sidebar's Settings area list (and the More sheet) switch the tab. */}
+            <main className="min-w-0">
+              {activeSection === "account" && <AccountIdentityPanel user={user} />}
 
-                {activeSection === "country" &&
-                  (country?.newStats || userProfile?.country ? (
-                    <CountryNationPanel
-                      country={country?.newStats ?? userProfile?.country}
-                      membershipTier={userProfile?.membershipTier}
-                      roleDisplayName={userProfile?.role?.displayName || userProfile?.role?.name}
-                    />
-                  ) : (
-                    <div className="border-border/40 bg-card/40 rounded-2xl border p-8 text-center backdrop-blur-md">
-                      <Globe className="text-muted-foreground/60 mx-auto mb-2 h-8 w-8" />
-                      <h3 className="text-foreground text-sm font-bold">No Country Linked</h3>
-                      <p className="text-muted-foreground mt-1 mb-4 text-xs">
-                        You need to link or create a country to manage nation settings.
-                      </p>
-                      <Link
-                        href="/setup"
-                        className="facet-interactive bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center rounded-xl px-3.5 py-1.5 text-xs font-bold"
-                      >
-                        Launch Setup
-                      </Link>
-                    </div>
-                  ))}
+              {activeSection === "country" &&
+                (country?.newStats || userProfile?.country ? (
+                  <CountryNationPanel
+                    country={country?.newStats ?? userProfile?.country}
+                    membershipTier={userProfile?.membershipTier}
+                    roleDisplayName={userProfile?.role?.displayName || userProfile?.role?.name}
+                  />
+                ) : (
+                  <div className="border-separator bg-surface rounded-card border p-8 text-center">
+                    <Globe className="text-muted-foreground/60 mx-auto mb-2 h-8 w-8" />
+                    <h3 className="text-foreground text-sm font-bold">No country linked</h3>
+                    <p className="text-muted-foreground mt-1 mb-4 text-xs">
+                      Link or create a country to manage its settings.
+                    </p>
+                    <Button asChild variant="default" size="sm">
+                      <Link href="/setup">Set up a country</Link>
+                    </Button>
+                  </div>
+                ))}
 
-                {activeSection === "appearance" && <AppearanceThemePanel />}
+              {activeSection === "appearance" && <AppearanceAccessibilityPanel />}
 
-                {activeSection === "wikios" && <WikiOSOptionsPanel />}
+              {activeSection === "wikios" && <WikiOSOptionsPanel />}
 
-                {activeSection === "notifications" && user?.id && (
-                  <NotificationSettingsPanel userId={user.id} />
-                )}
+              {activeSection === "notifications" && user?.id && (
+                <NotificationSettingsPanel userId={user.id} />
+              )}
 
-                {activeSection === "social" && user?.id && <SocialPersonaPanel userId={user.id} />}
+              {activeSection === "social" && user?.id && <SocialPersonaPanel userId={user.id} />}
 
-                {activeSection === "privacy" && <PrivacySecurityPanel />}
+              {activeSection === "privacy" && <PrivacySecurityPanel />}
 
-                {activeSection === "vault" && <VaultStatusPanel />}
+              {activeSection === "vault" && <VaultStatusPanel />}
 
-                {activeSection === "cosmetics" && <CosmeticsUpgradesPanel />}
+              {activeSection === "cosmetics" && <CosmeticsUpgradesPanel />}
 
-                {activeSection === "cards" && <NationStatesCardsPanel />}
-              </main>
-
-              {/* Right Column: Sticky Navigation Rail */}
-              <div className="lg:col-span-4">
-                <SettingsSidebarNav
-                  activeSection={activeSection}
-                  onSelectSection={handleSelectSection}
-                  hasCountryId={Boolean(userProfile?.countryId)}
-                  user={user}
-                  membershipTier={userProfile?.membershipTier}
-                  roleDisplayName={userProfile?.role?.displayName || userProfile?.role?.name}
-                />
-              </div>
-            </div>
-          </DashboardSidebarLayout>
+              {activeSection === "cards" && <NationStatesCardsPanel />}
+            </main>
+          </DashboardColumn>
         </div>
       </SignedIn>
       <SignedOut>

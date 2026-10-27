@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
-import { motion } from "motion/react";
 import {
   SystemRestart as Loader2,
   Check,
@@ -23,6 +22,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { getCardImagePreset, type CardImageType } from "~/lib/cards/image-presets";
 import { cn } from "~/lib/utils";
+import { assetUrl } from "~/lib/base-path";
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
@@ -153,7 +153,7 @@ export function CardImageUploadModal({
   // Mutation to save the image
   const upsertMutation = api.cardImages.upsert.useMutation({
     onSuccess: () => {
-      notify.success("Image saved successfully");
+      notify.success("Image saved");
       utils.cardImages.getByCountryAndType.invalidate({ countryId, cardType });
       utils.cardImages.getAllByCountry.invalidate({ countryId });
       onSuccess?.();
@@ -263,7 +263,7 @@ export function CardImageUploadModal({
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="presets" className="gap-2">
                 <ImageIcon className="h-4 w-4" />
-                Preset Images
+                Preset images
               </TabsTrigger>
               <TabsTrigger value="search" className="gap-2">
                 <ImageIcon className="h-4 w-4" />
@@ -273,55 +273,54 @@ export function CardImageUploadModal({
 
             {/* Preset Images Tab */}
             <TabsContent value="presets" className="mt-4 space-y-4">
-              <p className="text-muted-foreground text-sm">
+              <p className="text-label-secondary text-body">
                 Select a curated image for your {preset.label.toLowerCase()} card
               </p>
 
               {/* Preset Images Grid */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {presetImages.map((imageUrl, idx) => (
-                  <motion.div
+                  <div
                     key={idx}
                     className={cn(
-                      "relative aspect-video cursor-pointer overflow-hidden rounded-lg border-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                      "rounded-control relative aspect-video cursor-pointer overflow-hidden border-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       selectedImage === imageUrl
-                        ? "border-primary ring-primary/50 ring-2"
-                        : "hover:border-primary/50 border-transparent"
+                        ? "border-tint ring-tint/50 ring-2"
+                        : "hover:border-tint/50 border-transparent"
                     )}
-                    whileHover={{ scale: 1.02 }}
                     onClick={() => setSelectedImage(imageUrl)}
                   >
                     <img
-                      src={imageUrl}
+                      src={assetUrl(imageUrl) ?? undefined}
                       alt={`${preset.label} preset ${idx + 1}`}
                       className="h-full w-full object-cover"
                     />
                     {selectedImage === imageUrl && (
-                      <div className="bg-primary/20 absolute inset-0 flex items-center justify-center">
-                        <Check className="text-primary h-8 w-8 drop-shadow-lg" />
+                      <div className="bg-tint-fill absolute inset-0 flex items-center justify-center">
+                        <Check className="text-tint h-8 w-8 drop-shadow-lg" />
                       </div>
                     )}
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </TabsContent>
 
             {/* Image Repository Tab */}
             <TabsContent value="search" className="mt-4 space-y-4">
-              <p className="text-muted-foreground text-sm">
-                Search from Unsplash, Wiki Commons, IxWiki, or upload your own
+              <p className="text-label-secondary text-body">
+                Search from Unsplash, Wiki Commons, the wiki, or upload your own
               </p>
 
               {/* Selected Image Preview */}
               {selectedImage && !presetImages.includes(selectedImage) && (
-                <div className="border-primary relative aspect-video overflow-hidden rounded-lg border-2">
+                <div className="border-tint rounded-control relative aspect-video overflow-hidden border-2">
                   <img
-                    src={selectedImage}
+                    src={assetUrl(selectedImage) ?? undefined}
                     alt="Selected image"
                     className="h-full w-full object-cover"
                   />
-                  <div className="bg-primary/20 absolute inset-0 flex items-center justify-center">
-                    <Check className="text-primary h-8 w-8 drop-shadow-lg" />
+                  <div className="bg-tint-fill absolute inset-0 flex items-center justify-center">
+                    <Check className="text-tint h-8 w-8 drop-shadow-lg" />
                   </div>
                 </div>
               )}
@@ -332,10 +331,10 @@ export function CardImageUploadModal({
                 onClick={() => setIsMediaModalOpen(true)}
               >
                 <div className="flex flex-col items-center gap-2">
-                  <ImageIcon className="text-muted-foreground h-8 w-8" />
-                  <span>Open Image Repository</span>
-                  <span className="text-muted-foreground text-xs">
-                    Unsplash, Wiki Commons, IxWiki, or Upload
+                  <ImageIcon className="text-label-secondary h-8 w-8" />
+                  <span>Open image Repository</span>
+                  <span className="text-label-secondary text-footnote">
+                    Unsplash, Wiki Commons, the wiki, or Upload
                   </span>
                 </div>
               </Button>
@@ -377,7 +376,7 @@ export function CardImageUploadModal({
                 ) : (
                   <>
                     <Check className="mr-2 h-4 w-4" />
-                    Save Image
+                    Save image
                   </>
                 )}
               </Button>
@@ -395,5 +394,3 @@ export function CardImageUploadModal({
     </>
   );
 }
-
-export default CardImageUploadModal;

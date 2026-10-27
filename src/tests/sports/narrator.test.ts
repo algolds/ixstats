@@ -1,10 +1,8 @@
 import {
   narrateEvents,
-  narrateBulletin,
-  generateMatchReport,
-  generateMatchPreview,
-  generateSeasonSummary,
+  generateAudioBroadcast,
 } from "~/lib/sports/commentary/narrator";
+import type { EventTraceStep } from "~/lib/sports/types";
 
 describe("narrator tests", () => {
   const originalFetch = global.fetch;
@@ -19,131 +17,82 @@ describe("narrator tests", () => {
     delete process.env.SPORTS_LLM_API_KEY;
     global.fetch = originalFetch;
   });
+  describe("caller-supplied endpoints never receive the server key", () => {
+    const okReply = (content: string) =>
+      jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content } }] }),
+      });
+    const events: EventTraceStep[] = [
+      { t: 1, type: "tactic_shift", description: "Match starts", team: "home" },
+    ];
 
-  test("narrateEvents fallback when disabled", async () => {
-    process.env.SPORTS_LLM_COMMENTARY = "false";
-    const events = [{ t: 1, type: "tactical", description: "Match starts" }];
-    const result = await narrateEvents(events, { sport: "soccer" });
-    expect(result).toEqual(["Match starts"]);
-  });
+    test("narrateEvents ignores a custom URL that comes without its own key", async () => {
+      const mockFetch = okReply(JSON.stringify({ commentary: ["Kick-off!"] }));
+      global.fetch = mockFetch;
 
-  test("narrateEvents calls fetch and handles JSON structure", async () => {
-    const mockFetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        choices: [
-          {
-            message: {
-              content: JSON.stringify({ commentary: ["The whistle blows!"] }),
-            },
-          },
-        ],
-      }),
+      await narrateEvents(events, {
+        sport: "soccer",
+        config: { apiUrl: "https://attacker.example/collect" },
+      });
+
+      const [url, init] = mockFetch.mock.calls[0];
+      expect(String(url)).not.toContain("attacker.example");
+      expect(init.headers.Authorization).toBe("Bearer test-key");
     });
-    global.fetch = mockFetch;
 
-    const events = [{ t: 1, type: "tactical", description: "Match starts" }];
-    const result = await narrateEvents(events, { sport: "soccer" });
-    expect(result).toEqual(["The whistle blows!"]);
-    expect(mockFetch).toHaveBeenCalled();
-  });
+    test("narrateEvents drops a keyed config whose host is not allowlisted", async () => {
+      const mockFetch = okReply(JSON.stringify({ commentary: ["Kick-off!"] }));
+      global.fetch = mockFetch;
 
-  test("narrateBulletin calls fetch and returns summary string", async () => {
-    const mockFetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        choices: [
-          {
-            message: {
-              content: "A thrilling matchday with many goals!",
-            },
-          },
-        ],
-      }),
+      await narrateEvents(events, {
+        sport: "soccer",
+        config: { apiKey: "user-key", apiUrl: "http://169.254.169.254/latest" },
+      });
+
+      const [url, init] = mockFetch.mock.calls[0];
+      expect(String(url)).not.toContain("169.254.169.254");
+      expect(init.headers.Authorization).toBe("Bearer test-key");
     });
-    global.fetch = mockFetch;
 
-    const matches = [{ homeName: "United", awayName: "City", homeScore: 2, awayScore: 1 }];
-    const result = await narrateBulletin(matches, {
-      sport: "soccer",
-      leagueName: "Premier League",
-      matchDay: 1,
+    test("narrateEvents uses the caller's own key on an allowlisted host", async () => {
+      const mockFetch = okReply(JSON.stringify({ commentary: ["Kick-off!"] }));
+      global.fetch = mockFetch;
+
+      await narrateEvents(events, {
+        sport: "soccer",
+        config: { apiKey: "user-key", apiUrl: "https://openrouter.ai/api/v1" },
+      });
+
+      const [url, init] = mockFetch.mock.calls[0];
+      expect(String(url)).toBe("https://openrouter.ai/api/v1/chat/completions");
+      expect(init.headers.Authorization).toBe("Bearer user-key");
     });
-    expect(result).toBe("A thrilling matchday with many goals!");
-  });
 
-  test("generateMatchReport calls fetch and returns report markdown", async () => {
-    const mockFetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        choices: [
-          {
-            message: {
-              content: "# Match Report\n\nUnited wins!",
-            },
-          },
-        ],
-      }),
+    test("generateAudioBroadcast only posts to the configured TTS endpoint", async () => {
+      process.env.SPORTS_TTS_ENABLED = "true";
+      process.env.SPORTS_TTS_API_URL = "https://tts.example.hf.space/synthesize";
+      process.env.SPORTS_TTS_API_KEY = "tts-key";
+      const mockFetch = jest.fn().mockResolvedValue({
+        ok: true,
+        arrayBuffer: async () => new ArrayBuffer(4),
+      });
+      global.fetch = mockFetch;
+
+      try {
+        // Extra arguments from an old caller must not redirect the request.
+        await (generateAudioBroadcast as (...args: unknown[]) => Promise<string | null>)(
+          ["Goal!"],
+          { apiUrl: "https://attacker.example/collect" }
+        );
+        const [url, init] = mockFetch.mock.calls[0];
+        expect(url).toBe("https://tts.example.hf.space/synthesize");
+        expect(init.headers.Authorization).toBe("Bearer tts-key");
+      } finally {
+        delete process.env.SPORTS_TTS_ENABLED;
+        delete process.env.SPORTS_TTS_API_URL;
+        delete process.env.SPORTS_TTS_API_KEY;
+      }
     });
-    global.fetch = mockFetch;
-
-    const matchData = {
-      homeTeamName: "United",
-      awayTeamName: "City",
-      homeScore: 2,
-      awayScore: 1,
-      sport: "soccer",
-      events: [{ t: 1, type: "tactical", description: "Match starts" }],
-      playerStats: [],
-    };
-    const result = await generateMatchReport(matchData);
-    expect(result).toBe("# Match Report\n\nUnited wins!");
-  });
-
-  test("generateMatchPreview calls fetch and returns preview text", async () => {
-    const mockFetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        choices: [
-          {
-            message: {
-              content: "A tight clash is expected.",
-            },
-          },
-        ],
-      }),
-    });
-    global.fetch = mockFetch;
-
-    const result = await generateMatchPreview(
-      { name: "United", position: 1 },
-      { name: "City", position: 2 },
-      "soccer"
-    );
-    expect(result).toBe("A tight clash is expected.");
-  });
-
-  test("generateSeasonSummary calls fetch and returns summary text", async () => {
-    const mockFetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        choices: [
-          {
-            message: {
-              content: "Season summary details.",
-            },
-          },
-        ],
-      }),
-    });
-    global.fetch = mockFetch;
-
-    const result = await generateSeasonSummary(
-      "Premier League",
-      "United",
-      [{ teamName: "United", points: 80, wins: 25, losses: 5 }],
-      "soccer"
-    );
-    expect(result).toBe("Season summary details.");
   });
 });

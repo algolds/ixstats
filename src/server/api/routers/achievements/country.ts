@@ -1,6 +1,110 @@
 import { z } from "zod";
+import type { Prisma, PrismaClient, UserAchievement } from "@prisma/client";
 import { createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+
+/** Clerk ids of the users who own the country. */
+async function ownerClerkIds(db: PrismaClient, countryId: string) {
+  const users = await db.user.findMany({
+    where: { ownedCountries: { some: { id: countryId } } },
+    select: { clerkUserId: true },
+  });
+  return users.map((u) => u.clerkUserId);
+}
+
+const achievementView = (a: UserAchievement) => ({
+  id: a.id,
+  title: a.title,
+  description: a.description,
+  icon: a.iconUrl || "Trophy",
+  unlockedAt: a.unlockedAt.toISOString(),
+  category: a.category,
+  rarity: a.rarity,
+  points: 10,
+});
+
+const LEADERBOARD_SELECT = {
+  id: true,
+  name: true,
+  flag: true,
+  economicTier: true,
+  populationTier: true,
+  currentPopulation: true,
+  baselinePopulation: true,
+  currentTotalGdp: true,
+  currentGdpPerCapita: true,
+  baselineGdpPerCapita: true,
+  landArea: true,
+  populationDensity: true,
+  realGDPGrowthRate: true,
+  adjustedGdpGrowth: true,
+  averageAnnualIncome: true,
+  totalWorkforce: true,
+  laborForceParticipationRate: true,
+  employmentRate: true,
+  literacyRate: true,
+  lifeExpectancy: true,
+  governmentRevenueTotal: true,
+  taxRevenueGDPPercent: true,
+  totalGovernmentSpending: true,
+  spendingGDPPercent: true,
+  economicVitality: true,
+  populationWellbeing: true,
+  overallNationalHealth: true,
+  infrastructureRating: true,
+  urbanPopulationPercent: true,
+  publicApproval: true,
+} satisfies Prisma.CountrySelect;
+
+type LeaderboardRow = Prisma.CountryGetPayload<{ select: typeof LEADERBOARD_SELECT }>;
+
+/** Current figures, falling back to the baseline while a country has not been projected yet. */
+function headlineFigures(c: LeaderboardRow) {
+  const population =
+    c.currentPopulation && c.currentPopulation > 0
+      ? c.currentPopulation
+      : c.baselinePopulation || 0;
+  const gdpPerCapita =
+    c.currentGdpPerCapita && c.currentGdpPerCapita > 0
+      ? c.currentGdpPerCapita
+      : c.baselineGdpPerCapita || 0;
+  const totalGdp =
+    c.currentTotalGdp && c.currentTotalGdp > 0 ? c.currentTotalGdp : gdpPerCapita * population;
+  return { population, gdpPerCapita, totalGdp };
+}
+
+// Not-yet-computed vitality/wellbeing/health sit at their 0 default; treat as not recorded.
+const computed = (v: number) => (v > 0 ? v : null);
+
+const METRIC_VALUE = {
+  population: (_c, f) => f.population,
+  totalGdp: (_c, f) => f.totalGdp,
+  gdpPerCapita: (_c, f) => f.gdpPerCapita,
+  populationDensity: (c, f) =>
+    c.populationDensity && c.populationDensity > 0
+      ? c.populationDensity
+      : c.landArea && c.landArea > 0
+        ? f.population / c.landArea
+        : null,
+  landArea: (c) => c.landArea || null,
+  gdpGrowth: (c) => c.realGDPGrowthRate ?? c.adjustedGdpGrowth,
+  avgIncome: (c) => c.averageAnnualIncome,
+  workforce: (c) => c.totalWorkforce,
+  employmentRate: (c) => c.employmentRate,
+  literacyRate: (c) => c.literacyRate,
+  lifeExpectancy: (c) => c.lifeExpectancy,
+  govRevenue: (c) => c.governmentRevenueTotal,
+  govSpending: (c) => c.totalGovernmentSpending,
+  economicVitality: (c) => computed(c.economicVitality),
+  wellbeing: (c) => computed(c.populationWellbeing),
+  nationalHealth: (c) => computed(c.overallNationalHealth),
+  infrastructure: (c) => c.infrastructureRating,
+  urbanization: (c) => c.urbanPopulationPercent,
+  approval: (c) => c.publicApproval,
+} satisfies Record<
+  string,
+  (c: LeaderboardRow, f: ReturnType<typeof headlineFigures>) => number | null
+>;
 
 export const achievementsCountryRouter = createTRPCRouter({
   // Get recent achievements for a country
@@ -13,31 +117,12 @@ export const achievementsCountryRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const users = await ctx.db.user.findMany({
-          where: { ownedCountries: { some: { id: input.countryId } } },
-          select: { clerkUserId: true },
-        });
-
-        const userIds = users.map((u) => u.clerkUserId);
-
         const achievements = await ctx.db.userAchievement.findMany({
-          where: {
-            userId: { in: userIds },
-          },
+          where: { userId: { in: await ownerClerkIds(ctx.db, input.countryId) } },
           orderBy: { unlockedAt: "desc" },
           take: input.limit,
         });
-
-        return achievements.map((achievement) => ({
-          id: achievement.id,
-          title: achievement.title,
-          description: achievement.description,
-          icon: achievement.iconUrl || "🏆",
-          unlockedAt: achievement.unlockedAt.toISOString(),
-          category: achievement.category,
-          rarity: achievement.rarity,
-          points: 10,
-        }));
+        return achievements.map(achievementView);
       } catch (error) {
         console.error("Error fetching recent achievements:", error);
         return [];
@@ -53,30 +138,13 @@ export const achievementsCountryRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const users = await ctx.db.user.findMany({
-          where: { ownedCountries: { some: { id: input.countryId } } },
-          select: { clerkUserId: true },
-        });
-
-        const userIds = users.map((u) => u.clerkUserId);
-
         const achievements = await ctx.db.userAchievement.findMany({
-          where: {
-            userId: { in: userIds },
-          },
+          where: { userId: { in: await ownerClerkIds(ctx.db, input.countryId) } },
           orderBy: { unlockedAt: "desc" },
         });
-
-        return achievements.map((achievement) => ({
-          id: achievement.id,
-          achievementId: achievement.achievementId,
-          title: achievement.title,
-          description: achievement.description,
-          icon: achievement.iconUrl || "🏆",
-          unlockedAt: achievement.unlockedAt.toISOString(),
-          category: achievement.category,
-          rarity: achievement.rarity,
-          points: 10,
+        return achievements.map((a) => ({
+          ...achievementView(a),
+          achievementId: a.achievementId,
           progress: 100,
         }));
       } catch {
@@ -147,8 +215,8 @@ export const achievementsCountryRouter = createTRPCRouter({
             countryId: country.id,
             countryName: country.name,
             flag: country.flag || null,
-            economicTier: country.economicTier || "Developed",
-            populationTier: country.populationTier || "Medium",
+            economicTier: country.economicTier,
+            populationTier: country.populationTier,
             totalPoints: agg.count * 10,
             achievementCount: agg.count,
             rareAchievements: agg.rare,
@@ -219,133 +287,26 @@ export const achievementsCountryRouter = createTRPCRouter({
 
         const countries = await ctx.db.country.findMany({
           where: whereClause,
-          select: {
-            id: true,
-            name: true,
-            flag: true,
-            economicTier: true,
-            populationTier: true,
-            currentPopulation: true,
-            baselinePopulation: true,
-            currentTotalGdp: true,
-            currentGdpPerCapita: true,
-            baselineGdpPerCapita: true,
-            landArea: true,
-            populationDensity: true,
-            realGDPGrowthRate: true,
-            adjustedGdpGrowth: true,
-            averageAnnualIncome: true,
-            totalWorkforce: true,
-            laborForceParticipationRate: true,
-            employmentRate: true,
-            literacyRate: true,
-            lifeExpectancy: true,
-            governmentRevenueTotal: true,
-            taxRevenueGDPPercent: true,
-            totalGovernmentSpending: true,
-            spendingGDPPercent: true,
-            economicVitality: true,
-            populationWellbeing: true,
-            overallNationalHealth: true,
-            infrastructureRating: true,
-            urbanPopulationPercent: true,
-            publicApproval: true,
-          },
+          select: LEADERBOARD_SELECT,
         });
 
         const mapped = countries.map((c) => {
-          const pop =
-            c.currentPopulation && c.currentPopulation > 0
-              ? c.currentPopulation
-              : c.baselinePopulation || 0;
-          const gdpPerCap =
-            c.currentGdpPerCapita && c.currentGdpPerCapita > 0
-              ? c.currentGdpPerCapita
-              : c.baselineGdpPerCapita || 0;
-          const totalGdp =
-            c.currentTotalGdp && c.currentTotalGdp > 0 ? c.currentTotalGdp : gdpPerCap * pop;
-
-          let val = 0;
-          switch (input.metric) {
-            case "population":
-              val = pop;
-              break;
-            case "totalGdp":
-              val = totalGdp;
-              break;
-            case "gdpPerCapita":
-              val = gdpPerCap;
-              break;
-            case "populationDensity":
-              val =
-                c.populationDensity && c.populationDensity > 0
-                  ? c.populationDensity
-                  : c.landArea && c.landArea > 0
-                    ? pop / c.landArea
-                    : 50;
-              break;
-            case "landArea":
-              val = c.landArea || 100000;
-              break;
-            case "gdpGrowth":
-              val = c.realGDPGrowthRate ?? c.adjustedGdpGrowth ?? 2.5;
-              break;
-            case "avgIncome":
-              val = c.averageAnnualIncome ?? gdpPerCap * 0.45;
-              break;
-            case "workforce":
-              val = c.totalWorkforce ?? pop * (c.laborForceParticipationRate ?? 0.65);
-              break;
-            case "employmentRate":
-              val = c.employmentRate ?? 94.0;
-              break;
-            case "literacyRate":
-              val = c.literacyRate ?? 95.0;
-              break;
-            case "lifeExpectancy":
-              val = c.lifeExpectancy ?? 75.0;
-              break;
-            case "govRevenue":
-              val =
-                c.governmentRevenueTotal ??
-                totalGdp * (c.taxRevenueGDPPercent ? c.taxRevenueGDPPercent / 100 : 0.25);
-              break;
-            case "govSpending":
-              val =
-                c.totalGovernmentSpending ??
-                totalGdp * (c.spendingGDPPercent ? c.spendingGDPPercent / 100 : 0.28);
-              break;
-            case "economicVitality":
-              val = c.economicVitality || 50;
-              break;
-            case "wellbeing":
-              val = c.populationWellbeing || 50;
-              break;
-            case "nationalHealth":
-              val = c.overallNationalHealth || 50;
-              break;
-            case "infrastructure":
-              val = c.infrastructureRating || 50;
-              break;
-            case "urbanization":
-              val = c.urbanPopulationPercent ?? 68.0;
-              break;
-            case "approval":
-              val = c.publicApproval || 50;
-              break;
-          }
-
+          const val = METRIC_VALUE[input.metric](c, headlineFigures(c));
           return {
             countryId: c.id,
             countryName: c.name,
             flag: c.flag || null,
-            value: Number.isNaN(val) ? 0 : val,
-            economicTier: c.economicTier || "Developed",
-            populationTier: c.populationTier || "Medium",
+            value: val !== null && Number.isFinite(val) ? val : null,
+            economicTier: c.economicTier,
+            populationTier: c.populationTier,
           };
         });
 
-        return mapped.sort((a, b) => b.value - a.value).slice(0, input.limit);
+        // Countries with no recorded value for this metric are left off rather than ranked on an invented one.
+        return mapped
+          .flatMap((row) => (row.value === null ? [] : [{ ...row, value: row.value }]))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, input.limit);
       } catch (error) {
         console.error("Error fetching country leaderboard:", error);
         return [];

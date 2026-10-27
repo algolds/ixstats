@@ -1,33 +1,32 @@
 ---
-title: Traditional Government Builder
-description: Pick familiar government structures — executive, legislative, and judicial types — and combine them with atomic components for a fully custom nation.
-badge: Government & Structure
+title: Government Structure & Departments
+description: Your government's names and titles, its departments, and the government budget.
+badge: Economy & Government
+prevHref: /help/government/synergy
+prevLabel: Synergies & Conflicts
 ---
 
-## What Is the Traditional Builder?
+## What this covers
 
-The Traditional Government Builder gives you a straightforward way to define your country's government using classic, recognizable structures. If you're more comfortable thinking in terms of presidents, parliaments, and courts than individual policy components, this is the place to start.
+Alongside [components](/help/government/atomic), your government has a **structure**: what it's called, who leads it, the names of its branches, and the departments that spend its budget. Your form of government sets them when you [found a nation](/help/gameplay/country-building); you change the names and titles in the [Country Editor](/help/mycountry/editor). The structure is shown on your profile and used across MyCountry (for example, department names in the budget and your cabinet in Politics).
 
-- Choose your executive type (e.g., presidential, parliamentary, monarchical), your legislative body, and your judicial system in the builder’s Government step (the **Structure** tab, available in expert mode).
-- Your traditional choices create a quick summary that other players see on your country profile, making it easy to understand your government at a glance.
-- You can mix these traditional selections with [Atomic Components](/help/government/atomic) to build unique hybrid governments that go beyond the standard archetypes.
+## Names and titles
 
-## Setting Up Your Government
+Under **Customise institutions** when founding, and in the editor's **Form and institutions** section, you can set:
 
-> **How to Use the Builder**
->
-> 1. Open the Country Builder, navigate to the Government step, and open the **Structure** tab (expert mode).
-> 2. Set your government type, leadership titles, and descriptions for each branch.
-> 3. Fill in optional details like your national motto or founding events to make your country richer — these also sync with your IxWiki page if you have one.
-> 4. Use the **Preview & Create** step to preview everything before saving.
+- the form of government, which sets your government type;
+- the head of state and head of government titles;
+- the names of the legislature, the executive (cabinet) and the highest court.
 
-## After You Save
+These are descriptive: they don't change your numbers. Your actual legislature (chambers, seats, electoral system) is set up in [Politics](/help/mycountry/politics).
 
-- Your government’s shape carries into MyCountry → **Politics**, where you manage your cabinet, parties, and legislature.
-- You can return to the builder at any time to update your government as your country evolves — the same forms are used for both creation and editing.
+## Departments
 
-## Learn More
+Your departments are generated when you found, from your form of government (five to nine, such as defence, education or health, named to suit the form). Cabinet appointments in [Politics](/help/mycountry/politics) are made to these departments.
 
-- [Atomic Government System](/help/government/atomic) — combine traditional structures with granular components for deeper mechanics.
-- [Government Components Guide](/help/government/components) — explore every component you can add to your government.
-- [Country Building Guide](/help/gameplay/country-building) — see how government fits into the full country creation process.
+## The government budget
+
+Founding sets your starting budget so that taxes cover spending, split between departments by your starting kind's priorities. Adjust the split in [Economy & Budget → Budget](/help/mycountry/economy#budget).
+
+- Some [directives](/help/mycountry/executive) shift department allocations slightly.
+- At the start of each new IxTime year you may get a reminder to set that year's budget.

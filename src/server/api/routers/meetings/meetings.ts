@@ -2,14 +2,18 @@
 // Cabinet meetings, government officials, and meeting management
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { notificationHooks } from "~/lib/notifications/hooks";
-import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import {
+  assertCountryWriteAccess,
+  countriesWithWriteAccess,
+} from "~/server/shared/country-authorization";
+import { assertSameRealm } from "~/server/shared/same-realm-guard";
 
 export const meetingsMeetingsRouter = createTRPCRouter({
   // ==================== CABINET MEETINGS ====================
 
-  createMeeting: protectedProcedure
+  createMeeting: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -26,6 +30,7 @@ export const meetingsMeetingsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
       const { targetCountryId, intentId, ...rest } = input;
+      if (targetCountryId) await assertSameRealm(ctx.db, input.countryId, targetCountryId);
       const status = targetCountryId ? "pending" : "scheduled";
       const meeting = await ctx.db.cabinetMeeting.create({
         data: {
@@ -79,14 +84,16 @@ export const meetingsMeetingsRouter = createTRPCRouter({
     .input(
       z.object({
         countryId: z.string(),
+        limit: z.number().int().min(1).max(100).default(50),
       })
     )
     .query(async ({ ctx, input }) => {
-      return await ctx.db.cabinetMeeting.findMany({
+      const meetings = await ctx.db.cabinetMeeting.findMany({
         where: {
           OR: [{ countryId: input.countryId }, { targetCountryId: input.countryId }],
         },
         orderBy: { scheduledDate: "desc" },
+        take: input.limit,
         include: {
           attendances: true,
           agendaItems: true,
@@ -94,5 +101,23 @@ export const meetingsMeetingsRouter = createTRPCRouter({
           actionItems: true,
         },
       });
+      // Notes, decisions, action items, attendance notes and agenda outcomes belong to the
+      // governments at the table: redacted for everyone else.
+      const writable = await countriesWithWriteAccess(
+        ctx,
+        meetings.flatMap((m) => [m.countryId, m.targetCountryId])
+      );
+      return meetings.map((m) =>
+        writable.has(m.countryId) || (m.targetCountryId !== null && writable.has(m.targetCountryId))
+          ? m
+          : {
+              ...m,
+              notes: null,
+              decisions: [],
+              actionItems: [],
+              attendances: m.attendances.map((a) => ({ ...a, notes: null })),
+              agendaItems: m.agendaItems.map((a) => ({ ...a, outcome: null })),
+            }
+      );
     }),
 });

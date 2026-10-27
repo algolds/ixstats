@@ -1,16 +1,14 @@
 "use client";
-
-import React from "react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 
-export interface PremiumFeatures {
+interface PremiumFeatures {
   intelligence: boolean;
   defense: boolean;
   advancedAnalytics: boolean;
 }
 
-export interface PremiumStatus {
+interface PremiumStatus {
   isPremium: boolean;
   tier: "basic" | "mycountry_premium";
   features: PremiumFeatures;
@@ -71,45 +69,5 @@ export function usePremium(): PremiumStatus {
     tier: membershipData.tier,
     features: membershipData.features,
     isLoading: false,
-  };
-}
-
-/**
- * Hook to check if user has access to a specific premium feature
- */
-export function useFeatureAccess(feature: keyof PremiumFeatures): boolean {
-  const { features } = usePremium();
-  return features[feature];
-}
-
-/**
- * Hook that returns a component to render premium gates
- */
-export function usePremiumGate() {
-  const premium = usePremium();
-
-  const requirePremium = (
-    feature: keyof PremiumFeatures,
-    component: React.ReactNode,
-    fallback?: React.ReactNode
-  ) => {
-    if (premium.isLoading) {
-      return (
-        <div className="flex items-center justify-center p-8">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-white/60"></div>
-        </div>
-      );
-    }
-
-    if (premium.features[feature]) {
-      return component;
-    }
-
-    return fallback || null;
-  };
-
-  return {
-    ...premium,
-    requirePremium,
   };
 }

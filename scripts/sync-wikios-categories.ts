@@ -5,6 +5,9 @@
  * parses all `[[Category:...]]` wikitext tags, populates `wiki_categories`,
  * establishes parent-child DAG relations for all 12 domains,
  * and bulk-inserts all `wiki_category_members` rows.
+ *
+ * Every category is kept: which ones are maintenance or tracking categories is MediaWiki's call (its
+ * `hidden` flag, set on `wiki_categories` from each render), not a name filter kept here.
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -310,128 +313,6 @@ const DOMAIN_SUB_PATTERNS: Record<string, string[]> = {
   ],
 };
 
-function isIrlOrMaintenanceCategory(name: string): boolean {
-  if (!name) return true;
-  const lower = name.toLowerCase().replace(/_/g, " ").trim();
-
-  // 0. Malformed URLs, embedded links, or HTML/wikitext artifacts
-  if (
-    lower.includes("http:") ||
-    lower.includes("https:") ||
-    lower.includes("://") ||
-    lower.includes(".com") ||
-    lower.includes(".org") ||
-    lower.includes(".net") ||
-    lower.includes("www.") ||
-    lower.includes("%2f") ||
-    lower.includes("%3a") ||
-    /[<>{}\[\]%]/.test(name)
-  ) {
-    return true;
-  }
-
-  // 1. Template, Module, Navbox, Infobox, WikiProject, Glottolog, Maintenance tags
-  if (
-    lower.includes("template") ||
-    lower.includes("infobox") ||
-    lower.includes("navbox") ||
-    lower.includes("navigational") ||
-    lower.includes("wikiproject") ||
-    lower.includes("glottolog") ||
-    lower.includes("module:") ||
-    lower.includes("user:") ||
-    lower.includes("portal:") ||
-    lower.includes("wikipedia:") ||
-    lower.includes("help:") ||
-    lower.includes("disambiguation") ||
-    lower.includes("redirects") ||
-    lower.includes("tracking") ||
-    lower.includes("maintenance") ||
-    lower.includes("cleanup") ||
-    lower.includes("unreferenced") ||
-    lower.includes("stub") ||
-    lower.includes("stubs")
-  ) {
-    return true;
-  }
-
-  // 2. Real-World Births and Deaths
-  if (
-    /\b\d{1,4}\s+(?:births|deaths)\b/i.test(lower) ||
-    /\b(?:century|millennium)\s+(?:births|deaths)\b/i.test(lower) ||
-    lower === "births" ||
-    lower === "deaths" ||
-    lower === "living people" ||
-    lower === "missing people" ||
-    lower === "fat people" ||
-    lower.startsWith("people executed") ||
-    lower.startsWith("deaths from") ||
-    lower.startsWith("buried at")
-  ) {
-    return true;
-  }
-
-  // 3. Authority Control & Library Identifiers
-  if (
-    lower.includes("identifiers") ||
-    lower.includes("viaf") ||
-    lower.includes("bnf") ||
-    lower.includes("lccn") ||
-    lower.includes("gnd") ||
-    lower.includes("isni") ||
-    lower.includes("fast") ||
-    lower.includes("nla") ||
-    lower.includes("ndl") ||
-    lower.includes("worldcat")
-  ) {
-    return true;
-  }
-
-  // 4. Citation Style 1 (CS1) & Template Tracking
-  if (
-    lower.startsWith("cs1") ||
-    lower.includes("citation") ||
-    lower.includes("citations using") ||
-    lower.includes("webarchive") ||
-    lower.includes("wayback") ||
-    lower.includes("short description") ||
-    lower.includes("script errors") ||
-    lower.includes("duplicate arguments")
-  ) {
-    return true;
-  }
-
-  // 5. Language & Microformats
-  if (
-    lower.startsWith("articles containing") ||
-    lower.startsWith("articles with") ||
-    lower.startsWith("articles needing") ||
-    lower.includes("hcards") ||
-    lower.includes("lang-")
-  ) {
-    return true;
-  }
-
-  // 6. Real-World IRL Country / Political Entities (excluding IxWorld lore)
-  const irlRegex =
-    /\b(?:iran|iranian|portugal|portuguese|north america|south america|united states|u\.s\.|usa|russia|russian|china|chinese|germany|german|france|french|spain|spanish|italy|italian|japan|japanese|india|indian|brazil|brazilian|mexico|mexican|turkey|turkish|egypt|egyptian|israel|israeli|saudi|syria|syrian|iraq|iraqi|korea|korean|vietnam|vietnamese|netherlands|dutch|belgium|belgian|sweden|swedish|norway|norwegian|denmark|danish|finland|finnish|poland|polish|ukraine|ukrainian|canada|canadian|australia|australian|new zealand|argentina|chile|colombia|venezuela|peru|cuba|south africa|nigeria|kenya|ghana|morocco|algeria|tunisia|ethiopia|philippines|indonesia|malaysia|thailand|singapore|pakistan|bangladesh|ireland|irish|scotland|scottish|wales|welsh|england|english|united kingdom|british|austria|austrian|switzerland|swiss|greece|greek|hungary|hungarian|romania|romanian|bulgaria|serbia|croatia|czech|slovakia|albania|iceland|estonia|latvia|lithuania|taiwan|hong kong|latter day saint)\b/i;
-  if (irlRegex.test(lower)) {
-    return true;
-  }
-
-  // 7. Wikidata & Bot Maintenance
-  if (
-    lower.includes("wikidata") ||
-    lower.includes("templatedata") ||
-    lower.startsWith("pages ") ||
-    lower.startsWith("ixwb")
-  ) {
-    return true;
-  }
-
-  return false;
-}
-
 async function seedCategories() {
   console.log("==================================================================");
   console.log("🌱 WikiOS PostgreSQL Native Category Seeder & DAG Indexer");
@@ -440,19 +321,6 @@ async function seedCategories() {
   const startTime = Date.now();
 
   try {
-    // 0. Clean out any IRL or maintenance categories before seeding
-    const existingCategories = await db.wikiCategory.findMany({
-      select: { id: true, name: true, slug: true },
-    });
-    const purgeIds = existingCategories
-      .filter((c) => isIrlOrMaintenanceCategory(c.name) || isIrlOrMaintenanceCategory(c.slug))
-      .map((c) => c.id);
-    if (purgeIds.length > 0) {
-      await db.wikiCategoryMember.deleteMany({ where: { categoryId: { in: purgeIds } } });
-      await db.wikiCategory.deleteMany({ where: { id: { in: purgeIds } } });
-      console.log(`   🧹 Pre-cleaned ${purgeIds.length} obsolete / IRL categories.`);
-    }
-
     // 1. Seed Core Domain Root Categories
     console.log("\n📦 1. Seeding 12 Core Domain Categories into PostgreSQL `wiki_categories`...");
     const categoryMap = new Map<string, string>(); // slug -> id
@@ -505,7 +373,7 @@ async function seedCategories() {
           .replace(/^Category:/i, "")
           .trim()
           .replace(/_/g, " ");
-        if (catName && !isIrlOrMaintenanceCategory(catName)) {
+        if (catName) {
           categoryNames.add(catName);
         }
       }
@@ -515,7 +383,7 @@ async function seedCategories() {
 
       while ((match = categoryRegex.exec(art.wikitext)) !== null) {
         const rawName = match[1]?.trim().replace(/_/g, " ");
-        if (!rawName || isIrlOrMaintenanceCategory(rawName)) continue;
+        if (!rawName) continue;
 
         const catSlug = toArticleSlug(rawName);
         categoryNames.add(rawName);

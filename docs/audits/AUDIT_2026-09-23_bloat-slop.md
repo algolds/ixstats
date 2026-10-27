@@ -1,5 +1,8 @@
 # IxStats Bloat, Duplication & AI-Slop Audit — 2026-09-23
 
+> **Local-only references:** paths under `plans/` (for example `plans/341-zero-caller-procedures.txt`) point at the
+> maintainer's local plans folder, which is not in the repository.
+
 > ## Status (2026-09-29)
 >
 > Point-in-time record; findings are unchanged. §9 logs the 2026-09-25 execution (all 9 commits are merged into the current tree). Later commits closed more: plan 312 `cc12cf122` deleted 508 zero-caller procedures (router total now 77 namespaces / 958 procedures vs 94 / 1,661 audited); `48c03130b` moved help/terms/privacy to markdown; `ededb10d8` (plans 313 + 345) unified formatters/colour helpers/relative time/rarity palette and added the admin config-kv helper; `f737604ca` + `003c1ee5d` (plan 346 Steps 2–6) trimmed root providers, added opaque nested surfaces, `<Eyebrow>` and fewer decorative pulses; `server.mjs` no longer imports `sports-cron.js`.
@@ -183,14 +186,14 @@ Lean already: `src/trpc/`, `rate-limit-identity.ts`, `impersonation.ts`, `lib/au
 
 **Verdict:** the runtime core (`map-engine.ts`, `geo-math.ts`, `overlay-registry.ts`, `load-maplibre.ts`, 5 real plugins) is hand-crafted and lean. Around it: five feature routers share a copy-pasted 130-line helper + haversine + Zod schema + identical 27-banner skeleton; 39 of 129 geo procedures dead; two undo systems, two property panels, two welcome modals, two SVG stacks, six MapLibre bootstrap sites; god-hooks (`useMapEditor` 29×`useState`, `useProvinceImporter` 29×) and a 1,448-line `EditorMap.tsx` with 57 props — none of which plans 001–004 cover.
 
-1. `delete` 39 zero-caller geo procedures: whole `admin/templates.ts` (5), whole `realms-pipeline.ts` (3), `editor/procedural.ts` 5/7, `features/storylines.ts` 5/6, `linkage/validation.ts:autoLinkAllCountries`, `subdivisions/crud.ts:getSubdivisionStats`, `wiki.ts:scanWikiForPlaces`, `admin/provinces.ts:validateProvinceImport`, `editor/queue.ts:getMyEditHistory`, `core/overlays.ts:getTradeRouteGeoJSON`, `core/stats.ts` ×3, `core/point-queries.ts` ×2, `admin/uploads.ts:uploadSvg` (superseded by REST), … (~1,993, HIGH)
+1. `delete` 39 zero-caller geo procedures: whole `admin/templates.ts` (5; since deleted), whole `realms-pipeline.ts` (3), `editor/procedural.ts` 5/7 (since deleted), `features/storylines.ts` 5/6, `linkage/validation.ts:autoLinkAllCountries`, `subdivisions/crud.ts:getSubdivisionStats`, `wiki.ts:scanWikiForPlaces`, `admin/provinces.ts:validateProvinceImport`, `editor/queue.ts:getMyEditHistory`, `core/overlays.ts:getTradeRouteGeoJSON`, `core/stats.ts` ×3, `core/point-queries.ts` ×2, `admin/uploads.ts:uploadSvg` (superseded by REST), … (~1,993, HIGH)
 2. `dup` `syncResourcePoolModifiers` ×6; `pois.ts` calls its own copy instead of `server/shared/geo-resource-sync.ts`. (~660, HIGH)
 3. `delete` `lib/maps/pipeline/` (1,350) + `components/maps/pipeline/` (674) reachable only via dead `realms-pipeline.ts`, `/labs/map-pipeline`, tests. Plan 310 assumes this router is live — it is not. (MED, product)
 4. `yagni` deck.gl ×4 for `DeckTransportOverlay.tsx` (453); MapLibre-native path already in `TransportOverlay.tsx`. Flip `enableDeckGl` default off. (‑4 deps, ~500, MED)
 5. `dup` haversine ×17 vs `geo-math.ts:97 distanceKm`. (~200, HIGH)
 6. `perf` `lib/maps/border-editor.ts:712` synchronous `require()` of `topo-simplify`, which `require`s `@turf/turf` (full barrel, untyped) ×4 + 3 topojson packages into the editor client chunk. `@turf/kinks|area|simplify` submodules + `await import()`. (HIGH)
-7. `slop` 742 banner comments; 5 feature routers + `sovereignty.ts`, `editor/queue.ts`, `editor/procedural.ts` carry the identical 27-banner skeleton. (~700, HIGH)
-8. `dup` MapLibre bootstrap ×6 (`map-engine.ts:107` + `CoordinatesMapEmbed.tsx:105`, `useCountryMapEmbedLayers.ts:109`, `MapPickerModal.tsx:103`, `SvgPreviewMap.tsx:45`, `PreviewSection.tsx:84`); "grey out other countries" block ×3. (~230, HIGH)
+7. `slop` 742 banner comments; 5 feature routers + `sovereignty.ts`, `editor/queue.ts`, `editor/procedural.ts` (since deleted) carry the identical 27-banner skeleton. (~700, HIGH)
+8. `dup` MapLibre bootstrap ×6 (`map-engine.ts:107` + `CoordinatesMapEmbed.tsx:105`, `useCountryMapEmbedLayers.ts:109`, `MapPickerModal.tsx:103`, `SvgPreviewMap.tsx:45` (since deleted), `PreviewSection.tsx:84`); "grey out other countries" block ×3. (~230, HIGH)
 9. `dup` `geojson-layer-helpers.ts` used by 2 overlays while `useMapLayers.ts` hand-rolls 26 `addSource`/51 layer literals/12 `getLayer` guards. (~300, MED)
 10. `yagni` god-hooks: `useMapEditor.ts` (630, 29 `useState`), `useProvinceImporter.ts` (783, 29), `useMapState.ts` (339, 18); `EditorMap.tsx` (1,448, 57-prop interface, 4 global listeners). (L effort)
 11. `dup` two undo stacks (`border-undo.ts` + `useBorderEditor` vs `useMapHistory` + `useHistoryReversalExecutor` + `HistoryPanel`); `useMapHistory` returns 14 keys with redundant pairs; `useHistoryReversalExecutor.ts:20-42` re-instantiates 19 mutations that `useMapFeatureMutations` already holds; undo-of-delete recreates with a new id so redo targets a stale id (**bug**). Ctrl+Z handled twice (`useMapEditorOverlayState.ts:410`, `SelectPlugin.ts:44`). (MED)

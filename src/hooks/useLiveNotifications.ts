@@ -6,34 +6,15 @@
  * removed on 2026-09-25 (plan 342). Only `useNotificationBadge` remains.
  */
 
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-
-export interface LiveNotification {
-  id: string;
-  userId: string | null;
-  countryId: string | null;
-  title: string;
-  description: string | null;
-  message: string | null;
-  read: boolean;
-  dismissed: boolean;
-  href: string | null;
-  type: string | null;
-  category: string | null;
-  priority: string;
-  severity: string;
-  source: string | null;
-  actionable: boolean;
-  metadata: string | null;
-  relevanceScore: number | null;
-  deliveryMethod: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-let originalTitle: string | null = null;
+import {
+  applyRemainingBadge,
+  clearBadgeCount,
+  setBadgeCount,
+  withUnreadPrefix,
+} from "~/lib/notifications/title-badge";
 
 /**
  * Hook specifically for unread count and title badge
@@ -42,6 +23,7 @@ export function useNotificationBadge(options: { enableTitleBadge?: boolean } = {
   const { enableTitleBadge = true } = options;
   const { user } = useUser();
   const userId = user?.id;
+  const instanceId = useId();
 
   const { data: unreadData } = api.notifications.getUnreadCount.useQuery(undefined, {
     enabled: !!userId,
@@ -55,22 +37,14 @@ export function useNotificationBadge(options: { enableTitleBadge?: boolean } = {
   useEffect(() => {
     if (!enableTitleBadge || typeof document === "undefined") return;
 
-    if (originalTitle === null) {
-      originalTitle = document.title;
-    }
-
-    if (unreadCount > 0) {
-      document.title = `(${unreadCount}) ${originalTitle}`;
-    } else {
-      document.title = originalTitle;
-    }
+    setBadgeCount(instanceId, unreadCount);
+    document.title = withUnreadPrefix(unreadCount);
 
     return () => {
-      if (originalTitle !== null && typeof document !== "undefined") {
-        document.title = originalTitle;
-      }
+      clearBadgeCount(instanceId);
+      if (typeof document !== "undefined") document.title = applyRemainingBadge();
     };
-  }, [unreadCount, enableTitleBadge]);
+  }, [unreadCount, enableTitleBadge, instanceId]);
 
   return { unreadCount };
 }

@@ -1,23 +1,146 @@
 "use client";
 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { FacetMaterial } from "~/components/ui/facet";
+import { Skeleton } from "~/components/ui/skeleton";
 import { useEffect, useRef, useCallback, useState } from "react";
-import {
-  Xmark as X,
-  MapPin,
-  SystemRestart as Loader2,
-  WarningTriangle as AlertTriangle,
-  CheckCircle,
-} from "iconoir-react";
+import type { Map as MapLibreMap, Marker } from "maplibre-gl";
+import type { Feature, Geometry } from "geojson";
+import { MapPin, WarningTriangle as AlertTriangle, CheckCircle } from "iconoir-react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor } from "~/lib/maps/map-config";
 import { Button } from "~/components/ui/button";
 
-// Tree-shakeable Turf imports for containment checks
 import { booleanPointInPolygon } from "@turf/boolean-point-in-polygon";
 import { point } from "@turf/helpers";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
+import { addGeoLayers } from "~/components/maps/shared/geo-layers";
 
-export interface MapPickerModalProps {
+type EmbedData = ReturnType<typeof useCountryMapEmbed>;
+
+/** Draw the picked country (plus greyed neighbours and subdivision outlines) and fit to its bounds. */
+function drawCountryLayers(
+  map: MapLibreMap,
+  countryId: string,
+  { geometry, bbox, featureId, fillColor, subdivisions, worldPolitical }: EmbedData
+) {
+  if (worldPolitical?.features.length) {
+    addGeoLayers(
+      map,
+      "source-world-political",
+      worldPolitical.features.filter((f) => f.properties?._countryId !== countryId),
+      [
+        {
+          id: "world-political-fill",
+          type: "fill",
+          paint: { "fill-color": "#94a3b8", "fill-opacity": 0.15 },
+        },
+        {
+          id: "world-political-stroke",
+          type: "line",
+          paint: { "line-color": "#64748b", "line-width": 0.5, "line-opacity": 0.3 },
+        },
+      ]
+    );
+  }
+
+  const countryColor = fillColor || (featureId ? getCountryColor(featureId) : "#c5cae9");
+  addGeoLayers(
+    map,
+    "source-country",
+    [{ type: "Feature", properties: { _fillColor: countryColor }, geometry: geometry as Geometry }],
+    [
+      {
+        id: "country-fill",
+        type: "fill",
+        paint: { "fill-color": countryColor, "fill-opacity": 0.35 },
+      },
+      {
+        id: "country-stroke",
+        type: "line",
+        paint: { "line-color": "#1e293b", "line-width": 1.5 },
+      },
+    ]
+  );
+
+  if (subdivisions?.length) {
+    addGeoLayers(
+      map,
+      "source-subdivisions",
+      subdivisions
+        .filter((s) => s.geometry)
+        .map((s): Feature => ({
+          type: "Feature",
+          properties: { name: s.name },
+          geometry: s.geometry as Geometry,
+        })),
+      [
+        {
+          id: "subdivision-stroke",
+          type: "line",
+          paint: {
+            "line-color": "#64748b",
+            "line-width": 0.5,
+            "line-dasharray": [3, 2],
+            "line-opacity": 0.5,
+          },
+        },
+      ]
+    );
+  }
+
+  if (bbox) {
+    map.fitBounds(
+      [
+        [bbox.minLng, bbox.minLat],
+        [bbox.maxLng, bbox.maxLat],
+      ],
+      { padding: 30, maxZoom: 10, duration: 0 }
+    );
+  }
+}
+
+function PickerStatus({
+  coords,
+  isValid,
+}: {
+  coords: [number, number] | null;
+  isValid: boolean | null;
+}) {
+  const { Icon, iconClass, textClass, text } = !coords
+    ? {
+        Icon: MapPin,
+        iconClass: "text-label-secondary",
+        textClass: "text-label",
+        text: "Click on the map inside your borders to select a point",
+      }
+    : isValid
+      ? {
+          Icon: CheckCircle,
+          iconClass: "text-green",
+          textClass: "text-label",
+          text: `Valid location: ${coords[1].toFixed(5)}\u00b0, ${coords[0].toFixed(5)}\u00b0`,
+        }
+      : {
+          Icon: AlertTriangle,
+          iconClass: "text-destructive",
+          textClass: "text-destructive",
+          text: "These coordinates lie outside your country's borders.",
+        };
+
+  return (
+    <FacetMaterial
+      layer="chrome"
+      role="status"
+      className="rounded-control text-caption inline-flex items-center gap-2 px-3 py-2 font-semibold"
+    >
+      <Icon className={`${iconClass} h-4 w-4 shrink-0`} aria-hidden />
+      <span className={textClass}>{text}</span>
+    </FacetMaterial>
+  );
+}
+
+interface MapPickerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (coordinates: [number, number]) => void;
@@ -35,13 +158,12 @@ export function MapPickerModal({
   title = "Select Location on Map",
 }: MapPickerModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const markerRef = useRef<Marker | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [selectedCoords, setSelectedCoords] = useState<[number, number] | null>(
     initialCoordinates ? [initialCoordinates[0], initialCoordinates[1]] : null
   );
-  const [isValid, setIsValid] = useState<boolean | null>(null);
   // initMap reads the latest selection for its initial view/marker only; keeping it out of the
   // initMap deps stops every click from rebuilding the whole map.
   const selectedCoordsRef = useRef(selectedCoords);
@@ -49,44 +171,27 @@ export function MapPickerModal({
     selectedCoordsRef.current = selectedCoords;
   }, [selectedCoords]);
 
-  const {
-    geometry,
-    centroid,
-    bbox,
-    featureId,
-    fillColor,
-    subdivisions,
-    worldPolitical,
-    isLoading,
-  } = useCountryMapEmbed(countryId);
+  const embedData = useCountryMapEmbed(countryId);
+  const { geometry, isLoading } = embedData;
 
-  // Validate coordinates client-side using Turf
+  // Client-side containment check; without geometry (or if Turf errors) the server decides.
   const validateCoords = useCallback(
     (coords: [number, number]): boolean => {
-      if (!geometry) return true; // If no geometry loaded, bypass client check
+      if (!geometry) return true;
       try {
-        const pt = point(coords);
-        return booleanPointInPolygon(pt, geometry as any);
+        return booleanPointInPolygon(point(coords), geometry as any);
       } catch (err) {
         console.error("Turf containment check failed:", err);
-        return true; // Fallback to server check if Turf errors
+        return true;
       }
     },
     [geometry]
   );
+  const isValid = selectedCoords && geometry ? validateCoords(selectedCoords) : null;
 
-  // Set initial coordinates validation once geometry is ready
-  useEffect(() => {
-    if (selectedCoords && geometry) {
-      // oxlint-disable-next-line
-      setIsValid(validateCoords(selectedCoords));
-    }
-  }, [selectedCoords, geometry, validateCoords]);
-
-  // Map initialization
   const initMap = useCallback(
     async (isCancelled: () => boolean) => {
-      if (!containerRef.current || !geometry || !isOpen) return;
+      if (!containerRef.current || !embedData.geometry || !isOpen) return;
 
       // maplibre-gl 6 is ESM-only, so the module namespace itself carries the
       // named exports (Map, Popup, …).
@@ -95,20 +200,15 @@ export function MapPickerModal({
       // Closed/unmounted (or deps changed) while MapLibre was loading — don't create an orphan map.
       if (isCancelled() || !containerRef.current) return;
 
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
+      mapRef.current?.remove();
 
       const baseStyle = buildBaseStyle() as any;
       delete baseStyle.projection; // Ensure flat Mercator projection for local picking
 
       const initialCoords = selectedCoordsRef.current;
-      const initialCenter: [number, number] = initialCoords
-        ? initialCoords
-        : centroid
-          ? [centroid.lng, centroid.lat]
-          : [10, 5];
+      const { centroid } = embedData;
+      const initialCenter: [number, number] =
+        initialCoords ?? (centroid ? [centroid.lng, centroid.lat] : [10, 5]);
 
       const map = new maplibregl.Map({
         container: containerRef.current,
@@ -117,165 +217,33 @@ export function MapPickerModal({
         zoom: initialCoords ? 6 : 4,
         attributionControl: false,
       });
-
       mapRef.current = map;
+
+      const placeMarker = (coords: [number, number]) => {
+        if (markerRef.current) markerRef.current.setLngLat(coords);
+        else
+          markerRef.current = new maplibregl.Marker({ color: "#ef4444" })
+            .setLngLat(coords)
+            .addTo(map);
+      };
 
       map.on("load", () => {
         if (isCancelled()) return;
-        // ── Gray out other countries ──
-        if (worldPolitical && worldPolitical.features.length > 0) {
-          const otherCountries = {
-            type: "FeatureCollection",
-            features: worldPolitical.features.filter((f) => f.properties?._countryId !== countryId),
-          };
+        drawCountryLayers(map, countryId, embedData);
+        if (initialCoords) placeMarker(initialCoords);
 
-          map.addSource("source-world-political", {
-            type: "geojson",
-            data: otherCountries as any,
-          });
-
-          map.addLayer({
-            id: "world-political-fill",
-            type: "fill",
-            source: "source-world-political",
-            paint: {
-              "fill-color": "#94a3b8",
-              "fill-opacity": 0.15,
-            },
-          });
-
-          map.addLayer({
-            id: "world-political-stroke",
-            type: "line",
-            source: "source-world-political",
-            paint: {
-              "line-color": "#64748b",
-              "line-width": 0.5,
-              "line-opacity": 0.3,
-            },
-          });
-        }
-
-        // ── Active Country borders and fill ──
-        const countryColor = fillColor || (featureId ? getCountryColor(featureId) : "#c5cae9");
-        const countryGeo = {
-          type: "FeatureCollection",
-          features: [
-            {
-              type: "Feature",
-              properties: { _fillColor: countryColor },
-              geometry: geometry as any,
-            },
-          ],
-        };
-
-        map.addSource("source-country", { type: "geojson", data: countryGeo as any });
-
-        map.addLayer({
-          id: "country-fill",
-          type: "fill",
-          source: "source-country",
-          paint: {
-            "fill-color": countryColor,
-            "fill-opacity": 0.35,
-          },
-        });
-
-        map.addLayer({
-          id: "country-stroke",
-          type: "line",
-          source: "source-country",
-          paint: {
-            "line-color": "#1e293b",
-            "line-width": 1.5,
-          },
-        });
-
-        // ── Subdivisions ──
-        if (subdivisions && subdivisions.length > 0) {
-          const subGeo = {
-            type: "FeatureCollection",
-            features: subdivisions
-              .filter((s: any) => s.geometry)
-              .map((s: any) => ({
-                type: "Feature",
-                properties: { name: s.name },
-                geometry: s.geometry as any,
-              })),
-          };
-
-          map.addSource("source-subdivisions", { type: "geojson", data: subGeo as any });
-
-          map.addLayer({
-            id: "subdivision-stroke",
-            type: "line",
-            source: "source-subdivisions",
-            paint: {
-              "line-color": "#64748b",
-              "line-width": 0.5,
-              "line-dasharray": [3, 2],
-              "line-opacity": 0.5,
-            },
-          });
-        }
-
-        // Fit bounds
-        if (bbox) {
-          map.fitBounds(
-            [
-              [bbox.minLng, bbox.minLat],
-              [bbox.maxLng, bbox.maxLat],
-            ],
-            { padding: 30, maxZoom: 10, duration: 0 }
-          );
-        }
-
-        // Add a marker if we have coordinates
-        if (initialCoords) {
-          const marker = new maplibregl.Marker({ color: "#ef4444" })
-            .setLngLat(initialCoords)
-            .addTo(map);
-          markerRef.current = marker;
-        }
-
-        // Handle map clicks
-        map.on("click", (e: any) => {
-          const clickedCoords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-          setSelectedCoords(clickedCoords);
-
-          // Run validation
-          const valid = validateCoords(clickedCoords);
-          setIsValid(valid);
-
-          // Update or create marker
-          if (markerRef.current) {
-            markerRef.current.setLngLat(clickedCoords);
-          } else {
-            const marker = new maplibregl.Marker({ color: "#ef4444" })
-              .setLngLat(clickedCoords)
-              .addTo(map);
-            markerRef.current = marker;
-          }
+        map.on("click", (e) => {
+          const clicked: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+          setSelectedCoords(clicked);
+          placeMarker(clicked);
         });
 
         setMapReady(true);
       });
     },
-    [
-      geometry,
-      centroid,
-      bbox,
-      fillColor,
-      subdivisions,
-      worldPolitical,
-      countryId,
-      isOpen,
-      validateCoords,
-      featureId,
-    ]
+    [embedData, countryId, isOpen]
   );
 
-  // Initialize/remove map
   useEffect(() => {
     if (isOpen && geometry) {
       let cancelled = false;
@@ -304,85 +272,56 @@ export function MapPickerModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="facet-surface facet-refraction flex h-[550px] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-6 py-4 dark:bg-black/20">
-          <h3 className="flex items-center gap-2 text-lg font-bold text-white">
-            <MapPin className="h-5 w-5 text-emerald-400" />
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="rounded-card flex h-[550px] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+        <DialogHeader className="border-separator border-b px-6 py-4 pr-12">
+          <DialogTitle className="flex items-center gap-2">
+            <MapPin className="text-blue h-5 w-5" aria-hidden />
             {title}
-          </h3>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
-        {/* Content */}
         <div className="bg-map-ocean relative flex-1">
           {isLoading ? (
-            <div className="bg-map-ocean absolute inset-0 flex flex-col items-center justify-center gap-3 text-white">
-              <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-              <p className="text-sm text-white/60">Loading map data...</p>
+            <div
+              role="status"
+              className="bg-map-ocean absolute inset-0 flex flex-col items-center justify-center gap-3"
+            >
+              <Skeleton className="bg-fill-4 h-3 w-40" />
+              <p className="text-body text-white/70">Loading map data…</p>
             </div>
           ) : !geometry ? (
             <div className="bg-map-ocean absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center text-white">
-              <AlertTriangle className="h-10 w-10 text-amber-500" />
-              <p className="text-sm font-semibold">No map boundary linked</p>
-              <p className="max-w-xs text-xs text-white/50">
+              <AlertTriangle className="text-yellow h-10 w-10" aria-hidden />
+              <p className="text-headline">No map boundary linked</p>
+              <p className="text-footnote max-w-xs text-white/70">
                 Your country has no boundary coordinates assigned. Contact an administrator to link
                 it.
               </p>
             </div>
           ) : (
             <>
-              {/* Map container */}
               <div ref={containerRef} className="absolute inset-0 h-full w-full" />
-
-              {/* Status Bar Overlay */}
               <div className="pointer-events-none absolute top-4 right-4 left-4 z-10">
-                {selectedCoords ? (
-                  isValid ? (
-                    <div className="facet-surface inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-950/80 px-3 py-2 text-xs font-semibold text-emerald-400 shadow-lg backdrop-blur-md">
-                      <CheckCircle className="h-4 w-4 shrink-0" />
-                      <span>
-                        Valid Location: {selectedCoords[1].toFixed(5)}&deg;,{" "}
-                        {selectedCoords[0].toFixed(5)}&deg;
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="facet-surface inline-flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-950/80 px-3 py-2 text-xs font-semibold text-red-400 shadow-lg backdrop-blur-md">
-                      <AlertTriangle className="h-4 w-4 shrink-0" />
-                      <span>Warning: Coordinates lie outside your country borders!</span>
-                    </div>
-                  )
-                ) : (
-                  <div className="facet-surface inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/70 px-3 py-2 text-xs font-semibold text-white/80 shadow-lg backdrop-blur-md">
-                    <MapPin className="h-4 w-4 shrink-0 animate-bounce" />
-                    <span>Click on the map inside your borders to select a point</span>
-                  </div>
-                )}
+                <PickerStatus coords={selectedCoords} isValid={isValid} />
               </div>
             </>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-white/10 bg-white/5 px-6 py-4 dark:bg-black/20">
-          <Button variant="ghost" onClick={onClose} className="text-white hover:bg-white/10">
+        <div className="border-separator flex items-center justify-end gap-3 border-t px-6 py-4">
+          <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button
             onClick={handleConfirm}
             disabled={!selectedCoords || isValid === false || !mapReady}
-            className="bg-emerald-600 font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+            className="bg-tint text-on-tint hover:bg-tint-hover"
           >
-            Confirm Selection
+            Confirm selection
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

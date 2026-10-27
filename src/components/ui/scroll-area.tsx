@@ -30,19 +30,13 @@ const scrollBarVariants = cva("flex touch-none select-none transition-colors", {
   },
 });
 
-export interface ScrollAreaProps
-  extends
-    React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>,
-    VariantProps<typeof scrollAreaVariants> {
-  scrollHideDelay?: number;
-  type?: "auto" | "always" | "scroll" | "hover";
-}
+type ScrollAreaProps = React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root> &
+  VariantProps<typeof scrollAreaVariants>;
 
 const ScrollArea = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.Root>,
   ScrollAreaProps
-  // oxlint-disable-next-line eslint/no-unused-vars
->(({ className, children, orientation, scrollHideDelay, type, ...props }, ref) => (
+>(({ className, children, orientation, ...props }, ref) => (
   <ScrollAreaPrimitive.Root
     ref={ref}
     className={cn(scrollAreaVariants({ orientation }), className)}
@@ -63,10 +57,7 @@ ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName;
 
 interface ScrollBarProps extends React.ComponentPropsWithoutRef<
   typeof ScrollAreaPrimitive.ScrollAreaScrollbar
-> {
-  scrollHideDelay?: number;
-  type?: "auto" | "always" | "scroll" | "hover";
-}
+> {}
 
 const ScrollBar = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>,
@@ -76,7 +67,7 @@ const ScrollBar = React.forwardRef<
     <ScrollAreaPrimitive.ScrollAreaScrollbar
       ref={ref}
       orientation={orientation}
-      className={cn(scrollBarVariants({ orientation }), "hover:bg-accent", className)}
+      className={cn(scrollBarVariants({ orientation }), "hover:bg-fill-3", className)}
       {...props}
     >
       <ScrollAreaPrimitive.ScrollAreaThumb className="bg-border hover:bg-foreground/30 relative flex-1 rounded-full transition-colors" />
@@ -86,4 +77,4 @@ const ScrollBar = React.forwardRef<
 
 ScrollBar.displayName = ScrollAreaPrimitive.ScrollAreaScrollbar.displayName;
 
-export { ScrollArea, ScrollBar, scrollAreaVariants };
+export { ScrollArea };

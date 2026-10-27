@@ -8,3 +8,4 @@ export * from "./useGlassPlateEditor";
 export * from "./EditorToolbar";
 export * from "./MentionMenuPortal";
 export * from "./WikiAndStashPopovers";
+export * from "./mention-source";

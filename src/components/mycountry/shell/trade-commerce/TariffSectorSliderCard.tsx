@@ -3,8 +3,11 @@ import { Slider } from "~/components/ui/slider";
 import { PercentageFlow } from "~/components/ui/number-flow";
 import { Lock, LockSlash as Unlock, Undo as RotateCcw } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import type { CustomSector, AccentColor } from "./trade-commerce-types";
-import { ACCENT_BORDER, ACCENT_TEXT, ACCENT_BG } from "./trade-commerce-types";
+import { Button } from "~/components/ui/button";
+import type { CustomSector } from "./trade-commerce-types";
+import { ACCENT_BG } from "./trade-commerce-types";
+import { Card } from "~/components/ui/card";
+import { RateInput } from "../RateInput";
 
 interface TariffSectorSliderCardProps {
   sector: CustomSector;
@@ -26,63 +29,78 @@ export const TariffSectorSliderCard = React.memo(function TariffSectorSliderCard
   const isModified = Math.abs(currentTariff - sector.defaultTariff) > 0.01;
 
   return (
-    <div
-      className={cn(
-        "bg-card/60 relative space-y-3 rounded-xl border p-4 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-        ACCENT_BORDER[sector.accent] || "border-border/40"
-      )}
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div
-            className={cn("h-2.5 w-2.5 rounded-full", ACCENT_BG[sector.accent] || "bg-primary")}
+    <Card className="rounded-card space-y-3 p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            aria-hidden="true"
+            className={cn("h-2 w-2 shrink-0 rounded-full", ACCENT_BG[sector.accent] || "bg-tint")}
           />
-          <span className="text-foreground text-xs font-semibold">{sector.label}</span>
+          <span className="text-label text-caption truncate">{sector.label}</span>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-0.5">
           {isModified && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={onReset}
-              title="Reset to default"
-              className="text-muted-foreground hover:text-foreground p-1 transition-colors"
+              title="Reset to starting rate"
+              aria-label={`Reset ${sector.label} to its starting rate`}
+              className="text-label-secondary h-11 w-11 sm:h-7 sm:w-7"
             >
-              <RotateCcw className="h-3 w-3" />
-            </button>
+              <RotateCcw aria-hidden="true" />
+            </Button>
           )}
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onToggleLock}
             title={isLocked ? "Unlock sector" : "Lock sector"}
+            aria-label={isLocked ? `Unlock ${sector.label}` : `Lock ${sector.label}`}
+            aria-pressed={isLocked}
             className={cn(
-              "rounded p-1 transition-colors",
-              isLocked
-                ? "bg-amber-500/10 text-amber-400"
-                : "text-muted-foreground hover:text-foreground"
+              "h-11 w-11 sm:h-7 sm:w-7",
+              isLocked ? "text-tint" : "text-label-secondary"
             )}
           >
-            {isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-          </button>
+            {isLocked ? <Lock aria-hidden="true" /> : <Unlock aria-hidden="true" />}
+          </Button>
         </div>
       </div>
 
-      <div className="flex items-baseline justify-between">
-        <span className="text-muted-foreground text-xs">Export Share: {sector.defaultShare}%</span>
-        <div className={cn("text-lg font-bold tracking-tight", ACCENT_TEXT[sector.accent])}>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-label-secondary text-footnote">
+          Share of GDP: {sector.defaultShare}%
+        </span>
+        <div className="text-label text-title-3 tabular-nums">
           <PercentageFlow value={currentTariff} />
         </div>
       </div>
 
-      <Slider
-        value={[currentTariff]}
-        min={sector.min}
-        max={sector.max}
-        step={sector.step}
-        disabled={isLocked}
-        onValueChange={([val]) => onTariffChange(val || 0)}
-        className="py-1"
-      />
-    </div>
+      <div className="flex items-center gap-3">
+        <Slider
+          value={[currentTariff]}
+          min={sector.min}
+          max={sector.max}
+          step={sector.step}
+          disabled={isLocked}
+          onValueChange={([val]) => onTariffChange(val || 0)}
+          aria-label={`${sector.label} tariff`}
+          className="py-1"
+        />
+        <RateInput
+          value={currentTariff}
+          min={sector.min}
+          max={sector.max}
+          step={sector.step}
+          disabled={isLocked}
+          onCommit={onTariffChange}
+          aria-label={`${sector.label} tariff, percent`}
+        />
+      </div>
+    </Card>
   );
 });

@@ -2,7 +2,7 @@
  * Canonical contracts for the unified flag resolution stack (Plan 164).
  */
 
-export type FlagSource =
+type FlagSource =
   "provided" | "persistent-cache" | "memory-cache" | "commons" | "fictional-wiki" | "placeholder";
 
 export type FlagFallbackPolicy = "commons-only" | "fictional-wiki";
@@ -42,7 +42,6 @@ export interface FlagResolver {
     countryNames: readonly string[],
     options?: { fallbackPolicy?: FlagFallbackPolicy }
   ): Promise<ReadonlyMap<string, FlagResolution>>;
-  peek(countryName: string): FlagResolution | null;
   prefetch(
     countryNames: readonly string[],
     options?: { fallbackPolicy?: FlagFallbackPolicy }

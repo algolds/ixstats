@@ -3,7 +3,10 @@
 // Bulk heuristic scanner for automated wiki page linking.
 
 import { useState, useMemo, useCallback } from "react";
+import Link from "next/link";
+import { TRPCClientError } from "@trpc/client";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -15,23 +18,79 @@ import {
   WarningTriangle as AlertTriangle,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import type { ScanResult } from "./types";
+import { isWikiOutage, unreachableText } from "~/lib/wiki-os/wiki-outage";
+import { countryRows, type CountriesData, type CountryLinkRow, type ScanResult } from "./types";
+import {
+  parseWikiSource,
+  WIKI_SOURCES,
+  wikiReaderPath,
+  type WikiSource,
+} from "~/lib/wiki-os/config";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
-export function BulkScannerSection({ countriesData }: { countriesData: any }) {
+/** The wiki the scanner searches. */
+const SCAN_WIKI: WikiSource = "ixwiki";
+
+interface SearchHit {
+  title: string;
+  source: string;
+}
+
+type SearchTitles = (input: { query: string; wiki: WikiSource }) => Promise<readonly SearchHit[]>;
+
+/** One country's search: its best match, none, or an outage of the wiki searched (which says nothing of a match). */
+type CountryScan = { kind: "match"; result: ScanResult } | { kind: "none" } | { kind: "outage" };
+
+async function scanCountry(country: CountryLinkRow, search: SearchTitles): Promise<CountryScan> {
+  try {
+    const first = (await search({ query: country.name, wiki: SCAN_WIKI }))[0];
+    if (!first) return { kind: "none" };
+    const isExact = first.title.toLowerCase() === country.name.toLowerCase();
+    return {
+      kind: "match",
+      result: {
+        countryId: country.id,
+        countryName: country.name,
+        matchedTitle: first.title,
+        source: parseWikiSource(first.source),
+        confidence: isExact ? "exact" : "partial",
+        selected: isExact,
+      },
+    };
+  } catch (error) {
+    return error instanceof TRPCClientError && isWikiOutage(error)
+      ? { kind: "outage" }
+      : { kind: "none" };
+  }
+}
+
+/** The scan stopped because the wiki did not answer: `skipped` countries were not searched. */
+interface ScanOutage {
+  wiki: WikiSource;
+  skipped: number;
+}
+
+function outageText({ wiki, skipped }: ScanOutage): string {
+  const countries = skipped === 1 ? "1 country was" : `${skipped} countries were`;
+  return `${unreachableText(wiki)} ${countries} not scanned. Try again.`;
+}
+
+export function BulkScannerSection({ countriesData }: { countriesData: CountriesData }) {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResults, setScanResults] = useState<ScanResult[]>([]);
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 });
   const [scanComplete, setScanComplete] = useState(false);
+  const [scanOutage, setScanOutage] = useState<ScanOutage | null>(null);
 
-  const countries = useMemo(() => {
-    const list = countriesData?.countries ?? countriesData ?? [];
-    if (!Array.isArray(list)) return [];
-    return list as Array<{
-      id: string;
-      name: string;
-      wikiPageTitle?: string | null;
-    }>;
-  }, [countriesData]);
+  const countries = useMemo(() => countryRows(countriesData), [countriesData]);
 
   const unlinkedCountries = useMemo(() => countries.filter((c) => !c.wikiPageTitle), [countries]);
 
@@ -53,37 +112,23 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
     setIsScanning(true);
     setScanResults([]);
     setScanComplete(false);
+    setScanOutage(null);
     setScanProgress({ current: 0, total: unlinkedCountries.length });
 
     const results: ScanResult[] = [];
+    const search: SearchTitles = (input) => utils.wikios.searchArticles.fetch(input);
 
     for (let i = 0; i < unlinkedCountries.length; i++) {
       const country = unlinkedCountries[i]!;
       setScanProgress({ current: i + 1, total: unlinkedCountries.length });
 
-      try {
-        const searchResult = await utils.wikios.searchArticles.fetch({
-          query: country.name,
-        });
-
-        if (searchResult && Array.isArray(searchResult) && searchResult.length > 0) {
-          const first = searchResult[0]!;
-          const title = first.title ?? country.name;
-          const source = first.source ?? "ixwiki";
-          const isExact = title.toLowerCase() === country.name.toLowerCase();
-
-          results.push({
-            countryId: country.id,
-            countryName: country.name,
-            matchedTitle: title,
-            source,
-            confidence: isExact ? "exact" : "partial",
-            selected: isExact,
-          });
-        }
-      } catch {
-        // Skip countries with no matches
+      const scan = await scanCountry(country, search);
+      if (scan.kind === "outage") {
+        // Every later search would meet the same outage: stop, and keep what was found.
+        setScanOutage({ wiki: SCAN_WIKI, skipped: unlinkedCountries.length - i });
+        break;
       }
+      if (scan.kind === "match") results.push(scan.result);
     }
 
     setScanResults(results);
@@ -113,7 +158,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
           links: chunk.map((r) => ({
             countryId: r.countryId,
             wikiPageTitle: r.matchedTitle,
-            wikiSource: r.source as "ixwiki" | "iiwiki",
+            wikiSource: r.source,
           })),
         });
       }
@@ -131,35 +176,30 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
   const selectedCount = scanResults.filter((r) => r.selected).length;
 
   return (
-    <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-      <div className="border-border/20 flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
+    <Card className="space-y-4 p-5">
+      <div className="border-separator flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4 text-amber-400" />
-          <h3 className="text-foreground text-xs font-bold">Bulk Wiki Entity Scanner</h3>
+          <RefreshCw className="text-yellow h-4 w-4" />
+          <h3 className="text-label text-caption">Bulk wiki entity scanner</h3>
         </div>
-        <Badge variant="outline" className="w-fit text-xs">
+        <Badge variant="outline" className="w-fit">
           {unlinkedCountries.length} unlinked countries
         </Badge>
       </div>
 
       <div className="space-y-4">
-        <p className="text-muted-foreground text-xs">
+        <p className="text-label-secondary text-footnote">
           Automatically search wiki sources for unlinked countries and suggest entity cross-links.
         </p>
 
-        {/* Scan button */}
         <div className="flex items-center gap-2">
-          <Button
-            onClick={handleScan}
-            disabled={isScanning || unlinkedCountries.length === 0}
-            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
+          <Button onClick={handleScan} disabled={isScanning || unlinkedCountries.length === 0}>
             {isScanning ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Search className="mr-1.5 h-3.5 w-3.5" />
+              <Search className="mr-2 h-3.5 w-3.5" />
             )}
-            {isScanning ? "Scanning..." : "Scan Unlinked Countries"}
+            {isScanning ? "Scanning..." : "Scan unlinked countries"}
           </Button>
 
           {scanResults.length > 0 && (
@@ -167,22 +207,20 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
               variant="outline"
               onClick={handleLinkSelected}
               disabled={selectedCount === 0 || isLinking}
-              className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               {isLinking ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Link2 className="mr-1.5 h-3.5 w-3.5" />
+                <Link2 className="mr-2 h-3.5 w-3.5" />
               )}
-              {isLinking ? "Linking..." : `Link Selected (${selectedCount})`}
+              {isLinking ? "Linking..." : `Link selected (${selectedCount})`}
             </Button>
           )}
         </div>
 
-        {/* Progress */}
         {isScanning && (
-          <div className="space-y-1.5">
-            <div className="text-muted-foreground flex items-center justify-between text-xs">
+          <div className="space-y-2">
+            <div className="text-label-secondary text-footnote flex items-center justify-between">
               <span>
                 Scanning {scanProgress.current} of {scanProgress.total}...
               </span>
@@ -190,9 +228,9 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
                 {Math.round((scanProgress.current / Math.max(scanProgress.total, 1)) * 100)}%
               </span>
             </div>
-            <div className="bg-muted/40 h-1.5 w-full overflow-hidden rounded-full">
+            <div className="bg-fill-3 h-1.5 w-full overflow-hidden rounded-full">
               <div
-                className="h-full rounded-full bg-amber-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
+                className="bg-yellow duration-fast h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 style={{
                   width: `${(scanProgress.current / Math.max(scanProgress.total, 1)) * 100}%`,
                 }}
@@ -201,73 +239,82 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
           </div>
         )}
 
-        {/* Results */}
-        {scanComplete && scanResults.length === 0 && (
-          <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+        {scanOutage && (
+          <div
+            role="status"
+            className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-yellow flex items-center gap-2 border p-3"
+          >
+            <AlertTriangle className="text-yellow h-4 w-4 shrink-0" />
+            {outageText(scanOutage)}
+          </div>
+        )}
+
+        {scanComplete && !scanOutage && scanResults.length === 0 && (
+          <div className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-yellow flex items-center gap-2 border p-3">
+            <AlertTriangle className="text-yellow h-4 w-4 shrink-0" />
             No wiki matches found for unlinked countries.
           </div>
         )}
 
         {scanResults.length > 0 && (
-          <div className="border-border/30 bg-card/25 max-h-[24rem] overflow-x-auto overflow-y-auto rounded-2xl border shadow-xs backdrop-blur-md">
-            <table className="w-full text-xs">
-              <thead className="bg-muted/20 border-border/30 text-muted-foreground sticky top-0 border-b font-semibold backdrop-blur-md">
-                <tr>
-                  <th className="w-10 px-3 py-2.5 text-center" />
-                  <th className="px-3 py-2.5 text-left font-medium">Country</th>
-                  <th className="px-3 py-2.5 text-left font-medium">Matched Page</th>
-                  <th className="hidden px-3 py-2.5 text-left font-medium sm:table-cell">Source</th>
-                  <th className="px-3 py-2.5 text-right font-medium">Confidence</th>
-                </tr>
-              </thead>
-              <tbody className="divide-border/15 divide-y">
-                {scanResults.map((result) => (
-                  <tr
-                    key={result.countryId}
-                    className={cn(
-                      "transition-colors",
-                      result.selected ? "bg-primary/5" : "hover:bg-foreground/[0.02]"
-                    )}
-                  >
-                    <td className="px-3 py-2.5 text-center">
-                      <input
-                        type="checkbox"
-                        checked={result.selected}
-                        onChange={() => toggleResult(result.countryId)}
-                        className="border-border rounded"
-                      />
-                    </td>
-                    <td className="text-foreground px-3 py-2.5 font-semibold">
-                      {result.countryName}
-                    </td>
-                    <td className="text-muted-foreground max-w-[10rem] truncate px-3 py-2.5 font-mono">
+          <Table containerClassName="max-h-[24rem]">
+            <TableHeader sticky>
+              <TableRow>
+                <TableHead className="w-10 px-3 text-center" />
+                <TableHead className="px-3">Country</TableHead>
+                <TableHead className="px-3">Matched page</TableHead>
+                <TableHead className="hidden px-3 sm:table-cell">Source</TableHead>
+                <TableHead className="px-3 text-right">Confidence</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {scanResults.map((result) => (
+                <TableRow
+                  key={result.countryId}
+                  className={cn(
+                    "transition-colors",
+                    result.selected ? "bg-tint-fill" : "hover:bg-fill-4"
+                  )}
+                >
+                  <TableCell className="px-3 text-center">
+                    <Checkbox
+                      aria-label={`Select ${result.countryName}`}
+                      checked={result.selected}
+                      onCheckedChange={() => toggleResult(result.countryId)}
+                    />
+                  </TableCell>
+                  <TableCell className="text-label px-3 font-semibold">
+                    {result.countryName}
+                  </TableCell>
+                  <TableCell className="text-label-secondary max-w-[10rem] truncate px-3">
+                    <Link
+                      href={wikiReaderPath(result.matchedTitle, result.source)}
+                      className="hover:text-tint hover:underline"
+                    >
                       {result.matchedTitle}
-                    </td>
-                    <td className="hidden px-3 py-2.5 sm:table-cell">
-                      <Badge variant="outline" className="text-xs">
-                        {result.source}
-                      </Badge>
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      <span
-                        className={cn(
-                          "inline-block rounded-md border px-2 py-0.5 text-xs font-semibold",
-                          result.confidence === "exact"
-                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                            : "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                        )}
-                      >
-                        {result.confidence === "exact" ? "Exact" : "Partial"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </Link>
+                  </TableCell>
+                  <TableCell className="hidden px-3 sm:table-cell">
+                    <Badge variant="outline">{WIKI_SOURCES[result.source].name}</Badge>
+                  </TableCell>
+                  <TableCell className="px-3 text-right">
+                    <span
+                      className={cn(
+                        "rounded-control-sm text-caption inline-block border px-2 py-0.5",
+                        result.confidence === "exact"
+                          ? "border-green/30 bg-green/10 text-green"
+                          : "border-yellow/30 bg-yellow/10 text-yellow"
+                      )}
+                    >
+                      {result.confidence === "exact" ? "Exact" : "Partial"}
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </div>
-    </div>
+    </Card>
   );
 }

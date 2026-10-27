@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 
 export const onomaSyntaxRouter = createTRPCRouter({
   /**
@@ -29,7 +33,7 @@ export const onomaSyntaxRouter = createTRPCRouter({
   /**
    * Save (create or update) a grammar profile.
    */
-  saveProfile: protectedProcedure
+  saveProfile: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string().optional(),
@@ -84,7 +88,7 @@ export const onomaSyntaxRouter = createTRPCRouter({
   /**
    * Delete a grammar profile.
    */
-  deleteProfile: protectedProcedure
+  deleteProfile: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),

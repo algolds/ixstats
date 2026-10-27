@@ -10,7 +10,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
-import { cleanExcerpt } from "../../src/lib/wiki-os/transformers/excerpt";
+import { cleanExcerpt } from "../../src/lib/wiki-os/transformers/wikitext-parser";
 import type {
   WikiArticleCardData,
   WikiCategoryPortalData,

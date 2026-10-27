@@ -1,7 +1,21 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
+import { ensureUpcomingElection } from "~/lib/government/election-lifecycle";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+
+/** MC-2: a new (or re-activated) party may complete the setup the first election needs. */
+async function scheduleElectionIfReady(
+  db: Parameters<typeof ensureUpcomingElection>[0],
+  countryId: string
+) {
+  try {
+    await ensureUpcomingElection(db, countryId);
+  } catch (e) {
+    console.warn("[Elections] could not schedule an election:", e);
+  }
+}
 
 // ============================================================
 // Election System Router - Extension of Government Sub-System
@@ -19,7 +33,7 @@ export const electionsPartiesRouter = createTRPCRouter({
       });
     }),
 
-  createParty: protectedProcedure
+  createParty: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -41,13 +55,8 @@ export const electionsPartiesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify user owns this country
-      if (ctx.user?.countryId !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only manage parties for your own country",
-        });
-      }
+      // Verify user owns this country (any nation they own, not only the active one)
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       const party = await ctx.db.politicalParty.create({
         data: {
@@ -62,6 +71,8 @@ export const electionsPartiesRouter = createTRPCRouter({
           currentSupport: input.baseSupport,
         },
       });
+
+      await scheduleElectionIfReady(ctx.db, input.countryId);
 
       try {
         await notificationAPI.create({
@@ -81,7 +92,7 @@ export const electionsPartiesRouter = createTRPCRouter({
       return party;
     }),
 
-  updateParty: protectedProcedure
+  updateParty: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),
@@ -97,7 +108,7 @@ export const electionsPartiesRouter = createTRPCRouter({
         leaderName: z.string().max(100).optional(),
         platform: z.string().optional(),
         baseSupport: z.number().min(0).max(100).optional(),
-        currentSupport: z.number().min(0).max(100).optional(),
+        // currentSupport is not settable: drift and election results move it
         isActive: z.boolean().optional(),
       })
     )
@@ -108,15 +119,15 @@ export const electionsPartiesRouter = createTRPCRouter({
       if (!party) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Party not found" });
       }
-      if (ctx.user?.countryId !== party.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN" });
-      }
+      await assertCountryWriteAccess(ctx, party.countryId);
 
       const { id, ...data } = input;
-      return ctx.db.politicalParty.update({ where: { id }, data });
+      const updated = await ctx.db.politicalParty.update({ where: { id }, data });
+      if (input.isActive === true) await scheduleElectionIfReady(ctx.db, party.countryId);
+      return updated;
     }),
 
-  deleteParty: protectedProcedure
+  deleteParty: rateLimitedMutationProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const party = await ctx.db.politicalParty.findUnique({
@@ -125,10 +136,15 @@ export const electionsPartiesRouter = createTRPCRouter({
       if (!party) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
-      if (ctx.user?.countryId !== party.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN" });
-      }
+      await assertCountryWriteAccess(ctx, party.countryId);
 
-      return ctx.db.politicalParty.delete({ where: { id: input.id } });
+      // A party that stood in an election keeps its row (candidates and results cascade from it): deactivate it.
+      const candidacies = await ctx.db.electionCandidate.count({ where: { partyId: input.id } });
+      if (candidacies > 0) {
+        await ctx.db.politicalParty.update({ where: { id: input.id }, data: { isActive: false } });
+        return { id: input.id, deactivated: true };
+      }
+      await ctx.db.politicalParty.delete({ where: { id: input.id } });
+      return { id: input.id, deactivated: false };
     }),
 });

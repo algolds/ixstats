@@ -13,8 +13,15 @@
 import { useEffect, useRef } from "react";
 import { useIssueCount } from "./useNationalIssues";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
+import { withBasePath } from "~/lib/base-path";
 
 const STORAGE_KEY = "national_issues_last_counts";
+
+/** Issues live on the Overview agenda: switch the shell there (base path kept) and scroll to it. */
+export function openIssuesAgenda() {
+  window.history.pushState(null, "", withBasePath("/mycountry?focus=agenda"));
+  window.dispatchEvent(new PopStateEvent("popstate"));
+}
 
 export function useNationalIssuesToast(countryId: string | undefined) {
   const { total, urgent, isLoading } = useIssueCount(countryId);
@@ -67,24 +74,14 @@ export function useNationalIssuesToast(countryId: string | undefined) {
     }
 
     const id = enqueue({
-      title: `${total} National Issue${total !== 1 ? "s" : ""} Pending`,
+      title: `${total} national issue${total !== 1 ? "s" : ""} waiting`,
       message:
-        urgent > 0
-          ? `${urgent} urgent — requires immediate attention`
-          : "Review and respond in the Executive section",
+        urgent > 0 ? `${urgent} with a deadline` : "Review and respond on the Overview agenda",
       type: urgent > 0 ? "warning" : "info",
       priority: urgent > 0 ? "critical" : "high",
       category: "governance",
       duration: urgent > 0 ? 8000 : 5000,
-      actions: [
-        {
-          label: "View Issues",
-          onClick: () => {
-            window.history.pushState({}, "", "/mycountry/executive");
-            window.dispatchEvent(new PopStateEvent("popstate"));
-          },
-        },
-      ],
+      actions: [{ label: "View issues", onClick: openIssuesAgenda }],
     });
 
     toastIdRef.current = id;

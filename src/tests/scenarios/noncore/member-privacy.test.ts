@@ -1,0 +1,693 @@
+/** @jest-environment node */
+/**
+ * A member's privacy settings decide what other members see. Hana writes on IxWiki as "Hana Wiki" (an approved name
+ * claim, Lorewards medals and a featured-article award) and has no nation; Sam asks for "Sam Wiki" and has the
+ * passport handle "samwise". No surface that names players reads a wiki name at all (display names,
+ * messaging, a ThinkTank's roster, feed and join notices): they name a player by handle, else their persona, whether
+ * her claim is shown or hidden and even when the privacy switches cannot be read, and a persona made while the wiki
+ * name was shown loses to the handle. With her claim hidden her passport handle skips the wiki name, and she still sees
+ * her own claim. Her achievements as others see them follow her name claim: while she keeps it hidden they read no
+ * wiki name, and she still sees her own.
+ *
+ * Her direct messages are open to followers only, with read receipts and online status off. Sam, outside her
+ * audience, starts a conversation: it waits in her Requests folder and she is not told. She accepts, and Sam's next
+ * message reaches her. "Seen" shows only once both allow receipts, and her online dot only once she allows it. Omar's
+ * request she declines, and he cannot write again; Ivy accepts nobody, or no requests, and refuses outright.
+ *
+ * A ThinkTank chat is read and written only by its current members (not one who left, nor a realm board's banned
+ * nation owner) and a group DM only by its participants. It hides a blocked member's messages from the one who blocked
+ * them, keeps each message its author's to edit or delete, and a conversation imported from the old forum is
+ * read-only. ThinkTank invites pass only as each invitee allows (Ivy takes
+ * none, Sam blocked the inviter), only the invitee answers hers, and only the owner mints a single-use code.
+ *
+ * Folds display-names, account-resolver-wiki-attribution, thinktanks-wiki-attribution, achievements-wiki-attribution,
+ * ixnayid-status-verified-wiki, message-requests, messaging service and send-and-admin-fixes (participant checks,
+ * author-only edits, old-forum read-only), thinktanks-invites and thinktanks-invite-inbox.
+ */
+let mockDb: unknown;
+jest.mock("~/server/db", () => ({
+  get db() {
+    return mockDb;
+  },
+}));
+const mockThinktankActivity = jest.fn().mockResolvedValue(undefined);
+jest.mock("~/lib/notifications/hooks", () => ({
+  __esModule: true,
+  notificationHooks: { onThinktankActivity: (...a: unknown[]) => mockThinktankActivity(...a) },
+}));
+
+import { createCallerFactory } from "~/server/api/trpc";
+import { achievementsProgressRouter } from "~/server/api/routers/achievements/progress";
+import { ixnayidCoreRouter } from "~/server/api/routers/ixnayid/core";
+import { thinkpagesThinktanksRouter } from "~/server/api/routers/thinkpages/thinktanks";
+import { usersPreferencesRouter } from "~/server/api/routers/users/preferences";
+import { createMessagingService } from "~/server/modules/messaging";
+import { batchResolveMessagingAccounts } from "~/server/modules/messaging/account-resolver";
+import { resolveDisplayNames, UNKNOWN_DISPLAY_NAME } from "~/server/shared/display-names";
+import { recordHeartbeat, resetPresenceForTests } from "~/server/shared/presence";
+import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
+import { addIxnay, addNation } from "~/tests/helpers/nation-world";
+import { createMockCallerContext } from "~/tests/helpers/router-context";
+
+const settings = createCallerFactory(usersPreferencesRouter);
+const thinktanks = createCallerFactory(thinkpagesThinktanksRouter);
+const achievements = createCallerFactory(achievementsProgressRouter);
+const ixnayid = createCallerFactory(ixnayidCoreRouter);
+
+const SECRET_PAGE = "Hana's Secret Article";
+const HANA = "hana-clerk";
+const SAM = "sam-clerk";
+const OMAR = "omar-clerk";
+const IVY = "ivy-clerk";
+
+let db: MemoryPrisma;
+
+const as = (id: string | null) =>
+  createMockCallerContext({
+    db,
+    auth: id ? { userId: `${id}-clerk` } : null,
+    user: id
+      ? { id, clerkUserId: `${id}-clerk`, countryId: id === "omar" ? "omaria" : null }
+      : null,
+    rateLimitIdentifier: `${id}-${Math.random()}`,
+  });
+
+const privacy = (id: string, config: Record<string, string | boolean>) =>
+  settings(as(id)).updatePrivacyConfig(config);
+
+beforeEach(async () => {
+  jest.spyOn(console, "log").mockImplementation(() => undefined);
+  jest.spyOn(console, "warn").mockImplementation(() => undefined);
+  mockThinktankActivity.mockClear();
+  resetPresenceForTests();
+  db = createMemoryPrisma();
+  mockDb = db;
+  await addIxnay(db as never);
+  await addNation(db as never, { id: "omaria", name: "Omaria", baselineDate: new Date() });
+  const people = [
+    { id: "hana" },
+    { id: "sam", handle: "samwise" },
+    { id: "omar", countryId: "omaria" },
+    { id: "ivy" },
+  ];
+  for (const p of people) {
+    await db.user.create({
+      data: {
+        id: p.id,
+        clerkUserId: `${p.id}-clerk`,
+        handle: p.handle ?? null,
+        countryId: p.countryId ?? null,
+        lastSeenAt: new Date(),
+      },
+    });
+  }
+  await db.country.update({ where: { id: "omaria" }, data: { ownerUserId: "omar" } });
+  await db.wikiNameClaim.create({
+    data: {
+      userId: "hana",
+      source: "ixwiki",
+      name: "Hana Wiki",
+      status: "APPROVED",
+      origin: "CONVERSION",
+      requestedById: "hana",
+      decidedAt: new Date(),
+    },
+  });
+  await db.lorewardUserStats.create({
+    data: {
+      username: "Hana Wiki",
+      dailyWins: 3,
+      weeklyWins: 0,
+      monthlyWins: 0,
+      totalScore: 30,
+    } as never,
+  });
+  await db.wikiArticleAward.create({
+    data: {
+      name: "Featured Article",
+      pageTitle: SECRET_PAGE,
+      pageSlug: "Hanas_Secret_Article",
+      category: "FEATURED",
+      recipientUsers: ["Hana Wiki"],
+      awardedAt: new Date(0),
+    } as never,
+  });
+});
+afterEach(() => jest.restoreAllMocks());
+
+/** Omar's public ThinkTank, which Hana and Sam join. */
+async function economists() {
+  const group = await thinktanks(as("omar")).createThinktank({
+    name: "Economists",
+    type: "public",
+  });
+  for (const id of ["hana", "sam"]) await thinktanks(as(id)).joinThinktank({ groupId: group.id });
+  return group.id;
+}
+
+/** Hana and Sam post in the group; a first post creates each one's personal persona. */
+async function post(groupId: string) {
+  for (const id of ["hana", "sam"]) {
+    await thinktanks(as(id)).createGroupPost({ groupId, content: `${id} on tariffs` });
+  }
+}
+
+/** How each surface names Hana and Sam, as `viewer` sees them. */
+async function namesSeenBy(viewer: string | null, groupId: string) {
+  const display = await resolveDisplayNames(db as never, [HANA, SAM, OMAR, "ghost-clerk"]);
+  const messaging = await batchResolveMessagingAccounts([HANA, SAM], db as never);
+  const group = await thinktanks(as(viewer)).getThinktankById({ groupId });
+  const roster = new Map(
+    group!.members.map((m) => [m.userId, (m.user as { displayName?: string }).displayName])
+  );
+  const { posts } = await thinktanks(as(viewer)).getGroupFeed({ groupId });
+  const feed = new Map(posts.map((p) => [p.account!.clerkUserId, p.realUser?.handle ?? null]));
+  return {
+    display: [display.get(HANA), display.get(SAM), display.get(OMAR), display.get("ghost-clerk")],
+    messaging: [messaging.get(HANA)?.displayName, messaging.get(SAM)?.displayName],
+    roster: [roster.get(HANA), roster.get(SAM)],
+    feed: [feed.get(HANA), feed.get(SAM)],
+    wikiNameShown: /(Hana|Sam) Wiki/.test(JSON.stringify([group, posts, [...messaging.values()]])),
+  };
+}
+
+/** Hana's Lorewards medal and wiki award as `viewer` sees her achievements. */
+async function hanasLorewardsSeenBy(viewer: string) {
+  const list = await achievements(as(viewer)).getAllWithStatus({ userId: HANA });
+  return {
+    bronze: list.find((r) => r.key === "ool-bronze")?.isUnlocked ?? false,
+    awards: list.filter((r) => r.key.startsWith("wiki-award-")).length,
+    namesPage: JSON.stringify(list).includes(SECRET_PAGE),
+  };
+}
+
+it("names Hana and Sam by handle, else persona, never by a wiki name, whether her claim is shown or hidden", async () => {
+  const groupId = await economists();
+  await post(groupId);
+
+  // Her first post made her personal persona, never named after her wiki name
+  const persona = await db.thinkpagesAccount.findFirstOrThrow({ where: { clerkUserId: HANA } });
+  expect(persona.displayName).not.toContain("Hana Wiki");
+  for (const visible of [true, false]) {
+    await db.wikiNameClaim.updateMany({ where: { userId: "hana" }, data: { visible } });
+    for (const viewer of [null, "omar", "hana"]) {
+      expect(await namesSeenBy(viewer, groupId)).toEqual({
+        display: [persona.displayName, "samwise", "Omaria", UNKNOWN_DISPLAY_NAME],
+        messaging: [persona.displayName, "samwise"],
+        roster: [persona.displayName, "samwise"],
+        feed: [null, "samwise"],
+        wikiNameShown: false,
+      });
+    }
+  }
+  // The join notices did not name either by a wiki name
+  const joined = mockThinktankActivity.mock.calls
+    .map(([n]) => n as { actorUserId: string; actorUserName: string })
+    .filter((n) => n.actorUserId === HANA || n.actorUserId === SAM);
+  expect(joined.length).toBeGreaterThan(1);
+  for (const notice of joined) expect(notice.actorUserName).not.toMatch(/(Hana|Sam) Wiki/);
+
+  // With her claim hidden her passport handle (on every share link) skips the wiki name; her own settings still show
+  // the claim
+  const status = await ixnayid(as("hana")).getStatus();
+  expect(status.passportHandle).not.toMatch(/hana[ _]wiki/i);
+  expect(status.wiki).toMatchObject({ linked: true, username: "Hana Wiki" });
+  // Sam's wiki name and his pending claim are neither a link nor a handle
+  await db.wikiNameClaim.create({
+    data: { userId: "sam", name: "Sam Wiki", origin: "PLAYER", requestedById: "sam" },
+  });
+  const sams = await ixnayid(as("sam")).getStatus();
+  expect(sams.wiki).toMatchObject({ linked: false, username: null });
+  expect(sams.passportHandle).not.toMatch(/sam[ _]wiki/i);
+});
+
+it("reads no wiki name for Hana's achievements as others see them while she keeps her name claim hidden", async () => {
+  expect(await hanasLorewardsSeenBy("omar")).toEqual({ bronze: true, awards: 1, namesPage: true });
+
+  await db.wikiNameClaim.updateMany({ where: { userId: "hana" }, data: { visible: false } });
+  expect(await hanasLorewardsSeenBy("omar")).toEqual({
+    bronze: false,
+    awards: 0,
+    namesPage: false,
+  });
+  // A hidden claim still counts for her own view
+  expect(await hanasLorewardsSeenBy("hana")).toEqual({ bronze: true, awards: 1, namesPage: true });
+
+  // A claim she only asked for names her nowhere, not even to herself
+  await db.wikiNameClaim.updateMany({
+    where: { userId: "hana" },
+    data: { visible: true, status: "PENDING" },
+  });
+  expect(await hanasLorewardsSeenBy("hana")).toEqual({
+    bronze: false,
+    awards: 0,
+    namesPage: false,
+  });
+});
+
+it("names players the same when the privacy switches cannot be read", async () => {
+  const groupId = await economists();
+  const unreadable = () =>
+    jest.spyOn(db.userConnection, "findMany").mockRejectedValue(new Error("db down"));
+
+  unreadable();
+  const display = await resolveDisplayNames(db as never, [HANA, SAM, OMAR]);
+  expect([HANA, SAM, OMAR].map((id) => display.get(id))).toEqual([
+    UNKNOWN_DISPLAY_NAME,
+    "samwise",
+    "Omaria",
+  ]);
+  const messaging = await batchResolveMessagingAccounts([HANA, SAM], db as never);
+  expect([messaging.get(HANA)?.displayName, messaging.get(SAM)?.displayName]).toEqual([
+    UNKNOWN_DISPLAY_NAME,
+    "samwise",
+  ]);
+  const group = await thinktanks(as(null)).getThinktankById({ groupId });
+  expect(group!.members.map((m) => (m.user as { displayName?: string }).displayName)).toEqual([
+    "Omaria",
+    UNKNOWN_DISPLAY_NAME,
+    "samwise",
+  ]);
+
+  jest.restoreAllMocks();
+  await post(groupId);
+  unreadable();
+  const { posts } = await thinktanks(as(null)).getGroupFeed({ groupId });
+  const feed = new Map(posts.map((p) => [p.account!.clerkUserId, p.realUser?.handle ?? null]));
+  expect([feed.get(HANA), feed.get(SAM)]).toEqual([null, "samwise"]);
+});
+
+// A first post used to name the personal persona after the wiki name while it was shown. Once Hana hides her claim,
+// her handle names her, so nothing falls back to that persona (owner 2026-10-21); the persona keeps its name.
+it("names Hana by her handle, not a persona named after her wiki name, once she hides her claim", async () => {
+  const groupId = await economists();
+  await db.thinkpagesAccount.create({
+    data: {
+      clerkUserId: HANA,
+      countryId: null,
+      accountType: "personal",
+      username: "HanaWiki",
+      displayName: "Hana Wiki",
+      firstName: "Hana Wiki",
+      lastName: "",
+      bio: "",
+      verified: false,
+    },
+  });
+  await db.wikiNameClaim.updateMany({ where: { userId: "hana" }, data: { visible: false } });
+  await db.user.update({ where: { id: "hana" }, data: { handle: "hanako" } });
+
+  expect((await resolveDisplayNames(db as never, [HANA])).get(HANA)).toBe("hanako");
+  const messaging = await batchResolveMessagingAccounts([HANA], db as never);
+  expect(messaging.get(HANA)?.displayName).toBe("hanako");
+  const group = await thinktanks(as("omar")).getThinktankById({ groupId });
+  const rosterName = (id: string) =>
+    (group!.members.find((m) => m.userId === id)?.user as { displayName?: string } | undefined)
+      ?.displayName;
+  expect([rosterName(HANA), rosterName(SAM)]).toEqual(["hanako", "samwise"]);
+  const after = await db.thinkpagesAccount.findFirstOrThrow({ where: { clerkUserId: HANA } });
+  expect(after.displayName).toBe("Hana Wiki");
+});
+
+it("keeps a message from outside Hana's audience as a request, and honours both sides' receipts and online status", async () => {
+  const notifications = { create: jest.fn().mockResolvedValue("n") };
+  const svc = createMessagingService({
+    db: db as never,
+    notifications: notifications as never,
+    websocket: { broadcastToUsers: jest.fn() } as never,
+  });
+  const told = (who: string) =>
+    notifications.create.mock.calls.filter(([n]) => n.userId === who).length;
+  // Omar wrote to Hana while she took messages from everyone
+  const omars = await svc.createConversation(OMAR, { participantIds: [HANA] } as never);
+  await svc.sendMessage(OMAR, { conversationId: omars.id, content: "Hello neighbour" } as never);
+  expect(told(HANA)).toBe(1);
+
+  await privacy("hana", {
+    directMessages: "followers",
+    dmReadReceipts: false,
+    showOnlineStatus: false,
+  });
+  await privacy("ivy", { directMessages: "nobody" });
+  // Now outside her audience, his next message moves the conversation to her requests, untold
+  await svc.sendMessage(OMAR, { conversationId: omars.id, content: "Hello again" } as never);
+  expect(told(HANA)).toBe(1);
+
+  // Ivy takes messages from nobody, and refusing requests outright does the same
+  await expect(
+    svc.createConversation(SAM, { participantIds: [IVY] } as never)
+  ).rejects.toMatchObject({
+    name: "MessagingBlockedError",
+  });
+  await privacy("ivy", { directMessages: "followers", messageRequestFiltering: false });
+  await expect(
+    svc.createConversation(SAM, { participantIds: [IVY] } as never)
+  ).rejects.toMatchObject({
+    name: "MessagingBlockedError",
+  });
+
+  // Inside the audience (Sam takes messages from everyone) a conversation is a plain one
+  const plain = await svc.createConversation(HANA, { participantIds: [SAM] } as never);
+  const samInPlain = plain.participants.find((p: { userId: string }) => p.userId === SAM);
+  expect(samInPlain?.requestStatus).not.toBe("pending");
+
+  // Outside Hana's: a request she is not told of, in her Requests folder and not her inbox
+  const request = await svc.createConversation(SAM, { participantIds: [HANA] } as never);
+  await svc.sendMessage(SAM, { conversationId: request.id, content: "Trade talks?" } as never);
+  await svc.sendMessage(SAM, { conversationId: request.id, content: "Anyone there?" } as never);
+  expect(told(HANA)).toBe(1);
+  const folder = async (who: string, name: "requests" | "conversations") =>
+    (await svc.getConversationsByFolder(who, { folder: name } as never)).conversations.map(
+      (c: { id: string }) => c.id
+    );
+  expect((await folder(HANA, "requests")).sort()).toEqual([omars.id, request.id].sort());
+  expect(await folder(HANA, "conversations")).not.toContain(request.id);
+  const listed = async (who: string, name: "requests" | "conversations") =>
+    (await svc.getConversationsByFolder(who, { folder: name } as never)).conversations.find(
+      (c: { id: string }) => c.id === request.id
+    );
+  expect(await listed(HANA, "requests")).toMatchObject({
+    isRequest: true,
+    awaitingAcceptance: false,
+  });
+  expect(await listed(SAM, "conversations")).toMatchObject({
+    isRequest: false,
+    awaitingAcceptance: true,
+  });
+  await expect(svc.getSeenState(SAM, request.id)).resolves.toEqual({ seenAt: null });
+
+  await expect(
+    svc.respondToRequest(HANA, { conversationId: request.id, accept: true })
+  ).resolves.toEqual({
+    success: true,
+    accepted: true,
+  });
+  await expect(
+    svc.respondToRequest(HANA, { conversationId: request.id, accept: true })
+  ).rejects.toMatchObject({
+    name: "MessagingNotFoundError",
+  });
+  await svc.sendMessage(SAM, {
+    conversationId: request.id,
+    content: "Thanks for accepting",
+  } as never);
+  expect(told(HANA)).toBe(2);
+
+  // Seen: hidden while Hana's receipts are off, shown once both allow them; never to a stranger
+  await svc.markMessagesAsRead(HANA, { conversationId: request.id });
+  await expect(svc.getSeenState(SAM, request.id)).resolves.toEqual({ seenAt: null });
+  await privacy("hana", { dmReadReceipts: true });
+  const { seenAt } = await svc.getSeenState(SAM, request.id);
+  expect(seenAt).toBeInstanceOf(Date);
+  await expect(svc.getSeenState(OMAR, request.id)).rejects.toMatchObject({
+    name: "MessagingForbiddenError",
+  });
+
+  // Online: a recent heartbeat shows only once Hana allows it
+  await recordHeartbeat(HANA);
+  const hanaOnline = async () => {
+    const { conversations } = await svc.getConversationsByFolder(SAM, {
+      folder: "conversations",
+    } as never);
+    const conv = conversations.find((c: { id: string }) => c.id === request.id);
+    return conv.otherParticipants[0].isOnline;
+  };
+  expect(await hanaOnline()).toBe(false);
+  await privacy("hana", { showOnlineStatus: true });
+  expect(await hanaOnline()).toBe(true);
+
+  // Omar's request she declines: she leaves it, and he cannot write again
+  await svc.respondToRequest(HANA, { conversationId: omars.id, accept: false });
+  await expect(
+    svc.sendMessage(OMAR, { conversationId: omars.id, content: "Reconsider?" } as never)
+  ).rejects.toMatchObject({ name: "MessagingBlockedError" });
+  expect(told(HANA)).toBe(2);
+});
+
+it("admits only members to a ThinkTank chat, keeps each message its author's, and leaves the old forum's read-only", async () => {
+  const svc = createMessagingService({
+    db: db as never,
+    notifications: { create: jest.fn().mockResolvedValue("n") } as never,
+    websocket: { broadcastToUsers: jest.fn() } as never,
+  });
+  const groupId = await economists();
+  const group = await thinktanks(as("omar")).getThinktankById({ groupId });
+  const chat = group!.conversationId!;
+  expect(chat).toBeTruthy();
+
+  // Sam, a member, writes; Ivy, outside the group, can neither write (by either id) nor read
+  const sams = await svc.sendMessage(SAM, {
+    conversationId: chat,
+    content: "Agenda attached",
+  } as never);
+  for (const conversationId of [chat, groupId]) {
+    await expect(
+      svc.sendMessage(IVY, { conversationId, content: "let me in" } as never)
+    ).rejects.toMatchObject({
+      name: "MessagingForbiddenError",
+    });
+  }
+  expect(
+    await db.conversationParticipant.count({ where: { conversationId: chat, userId: IVY } })
+  ).toBe(0);
+
+  // Hana blocked Omar: his chat messages stay out of her preview and her read of the chat
+  await settings(as("hana")).blockAccount({ identifier: "Omaria" });
+  await svc.sendMessage(OMAR, { conversationId: chat, content: "Ignore the agenda" } as never);
+  const { conversations } = await svc.getConversationsByFolder(HANA, {
+    folder: "thinktank",
+  } as never);
+  const preview = conversations.find((c: { id: string }) => c.id === chat);
+  expect(preview?.lastMessage?.content).toBe("Agenda attached");
+  const { messages } = await svc.getConversationMessages(HANA, { conversationId: chat } as never);
+  expect(messages.map((m: { content: string }) => m.content)).toEqual(["Agenda attached"]);
+
+  // Only Sam edits or deletes his message
+  await expect(
+    svc.editMessage(HANA, { messageId: sams.id, content: "Hacked" } as never)
+  ).rejects.toMatchObject({
+    name: "MessagingForbiddenError",
+  });
+  await svc.deleteMessage(SAM, { messageId: sams.id } as never);
+  expect((await db.thinkshareMessage.findUniqueOrThrow({ where: { id: sams.id } })).content).toBe(
+    "This message was deleted"
+  );
+
+  // A conversation imported from the old forum takes no new message, edit or reaction
+  const archived = await db.thinkshareConversation.create({
+    data: {
+      type: "direct",
+      source: "forum",
+      participants: { create: [{ userId: HANA }, { userId: SAM }] },
+    },
+  });
+  const old = await db.thinkshareMessage.create({
+    data: { conversationId: archived.id, userId: HANA, content: "From 2019" },
+  });
+  const readOnly = { name: "MessagingBlockedError" };
+  await expect(
+    svc.sendMessage(HANA, { conversationId: archived.id, content: "Hi" } as never)
+  ).rejects.toMatchObject(readOnly);
+  await expect(
+    svc.editMessage(HANA, { messageId: old.id, content: "Changed" } as never)
+  ).rejects.toMatchObject(readOnly);
+  await expect(
+    svc.addReaction(HANA, { messageId: old.id, emoji: "👍" } as never)
+  ).rejects.toMatchObject(readOnly);
+  expect((await db.thinkshareMessage.findUniqueOrThrow({ where: { id: old.id } })).content).toBe(
+    "From 2019"
+  );
+});
+
+it("lets ThinkTank invites through only as each invitee allows, and only the invitee answers hers", async () => {
+  const circle = await thinktanks(as("omar")).createThinktank({
+    name: "Inner Circle",
+    type: "invite_only",
+  });
+  await privacy("ivy", { thinktankInvites: "nobody" });
+  await settings(as("sam")).blockAccount({ identifier: "Omaria" });
+
+  // Ivy takes no invites, Sam blocked Omar, and a made-up id is nobody: only Hana is invited
+  const sent = await thinktanks(as("omar")).inviteToThinktank({
+    groupId: circle.id,
+    userIds: [HANA, SAM, IVY, "ghost-clerk"],
+  });
+  expect(sent).toMatchObject({ count: 1, skipped: 3 });
+  const invites = await db.thinktankInvite.findMany({ where: { groupId: circle.id } });
+  expect(invites.map((i) => i.invitedUser)).toEqual([HANA]);
+
+  // Sam cannot answer Hana's invite; Hana accepts it once
+  await expect(
+    thinktanks(as("sam")).acceptThinktankInvite({ inviteId: invites[0]!.id })
+  ).rejects.toMatchObject({
+    code: "NOT_FOUND",
+  });
+  await expect(
+    thinktanks(as("sam")).declineThinktankInvite({ inviteId: invites[0]!.id })
+  ).rejects.toMatchObject({
+    code: "NOT_FOUND",
+  });
+  await thinktanks(as("hana")).acceptThinktankInvite({ inviteId: invites[0]!.id });
+  await expect(
+    thinktanks(as("hana")).acceptThinktankInvite({ inviteId: invites[0]!.id })
+  ).rejects.toMatchObject({
+    code: "NOT_FOUND",
+  });
+
+  // A member cannot mint a code or search for invitees; the owner's code admits one person
+  await expect(
+    thinktanks(as("hana")).createThinktankInviteCode({ groupId: circle.id })
+  ).rejects.toThrow();
+  await expect(
+    thinktanks(as("hana")).searchInvitableUsers({ groupId: circle.id, query: "sam" })
+  ).rejects.toThrow(/owner or a group admin/);
+  const { code } = await thinktanks(as("omar")).createThinktankInviteCode({ groupId: circle.id });
+  await expect(
+    thinktanks(as("ivy")).joinThinktankByCode({ code: code.toLowerCase() })
+  ).resolves.toMatchObject({
+    groupId: circle.id,
+  });
+  await expect(thinktanks(as("sam")).joinThinktankByCode({ code })).rejects.toThrow();
+  const members = await db.thinktankMember.findMany({
+    where: { groupId: circle.id, isActive: true },
+  });
+  expect(members.map((m) => m.userId).sort()).toEqual([HANA, IVY, OMAR].sort());
+});
+
+/**
+ * Omar's invite-only Inner Circle: Hana joins by invite, Sam joins by invite and then leaves. Omar writes in its chat,
+ * and Hana starts a group DM with Sam and Omar.
+ */
+async function innerCircle() {
+  const svc = createMessagingService({
+    db: db as never,
+    notifications: { create: jest.fn().mockResolvedValue("n") } as never,
+    websocket: { broadcastToUsers: jest.fn() } as never,
+  });
+  const circle = await thinktanks(as("omar")).createThinktank({
+    name: "Inner Circle",
+    type: "invite_only",
+  });
+  const chat = (await thinktanks(as("omar")).getThinktankById({ groupId: circle.id }))!
+    .conversationId!;
+  await thinktanks(as("omar")).inviteToThinktank({ groupId: circle.id, userIds: [HANA, SAM] });
+  for (const invitee of ["hana", "sam"]) {
+    const invite = await db.thinktankInvite.findFirstOrThrow({
+      where: { groupId: circle.id, invitedUser: `${invitee}-clerk` },
+    });
+    await thinktanks(as(invitee)).acceptThinktankInvite({ inviteId: invite.id });
+  }
+  await thinktanks(as("sam")).leaveThinktank({ groupId: circle.id });
+  await svc.sendMessage(OMAR, { conversationId: chat, content: "The plan" } as never);
+  const dm = await svc.createConversation(HANA, { participantIds: [SAM, OMAR] } as never);
+  await svc.sendMessage(HANA, { conversationId: dm.id, content: "Between us" } as never);
+  return { svc, ids: { group: circle.id, chat, dm: dm.id } };
+}
+
+// Found 2026-10-21: reading a conversation used to enroll any signed-in caller in any ThinkTank chat or group DM.
+it.each([
+  ["a non-member of an invite-only ThinkTank, by its chat's id", IVY, "chat"],
+  ["a non-member of an invite-only ThinkTank, by its group's id", IVY, "group"],
+  ["a former member who left the ThinkTank", SAM, "chat"],
+  ["a stranger to a group DM", IVY, "dm"],
+] as const)("keeps a private group chat closed to %s", async (_who, userId, target) => {
+  const { svc, ids } = await innerCircle();
+  const forbidden = { name: "MessagingForbiddenError" };
+
+  await expect(
+    svc.getConversationMessages(userId, { conversationId: ids[target] } as never)
+  ).rejects.toMatchObject(forbidden);
+  await expect(svc.getConversation(userId, ids[target])).rejects.toMatchObject(forbidden);
+  await expect(
+    svc.sendMessage(userId, { conversationId: ids[target], content: "I'm in" } as never)
+  ).rejects.toMatchObject(forbidden);
+  const conversationId = target === "dm" ? ids.dm : ids.chat;
+  expect(
+    await db.conversationParticipant.count({ where: { conversationId, userId, isActive: true } })
+  ).toBe(0);
+});
+
+// Found 2026-10-21: any participant could add anyone to any conversation, past a ThinkTank's invites.
+it.each([
+  [
+    "refuses a member adding someone to a ThinkTank chat, which follows its membership",
+    OMAR,
+    "chat",
+    0,
+  ],
+  ["refuses adding a third person to a direct message", HANA, "direct", 0],
+  ["lets a participant add someone to a group DM", HANA, "dm", 1],
+] as const)("%s", async (_case, actorId, target, added) => {
+  const { svc, ids } = await innerCircle();
+  const direct = await db.thinkshareConversation.create({
+    data: {
+      type: "direct",
+      participants: { create: [{ userId: HANA }, { userId: OMAR }] },
+    },
+  });
+  const conversationId = target === "direct" ? direct.id : ids[target];
+
+  const adding = svc.addParticipant(actorId, { conversationId, targetUserId: IVY });
+  if (added) await adding;
+  else await expect(adding).rejects.toMatchObject({ name: "MessagingForbiddenError" });
+  expect(
+    await db.conversationParticipant.count({
+      where: { conversationId, userId: IVY, isActive: true },
+    })
+  ).toBe(added);
+});
+
+it("enrolls a current ThinkTank member in its chat once, and they read it", async () => {
+  const { svc, ids } = await innerCircle();
+  await db.conversationParticipant.deleteMany({
+    where: { conversationId: ids.chat, userId: HANA },
+  });
+
+  for (const conversationId of [ids.chat, ids.group]) {
+    const { messages } = await svc.getConversationMessages(HANA, { conversationId } as never);
+    expect(messages.map((m: { content: string }) => m.content)).toEqual(["The plan"]);
+  }
+  expect(
+    await db.conversationParticipant.count({ where: { conversationId: ids.chat, userId: HANA } })
+  ).toBe(1);
+});
+
+it.each([
+  ["muted on it, is joined and reads", "mute", ["Board notice"]],
+  ["banned from it, is refused", "ban", null],
+] as const)("a realm board member whose nation is %s", async (_case, kind, read) => {
+  const svc = createMessagingService({ db: db as never });
+  const chat = await db.thinkshareConversation.create({
+    data: { type: "group", source: "thinktank", name: "Ixnay board" },
+  });
+  const board = await db.thinktankGroup.create({
+    data: {
+      name: "Ixnay board",
+      type: "realm_board",
+      createdBy: "system",
+      conversationId: chat.id,
+      members: { create: { userId: OMAR } },
+    },
+  });
+  await db.thinkshareConversation.update({
+    where: { id: chat.id },
+    data: { sourceId: board.id },
+  });
+  await db.realmBoard.create({ data: { realmId: "default", groupId: board.id } });
+  await db.realmBoardBan.create({
+    data: { realmId: "default", countryId: "omaria", kind, createdBy: "system" },
+  });
+  await db.thinkshareMessage.create({
+    data: { conversationId: chat.id, userId: "system", content: "Board notice" },
+  });
+
+  const reading = svc.getConversationMessages(OMAR, { conversationId: chat.id } as never);
+  if (read) {
+    expect((await reading).messages.map((m: { content: string }) => m.content)).toEqual(read);
+  } else {
+    await expect(reading).rejects.toMatchObject({ name: "MessagingForbiddenError" });
+  }
+  expect(
+    await db.conversationParticipant.count({ where: { conversationId: chat.id, userId: OMAR } })
+  ).toBe(read ? 1 : 0);
+});

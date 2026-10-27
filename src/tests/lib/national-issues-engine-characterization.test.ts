@@ -1,10 +1,15 @@
 /**
- * Characterization test for NationalIssuesEngine.buildCountrySnapshot and
- * NationalIssuesEngine.evaluateCountry (plan 315).
+ * The national issues engine corpus.
  *
- * Every DB call (in order, with its arguments) and the returned value are pinned
- * for fixed fixtures, with IxTime, Math.random and the config held constant, so a
- * refactor of the engine must keep the exact same queries, writes and results.
+ * NationalIssuesEngine.evaluateCountry (with the snapshot it builds) and forceGenerate are pinned (plan 315): every DB
+ * call (in order, with its arguments) and the returned value for fixed fixtures, with IxTime, Math.random and the
+ * config held constant, so a refactor keeps the exact queries, writes and results. Below it: the trigger condition
+ * evaluator over a realistic snapshot (one row per operator, aggregation and path shape), variable substitution, the
+ * GDP-units regression (#49), the weekly cap that stops the cron evaluating, a partial config save keeping spawnMode,
+ * and the consequence-to-level-effect mapping (compounding, caps, the dropped shapes).
+ *
+ * Folds national-issues-evaluator, national-issues-limits, national-issues-config and the cap and compounding cases of
+ * national-issues-projection-effects (its +X pp, multiplier and dropped cases are in national-issue-response).
  */
 // `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() calls
 // on the global, not on a `jest` imported from @jest/globals.
@@ -15,6 +20,7 @@ jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "te
 
 const mockConfig = { maxIssuesPerSession: 4, maxIssuesPerWeek: 10 };
 jest.mock("~/lib/national-issues/config", () => ({
+  ...jest.requireActual("~/lib/national-issues/config"),
   getNationalIssuesConfig: () => mockConfig,
 }));
 
@@ -59,6 +65,22 @@ import {
   type CountrySnapshot,
   type EvaluationResult,
 } from "~/lib/national-issues";
+import {
+  completeNationalIssuesConfig,
+  type NationalIssuesConfig,
+} from "~/lib/national-issues/config";
+import {
+  evaluateTriggerCondition,
+  type TriggerCondition,
+} from "~/lib/national-issues/evaluators/condition-evaluator";
+import { substituteVariables } from "~/lib/national-issues/evaluators/issue-generator";
+import { growthDecimalToPercent } from "~/lib/national-issues/country-snapshot";
+import {
+  issueConsequenceToEffect,
+  MAX_ISSUE_GDP_LEVEL_SHIFT,
+  MAX_ISSUE_POPULATION_LEVEL_SHIFT,
+} from "~/lib/national-issues/projection-effects";
+import type { ConsequenceDefinition } from "~/lib/national-issues/types";
 import { IxTime } from "~/lib/ixtime";
 
 type Json = string | number | boolean | null | undefined | Date | Json[] | { [key: string]: Json };
@@ -96,7 +118,7 @@ const RICH_COUNTRY = {
   currentPopulation: 200000,
   currentGdpPerCapita: 38000,
   currentTotalGdp: 7600000000,
-  actualGdpGrowth: 1.4,
+  actualGdpGrowth: 0.014, // stored as a decimal; the snapshot reports 1.4 (%)
   unemploymentRate: 6.2,
   inflationRate: null,
   tradeBalance: -12000000,
@@ -305,20 +327,6 @@ function scrub<T>(value: T): T {
 type Scenario = () => Promise<{ value: ScenarioValue; calls: Call[] }>;
 
 const SCENARIOS: Record<string, Scenario> = {
-  snapshotRich: async () => {
-    const calls: Call[] = [];
-    const value = await NationalIssuesEngine.buildCountrySnapshot(
-      "c-astria",
-      richDb(calls, { targetIntent: true }) as never
-    );
-    return { value, calls };
-  },
-  snapshotMissingCountry: async () => {
-    const calls: Call[] = [];
-    const db = makeDb({ country: { findUnique: () => null } }, calls);
-    const value = await NationalIssuesEngine.buildCountrySnapshot("nope", db as never);
-    return { value, calls };
-  },
   evaluateRichWithTarget: async () => {
     const calls: Call[] = [];
     const db = richDb(calls, { targetIntent: true, failCreateFor: "t8" });
@@ -335,12 +343,6 @@ const SCENARIOS: Record<string, Scenario> = {
     });
     return { value, calls };
   },
-  evaluateMissingCountry: async () => {
-    const calls: Call[] = [];
-    const db = makeDb({ country: { findUnique: () => null } }, calls);
-    const value = await NationalIssuesEngine.evaluateCountry("nope", db as never);
-    return { value, calls };
-  },
   evaluatePendingCap: async () => {
     const calls: Call[] = [];
     const db = richDb(calls, { targetIntent: true });
@@ -355,15 +357,6 @@ const SCENARIOS: Record<string, Scenario> = {
     const calls: Call[] = [];
     mockConfig.maxIssuesPerWeek = 3;
     const db = richDb(calls, { targetIntent: true });
-    const value = await NationalIssuesEngine.evaluateCountry("c-astria", db as never);
-    return { value, calls };
-  },
-  evaluateTemplateQueryThrows: async () => {
-    const calls: Call[] = [];
-    const db = richDb(calls, { targetIntent: true });
-    db.nationalIssueTemplate!.findMany = async () => {
-      throw new Error("db offline");
-    };
     const value = await NationalIssuesEngine.evaluateCountry("c-astria", db as never);
     return { value, calls };
   },
@@ -384,32 +377,10 @@ const SCENARIOS: Record<string, Scenario> = {
     const value = await NationalIssuesEngine.forceGenerate("t1", "c-astria", db as never, "i-9");
     return { value, calls };
   },
-  forceGenerateAdmin: async () => {
-    const calls: Call[] = [];
-    const db = richDb(calls, { targetIntent: true });
-    const value = await NationalIssuesEngine.forceGenerate("t7", "c-astria", db as never);
-    return { value, calls };
-  },
   forceGenerateInvalidOptions: async () => {
     const calls: Call[] = [];
     const db = richDb(calls, { targetIntent: true });
     const value = await NationalIssuesEngine.forceGenerate("t6", "c-astria", db as never);
-    return { value, calls };
-  },
-  forceGenerateMissingTemplate: async () => {
-    const calls: Call[] = [];
-    const db = richDb(calls, { targetIntent: true });
-    const value = await NationalIssuesEngine.forceGenerate("nope", "c-astria", db as never);
-    return { value, calls };
-  },
-  forceGenerateMissingCountry: async () => {
-    const calls: Call[] = [];
-    const db = richDb(calls, { targetIntent: true });
-    db.country!.findUnique = async (...args: Where[]) => {
-      calls.push(["country.findUnique", args]);
-      return null;
-    };
-    const value = await NationalIssuesEngine.forceGenerate("t1", "nope", db as never);
     return { value, calls };
   },
 };
@@ -418,114 +389,6 @@ const EXPECTED: Record<
   string,
   { summary: { value: ScenarioValue; callNames: string[] }; digest: string }
 > = {
-  snapshotRich: {
-    summary: {
-      value: {
-        id: "c-astria",
-        name: "Astria",
-        leader: "Chancellor Rhee",
-        governmentType: "Parliamentary Republic",
-        economicTier: "Developed",
-        populationTier: "Small",
-        continent: "Oriente",
-        region: null,
-        currentPopulation: 200000,
-        currentGdpPerCapita: 38000,
-        currentTotalGdp: 7600000000,
-        actualGdpGrowth: 1.4,
-        unemploymentRate: 6.2,
-        inflationRate: 0,
-        tradeBalance: -12000000,
-        taxRevenueGDPPercent: 31,
-        budgetDeficitSurplus: 0,
-        totalDebtGDPRatio: 64,
-        debtPerCapita: 0,
-        publicApproval: 47,
-        povertyRate: 11,
-        incomeInequalityGini: 0,
-        lifeExpectancy: 70,
-        literacyRate: 97,
-        urbanPopulationPercent: 50,
-        infrastructureRating: 58,
-        politicalStability: 61,
-        democracyIndex: 50,
-        governmentEffectiveness: 50,
-        ruleOfLaw: 70,
-        corruptionIndex: 50,
-        politicalPolarization: 55,
-        stabilityScore: 75,
-        crimeRate: 5,
-        protestFrequency: 5,
-        riotRisk: 10,
-        socialCohesion: 70,
-        ethnicTension: 20,
-        trustInGovernment: 50,
-        activeEmbassyCount: 3,
-        activeAllianceCount: 2,
-        activePolicyCount: 3,
-        pendingIssueCount: 2,
-        recentCrisisCount: 1,
-        activeTreatyCount: 0,
-        activeComponents: [
-          "REGIONAL_INTEGRATION",
-          "INTERNATIONAL_LAW",
-          "FREE_MARKET_SYSTEM",
-          "digital_filing",
-        ],
-        implementingComponents: ["DEVELOPMENT_AID", "STATE_CAPITALISM", "withholding_system"],
-        civilServiceCapacity: 101,
-        consumedStaff: 540,
-        currentIxTime: 2223374400000,
-        currentIxYear: 2040,
-        currentIxMonth: 6,
-        activePoliciesList: ["green-deal-v2", "harbour-reform-", "plain-old-policy"],
-        policySettings: { "green-deal-v2": { rate: 3 } },
-        activeIntents: ["grow_exports", "calm_streets"],
-        activeIntentCategories: ["economy", "social"],
-        geo: {
-          isLandlocked: false,
-          isIsland: true,
-          dominantClimate: "maritime",
-          terrainRoughness: null,
-          arableLandPercent: 22,
-          coastlineKm: 1400,
-          neighborCount: 1,
-        },
-        identity: {
-          capitalCity: "Port Aster",
-          largestCity: null,
-          languages: "Astrian",
-          religion: null,
-        },
-        party: { name: "Unity Party", ideology: "centrist", support: 41 },
-        minister: { name: "Mira Holt", title: "Minister of Finance" },
-        fiscal: { salesTaxRate: 12, corporateTaxRate: null },
-        partners: [{ name: "Nordland", band: "ALLY", strength: 80 }],
-        embassyPartners: ["Nordland"],
-        worldEvents: [],
-        crises: ["Harbour strike"],
-        neighbors: [{ name: "Valeria", countryId: "c-valeria" }],
-        activeIntentGoals: ["grow_exports", "calm_streets"],
-      },
-      callNames: [
-        "country.findUnique",
-        "embassy.count",
-        "policy.count",
-        "nationalIssue.count",
-        "crisisEvent.count",
-        "governmentComponent.findMany",
-        "economicComponent.findMany",
-        "taxComponent.findMany",
-        "policy.findMany",
-        "intent.findMany",
-      ],
-    },
-    digest: "e9f1ff1efc4a53e7ad8242a435fe890bc0577e12f66d9824fdb9a565a1f8016a",
-  },
-  snapshotMissingCountry: {
-    summary: { value: null, callNames: ["country.findUnique"] },
-    digest: "d6eb1621a147a3d267b4b42275ea01fdef6d15708584ee6bf8a07930a9007fc7",
-  },
   evaluateRichWithTarget: {
     summary: {
       value: {
@@ -568,7 +431,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "62cf98dfd6be8e961c65a25e04f0fb61e73b972a3d47325f16fbadced8bcf61b",
+    digest: "74eafa6df862a1487f0fd4c828eaa42a24c57d29a532431eab5a65a3fd92148d",
   },
   evaluateNeighborFallbackForcedDomain: {
     summary: {
@@ -609,22 +472,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "9eae36692c9a39e87fad891a46bb31c9bc41e0a33e9842c308b284df0e396639",
-  },
-  evaluateMissingCountry: {
-    summary: {
-      value: {
-        issuesGenerated: 0,
-        issuesSkippedCooldown: 0,
-        issuesSkippedMaxActive: 0,
-        templatesEvaluated: 0,
-        templatesPassed: 0,
-        executionTimeMs: 0,
-        errors: ["Country nope not found"],
-      },
-      callNames: ["country.findUnique"],
-    },
-    digest: "6258efbc58592dcc880840bb8e526120d97ed33e298fc9438fc51d9b26585f10",
+    digest: "e5afd8151fe54b19f6e714d7042eaff04f1ac0ea276aebb3ea526715da3d318e",
   },
   evaluatePendingCap: {
     summary: {
@@ -652,7 +500,7 @@ const EXPECTED: Record<
         "nationalIssue.count",
       ],
     },
-    digest: "208981d2890df13f7cc689af9baa4605f3e68f3cbe2dfdd0df30f74953db2587",
+    digest: "e1ed18e37fd98df4b1bdca46ddd119c992cb95ab805803d97c193cc0c5b96362",
   },
   evaluateWeeklyCapReached: {
     summary: {
@@ -689,37 +537,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "7992a266a47e19fd629b742eaa79d73d4db33dff65fc9c607f1901532d2797e2",
-  },
-  evaluateTemplateQueryThrows: {
-    summary: {
-      value: {
-        issuesGenerated: 1,
-        issuesSkippedCooldown: 0,
-        issuesSkippedMaxActive: 0,
-        templatesEvaluated: 0,
-        templatesPassed: 0,
-        executionTimeMs: 0,
-        errors: ["Evaluation failed: db offline"],
-      },
-      callNames: [
-        "country.findUnique",
-        "embassy.count",
-        "policy.count",
-        "nationalIssue.count",
-        "crisisEvent.count",
-        "governmentComponent.findMany",
-        "economicComponent.findMany",
-        "taxComponent.findMany",
-        "policy.findMany",
-        "intent.findMany",
-        "nationalIssueTemplate.upsert",
-        "nationalIssue.count",
-        "nationalIssue.create",
-        "nationalIssue.count",
-      ],
-    },
-    digest: "a07a1a2b9aae1b49b9f7b1d4df136ab1b9d09802773c507030b45a9fc428d68c",
+    digest: "264eb4ed685fd83f67621794a18576ae93989f5946c899d807f5780077e3d3b6",
   },
   evaluateTargetLookupThrows: {
     summary: {
@@ -757,7 +575,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "b20bf46e0627b382b764a4f13b03820fd1b198a3d9bd343c9e2131eef565e64f",
+    digest: "9d6c8bba07883789a648872e8f3fdae5924c05eb2b8a33685bfbd7fee05a91fa",
   },
   forceGenerateFollowUp: {
     summary: {
@@ -777,27 +595,7 @@ const EXPECTED: Record<
         "nationalIssue.create",
       ],
     },
-    digest: "6b3405fcaf3a6127b0d4160aa23a8429652d8f74bee5eba2aae1b7cc86e54161",
-  },
-  forceGenerateAdmin: {
-    summary: {
-      value: "issue_t7",
-      callNames: [
-        "nationalIssueTemplate.findUnique",
-        "country.findUnique",
-        "embassy.count",
-        "policy.count",
-        "nationalIssue.count",
-        "crisisEvent.count",
-        "governmentComponent.findMany",
-        "economicComponent.findMany",
-        "taxComponent.findMany",
-        "policy.findMany",
-        "intent.findMany",
-        "nationalIssue.create",
-      ],
-    },
-    digest: "9501fe9554bc562e842d44aecb718af2644bd364b781e0e76360f85ec43c8395",
+    digest: "3f8fdb12f5632b76e8027dd79cc779afb16c5500d11c01b8957536b24f18df27",
   },
   forceGenerateInvalidOptions: {
     summary: {
@@ -816,15 +614,7 @@ const EXPECTED: Record<
         "intent.findMany",
       ],
     },
-    digest: "4efc8366812a5b0b2e90b0ce18fdde955b50775ec921879755f5a731ad149c46",
-  },
-  forceGenerateMissingTemplate: {
-    summary: { value: null, callNames: ["nationalIssueTemplate.findUnique"] },
-    digest: "dd9c7add0d9240fbfad383a6e719b266362cd032b6032b729899cae3843cc67c",
-  },
-  forceGenerateMissingCountry: {
-    summary: { value: null, callNames: ["nationalIssueTemplate.findUnique", "country.findUnique"] },
-    digest: "ec772a0ba991cbf84ebbba7d49a683e5eeec9529cbef0ad098b8d7a28a791ce0",
+    digest: "9244c8c52fc6215215e1cde6a86a26acc62f616a642b9280a3892630d8ebcdf6",
   },
 };
 
@@ -862,4 +652,211 @@ describe("NationalIssuesEngine characterization (fixed fixtures)", () => {
       expect(actual).toEqual(EXPECTED[name]);
     });
   }
+});
+
+const SNAPSHOT: CountrySnapshot = {
+  id: "c-1",
+  name: "Aethelgard",
+  leader: "High Chancellor Vane",
+  governmentType: "Constitutional Republic",
+  economicTier: "Developed",
+  populationTier: "Medium",
+  continent: "Oriente",
+  region: "Northern Coast",
+  currentPopulation: 45000000,
+  currentGdpPerCapita: 42000,
+  currentTotalGdp: 1890000000000,
+  actualGdpGrowth: 2.5,
+  unemploymentRate: 4.8,
+  inflationRate: 2.1,
+  tradeBalance: 15000000000,
+  taxRevenueGDPPercent: 28.5,
+  budgetDeficitSurplus: -5000000000,
+  totalDebtGDPRatio: 45.2,
+  debtPerCapita: 19000,
+  publicApproval: 68.4,
+  povertyRate: 8.2,
+  incomeInequalityGini: 32.5,
+  lifeExpectancy: 81.2,
+  literacyRate: 99.1,
+  urbanPopulationPercent: 78.4,
+  infrastructureRating: 84.5,
+  politicalStability: 75.0,
+  democracyIndex: 82.0,
+  governmentEffectiveness: 80.0,
+  ruleOfLaw: 85.0,
+  corruptionIndex: 18.0,
+  politicalPolarization: 35.0,
+  stabilityScore: 78.0,
+  crimeRate: 22.0,
+  protestFrequency: 10.0,
+  riotRisk: 5.0,
+  socialCohesion: 72.0,
+  ethnicTension: 15.0,
+  trustInGovernment: 64.0,
+  activeEmbassyCount: 12,
+  activeAllianceCount: 3,
+  activePolicyCount: 15,
+  pendingIssueCount: 2,
+  recentCrisisCount: 0,
+  activeTreatyCount: 5,
+  currentIxYear: 2026,
+  currentIxMonth: 8,
+  currentIxTime: 1772412800000,
+  civilServiceCapacity: 2500,
+  consumedStaff: 1800,
+  activeComponents: ["comp-1", "comp-2", "comp-3"],
+  implementingComponents: ["comp-4"],
+  activePoliciesList: ["tax_reform_policy"],
+  policySettings: { "universal-basic-income": { stipend: 2, funding: 1 } },
+  activeIntents: ["intent-1"],
+  activeIntentCategories: ["economy", "defense"],
+  activeIntentGoals: ["economic_growth", "border_security"],
+  partners: [
+    { name: "Nordland", band: "ALLY", strength: 80 },
+    { name: "Valeria", band: "HOSTILE", strength: 70 },
+  ],
+  neighbors: [{ name: "Nordland", countryId: "c-2" }],
+};
+
+describe("the trigger condition evaluator over a realistic snapshot", () => {
+  it.each<[string, TriggerCondition, boolean]>([
+    [">", { field: "currentPopulation", op: ">", value: 40_000_000 }, true],
+    [">= at the value", { field: "unemploymentRate", op: ">=", value: 4.8 }, true],
+    ["in", { field: "economicTier", op: "in", value: ["Developed", "Advanced"] }, true],
+    ["between (outside)", { field: "actualGdpGrowth", op: "between", value: 3, value2: 6 }, false],
+    ["array == is membership", { field: "activeComponents", op: "==", value: "comp-2" }, true],
+    ["count", { count: { field: "activeComponents", op: ">=", value: 3 } }, true],
+    [
+      "any over objects",
+      { any: { field: "partners", condition: { field: "band", op: "==", value: "HOSTILE" } } },
+      true,
+    ],
+    [
+      "or",
+      {
+        or: [
+          { field: "publicApproval", op: "<", value: 20 },
+          { field: "democracyIndex", op: ">", value: 70 },
+        ],
+      },
+      true,
+    ],
+    ["not", { not: { field: "publicApproval", op: "<", value: 50 } }, true],
+    [
+      "a dotted policy setting",
+      { field: "policySettings.universal-basic-income.stipend", op: "==", value: 2 },
+      true,
+    ],
+    [
+      "a missing dotted path",
+      { field: "policySettings.surveillance-oversight.surveillance", op: "==", value: 0 },
+      false,
+    ],
+  ])("evaluates %s", (_label, condition, expected) => {
+    expect(evaluateTriggerCondition(condition, SNAPSHOT)).toBe(expected);
+  });
+
+  it.each([
+    [
+      "Relations with {{allyName}} flourish while {{rivalName}} poses border friction.",
+      undefined,
+      "Relations with Nordland flourish while Valeria poses border friction.",
+    ],
+    [
+      "Target state {{targetCountryName}} has approached {{countryName}}.",
+      { targetCountryName: "Zandaria" },
+      "Target state Zandaria has approached Aethelgard.",
+    ],
+  ])("renders %p", (text, extra, rendered) => {
+    expect(substituteVariables(text, SNAPSHOT, extra)).toBe(rendered);
+  });
+
+  it("compares and renders a stored decimal GDP growth rate in percent (#49)", () => {
+    // Country.actualGdpGrowth is stored as a decimal; templates compare it in percent.
+    const stored = (growth: number): CountrySnapshot => ({
+      ...SNAPSHOT,
+      actualGdpGrowth: growthDecimalToPercent(growth),
+    });
+    const boom: TriggerCondition = { field: "actualGdpGrowth", op: ">", value: 3 };
+    const slump: TriggerCondition = { field: "actualGdpGrowth", op: "<", value: 0.5 };
+    expect(evaluateTriggerCondition(boom, stored(0.035))).toBe(true);
+    expect(evaluateTriggerCondition(boom, stored(0.02))).toBe(false);
+    // 2% growth is not a slump; compared raw (0.02 < 0.5) it used to be.
+    expect(evaluateTriggerCondition(slump, stored(0.02))).toBe(false);
+    expect(evaluateTriggerCondition(slump, stored(0.003))).toBe(true);
+    expect(substituteVariables("{{gdpGrowth}}", stored(0.035))).toBe("3.5%");
+  });
+});
+
+describe("limits and configuration", () => {
+  it("evaluates a nation below its weekly cap and stops once the week's issues reach it", async () => {
+    mockConfig.maxIssuesPerWeek = 5;
+    const dbWith = (weekly: number) =>
+      makeDb(
+        { nationalIssue: { count: () => weekly }, issueGenerationLog: { findFirst: () => null } },
+        []
+      );
+    await expect(
+      NationalIssuesEngine.shouldEvaluate("c-astria", dbWith(4) as never, FIXED_IX_TIME)
+    ).resolves.toBe(true);
+    await expect(
+      NationalIssuesEngine.shouldEvaluate("c-astria", dbWith(5) as never, FIXED_IX_TIME)
+    ).resolves.toBe(false);
+  });
+
+  it("keeps spawnMode when a partial config is saved", () => {
+    expect(completeNationalIssuesConfig({ maxIssuesPerSession: 7 })).toEqual({
+      maxIssuesPerSession: 7,
+      maxIssuesPerWeek: 5,
+      spawnMode: "probability",
+    } satisfies NationalIssuesConfig);
+  });
+});
+
+describe("issue consequences become level effects", () => {
+  const consequence = (
+    targetField: string,
+    operation: ConsequenceDefinition["operation"],
+    value: number,
+    extra: Partial<ConsequenceDefinition> = {}
+  ): ConsequenceDefinition => ({ targetModel: "Country", targetField, operation, value, ...extra });
+
+  it.each<[string, ConsequenceDefinition, Record<string, unknown> | null]>([
+    [
+      "growth compounding over whole IxTime years",
+      consequence("actualGdpGrowth", "add", 1, { durationDays: 730, effectType: "gradual" }),
+      { inputType: "gdp_level_adjustment", duration: 2, value: expect.closeTo(0.0201, 4) },
+    ],
+    [
+      "a short growth consequence (at least a year)",
+      consequence("actualGdpGrowth", "add", 1, { durationDays: 30 }),
+      { duration: 1 },
+    ],
+    [
+      "growth capped",
+      consequence("actualGdpGrowth", "add", 4),
+      { value: MAX_ISSUE_GDP_LEVEL_SHIFT },
+    ],
+    [
+      "a population multiplier",
+      consequence("currentPopulation", "multiply", 1.002),
+      { inputType: "population_level_adjustment", value: 0.002, duration: null },
+    ],
+    [
+      "a population multiplier capped",
+      consequence("currentPopulation", "multiply", 0.5),
+      { value: -MAX_ISSUE_POPULATION_LEVEL_SHIFT },
+    ],
+    [
+      "a growth multiplier (no faithful mapping)",
+      consequence("actualGdpGrowth", "multiply", 1.1),
+      null,
+    ],
+    ["an absolute GDP add (no faithful mapping)", consequence("currentTotalGdp", "add", 1e9), null],
+  ])("maps %s", (_label, input, expected) => {
+    const effect = issueConsequenceToEffect(input);
+    if (expected === null) expect(effect).toBeNull();
+    else expect(effect).toMatchObject(expected);
+  });
 });

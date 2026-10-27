@@ -1,10 +1,15 @@
 /**
- * Baseline data for a brand-new Country row — the one source for users.createCountry and for a realm
+ * Baseline data for a brand-new Country row: a realm
  * nation created by an approved claim (realms ruling E-f). Callers add the slug and any realm/wiki fields.
+ * Its growth comes from the realm's per-tier table (`Realm.settings.nationDefaults`), else IxStats's defaults.
  */
-import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
+import {
+  IXSTATS_NATION_GROWTH_DEFAULTS,
+  nationGrowthFor,
+  type NationGrowthTable,
+} from "~/lib/realms/nation-growth-defaults";
 import type { BaseCountryData } from "~/types/ixstats";
 
 /** Values the builder may supply; missing, empty or zero values fall back to the defaults. */
@@ -17,6 +22,7 @@ export interface BaselineCountryInitial {
   flag?: string;
   coatOfArms?: string;
   government?: string;
+  leader?: string;
   nominalGDP?: number;
   realGDPGrowthRate?: number;
   inflationRate?: number;
@@ -26,18 +32,19 @@ export interface BaselineCountryInitial {
   lifeExpectancy?: number;
 }
 
-function baselineFields(name: string, initial: BaselineCountryInitial) {
-  const now = new Date(IxTime.getCurrentIxTime());
+function baselineFields(name: string, nowMs: number, initial: BaselineCountryInitial) {
+  const now = new Date(nowMs);
   return {
     name,
-    continent: initial.continent || "Unknown",
-    region: initial.region || "Unknown",
+    continent: initial.continent || null,
+    region: initial.region || null,
     baselinePopulation: initial.baselinePopulation || 1000000,
     baselineGdpPerCapita: initial.baselineGdpPerCapita || 50000,
     landArea: initial.landArea || 100000,
     flag: initial.flag || undefined,
     coatOfArms: initial.coatOfArms || undefined,
     governmentType: initial.government || undefined,
+    leader: initial.leader || undefined,
     baselineDate: now,
     lastCalculated: now,
     localGrowthFactor: 1.0,
@@ -56,9 +63,21 @@ function indicatorFields(initial: BaselineCountryInitial, totalGdp: number) {
   };
 }
 
-/** A new country's create data: defaults, then the calculator's current stats and tiers at the present IxTime. */
-export function buildBaselineCountryData(name: string, initial: BaselineCountryInitial = {}) {
-  const base = baselineFields(name, initial);
+/**
+ * A new country's create data: defaults, growth from `growth` for its tier (the cap from the IxStats tier rule),
+ * then the calculator's current stats and tiers, dated `nowMs`: its realm's time now (`readerFromSettings`).
+ */
+export function buildBaselineCountryData(
+  name: string,
+  nowMs: number,
+  initial: BaselineCountryInitial = {},
+  growth: NationGrowthTable = IXSTATS_NATION_GROWTH_DEFAULTS
+) {
+  const base = baselineFields(name, nowMs, initial);
+  const { populationGrowthRate, adjustedGdpGrowth, maxGdpGrowthRate } = nationGrowthFor(
+    base.baselineGdpPerCapita,
+    growth
+  );
   const calculator = new IxStatsCalculator(getDefaultEconomicConfig(), base.baselineDate.getTime());
   const seed: BaseCountryData = {
     country: base.name,
@@ -67,16 +86,19 @@ export function buildBaselineCountryData(name: string, initial: BaselineCountryI
     population: base.baselinePopulation,
     gdpPerCapita: base.baselineGdpPerCapita,
     landArea: base.landArea,
-    maxGdpGrowthRate: 0.05,
-    adjustedGdpGrowth: 0.03,
-    populationGrowthRate: 0.01,
+    maxGdpGrowthRate,
+    adjustedGdpGrowth,
+    populationGrowthRate,
     actualGdpGrowth: 0.03,
     projected2040Population: base.baselinePopulation * 1.2,
     projected2040Gdp: base.baselinePopulation * base.baselineGdpPerCapita * 1.5,
     projected2040GdpPerCapita: base.baselineGdpPerCapita * 1.25,
     localGrowthFactor: 1.0,
   };
-  const { newStats } = calculator.calculateTimeProgression(calculator.initializeCountryStats(seed));
+  const { newStats } = calculator.calculateTimeProgression(
+    calculator.initializeCountryStats(seed),
+    nowMs
+  );
   return {
     ...base,
     currentPopulation: newStats.currentPopulation,
@@ -92,5 +114,3 @@ export function buildBaselineCountryData(name: string, initial: BaselineCountryI
     ...indicatorFields(initial, base.baselinePopulation * base.baselineGdpPerCapita),
   };
 }
-
-export type BaselineCountryData = ReturnType<typeof buildBaselineCountryData>;

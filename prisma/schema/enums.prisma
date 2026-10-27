@@ -278,17 +278,6 @@ enum Difficulty {
   TRANSFORMATIONAL
 }
 
-enum BranchType {
-  army
-  navy
-  air_force
-  space_force
-  marines
-  cyber_command
-  special_forces
-  coast_guard
-}
-
 enum AssetType {
   aircraft
   ship
@@ -304,41 +293,23 @@ enum AssetStatus {
   retired
 }
 
-enum ThreatType {
-  military
-  terrorism
-  insurgency
-  cyber
-  organized_crime
-  espionage
-  nuclear
-  biological
-  natural_disaster
-}
-
-enum ThreatSeverity {
-  existential
-  critical
-  high
-  moderate
-  low
-}
-
-enum ThreatStatus {
-  monitoring
-  responding
-  contained
-  resolved
-}
-
 /// *
 ///  * CardType - Classification of card types
 enum CardType {
-  NATION
   LORE
-  NS_IMPORT
+  NATION
+  NS
   SPECIAL
-  COMMUNITY
+  TROPHY
+}
+
+/// *
+///  * CardFinish - The finish of one copy (cards refresh §2.1): rolled at mint, upgraded by fusing
+enum CardFinish {
+  STANDARD
+  FOIL
+  HOLO
+  SERIALISED
 }
 
 /// *
@@ -364,37 +335,6 @@ enum PackType {
 }
 
 /// *
-///  * AcquireMethod - How a card was acquired
-enum AcquireMethod {
-  PACK
-  TRADE
-  AUCTION
-  CRAFT
-  GIFT
-  NS_IMPORT
-  ACHIEVEMENT
-  EVENT
-}
-
-/// *
-///  * AuctionStatus - Auction lifecycle status
-enum AuctionStatus {
-  ACTIVE
-  COMPLETED
-  CANCELLED
-}
-
-/// *
-///  * TradeStatus - Trade lifecycle status
-enum TradeStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-  CANCELLED
-  EXPIRED
-}
-
-/// *
 ///  * VaultTransactionType - Types of IxCredits transactions
 enum VaultTransactionType {
   EARN_PASSIVE
@@ -409,10 +349,12 @@ enum VaultTransactionType {
   SPEND_BOOST
   SPEND_COSMETIC
   ADMIN_ADJUSTMENT
+  SPEND_EXCHANGE
+  EARN_EXCHANGE
 }
 
 /// *
-///  * LoreCategory - 13 super-categories for lore-first cards
+///  * LoreCategory - 12 super-categories for lore-first cards
 enum LoreCategory {
   MILITARY
   DIPLOMACY
@@ -426,7 +368,23 @@ enum LoreCategory {
   HISTORY
   NATION
   SPECIAL
-  NS_IMPORT
+}
+
+/// Who set a lore card's category: the classifier (import or backfill), an admin, the realm's owner, or a player's
+/// suggestion an admin accepted.
+enum CardCategorySource {
+  CLASSIFIER
+  ADMIN
+  REALM_OWNER
+  SUGGESTION
+}
+
+/// A player's category suggestion: waiting, accepted as proposed, answered with another category, or turned down.
+enum CardCategorySuggestionStatus {
+  PENDING
+  ACCEPTED
+  CHANGED
+  REJECTED
 }
 
 /// *
@@ -436,5 +394,86 @@ enum ArtworkSource {
   WIKI_FETCHED
   UPLOADED
   FLAG
+}
+
+/// Where a card stands in review. Imports land PENDING; only APPROVED cards enter packs, the daily card and Explore.
+enum CardReviewState {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// What a Special card is for: an event, or the reward for unlocking one achievement.
+enum SpecialCardKind {
+  EVENT
+  ACHIEVEMENT_REWARD
+}
+
+/// What a card art's licence allows. RESTRICTED is non-commercial or no-derivatives; UNKNOWN means none was found.
+enum CardLicenceStatus {
+  OPEN
+  RESTRICTED
+  UNKNOWN
+}
+
+enum CardImportJobKind {
+  MANUAL
+  DAILY
+}
+
+enum CardImportJobStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+  CANCELLED
+}
+
+enum CardImportItemStatus {
+  QUEUED
+  PROCESSING
+  STAGED
+  SKIPPED
+  BLOCKED
+  FAILED
+}
+
+enum CardTakedownOrigin {
+  NS_SELF_SERVICE
+  AUTHOR_REQUEST
+  LICENCE_REVIEW
+  ADMIN
+  PLAYER_REQUEST
+}
+
+enum CardTakedownStatus {
+  OPEN
+  HIDDEN
+  DECLINED
+  RESTORED
+}
+
+/// Trade offer lifecycle. A counter-offer edits the same row (revision + 1), so there is no COUNTERED state.
+enum TradeOfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+/// Auction lifecycle.
+enum CardAuctionStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+/// Fixed-price listing lifecycle.
+enum CardListingStatus {
+  ACTIVE
+  SOLD
+  CANCELLED
+  EXPIRED
 }
 

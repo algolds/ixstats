@@ -1,6 +1,6 @@
 import { ComponentType } from "@prisma/client";
 
-export interface PowerBrokerDefinition {
+interface PowerBrokerDefinition {
   id: string;
   name: string;
   description: string;
@@ -22,7 +22,7 @@ export interface ActiveBroker {
   bonusDescription: string;
 }
 
-export const POWER_BROKERS: PowerBrokerDefinition[] = [
+const POWER_BROKERS: PowerBrokerDefinition[] = [
   {
     id: "technocrats",
     name: "The Technocrats",

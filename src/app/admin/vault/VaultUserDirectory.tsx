@@ -1,7 +1,8 @@
 "use client";
 
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import React, { useState, useMemo } from "react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import {
@@ -23,16 +24,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "~/components/ui/dialog";
+import { ValueSelect } from "~/components/ui/value-select";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-// oxlint-disable-next-line eslint/no-unused-vars
-import {
-  NavArrowRight as ChevronRight,
   SystemRestart as Loader2,
   Gift,
   ArrowSeparateVertical as ArrowUpDown,
@@ -43,6 +36,21 @@ import {
 } from "iconoir-react";
 
 import { FacetDataTable, type FacetColumn } from "~/components/ui/data-table";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
+import { PlayerCardsSheet, type PlayerRef } from "./PlayerCardsSheet";
+import { assetUrl } from "~/lib/base-path";
+
+type VaultUser = RouterOutputs["vault"]["adminListVaults"]["users"][number];
+
+/** A player's name in the directory: their nation, then their passport handle, then their Clerk id. */
+const vaultUserName = (user: VaultUser) => user.country?.name ?? user.handle ?? user.clerkUserId;
 
 export function VaultUserDirectory() {
   const notify = useNotify();
@@ -57,13 +65,12 @@ export function VaultUserDirectory() {
     id: string;
     clerkUserId: string;
     displayName: string;
-    country?: { name: string; flag: string } | null;
+    country?: { name: string; flag: string | null } | null;
     credits: number;
   } | null>(null);
 
   // Dialog open states
   const [isAdjustOpen, setIsAdjustOpen] = useState(false);
-  const [isPackOpen, setIsPackOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isStreakOpen, setIsStreakOpen] = useState(false);
   const [isCosmeticsOpen, setIsCosmeticsOpen] = useState(false);
@@ -75,11 +82,9 @@ export function VaultUserDirectory() {
   const [adjustReason, setAdjustReason] = useState("");
   const [adjustNotify, setAdjustNotify] = useState(true);
 
-  // Pack award state
-  const [selectedPackId, setSelectedPackId] = useState("");
-  const [packMethod, setPackMethod] = useState("ADMIN_AWARD");
-  const [packNotify, setPackNotify] = useState(true);
   const [streakDelta, setStreakDelta] = useState(0);
+  // The player whose cards and packs the sheet shows
+  const [cardsPlayer, setCardsPlayer] = useState<PlayerRef | null>(null);
 
   // tRPC Queries
   const {
@@ -95,8 +100,6 @@ export function VaultUserDirectory() {
     { placeholderData: (prev) => prev }
   );
 
-  const { data: packsData } = api.cardPacks.getAllPacks.useQuery();
-
   // tRPC Mutations
   const adjustMutation = api.vault.adminAdjustCredits.useMutation({
     onSuccess: (data) => {
@@ -107,18 +110,6 @@ export function VaultUserDirectory() {
     },
     onError: (error) => {
       notify.error("Error", error.message || "Failed to adjust credits");
-    },
-  });
-
-  const awardPackMutation = api.cardPacks.adminAwardPack.useMutation({
-    onSuccess: (data) => {
-      notify.success("Success", data.message || "Pack awarded successfully");
-      setIsPackOpen(false);
-      resetPackForm();
-      refetchVaults();
-    },
-    onError: (error) => {
-      notify.error("Error", error.message || "Failed to award pack");
     },
   });
 
@@ -182,7 +173,6 @@ export function VaultUserDirectory() {
     onError: (err) => notify.error("Failed to revoke", err.message),
   });
 
-  // Resets
   const resetAdjustForm = () => {
     setAdjustAmount("");
     setAdjustType("ADMIN_ADJUSTMENT");
@@ -191,45 +181,20 @@ export function VaultUserDirectory() {
     setAdjustNotify(true);
   };
 
-  const resetPackForm = () => {
-    setSelectedPackId("");
-    setPackMethod("ADMIN_AWARD");
-    setPackNotify(true);
-  };
-
   // Handlers
-  const handleOpenAdjust = (user: any) => {
+  const openDialogFor = (user: VaultUser, open: () => void) => {
     setSelectedUser({
       id: user.id,
       clerkUserId: user.clerkUserId,
-      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
+      displayName: vaultUserName(user),
       country: user.country,
       credits: user.vault.credits,
     });
-    setIsAdjustOpen(true);
+    open();
   };
-
-  const handleOpenPack = (user: any) => {
-    setSelectedUser({
-      id: user.id,
-      clerkUserId: user.clerkUserId,
-      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-      country: user.country,
-      credits: user.vault.credits,
-    });
-    setIsPackOpen(true);
-  };
-
-  const handleOpenCosmetics = (user: any) => {
-    setSelectedUser({
-      id: user.id,
-      clerkUserId: user.clerkUserId,
-      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-      country: user.country,
-      credits: user.vault.credits,
-    });
-    setIsCosmeticsOpen(true);
-  };
+  const handleOpenAdjust = (user: VaultUser) => openDialogFor(user, () => setIsAdjustOpen(true));
+  const handleOpenCosmetics = (user: VaultUser) =>
+    openDialogFor(user, () => setIsCosmeticsOpen(true));
 
   const handleAdjustSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -256,52 +221,37 @@ export function VaultUserDirectory() {
     });
   };
 
-  const handlePackSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser || !selectedPackId) {
-      notify.error("Validation Error", "Please select a pack to award.");
-      return;
-    }
-
-    awardPackMutation.mutate({
-      targetUserId: selectedUser.id,
-      packId: selectedPackId,
-      acquiredMethod: packMethod,
-      sendNotification: packNotify,
-    });
-  };
-
   const totalItems = vaultData?.total ?? 0;
   const selectedUserVault = selectedUser
-    ? vaultData?.users?.find((u: any) => u.id === selectedUser.id)?.vault
+    ? vaultData?.users?.find((u) => u.id === selectedUser.id)?.vault
     : null;
 
-  const columns = useMemo<FacetColumn<any>[]>(
+  const columns = useMemo<FacetColumn<VaultUser>[]>(
     () => [
       {
         key: "user",
         header: "User Identification",
         mobileRole: "hero",
-        accessor: (user: any) => user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-        render: (_val: unknown, user: any) => (
+        accessor: vaultUserName,
+        render: (_val, user) => (
           <div className="flex items-center gap-2">
             {user.country?.flag && (
               <img
-                src={user.country.flag}
+                src={assetUrl(user.country.flag) ?? undefined}
                 alt=""
-                className="h-4 w-6 shrink-0 rounded-sm object-cover"
+                className="rounded-control-sm h-4 w-6 shrink-0 object-cover"
               />
             )}
             <div className="min-w-0">
               <div
-                className="text-foreground max-w-[200px] truncate font-semibold"
+                className="text-label max-w-[200px] truncate font-semibold"
                 title={`Clerk ID: ${user.clerkUserId}`}
               >
-                {user.country?.name ?? user.wikiUsername ?? user.clerkUserId}
+                {vaultUserName(user)}
               </div>
               {user.country?.name && (
-                <div className="text-muted-foreground flex max-w-[220px] flex-wrap gap-x-2 gap-y-0.5 text-xs">
-                  {user.wikiUsername && <span>Wiki: {user.wikiUsername}</span>}
+                <div className="text-label-secondary text-footnote flex max-w-[220px] flex-wrap gap-x-2 gap-y-0.5">
+                  {user.handle && <span>@{user.handle}</span>}
                   {user.forumUsername && <span>Forum: {user.forumUsername}</span>}
                   {user.discordUsername && <span>Discord: {user.discordUsername}</span>}
                 </div>
@@ -316,9 +266,9 @@ export function VaultUserDirectory() {
         align: "right",
         sortable: true,
         mobileRole: "badge",
-        accessor: (user: any) => user.vault?.credits ?? 0,
-        render: (_val: unknown, user: any) => (
-          <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+        accessor: (user) => user.vault?.credits ?? 0,
+        render: (_val, user) => (
+          <span className="text-yellow font-semibold tabular-nums">
             {(user.vault?.credits ?? 0).toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
@@ -333,9 +283,9 @@ export function VaultUserDirectory() {
         sortable: true,
         mobileRole: "field",
         mobileLabel: "Earned",
-        accessor: (user: any) => user.vault?.lifetimeEarned ?? 0,
-        render: (_val: unknown, user: any) => (
-          <span className="text-muted-foreground font-mono text-xs">
+        accessor: (user) => user.vault?.lifetimeEarned ?? 0,
+        render: (_val, user) => (
+          <span className="text-label-secondary text-footnote tabular-nums">
             {(user.vault?.lifetimeEarned ?? 0).toLocaleString(undefined, {
               maximumFractionDigits: 1,
             })}
@@ -349,9 +299,9 @@ export function VaultUserDirectory() {
         sortable: true,
         mobileRole: "field",
         mobileLabel: "Spent",
-        accessor: (user: any) => user.vault?.lifetimeSpent ?? 0,
-        render: (_val: unknown, user: any) => (
-          <span className="text-muted-foreground font-mono text-xs">
+        accessor: (user) => user.vault?.lifetimeSpent ?? 0,
+        render: (_val, user) => (
+          <span className="text-label-secondary text-footnote tabular-nums">
             {(user.vault?.lifetimeSpent ?? 0).toLocaleString(undefined, {
               maximumFractionDigits: 1,
             })}
@@ -363,101 +313,70 @@ export function VaultUserDirectory() {
         header: "Streak",
         align: "center",
         mobileRole: "field",
-        accessor: (user: any) => user.vault?.loginStreak ?? 0,
-        render: (_val: unknown, user: any) => (
-          <Badge
-            variant="outline"
-            className="border-orange-500/20 bg-orange-500/5 text-orange-600 dark:text-orange-400"
-          >
-            {user.vault?.loginStreak ?? 0}d
-          </Badge>
-        ),
+        accessor: (user) => user.vault?.loginStreak ?? 0,
+        render: (_val, user) => <Badge variant="warning">{user.vault?.loginStreak ?? 0}d</Badge>,
       },
       {
         key: "level",
         header: "Level",
         align: "center",
         mobileRole: "field",
-        accessor: (user: any) => user.vault?.vaultLevel ?? 1,
-        render: (_val: unknown, user: any) => (
-          <Badge
-            variant="outline"
-            className="border-blue-500/20 bg-blue-500/5 text-blue-600 dark:text-blue-400"
-          >
-            Lvl {user.vault?.vaultLevel ?? 1}
-          </Badge>
-        ),
+        accessor: (user) => user.vault?.vaultLevel ?? 1,
+        render: (_val, user) => <Badge variant="info">Lvl {user.vault?.vaultLevel ?? 1}</Badge>,
       },
       {
         key: "actions",
         header: "Actions",
         align: "center",
         mobileRole: "action",
-        render: (_val: unknown, user: any) => (
+        render: (_val, user) => (
           <div className="flex items-center justify-center">
             <DropdownMenu>
-              <DropdownMenuTrigger className="border-border/40 bg-background text-foreground hover:bg-muted inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold select-none">
+              <DropdownMenuTrigger className="border-separator bg-background text-label hover:bg-fill-4 rounded-control text-caption inline-flex h-8 cursor-pointer items-center justify-center gap-2 border px-3 py-2 select-none">
                 <MoreHorizontal className="h-3.5 w-3.5 shrink-0" />
                 <span>Actions</span>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="bg-popover border-border text-foreground w-44"
-              >
+              <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuItem
                   onClick={() => handleOpenAdjust(user)}
                   className="cursor-pointer gap-2 py-2"
                 >
-                  <ArrowUpDown className="h-3.5 w-3.5 text-amber-500" />
-                  <span>Adjust Credits</span>
+                  <ArrowUpDown className="text-yellow h-3.5 w-3.5" />
+                  <span>Adjust credits</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => handleOpenPack(user)}
+                  onClick={() => setCardsPlayer({ id: user.id, displayName: vaultUserName(user) })}
                   className="cursor-pointer gap-2 py-2"
                 >
-                  <Gift className="h-3.5 w-3.5 text-blue-500" />
-                  <span>Award Card Pack</span>
+                  <Gift className="text-blue h-3.5 w-3.5" />
+                  <span>Cards and packs</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleOpenCosmetics(user)}
                   className="cursor-pointer gap-2 py-2"
                 >
-                  <Gem className="h-3.5 w-3.5 text-purple-500" />
-                  <span>Manage Cosmetics</span>
+                  <Gem className="text-purple h-3.5 w-3.5" />
+                  <span>Manage cosmetics</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => {
-                    setSelectedUser({
-                      id: user.id,
-                      clerkUserId: user.clerkUserId,
-                      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-                      country: user.country,
-                      credits: user.vault.credits,
-                    });
-                    setIsStreakOpen(true);
-                    setStreakDelta(0);
-                  }}
+                  onClick={() =>
+                    openDialogFor(user, () => {
+                      setIsStreakOpen(true);
+                      setStreakDelta(0);
+                    })
+                  }
                   className="cursor-pointer gap-2 py-2"
                 >
-                  <Flame className="h-3.5 w-3.5 text-orange-500" />
-                  <span>Adjust Streak</span>
+                  <Flame className="text-orange h-3.5 w-3.5" />
+                  <span>Adjust streak</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => {
-                    setSelectedUser({
-                      id: user.id,
-                      clerkUserId: user.clerkUserId,
-                      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-                      country: user.country,
-                      credits: user.vault.credits,
-                    });
-                    setIsHistoryOpen(true);
-                  }}
+                  onClick={() => openDialogFor(user, () => setIsHistoryOpen(true))}
                   className="cursor-pointer gap-2 py-2"
                 >
-                  <History className="h-3.5 w-3.5 text-slate-400" />
-                  <span>Transaction History</span>
+                  <History className="text-label-secondary h-3.5 w-3.5" />
+                  <span>Transaction history</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -470,11 +389,10 @@ export function VaultUserDirectory() {
 
   return (
     <div className="space-y-6">
-      {/* Directory Table */}
       <FacetDataTable
         data={vaultData?.users || []}
         columns={columns}
-        title="User Vault Directory"
+        title="User Vault directory"
         description="Search, inspect, and adjust user balances, level progression, and card inventory."
         searchable
         searchPlaceholder="Search user ID, clerk ID, usernames..."
@@ -492,42 +410,39 @@ export function VaultUserDirectory() {
         emptyMessage="No user vaults found matching your search."
       />
 
-      {/* Adjust Credits Dialog */}
       <Dialog open={isAdjustOpen} onOpenChange={setIsAdjustOpen}>
-        <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-md shadow-2xl backdrop-blur-md dark:bg-slate-900/98">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2">
-              Adjust Credits Balance
-            </DialogTitle>
+            <DialogTitle className="flex items-center gap-2">Adjust credits balance</DialogTitle>
           </DialogHeader>
 
           {selectedUser && (
             <form onSubmit={handleAdjustSubmit} className="space-y-4 py-2">
-              <div className="bg-muted/30 border-border/40 rounded-lg border p-3">
-                <div className="text-muted-foreground text-xs">Target User</div>
+              <div className="bg-fill-4 border-separator rounded-control border p-3">
+                <div className="text-label-secondary text-footnote">Target user</div>
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
                     <img
-                      src={selectedUser.country.flag}
+                      src={assetUrl(selectedUser.country.flag) ?? undefined}
                       alt=""
-                      className="h-4 w-6 shrink-0 rounded-sm object-cover"
+                      className="rounded-control-sm h-4 w-6 shrink-0 object-cover"
                     />
                   )}
-                  <div className="text-foreground truncate text-sm font-semibold">
+                  <div className="text-label text-headline truncate">
                     {selectedUser.displayName}
                   </div>
                 </div>
-                <div className="mt-1 flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Current Balance:</span>
-                  <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                <div className="text-footnote mt-1 flex items-center justify-between">
+                  <span className="text-label-secondary">Current Balance:</span>
+                  <span className="text-yellow font-semibold tabular-nums">
                     {selectedUser.credits.toLocaleString()} IxC
                   </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="adjust-amount">Adjustment Amount</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="adjust-amount">Adjustment amount</Label>
                   <Input
                     id="adjust-amount"
                     type="number"
@@ -536,47 +451,44 @@ export function VaultUserDirectory() {
                     value={adjustAmount}
                     onChange={(e) => setAdjustAmount(e.target.value)}
                     required
-                    className="bg-background border-border/40 text-foreground font-mono"
+                    className="font-mono"
                   />
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-label-secondary text-footnote">
                     Positive adds, negative subtracts.
                   </span>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="adjust-type">Transaction Type</Label>
-                  <Select value={adjustType} onValueChange={setAdjustType}>
-                    <SelectTrigger
-                      id="adjust-type"
-                      className="bg-background border-border/40 text-foreground"
-                    >
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border-border/50 text-foreground">
-                      <SelectItem value="ADMIN_ADJUSTMENT">Admin Adjustment</SelectItem>
-                      <SelectItem value="EARN_ACTIVE">Earn Active Gameplay</SelectItem>
-                      <SelectItem value="EARN_SOCIAL">Earn Social Engagement</SelectItem>
-                      <SelectItem value="SPEND_MARKET">Spend Marketplace</SelectItem>
-                      <SelectItem value="SPEND_BOOST">Spend Deck Boost</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-2">
+                  <Label htmlFor="adjust-type">Transaction type</Label>
+                  <ValueSelect
+                    value={adjustType}
+                    onValueChange={setAdjustType}
+                    options={[
+                      ["ADMIN_ADJUSTMENT", "Admin adjustment"],
+                      ["EARN_ACTIVE", "Earn active gameplay"],
+                      ["EARN_SOCIAL", "Earn social engagement"],
+                      ["SPEND_MARKET", "Spend marketplace"],
+                      ["SPEND_BOOST", "Spend deck boost"],
+                    ]}
+                    id="adjust-type"
+                    placeholder="Select type"
+                  />
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="adjust-source">System Source</Label>
+              <div className="space-y-2">
+                <Label htmlFor="adjust-source">System source</Label>
                 <Input
                   id="adjust-source"
                   type="text"
                   value={adjustSource}
                   onChange={(e) => setAdjustSource(e.target.value)}
                   required
-                  className="bg-background border-border/40 text-foreground"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="adjust-reason">Audit Reason</Label>
+              <div className="space-y-2">
+                <Label htmlFor="adjust-reason">Audit reason</Label>
                 <Input
                   id="adjust-reason"
                   type="text"
@@ -584,16 +496,13 @@ export function VaultUserDirectory() {
                   value={adjustReason}
                   onChange={(e) => setAdjustReason(e.target.value)}
                   required
-                  className="bg-background border-border/40 text-foreground"
                 />
               </div>
 
-              <div className="border-border/40 bg-muted/20 flex items-center justify-between rounded-lg border p-3">
+              <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3">
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-foreground text-xs font-semibold">
-                    Send Alert Notification
-                  </span>
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-label text-caption">Send alert notification</span>
+                  <span className="text-label-secondary text-footnote">
                     Send notification directly to user profile feed.
                   </span>
                 </div>
@@ -604,11 +513,7 @@ export function VaultUserDirectory() {
                 <Button type="button" variant="outline" onClick={() => setIsAdjustOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={adjustMutation.isPending}
-                  className="bg-amber-600 font-semibold text-white hover:bg-amber-700"
-                >
+                <Button type="submit" disabled={adjustMutation.isPending}>
                   {adjustMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -624,13 +529,10 @@ export function VaultUserDirectory() {
         </DialogContent>
       </Dialog>
 
-      {/* Adjust Streak Dialog */}
       <Dialog open={isStreakOpen} onOpenChange={setIsStreakOpen}>
-        <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-sm shadow-2xl backdrop-blur-md dark:bg-slate-900/98">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2">
-              Adjust Login Streak
-            </DialogTitle>
+            <DialogTitle className="flex items-center gap-2">Adjust login streak</DialogTitle>
           </DialogHeader>
 
           {selectedUser && (
@@ -644,20 +546,24 @@ export function VaultUserDirectory() {
               }}
               className="space-y-4 py-2"
             >
-              <div className="bg-muted/30 border-border/40 rounded-lg border p-3">
-                <div className="text-muted-foreground text-xs">Target User</div>
+              <div className="bg-fill-4 border-separator rounded-control border p-3">
+                <div className="text-label-secondary text-footnote">Target user</div>
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
-                    <img src={selectedUser.country.flag} alt="" className="h-4 w-6 rounded-sm" />
+                    <img
+                      src={assetUrl(selectedUser.country.flag) ?? undefined}
+                      alt=""
+                      className="rounded-control-sm h-4 w-6"
+                    />
                   )}
-                  <div className="text-foreground font-semibold">{selectedUser.displayName}</div>
+                  <div className="text-label font-semibold">{selectedUser.displayName}</div>
                 </div>
-                <div className="text-muted-foreground mt-2 text-sm">
+                <div className="text-label-secondary text-body mt-2">
                   Current Streak: {selectedUserVault?.loginStreak ?? "-"} days
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="streak-delta">Streak Delta (positive or negative)</Label>
                 <Input
                   id="streak-delta"
@@ -665,7 +571,6 @@ export function VaultUserDirectory() {
                   step="1"
                   value={String(streakDelta)}
                   onChange={(e) => setStreakDelta(Number(e.target.value))}
-                  className="bg-background border-border/40 text-foreground"
                 />
               </div>
 
@@ -673,207 +578,104 @@ export function VaultUserDirectory() {
                 <Button type="button" variant="outline" onClick={() => setIsStreakOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-amber-600 text-white">
-                  Apply
-                </Button>
+                <Button type="submit">Apply</Button>
               </DialogFooter>
             </form>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Transaction History Dialog */}
-      <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-        <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-3xl shadow-2xl backdrop-blur-md dark:bg-slate-900/98">
-          <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2">
-              Transaction History
-            </DialogTitle>
-          </DialogHeader>
+      <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+        <SheetContent size="wide" className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">Transaction history</SheetTitle>
+          </SheetHeader>
 
           <div className="py-2">
             {listTransactionsQuery.isLoading ? (
               <div className="space-y-2">
                 {[...Array(6)].map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-full rounded-lg" />
+                  <Skeleton key={i} className="rounded-control h-8 w-full" />
                 ))}
               </div>
             ) : (
-              <div className="border-border/40 bg-muted/20 max-h-80 overflow-x-auto overflow-y-auto rounded-lg border">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-muted-foreground bg-muted/30 text-xs">
-                      <th className="px-3 py-2 text-left">Time</th>
-                      <th className="px-3 py-2 text-right">Amount</th>
-                      <th className="px-3 py-2 text-left">Type</th>
-                      <th className="px-3 py-2 text-left">Source</th>
-                      <th className="px-3 py-2 text-right">Balance</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {listTransactionsQuery.data?.transactions?.map((tx: any) => (
-                      <tr key={tx.id} className="border-border/40 hover:bg-muted/30 border-t">
-                        <td className="text-muted-foreground px-3 py-2 text-xs">
-                          {new Date(tx.createdAt).toLocaleString()}
-                        </td>
-                        <td
-                          className={`px-3 py-2 text-right font-mono font-bold ${tx.credits >= 0 ? "text-emerald-500" : "text-red-400"}`}
-                        >
-                          {tx.credits >= 0 ? "+" : ""}
-                          {tx.credits}
-                        </td>
-                        <td className="px-3 py-2 text-xs">{tx.type}</td>
-                        <td className="text-muted-foreground max-w-[200px] truncate px-3 py-2 text-xs">
-                          {tx.source}
-                        </td>
-                        <td className="px-3 py-2 text-right font-mono text-xs">
-                          {tx.balanceAfter}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table containerClassName="max-h-80">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="px-3">Time</TableHead>
+                    <TableHead className="px-3 text-right">Amount</TableHead>
+                    <TableHead className="px-3">Type</TableHead>
+                    <TableHead className="px-3">Source</TableHead>
+                    <TableHead className="px-3 text-right">Balance</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {listTransactionsQuery.data?.transactions?.map((tx: any) => (
+                    <TableRow key={tx.id} className="border-t">
+                      <TableCell className="text-label-secondary text-footnote px-3">
+                        {new Date(tx.createdAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell
+                        className={`px-3 py-2 text-right font-semibold tabular-nums ${tx.credits >= 0 ? "text-green" : "text-red"}`}
+                      >
+                        {tx.credits >= 0 ? "+" : ""}
+                        {tx.credits}
+                      </TableCell>
+                      <TableCell className="text-footnote px-3">{tx.type}</TableCell>
+                      <TableCell className="text-label-secondary text-footnote max-w-[200px] truncate px-3">
+                        {tx.source}
+                      </TableCell>
+                      <TableCell className="text-footnote px-3 text-right">
+                        {tx.balanceAfter}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </div>
 
-          <DialogFooter>
+          <SheetFooter>
             <Button variant="outline" onClick={() => setIsHistoryOpen(false)}>
               Close
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
-      {/* Award Pack Dialog */}
-      <Dialog open={isPackOpen} onOpenChange={setIsPackOpen}>
-        <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-md shadow-2xl backdrop-blur-md dark:bg-slate-900/98">
-          <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2">
-              Award Card Pack
-            </DialogTitle>
-          </DialogHeader>
+      <PlayerCardsSheet
+        player={cardsPlayer}
+        onOpenChange={(open) => !open && setCardsPlayer(null)}
+      />
 
-          {selectedUser && (
-            <form onSubmit={handlePackSubmit} className="space-y-4 py-2">
-              <div className="bg-muted/30 border-border/40 rounded-lg border p-3">
-                <div className="text-muted-foreground text-xs">Recipient User</div>
-                <div className="mt-0.5 flex items-center gap-2">
-                  {selectedUser.country?.flag && (
-                    <img
-                      src={selectedUser.country.flag}
-                      alt=""
-                      className="h-4 w-6 shrink-0 rounded-sm object-cover"
-                    />
-                  )}
-                  <div className="text-foreground truncate text-sm font-semibold">
-                    {selectedUser.displayName}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="pack-select">Select Card Pack Template</Label>
-                <Select value={selectedPackId} onValueChange={setSelectedPackId}>
-                  <SelectTrigger
-                    id="pack-select"
-                    className="bg-background border-border/40 text-foreground"
-                  >
-                    <SelectValue placeholder="Choose a pack configurations..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-border/50 text-foreground">
-                    {packsData?.packs?.map((pack: any) => (
-                      <SelectItem key={pack.id} value={pack.id}>
-                        {pack.name} ({pack.cardCount} cards, {pack.packType})
-                      </SelectItem>
-                    ))}
-                    {!packsData?.packs ||
-                      (packsData.packs.length === 0 && (
-                        <SelectItem value="none" disabled>
-                          No packs available
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="pack-method">Acquired Method</Label>
-                <Input
-                  id="pack-method"
-                  type="text"
-                  value={packMethod}
-                  onChange={(e) => setPackMethod(e.target.value)}
-                  required
-                  className="bg-background border-border/40 text-foreground"
-                />
-              </div>
-
-              <div className="border-border/40 bg-muted/20 flex items-center justify-between rounded-lg border p-3">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-foreground text-xs font-semibold">
-                    Send Alert Notification
-                  </span>
-                  <span className="text-muted-foreground text-xs">
-                    Notify user they received a new pack configuration.
-                  </span>
-                </div>
-                <Switch checked={packNotify} onCheckedChange={setPackNotify} />
-              </div>
-
-              <DialogFooter className="pt-2">
-                <Button type="button" variant="outline" onClick={() => setIsPackOpen(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={awardPackMutation.isPending}
-                  className="bg-blue-600 font-semibold text-white hover:bg-blue-700"
-                >
-                  {awardPackMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Awarding...
-                    </>
-                  ) : (
-                    "Award Pack"
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Manage Cosmetics Dialog */}
       <Dialog open={isCosmeticsOpen} onOpenChange={setIsCosmeticsOpen}>
-        <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-lg shadow-2xl backdrop-blur-md dark:bg-slate-900/98">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2 font-black">
-              <Gem className="h-5 w-5 text-purple-500" />
-              Manage Cosmetics & Upgrades
+            <DialogTitle className="flex items-center gap-2">
+              <Gem className="text-purple h-5 w-5" />
+              Manage cosmetics & upgrades
             </DialogTitle>
           </DialogHeader>
 
           {selectedUser && (
             <div className="space-y-4 py-2">
-              <div className="bg-muted/30 border-border/40 rounded-lg border p-3">
-                <div className="text-muted-foreground text-xs">Target User</div>
+              <div className="bg-fill-4 border-separator rounded-control border p-3">
+                <div className="text-label-secondary text-footnote">Target user</div>
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
                     <img
-                      src={selectedUser.country.flag}
+                      src={assetUrl(selectedUser.country.flag) ?? undefined}
                       alt=""
-                      className="h-4 w-6 shrink-0 rounded-sm object-cover"
+                      className="rounded-control-sm h-4 w-6 shrink-0 object-cover"
                     />
                   )}
-                  <div className="text-foreground truncate text-sm font-semibold">
+                  <div className="text-label text-headline truncate">
                     {selectedUser.displayName}
                   </div>
                 </div>
               </div>
 
-              <div className="border-border/40 bg-muted/20 max-h-80 space-y-2 overflow-y-auto rounded-lg border p-2">
+              <div className="border-separator bg-fill-4 rounded-control max-h-80 space-y-2 overflow-y-auto border p-2">
                 {storeItems?.map((item: any) => {
                   const ownedItemIds = userPurchases?.purchasedItemIds || [];
                   const isOwned = ownedItemIds.includes(item.id);
@@ -891,22 +693,22 @@ export function VaultUserDirectory() {
                   return (
                     <div
                       key={item.id}
-                      className="border-border/30 bg-card/25 flex items-center justify-between rounded-lg border p-2"
+                      className="border-separator bg-surface rounded-control flex items-center justify-between border p-2"
                     >
-                      <div className="flex items-start gap-2.5">
-                        <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded bg-purple-500/10 text-purple-500 dark:bg-purple-500/20 dark:text-purple-400">
+                      <div className="flex items-start gap-2">
+                        <div className="rounded-control-sm bg-purple/10 text-purple mt-0.5 flex h-7 w-7 items-center justify-center">
                           <Gem className="h-4 w-4" />
                         </div>
                         <div>
-                          <div className="text-foreground text-xs font-semibold">{item.name}</div>
-                          <div className="text-muted-foreground line-clamp-1 max-w-[280px] text-xs">
+                          <div className="text-label text-caption">{item.name}</div>
+                          <div className="text-label-secondary text-footnote line-clamp-1 max-w-[280px]">
                             {item.description}
                           </div>
-                          <div className="mt-1 flex items-center gap-1.5">
-                            <Badge variant="outline" className="px-1 py-0 text-xs capitalize">
+                          <div className="mt-1 flex items-center gap-2">
+                            <Badge variant="outline" className="px-1 py-0 capitalize">
                               {item.category}
                             </Badge>
-                            <span className="font-mono text-xs text-amber-600 dark:text-amber-400">
+                            <span className="text-footnote text-yellow tabular-nums">
                               {item.price} IxC
                             </span>
                           </div>
@@ -925,10 +727,10 @@ export function VaultUserDirectory() {
                                 itemId: item.id,
                               })
                             }
-                            className={`h-7 px-2.5 text-xs font-bold ${
+                            className={`text-caption h-7 px-3 ${
                               isEquipped
-                                ? "bg-purple-600 text-white hover:bg-purple-700"
-                                : "border-purple-500/30 bg-purple-500/5 text-purple-500 hover:bg-purple-500/10 hover:text-purple-400"
+                                ? "bg-purple text-on-purple hover:bg-purple"
+                                : "border-purple/30 bg-purple/5 text-purple hover:bg-purple/10 hover:text-purple"
                             }`}
                           >
                             {isTogglePending ? "..." : isEquipped ? "Equipped" : "Equip"}
@@ -945,14 +747,13 @@ export function VaultUserDirectory() {
                                 itemId: item.id,
                               })
                             }
-                            className="h-7 px-2.5 text-xs font-bold text-white"
                           >
                             {isPending ? "Revoking..." : "Revoke"}
                           </Button>
                         ) : (
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant="secondary"
                             disabled={isPending}
                             onClick={() =>
                               grantItemMutation.mutate({
@@ -960,7 +761,6 @@ export function VaultUserDirectory() {
                                 itemId: item.id,
                               })
                             }
-                            className="h-7 border-emerald-500/30 bg-emerald-500/5 px-2.5 text-xs font-bold text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-400"
                           >
                             {isPending ? "Granting..." : "Grant"}
                           </Button>
@@ -971,13 +771,13 @@ export function VaultUserDirectory() {
                 })}
 
                 {(!storeItems || storeItems.length === 0) && (
-                  <p className="text-muted-foreground py-4 text-center text-xs">
+                  <p className="text-label-secondary text-footnote py-4 text-center">
                     No store items configured.
                   </p>
                 )}
               </div>
 
-              <DialogFooter className="border-border/40 border-t pt-3">
+              <DialogFooter className="border-separator border-t pt-3">
                 <Button variant="outline" onClick={() => setIsCosmeticsOpen(false)}>
                   Close
                 </Button>

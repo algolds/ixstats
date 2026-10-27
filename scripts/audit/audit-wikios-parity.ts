@@ -9,13 +9,10 @@
  *   bun run audit:wikios-parity
  */
 
+import "../lib/load-env"; // first: the config below reads process.env when it loads
 import { PrismaClient } from "@prisma/client";
 import mysql from "mysql2/promise";
-import dotenv from "dotenv";
-
-dotenv.config({ path: ".env.local.dev" });
-dotenv.config({ path: ".env.local" });
-dotenv.config({ path: ".env" });
+import { DEFAULT_USER_AGENT, mediaWikiApiUrl } from "../../src/lib/wiki-os/config";
 
 const prisma = new PrismaClient({
   datasources: {
@@ -28,10 +25,15 @@ const prisma = new PrismaClient({
 const IXWIKI_DB_HOST = process.env.IXWIKI_DB_HOST || "localhost";
 const IXWIKI_DB_PORT = parseInt(process.env.IXWIKI_DB_PORT || "13306", 10);
 const IXWIKI_DB_USER = process.env.IXWIKI_DB_USER || "ixwiki";
-const IXWIKI_DB_PASSWORD = process.env.IXWIKI_DB_PASSWORD || "Multico1!";
+const IXWIKI_DB_PASSWORD = process.env.IXWIKI_DB_PASSWORD;
+if (!IXWIKI_DB_PASSWORD) {
+  console.error(
+    "IXWIKI_DB_PASSWORD is not set. Export it (or add it to .env.local) before running this script; no default is provided."
+  );
+  process.exit(1);
+}
 const IXWIKI_DB_NAME = process.env.IXWIKI_DB_NAME || "ixwiki";
-const MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-const API_URL = `${MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php`;
+const API_URL = mediaWikiApiUrl({ internal: true });
 
 async function fetchApi(params: Record<string, string>): Promise<any> {
   const url = new URL(API_URL);
@@ -41,7 +43,7 @@ async function fetchApi(params: Record<string, string>): Promise<any> {
   url.searchParams.set("format", "json");
 
   const res = await fetch(url.toString(), {
-    headers: { "User-Agent": "IxStats-Builder" },
+    headers: { "User-Agent": DEFAULT_USER_AGENT },
     signal: AbortSignal.timeout(15000),
   });
 

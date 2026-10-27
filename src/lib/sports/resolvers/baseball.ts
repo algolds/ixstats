@@ -1,466 +1,222 @@
-import type { EventTraceStep } from "../types";
-import type { SportResolverContext, SportMatchOutcome } from "./types";
+import type { SportResolverContext, SportMatchOutcome, RosterPlayer } from "./types";
+import { actorOf, createTrace, fullName, sideLabel, type Side } from "./common";
 import { extractBaseballRoster, getPlayerOverall } from "./helpers";
 
+type HalfLabel = "Top" | "Bottom";
+
+interface TeamState {
+  side: Side;
+  score: number;
+  orderIdx: number;
+  roster?: RosterPlayer[];
+  offense: number;
+  line: ReturnType<typeof extractBaseballRoster>;
+  pitcher: RosterPlayer;
+  pitcherType: "SP" | "RP" | "CP";
+  fatigue: number;
+}
+
+const WALK_PROB = 0.08;
+const STRIKEOUT_PROB = 0.18;
+const MAX_INNING = 15;
+/** [upper roll bound, hit type, bases advanced]; anything above the last bound is a home run. */
+const HIT_TYPES = [
+  [0.65, "single", 1],
+  [0.85, "double", 2],
+  [0.95, "triple", 3],
+] as const;
+
 export function runBaseballMatch(ctx: SportResolverContext): SportMatchOutcome {
-  const { rng, homeOffense, awayOffense, homeRoster, awayRoster } = ctx;
+  const { rng } = ctx;
+  const { trace, push } = createTrace();
 
-  const trace: EventTraceStep[] = [];
-  let homeScore = 0;
-  let awayScore = 0;
+  const makeTeam = (side: Side, roster: RosterPlayer[] | undefined, offense: number): TeamState => {
+    const line = extractBaseballRoster(roster, offense);
+    return {
+      side,
+      score: 0,
+      orderIdx: 0,
+      roster,
+      offense,
+      line,
+      pitcher: line.sp,
+      pitcherType: "SP",
+      fatigue: 0,
+    };
+  };
+  const home = makeTeam("home", ctx.homeRoster, ctx.homeOffense);
+  const away = makeTeam("away", ctx.awayRoster, ctx.awayOffense);
 
-  const homeLine = extractBaseballRoster(homeRoster, homeOffense);
-  const awayLine = extractBaseballRoster(awayRoster, awayOffense);
+  const scoreLine = () => `Score: Home ${home.score} - Away ${away.score}`;
 
-  trace.push({
-    t: 0,
-    type: "tactic_shift",
-    description: `Play ball! Match begins. Home Pitcher: SP ${homeLine.sp.firstName} ${homeLine.sp.lastName} | Away Pitcher: SP ${awayLine.sp.firstName} ${awayLine.sp.lastName}.`,
-    team: "home",
-  });
+  push(
+    0,
+    "tactic_shift",
+    `Play ball! Match begins. Home Pitcher: SP ${fullName(home.line.sp)} | Away Pitcher: SP ${fullName(away.line.sp)}.`,
+    "home"
+  );
 
-  const inningsCount = 9;
-  let homeOrderIdx = 0;
-  let awayOrderIdx = 0;
+  const changePitcher = (inning: number, label: HalfLabel, pit: TeamState, bat: TeamState) => {
+    const { sp, rp, cp } = pit.line;
+    if (pit.pitcherType === "SP" && inning >= 6 && (pit.fatigue >= 75 || bat.score >= 4)) {
+      pit.pitcher = rp;
+      pit.pitcherType = "RP";
+      pit.fatigue = 0;
+      push(
+        inning,
+        "tactic_shift",
+        `[${label} ${inning}] PITCHING CHANGE: RP ${fullName(rp)} enters the game, replacing SP ${fullName(sp)}.`,
+        pit.side,
+        actorOf(rp)
+      );
+    }
+    const lead = pit.score - bat.score;
+    if (pit.pitcherType === "RP" && inning === 9 && lead > 0 && lead <= 3) {
+      pit.pitcher = cp;
+      pit.pitcherType = "CP";
+      pit.fatigue = 0;
+      push(
+        inning,
+        "tactic_shift",
+        `[${label} ${inning}] PITCHING CHANGE: Closer CP ${fullName(cp)} enters the game to close it out.`,
+        pit.side,
+        actorOf(cp)
+      );
+    }
+  };
 
-  let homeActivePitcher = homeLine.sp;
-  let awayActivePitcher = awayLine.sp;
-  let homePitcherType: "SP" | "RP" | "CP" = "SP";
-  let awayPitcherType: "SP" | "RP" | "CP" = "SP";
-  let homePitcherFatigue = 0;
-  let awayPitcherFatigue = 0;
+  /** Next batter in the order, and the hit probability against the (tiring) pitcher. */
+  const faceBatter = (bat: TeamState, pit: TeamState) => {
+    const batter: RosterPlayer = bat.roster?.[bat.orderIdx % (bat.roster.length || 9)] ?? {
+      id: `${bat.side}_batter_${bat.orderIdx}`,
+      firstName: sideLabel(bat.side),
+      lastName: `Batter ${bat.orderIdx + 1}`,
+      position: "OF",
+      ratings: { overall: bat.offense },
+    };
+    bat.orderIdx++;
+    const pitcherOverall = Math.max(
+      30,
+      getPlayerOverall(pit.pitcher) - Math.round(pit.fatigue / 3)
+    );
+    pit.fatigue += 1.2;
+    return { batter, hitProb: 0.26 + (getPlayerOverall(batter) - pitcherOverall) / 600 };
+  };
 
-  for (let inning = 1; inning <= inningsCount; inning++) {
-    // 1. Top of the inning (Away batting, Home pitching)
-    {
-      let outs = 0;
-      let bases = [false, false, false];
+  const playHalf = (inning: number, label: HalfLabel, bat: TeamState, pit: TeamState) => {
+    changePitcher(inning, label, pit, bat);
+    const tag = `[${label} ${inning}]`;
+    let outs = 0;
+    let bases = [false, false, false];
 
-      if (homePitcherType === "SP" && inning >= 6 && (homePitcherFatigue >= 75 || awayScore >= 4)) {
-        homeActivePitcher = homeLine.rp;
-        homePitcherType = "RP";
-        homePitcherFatigue = 0;
-        trace.push({
-          t: inning,
-          type: "tactic_shift",
-          description: `[Top ${inning}] PITCHING CHANGE: RP ${homeLine.rp.firstName} ${homeLine.rp.lastName} enters the game, replacing SP ${homeLine.sp.firstName} ${homeLine.sp.lastName}.`,
-          actorId: homeLine.rp.id,
-          actorName: `${homeLine.rp.firstName} ${homeLine.rp.lastName}`,
-          team: "home",
-        });
-      }
-      if (
-        homePitcherType === "RP" &&
-        inning === 9 &&
-        homeScore > awayScore &&
-        homeScore - awayScore <= 3
-      ) {
-        homeActivePitcher = homeLine.cp;
-        homePitcherType = "CP";
-        homePitcherFatigue = 0;
-        trace.push({
-          t: inning,
-          type: "tactic_shift",
-          description: `[Top ${inning}] PITCHING CHANGE: Closer CP ${homeLine.cp.firstName} ${homeLine.cp.lastName} enters the game to close it out.`,
-          actorId: homeLine.cp.id,
-          actorName: `${homeLine.cp.firstName} ${homeLine.cp.lastName}`,
-          team: "home",
-        });
-      }
+    while (outs < 3) {
+      const { batter, hitProb } = faceBatter(bat, pit);
+      const roll = rng();
 
-      while (outs < 3) {
-        const awayBatter = awayRoster?.[awayOrderIdx % (awayRoster.length || 9)] ?? {
-          id: `away_batter_${awayOrderIdx}`,
-          firstName: "Away",
-          lastName: `Batter ${awayOrderIdx + 1}`,
-          position: "OF",
-          ratings: { overall: awayOffense },
-        };
-        awayOrderIdx++;
-
-        const batterOverall = getPlayerOverall(awayBatter);
-        const pitcherOverall = Math.max(
-          30,
-          getPlayerOverall(homeActivePitcher) - Math.round(homePitcherFatigue / 3)
-        );
-
-        homePitcherFatigue += 1.2;
-
-        const hitProb = 0.26 + (batterOverall - pitcherOverall) / 600;
-        const walkProb = 0.08;
-        const kProb = 0.18;
-
-        const roll = rng();
-        if (roll < hitProb) {
-          const hitTypeRoll = rng();
-          let basesToAdvance = 1;
-          let hitType = "single";
-
-          if (hitTypeRoll < 0.65) {
-            basesToAdvance = 1;
-            hitType = "single";
-          } else if (hitTypeRoll < 0.85) {
-            basesToAdvance = 2;
-            hitType = "double";
-          } else if (hitTypeRoll < 0.95) {
-            basesToAdvance = 3;
-            hitType = "triple";
-          } else {
-            basesToAdvance = 4;
-            hitType = "home run";
-          }
-
-          let runsScored = 0;
-          if (basesToAdvance === 4) {
-            runsScored = 1 + bases.filter(Boolean).length;
-            bases = [false, false, false];
-            awayScore += runsScored;
-            homePitcherFatigue += runsScored * 4;
-            trace.push({
-              t: inning,
-              type: "goal",
-              description: `[Top ${inning}] HOME RUN! ${awayBatter.firstName} ${awayBatter.lastName} crushes a deep blast! ${runsScored} run(s) score. Score: Home ${homeScore} - Away ${awayScore}`,
-              actorId: awayBatter.id,
-              actorName: `${awayBatter.firstName} ${awayBatter.lastName}`,
-              team: "away",
-            });
-          } else {
-            for (let b = 2; b >= 0; b--) {
-              if (bases[b]) {
-                if (b + basesToAdvance >= 3) {
-                  runsScored++;
-                  bases[b] = false;
-                } else {
-                  bases[b + basesToAdvance] = true;
-                  bases[b] = false;
-                }
-              }
-            }
-            bases[basesToAdvance - 1] = true;
-            if (runsScored > 0) {
-              awayScore += runsScored;
-              homePitcherFatigue += runsScored * 4;
-              trace.push({
-                t: inning,
-                type: "goal",
-                description: `[Top ${inning}] RBI Hit! ${awayBatter.firstName} ${awayBatter.lastName} hits a ${hitType}! Score: Home ${homeScore} - Away ${awayScore}`,
-                actorId: awayBatter.id,
-                actorName: `${awayBatter.firstName} ${awayBatter.lastName}`,
-                team: "away",
-              });
-            }
-          }
-        } else if (roll < hitProb + walkProb) {
-          let runsScored = 0;
-          if (bases[0] && bases[1] && bases[2]) {
-            runsScored = 1;
-            awayScore++;
-            homePitcherFatigue += 4;
-          } else if (bases[0] && bases[1]) {
-            bases[2] = true;
-          } else if (bases[0]) {
-            bases[1] = true;
-          } else {
-            bases[0] = true;
-          }
-          if (runsScored > 0) {
-            trace.push({
-              t: inning,
-              type: "goal",
-              description: `[Top ${inning}] Walk scores a run! ${awayBatter.firstName} ${awayBatter.lastName} walks. Score: Home ${homeScore} - Away ${awayScore}`,
-              actorId: awayBatter.id,
-              actorName: `${awayBatter.firstName} ${awayBatter.lastName}`,
-              team: "away",
-            });
-          }
-        } else if (roll < hitProb + walkProb + kProb) {
-          outs++;
-          if (rng() < 0.25) {
-            trace.push({
-              t: inning,
-              type: "card",
-              description: `[Top ${inning}] Strikeout! ${homeActivePitcher.firstName} ${homeActivePitcher.lastName} strikes out ${awayBatter.firstName} ${awayBatter.lastName}.`,
-              actorId: homeActivePitcher.id,
-              actorName: `${homeActivePitcher.firstName} ${homeActivePitcher.lastName}`,
-              team: "home",
-            });
-          }
+      if (roll < hitProb) {
+        const hitRoll = rng();
+        const [, hitType, advance] = HIT_TYPES.find(([bound]) => hitRoll < bound) ?? [
+          1,
+          "home run",
+          4,
+        ];
+        let runs = 0;
+        if (advance === 4) {
+          runs = 1 + bases.filter(Boolean).length;
+          bases = [false, false, false];
         } else {
-          outs++;
+          for (let b = 2; b >= 0; b--) {
+            if (!bases[b]) continue;
+            bases[b] = false;
+            if (b + advance >= 3) runs++;
+            else bases[b + advance] = true;
+          }
+          bases[advance - 1] = true;
+        }
+        if (runs > 0) {
+          bat.score += runs;
+          pit.fatigue += runs * 4;
+          push(
+            inning,
+            "goal",
+            advance === 4
+              ? `${tag} HOME RUN! ${fullName(batter)} crushes a deep blast! ${runs} run(s) score. ${scoreLine()}`
+              : `${tag} RBI Hit! ${fullName(batter)} hits a ${hitType}! ${scoreLine()}`,
+            bat.side,
+            actorOf(batter)
+          );
+        }
+      } else if (roll < hitProb + WALK_PROB) {
+        if (bases.every(Boolean)) {
+          bat.score++;
+          pit.fatigue += 4;
+          push(
+            inning,
+            "goal",
+            `${tag} Walk scores a run! ${fullName(batter)} walks. ${scoreLine()}`,
+            bat.side,
+            actorOf(batter)
+          );
+        } else {
+          bases[bases.indexOf(false)] = true;
+        }
+      } else {
+        outs++;
+        if (roll < hitProb + WALK_PROB + STRIKEOUT_PROB && rng() < 0.25) {
+          push(
+            inning,
+            "card",
+            `${tag} Strikeout! ${fullName(pit.pitcher)} strikes out ${fullName(batter)}.`,
+            pit.side,
+            actorOf(pit.pitcher)
+          );
         }
       }
-    }
 
-    // Bottom of the inning
-    if (inning === 9 && homeScore > awayScore) {
-      trace.push({
-        t: inning,
-        type: "tactic_shift",
-        description: `Bottom 9th not played as Home team leads.`,
-        team: "home",
-      });
+      const batterReached = roll < hitProb + WALK_PROB;
+      if (label === "Bottom" && batterReached && inning === 9 && bat.score > pit.score) {
+        push(inning, "goal", "Walk-off victory for the home team!", "home");
+        break;
+      }
+    }
+  };
+
+  const playExtraHalf = (inning: number, label: HalfLabel, bat: TeamState, pit: TeamState) => {
+    for (let outs = 0; outs < 3;) {
+      if (rng() >= faceBatter(bat, pit).hitProb) {
+        outs++;
+        continue;
+      }
+      bat.score++;
+      push(
+        inning,
+        "goal",
+        `[${label} ${inning}] Extra Innings ${label === "Top" ? "RBI" : "Walk-off"} Hit! ${scoreLine()}`,
+        bat.side
+      );
+      if (label === "Bottom" && bat.score > pit.score) break;
+    }
+  };
+
+  for (let inning = 1; inning <= 9; inning++) {
+    playHalf(inning, "Top", away, home);
+    if (inning === 9 && home.score > away.score) {
+      push(inning, "tactic_shift", "Bottom 9th not played as Home team leads.", "home");
       break;
     }
-
-    {
-      let outs = 0;
-      let bases = [false, false, false];
-
-      if (awayPitcherType === "SP" && inning >= 6 && (awayPitcherFatigue >= 75 || homeScore >= 4)) {
-        awayActivePitcher = awayLine.rp;
-        awayPitcherType = "RP";
-        awayPitcherFatigue = 0;
-        trace.push({
-          t: inning,
-          type: "tactic_shift",
-          description: `[Bottom ${inning}] PITCHING CHANGE: RP ${awayLine.rp.firstName} ${awayLine.rp.lastName} enters the game, replacing SP ${awayLine.sp.firstName} ${awayLine.sp.lastName}.`,
-          actorId: awayLine.rp.id,
-          actorName: `${awayLine.rp.firstName} ${awayLine.rp.lastName}`,
-          team: "away",
-        });
-      }
-      if (
-        awayPitcherType === "RP" &&
-        inning === 9 &&
-        awayScore > homeScore &&
-        awayScore - homeScore <= 3
-      ) {
-        awayActivePitcher = awayLine.cp;
-        awayPitcherType = "CP";
-        awayPitcherFatigue = 0;
-        trace.push({
-          t: inning,
-          type: "tactic_shift",
-          description: `[Bottom ${inning}] PITCHING CHANGE: Closer CP ${awayLine.cp.firstName} ${awayLine.cp.lastName} enters the game to close it out.`,
-          actorId: awayLine.cp.id,
-          actorName: `${awayLine.cp.firstName} ${awayLine.cp.lastName}`,
-          team: "away",
-        });
-      }
-
-      while (outs < 3) {
-        const homeBatter = homeRoster?.[homeOrderIdx % (homeRoster.length || 9)] ?? {
-          id: `home_batter_${homeOrderIdx}`,
-          firstName: "Home",
-          lastName: `Batter ${homeOrderIdx + 1}`,
-          position: "OF",
-          ratings: { overall: homeOffense },
-        };
-        homeOrderIdx++;
-
-        const batterOverall = getPlayerOverall(homeBatter);
-        const pitcherOverall = Math.max(
-          30,
-          getPlayerOverall(awayActivePitcher) - Math.round(awayPitcherFatigue / 3)
-        );
-
-        awayPitcherFatigue += 1.2;
-
-        const hitProb = 0.26 + (batterOverall - pitcherOverall) / 600;
-        const walkProb = 0.08;
-        const kProb = 0.18;
-
-        const roll = rng();
-        if (roll < hitProb) {
-          const hitTypeRoll = rng();
-          let basesToAdvance = 1;
-          let hitType = "single";
-
-          if (hitTypeRoll < 0.65) {
-            basesToAdvance = 1;
-            hitType = "single";
-          } else if (hitTypeRoll < 0.85) {
-            basesToAdvance = 2;
-            hitType = "double";
-          } else if (hitTypeRoll < 0.95) {
-            basesToAdvance = 3;
-            hitType = "triple";
-          } else {
-            basesToAdvance = 4;
-            hitType = "home run";
-          }
-
-          let runsScored = 0;
-          if (basesToAdvance === 4) {
-            runsScored = 1 + bases.filter(Boolean).length;
-            bases = [false, false, false];
-            homeScore += runsScored;
-            awayPitcherFatigue += runsScored * 4;
-            trace.push({
-              t: inning,
-              type: "goal",
-              description: `[Bottom ${inning}] HOME RUN! ${homeBatter.firstName} ${homeBatter.lastName} crushes a deep blast! ${runsScored} run(s) score. Score: Home ${homeScore} - Away ${awayScore}`,
-              actorId: homeBatter.id,
-              actorName: `${homeBatter.firstName} ${homeBatter.lastName}`,
-              team: "home",
-            });
-          } else {
-            for (let b = 2; b >= 0; b--) {
-              if (bases[b]) {
-                if (b + basesToAdvance >= 3) {
-                  runsScored++;
-                  bases[b] = false;
-                } else {
-                  bases[b + basesToAdvance] = true;
-                  bases[b] = false;
-                }
-              }
-            }
-            bases[basesToAdvance - 1] = true;
-            if (runsScored > 0) {
-              homeScore += runsScored;
-              awayPitcherFatigue += runsScored * 4;
-              trace.push({
-                t: inning,
-                type: "goal",
-                description: `[Bottom ${inning}] RBI Hit! ${homeBatter.firstName} ${homeBatter.lastName} hits a ${hitType}! Score: Home ${homeScore} - Away ${awayScore}`,
-                actorId: homeBatter.id,
-                actorName: `${homeBatter.firstName} ${homeBatter.lastName}`,
-                team: "home",
-              });
-            }
-          }
-
-          if (inning === 9 && homeScore > awayScore) {
-            trace.push({
-              t: inning,
-              type: "goal",
-              description: `Walk-off victory for the home team!`,
-              team: "home",
-            });
-            break;
-          }
-        } else if (roll < hitProb + walkProb) {
-          let runsScored = 0;
-          if (bases[0] && bases[1] && bases[2]) {
-            runsScored = 1;
-            homeScore++;
-            awayPitcherFatigue += 4;
-          } else if (bases[0] && bases[1]) {
-            bases[2] = true;
-          } else if (bases[0]) {
-            bases[1] = true;
-          } else {
-            bases[0] = true;
-          }
-          if (runsScored > 0) {
-            trace.push({
-              t: inning,
-              type: "goal",
-              description: `[Bottom ${inning}] Walk scores a run! ${homeBatter.firstName} ${homeBatter.lastName} walks. Score: Home ${homeScore} - Away ${awayScore}`,
-              actorId: homeBatter.id,
-              actorName: `${homeBatter.firstName} ${homeBatter.lastName}`,
-              team: "home",
-            });
-          }
-          if (inning === 9 && homeScore > awayScore) {
-            trace.push({
-              t: inning,
-              type: "goal",
-              description: `Walk-off victory for the home team!`,
-              team: "home",
-            });
-            break;
-          }
-        } else if (roll < hitProb + walkProb + kProb) {
-          outs++;
-          if (rng() < 0.25) {
-            trace.push({
-              t: inning,
-              type: "card",
-              description: `[Bottom ${inning}] Strikeout! ${awayActivePitcher.firstName} ${awayActivePitcher.lastName} strikes out ${homeBatter.firstName} ${homeBatter.lastName}.`,
-              actorId: awayActivePitcher.id,
-              actorName: `${awayActivePitcher.firstName} ${awayActivePitcher.lastName}`,
-              team: "away",
-            });
-          }
-        } else {
-          outs++;
-        }
-      }
-    }
+    playHalf(inning, "Bottom", home, away);
   }
 
-  // Extra Innings if tied
-  let extraInning = 9;
-  while (homeScore === awayScore && extraInning < 15) {
-    extraInning++;
-    trace.push({
-      t: extraInning,
-      type: "tactic_shift",
-      description: `Tied at ${homeScore}-${awayScore}. Proceeding to Inning ${extraInning}!`,
-      team: "home",
-    });
-
-    // Top Half
-    {
-      let outs = 0;
-      while (outs < 3) {
-        const awayBatter = awayRoster?.[awayOrderIdx % (awayRoster.length || 9)] ?? {
-          id: `away_batter_${awayOrderIdx}`,
-          firstName: "Away",
-          lastName: `Batter ${awayOrderIdx + 1}`,
-          position: "OF",
-          ratings: { overall: awayOffense },
-        };
-        awayOrderIdx++;
-        const batterOverall = getPlayerOverall(awayBatter);
-        const pitcherOverall = Math.max(
-          30,
-          getPlayerOverall(homeActivePitcher) - Math.round(homePitcherFatigue / 3)
-        );
-        homePitcherFatigue += 1.2;
-
-        const hitProb = 0.26 + (batterOverall - pitcherOverall) / 600;
-        if (rng() < hitProb) {
-          awayScore++;
-          trace.push({
-            t: extraInning,
-            type: "goal",
-            description: `[Top ${extraInning}] Extra Innings RBI Hit! Score: Home ${homeScore} - Away ${awayScore}`,
-            team: "away",
-          });
-        } else {
-          outs++;
-        }
-      }
-    }
-
-    // Bottom Half
-    {
-      let outs = 0;
-      while (outs < 3) {
-        const homeBatter = homeRoster?.[homeOrderIdx % (homeRoster.length || 9)] ?? {
-          id: `home_batter_${homeOrderIdx}`,
-          firstName: "Home",
-          lastName: `Batter ${homeOrderIdx + 1}`,
-          position: "OF",
-          ratings: { overall: homeOffense },
-        };
-        homeOrderIdx++;
-        const batterOverall = getPlayerOverall(homeBatter);
-        const pitcherOverall = Math.max(
-          30,
-          getPlayerOverall(awayActivePitcher) - Math.round(awayPitcherFatigue / 3)
-        );
-        awayPitcherFatigue += 1.2;
-
-        const hitProb = 0.26 + (batterOverall - pitcherOverall) / 600;
-        if (rng() < hitProb) {
-          homeScore++;
-          trace.push({
-            t: extraInning,
-            type: "goal",
-            description: `[Bottom ${extraInning}] Extra Innings Walk-off Hit! Score: Home ${homeScore} - Away ${awayScore}`,
-            team: "home",
-          });
-          if (homeScore > awayScore) break;
-        } else {
-          outs++;
-        }
-      }
-    }
+  for (let inning = 10; home.score === away.score && inning <= MAX_INNING; inning++) {
+    push(
+      inning,
+      "tactic_shift",
+      `Tied at ${home.score}-${away.score}. Proceeding to Inning ${inning}!`,
+      "home"
+    );
+    playExtraHalf(inning, "Top", away, home);
+    playExtraHalf(inning, "Bottom", home, away);
   }
 
-  return { homeScore, awayScore, trace };
+  return { homeScore: home.score, awayScore: away.score, trace };
 }

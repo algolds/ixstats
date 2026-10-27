@@ -12,31 +12,9 @@
  * Pure functions — no database access. Takes pre-fetched data as input.
  */
 
-export type RouteType =
-  // Rail family
-  | "rail"
-  | "high_speed_rail"
-  | "freight_rail"
-  | "commuter_rail"
-  // Road family
-  | "motorway"
-  | "highway"
-  | "trunk"
-  | "road"
-  | "secondary"
-  // Maritime
-  | "shipping_lane"
-  | "canal"
-  | "ferry"
-  // Air
-  | "air_corridor"
-  // Utility
-  | "pipeline"
-  | "power_grid"
-  | "fiber"
-  // Military
-  | "military_supply"
-  | "military_naval";
+import { ROUTE_CONFIGS, type RouteType } from "./transport-route-configs";
+
+export type { RouteType };
 
 export interface CityNode {
   id: string;
@@ -48,14 +26,7 @@ export interface CityNode {
   hasAirport?: boolean;
 }
 
-export interface TerrainCell {
-  elevation: number; // meters
-  isWater: boolean;
-  isCoast: boolean;
-  climateType?: string;
-}
-
-export interface GeneratedRoute {
+interface GeneratedRoute {
   routeType: RouteType;
   name: string;
   geometry: { type: "LineString"; coordinates: [number, number][] };
@@ -75,166 +46,13 @@ export interface GenerationInput {
   neighborCities?: CityNode[]; // cities in neighboring countries (for international routes)
 }
 
-// ── Terrain cost functions ─────────────────────────────────────────
+// Terrain cost functions
 
-const ROUTE_CONFIGS: Record<
-  RouteType,
-  {
-    maxElevation: number;
-    maxGrade: number; // percent
-    waterCost: number; // multiplier (Infinity = impassable)
-    elevationCostFactor: number;
-    baseSpeed: number; // km/h
-  }
-> = {
-  rail: {
-    maxElevation: 2000,
-    maxGrade: 3,
-    waterCost: Infinity,
-    elevationCostFactor: 5,
-    baseSpeed: 120,
-  },
-  high_speed_rail: {
-    maxElevation: 1800,
-    maxGrade: 2.5,
-    waterCost: Infinity,
-    elevationCostFactor: 6,
-    baseSpeed: 300,
-  },
-  freight_rail: {
-    maxElevation: 2200,
-    maxGrade: 2.0,
-    waterCost: Infinity,
-    elevationCostFactor: 5,
-    baseSpeed: 80,
-  },
-  commuter_rail: {
-    maxElevation: 2500,
-    maxGrade: 3.5,
-    waterCost: Infinity,
-    elevationCostFactor: 4,
-    baseSpeed: 90,
-  },
-  motorway: {
-    maxElevation: 2800,
-    maxGrade: 6,
-    waterCost: Infinity,
-    elevationCostFactor: 3.5,
-    baseSpeed: 130,
-  },
-  highway: {
-    maxElevation: 3000,
-    maxGrade: 8,
-    waterCost: Infinity,
-    elevationCostFactor: 3,
-    baseSpeed: 100,
-  },
-  trunk: {
-    maxElevation: 3500,
-    maxGrade: 10,
-    waterCost: Infinity,
-    elevationCostFactor: 2.5,
-    baseSpeed: 80,
-  },
-  road: {
-    maxElevation: 4500,
-    maxGrade: 15,
-    waterCost: Infinity,
-    elevationCostFactor: 1.5,
-    baseSpeed: 60,
-  },
-  secondary: {
-    maxElevation: 4500,
-    maxGrade: 18,
-    waterCost: Infinity,
-    elevationCostFactor: 1.2,
-    baseSpeed: 50,
-  },
-  shipping_lane: {
-    maxElevation: 0,
-    maxGrade: 0,
-    waterCost: 0.5,
-    elevationCostFactor: 0,
-    baseSpeed: 30,
-  },
-  canal: { maxElevation: 500, maxGrade: 0.1, waterCost: 1, elevationCostFactor: 10, baseSpeed: 15 },
-  air_corridor: {
-    maxElevation: Infinity,
-    maxGrade: 0,
-    waterCost: 0,
-    elevationCostFactor: 0,
-    baseSpeed: 850, // cruising speed
-  },
-  ferry: {
-    maxElevation: 0,
-    maxGrade: 0,
-    waterCost: 0.3,
-    elevationCostFactor: 0,
-    baseSpeed: 40,
-  },
-  pipeline: {
-    maxElevation: 4000,
-    maxGrade: 20,
-    waterCost: Infinity,
-    elevationCostFactor: 1.5,
-    baseSpeed: 10,
-  },
-  power_grid: {
-    maxElevation: 5000,
-    maxGrade: 30,
-    waterCost: Infinity,
-    elevationCostFactor: 1.0,
-    baseSpeed: 300000,
-  },
-  fiber: {
-    maxElevation: 5000,
-    maxGrade: 30,
-    waterCost: Infinity,
-    elevationCostFactor: 1.0,
-    baseSpeed: 200000,
-  },
-  military_supply: {
-    maxElevation: 4000,
-    maxGrade: 15,
-    waterCost: Infinity,
-    elevationCostFactor: 2.0,
-    baseSpeed: 80,
-  },
-  military_naval: {
-    maxElevation: 0,
-    maxGrade: 0,
-    waterCost: 0.5,
-    elevationCostFactor: 0,
-    baseSpeed: 40,
-  },
-};
-
-/**
- * Compute terrain traversal cost for a route type at a given point.
- * Returns Infinity if impassable.
- */
-/** Terrain traversal cost for A* pathfinding (used by future grid-based pathfinder) */
-export function terrainCost(elevation: number, isWater: boolean, routeType: RouteType): number {
-  const config = ROUTE_CONFIGS[routeType];
-
-  if (routeType === "shipping_lane") {
-    return isWater ? config.waterCost : Infinity; // shipping only on water
-  }
-
-  if (isWater) return config.waterCost; // land routes can't cross water
-
-  if (elevation > config.maxElevation) return Infinity;
-
-  // Cost increases with elevation (exponential for realism)
-  const elevCost = 1 + (elevation / 1000) * config.elevationCostFactor;
-  return elevCost;
-}
-
-// ── Haversine distance ─────────────────────────────────────────────
+// Haversine distance
 
 import { distanceKm as haversineKm } from "~/lib/maps/geo-math";
 
-// ── Route line generation ──────────────────────────────────────────
+// Route line generation
 
 /**
  * Generate a direct great-circle route between two cities,
@@ -255,86 +73,58 @@ function generateDirectRoute(
   return coords;
 }
 
+type Bbox = [number, number, number, number];
+
+/** Elevation of the grid cell containing (lng, lat); undefined outside the grid. */
+function elevationAt(grid: number[][], bbox: Bbox, lng: number, lat: number): number | undefined {
+  const width = grid[0]?.length ?? 0;
+  const x = Math.floor(((lng - bbox[0]) / (bbox[2] - bbox[0])) * (width || 1));
+  const y = Math.floor(((lat - bbox[1]) / (bbox[3] - bbox[1])) * grid.length);
+  if (y < 0 || y >= grid.length || x < 0 || x >= width) return undefined;
+  return grid[y]![x] ?? 0;
+}
+
+const NEIGHBOR_OFFSETS = [
+  [0.1, 0],
+  [-0.1, 0],
+  [0, 0.1],
+  [0, -0.1],
+] as const;
+
 /**
  * Apply terrain-aware deflection to a route.
  * Nudges waypoints toward lower elevation when possible.
  */
 function deflectForTerrain(
   coords: [number, number][],
-  _elevationGrid: number[][] | undefined,
-  _gridResolution: number,
-  _bbox: [number, number, number, number],
+  elevationGrid: number[][] | undefined,
+  bbox: Bbox,
   routeType: RouteType
 ): [number, number][] {
-  if (!_elevationGrid || _elevationGrid.length === 0) return coords;
+  if (!elevationGrid || elevationGrid.length === 0) return coords;
+  if (ROUTE_CONFIGS[routeType].elevationCostFactor === 0) return coords; // shipping doesn't deflect
 
-  const config = ROUTE_CONFIGS[routeType];
-  if (config.elevationCostFactor === 0) return coords; // shipping doesn't deflect
-
-  // Sample elevation at each waypoint and nudge laterally toward lower terrain
+  // Nudge each interior waypoint 30% toward the lowest of its four neighbouring cells
   const deflected: [number, number][] = [coords[0]!];
-
-  for (let i = 1; i < coords.length - 1; i++) {
-    const [lng, lat] = coords[i]!;
-
-    // Get grid cell
-    const gridX = Math.floor(
-      ((lng - _bbox[0]) / (_bbox[2] - _bbox[0])) * (_elevationGrid[0]?.length ?? 1)
-    );
-    const gridY = Math.floor(((lat - _bbox[1]) / (_bbox[3] - _bbox[1])) * _elevationGrid.length);
-
-    if (
-      gridY >= 0 &&
-      gridY < _elevationGrid.length &&
-      gridX >= 0 &&
-      gridX < (_elevationGrid[0]?.length ?? 0)
-    ) {
-      const centerElev = _elevationGrid[gridY]![gridX] ?? 0;
-
-      // Check 4 neighbors for lower elevation
-      const offsets = [
-        [0.1, 0],
-        [-0.1, 0],
-        [0, 0.1],
-        [0, -0.1],
-      ] as const;
-      let bestLng = lng;
-      let bestLat = lat;
-      let bestElev = centerElev;
-
-      for (const [dlng, dlat] of offsets) {
-        const nx = Math.floor(
-          ((lng + dlng - _bbox[0]) / (_bbox[2] - _bbox[0])) * (_elevationGrid[0]?.length ?? 1)
-        );
-        const ny = Math.floor(
-          ((lat + dlat - _bbox[1]) / (_bbox[3] - _bbox[1])) * _elevationGrid.length
-        );
-        if (
-          ny >= 0 &&
-          ny < _elevationGrid.length &&
-          nx >= 0 &&
-          nx < (_elevationGrid[0]?.length ?? 0)
-        ) {
-          const nElev = _elevationGrid[ny]![nx] ?? 0;
-          if (nElev < bestElev) {
-            bestElev = nElev;
-            bestLng = lng + dlng * 0.3; // partial deflection
-            bestLat = lat + dlat * 0.3;
-          }
+  for (const [lng, lat] of coords.slice(1, -1)) {
+    let bestElev = elevationAt(elevationGrid, bbox, lng, lat);
+    let point: [number, number] = [lng, lat];
+    if (bestElev !== undefined) {
+      for (const [dlng, dlat] of NEIGHBOR_OFFSETS) {
+        const elev = elevationAt(elevationGrid, bbox, lng + dlng, lat + dlat);
+        if (elev !== undefined && elev < bestElev) {
+          bestElev = elev;
+          point = [lng + dlng * 0.3, lat + dlat * 0.3];
         }
       }
-
-      deflected.push([bestLng, bestLat]);
-    } else {
-      deflected.push([lng, lat]);
     }
+    deflected.push(point);
   }
-
   deflected.push(coords[coords.length - 1]!);
   return deflected;
 }
 
-// ── Minimum Spanning Tree (Prim's) ─────────────────────────────────
+// Minimum Spanning Tree (Prim's)
 
 interface Edge {
   from: number;
@@ -386,7 +176,102 @@ function buildMST(cities: CityNode[]): Edge[] {
   return edges;
 }
 
-// ── Main generator ─────────────────────────────────────────────────
+// Main generator
+
+const ROUTE_LABELS: Partial<Record<RouteType, string>> = {
+  rail: "Railway",
+  high_speed_rail: "Express Shinkansen",
+  freight_rail: "Freight Corridor",
+  commuter_rail: "Commuter Line",
+  motorway: "Autoroute",
+  highway: "Highway",
+  trunk: "Trunk Expressway",
+  road: "Road",
+  secondary: "Secondary Arterial",
+  pipeline: "Pipeline",
+  power_grid: "Power Grid",
+  fiber: "Fiber Link",
+  military_supply: "Military Supply Route",
+};
+
+const NON_LAND_TYPES: RouteType[] = ["shipping_lane", "ferry", "air_corridor", "military_naval"];
+const UTILITY_TYPES: RouteType[] = ["pipeline", "power_grid", "fiber", "military_supply"];
+
+/** Rail sub-type for a city pair, among the types requested. */
+function classifyRail(requested: RouteType[], a: CityNode, b: CityNode, dist: number): RouteType {
+  const pop = a.population + b.population;
+  if (requested.includes("high_speed_rail") && (a.isCapital || b.isCapital || pop > 6_000_000)) {
+    return "high_speed_rail";
+  }
+  if (requested.includes("commuter_rail") && dist < 60 && pop > 1_500_000) return "commuter_rail";
+  if (requested.includes("freight_rail") && dist > 150) return "freight_rail";
+  return "rail";
+}
+
+/** Road sub-type for a city pair, among the types requested. */
+function classifyRoad(requested: RouteType[], a: CityNode, b: CityNode, dist: number): RouteType {
+  const pop = a.population + b.population;
+  if (requested.includes("motorway") && (a.isCapital || b.isCapital || pop > 4_000_000)) {
+    return "motorway";
+  }
+  if (requested.includes("highway") && (pop > 1_000_000 || dist > 150)) return "highway";
+  if (requested.includes("trunk") && pop > 300_000) return "trunk";
+  if (requested.includes("secondary") && pop < 150_000) return "secondary";
+  return "road";
+}
+
+/** Land route types to build between two cities: one rail, one road, and every requested utility. */
+function landTypesFor(requested: RouteType[], a: CityNode, b: CityNode): Set<RouteType> {
+  const dist = haversineKm(a.coordinates, b.coordinates);
+  const rail = classifyRail(requested, a, b, dist);
+  const road = classifyRoad(requested, a, b, dist);
+
+  const types = new Set<RouteType>();
+  if (requested.includes(rail)) types.add(rail);
+  else if (requested.includes("rail")) types.add("rail");
+
+  if (requested.includes(road)) types.add(road);
+  else if (requested.includes("highway")) types.add("highway");
+  else if (requested.includes("road")) types.add("road");
+
+  for (const t of UTILITY_TYPES) if (requested.includes(t)) types.add(t);
+  return types;
+}
+
+function makeRoute(
+  routeType: RouteType,
+  name: string,
+  from: CityNode,
+  to: CityNode,
+  coordinates: [number, number][],
+  terrainDifficulty: number,
+  lengthKm: number,
+  properties: Record<string, unknown>
+): GeneratedRoute {
+  return {
+    routeType,
+    name,
+    geometry: { type: "LineString", coordinates },
+    stops: [
+      { cityId: from.id, name: from.name, coordinates: from.coordinates, order: 0 },
+      { cityId: to.id, name: to.name, coordinates: to.coordinates, order: 1 },
+    ],
+    terrainDifficulty,
+    lengthKm,
+    isInternational: false,
+    properties,
+  };
+}
+
+/** Sea routes chaining coastal cities in order. */
+const COASTAL_CHAIN_ROUTES = [
+  { type: "shipping_lane", label: "Shipping Lane", terrain: 0.1, speed: 30 },
+  { type: "military_naval", label: "Naval Route", terrain: 0.1, speed: 40 },
+] as const;
+
+/** Pairs each city with its successor in the list. */
+const consecutivePairs = <T>(items: T[]): Array<[T, T]> =>
+  items.slice(1).map((item, i) => [items[i]!, item]);
 
 /**
  * Generate transport routes for a country.
@@ -402,254 +287,123 @@ export function generateTransportNetwork(
   input: GenerationInput,
   routeTypes: RouteType[] = ["rail", "highway", "road"]
 ): GeneratedRoute[] {
-  const { cities, countryBbox, elevationGrid, gridResolution = 10 } = input;
-
+  const { cities, countryBbox, elevationGrid } = input;
   if (cities.length < 2) return [];
 
-  // Sort: capital first, then by population descending
+  // Capital first, then by population descending
   const sorted = [...cities].sort((a, b) => {
-    if (a.isCapital && !b.isCapital) return -1;
-    if (!a.isCapital && b.isCapital) return 1;
+    if (a.isCapital !== b.isCapital) return a.isCapital ? -1 : 1;
     return b.population - a.population;
   });
-
+  const coastal = sorted.filter((c) => c.isCoastal);
   const routes: GeneratedRoute[] = [];
 
-  // Build MST for land routes
-  const nonLandTypes = ["shipping_lane", "ferry", "air_corridor", "military_naval"];
-  const landTypesRequested = routeTypes.filter((t) => !nonLandTypes.includes(t));
-
-  if (landTypesRequested.length > 0) {
-    const mstEdges = buildMST(sorted);
-
-    for (const edge of mstEdges) {
+  if (routeTypes.some((t) => !NON_LAND_TYPES.includes(t))) {
+    for (const edge of buildMST(sorted)) {
       const from = sorted[edge.from]!;
       const to = sorted[edge.to]!;
       const dist = haversineKm(from.coordinates, to.coordinates);
-      const combinedPop = from.population + to.population;
 
-      // Sub-type classification for rail & road families
-      let railType: RouteType = "rail";
-      if (routeTypes.includes("high_speed_rail") && (from.isCapital || to.isCapital || combinedPop > 6_000_000)) {
-        railType = "high_speed_rail";
-      } else if (routeTypes.includes("commuter_rail") && dist < 60 && combinedPop > 1_500_000) {
-        railType = "commuter_rail";
-      } else if (routeTypes.includes("freight_rail") && dist > 150) {
-        railType = "freight_rail";
-      }
-
-      let roadType: RouteType = "road";
-      if (routeTypes.includes("motorway") && (from.isCapital || to.isCapital || combinedPop > 4_000_000)) {
-        roadType = "motorway";
-      } else if (routeTypes.includes("highway") && (combinedPop > 1_000_000 || dist > 150)) {
-        roadType = "highway";
-      } else if (routeTypes.includes("trunk") && combinedPop > 300_000) {
-        roadType = "trunk";
-      } else if (routeTypes.includes("secondary") && combinedPop < 150_000) {
-        roadType = "secondary";
-      }
-
-      // Collect all land route types we should generate for this edge
-      const typesToGenerate = new Set<RouteType>();
-      if (routeTypes.includes(railType)) {
-        typesToGenerate.add(railType);
-      } else if (routeTypes.includes("rail")) {
-        typesToGenerate.add("rail");
-      }
-
-      if (routeTypes.includes(roadType)) {
-        typesToGenerate.add(roadType);
-      } else if (routeTypes.includes("highway")) {
-        typesToGenerate.add("highway");
-      } else if (routeTypes.includes("road")) {
-        typesToGenerate.add("road");
-      }
-
-      for (const t of ["pipeline", "power_grid", "fiber", "military_supply"] as RouteType[]) {
-        if (routeTypes.includes(t)) {
-          typesToGenerate.add(t);
-        }
-      }
-
-      for (const t of typesToGenerate) {
-        // Generate route geometry
+      for (const t of landTypesFor(routeTypes, from, to)) {
         const pointCount = Math.max(10, Math.round(dist / 20));
-        let coords = generateDirectRoute(from, to, pointCount);
-        coords = deflectForTerrain(coords, elevationGrid, gridResolution, countryBbox, t);
-
-        // Compute terrain difficulty from elevation variance along route
-        const difficulty = computeTerrainDifficulty(
-          coords,
+        const coords = deflectForTerrain(
+          generateDirectRoute(from, to, pointCount),
           elevationGrid,
-          gridResolution,
-          countryBbox
+          countryBbox,
+          t
         );
-
-        let typeLabel = "";
-        if (t === "rail") typeLabel = "Railway";
-        else if (t === "high_speed_rail") typeLabel = "Express Shinkansen";
-        else if (t === "freight_rail") typeLabel = "Freight Corridor";
-        else if (t === "commuter_rail") typeLabel = "Commuter Line";
-        else if (t === "motorway") typeLabel = "Autoroute";
-        else if (t === "highway") typeLabel = "Highway";
-        else if (t === "trunk") typeLabel = "Trunk Expressway";
-        else if (t === "road") typeLabel = "Road";
-        else if (t === "secondary") typeLabel = "Secondary Arterial";
-        else if (t === "pipeline") typeLabel = "Pipeline";
-        else if (t === "power_grid") typeLabel = "Power Grid";
-        else if (t === "fiber") typeLabel = "Fiber Link";
-        else if (t === "military_supply") typeLabel = "Military Supply Route";
-        else typeLabel = t;
-
-        routes.push({
-          routeType: t,
-          name: `${from.name}–${to.name} ${typeLabel}`,
-          geometry: { type: "LineString", coordinates: coords },
-          stops: [
-            { cityId: from.id, name: from.name, coordinates: from.coordinates, order: 0 },
-            { cityId: to.id, name: to.name, coordinates: to.coordinates, order: 1 },
-          ],
-          terrainDifficulty: difficulty,
-          lengthKm: Math.round(dist * 1.15), // 15% longer than straight-line due to terrain
-          isInternational: false,
-          properties: {
-            speed_kmh: ROUTE_CONFIGS[t].baseSpeed,
-            combinedPopulation: combinedPop,
-          },
-        });
+        routes.push(
+          makeRoute(
+            t,
+            `${from.name}–${to.name} ${ROUTE_LABELS[t] ?? t}`,
+            from,
+            to,
+            coords,
+            computeTerrainDifficulty(coords, elevationGrid, countryBbox),
+            Math.round(dist * 1.15), // 15% longer than straight-line due to terrain
+            {
+              speed_kmh: ROUTE_CONFIGS[t].baseSpeed,
+              combinedPopulation: from.population + to.population,
+            }
+          )
+        );
       }
     }
   }
 
-  // Shipping lanes between coastal cities
-  if (routeTypes.includes("shipping_lane")) {
-    const coastalCities = sorted.filter((c) => c.isCoastal);
-    if (coastalCities.length >= 2) {
-      // Connect coastal cities in order along the coast
-      for (let i = 0; i < coastalCities.length - 1; i++) {
-        const from = coastalCities[i]!;
-        const to = coastalCities[i + 1]!;
-        const dist = haversineKm(from.coordinates, to.coordinates);
-
-        routes.push({
-          routeType: "shipping_lane",
-          name: `${from.name}–${to.name} Shipping Lane`,
-          geometry: { type: "LineString", coordinates: generateDirectRoute(from, to, 15) },
-          stops: [
-            { cityId: from.id, name: from.name, coordinates: from.coordinates, order: 0 },
-            { cityId: to.id, name: to.name, coordinates: to.coordinates, order: 1 },
-          ],
-          terrainDifficulty: 0.1, // sea routes are easy
-          lengthKm: Math.round(dist),
-          isInternational: false,
-          properties: { speed_kmh: 30 },
-        });
-      }
+  // Shipping lanes and naval routes chain the coastal cities in order
+  for (const { type, label, terrain, speed } of COASTAL_CHAIN_ROUTES) {
+    if (!routeTypes.includes(type)) continue;
+    for (const [from, to] of consecutivePairs(coastal)) {
+      routes.push(
+        makeRoute(
+          type,
+          `${from.name}–${to.name} ${label}`,
+          from,
+          to,
+          generateDirectRoute(from, to, 15),
+          terrain,
+          Math.round(haversineKm(from.coordinates, to.coordinates)),
+          { speed_kmh: speed }
+        )
+      );
     }
   }
 
-  // Military naval routes between coastal cities (similar to shipping lanes)
-  if (routeTypes.includes("military_naval")) {
-    const coastalCities = sorted.filter((c) => c.isCoastal);
-    if (coastalCities.length >= 2) {
-      for (let i = 0; i < coastalCities.length - 1; i++) {
-        const from = coastalCities[i]!;
-        const to = coastalCities[i + 1]!;
-        const dist = haversineKm(from.coordinates, to.coordinates);
-
-        routes.push({
-          routeType: "military_naval",
-          name: `${from.name}–${to.name} Naval Route`,
-          geometry: { type: "LineString", coordinates: generateDirectRoute(from, to, 15) },
-          stops: [
-            { cityId: from.id, name: from.name, coordinates: from.coordinates, order: 0 },
-            { cityId: to.id, name: to.name, coordinates: to.coordinates, order: 1 },
-          ],
-          terrainDifficulty: 0.1,
-          lengthKm: Math.round(dist),
-          isInternational: false,
-          properties: { speed_kmh: 40 },
-        });
-      }
-    }
-  }
-
-  // Ferry routes between nearby coastal cities (< 200km, distinct from shipping lanes)
+  // Ferries link nearby coastal cities (< 200 km), distinct from shipping lanes
   if (routeTypes.includes("ferry")) {
-    const coastalCities = sorted.filter((c) => c.isCoastal);
-    const ferryThresholdKm = 200;
-    const addedPairs = new Set<string>();
-    for (let i = 0; i < coastalCities.length; i++) {
-      for (let j = i + 1; j < coastalCities.length; j++) {
-        const from = coastalCities[i]!;
-        const to = coastalCities[j]!;
+    for (let i = 0; i < coastal.length; i++) {
+      for (let j = i + 1; j < coastal.length; j++) {
+        const from = coastal[i]!;
+        const to = coastal[j]!;
         const dist = haversineKm(from.coordinates, to.coordinates);
-        if (dist > ferryThresholdKm) continue;
-        const pairKey = [from.id, to.id].sort().join("|");
-        if (addedPairs.has(pairKey)) continue;
-        addedPairs.add(pairKey);
-
-        routes.push({
-          routeType: "ferry",
-          name: `${from.name}–${to.name} Ferry`,
-          geometry: { type: "LineString", coordinates: generateDirectRoute(from, to, 12) },
-          stops: [
-            { cityId: from.id, name: from.name, coordinates: from.coordinates, order: 0 },
-            { cityId: to.id, name: to.name, coordinates: to.coordinates, order: 1 },
-          ],
-          terrainDifficulty: 0.05,
-          lengthKm: Math.round(dist),
-          isInternational: false,
-          properties: { speed_kmh: 40, vessel_type: "passenger" },
-        });
+        if (dist > 200) continue;
+        routes.push(
+          makeRoute(
+            "ferry",
+            `${from.name}–${to.name} Ferry`,
+            from,
+            to,
+            generateDirectRoute(from, to, 12),
+            0.05,
+            Math.round(dist),
+            {
+              speed_kmh: 40,
+              vessel_type: "passenger",
+            }
+          )
+        );
       }
     }
   }
 
-  // Air corridors between major cities with airports (great-circle arcs)
+  // Air corridors: capital routes plus pairs of large cities, as great-circle arcs
   if (routeTypes.includes("air_corridor")) {
-    const airportCities = sorted.filter((c) => c.hasAirport);
-    // If no airports flagged, fall back to top cities by population
+    const airports = sorted.filter((c) => c.hasAirport);
+    // If no airports flagged, fall back to the top cities by population
     const candidates =
-      airportCities.length >= 2
-        ? airportCities
-        : sorted.filter((c) => c.population > 500_000).slice(0, 10);
+      airports.length >= 2 ? airports : sorted.filter((c) => c.population > 500_000).slice(0, 10);
 
-    if (candidates.length >= 2) {
-      // Connect each airport city to the capital and to other major airport cities
-      const _capital = candidates.find((c) => c.isCapital);
-      const addedAirPairs = new Set<string>();
+    for (let i = 0; i < candidates.length; i++) {
+      for (let j = i + 1; j < candidates.length; j++) {
+        const from = candidates[i]!;
+        const to = candidates[j]!;
+        const isCapitalRoute = from.isCapital || to.isCapital;
+        const bothLarge = from.population > 1_000_000 && to.population > 1_000_000;
+        if (!isCapitalRoute && !bothLarge) continue;
 
-      for (let i = 0; i < candidates.length; i++) {
-        for (let j = i + 1; j < candidates.length; j++) {
-          const from = candidates[i]!;
-          const to = candidates[j]!;
-          const pairKey = [from.id, to.id].sort().join("|");
-          if (addedAirPairs.has(pairKey)) continue;
-
-          // Only connect if at least one is the capital, or both are large
-          const isCapitalRoute = from.isCapital || to.isCapital;
-          const bothLarge = from.population > 1_000_000 && to.population > 1_000_000;
-          if (!isCapitalRoute && !bothLarge) continue;
-
-          addedAirPairs.add(pairKey);
-          const dist = haversineKm(from.coordinates, to.coordinates);
-          const arcCoords = generateGreatCircleArc(from.coordinates, to.coordinates, 40);
-
-          routes.push({
-            routeType: "air_corridor",
-            name: `${from.name}–${to.name} Air Route`,
-            geometry: { type: "LineString", coordinates: arcCoords },
-            stops: [
-              { cityId: from.id, name: from.name, coordinates: from.coordinates, order: 0 },
-              { cityId: to.id, name: to.name, coordinates: to.coordinates, order: 1 },
-            ],
-            terrainDifficulty: 0,
-            lengthKm: Math.round(dist),
-            isInternational: false,
-            properties: { speed_kmh: 850, flight_level: 350 },
-          });
-        }
+        routes.push(
+          makeRoute(
+            "air_corridor",
+            `${from.name}–${to.name} Air Route`,
+            from,
+            to,
+            generateGreatCircleArc(from.coordinates, to.coordinates, 40),
+            0,
+            Math.round(haversineKm(from.coordinates, to.coordinates)),
+            { speed_kmh: 850, flight_level: 350 }
+          )
+        );
       }
     }
   }
@@ -701,43 +455,23 @@ function generateGreatCircleArc(
 }
 
 /**
- * Compute terrain difficulty (0-1) from elevation changes along a route.
+ * Compute terrain difficulty (0-1) from elevation changes along a route:
+ * 0m total ascent = 0, 5000m+ = 1.
  */
 function computeTerrainDifficulty(
   coords: [number, number][],
   elevationGrid: number[][] | undefined,
-  gridResolution: number,
-  bbox: [number, number, number, number]
+  bbox: Bbox
 ): number {
   if (!elevationGrid || elevationGrid.length === 0 || coords.length < 2) return 0.3;
 
   let totalAscent = 0;
   let prevElev = 0;
-
-  for (let i = 0; i < coords.length; i++) {
-    const [lng, lat] = coords[i]!;
-    const gridX = Math.floor(
-      ((lng - bbox[0]) / (bbox[2] - bbox[0])) * (elevationGrid[0]?.length ?? 1)
-    );
-    const gridY = Math.floor(((lat - bbox[1]) / (bbox[3] - bbox[1])) * elevationGrid.length);
-
-    let elev = 0;
-    if (
-      gridY >= 0 &&
-      gridY < elevationGrid.length &&
-      gridX >= 0 &&
-      gridX < (elevationGrid[0]?.length ?? 0)
-    ) {
-      elev = elevationGrid[gridY]![gridX] ?? 0;
-    }
-
-    if (i > 0) {
-      totalAscent += Math.abs(elev - prevElev);
-    }
+  coords.forEach(([lng, lat], i) => {
+    const elev = elevationAt(elevationGrid, bbox, lng, lat) ?? 0;
+    if (i > 0) totalAscent += Math.abs(elev - prevElev);
     prevElev = elev;
-  }
-
-  // Normalize: 0m ascent = 0 difficulty, 5000m+ ascent = 1.0 difficulty
+  });
   return Math.min(1, totalAscent / 5000);
 }
 
@@ -760,89 +494,3 @@ export function estimateCoastalCities(
     return { ...city, isCoastal: minDist < thresholdKm };
   });
 }
-
-export interface GeneratedNode {
-  id: string;
-  name: string;
-  coordinates: [number, number];
-  nodeType: string;
-  cityId?: string;
-}
-
-export interface GeneratedSegment {
-  id: string;
-  fromNodeId: string;
-  toNodeId: string;
-  routeType: RouteType;
-  geometry: { type: "LineString"; coordinates: [number, number][] };
-  lengthKm: number;
-  terrainDifficulty: number;
-  speedKmh: number;
-  status: string;
-  isInternational: boolean;
-}
-
-export interface GeneratedNetwork {
-  nodes: GeneratedNode[];
-  segments: GeneratedSegment[];
-  routes: GeneratedRoute[];
-}
-
-export function generateTransportNetworkWithSegments(
-  input: GenerationInput,
-  routeTypes: RouteType[] = ["rail", "highway", "road"]
-): GeneratedNetwork {
-  const routes = generateTransportNetwork(input, routeTypes);
-
-  const nodeMap = new Map<string, GeneratedNode>();
-  const segments: GeneratedSegment[] = [];
-
-  function getOrCreateNode(coord: [number, number], name: string, cityId?: string): GeneratedNode {
-    const key = `${coord[0].toFixed(3)},${coord[1].toFixed(3)}`;
-    const existing = nodeMap.get(key);
-    if (existing) return existing;
-
-    const node: GeneratedNode = {
-      id: `node_${nodeMap.size + 1}`,
-      name,
-      coordinates: coord,
-      nodeType: cityId ? "city" : "waypoint",
-      cityId,
-    };
-    nodeMap.set(key, node);
-    return node;
-  }
-
-  for (let i = 0; i < routes.length; i++) {
-    const r = routes[i]!;
-    const coords = r.geometry.coordinates;
-    const fromCoord = coords[0]!;
-    const toCoord = coords[coords.length - 1]!;
-
-    const stop0 = r.stops[0];
-    const stop1 = r.stops[1];
-
-    const fromNode = getOrCreateNode(fromCoord, stop0?.name ?? "Node A", stop0?.cityId);
-    const toNode = getOrCreateNode(toCoord, stop1?.name ?? "Node B", stop1?.cityId);
-
-    segments.push({
-      id: `seg_${i + 1}`,
-      fromNodeId: fromNode.id,
-      toNodeId: toNode.id,
-      routeType: r.routeType,
-      geometry: r.geometry,
-      lengthKm: r.lengthKm,
-      terrainDifficulty: r.terrainDifficulty,
-      speedKmh: (r.properties.speed_kmh as number) ?? 80,
-      status: "operational",
-      isInternational: r.isInternational,
-    });
-  }
-
-  return {
-    nodes: Array.from(nodeMap.values()),
-    segments,
-    routes,
-  };
-}
-

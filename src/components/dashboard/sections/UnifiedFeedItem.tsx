@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useMemo, memo } from "react";
+import { useMemo, memo } from "react";
 import {
   WarningTriangle as AlertTriangle,
-  OpenNewWindow as ExternalLink,
   Globe,
   Bank as Landmark,
   Map as MapIcon,
@@ -12,156 +11,159 @@ import {
   StatUp as TrendingUp,
   Trophy,
   Group as Users,
-  OpenBook as BookOpen,
   ChatBubble as MessageCircle,
+  ClipboardCheck,
 } from "iconoir-react";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { Badge } from "~/components/ui/badge";
+import { DiscussedInBadge } from "~/components/action-links/DiscussedIn";
+import { Skeleton } from "~/components/ui/skeleton";
 import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
-import {
-  WikiLinkPreview,
-  ForumLinkPreview,
-  WikiHtmlContent,
-} from "~/components/wiki-os/reader/WikiLinkPreview";
-import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
 import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
-import { formatThinkpagesContentForDisplay } from "~/lib/utils";
-import { cn } from "~/lib/utils";
-import { WikiAuthorPopover } from "./WikiAuthorPopover";
+import { cn, formatThinkpagesContentForDisplay } from "~/lib/utils";
 import { FeedItemHeader } from "./feed/FeedItemHeader";
 import { FeedGroupedDrawer } from "./feed/FeedGroupedDrawer";
-import { InlineWikiArticlePreview, parseWikitextToHtml } from "./feed/InlineWikiArticlePreview";
 import { WikiFeedCard } from "./feed/WikiFeedCard";
+import { ForumFeedCard } from "./feed/ForumFeedCard";
 import type { ProcessedFeedItem } from "~/types/dashboard-feed";
+import { Card } from "~/components/ui/card";
 
-export { parseWikitextToHtml, InlineWikiArticlePreview, WikiFeedCard };
+/** `app` scopes the badge to that app's tint (`data-app`), so an app's items wear the app's colour. */
+type FeedBadge = { icon: typeof Rss; color: string; bg: string; label: string; app?: string };
 
-export const SOURCE_CONFIG: Record<
-  string,
-  { icon: typeof Rss; color: string; bg: string; label: string }
-> = {
-  activity: { icon: Rss, color: "text-blue-400", bg: "bg-blue-500/10", label: "Activity" },
-  thinkpages: {
-    icon: Users,
-    color: "text-blue-400",
-    bg: "bg-blue-500/10",
-    label: "Social",
-  },
-  wiki: { icon: BookOpen, color: "text-wiki", bg: "bg-wiki/10", label: "Wiki" },
-  forum: { icon: MessageCircle, color: "text-orange-400", bg: "bg-orange-500/10", label: "Forum" },
+const BLUE = { color: "text-blue", bg: "bg-blue/10" };
+const GREEN = { color: "text-green", bg: "bg-green/10" };
+const RED = { color: "text-red", bg: "bg-red/10" };
+const tintOf = (app: string) => ({ color: "text-tint", bg: "bg-tint-fill", app });
+
+const SOURCE_CONFIG: Record<string, FeedBadge> = {
+  activity: { icon: Rss, ...BLUE, label: "Activity" },
+  thinkpages: { icon: Users, ...tintOf("thinkpages"), label: "Social" },
+  forum: { icon: MessageCircle, ...tintOf("thinkpages"), label: "Forum" },
 };
 
-export function getActivityLabel(activity: any): {
-  label: string;
-  icon: typeof Rss;
-  color: string;
-  bg: string;
-} {
+/** First match wins: an activity type, a category or a keyword in the title. */
+const ACTIVITY_RULES: (FeedBadge & { types?: string[]; cats?: string[]; words: string[] })[] = [
+  // A directive is named by its activity type; its title is the player's own goal text, so words never apply.
+  { label: "Directive", icon: ClipboardCheck, ...tintOf("mycountry"), types: ["directive"], words: [] },
+  { label: "POI", icon: MapIcon, ...tintOf("maps"), words: ["point of interest", "poi"] },
+  { label: "City", icon: MapIcon, ...tintOf("maps"), words: ["city", "settlement"] },
+  {
+    label: "Subdivision",
+    icon: MapIcon,
+    ...tintOf("maps"),
+    words: ["subdivision", "province", "state", "region"],
+  },
+  { label: "Maps", icon: MapIcon, ...tintOf("maps"), cats: ["map"], words: ["map", "claim"] },
+  {
+    label: "Economy",
+    icon: TrendingUp,
+    ...GREEN,
+    cats: ["economic"],
+    words: ["gdp", "econom", "trade"],
+  },
+  {
+    label: "Diplomacy",
+    icon: Globe,
+    color: "text-teal",
+    bg: "bg-teal/10",
+    cats: ["diplomatic"],
+    words: ["embassy", "diplom", "treaty"],
+  },
+  {
+    label: "Defense",
+    icon: Shield,
+    ...RED,
+    cats: ["military"],
+    words: ["military", "defense", "deploy"],
+  },
+  {
+    label: "Politics",
+    icon: Landmark,
+    color: "text-indigo",
+    bg: "bg-indigo/10",
+    cats: ["political", "government"],
+    words: ["govern", "politic", "election"],
+  },
+  { label: "Crisis", icon: AlertTriangle, ...RED, cats: ["crisis"], words: ["crisis"] },
+  {
+    label: "Achievement",
+    icon: Trophy,
+    color: "text-yellow",
+    bg: "bg-yellow/10",
+    cats: ["achievement"],
+    words: ["tier", "achieve"],
+  },
+];
+
+export function getActivityLabel(activity: any): FeedBadge {
   const cat = activity.category ?? activity.content?.metadata?.category ?? "";
   const title = (activity.content?.title ?? "").toLowerCase();
-
-  if (title.includes("point of interest") || title.includes("poi"))
-    return { label: "POI", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
-  if (title.includes("city") || title.includes("settlement"))
-    return { label: "City", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
-  if (
-    title.includes("subdivision") ||
-    title.includes("province") ||
-    title.includes("state") ||
-    title.includes("region")
-  )
-    return {
-      label: "Subdivision",
-      icon: MapIcon,
-      color: "text-emerald-400",
-      bg: "bg-emerald-500/10",
-    };
-  if (cat === "map" || title.includes("map") || title.includes("claim"))
-    return { label: "Maps", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
-  if (
-    cat === "economic" ||
-    title.includes("gdp") ||
-    title.includes("econom") ||
-    title.includes("trade")
-  )
-    return {
-      label: "Economy",
-      icon: TrendingUp,
-      color: "text-emerald-400",
-      bg: "bg-emerald-500/10",
-    };
-  if (
-    cat === "diplomatic" ||
-    title.includes("embassy") ||
-    title.includes("diplom") ||
-    title.includes("treaty")
-  )
-    return { label: "Diplomacy", icon: Globe, color: "text-cyan-400", bg: "bg-cyan-500/10" };
-  if (
-    cat === "military" ||
-    title.includes("military") ||
-    title.includes("defense") ||
-    title.includes("deploy")
-  )
-    return { label: "Defense", icon: Shield, color: "text-red-400", bg: "bg-red-500/10" };
-  if (
-    cat === "political" ||
-    title.includes("govern") ||
-    title.includes("politic") ||
-    title.includes("election")
-  )
-    return { label: "Politics", icon: Landmark, color: "text-indigo-400", bg: "bg-indigo-500/10" };
-  if (cat === "crisis" || title.includes("crisis"))
-    return { label: "Crisis", icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10" };
-  if (cat === "achievement" || title.includes("tier") || title.includes("achieve"))
-    return { label: "Achievement", icon: Trophy, color: "text-amber-400", bg: "bg-amber-500/10" };
-  return { label: "Activity", icon: Rss, color: "text-blue-400", bg: "bg-blue-500/10" };
+  const rule = ACTIVITY_RULES.find(
+    (r) =>
+      r.types?.includes(activity.type) ||
+      r.cats?.includes(cat) ||
+      r.words.some((word) => title.includes(word))
+  );
+  return rule ?? SOURCE_CONFIG.activity!;
 }
 
-export const UnifiedFeedItem = memo(function UnifiedFeedItem({
-  activity,
-}: {
-  activity: ProcessedFeedItem | any;
-}) {
+function Byline({ activity }: { activity: any }) {
+  if (activity._grouped) {
+    return (
+      <span>
+        <span className="text-label font-medium tabular-nums">{activity._editCount}</span> updates
+        by <span className="text-label font-medium">{activity._editors?.[0] ?? "unknown"}</span>
+      </span>
+    );
+  }
+  const name = activity.user?.name;
+  if (!name || (activity.poll && name === "User")) return null;
+  return (
+    <span>
+      by <span className="text-label font-medium">{name}</span>
+    </span>
+  );
+}
+
+function ActivityBody({ activity, sportsBulletin }: { activity: any; sportsBulletin: any }) {
+  if (activity._grouped) return <FeedGroupedDrawer subEdits={activity._subEdits} />;
+  const description = activity.content?.description || activity.post?.content;
+  return (
+    <>
+      {description && (
+        <WikiHtmlContent
+          html={formatThinkpagesContentForDisplay(description as string)}
+          className="text-label-secondary text-callout pt-0.5 break-words whitespace-pre-wrap"
+        />
+      )}
+      {activity.poll ? (
+        <FeedPollWidget poll={activity.poll} />
+      ) : sportsBulletin ? (
+        <SportsBulletinCard data={sportsBulletin} />
+      ) : null}
+    </>
+  );
+}
+
+/** The item's open link: its wiki page or forum thread, else (an unlock) the achievement in the Vault. */
+function openUrlOf(metadata: Record<string, string | undefined>) {
+  const external = metadata.wikiUrl ?? metadata.forumUrl;
+  if (external) return external;
+  return metadata.achievementKey
+    ? `/vault/achievements?a=${encodeURIComponent(metadata.achievementKey)}`
+    : undefined;
+}
+
+function ActivityCard({ activity }: { activity: any }) {
   const source = activity.source ?? "activity";
-  const isWiki = source === "wiki";
-  const isGrouped = !!activity._grouped;
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const [expanded, setExpanded] = useState(false);
-
-  // Dynamic badge for IxStats activities
-  const resolvedConfig = useMemo(() => {
-    if (source === "activity") return getActivityLabel(activity);
-    return SOURCE_CONFIG[source] ?? SOURCE_CONFIG.activity!;
-  }, [source, activity]);
-
-  const Icon = resolvedConfig.icon;
+  const badge =
+    source === "activity"
+      ? getActivityLabel(activity)
+      : (SOURCE_CONFIG[source] ?? SOURCE_CONFIG.activity!);
+  const Icon = badge.icon;
   const metadata = activity.content?.metadata ?? {};
-  const externalUrl = metadata.wikiUrl ?? metadata.forumUrl;
-
-  // Wiki page title for clickable link
-  const wikiPageTitle = metadata.pageTitle as string | undefined;
-  const wikiHref = wikiPageTitle ? titleToWikiOSRoute(wikiPageTitle) : null;
-
-  const titleText = activity.content?.title ?? "";
-  // For wiki items, strip the "Wiki edit: " or "New wiki page: " prefix
-  const displayTitle =
-    isWiki && wikiPageTitle
-      ? activity._isNew
-        ? "New page created"
-        : isGrouped
-          ? ""
-          : titleText.replace(/^(Wiki edit|New wiki page):\s*/i, "")
-      : titleText;
-  const titleHtml = displayTitle ? formatThinkpagesContentForDisplay(displayTitle) : "";
-
-  const descHtml = activity.content?.description
-    ? formatThinkpagesContentForDisplay(activity.content.description)
-    : activity.post?.content
-      ? formatThinkpagesContentForDisplay(activity.post.content as string)
-      : "";
+  const title = activity.content?.title ?? "";
 
   const rawContentText = [
     activity.content?.title,
@@ -170,134 +172,66 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
   ]
     .filter((x): x is string => typeof x === "string" && x.length > 0)
     .join("\n");
-
   const sportsBulletin = useMemo(() => parseSportsBulletin(rawContentText), [rawContentText]);
 
-  // For wiki activities, render the dedicated cohesive WikiFeedCard
-  if (isWiki) {
-    return <WikiFeedCard activity={activity} />;
-  }
-
   return (
-    <div className="group border-border/50 bg-card/75 hover:border-border/80 hover:bg-card/95 relative overflow-hidden rounded-2xl border p-4 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-md">
+    <Card padding="md">
       <div className="flex items-start gap-3">
-        {/* Source icon — wiki uses the W logo */}
         <div
+          aria-hidden
+          data-app={badge.app}
           className={cn(
-            "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-xs transition-transform duration-200 group-hover:scale-105",
-            isWiki ? "border-wiki/30 bg-wiki/10" : cn(resolvedConfig.bg, "border-border/30")
+            "rounded-row border-separator mt-0.5 flex size-9 shrink-0 items-center justify-center border",
+            badge.bg
           )}
         >
-          {isWiki ? (
-            <WikiOSLogomark className="h-4.5 w-4.5 text-wiki" />
-          ) : (
-            <Icon className={cn("h-4.5 w-4.5", resolvedConfig.color)} />
-          )}
+          <Icon className={cn("size-4.5", badge.color)} />
         </div>
 
-        <div className="min-w-0 flex-1 space-y-1.5">
-          {/* Header Row: Title on Left, Badges / Timestamp / Open Link on Right */}
+        <div className="min-w-0 flex-1 space-y-2">
           <FeedItemHeader
             activity={activity}
-            resolvedConfig={resolvedConfig}
-            isWiki={isWiki}
-            isGrouped={isGrouped}
+            label={badge.label}
             sportsBulletin={sportsBulletin}
-            wikiPageTitle={wikiPageTitle}
-            wikiHref={wikiHref}
-            displayTitle={displayTitle}
-            titleHtml={titleHtml}
-            externalUrl={externalUrl}
+            titleHtml={title ? formatThinkpagesContentForDisplay(title) : ""}
+            externalUrl={openUrlOf(metadata)}
           />
-
-          {/* Subtitle / Author Row */}
-          <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs font-medium tracking-tight">
-            {isGrouped ? (
-              isWiki ? (
-                <span>
-                  <span className="text-foreground font-semibold">{activity._editCount}</span> edits
-                  by{" "}
-                  {activity._editors.map((editor: string, idx: number) => (
-                    <span key={editor}>
-                      {idx > 0 && ", "}
-                      <WikiAuthorPopover username={editor} />
-                    </span>
-                  ))}
-                </span>
-              ) : (
-                <span>
-                  <span className="text-foreground font-semibold">{activity._editCount}</span>{" "}
-                  updates by{" "}
-                  <span className="text-foreground font-semibold">
-                    {activity._editors?.[0] ?? "unknown"}
-                  </span>
-                </span>
-              )
-            ) : (
-              activity.user?.name &&
-              (isWiki ? (
-                <span className="flex items-center gap-1">
-                  <span>by</span> <WikiAuthorPopover username={activity.user.name} />
-                </span>
-              ) : activity.poll && activity.user.name === "User" ? null : (
-                <span>
-                  by <span className="text-foreground/90 font-semibold">{activity.user.name}</span>
-                </span>
-              ))
-            )}
+          <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-2">
+            <Byline activity={activity} />
           </div>
-
-          {/* Edit description for non-grouped wiki items or standard posts */}
-          {!isGrouped && descHtml && (
-            <WikiHtmlContent
-              html={descHtml}
-              className="text-muted-foreground/90 pt-0.5 text-xs leading-relaxed tracking-tight break-words whitespace-pre-wrap"
-            />
-          )}
-
-          {/* Inline Wiki Article Lead Snippet Preview */}
-          {isWiki && wikiPageTitle && (
-            <InlineWikiArticlePreview title={wikiPageTitle} wiki="ixwiki" />
-          )}
-
-          {/* Body Content / Poll / Sports Card (non-wiki items) */}
-          {!isWiki &&
-            !isGrouped &&
-            (activity.poll ? (
-              <FeedPollWidget poll={activity.poll} />
-            ) : sportsBulletin ? (
-              <SportsBulletinCard data={sportsBulletin} />
-            ) : null)}
-
-          {/* Grouped sub-items expandable drawer */}
-          {isGrouped && <FeedGroupedDrawer subEdits={activity._subEdits} isWiki={isWiki} />}
+          <ActivityBody activity={activity} sportsBulletin={sportsBulletin} />
+          {source === "activity" && !activity._grouped ? (
+            <DiscussedInBadge activityId={activity.id} />
+          ) : null}
         </div>
       </div>
-    </div>
+    </Card>
   );
+}
+
+/** Wiki edits and forum posts get their own cards; every other activity shares one layout. */
+export const UnifiedFeedItem = memo(function UnifiedFeedItem({
+  activity,
+}: {
+  activity: ProcessedFeedItem;
+}) {
+  if (activity.source === "wiki") return <WikiFeedCard activity={activity} />;
+  // An item cached before previews existed has no `forum` and keeps the plain card.
+  if (activity.source === "forum" && activity.forum) {
+    return <ForumFeedCard activity={{ timestamp: activity.timestamp, forum: activity.forum }} />;
+  }
+  return <ActivityCard activity={activity} />;
 });
 
-export function FeedExternalLink({ url }: { url: string; title?: string }) {
-  const wikiMatch = url.match(/ixwiki\.com\/wiki\/([^#?]+)/);
-  const forumMatch = url.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
-  const link = (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 flex items-center gap-1 rounded-lg border px-2 py-0.5 text-xs font-medium tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.95]"
-    >
-      <ExternalLink className="h-3 w-3" />
-      <span>Open</span>
-    </a>
+/** Loading placeholder shaped like a feed card. */
+export function FeedItemSkeleton() {
+  return (
+    <Card padding="md" aria-hidden className="flex items-start gap-3">
+      <Skeleton className="rounded-row size-9 shrink-0" />
+      <div className="flex-1 space-y-2">
+        <Skeleton className="rounded-control-sm h-4 w-3/4" />
+        <Skeleton className="rounded-control-sm h-3 w-1/2" />
+      </div>
+    </Card>
   );
-  if (wikiMatch)
-    return (
-      <WikiLinkPreview title={decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ")} wiki="ixwiki">
-        {link}
-      </WikiLinkPreview>
-    );
-  if (forumMatch)
-    return <ForumLinkPreview threadId={parseInt(forumMatch[1]!, 10)}>{link}</ForumLinkPreview>;
-  return link;
 }

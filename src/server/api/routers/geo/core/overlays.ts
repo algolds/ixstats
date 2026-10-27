@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { cachedPublicProcedure } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { computeCrisisRiskFactors } from "~/lib/maps/geo-analytics";
@@ -8,6 +9,7 @@ import {
   type HealthInput,
 } from "~/lib/maps/overlay-metrics";
 import { parseAffectedCountries } from "~/lib/maps/crisis-affected-countries";
+import { percentileRanks } from "~/server/modules/maps/layer-geometry";
 
 /**
  * Weighted canon sources used by the Canon Density overlay. Each source is
@@ -58,6 +60,10 @@ function normalizeCountMap(records: { id: string; _count: number }[]): Record<st
 /** Overlays that take no other input: the listing is scoped to the viewer's realm (?realm= overrides). */
 const realmScopedOverlayProcedure = cachedPublicProcedure.input(realmScopeInput.optional());
 
+/**
+ * Fill overlays return one row per country and no outline: the client colours the political layer it already
+ * holds, matching `countryId` to each feature's `_countryId`, so the 1 MB or so of `Country.geometry` stays put.
+ */
 export const overlayProcedures = {
   getRegionalChoropleth: cachedPublicProcedure
     .input(
@@ -69,13 +75,14 @@ export const overlayProcedures = {
     )
     .query(async ({ ctx, input }) => {
       const countries = await ctx.db.country.findMany({
-        where: { geometry: { not: null } as any, realmId: await viewerRealmId(ctx, input.realm) },
+        where: {
+          geometry: { not: Prisma.AnyNull },
+          realmId: await viewerRealmId(ctx, input.realm),
+        },
         select: {
           id: true,
           name: true,
           slug: true,
-          geometry: true,
-          centroid: true,
           continent: true,
           region: true,
           currentPopulation: true,
@@ -149,28 +156,20 @@ export const overlayProcedures = {
       if (input.groupBy === "country") {
         // Compute percentile rank (0–1) for each country so colors distribute evenly.
         // Raw values go in rawValue for tooltips. `value` is the normalized rank.
-        const rawValues = countries.map((c) => ({ c, raw: getRankValue(c) }));
-        const sorted = [...rawValues].sort((a, b) => a.raw - b.raw);
-        const rankMap = new Map<string, number>();
-        for (let i = 0; i < sorted.length; i++) {
-          rankMap.set(sorted[i]!.c.id, sorted.length > 1 ? i / (sorted.length - 1) : 0.5);
-        }
+        const rankMap = percentileRanks(
+          countries.map((c) => ({ id: c.id, value: getRankValue(c) }))
+        );
 
         return {
-          type: "FeatureCollection" as const,
-          features: countries.map((c) => ({
-            type: "Feature" as const,
-            geometry: c.geometry as unknown as import("geojson").Geometry,
-            properties: {
-              id: c.id,
-              name: c.name,
-              slug: c.slug,
-              value: rankMap.get(c.id) ?? 0, // 0–1 percentile rank
-              rawValue: getMetricValue(c),
-              metric: input.metric,
-              continent: c.continent,
-              region: c.region,
-            },
+          rows: countries.map((c) => ({
+            countryId: c.id,
+            name: c.name,
+            slug: c.slug,
+            value: rankMap.get(c.id) ?? 0, // 0–1 percentile rank
+            rawValue: getMetricValue(c),
+            metric: input.metric,
+            continent: c.continent,
+            region: c.region,
           })),
           metadata: {
             metric: input.metric,
@@ -218,23 +217,18 @@ export const overlayProcedures = {
       }
 
       return {
-        type: "FeatureCollection" as const,
-        features: countries.map((c) => {
+        rows: countries.map((c) => {
           const key =
             input.groupBy === "region" ? (c.region ?? "Unknown") : (c.continent ?? "Unknown");
           return {
-            type: "Feature" as const,
-            geometry: c.geometry as unknown as import("geojson").Geometry,
-            properties: {
-              id: c.id,
-              name: c.name,
-              slug: c.slug,
-              value: groupRank.get(key) ?? 0,
-              rawValue: groupAgg.get(key) ?? 0,
-              metric: input.metric,
-              groupName: key,
-              groupBy: input.groupBy,
-            },
+            countryId: c.id,
+            name: c.name,
+            slug: c.slug,
+            value: groupRank.get(key) ?? 0,
+            rawValue: groupAgg.get(key) ?? 0,
+            metric: input.metric,
+            groupName: key,
+            groupBy: input.groupBy,
           };
         }),
         metadata: {
@@ -256,13 +250,14 @@ export const overlayProcedures = {
    */
   getCanonDensity: realmScopedOverlayProcedure.query(async ({ ctx, input }) => {
     const countries = await ctx.db.country.findMany({
-      where: { geometry: { not: null } as any, realmId: await viewerRealmId(ctx, input?.realm) },
+      where: {
+        geometry: { not: Prisma.AnyNull },
+        realmId: await viewerRealmId(ctx, input?.realm),
+      },
       select: {
         id: true,
         name: true,
         slug: true,
-        geometry: true,
-        centroid: true,
         continent: true,
         region: true,
       },
@@ -339,29 +334,22 @@ export const overlayProcedures = {
     const scores = computeCanonDensityScores(countryIds, sourceCounts);
 
     // Percentile rank across all countries with geometry.
-    const sorted = [...countries].sort((a, b) => (scores.get(a.id) ?? 0) - (scores.get(b.id) ?? 0));
-    const rankMap = new Map<string, number>();
-    for (let i = 0; i < sorted.length; i++) {
-      rankMap.set(sorted[i]!.id, sorted.length > 1 ? i / (sorted.length - 1) : 0.5);
-    }
+    const rankMap = percentileRanks(
+      countries.map((c) => ({ id: c.id, value: scores.get(c.id) ?? 0 }))
+    );
 
     const maxScore = Math.max(1, ...Array.from(scores.values()));
 
     return {
-      type: "FeatureCollection" as const,
-      features: countries.map((c) => ({
-        type: "Feature" as const,
-        geometry: c.geometry as unknown as import("geojson").Geometry,
-        properties: {
-          id: c.id,
-          name: c.name,
-          slug: c.slug,
-          value: rankMap.get(c.id) ?? 0,
-          rawValue: scores.get(c.id) ?? 0,
-          metric: "canonDensity",
-          continent: c.continent,
-          region: c.region,
-        },
+      rows: countries.map((c) => ({
+        countryId: c.id,
+        name: c.name,
+        slug: c.slug,
+        value: rankMap.get(c.id) ?? 0,
+        rawValue: scores.get(c.id) ?? 0,
+        metric: "canonDensity",
+        continent: c.continent,
+        region: c.region,
       })),
       metadata: {
         metric: "canonDensity",
@@ -373,8 +361,8 @@ export const overlayProcedures = {
   }),
 
   /**
-   * 4.3 — Crisis Risk Map: Return per-country risk scores as a GeoJSON
-   * FeatureCollection for heatmap coloring, plus active crisis events.
+   * 4.3 — Crisis Risk Map: Return per-country risk scores (`value`) for heatmap coloring,
+   * plus active crisis events as a GeoJSON FeatureCollection of points.
    */
   getCrisisRiskMap: cachedPublicProcedure
     .input(
@@ -403,7 +391,7 @@ export const overlayProcedures = {
           terrainRoughness: true,
           meanElevation: true,
           country: {
-            select: { name: true, slug: true, geometry: true },
+            select: { name: true, slug: true },
           },
         },
       });
@@ -423,10 +411,8 @@ export const overlayProcedures = {
       });
 
       // For each country, compute risk from their geo profile
-      const riskFeatures = [];
+      const riskRows = [];
       for (const p of profiles) {
-        if (!p.country.geometry) continue;
-
         // Re-compute risk factors from the stored profile data
         const risk = computeCrisisRiskFactors({
           coastlineKm: p.coastlineKm ?? 0,
@@ -445,17 +431,13 @@ export const overlayProcedures = {
         const riskType = input?.riskType;
         const riskScore = riskType ? (risk[riskType] ?? 0) : Math.max(...Object.values(risk));
 
-        riskFeatures.push({
-          type: "Feature" as const,
-          geometry: p.country.geometry as unknown as import("geojson").Geometry,
-          properties: {
-            id: p.countryId,
-            name: p.country.name,
-            slug: p.country.slug,
-            riskScore,
-            riskType: riskType ?? "max",
-            ...risk,
-          },
+        riskRows.push({
+          countryId: p.countryId,
+          name: p.country.name,
+          slug: p.country.slug,
+          value: riskScore,
+          riskType: riskType ?? "max",
+          ...risk,
         });
       }
 
@@ -498,7 +480,7 @@ export const overlayProcedures = {
       }
 
       return {
-        riskMap: { type: "FeatureCollection" as const, features: riskFeatures },
+        rows: riskRows,
         crisisEvents: { type: "FeatureCollection" as const, features: crisisPoints },
       };
     }),
@@ -511,7 +493,7 @@ export const overlayProcedures = {
     const realmId = await viewerRealmId(ctx, input?.realm);
     // 1. Alliance groups
     const alliances = await ctx.db.alliance.findMany({
-      where: { visibility: "public" },
+      where: { visibility: "public", realmId },
       select: {
         id: true,
         name: true,

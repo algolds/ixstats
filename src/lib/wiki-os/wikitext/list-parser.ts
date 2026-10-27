@@ -10,7 +10,8 @@ export function parseWikiList(lines: string[]): ListBlock {
   const isOrdered = firstLine.startsWith("#");
   const items = lines.map((line) => {
     const trimmed = line.trim();
-    const match = trimmed.match(/^([*#:\;]+)\s*(.*)$/);
+    // `[\s\S]` so an item whose template or reference spans several lines keeps its whole text
+    const match = trimmed.match(/^([*#:\;]+)\s*([\s\S]*)$/);
     const prefix = match ? match[1]! : (isOrdered ? "#" : "*");
     const content = match ? match[2]! : trimmed;
     const level = prefix.length;
@@ -19,6 +20,7 @@ export function parseWikiList(lines: string[]): ListBlock {
       type: "list-item" as const,
       level,
       prefix,
+      raw: line,
       children: parseInlineLinksAndFormatting(content),
     };
   });

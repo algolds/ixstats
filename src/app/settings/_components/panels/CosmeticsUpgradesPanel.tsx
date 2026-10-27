@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
 import React from "react";
 import Link from "next/link";
 import {
@@ -49,7 +50,6 @@ export function CosmeticsUpgradesPanel() {
   const notify = useNotify();
   const utils = api.useUtils();
 
-  // Queries for live store, purchased items, and equipped cosmetics
   const { data: storeItems, isLoading: storeLoading } = api.vault.listStoreItems.useQuery(
     undefined,
     {
@@ -85,7 +85,7 @@ export function CosmeticsUpgradesPanel() {
   const handleRefreshAll = () => {
     soundEffects.press();
     void utils.vault.invalidate();
-    notify.success("Inventory synchronized with Vault server");
+    notify.success("Inventory updated");
   };
 
   // Strictly filter to PURCHASED/OWNED items only
@@ -106,59 +106,54 @@ export function CosmeticsUpgradesPanel() {
   return (
     <div className="space-y-6">
       <SettingsHeader
-        title="Cosmetics & Upgrades"
+        title="Cosmetics & upgrades"
         category="Vault"
-        description="Manage your owned profile cosmetics, avatar accents, and permanent vault upgrades."
+        description="Profile cosmetics, avatar accents and permanent upgrades you own."
         actions={
           <div className="flex items-center gap-2">
-            <Link
-              href="/vault"
-              data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-            >
-              <ShoppingCart className="h-3.5 w-3.5" />
-              <span>Vault Store</span>
-              <ExternalLink className="h-3 w-3 opacity-60" />
-            </Link>
-            <button
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/vault" data-cuelume-press="soft">
+                <ShoppingCart className="h-3.5 w-3.5" />
+                <span>Vault store</span>
+                <ExternalLink className="h-3 w-3 opacity-60" />
+              </Link>
+            </Button>
+            <Button
               type="button"
               onClick={handleRefreshAll}
               data-cuelume-press="soft"
               title="Sync with server"
-              className="facet-interactive border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground flex h-8 w-8 items-center justify-center rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
+              variant="secondary"
+              size="icon-sm"
             >
               <RefreshCw className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           </div>
         }
       />
 
-      {/* Owned Cosmetics & Badges */}
+      {/* Owned cosmetics */}
       <SettingsGroup
-        title="Owned Cosmetics & Badges"
-        description="Visual flair, glowing card frames, and avatar accents currently in your inventory."
+        title="Owned cosmetics"
+        description="Card frames, avatar accents and badges in your inventory."
       >
         {isDataLoading ? (
           <div className="text-muted-foreground p-4 text-center text-xs">
-            Loading owned inventory...
+            Loading your cosmetics...
           </div>
         ) : ownedCosmetics.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-6 text-center">
             <Palette className="text-muted-foreground/40 mb-2 h-8 w-8" />
-            <p className="text-muted-foreground text-xs font-semibold">
-              No purchased cosmetics in inventory
-            </p>
+            <p className="text-muted-foreground text-xs font-semibold">You have no cosmetics yet</p>
             <p className="text-muted-foreground/70 mt-0.5 max-w-sm text-xs">
-              Purchase profile glows, card borders, and elite chat badges from the Vault Store.
+              Buy profile effects, card borders and chat badges in the Vault store.
             </p>
-            <Link
-              href="/vault"
-              data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-secondary text-foreground hover:bg-secondary/80 mt-3 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-            >
-              <ShoppingCart className="h-3.5 w-3.5" />
-              <span>Browse Vault Store</span>
-            </Link>
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/vault" data-cuelume-press="soft">
+                <ShoppingCart className="h-3.5 w-3.5" />
+                <span>Browse the Vault store</span>
+              </Link>
+            </Button>
           </div>
         ) : (
           ownedCosmetics.map((item) => {
@@ -172,37 +167,31 @@ export function CosmeticsUpgradesPanel() {
               <SettingsRow
                 key={item.id}
                 label={item.name}
-                description={
-                  item.description ?? "Visual cosmetic enhancement for profile and card showcase"
-                }
+                description={item.description ?? "Cosmetic for your profile and card showcase"}
                 icon={Icon}
                 glyphClass="bg-muted/60 text-foreground"
               >
                 <div className="flex items-center gap-2.5">
                   <span
                     className={cn(
-                      "hidden rounded-md border px-1.5 py-0.5 text-xs font-bold uppercase sm:inline-block",
+                      "hidden rounded-md border px-1.5 py-0.5 text-xs font-semibold sm:inline-block",
                       qualityMeta.class
                     )}
                   >
                     {qualityMeta.label}
                   </span>
 
-                  <button
+                  <Button
                     type="button"
                     disabled={isToggling}
                     onClick={() => toggleEquipMutation.mutate({ itemId: item.id })}
                     data-cuelume-press="soft"
-                    className={cn(
-                      "facet-interactive flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50",
-                      isEquipped
-                        ? "border-foreground/20 bg-foreground text-background hover:bg-foreground/90 shadow-2xs"
-                        : "border-border/60 bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted/70"
-                    )}
+                    variant={isEquipped ? "default" : "secondary"}
+                    size="sm"
                   >
                     {isEquipped && <Check className="h-3.5 w-3.5" />}
                     <span>{isToggling ? "Saving..." : isEquipped ? "Equipped" : "Equip"}</span>
-                  </button>
+                  </Button>
                 </div>
               </SettingsRow>
             );
@@ -210,10 +199,10 @@ export function CosmeticsUpgradesPanel() {
         )}
       </SettingsGroup>
 
-      {/* Purchased Upgrades */}
+      {/* Purchased upgrades */}
       <SettingsGroup
-        title="Purchased Upgrades"
-        description="Permanent platform enhancements, card capacity expansions, and passive dividend yield boosts."
+        title="Purchased upgrades"
+        description="Permanent upgrades such as extra card capacity and passive yield."
       >
         {isDataLoading ? (
           <div className="text-muted-foreground p-4 text-center text-xs">
@@ -222,20 +211,16 @@ export function CosmeticsUpgradesPanel() {
         ) : ownedUpgrades.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-6 text-center">
             <Gem className="text-muted-foreground/40 mb-2 h-8 w-8" />
-            <p className="text-muted-foreground text-xs font-semibold">
-              No purchased upgrades in inventory
-            </p>
+            <p className="text-muted-foreground text-xs font-semibold">You have no upgrades yet</p>
             <p className="text-muted-foreground/70 mt-0.5 max-w-sm text-xs">
-              Acquire card inventory expansions and passive yield multipliers in the Vault Store.
+              Buy card capacity and yield upgrades in the Vault store.
             </p>
-            <Link
-              href="/vault"
-              data-cuelume-press="soft"
-              className="facet-interactive border-border/60 bg-secondary text-foreground hover:bg-secondary/80 mt-3 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-            >
-              <ShoppingCart className="h-3.5 w-3.5" />
-              <span>Browse Vault Store</span>
-            </Link>
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/vault" data-cuelume-press="soft">
+                <ShoppingCart className="h-3.5 w-3.5" />
+                <span>Browse the Vault store</span>
+              </Link>
+            </Button>
           </div>
         ) : (
           ownedUpgrades.map((item) => {
@@ -247,14 +232,14 @@ export function CosmeticsUpgradesPanel() {
               <SettingsRow
                 key={item.id}
                 label={item.name}
-                description={item.description ?? "Permanent economy and vault upgrade"}
+                description={item.description ?? "Permanent Vault upgrade"}
                 icon={Icon}
                 glyphClass="bg-muted/60 text-foreground"
               >
                 <div className="flex items-center gap-2.5">
                   <span
                     className={cn(
-                      "hidden rounded-md border px-1.5 py-0.5 text-xs font-bold uppercase sm:inline-block",
+                      "hidden rounded-md border px-1.5 py-0.5 text-xs font-semibold sm:inline-block",
                       qualityMeta.class
                     )}
                   >

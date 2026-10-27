@@ -1,0 +1,303 @@
+/// ThinkPages forum (docs/superpowers/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md). Phase 1: the sitewide
+/// section. Phase 2 adds realm sections (scope "realm", three categories per realm) and the archive source refs;
+/// phase 3 adds the moderation models (category moderators, reports, warnings, bans, the append-only mod log, appeals);
+/// phase 4 adds the XenForo import columns (nullable authors, imported author names, XenForo user ids); the follow-ups
+/// add the appeal's subject scope and the report's target author (migration 20261012120000).
+/// The foundation (migration 20261013120000) adds category style, post wikitext and render metadata, and forum_post_templates.
+/// The realm board (migration 20261014120000) adds the post reply and continued-thread links, and seeds each realm's hidden
+/// board category (style "board", key "board") with its one thread; every forum list, count and feed leaves it out
+/// (src/lib/thinkpages-forum/categories.ts, isBoardCategory).
+/// Unread, watch and mentions (migration 20261015120000) add forum_thread_reads, forum_thread_watches and
+/// forum_post_mentions (and a "mark all read" table, dropped by migration 20261027120000); all expressible in Prisma, so a
+/// db push keeps them.
+/// Reactions (migration 20261016120000) add forum_post_reactions and forum_posts."reactionCounts"; both are expressible
+/// in Prisma, so a db push keeps them.
+/// Realm adverts (migration 20261018120000) add forum_threads.advertRealmId: a unique, nullable foreign key to realms that
+/// marks a thread as its realm's Find a Realm advert; expressible in Prisma, so a db push keeps it.
+///
+/// Not expressible in Prisma, so kept by hand-written migrations (and possibly dropped by `prisma db push` as drift;
+/// re-apply 20261012120000_thinkpages_forum_followups after a push): the partial unique index
+/// "forum_categories_site_key_unique" on (key) WHERE scope = 'site' (N5), the partial index "forum_posts_stale_idx" on
+/// forum_posts("renderedAt") WHERE "contentWikitext" IS NOT NULL (the stale re-render cron; re-apply
+/// 20261013120000_thinkpages_forum_foundation after a push), and forum_mod_log's append-only triggers
+/// calling "forum_mod_log_append_only"() (M11). Order: apply the migration before the deploy (it backfills the new
+/// columns), deploy (db push), re-apply after every db:push:force (docs/operations/deployment.md).
+model ForumCategory {
+  id          String        @id @default(cuid())
+  scope       String        @default("site") // "site" | "realm"
+  realmId     String?
+  key         String
+  name        String
+  description String?
+  order       Int           @default(0)
+  visibility  String        @default("public") // "public" | "staff" | "reporter_staff"
+  postRole    String        @default("any") // "any" | "staff" (who may start threads)
+  icAllowed   Boolean       @default(false)
+  style       String        @default("ooc") // "ooc" | "ic": how posts render (spec §1); "board": the hidden realm board
+  createdAt   DateTime      @default(now())
+  threads     ForumThread[]
+  moderators  ForumCategoryModerator[]
+
+  // Sitewide rows have a NULL realmId, which this key does not cover: see "forum_categories_site_key_unique" above.
+  @@unique([scope, realmId, key])
+  @@index([scope, realmId, order])
+  @@map("forum_categories")
+}
+
+model ForumThread {
+  id                 String        @id @default(cuid())
+  categoryId         String
+  category           ForumCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title              String        @db.VarChar(200)
+  // null for imported rows whose XenForo author has no IxStats account (phase 4, Q3)
+  authorUserId       String?
+  authorPersonaId    String?
+  importedAuthorName String?
+  xenforoUserId      Int?
+  pinned             Boolean       @default(false)
+  locked             Boolean       @default(false)
+  hidden             Boolean       @default(false)
+  archived           Boolean       @default(false)
+  postCount          Int           @default(0)
+  lastPostAt         DateTime      @default(now())
+  createdAt          DateTime      @default(now())
+  xenforoThreadId    Int?          @unique
+  sourceRef          String?       @unique // archive provenance, e.g. "realm_board:<groupId>" / "thinkpages_post:<postId>" / "realm_board_thread:<realmId>"
+  /// Find a Realm: the realm this thread advertises (at most one advert per realm); null for every other thread.
+  advertRealmId      String?       @unique
+  advertRealm        Realm?        @relation("RealmAdvert", fields: [advertRealmId], references: [id], onDelete: SetNull)
+  posts              ForumPost[]
+  /// Board messages that were turned into this thread (the placeholder posts that link to it).
+  continuedFrom      ForumPost[]   @relation("PostContinuedThread")
+  /// What members have read of this thread, and who watches it (migration 20261015120000).
+  reads              ForumThreadRead[]
+  watches            ForumThreadWatch[]
+
+  @@index([categoryId, pinned, lastPostAt])
+  @@index([xenforoUserId])
+  @@index([lastPostAt])
+  @@map("forum_threads")
+}
+
+model ForumPost {
+  id                 String      @id @default(cuid())
+  threadId           String
+  thread             ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  // null for imported rows whose XenForo author has no IxStats account (phase 4, Q3)
+  authorUserId       String?
+  authorPersonaId    String?
+  contentHtml        String      @db.Text
+  plainText          String      @db.Text
+  /// Canvas source (null: an HTML-only post, e.g. imported or written before the foundation).
+  contentWikitext    String?     @db.Text
+  /// Pipeline version + sanitizer fingerprint of the stored render (render.ts).
+  rendererVersion    String?
+  /// When MediaWiki rendered contentHtml; null with wikitext present = fallback or stale, the cron re-renders.
+  renderedAt         DateTime?
+  templates          ForumPostTemplate[]
+  hidden             Boolean     @default(false)
+  editedAt           DateTime?
+  importedAuthorName String?
+  createdAt          DateTime    @default(now())
+  xenforoPostId      Int?        @unique
+  xenforoUserId      Int?
+  sourceRef          String?     @unique // archive provenance, e.g. "realm_board:<groupId>" / "thinkpages_post:<postId>"
+  /// Board messages: the message this one replies to (same thread); cleared when that post goes.
+  replyToPostId      String?
+  replyToPost        ForumPost?  @relation("PostReplyTo", fields: [replyToPostId], references: [id], onDelete: SetNull)
+  replies            ForumPost[] @relation("PostReplyTo")
+  /// Board messages: the thread a message was continued in (this post is its placeholder link line); cleared when it goes.
+  continuedThreadId  String?
+  continuedThread    ForumThread? @relation("PostContinuedThread", fields: [continuedThreadId], references: [id], onDelete: SetNull)
+  /// Who this post has already mentioned (an edit notifies only new mentions).
+  mentions           ForumPostMention[]
+  /// Denormalized `{type: count}` of this post's reactions, recounted in the same transaction as the reaction row.
+  reactionCounts     Json        @default("{}")
+  reactions          ForumPostReaction[]
+
+  @@index([threadId, createdAt])
+  @@index([replyToPostId])
+  @@index([authorUserId])
+  @@index([xenforoUserId])
+  @@index([createdAt])
+  @@map("forum_posts")
+}
+
+/// Templates (and Lua modules) a post's render used, as MediaWiki titles, for re-rendering when one changes.
+model ForumPostTemplate {
+  postId String
+  post   ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  title  String
+
+  @@id([postId, title])
+  @@index([title])
+  @@map("forum_post_templates")
+}
+
+model ForumCategoryModerator {
+  id         String        @id @default(cuid())
+  categoryId String
+  category   ForumCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  userId     String        // User.id
+  grantedBy  String        // User.id
+  createdAt  DateTime      @default(now())
+
+  @@unique([categoryId, userId])
+  @@index([userId])
+  @@map("forum_category_moderators")
+}
+
+model ForumReport {
+  id         String    @id @default(cuid())
+  targetType String    // "thread" | "post"
+  targetId   String
+  categoryId String    // the target's category when reported; re-pointed when its thread moves (M11)
+  reporterId String    // User.id
+  targetAuthorId String? // User.id of the target's author (M8); null for imported content without one, or a gone target
+  reason     String    @db.VarChar(1000)
+  status     String    @default("open") // "open" | "resolved" | "dismissed"
+  handledBy  String?   // User.id
+  handledAt  DateTime?
+  note       String?   @db.VarChar(1000)
+  createdAt  DateTime  @default(now())
+
+  @@index([status, categoryId, createdAt])
+  @@index([targetType, targetId])
+  @@index([reporterId])
+  @@index([targetAuthorId])
+  @@map("forum_reports")
+}
+
+model ForumWarning {
+  id         String    @id @default(cuid())
+  userId     String    // User.id
+  issuedBy   String    // User.id
+  reason     String    @db.VarChar(1000)
+  points     Int
+  targetType String?   // "thread" | "post"
+  targetId   String?
+  categoryId String?   // scope the warning was issued in (null = site)
+  expiresAt  DateTime  // createdAt + MODERATION_POLICY.warningTtlDays
+  revokedAt  DateTime?
+  revokedBy  String?   // User.id
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, expiresAt])
+  @@index([categoryId, createdAt])
+  @@map("forum_warnings")
+}
+
+model ForumBan {
+  id        String    @id @default(cuid())
+  userId    String    // User.id
+  scope     String    // "site" | "realm" | "category"
+  scopeId   String?   // realmId or categoryId; null for site
+  reason    String    @db.VarChar(1000)
+  issuedBy  String    // User.id (the triggering warning's issuer for auto bans, M2), or "system" for a re-tier
+  expiresAt DateTime? // null = permanent
+  auto      Boolean   @default(false)
+  autoTier  Int?      // points threshold an automatic ban is set for (MODERATION_POLICY.autoBanTiers: 5 or 10); null for manual bans
+  liftedAt  DateTime?
+  liftedBy  String?   // User.id
+  sourceRef String?   @unique // migration provenance, e.g. "realm_board_ban:<id>:<userId>"
+  createdAt DateTime  @default(now())
+
+  @@index([userId, scope, scopeId])
+  @@index([scope, scopeId, createdAt])
+  @@map("forum_bans")
+}
+
+/// Append-only (M16): nothing updates or deletes a row; triggers that raise on UPDATE, DELETE and TRUNCATE
+/// (migration 20261012120000, M11) and src/tests/architecture/forum-mod-log-append-only.test.ts guard it.
+model ForumModLog {
+  id         String   @id @default(cuid())
+  actorId    String   // User.id, or "system" for the migration script and automatic re-tiers
+  action     String   // e.g. "thread.lock", "post.hide", "warning.issue", "ban.issue", "ban.auto", "ban.extend", "ban.retier", "ban.lift", "report.resolve", "appeal.review", "moderator.grant"
+  targetType String   // "thread" | "post" | "user" | "report" | "warning" | "ban" | "appeal" | "category"
+  targetId   String
+  scope      String   // "site" | "realm" | "category"
+  scopeId    String?
+  detail     String?  @db.Text // JSON
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@index([scope, scopeId, createdAt])
+  @@index([actorId, createdAt])
+  @@map("forum_mod_log")
+}
+
+model ForumAppeal {
+  id          String    @id @default(cuid())
+  subjectType String    // "warning" | "ban"
+  subjectId   String
+  userId      String    // User.id, the subject's user
+  scope       String?   // the subject's scope, as ForumBan's (M7): a ban's own; a warning's "category" or "site"
+  scopeId     String?
+  body        String    @db.VarChar(4000)
+  status      String    @default("open") // "open" | "upheld" | "overturned" | "moot" (the subject ended before a decision)
+  reviewedBy  String?   // User.id, never the subject's issuer; null when a lift or revoke mooted it
+  reviewedAt  DateTime?
+  response    String?   @db.VarChar(2000)
+  createdAt   DateTime  @default(now())
+
+  @@unique([subjectType, subjectId])
+  @@index([status, createdAt])
+  @@index([userId])
+  @@index([scope, scopeId, status, createdAt])
+  @@map("forum_appeals")
+}
+
+/// What a member has read of a thread: the `lastPostAt` they have seen up to. A thread is unread when its lastPostAt is
+/// later than max(readAt, 30 days ago). `userId` is a User.id.
+model ForumThreadRead {
+  userId   String
+  threadId String
+  thread   ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  readAt   DateTime
+
+  @@id([userId, threadId])
+  @@index([threadId])
+  @@map("forum_thread_reads")
+}
+
+/// A member watching a thread. `notifiedAt` is set when a reply notified them and cleared when they next open the
+/// thread (told once until visited).
+model ForumThreadWatch {
+  userId     String
+  threadId   String
+  thread     ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  createdAt  DateTime    @default(now())
+  notifiedAt DateTime?
+
+  @@id([userId, threadId])
+  @@index([threadId])
+  @@map("forum_thread_watches")
+}
+
+/// Who a post has mentioned (the recipient's User.id): an edit notifies only the mentions it adds.
+model ForumPostMention {
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime  @default(now())
+
+  @@id([postId, userId])
+  @@map("forum_post_mentions")
+}
+
+/// A member's one reaction to a post (a thread post or a realm board message). `type` is a built-in reaction or
+/// `discord:<name>[:<id>]` (src/lib/thinkpages-forum/reactions.ts). The reaction is the player's own, never a persona's.
+model ForumPostReaction {
+  id        String    @id @default(cuid())
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  createdAt DateTime  @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId, type])
+  @@map("forum_post_reactions")
+}

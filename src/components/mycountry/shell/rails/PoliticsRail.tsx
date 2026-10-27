@@ -9,13 +9,19 @@ import {
   StatsReport as BarChart3,
   CheckSquare as Vote,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
-import { computeApproval } from "~/lib/government/approval";
+import { approvalKpiValue } from "~/lib/government/approval";
 import { ParliamentHemicycle } from "~/components/executive/politics/ParliamentHemicycle";
 import {
   DomainKpiGrid,
   DomainActivityCard,
+  RailBar,
+  RailCard,
+  RailCount,
+  RailEmpty,
+  RailRow,
+  pushRecorded,
+  STATUS_TEXT,
   type Kpi,
   type ActivityEntry,
 } from "./shared";
@@ -26,8 +32,6 @@ interface PartyItem {
   ideology?: string | null;
   currentSupport?: number | null;
   popularSupport?: number | null;
-  seatsOwned?: number | null;
-  seats?: number | null;
   createdAt?: string | Date | null;
 }
 
@@ -96,59 +100,70 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
+  // Same query (and cache entry) as the CountryDataProvider: approval is Country.publicApproval.
+  const { data: country } = api.countries.getByIdWithEconomicData.useQuery(
+    { id: countryId },
+    { enabled: !!countryId }
+  );
+
   const parties = partiesRaw as PartyItem[] | undefined;
   const elections = electionsRaw as ElectionItem[] | undefined;
   const legislature = legislatureRaw as LegislatureItem | undefined;
   const parliament = parliamentRaw as ParliamentData | null | undefined;
 
   const kpis = useMemo<Kpi[]>(() => {
-    const approval = computeApproval(
-      (parties ?? []).map((p) => ({ id: p.id, currentSupport: p.currentSupport ?? 0 })),
-      null
-    );
     return [
       { label: "Parties", value: parties?.length ?? 0 },
       { label: "Seats", value: legislature?.totalSeats ?? 0 },
-      { label: "Approval", value: `${approval}%` },
+      { label: "Approval", value: approvalKpiValue(country?.publicApproval) },
     ];
-  }, [parties, legislature]);
+  }, [parties, legislature, country?.publicApproval]);
 
   const activity = useMemo<ActivityEntry[]>(() => {
     const entries: ActivityEntry[] = [];
 
     if (legislature && legislature.totalSeats > 0) {
-      entries.push({
-        id: "legislature",
-        icon: Landmark,
-        iconColor: "text-indigo-500",
-        text: `Legislature: ${legislature.totalSeats} seats configured`,
-        time: new Date(
-          legislature.updatedAt ?? legislature.createdAt ?? Date.now()
-        ),
-      });
+      pushRecorded(
+        entries,
+        {
+          id: "legislature",
+          icon: Landmark,
+          iconColor: STATUS_TEXT.neutral,
+          text: `Legislature: ${legislature.totalSeats} seats configured`,
+        },
+        legislature.updatedAt,
+        legislature.createdAt
+      );
     }
 
     parties?.forEach((p) => {
-      entries.push({
-        id: `party-${p.id}`,
-        icon: Users,
-        iconColor: "text-indigo-500",
-        text: `Party: ${p.name} (${p.ideology?.replace(/_/g, " ") ?? "Independent"})`,
-        time: new Date(p.createdAt ?? Date.now()),
-      });
+      pushRecorded(
+        entries,
+        {
+          id: `party-${p.id}`,
+          icon: Users,
+          iconColor: STATUS_TEXT.neutral,
+          text: `Party: ${p.name} (${p.ideology?.replace(/_/g, " ") ?? "Independent"})`,
+        },
+        p.createdAt
+      );
     });
 
     elections?.forEach((e) => {
       const isCompleted = e.status === "COMPLETED" || e.status === "completed";
-      entries.push({
-        id: `election-${e.id}`,
-        icon: isCompleted ? CheckCircle : BarChart3,
-        iconColor: isCompleted ? "text-emerald-500" : "text-indigo-500",
-        text: isCompleted
-          ? `Completed: ${e.name ?? "Election"}`
-          : `Scheduled: ${e.name ?? "Election"}`,
-        time: new Date(e.updatedAt ?? e.createdAt ?? Date.now()),
-      });
+      pushRecorded(
+        entries,
+        {
+          id: `election-${e.id}`,
+          icon: isCompleted ? CheckCircle : BarChart3,
+          iconColor: isCompleted ? STATUS_TEXT.success : STATUS_TEXT.neutral,
+          text: isCompleted
+            ? `Completed: ${e.name ?? "Election"}`
+            : `Scheduled: ${e.name ?? "Election"}`,
+        },
+        e.updatedAt,
+        e.createdAt
+      );
     });
 
     return entries.sort((a, b) => b.time.getTime() - a.time.getTime());
@@ -156,37 +171,33 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
 
   const hasParliamentSeats = parliament?.seats && parliament.seats.length > 0;
 
+  // Seats a party actually holds in the chamber (from LegislativeSeat rows; 0 until elected).
+  const seatsByParty = useMemo(
+    () => new Map((parliament?.partySummary ?? []).map((ps) => [ps.party.id, ps.seats])),
+    [parliament]
+  );
+
   return (
-    <div className="space-y-4">
-      {/* Political Snapshot Header KPIs */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-md">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Landmark className="h-3.5 w-3.5 text-indigo-500" />
-            <h4 className="text-xs font-bold tracking-widest text-indigo-500 uppercase">
-              Political Snapshot
-            </h4>
-          </div>
-        </div>
+    <div className="space-y-6">
+      {/* Political snapshot KPIs */}
+      <RailCard title="Political snapshot" icon={Landmark}>
         <DomainKpiGrid items={kpis} />
-      </FacetCard>
+      </RailCard>
 
-      {/* Parliament Seat Allocation Card (Hemicycle Arc & Seat Breakdown) */}
-      <FacetCard depth={1} className="bg-card/30 space-y-3 p-4 backdrop-blur-md">
-        <div className="flex items-center justify-between border-b border-white/5 pb-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <Building2 className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
-            <h4 className="text-foreground truncate text-xs font-bold">
-              {parliament?.legislature?.name
-                ? `${parliament.legislature.name} Seat Allocation`
-                : "Legislature Seat Allocation"}
-            </h4>
-          </div>
-          <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 font-mono text-xs font-extrabold text-indigo-500">
-            {parliament?.legislature?.totalSeats ?? legislature?.totalSeats ?? 0} Seats
-          </span>
-        </div>
-
+      {/* Parliament seat allocation (hemicycle arc and seat breakdown) */}
+      <RailCard
+        title={
+          parliament?.legislature?.name
+            ? `${parliament.legislature.name} seat allocation`
+            : "Legislature seat allocation"
+        }
+        icon={Building2}
+        accessory={
+          <RailCount>
+            {parliament?.legislature?.totalSeats ?? legislature?.totalSeats ?? 0} seats
+          </RailCount>
+        }
+      >
         {hasParliamentSeats && parliament?.legislature ? (
           <div className="flex flex-col items-center overflow-hidden">
             <ParliamentHemicycle
@@ -198,21 +209,24 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-muted-foreground py-1 text-center font-mono text-xs">
-              Chamber Hemicycle ({legislature?.totalSeats ?? 100} Total Seats)
+            <p className="text-label-secondary text-footnote py-1 text-center">
+              {legislature
+                ? `Chamber hemicycle (${legislature.totalSeats} total seats)`
+                : "No legislature configured"}
             </p>
             {parties && parties.length > 0 ? (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {parties.slice(0, 4).map((p) => {
-                  const seats = p.seatsOwned ?? p.seats ?? 0;
-                  const total = legislature?.totalSeats ?? 100;
+                  const seats = seatsByParty.get(p.id) ?? 0;
+                  const total = legislature?.totalSeats ?? 0;
                   const pct = total > 0 ? (seats / total) * 100 : 0;
                   return (
-                    <div key={p.id} className="flex items-center justify-between text-xs">
-                      <span className="text-foreground truncate text-xs font-semibold">
-                        {p.name}
-                      </span>
-                      <span className="font-mono text-xs font-bold text-indigo-500">
+                    <div
+                      key={p.id}
+                      className="text-footnote flex items-center justify-between gap-2"
+                    >
+                      <span className="text-label truncate font-medium">{p.name}</span>
+                      <span className="text-label-secondary shrink-0 tabular-nums">
                         {seats} seats ({pct.toFixed(0)}%)
                       </span>
                     </div>
@@ -220,69 +234,49 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
                 })}
               </div>
             ) : (
-              <p className="text-muted-foreground py-2 text-center text-xs">
-                No legislature seats allocated yet.
-              </p>
+              <RailEmpty>No legislature seats allocated yet.</RailEmpty>
             )}
           </div>
         )}
-      </FacetCard>
+      </RailCard>
 
-      {/* Political Parties & Factions Snapshot Card */}
-      <FacetCard depth={1} className="bg-card/30 space-y-2.5 p-4 backdrop-blur-md">
-        <div className="flex items-center justify-between border-b border-white/5 pb-2">
-          <div className="flex items-center gap-2">
-            <Users className="h-3.5 w-3.5 text-indigo-500" />
-            <h4 className="text-foreground text-xs font-bold">Political Parties</h4>
-          </div>
-          <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-xs font-extrabold text-indigo-500">
-            {parties?.length ?? 0} Parties
-          </span>
-        </div>
+      {/* Political parties snapshot */}
+      <RailCard
+        title="Political parties"
+        icon={Users}
+        accessory={<RailCount>{parties?.length ?? 0}</RailCount>}
+      >
+        {!parties || parties.length === 0 ? (
+          <RailEmpty>No registered political parties.</RailEmpty>
+        ) : (
+          parties.slice(0, 4).map((party) => {
+            const support = party.currentSupport ?? party.popularSupport ?? 0;
+            const seats = seatsByParty.get(party.id) ?? 0;
 
-        <div className="space-y-1.5">
-          {!parties || parties.length === 0 ? (
-            <p className="text-muted-foreground py-2 text-center text-xs">
-              No registered political parties.
-            </p>
-          ) : (
-            parties.slice(0, 4).map((party) => {
-              const support = party.currentSupport ?? party.popularSupport ?? 0;
-              const seats = party.seatsOwned ?? party.seats ?? 0;
-
-              return (
-                <div
-                  key={party.id}
-                  className="space-y-1 rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md"
-                >
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex min-w-0 items-center gap-1.5 pr-2">
-                      <span className="text-foreground truncate font-semibold">{party.name}</span>
-                      <span className="text-muted-foreground font-mono text-xs uppercase">
-                        ({party.ideology?.replace(/_/g, " ") ?? "Centrist"})
-                      </span>
-                    </div>
-                    <span className="shrink-0 text-xs font-bold text-indigo-500">
-                      {support}% support · {seats} seats
+            return (
+              <RailRow key={party.id}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-baseline gap-2">
+                    <span className="text-label truncate font-medium">{party.name}</span>
+                    <span className="text-label-secondary shrink-0 truncate capitalize">
+                      {party.ideology?.replace(/_/g, " ") ?? "centrist"}
                     </span>
                   </div>
-                  <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full bg-indigo-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
-                      style={{ width: `${Math.min(100, Math.max(0, support))}%` }}
-                    />
-                  </div>
+                  <span className="text-label shrink-0 tabular-nums">
+                    {support}% · {seats} seats
+                  </span>
                 </div>
-              );
-            })
-          )}
-        </div>
-      </FacetCard>
+                <RailBar value={support} />
+              </RailRow>
+            );
+          })
+        )}
+      </RailCard>
 
-      {/* Political Activity Feed */}
+      {/* Political activity feed */}
       <DomainActivityCard
         domain="politics"
-        title="Political Log"
+        title="Political log"
         icon={Vote}
         entries={activity}
         emptyMessage="No political activity yet"

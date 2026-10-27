@@ -1,3 +1,5 @@
+import { arcToPoints } from "./arc";
+
 export interface SvgPathCommand {
   code: string;
   command: string;
@@ -9,6 +11,12 @@ export interface SvgPathCommand {
   y1?: number;
   x2?: number;
   y2?: number;
+  /** Elliptical arc (`A`) parameters. */
+  rx?: number;
+  ry?: number;
+  xAxisRotation?: number;
+  largeArc?: boolean;
+  sweep?: boolean;
 }
 
 /**
@@ -134,9 +142,31 @@ export function pathCommandsToRings(
         currentRing.push([curX, curY]);
         break;
       }
+      case "A": {
+        const x = cmd.x ?? curX;
+        const y = cmd.y ?? curY;
+        const quarter = Math.max(2, Math.round(bezierSegments / 2));
+        for (const point of arcToPoints(
+          curX,
+          curY,
+          cmd.rx ?? 0,
+          cmd.ry ?? 0,
+          cmd.xAxisRotation ?? 0,
+          !!cmd.largeArc,
+          !!cmd.sweep,
+          x,
+          y,
+          quarter
+        )) {
+          currentRing.push(point);
+        }
+        curX = x;
+        curY = y;
+        break;
+      }
       case "L":
       case "H":
-      case "A": {
+      case "T": {
         curX = cmd.x ?? curX;
         curY = cmd.y ?? curY;
         currentRing.push([curX, curY]);

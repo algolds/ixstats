@@ -17,32 +17,22 @@ export const systemRouter = createTRPCRouter({
    * that need to display current game time
    */
   getCurrentIxTime: publicProcedure.query(async () => {
-    try {
-      const ixTimeStatus = await IxTime.getStatus();
-
-      return {
-        currentRealTime: new Date().toISOString(),
-        currentIxTime: new Date(IxTime.getCurrentIxTime()).toISOString(),
-        currentIxTimeNumber: IxTime.getCurrentIxTime(),
-        formattedIxTime: IxTime.formatIxTime(IxTime.getCurrentIxTime(), true),
-        multiplier: IxTime.getTimeMultiplier(),
-        isPaused: IxTime.isPaused(),
-        gameYear: IxTime.getCurrentGameYear(),
-        hasTimeOverride: ixTimeStatus.hasTimeOverride,
-      };
-    } catch (error) {
+    // Return current time even if the status check fails
+    const status = await IxTime.getStatus().catch((error: unknown) => {
       console.error("Failed to get IxTime status:", error);
-      // Return current time even if status check fails
-      return {
-        currentRealTime: new Date().toISOString(),
-        currentIxTime: new Date(IxTime.getCurrentIxTime()).toISOString(),
-        currentIxTimeNumber: IxTime.getCurrentIxTime(),
-        formattedIxTime: IxTime.formatIxTime(IxTime.getCurrentIxTime(), true),
-        multiplier: IxTime.getTimeMultiplier(),
-        isPaused: false,
-        gameYear: IxTime.getCurrentGameYear(),
-        hasTimeOverride: false,
-      };
-    }
+      return null;
+    });
+    // One clock read, so every field describes the same instant
+    const now = IxTime.getCurrentIxTime();
+    return {
+      currentRealTime: new Date().toISOString(),
+      currentIxTime: new Date(now).toISOString(),
+      currentIxTimeNumber: now,
+      formattedIxTime: IxTime.formatIxTime(now, true),
+      multiplier: IxTime.getTimeMultiplier(),
+      isPaused: status ? IxTime.isPaused() : false,
+      gameYear: IxTime.getCurrentGameYear(now),
+      hasTimeOverride: status?.hasTimeOverride ?? false,
+    };
   }),
 });

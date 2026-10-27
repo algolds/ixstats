@@ -1,12 +1,3 @@
-/**
- * IxMaps Configuration
- *
- * MapLibre GL JS configuration for the IxEarth fictional world map.
- * Uses globe projection at low zoom, transitions to mercator at higher zoom.
- * Visual style: minimal/clean (Google Maps-like) with light palette.
- */
-
-import { ELEVATION_ZONES, type ElevationZoneConfig } from "./elevation-config";
 import {
   CLIMATE_TYPES,
   CLIMATE_NAMES,
@@ -36,7 +27,7 @@ export type MapLayerType = (typeof MAP_LAYER_TYPES)[number];
 export const DEMOTED_COUNTRY_NAMES = ["Ugarit", "Orenstia", "Trade Island 5"] as const;
 
 /** Layer rendering configuration */
-export interface LayerConfig {
+interface LayerConfig {
   label: string;
   zIndex: number;
   defaultVisible: boolean;
@@ -144,9 +135,12 @@ export const LAYER_CONFIGS: Record<MapLayerType, LayerConfig> = {
   },
 };
 
-/** Map view defaults */
+/** Ixnay's prime meridian: its map is drawn around lng 56.1842, the meridian line and home view centre. */
+export const IXNAY_PRIME_MERIDIAN_LNG = 56.1842;
+
+/** Map view defaults (any realm; Ixnay's home view centre is mapHomeCenter(true)) */
 export const MAP_DEFAULTS = {
-  center: [56.1842, 0] as [number, number],
+  center: [0, 0] as [number, number],
   zoom: 1.8,
   minZoom: 0.5,
   maxZoom: 6,
@@ -154,18 +148,15 @@ export const MAP_DEFAULTS = {
   pitch: 0,
 };
 
+const IXNAY_HOME_CENTER: [number, number] = [IXNAY_PRIME_MERIDIAN_LNG, 0];
+
+/** The home view's centre: Ixnay's prime meridian there, the origin in any other realm (stable references). */
+export function mapHomeCenter(ixnay: boolean): [number, number] {
+  return ixnay ? IXNAY_HOME_CENTER : MAP_DEFAULTS.center;
+}
+
 /** Projection mode for the IxWorld map */
 export type ProjectionMode = "dynamic" | "globe" | "mercator";
-
-export const PROJECTION_MODES: { mode: ProjectionMode; label: string; title: string }[] = [
-  {
-    mode: "dynamic",
-    label: "Auto",
-    title: "Dynamic projection (globe at low zoom, flat at high zoom)",
-  },
-  { mode: "globe", label: "Globe", title: "Lock to globe projection" },
-  { mode: "mercator", label: "Flat", title: "Lock to flat (Mercator) projection" },
-];
 
 /** Get the MapLibre projection specification for a given mode */
 export function getProjectionSpec(mode: ProjectionMode): { type: unknown } {
@@ -180,14 +171,12 @@ export function getProjectionSpec(mode: ProjectionMode): { type: unknown } {
   }
 }
 
-// ─── Route Styles (single source of truth) ───────────────────────────────────
-
 /**
  * Visual style for each transport route type.
  * Consumed by TransportOverlay (IxWorldMap) and EditorMap route layers so that
  * adding a new route type is a single-line change here.
  */
-export interface RouteStyle {
+interface RouteStyle {
   /** Display label used in the UI */
   label: string;
   /** MapLibre line-color / UI color swatch */
@@ -286,10 +275,6 @@ export function getCountryColor(featureId: string): string {
   return DEFAULT_COUNTRY_COLORS[Math.abs(hash) % DEFAULT_COUNTRY_COLORS.length];
 }
 
-// ──────────────────────────────────────────────
-// Sovereignty / dependency configuration
-// ──────────────────────────────────────────────
-
 export const SOVEREIGNTY_TYPES = [
   // Original types
   { value: "crown_possession", label: "Crown Possession", short: "Crown Poss." },
@@ -331,14 +316,14 @@ export const SOVEREIGNTY_TYPES = [
   { value: "twin_associated_states", label: "Twin Associated States", short: "Twin Assoc." },
 ] as const;
 
-export type SovereigntyType = (typeof SOVEREIGNTY_TYPES)[number]["value"];
+type SovereigntyType = (typeof SOVEREIGNTY_TYPES)[number]["value"];
 
 export const SOVEREIGNTY_TYPE_MAP = Object.fromEntries(
   SOVEREIGNTY_TYPES.map((t) => [t.value, t])
 ) as Record<SovereigntyType, (typeof SOVEREIGNTY_TYPES)[number]>;
 
 /** Interpolate between two hex colors. ratio=0 → color1, ratio=1 → color2 */
-export function blendColors(color1: string, color2: string, ratio: number): string {
+function blendColors(color1: string, color2: string, ratio: number): string {
   const [r1, g1, b1] = hexToRgbArray(color1);
   const [r2, g2, b2] = hexToRgbArray(color2);
   const safeRatio = isNaN(ratio) ? 0 : Math.max(0, Math.min(1, ratio));
@@ -367,34 +352,7 @@ export function getSovereigntyColor(
   return blendColors(subjectColor, sovereignColor, sovereignWeight);
 }
 
-// ──────────────────────────────────────────────
-// Elevation legend configuration
-// ──────────────────────────────────────────────
-
-/** Elevation zone legend entries for map UI */
-export interface ElevationLegendEntry {
-  zoneId: string;
-  label: string;
-  color: string;
-  elevationRange: string;
-}
-
-/** Get elevation legend entries for the map UI */
-export function getElevationLegend(): ElevationLegendEntry[] {
-  return ELEVATION_ZONES.map((z: ElevationZoneConfig) => ({
-    zoneId: z.zoneId,
-    label: z.zoneName,
-    color: z.color.slice(0, 7), // Strip alpha for CSS
-    elevationRange:
-      z.elevationMax >= 9999 ? `${z.elevationMin}m+` : `${z.elevationMin}-${z.elevationMax}m`,
-  }));
-}
-
-// ──────────────────────────────────────────────
-// Climate legend configuration (Trewartha)
-// ──────────────────────────────────────────────
-
-export interface ClimateLegendEntry {
+interface ClimateLegendEntry {
   code: IxWorldClimate;
   label: string;
   color: string;
@@ -409,11 +367,7 @@ export function getClimateLegend(): ClimateLegendEntry[] {
   }));
 }
 
-// ──────────────────────────────────────────────
-// Ocean & sea label positions
-// ──────────────────────────────────────────────
-
-export interface WaterBodyLabel {
+interface WaterBodyLabel {
   name: string;
   coordinates: [number, number]; // [lng, lat] — approximate center
   type: "ocean" | "sea" | "strait";
@@ -431,7 +385,6 @@ export interface WaterBodyLabel {
 }
 
 export const WATER_BODY_LABELS: WaterBodyLabel[] = [
-  // ── Major Oceans ──
   {
     name: "Levantine Ocean",
     coordinates: [115, 32],
@@ -476,7 +429,6 @@ export const WATER_BODY_LABELS: WaterBodyLabel[] = [
     maxDepthM: 7200,
   },
 
-  // ── Seas ──
   {
     name: "Kilikas Sea",
     coordinates: [25, 58],

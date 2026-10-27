@@ -7,93 +7,54 @@
 
 import type { WikiParameter } from "./types";
 
+/** Where the `-->` of the comment opened at `at` is, or -1 when it never closes (the rest of the text is comment). */
+const commentClose = (text: string, at: number): number => text.indexOf("-->", at + 4);
+
 /**
  * Splits parameter segments by `|`, respecting nested `{{ }}`, `[[ ]]`, `{| |}`, and `<!-- -->`.
  */
 export function splitBalancedPipes(text: string): string[] {
   const parts: string[] = [];
-  let current = "";
   let tmplDepth = 0;
   let linkDepth = 0;
   let tableDepth = 0;
-  let inComment = false;
+  let start = 0;
   let i = 0;
 
   while (i < text.length) {
-    // 1. Comments
-    if (!inComment && text.startsWith("<!--", i)) {
-      inComment = true;
-      current += "<!--";
-      i += 4;
-      continue;
-    }
-    if (inComment) {
-      if (text.startsWith("-->", i)) {
-        inComment = false;
-        current += "-->";
-        i += 3;
-        continue;
-      }
-      current += text[i];
-      i++;
-      continue;
-    }
-
-    // 2. Templates
-    if (text.startsWith("{{", i)) {
+    const code = text.charCodeAt(i);
+    const next = text.charCodeAt(i + 1);
+    if (code === 60 && text.startsWith("<!--", i)) {
+      const end = commentClose(text, i);
+      if (end === -1) break;
+      i = end + 3;
+    } else if (code === 123 && next === 123) {
       tmplDepth++;
-      current += "{{";
       i += 2;
-      continue;
-    }
-    if (text.startsWith("}}", i)) {
+    } else if (code === 125 && next === 125) {
       tmplDepth = Math.max(0, tmplDepth - 1);
-      current += "}}";
       i += 2;
-      continue;
-    }
-
-    // 3. Links
-    if (text.startsWith("[[", i)) {
+    } else if (code === 91 && next === 91) {
       linkDepth++;
-      current += "[[";
       i += 2;
-      continue;
-    }
-    if (text.startsWith("]]", i)) {
+    } else if (code === 93 && next === 93) {
       linkDepth = Math.max(0, linkDepth - 1);
-      current += "]]";
       i += 2;
-      continue;
-    }
-
-    // 4. Tables
-    if (text.startsWith("{|", i)) {
+    } else if (code === 123 && next === 124) {
       tableDepth++;
-      current += "{|";
       i += 2;
-      continue;
-    }
-    if (text.startsWith("|}", i)) {
+    } else if (code === 124 && next === 125) {
       tableDepth = Math.max(0, tableDepth - 1);
-      current += "|}";
       i += 2;
-      continue;
-    }
-
-    // 5. Pipe delimiter at top level
-    if (text[i] === "|" && tmplDepth === 0 && linkDepth === 0 && tableDepth === 0) {
-      parts.push(current);
-      current = "";
+    } else if (code === 124 && tmplDepth === 0 && linkDepth === 0 && tableDepth === 0) {
+      parts.push(text.slice(start, i));
+      start = ++i;
+    } else {
       i++;
-      continue;
     }
-
-    current += text[i];
-    i++;
   }
 
-  parts.push(current);
+  parts.push(text.slice(start));
   return parts;
 }
 
@@ -104,63 +65,38 @@ export function findBalancedEquals(part: string): number {
   let tmplDepth = 0;
   let linkDepth = 0;
   let tableDepth = 0;
-  let inComment = false;
   let i = 0;
 
   while (i < part.length) {
-    if (!inComment && part.startsWith("<!--", i)) {
-      inComment = true;
-      i += 4;
-      continue;
-    }
-    if (inComment) {
-      if (part.startsWith("-->", i)) {
-        inComment = false;
-        i += 3;
-        continue;
-      }
-      i++;
-      continue;
-    }
-
-    if (part.startsWith("{{", i)) {
+    const code = part.charCodeAt(i);
+    const next = part.charCodeAt(i + 1);
+    if (code === 60 && part.startsWith("<!--", i)) {
+      const end = commentClose(part, i);
+      if (end === -1) break;
+      i = end + 3;
+    } else if (code === 123 && next === 123) {
       tmplDepth++;
       i += 2;
-      continue;
-    }
-    if (part.startsWith("}}", i)) {
+    } else if (code === 125 && next === 125) {
       tmplDepth = Math.max(0, tmplDepth - 1);
       i += 2;
-      continue;
-    }
-
-    if (part.startsWith("[[", i)) {
+    } else if (code === 91 && next === 91) {
       linkDepth++;
       i += 2;
-      continue;
-    }
-    if (part.startsWith("]]", i)) {
+    } else if (code === 93 && next === 93) {
       linkDepth = Math.max(0, linkDepth - 1);
       i += 2;
-      continue;
-    }
-
-    if (part.startsWith("{|", i)) {
+    } else if (code === 123 && next === 124) {
       tableDepth++;
       i += 2;
-      continue;
-    }
-    if (part.startsWith("|}", i)) {
+    } else if (code === 124 && next === 125) {
       tableDepth = Math.max(0, tableDepth - 1);
       i += 2;
-      continue;
-    }
-
-    if (part[i] === "=" && tmplDepth === 0 && linkDepth === 0 && tableDepth === 0) {
+    } else if (code === 61 && tmplDepth === 0 && linkDepth === 0 && tableDepth === 0) {
       return i;
+    } else {
+      i++;
     }
-
-    i++;
   }
 
   return -1;

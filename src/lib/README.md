@@ -25,7 +25,7 @@ The root level of `src/lib/` is strictly reserved for platform-wide architectura
 | | [`markdown-document.ts`](markdown-document.ts) | Parser for Markdown documents under `src/content/` (help, terms, privacy). |
 | | [`audio-store.ts`](audio-store.ts) · [`playback-engine.ts`](playback-engine.ts) | Media player queue store and playback engine (narrator / MiniPlayer). |
 | **Platform Config** | [`config-service.ts`](config-service.ts) | Database-backed `SystemConfig` settings cache and retrieval client. |
-| | [`navigation-config.ts`](navigation-config.ts) | App shell navigation tree, topbar links, sidebar menus, and command palettes. |
+| | [`navigation/app-sections.ts`](navigation/app-sections.ts) | The app sidebar's source list: every app, its sections and their visibility rules. |
 | | [`event-bus.ts`](event-bus.ts) | Universal EventEmitter singleton for cross-cutting in-memory pub/sub events. |
 | | [`gameplay-flags.ts`](gameplay-flags.ts) | Runtime evaluation for gameplay feature toggles and flags. |
 
@@ -33,15 +33,16 @@ The root level of `src/lib/` is strictly reserved for platform-wide architectura
 
 ## 2. Modular Subpackages Catalog
 
-All domain logic is partitioned into dedicated subpackages in `src/lib/<domain>/`. Subpackages with a master `index.ts` barrel: `activity`, `ai`, `auth`, `builder`, `cache`, `country-geo`, `demo-seed`, `discord`, `heraldry`, `ixtime`, `logging`, `lorewards`, `media`, `military`, `national-issues`, `nationstates`, `notifications`, `policies`, `sports`, `themes`, `utils`, `websocket`, `wiki-os`. Highlights:
+All domain logic is partitioned into dedicated subpackages in `src/lib/<domain>/`. Subpackages with a master `index.ts` barrel: `activity`, `auth`, `builder`, `cache`, `country-geo`, `heraldry`, `ixtime`, `logging`, `lorewards`, `media`, `national-issues`, `notifications`, `policies`, `sports`, `themes`, `utils`. Highlights:
 
 ### Platform Infrastructure & Foundations
 - **`src/lib/cache/`** — Redis/in-memory cache client, sliding window rate limiters, stampede protection, outbound HTTP cache, and tRPC response caching middleware.
-- **`src/lib/system/`** — Structured JSON logging, query performance monitoring, boot-time system validations, connection pooling, V8 memory profiling, and process error handlers.
+- **`src/lib/system/`** — Query performance monitoring, boot-time system validations, connection pooling, V8 memory profiling, and process error handlers.
 - **`src/lib/utils/`** — Universal Tailwind `cn()` merger, currency/number formatters, date utilities, chart math, CSV/PDF report exporters, and HTML sanitizers.
 - **`src/lib/auth/`** — CASL permission definitions, ability builders, Clerk/Prisma user management, and system-owner security constants.
 - **`src/lib/websocket/`** — Real-time Socket.IO servers, reconnection managers, marketplace streams, and intelligence broadcasts.
 - **`src/lib/logging/`** — Security audit logs, user action tracking, and database logging middleware.
+- **`src/lib/llm/`** — OpenAI-compatible chat-completions client and the LLM host allowlist (SSRF guard), used by sports commentary.
 
 ### Simulation Engines & Mechanics
 - **`src/lib/economy/`** — GDP growth models, tax calculators, fiscal policy engines, currency converters, auctions, and trade logistics.
@@ -65,7 +66,6 @@ All domain logic is partitioned into dedicated subpackages in `src/lib/<domain>/
 - **`src/lib/nationstates/`** — Official NationStates XML API v12 client, deck synchronization processor, and shard parsers.
 - **`src/lib/media/`** — Unsplash API integration, image palettes, sound FX triggers, and asset caching.
 - **`src/lib/themes/`** — Facet design system themes, chromatic palettes, and charting color token mappings.
-- **`src/lib/ai/`** — NLP sentiment analysis and AI text classification helpers.
 
 ### Maps, Geography & World Generation
 - **`src/lib/maps/`** — MapLibre GL pipelines, GeoJSON compression, shared vertex topology engines, border tracing, and spatial indexers.
@@ -89,7 +89,6 @@ import { rateLimiter, globalCache } from "~/lib/cache";
 import { ArticleRepository, LinkGraphService } from "~/lib/wiki-os";
 
 // ✅ Also fine: packages without a barrel are imported by file
-import { logger } from "~/lib/system/logger";
 import { memoryConfig } from "~/lib/system/dev-memory-config";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
 
@@ -105,4 +104,4 @@ import { rateLimiter } from "~/lib/rate-limiter";     // Removed — now ~/lib/c
 1. **Pure Functions First**: Keep simulation and calculation functions pure and idempotent.
 2. **Encapsulate Side Effects**: Confine database operations, Redis interactions, and outbound HTTP calls to services or cron workers within their respective subpackages.
 3. **No Cross-Domain Monoliths**: If a helper is specific to a domain, place it in `src/lib/<domain>/`. If it is shared across all domains (like `cn` or `logger`), use `src/lib/utils/` or `src/lib/system/`.
-4. **Unit Tests**: Place test files in the centralized tree at `src/tests/lib/<domain>/` (mirroring the source path). Run targeted tests with `bun run test -- <pattern>` or `bun run test:unit` for all of `src/tests/lib`.
+4. **Unit Tests**: Place test files in the centralized tree at `src/tests/lib/<domain>/` (mirroring the source path). Run targeted tests with `bun run test -- <pattern>` or `bun run test -- src/tests/lib` for all of `src/tests/lib`.

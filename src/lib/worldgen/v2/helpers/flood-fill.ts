@@ -5,37 +5,7 @@
  */
 
 import type { WorldGraph } from "../types";
-
-/**
- * Flood-fill from a starting cell, visiting all connected cells that
- * satisfy the predicate. Returns the list of visited cell IDs.
- */
-export function floodFill(
-  graph: WorldGraph,
-  startCell: number,
-  predicate: (cellId: number) => boolean
-): number[] {
-  const { cells } = graph;
-  const visited = new Uint8Array(cells.n);
-  const component: number[] = [];
-  const queue: number[] = [startCell];
-  visited[startCell] = 1;
-
-  while (queue.length > 0) {
-    const cell = queue.pop()!;
-    if (!predicate(cell)) continue;
-    component.push(cell);
-
-    for (const nb of cells.neighbors[cell]!) {
-      if (!visited[nb]) {
-        visited[nb] = 1;
-        queue.push(nb);
-      }
-    }
-  }
-
-  return component;
-}
+import { MinHeap } from "./heap";
 
 /**
  * Multi-source BFS spread from seed cells.
@@ -77,40 +47,6 @@ export function bfsAssign(
   }
 
   return { assignment, distance };
-}
-
-/**
- * Find all connected components within a set of cell IDs.
- * Returns an array of components, each being an array of cell IDs.
- */
-export function findConnectedComponents(graph: WorldGraph, cellSet: Set<number>): number[][] {
-  const { cells } = graph;
-  const visited = new Set<number>();
-  const components: number[][] = [];
-
-  for (const cell of cellSet) {
-    if (visited.has(cell)) continue;
-
-    const component: number[] = [];
-    const queue = [cell];
-    visited.add(cell);
-
-    while (queue.length > 0) {
-      const c = queue.pop()!;
-      component.push(c);
-
-      for (const nb of cells.neighbors[c]!) {
-        if (!visited.has(nb) && cellSet.has(nb)) {
-          visited.add(nb);
-          queue.push(nb);
-        }
-      }
-    }
-
-    components.push(component);
-  }
-
-  return components;
 }
 
 /**
@@ -164,27 +100,23 @@ export function dijkstraMultiSource(
   sources: { cell: number; id: number }[],
   edgeCost: (from: number, to: number) => number,
   canTraverse: (cellId: number) => boolean = () => true
-): { cost: Float32Array; sourceId: Uint16Array } {
+): { cost: Float64Array; sourceId: Uint16Array } {
   const { cells } = graph;
   const n = cells.n;
-  const cost = new Float32Array(n).fill(Infinity);
+  // Float64: Float32 rounding would make fresh heap entries look stale and skip their expansion
+  const cost = new Float64Array(n).fill(Infinity);
   const sourceId = new Uint16Array(n);
 
-  // Simple priority queue using sorted insertion (adequate for 50K cells)
-  // For production perf, swap to a proper binary heap.
-  const pq: { cell: number; cost: number }[] = [];
-
+  const pq = new MinHeap();
   for (const s of sources) {
     cost[s.cell] = 0;
     sourceId[s.cell] = s.id;
-    pq.push({ cell: s.cell, cost: 0 });
+    pq.push(0, s.cell);
   }
 
-  // Sort ascending by cost
-  pq.sort((a, b) => a.cost - b.cost);
-
-  while (pq.length > 0) {
-    const { cell, cost: currentCost } = pq.shift()!;
+  while (pq.size > 0) {
+    const currentCost = pq.peekKey()!;
+    const cell = pq.pop();
     if (currentCost > cost[cell]!) continue; // stale entry
 
     for (const nb of cells.neighbors[cell]!) {
@@ -193,15 +125,7 @@ export function dijkstraMultiSource(
       if (newCost < cost[nb]!) {
         cost[nb] = newCost;
         sourceId[nb] = sourceId[cell]!;
-        // Binary search insert to maintain sorted order
-        let lo = 0,
-          hi = pq.length;
-        while (lo < hi) {
-          const mid = (lo + hi) >>> 1;
-          if (pq[mid]!.cost < newCost) lo = mid + 1;
-          else hi = mid;
-        }
-        pq.splice(lo, 0, { cell: nb, cost: newCost });
+        pq.push(newCost, nb);
       }
     }
   }

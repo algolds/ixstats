@@ -1,13 +1,13 @@
 "use client";
-// src/app/(wiki-os)/wiki/search/page.tsx
 // WikiOS Search Page — full search results
 
 import { useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
+import { Button } from "~/components/ui/button";
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -40,9 +40,9 @@ export default function SearchPage() {
             className="wikios-fullsearch-input"
             autoFocus
           />
-          <button type="submit" className="wikios-action-btn">
+          <Button variant="secondary" type="submit">
             Search
-          </button>
+          </Button>
         </form>
 
         {isLoading && (
@@ -61,9 +61,7 @@ export default function SearchPage() {
               {results.map((item) => (
                 <li key={item.title} className="wikios-search-result-item">
                   <Link
-                    href={withBasePath(
-                      `/wiki/${encodeURIComponent(item.title.replace(/ /g, "_"))}`
-                    )}
+                    href={`/wiki/${encodeURIComponent(item.title.replace(/ /g, "_"))}`}
                     className="wikios-search-result-title-link"
                   >
                     {item.title}
@@ -81,12 +79,12 @@ export default function SearchPage() {
 
         {results && results.length === 0 && searchTerm && (
           <div className="wikios-no-results">
-            <p className="text-zinc-400">No results found for &ldquo;{searchTerm}&rdquo;.</p>
-            <p className="mt-2 text-sm text-zinc-500">
+            <p className="text-label-secondary">No results found for &ldquo;{searchTerm}&rdquo;.</p>
+            <p className="text-body text-label-secondary mt-2">
               Try a different search term, or{" "}
               <a
-                href={`/wiki/index.php?search=${encodeURIComponent(searchTerm)}`}
-                className="text-blue-400 underline"
+                href={`${mediaWikiOrigin()}/index.php?search=${encodeURIComponent(searchTerm)}`}
+                className="text-tint underline"
               >
                 search on MediaWiki
               </a>

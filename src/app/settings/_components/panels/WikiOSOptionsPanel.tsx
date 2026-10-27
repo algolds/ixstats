@@ -19,12 +19,13 @@ import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { useLocalPref } from "~/components/halo/views/settings/SettingsControls";
 import { Switch } from "~/components/ui/switch";
+import { Button } from "~/components/ui/button";
 
 export function WikiOSOptionsPanel() {
   const notify = useNotify();
   const utils = api.useUtils();
 
-  // Media theme hook (from Halo wiki settings)
+  // Media theme
   const { mediaThemeMode, setMediaThemeMode } = useWikiMediaTheme();
 
   // Reader local preferences (from Halo wiki settings)
@@ -55,31 +56,29 @@ export function WikiOSOptionsPanel() {
   return (
     <div className="space-y-6">
       <SettingsHeader
-        title="WikiOS Options"
-        category="Platform & Preferences"
-        description="Reader navigation, citation previews, media styles, and background lore scanners."
+        title="WikiOS options"
+        category="Platform & preferences"
+        description="Reader navigation, citation previews, media styles and background lore scanning."
         actions={
-          <Link
-            href="/wiki"
-            data-cuelume-press="soft"
-            className="facet-interactive border-border/60 bg-secondary/80 text-foreground hover:bg-secondary flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-          >
-            <WikiOSLogomark className="h-3.5 w-auto" />
-            <span>Open WikiOS</span>
-            <ExternalLink className="h-3.5 w-3.5 opacity-60" />
-          </Link>
+          <Button asChild variant="secondary" size="sm">
+            <Link href="/wiki" data-cuelume-press="soft">
+              <WikiOSLogomark className="h-3.5 w-auto" />
+              <span>Open WikiOS</span>
+              <ExternalLink aria-hidden />
+            </Link>
+          </Button>
         }
       />
 
-      {/* Reader Layout Preferences (from Halo Wiki View) */}
+      {/* Reader layout and navigation */}
       <SettingsGroup
-        title="Reader Layout & Navigation"
-        description="Configure interactive reading tools, floating outlines, and citation tooltips."
+        title="Reader layout and navigation"
+        description="Reading tools, floating outlines and citation tooltips."
       >
         <SettingsSwitchRow
           id="citation-tooltips"
-          label="Citation Tooltips"
-          description="Display interactive hover preview cards on citation numbers and reference tags"
+          label="Citation tooltips"
+          description="Show a preview card when you hover a citation number or reference tag"
           icon={MessageSquare}
           glyphClass="bg-purple-500/15 text-purple-500"
           checked={showCiteTooltips}
@@ -91,8 +90,8 @@ export function WikiOSOptionsPanel() {
 
         <SettingsSwitchRow
           id="article-toc"
-          label="Article Outline Navigator"
-          description="Show a floating table of contents navigator and chapter breakdown on long articles"
+          label="Article outline"
+          description="Show a floating table of contents on long articles"
           icon={List}
           glyphClass="bg-cyan-500/15 text-cyan-500"
           checked={showWikiToc}
@@ -104,8 +103,8 @@ export function WikiOSOptionsPanel() {
 
         <SettingsSwitchRow
           id="quick-search"
-          label="Dynamic Quick Search"
-          description="Index and suggest wiki articles within global search and the Dynamic Island"
+          label="Wiki results in search"
+          description="Suggest wiki articles in global search and Halo"
           icon={Search}
           glyphClass="bg-blue-500/15 text-blue-500"
           checked={dynamicSearchWiki}
@@ -117,8 +116,8 @@ export function WikiOSOptionsPanel() {
 
         <SettingsSwitchRow
           id="open-new-tab"
-          label="Open in New Tab"
-          description="Open external wiki references and cross-article links in new browser tabs"
+          label="Open links in a new tab"
+          description="Open external wiki references and links between articles in new browser tabs"
           icon={ExternalLink}
           glyphClass="bg-emerald-500/15 text-emerald-500"
           checked={openInNewTab}
@@ -129,17 +128,17 @@ export function WikiOSOptionsPanel() {
         />
       </SettingsGroup>
 
-      {/* Media & Image Appearance (from Halo Wiki View) */}
+      {/* Media appearance */}
       <SettingsGroup
-        title="Media & Graphics Appearance"
-        description="Visual presentation of flags, seal vectors, and transparent diagram overlays."
+        title="Media appearance"
+        description="How flags, seals and transparent diagrams are shown."
       >
         <SettingsRow
-          label="Image Plinth Backplate"
+          label="Image backplate"
           description={
             mediaThemeMode === "plinth"
-              ? "Frosted Plate — renders dark-mode transparent PNG flags with an adaptive light backplate plinth"
-              : "Adaptive Dark — standard transparency blending with dark mode backgrounds"
+              ? "Light backplate: transparent PNG flags sit on a light plate in dark mode"
+              : "Adaptive: transparent images blend with the dark background"
           }
           icon={mediaThemeMode === "plinth" ? Square : SunMoon}
           glyphClass={
@@ -150,7 +149,7 @@ export function WikiOSOptionsPanel() {
         >
           <div className="flex items-center gap-3">
             <span className="text-muted-foreground text-xs font-semibold">
-              {mediaThemeMode === "plinth" ? "Light Plinth" : "Adaptive Dark"}
+              {mediaThemeMode === "plinth" ? "Light backplate" : "Adaptive"}
             </span>
             <Switch
               checked={mediaThemeMode === "plinth"}
@@ -163,15 +162,15 @@ export function WikiOSOptionsPanel() {
         </SettingsRow>
       </SettingsGroup>
 
-      {/* Simulation & Lore Synchronization */}
+      {/* Simulation and lore */}
       <SettingsGroup
-        title="Simulation & Lore Synchronization"
-        description="Background integration between WikiOS articles and MyCountry tabs."
+        title="Simulation and lore"
+        description="How WikiOS articles connect to MyCountry."
       >
         <SettingsSwitchRow
           id="wiki-autoscan"
-          label="MyCountry Inline Lore"
-          description="Display contextual wiki section summaries and national history excerpts between gameplay cards in MyCountry"
+          label="MyCountry inline lore"
+          description="Show wiki section summaries and national history excerpts between cards in MyCountry"
           icon={BookOpen}
           glyphClass="bg-indigo-500/15 text-indigo-500"
           checked={wikiAutoScan}

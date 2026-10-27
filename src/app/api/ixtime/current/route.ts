@@ -1,4 +1,3 @@
-// src/app/api/ixtime/current/route.ts
 import { NextResponse } from "next/server";
 import { IxTime } from "~/lib/ixtime";
 

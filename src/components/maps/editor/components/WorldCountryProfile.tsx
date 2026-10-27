@@ -1,5 +1,6 @@
 "use client";
-
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
 import React, { useState } from "react";
 import {
   EditPencil as Pencil,
@@ -8,13 +9,17 @@ import {
 } from "iconoir-react";
 import { useRouter } from "next/navigation";
 import { ProvinceGeneratorPanel } from "./ProvinceGeneratorPanel";
+import { WorldSlotTools } from "./WorldSlotTools";
 import { JsonViewer } from "~/components/shared/json-viewer";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import type { Polygon, MultiPolygon } from "geojson";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import type { EditorFeatureDetails, PropertiesPanelCountry } from "../types/editor-state";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { Card } from "~/components/ui/card";
+import { assetUrl } from "~/lib/base-path";
 
-interface WorldCountryProfileProps {
+export interface WorldCountryProfileProps {
   mapSelectedCountry: SelectedCountry;
   isUnclaimed?: boolean;
   selectedCountryName: string;
@@ -35,6 +40,7 @@ interface WorldCountryProfileProps {
       countryId?: string | null;
       properties?: Record<string, string | number | boolean | null>;
       wikiPageTitle?: string | null;
+      realm?: string;
     }) => Promise<{ ok?: boolean; success?: boolean } | void>;
   };
   isEditingJson: boolean;
@@ -59,402 +65,432 @@ interface WorldCountryProfileProps {
   ) => void;
   countryGeometry?: Polygon | MultiPolygon | null;
   countryId?: string | null;
+  /** A generated nation slot was deleted from here: drop it from the selection */
+  onSlotDeleted?: () => void;
 }
 
-export const WorldCountryProfile = React.memo(function WorldCountryProfile({
-  mapSelectedCountry,
+const inputClasses =
+  "w-full rounded-control border border-separator bg-surface px-3 py-2 text-footnote text-label disabled:opacity-50 focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <span className="text-label-secondary text-caption">{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function DataRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="text-footnote flex justify-between">
+      <span className="text-label-secondary">{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function ProfileHeader({
   isUnclaimed,
-  selectedCountryName,
-  editableFeatureName,
-  setEditableFeatureName,
-  editableCountryLinkageId,
-  setEditableCountryLinkageId,
-  countries,
-  wikiPageTitle,
-  setWikiPageTitle,
-  featureDetails,
-  handleSaveFeatureProperties,
-  updatePropertiesMutation,
-  isEditingJson,
-  setIsEditingJson,
-  propertiesJsonString,
-  setPropertiesJsonString,
-  jsonError,
-  setJsonError,
-  parsedProperties,
-  assignCountryId,
-  setAssignCountryId,
-  handleAssignLink,
-  assignMutation,
-  availableCountries,
-  createCountryFromShapeAction,
-  createCountryFromShapePending,
-  enterBorderEdit,
-  countryGeometry,
-  countryId,
-}: WorldCountryProfileProps) {
+  title,
+}: Pick<WorldCountryProfileProps, "isUnclaimed"> & { title: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <Eyebrow>{isUnclaimed ? "Unclaimed Territory" : "Country Profile"}</Eyebrow>
+      <div className="flex min-w-0 items-center gap-2">
+        {!isUnclaimed && (
+          <Card className="relative h-4 w-6 shrink-0 overflow-hidden rounded-xs">
+            <UnifiedCountryFlag
+              countryName={title}
+              fitContainer
+              objectFit="cover"
+              className="h-full w-full"
+            />
+          </Card>
+        )}
+        <span
+          className={`text-caption rounded-control-sm truncate border px-2 py-0.5 ${
+            isUnclaimed ? "border-yellow/30 text-yellow" : "border-green/30 text-green"
+          }`}
+        >
+          {title}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function DetailsCard(props: WorldCountryProfileProps) {
+  const { mapSelectedCountry, isUnclaimed, editableFeatureName, editableCountryLinkageId } = props;
+  const isDirty =
+    editableFeatureName !== (mapSelectedCountry.displayName || "") ||
+    editableCountryLinkageId !== (mapSelectedCountry.countryId || "") ||
+    props.wikiPageTitle !== (props.featureDetails?.wikiPageTitle || "");
+  const countryOptions = [
+    { value: "", label: "None" },
+    ...(props.countries ?? []).map((c) => ({ value: c.id, label: c.name })),
+  ];
+
+  return (
+    <Card className="space-y-3 p-3">
+      <Eyebrow className="block">Details</Eyebrow>
+      <div className="space-y-2">
+        <Field label="Name">
+          <input
+            type="text"
+            value={editableFeatureName}
+            onChange={(e) => props.setEditableFeatureName(e.target.value)}
+            className={inputClasses}
+            placeholder="e.g. Caphiria"
+          />
+        </Field>
+
+        <Field label="Linked country">
+          <OptionSelect
+            aria-label="Linked country"
+            value={editableCountryLinkageId}
+            onValueChange={props.setEditableCountryLinkageId}
+            options={countryOptions}
+          />
+        </Field>
+
+        {!isUnclaimed && (
+          <Field label="Wiki article">
+            <input
+              type="text"
+              value={props.wikiPageTitle}
+              onChange={(e) => props.setWikiPageTitle(e.target.value)}
+              placeholder="e.g. Caphiria"
+              className={inputClasses}
+            />
+          </Field>
+        )}
+
+        {isDirty && (
+          <Button
+            size="sm"
+            className="mt-2 w-full"
+            onClick={() => props.handleSaveFeatureProperties()}
+            disabled={props.updatePropertiesMutation.isPending}
+          >
+            {props.updatePropertiesMutation.isPending ? "Saving..." : "Save changes"}
+          </Button>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function FeatureDataCard({ country }: { country: SelectedCountry }) {
+  return (
+    <Card className="space-y-2 p-3">
+      <Eyebrow className="block">Feature data</Eyebrow>
+      <div className="space-y-1">
+        <DataRow label="Feature ID">
+          <span className="text-label-secondary text-footnote max-w-[180px] truncate font-mono">
+            {country.featureId || "—"}
+          </span>
+        </DataRow>
+        <DataRow label="Centroid">
+          <span className="text-label-secondary text-footnote font-mono">
+            {country.centroidLng?.toFixed(4)},{country.centroidLat?.toFixed(4)}
+          </span>
+        </DataRow>
+        <DataRow label="Fill color">
+          <span className="flex items-center gap-1">
+            <span
+              className="border-separator inline-block h-3 w-3 rounded-xs border"
+              style={{ backgroundColor: country.fillColor || "var(--color-surface-secondary)" }}
+            />
+            <span className="text-label-secondary text-footnote tabular-nums">
+              {country.fillColor || "—"}
+            </span>
+          </span>
+        </DataRow>
+      </div>
+    </Card>
+  );
+}
+
+function DatabaseRecordCard({
+  details,
+  countryName,
+}: {
+  details: EditorFeatureDetails;
+  countryName: string;
+}) {
+  return (
+    <Card className="space-y-2 p-3">
+      <Eyebrow className="block">Database record</Eyebrow>
+      <div className="space-y-1">
+        {details.flagUrl && (
+          <img
+            src={assetUrl(details.flagUrl) ?? undefined}
+            alt={`${countryName} flag`}
+            className="border-separator rounded-control shadow-card mb-2 aspect-video w-full border object-cover"
+          />
+        )}
+        {details.featureType && (
+          <DataRow label="Type">
+            <span className="text-label-secondary">{String(details.featureType)}</span>
+          </DataRow>
+        )}
+        {details.areaKm2 != null && (
+          <DataRow label="Area">
+            <span className="text-label-secondary">
+              {Math.round(Number(details.areaKm2)).toLocaleString()} km²
+            </span>
+          </DataRow>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function PropertiesJsonCard(props: WorldCountryProfileProps) {
+  const { isEditingJson, propertiesJsonString } = props;
+
+  const toggleEdit = () => {
+    if (!isEditingJson) {
+      props.setIsEditingJson(true);
+      return;
+    }
+    try {
+      const parsed = propertiesJsonString ? JSON.parse(propertiesJsonString) : {};
+      props.setJsonError(null);
+      props.handleSaveFeatureProperties(parsed);
+      props.setIsEditingJson(false);
+    } catch {
+      props.setJsonError("Invalid JSON syntax");
+    }
+  };
+
+  return (
+    <Card className="p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <Eyebrow className="block">Properties JSON</Eyebrow>
+        <Button variant="ghost" size="sm" onClick={toggleEdit}>
+          {isEditingJson ? "Save" : "Edit JSON"}
+        </Button>
+      </div>
+      {isEditingJson ? (
+        <div className="space-y-1">
+          <textarea
+            value={propertiesJsonString}
+            onChange={(e) => props.setPropertiesJsonString(e.target.value)}
+            rows={6}
+            className="border-separator bg-surface focus:border-tint rounded-control text-footnote w-full border px-3 py-2 leading-relaxed tabular-nums focus:outline-none"
+          />
+          {props.jsonError && <p className="text-destructive text-footnote">{props.jsonError}</p>}
+        </div>
+      ) : (
+        <JsonViewer data={props.parsedProperties} />
+      )}
+    </Card>
+  );
+}
+
+function CreateCountryFromShape({
+  initialName,
+  pending,
+  onCreate,
+}: {
+  initialName: string;
+  pending: boolean | undefined;
+  onCreate: (name: string) => void;
+}) {
+  const [isCreating, setIsCreating] = useState(false);
+  const [name, setName] = useState("");
+  const trimmed = name.trim();
+
+  const close = () => {
+    setIsCreating(false);
+    setName("");
+  };
+  const submit = () => {
+    if (!trimmed) return;
+    onCreate(trimmed);
+    close();
+  };
+
+  if (!isCreating) {
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="w-full justify-center"
+        onClick={() => {
+          setName(initialName);
+          setIsCreating(true);
+        }}
+        disabled={pending}
+      >
+        {pending ? "Creating…" : "+ Create new country from shape"}
+      </Button>
+    );
+  }
+
+  return (
+    <div className="rounded-control border-green/30 bg-green/5 space-y-2 border p-2">
+      <Eyebrow className="block">New country name</Eyebrow>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Enter country name..."
+        autoFocus
+        className="border-separator bg-surface text-label text-footnote focus:ring-green rounded-control-sm w-full border px-2 py-1 focus:ring-1 focus:outline-none"
+        onKeyDown={(e) => {
+          if (e.key === "Enter") submit();
+          else if (e.key === "Escape") close();
+        }}
+      />
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" size="xs" className="text-label-secondary" onClick={close}>
+          Cancel
+        </Button>
+        <Button variant="outline" size="xs" onClick={submit} disabled={!trimmed || pending}>
+          {pending ? "Creating…" : "Create"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function UnclaimedActions(props: WorldCountryProfileProps) {
+  const { setAssignCountryId, handleAssignLink, availableCountries, assignCountryId } = props;
+  return (
+    <div className="border-separator rounded-control border-yellow/20 bg-yellow/5 space-y-2 border p-3">
+      <p className="text-label-secondary text-footnote">
+        This territory has no linked country record.
+      </p>
+
+      {setAssignCountryId && handleAssignLink && availableCountries && (
+        <div className="space-y-2">
+          <Eyebrow className="block">Assign to country</Eyebrow>
+          <div className="flex gap-2">
+            <OptionSelect
+              aria-label="Assign to country"
+              value={assignCountryId ?? ""}
+              onValueChange={setAssignCountryId}
+              options={[
+                { value: "", label: "— select country —" },
+                ...availableCountries.map((c) => ({ value: c.id, label: c.name })),
+              ]}
+              size="sm"
+              className="w-full"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              className="shrink-0"
+              onClick={() => handleAssignLink(props.mapSelectedCountry.featureId)}
+              disabled={!assignCountryId || props.assignMutation?.isPending}
+            >
+              Assign
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {props.createCountryFromShapeAction && (
+        <CreateCountryFromShape
+          initialName={props.mapSelectedCountry.displayName || ""}
+          pending={props.createCountryFromShapePending}
+          onCreate={props.createCountryFromShapeAction}
+        />
+      )}
+    </div>
+  );
+}
+
+export const WorldCountryProfile = React.memo(function WorldCountryProfile(
+  props: WorldCountryProfileProps
+) {
+  const { mapSelectedCountry, isUnclaimed, enterBorderEdit } = props;
   const router = useRouter();
   const [showGenerator, setShowGenerator] = useState(false);
-  const [isCreatingCountry, setIsCreatingCountry] = useState(false);
-  const [newCountryName, setNewCountryName] = useState("");
-
-  const inputClasses =
-    "w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground disabled:opacity-50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
+  const title =
+    props.selectedCountryName || mapSelectedCountry.displayName || mapSelectedCountry.featureId;
 
   return (
     <div className="space-y-3">
-      {/* Header badge */}
-      <div className="flex items-center justify-between">
-        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          {isUnclaimed ? "Unclaimed Territory" : "Country Profile"}
-        </span>
-        <div className="flex min-w-0 items-center gap-1.5">
-          {!isUnclaimed && (
-            <div className="border-border/60 bg-muted/40 relative h-4 w-6 shrink-0 overflow-hidden rounded-xs border shadow-2xs">
-              <UnifiedCountryFlag
-                countryName={
-                  selectedCountryName ||
-                  mapSelectedCountry.displayName ||
-                  mapSelectedCountry.featureId
-                }
-                fitContainer
-                objectFit="cover"
-                className="h-full w-full"
-              />
-            </div>
-          )}
-          <span
-            className={`truncate rounded px-1.5 py-0.5 text-xs font-medium ${
-              isUnclaimed
-                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-            }`}
-          >
-            {selectedCountryName || mapSelectedCountry.displayName || mapSelectedCountry.featureId}
-          </span>
-        </div>
-      </div>
-
-      {/* Settings (editable display name & linkage) */}
-      <div className="border-border/60 bg-muted/10 space-y-3 rounded-lg border p-3">
-        <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Details
-        </label>
-        <div className="space-y-2">
-          <div className="space-y-1">
-            <span className="text-muted-foreground text-xs font-medium">Name</span>
-            <input
-              type="text"
-              value={editableFeatureName}
-              onChange={(e) => setEditableFeatureName(e.target.value)}
-              className={inputClasses}
-              placeholder="e.g. Caphiria"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <span className="text-muted-foreground text-xs font-medium">Linked country</span>
-            <select
-              value={editableCountryLinkageId}
-              onChange={(e) => setEditableCountryLinkageId(e.target.value)}
-              className="border-border bg-background text-foreground focus:border-primary w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none"
-            >
-              <option value="">None</option>
-              {countries &&
-                countries.map((c: PropertiesPanelCountry) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          {!isUnclaimed && (
-            <div className="space-y-1">
-              <span className="text-muted-foreground text-xs font-medium">Wiki article</span>
-              <input
-                type="text"
-                value={wikiPageTitle}
-                onChange={(e) => setWikiPageTitle(e.target.value)}
-                placeholder="e.g. Caphiria"
-                className={inputClasses}
-              />
-            </div>
-          )}
-
-          {(editableFeatureName !== (mapSelectedCountry.displayName || "") ||
-            editableCountryLinkageId !== (mapSelectedCountry.countryId || "") ||
-            wikiPageTitle !== (featureDetails?.wikiPageTitle || "")) && (
-            <button
-              onClick={() => handleSaveFeatureProperties()}
-              disabled={updatePropertiesMutation.isPending}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 mt-2 w-full cursor-pointer rounded-lg py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
-            >
-              {updatePropertiesMutation.isPending ? "Saving..." : "Save changes"}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Feature data card */}
-      <div className="border-border/60 bg-muted/10 space-y-2 rounded-lg border p-3">
-        <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Feature Data
-        </label>
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">Feature ID</span>
-            <span className="text-foreground/80 max-w-[180px] truncate font-mono text-xs">
-              {mapSelectedCountry.featureId || "—"}
-            </span>
-          </div>
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">Centroid</span>
-            <span className="text-foreground/80 font-mono text-xs">
-              {mapSelectedCountry.centroidLng?.toFixed(4)},
-              {mapSelectedCountry.centroidLat?.toFixed(4)}
-            </span>
-          </div>
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">Fill Color</span>
-            <span className="flex items-center gap-1">
-              <span
-                className="border-border inline-block h-3 w-3 rounded border"
-                style={{
-                  backgroundColor: mapSelectedCountry.fillColor || "var(--color-bg-secondary)",
-                }}
-              />
-              <span className="text-foreground/80 font-mono text-xs">
-                {mapSelectedCountry.fillColor || "—"}
-              </span>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* DB feature details card */}
-      {featureDetails && (
-        <div className="border-border/60 bg-muted/10 space-y-2 rounded-lg border p-3">
-          <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Database Record
-          </label>
-          <div className="space-y-1">
-            {featureDetails.flagUrl && (
-              <img
-                src={featureDetails.flagUrl}
-                alt={`${selectedCountryName} flag`}
-                className="border-border/60 mb-2 aspect-video w-full rounded-lg border object-cover shadow-sm"
-              />
-            )}
-            {featureDetails.featureType && (
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Type</span>
-                <span className="text-foreground/80">{String(featureDetails.featureType)}</span>
-              </div>
-            )}
-            {featureDetails.areaKm2 != null && (
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Area</span>
-                <span className="text-foreground/80">
-                  {Math.round(Number(featureDetails.areaKm2)).toLocaleString()} km²
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
+      <ProfileHeader isUnclaimed={isUnclaimed} title={title} />
+      <DetailsCard {...props} />
+      <FeatureDataCard country={mapSelectedCountry} />
+      {props.featureDetails && (
+        <DatabaseRecordCard
+          details={props.featureDetails}
+          countryName={props.selectedCountryName}
+        />
+      )}
+      <PropertiesJsonCard {...props} />
+      {isUnclaimed && <UnclaimedActions {...props} />}
+      {mapSelectedCountry.countryId && props.onSlotDeleted && (
+        <WorldSlotTools
+          countryId={mapSelectedCountry.countryId}
+          countryName={title}
+          onDeleted={props.onSlotDeleted}
+        />
       )}
 
-      {/* Full feature properties JSON viewer */}
-      <div className="border-border/60 bg-muted/10 rounded-lg border p-3">
-        <div className="mb-2 flex items-center justify-between">
-          <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Properties JSON
-          </label>
-          <button
-            onClick={() => {
-              if (isEditingJson) {
-                try {
-                  const parsed = propertiesJsonString ? JSON.parse(propertiesJsonString) : {};
-                  setJsonError(null);
-                  handleSaveFeatureProperties(parsed);
-                  setIsEditingJson(false);
-                } catch (_e) {
-                  setJsonError("Invalid JSON syntax");
+      <div className="border-separator space-y-2 border-t pt-3">
+        {enterBorderEdit && (
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full justify-center"
+              onClick={() => enterBorderEdit()}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit borders
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-center"
+              onClick={() => enterBorderEdit("brush")}
+            >
+              <Paintbrush className="h-3.5 w-3.5" />
+              Brush Territory…
+            </Button>
+          </>
+        )}
+        {!isUnclaimed && (
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full justify-center"
+              onClick={() => setShowGenerator((v) => !v)}
+            >
+              <Grid3X3 className="h-3.5 w-3.5" />
+              Generate Subdivisions…
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => {
+                if (mapSelectedCountry.featureId) {
+                  router.push(`/admin/geography?featureId=${mapSelectedCountry.featureId}`);
                 }
-              } else {
-                setIsEditingJson(true);
-              }
-            }}
-            className="text-primary text-xs font-semibold hover:underline"
-          >
-            {isEditingJson ? "Save" : "Edit JSON"}
-          </button>
-        </div>
-        {isEditingJson ? (
-          <div className="space-y-1">
-            <textarea
-              value={propertiesJsonString}
-              onChange={(e) => setPropertiesJsonString(e.target.value)}
-              rows={6}
-              className="border-border bg-background focus:border-primary w-full rounded-lg border px-3 py-2 font-mono text-xs leading-relaxed focus:outline-none"
-            />
-            {jsonError && <p className="text-destructive text-xs">{jsonError}</p>}
-          </div>
-        ) : (
-          <JsonViewer data={parsedProperties} />
-        )}
-      </div>
-
-      {/* Unclaimed territory actions */}
-      {isUnclaimed && (
-        <div className="border-border/60 space-y-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-          <p className="text-muted-foreground text-xs">
-            This territory has no linked country record.
-          </p>
-
-          {setAssignCountryId && handleAssignLink && availableCountries && (
-            <div className="space-y-1.5">
-              <label className="text-muted-foreground text-xs font-medium uppercase">
-                Assign to country
-              </label>
-              <div className="flex gap-1.5">
-                <select
-                  value={assignCountryId ?? ""}
-                  onChange={(e) => setAssignCountryId(e.target.value)}
-                  className="border-border bg-background text-foreground focus:border-primary w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none"
-                >
-                  <option value="">— select country —</option>
-                  {availableCountries.map((c: PropertiesPanelCountry) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={() => handleAssignLink(mapSelectedCountry.featureId)}
-                  disabled={!assignCountryId || assignMutation?.isPending}
-                  className="bg-primary/15 hover:bg-primary/25 text-primary shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium active:scale-[0.98] disabled:opacity-50"
-                >
-                  Assign
-                </button>
-              </div>
-            </div>
-          )}
-
-          {createCountryFromShapeAction &&
-            (isCreatingCountry ? (
-              <div className="space-y-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2">
-                <label className="block text-xs font-semibold tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
-                  New Country Name
-                </label>
-                <input
-                  type="text"
-                  value={newCountryName}
-                  onChange={(e) => setNewCountryName(e.target.value)}
-                  placeholder="Enter country name..."
-                  autoFocus
-                  className="border-border bg-background text-foreground w-full rounded border px-2 py-1 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && newCountryName.trim()) {
-                      createCountryFromShapeAction(newCountryName.trim());
-                      setIsCreatingCountry(false);
-                      setNewCountryName("");
-                    } else if (e.key === "Escape") {
-                      setIsCreatingCountry(false);
-                      setNewCountryName("");
-                    }
-                  }}
-                />
-                <div className="flex justify-end gap-1.5">
-                  <button
-                    onClick={() => {
-                      setIsCreatingCountry(false);
-                      setNewCountryName("");
-                    }}
-                    className="text-muted-foreground hover:text-foreground rounded px-2 py-1 text-xs active:scale-[0.98]"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (newCountryName.trim()) {
-                        createCountryFromShapeAction(newCountryName.trim());
-                        setIsCreatingCountry(false);
-                        setNewCountryName("");
-                      }
-                    }}
-                    disabled={!newCountryName.trim() || createCountryFromShapePending}
-                    className="rounded bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50"
-                  >
-                    {createCountryFromShapePending ? "Creating…" : "Create"}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  setNewCountryName(mapSelectedCountry.displayName || "");
-                  setIsCreatingCountry(true);
-                }}
-                disabled={createCountryFromShapePending}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-600 hover:bg-emerald-500/25 active:scale-[0.98] disabled:opacity-50 dark:text-emerald-400"
-              >
-                {createCountryFromShapePending ? "Creating…" : "+ Create new country from shape"}
-              </button>
-            ))}
-        </div>
-      )}
-
-      {/* Action buttons */}
-      <div className="border-border/60 space-y-2 border-t pt-3">
-        {enterBorderEdit && (
-          <button
-            onClick={() => enterBorderEdit()}
-            className="bg-primary/15 text-primary hover:bg-primary/25 flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium active:scale-[0.98]"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-            Edit Borders
-          </button>
-        )}
-        {enterBorderEdit && (
-          <button
-            onClick={() => enterBorderEdit("brush")}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-600 hover:bg-emerald-500/25 active:scale-[0.98] dark:text-emerald-400"
-          >
-            <Paintbrush className="h-3.5 w-3.5" />
-            Brush Territory…
-          </button>
-        )}
-        {!isUnclaimed && (
-          <button
-            onClick={() => setShowGenerator((v) => !v)}
-            className="bg-accent hover:bg-accent/80 text-accent-foreground flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium active:scale-[0.98]"
-          >
-            <Grid3X3 className="h-3.5 w-3.5" />
-            Generate Subdivisions…
-          </button>
-        )}
-        {!isUnclaimed && (
-          <button
-            onClick={() => {
-              if (mapSelectedCountry?.featureId) {
-                router.push(`/admin/geography?featureId=${mapSelectedCountry.featureId}`);
-              }
-            }}
-            className="border-border bg-muted/20 hover:bg-muted/40 text-foreground w-full rounded-lg border py-2 text-center text-xs font-medium transition-colors active:scale-[0.98]"
-          >
-            Manage Database Record
-          </button>
+              }}
+            >
+              Manage database record
+            </Button>
+          </>
         )}
       </div>
       {showGenerator && (
-        <div className="border-border/60 bg-muted/10 rounded-lg border">
+        <Card>
           <ProvinceGeneratorPanel
-            countryGeometry={countryGeometry ?? null}
-            countryId={countryId ?? ""}
+            countryGeometry={props.countryGeometry ?? null}
+            countryId={props.countryId ?? ""}
             onClose={() => setShowGenerator(false)}
           />
-        </div>
+        </Card>
       )}
     </div>
   );

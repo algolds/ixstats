@@ -1,18 +1,22 @@
+import type { PrismaClient } from "@prisma/client";
 import { db } from "~/server/db";
-import { CountryEventSpine } from "~/lib/activity";
+import { realmClocks, realmNowsOnce } from "~/server/shared/realm-time";
 import { NationalIssuesEngine } from "~/lib/national-issues/engine";
 import { getNationalIssuesConfig } from "~/lib/national-issues/config";
 import { INTENT_CATEGORY_TO_TEMPLATE, spawnResistanceForIntent } from "~/lib/intent/resistance";
 import type { Category } from "~/lib/intent/assemble";
+import { debitCountryMaintenance, expireLapsedPolicies } from "./lifecycle";
+import { findAllById } from "~/lib/system/find-all-by-id";
 
-export interface PolicyMaintenanceResult {
+interface PolicyMaintenanceResult {
   countriesProcessed: number;
   policiesProcessed: number;
   totalCostDebited: number;
+  policiesExpired: number;
   volatileSpawns: SpawnVolatileIssuesResult;
 }
 
-export interface SpawnVolatileIssuesResult {
+interface SpawnVolatileIssuesResult {
   policiesRolled: number;
   policyIssuesSpawned: number;
   intentsRolled: number;
@@ -24,7 +28,7 @@ export interface SpawnVolatileIssuesResult {
  * (fiscal/trade/defense/…) don't match template domains (economic/military/…);
  * this bridges the vocabulary (the "fixed matching" fix).
  */
-export const POLICY_CATEGORY_TO_TEMPLATE: Record<string, string[]> = {
+const POLICY_CATEGORY_TO_TEMPLATE: Record<string, string[]> = {
   fiscal: ["economic"],
   financial: ["economic"],
   economics: ["economic"],
@@ -81,7 +85,7 @@ function policyTemplateTokens(policy: { category: string; policyType: string }):
  *
  * Never throws — best-effort, per-country failures are caught.
  */
-export async function spawnVolatileIssues(): Promise<SpawnVolatileIssuesResult> {
+async function spawnVolatileIssues(): Promise<SpawnVolatileIssuesResult> {
   const result: SpawnVolatileIssuesResult = {
     policiesRolled: 0,
     policyIssuesSpawned: 0,
@@ -90,7 +94,7 @@ export async function spawnVolatileIssues(): Promise<SpawnVolatileIssuesResult> 
   };
 
   try {
-    // ── 1. Policy risk rolls ──────────────────────────────────────────────
+    // 1. Policy risk rolls
     const volatilePolicies = await db.policy.findMany({
       where: { status: "active", riskRating: { in: ["volatile", "high-risk"] } },
       select: {
@@ -134,7 +138,7 @@ export async function spawnVolatileIssues(): Promise<SpawnVolatileIssuesResult> 
       }
     }
 
-    // ── 2. Intent risk rolls (probability mode only) ─────────────────────
+    // 2. Intent risk rolls (probability mode only)
     const config = getNationalIssuesConfig();
     if (config.spawnMode === "probability") {
       const volatileIntents = await db.intent.findMany({
@@ -177,11 +181,19 @@ export async function spawnVolatileIssues(): Promise<SpawnVolatileIssuesResult> 
   return result;
 }
 
-export async function runPolicyMaintenanceDebits(): Promise<PolicyMaintenanceResult> {
+/**
+ * The `policy-maintenance` job (every 6 h): expire lapsed policies, roll volatile risks, then
+ * charge each country's active policies as spending within the year — at most once per policy
+ * per budget year of its realm's clock (PL-8, see ./lifecycle), so reruns within a year charge nothing.
+ */
+export async function runPolicyMaintenanceDebits(
+  database: PrismaClient = db
+): Promise<PolicyMaintenanceResult> {
   const result: PolicyMaintenanceResult = {
     countriesProcessed: 0,
     policiesProcessed: 0,
     totalCostDebited: 0,
+    policiesExpired: 0,
     volatileSpawns: {
       policiesRolled: 0,
       policyIssuesSpawned: 0,
@@ -191,88 +203,56 @@ export async function runPolicyMaintenanceDebits(): Promise<PolicyMaintenanceRes
   };
 
   try {
+    // Lapsed policies stop first, so they are neither rolled nor debited.
+    result.policiesExpired = await expireLapsedPolicies(database);
+
     // Risk rolls for volatile policies + intents (policy maintenance is run
     // alongside; both are part of the same 6-hourly maintenance pass).
     result.volatileSpawns = await spawnVolatileIssues();
 
-    // Find all active policies
-    const activePolicies = await db.policy.findMany({
-      where: { status: "active" },
-      select: {
-        id: true,
-        countryId: true,
-        name: true,
-        maintenanceCost: true,
-      },
-    });
+    const activePolicies = await findAllById((page) =>
+      database.policy.findMany({
+        where: { status: "active" },
+        select: {
+          id: true,
+          countryId: true,
+          name: true,
+          maintenanceCost: true,
+          country: { select: { realmId: true } },
+        },
+        ...page,
+      })
+    );
 
-    if (activePolicies.length === 0) {
-      return result;
+    const policiesByCountry = new Map<string, typeof activePolicies>();
+    for (const p of activePolicies) {
+      const list = policiesByCountry.get(p.countryId) ?? [];
+      list.push(p);
+      policiesByCountry.set(p.countryId, list);
     }
 
-    // Group active policies by countryId
-    const policiesByCountry: Record<string, typeof activePolicies> = {};
-    activePolicies.forEach((p) => {
-      if (!policiesByCountry[p.countryId]) {
-        policiesByCountry[p.countryId] = [];
-      }
-      policiesByCountry[p.countryId].push(p);
-    });
-
-    const countryIds = Object.keys(policiesByCountry);
-
-    for (const countryId of countryIds) {
+    // Each nation is charged for the budget year of its realm's clock, read once per realm.
+    const nowOf = realmNowsOnce(await realmClocks(database));
+    for (const [countryId, countryPolicies] of policiesByCountry) {
       try {
         result.countriesProcessed++;
-        const countryPolicies = policiesByCountry[countryId]!;
-
-        // Get GovernmentStructure for the country
-        const structure = await db.governmentStructure.findUnique({
+        const structure = await database.governmentStructure.findUnique({
           where: { countryId },
-          select: { id: true, totalBudget: true },
+          select: { totalBudget: true },
         });
+        // No budget to spend from yet: nothing to do (and nothing recorded) until there is.
+        const totalBudget = structure?.totalBudget;
+        if (totalBudget == null) continue;
 
-        if (!structure) continue;
-
-        let totalMaintenanceCost = 0;
-        const policyDetails: string[] = [];
-        const consequences: Array<{
-          targetModel: string;
-          targetField: string;
-          operation: "subtract" | "add" | "multiply" | "set";
-          value: number;
-          effectType?: string;
-        }> = [];
-
-        for (const policy of countryPolicies) {
-          const cost = policy.maintenanceCost || 0;
-          if (cost > 0) {
-            totalMaintenanceCost += cost;
-            policyDetails.push(`"${policy.name}" (${cost.toLocaleString()})`);
-
-            consequences.push({
-              targetModel: "GovernmentStructure",
-              targetField: "totalBudget",
-              operation: "subtract",
-              value: cost,
-              effectType: "POLICY_MAINTENANCE",
-            });
-
-            result.policiesProcessed++;
-            result.totalCostDebited += cost;
-          }
-        }
-
-        if (totalMaintenanceCost > 0) {
-          // Record the event and apply consequences using the unified spine
-          await CountryEventSpine.recordCountryEvent({
-            db,
-            countryId,
-            sourceType: "policy",
-            description: `Policy Maintenance: debited total cost of ${totalMaintenanceCost.toLocaleString()} from budget for active policies: ${policyDetails.join(", ")}`,
-            consequences,
-          });
-        }
+        const debit = await debitCountryMaintenance(
+          database,
+          countryId,
+          countryPolicies,
+          totalBudget,
+          nowOf(countryPolicies[0]!.country?.realmId ?? null)
+        );
+        result.policiesProcessed += debit.policiesDebited;
+        result.totalCostDebited += debit.totalDebited;
       } catch (err: any) {
         console.error(`[PolicyMaintenanceCron] Failed for country ${countryId}:`, err.message);
       }

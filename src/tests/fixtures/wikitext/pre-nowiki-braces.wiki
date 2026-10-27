@@ -1,0 +1,15 @@
+To call a template write <nowiki>{{Infobox country}}</nowiki> at the top of the page.
+
+<pre>
+{{Infobox country
+| name = Example
+}}
+
+Some literal text with [[brackets]] and '''quotes'''.
+</pre>
+
+<nowiki>
+{{Not a template}}
+</nowiki>
+
+The word <code>{{foo}}</code> above is inline code.

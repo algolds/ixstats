@@ -6,7 +6,7 @@
  */
 
 /** Store items that can only be bought after owning N of another item. */
-export const STORE_ITEM_PREREQUISITES: Record<string, { itemId: string; count: number }> = {
+const STORE_ITEM_PREREQUISITES: Record<string, { itemId: string; count: number }> = {
   upgrade_card_capacity_mega: { itemId: "upgrade_card_capacity", count: 5 },
 };
 
@@ -26,26 +26,53 @@ export function storePrerequisiteMet(
 }
 
 /**
- * Count store purchases per item from SPEND_COSMETIC / SPEND_BOOST transaction
- * metadata. Metadata is stored as a JSON string or an object; rows without an
- * `itemId` are ignored.
+ * The store item a SPEND_COSMETIC / SPEND_BOOST transaction bought. Metadata is stored as a
+ * JSON string or an object; rows without an `itemId` yield null.
+ */
+export function purchasedItemId(metadata: unknown): string | null {
+  const itemId = metadataObject(metadata).itemId;
+  return typeof itemId === "string" && itemId ? itemId : null;
+}
+
+function metadataObject(metadata: unknown): Record<string, unknown> {
+  let meta = metadata;
+  if (typeof meta === "string") {
+    try {
+      meta = JSON.parse(meta);
+    } catch {
+      return {};
+    }
+  }
+  return meta && typeof meta === "object" ? (meta as Record<string, unknown>) : {};
+}
+
+/**
+ * Whether an admin revoked this purchase. The row stays in the ledger (its amount and
+ * balanceAfter are history); its metadata gains `revokedAt`, and it no longer grants the item.
+ */
+export function isRevokedPurchase(metadata: unknown): boolean {
+  return typeof metadataObject(metadata).revokedAt === "string";
+}
+
+/** The purchase's metadata marked revoked (stored as a JSON string, like ledger metadata). */
+export function revokedPurchaseMetadata(metadata: unknown, revokedByUserId: string | null): string {
+  return JSON.stringify({
+    ...metadataObject(metadata),
+    revokedAt: new Date().toISOString(),
+    revokedByUserId,
+  });
+}
+
+/**
+ * Count store purchases per item from SPEND_COSMETIC / SPEND_BOOST transaction metadata.
+ * Revoked purchases grant nothing and are not counted.
  */
 export function countStorePurchases(rows: { metadata: unknown }[]): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const row of rows) {
-    let meta = row.metadata;
-    if (typeof meta === "string") {
-      try {
-        meta = JSON.parse(meta);
-      } catch {
-        continue;
-      }
-    }
-    const itemId =
-      meta && typeof meta === "object" ? (meta as Record<string, unknown>).itemId : undefined;
-    if (typeof itemId === "string" && itemId) {
-      counts[itemId] = (counts[itemId] ?? 0) + 1;
-    }
+    if (isRevokedPurchase(row.metadata)) continue;
+    const itemId = purchasedItemId(row.metadata);
+    if (itemId) counts[itemId] = (counts[itemId] ?? 0) + 1;
   }
   return counts;
 }

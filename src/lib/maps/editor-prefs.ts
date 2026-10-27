@@ -35,8 +35,6 @@ function writePref(key: string, value: string): void {
   }
 }
 
-// --- Snap enabled ---
-
 export function getSnapEnabled(): boolean {
   const raw = readPref(PREFS_KEY);
   return raw === null ? DEFAULT_ENABLED : raw !== "false";
@@ -46,8 +44,6 @@ export function setSnapEnabled(enabled: boolean): void {
   writePref(PREFS_KEY, String(enabled));
 }
 
-// --- Snap tolerance (degrees) ---
-
 export function getSnapTolerance(): number {
   const n = parseFloat(readPref(TOLERANCE_KEY) ?? "");
   return isNaN(n) || n <= 0 ? DEFAULT_TOLERANCE : n;
@@ -56,8 +52,6 @@ export function getSnapTolerance(): number {
 export function setSnapTolerance(tolerance: number): void {
   writePref(TOLERANCE_KEY, String(tolerance));
 }
-
-// --- Per-layer terrain snap toggles ---
 
 /** Background layers the editor snaps to. "background" is the landmass, i.e. the coastline. */
 export const SNAP_LAYER_TYPES = ["rivers", "lakes", "background", "altitudes", "climate"] as const;

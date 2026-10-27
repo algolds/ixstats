@@ -17,6 +17,7 @@ export interface CountrySnapshot {
   currentPopulation: number;
   currentGdpPerCapita: number;
   currentTotalGdp: number;
+  /** Percent (3 = 3%), converted from the stored decimal by buildCountrySnapshot. */
   actualGdpGrowth: number;
   unemploymentRate: number;
   inflationRate: number;
@@ -81,8 +82,8 @@ export interface CountrySnapshot {
   activeIntents: string[];
   activeIntentCategories: string[];
 
-  // ── Grounded context (Phase 3, focused-first) — all optional; filled when the
-  // ── country has the data. Absent → templates that reference them won't trigger.
+  // Grounded context (Phase 3, focused-first) — all optional; filled when the
+  // country has the data. Absent → templates that reference them won't trigger.
   geo?: {
     isLandlocked: boolean;
     isIsland: boolean;

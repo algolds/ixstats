@@ -1,24 +1,5 @@
-/** Tiny generated map images for the PNG realm-map pipeline tests (no files on disk). */
+/** A tiny generated PNG for the image decoders' size limits (no files on disk). */
 import sharp from "sharp";
-
-export const MAP_WIDTH = 40;
-export const MAP_HEIGHT = 20;
-type Rgb = [number, number, number];
-
-/** A 40×20 flat-colour map: Aurelia (red) west, Borealis (green) east, inside a 2px blue ocean. */
-export function twoNationPng(): Promise<Buffer> {
-  const raw = Buffer.alloc(MAP_WIDTH * MAP_HEIGHT * 3);
-  for (let y = 0; y < MAP_HEIGHT; y++) {
-    for (let x = 0; x < MAP_WIDTH; x++) {
-      const ocean = x < 2 || x >= MAP_WIDTH - 2 || y < 2 || y >= MAP_HEIGHT - 2;
-      const rgb: Rgb = ocean ? [0, 0, 255] : x < MAP_WIDTH / 2 ? [255, 0, 0] : [0, 255, 0];
-      raw.set(rgb, (y * MAP_WIDTH + x) * 3);
-    }
-  }
-  return sharp(raw, { raw: { width: MAP_WIDTH, height: MAP_HEIGHT, channels: 3 } })
-    .png()
-    .toBuffer();
-}
 
 const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
   let c = n;

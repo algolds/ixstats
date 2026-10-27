@@ -6,14 +6,14 @@
  */
 
 /**
- * Lore categories — the 13-value replacement for the legacy 5-value CardType.
+ * Lore categories: the 12 super-categories of Lore cards (NS cards carry none).
  *
  * Organized into visual families:
  *   Heraldic:   MILITARY, GOVERNMENT, NATION
  *   Celestial:  RELIGION, SCIENCE, GEOGRAPHY
  *   Civic:      DIPLOMACY, ECONOMY
  *   Humanistic: PEOPLE, CULTURE, HISTORY
- *   Meta:       SPECIAL, NS_IMPORT
+ *   Meta:       SPECIAL
  */
 export const LoreCategory = {
   MILITARY: "MILITARY",
@@ -28,52 +28,26 @@ export const LoreCategory = {
   HISTORY: "HISTORY",
   NATION: "NATION",
   SPECIAL: "SPECIAL",
-  NS_IMPORT: "NS_IMPORT",
 } as const;
 
 export type LoreCategory = (typeof LoreCategory)[keyof typeof LoreCategory];
 
-/**
- * How a card's artwork was sourced.
- */
-export const ArtworkSource = {
-  /** No image — fully procedural rendering (Tier 1) */
-  PROCEDURAL: "PROCEDURAL",
-  /** Image pulled from wiki article via MediaWiki API (Tier 3) */
-  WIKI_FETCHED: "WIKI_FETCHED",
-  /** Admin-uploaded custom art (Tier 3) */
-  UPLOADED: "UPLOADED",
-  /** Country flag, auto-fetched (Tier 3) */
-  FLAG: "FLAG",
-} as const;
-
-export type ArtworkSource = (typeof ArtworkSource)[keyof typeof ArtworkSource];
-
-/**
- * All lore categories as an ordered array (useful for filters, navigation).
- * Excludes NS_IMPORT — that's a compatibility bucket, not a browsable category.
- */
-export const BROWSABLE_CATEGORIES: LoreCategory[] = [
-  LoreCategory.MILITARY,
-  LoreCategory.DIPLOMACY,
-  LoreCategory.GEOGRAPHY,
-  LoreCategory.RELIGION,
-  LoreCategory.CULTURE,
-  LoreCategory.GOVERNMENT,
-  LoreCategory.PEOPLE,
-  LoreCategory.ECONOMY,
-  LoreCategory.SCIENCE,
-  LoreCategory.HISTORY,
-  LoreCategory.NATION,
-  LoreCategory.SPECIAL,
-];
+/** Every lore category, in display order (for filters and navigation). */
+export const BROWSABLE_CATEGORIES: LoreCategory[] = Object.values(LoreCategory);
 
 export function isValidLoreCategory(value: string): value is LoreCategory {
   return Object.values(LoreCategory).includes(value as LoreCategory);
 }
 
-export function isValidArtworkSource(value: string): value is ArtworkSource {
-  return Object.values(ArtworkSource).includes(value as ArtworkSource);
+/** The filters' extra choice: a lore card with no category. */
+export const UNCATEGORISED = "UNCATEGORISED" as const;
+
+export const CategoryFilter = { ...LoreCategory, UNCATEGORISED } as const;
+
+export type CategoryFilterValue = LoreCategory | typeof UNCATEGORISED;
+
+export function isCategoryFilterValue(value: string): value is CategoryFilterValue {
+  return value === UNCATEGORISED || isValidLoreCategory(value);
 }
 
 /**
@@ -263,7 +237,6 @@ const CATEGORY_ROOTS: Record<LoreCategory, readonly string[]> = {
     "monument",
     "symbol",
     "anthem",
-    "flag",
   ],
   GOVERNMENT: [
     "government",
@@ -361,16 +334,6 @@ const CATEGORY_ROOTS: Record<LoreCategory, readonly string[]> = {
     "loreward",
     "founder",
   ],
-  NS_IMPORT: [
-    "nationstates",
-    "ns",
-    "ns card",
-    "ns import",
-    "external deck",
-    "flag import",
-    "trading card",
-    "nationstates import",
-  ],
 };
 
 function expandSynonyms(roots: readonly string[]): string[] {
@@ -403,23 +366,3 @@ function expandSynonyms(roots: readonly string[]): string[] {
 export const CATEGORY_SYNONYMS: Record<LoreCategory, readonly string[]> = Object.fromEntries(
   Object.entries(CATEGORY_ROOTS).map(([cat, roots]) => [cat, expandSynonyms(roots)])
 ) as unknown as Record<LoreCategory, readonly string[]>;
-
-/**
- * Returns all synonyms/aliases for a given category.
- */
-export function getCategorySynonyms(category: LoreCategory): readonly string[] {
-  return CATEGORY_SYNONYMS[category] || [];
-}
-
-/**
- * Find matching LoreCategory for any keyword, synonym, or alias.
- */
-export function findMatchingCategory(term: string): LoreCategory | null {
-  const normalized = term.trim().toLowerCase();
-  for (const [cat, synonyms] of Object.entries(CATEGORY_SYNONYMS)) {
-    if (cat.toLowerCase() === normalized || synonyms.includes(normalized)) {
-      return cat as LoreCategory;
-    }
-  }
-  return null;
-}

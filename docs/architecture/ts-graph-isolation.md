@@ -1,5 +1,7 @@
 # TypeScript Architecture & Compilation Isolation
 
+**Last updated:** 2026-09-29
+
 **Tooling**: TypeScript 7.0.2 · Bun 1.4 Runtime · ts-morph AST Engine  
 **Enforcement**: `scripts/audit/audit-arch.ts` (`bun run audit:arch`)  
 **Configs**: `tsconfig.json`, `tsconfig.base.json`, `tsconfig.ui.json`, `tsconfig.server.json`, `tsconfig.trpc.json`, `tsconfig.db.json`

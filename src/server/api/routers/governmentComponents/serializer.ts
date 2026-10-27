@@ -1,6 +1,7 @@
-import { ComponentType } from "@prisma/client";
+import type { ComponentType } from "@prisma/client";
+import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 
-export interface ParsedComponent {
+interface ParsedComponent {
   id: string;
   type: ComponentType;
   name: string;
@@ -25,51 +26,27 @@ export interface ParsedComponent {
 }
 
 /**
- * Parse JSON field safely with fallback
+ * Components from the ATOMIC_COMPONENTS code library
  */
-export function safeJSONParse<T>(jsonString: string | null, fallback: T): T {
-  if (!jsonString) return fallback;
-
-  try {
-    return JSON.parse(jsonString) as T;
-  } catch (error) {
-    console.warn("[governmentComponents] Failed to parse JSON:", error);
-    return fallback;
-  }
-}
-
-/**
- * Transform database component to parsed format with nullish fallbacks
- */
-export function transformDatabaseComponent(dbComp: any): ParsedComponent {
-  const synergies = safeJSONParse<ComponentType[]>(dbComp.synergies, []);
-  const conflicts = safeJSONParse<ComponentType[]>(dbComp.conflicts, []);
-  const prerequisites = safeJSONParse<string[]>(dbComp.prerequisites, []);
-  const metadata = safeJSONParse<ParsedComponent["metadata"]>(dbComp.metadata, {
-    complexity: "Medium",
-    timeToImplement: "12-18 months",
-    staffRequired: 10,
-    technologyRequired: false,
-  });
-
-  return {
-    id:
-      dbComp.id ||
-      (typeof dbComp.componentType === "string" ? dbComp.componentType.toLowerCase() : ""),
-    type: dbComp.componentType,
-    name: dbComp.name,
-    description: dbComp.description ?? "",
-    effectiveness: dbComp.effectiveness ?? 50,
-    synergies,
-    conflicts,
-    implementationCost: dbComp.implementationCost ?? 0,
-    maintenanceCost: dbComp.maintenanceCost ?? 0,
-    requiredCapacity: dbComp.requiredCapacity ?? 50,
-    category: dbComp.category ?? "general",
-    prerequisites,
-    color: dbComp.color ?? "blue",
-    metadata,
-    usageCount: dbComp.usageCount ?? 0,
-    isActive: dbComp.isActive ?? true,
-  };
+export function getLibraryComponents(): ParsedComponent[] {
+  return Object.values(ATOMIC_COMPONENTS)
+    .filter((comp): comp is NonNullable<typeof comp> => comp !== undefined)
+    .map((comp) => ({
+      id: comp.id,
+      type: comp.type,
+      name: comp.name,
+      description: comp.description,
+      effectiveness: comp.effectiveness,
+      synergies: comp.synergies,
+      conflicts: comp.conflicts,
+      implementationCost: comp.implementationCost,
+      maintenanceCost: comp.maintenanceCost,
+      requiredCapacity: comp.requiredCapacity,
+      category: comp.category,
+      prerequisites: comp.prerequisites,
+      color: comp.color,
+      metadata: comp.metadata,
+      usageCount: 0,
+      isActive: true,
+    }));
 }

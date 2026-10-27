@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { validateNoXSS } from "~/lib/utils";
@@ -27,7 +27,7 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
     }),
 
   // Create a collaborative document
-  createThinktankDocument: protectedProcedure
+  createThinktankDocument: rateLimitedMutationProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -106,7 +106,7 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
     }),
 
   // Update a collaborative document
-  updateThinktankDocument: protectedProcedure
+  updateThinktankDocument: rateLimitedMutationProcedure
     .input(
       z.object({
         documentId: z.string(),
@@ -197,7 +197,7 @@ export const thinkpagesThinktanksDocumentsRouter = createTRPCRouter({
     }),
 
   // Delete a collaborative document
-  deleteThinktankDocument: protectedProcedure
+  deleteThinktankDocument: rateLimitedMutationProcedure
     .input(
       z.object({
         documentId: z.string(),

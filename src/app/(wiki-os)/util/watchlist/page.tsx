@@ -1,5 +1,4 @@
 "use client";
-// src/app/(wiki-os)/wiki/watchlist/page.tsx
 // WikiOS Stash Watchlist Hub
 
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";

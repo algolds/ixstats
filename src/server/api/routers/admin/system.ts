@@ -8,12 +8,12 @@ import {
   invalidateConfigCache,
 } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
-import { assertPersistableStats, IxStatsCalculator } from "~/lib/economy/calculations";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { persistSharedClock } from "~/lib/ixtime/shared-clock";
+import { withJobLock } from "~/lib/system/job-lock";
+import { runStatProgression, type StatProgressionResult } from "~/server/cron/stat-progression";
+import { ActivityHooks } from "~/lib/activity/hooks";
 import type { SystemStatus } from "~/types/ixstats";
-import {
-  prepareBaseCountryData,
-  getCountryComponentsStatsData,
-} from "~/server/shared/country-helpers";
 import { readConfigKeys, writeConfigKeys } from "./_config-kv";
 
 export const adminSystemRouter = createTRPCRouter({
@@ -243,7 +243,7 @@ export const adminSystemRouter = createTRPCRouter({
         multiplier: z.number().optional(),
       })
     )
-    .mutation(async ({ ctx: _ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       try {
         // Try to set via bot first
         const botResult = await IxTime.setBotTimeOverride(input.ixTime, input.multiplier);
@@ -260,6 +260,7 @@ export const adminSystemRouter = createTRPCRouter({
           if (input.multiplier !== undefined) {
             IxTime.setMultiplierOverride(input.multiplier);
           }
+          await persistSharedClock(ctx.db);
 
           return {
             success: true,
@@ -322,132 +323,85 @@ export const adminSystemRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      try {
-        const currentEpoch = IxTime.getInGameEpoch();
-        const _currentIxTime = IxTime.getCurrentIxTime();
+      const currentEpoch = IxTime.getInGameEpoch();
+      const _currentIxTime = IxTime.getCurrentIxTime();
 
-        // Calculate the time difference
-        const _timeDifference = input.targetEpoch - currentEpoch;
-        const yearsDifference = IxTime.getYearsElapsed(currentEpoch, input.targetEpoch);
+      // Calculate the time difference
+      const _timeDifference = input.targetEpoch - currentEpoch;
+      const yearsDifference = IxTime.getYearsElapsed(currentEpoch, input.targetEpoch);
 
-        // Update all countries' baseline dates to the new epoch
-        const updateResult = await ctx.db.country.updateMany({
-          data: {
-            baselineDate: new Date(input.targetEpoch),
-            lastCalculated: new Date(input.targetEpoch),
-          },
-        });
-
-        // Set the bot time override to the new epoch
-        const botResult = await IxTime.setBotTimeOverride(input.targetEpoch);
-
-        // Log the epoch sync
-        await ctx.db.calculationLog.create({
-          data: {
-            timestamp: new Date(),
-            ixTimeTimestamp: new Date(input.targetEpoch),
-            countriesUpdated: updateResult.count,
-            executionTimeMs: 0,
-            globalGrowthFactor: (await getEconomicConfigFromDB(ctx.db)).globalGrowthFactor,
-            notes: `Epoch sync: ${yearsDifference.toFixed(1)} years adjustment. ${updateResult.count} countries updated. ${input.reason || "Manual epoch sync"}.`,
-          },
-        });
-
-        return {
-          success: true,
-          message: `Epoch synchronized successfully. Adjusted ${yearsDifference.toFixed(1)} years.`,
-          previousEpoch: currentEpoch,
-          newEpoch: input.targetEpoch,
-          yearsDifference: yearsDifference,
-          countriesUpdated: updateResult.count,
-          botSyncSuccess: botResult.success,
-        };
-      } catch (error) {
-        console.error("Failed to sync epoch:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to sync epoch time", {
-          cause: error,
-        });
-      }
-    }),
-
-  // Force recalculation of all countries
-  forceRecalculation: adminProcedure.mutation(async ({ ctx }) => {
-    try {
-      const startTime = Date.now();
-      const countries = await ctx.db.country.findMany({
-        include: {
-          storytellerEffects: {
-            where: { isActive: true },
-            orderBy: { ixTimeTimestamp: "desc" },
-          },
+      // Move Ixnay's nations' baseline dates to the new epoch: the bot clock is Ixnay's, and every other realm's
+      // nations run on their own realm's clock.
+      const updateResult = await ctx.db.country.updateMany({
+        where: { realmId: DEFAULT_REALM_ID },
+        data: {
+          baselineDate: new Date(input.targetEpoch),
+          lastCalculated: new Date(input.targetEpoch),
         },
       });
 
-      const econConfig = await getEconomicConfigFromDB(ctx.db);
-      const currentIxTime = IxTime.getCurrentIxTime();
+      // Set the bot time override to the new epoch
+      const botResult = await IxTime.setBotTimeOverride(input.targetEpoch);
 
-      let updatedCount = 0;
-
-      for (const country of countries) {
-        try {
-          const calc = new IxStatsCalculator(econConfig, country.baselineDate.getTime());
-
-          const componentsData = await getCountryComponentsStatsData(ctx.db, country.id);
-          const baseCountryData = prepareBaseCountryData(country, componentsData);
-
-          const initialStats = calc.initializeCountryStats(baseCountryData);
-          const effects = country.storytellerEffects.map((d) => ({
-            ...d,
-            ixTimeTimestamp: d.ixTimeTimestamp.getTime(),
-          }));
-
-          const result = calc.calculateTimeProgression(initialStats, currentIxTime, effects);
-          assertPersistableStats(result.newStats);
-
-          await ctx.db.country.update({
-            where: { id: country.id },
-            data: {
-              currentPopulation: result.newStats.currentPopulation,
-              currentGdpPerCapita: result.newStats.currentGdpPerCapita,
-              currentTotalGdp: result.newStats.currentTotalGdp,
-              economicTier: result.newStats.economicTier.toString(),
-              populationTier: result.newStats.populationTier.toString(),
-              populationDensity: result.newStats.populationDensity,
-              gdpDensity: result.newStats.gdpDensity,
-              lastCalculated: new Date(currentIxTime),
-            },
-          });
-
-          updatedCount++;
-        } catch (countryError) {
-          console.error(`Failed to update country ${country.name}:`, countryError);
-        }
-      }
-
-      const executionTime = Date.now() - startTime;
-
-      // Log the calculation
+      // Log the epoch sync
       await ctx.db.calculationLog.create({
         data: {
           timestamp: new Date(),
-          ixTimeTimestamp: new Date(currentIxTime),
-          countriesUpdated: updatedCount,
-          executionTimeMs: executionTime,
-          globalGrowthFactor: econConfig.globalGrowthFactor,
-          notes: "Manual recalculation from admin panel",
+          ixTimeTimestamp: new Date(input.targetEpoch),
+          countriesUpdated: updateResult.count,
+          executionTimeMs: 0,
+          globalGrowthFactor: (await getEconomicConfigFromDB(ctx.db)).globalGrowthFactor,
+          notes: `Epoch sync: ${yearsDifference.toFixed(1)} years adjustment. ${updateResult.count} countries updated. ${input.reason || "Manual epoch sync"}.`,
         },
       });
 
       return {
         success: true,
-        message: `Updated ${updatedCount} countries in ${executionTime}ms`,
-        countriesUpdated: updatedCount,
-        executionTimeMs: executionTime,
+        message: `Epoch synchronized successfully. Adjusted ${yearsDifference.toFixed(1)} years.`,
+        previousEpoch: currentEpoch,
+        newEpoch: input.targetEpoch,
+        yearsDifference: yearsDifference,
+        countriesUpdated: updateResult.count,
+        botSyncSuccess: botResult.success,
       };
+    }),
+
+  // Force recalculation of all countries: the stat-progression job with every country written.
+  forceRecalculation: adminProcedure.mutation(async ({ ctx }) => {
+    let outcome: Awaited<ReturnType<typeof withJobLock<StatProgressionResult>>>;
+    try {
+      outcome = await withJobLock(
+        ctx.db,
+        "stat-progression",
+        () =>
+          runStatProgression({
+            db: ctx.db,
+            force: true,
+            note: "Manual recalculation from admin panel",
+            onEconomicTierChange: ({ countryId, from, to }) =>
+              ActivityHooks.Economic.onEconomicTierChange(countryId, from, to),
+          }),
+        { timeoutMs: 30 * 60_000 }
+      );
     } catch (error) {
       console.error("Failed to force recalculation:", error);
       throw new Error("Failed to recalculate country statistics", { cause: error });
     }
+
+    if (!outcome.ran) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "Stat progression is already running; try again shortly.",
+      });
+    }
+
+    const { updated, executionTimeMs } = outcome.result;
+    return {
+      success: true,
+      message: `Updated ${updated} countries in ${executionTimeMs}ms`,
+      countriesUpdated: updated,
+      executionTimeMs,
+    };
   }),
 
   getSystemLogs: adminProcedure

@@ -1,6 +1,7 @@
-import { EconomicComponentType } from "@prisma/client";
+import type { EconomicComponentType } from "@prisma/client";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 
-export interface ParsedEconomicComponent {
+interface ParsedEconomicComponent {
   id: string;
   type: EconomicComponentType;
   name: string;
@@ -37,67 +38,31 @@ export interface ParsedEconomicComponent {
 }
 
 /**
- * Parse JSON field safely with fallback
+ * Components from the ATOMIC_ECONOMIC_COMPONENTS code library
  */
-export function safeJSONParse<T>(jsonString: string | null, fallback: T): T {
-  if (!jsonString) return fallback;
-
-  try {
-    return JSON.parse(jsonString) as T;
-  } catch (error) {
-    console.warn("[economicComponents] Failed to parse JSON:", error);
-    return fallback;
-  }
-}
-
-/**
- * Transform database component to parsed format with 7-field JSON parsing and nullish fallbacks
- */
-export function transformDatabaseComponent(dbComp: any): ParsedEconomicComponent {
-  // Parse all JSON fields
-  const synergies = safeJSONParse<EconomicComponentType[]>(dbComp.synergies, []);
-  const conflicts = safeJSONParse<EconomicComponentType[]>(dbComp.conflicts, []);
-  const governmentSynergies = safeJSONParse<string[]>(dbComp.governmentSynergies, []);
-  const governmentConflicts = safeJSONParse<string[]>(dbComp.governmentConflicts, []);
-  const taxImpact = safeJSONParse<ParsedEconomicComponent["taxImpact"]>(dbComp.taxImpact, {
-    optimalCorporateRate: 20,
-    optimalIncomeRate: 25,
-    revenueEfficiency: 0.75,
-  });
-  const sectorImpact = safeJSONParse<Record<string, number>>(dbComp.sectorImpact, {});
-  const employmentImpact = safeJSONParse<ParsedEconomicComponent["employmentImpact"]>(
-    dbComp.employmentImpact,
-    { unemploymentModifier: 0, participationModifier: 1, wageGrowthModifier: 1 }
-  );
-  const metadata = safeJSONParse<ParsedEconomicComponent["metadata"]>(dbComp.metadata, {
-    complexity: "Medium",
-    timeToImplement: "2-3 years",
-    staffRequired: 150,
-    technologyRequired: true,
-  });
-
-  return {
-    id:
-      dbComp.id ||
-      (typeof dbComp.componentType === "string" ? dbComp.componentType.toLowerCase() : ""),
-    type: dbComp.componentType,
-    name: dbComp.name,
-    description: dbComp.description ?? "",
-    effectiveness: dbComp.effectiveness ?? dbComp.effectivenessScore ?? 75,
-    synergies,
-    conflicts,
-    governmentSynergies,
-    governmentConflicts,
-    taxImpact,
-    sectorImpact,
-    employmentImpact,
-    implementationCost: dbComp.implementationCost ?? 100000,
-    maintenanceCost: dbComp.maintenanceCost ?? 50000,
-    requiredCapacity: dbComp.requiredCapacity ?? 75,
-    category: dbComp.category ?? "Economic Model",
-    color: dbComp.color ?? "emerald",
-    metadata,
-    usageCount: dbComp.usageCount ?? 0,
-    isActive: dbComp.isActive ?? true,
-  };
+export function getLibraryComponents(): ParsedEconomicComponent[] {
+  return Object.values(ATOMIC_ECONOMIC_COMPONENTS)
+    .filter((comp): comp is NonNullable<typeof comp> => comp !== undefined)
+    .map((comp) => ({
+      id: comp.id,
+      type: comp.type,
+      name: comp.name,
+      description: comp.description,
+      effectiveness: comp.effectiveness,
+      synergies: comp.synergies,
+      conflicts: comp.conflicts,
+      governmentSynergies: comp.governmentSynergies,
+      governmentConflicts: comp.governmentConflicts,
+      taxImpact: comp.taxImpact,
+      sectorImpact: comp.sectorImpact,
+      employmentImpact: comp.employmentImpact,
+      implementationCost: comp.implementationCost,
+      maintenanceCost: comp.maintenanceCost,
+      requiredCapacity: comp.requiredCapacity,
+      category: comp.category,
+      color: comp.color,
+      metadata: comp.metadata,
+      usageCount: 0,
+      isActive: true,
+    }));
 }

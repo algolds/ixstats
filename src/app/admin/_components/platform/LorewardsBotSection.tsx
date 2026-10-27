@@ -22,7 +22,6 @@ import {
   Flash as Zap,
   ArrowSeparateVertical as ChevronsUpDown,
   Prohibition as Ban,
-  FloppyDisk as Save,
   CheckCircle,
 } from "iconoir-react";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
@@ -35,6 +34,11 @@ import {
   CommandItem,
   CommandGroup,
 } from "~/components/ui/command";
+import { ValueSelect } from "~/components/ui/value-select";
+import { overrideToast } from "~/lib/lorewards/override-form";
+import { fullSyncToast } from "~/lib/lorewards/admin-toasts";
+import { LorewardOverrideCard } from "./LorewardOverrideCard";
+import { LorewardPayNowButton } from "./LorewardPayNowButton";
 
 export function LorewardsBotSection() {
   const notify = useNotify();
@@ -62,18 +66,6 @@ export function LorewardsBotSection() {
       { enabled: debouncedSearchTerm.trim().length >= 2 }
     );
 
-  // Override form states
-  const [overrideDate, setOverrideDate] = useState<string>("");
-  const [overrideType, setOverrideType] = useState<string>("daily");
-  const [overrideWinnerUser, setOverrideWinnerUser] = useState<string>("");
-  const [overrideWinnerPage, setOverrideWinnerPage] = useState<string>("");
-  const [overrideWinnerScore, setOverrideWinnerScore] = useState<number>(100);
-  const [overrideWinnerBytes, setOverrideWinnerBytes] = useState<number>(1000);
-  const [overrideRunnerUpUser, setOverrideRunnerUpUser] = useState<string>("");
-  const [overrideRunnerUpPage, setOverrideRunnerUpPage] = useState<string>("");
-  const [overrideRunnerUpScore, setOverrideRunnerUpScore] = useState<number>(50);
-  const [overrideRunnerUpBytes, setOverrideRunnerUpBytes] = useState<number>(500);
-
   // Cross-validation / Sync states
   const [adminDate, setAdminDate] = useState(() => {
     const d = new Date();
@@ -85,51 +77,37 @@ export function LorewardsBotSection() {
   // Blacklist query
   const { data: blacklist, refetch: refetchBlacklist } = api.lorewards.getBlacklist.useQuery();
 
-  // Blacklist Mutation
   const updateBlacklistMutation = api.lorewards.updateBlacklist.useMutation({
     onSuccess: () => {
       notify.success(
-        "Blacklist Updated",
+        "Blacklist updated",
         "The user's blacklist status has been successfully updated."
       );
       refetchBlacklist();
     },
     onError: (err) => {
-      notify.error("Blacklist Update Failed", err.message);
+      notify.error("Blacklist update failed", err.message);
     },
   });
 
-  // Override Winner Mutation
-  const overrideWinnerMutation = api.lorewards.overrideWinner.useMutation({
-    onSuccess: () => {
-      notify.success("Winner Overridden", "The winner override has been successfully synced.");
-    },
-    onError: (err) => {
-      notify.error("Override Failed", err.message);
-    },
-  });
-
-  // Admin sync mutation
+  // Admin sync mutation: reads the OOL pages, then settles every place
   const triggerSyncMutation = api.lorewards.triggerSync.useMutation({
-    onSuccess: () => {
-      notify.success(
-        "Database Sync Complete",
-        "Successfully synchronized state file and OOL page."
-      );
+    onSuccess: (result) => {
+      const toast = fullSyncToast(result);
+      notify[toast.tone](toast.title, toast.message);
     },
     onError: (err) => {
-      notify.error("Database Sync Failed", err.message);
+      notify.error("Database sync failed", err.message);
     },
   });
 
-  // Cross validate mutation
   const crossValidateMutation = api.lorewards.crossValidate.useMutation({
     onSuccess: (data) => {
       setValidationResult(data);
-      notify.success("Cross-Validation Complete", `Calculated match stats for ${data.date}.`);
+      notify.success("Cross-validation complete", `Calculated match stats for ${data.date}.`);
     },
     onError: (err) => {
-      notify.error("Cross-Validation Failed", err.message);
+      notify.error("Cross-validation failed", err.message);
     },
   });
 
@@ -140,7 +118,7 @@ export function LorewardsBotSection() {
 
   const handleAddBlacklist = () => {
     if (!blacklistUser.trim()) {
-      notify.error("Validation Error", "Please input a valid username.");
+      notify.error("Validation error", "Please input a valid username.");
       return;
     }
     let expiry: string | null = null;
@@ -154,7 +132,7 @@ export function LorewardsBotSection() {
       expiry = d.toISOString().slice(0, 10);
     } else if (blacklistDuration === "custom") {
       if (!blacklistExpiry) {
-        notify.error("Validation Error", "Please choose a custom expiry date.");
+        notify.error("Validation error", "Please choose a custom expiry date.");
         return;
       }
       expiry = blacklistExpiry;
@@ -169,25 +147,6 @@ export function LorewardsBotSection() {
     setSearchTerm("");
   };
 
-  const handleOverrideSubmit = () => {
-    if (!overrideDate) {
-      notify.error("Validation Error", "Please select a date for the override.");
-      return;
-    }
-    overrideWinnerMutation.mutate({
-      date: overrideDate,
-      type: overrideType as "daily" | "weekly" | "monthly",
-      winnerUser: overrideWinnerUser || null,
-      winnerPage: overrideWinnerPage || null,
-      winnerScore: overrideWinnerScore ? Number(overrideWinnerScore) : null,
-      winnerBytes: overrideWinnerBytes ? Number(overrideWinnerBytes) : null,
-      runnerUpUser: overrideRunnerUpUser || null,
-      runnerUpPage: overrideRunnerUpPage || null,
-      runnerUpScore: overrideRunnerUpScore ? Number(overrideRunnerUpScore) : null,
-      runnerUpBytes: overrideRunnerUpBytes ? Number(overrideRunnerUpBytes) : null,
-    });
-  };
-
   // PM2 Process control
   const { data: botProcesses, refetch: refetchProcesses } = api.admin.getBotProcesses.useQuery(
     undefined,
@@ -196,10 +155,10 @@ export function LorewardsBotSection() {
 
   const controlBotMutation = api.admin.controlBotProcess.useMutation({
     onSuccess: (data) => {
-      notify.success("Process Control", data.message);
+      notify.success("Process control", data.message);
       refetchProcesses();
     },
-    onError: (err) => notify.error("Process Error", err.message),
+    onError: (err) => notify.error("Process error", err.message),
   });
 
   const handleProcessControl = (
@@ -231,46 +190,21 @@ export function LorewardsBotSection() {
   const triggerScoringMutation = api.admin.triggerLorewardScoring.useMutation({
     onSuccess: (data) => {
       setScoringResult(data);
-      notify.success("Scoring Engine", "Successfully generated candidate lists.");
+      notify.success("Scoring engine", "Successfully generated candidate lists.");
     },
-    onError: (err) => notify.error("Scoring Error", err.message),
-  });
-
-  const pushToBotMutation = api.admin.pushLorewardToBot.useMutation({
-    onSuccess: () => notify.success("Announced", "Broadcasted winner embed to Discord channel"),
-    onError: (err) => notify.error("Broadcast Error", err.message),
+    onError: (err) => notify.error("Scoring error", err.message),
   });
 
   const saveOverrideMutation = api.admin.saveLorewardWinnerOverride.useMutation({
-    onSuccess: () => notify.success("Saved", "Saved winner details override to database"),
-    onError: (err) => notify.error("Override Error", err.message),
+    onSuccess: (result) => {
+      const toast = overrideToast(result.botSynced, result);
+      notify[toast.tone](toast.title, toast.message);
+    },
+    onError: (err) => notify.error("Override error", err.message),
   });
 
   const handleTriggerScoring = () => {
     triggerScoringMutation.mutate({ date: runDate });
-  };
-
-  const handlePushToBot = () => {
-    if (!scoringResult || !scoringResult.winner) return;
-    pushToBotMutation.mutate({
-      date: runDate,
-      winner: {
-        user: scoringResult.winner.user,
-        page: scoringResult.winner.page,
-        score: scoringResult.winner.score ?? scoringResult.winner.finalScore ?? 0,
-        bytesAdded: scoringResult.winner.bytesAdded ?? 0,
-      },
-      runnerUp: scoringResult.runnerUp
-        ? {
-            user: scoringResult.runnerUp.user,
-            page: scoringResult.runnerUp.page,
-            score: scoringResult.runnerUp.score ?? scoringResult.runnerUp.finalScore ?? 0,
-            bytesAdded: scoringResult.runnerUp.bytesAdded ?? 0,
-          }
-        : null,
-      candidates: scoringResult.candidates || [],
-      editCount: scoringResult.editCount || 0,
-    });
   };
 
   const handleSaveOverride = () => {
@@ -290,10 +224,10 @@ export function LorewardsBotSection() {
   };
 
   const formatBytes = (bytes: number) => {
-    if (!bytes) return "0 Bytes";
+    if (!bytes) return "0 bytes";
     const k = 1024;
     const dm = 2;
-    const sizes = ["Bytes", "KB", "MB"];
+    const sizes = ["bytes", "KB", "MB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
   };
@@ -301,43 +235,43 @@ export function LorewardsBotSection() {
   return (
     <div className="space-y-6">
       {/* PM2 Controls */}
-      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Sliders className="h-5 w-5 text-indigo-500" />
-            PM2 Process Manager
+          <CardTitle className="text-title-3 flex items-center gap-2">
+            <Sliders className="text-indigo h-5 w-5" />
+            PM2 process manager
           </CardTitle>
-          <CardDescription>Control active backend integrations in real-time</CardDescription>
+          <CardDescription>Switch backend integrations on or off</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
             {botProcesses?.map((proc) => (
               <div
                 key={proc.name}
-                className="border-border/30 bg-muted/20 flex flex-col justify-between rounded-xl border p-4"
+                className="border-separator bg-fill-4 rounded-row flex flex-col justify-between border p-4"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <h4 className="text-foreground font-semibold">{proc.name}</h4>
+                    <h4 className="text-label font-semibold">{proc.name}</h4>
                     <div className="mt-1 flex items-center gap-2">
                       <span
                         className={cn(
                           "h-2 w-2 rounded-full",
-                          proc.status === "online" ? "bg-emerald-500" : "bg-red-500"
+                          proc.status === "online" ? "bg-green" : "bg-red"
                         )}
                       />
-                      <span className="text-muted-foreground text-xs capitalize">
+                      <span className="text-label-secondary text-footnote capitalize">
                         {proc.status}
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <Button
                       size="icon"
                       variant="ghost"
                       onClick={() => handleProcessControl(proc.name as any, "start")}
                       disabled={proc.status === "online"}
-                      className="h-8 w-8 text-emerald-500 hover:bg-emerald-500/10"
+                      className="w-8"
                     >
                       <Play className="h-4 w-4" />
                     </Button>
@@ -346,7 +280,7 @@ export function LorewardsBotSection() {
                       variant="ghost"
                       onClick={() => handleProcessControl(proc.name as any, "stop")}
                       disabled={proc.status !== "online"}
-                      className="h-8 w-8 text-red-500 hover:bg-red-500/10"
+                      className="text-destructive w-8"
                     >
                       <Square className="h-4 w-4" />
                     </Button>
@@ -354,32 +288,32 @@ export function LorewardsBotSection() {
                       size="icon"
                       variant="ghost"
                       onClick={() => handleProcessControl(proc.name as any, "restart")}
-                      className="h-8 w-8 text-amber-500 hover:bg-amber-500/10"
+                      className="w-8"
                     >
                       <RefreshCw className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
 
-                <div className="border-border/20 text-muted-foreground mt-4 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
+                <div className="border-separator text-label-secondary text-footnote mt-4 grid grid-cols-2 gap-2 border-t pt-3">
                   <div>
-                    <span className="block opacity-60">CPU Load</span>
-                    <span className="text-foreground font-mono font-medium">{proc.cpu}%</span>
+                    <span className="block opacity-60">CPU load</span>
+                    <span className="text-label font-medium tabular-nums">{proc.cpu}%</span>
                   </div>
                   <div>
                     <span className="block opacity-60">Memory</span>
-                    <span className="text-foreground font-mono font-medium">
+                    <span className="text-label font-medium tabular-nums">
                       {formatBytes(proc.memory)}
                     </span>
                   </div>
                   <div>
                     <span className="block opacity-60">Restarts</span>
-                    <span className="text-foreground font-mono font-medium">{proc.restarts}</span>
+                    <span className="text-label font-medium tabular-nums">{proc.restarts}</span>
                   </div>
                   <div>
                     <span className="block opacity-60">Uptime</span>
-                    <span className="text-foreground font-mono font-medium">
-                      {proc.uptime ? `${Math.round(proc.uptime / 60000)}m` : "—"}
+                    <span className="text-label font-medium tabular-nums">
+                      {proc.uptime ? `${Math.round(proc.uptime / 60000)}m` : "–"}
                     </span>
                   </div>
                 </div>
@@ -389,40 +323,41 @@ export function LorewardsBotSection() {
         </CardContent>
       </Card>
 
-      {/* Bot Logs Console */}
-      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Terminal className="h-5 w-5 text-emerald-400" />
-                Live Console logs
+              <CardTitle className="text-title-3 flex items-center gap-2">
+                <Terminal className="text-green h-5 w-5" />
+                Live console logs
               </CardTitle>
               <CardDescription>Auditing output stream of Discord bot processes</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <select
+              <ValueSelect
                 value={selectedProcess}
-                onChange={(e) => setSelectedProcess(e.target.value as any)}
-                className="bg-background border-border/40 text-foreground rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
-              >
-                <option value="ixwiki-discord-bot">Discord Bot</option>
-                <option value="ixstats-ixtwitter">IxTwitter Feed</option>
-              </select>
-              <select
+                onValueChange={(v) => setSelectedProcess(v as any)}
+                options={[
+                  ["ixwiki-discord-bot", "Discord bot"],
+                  ["ixstats-ixtwitter", "IxTwitter feed"],
+                ]}
+                size="sm"
+              />
+              <ValueSelect
                 value={logType}
-                onChange={(e) => setLogType(e.target.value as any)}
-                className="bg-background border-border/40 text-foreground rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
-              >
-                <option value="out">Stdout (info)</option>
-                <option value="err">Stderr (errors)</option>
-              </select>
+                onValueChange={(v) => setLogType(v as any)}
+                options={[
+                  ["out", "Stdout (info)"],
+                  ["err", "Stderr (errors)"],
+                ]}
+                size="sm"
+              />
               <Button
                 size="icon"
                 variant="ghost"
                 onClick={() => refetchLogs()}
                 disabled={isFetchingLogs}
-                className="text-muted-foreground h-8 w-8"
+                className="w-8"
               >
                 <RefreshCw className={cn("h-4 w-4", isFetchingLogs && "animate-spin")} />
               </Button>
@@ -430,24 +365,18 @@ export function LorewardsBotSection() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="scrollbar-thumb-muted-foreground/30 bg-muted/30 border-border/40 text-foreground/90 max-h-72 min-h-60 scrollbar-thin overflow-y-auto rounded-xl border p-4 font-mono text-xs dark:bg-black/40">
+          <div className="scrollbar-thumb-muted-foreground/30 bg-fill-4 border-separator text-label rounded-row text-footnote max-h-72 min-h-60 scrollbar-thin overflow-y-auto border p-4 font-mono">
             {logsData && logsData.length > 0 ? (
               logsData.map((line, idx) => (
-                <div key={idx} className="hover:bg-muted/40 py-0.5 leading-5 transition-colors">
-                  <span className="text-muted-foreground/60 pr-3 select-none">{idx + 1}</span>
-                  <span
-                    className={cn(
-                      logType === "err"
-                        ? "text-destructive"
-                        : "text-foreground/80 dark:text-zinc-300"
-                    )}
-                  >
+                <div key={idx} className="hover:bg-fill-4 py-0.5 leading-5 transition-colors">
+                  <span className="text-label-secondary pr-3 select-none">{idx + 1}</span>
+                  <span className={cn(logType === "err" ? "text-destructive" : "text-label")}>
                     {line}
                   </span>
                 </div>
               ))
             ) : (
-              <div className="text-muted-foreground/60 flex min-h-48 items-center justify-center italic">
+              <div className="text-label-secondary flex min-h-48 items-center justify-center italic">
                 No logs recorded yet.
               </div>
             )}
@@ -455,12 +384,11 @@ export function LorewardsBotSection() {
         </CardContent>
       </Card>
 
-      {/* Loreward Run Console */}
-      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Award className="h-5 w-5 text-amber-500" />
-            Loreward Run Console
+          <CardTitle className="text-title-3 flex items-center gap-2">
+            <Award className="text-yellow h-5 w-5" />
+            Loreward run console
           </CardTitle>
           <CardDescription>
             Manually trigger scoring run, preview candidates, and push updates
@@ -484,38 +412,38 @@ export function LorewardsBotSection() {
               ) : (
                 <RefreshCw className="h-4 w-4" />
               )}
-              Trigger Daily Scoring
+              Trigger daily scoring
             </Button>
           </div>
 
           {scoringResult && (
-            <div className="border-border/30 mt-6 space-y-4 rounded-xl border p-4">
+            <div className="border-separator rounded-row mt-6 space-y-4 border p-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <h4 className="flex items-center gap-1.5 text-sm font-semibold text-emerald-500">
+                  <h4 className="text-headline text-green flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
-                    Winner Picked
+                    Winner picked
                   </h4>
                   {scoringResult.winner ? (
-                    <div className="text-muted-foreground mt-2 text-sm">
-                      <p className="text-foreground font-semibold">{scoringResult.winner.user}</p>
+                    <div className="text-label-secondary text-body mt-2">
+                      <p className="text-label font-semibold">{scoringResult.winner.user}</p>
                       <p>Page: {scoringResult.winner.page}</p>
                       <p>Score: {scoringResult.winner.score ?? scoringResult.winner.finalScore}</p>
                       <p>Bytes: {scoringResult.winner.bytesAdded?.toLocaleString() || 0} bytes</p>
                     </div>
                   ) : (
-                    <p className="text-muted-foreground mt-2 text-sm italic">None found</p>
+                    <p className="text-label-secondary text-body mt-2 italic">None found</p>
                   )}
                 </div>
 
                 <div>
-                  <h4 className="flex items-center gap-1.5 text-sm font-semibold text-blue-400">
+                  <h4 className="text-headline text-blue flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
-                    Runner-up Picked
+                    Runner-up picked
                   </h4>
                   {scoringResult.runnerUp ? (
-                    <div className="text-muted-foreground mt-2 text-sm">
-                      <p className="text-foreground font-semibold">{scoringResult.runnerUp.user}</p>
+                    <div className="text-label-secondary text-body mt-2">
+                      <p className="text-label font-semibold">{scoringResult.runnerUp.user}</p>
                       <p>Page: {scoringResult.runnerUp.page}</p>
                       <p>
                         Score: {scoringResult.runnerUp.score ?? scoringResult.runnerUp.finalScore}
@@ -523,26 +451,26 @@ export function LorewardsBotSection() {
                       <p>Bytes: {scoringResult.runnerUp.bytesAdded?.toLocaleString() || 0} bytes</p>
                     </div>
                   ) : (
-                    <p className="text-muted-foreground mt-2 text-sm italic">None found</p>
+                    <p className="text-label-secondary text-body mt-2 italic">None found</p>
                   )}
                 </div>
               </div>
 
               {scoringResult.candidates && scoringResult.candidates.length > 0 && (
-                <div className="border-border/20 mt-4 border-t pt-3">
-                  <h4 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
-                    Scoring Candidate Queue
+                <div className="border-separator mt-4 border-t pt-3">
+                  <h4 className="text-label-secondary text-subhead mb-2">
+                    Scoring candidate queue
                   </h4>
-                  <div className="text-muted-foreground space-y-1.5 text-xs">
+                  <div className="text-label-secondary text-footnote space-y-2">
                     {scoringResult.candidates.map((c: any, index: number) => (
                       <div
                         key={index}
-                        className="border-border/10 flex justify-between border-b py-1"
+                        className="border-separator flex justify-between border-b py-1"
                       >
                         <span>
                           {index + 1}. **{c.user}** on *{c.page}*
                         </span>
-                        <span className="text-foreground font-mono font-semibold">
+                        <span className="text-label font-semibold tabular-nums">
                           {c.score ?? c.finalScore} pts (+{c.bytesAdded?.toLocaleString() || 0}b)
                         </span>
                       </div>
@@ -552,22 +480,14 @@ export function LorewardsBotSection() {
               )}
 
               <div className="flex items-center gap-3 pt-2">
+                {/* Saving tells the bot with announce on, so there is no separate Announce. */}
                 <Button
                   onClick={handleSaveOverride}
                   disabled={saveOverrideMutation.isPending}
-                  variant="outline"
-                  className="gap-2 border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+                  className="gap-2"
                 >
                   {saveOverrideMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Save Winner Override to DB
-                </Button>
-                <Button
-                  onClick={handlePushToBot}
-                  disabled={pushToBotMutation.isPending}
-                  className="gap-2 bg-indigo-600 text-white hover:bg-indigo-700"
-                >
-                  {pushToBotMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Announce & Sync to Discord Bot
+                  Save and announce winner
                 </Button>
               </div>
             </div>
@@ -575,12 +495,11 @@ export function LorewardsBotSection() {
         </CardContent>
       </Card>
 
-      {/* Sync & Cross-Validation Diagnostics */}
-      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Database className="h-5 w-5 text-blue-500" />
-            Sync & Cross-Validation Diagnostics
+          <CardTitle className="text-title-3 flex items-center gap-2">
+            <Database className="text-blue h-5 w-5" />
+            Sync and cross-validation diagnostics
           </CardTitle>
           <CardDescription>
             Force sync the scoring db and cross-validate daily outcomes between bot scanning and
@@ -590,108 +509,98 @@ export function LorewardsBotSection() {
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
             <Button
+              variant="destructive"
               onClick={() => triggerSyncMutation.mutate()}
               disabled={triggerSyncMutation.isPending}
-              className="bg-destructive/10 border-destructive/20 text-destructive hover:bg-destructive/20 gap-2 border text-xs font-bold"
+              className="gap-2"
               size="sm"
             >
               {triggerSyncMutation.isPending ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Syncing...
-                </>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <>
-                  <Zap className="h-3.5 w-3.5" />
-                  Trigger Full State Sync
-                </>
+                <Zap className="h-3.5 w-3.5" />
               )}
+              {triggerSyncMutation.isPending ? "Syncing..." : "Run full sync"}
             </Button>
+            <LorewardPayNowButton />
 
             <div className="ml-auto flex items-center gap-2">
               <Input
                 type="date"
                 value={adminDate}
                 onChange={(e) => setAdminDate(e.target.value)}
-                className="h-9 w-36 text-xs"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm) w-36"
               />
               <Button
+                variant="secondary"
                 onClick={() => crossValidateMutation.mutate({ date: adminDate })}
                 disabled={crossValidateMutation.isPending}
-                className="h-9 gap-2 border border-blue-500/25 bg-blue-500/10 text-xs font-bold text-blue-600 hover:bg-blue-500/20 dark:text-blue-400"
+                className="gap-2"
                 size="sm"
               >
                 {crossValidateMutation.isPending ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  "Run Cross-Validation"
+                  "Run cross-validation"
                 )}
               </Button>
             </div>
           </div>
 
-          {/* Validation Result Display */}
           {validationResult && (
-            <div className="space-y-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 dark:border-blue-500/10 dark:bg-blue-500/10">
-              <div className="flex items-center justify-between border-b border-blue-500/20 pb-2 dark:border-blue-500/10">
-                <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-blue-600 uppercase dark:text-blue-400">
+            <div className="rounded-row border-blue/20 bg-blue/5 space-y-3 border p-4">
+              <div className="border-blue/20 flex items-center justify-between border-b pb-2">
+                <span className="text-subhead text-blue flex items-center gap-2 font-semibold">
                   <Info className="h-4 w-4" />
-                  Cross-Validation Report for {validationResult.date}
+                  Cross-validation report for {validationResult.date}
                 </span>
                 <span
                   className={cn(
-                    "rounded px-2 py-0.5 text-xs font-black",
+                    "rounded-control-sm text-caption px-2 py-0.5",
                     validationResult.winnersAgree
-                      ? "bg-emerald-500/10 text-emerald-500"
+                      ? "bg-green/10 text-green"
                       : "bg-destructive/10 text-destructive"
                   )}
                 >
-                  {validationResult.winnersAgree ? "Winners Agree" : "Winners Disagree"}
+                  {validationResult.winnersAgree ? "Winners agree" : "Winners disagree"}
                 </span>
               </div>
-              <div className="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
+              <div className="text-footnote grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <h6 className="text-muted-foreground mb-1 text-xs font-bold uppercase">
-                    Bot Result:
-                  </h6>
+                  <h6 className="text-label-secondary text-subhead mb-1">Bot result</h6>
                   <p>
                     Winner: <strong>{validationResult.bot.winner || "None"}</strong> (
                     {validationResult.bot.winnerPage || "No page"})
                   </p>
                   <p>
-                    Score: <strong>{validationResult.bot.score || "—"}</strong>
+                    Score: <strong>{validationResult.bot.score || "–"}</strong>
                   </p>
                 </div>
                 <div>
-                  <h6 className="text-muted-foreground mb-1 text-xs font-bold uppercase">
-                    WikiOS Core Result:
-                  </h6>
+                  <h6 className="text-label-secondary text-subhead mb-1">WikiOS core result</h6>
                   <p>
                     Winner: <strong>{validationResult.wikios.winner || "None"}</strong> (
                     {validationResult.wikios.winnerPage || "No page"})
                   </p>
                   <p>
-                    Score: <strong>{validationResult.wikios.score || "—"}</strong>
+                    Score: <strong>{validationResult.wikios.score || "–"}</strong>
                   </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Recent validation history list */}
           <div className="space-y-2">
-            <h6 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-              Recent Cross-Validation History:
-            </h6>
-            <div className="border-border/40 bg-muted/20 divide-border/20 divide-y overflow-hidden rounded-xl border text-xs">
+            <h6 className="text-label-secondary text-subhead">Recent cross-validation history</h6>
+            <div className="border-separator bg-fill-4 divide-separator rounded-row text-footnote divide-y overflow-hidden border">
               {validationHistory?.results && validationHistory.results.length > 0 ? (
                 validationHistory.results.map((r: any) => (
                   <div
                     key={r.date}
-                    className="hover:bg-muted/50 flex items-center justify-between p-3 transition-colors"
+                    className="hover:bg-fill-4 flex items-center justify-between p-3 transition-colors"
                   >
-                    <span className="font-mono font-semibold">{r.date}</span>
-                    <div className="flex items-center gap-3 text-xs">
+                    <span className="font-semibold tabular-nums">{r.date}</span>
+                    <div className="text-footnote flex items-center gap-3">
                       <span>
                         Bot: <strong>{r.botWinner || "None"}</strong>
                       </span>
@@ -700,19 +609,19 @@ export function LorewardsBotSection() {
                       </span>
                       <span
                         className={cn(
-                          "py-0.2 rounded px-1.5 text-xs font-bold",
+                          "py-0.2 rounded-control-sm text-caption px-2",
                           r.winnersAgree
-                            ? "bg-emerald-500/10 text-emerald-500"
+                            ? "bg-green/10 text-green"
                             : "bg-destructive/10 text-destructive"
                         )}
                       >
-                        {r.winnersAgree ? "MATCH" : "MISMATCH"}
+                        {r.winnersAgree ? "Match" : "Mismatch"}
                       </span>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-muted-foreground p-4 text-center italic">
+                <div className="text-label-secondary p-4 text-center italic">
                   No cross-validation records found.
                 </div>
               )}
@@ -721,12 +630,11 @@ export function LorewardsBotSection() {
         </CardContent>
       </Card>
 
-      {/* Silent Blacklist Manager */}
-      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Ban className="h-5 w-5 text-red-500" />
-            Silent Blacklist Manager
+          <CardTitle className="text-title-3 flex items-center gap-2">
+            <Ban className="text-red h-5 w-5" />
+            Silent blacklist manager
           </CardTitle>
           <CardDescription>
             Excludes specified users from the bot's daily scans and win eligibility for a
@@ -736,41 +644,39 @@ export function LorewardsBotSection() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <div className="space-y-1">
-              <label className="text-muted-foreground text-xs font-bold uppercase">
-                Username
-              </label>
+              <label className="text-label-secondary text-subhead">Username</label>
               <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     role="combobox"
                     aria-expanded={comboboxOpen}
-                    className="border-border/50 bg-background text-foreground hover:bg-muted/30 focus:ring-primary flex h-9 w-full items-center justify-between px-3 text-xs font-normal focus:ring-1 focus:outline-none"
+                    className="flex w-full items-center justify-between"
                   >
                     <span className="truncate">{blacklistUser || "Select wiki username..."}</span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="border-border/50 bg-card/95 z-[100060] w-80 p-0 shadow-2xl backdrop-blur-md">
+                <PopoverContent className="w-80 p-0">
                   <Command shouldFilter={false}>
                     <CommandInput
                       placeholder="Search wiki account..."
                       value={searchTerm}
                       onValueChange={setSearchTerm}
-                      className="h-8 text-xs"
+                      className="text-footnote h-8"
                     />
                     <CommandList className="max-h-60 overflow-y-auto">
                       {isSuggestionsLoading && (
                         <div className="flex items-center justify-center p-4">
-                          <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
-                          <span className="text-muted-foreground ml-2 text-xs">
+                          <Loader2 className="text-label-secondary h-4 w-4 animate-spin" />
+                          <span className="text-label-secondary text-footnote ml-2">
                             Searching wiki...
                           </span>
                         </div>
                       )}
                       {!isSuggestionsLoading &&
                         (!wikiUserSuggestions || wikiUserSuggestions.length === 0) && (
-                          <CommandEmpty className="text-muted-foreground p-4 text-center text-xs">
+                          <CommandEmpty className="text-label-secondary text-footnote p-4 text-center">
                             {searchTerm.trim().length < 2
                               ? "Type at least 2 characters to search..."
                               : "No wiki accounts found."}
@@ -779,7 +685,7 @@ export function LorewardsBotSection() {
                       {!isSuggestionsLoading &&
                         wikiUserSuggestions &&
                         wikiUserSuggestions.length > 0 && (
-                          <CommandGroup heading="Wiki Accounts">
+                          <CommandGroup heading="Wiki accounts">
                             {wikiUserSuggestions.map((user) => (
                               <CommandItem
                                 key={user.username}
@@ -788,7 +694,7 @@ export function LorewardsBotSection() {
                                   setBlacklistUser(user.username);
                                   setComboboxOpen(false);
                                 }}
-                                className="hover:bg-muted/50 flex cursor-pointer items-center justify-between px-3 py-2 text-xs"
+                                className="hover:bg-fill-4 text-footnote flex cursor-pointer items-center justify-between px-3 py-2"
                               >
                                 <div className="flex items-center gap-2 font-medium">
                                   <UnifiedCountryFlag
@@ -798,7 +704,7 @@ export function LorewardsBotSection() {
                                   />
                                   {user.username}
                                 </div>
-                                <span className="text-muted-foreground font-mono text-xs">
+                                <span className="text-label-secondary text-footnote tabular-nums">
                                   {user.editCount} edits
                                 </span>
                               </CommandItem>
@@ -806,14 +712,14 @@ export function LorewardsBotSection() {
                           </CommandGroup>
                         )}
                       {searchTerm.trim().length > 0 && (
-                        <CommandGroup heading="Custom Entry">
+                        <CommandGroup heading="Custom entry">
                           <CommandItem
                             value={searchTerm.trim()}
                             onSelect={() => {
                               setBlacklistUser(searchTerm.trim());
                               setComboboxOpen(false);
                             }}
-                            className="hover:bg-muted/50 text-primary flex cursor-pointer items-center gap-2 px-3 py-2 text-xs font-medium"
+                            className="hover:bg-fill-4 text-tint text-caption flex cursor-pointer items-center gap-2 px-3 py-2"
                           >
                             Use custom: "{searchTerm.trim()}"
                           </CommandItem>
@@ -825,76 +731,75 @@ export function LorewardsBotSection() {
               </Popover>
             </div>
             <div className="space-y-1">
-              <label className="text-muted-foreground text-xs font-bold uppercase">
-                Duration
-              </label>
-              <select
+              <label className="text-label-secondary text-subhead">Duration</label>
+              <ValueSelect
                 value={blacklistDuration}
-                onChange={(e) => setBlacklistDuration(e.target.value)}
-                className="border-border/40 bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs focus:outline-none"
-              >
-                <option value="permanent">Permanent</option>
-                <option value="7days">7 Days</option>
-                <option value="30days">30 Days</option>
-                <option value="custom">Custom Date</option>
-              </select>
+                onValueChange={(v) => setBlacklistDuration(v)}
+                options={[
+                  ["permanent", "Permanent"],
+                  ["7days", "7 days"],
+                  ["30days", "30 days"],
+                  ["custom", "Custom date"],
+                ]}
+                size="sm"
+                className="w-full"
+              />
             </div>
             {blacklistDuration === "custom" && (
               <div className="space-y-1">
-                <label className="text-muted-foreground text-xs font-bold uppercase">
-                  Expiry Date
-                </label>
+                <label className="text-label-secondary text-subhead">Expiry date</label>
                 <Input
                   type="date"
                   value={blacklistExpiry}
                   onChange={(e) => setBlacklistExpiry(e.target.value)}
-                  className="h-9 rounded-xl text-xs"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                 />
               </div>
             )}
           </div>
           <Button
+            variant="destructive"
             onClick={handleAddBlacklist}
             disabled={updateBlacklistMutation.isPending}
-            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground h-9 w-full rounded-xl text-xs font-bold active:scale-[0.98] sm:w-auto"
+            className="w-full sm:w-auto"
           >
-            Add to Blacklist
+            Add to blacklist
           </Button>
 
-          {/* Active Blacklisted Users List */}
           <div className="space-y-2">
-            <h6 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-              Active Blacklisted Users:
-            </h6>
-            <div className="border-border/40 bg-muted/20 divide-border/20 max-h-48 divide-y overflow-hidden overflow-y-auto rounded-xl border text-xs">
+            <h6 className="text-label-secondary text-subhead">Active blacklisted users</h6>
+            <div className="border-separator bg-fill-4 divide-separator rounded-row text-footnote max-h-48 divide-y overflow-hidden overflow-y-auto border">
               {blacklist && Object.keys(blacklist).length > 0 ? (
                 Object.entries(blacklist).map(([user, date]: [string, any]) => (
                   <div
                     key={user}
-                    className="hover:bg-muted/50 flex items-center justify-between p-3 transition-colors"
+                    className="hover:bg-fill-4 flex items-center justify-between p-3 transition-colors"
                   >
-                    <div className="flex items-center gap-2 font-bold">
+                    <div className="flex items-center gap-2 font-semibold">
                       <UnifiedCountryFlag countryName={user} size="xs" showTooltip={false} />
                       {user}
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-muted-foreground font-mono text-xs">
+                      <span className="text-label-secondary text-footnote tabular-nums">
                         Expires: {date ? String(date).slice(0, 10) : "Permanent"}
                       </span>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Remove ${user} from the blacklist`}
                         onClick={() =>
                           updateBlacklistMutation.mutate({ username: user, action: "remove" })
                         }
                         disabled={updateBlacklistMutation.isPending}
-                        className="text-destructive/80 hover:text-destructive transition-colors"
+                        className="text-destructive"
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                        <Trash2 aria-hidden />
+                      </Button>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-muted-foreground p-4 text-center italic">
+                <div className="text-label-secondary p-4 text-center italic">
                   No blacklisted users found.
                 </div>
               )}
@@ -903,171 +808,7 @@ export function LorewardsBotSection() {
         </CardContent>
       </Card>
 
-      {/* Manual Winner Override Tool */}
-      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Sliders className="h-5 w-5 text-amber-500" />
-            Manual Winner Override Tool
-          </CardTitle>
-          <CardDescription>
-            Manually rewrite the winning details of past daily, weekly, or monthly entries and push
-            announcement updates to the Discord bot
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-muted-foreground text-xs font-bold uppercase">Date</label>
-              <Input
-                type="date"
-                value={overrideDate}
-                onChange={(e) => setOverrideDate(e.target.value)}
-                className="h-9 rounded-xl text-xs"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-muted-foreground text-xs font-bold uppercase">Type</label>
-              <select
-                value={overrideType}
-                onChange={(e) => setOverrideType(e.target.value)}
-                className="border-border/40 bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs focus:outline-none"
-              >
-                <option value="daily">Daily Loreward</option>
-                <option value="weekly">Weekly Loreward</option>
-                <option value="monthly">Monthly Loreward</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Winner details */}
-          <div className="border-border/20 space-y-2 border-t pt-2">
-            <span className="text-xs font-black tracking-wider text-amber-500 uppercase">
-              1. Winner Details
-            </span>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <label className="text-muted-foreground text-xs font-bold uppercase">
-                  Username
-                </label>
-                <Input
-                  placeholder="Winner username"
-                  value={overrideWinnerUser}
-                  onChange={(e) => setOverrideWinnerUser(e.target.value)}
-                  className="h-9 text-xs"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-muted-foreground text-xs font-bold uppercase">
-                  Page Title
-                </label>
-                <Input
-                  placeholder="Winner article page"
-                  value={overrideWinnerPage}
-                  onChange={(e) => setOverrideWinnerPage(e.target.value)}
-                  className="h-9 text-xs"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <label className="text-muted-foreground text-xs font-bold uppercase">
-                  Score
-                </label>
-                <Input
-                  type="number"
-                  placeholder="Winner score"
-                  value={overrideWinnerScore}
-                  onChange={(e) => setOverrideWinnerScore(Number(e.target.value))}
-                  className="h-9 font-mono text-xs"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-muted-foreground text-xs font-bold uppercase">
-                  Bytes Added
-                </label>
-                <Input
-                  type="number"
-                  placeholder="Winner bytes"
-                  value={overrideWinnerBytes}
-                  onChange={(e) => setOverrideWinnerBytes(Number(e.target.value))}
-                  className="h-9 font-mono text-xs"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Runner up details */}
-          <div className="border-border/20 space-y-2 border-t pt-2">
-            <span className="text-muted-foreground text-xs font-black tracking-wider uppercase">
-              2. Runner-up Details
-            </span>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <label className="text-muted-foreground text-xs font-bold uppercase">
-                  Username
-                </label>
-                <Input
-                  placeholder="Runner-up username"
-                  value={overrideRunnerUpUser}
-                  onChange={(e) => setOverrideRunnerUpUser(e.target.value)}
-                  className="h-9 text-xs"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-muted-foreground text-xs font-bold uppercase">
-                  Page Title
-                </label>
-                <Input
-                  placeholder="Runner-up article page"
-                  value={overrideRunnerUpPage}
-                  onChange={(e) => setOverrideRunnerUpPage(e.target.value)}
-                  className="h-9 text-xs"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <label className="text-muted-foreground text-xs font-bold uppercase">
-                  Score
-                </label>
-                <Input
-                  type="number"
-                  placeholder="Runner-up score"
-                  value={overrideRunnerUpScore}
-                  onChange={(e) => setOverrideRunnerUpScore(Number(e.target.value))}
-                  className="h-9 font-mono text-xs"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-muted-foreground text-xs font-bold uppercase">
-                  Bytes Added
-                </label>
-                <Input
-                  type="number"
-                  placeholder="Runner-up bytes"
-                  value={overrideRunnerUpBytes}
-                  onChange={(e) => setOverrideRunnerUpBytes(Number(e.target.value))}
-                  className="h-9 font-mono text-xs"
-                />
-              </div>
-            </div>
-          </div>
-
-          <Button
-            onClick={handleOverrideSubmit}
-            disabled={overrideWinnerMutation.isPending}
-            className="text-primary-foreground h-9 w-full gap-2 bg-amber-500 text-xs font-bold transition-colors hover:bg-amber-600 dark:text-black"
-          >
-            {overrideWinnerMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            Save and Sync Winner Override
-          </Button>
-        </CardContent>
-      </Card>
+      <LorewardOverrideCard />
     </div>
   );
 }

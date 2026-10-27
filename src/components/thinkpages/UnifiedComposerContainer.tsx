@@ -3,10 +3,11 @@
 import React, { useState } from "react";
 import { EditPencil as PenSquare, Group as Users } from "iconoir-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Button } from "~/components/ui/button";
 import { GlassCanvasComposer } from "./GlassCanvasComposer";
-import { EnhancedAccountManager } from "./EnhancedAccountManager";
+import { EnhancedAccountManager } from "~/components/dashboard/accounts/EnhancedAccountManager";
+import { Card } from "~/components/ui/card";
 
 interface UnifiedComposerContainerProps {
   countryId: string;
@@ -40,57 +41,58 @@ export function UnifiedComposerContainer({
     selectedAccount ? "compose" : "accounts"
   );
 
-  // If hiding accounts tab, show only composer without tabs
+  const handlers = {
+    onAccountSelect: onAccountSelect || (() => {}),
+    onAccountSettings: onAccountSettings || (() => {}),
+    onCreateAccount: onCreateAccount || (() => {}),
+  };
+  const renderComposer = (emptyPlaceholder: string) => (
+    <GlassCanvasComposer
+      {...handlers}
+      account={selectedAccount}
+      accounts={accounts}
+      isOwner={isOwner}
+      onPost={onPost}
+      placeholder={repostData ? "Add a comment to your repost..." : emptyPlaceholder}
+      countryId={countryId}
+      repostData={repostData}
+    />
+  );
+
+  // Without the accounts tab, show only the composer
   if (hideAccountsTab) {
     return (
-      <Card className="glass-hierarchy-interactive border-blue-500/30 bg-blue-500/5">
+      <div>
         {selectedAccount ? (
-          <GlassCanvasComposer
-            account={selectedAccount}
-            accounts={accounts}
-            onAccountSelect={onAccountSelect || (() => {})}
-            onAccountSettings={onAccountSettings || (() => {})}
-            onCreateAccount={onCreateAccount || (() => {})}
-            isOwner={isOwner}
-            onPost={onPost}
-            placeholder={repostData ? "Add a comment to your repost..." : "What's happening?"}
-            countryId={countryId}
-            repostData={repostData}
-          />
+          renderComposer("What's happening?")
         ) : (
-          <div className="p-8 text-center">
-            <div className="text-muted-foreground mb-4">
-              <Users className="mx-auto mb-3 h-12 w-12 opacity-50" />
-              <h3 className="mb-2 text-lg font-semibold">No Account Selected</h3>
-              <p className="text-sm">Please select an account to start posting</p>
-            </div>
-          </div>
+          <Card>
+            <EmptyState
+              icon={<Users />}
+              title="No account selected"
+              message="Select an account to post."
+            />
+          </Card>
         )}
-      </Card>
+      </div>
     );
   }
 
   return (
-    <Card className="glass-hierarchy-interactive border-blue-500/30 bg-blue-500/5">
+    <Card>
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as "compose" | "accounts")}
         className="w-full"
       >
-        <div className="border-b border-white/10 p-4">
-          <TabsList className="grid w-full grid-cols-2 bg-white/5">
-            <TabsTrigger
-              value="compose"
-              className="flex items-center gap-2 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400"
-            >
-              <PenSquare className="h-4 w-4" />
+        <div className="border-separator border-b p-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="compose" className="gap-2" aria-label="Compose">
+              <PenSquare className="size-4" aria-hidden="true" />
               <span className="hidden sm:inline">Compose</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="accounts"
-              className="flex items-center gap-2 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400"
-            >
-              <Users className="h-4 w-4" />
+            <TabsTrigger value="accounts" className="gap-2" aria-label="Accounts">
+              <Users className="size-4" aria-hidden="true" />
               <span className="hidden sm:inline">Accounts</span>
             </TabsTrigger>
           </TabsList>
@@ -98,43 +100,27 @@ export function UnifiedComposerContainer({
 
         <TabsContent value="compose" className="m-0 p-0">
           {selectedAccount ? (
-            <GlassCanvasComposer
-              account={selectedAccount}
-              accounts={accounts}
-              onAccountSelect={onAccountSelect || (() => {})}
-              onAccountSettings={onAccountSettings || (() => {})}
-              onCreateAccount={onCreateAccount || (() => {})}
-              isOwner={isOwner}
-              onPost={onPost}
-              placeholder={
-                repostData ? "Add a comment to your repost..." : "What's happening in your nation?"
-              }
-              countryId={countryId}
-              repostData={repostData}
-            />
+            renderComposer("What's happening in your nation?")
           ) : (
-            <div className="p-8 text-center">
-              <div className="text-muted-foreground mb-4">
-                <Users className="mx-auto mb-3 h-12 w-12 opacity-50" />
-                <h3 className="mb-2 text-lg font-semibold">Select an Account to Compose</h3>
-                <p className="text-sm">Choose an account from the Accounts tab to start posting</p>
-              </div>
-              <Button variant="outline" onClick={() => setActiveTab("accounts")} className="mt-4">
-                <Users className="mr-2 h-4 w-4" />
-                Manage Accounts
-              </Button>
-            </div>
+            <EmptyState
+              icon={<Users />}
+              title="Select an account to compose"
+              message="Choose an account in the Accounts tab to post."
+              action={
+                <Button variant="outline" onClick={() => setActiveTab("accounts")}>
+                  <Users aria-hidden="true" />
+                  Manage accounts
+                </Button>
+              }
+            />
           )}
         </TabsContent>
 
         <TabsContent value="accounts" className="m-0 p-0">
           <EnhancedAccountManager
-            countryId={countryId}
+            {...handlers}
             accounts={accounts}
             selectedAccount={selectedAccount}
-            onAccountSelect={onAccountSelect || (() => {})}
-            onAccountSettings={onAccountSettings || (() => {})}
-            onCreateAccount={onCreateAccount || (() => {})}
             isOwner={isOwner}
           />
         </TabsContent>

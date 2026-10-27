@@ -30,7 +30,7 @@ class ConsoleTelemetryLogger implements TelemetryLogger {
   }
 }
 
-export const defaultTelemetryLogger: TelemetryLogger = new ConsoleTelemetryLogger();
+const defaultTelemetryLogger: TelemetryLogger = new ConsoleTelemetryLogger();
 
 /**
  * Record a messaging operation event safely.

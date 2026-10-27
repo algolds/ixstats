@@ -7,18 +7,18 @@
 import { Cache } from "~/lib/cache";
 import { isDatabaseReadOnly } from "~/server/db";
 
-export type PlayAsDeniedReason =
+type PlayAsDeniedReason =
   | "not-staff"
   | "target-is-system-owner"
   | "target-not-found"
   | "target-outranks";
 
-export type PlayAsDecision =
+type PlayAsDecision =
   | { kind: "none" }
   | { kind: "granted"; targetUserId: string }
   | { kind: "denied"; reason: PlayAsDeniedReason };
 
-export interface DecidePlayAsInput {
+interface DecidePlayAsInput {
   realUserId: string;
   requestedUserId: string | null;
   requesterRole: { name?: string | null; level?: number | null } | null;
@@ -83,7 +83,51 @@ export function decidePlayAs(input: DecidePlayAsInput): PlayAsDecision {
   return { kind: "granted", targetUserId: requestedUserId };
 }
 
-export interface RecordPlayAsAuditEntry {
+/**
+ * Mutations that move IxCredits, Sovereigns or card copies: a whole router (every mutation under it)
+ * or one procedure path. While playing as another user these refuse (`playAsMoneyMiddleware`), so
+ * play-as never spends, sells, trades or claims with the target's money; reads stay allowed.
+ * `src/tests/architecture/play-as-money.test.ts` finds money mutations by what they write and fails
+ * when one is not covered here.
+ */
+export const PLAY_AS_MONEY_ROUTES = [
+  // The wallet and store, cards, packs, the market, the workshop, trades, the Exchange, NS deck imports
+  "vault",
+  "cards",
+  "cardPacks",
+  "cardMarket",
+  "crafting",
+  "trading",
+  "exchange",
+  "nsImport",
+  // Achievement payouts (IxCredits, reward cards and packs)
+  "achievements.syncMyCollectorAchievements",
+  // Sovereign spends and payouts in sports, and the season trophies it mints
+  "sports.claimTeam",
+  "sports.createLeague",
+  "sports.upgradeStadium",
+  "sports.invokePatronSaint",
+  "sports.trainPlayer",
+  "sports.teamTraining",
+  "sports.listPlayerForTransfer",
+  "sports.placeTransferBid",
+  "sports.respondToTransferBid",
+  // Escrow and prediction refunds when a league is deleted or its season reset or rescheduled
+  "sports.deleteLeague",
+  "sports.resetSeason",
+  "sports.regenerateSchedule",
+  "sports.placePrediction",
+  "sports.simulateMatchDay",
+  "sports.simulateSingleMatch",
+  "sports.simulateFullSeason",
+  "sports.transitionToNextSeason",
+] as const;
+
+export function isPlayAsMoneyPath(path: string): boolean {
+  return PLAY_AS_MONEY_ROUTES.some((route) => path === route || path.startsWith(`${route}.`));
+}
+
+interface RecordPlayAsAuditEntry {
   realUserId: string;
   requestedUserId: string;
   kind: "granted" | "denied";

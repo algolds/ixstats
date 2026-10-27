@@ -22,7 +22,7 @@ export function TrendIndicator({ trend, value }: TrendIndicatorProps) {
     <div className={`flex items-center gap-1 ${colors[trend]}`}>
       <Icon className="h-3.5 w-3.5" aria-hidden="true" />
       {typeof value === "number" && (
-        <span className="text-xs font-medium">
+        <span className="text-caption font-medium tabular-nums">
           {trend === "up" ? "+" : trend === "down" ? "-" : ""}
           {Math.abs(value)}%
         </span>

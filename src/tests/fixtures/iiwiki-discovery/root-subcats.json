@@ -1,0 +1,11 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "categorymembers": [
+      { "pageid": 1100, "ns": 14, "title": "Category:Countries (Eurth)" },
+      { "pageid": 1101, "ns": 14, "title": "Category:History (Eurth)" },
+      { "pageid": 1102, "ns": 14, "title": "Category:Eurth maps" },
+      { "pageid": 1103, "ns": 14, "title": "Category:Mapping projects (Eurth)" }
+    ]
+  }
+}

@@ -25,8 +25,7 @@ import { useOnomaPronunciation } from "./useOnomaPronunciation";
 
 export function useOnomaRouter() {
   const pathname = usePathname();
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn } = useUser();
   const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery();
 
   const fontLink = useMemo(() => {
@@ -94,28 +93,6 @@ export function useOnomaRouter() {
       if (t) clearTimeout(t);
     };
   }, [bankLength]);
-
-  // Dynamic lexicon terms count computation
-  const lexiconCount = useMemo(() => {
-    if (!bank.nameBank) return 0;
-    const stashedNames = bank.nameBank
-      .filter((entry) => entry.type === "saved-name")
-      .map((entry) => entry.title);
-
-    if (typeof window !== "undefined") {
-      const defsJson = localStorage.getItem("onoma-lexicon-definitions");
-      if (defsJson) {
-        try {
-          const defs = JSON.parse(defsJson);
-          const termsSet = new Set<string>([...stashedNames, ...Object.keys(defs)]);
-          return termsSet.size;
-        } catch {
-          // ignore
-        }
-      }
-    }
-    return new Set(stashedNames).size;
-  }, [bank.nameBank]);
 
   // Help walkthrough modal state & mode
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -280,7 +257,6 @@ export function useOnomaRouter() {
     activeSubTab,
     activeExploreSubTab,
     lastActiveTab,
-    lexiconCount,
     shouldAnimateStash,
     hasInteractedPronunciation,
     setHasInteractedPronunciation,

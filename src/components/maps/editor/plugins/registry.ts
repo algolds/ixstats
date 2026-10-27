@@ -16,11 +16,3 @@ const PLUGINS: MapEditorPlugin[] = [
 export function getPlugins(): MapEditorPlugin[] {
   return PLUGINS;
 }
-
-export function getPluginsForMode(mode: string): MapEditorPlugin[] {
-  return PLUGINS.filter((p) => p.modes && p.modes.includes(mode));
-}
-
-export function getGlobalPlugins(): MapEditorPlugin[] {
-  return PLUGINS.filter((p) => p.global);
-}

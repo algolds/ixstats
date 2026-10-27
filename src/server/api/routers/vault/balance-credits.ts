@@ -10,11 +10,19 @@
  * - Vault level and earnings summaries
  */
 
-import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
-import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
+import { getVaultConfig } from "~/lib/vault/vault-perks";
+import { grantNewPlayerBonus, NEW_PLAYER_BONUS_ON_VAULT_OPEN } from "~/lib/vault/vault-bonus";
+import { deckValueOf } from "~/lib/cards/copy-value";
 import { globalCache } from "~/lib/cache";
+import { sentenceCase } from "~/lib/format/sentence-case";
+
+interface VaultUserStats {
+  totalCards: number;
+  deckValue: number;
+  deckValueExTrophy: number;
+}
 
 export const vaultBalanceCreditsRouter = createTRPCRouter({
   /**
@@ -28,8 +36,15 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       const cached = await globalCache.get<any>(cacheKey);
       if (cached) return cached;
 
+      // Accounts that predate the sign-up bonus get it on first Vault open (no-op once paid), but never from staff
+      // playing as them: that read is not cached either, so the member's own next visit pays it
+      const playingAs = Boolean(ctx.impersonatorId);
+      if (NEW_PLAYER_BONUS_ON_VAULT_OPEN && !playingAs) {
+        await grantNewPlayerBonus(ctx.db as any, userId, "vault_opened");
+      }
+
       const balance = await vaultService.getBalance(userId, ctx.db as any);
-      await globalCache.set(cacheKey, balance, { ttl: 30 });
+      if (!playingAs) await globalCache.set(cacheKey, balance, { ttl: 30 });
       return balance;
     } catch (error) {
       console.error("[Vault Router] Error getting balance:", error);
@@ -45,12 +60,15 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       // Guaranteed non-null by protectedProcedure's authMiddleware.
       const userId = ctx.auth.userId;
       const balance = await vaultService.getBalance(userId, ctx.db as any);
+      // Same curve as the ledger: configured XP per level.
+      const { xpPerLevel } = await getVaultConfig(ctx.db);
+      const vaultLevel = Math.floor(balance.vaultXp / xpPerLevel) + 1;
 
       return {
-        vaultLevel: balance.vaultLevel,
+        vaultLevel,
         vaultXp: balance.vaultXp,
-        nextLevelXp: balance.vaultLevel * 1000,
-        progress: (balance.vaultXp % 1000) / 1000,
+        nextLevelXp: vaultLevel * xpPerLevel,
+        progress: (balance.vaultXp % xpPerLevel) / xpPerLevel,
       };
     } catch (error) {
       console.error("[Vault Router] Error getting vault level:", error);
@@ -76,9 +94,10 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
           EARN_ACTIVE: "Active Gameplay",
           EARN_CARDS: "Card Activities",
           EARN_SOCIAL: "Social Engagement",
+          EARN_BONUS: "Bonuses",
           DAILY_LOGIN: "Daily Bonus",
         };
-        return labels[source] || source.replace(/_/g, " ");
+        return labels[source] || sentenceCase(source);
       };
 
       const sources = Object.entries(summary.breakdown).map(([type, amount]) => ({
@@ -99,118 +118,31 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
   }),
 
   /**
-   * Calculate passive income for a country
-   */
-  calculatePassiveIncome: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string().min(1, "Country ID is required"),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const dailyDividend = await vaultService.calculatePassiveIncome(
-          input.countryId,
-          ctx.db as any
-        );
-
-        return {
-          countryId: input.countryId,
-          dailyDividend,
-          weeklyDividend: dailyDividend * 7,
-          monthlyDividend: dailyDividend * 30,
-        };
-      } catch (error) {
-        console.error("[Vault Router] Error calculating passive income:", error);
-        throw new Error("Failed to calculate passive income", { cause: error });
-      }
-    }),
-
-  /**
-   * Admin: Adjust a user's login streak (absolute delta applied)
+   * The caller's card figures: copies held and their value (the shared per-copy value), with and without trophy cards
+   * (cached 30 s). Every copy counts, a hidden (retired) card's too, as the inventory lists them; a retired card is
+   * not valued, as in the dividend.
    */
   getUserStats: protectedProcedure.query(async ({ ctx }) => {
     try {
-      if (!ctx.user?.id) {
-        throw new Error("User not found in authentication context");
-      }
-
       const cacheKey = `user_vault_stats:${ctx.user.id}`;
-      const cached = await globalCache.get<any>(cacheKey);
+      const cached = await globalCache.get<VaultUserStats>(cacheKey);
       if (cached) return cached;
 
-      // Count owned card instances live (excluding retired cards)
-      const totalCards = await ctx.db.cardOwnership.count({
-        where: {
-          ownerId: ctx.user.id,
-          cards: { isRetired: false },
-        },
-      });
-
-      // Sum of market values for all owned card instances live (excluding retired cards)
-      const ownerships = await ctx.db.cardOwnership.findMany({
-        where: {
-          ownerId: ctx.user.id,
-          cards: { isRetired: false },
-        },
-        include: {
-          cards: {
-            select: {
-              marketValue: true,
-            },
-          },
-        },
-      });
-
-      const deckValue = ownerships.reduce((sum, own) => {
-        return sum + (own.cards?.marketValue ?? 0) * own.quantity;
-      }, 0);
-
-      const capacityBoost = await vaultService.getCardCapacityBoost(ctx.user.id, ctx.db as any);
-
-      const stats = {
-        totalCards,
-        deckValue,
-        collectorLevel: ctx.user.collectorLevel ?? 1,
-        collectorXp: ctx.user.collectorXp ?? 0,
-        capacityBoost,
+      const [held, deck] = await Promise.all([
+        ctx.db.cardOwnership.count({ where: { ownerId: ctx.user.id } }),
+        deckValueOf(ctx.db, ctx.user.id),
+      ]);
+      const stats: VaultUserStats = {
+        totalCards: held,
+        deckValue: deck.total,
+        // The figure the economy and the deck-value achievements read: trophy cards do not count.
+        deckValueExTrophy: deck.exTrophy,
       };
-
       await globalCache.set(cacheKey, stats, { ttl: 30 });
-
       return stats;
     } catch (error) {
       console.error("[Vault Router] Error getting user stats:", error);
       throw new Error("Failed to retrieve user stats", { cause: error });
     }
   }),
-
-  /**
-   * Get budget multiplier for passive income
-   */
-  getBudgetMultiplier: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string().min(1, "Country ID is required"),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const multiplier = await budgetVaultCalculator.calculateBudgetMultiplier(
-          input.countryId,
-          ctx.db as any
-        );
-        const description = budgetVaultCalculator.getMultiplierDescription(multiplier);
-
-        return {
-          countryId: input.countryId,
-          multiplier,
-          description,
-          percentChange: Math.round((multiplier - 1.0) * 100),
-        };
-      } catch (error) {
-        console.error("[Vault Router] Error getting budget multiplier:", error);
-        throw new Error("Failed to retrieve budget multiplier", { cause: error });
-      }
-    }),
 });
