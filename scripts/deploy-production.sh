@@ -4,7 +4,7 @@
 # Ensures the app is configured for https://ixwiki.com/projects/ixstates
 #
 # Order: git sync and checks; dependencies and the Prisma client; the database backup; the additive schema step, the
-# WikiOS proof check, the hand-written SQL, db push and the post-push SQL; the build; IxWorld and the PM2 reload; the
+# WikiOS proof check, the hand-written SQL, db push and the post-push SQL; the build; the PM2 reload; the
 # web server, and once it answers the post-deploy data SQL (run_post_deploy_sql). Nothing before the build touches the
 # live build (.next), so a failure there leaves a running server serving what it has loaded; but the dependencies step
 # has already replaced node_modules with the release's, so never start a stopped server on this checkout. The build moves .next to .next.prev first and puts it back if anything fails before the new server answers; .next.prev
@@ -48,8 +48,7 @@ if [ "$(pwd)" = "/ixwiki/public/projects/ixstats" ]; then
     fi
 fi
 
-# The commit this deploy builds: deploy-ixworld.sh builds the same one instead of syncing git again, so the web app,
-# IxWorld, cron and the websockets all run one commit.
+# The commit this deploy builds, exported so cron and the websockets (and a manual deploy-ixworld.sh) run the same one.
 IXSTATS_DEPLOY_COMMIT="$(git rev-parse HEAD 2>/dev/null || true)"
 export IXSTATS_DEPLOY_COMMIT
 
@@ -344,11 +343,8 @@ else
     exit 1
 fi
 
-# Build and deploy the IxWorld standalone maps app (from IXSTATS_DEPLOY_COMMIT: it does not sync git again)
-echo "🗺️ Building and deploying IxWorld standalone maps..."
-if [ -f "./scripts/deploy-ixworld.sh" ]; then
-    ./scripts/deploy-ixworld.sh
-fi
+# No separate IxWorld build: maps.ixwiki.com is the main app's /maps page (nginx sends the map and its requests to this
+# web app, every other page to beta.ixwiki.com; 2026-10-27). scripts/deploy-ixworld.sh stays for a manual standalone build.
 
 # A non-5xx answer on the web port: the new server is up.
 wait_for_web() {
