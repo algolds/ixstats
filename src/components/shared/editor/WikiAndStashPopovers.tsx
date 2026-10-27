@@ -258,6 +258,9 @@ export function WikiAndStashPopovers({
         <PopoverContent
           side="top"
           align="start"
+          // Picking an image refocuses the editor after it; returning focus to this trigger on
+          // close would take it back and swallow the next keystrokes.
+          onCloseAutoFocus={(e) => e.preventDefault()}
           className="dark:border-border dark:bg-popover/95 z-[200000] w-80 rounded-2xl border border-neutral-200/80 bg-white/95 p-3 shadow-2xl backdrop-blur-xl"
         >
           <div className="space-y-2.5 text-xs">

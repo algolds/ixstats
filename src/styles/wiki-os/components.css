@@ -744,8 +744,9 @@
     color: inherit;
     border-bottom: 2px dashed color-mix(in srgb, var(--annotation-color, #fef036) 40%, transparent);
     border-radius: 4px;
-    padding: 0.12em 0.25em;
-    margin: 0 -0.05em;
+    /* No horizontal padding or margin: a quote often starts or ends mid-word, and any inline
+       spacing on the mark shows as a space inside that word. */
+    padding: 0.12em 0;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
     cursor: pointer;

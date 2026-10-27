@@ -92,7 +92,10 @@ export function useGlassCanvasComposer({
   const getAccountAvatar = (acc: any) => acc.profileImageUrl || fallbackAvatar(acc.displayName);
 
   const hasContent =
-    plainText.trim().length > 0 || selectedImages.length > 0 || selectedVisualizations.length > 0;
+    plainText.trim().length > 0 ||
+    selectedImages.length > 0 ||
+    selectedVisualizations.length > 0 ||
+    !!pollDraft;
   const showActionBar = isEditorFocused || hasContent || showVisualizationPanel;
 
   const liveQuery = { enabled: !!countryId, refetchOnWindowFocus: false };
