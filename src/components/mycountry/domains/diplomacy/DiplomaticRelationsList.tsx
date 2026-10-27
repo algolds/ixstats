@@ -125,7 +125,7 @@ function RelationCard({
   isOwner: boolean;
   alliances: Alliance[];
   goalPending: boolean;
-  onGoalChange: (relationId: string, goal: DiplomaticGoal) => void;
+  onGoalChange: (rel: RelationRow, goal: DiplomaticGoal) => void;
 }) {
   // One band, from the one scale (relation strength), for the badge, the label and the bar.
   const band = getStandingBand(rel.strength);
@@ -193,7 +193,7 @@ function RelationCard({
           {isOwner ? (
             <Select
               value={rel.goalSelf || undefined}
-              onValueChange={(goal) => isDiplomaticGoal(goal) && onGoalChange(rel.id, goal)}
+              onValueChange={(goal) => isDiplomaticGoal(goal) && onGoalChange(rel, goal)}
               disabled={goalPending}
             >
               <SelectTrigger size="sm" className="text-footnote w-full" aria-label="Your stance">
@@ -298,9 +298,14 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
   useScrollToFocus(focusId, [allRelations]);
 
-  const handleGoalChange = (relationId: string, goal: DiplomaticGoal) => {
-    if (relationId.startsWith("embassy-rel-")) return;
-    setGoalMutation.mutate({ relationId, goal });
+  const handleGoalChange = (rel: RelationRow, goal: DiplomaticGoal) => {
+    // An embassy partner with no relation record yet: the server opens the relation.
+    if (rel.isEmbassyDerived) {
+      if (rel.targetCountryId)
+        setGoalMutation.mutate({ targetCountryId: rel.targetCountryId, goal });
+      return;
+    }
+    setGoalMutation.mutate({ relationId: rel.id, goal });
   };
 
   if (isLoadingRelations || isLoadingEmbassies) {

@@ -7,6 +7,7 @@ import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { groupIncidentsByCountry } from "~/lib/diplomacy/incidents";
 import { assertSameRealm } from "~/server/shared/same-realm-guard";
 import { sameRealm } from "~/lib/realms/same-realm";
+import { OPENING_RELATION_STRENGTH, getStandingBand } from "~/lib/diplomacy/relation-bands";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCoreRelationsRouter = createTRPCRouter({
@@ -106,10 +107,19 @@ export const diplomaticCoreRelationsRouter = createTRPCRouter({
   // Set diplomatic goal (Stance)
   setDiplomaticGoal: rateLimitedMutationProcedure
     .input(
-      z.object({
-        relationId: z.string(),
-        goal: z.enum(["ALLY", "COEXIST", "HEGEMONY", "RIVAL"]),
-      })
+      z
+        .object({
+          relationId: z.string().optional(),
+          /**
+           * A partner known only through an embassy (a legacy embassy opened before embassies
+           * created relations): the relation is opened with this goal, as establishing does.
+           */
+          targetCountryId: z.string().optional(),
+          goal: z.enum(["ALLY", "COEXIST", "HEGEMONY", "RIVAL"]),
+        })
+        .refine((v) => !!v.relationId || !!v.targetCountryId, {
+          message: "A relation or a partner nation is required.",
+        })
     )
     .mutation(async ({ ctx, input }) => {
       if (!ctx.user?.countryId) {
@@ -118,10 +128,55 @@ export const diplomaticCoreRelationsRouter = createTRPCRouter({
           message: "You must be associated with a country to update diplomatic goals.",
         });
       }
+      const selfId = ctx.user.countryId;
 
-      const relation = await ctx.db.diplomaticRelation.findUnique({
-        where: { id: input.relationId },
-      });
+      let relation = input.relationId
+        ? await ctx.db.diplomaticRelation.findUnique({
+            where: { id: input.relationId },
+          })
+        : null;
+
+      if (!input.relationId && input.targetCountryId) {
+        const targetId = input.targetCountryId;
+        relation = await ctx.db.diplomaticRelation.findFirst({
+          where: {
+            OR: [
+              { country1: selfId, country2: targetId },
+              { country1: targetId, country2: selfId },
+            ],
+          },
+        });
+        if (!relation) {
+          const embassy = await ctx.db.embassy.findFirst({
+            where: {
+              OR: [
+                { hostCountryId: selfId, guestCountryId: targetId },
+                { hostCountryId: targetId, guestCountryId: selfId },
+              ],
+            },
+            select: { id: true },
+          });
+          if (!embassy || targetId === selfId) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Open an embassy with this nation before setting a stance.",
+            });
+          }
+          await assertSameRealm(ctx.db, selfId, targetId);
+          return await ctx.db.diplomaticRelation.create({
+            data: {
+              country1: selfId,
+              country2: targetId,
+              relationship: getStandingBand(OPENING_RELATION_STRENGTH).key,
+              strength: OPENING_RELATION_STRENGTH,
+              status: "active",
+              lastContact: new Date(),
+              diplomaticChannels: JSON.stringify(["embassy"]),
+              goalCountry1: input.goal,
+            },
+          });
+        }
+      }
 
       if (!relation) {
         throw new TRPCError({
@@ -149,7 +204,7 @@ export const diplomaticCoreRelationsRouter = createTRPCRouter({
       }
 
       return await ctx.db.diplomaticRelation.update({
-        where: { id: input.relationId },
+        where: { id: relation.id },
         data: updateData,
       });
     }),

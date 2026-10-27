@@ -54,8 +54,8 @@ export function CulturalExchangeWizard({
             onCountrySearchChange={form.setCountrySearch}
             isLoading={form.isLoadingCountries}
             countries={form.availableCountries}
-            participantCountryId={data.participantCountryId}
-            onSelect={form.setParticipantCountryId}
+            participantCountryIds={data.participantCountryIds}
+            onToggle={form.toggleParticipant}
           />
         );
       case 3:
@@ -89,7 +89,7 @@ export function CulturalExchangeWizard({
             data={data}
             type={form.type}
             hostCountry={hostCountry}
-            selectedCountry={form.selectedCountry}
+            selectedCountries={form.selectedCountries}
           />
         );
       default:

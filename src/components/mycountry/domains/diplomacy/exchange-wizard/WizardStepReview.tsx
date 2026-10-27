@@ -19,7 +19,7 @@ interface WizardStepReviewProps {
   data: ExchangeWizardData;
   type: WizardExchangeType;
   hostCountry: WizardHostCountry;
-  selectedCountry: WizardCountry | undefined;
+  selectedCountries: WizardCountry[];
 }
 
 function ReviewCountry({
@@ -61,7 +61,7 @@ export const WizardStepReview = React.memo(function WizardStepReview({
   data,
   type,
   hostCountry,
-  selectedCountry,
+  selectedCountries,
 }: WizardStepReviewProps) {
   const typeConfig = WIZARD_EXCHANGE_TYPES[type];
   const clock = useNationClock();
@@ -97,13 +97,14 @@ export const WizardStepReview = React.memo(function WizardStepReview({
               flagUrl={getCountryFlagUrl(hostCountry)}
               caption="Host Country"
             />
-            {selectedCountry && (
+            {selectedCountries.map((country) => (
               <ReviewCountry
-                name={selectedCountry.name}
-                flagUrl={getCountryFlagUrl(selectedCountry)}
+                key={country.id}
+                name={country.name}
+                flagUrl={getCountryFlagUrl(country)}
                 caption="Participant Country"
               />
-            )}
+            ))}
           </div>
         </div>
 

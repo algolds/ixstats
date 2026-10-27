@@ -1,4 +1,4 @@
-import { Community, Crown, Journal } from "iconoir-react";
+import { Building, Community, Crown, Journal } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import type { PersonaType } from "~/lib/thinkpages-forum/persona-type";
 
@@ -6,6 +6,7 @@ const CHIP: Record<PersonaType, { label: string; Icon: typeof Crown }> = {
   government: { label: "Government", Icon: Crown },
   media: { label: "Media", Icon: Journal },
   citizen: { label: "Citizen", Icon: Community },
+  corporate: { label: "Corporate", Icon: Building },
 };
 
 /** A persona's voice as a neutral chip: the app tint already carries the colour, so the chip stays quiet. */

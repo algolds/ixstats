@@ -14,6 +14,8 @@ interface TariffSectorSliderCardProps {
   currentTariff: number;
   isLocked: boolean;
   onTariffChange: (val: number) => void;
+  /** Fires when a value is settled (slider released or rate typed): the save point. */
+  onTariffCommit: (val: number) => void;
   onToggleLock: () => void;
   onReset: () => void;
 }
@@ -23,6 +25,7 @@ export const TariffSectorSliderCard = React.memo(function TariffSectorSliderCard
   currentTariff,
   isLocked,
   onTariffChange,
+  onTariffCommit,
   onToggleLock,
   onReset,
 }: TariffSectorSliderCardProps) {
@@ -88,6 +91,7 @@ export const TariffSectorSliderCard = React.memo(function TariffSectorSliderCard
           step={sector.step}
           disabled={isLocked}
           onValueChange={([val]) => onTariffChange(val || 0)}
+          onValueCommit={([val]) => onTariffCommit(val || 0)}
           aria-label={`${sector.label} tariff`}
           className="py-1"
         />
@@ -97,7 +101,7 @@ export const TariffSectorSliderCard = React.memo(function TariffSectorSliderCard
           max={sector.max}
           step={sector.step}
           disabled={isLocked}
-          onCommit={onTariffChange}
+          onCommit={onTariffCommit}
           aria-label={`${sector.label} tariff, percent`}
         />
       </div>

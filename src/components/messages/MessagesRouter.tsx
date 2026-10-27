@@ -187,7 +187,8 @@ function MessagesRouterInner() {
       });
       setSelectedConversationId(result.id);
       setShowNewConversation(false);
-      notify.success("Conversation created");
+      // Message myself reopens the one notes conversation after the first time.
+      notify.success(participantId === currentUserId ? "Notes to self" : "Conversation created");
       void refetchConversations();
     } catch (error: any) {
       notify.error(error.message || "Failed to create conversation");

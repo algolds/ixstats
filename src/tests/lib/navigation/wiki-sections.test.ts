@@ -17,4 +17,10 @@ describe("wiki sections", () => {
     expect(getActiveSectionId(getApp("wiki"), "/util/lorewards", null)).toBe("lorewards");
     expect(getActiveSectionId(getApp("wiki"), "/util", null)).toBe("utilities");
   });
+
+  it("lists Stash in the main wiki lineup and marks it current on /stashes", () => {
+    const row = getApp("wiki").sections.find((section) => section.id === "stash");
+    expect(row).toMatchObject({ label: "Stash", href: "/stashes" });
+    expect(getActiveSectionId(getApp("wiki"), "/stashes", null)).toBe("stash");
+  });
 });

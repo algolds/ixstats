@@ -194,8 +194,9 @@ below).
    `20261022120000_atlas_ra`. Prisma 6.19's push never reads partial indexes, triggers or rules, so the ones the SQL
    created (the forum's, IxnayID's, the cards triggers) survive it and need no re-apply.
 9. **Build:** moves the live `.next` to `.next.prev` (see "When it fails" below), then `bun run build`.
-10. **IxWorld:** `scripts/deploy-ixworld.sh` builds the same commit (it refuses if the checkout moved), swaps it into
-    `/ixwiki/public/maps/ixworld`, reloads PM2 `ixworld` and rolls itself back if its health check fails.
+10. **No IxWorld build.** maps.ixwiki.com is the main app's `/maps` page (nginx proxies the map and its requests to
+    `ixstats-web`, every other page to beta.ixwiki.com), so the deploy builds nothing else. `scripts/deploy-ixworld.sh`
+    stays for a manual standalone build.
 11. **PM2:** `pm2 startOrReload ecosystem.config.cjs --update-env` (cron, websockets, IxTwitter sync, and `ixstats-web`
     when it is defined). The first time `ixstats-web` is defined, the deploy first stops the foreground server
     `start-production.sh` left on the port. A failed reload stops the deploy; a missing `pm2` or `ecosystem.config.cjs`

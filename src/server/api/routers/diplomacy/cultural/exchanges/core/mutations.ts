@@ -70,6 +70,8 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
         hostCountryName: z.string(),
         hostCountryFlag: z.string().optional(),
         participantCountryId: z.string().optional(),
+        /** Several specific nations to take part (with or alongside `participantCountryId`). */
+        participantCountryIds: z.array(z.string()).max(50).optional(),
         startDate: z.string(),
         endDate: z.string(),
         autoCreateMissions: z.boolean().optional().default(true),
@@ -78,8 +80,21 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.hostCountryId);
-      if (input.participantCountryId) {
-        await assertSameRealm(ctx.db, input.hostCountryId, input.participantCountryId);
+      // Every named participant, once, never the host.
+      const participantIds = [
+        ...new Set([
+          ...(input.participantCountryId ? [input.participantCountryId] : []),
+          ...(input.participantCountryIds ?? []),
+        ]),
+      ].filter((id) => id !== input.hostCountryId);
+      if (input.maxParticipants != null && participantIds.length > input.maxParticipants) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `You invited ${participantIds.length} nations; the exchange allows ${input.maxParticipants}.`,
+        });
+      }
+      for (const id of participantIds) {
+        await assertSameRealm(ctx.db, input.hostCountryId, id);
       }
 
       // Validate embassy mission if provided
@@ -147,30 +162,31 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
         },
       });
 
-      // If a participant country was specified, create a participant record
-      if (input.participantCountryId) {
+      // A participant record for each named participant country that exists
+      let participantCount = 0;
+      for (const participantId of participantIds) {
         const participantCountry = await ctx.db.country.findUnique({
-          where: { id: input.participantCountryId },
+          where: { id: participantId },
           select: { name: true, flag: true },
         });
+        if (!participantCountry) continue;
 
-        if (participantCountry) {
-          await ctx.db.culturalExchangeParticipant.create({
-            data: {
-              exchangeId: exchange.id,
-              countryId: input.participantCountryId,
-              countryName: participantCountry.name,
-              flagUrl: normalizeFlagUrl(participantCountry.flag),
-              role: "participant",
-            },
-          });
-
-          // Update participant count
-          await ctx.db.culturalExchange.update({
-            where: { id: exchange.id },
-            data: { participants: 1 },
-          });
-        }
+        await ctx.db.culturalExchangeParticipant.create({
+          data: {
+            exchangeId: exchange.id,
+            countryId: participantId,
+            countryName: participantCountry.name,
+            flagUrl: normalizeFlagUrl(participantCountry.flag),
+            role: "participant",
+          },
+        });
+        participantCount++;
+      }
+      if (participantCount > 0) {
+        await ctx.db.culturalExchange.update({
+          where: { id: exchange.id },
+          data: { participants: participantCount },
+        });
       }
 
       // Track cultural exchange creation

@@ -2,7 +2,6 @@
 
 import {
   Compass,
-  BookmarkBook,
   User,
   Shuffle,
   Folder,
@@ -23,16 +22,6 @@ const TOOLS: UtilityTool[] = [
     href: "/util/recent-changes",
     badge: "Live",
     color: "border-blue/20 bg-blue/10 text-blue",
-  },
-  {
-    id: "watchlist",
-    title: "Personal watchlist & stash feed",
-    description: "Follow changes to your curated lore articles, bookmarks, and starred entities.",
-    legacyAlias: "Special:Watchlist",
-    icon: BookmarkBook,
-    href: "/stashes",
-    badge: "Stash integrated",
-    color: "border-yellow/20 bg-yellow/10 text-yellow",
   },
   {
     id: "contributions",

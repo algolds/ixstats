@@ -28,6 +28,7 @@ import {
   Activity,
   Bell,
   Bookmark,
+  BookmarkBook,
   BookStack,
   Building,
   Cart,
@@ -312,8 +313,9 @@ export const APPS: readonly AppDefinition[] = [
     match: ["/wiki", "/util", "/blurbs", "/stashes"],
     navSetting: "showWikiTab",
     // WikiOS utilities live under /util. WikiOS has no rail of its own: search is a section here, and page creation
-    // and page tools live in the page header. The rest of the tools (Random, Contributions, Watchlist, ...) open from
-    // the Utilities hub; /stashes and /blurbs stay in the app without a row (Stash is in the account menu).
+    // and page tools live in the page header. Stash is a main row (it is too central to bury in Utilities, and it is
+    // also in the account menu); the rest of the tools (Random, Contributions, ...) open from the Utilities hub, and
+    // /blurbs stays in the app without a row.
     sections: [
       {
         id: "main",
@@ -346,6 +348,13 @@ export const APPS: readonly AppDefinition[] = [
         label: "Repository",
         href: "/util/repository",
         icon: MediaImage,
+      },
+      {
+        id: "stash",
+        label: "Stash",
+        href: "/stashes",
+        icon: BookmarkBook,
+        requires: "signed-in",
       },
       { id: "lorewards", label: "Lorewards", href: "/util/lorewards", icon: Trophy },
       { id: "utilities", label: "Utilities", href: "/util", icon: List },
