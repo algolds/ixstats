@@ -5,6 +5,8 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Cart as ShoppingCart } from "iconoir-react";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
+import type { PublicCosmetics } from "~/lib/vault/public-cosmetics";
+import { CosmeticStorePreview } from "./store/CosmeticStorePreview";
 
 export interface StoreItem {
   id: string;
@@ -15,6 +17,8 @@ export interface StoreItem {
   quality: string; // "LEGENDARY" | "EPIC" | "RARE" | "COMMON"
   badgeText: string;
   category?: string;
+  /** A cosmetic's resolved effect: when set, the card shows it worn instead of the generic icon. */
+  cosmetics?: PublicCosmetics | null;
 }
 
 interface StoreItemCardProps {
@@ -143,14 +147,20 @@ export function StoreItemCard({
 
         {/* Card Artwork / Icon block */}
         <div className="flex flex-1 flex-col items-center justify-center py-4">
-          <div
-            className={cn(
-              "rounded-row bg-surface-secondary mb-2 border p-4 shadow-inner",
-              colors.border
-            )}
-          >
-            <Icon className={cn("h-7 w-7", colors.text)} />
-          </div>
+          {item.cosmetics ? (
+            <div className="mb-2">
+              <CosmeticStorePreview cosmetics={item.cosmetics} />
+            </div>
+          ) : (
+            <div
+              className={cn(
+                "rounded-row bg-surface-secondary mb-2 border p-4 shadow-inner",
+                colors.border
+              )}
+            >
+              <Icon className={cn("h-7 w-7", colors.text)} />
+            </div>
+          )}
           <h4 className="text-footnote text-label text-center font-semibold">{item.name}</h4>
           <p className="text-label-secondary text-footnote mt-1 text-center leading-tight">
             {item.description}
