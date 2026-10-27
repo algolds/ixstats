@@ -5,7 +5,7 @@ import {
   type NextMiddleware,
   NextResponse,
 } from "next/server";
-import { isStandaloneRequest } from "~/lib/system/standalone-detection";
+import { isMapsHostRequest, isStandaloneRequest } from "~/lib/system/standalone-detection";
 import {
   WikiStandaloneConfigError,
   isWikiStandalone,
@@ -98,7 +98,7 @@ function frameAncestorsFor(req: NextRequest): FrameAncestors {
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
   if (signedInTool) return "'none'";
-  if (isStandaloneRequest(req.headers)) return IXWIKI_FRAME_ANCESTORS;
+  if (isMapsHostRequest(req.headers)) return IXWIKI_FRAME_ANCESTORS;
   if (isMapViewer || pathname.startsWith("/wiki/") || pathname.startsWith("/countries/")) {
     return "'self'";
   }
@@ -162,7 +162,7 @@ function nextWithSecurityHeaders(req: NextRequest): NextResponse {
 
 /**
  * IxWorld standalone route guard.
- * When the request comes from maps.ixwiki.com, redirect root to /maps.
+ * In the maps-only standalone build, redirect root to /maps (maps.ixwiki.com itself serves the full app).
  * All other routes are served as-is.
  */
 function handleStandaloneRouting(req: NextRequest): NextResponse | null {
