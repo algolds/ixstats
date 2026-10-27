@@ -1,42 +1,18 @@
 // @ts-nocheck
 /**
- * Template for next.config.js, which is git-ignored: each environment (dev machines, the
- * production server) keeps its own copy. Copy this file to next.config.js to run or build the app.
+ * A reference copy of next.config.js, which is tracked in git now (2026-10-06): the tracked file is the source of
+ * truth, and nothing needs copying. This one is older and may lag it.
  *
  * Reconstructed on 2026-10-05 from the last tracked copy (removed from git on 2026-06-03) plus
  * the later changes CHANGELOG records: TypeScript build errors fail the build, packages that are no
  * longer dependencies are dropped, and `/@handle` rewrites to the IxnayID passport (`/id/[username]`).
- * The server's copy is the source of truth: when you change it, mirror the change here.
  *
  * No secrets belong in this file; they live in .env files.
  */
 
-// Normalize base path so we can deploy under https://ixwiki.com/projects/ixstates
-const normalizeBasePath = (value) => {
-  if (!value) {
-    return "";
-  }
-  let normalized = value.startsWith("/") ? value : `/${value}`;
-  if (normalized.length > 1 && normalized.endsWith("/")) {
-    normalized = normalized.slice(0, -1);
-  }
-  return normalized;
-};
-
-const resolveBasePath = () => {
-  // IxWorld standalone (maps.ixwiki.com) always uses an empty base path
-  if (process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true") {
-    return "";
-  }
-
-  const hasBasePathEnv = Object.prototype.hasOwnProperty.call(process.env, "BASE_PATH");
-  const rawBasePath = hasBasePathEnv
-    ? process.env.BASE_PATH
-    : process.env.NODE_ENV === "production"
-      ? "/projects/ixstates"
-      : "";
-  return normalizeBasePath(rawBasePath);
-};
+// The base path (https://ixwiki.com/projects/ixstates in production): one rule, shared with next.config.js and the
+// stylesheets' PostCSS pass, so this template cannot drift from them
+import { resolveBasePath } from "./scripts/setup/base-path.cjs";
 
 const basePath = resolveBasePath();
 const assetPrefix = basePath || undefined;

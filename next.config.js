@@ -155,7 +155,6 @@ const config = {
       // Note: NationStates images are now proxied through /api/proxy-ns-image
       // to bypass hotlinking restrictions, so no NS domains needed here
     ],
-    // Allow local API routes with query strings (for NS image proxy and placeholders)
     // Only the bundled top-level images in public/images (the setup intro) go through the
     // optimizer; user uploads under /images/uploads and API routes stay out of it
     localPatterns: [

@@ -150,7 +150,7 @@ git checkout development
 
 # 3. Drop in the .env.local the lead gave you (into the project root),
 #    or copy .env.example to .env.local and add your own Clerk dev keys.
-#    Then: cp next.config.example.js next.config.js (git-ignored, one per environment)
+#    (next.config.js is tracked: nothing to copy.)
 
 # 4. Install dependencies (also generates the Prisma client)
 bun install
