@@ -116,9 +116,9 @@ parity with MediaWiki and the bench) under a profile (local, launch or recurring
 committed proof (`docs/audits/wikios-proof/latest.json`) gates every deploy: `deploy-production.sh` runs the `predeploy`
 check, which refuses a release whose WikiOS code changed since the committed passing proof, or whose editor round trip
 changes a byte of the production corpus. The weekly `wikios-proof` cron job runs the recurring profile on the server.
-Numbers (local proof, 2026-10-26, commit `58ef66fe7`): the round trip kept 12,706 of 12,706 pages byte-identical
+Numbers (local proof, 2026-10-27, commit `528f6b69c`): the round trip kept 12,706 of 12,706 pages byte-identical
 (100%); parity over a 497-page sample, each page at the revision WikiOS holds, scored 99.8% of pages at 98 or more with
-a mean of 99.93 and none below 70; bench: launch run pending (dev server numbers are reference only). How to run it, each threshold and the
+a mean of 99.97 and none below 70; bench: launch run pending (dev server numbers are reference only). How to run it, each threshold and the
 ratchet rule:
 [docs/audits/wikios-proof/](../../audits/wikios-proof/README.md).
 

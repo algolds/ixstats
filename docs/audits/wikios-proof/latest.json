@@ -1,8 +1,8 @@
 {
   "profile": "local",
-  "generatedAt": "2026-10-26T15:50:51.436Z",
-  "commit": "58ef66fe77255483980a148ef0623814a63ab039",
-  "treeKey": "aff5f5b26dc725bd9d18b9b7374b90275a7d9ef3fe628863c913942fd3b459bf",
+  "generatedAt": "2026-10-27T01:09:24.881Z",
+  "commit": "528f6b69cce12ff3fa5125df7969ed4ebae8a5fd",
+  "treeKey": "b56e2fb24039055a452deeb8f00232bbdec045fb5014e303aa8d17f307565d5e",
   "dirty": false,
   "corpus": {
     "roundTripPages": 12706,
@@ -63,7 +63,7 @@
       "name": "parity.pages",
       "passed": true,
       "skipped": null,
-      "measured": "494 answered of 497 requested, 3 left out (497 in the report)",
+      "measured": "495 answered of 497 requested, 3 left out (497 in the report)",
       "threshold": ">= 200 answered or left out, every requested page reported"
     },
     {
@@ -105,7 +105,7 @@
       "name": "parity.meanScore",
       "passed": true,
       "skipped": null,
-      "measured": "99.93",
+      "measured": "99.97",
       "threshold": ">= 98"
     },
     {
@@ -140,21 +140,21 @@
       "name": "bench.p95.data.totalMs",
       "passed": false,
       "skipped": "dev server: reference only",
-      "measured": "2018 ms",
+      "measured": "1098 ms",
       "threshold": "<= 800 ms"
     },
     {
       "name": "bench.p95.search.totalMs",
       "passed": true,
       "skipped": "dev server: reference only",
-      "measured": "41 ms",
+      "measured": "42 ms",
       "threshold": "<= 500 ms"
     },
     {
       "name": "bench.p95.history.totalMs",
       "passed": true,
       "skipped": "dev server: reference only",
-      "measured": "39 ms",
+      "measured": "43 ms",
       "threshold": "<= 800 ms"
     },
     {
@@ -168,14 +168,14 @@
       "name": "bench.ratio.search.totalMs",
       "passed": true,
       "skipped": "dev server: reference only",
-      "measured": "0.14 (n=50)",
+      "measured": "0.31 (n=50)",
       "threshold": "<= 1"
     },
     {
       "name": "bench.ratio.history.totalMs",
       "passed": true,
       "skipped": "dev server: reference only",
-      "measured": "0.29 (n=50)",
+      "measured": "0.25 (n=50)",
       "threshold": "<= 1"
     }
   ],

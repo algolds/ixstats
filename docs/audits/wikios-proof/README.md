@@ -12,7 +12,13 @@ The CLI is [`scripts/audit/wikios-proof.ts`](../../../scripts/audit/wikios-proof
 
 **Reports so far:**
 
-- [2026-10-26, local, second run](2026-10-26-local-2.md) (commit `58ef66fe7`, `latest.json`): passed, on renderer 7 and
+- [2026-10-27, local](2026-10-27-local.md) (commit `528f6b69c`, `latest.json`): passed, on the merge of origin's
+  pre-production audit (sanitizer hooks v9, which strip `fixed` and `sticky` positioning, and next 16.4.3). The round
+  trip kept 12,706 of 12,706 pages byte-identical, in every namespace. Parity compared a sample of 497 pages at the
+  revision WikiOS holds: 99.8% of the 495 scored pages score 98 or more, the mean is 99.97 and none is below 70 (two
+  pages failed on classic's side with an internal error; three `sanitized-css` pages were left out). Two first renders
+  failed with ECONNRESET and were rendered again within the settle window.
+- [2026-10-26, local, second run](2026-10-26-local-2.md) (commit `58ef66fe7`): passed, on renderer 7 and
   the grown proof key. The round trip kept 12,706 of 12,706 pages byte-identical, in every namespace. Parity compared a
   sample of 497 pages at the revision WikiOS holds: 99.8% of the 494 scored pages score 98 or more, the mean is 99.93
   and none is below 70 (three pages failed on classic's side: two internal errors and one dropped connection; three
@@ -100,8 +106,8 @@ parity report must record its settle wait (`parity.settleMs`) and have parsed th
 - `parity.leftOut`: at most 2% of the requested sample left out by content model, each named (a fixed cap in the gate,
   not in the thresholds file). The corpus has 24 `sanitized-css` pages among 4,771 articles (0.5%), and the first proof
   left out 3 of 500; more than 2% would mean the exclusion hides articles.
-- `parity.atLeast98`: at least 97.7% of scored pages score 98 or more (measured 99.2%, then 99.8%).
-- `parity.meanScore`: a mean score of at least 98 (measured 99.88, then 99.93).
+- `parity.atLeast98`: at least 97.7% of scored pages score 98 or more (measured 99.2%, then 99.8% twice).
+- `parity.meanScore`: a mean score of at least 98 (measured 99.88, 99.93, then 99.97).
 - `parity.below70`: 0 pages below 70, except pages listed in `knownLowPages` with a reason.
 - `bench.failures.<system>`: at most 1% of requests failed, per system.
 - `bench.p95.<metric>`: p95 caps of 1,500 ms for `page+data.totalMs` (the article page and its data call), 800 ms for

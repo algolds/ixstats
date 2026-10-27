@@ -152,8 +152,8 @@ is deployed; WikiOS editing launches with WikiOS v1.
     recurring profile, and checks them against `scripts/audit/wikios-proof-thresholds.json`.
   - The weekly `wikios-proof` cron job runs it on the server. Every deploy refuses a release whose WikiOS code has no
     committed passing proof ([docs/audits/wikios-proof/](docs/audits/wikios-proof/README.md)). The local proof passed
-    on 2026-10-26 (commit `58ef66fe7`): 12,706 of 12,706 pages byte-identical through the editor, and 99.8% of the 494
-    scored pages (of a 497-page parity sample) at 98 or more (mean 99.93, none below 70). The bench's gated run is the launch run.
+    on 2026-10-27 (commit `528f6b69c`): 12,706 of 12,706 pages byte-identical through the editor, and 99.8% of the 495
+    scored pages (of a 497-page parity sample) at 98 or more (mean 99.97, none below 70). The bench's gated run is the launch run.
   - A render in which MediaWiki could not show a file (a missing-file link or a failed thumbnail, which classic's
     Commons lookup can produce for one render and not the next) is rendered again once it is a day old.
   - The unreachable Margin Inspect tab and a stray log line are gone.
