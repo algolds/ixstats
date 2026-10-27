@@ -46,6 +46,8 @@ interface ElectionItem {
 interface LegislatureItem {
   totalSeats: number;
   name?: string | null;
+  /** `unicameral|…`, `bicameral|…` and so on: the structure, then the serialized chambers. */
+  chamberType?: string | null;
   updatedAt?: string | Date | null;
   createdAt?: string | Date | null;
 }
@@ -79,6 +81,12 @@ interface ParliamentData {
   } | null;
   seats: ParliamentSeatItem[];
   partySummary: ParliamentPartySummaryItem[];
+}
+
+/** "bicameral, " from the saved chamber type (empty when it isn't recorded). */
+function legislatureStructure(legislature: Pick<LegislatureItem, "chamberType">): string {
+  const type = legislature.chamberType?.split("|")[0]?.trim();
+  return type ? `${type}, ` : "";
 }
 
 /** Politics rail — parties / seats / approval snapshot + recent political activity. */
@@ -129,7 +137,7 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
           id: "legislature",
           icon: Landmark,
           iconColor: STATUS_TEXT.neutral,
-          text: `Legislature: ${legislature.totalSeats} seats configured`,
+          text: `Legislature: ${legislatureStructure(legislature)}${legislature.totalSeats} seats configured`,
         },
         legislature.updatedAt,
         legislature.createdAt
@@ -211,7 +219,7 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
           <div className="space-y-2">
             <p className="text-label-secondary text-footnote py-1 text-center">
               {legislature
-                ? `Chamber hemicycle (${legislature.totalSeats} total seats)`
+                ? `Chamber hemicycle (${legislatureStructure(legislature)}${legislature.totalSeats} total seats)`
                 : "No legislature configured"}
             </p>
             {parties && parties.length > 0 ? (
