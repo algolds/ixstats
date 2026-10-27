@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Button } from "~/components/ui/button";
 import { Plus, InfoCircle, Globe } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
@@ -19,6 +19,7 @@ import { sectorsFromRecorded } from "./trade-commerce/trade-commerce-types";
 import { TariffSectorSliderCard } from "./trade-commerce/TariffSectorSliderCard";
 import { TradePartnersManager } from "./trade-commerce/TradePartnersManager";
 import { TradeImpactSummary } from "./trade-commerce/TradeImpactSummary";
+import { exciseWithSectorTariff, readSectorTariffs } from "./trade-commerce/sector-tariffs";
 import { CustomSectorDialog } from "./trade-commerce/CustomSectorDialog";
 import { RailCard, RailCount, RailRow } from "./rails/shared";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
@@ -28,11 +29,13 @@ import { Card, CardContent, CardHeader } from "~/components/ui/card";
  *
  * Trade figures come from the nation's recorded exports/imports (% of GDP) and show "—" when
  * none are recorded. The sector tariff schedule is a planner: it is seeded from the recorded
- * sectors and the saved Fiscal Policy tariff rate, but its edits live only in this component and
- * are labelled as not saved. Trade agreement status is read from recorded treaties.
+ * sectors and the saved Fiscal Policy tariff rate. A recorded sector's rate is saved when a slider
+ * is released (beside the overall tariff in `exciseTaxRates`); sectors added here stay in this
+ * session. Trade agreement status is read from recorded treaties.
  */
 export function TradeCommerceConsole({ countryId }: { countryId: string }) {
   const notify = useNotify();
+  const utils = api.useUtils();
   const { country } = useCountryData();
 
   const [isAddSectorOpen, setIsAddSectorOpen] = useState(false);
@@ -61,21 +64,67 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
   );
   const [tariffs, setTariffs] = useState<Record<string, number>>({});
 
+  // Saved per-sector rates, by sector key (recorded sectors only).
+  const savedSectorTariffs = useMemo(
+    () => readSectorTariffs(fiscal?.exciseTaxRates),
+    [fiscal?.exciseTaxRates]
+  );
+  const rateOf = useCallback(
+    (s: CustomSector) => tariffs[s.id] ?? savedSectorTariffs[s.key] ?? s.defaultTariff,
+    [tariffs, savedSectorTariffs]
+  );
+
+  const saveMutation = api.economics.updateFiscalSystem.useMutation({
+    onSuccess: () => {
+      void utils.countries.getByIdWithEconomicData.invalidate();
+    },
+    onError: (err: { message?: string }) => {
+      notify.error(`Failed to save sector tariff: ${err?.message ?? "Unknown error"}`);
+    },
+  });
+  const mutateRef = useRef(saveMutation.mutate);
+  useEffect(() => {
+    mutateRef.current = saveMutation.mutate;
+  }, [saveMutation.mutate]);
+  // Latest exciseTaxRates we know of, so back-to-back sector saves merge into each other.
+  const exciseRef = useRef<string | null | undefined>(fiscal?.exciseTaxRates);
+  useEffect(() => {
+    exciseRef.current = fiscal?.exciseTaxRates;
+  }, [fiscal?.exciseTaxRates]);
+
+  const persistTariff = useCallback(
+    (sector: CustomSector, rate: number | null) => {
+      if (!recordedSectors.some((s) => s.id === sector.id)) return; // session-only sector
+      const next = exciseWithSectorTariff(exciseRef.current, sector.key, rate);
+      exciseRef.current = next;
+      mutateRef.current({ countryId, exciseTaxRates: next });
+    },
+    [countryId, recordedSectors]
+  );
+
   const handleTariffChange = useCallback((sectorId: string, val: number) => {
     setTariffs((prev) => ({ ...prev, [sectorId]: val }));
   }, []);
+
+  const handleTariffCommit = useCallback(
+    (sector: CustomSector, val: number) => {
+      setTariffs((prev) => ({ ...prev, [sector.id]: val }));
+      persistTariff(sector, val);
+    },
+    [persistTariff]
+  );
 
   const toggleLock = useCallback((sectorId: string) => {
     setLockedSectors((prev) => ({ ...prev, [sectorId]: !prev[sectorId] }));
   }, []);
 
-  const resetTariff = useCallback((sector: CustomSector) => {
-    setTariffs((prev) => {
-      const next = { ...prev };
-      delete next[sector.id];
-      return next;
-    });
-  }, []);
+  const resetTariff = useCallback(
+    (sector: CustomSector) => {
+      setTariffs((prev) => ({ ...prev, [sector.id]: sector.defaultTariff }));
+      persistTariff(sector, null);
+    },
+    [persistTariff]
+  );
 
   const handleAddSector = useCallback(
     (newSector: CustomSector) => {
@@ -100,7 +149,7 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
     let weighted = 0;
     let totalShare = 0;
     sectors.forEach((s) => {
-      const rate = tariffs[s.id] ?? s.defaultTariff;
+      const rate = rateOf(s);
       weighted += rate * s.defaultShare;
       totalShare += s.defaultShare;
     });
@@ -110,7 +159,7 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
         ? totalImports * (avg / 100) * (taxEfficiency ?? 1)
         : null;
     return { plannedAverageTariff: avg, plannedTariffRevenue: revenue };
-  }, [sectors, tariffs, totalImports, taxEfficiency]);
+  }, [sectors, rateOf, totalImports, taxEfficiency]);
 
   // Trade partners, with agreement status from recorded treaties.
   const tradePartners = useMemo(() => {
@@ -136,17 +185,17 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
         totalImports={totalImports}
       />
 
-      {/* Sector Tariff Planner (not saved) */}
+      {/* Sector Tariff Planner (recorded sectors save on release) */}
       <Card className="rounded-card">
         <CardHeader className="flex-row flex-wrap items-start justify-between gap-3 p-4 pb-3">
           <div className="min-w-0 space-y-0.5">
             <h3 className="text-label text-headline flex flex-wrap items-center gap-2">
               Sector tariff planner
-              <Badge variant="warning">Not saved</Badge>
+              {addedSectors.length > 0 && <Badge variant="warning">Added sectors not saved</Badge>}
             </h3>
             <p className="text-label-secondary text-footnote">
-              Try out tariffs by sector. Changes here reset when you leave the page and don&apos;t
-              change your economy.
+              Set tariffs by sector. Rates for recorded sectors save when you release a slider; they
+              don&apos;t change your economy&apos;s tariff revenue.
             </p>
           </div>
           <Button
@@ -183,9 +232,10 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
                 <TariffSectorSliderCard
                   key={sec.id}
                   sector={sec}
-                  currentTariff={tariffs[sec.id] ?? sec.defaultTariff}
+                  currentTariff={rateOf(sec)}
                   isLocked={!!lockedSectors[sec.id]}
                   onTariffChange={(val) => handleTariffChange(sec.id, val)}
+                  onTariffCommit={(val) => handleTariffCommit(sec, val)}
                   onToggleLock={() => toggleLock(sec.id)}
                   onReset={() => resetTariff(sec)}
                 />
