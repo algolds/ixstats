@@ -456,7 +456,7 @@ export function evaluateBench(
 }
 
 // ---------------------------------------------------------------------------
-// Tree key
+// Tree digest
 // ---------------------------------------------------------------------------
 
 /**
@@ -523,7 +523,7 @@ const proofSummarySchema = z.object({
   profile: z.enum(PROOF_PROFILES),
   generatedAt: z.string(),
   commit: z.string(),
-  treeKey: z.string(),
+  treeDigest: z.string(),
   dirty: z.boolean(),
   corpus: z.object({ roundTripPages: count, parityPages: count, benchPages: count }),
   checks: z.array(checkSchema),
@@ -541,12 +541,12 @@ const allPassed = (checks: readonly Check[]): boolean =>
   checks.length > 0 && checks.every((check) => check.passed || check.skipped !== null);
 
 export function buildSummary(meta: ProofMeta, checks: Check[]): ProofSummary {
-  const { profile, generatedAt, commit, treeKey, dirty, corpus } = meta;
+  const { profile, generatedAt, commit, treeDigest, dirty, corpus } = meta;
   return {
     profile,
     generatedAt,
     commit,
-    treeKey,
+    treeDigest,
     dirty,
     corpus,
     checks,
@@ -581,7 +581,7 @@ function renderHeader(summary: ProofSummary): string[] {
     `- Result: ${summary.passed ? "PASSED" : "FAILED"}`,
     `- Generated: ${summary.generatedAt}`,
     `- Commit: ${summary.commit}`,
-    `- Tree key: ${summary.treeKey}`,
+    `- Tree digest: ${summary.treeDigest}`,
     `- Dirty: ${summary.dirty ? "yes (uncommitted WikiOS changes; this run cannot stand as a proof)" : "no"}`,
     `- Corpus: ${corpus.roundTripPages} round-trip pages, ${corpus.parityPages} parity pages, ${corpus.benchPages} bench pages`,
   ];
@@ -700,7 +700,7 @@ export function checkCommittedProof(
       "The committed proof has no parity check: run the full proof, not the round trip alone"
     );
   }
-  if (summary.treeKey !== currentKey) {
+  if (summary.treeDigest !== currentKey) {
     return refuse(
       "WikiOS code changed since the committed proof: run the local proof on this commit and commit its summary"
     );
@@ -1065,7 +1065,7 @@ export interface GitOutput {
 
 export interface TreeState {
   commit: string;
-  treeKey: string;
+  treeDigest: string;
   dirty: boolean;
 }
 
@@ -1075,11 +1075,11 @@ export interface TreeState {
  */
 export function treeState(lsTree: GitOutput, status: GitOutput, head: GitOutput): TreeState {
   if ([lsTree, status, head].some((output) => output.status !== 0)) {
-    return { commit: "no-git", treeKey: "no-git", dirty: true };
+    return { commit: "no-git", treeDigest: "no-git", dirty: true };
   }
   return {
     commit: head.stdout.trim(),
-    treeKey: wikiosTreeKey(lsTree.stdout),
+    treeDigest: wikiosTreeKey(lsTree.stdout),
     dirty: isTreeDirty(status.stdout),
   };
 }
@@ -1110,8 +1110,8 @@ export function measuredTree(summaryJson: string | null, file: string): TreeStat
     "gate keys its summary to the run that measured the reports: gate them in their run directory";
   if (summaryJson === null) throw new Error(`${file} is missing; ${fix}`);
   try {
-    const { commit, treeKey, dirty } = parseProofSummary(summaryJson);
-    return { commit, treeKey, dirty };
+    const { commit, treeDigest, dirty } = parseProofSummary(summaryJson);
+    return { commit, treeDigest, dirty };
   } catch (error) {
     const why = errorText(error instanceof Error ? error : String(error));
     throw new Error(`${file} is not a proof summary (${why}); ${fix}`, { cause: error });

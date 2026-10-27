@@ -522,7 +522,7 @@ describe("treeState", () => {
     const lsTree = "100644 blob abc\tsrc/lib/wiki-os/a.ts\n";
     expect(treeState(ok(lsTree), ok(""), ok("deadbeef\n"))).toEqual({
       commit: "deadbeef",
-      treeKey: wikiosTreeKey(lsTree),
+      treeDigest: wikiosTreeKey(lsTree),
       dirty: false,
     });
     expect(treeState(ok(lsTree), ok(" M src/lib/wiki-os/a.ts\n"), ok("deadbeef")).dirty).toBe(true);
@@ -533,17 +533,17 @@ describe("treeState", () => {
     const none = { status: null, stdout: "" };
     expect(treeState(failed, ok(""), ok("x"))).toEqual({
       commit: "no-git",
-      treeKey: "no-git",
+      treeDigest: "no-git",
       dirty: true,
     });
     expect(treeState(ok("100644 blob a\tx\n"), none, ok("x"))).toEqual({
       commit: "no-git",
-      treeKey: "no-git",
+      treeDigest: "no-git",
       dirty: true,
     });
     expect(treeState(ok("100644 blob a\tx\n"), ok(""), failed)).toEqual({
       commit: "no-git",
-      treeKey: "no-git",
+      treeDigest: "no-git",
       dirty: true,
     });
   });
@@ -605,7 +605,7 @@ describe("gate's tree", () => {
     profile: "local",
     generatedAt: "2026-10-26T06:22:29.521Z",
     commit: "72b282b77",
-    treeKey: "measured-key",
+    treeDigest: "measured-key",
     dirty: false,
     corpus: { roundTripPages: 1, parityPages: 1, benchPages: 0 },
     checks: [],
@@ -634,7 +634,7 @@ describe("gate's tree", () => {
     const file = join("run", "summary.json");
     expect(measuredTree(JSON.stringify(summary), file)).toEqual({
       commit: "72b282b77",
-      treeKey: "measured-key",
+      treeDigest: "measured-key",
       dirty: false,
     });
     expect(measuredTree(JSON.stringify({ ...summary, dirty: true }), file).dirty).toBe(true);
@@ -645,7 +645,7 @@ describe("gate's tree", () => {
       /^run\/summary\.json is missing; gate keys its summary to the run that measured the reports/
     );
     expect(() => measuredTree("{", "run/summary.json")).toThrow(/is not a proof summary/);
-    const { treeKey: _treeKey, ...keyless } = summary;
+    const { treeDigest: _treeDigest, ...keyless } = summary;
     expect(() => measuredTree(JSON.stringify(keyless), "run/summary.json")).toThrow(
       /is not a proof summary/
     );

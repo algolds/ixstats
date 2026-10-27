@@ -152,7 +152,7 @@ function summary(overrides: Partial<ProofSummary> = {}): ProofSummary {
       profile: "local",
       generatedAt: "2026-10-25T12:00:00.000Z",
       commit: "abc1234",
-      treeKey: KEY,
+      treeDigest: KEY,
       dirty: false,
       corpus: { roundTripPages: 12706, parityPages: 500, benchPages: 25 },
       ...overrides,
@@ -828,7 +828,7 @@ describe("evaluateBench", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Tree key
+// Tree digest
 // ---------------------------------------------------------------------------
 
 describe("wikiosTreeKey", () => {

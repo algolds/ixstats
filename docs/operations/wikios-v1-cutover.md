@@ -556,7 +556,7 @@ Read first (read-only, besides the fetch, which the deploy runs anyway and which
 B=$(git -C "$IX" branch --show-current); echo "$B"       # the branch the deploy fetches (master)
 git -C "$IX" fetch master "$B"                           # the deploy's own fetch (scripts/deploy-production.sh): moves FETCH_HEAD only
 [ "$(git -C "$IX" rev-parse FETCH_HEAD)" = "$(cat "$BK/release.sha")" ] && echo "the release of step 0b" || echo "master moved since step 0b: stop and ask the owner"
-git -C "$IX" show FETCH_HEAD:docs/audits/wikios-proof/latest.json | jq '{profile, passed, dirty, commit, treeKey}'
+git -C "$IX" show FETCH_HEAD:docs/audits/wikios-proof/latest.json | jq '{profile, passed, dirty, commit, treeDigest}'
 git -C "$IX" show FETCH_HEAD:scripts/audit/wikios-proof-thresholds.json | jq '.roundTrip.minPages'    # the page floor
 # the columns the round trip reads: id, source, namespace, title, wikitext
 docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \

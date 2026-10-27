@@ -339,10 +339,13 @@ function gate(command: Extract<CliCommand, { command: "gate" }>): number {
   return passed ? 0 : 1;
 }
 
-function committedProof(treeKey: string): CommittedProofResult {
-  if (!existsSync(COMMITTED_PROOF)) return checkCommittedProof(null, treeKey);
+function committedProof(treeDigest: string): CommittedProofResult {
+  if (!existsSync(COMMITTED_PROOF)) return checkCommittedProof(null, treeDigest);
   try {
-    return checkCommittedProof(parseProofSummary(readFileSync(COMMITTED_PROOF, "utf8")), treeKey);
+    return checkCommittedProof(
+      parseProofSummary(readFileSync(COMMITTED_PROOF, "utf8")),
+      treeDigest
+    );
   } catch (error) {
     const why = errorText(error instanceof Error ? error : String(error));
     return { ok: false, reason: `${COMMITTED_PROOF} is not a proof summary (${why})` };
@@ -351,7 +354,7 @@ function committedProof(treeKey: string): CommittedProofResult {
 
 /** The committed proof and the full round trip, the report in the proof directory (pruned to the newest runs). */
 async function measurePredeploy(t: ProofThresholds): Promise<Check[]> {
-  const committed = committedProof(currentTree().treeKey);
+  const committed = committedProof(currentTree().treeDigest);
   const dir = proofDir();
   mkdirSync(dir, { recursive: true });
   const stamp = proofStamp(new Date());

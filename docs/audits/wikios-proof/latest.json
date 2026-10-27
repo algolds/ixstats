@@ -2,7 +2,7 @@
   "profile": "local",
   "generatedAt": "2026-10-27T01:09:24.881Z",
   "commit": "528f6b69cce12ff3fa5125df7969ed4ebae8a5fd",
-  "treeKey": "b56e2fb24039055a452deeb8f00232bbdec045fb5014e303aa8d17f307565d5e",
+  "treeDigest": "b56e2fb24039055a452deeb8f00232bbdec045fb5014e303aa8d17f307565d5e",
   "dirty": false,
   "corpus": {
     "roundTripPages": 12706,
