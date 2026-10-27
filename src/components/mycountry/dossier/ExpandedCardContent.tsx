@@ -1,31 +1,33 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { Spotlight } from "~/components/ui/spotlight-new";
 import { FadeIn } from "~/components/ui/text-reveal";
-import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { cn } from "~/lib/utils";
-import { createUrl } from "~/lib/utils";
 import {
   UserPlus,
-  UserMinus,
-  MessageSquare,
-  Building2,
-  Handshake,
+  UserXmark as UserMinus,
+  ChatBubble as MessageSquare,
+  City as Building2,
+  Community as Handshake,
   Shield,
-  Scale,
-  Swords,
-  Loader2,
+  ScaleFrameEnlarge as Scale,
+  Tournament as Swords,
+  SystemRestart as Loader2,
   Globe,
-  ExternalLink,
+  NavArrowRight,
   Crown,
   Calendar,
-} from "lucide-react";
+} from "iconoir-react";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
 import { type CountryCardData } from "./CountryFocusCard";
+import { useCountryDiplomacyActions, type ForeignPolicyType } from "./useCountryDiplomacyActions";
 
 interface ExpandedCardContentProps {
   country: CountryCardData;
@@ -34,92 +36,33 @@ interface ExpandedCardContentProps {
   onCountryClick?: (countryId: string, countryName: string) => void;
 }
 
-type ForeignPolicyType = "free_trade" | "military_alliance" | "sanction" | "embargo";
-
 export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
-  ({ country, viewerCountryId, isOwnCountry, onCountryClick }) => {
+  ({ country, viewerCountryId, isOwnCountry }) => {
     const notify = useNotify();
     const router = useRouter();
     const targetCountryId = country.id;
     const targetCountryName = country.name;
     const [schedulerOpen, setSchedulerOpen] = useState(false);
 
-    // Follow status query - only when viewer has a country and it's not their own
-    const { data: followStatus, refetch: refetchFollowStatus } =
-      api.diplomaticCore.getFollowStatus.useQuery(
-        {
-          viewerCountryId: viewerCountryId || "",
-          targetCountryId,
-        },
-        {
-          enabled: !!viewerCountryId && !isOwnCountry,
-        }
-      );
-
-    const followMutation = api.diplomaticCore.followCountry.useMutation({
-      onSuccess: () => {
-        notify.success(`Now following ${targetCountryName}`);
-        void refetchFollowStatus();
-      },
-      onError: (error) => notify.error(`Failed to follow: ${error.message}`),
-    });
-
-    const unfollowMutation = api.diplomaticCore.unfollowCountry.useMutation({
-      onSuccess: () => {
-        notify.success(`Unfollowed ${targetCountryName}`);
-        void refetchFollowStatus();
-      },
-      onError: (error) => notify.error(`Failed to unfollow: ${error.message}`),
-    });
-
-    const establishEmbassyMutation = api.diplomaticEmbassies.establishEmbassy.useMutation({
-      onSuccess: () => {
-        notify.success(`Embassy construction initiated with ${targetCountryName}`);
-      },
-      onError: (error) => notify.error(`Failed to establish embassy: ${error.message}`),
-    });
-
-    const foreignPolicyMutation = api.diplomaticPolicies.proposeForeignPolicyAction.useMutation({
-      onSuccess: (_, variables) => {
-        const labels: Record<string, string> = {
-          free_trade: "Free trade agreement",
-          military_alliance: "Military alliance",
-          sanction: "Sanctions",
-          embargo: "Trade embargo",
-        };
-        notify.success(
-          `${labels[variables.actionType] ?? "Action"} proposed to ${targetCountryName}`
-        );
-      },
-      onError: (error) => notify.error(`Failed: ${error.message}`),
+    const diplomacy = useCountryDiplomacyActions({
+      viewerCountryId,
+      targetCountryId,
+      targetCountryName,
+      followStatusEnabled: !!viewerCountryId && !isOwnCountry,
     });
 
     const handleFollowToggle = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!viewerCountryId) {
-          notify.error("You must be logged in to follow countries");
-          return;
-        }
-        if (followStatus?.isFollowing) {
-          unfollowMutation.mutate({
-            followerCountryId: viewerCountryId,
-            followedCountryId: targetCountryId,
-          });
-        } else {
-          followMutation.mutate({
-            followerCountryId: viewerCountryId,
-            followedCountryId: targetCountryId,
-          });
-        }
+        diplomacy.toggleFollow();
       },
-      [viewerCountryId, followStatus, targetCountryId, followMutation, unfollowMutation, notify]
+      [diplomacy.toggleFollow]
     );
 
     const handleSendMessage = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
-        router.push(createUrl(`/messages?country=${targetCountryId}`));
+        router.push(`/messages?country=${targetCountryId}`);
       },
       [router, targetCountryId]
     );
@@ -127,169 +70,121 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
     const handleEstablishEmbassy = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!viewerCountryId) {
-          notify.error("You must be logged in to establish embassies");
-          return;
-        }
-        establishEmbassyMutation.mutate({
-          hostCountryId: targetCountryId,
-          guestCountryId: viewerCountryId,
-          name: `Embassy in ${targetCountryName}`,
-          location: "Capital District",
-        });
+        diplomacy.establishEmbassy();
       },
-      [viewerCountryId, targetCountryId, targetCountryName, establishEmbassyMutation, notify]
+      [diplomacy.establishEmbassy]
     );
 
     const handleForeignPolicy = useCallback(
       (e: React.MouseEvent, actionType: ForeignPolicyType) => {
         e.stopPropagation();
-        if (!viewerCountryId) {
-          notify.error("You must be logged in to propose foreign policy");
-          return;
-        }
-        foreignPolicyMutation.mutate({
-          targetId: targetCountryId,
-          actionType,
-          severity: "moderate",
-        });
+        diplomacy.proposeForeignPolicy(actionType);
       },
-      [viewerCountryId, targetCountryId, foreignPolicyMutation, notify]
+      [diplomacy.proposeForeignPolicy]
     );
 
     const handleGoToMyCountry = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
-        router.push(createUrl("/mycountry"));
+        router.push("/mycountry");
       },
       [router]
     );
 
-    const isLoading =
-      followMutation.isPending ||
-      unfollowMutation.isPending ||
-      establishEmbassyMutation.isPending ||
-      foreignPolicyMutation.isPending;
+    const isLoading = diplomacy.isPending;
 
-    const buttonClass = (colors: string) =>
-      `flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium backdrop-blur-sm transition-all duration-200 disabled:opacity-50 ${colors}`;
+    // Action rows: Facet `Button`s at the large (44px) size, label-aligned.
+    const actionClass = "w-full justify-start";
 
     return (
-      <div className="relative overflow-hidden border-t border-white/20 bg-black/75 backdrop-blur-xl">
-        <AnimatePresence>
-          <Spotlight
-            gradientFirst="radial-gradient(68.54% 68.72% at 55.02% 31.46%, hsla(220, 100%, 85%, .12) 0, hsla(220, 100%, 65%, .04) 50%, hsla(220, 100%, 55%, 0) 80%)"
-            gradientSecond="radial-gradient(50% 50% at 50% 50%, hsla(200, 100%, 85%, .08) 0, hsla(200, 100%, 65%, .03) 80%, transparent 100%)"
-            gradientThird="radial-gradient(50% 50% at 50% 50%, hsla(240, 100%, 85%, .06) 0, hsla(240, 100%, 55%, .02) 80%, transparent 100%)"
-            translateY={-200}
-            width={300}
-            height={600}
-            smallWidth={120}
-            duration={12}
-            xOffset={50}
-          />
-        </AnimatePresence>
-
-        <div className="relative z-10 space-y-4 px-4 py-4">
+      <div className="bg-surface text-label relative min-h-[320px] w-full p-4 sm:p-5">
+        <div className="relative z-10 space-y-4">
           {/* Header */}
           <FadeIn direction="up" delay={0.1}>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-semibold tracking-wide text-white/50 uppercase">
-                Country Actions
-              </span>
-              {country.continent && (
-                <span className="rounded-full border border-white/15 bg-white/10 px-2 py-px text-[9px] font-medium text-white/75">
-                  {country.continent}
-                </span>
-              )}
-              {country.region && (
-                <span className="rounded-full border border-white/10 bg-white/5 px-2 py-px text-[9px] text-white/55">
-                  {country.region}
-                </span>
-              )}
+              <Eyebrow>Country actions</Eyebrow>
+              {country.continent && <Badge variant="default">{country.continent}</Badge>}
+              {country.region && <Badge variant="outline">{country.region}</Badge>}
             </div>
           </FadeIn>
 
           {/* Own Country Action */}
           {isOwnCountry && (
             <FadeIn direction="up" delay={0.15}>
-              <motion.button
+              <Button
+                type="button"
                 onClick={handleGoToMyCountry}
-                className={buttonClass(
-                  "border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 hover:from-amber-500/30 hover:to-orange-500/30"
-                )}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                variant="default"
+                size="lg"
+                className={actionClass}
               >
                 <Crown className="h-4 w-4" />
-                Go to MyCountry Dashboard
-              </motion.button>
+                Go to MyCountry dashboard
+              </Button>
             </FadeIn>
           )}
 
           {/* Other Country Actions */}
           {!isOwnCountry && (
-            <div className="space-y-3.5">
+            <div className="space-y-4">
               {/* Social */}
-              <div className="space-y-1.5">
-                <p className="px-1 text-[9px] font-semibold tracking-widest text-white/30 uppercase">
-                  Social
-                </p>
+              <div className="space-y-2">
+                <Eyebrow className="block px-1">Social</Eyebrow>
                 <div className="grid grid-cols-2 gap-2">
-                  <button
+                  <Button
+                    type="button"
                     onClick={handleFollowToggle}
                     disabled={!viewerCountryId || isLoading}
-                    className={buttonClass(
-                      followStatus?.isFollowing
-                        ? "border-red-500/20 bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-300 hover:from-red-500/30 hover:to-pink-500/30"
-                        : "border-blue-500/20 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 hover:from-blue-500/30 hover:to-cyan-500/30"
-                    )}
+                    variant="outline"
+                    size="lg"
+                    className={cn(actionClass, diplomacy.isFollowing && "text-destructive")}
                   >
-                    {followMutation.isPending || unfollowMutation.isPending ? (
+                    {diplomacy.isFollowPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : followStatus?.isFollowing ? (
-                      <UserMinus className="h-3.5 w-3.5" />
+                    ) : diplomacy.isFollowing ? (
+                      <UserMinus className="text-destructive h-3.5 w-3.5" />
                     ) : (
-                      <UserPlus className="h-3.5 w-3.5" />
+                      <UserPlus className="text-label-secondary h-3.5 w-3.5" />
                     )}
-                    {followStatus?.isFollowing ? "Unfollow" : "Follow"}
-                  </button>
+                    {diplomacy.isFollowing ? "Unfollow" : "Follow"}
+                  </Button>
 
-                  <button
+                  <Button
+                    type="button"
                     onClick={handleSendMessage}
                     disabled={!viewerCountryId}
-                    className={buttonClass(
-                      "border-purple-500/20 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 text-purple-300 hover:from-purple-500/30 hover:to-fuchsia-500/30"
-                    )}
+                    variant="outline"
+                    size="lg"
+                    className={actionClass}
                   >
-                    <MessageSquare className="h-3.5 w-3.5" />
+                    <MessageSquare className="text-label-secondary h-3.5 w-3.5" />
                     Message
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               {/* Diplomacy */}
-              <div className="space-y-1.5">
-                <p className="px-1 text-[9px] font-semibold tracking-widest text-white/30 uppercase">
-                  Diplomacy
-                </p>
+              <div className="space-y-2">
+                <Eyebrow className="block px-1">Diplomacy</Eyebrow>
                 <div className="flex flex-col gap-2">
-                  <button
+                  <Button
+                    type="button"
                     onClick={handleEstablishEmbassy}
                     disabled={!viewerCountryId || isLoading}
-                    className={buttonClass(
-                      "border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-300 hover:from-amber-500/30 hover:to-yellow-500/30"
-                    )}
+                    variant="outline"
+                    size="lg"
+                    className={actionClass}
                   >
-                    {establishEmbassyMutation.isPending ? (
+                    {diplomacy.isEmbassyPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Building2 className="h-3.5 w-3.5" />
+                      <Building2 className="text-label-secondary h-3.5 w-3.5" />
                     )}
                     Construct Embassy
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (!viewerCountryId) {
@@ -299,94 +194,90 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                       setSchedulerOpen(true);
                     }}
                     disabled={!viewerCountryId || isLoading}
-                    className={buttonClass(
-                      "border-indigo-500/20 bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-indigo-300 hover:from-indigo-500/30 hover:to-violet-500/30"
-                    )}
+                    variant="outline"
+                    size="lg"
+                    className={actionClass}
                   >
-                    <Calendar className="h-3.5 w-3.5" />
-                    Request Meeting
-                  </button>
+                    <Calendar className="text-label-secondary h-3.5 w-3.5" />
+                    Request meeting
+                  </Button>
 
                   <div className="grid grid-cols-2 gap-2">
-                    <button
+                    <Button
+                      type="button"
                       onClick={(e) => handleForeignPolicy(e, "free_trade")}
                       disabled={!viewerCountryId || isLoading}
-                      className={buttonClass(
-                        "border-emerald-500/20 bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-300 hover:from-emerald-500/30 hover:to-green-500/30"
-                      )}
+                      variant="outline"
+                      size="lg"
+                      className={actionClass}
                     >
-                      <Handshake className="h-3.5 w-3.5" />
-                      Free Trade
-                    </button>
+                      <Handshake className="text-label-secondary h-3.5 w-3.5" />
+                      Free trade
+                    </Button>
 
-                    <button
+                    <Button
+                      type="button"
                       onClick={(e) => handleForeignPolicy(e, "military_alliance")}
                       disabled={!viewerCountryId || isLoading}
-                      className={buttonClass(
-                        "border-sky-500/20 bg-gradient-to-r from-sky-500/20 to-blue-500/20 text-sky-300 hover:from-sky-500/30 hover:to-blue-500/30"
-                      )}
+                      variant="outline"
+                      size="lg"
+                      className={actionClass}
                     >
-                      <Shield className="h-3.5 w-3.5" />
+                      <Shield className="text-label-secondary h-3.5 w-3.5" />
                       Alliance
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
 
-              {/* Foreign Policy */}
-              <div className="space-y-1.5">
-                <p className="px-1 text-[9px] font-semibold tracking-widest text-white/30 uppercase">
-                  Foreign Policy
-                </p>
+              {/* Foreign Policy (Sanctions & Embargo) */}
+              <div className="space-y-2">
+                <Eyebrow className="block px-1">Foreign policy</Eyebrow>
                 <div className="grid grid-cols-2 gap-2">
-                  <button
+                  <Button
+                    type="button"
                     onClick={(e) => handleForeignPolicy(e, "sanction")}
                     disabled={!viewerCountryId || isLoading}
-                    className={buttonClass(
-                      "border-orange-500/20 bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-300 hover:from-orange-500/30 hover:to-amber-500/30"
-                    )}
+                    variant="outline"
+                    size="lg"
+                    className={cn(actionClass, "text-destructive")}
                   >
-                    <Scale className="h-3.5 w-3.5" />
+                    <Scale className="text-label-secondary h-3.5 w-3.5" />
                     Sanctions
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
+                    type="button"
                     onClick={(e) => handleForeignPolicy(e, "embargo")}
                     disabled={!viewerCountryId || isLoading}
-                    className={buttonClass(
-                      "border-red-500/20 bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-300 hover:from-red-500/30 hover:to-rose-500/30"
-                    )}
+                    variant="outline"
+                    size="lg"
+                    className={cn(actionClass, "text-destructive")}
                   >
-                    <Swords className="h-3.5 w-3.5" />
+                    <Swords className="text-label-secondary h-3.5 w-3.5" />
                     Embargo
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               {/* Quick Links */}
-              <div className="space-y-1.5">
-                <p className="px-1 text-[9px] font-semibold tracking-widest text-white/30 uppercase">
-                  Quick Links
-                </p>
-                <a
-                  href={`/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className={buttonClass(
-                    "border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10"
-                  )}
-                >
-                  <Globe className="h-3.5 w-3.5" />
-                  View on IxWiki
-                  <ExternalLink className="ml-auto h-3 w-3 text-white/40" />
-                </a>
+              <div className="space-y-2">
+                <Eyebrow className="block px-1">Quick links</Eyebrow>
+                <Button asChild variant="outline" size="lg" className={actionClass}>
+                  <Link href={wikiReaderPath(country.name)} onClick={(e) => e.stopPropagation()}>
+                    <Globe className="text-label-secondary h-3.5 w-3.5" />
+                    View on the wiki
+                    <NavArrowRight className="text-label-secondary ml-auto h-3 w-3" />
+                  </Link>
+                </Button>
               </div>
             </div>
           )}
 
           {/* Login warning */}
           {!viewerCountryId && !isOwnCountry && (
-            <div className="mt-2 border-t border-white/15 pt-3">
-              <p className="text-center text-[10px] text-white/40">
+            <div className="border-separator mt-3 border-t pt-3">
+              <p className="text-label-secondary text-caption text-center">
                 Login required to perform actions
               </p>
             </div>

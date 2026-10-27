@@ -1,0 +1,77 @@
+/**
+ * Stash content types.
+ *
+ * A stash holds one item per (content type, title): the Onoma name "Rome" and the article "Rome"
+ * live side by side (`StashItem` is unique on `[stashId, contentType, pageTitle]`). Callers that
+ * only know a title (the article page's stash button, Margin annotations) mean the type the title's
+ * prefix implies — an ordinary title is a wiki article.
+ */
+
+import { isMediaWikiUrl } from "~/lib/wiki-os/config";
+
+export type StashContentType = "wiki" | "image" | "forum_thread";
+
+/** The content type of a stashed forum thread, native or legacy. */
+export const FORUM_THREAD_CONTENT_TYPE = "forum_thread" satisfies StashContentType;
+
+/** Title prefixes of a stashed forum thread: the native ThinkPages forum, and the XenForo bridge's legacy items. */
+export const NATIVE_THREAD_PREFIX = "thinkpages:thread:";
+export const LEGACY_THREAD_PREFIX = "forum:thread:";
+
+/** The thread id inside a native stash title, else null. */
+export function nativeThreadIdOf(pageTitle: string): string | null {
+  const id = pageTitle.startsWith(NATIVE_THREAD_PREFIX)
+    ? pageTitle.slice(NATIVE_THREAD_PREFIX.length)
+    : "";
+  return id === "" ? null : id;
+}
+
+/** A native thread's stash title (`nativeThreadIdOf` reads the id back). */
+export function nativeThreadTitle(threadId: string): string {
+  return `${NATIVE_THREAD_PREFIX}${threadId}`;
+}
+
+/** Whether a stash title names a forum thread, native or legacy. */
+export function isForumThreadTitle(pageTitle: string): boolean {
+  return pageTitle.startsWith(NATIVE_THREAD_PREFIX) || pageTitle.startsWith(LEGACY_THREAD_PREFIX);
+}
+
+/** A root-relative URL (`/wiki/File:X`, with or without the base path): this site's own page. `//` and `/\` are not. */
+const ROOT_RELATIVE = /^\/(?![/\\])/u;
+
+/**
+ * The stash title of an image the lightbox shows, from the link to its file page and its `File:` name (without the
+ * prefix): an IxWiki file when the link is root-relative (the reader's own `/wiki/File:X`) or on the wiki's host, an
+ * IIWiki file, else a Commons one.
+ */
+export function imageStashTitle(fileUrl: string, fileName: string): string {
+  if (ROOT_RELATIVE.test(fileUrl) || isMediaWikiUrl(fileUrl)) return `File:${fileName}`;
+  if (fileUrl.includes("iiwiki.com")) return `iiwiki:File:${fileName}`;
+  return `commons:File:${fileName}`;
+}
+
+/** The content type a bare stash title stands for. */
+export function stashContentTypeForTitle(pageTitle: string): StashContentType {
+  if (pageTitle.startsWith("commons:")) return "image";
+  if (isForumThreadTitle(pageTitle)) return FORUM_THREAD_CONTENT_TYPE;
+  return "wiki";
+}
+
+/** Whether a stash item is a forum thread, native or legacy: by its content type, else by its title. */
+export function isStashedForumThread(item: {
+  contentType?: string | null;
+  pageTitle: string;
+}): boolean {
+  return item.contentType === FORUM_THREAD_CONTENT_TYPE || isForumThreadTitle(item.pageTitle);
+}
+
+/** Whether a stash item is a wiki article: an explicit "wiki" type, else anything that is not an image or a thread. */
+export function isStashedArticle(item: {
+  contentType?: string | null;
+  pageTitle: string;
+}): boolean {
+  return (
+    item.contentType === "wiki" ||
+    (!item.pageTitle.startsWith("commons:") && !isForumThreadTitle(item.pageTitle))
+  );
+}

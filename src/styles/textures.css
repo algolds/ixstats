@@ -1,0 +1,163 @@
+/* ==========================================================================
+   FACET — TEXTURES (TextureOverlay)
+
+   Layered in `@layer components`; no `!important` (utilities on an element win).
+   User-preference kill switches live in `facet/interaction.css`.
+   ========================================================================== */
+
+@layer components {
+  /* ─── Textures (TextureOverlay) ────────────────────────── */
+
+  .facet-texture-dots {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      var(--facet-texture-color) 1px,
+      transparent 0
+    );
+    background-size: 8px 8px;
+  }
+
+  .facet-texture-grid {
+    background-image:
+      linear-gradient(var(--facet-texture-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--facet-texture-color) 1px, transparent 1px);
+    background-size: 12px 12px;
+  }
+
+  .facet-texture-crosshatch {
+    background-image:
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 2px,
+        var(--facet-texture-color) 2px,
+        var(--facet-texture-color) 4px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 2px,
+        var(--facet-texture-color) 2px,
+        var(--facet-texture-color) 4px
+      );
+  }
+
+  .facet-texture-triangular {
+    background-image: conic-gradient(
+      from 0deg at 50% 50%,
+      var(--facet-texture-color) 0deg 120deg,
+      transparent 120deg 240deg,
+      var(--facet-texture-color) 240deg 360deg
+    );
+    background-size: 8px 8px;
+    background-position:
+      0 0,
+      4px 4px;
+  }
+
+  .facet-texture-chevron {
+    background-image:
+      repeating-linear-gradient(
+        45deg,
+        var(--facet-texture-color) 0px,
+        var(--facet-texture-color) 2px,
+        transparent 2px,
+        transparent 8px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        var(--facet-texture-color) 0px,
+        var(--facet-texture-color) 2px,
+        transparent 2px,
+        transparent 8px
+      );
+  }
+
+  .facet-texture-paper-grain {
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        var(--facet-texture-color) 0px,
+        transparent 1px,
+        transparent 3px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        var(--facet-texture-color) 0px,
+        transparent 1px,
+        transparent 4px
+      ),
+      repeating-linear-gradient(
+        45deg,
+        var(--facet-texture-color) 0px,
+        transparent 1px,
+        transparent 5px
+      );
+  }
+
+  .facet-texture-waves {
+    background-image: repeating-radial-gradient(
+      circle at 0 50%,
+      transparent 0,
+      var(--facet-texture-color) 2px,
+      transparent 3px
+    );
+    background-size: 16px 16px;
+  }
+
+  .facet-texture-diamonds {
+    background-image:
+      repeating-linear-gradient(
+        45deg,
+        var(--facet-texture-color) 0px,
+        var(--facet-texture-color) 1px,
+        transparent 1px,
+        transparent 12px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        var(--facet-texture-color) 0px,
+        var(--facet-texture-color) 1px,
+        transparent 1px,
+        transparent 12px
+      );
+  }
+
+  .facet-texture-shimmer {
+    background: linear-gradient(
+      135deg,
+      transparent 0%,
+      var(--facet-texture-color) 25%,
+      transparent 50%,
+      var(--facet-texture-color) 75%,
+      transparent 100%
+    );
+    background-size: 400% 400%;
+    animation: facet-shimmer 6s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .facet-texture-shimmer {
+      animation: none;
+    }
+  }
+}
+
+@keyframes facet-shimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@layer base {
+  :root {
+    --facet-texture-color: rgba(0, 0, 0, 0.25);
+  }
+  [data-theme="dark"] {
+    --facet-texture-color: rgba(255, 255, 255, 0.08);
+  }
+}

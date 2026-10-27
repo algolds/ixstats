@@ -15,18 +15,6 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
  * Analytics endpoints: Usage statistics and trends
  */
 export const militaryEquipmentAnalyticsRouter = createTRPCRouter({
-  // ==========================================
-  // PUBLIC ENDPOINTS
-  // ==========================================
-
-  // ==========================================
-  // ADMIN ENDPOINTS
-  // ==========================================
-
-  // ==========================================
-  // ANALYTICS ENDPOINTS
-  // ==========================================
-
   /**
    * Get equipment usage statistics
    */
@@ -106,8 +94,4 @@ export const militaryEquipmentAnalyticsRouter = createTRPCRouter({
       });
     }
   }),
-
-  // ==========================================
-  // IMAGE RESOLUTION ENDPOINTS
-  // ==========================================
 });

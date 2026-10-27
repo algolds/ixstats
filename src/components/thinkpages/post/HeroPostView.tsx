@@ -1,20 +1,20 @@
 "use client";
 
+import Link from "next/link";
+
 import React from "react";
+import { springGentle } from "~/lib/design/motion";
 import { motion } from "motion/react";
 import {
-  MoreHorizontal,
+  MoreHoriz as MoreHorizontal,
   Pin,
   Bookmark,
-  Flag,
-  Edit,
-  Trash2,
-  Crown,
-  Newspaper,
-  Users,
-} from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+  WhiteFlag as Flag,
+  EditPencil as Edit,
+  Trash as Trash2,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "~/components/ui/context-menu";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -24,355 +24,239 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { PostBody } from "./PostBody";
 import { PostMediaGrid } from "./PostMediaGrid";
+import { PostEmbeds } from "./PostEmbeds";
+import { PostComposers } from "./PostComposers";
+import { PostModals } from "./PostModals";
 import { PostActions } from "../primitives/PostActions";
-import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
-import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPreview";
-import { LiveDataCard } from "../LiveDataCard";
-import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
+import { PersonaAuthorCard } from "../PersonaAuthorCard";
+import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { cn } from "~/lib/utils";
+import type { PostState, PostViewContext } from "./postViewTypes";
+import { AccountAvatar, AccountTypeIcon, accountTypeColor } from "./ThinkpagesPostUtils";
+import { assetUrl } from "~/lib/base-path";
 
-import { ACCOUNT_TYPE_ICONS, ACCOUNT_TYPE_COLORS } from "./ThinkpagesPostUtils";
-
-export interface HeroPostViewProps {
+interface HeroPostViewProps {
   post: any;
-  currentUserAccountId: string;
-  accounts?: any[];
-  countryId?: string;
-  isOwner?: boolean;
-  onAccountSelect?: (account: any) => void;
-  onAccountSettings?: (account: any) => void;
-  onCreateAccount?: () => void;
-  onLike?: (postId: string) => void;
-  onRepost?: (postId: string) => void;
-  onReply?: (postId: string) => void;
-  onShare?: (postId: string) => void;
-  onAccountClick?: (accountId: string) => void;
-  blurbMeta: any;
-  cleanPostContent: string;
-  sportsBulletin: any;
-  mediaAttachments: any[];
-  visualizations: any[];
-  setLightboxMedia: (media: { url: string; id: string } | null) => void;
-  showMoreOptions: boolean;
-  setShowMoreOptions: (val: boolean) => void;
-  canEdit: boolean;
-  canDelete: boolean;
-  isOwnPost: boolean;
-  handleEdit: () => void;
-  handlePin: () => void;
-  handleBookmark: () => void;
-  handleFlag: () => void;
-  handleDelete: () => void;
-  proxyDiscordUrl: (url: string) => string;
+  ctx: PostViewContext;
+  state: PostState;
 }
 
-export function HeroPostView({
-  post,
-  currentUserAccountId,
-  accounts,
-  countryId,
-  isOwner,
-  onAccountSelect,
-  onAccountSettings,
-  onCreateAccount,
-  onLike,
-  onRepost,
-  onReply,
-  onShare,
-  onAccountClick,
-  blurbMeta,
-  cleanPostContent,
-  sportsBulletin,
-  mediaAttachments,
-  visualizations,
-  setLightboxMedia,
-  showMoreOptions,
-  setShowMoreOptions,
-  canEdit,
-  canDelete,
-  isOwnPost,
-  handleEdit,
-  handlePin,
-  handleBookmark,
-  handleFlag,
-  handleDelete,
-  proxyDiscordUrl,
-}: HeroPostViewProps) {
+const timeFormat: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit" };
+const dateFormat: Intl.DateTimeFormatOptions = { year: "numeric", month: "short", day: "numeric" };
+
+export function HeroPostView({ post, ctx, state }: HeroPostViewProps) {
+  const { currentUserAccountId, onAccountClick } = ctx;
+  const { account } = post;
+  const timestamp = new Date(post.timestamp);
+
+  const menuItems = [
+    { show: state.canEdit, Icon: Edit, label: "Edit post", onClick: state.handleEdit },
+    {
+      show: !!currentUserAccountId,
+      Icon: Pin,
+      label: post.pinned ? "Unpin post" : "Pin post",
+      onClick: state.handlePin,
+    },
+    {
+      show: !!currentUserAccountId,
+      Icon: Bookmark,
+      label: "Bookmark post",
+      onClick: state.handleBookmark,
+    },
+    {
+      show: !!currentUserAccountId && !state.isOwnPost,
+      Icon: Flag,
+      label: "Report post",
+      onClick: state.handleFlag,
+      danger: true,
+    },
+    {
+      show: state.canDelete,
+      Icon: Trash2,
+      label: "Delete post",
+      onClick: state.handleDelete,
+      danger: true,
+      separated: true,
+    },
+  ].filter((item) => item.show);
+
+  // Shared by the "More" dropdown and the post's right-click menu.
+  const items = menuItems.map(({ Icon, label, onClick, danger, separated }) => (
+    <React.Fragment key={label}>
+      {separated && <DropdownMenuSeparator className="bg-border/40" />}
+      <DropdownMenuItem
+        onClick={onClick}
+        className={
+          danger
+            ? cn("text-red hover:bg-red/20 hover:text-red", separated && "font-medium")
+            : "text-label hover:bg-fill-4"
+        }
+      >
+        <Icon />
+        <span>{label}</span>
+      </DropdownMenuItem>
+    </React.Fragment>
+  ));
+
+  const stats = [
+    { label: "Likes", value: post.likeCount },
+    { label: "Reposts", value: post.repostCount },
+    { label: "Replies", value: post.replyCount },
+  ];
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="relative space-y-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/40 p-6 shadow-xl backdrop-blur-xl"
-    >
-      {/* Header section */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => onAccountClick?.(post.account.id)}
-            className="shrink-0 transition-transform hover:scale-105"
-          >
-            <Avatar className="h-12 w-12 border border-white/10">
-              <AvatarImage src={proxyDiscordUrl(post.account.profileImageUrl)} />
-              <AvatarFallback
-                className={`text-sm font-semibold ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
-              >
-                {post.account.displayName
-                  .split(" ")
-                  .map((n: string) => n[0])
-                  .join("")
-                  .toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          </button>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
+    <ContextMenu>
+      <ContextMenuTrigger asChild disabled={items.length === 0}>
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={springGentle}
+          className="group bg-surface border-separator shadow-card text-label rounded-card relative space-y-4 overflow-hidden border p-5"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <button
-                onClick={() => onAccountClick?.(post.account.id)}
-                className="text-base leading-snug font-bold text-slate-100 hover:underline"
+                onClick={() => onAccountClick?.(account.id)}
+                className="shrink-0 transition-transform hover:scale-105"
               >
-                {post.account.displayName}
+                <AccountAvatar
+                  account={account}
+                  className="border-separator h-12 w-12 border"
+                  fallbackClassName="text-headline"
+                />
               </button>
-              {post.account.verified && (
-                <span
-                  className="inline-flex h-4 w-4 items-center justify-center text-sm"
-                  title="Verified"
-                >
-                  ✅
-                </span>
-              )}
-              {post.account.country && (
-                <span className="inline-flex items-center gap-1 rounded border border-white/5 bg-white/5 px-1.5 py-0.5 text-[11px] font-medium text-slate-300">
-                  {post.account.country.flag && (
-                    <img
-                      src={normalizeFlagUrl(post.account.country.flag)}
-                      alt=""
-                      className="h-2.5 w-3.5 rounded-sm object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <PersonaAuthorCard username={account.username ?? ""}>
+                    <button
+                      onClick={() => onAccountClick?.(account.id)}
+                      className="text-headline text-label leading-snug hover:underline"
+                    >
+                      {account.displayName}
+                    </button>
+                  </PersonaAuthorCard>
+                  {account.verified && (
+                    <span
+                      className="text-body inline-flex h-4 w-4 items-center justify-center"
+                      title="Verified"
+                    >
+                      ✅
+                    </span>
                   )}
-                  {post.account.country.name}
-                </span>
-              )}
-            </div>
-            <div className="mt-0.5 flex items-center gap-2">
-              <span className="text-sm text-slate-400">@{post.account.username}</span>
-              <span className="text-xs text-slate-600">·</span>
-              <div
-                className={cn(
-                  "flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase",
-                  ACCOUNT_TYPE_COLORS[
-                    post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS
-                  ] || "bg-gray-500/20 text-gray-500"
-                )}
-              >
-                {React.createElement(
-                  ACCOUNT_TYPE_ICONS[post.account.accountType as keyof typeof ACCOUNT_TYPE_ICONS] ||
-                    Users,
-                  { className: "h-2.5 w-2.5" }
-                )}
-                <span>{post.account.accountType}</span>
+                  {account.country && (
+                    <span className="border-separator bg-fill-4 text-label-secondary rounded-control-sm text-caption inline-flex items-center gap-1 border px-2 py-0.5">
+                      {account.country.flag && (
+                        <img
+                          src={assetUrl(normalizeFlagUrl(account.country.flag)) ?? undefined}
+                          alt=""
+                          className="rounded-control-sm h-2.5 w-3.5 object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                      )}
+                      {account.country.name}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <span className="text-label-secondary text-body">@{account.username}</span>
+                  <span className="text-label-tertiary text-footnote">·</span>
+                  <div
+                    className={cn(
+                      "rounded-control-sm text-caption flex items-center gap-1 px-2 py-0.5",
+                      accountTypeColor(account.accountType)
+                    )}
+                  >
+                    <AccountTypeIcon type={account.accountType} className="h-2.5 w-2.5" />
+                    <span>{account.accountType}</span>
+                  </div>
+                </div>
               </div>
             </div>
+
+            <div className="relative">
+              <DropdownMenu open={state.showMoreOptions} onOpenChange={state.setShowMoreOptions}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-label-secondary hover:bg-fill-4 hover:text-label size-9 rounded-full"
+                  >
+                    <MoreHorizontal className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="border-separator bg-surface w-56">
+                  {items}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        </div>
 
-        {/* More options dropdown menu */}
-        <div className="relative">
-          <DropdownMenu open={showMoreOptions} onOpenChange={setShowMoreOptions}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 rounded-full text-slate-400 hover:bg-white/10 hover:text-slate-200"
-              >
-                <MoreHorizontal className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-56 border-white/10 bg-slate-900/90 backdrop-blur-xl"
-            >
-              {canEdit && (
-                <DropdownMenuItem onClick={handleEdit} className="text-slate-200 hover:bg-white/10">
-                  <Edit className="mr-2 h-4 w-4" />
-                  <span>Edit Post</span>
-                </DropdownMenuItem>
-              )}
-              {currentUserAccountId && (
-                <>
-                  <DropdownMenuItem
-                    onClick={handlePin}
-                    className="text-slate-200 hover:bg-white/10"
-                  >
-                    <Pin className="mr-2 h-4 w-4" />
-                    <span>{post.pinned ? "Unpin Post" : "Pin Post"}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleBookmark}
-                    className="text-slate-200 hover:bg-white/10"
-                  >
-                    <Bookmark className="mr-2 h-4 w-4" />
-                    <span>Bookmark Post</span>
-                  </DropdownMenuItem>
-                </>
-              )}
-              {currentUserAccountId && !isOwnPost && (
-                <DropdownMenuItem
-                  onClick={handleFlag}
-                  className="text-red-400 hover:bg-red-500/20 hover:text-red-300"
+          <PostBody
+            content={post.content}
+            cleanContent={state.cleanPostContent}
+            blurbMeta={state.blurbMeta}
+            sportsBulletin={state.sportsBulletin}
+            account={account}
+            isHero={true}
+          />
+
+          <PostMediaGrid
+            mediaAttachments={state.mediaAttachments}
+            postId={post.id}
+            onOpenLightbox={state.setLightboxMedia}
+          />
+
+          <PostEmbeds post={post} state={state} vizSpacing="mt-3 space-y-3" />
+
+          {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {post.hashtags.map((hashtag: string, index: number) => (
+                <Link
+                  key={index}
+                  href={`/hashtags/${encodeURIComponent(hashtag.replace(/^#/, ""))}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-body text-blue hover:text-blue font-medium hover:underline"
                 >
-                  <Flag className="mr-2 h-4 w-4" />
-                  <span>Report Post</span>
-                </DropdownMenuItem>
-              )}
-              {canDelete && (
-                <>
-                  <DropdownMenuSeparator className="bg-white/10" />
-                  <DropdownMenuItem
-                    onClick={handleDelete}
-                    className="font-medium text-red-500 hover:bg-red-500/20 hover:text-red-400"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    <span>Delete Post</span>
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {/* Content body */}
-      <PostBody
-        content={post.content}
-        cleanContent={cleanPostContent}
-        blurbMeta={blurbMeta}
-        sportsBulletin={sportsBulletin}
-        account={post.account}
-        isHero={true}
-      />
-
-      {/* Media attachments */}
-      <PostMediaGrid
-        mediaAttachments={mediaAttachments}
-        postId={post.id}
-        onOpenLightbox={(m) => setLightboxMedia(m)}
-      />
-
-      {/* Embedded Visualizations */}
-      {visualizations && visualizations.length > 0 && (
-        <div className="mt-3 space-y-3">
-          {visualizations.map((viz: any, index: number) => (
-            <LiveDataCard
-              key={viz.id || index}
-              type={viz.type}
-              title={viz.title}
-              countryId={post.account.countryId || post.account.country?.id || ""}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Embedded Poll */}
-      {post.poll && <FeedPollWidget poll={post.poll} />}
-
-      {/* Inline Link Previews */}
-      {(() => {
-        if (sportsBulletin) return null;
-        const matchedLink = getInlinePreviewLink(post.content);
-        if (matchedLink) {
-          return <PostInlineLinkPreview url={matchedLink} />;
-        }
-        return null;
-      })()}
-
-      {/* Hashtags */}
-      {post.hashtags && post.hashtags.length > 0 && (
-        <div className="flex flex-wrap gap-2 pt-1">
-          {post.hashtags.map((hashtag: string, index: number) => (
-            <button
-              key={index}
-              className="text-sm font-medium text-blue-400 hover:text-blue-300 hover:underline"
-            >
-              #{hashtag}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Timestamp Row */}
-      <div className="py-1 text-sm text-slate-400">
-        {new Date(post.timestamp).toLocaleTimeString(undefined, {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}
-        {" · "}
-        {new Date(post.timestamp).toLocaleDateString(undefined, {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        })}
-        {" · ixTime"}
-      </div>
-
-      {/* Status Counters Row */}
-      <div className="flex gap-4 border-t border-b border-white/5 py-3 text-sm font-medium text-slate-300">
-        <div>
-          <span className="font-bold text-slate-100">{post.likeCount || 0}</span>
-          <span className="ml-1 font-normal text-slate-400">Likes</span>
-        </div>
-        <div>
-          <span className="font-bold text-slate-100">{post.repostCount || 0}</span>
-          <span className="ml-1 font-normal text-slate-400">Reposts</span>
-        </div>
-        <div>
-          <span className="font-bold text-slate-100">{post.replyCount || 0}</span>
-          <span className="ml-1 font-normal text-slate-400">Replies</span>
-        </div>
-      </div>
-
-      {/* Action Buttons Row */}
-      <div className="py-1">
-        <PostActions
-          postId={post.id}
-          currentUserAccountId={currentUserAccountId}
-          post={post}
-          accounts={accounts ?? []}
-          countryId={countryId ?? ""}
-          isOwner={isOwner ?? false}
-          onAccountSelect={onAccountSelect}
-          onAccountSettings={onAccountSettings}
-          onCreateAccount={onCreateAccount}
-          isLiked={post.reactions?.some(
-            (r: any) => r.accountId === currentUserAccountId && r.reactionType === "like"
+                  #{hashtag}
+                </Link>
+              ))}
+            </div>
           )}
-          isReposted={post.reposts?.some((r: any) => r.accountId === currentUserAccountId) ?? false}
-          likeCount={post.likeCount}
-          repostCount={post.repostCount}
-          replyCount={post.replyCount}
-          reactions={post.reactions || []}
-          reactionCounts={(() => {
-            try {
-              if (typeof post.reactionCounts === "string") {
-                return JSON.parse(post.reactionCounts);
-              }
-              return post.reactionCounts || {};
-            } catch {
-              return {};
-            }
-          })()}
-          onLike={onLike}
-          onRepost={onRepost}
-          onReply={onReply}
-          onShare={onShare}
-          showCounts={false}
-          size="lg"
-          className="w-full justify-around"
-        />
-      </div>
-    </motion.div>
+
+          <div className="text-label-secondary text-body py-1">
+            {timestamp.toLocaleTimeString(undefined, timeFormat)}
+            {" · "}
+            {timestamp.toLocaleDateString(undefined, dateFormat)}
+          </div>
+
+          <div className="border-separator text-label-secondary text-body flex gap-4 border-t border-b py-3 font-medium">
+            {stats.map(({ label, value }) => (
+              <div key={label}>
+                <span className="text-label font-semibold">{value || 0}</span>
+                <span className="text-label-secondary ml-1 font-normal">{label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="py-1">
+            <PostActions
+              {...ctx}
+              postId={post.id}
+              post={post}
+              showCounts={false}
+              size="lg"
+              className="w-full justify-around"
+            />
+          </div>
+
+          <PostComposers post={post} state={state} ctx={ctx} />
+
+          <PostModals post={post} state={state} onAccountClick={onAccountClick} />
+        </motion.div>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-56">{items}</ContextMenuContent>
+    </ContextMenu>
   );
 }

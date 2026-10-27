@@ -1,0 +1,59 @@
+---
+title: Realms & Claiming a Nation
+description: The worlds nations live in, realm pages and boards, and how to claim a nation.
+badge: The World
+prevHref: /help/world/maps
+prevLabel: IxMaps: The World Map
+nextHref: /help/world/countries
+nextLabel: Exploring Countries
+---
+
+## What realms are
+
+A realm is a world that nations live in, a bit like a NationStates region. **Ixnay** is the main realm; other realms are run by their founders. Each nation belongs to one realm, and rankings in the [World Census](/help/mycountry/overview#world-census) and the [leaderboards](/help/gameplay/leaderboards) are per realm. All realms share the same [IxTime](/help/getting-started/ixtime) clock.
+
+## Finding realms
+
+The [realm directory](/realms) lists every public, active realm (Ixnay always), with how many nations it has, how many are unclaimed, how many you own, the realm's nation limit, and recent board activity. Unlisted realms can still be opened by link.
+
+Each realm has a page at `/r/<realm>` with its nations and a claim list, and a **board** at `/thinkpages/r/<realm>`. The **Community** panel links to the realm's forum, Discord, wiki or map, and the header shows the realm's **in-world date** if its founder set one.
+
+## Claiming a nation
+
+1. Open the realm's page from the [directory](/realms) (or use **Link to Existing Country** in [Setup](/setup) for Ixnay).
+2. In the claim list, choose an unclaimed nation and submit your claim. If the realm has **rules** (its **Rules** tab), read them and tick **I have read the realm's rules** first; you can't claim without it.
+3. A moderator (a site admin or the realm's founder) reviews it. If you created that nation's wiki page, the claim is approved immediately: in Ixnay, under one of your approved [old IxWiki names](/help/getting-started/ixnayid#claim-your-old-ixwiki-names); in a realm hosted on IIWiki or AltHistory, under your [verified account on that wiki](/help/getting-started/ixnayid#link-your-sister-wiki-accounts).
+
+The directory shows **Join · claim a nation** (or **Claim another nation**) while you're under the realm's limit.
+
+## Nation limits
+
+How many nations you can hold in a realm is the lower of:
+
+- the **realm's limit** (set by its admins, 1 by default, up to 20), and
+- your **account limit**: 1 for free accounts, 5 for [Premium](/help/getting-started/premium).
+
+Founding and claims both check this.
+
+## Playing more than one nation
+
+If you own several nations, choose which one you're playing as with the nation switcher in the user menu, or **Play as** on a realm page. MyCountry, directives and proposals act as that nation.
+
+## Realm boards
+
+A realm board is a shared space for the realm's nations, with three tabs:
+
+- **Board:** a feed. Anyone can read it; owners of a nation in the realm can post (as a persona of one of their nations there).
+- **Chat:** a group conversation for members.
+- **Realm feed:** ThinkPages posts from the realm's nations.
+
+You join a board automatically on your first visit if you own a nation in the realm. Site admins and the realm's founder can remove posts.
+
+## Good to know
+
+- Founding a new realm isn't open to players yet; realms are created by admins.
+- A realm can show its own in-world date (set by its founder), but it still runs on the shared IxTime clock.
+- Founders and officers with the appearance power set the realm's links, rules and in-world date in **Manage**.
+- Founders set the category of each lore card from their realm in **Manage** → **Cards** → **Card categories**.
+- Founders and officers with the map power edit their realm's map: borders, which region belongs to which nation, and labels for its oceans, seas, regions and continents (**World editor** on the realm's map). In **Manage** → **Map** they set the map's credit line, a base image and the planet's size.
+- On a realm's map, nations nobody has claimed yet are drawn hatched; the legend at the bottom left lists every nation by colour.

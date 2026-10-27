@@ -7,34 +7,58 @@
  */
 
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, cachedPublicProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { parseWikiSource, wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
 import {
   parseInfobox,
   extractCoordsFromFields,
   parseCoordTemplate,
-} from "~/lib/wiki/infobox-parser";
+} from "~/lib/wiki-os/transformers/infobox-parser";
+
+/**
+ * Ixnay's lookup order: ixwiki (direct DB, fast), then iiwiki (HTTP). A wiki that cannot be reached is passed over
+ * like one without the page (`unlessUnavailable`), so the lookup goes on to the next.
+ */
+const IXNAY_WIKIS: readonly WikiSource[] = ["ixwiki", "iiwiki"];
+
+/**
+ * The wikis a realm's map looks pages up in (AT-12): the wiki its lore index was imported from, else
+ * Ixnay's order. A realm's wiki is recorded on its RealmPage rows; Realm has no wiki setting of its own.
+ */
+async function realmWikis(
+  ctx: Parameters<typeof viewerRealmId>[0] & { db: Pick<PrismaClient, "realmPage"> },
+  realmSlug: string | undefined
+): Promise<readonly WikiSource[]> {
+  const realmId = await viewerRealmId(ctx, realmSlug);
+  if (realmId === DEFAULT_REALM_ID) return IXNAY_WIKIS;
+  const lore = await ctx.db.realmPage.findFirst({
+    where: { realmId },
+    select: { wikiSource: true },
+  });
+  return lore ? [parseWikiSource(lore.wikiSource)] : IXNAY_WIKIS;
+}
 
 export const geoWikiRouter = createTRPCRouter({
   /** Fetch wiki article intro for a map feature (city/POI) by its linked wiki page title. */
   getFeatureWikiIntro: cachedPublicProcedure
-    .input(z.object({ wikiPageTitle: z.string() }))
-    .query(async ({ input }) => {
+    .input(realmScopeInput.extend({ wikiPageTitle: z.string() }))
+    .query(async ({ ctx, input }) => {
       const name = input.wikiPageTitle.trim();
       if (!name) return null;
 
-      const { getArticleIntro } = await import("~/lib/wiki/bridge");
+      const { getArticleIntro } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
+      const { unlessUnavailable } = await import("~/lib/wiki-os/upstream-guard");
 
-      // Try ixwiki first (direct MySQL, ~8ms), then iiwiki (HTTP, ~400ms)
-      for (const wiki of ["ixwiki", "iiwiki"] as const) {
-        const result = await getArticleIntro(name, wiki);
+      for (const wiki of await realmWikis(ctx, input.realm)) {
+        const result = await unlessUnavailable(getArticleIntro(name, wiki));
         if (result?.text) {
           return {
             extract: result.text.substring(0, 400),
             wikiSource: wiki,
-            wikiUrl:
-              wiki === "ixwiki"
-                ? `/wiki/${encodeURIComponent(result.title)}`
-                : `https://iiwiki.com/wiki/${encodeURIComponent(result.title)}`,
+            wikiUrl: wikiReaderPath(result.title, wiki),
           };
         }
       }
@@ -46,19 +70,17 @@ export const geoWikiRouter = createTRPCRouter({
    * Used by the map editor WikiLinkWizard for auto-filling city/POI data.
    */
   parseWikiInfobox: cachedPublicProcedure
-    .input(z.object({ pageTitle: z.string().min(1).max(200) }))
-    .query(async ({ input }) => {
+    .input(realmScopeInput.extend({ pageTitle: z.string().min(1).max(200) }))
+    .query(async ({ ctx, input }) => {
       const title = input.pageTitle.trim();
-      const { getArticleWikitext } = await import("~/lib/wiki/bridge");
+      const { getArticleWikitext } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
+      const { unlessUnavailable } = await import("~/lib/wiki-os/upstream-guard");
 
-      for (const wiki of ["ixwiki", "iiwiki"] as const) {
-        const article = await getArticleWikitext(title, wiki);
+      for (const wiki of await realmWikis(ctx, input.realm)) {
+        const article = await unlessUnavailable(getArticleWikitext(title, wiki));
         if (!article) continue;
 
-        const pageUrl =
-          wiki === "ixwiki"
-            ? `/wiki/${encodeURIComponent(article.title)}`
-            : `https://iiwiki.com/wiki/${encodeURIComponent(article.title)}`;
+        const pageUrl = wikiReaderPath(article.title, wiki);
         const parsed = parseInfobox(article.wikitext);
 
         if (!parsed) {
@@ -111,127 +133,29 @@ export const geoWikiRouter = createTRPCRouter({
    */
   searchWikiPages: cachedPublicProcedure
     .input(
-      z.object({ query: z.string().min(1).max(100), limit: z.number().min(1).max(20).default(10) })
+      realmScopeInput.extend({
+        query: z.string().min(1).max(100),
+        limit: z.number().min(1).max(20).default(10),
+      })
     )
-    .query(async ({ input }) => {
-      const { searchPages } = await import("~/lib/wiki/bridge");
+    .query(async ({ ctx, input }) => {
+      const { searchPages } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
+      const { unlessUnavailable } = await import("~/lib/wiki-os/upstream-guard");
 
-      // Try ixwiki first (MySQL, ~30ms), then iiwiki (HTTP, ~400ms)
-      for (const wiki of ["ixwiki", "iiwiki"] as const) {
-        const results = await searchPages(input.query, input.limit, wiki);
-        if (results.length > 0) {
+      for (const wiki of await realmWikis(ctx, input.realm)) {
+        const results = await unlessUnavailable(searchPages(input.query, input.limit, wiki));
+        if (results?.length) {
           return {
             wikiSource: wiki,
             results: results.map((r) => ({
               title: r.title,
               description: "",
-              url:
-                wiki === "ixwiki"
-                  ? `/wiki/${encodeURIComponent(r.title)}`
-                  : `https://iiwiki.com/wiki/${encodeURIComponent(r.title)}`,
+              url: wikiReaderPath(r.title, wiki),
             })),
           };
         }
       }
 
       return { wikiSource: null, results: [] };
-    }),
-
-  /**
-   * Scan a wiki article for place names that match known map features.
-   * Returns matched/unmatched place names for the auto-linker.
-   */
-  scanWikiForPlaces: cachedPublicProcedure
-    .input(z.object({ pageTitle: z.string().min(1).max(200) }))
-    .query(async ({ ctx, input }) => {
-      const title = input.pageTitle.trim();
-
-      // Fetch article intro via WikiBridge (direct MySQL for ixwiki)
-      const { getArticleIntro } = await import("~/lib/wiki/bridge");
-      let plaintext = "";
-
-      for (const wiki of ["ixwiki", "iiwiki"] as const) {
-        const result = await getArticleIntro(title, wiki);
-        if (result?.text) {
-          plaintext = result.text;
-          break;
-        }
-      }
-
-      if (!plaintext) return { matches: [], unmatched: [] };
-
-      // Get all known place names from the database
-      const [countries, cities, pois, subdivisions] = await Promise.all([
-        ctx.db.country.findMany({
-          select: { id: true, name: true },
-          where: { geometry: { not: null } as any },
-        }),
-        ctx.db.city.findMany({
-          select: { id: true, name: true, countryId: true },
-          where: { status: "approved" },
-        }),
-        ctx.db.pointOfInterest.findMany({
-          select: { id: true, name: true, countryId: true },
-          where: { status: "approved" },
-        }),
-        ctx.db.subdivision.findMany({
-          select: { id: true, name: true, countryId: true },
-          where: { status: "approved" },
-        }),
-      ]);
-
-      // Build a name → feature lookup (case-insensitive, min 3 chars to avoid noise)
-      const knownPlaces = new Map<string, { id: string; type: string; name: string }>();
-      for (const c of countries)
-        if (c.name.length >= 3)
-          knownPlaces.set(c.name.toLowerCase(), { id: c.id, type: "country", name: c.name });
-      for (const c of cities)
-        if (c.name.length >= 3)
-          knownPlaces.set(c.name.toLowerCase(), { id: c.id, type: "city", name: c.name });
-      for (const p of pois)
-        if (p.name.length >= 3)
-          knownPlaces.set(p.name.toLowerCase(), { id: p.id, type: "poi", name: p.name });
-      for (const s of subdivisions)
-        if (s.name.length >= 3)
-          knownPlaces.set(s.name.toLowerCase(), { id: s.id, type: "subdivision", name: s.name });
-
-      // Scan plaintext for known place names
-      const matches: Array<{ name: string; type: string; id: string; linked: boolean }> = [];
-      const seen = new Set<string>();
-
-      // Check each known place name against the article text
-      for (const [lowerName, place] of knownPlaces) {
-        if (seen.has(lowerName)) continue;
-        // Word-boundary match (avoid matching "an" inside "Canpei")
-        const regex = new RegExp(`\\b${lowerName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
-        if (regex.test(plaintext)) {
-          seen.add(lowerName);
-
-          // Check if this feature already has a wikiPageTitle linking to it
-          let linked = false;
-          if (place.type === "city") {
-            const city = await ctx.db.city.findUnique({
-              where: { id: place.id },
-              select: { wikiPageTitle: true },
-            });
-            linked = !!city?.wikiPageTitle;
-          } else if (place.type === "poi") {
-            const poi = await ctx.db.pointOfInterest.findUnique({
-              where: { id: place.id },
-              select: { wikiPageTitle: true },
-            });
-            linked = !!poi?.wikiPageTitle;
-          } else if (place.type === "country") {
-            linked = true; // Countries are always "linked" by nature
-          }
-
-          matches.push({ name: place.name, type: place.type, id: place.id, linked });
-        }
-      }
-
-      return {
-        matches: matches.sort((a, b) => a.name.localeCompare(b.name)),
-        scannedChars: plaintext.length,
-      };
     }),
 });

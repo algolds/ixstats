@@ -1,15 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
-import { Folder, FileText } from "lucide-react";
-
-interface CategoryMember {
-  title: string;
-  ns: number;
-}
+import { Page as FileText } from "iconoir-react";
+import {
+  CategoryMasthead,
+  CategoryPageCard,
+  SubcategorySection,
+  type CategoryMember,
+} from "./CategoryParts";
 
 interface EnhancedCategoryBrowserProps {
   category: string;
@@ -17,7 +16,11 @@ interface EnhancedCategoryBrowserProps {
   pages: CategoryMember[];
 }
 
-export function EnhancedCategoryBrowser({ subcategories, pages }: EnhancedCategoryBrowserProps) {
+export function EnhancedCategoryBrowser({
+  category,
+  subcategories,
+  pages,
+}: EnhancedCategoryBrowserProps) {
   // Fetch all countries for flag matching
   const { data: countriesData } = api.countries.getSelectList.useQuery(
     { limit: 500 },
@@ -36,60 +39,47 @@ export function EnhancedCategoryBrowser({ subcategories, pages }: EnhancedCatego
     return map;
   }, [countriesData]);
 
-  return (
-    <div className="wikios-portal">
-      {/* Subcategories */}
-      {subcategories.length > 0 && (
-        <div className="wikios-portal-section">
-          <h2 className="wikios-portal-section-title">Subcategories</h2>
-          <div className="wikios-portal-subcats">
-            {subcategories.map((m) => {
-              const name = m.title.replace(/^Category:/, "");
-              return (
-                <Link
-                  key={m.title}
-                  href={withBasePath(
-                    `/wiki/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
-                  )}
-                  className="wikios-portal-pill"
-                >
-                  <Folder className="h-3 w-3 opacity-50" />
-                  {name}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
+  const cleanCategoryName = category.replace(/^Category:/i, "").replace(/_/g, " ");
 
-      {/* Pages */}
+  return (
+    <div className="mx-auto w-full max-w-6xl space-y-8 pb-16 select-none">
+      <CategoryMasthead
+        title={cleanCategoryName}
+        description={
+          <>
+            Encyclopedic category index containing {pages.length} published article
+            {pages.length === 1 ? "" : "s"}
+            {subcategories.length > 0
+              ? ` and ${subcategories.length} subcategor${subcategories.length === 1 ? "y" : "ies"}`
+              : ""}
+            .
+          </>
+        }
+        articleCount={pages.length}
+        subcategoryCount={subcategories.length}
+      />
+
+      <SubcategorySection subcategories={subcategories} />
+
       {pages.length > 0 && (
-        <div className="wikios-portal-section">
-          <h2 className="wikios-portal-section-title">Pages in category ({pages.length})</h2>
-          <div className="wikios-portal-articles">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 px-1">
+            <FileText className="text-green h-4 w-4" />
+            <h2 className="text-label text-headline text-subhead">
+              Pages in category ({pages.length})
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {pages.map((m) => {
               const match = countryMap.get(m.title.toLowerCase());
               return (
-                <Link
+                <CategoryPageCard
                   key={m.title}
-                  href={withBasePath(`/wiki/${encodeURIComponent(m.title.replace(/ /g, "_"))}`)}
-                  className="wikios-portal-card"
-                >
-                  {match?.flagUrl ? (
-                    <img
-                      src={match.flagUrl}
-                      alt=""
-                      className="wikios-portal-card-flag"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <FileText className="h-3.5 w-3.5 shrink-0 opacity-40" />
-                  )}
-                  <span className="wikios-portal-card-title">{m.title}</span>
-                  {match?.economicTier && (
-                    <span className="wikios-portal-card-tier">{match.economicTier}</span>
-                  )}
-                </Link>
+                  title={m.title}
+                  imageUrl={m.imageUrl}
+                  flagUrl={match?.flagUrl}
+                  detail={match?.economicTier}
+                />
               );
             })}
           </div>
@@ -97,9 +87,9 @@ export function EnhancedCategoryBrowser({ subcategories, pages }: EnhancedCatego
       )}
 
       {pages.length === 0 && subcategories.length === 0 && (
-        <p className="py-8 text-center text-sm text-[var(--wikios-text-dim)]">
-          This category is empty.
-        </p>
+        <div className="border-separator bg-fill-4 rounded-card border py-16 text-center">
+          <p className="text-label-secondary text-body">This category is currently empty.</p>
+        </div>
       )}
     </div>
   );

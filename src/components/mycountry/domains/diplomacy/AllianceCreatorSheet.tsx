@@ -3,13 +3,7 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -22,7 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Shield, DollarSign, Landmark, MapPin, Users } from "lucide-react";
+import {
+  Shield,
+  Dollar as DollarSign,
+  Bank as Landmark,
+  MapPin,
+  Group as Users,
+} from "iconoir-react";
 import { ColorPickerInput } from "~/components/ui/color-picker";
 
 interface AllianceCreatorSheetProps {
@@ -35,20 +35,20 @@ interface AllianceCreatorSheetProps {
 const ALLIANCE_TYPES = [
   {
     value: "military",
-    label: "Military Alliance",
+    label: "Military alliance",
     icon: Shield,
     description: "Mutual defense pact",
   },
-  { value: "economic", label: "Economic Bloc", icon: DollarSign, description: "Trade cooperation" },
+  { value: "economic", label: "Economic bloc", icon: DollarSign, description: "Trade cooperation" },
   {
     value: "political",
-    label: "Political Union",
+    label: "Political union",
     icon: Landmark,
     description: "Governance alignment",
   },
   {
     value: "regional",
-    label: "Regional Bloc",
+    label: "Regional bloc",
     icon: MapPin,
     description: "Geographic cooperation",
   },
@@ -76,26 +76,35 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
 
   const createAlliance = api.diplomaticPolicies.createAlliance.useMutation({
     onSuccess: () => {
-      notify.success("Alliance founded!", `${name} is now active. Invite nations to join.`);
+      notify.success("Alliance founded", `${name} is now active. Invite nations to join.`);
       onOpenChange(false);
       resetForm();
       onCreated?.();
     },
     onError: (error) => {
-      notify.error("Failed to create alliance", error.message);
+      let msg = error.message;
+      try {
+        const parsed = JSON.parse(error.message);
+        if (Array.isArray(parsed) && parsed[0]?.message) {
+          msg = parsed[0].message;
+        }
+      } catch {
+        // use raw message
+      }
+      notify.error("Failed to create alliance", msg);
     },
   });
 
   const handleSubmit = () => {
-    if (!name.trim()) {
-      notify.error("Alliance name is required");
+    if (name.trim().length < 2) {
+      notify.error("Invalid alliance name", "Alliance name must be at least 2 characters long.");
       return;
     }
     createAlliance.mutate({
-      name,
-      shortName: shortName || undefined,
+      name: name.trim(),
+      shortName: shortName.trim() || undefined,
       type,
-      description: description || undefined,
+      description: description.trim() || undefined,
       color,
       visibility,
       joinPolicy,
@@ -103,33 +112,22 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="sm:max-w-lg"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 0,
-          padding: 0,
-          maxHeight: "85vh",
-          overflow: "hidden",
-        }}
-      >
-        <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 shrink-0 text-cyan-500" />
-            Create New Alliance
-          </DialogTitle>
-          <p className="text-muted-foreground text-sm">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="flex flex-col gap-0 overflow-hidden p-0">
+        <SheetHeader className="px-6 pt-6 pb-0">
+          <SheetTitle className="flex items-center gap-2">
+            <Users className="text-label-secondary h-5 w-5 shrink-0" />
+            Create new alliance
+          </SheetTitle>
+          <p className="text-label-secondary text-body">
             Found a new alliance and invite other nations to join.
           </p>
-        </DialogHeader>
+        </SheetHeader>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
-          {/* Name fields */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="mb-1.5 block text-xs font-medium">Alliance Name</Label>
+              <Label className="text-caption mb-2 block">Alliance name</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -137,7 +135,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
               />
             </div>
             <div>
-              <Label className="mb-1.5 block text-xs font-medium">Short Name</Label>
+              <Label className="text-caption mb-2 block">Short name</Label>
               <Input
                 value={shortName}
                 onChange={(e) => setShortName(e.target.value)}
@@ -149,9 +147,8 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
 
           <Separator />
 
-          {/* Type */}
           <div>
-            <Label className="mb-1.5 block text-xs font-medium">Alliance Type</Label>
+            <Label className="text-caption mb-2 block">Alliance type</Label>
             <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
               <SelectTrigger>
                 <SelectValue />
@@ -162,7 +159,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
                     <div className="flex items-center gap-2">
                       <t.icon className="h-4 w-4" />
                       <span>{t.label}</span>
-                      <span className="text-muted-foreground text-xs">— {t.description}</span>
+                      <span className="text-label-secondary text-footnote">— {t.description}</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -170,9 +167,8 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
             </Select>
           </div>
 
-          {/* Description */}
           <div>
-            <Label className="mb-1.5 block text-xs font-medium">Description</Label>
+            <Label className="text-caption mb-2 block">Description</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -183,14 +179,13 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
 
           <Separator />
 
-          {/* Settings row */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <Label className="mb-1.5 block text-xs font-medium">Color</Label>
+              <Label className="text-caption mb-2 block">Color</Label>
               <ColorPickerInput value={color} onChange={(val: string) => setColor(val)} />
             </div>
             <div>
-              <Label className="mb-1.5 block text-xs font-medium">Visibility</Label>
+              <Label className="text-caption mb-2 block">Visibility</Label>
               <Select
                 value={visibility}
                 onValueChange={(v) => setVisibility(v as typeof visibility)}
@@ -206,7 +201,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
               </Select>
             </div>
             <div>
-              <Label className="mb-1.5 block text-xs font-medium">Join Policy</Label>
+              <Label className="text-caption mb-2 block">Join policy</Label>
               <Select
                 value={joinPolicy}
                 onValueChange={(v) => setJoinPolicy(v as typeof joinPolicy)}
@@ -216,7 +211,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="invite">Invite Only</SelectItem>
+                  <SelectItem value="invite">Invite only</SelectItem>
                   <SelectItem value="application">Application</SelectItem>
                 </SelectContent>
               </Select>
@@ -224,7 +219,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
           </div>
         </div>
 
-        <DialogFooter className="border-border/50 border-t px-6 py-4">
+        <SheetFooter className="border-separator border-t px-6 py-4">
           <Button
             variant="outline"
             size="sm"
@@ -237,15 +232,15 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
           </Button>
           <Button
             size="sm"
-            className="gap-1.5"
+            className="gap-2"
             onClick={handleSubmit}
             disabled={!name.trim() || createAlliance.isPending}
           >
             <Users className="h-3 w-3" />
             {createAlliance.isPending ? "Founding..." : "Found Alliance"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

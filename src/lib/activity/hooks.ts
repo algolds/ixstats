@@ -1,9 +1,7 @@
-// src/lib/activity-hooks.ts
-// Comprehensive activity generation hooks for all user/country interactions
-
 import { db } from "~/server/db";
 import { ActivityGenerator } from "./generator";
-import { formatCurrency, formatPopulation } from "~/lib/utils";
+import { recordActivity, type ActivityRecord } from "./record";
+import { EconomicTier } from "~/types/ixstats";
 import { notificationHooks } from "~/lib/notifications";
 import { eventBus } from "~/lib/event-bus";
 
@@ -16,7 +14,7 @@ async function triggerAchievementCheck(countryId: string, eventName: string, use
     let activeUserId = userId;
     if (!activeUserId && countryId) {
       const user = await db.user.findFirst({
-        where: { countryId },
+        where: { ownedCountries: { some: { id: countryId } } },
         select: { clerkUserId: true },
       });
       if (user) activeUserId = user.clerkUserId;
@@ -29,51 +27,55 @@ async function triggerAchievementCheck(countryId: string, eventName: string, use
   }
 }
 
+/** Fire-and-forget achievement evaluation for each (country, event) pair; `userId` applies to the first. */
+function queueAchievementChecks(eventName: string, countryIds: string[], userId?: string) {
+  countryIds.forEach((countryId, i) => {
+    triggerAchievementCheck(countryId, eventName, i === 0 ? userId : undefined).catch(
+      console.error
+    );
+  });
+}
+
+const findCountries = (...ids: string[]) =>
+  Promise.all(ids.map((id) => db.country.findUnique({ where: { id }, select: { name: true } })));
+
+/** Runs an activity hook, logging (never throwing) any failure. */
+async function guarded(label: string, action: () => Promise<void>) {
+  try {
+    await action();
+  } catch (error) {
+    console.error(`Error creating ${label} activity:`, error);
+  }
+}
+
 /**
  * Activity hooks for diplomatic operations
  */
-export class DiplomaticActivityHooks {
-  /**
-   * Embassy established between two countries
-   */
-  static async onEmbassyEstablished(
+class DiplomaticActivityHooks {
+  /** Embassy established between two countries */
+  static onEmbassyEstablished(
     country1Id: string,
     country2Id: string,
     embassyTier: string,
     userId?: string
   ): Promise<void> {
-    try {
-      triggerAchievementCheck(country1Id, "diplomacy:updated", userId).catch(console.error);
-      triggerAchievementCheck(country2Id, "diplomacy:updated").catch(console.error);
-
-      const [country1, country2] = await Promise.all([
-        db.country.findUnique({ where: { id: country1Id }, select: { name: true } }),
-        db.country.findUnique({ where: { id: country2Id }, select: { name: true } }),
-      ]);
-
+    return guarded("embassy established", async () => {
+      queueAchievementChecks("diplomacy:updated", [country1Id, country2Id], userId);
+      const [country1, country2] = await findCountries(country1Id, country2Id);
       if (!country1 || !country2) return;
 
-      await db.activityFeed.create({
-        data: {
-          type: "diplomatic",
-          category: "game",
-          userId: userId || null,
-          countryId: country1Id,
-          title: `${country1.name} Establishes Embassy in ${country2.name}`,
-          description: `${country1.name} has opened a ${embassyTier} embassy in ${country2.name}, strengthening diplomatic ties between the two nations.`,
-          metadata: JSON.stringify({
-            eventType: "embassy_established",
-            country1: country1.name,
-            country2: country2.name,
-            embassyTier,
-          }),
-          priority: "medium",
-          visibility: "public",
-          relatedCountries: JSON.stringify([country1Id, country2Id]),
-        },
+      await recordActivity({
+        type: "diplomatic",
+        userId,
+        countryId: country1Id,
+        title: `${country1.name} Establishes Embassy in ${country2.name}`,
+        description: `${country1.name} has opened a ${embassyTier} embassy in ${country2.name}, strengthening diplomatic ties between the two nations.`,
+        eventType: "embassy_established",
+        meta: { country1: country1.name, country2: country2.name, embassyTier },
+        priority: "medium",
+        related: [country1Id, country2Id],
       });
 
-      // 🔔 Notify diplomatic event
       await notificationHooks
         .onDiplomaticEvent({
           eventType: "agreement",
@@ -82,654 +84,134 @@ export class DiplomaticActivityHooks {
           description: `${embassyTier} embassy established`,
         })
         .catch((err) => console.error("[Activity] Failed to send embassy notification:", err));
-    } catch (error) {
-      console.error("Error creating embassy established activity:", error);
-    }
+    });
   }
 
-  /**
-   * Diplomatic mission completed
-   */
-  static async onMissionCompleted(
+  /** A country founds a public alliance. */
+  static onAllianceFormed(
     countryId: string,
-    targetCountryId: string,
-    missionType: string,
-    success: boolean,
-    userId?: string
-  ): Promise<void> {
-    try {
-      triggerAchievementCheck(countryId, "diplomacy:updated", userId).catch(console.error);
-
-      const [country, targetCountry] = await Promise.all([
-        db.country.findUnique({ where: { id: countryId }, select: { name: true } }),
-        db.country.findUnique({ where: { id: targetCountryId }, select: { name: true } }),
-      ]);
-
-      if (!country || !targetCountry) return;
-
-      await db.activityFeed.create({
-        data: {
-          type: "diplomatic",
-          category: "game",
-          userId: userId || null,
-          countryId,
-          title: `${country.name} ${success ? "Completes" : "Fails"} ${missionType} Mission`,
-          description: `${country.name} has ${success ? "successfully completed" : "failed to complete"} a ${missionType} mission with ${targetCountry.name}.`,
-          metadata: JSON.stringify({
-            eventType: "mission_completed",
-            missionType,
-            success,
-            country: country.name,
-            targetCountry: targetCountry.name,
-          }),
-          priority: success ? "medium" : "low",
-          visibility: "public",
-          relatedCountries: JSON.stringify([countryId, targetCountryId]),
-        },
-      });
-    } catch (error) {
-      console.error("Error creating mission completed activity:", error);
-    }
-  }
-
-  /**
-   * Alliance formed between countries
-   */
-  static async onAllianceFormed(
-    country1Id: string,
-    country2Id: string,
     allianceName: string,
+    allianceType: string,
     userId?: string
   ): Promise<void> {
-    try {
-      triggerAchievementCheck(country1Id, "diplomacy:updated", userId).catch(console.error);
-      triggerAchievementCheck(country2Id, "diplomacy:updated").catch(console.error);
-
-      const [country1, country2] = await Promise.all([
-        db.country.findUnique({ where: { id: country1Id }, select: { name: true } }),
-        db.country.findUnique({ where: { id: country2Id }, select: { name: true } }),
-      ]);
-
-      if (!country1 || !country2) return;
-
-      await db.activityFeed.create({
-        data: {
-          type: "diplomatic",
-          category: "game",
-          userId: userId || null,
-          title: `${country1.name} and ${country2.name} Form Alliance`,
-          description: `${country1.name} and ${country2.name} have formed the ${allianceName || "bilateral alliance"}, pledging mutual cooperation and support.`,
-          metadata: JSON.stringify({
-            eventType: "alliance_formed",
-            countries: [country1.name, country2.name],
-            allianceName,
-          }),
-          priority: "high",
-          visibility: "public",
-          relatedCountries: JSON.stringify([country1Id, country2Id]),
-        },
-      });
-    } catch (error) {
-      console.error("Error creating alliance formed activity:", error);
-    }
+    return recordCountryActivity(
+      "alliance formed",
+      "diplomacy:updated",
+      countryId,
+      userId,
+      (name) => ({
+        type: "diplomatic",
+        title: `${name} Founds the ${allianceName}`,
+        description: `${name} has founded the ${allianceName}, a new ${allianceType} alliance.`,
+        eventType: "alliance_formed",
+        meta: { allianceName, allianceType, country: name },
+        priority: "high",
+      })
+    );
   }
 
-  /**
-   * Trade agreement signed
-   */
-  static async onTradeAgreement(
-    country1Id: string,
-    country2Id: string,
-    tradeValue?: number,
-    userId?: string
-  ): Promise<void> {
-    try {
-      triggerAchievementCheck(country1Id, "diplomacy:updated", userId).catch(console.error);
-      triggerAchievementCheck(country2Id, "diplomacy:updated").catch(console.error);
-
-      const [country1, country2] = await Promise.all([
-        db.country.findUnique({ where: { id: country1Id }, select: { name: true } }),
-        db.country.findUnique({ where: { id: country2Id }, select: { name: true } }),
-      ]);
-
-      if (!country1 || !country2) return;
-
-      const priority = tradeValue && tradeValue > 50000000000 ? "high" : "medium";
-
-      await db.activityFeed.create({
-        data: {
-          type: "diplomatic",
-          category: "game",
-          userId: userId || null,
-          title: `${country1.name} and ${country2.name} Sign Trade Agreement`,
-          description: `${country1.name} and ${country2.name} have signed a comprehensive trade agreement${tradeValue ? ` valued at ${formatCurrency(tradeValue)}` : ""}.`,
-          metadata: JSON.stringify({
-            eventType: "trade_agreement",
-            countries: [country1.name, country2.name],
-            tradeValue,
-          }),
-          priority,
-          visibility: "public",
-          relatedCountries: JSON.stringify([country1Id, country2Id]),
-        },
-      });
-    } catch (error) {
-      console.error("Error creating trade agreement activity:", error);
-    }
+  /** A country accepts an invitation and joins a public alliance. */
+  static onAllianceJoined(countryId: string, allianceName: string, userId?: string): Promise<void> {
+    return recordCountryActivity(
+      "alliance joined",
+      "diplomacy:updated",
+      countryId,
+      userId,
+      (name) => ({
+        type: "diplomatic",
+        title: `${name} Joins the ${allianceName}`,
+        description: `${name} has joined the ${allianceName}, pledging cooperation with its members.`,
+        eventType: "alliance_joined",
+        meta: { allianceName, country: name },
+        priority: "medium",
+      })
+    );
   }
+}
+
+/**
+ * One single-country activity: queues the achievement check, looks up the country and records
+ * the entry built from its name.
+ */
+async function recordCountryActivity(
+  label: string,
+  achievementEvent: string,
+  countryId: string,
+  userId: string | undefined,
+  build: (countryName: string) => Omit<ActivityRecord, "userId" | "countryId" | "related">
+) {
+  await guarded(label, async () => {
+    queueAchievementChecks(achievementEvent, [countryId], userId);
+    const [country] = await findCountries(countryId);
+    if (!country) return;
+    await recordActivity({ userId, countryId, related: [countryId], ...build(country.name) });
+  });
 }
 
 /**
  * Activity hooks for government operations
  */
-export class GovernmentActivityHooks {
+class GovernmentActivityHooks {
   /**
-   * Government component added to country
+   * A bill passes the legislature and becomes law. Bills with an economic effect file under
+   * Economic; the rest under Achievements.
    */
-  static async onComponentAdded(
+  static onLawPassed(
     countryId: string,
-    componentName: string,
-    componentType: string,
+    billName: string,
+    gdpEffect: number,
     userId?: string
   ): Promise<void> {
-    try {
-      triggerAchievementCheck(countryId, "country:updated", userId).catch(console.error);
-
-      const country = await db.country.findUnique({
-        where: { id: countryId },
-        select: { name: true },
-      });
-
-      if (!country) return;
-
-      await db.activityFeed.create({
-        data: {
-          type: "achievement",
-          category: "game",
-          userId: userId || null,
-          countryId,
-          title: `${country.name} Implements ${componentName}`,
-          description: `${country.name} has implemented ${componentName}, a ${componentType} component in their governmental system.`,
-          metadata: JSON.stringify({
-            eventType: "component_added",
-            componentName,
-            componentType,
-            country: country.name,
-          }),
-          priority: "medium",
-          visibility: "public",
-          relatedCountries: JSON.stringify([countryId]),
-        },
-      });
-    } catch (error) {
-      console.error("Error creating component added activity:", error);
-    }
-  }
-
-  /**
-   * Government effectiveness change
-   */
-  static async onEffectivenessChange(
-    countryId: string,
-    oldEffectiveness: number,
-    newEffectiveness: number,
-    userId?: string
-  ): Promise<void> {
-    try {
-      if (Math.abs(newEffectiveness - oldEffectiveness) < 10) return; // Only significant changes
-
-      triggerAchievementCheck(countryId, "country:updated", userId).catch(console.error);
-
-      const country = await db.country.findUnique({
-        where: { id: countryId },
-        select: { name: true },
-      });
-
-      if (!country) return;
-
-      const isImprovement = newEffectiveness > oldEffectiveness;
-      const priority = Math.abs(newEffectiveness - oldEffectiveness) > 20 ? "high" : "medium";
-
-      await db.activityFeed.create({
-        data: {
-          type: "achievement",
-          category: "game",
-          userId: userId || null,
-          countryId,
-          title: `${country.name} Government Effectiveness ${isImprovement ? "Increases" : "Decreases"}`,
-          description: `${country.name}'s governmental effectiveness has ${isImprovement ? "improved" : "declined"} to ${newEffectiveness.toFixed(1)}%, ${isImprovement ? "strengthening" : "weakening"} administrative capacity.`,
-          metadata: JSON.stringify({
-            eventType: "effectiveness_change",
-            oldEffectiveness,
-            newEffectiveness,
-            isImprovement,
-          }),
-          priority,
-          visibility: "public",
-          relatedCountries: JSON.stringify([countryId]),
-        },
-      });
-    } catch (error) {
-      console.error("Error creating effectiveness change activity:", error);
-    }
-  }
-
-  /**
-   * Constitutional reform enacted
-   */
-  static async onConstitutionalReform(
-    countryId: string,
-    reformType: string,
-    reformDescription: string,
-    userId?: string
-  ): Promise<void> {
-    try {
-      triggerAchievementCheck(countryId, "country:updated", userId).catch(console.error);
-
-      const country = await db.country.findUnique({
-        where: { id: countryId },
-        select: { name: true },
-      });
-
-      if (!country) return;
-
-      await db.activityFeed.create({
-        data: {
-          type: "achievement",
-          category: "game",
-          userId: userId || null,
-          countryId,
-          title: `${country.name} Enacts Constitutional Reform`,
-          description: `${country.name} has enacted major ${reformType} reforms: ${reformDescription}`,
-          metadata: JSON.stringify({
-            eventType: "constitutional_reform",
-            reformType,
-            reformDescription,
-          }),
-          priority: "high",
-          visibility: "public",
-          relatedCountries: JSON.stringify([countryId]),
-        },
-      });
-    } catch (error) {
-      console.error("Error creating constitutional reform activity:", error);
-    }
+    return recordCountryActivity("law passed", "country:updated", countryId, userId, (name) => ({
+      type: gdpEffect !== 0 ? "economic" : "achievement",
+      title: `${name} Passes ${billName}`,
+      description: `The legislature of ${name} has passed "${billName}" into law.`,
+      eventType: "law_passed",
+      meta: { billName, gdpEffect },
+      priority: "medium",
+    }));
   }
 }
 
 /**
  * Activity hooks for economic operations
  */
-export class EconomicActivityHooks {
+class EconomicActivityHooks {
   /**
-   * Budget approved/changed
+   * Economic milestone: the nightly stat progression moved a country to a new economic tier
+   * (tiers follow GDP per capita, so this fires only when a threshold is crossed).
    */
-  static async onBudgetApproved(
-    countryId: string,
-    totalBudget: number,
-    majorChanges: string[],
-    userId?: string
-  ): Promise<void> {
-    try {
-      triggerAchievementCheck(countryId, "country:updated", userId).catch(console.error);
-
-      const country = await db.country.findUnique({
-        where: { id: countryId },
-        select: { name: true },
-      });
-
-      if (!country) return;
-
-      await db.activityFeed.create({
-        data: {
-          type: "economic",
-          category: "game",
-          userId: userId || null,
-          countryId,
-          title: `${country.name} Approves ${formatCurrency(totalBudget)} Budget`,
-          description: `${country.name} has approved a ${formatCurrency(totalBudget)} national budget${majorChanges.length ? ` with major changes in ${majorChanges.join(", ")}` : ""}.`,
-          metadata: JSON.stringify({
-            eventType: "budget_approved",
-            totalBudget,
-            majorChanges,
-          }),
-          priority: totalBudget > 1000000000000 ? "high" : "medium",
-          visibility: "public",
-          relatedCountries: JSON.stringify([countryId]),
-        },
-      });
-    } catch (error) {
-      console.error("Error creating budget approved activity:", error);
-    }
-  }
-
-  /**
-   * Tax policy change
-   */
-  static async onTaxPolicyChange(
-    countryId: string,
-    policyType: string,
-    policyDescription: string,
-    impactedPopulation: number,
-    userId?: string
-  ): Promise<void> {
-    if (!db || typeof (db as any).country?.findUnique !== "function") {
-      return;
-    }
-    try {
-      triggerAchievementCheck(countryId, "country:updated", userId).catch(console.error);
-
-      const country = await db.country.findUnique({
-        where: { id: countryId },
-        select: { name: true },
-      });
-
-      if (!country) return;
-
-      await db.activityFeed.create({
-        data: {
-          type: "economic",
-          category: "game",
-          userId: userId || null,
-          countryId,
-          title: `${country.name} Reforms Tax Policy`,
-          description: `${country.name} has implemented ${policyType} tax reforms affecting ${formatPopulation(impactedPopulation)} citizens: ${policyDescription}`,
-          metadata: JSON.stringify({
-            eventType: "tax_policy_change",
-            policyType,
-            policyDescription,
-            impactedPopulation,
-          }),
-          priority: "medium",
-          visibility: "public",
-          relatedCountries: JSON.stringify([countryId]),
-        },
-      });
-    } catch (error) {
-      console.error("Error creating tax policy change activity:", error);
-    }
-  }
-
-  /**
-   * Major infrastructure project announced
-   */
-  static async onInfrastructureProject(
-    countryId: string,
-    projectName: string,
-    projectValue: number,
-    projectType: string,
-    userId?: string
-  ): Promise<void> {
-    try {
-      triggerAchievementCheck(countryId, "country:updated", userId).catch(console.error);
-
-      const country = await db.country.findUnique({
-        where: { id: countryId },
-        select: { name: true },
-      });
-
-      if (!country) return;
-
-      const priority = projectValue > 10000000000 ? "high" : "medium";
-
-      await db.activityFeed.create({
-        data: {
-          type: "economic",
-          category: "game",
-          userId: userId || null,
-          countryId,
-          title: `${country.name} Announces Major Infrastructure Project`,
-          description: `${country.name} has announced the ${projectName}, a ${formatCurrency(projectValue)} ${projectType} infrastructure initiative.`,
-          metadata: JSON.stringify({
-            eventType: "infrastructure_project",
-            projectName,
-            projectValue,
-            projectType,
-          }),
-          priority,
-          visibility: "public",
-          relatedCountries: JSON.stringify([countryId]),
-        },
-      });
-    } catch (error) {
-      console.error("Error creating infrastructure project activity:", error);
-    }
+  static onEconomicTierChange(countryId: string, oldTier: string, newTier: string): Promise<void> {
+    const rose = economicTierRank(newTier) > economicTierRank(oldTier);
+    return recordCountryActivity(
+      "economic tier change",
+      "country:updated",
+      countryId,
+      undefined,
+      (name) => ({
+        type: "economic",
+        title: `${name} ${rose ? "Rises" : "Falls"} to ${newTier} Status`,
+        description: rose
+          ? `${name} has grown into a ${newTier} economy, up from ${oldTier}.`
+          : `${name} has slipped to a ${newTier} economy, down from ${oldTier}.`,
+        eventType: "economic_tier_change",
+        meta: { oldTier, newTier, rose },
+        priority: rose ? "high" : "medium",
+      })
+    );
   }
 }
 
-/**
- * Activity hooks for defense/security operations
- */
-export class SecurityActivityHooks {
-  /**
-   * Military branch created/upgraded
-   */
-  static async onMilitaryBranchChange(
-    countryId: string,
-    branchName: string,
-    action: "created" | "upgraded",
-    newLevel?: string,
-    userId?: string
-  ): Promise<void> {
-    try {
-      triggerAchievementCheck(countryId, "military:updated", userId).catch(console.error);
-
-      const country = await db.country.findUnique({
-        where: { id: countryId },
-        select: { name: true },
-      });
-
-      if (!country) return;
-
-      await db.activityFeed.create({
-        data: {
-          type: "achievement",
-          category: "game",
-          userId: userId || null,
-          countryId,
-          title: `${country.name} ${action === "created" ? "Establishes" : "Upgrades"} ${branchName}`,
-          description: `${country.name} has ${action} the ${branchName}${newLevel ? ` to ${newLevel} level` : ""}, enhancing national defense capabilities.`,
-          metadata: JSON.stringify({
-            eventType: "military_branch_change",
-            branchName,
-            action,
-            newLevel,
-          }),
-          priority: "medium",
-          visibility: "public",
-          relatedCountries: JSON.stringify([countryId]),
-        },
-      });
-    } catch (error) {
-      console.error("Error creating military branch change activity:", error);
-    }
-  }
-
-  /**
-   * Security threat detected/resolved
-   */
-  static async onSecurityThreat(
-    countryId: string,
-    threatType: string,
-    severity: string,
-    status: "detected" | "resolved",
-    userId?: string
-  ): Promise<void> {
-    try {
-      triggerAchievementCheck(countryId, "military:updated", userId).catch(console.error);
-
-      const country = await db.country.findUnique({
-        where: { id: countryId },
-        select: { name: true },
-      });
-
-      if (!country) return;
-
-      const priority =
-        severity === "critical" ? "critical" : severity === "high" ? "high" : "medium";
-
-      await db.activityFeed.create({
-        data: {
-          type: "meta",
-          category: "game",
-          userId: userId || null,
-          countryId,
-          title: `${country.name} ${status === "detected" ? "Faces" : "Resolves"} Security Threat`,
-          description: `${country.name} has ${status} a ${severity} severity ${threatType} threat to national security.`,
-          metadata: JSON.stringify({
-            eventType: "security_threat",
-            threatType,
-            severity,
-            status,
-          }),
-          priority,
-          visibility: "public",
-          relatedCountries: JSON.stringify([countryId]),
-        },
-      });
-    } catch (error) {
-      console.error("Error creating security threat activity:", error);
-    }
-  }
-}
-
-/**
- * Activity hooks for social/ThinkPages operations
- */
-export class SocialActivityHooks {
-  /**
-   * ThinkPage post created
-   */
-  static async onThinkPagePost(
-    userId: string,
-    countryId: string,
-    postTitle: string,
-    postType: string,
-    visibility: "public" | "followers" | "friends"
-  ): Promise<void> {
-    try {
-      triggerAchievementCheck(countryId, "thinkpages:updated", userId).catch(console.error);
-
-      const country = await db.country.findUnique({
-        where: { id: countryId },
-        select: { name: true },
-      });
-
-      if (!country) return;
-
-      await db.activityFeed.create({
-        data: {
-          type: "social",
-          category: "social",
-          userId,
-          countryId,
-          title: `New ${postType} from ${country.name}`,
-          description: postTitle,
-          metadata: JSON.stringify({
-            eventType: "thinkpage_post",
-            postType,
-          }),
-          priority: "low",
-          visibility,
-          relatedCountries: JSON.stringify([countryId]),
-        },
-      });
-    } catch (error) {
-      console.error("Error creating ThinkPage post activity:", error);
-    }
-  }
-
-  /**
-   * User follows country
-   */
-  static async onFollowCountry(
-    userId: string,
-    countryId: string,
-    userCountryId?: string
-  ): Promise<void> {
-    try {
-      triggerAchievementCheck(userCountryId || countryId, "thinkpages:updated", userId).catch(
-        console.error
-      );
-      triggerAchievementCheck(countryId, "thinkpages:updated").catch(console.error);
-
-      const [country, userCountry] = await Promise.all([
-        db.country.findUnique({ where: { id: countryId }, select: { name: true } }),
-        userCountryId
-          ? db.country.findUnique({ where: { id: userCountryId }, select: { name: true } })
-          : null,
-      ]);
-
-      if (!country) return;
-
-      await db.activityFeed.create({
-        data: {
-          type: "social",
-          category: "social",
-          userId,
-          countryId: userCountryId || null,
-          title: `${userCountry?.name || "User"} Follows ${country.name}`,
-          description: `${userCountry?.name || "A user"} is now following ${country.name} for updates and activities.`,
-          metadata: JSON.stringify({
-            eventType: "follow_country",
-            followedCountry: country.name,
-          }),
-          priority: "low",
-          visibility: "friends",
-          relatedCountries: JSON.stringify([countryId, ...(userCountryId ? [userCountryId] : [])]),
-        },
-      });
-    } catch (error) {
-      console.error("Error creating follow country activity:", error);
-    }
-  }
-
-  /**
-   * User joins platform
-   */
-  static async onUserJoined(userId: string, countryId?: string): Promise<void> {
-    try {
-      if (countryId) {
-        triggerAchievementCheck(countryId, "user:signup", userId).catch(console.error);
-      }
-
-      const country = countryId
-        ? await db.country.findUnique({
-            where: { id: countryId },
-            select: { name: true },
-          })
-        : null;
-
-      await db.activityFeed.create({
-        data: {
-          type: "social",
-          category: "platform",
-          userId,
-          countryId: countryId || null,
-          title: `New Leader Joins IxStats`,
-          description: `A new leader has joined IxStats${country ? ` representing ${country.name}` : ""}!`,
-          metadata: JSON.stringify({
-            eventType: "user_joined",
-            countryName: country?.name,
-          }),
-          priority: "low",
-          visibility: "public",
-          relatedCountries: countryId ? JSON.stringify([countryId]) : null,
-        },
-      });
-    } catch (error) {
-      console.error("Error creating user joined activity:", error);
-    }
-  }
+/** Rank of an economic tier, lowest first (`EconomicTier` declaration order); unknown names rank -1. */
+export function economicTierRank(tier: string): number {
+  return (Object.values(EconomicTier) as string[]).indexOf(tier);
 }
 
 /**
  * Activity hooks for user operations
  */
-export class UserActivityHooks {
-  /**
-   * User links to country
-   */
+class UserActivityHooks {
+  /** User links to country */
   static async onCountryLink(
     userId: string,
     countryId: string,
@@ -739,43 +221,30 @@ export class UserActivityHooks {
     await ActivityGenerator.createCountryLinkActivity(userId, countryId, isNewCountry);
   }
 
-  /**
-   * User achievement unlocked
-   */
+  /** User achievement unlocked */
   static async onAchievementUnlocked(
     userId: string,
     countryId: string,
     achievementName: string,
-    achievementDescription: string
+    achievementDescription: string,
+    achievementKey: string
   ): Promise<void> {
-    try {
-      const country = await db.country.findUnique({
-        where: { id: countryId },
-        select: { name: true },
-      });
-
+    await guarded("achievement unlocked", async () => {
+      const [country] = await findCountries(countryId);
       if (!country) return;
 
-      await db.activityFeed.create({
-        data: {
-          type: "achievement",
-          category: "game",
-          userId,
-          countryId,
-          title: `${country.name} Unlocks Achievement: ${achievementName}`,
-          description: achievementDescription,
-          metadata: JSON.stringify({
-            eventType: "achievement_unlocked",
-            achievementName,
-          }),
-          priority: "medium",
-          visibility: "public",
-          relatedCountries: JSON.stringify([countryId]),
-        },
+      await recordActivity({
+        type: "achievement",
+        userId,
+        countryId,
+        title: `${country.name} Unlocks Achievement: ${achievementName}`,
+        description: achievementDescription,
+        eventType: "achievement_unlocked",
+        meta: { achievementName, achievementKey },
+        priority: "medium",
+        related: [countryId],
       });
-    } catch (error) {
-      console.error("Error creating achievement unlocked activity:", error);
-    }
+    });
   }
 }
 
@@ -786,7 +255,5 @@ export const ActivityHooks = {
   Diplomatic: DiplomaticActivityHooks,
   Government: GovernmentActivityHooks,
   Economic: EconomicActivityHooks,
-  Security: SecurityActivityHooks,
-  Social: SocialActivityHooks,
   User: UserActivityHooks,
 };

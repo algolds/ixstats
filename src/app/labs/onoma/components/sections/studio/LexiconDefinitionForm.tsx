@@ -3,13 +3,10 @@
 // src/app/labs/onoma/components/sections/studio/LexiconDefinitionForm.tsx
 // Onoma Custom Studio Workshop — Lexicon Definition Form Component
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import { Button } from "~/components/ui/button";
 
 interface LexiconDefinitionFormProps {
   lexEditPos: string;
@@ -35,104 +32,67 @@ export function LexiconDefinitionForm({
   onSubmit,
 }: LexiconDefinitionFormProps) {
   return (
-    <div className="border-border/20 border-t pt-5">
-      <h4 className="text-muted-foreground mb-3 text-xs font-bold tracking-wider uppercase">
-        Define Lexicon Meaning
-      </h4>
+    <div className="border-separator border-t pt-5">
+      <h4 className="text-label-secondary text-subhead mb-3">Define lexicon meaning</h4>
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">
-              Part of Speech
-            </label>
-            <Select value={lexEditPos} onValueChange={setLexEditPos}>
-              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-2 text-xs transition-colors focus:border-[#0091ff]/50 focus:outline-none">
-                <SelectValue placeholder="Select POS" />
-              </SelectTrigger>
-              <SelectContent className="border-border/40 bg-background/95 max-h-[200px] backdrop-blur-md">
-                <SelectItem
-                  value="Noun"
-                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
-                >
-                  Noun
-                </SelectItem>
-                <SelectItem
-                  value="Adjective"
-                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
-                >
-                  Adjective
-                </SelectItem>
-                <SelectItem
-                  value="Verb"
-                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
-                >
-                  Verb
-                </SelectItem>
-                <SelectItem
-                  value="Proper Noun"
-                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
-                >
-                  Proper Noun
-                </SelectItem>
-                <SelectItem
-                  value="Adverb"
-                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
-                >
-                  Adverb
-                </SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-2">
+            <label className="text-label-secondary text-subhead">Part of speech</label>
+            <ValueSelect
+              value={lexEditPos}
+              onValueChange={setLexEditPos}
+              options={[
+                ["Noun", "Noun"],
+                ["Adjective", "Adjective"],
+                ["Verb", "Verb"],
+                ["Proper Noun", "Proper noun"],
+                ["Adverb", "Adverb"],
+              ]}
+              className="text-footnote w-full"
+              placeholder="Select POS"
+              contentClassName="max-h-[200px]"
+              itemClassName="text-footnote"
+            />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">
-              Etymological Root
-            </label>
-            <input
+          <div className="space-y-2">
+            <label className="text-label-secondary text-subhead">Etymological root</label>
+            <Input
               type="text"
               value={lexEditRoot}
               onChange={(e) => setLexEditRoot(e.target.value)}
               placeholder="e.g. rom- (strength)"
-              className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-2 text-xs focus:border-[#0091ff]/50 focus:outline-none"
+              className="text-footnote w-full"
             />
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-muted-foreground text-[10px] font-bold uppercase">
-            Meaning / Translation
-          </label>
-          <input
+        <div className="space-y-2">
+          <label className="text-label-secondary text-subhead">Meaning / Translation</label>
+          <Input
             type="text"
             value={lexEditMeaning}
             onChange={(e) => setLexEditMeaning(e.target.value)}
             placeholder="e.g. Place of strength, capital city"
             required
-            className="border-border/60 bg-background text-foreground w-full rounded-lg border px-3 py-2 text-xs focus:border-[#0091ff]/50 focus:outline-none"
+            className="text-footnote w-full"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-muted-foreground text-[10px] font-bold uppercase">
-            Historical Origin & Notes
-          </label>
-          <textarea
+        <div className="space-y-2">
+          <label className="text-label-secondary text-subhead">Historical origin & notes</label>
+          <Textarea
             value={lexEditOrigin}
             onChange={(e) => setLexEditOrigin(e.target.value)}
             placeholder="e.g. Named after legendary founder Romus, later expanded by Latin tribes..."
-            className="border-border/60 bg-background text-foreground h-20 w-full rounded-lg border px-3 py-2 text-xs focus:border-[#0091ff]/50 focus:outline-none"
+            className="text-footnote h-20 w-full"
           />
         </div>
 
-        <button
-          type="submit"
-          className="w-full rounded-lg bg-[#0091ff] py-2 text-xs font-bold text-white shadow-md shadow-[#0091ff]/10 transition-all hover:bg-[#33a7ff]"
-        >
-          Save Lexicon Definition
-        </button>
+        <Button size="sm" type="submit" className="w-full">
+          Save lexicon definition
+        </Button>
       </form>
     </div>
   );
 }
-
-export default LexiconDefinitionForm;

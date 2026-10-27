@@ -1,17 +1,15 @@
-import type { PrismaClient } from "@prisma/client";
-
-export interface DecretalSliderOption {
+interface DecretalSliderOption {
   label: string;
   value: number; // multiplier or baseline factor
 }
 
-export interface DecretalSlider {
+interface DecretalSlider {
   key: string;
   label: string;
   options: DecretalSliderOption[];
 }
 
-export interface PolicyDecretal {
+interface PolicyDecretal {
   key: string;
   name: string;
   description: string;
@@ -20,7 +18,7 @@ export interface PolicyDecretal {
   sliders: DecretalSlider[];
   riskRating?: string;
   origin?: string;
-  civCapCost?: number;
+  execBandwidthCost?: number;
   calculate: (
     settings: Record<string, number>,
     countryMetrics: any
@@ -45,7 +43,7 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
     policyType: "economic",
     riskRating: "volatile",
     origin: "personal",
-    civCapCost: 15,
+    execBandwidthCost: 15,
     sliders: [
       {
         key: "stipend",
@@ -133,7 +131,7 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
     policyType: "economic",
     riskRating: "stable",
     origin: "personal",
-    civCapCost: 5,
+    execBandwidthCost: 5,
     sliders: [
       {
         key: "tariffRate",
@@ -156,6 +154,7 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
         ],
       },
     ],
+    // oxlint-disable-next-line typescript/no-unused-vars
     calculate: (settings, countryMetrics) => {
       const rate = settings.tariffRate ?? 0;
       const exceptions = settings.exceptions ?? 0;
@@ -214,7 +213,7 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
     policyType: "social",
     riskRating: "high-risk",
     origin: "personal",
-    civCapCost: 20,
+    execBandwidthCost: 20,
     sliders: [
       {
         key: "surveillance",
@@ -227,6 +226,7 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
         ],
       },
     ],
+    // oxlint-disable-next-line typescript/no-unused-vars
     calculate: (settings, countryMetrics) => {
       const level = settings.surveillance ?? 0;
 
@@ -234,8 +234,8 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
       const maintenanceCost = level * 2000000;
 
       let gdpEffect = 0;
-      let employmentEffect = 0;
-      let inflationEffect = 0;
+      const employmentEffect = 0;
+      const inflationEffect = 0;
       let taxRevenueEffect = 0;
       let stabilityEffect = 0;
 
@@ -275,7 +275,9 @@ export async function getPolicyDecretals(db: any): Promise<Record<string, Policy
       if (template.defaultSettings) {
         try {
           parsedSettings = JSON.parse(template.defaultSettings);
-        } catch {}
+        } catch (err) {
+          console.warn("[Registry] Malformed defaultSettings on template", template.id, err);
+        }
       }
 
       const costMult = parsedSettings.costMultiplier ?? 1.0;
@@ -289,7 +291,7 @@ export async function getPolicyDecretals(db: any): Promise<Record<string, Policy
         policyType: "economic",
         riskRating: "stable",
         origin: "personal",
-        civCapCost: 0,
+        execBandwidthCost: 0,
         sliders: [
           {
             key: "funding",

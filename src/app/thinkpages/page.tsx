@@ -1,7 +1,12 @@
-"use client";
+import { type Metadata } from "next";
+import { ForumHome } from "~/components/thinkpages-forum/home";
 
-import { ThinkPagesAccountHub } from "~/components/thinkpages/ThinkPagesAccountHub";
+export const metadata: Metadata = {
+  title: "ThinkPages - IxStates",
+  description: "The community forum: sitewide boards and a section for every realm.",
+};
 
-export default function ThinkPagesMainPage() {
-  return <ThinkPagesAccountHub />;
+/** The Forums home: the sitewide boards and the old forum's archive. */
+export default function ThinkPagesHomePage() {
+  return <ForumHome />;
 }

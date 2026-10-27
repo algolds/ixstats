@@ -7,16 +7,7 @@ import { getAllProfileSeeds } from "./comparator";
 import { IPA_VOWEL_SET } from "./phonetics-shared";
 import type { CulturalProfile } from "./types";
 
-export interface DynamicCorpus {
-  id: string;
-  label: string;
-  words: string[];
-  type: "culture" | "custom" | "stash" | "studio";
-  cultureTag?: CulturalProfile;
-  category?: string | null;
-}
-
-export interface DynamicPhoneticInventory {
+interface DynamicPhoneticInventory {
   phonemes: string[];
   vowels: string[];
   consonants: string[];
@@ -38,12 +29,10 @@ export interface DynamicComparisonResult {
   entropyDelta: number;
 }
 
-
-
 /**
  * Extract clean IPA phonemes from an arbitrary list of words.
  */
-export function extractPhonemeInventory(
+function extractPhonemeInventory(
   words: string[],
   fallbackCulture: string = "latin"
 ): DynamicPhoneticInventory {
@@ -85,7 +74,7 @@ export function extractPhonemeInventory(
  * Calculates Shannon Entropy H(X) in bits from letter/phoneme distributions.
  * H = -sum(p_i * log2(p_i))
  */
-export function computeShannonEntropy(words: string[]): number {
+function computeShannonEntropy(words: string[]): number {
   if (words.length === 0) return 0;
   const counts: Record<string, number> = {};
   let total = 0;
@@ -115,7 +104,7 @@ export function computeShannonEntropy(words: string[]): number {
 /**
  * Calculates bigram frequency profile of a word list.
  */
-export function computeBigramFrequencies(words: string[]): Record<string, number> {
+function computeBigramFrequencies(words: string[]): Record<string, number> {
   const bigrams: Record<string, number> = {};
   let total = 0;
 
@@ -192,9 +181,7 @@ export function compareDynamicWordLists(
   }
 
   const bigramSimilarity =
-    magA > 0 && magB > 0
-      ? Math.round((dotProduct / (Math.sqrt(magA) * Math.sqrt(magB))) * 100)
-      : 0;
+    magA > 0 && magB > 0 ? Math.round((dotProduct / (Math.sqrt(magA) * Math.sqrt(magB))) * 100) : 0;
 
   // Composite Distance: 100 - (0.6 * phonemeOverlap + 0.4 * bigramSimilarity)
   const linguisticDistance = Math.max(
@@ -238,7 +225,9 @@ export function resolveCorpusWords(
 
   // 2. Check custom stash dictionaries
   if (customDicts && customDicts.length > 0) {
-    const found = customDicts.find((d) => d.id === corpusId || d.title.toLowerCase() === corpusId.toLowerCase());
+    const found = customDicts.find(
+      (d) => d.id === corpusId || d.title.toLowerCase() === corpusId.toLowerCase()
+    );
     if (found) {
       return {
         words: found.values,

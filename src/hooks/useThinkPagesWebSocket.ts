@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
+import { useAuth } from "~/context/auth-context";
+import { BOARD_EVENT_NAMES, boardLiveEventSchema } from "~/lib/thinkpages-forum/board-live";
 import type {
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  ThinkPagesWebSocketEvent,
   ThinkPagesClientState,
   ThinkPagesWebSocketHookOptions,
   PresenceUpdate,
@@ -12,6 +12,10 @@ import type {
 } from "~/lib/websocket/thinkpages-types";
 
 const isServer = typeof window === "undefined";
+
+/** Waits between reconnection attempts grow from the first to the cap, for as long as the page stays open. */
+const RECONNECT_DELAY_MS = 2_000;
+const RECONNECT_DELAY_MAX_MS = 30_000;
 
 // Initial state factory
 const createInitialState = (accountId?: string): ThinkPagesClientState => ({
@@ -34,15 +38,22 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
   const socket = useRef<Socket | null>(null);
   const optionsRef = useRef(options);
+  const { getToken, isSignedIn } = useAuth();
+  const getTokenRef = useRef(getToken);
+  const isSignedInRef = useRef(isSignedIn);
 
-  // Update ref when options change
+  // Update refs when options / token source change
   useEffect(() => {
     optionsRef.current = options;
   }, [options]);
+  useEffect(() => {
+    getTokenRef.current = getToken;
+    isSignedInRef.current = isSignedIn;
+  }, [getToken, isSignedIn]);
 
   const typingTimeout = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const retryCount = useRef(0);
-  const maxRetries = 3;
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // No-op function for SSR
   const noOp = useCallback(() => {}, []);
@@ -62,6 +73,21 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     }
   }, []);
 
+  /**
+   * socket.io retries a lost transport by itself, but not a connection the server refused or closed (`active` is
+   * false then): those are connected again here, after the same growing, capped wait.
+   */
+  const retryIfStopped = useCallback((stopped: Socket) => {
+    // A socket this hook closed itself (unmount, or another connect) is not retried.
+    if (socket.current !== stopped || stopped.active || retryTimer.current) return;
+    const wait = Math.min(RECONNECT_DELAY_MS * 2 ** retryCount.current, RECONNECT_DELAY_MAX_MS);
+    retryCount.current += 1;
+    retryTimer.current = setTimeout(() => {
+      retryTimer.current = null;
+      if (socket.current === stopped) stopped.connect();
+    }, wait);
+  }, []);
+
   const connect = useCallback(() => {
     // Skip on server
     if (isServer) return;
@@ -79,11 +105,8 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       return;
     }
 
-    // Stop retrying after max attempts
-    if (retryCount.current >= maxRetries) {
-      console.warn("WebSocket: Max retry attempts reached, disabling real-time features");
-      return;
-    }
+    // A Clerk session token is required unless the caller reads public realm boards signed out
+    if (!getTokenRef.current && !optionsRef.current.anonymous) return;
 
     const wsPort = process.env.NEXT_PUBLIC_WS_PORT || 3001;
     const protocol = window.location.protocol === "https:" ? "https" : "http";
@@ -98,18 +121,30 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     socket.current = io(url, {
       path: "/ws/thinkpages",
       transports: ["websocket", "polling"],
-      reconnectionAttempts: maxRetries,
-      reconnectionDelay: 2000,
+      // Keep trying for as long as the page is open: live updates come back whenever the network does.
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: RECONNECT_DELAY_MS,
+      reconnectionDelayMax: RECONNECT_DELAY_MAX_MS,
+      // Callback form: re-invoked on every (re)connect so each handshake gets a fresh token
+      auth: (cb) => {
+        const pending: Promise<string | null> = getTokenRef.current?.() ?? Promise.resolve(null);
+        void pending
+          .catch(() => null)
+          .then((token) => {
+            // Only a signed-out reader says so: a signed-in user whose token failed is refused, not demoted.
+            cb(
+              token || isSignedInRef.current
+                ? { token: token ?? "" }
+                : { token: "", anonymous: true }
+            );
+          });
+      },
     });
 
+    const opened = socket.current;
     socket.current.on("connect", () => {
       retryCount.current = 0;
       setClientState((prev) => ({ ...prev, connected: true }));
-
-      if (optionsRef.current.accountId) {
-        socket.current?.emit("auth", { accountId: optionsRef.current.accountId });
-      }
-
       updatePresence("online");
       optionsRef.current.onConnect?.();
     });
@@ -169,9 +204,18 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       optionsRef.current.onConversationUpdate?.(data);
     });
 
+    // Realm board rooms: every event is validated against the shared schema before it reaches the caller.
+    for (const name of BOARD_EVENT_NAMES) {
+      socket.current.on(name, (data: object) => {
+        const parsed = boardLiveEventSchema.safeParse(data);
+        if (parsed.success) optionsRef.current.onBoardEvent?.(parsed.data);
+      });
+    }
+
     socket.current.on("disconnect", () => {
       setClientState((prev) => ({ ...prev, connected: false, authenticated: false }));
       optionsRef.current.onDisconnect?.();
+      retryIfStopped(opened);
     });
 
     socket.current.on("connect_error", (error) => {
@@ -180,8 +224,9 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
         error
       );
       optionsRef.current.onError?.(error);
+      retryIfStopped(opened);
     });
-  }, [updatePresence]);
+  }, [updatePresence, retryIfStopped]);
 
   const disconnect = useCallback(() => {
     if (isServer) return;
@@ -191,10 +236,13 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
     updatePresence("offline");
 
-    if (socket.current) {
-      socket.current.disconnect();
-      socket.current = null;
-    }
+    if (retryTimer.current) clearTimeout(retryTimer.current);
+    retryTimer.current = null;
+    retryCount.current = 0;
+
+    const closing = socket.current;
+    socket.current = null;
+    closing?.disconnect();
   }, [updatePresence]);
   const sendTypingIndicator = useCallback(
     (conversationId?: string, groupId?: string, isTyping = true) => {
@@ -268,6 +316,22 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     }
   }, []);
 
+  const subscribeToChannel = useCallback((channel: string) => {
+    if (isServer) return;
+    if (socket.current?.connected) socket.current.emit("subscribe", { channel });
+  }, []);
+
+  const unsubscribeFromChannel = useCallback((channel: string) => {
+    if (isServer) return;
+    if (socket.current?.connected) socket.current.emit("unsubscribe", { channel });
+  }, []);
+
+  /** The server resolves the display name from the verified session; the client names only a persona. */
+  const emitBoardTyping = useCallback((payload: { realmId: string; personaId: string | null }) => {
+    if (isServer) return;
+    if (socket.current?.connected) socket.current.emit("board:typing", payload);
+  }, []);
+
   const markMessageAsRead = useCallback(
     (messageId: string, conversationId?: string, groupId?: string) => {
       if (isServer) return;
@@ -289,14 +353,14 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
   useEffect(() => {
     if (isServer) return;
 
-    if (options.accountId) {
+    if (options.accountId || options.anonymous) {
       connect();
     }
 
     return () => {
       disconnect();
     };
-  }, [options.accountId, connect, disconnect]);
+  }, [options.accountId, options.anonymous, connect, disconnect]);
 
   // Handle visibility change for presence (only on client)
   useEffect(() => {
@@ -327,6 +391,9 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       subscribeToConversation: noOp,
       unsubscribeFromConversation: noOp,
       subscribeToGroup: noOp,
+      subscribeToChannel: noOp,
+      unsubscribeFromChannel: noOp,
+      emitBoardTyping: noOp,
       markMessageAsRead: noOp,
     };
   }
@@ -340,6 +407,9 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     subscribeToConversation,
     unsubscribeFromConversation,
     subscribeToGroup,
+    subscribeToChannel,
+    unsubscribeFromChannel,
+    emitBoardTyping,
     markMessageAsRead,
   };
 }

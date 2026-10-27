@@ -1,0 +1,7 @@
+<includeonly><div class="sister-link" data-sister-wiki="{{lc:{{{1|}}}}}" data-sister-title="{{urlencode:{{{2|}}}|PATH}}" data-sister-mode="{{#if:{{{card|}}}|card|{{#if:{{{infobox|}}}|infobox|{{#if:{{{section|}}}|section|page}}}}}}" data-sister-section="{{urlencode:{{{section|}}}|PATH}}">From {{#switch:{{lc:{{{1|}}}}}
+ |iiwiki=IIWiki: [https://iiwiki.com/wiki/{{urlencode:{{{2|}}}|WIKI}}{{#if:{{{section|}}}|#{{anchorencode:{{{section|}}}}}}} {{{2|}}}]
+ |althistory=AltHistory Wiki: [https://althistory.fandom.com/wiki/{{urlencode:{{{2|}}}|WIKI}}{{#if:{{{section|}}}|#{{anchorencode:{{{section|}}}}}}} {{{2|}}}]
+ |#default={{{1|}}}: {{{2|}}}
+}}</div></includeonly><noinclude>
+Usage: <code><nowiki>{{Sister|iiwiki|Title}}</nowiki></code>, optionally with <code>section=Heading</code>, <code>infobox=yes</code> or <code>card=yes</code>. Classic ixwiki.com shows this link box; WikiOS inside IxStates shows the live embed, read from that wiki.
+</noinclude>

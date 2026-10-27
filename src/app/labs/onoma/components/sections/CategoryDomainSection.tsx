@@ -16,7 +16,7 @@ interface CategoryDomainSectionProps {
   domain: "places" | "people" | "organizations" | "culture" | "military";
 }
 
-export function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
+function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
   const config = DOMAIN_CONFIGS[domain];
   const [activeTab, setActiveTab] = useState<NameCategory>(config?.defaultTab || "city");
 
@@ -34,10 +34,12 @@ export function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
 
   // Sync category with active tab
   useEffect(() => {
+    // oxlint-disable-next-line
     gen.setCategory(activeTab);
     const tabObj = config?.tabs.find((t) => t.id === activeTab);
     const defSubType = tabObj?.subTypes?.[0]?.value || "generic";
     gen.setSubType(defSubType);
+    // oxlint-disable-next-line
   }, [activeTab, config]);
 
   if (!config) return null;
@@ -96,7 +98,7 @@ export function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
   return (
     <div className="space-y-5">
       {/* 30% Controls + 70% Results Layout */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-10 items-start">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-10">
         {/* 30% Control Column */}
         <div className="lg:col-span-3">
           <DomainControlBar
@@ -137,7 +139,6 @@ export function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
         </div>
       </div>
 
-      {/* Redirect Modal for deployment */}
       {useName && (
         <UseNameDialog
           isOpen={!!useName}

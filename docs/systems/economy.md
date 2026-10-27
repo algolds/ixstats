@@ -1,28 +1,33 @@
-# Economy & Resources System
+# 🏛️ MyCountry Economy Domain & Fiscal Engine
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Subsystem of MyCountry (`MYCOUNTRY_VERSION = 5`), powered by the **MyCountry Simulation Engine** (`MYCOUNTRY_ENGINE_VERSION = 4`).
+**Last updated:** 2026-09-30
 
-The economy system models macroeconomic output, fiscal policy, sector performance, labor dynamics, trade flows, tax brackets, and long-range statistical projections.
+**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
+**Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
+**Primary Action:** `SIMULATE` | **Domain Accent:** Amber Gold (MyCountry; status colours only otherwise)  
+**Route:** `/mycountry/economy` (Economy Domain) | **Status:** 🟡 Partial: see [SYSTEM_STATUS.md](SYSTEM_STATUS.md); economy decisions largely do not reach the headline stats  
+
+The Economy system models macroeconomic output, fiscal policy built from 42 atomic tax components, sector performance, labor dynamics, trade flows, and long-range statistical projections.
 
 ---
 
 ## Architecture & Surface Integration
 
 ### UI Surfaces
-- `src/components/mycountry/DomainSurface.tsx` (Economy Domain) – Macroeconomic overview, sector distribution, fiscal surplus/deficit, and trade balances
-- `src/components/mycountry/DrillSheets.tsx` – Slide-over economic policy sheet and tax structure editor
-- `src/components/economy/` – Macro indicators, GDP trend charts, sector composition donuts, growth projections
-- `src/components/modals/metric-details/` – BaseMetricDetailsModal system for GDP, Labor, Debt, Government Spending deep dives
-- `src/components/analytics/TrendRiskAnalytics.tsx` – Multi-indicator risk analysis visualizations
+- `src/components/mycountry/shell/DomainSurface.tsx` → `EconomyDrillDown.tsx` (Economy Domain) – Budget management dashboard, infrastructure maintenance, fiscal and trade consoles
+- `src/components/mycountry/shell/DrillSheets.tsx` – Slide-over economy sheet (same `EconomyDrillDown`)
+- `src/components/mycountry/shell/FiscalPolicyConsole.tsx` + `fiscal/` – Tax rates, revenue projections, fiscal insights
+- `src/components/mycountry/shell/TradeCommerceConsole.tsx` + `trade-commerce/` – Tariffs, trade partners, trade impact
+- `src/components/mycountry/domains/economy/` – Atomic economic component library and metric modals
+- `src/components/mycountry/shared/modals/metric-details/` – `BaseMetricDetailsModal` system for GDP, Population, Labor, Debt, Demographics, Government Spending deep dives
+- `src/app/countries/[slug]/modeling/` – Public what-if modeling engine (`EconomicModelingEngine`)
 
 ### Backend Routers
-- `src/server/api/routers/economics/` (`index.ts`, `indicators.ts`, `projections.ts`, `history.ts`) – Country indicators, forecast series, and historical growth points
-- `src/server/api/routers/atomicEconomic.ts` – Economic policy component catalog and impact modifiers
-- `src/server/api/routers/economicComponents/` – Component CRUD and synergy matching
-- `src/server/api/routers/economicArchetypes/` – 12+ macro templates (Free Market, Nordic, Developmental State, etc.)
-- `src/server/api/routers/taxSystem/` & `src/server/api/routers/atomicTax.ts` – 42 tax components, bracket calculations, and revenue models
+- `src/server/api/routers/economics/` (`builder.ts`, `config.ts`, `fiscal.ts`, `profile.ts`) – Economy builder state, economy configuration, fiscal system and economic profile updates
+- `src/server/api/routers/historical/` – Historical growth points (`HistoricalDataPoint`)
+- `src/server/api/routers/economicComponents/` – Admin component CRUD and synergy records
+- `src/server/api/routers/economicArchetypes/` – Archetype CRUD/usage; 20 built-in presets (10 modern + 10 historical) live in `src/lib/economy/archetypes/`
+- `src/server/api/routers/taxSystem/` – Tax system records, bracket calculations, and revenue analysis; the 42 atomic tax components are defined in `src/lib/government/tax/atomic-tax-components.ts`
 - `src/server/api/routers/formulas.ts` – Calculation utility endpoints
 - `src/server/api/routers/resources.ts` & `src/server/api/routers/transport.ts` – Resource endowments and transport infrastructure
 
@@ -30,13 +35,13 @@ The economy system models macroeconomic output, fiscal policy, sector performanc
 
 ## Data Models
 
-Defined across `prisma/schema/economy.prisma`:
-- `EconomicIndicator`: Current snapshot of GDP, GDP per capita, growth rate, inflation, unemployment, Gini coefficient
-- `EconomicHistory`: Immutable time-series data points recording macroeconomic progress
-- `EconomicProjection`: 5–10 year forecasts factoring active policies, synergies, and trade network multipliers
-- `TaxPolicy`: Configured progressive income, corporate, consumption, and wealth tax structures
-- `LaborMetric`: Workforce participation, sector breakdowns, minimum wage, and unionization rates
-- `TradeBalance`: Import/export flows, tariffs, and bilateral trade agreements
+Defined across `prisma/schema/economy.prisma` (selection):
+- `EconomicProfile`, `LaborMarket`, `FiscalSystem`, `IncomeDistribution`, `GovernmentBudget`, `Demographics`: Per-country economy configuration
+- `HistoricalDataPoint`: Time-series records for trend charts
+- `EconomicModel`: Modeling scenarios and projections
+- `TaxSystem`, `TaxCategory`, `TaxBracket`, `TaxExemption`, `TaxDeduction`: Tax structure
+- `EconomicComponent`, `TaxComponent`, `EconomicArchetype`: Atomic components and presets
+- Trade: `BilateralTrade` (in `prisma/schema/diplomacy.prisma`)
 
 ---
 
@@ -45,17 +50,20 @@ Defined across `prisma/schema/economy.prisma`:
 ```mermaid
 graph LR
     A[Baseline Indicators] --> B[Atomic Economic Components]
+    B --> G[IxStatsCalculator projection on read]
+    A --> G
+    S[Storyteller Effects] --> G
     B --> C[Tax System & Revenue]
     C --> D[Budget Allocation]
-    D --> E[Passive Income Dividend]
-    E --> F[Storyteller Effects & Growth Tick]
-    F --> A
 ```
 
+There is no growth tick and no loop back into the baseline. Headline population and GDP are a projection computed on read by `IxStatsCalculator` (`src/lib/economy/calculations.ts`, `countries/economy.ts`) from the baseline, `baselineDate`, the adjusted growth inputs and `StorytellerEffect` rows. The `stat-progression` cron job (`src/server/cron/stat-progression.ts`, every 6 h at :23, off unless listed in `CRON_ENABLED_JOBS`; schedule override `cronSchedule_statProgression`) persists that same projection into the stored `current*` columns (population, GDP per capita, total GDP, tiers, densities, `lastCalculated`) for every country, so rankings and vitality read the numbers MyCountry shows. It walks countries in id-cursor batches of 50, skips a country whose stored stats already match (relative tolerance 1e-6, same tiers), never writes a `baseline*` column, and writes one `HistoricalDataPoint` per country per IxTime month (skipped when the month already has one, so reruns are idempotent). The admin `forceRecalculation` (`admin/system.ts`) runs the same job with every country written, under the same `stat-progression` job lock. The projection itself is shared through `projectCountryStats` / `projectedStatsUpdate` in `src/server/shared/country-helpers.ts`. `countries.getByIdWithEconomicData` still synthesises its 5-year history when fewer than 5 points exist; that stops once the job has written 5 months of points. Tax rates (`economics.updateFiscalSystem`), budget allocation and the fiscal calculators do not feed GDP growth. The tax to budget chain above is a separate reporting path; it no longer feeds IxCredits.
+
 1. **Growth Computation**: Evaluates tier-based growth caps, diminishing returns ($>\$60\text{k}$), active policy multipliers, and embassy trade bonuses.
-2. **Fiscal Balancing**: Computes total revenue against department budgets, calculating national surplus/deficit and debt-to-GDP accumulation.
-3. **Vault Integration**: Economic health and budget weights feed directly into the daily dividend calculation (`vaultService.earnCredits`), rewarding sound economic management.
-4. **Legibility & Auditing**: Any stat adjustment is logged to the persistent `CountryChangeLogTimeline`, making all growth auditable.
+2. **Fiscal Balancing** (reference calculation): Computes total revenue against department budgets, calculating national surplus/deficit and debt-to-GDP accumulation.
+3. **No Vault integration**: the economy no longer feeds IxCredits. The country dividend (the passive-income cron, `BudgetVaultCalculator` and the budget multiplier) was removed on 2026-10-14; the Vault dividend is paid from platform activity and card holdings, see [ixcredits.md](./ixcredits.md#1-the-vault-dividend-earn_passive--no-daily-cap).
+4. **Decisions → GDP**: Growth directives (`intent.commit`) add a `gdp_level_adjustment` effect worth the growth their modifier would add at a 3% reference rate over 1 IxTime year (`growthModifierToLevelShift`). National-issue consequences on GDP, GDP per capita, population and GDP growth (`actualGdpGrowth`) become `gdp_level_adjustment` / `population_level_adjustment` effects (`src/lib/national-issues/projection-effects.ts`); see [calculations](./calculations.md#level-effects).
+5. **Legibility & Auditing**: Stat adjustments routed through `CountryEventSpine` are logged to `CountryChangeLog` and surfaced in the MyCountry canon feed (`mycountry.getCanonFeed`).
 
 ---
 
@@ -65,4 +73,4 @@ graph LR
 - [IxCredits Economy & Earning Architecture](./ixcredits.md)
 - [Builder System](./builder.md)
 - [MyCountry Command Suite](./mycountry.md)
-- [API Reference: Economics Routers](../reference/api-complete.md#economics-router)
+- [API Reference: Economics Routers](../reference/api-complete.md#government--economics)

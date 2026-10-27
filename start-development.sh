@@ -74,15 +74,15 @@ try {
     const deps = { ...pkg.dependencies, ...pkg.devDependencies };
     const cleanVer = (v, fb) => (v || fb || "").replace(/^[\^~]/, "");
 
-    let platform = "v1.4.0 \"Ogma\" (Release Candidate)";
+    let platform = "v1.4.0 \\\"Lobster Crosby\\\" (Release Candidate)";
     if (fs.existsSync("./src/lib/buildVersion.ts")) {
         const bv = fs.readFileSync("./src/lib/buildVersion.ts", "utf8");
         const major = bv.match(/major:\s*(\d+)/)?.[1] || "1";
         const minor = bv.match(/minor:\s*(\d+)/)?.[1] || "4";
         const patch = bv.match(/patch:\s*(\d+)/)?.[1] || "0";
-        const release = bv.match(/release:\s*"([^"]+)"/)?.[1] || "Ogma";
+        const release = bv.match(/release:\s*"([^"]+)"/)?.[1] || "Lobster Crosby";
         const channel = bv.match(/channel:\s*"([^"]+)"/)?.[1] || "Release Candidate";
-        platform = `v${major}.${minor}.${patch} "${release}" (${channel})`;
+        platform = `v${major}.${minor}.${patch} \\"${release}\\" (${channel})`;
     }
 
     console.log(`NEXT_VER="${cleanVer(deps["next"], "16.3.0")}"`);
@@ -101,9 +101,9 @@ try {
     console.log("TRPC_VER=\"11.18.0\"");
     console.log("C15T_VER=\"2.2.0\"");
     console.log("TS_VER=\"7.0.0\"");
-    console.log("PLATFORM_INFO=\"v1.4.0 \\\"Ogma\\\" (Release Candidate)\"");
+    console.log("PLATFORM_INFO=\"v1.4.0 \\\"Lobster Crosby\\\" (Release Candidate)\"");
 }
-' 2>/dev/null || echo 'NEXT_VER="16.3.0" REACT_VER="19.2.8" TS_VER="7.0.0" PLATFORM_INFO="v1.4.0 \"Ogma\""')"
+' 2>/dev/null || echo 'NEXT_VER="16.3.0" REACT_VER="19.2.8" TS_VER="7.0.0" PLATFORM_INFO="v1.4.0 \"Lobster Crosby\""')"
 
 BUN_VER=$(bun --version 2>/dev/null || echo "1.4.0")
 GIT_BRANCH=$(git branch --show-current 2>/dev/null || echo "development")
@@ -197,6 +197,10 @@ if [ -d "public/images/uploads_backup" ]; then
     cp -n public/images/uploads_backup/* public/images/uploads/ 2>/dev/null || true
 fi
 
+# MapLibre's web worker is served from public/maplibre/ (gitignored). Without it every map
+# stalls on "Worker failed to load", so make sure it is there even if postinstall was skipped.
+node scripts/setup/copy-maplibre-worker.mjs || true
+
 # ------------------------------------------------------------------------------
 # 7. Smart Prisma Schema Synchronization
 # ------------------------------------------------------------------------------
@@ -221,12 +225,24 @@ if [ "${DATABASE_READONLY:-}" != "true" ] && [ "${SKIP_DB_PUSH:-}" != "1" ] && [
 
     if [ "$NEWEST_SCHEMA_TS" -gt "$STAMP_TS" ]; then
         echo -e "${CYAN}🔄 Schema modification detected.${RESET} Syncing database schema..."
-        if bun run db:push:force; then
+        # The Atlas Studio SQL drops the dead procedural_worlds table, which db push refuses to do when it has rows
+        # (idempotent; see scripts/deploy-production.sh)
+        # The cards refresh SQL (Phases 1-4 and card categories, with Phase 1's backfill) and the IxnayID claims SQL
+        # (with the IxWiki link conversion) run before the push in the deploy's order: the cards SQL converts columns in
+        # place that db push would drop and re-add. The MyCountry and realm-time data SQL follow in their runbooks'
+        # order (docs/operations/deploy-{mycountry,realm-time}-2026-10.md): realm-time drops tables and retypes
+        # military columns that db push would refuse to. Nations get a starter force on their first defense read
+        # (the production reset script is not run here). Every step is a no-op once applied. First, as in the deploy:
+        # the additive schema changes the SQL reads, the Realms drop of world_configs, and the forum migrations.
+        if bun scripts/deployment/apply-additive-schema.ts --apply && bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realms/drop-world-configs.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261008120000_thinkpages_forum/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261009120000_thinkpages_forum_realms/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261010030000_uploaded_assets/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261010120000_thinkpages_forum_moderation/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261011120000_thinkpages_forum_import/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261012120000_thinkpages_forum_followups/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261013120000_thinkpages_forum_foundation/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261014120000_thinkpages_realm_board/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261015120000_thinkpages_forum_engagement/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261016120000_thinkpages_forum_reactions/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261017120000_action_link_rewards/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261018120000_thinkpages_realm_adverts/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261023120000_atlas_studio/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261024120000_vault_hub/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120000_drop_forum_readers/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120000_cards_foundations/migration.sql && bun scripts/cards/backfill-cards-refresh.ts --apply && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120001_cards_foundations_constraints/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261028120000_cards_admin/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261031120000_cards_face_hub/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261101120000_cards_economy/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261102120000_cards_categories/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261103120000_ixnayid_claims/migration.sql && bun scripts/identity/convert-wiki-name-claims.ts --apply && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261103120001_ixnayid_drop_legacy/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261104120000_country_lore/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261105120000_wikios_conflicts/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261105120001_wikios_sync_dead_letters/migration.sql && bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/h-meeting-intent-columns.sql && bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/a1-storyteller-effects.sql && bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/a2-units-and-scales.sql && bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/de-relation-bands.sql && bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/f-defense.sql && bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/r1-coercive-fp-effects.sql && bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/t1-realm-clocks.sql && bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/t3-platform-real-time.sql && bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/t3b-sports-intervals.sql && bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/d2a-defense-model.sql && bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/d3-combat.sql && bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/d1-drop-legacy-security.sql && bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/r3-catalog-duplicates.sql && bun run db:push:force; then
             touch "$STAMP_FILE"
             echo -e "   ${EMERALD}✓ Schema synchronized successfully${RESET}"
         fi
     fi
 fi
+
+# Background WikiOS Database Integrity Guard
+bun run scripts/setup/check-wikios-db.ts > /dev/null 2>&1 &
 
 # ------------------------------------------------------------------------------
 # 8. Executive Environment Dashboard

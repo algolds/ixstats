@@ -1,0 +1,468 @@
+/**
+ * ThinkPages Forum (docs/superpowers/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md, phases 1-4).
+ * Thin: validates, maps the signed-in user to the module's viewer (with what they moderate), calls
+ * ~/server/modules/thinkpages-forum, maps ForumError 1:1 to TRPCError. Author display data goes through authorsOf,
+ * so no raw user row leaves here. Named `thinkpagesForum` because `api.forum` was the XenForo bridge (retired in
+ * phase 4b).
+ * Moderator actions live in `thinkpagesForumMod` (./mod.ts).
+ */
+import { z } from "zod";
+import { isAdvertCategory } from "~/lib/thinkpages-forum/adverts";
+import { postNumberOf } from "~/lib/thinkpages-forum/numbers";
+import { THREAD_SORTS } from "~/lib/thinkpages-forum/thread-sort";
+import { MAX_POST_WIKITEXT } from "~/lib/thinkpages-forum/wikitext-guards";
+import {
+  createTRPCRouter,
+  mergeRouters,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
+import {
+  advertRowOf,
+  advertViewOf,
+  authorModeration,
+  afterEdit,
+  afterReply,
+  afterThreadStarted,
+  boardTopPosters,
+  canStartThread,
+  createThread,
+  editPost,
+  fileAppeal,
+  fileReport,
+  firstPostIdOf,
+  forumNavFlags,
+  getCategoryThreads,
+  getRealmSection,
+  getThreadPosts,
+  isThreadStashed,
+  isWatching,
+  latestActivity,
+  listBoards,
+  listForumRealms,
+  loadCategory,
+  markUnreadThreads,
+  MAX_POST_HTML,
+  moveDestinations,
+  myStanding,
+  postingAccessFor,
+  primaryRealmIdOf,
+  renderPostWikitext,
+  replyToThread,
+  resolvePostLocation,
+  roleContextOf,
+  roleOf,
+  stashThread,
+  TITLE_MAX,
+  threadLastPosters,
+  threadParticipants,
+  threadReactable,
+  TITLE_MIN,
+  trendingThreads,
+  unstashThread,
+  withReactions,
+  withUnreadCounts,
+  type AuthorModerationDb,
+  type ContentDb,
+  type ForumViewer,
+} from "~/server/modules/thinkpages-forum";
+import { PERSONAL_ACCOUNT_TYPE } from "~/server/shared/thinkpages-personal-account";
+import { thinkpagesForumAdvertsRouter } from "./adverts";
+import { thinkpagesForumBoardRouter } from "./board";
+import { thinkpagesForumEngagementRouter } from "./engagement";
+import { thinkpagesForumIntegrationsRouter } from "./integrations";
+import { thinkpagesForumReactionsRouter } from "./reactions";
+import {
+  actorOf,
+  authorMaps,
+  categoryKey,
+  hookFailed,
+  id,
+  mapError,
+  maskPersona,
+  memberOf,
+  page,
+  realm,
+  stashOwnerOf,
+  viewerOf,
+} from "./viewer";
+
+const html = z.string().max(MAX_POST_HTML).optional();
+const wikitext = z.string().max(MAX_POST_WIKITEXT).optional();
+/** A post is sent as light-editor html or as Canvas wikitext, never both and never neither. */
+const oneBody = (v: { html?: string; wikitext?: string }) =>
+  (v.html === undefined) !== (v.wikitext === undefined);
+const ONE_BODY = "Send html or wikitext";
+const personaId = id.nullish();
+const stashTarget = z.object({ threadId: id, stashId: id.optional() });
+
+/** The thread read without the realm rows it joined: they carry the founder's Clerk id and never leave the router. */
+type ThreadPage = Omit<Awaited<ReturnType<typeof getThreadPosts>>, "forumRealm" | "advertRealm">;
+
+/**
+ * A moderator's extras on a thread: Move destinations, and what they may do to each author's posts (I-1, M-8), so
+ * the UI offers only what the server allows.
+ */
+async function moderatorView(
+  db: AuthorModerationDb & Pick<ContentDb, "forumCategory">,
+  viewer: ForumViewer,
+  result: ThreadPage
+) {
+  const [destinations, moderation] = await Promise.all([
+    moveDestinations(db, viewer, result.category),
+    authorModeration(db, viewer, [
+      result.thread.authorUserId,
+      ...result.posts.map((p) => p.authorUserId),
+    ]),
+  ]);
+  return {
+    tools: { categories: destinations.map((c) => ({ ...c, realm: result.category.realm })) },
+    of: (authorUserId: string | null) => moderation(authorUserId, result.category),
+  };
+}
+
+const forumRouter = createTRPCRouter({
+  /** The Forums home: visible sitewide boards with counts, style and latest post. */
+  categories: publicProcedure.query(async ({ ctx }) => {
+    const viewer = await viewerOf(ctx.db, ctx.user);
+    return withUnreadCounts(ctx.db, viewer, await listBoards(ctx.db, viewer));
+  }),
+
+  /** New across ThinkPages: the newest posts across the boards the viewer may see, with their authors' display data. */
+  latestActivity: publicProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(10).default(6) }).optional())
+    .query(async ({ ctx, input }) =>
+      latestActivity(ctx.db, await viewerOf(ctx.db, ctx.user), input?.limit ?? 6)
+    ),
+
+  /** Trending: the most active threads of the last 24 hours that the viewer may see. */
+  trending: publicProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(10).default(5) }).optional())
+    .query(async ({ ctx, input }) =>
+      trendingThreads(ctx.db, await viewerOf(ctx.db, ctx.user), input?.limit ?? 5)
+    ),
+
+  /** Rail: a board's most active authors this month, with their display data. */
+  boardTopPosters: publicProcedure
+    .input(z.object({ key: categoryKey, realm: realm.optional() }))
+    .query(async ({ ctx, input }) => {
+      const viewer = await viewerOf(ctx.db, ctx.user);
+      const { category } = await loadCategory(ctx.db, viewer, input).catch(mapError);
+      const posters = await boardTopPosters(ctx.db, viewer, category);
+      return {
+        posters,
+        authors: await authorMaps(
+          ctx.db,
+          posters.map((p) => ({ authorUserId: p.authorUserId, authorPersonaId: null }))
+        ),
+      };
+    }),
+
+  /** The sidebar's gated sections: "Your realm" for a realm member, "Moderation" for site staff and moderators. */
+  navFlags: publicProcedure.query(async ({ ctx }) =>
+    forumNavFlags(ctx.db, await viewerOf(ctx.db, ctx.user))
+  ),
+
+  /** The realm switcher: realms the viewer may pick, defaulting to their primary nation's realm. */
+  realms: publicProcedure.query(async ({ ctx }) => {
+    const viewer = await viewerOf(ctx.db, ctx.user);
+    const activeRealmId = await primaryRealmIdOf(ctx.db, viewer);
+    return listForumRealms(ctx.db, viewer && { ...viewer, activeRealmId });
+  }),
+
+  /** May write: a realm without categories gets them seeded on first read. */
+  realmSection: publicProcedure.input(z.object({ realm })).query(async ({ ctx, input }) => {
+    const viewer = await viewerOf(ctx.db, ctx.user);
+    const section = await getRealmSection(ctx.db, viewer, input.realm).catch(mapError);
+    // Only the verdict leaves: never the viewer's nation ids or the raw ban (T0-18: a flag for BanNotice).
+    const { canPost, notice, ban, needsNation } = section.access;
+    return {
+      realm: section.realm,
+      categories: await withUnreadCounts(ctx.db, viewer, section.categories),
+      canPost,
+      notice,
+      banned: ban !== null,
+      needsNation,
+    };
+  }),
+
+  category: publicProcedure
+    .input(
+      z.object({
+        key: categoryKey,
+        page,
+        realm: realm.optional(),
+        sort: z.enum(THREAD_SORTS).default("latest"),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const viewer = await viewerOf(ctx.db, ctx.user);
+      const { forumRealm, ...result } = await getCategoryThreads(
+        ctx.db,
+        viewer,
+        { key: input.key, realm: input.realm },
+        input.page,
+        input.sort
+      ).catch(mapError);
+      const access = await postingAccessFor(ctx.db, viewer, result.category, forumRealm);
+      const lastPosters = await threadLastPosters(
+        ctx.db,
+        viewer,
+        result.category,
+        result.threads.map((t) => t.id)
+      );
+      const listed = await markUnreadThreads(ctx.db, viewer, result.threads);
+      return {
+        ...result,
+        // Moderators of the category get the Hidden badge; members never receive hidden threads (M-4). Each thread
+        // carries its last visible post's author (a persona never with the player's id).
+        threads: listed.map(({ hidden, advertRealm, ...thread }) =>
+          maskPersona(
+            {
+              ...thread,
+              ...(result.canModerate ? { hidden } : {}),
+              advert: advertRowOf(advertRealm),
+              lastPoster: lastPosters.get(thread.id) ?? null,
+            },
+            result.canModerate
+          )
+        ),
+        // Find a Realm takes adverts only (writes.ts); its "Advertise your realm" action is the board page's own.
+        canStart:
+          canStartThread(viewer, result.category) &&
+          access.canPost &&
+          !isAdvertCategory(result.category),
+        notice: access.notice,
+        banned: access.ban !== null,
+        authors: await authorMaps(ctx.db, [
+          ...result.threads,
+          ...result.threads.flatMap((t) => lastPosters.get(t.id) ?? []),
+        ]),
+      };
+    }),
+
+  thread: publicProcedure.input(z.object({ threadId: id, page })).query(async ({ ctx, input }) => {
+    const viewer = await viewerOf(ctx.db, ctx.user);
+    const { forumRealm, advertRealm, ...result } = await getThreadPosts(
+      ctx.db,
+      viewer,
+      input.threadId,
+      input.page
+    ).catch(mapError);
+    // The single posting-access entry (T0-2): reply, Edit, the notice and the ban flag all come from it, with the
+    // realm the read already loaded (N1).
+    const access = await postingAccessFor(ctx.db, viewer, result.category, forumRealm);
+    const moderator = result.canModerate ? await moderatorView(ctx.db, viewer, result) : null;
+    // An advert: the realm, whether the viewer manages it, whether they may lock it, and whether its realm is archived
+    // (closed to writes).
+    const advert = advertRealm
+      ? await advertViewOf(ctx.db, viewer, advertRealm, {
+          banned: access.ban !== null,
+          hidden: result.thread.hidden,
+        })
+      : null;
+    const closed = advert?.closed === true;
+    // The advert's first post is the thread's first, hidden or not (the notion `canEditPost` uses), not page 1's first row.
+    const advertFirst = advert ? await firstPostIdOf(ctx.db, input.threadId) : null;
+    // Hidden content stays readable to moderators but refuses writes (writes.ts), so it offers neither reply nor Edit.
+    const writable =
+      viewer !== null &&
+      !result.thread.locked &&
+      !result.thread.archived &&
+      !result.thread.hidden &&
+      !closed;
+    const canReply = writable && access.canPost;
+    // Sitewide the author edits unless banned (T0-17); in a realm section only while they may post there (D13).
+    const editable =
+      writable && (result.category.scope !== "realm" ? access.ban === null : canReply);
+    // The reactions depend only on the viewer and the page's posts, so they load alongside the roles and participants.
+    const [reacted, roles, { top: participants, total: participantCount }] = await Promise.all([
+      withReactions(ctx.db, viewer, result.posts),
+      roleContextOf(ctx.db, result.thread, result.category, result.posts),
+      threadParticipants(ctx.db, viewer, result.category, input.threadId),
+    ]);
+    return {
+      ...result,
+      // An archived realm's advert reads as locked (the row itself is untouched, so unarchiving reopens it).
+      thread: maskPersona(
+        { ...result.thread, locked: result.thread.locked || closed },
+        result.canModerate
+      ),
+      // Moderators of the category get the Hidden badge and what they may do to each post; members never receive
+      // hidden posts (T0-19). `byViewer` is authorship (no Report on your own post); `isOwn` is "may edit it now".
+      // An imported post without an IxStats author (null, phase 4) is never the viewer's. A Canvas post's wikitext
+      // (what its editor opens) goes only to the author who may edit it now, never to another reader or a moderator.
+      posts: reacted.map(({ hidden, contentWikitext, ...post }, index) => {
+        const byViewer = viewer !== null && post.authorUserId === viewer.id;
+        // An advert's first post is edited by whoever manages the advert, not by its author as such (writes.ts).
+        const mayEdit = advert && post.id === advertFirst ? advert.canManage : byViewer;
+        const isOwn = mayEdit && editable && !hidden;
+        return maskPersona(
+          {
+            ...post,
+            number: postNumberOf(input.page, index),
+            role: roleOf(post, roles),
+            ...(moderator ? { hidden, ...moderator.of(post.authorUserId) } : {}),
+            ...(isOwn && contentWikitext !== null ? { contentWikitext } : {}),
+            byViewer,
+            isOwn,
+          },
+          result.canModerate
+        );
+      }),
+      viewerIsAuthor: viewer !== null && result.thread.authorUserId === viewer.id,
+      watching: viewer ? await isWatching(ctx.db, viewer.id, input.threadId) : false,
+      canReply,
+      canReact: threadReactable(viewer, result.thread, access.ban !== null, forumRealm, closed),
+      advert,
+      notice: access.notice,
+      banned: access.ban !== null,
+      // The thread bar's actions (lock, pin, hide, archive, move): a site admin's thread is site admins' only.
+      ...(moderator
+        ? {
+            moderatorTools: moderator.tools,
+            moderable: moderator.of(result.thread.authorUserId).moderable,
+          }
+        : {}),
+      style: result.category.style,
+      participants,
+      /** Distinct authors of the thread; `participants` is only the top few. */
+      participantCount,
+      authors: await authorMaps(ctx.db, [result.thread, ...result.posts, ...participants]),
+    };
+  }),
+
+  resolvePost: publicProcedure
+    .input(z.object({ postId: id }))
+    .query(async ({ ctx, input }) =>
+      resolvePostLocation(ctx.db, await viewerOf(ctx.db, ctx.user), input.postId)
+    ),
+
+  myPersonas: protectedProcedure.query(({ ctx }) =>
+    ctx.db.thinkpagesAccount.findMany({
+      where: {
+        clerkUserId: ctx.user.clerkUserId,
+        isActive: true,
+        accountType: { not: PERSONAL_ACCOUNT_TYPE },
+      },
+      orderBy: { displayName: "asc" },
+      select: { id: true, displayName: true, username: true },
+    })
+  ),
+
+  /** The member's own warnings, bans and appeals (M20); never who issued or reviewed them. */
+  myStanding: protectedProcedure.query(({ ctx }) => myStanding(ctx.db, memberOf(ctx.user))),
+
+  /** Stashes a thread the caller may read (NOT_FOUND otherwise) in their default or a given stash. */
+  stashThread: rateLimitedMutationProcedure
+    .input(stashTarget)
+    .mutation(async ({ ctx, input }) =>
+      stashThread(ctx.db, await viewerOf(ctx.db, ctx.user), stashOwnerOf(ctx), input).catch(
+        mapError
+      )
+    ),
+
+  /** Removes the thread from one stash, or from all the caller's stashes. */
+  unstashThread: rateLimitedMutationProcedure
+    .input(stashTarget)
+    .mutation(({ ctx, input }) => unstashThread(ctx.db, stashOwnerOf(ctx), input).catch(mapError)),
+
+  isThreadStashed: protectedProcedure
+    .input(z.object({ threadId: id }))
+    .query(({ ctx, input }) => isThreadStashed(ctx.db, stashOwnerOf(ctx), input)),
+
+  createThread: rateLimitedMutationProcedure
+    .input(
+      z
+        .object({
+          categoryKey,
+          realm: realm.optional(),
+          title: z.string().trim().min(TITLE_MIN).max(TITLE_MAX),
+          html,
+          wikitext,
+          personaId,
+        })
+        .refine(oneBody, ONE_BODY)
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actor = await actorOf(ctx.db, ctx.user);
+      const created = await createThread(ctx.db, actor, input).catch(mapError);
+      void afterThreadStarted(ctx.db, actor, created).catch(hookFailed);
+      return created;
+    }),
+
+  reply: rateLimitedMutationProcedure
+    .input(z.object({ threadId: id, html, wikitext, personaId }).refine(oneBody, ONE_BODY))
+    .mutation(async ({ ctx, input }) => {
+      const actor = await actorOf(ctx.db, ctx.user);
+      const replied = await replyToThread(ctx.db, actor, input).catch(mapError);
+      void afterReply(ctx.db, actor, { threadId: input.threadId, postId: replied.postId }).catch(
+        hookFailed
+      );
+      return replied;
+    }),
+
+  /** `editedAt` is the post's value when the author loaded it (M1: CONFLICT if a moderator edited since). */
+  editPost: rateLimitedMutationProcedure
+    .input(
+      z
+        .object({ postId: id, html, wikitext, editedAt: z.date().nullable() })
+        .refine(oneBody, ONE_BODY)
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actor = await actorOf(ctx.db, ctx.user);
+      const edited = await editPost(ctx.db, actor, input).catch(mapError);
+      void afterEdit(ctx.db, actor, input.postId).catch(hookFailed);
+      return edited;
+    }),
+
+  /** Canvas preview: the same render as a save, without writing. `pending` when the wiki was unavailable. */
+  previewPost: rateLimitedMutationProcedure
+    .input(z.object({ wikitext: z.string().max(MAX_POST_WIKITEXT), threadId: id.optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const out = await renderPostWikitext(
+        input.wikitext,
+        input.threadId ?? "preview",
+        memberOf(ctx.user).id
+      ).catch(mapError);
+      return { html: out.contentHtml, pending: out.renderedAt === null };
+    }),
+
+  /** M11: returns only the report's id; the reporter is never shown to the reported member. */
+  report: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        targetType: z.enum(["thread", "post"]),
+        targetId: id,
+        reason: z.string().trim().min(3).max(1000),
+      })
+    )
+    .mutation(async ({ ctx, input }) =>
+      fileReport(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
+    ),
+
+  /** M12: one appeal per active warning or ban of the member's own. */
+  appeal: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        subjectType: z.enum(["warning", "ban"]),
+        subjectId: id,
+        body: z.string().trim().min(10).max(4000),
+      })
+    )
+    .mutation(({ ctx, input }) => fileAppeal(ctx.db, memberOf(ctx.user), input).catch(mapError)),
+});
+
+/**
+ * The forum procedures plus the realm board's (./board.ts), the engagement procedures (./engagement.ts), the
+ * reactions (./reactions.ts), the Find a Realm adverts (./adverts.ts) and the board previews (./integrations.ts).
+ */
+export const thinkpagesForumRouter = mergeRouters(
+  forumRouter,
+  thinkpagesForumBoardRouter,
+  thinkpagesForumEngagementRouter,
+  thinkpagesForumReactionsRouter,
+  thinkpagesForumAdvertsRouter,
+  thinkpagesForumIntegrationsRouter
+);

@@ -1,15 +1,16 @@
 "use client";
-
-/**
- * SmartPlacement — Contextual suggestions when placing a city or POI.
- *
- * Based on terrain info at the clicked point, suggests:
- * - City type (port for coast, trade city for river valley, etc)
- * - Relevant characteristics based on elevation/climate
- * - Nearby wiki-mentioned places not yet on the map
- */
-
-import { Lightbulb, Anchor, Mountain, TreePine, Waves, Landmark } from "lucide-react";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Button } from "~/components/ui/button";
+import {
+  SeaWaves as Anchor,
+  ModernTv as Mountain,
+  Tree as TreePine,
+  SeaWaves as Waves,
+  Bank as Landmark,
+  Shield,
+  Droplet as Droplets,
+} from "iconoir-react";
+import { Card } from "~/components/ui/card";
 
 interface SmartPlacementProps {
   /** Terrain at the clicked point */
@@ -19,17 +20,58 @@ interface SmartPlacementProps {
   } | null;
   /** Current pending coordinates */
   coordinates?: [number, number] | null;
-  /** Whether the point is near coast */
-  isCoastal?: boolean;
   /** Feature type being placed */
   featureType: "city" | "poi";
+  /** Optional callback to apply suggested type/name directly to form */
+  onApplySuggestion?: (suggestedType: string, suggestedName?: string) => void;
 }
 
 interface Suggestion {
   icon: typeof Anchor;
+  title: string;
   text: string;
   suggestedType?: string;
+  suggestedName?: string;
   color: string;
+  siteImpact?: string;
+}
+
+const has = (text: string, ...words: string[]) => {
+  const lower = text.toLowerCase();
+  return words.some((w) => lower.includes(w));
+};
+
+const clampScore = (score: number) => Math.min(100, Math.max(5, score));
+
+function computeSiteMetrics(elev: string, climate: string) {
+  let agriScore = 50;
+  let tradeScore = 40;
+  let defenseScore = 40;
+  let waterScore = 60;
+
+  if (has(elev, "mountain", "highland")) {
+    defenseScore += 45;
+    agriScore -= 25;
+    tradeScore -= 15;
+  } else if (has(elev, "lowland", "valley")) {
+    agriScore += 35;
+    tradeScore += 20;
+    waterScore += 25;
+  }
+
+  if (has(climate, "tropical", "temperate")) {
+    agriScore += 20;
+  } else if (has(climate, "arid", "desert")) {
+    agriScore -= 35;
+    waterScore -= 40;
+  }
+
+  return {
+    agriScore: clampScore(agriScore),
+    tradeScore: clampScore(tradeScore),
+    defenseScore: clampScore(defenseScore),
+    waterScore: clampScore(waterScore),
+  };
 }
 
 function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
@@ -37,81 +79,132 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
   const elev = props.terrainInfo?.elevation?.zoneName ?? "";
   const climate = props.terrainInfo?.climate?.climateName ?? "";
 
-  // Coastal suggestions
-  if (props.isCoastal) {
-    suggestions.push({
-      icon: Anchor,
-      text: "Coastal location — ideal for a port city or naval base",
-      suggestedType: "port",
-      color: "text-blue-500",
-    });
-  }
-
-  // Elevation-based
-  if (elev.toLowerCase().includes("highland") || elev.toLowerCase().includes("mountain")) {
+  if (has(elev, "highland", "mountain")) {
     suggestions.push({
       icon: Mountain,
-      text: "Mountain terrain — consider a fortress, mining town, or monastery",
+      title: "Highland Bastion",
+      text: "Rugged elevation and natural chokepoints offer strategic defensive control.",
       suggestedType: props.featureType === "city" ? "fortress" : "military",
-      color: "text-stone-500",
+      suggestedName: "Kragtor Keep",
+      color: "text-label-secondary",
+      siteImpact: "+45% Defensive Security",
     });
-  } else if (elev.toLowerCase().includes("lowland") || elev.toLowerCase().includes("coastal")) {
+  } else if (has(elev, "lowland", "valley", "coastal")) {
     suggestions.push({
       icon: Waves,
-      text: "Low elevation — good for agriculture and trade",
+      title: "Fertile Floodplain Basin",
+      text: "Alluvial soil and abundant fresh water support intensive agriculture and population growth.",
       suggestedType: "city",
-      color: "text-emerald-500",
+      suggestedName: "Oakhaven",
+      color: "text-green",
+      siteImpact: "+35% Agricultural Yield",
     });
   }
 
-  // Climate-based
-  if (climate.toLowerCase().includes("desert") || climate.toLowerCase().includes("arid")) {
+  if (has(climate, "desert", "arid")) {
     suggestions.push({
       icon: Landmark,
-      text: "Arid climate — consider an oasis settlement or caravan stop",
+      title: "Caravan Oasis Stop",
+      text: "Critical desert aquifer point acting as an inland mercantile nexus.",
       suggestedType: "town",
-      color: "text-amber-500",
+      suggestedName: "Al-Zahra",
+      color: "text-yellow",
+      siteImpact: "+20% Trans-Arid Trade",
     });
-  } else if (climate.toLowerCase().includes("tropical")) {
+  } else if (has(climate, "tropical")) {
     suggestions.push({
       icon: TreePine,
-      text: "Tropical zone — rich biodiversity, potential for a cultural center",
+      title: "Tropical Biodiversity Hub",
+      text: "Lush botanical ecosystem rich in rare timber, spices, and natural lore.",
       suggestedType: props.featureType === "poi" ? "natural" : "city",
-      color: "text-green-500",
-    });
-  } else if (climate.toLowerCase().includes("boreal") || climate.toLowerCase().includes("tundra")) {
-    suggestions.push({
-      icon: Mountain,
-      text: "Cold climate — remote outpost, research station, or frontier settlement",
-      suggestedType: "village",
-      color: "text-sky-500",
+      suggestedName: "Verdant Reach",
+      color: "text-green",
+      siteImpact: "+25% Lore Harvest",
     });
   }
 
   return suggestions;
 }
 
+const METRIC_TILES = [
+  { key: "agriScore", label: "Agri yield", icon: Waves, iconClass: "text-green" },
+  { key: "tradeScore", label: "Trade flow", icon: Anchor, iconClass: "text-blue" },
+  { key: "defenseScore", label: "Defense", icon: Shield, iconClass: "text-label-secondary" },
+  { key: "waterScore", label: "Water table", icon: Droplets, iconClass: "text-cyan" },
+] as const;
+
 export function SmartPlacement(props: SmartPlacementProps) {
   if (!props.coordinates || !props.terrainInfo) return null;
 
+  const elev = props.terrainInfo.elevation?.zoneName ?? "";
+  const climate = props.terrainInfo.climate?.climateName ?? "";
   const suggestions = generateSuggestions(props);
-  if (suggestions.length === 0) return null;
+  const metrics = computeSiteMetrics(elev, climate);
 
   return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-1 text-[10px] font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400">
-        <Lightbulb className="h-3 w-3" />
-        Suggestions
+    <Card className="space-y-2 p-2">
+      <div className="flex items-center justify-between">
+        <Eyebrow className="flex items-center gap-2">
+          <span>Site suitability</span>
+        </Eyebrow>
+        <span className="text-label-secondary text-footnote tabular-nums">
+          {elev || "Terrain"} · {climate || "Climate"}
+        </span>
       </div>
-      {suggestions.map((s, i) => {
-        const Icon = s.icon;
-        return (
-          <div key={i} className="text-muted-foreground flex items-start gap-1.5 text-[11px]">
-            <Icon className={`mt-0.5 h-3 w-3 shrink-0 ${s.color}`} />
-            <span>{s.text}</span>
+
+      <div className="text-footnote grid grid-cols-2 gap-2">
+        {METRIC_TILES.map(({ key, label, icon: Icon, iconClass }) => (
+          <div
+            key={key}
+            className="bg-fill-3 rounded-control-sm flex items-center justify-between px-2 py-1"
+          >
+            <span className="text-label-secondary flex items-center gap-1">
+              <Icon className={`${iconClass} h-2.5 w-2.5`} /> {label}
+            </span>
+            <span className="font-semibold tabular-nums">{metrics[key]}%</span>
           </div>
-        );
-      })}
-    </div>
+        ))}
+      </div>
+
+      {suggestions.length > 0 && (
+        <div className="border-separator space-y-2 border-t pt-1">
+          {suggestions.map((s, i) => {
+            const Icon = s.icon;
+            return (
+              <div
+                key={i}
+                className="group border-separator bg-surface hover:bg-surface rounded-control-sm flex flex-col gap-1 border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="text-caption flex items-center gap-2">
+                    <Icon className={`h-3 w-3 shrink-0 ${s.color}`} />
+                    <span className="text-label">{s.title}</span>
+                  </div>
+                  {s.siteImpact && (
+                    <span className="text-caption text-green font-semibold tabular-nums">
+                      {s.siteImpact}
+                    </span>
+                  )}
+                </div>
+                <p className="text-label-secondary text-footnote leading-tight">{s.text}</p>
+                {props.onApplySuggestion && s.suggestedType && (
+                  <Button
+                    variant="secondary"
+                    size="xs"
+                    className="mt-0.5 w-fit"
+                    onClick={() => props.onApplySuggestion?.(s.suggestedType!, s.suggestedName)}
+                  >
+                    <span>Apply Type: {s.suggestedType}</span>
+                    {s.suggestedName && (
+                      <span className="text-label-secondary font-normal">({s.suggestedName})</span>
+                    )}
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Card>
   );
 }

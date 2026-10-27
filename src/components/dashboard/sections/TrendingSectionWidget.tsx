@@ -3,133 +3,246 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  Flame,
-  ExternalLink,
-  Rss,
-  Newspaper,
-  MessageCircle,
-  BookOpen,
-  Users,
+  RssFeed as Rss,
+  Journal as Newspaper,
+  OpenBook as BookOpen,
   Eye,
-  MessageSquare,
-  AlertTriangle,
+  ChatBubble as MessageSquare,
+  WarningTriangle as AlertTriangle,
   Heart,
-} from "lucide-react";
+  Activity,
+} from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Tooltip } from "~/components/ui/tooltip-card";
+import { Card } from "~/components/ui/card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { WIKI_SOURCES } from "~/lib/wiki-os/config";
+import { useWikiLeadImage } from "./feed/useWikiLeadImage";
+import { wikiTitleFromUrl } from "./feed/externalLinks";
+import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
-const TRENDING_LIMIT = 5;
+const TRENDING_DEFAULT_LIMIT = 4;
+const TRENDING_FILTER_LIMIT = 10;
 
 type FilterTab = "all" | "forum" | "wiki";
 
-const TRENDING_SOURCE: Record<
-  string,
-  { icon: typeof Rss; color: string; bg: string; label: string }
-> = {
-  thinkpages: {
-    icon: Newspaper,
-    color: "text-purple-700 dark:text-purple-300",
-    bg: "bg-purple-500/15 border-purple-500/30",
-    label: "Social",
-  },
-  forum: {
-    icon: MessageCircle,
-    color: "text-indigo-700 dark:text-indigo-300",
-    bg: "bg-indigo-500/15 border-indigo-500/30",
-    label: "Forum",
-  },
-  wiki: {
-    icon: BookOpen,
-    color: "text-teal-700 dark:text-teal-300",
-    bg: "bg-teal-500/15 border-teal-500/30",
-    label: "Wiki",
-  },
-  ixstats: {
-    icon: Rss,
-    color: "text-blue-700 dark:text-blue-300",
-    bg: "bg-blue-500/15 border-blue-500/30",
-    label: "IxStats",
-  },
-  crisis: {
-    icon: AlertTriangle,
-    color: "text-red-700 dark:text-red-300",
-    bg: "bg-red-500/15 border-red-500/30",
-    label: "Crisis",
-  },
+/** `app` scopes the icon to that app's tint (`data-app`), so a ThinkPages source wears ThinkPages' colour. */
+type TrendingSource = {
+  icon: typeof Rss | typeof Activity;
+  color: string;
+  label: string;
+  app?: string;
 };
 
-export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
-  const { data: intro } = api.wikios.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <BookOpen className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-        <span className="text-foreground truncate text-sm font-semibold">{title}</span>
-        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-medium">
-          {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
-        </span>
+const DEFAULT_SOURCE: TrendingSource = { icon: Activity, color: "text-yellow", label: "Live activity" };
+
+const TRENDING_SOURCE: Record<string, TrendingSource> = {
+  thinkpages: { icon: Newspaper, color: "text-tint", label: "ThinkPages", app: "thinkpages" },
+  forum: { icon: MessageSquare, color: "text-tint", label: "Forum", app: "thinkpages" },
+  wiki: { icon: BookOpen, color: "text-wiki", label: "Wiki" },
+  crisis: { icon: AlertTriangle, color: "text-red", label: "Crisis" },
+};
+
+const FILTER_OPTIONS: { value: FilterTab; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "forum", label: "Forum" },
+  { value: "wiki", label: "Wiki" },
+];
+
+const ENGAGEMENT_STATS = [
+  { key: "likes", label: "Likes", icon: Heart, className: "text-red size-3.5 fill-current" },
+  { key: "replies", label: "Replies", icon: MessageSquare, className: "text-indigo size-3.5" },
+  { key: "views", label: "Views", icon: Eye, className: "size-3.5" },
+] as const;
+
+/** Engagement weight per source; unlisted sources fall back to likes, replies and a flat bonus. */
+const INTERACTION_SCORE: Record<string, (item: any, e: Record<string, number>) => number> = {
+  thinkpages: (_, e) =>
+    e.likes! * 3 + e.replies! * 5 + e.reposts! * 8 + Math.min(e.views! * 0.02, 15),
+  wiki: (item) => {
+    const edits = parseInt(item.excerpt?.match(/(\d+)\s+edit/)?.[1] ?? "1", 10);
+    const editors = parseInt(item.excerpt?.match(/(\d+)\s+editor/)?.[1] ?? "1", 10);
+    return edits * 3 + editors * 5;
+  },
+  forum: (_, e) => e.replies! * 5,
+};
+const DEFAULT_INTERACTION = (_: unknown, e: Record<string, number>) =>
+  e.likes! * 3 + e.replies! * 5 + 15;
+
+/** Engagement score decayed by age in hours. */
+function scoreItem(item: any, nowMs: number): number {
+  const e = Object.fromEntries(
+    ["likes", "replies", "reposts", "views"].map((k) => [k, item.engagement?.[k] ?? 0])
+  );
+  const base = Math.max(1, (INTERACTION_SCORE[item.source] ?? DEFAULT_INTERACTION)(item, e));
+  const ageHours = Math.max(0.1, (nowMs - new Date(item.timestamp).getTime()) / 3600000);
+  return base / Math.pow(ageHours + 2, 1.2);
+}
+
+/** "All" shows the best item of each source first, then fills up with the rest by score. */
+function selectTrending(rawItems: any[], filter: FilterTab): any[] {
+  // oxlint-disable-next-line
+  const nowMs = Date.now();
+  const sorted = rawItems
+    .map((item) => ({ ...item, computedScore: scoreItem(item, nowMs) }))
+    .sort((a, b) => b.computedScore - a.computedScore);
+
+  if (filter !== "all") {
+    return sorted.filter((item) => item.source === filter).slice(0, TRENDING_FILTER_LIMIT);
+  }
+
+  const picked = new Map<string, any>();
+  for (const cat of ["thinkpages", "forum", "wiki", "ixstats"]) {
+    const top = sorted.find((i) => i.source === cat && !picked.has(i.id));
+    if (top) picked.set(top.id, top);
+  }
+  for (const item of sorted) {
+    if (picked.size >= TRENDING_DEFAULT_LIMIT) break;
+    if (!picked.has(item.id)) picked.set(item.id, item);
+  }
+  return [...picked.values()].sort((a, b) => b.computedScore - a.computedScore);
+}
+
+/** Sports bulletins arrive as an HTML-comment payload; show a readable headline instead. */
+function trendingTitle(item: any): string {
+  const title: string = item.title;
+  if (!title.includes("sports-bulletin:") && !title.includes("<!--")) return title;
+  const payload = title.match(/<!--\s*sports-bulletin:([\s\S]*?)-->/i)?.[1];
+  if (!payload) return item.author ? `@${item.author}` : "⚽ Sports Bulletin";
+  try {
+    const data = JSON.parse(payload.trim());
+    return `${data.sportEmoji || "⚽"} ${data.league?.name || "League"} Matchday ${data.matchDay || ""}`;
+  } catch {
+    return "⚽ Sports Bulletin";
+  }
+}
+
+function trendingExcerpt(item: any): string {
+  const excerpt = (item.excerpt || "").replace(/<!--\s*sports-bulletin:[\s\S]*?-->/gi, "").trim();
+  return excerpt || (item.source === "thinkpages" ? "Sports news and matchday bulletin" : "");
+}
+
+function RowLink({
+  href,
+  className,
+  children,
+}: {
+  href?: string;
+  className: string;
+  children: React.ReactNode;
+}) {
+  if (href?.startsWith("/")) {
+    return (
+      <Link href={href} className={className}>
+        {children}
+      </Link>
+    );
+  }
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+        {children}
+      </a>
+    );
+  }
+  return <div className={className}>{children}</div>;
+}
+
+function TrendingRow({ item }: { item: any }) {
+  const src = TRENDING_SOURCE[item.source as string] ?? DEFAULT_SOURCE;
+  const SrcIcon = src.icon;
+  const wikiTitle = wikiTitleFromUrl(item.url);
+  const excerpt = trendingExcerpt(item);
+
+  const row = (
+    <RowLink
+      href={wikiTitle ? titleToWikiOSRoute(wikiTitle) : item.url}
+      className="group/item bg-surface-secondary border-separator hover:border-tint/40 hover:bg-fill-3 rounded-row facet-press facet-press-subtle focus-visible:outline-tint flex cursor-pointer items-start gap-3 border p-3 focus-visible:outline-2 focus-visible:outline-offset-2"
+    >
+      <span
+        aria-hidden
+        data-app={src.app}
+        className="bg-surface border-separator rounded-control-sm mt-0.5 flex size-6 shrink-0 items-center justify-center border"
+      >
+        <SrcIcon className={cn("size-3.5", src.color)} />
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-label text-headline group-hover/item:text-tint group-focus-visible/item:text-tint truncate transition-colors">
+            {trendingTitle(item)}
+          </span>
+          <Badge variant="default">{src.label}</Badge>
+        </div>
+
+        {excerpt && (
+          <p className="text-label-secondary text-footnote mt-0.5 line-clamp-1">{excerpt}</p>
+        )}
+
+        <div className="text-label-secondary text-footnote mt-1 flex items-center gap-3 tabular-nums">
+          {ENGAGEMENT_STATS.map(({ key, label, icon: Icon, className }) => {
+            const count = item.engagement?.[key];
+            return (
+              count > 0 && (
+                <span key={key} className="flex items-center gap-1">
+                  <Icon aria-hidden className={className} />
+                  <span className="sr-only">{label}: </span>
+                  {count}
+                </span>
+              )
+            );
+          })}
+        </div>
       </div>
-      {intro?.text ? (
-        <p className="text-foreground/80 line-clamp-4 text-xs leading-relaxed">
-          {intro.text.substring(0, 300)}
-          {intro.text.length > 300 ? "…" : ""}
-        </p>
-      ) : (
-        <div className="bg-muted h-10 animate-pulse rounded" />
-      )}
-    </div>
+    </RowLink>
+  );
+
+  return wikiTitle ? (
+    <Tooltip
+      content={<WikiPreviewContent title={wikiTitle} wiki="ixwiki" />}
+      containerClassName="block"
+    >
+      {row}
+    </Tooltip>
+  ) : (
+    row
   );
 }
 
-export function ForumPreviewContent({ threadId }: { threadId: number }) {
-  const { data: thread } = api.wikios.getForumThreadPreview.useQuery(
-    { threadId },
-    { staleTime: 10 * 60_000 }
-  );
-  if (!thread) {
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
-          <span className="text-foreground text-sm font-medium">Loading thread...</span>
-        </div>
-        <div className="bg-muted h-10 animate-pulse rounded" />
-      </div>
-    );
-  }
+function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
+  const { data: intro } = api.wikios.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
+
+  const leadImage = useWikiLeadImage(title, intro?.text || intro?.intro || "", wiki);
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
-        <span className="text-foreground truncate text-sm font-semibold">{thread.title}</span>
+        <WikiOSLogomark aria-hidden className="text-wiki size-3.5 shrink-0" />
+        <span className="text-label text-headline truncate">{title}</span>
+        <Badge variant="default" className="ml-auto">
+          {WIKI_SOURCES[wiki].name}
+        </Badge>
       </div>
-      {thread.forumName && (
-        <span className="inline-block rounded-md bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-medium text-violet-400">
-          {thread.forumName}
-        </span>
-      )}
-      {thread.excerpt && (
-        <p className="text-foreground/80 line-clamp-3 text-xs leading-relaxed">
-          {thread.excerpt.substring(0, 250)}
-          {thread.excerpt.length > 250 ? "…" : ""}
-        </p>
-      )}
-      <div className="text-muted-foreground flex items-center gap-3 text-[10px]">
-        <span className="flex items-center gap-0.5">
-          <Users className="h-2.5 w-2.5" />
-          {thread.author}
-        </span>
-        <span className="flex items-center gap-0.5">
-          <MessageSquare className="h-2.5 w-2.5" />
-          {thread.replyCount} replies
-        </span>
-        <span className="flex items-center gap-0.5">
-          <Eye className="h-2.5 w-2.5" />
-          {thread.viewCount}
-        </span>
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          {intro?.text ? (
+            <p className="text-label-secondary text-footnote line-clamp-3">
+              {intro.text.substring(0, 300)}
+              {intro.text.length > 300 ? "…" : ""}
+            </p>
+          ) : (
+            <Skeleton className="rounded-control-sm h-10" />
+          )}
+        </div>
+        {leadImage && (
+          <div className="border-separator bg-fill-4 rounded-control relative h-14 w-18 shrink-0 overflow-hidden border">
+            <img src={leadImage} alt={title} className="h-full w-full object-cover" />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -143,249 +256,41 @@ export function TrendingSectionWidget() {
     { refetchInterval: 5 * 60_000 }
   );
 
-  const trendingItems = useMemo(() => {
-    const rawItems = trendingData?.items ?? [];
-    if (rawItems.length === 0) return [];
-
-    const nowMs = Date.now();
-
-    const scored = rawItems.map((item: any) => {
-      const { source, engagement, timestamp } = item;
-      const likes = engagement?.likes ?? 0;
-      const replies = engagement?.replies ?? 0;
-      const reposts = engagement?.reposts ?? 0;
-      const views = engagement?.views ?? 0;
-
-      let baseInteraction = 0;
-      if (source === "thinkpages") {
-        baseInteraction = likes * 3 + replies * 5 + reposts * 8 + Math.min(views * 0.02, 15);
-      } else if (source === "wiki") {
-        const editsMatch = item.excerpt?.match(/(\d+)\s+edit/);
-        const editorsMatch = item.excerpt?.match(/(\d+)\s+editor/);
-        const edits = editsMatch ? parseInt(editsMatch[1], 10) : 1;
-        const editors = editorsMatch ? parseInt(editorsMatch[1], 10) : 1;
-        baseInteraction = edits * 3 + editors * 5;
-      } else if (source === "forum") {
-        baseInteraction = replies * 5 + Math.min(views * 0.03, 15);
-      } else {
-        baseInteraction = likes * 3 + replies * 5 + 15;
-      }
-
-      const scoreBase = Math.max(1, baseInteraction);
-      const ageHours = Math.max(0.1, (nowMs - new Date(timestamp).getTime()) / 3600000);
-      const decayFactor = 1 / Math.pow(ageHours + 2, 1.2);
-      const finalScore = scoreBase * decayFactor;
-
-      return { ...item, computedScore: finalScore };
-    });
-
-    const sorted = scored.sort((a: any, b: any) => b.computedScore - a.computedScore);
-
-    if (activeFilter !== "all") {
-      return sorted.filter((item: any) => item.source === activeFilter).slice(0, TRENDING_LIMIT);
-    }
-
-    const result: any[] = [];
-    const categories = ["thinkpages", "forum", "wiki", "ixstats"];
-    const usedIds = new Set<string>();
-
-    for (const cat of categories) {
-      const topCat = sorted.find((i: any) => i.source === cat && !usedIds.has(i.id));
-      if (topCat) {
-        result.push(topCat);
-        usedIds.add(topCat.id);
-      }
-    }
-
-    for (const item of sorted) {
-      if (result.length >= TRENDING_LIMIT) break;
-      if (!usedIds.has(item.id)) {
-        result.push(item);
-        usedIds.add(item.id);
-      }
-    }
-
-    return result.sort((a, b) => b.computedScore - a.computedScore);
-  }, [trendingData, activeFilter]);
+  const trendingItems = useMemo(
+    () => selectTrending(trendingData?.items ?? [], activeFilter),
+    [trendingData, activeFilter]
+  );
 
   return (
-    <div
-      className={cn(
-        "no-wiki-tooltip relative space-y-3 overflow-hidden rounded-2xl border border-black/10 bg-white/60 p-3 shadow-xl backdrop-blur-2xl dark:border-white/10 dark:bg-black/40"
-      )}
-    >
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <span className="text-foreground text-xs font-semibold tracking-tight">
-            Trending Topics
-          </span>
-        </div>
+    <Card padding="md" className="no-wiki-tooltip">
+      <h2 className="text-headline text-label mb-3">Trending topics</h2>
 
-        {/* Category Segment Control Bar */}
-        <div className="grid grid-cols-3 gap-1 rounded-xl border border-black/5 bg-black/5 p-1 backdrop-blur-md dark:border-white/10 dark:bg-white/10">
-          {(["all", "forum", "wiki"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveFilter(tab)}
-              className={cn(
-                "cursor-pointer rounded-lg py-1 text-center text-[10px] font-medium capitalize transition-all duration-150",
-                activeFilter === tab
-                  ? "border border-black/10 bg-white font-semibold text-amber-800 shadow-xs dark:border-white/15 dark:bg-zinc-800 dark:text-amber-300"
-                  : "text-muted-foreground/80 hover:text-foreground font-medium hover:bg-black/5 dark:hover:bg-white/5"
-              )}
-            >
-              {tab}
-            </button>
-          ))}
+      <div className="space-y-3">
+        <SegmentedControl
+          aria-label="Trending source"
+          size="sm"
+          fullWidth
+          value={activeFilter}
+          onValueChange={setActiveFilter}
+          options={FILTER_OPTIONS}
+        />
+
+        <div className="space-y-2 pt-1">
+          {isLoading ? (
+            <div className="space-y-2 py-2">
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} className="rounded-row h-12" />
+              ))}
+            </div>
+          ) : trendingItems.length === 0 ? (
+            <p className="text-label-secondary text-callout py-6 text-center">
+              Nothing is trending right now.
+            </p>
+          ) : (
+            trendingItems.map((item) => <TrendingRow key={item.id} item={item} />)
+          )}
         </div>
       </div>
-
-      <div className="space-y-2 pt-1">
-        {isLoading && (
-          <div className="space-y-2 py-4">
-            <div className="h-10 animate-pulse rounded-xl bg-black/5 dark:bg-white/5" />
-            <div className="h-10 animate-pulse rounded-xl bg-black/5 dark:bg-white/5" />
-            <div className="h-10 animate-pulse rounded-xl bg-black/5 dark:bg-white/5" />
-          </div>
-        )}
-
-        {!isLoading && trendingItems.length === 0 && (
-          <p className="text-muted-foreground py-6 text-center text-[11px] font-medium">
-            No trending content found
-          </p>
-        )}
-
-        {!isLoading &&
-          trendingItems.map((item: any) => {
-            const src = TRENDING_SOURCE[item.source as string] ?? TRENDING_SOURCE.ixstats!;
-            const SrcIcon = src.icon;
-            const wikiMatch = item.url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
-            const forumMatch = item.url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
-            const wikiTitle = wikiMatch
-              ? decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ")
-              : null;
-            const forumThreadId = forumMatch ? parseInt(forumMatch[1]!, 10) : null;
-
-            const isWiki = !!wikiTitle;
-            const isForum = !!forumThreadId;
-            const wikiHref = isWiki && wikiTitle ? titleToWikiOSRoute(wikiTitle) : undefined;
-
-            let displayTitle = item.title;
-            if (displayTitle.includes("sports-bulletin:") || displayTitle.includes("<!--")) {
-              const match = displayTitle.match(/<!--\s*sports-bulletin:([\s\S]*?)-->/i);
-              if (match && match[1]) {
-                try {
-                  const data = JSON.parse(match[1].trim());
-                  displayTitle = `${data.sportEmoji || "⚽"} ${data.league?.name || "League"} Matchday ${data.matchDay || ""}`;
-                } catch (_e) {
-                  displayTitle = "⚽ Sports Bulletin";
-                }
-              } else {
-                displayTitle = item.author ? `@${item.author}` : "⚽ Sports Bulletin";
-              }
-            }
-
-            let displayExcerpt = (item.excerpt || "")
-              .replace(/<!--\s*sports-bulletin:[\s\S]*?-->/gi, "")
-              .trim();
-            if (!displayExcerpt && item.source === "thinkpages") {
-              displayExcerpt = "Sports News & Matchday Bulletin";
-            }
-
-            const itemHref = isWiki && wikiTitle ? titleToWikiOSRoute(wikiTitle) : item.url;
-            const isInternal = !!itemHref && itemHref.startsWith("/");
-            const W = isInternal ? Link : itemHref ? "a" : "div";
-            const linkProps = isInternal
-              ? { href: itemHref }
-              : itemHref
-                ? { href: itemHref, target: "_blank", rel: "noopener noreferrer" }
-                : {};
-
-            const el = (
-              <W
-                key={item.id}
-                {...(linkProps as any)}
-                className="group/item flex cursor-pointer items-start gap-2.5 rounded-xl border border-black/10 bg-white/40 p-2.5 shadow-2xs transition-all duration-200 hover:border-amber-500/40 hover:bg-white/80 active:scale-[0.98] dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]"
-              >
-                <div
-                  className={cn(
-                    "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border shadow-xs backdrop-blur-md transition-transform duration-200 group-hover/item:scale-110",
-                    src.bg
-                  )}
-                >
-                  <SrcIcon className={cn("h-3 w-3", src.color)} />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-foreground truncate text-[11px] font-semibold tracking-tight transition-colors group-hover/item:text-amber-600 dark:group-hover/item:text-amber-400">
-                      {displayTitle}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "shrink-0 border px-1.5 py-0 text-[8px] font-semibold tracking-wider uppercase",
-                        src.color,
-                        src.bg
-                      )}
-                    >
-                      {src.label}
-                    </Badge>
-                  </div>
-
-                  {displayExcerpt && (
-                    <p className="text-muted-foreground/80 mt-0.5 line-clamp-1 text-[10px] leading-snug font-normal">
-                      {displayExcerpt}
-                    </p>
-                  )}
-
-                  <div className="text-muted-foreground/70 mt-1 flex items-center gap-2.5 text-[9px] font-medium tabular-nums">
-                    {item.engagement?.likes > 0 && (
-                      <span className="flex items-center gap-0.5 text-rose-600 dark:text-rose-400">
-                        <Heart className="h-2.5 w-2.5 fill-current" />
-                        {item.engagement.likes}
-                      </span>
-                    )}
-                    {item.engagement?.replies > 0 && (
-                      <span className="flex items-center gap-0.5 text-indigo-600 dark:text-indigo-400">
-                        <MessageSquare className="h-2.5 w-2.5" />
-                        {item.engagement.replies}
-                      </span>
-                    )}
-                    {item.engagement?.views > 0 && (
-                      <span className="flex items-center gap-0.5">
-                        <Eye className="h-2.5 w-2.5" />
-                        {item.engagement.views}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </W>
-            );
-
-            if (isWiki)
-              return (
-                <Tooltip
-                  key={item.id}
-                  content={<WikiPreviewContent title={wikiTitle!} wiki="ixwiki" />}
-                  containerClassName="block"
-                >
-                  {el}
-                </Tooltip>
-              );
-            if (isForum)
-              return (
-                <Tooltip
-                  key={item.id}
-                  content={<ForumPreviewContent threadId={forumThreadId!} />}
-                  containerClassName="block"
-                >
-                  {el}
-                </Tooltip>
-              );
-            return el;
-          })}
-      </div>
-    </div>
+    </Card>
   );
 }

@@ -8,17 +8,14 @@
  *  - scenarios: scenario CRUD + read queries (public + admin)
  *  - choices:   choice/response-option CRUD, recording, and choice analytics
  *  - analytics: relevance scoring, usage tracking, performance + completion metrics
- *  - player:    player-facing scenario generation, country lookup, and history
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { diplomaticScenariosScenariosRouter } from "./scenarios";
 import { diplomaticScenariosChoicesRouter } from "./choices";
 import { diplomaticScenariosAnalyticsRouter } from "./analytics";
-import { diplomaticScenariosPlayerRouter } from "./player";
 
 export const diplomaticScenariosRouter = mergeRouters(
   diplomaticScenariosScenariosRouter,
   diplomaticScenariosChoicesRouter,
-  diplomaticScenariosAnalyticsRouter,
-  diplomaticScenariosPlayerRouter
+  diplomaticScenariosAnalyticsRouter
 );

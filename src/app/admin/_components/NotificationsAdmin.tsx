@@ -1,11 +1,11 @@
-// src/app/admin/_components/NotificationsAdmin.tsx
 "use client";
+// src/app/admin/_components/NotificationsAdmin.tsx
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "./AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Bell, ListTree, ScanEye, Send } from "lucide-react";
+import { NumberedListLeft as ListTree, ScanQrCode as ScanEye, Send } from "iconoir-react";
 import {
   EventsRegistryPanel,
   NotificationBrowser,
@@ -13,7 +13,6 @@ import {
   AlertRulesPanel,
   TestSuitePanel,
 } from "../notifications/_components";
-import { NotificationTestCard } from "./platform/NotificationTestCard";
 
 export function NotificationsAdmin() {
   usePageTitle({ title: "Admin - Notification Settings" });
@@ -21,31 +20,39 @@ export function NotificationsAdmin() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Bell}
-        title="Notification Settings"
-        description="Notification hooks, alert rules, message logs, and test triggers."
+      <PageHeader
+        title="Notification settings"
+        subtitle="Hooks, alert rules, message logs and test triggers."
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-4 w-full justify-start">
-          <TabsTrigger value="rules" className="flex items-center gap-1.5">
-            <ListTree className="h-4 w-4" />
-            Rules & Event Hooks
+        <TabsList className="bg-fill-3 rounded-row mb-4 flex w-full flex-wrap justify-start gap-1 p-1 sm:w-auto">
+          <TabsTrigger
+            value="rules"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
+          >
+            <ListTree className="h-3.5 w-3.5" />
+            Rules & event hooks
           </TabsTrigger>
-          <TabsTrigger value="log" className="flex items-center gap-1.5">
-            <ScanEye className="h-4 w-4" />
-            Logs & Inbox
+          <TabsTrigger
+            value="log"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
+          >
+            <ScanEye className="h-3.5 w-3.5" />
+            Logs & inbox
           </TabsTrigger>
-          <TabsTrigger value="testing" className="flex items-center gap-1.5">
-            <Send className="h-4 w-4" />
-            Testing & Composition
+          <TabsTrigger
+            value="testing"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
+          >
+            <Send className="h-3.5 w-3.5" />
+            Testing & composition
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="rules" className="space-y-6 outline-none">
           {activeTab === "rules" && (
-            <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-300">
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-fast space-y-6">
               <AlertRulesPanel />
               <EventsRegistryPanel />
             </div>
@@ -54,7 +61,7 @@ export function NotificationsAdmin() {
 
         <TabsContent value="log" className="outline-none">
           {activeTab === "log" && (
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-fast">
               <NotificationBrowser />
             </div>
           )}
@@ -62,11 +69,8 @@ export function NotificationsAdmin() {
 
         <TabsContent value="testing" className="outline-none">
           {activeTab === "testing" && (
-            <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-300">
-              <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                <NotificationComposer />
-                <NotificationTestCard />
-              </div>
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-fast space-y-6">
+              <NotificationComposer />
               <TestSuitePanel />
             </div>
           )}

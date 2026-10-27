@@ -3,14 +3,31 @@
 
 import { env } from "~/env";
 import type { BotTimeResponse, BotEndpointStatusResponse } from "~/types/ixstats";
+import { postBotCommand, type BotCommandResult } from "./bot-control";
+
+/** The part of the Discord bot's reported state that decides the local clock. */
+type BotClockState = Pick<
+  BotTimeResponse,
+  "ixTimeTimestamp" | "multiplier" | "isPaused" | "hasTimeOverride" | "hasMultiplierOverride"
+>;
+
+/**
+ * The local clock's override state. `timeOverrideSetAt` is real (wall-clock) ms, so every process
+ * on the box that loads the same state reads the same IxTime.
+ */
+export interface IxTimeClockState {
+  timeOverride: number | null;
+  timeOverrideSetAt: number | null;
+  multiplierOverride: number | null;
+}
 
 export class IxTime {
-  // Real-world epoch: October 4, 2020
-  private static readonly REAL_WORLD_EPOCH = new Date(2020, 9, 4, 0, 0, 0, 0).getTime();
+  // Real-world epoch: October 4, 2020 UTC
+  private static readonly REAL_WORLD_EPOCH = Date.UTC(2020, 9, 4, 0, 0, 0, 0);
 
-  // In-game epoch: January 1, 2028 (this is when roster data represents)
+  // In-game epoch: January 1, 2028 UTC (this is when roster data represents)
   // This is the "in-game year zero" baseline
-  private static readonly IN_GAME_EPOCH = new Date(2028, 0, 1, 0, 0, 0, 0).getTime();
+  private static readonly IN_GAME_EPOCH = Date.UTC(2028, 0, 1, 0, 0, 0, 0);
 
   private static readonly BASE_TIME_MULTIPLIER = 4.0; // 4x faster than real time (before speed change)
   private static readonly POST_SPEED_CHANGE_MULTIPLIER = 2.0; // 2x faster after 7/27/25
@@ -54,28 +71,41 @@ export class IxTime {
   }
 
   /**
-   * Convert a real-world timestamp to its IxTime equivalent.
-   * Uses the same pivot-point system as getCurrentIxTime for consistency.
+   * Canonical (override-free) mapping from real time to IxTime:
+   * 4x from the real-world epoch until the 7/27/25 pivot, then 2x from Jan 1, 2040.
    */
-  static convertToIxTime(realWorldTimestamp: number): number {
-    if (this.multiplierOverride === 0) {
-      return this.timeOverride ?? this.getCurrentIxTime();
-    }
-
+  private static canonicalIxTime(realMs: number): number {
+    // July 27, 2025 00:00:00 UTC = January 1, 2040 IxTime
     const PIVOT_POINT_REAL = new Date("2025-07-27T00:00:00.000Z").getTime();
     const PIVOT_POINT_IXTIME = new Date("2040-01-01T00:00:00.000Z").getTime();
 
-    if (realWorldTimestamp >= PIVOT_POINT_REAL) {
+    if (realMs >= PIVOT_POINT_REAL) {
       // After pivot: 2x from Jan 1, 2040 IxTime
-      const realElapsed = (realWorldTimestamp - PIVOT_POINT_REAL) / 1000;
-      const mult = this.multiplierOverride ?? this.POST_SPEED_CHANGE_MULTIPLIER;
-      return PIVOT_POINT_IXTIME + realElapsed * mult * 1000;
-    } else {
-      // Before pivot: 4x from real-world epoch
-      const realElapsed = (realWorldTimestamp - this.REAL_WORLD_EPOCH) / 1000;
-      const mult = this.multiplierOverride ?? this.BASE_TIME_MULTIPLIER;
-      return this.REAL_WORLD_EPOCH + realElapsed * mult * 1000;
+      const realElapsed = (realMs - PIVOT_POINT_REAL) / 1000;
+      return PIVOT_POINT_IXTIME + realElapsed * this.POST_SPEED_CHANGE_MULTIPLIER * 1000;
     }
+    // Before pivot: 4x from real-world epoch
+    const realElapsed = (realMs - this.REAL_WORLD_EPOCH) / 1000;
+    return this.REAL_WORLD_EPOCH + realElapsed * this.BASE_TIME_MULTIPLIER * 1000;
+  }
+
+  /**
+   * Convert a real-world timestamp to its IxTime equivalent.
+   * Agrees with getCurrentIxTime: timestamps at or after the active anchor progress from
+   * it at the current multiplier; earlier timestamps use the canonical formula, so an
+   * override never rewrites history.
+   */
+  static convertToIxTime(realWorldTimestamp: number): number {
+    if (
+      this.timeOverride !== null &&
+      this.timeOverrideSetAt !== null &&
+      realWorldTimestamp >= this.timeOverrideSetAt
+    ) {
+      return (
+        this.timeOverride + (realWorldTimestamp - this.timeOverrideSetAt) * this.getTimeMultiplier()
+      );
+    }
+    return this.canonicalIxTime(realWorldTimestamp);
   }
 
   /**
@@ -101,26 +131,9 @@ export class IxTime {
       return this.timeOverride + ixTimeElapsed;
     }
 
-    // CORRECTED CALCULATION: July 27, 2025 00:00:00 UTC = January 1, 2040 IxTime
-    const PIVOT_POINT_REAL = new Date("2025-07-27T00:00:00.000Z").getTime();
-    const PIVOT_POINT_IXTIME = new Date("2040-01-01T00:00:00.000Z").getTime();
-    const now = Date.now();
-
-    if (now >= PIVOT_POINT_REAL) {
-      // After July 27, 2025: Use 2x multiplier from the pivot point
-      const realTimeElapsed = (now - PIVOT_POINT_REAL) / 1000;
-      const currentMultiplier =
-        this.multiplierOverride !== null
-          ? this.multiplierOverride
-          : this.POST_SPEED_CHANGE_MULTIPLIER;
-      const ixTimeElapsed = realTimeElapsed * currentMultiplier * 1000;
-      return PIVOT_POINT_IXTIME + ixTimeElapsed;
-    } else {
-      // Before July 27, 2025: Use 4x multiplier to reach the pivot point
-      const realTimeElapsed = (now - this.REAL_WORLD_EPOCH) / 1000;
-      const ixTimeElapsed = realTimeElapsed * this.BASE_TIME_MULTIPLIER * 1000;
-      return this.REAL_WORLD_EPOCH + ixTimeElapsed;
-    }
+    // No anchor: a non-null multiplierOverride always comes with a time anchor
+    // (see applyMultiplier), so the canonical formula is authoritative here.
+    return this.canonicalIxTime(Date.now());
   }
 
   /**
@@ -133,14 +146,6 @@ export class IxTime {
 
     const millisecondsPerYear = 365.25 * 24 * 60 * 60 * 1000;
     return (endMs - startMs) / millisecondsPerYear;
-  }
-
-  /**
-   * FIXED: Added missing getYearsBetween function as alias for getYearsElapsed
-   * Calculate years between two IxTime timestamps (absolute value)
-   */
-  static getYearsBetween(startIxTime: number | Date, endIxTime: number | Date): number {
-    return Math.abs(this.getYearsElapsed(startIxTime, endIxTime));
   }
 
   /**
@@ -170,22 +175,26 @@ export class IxTime {
   }
 
   /**
-   * Add months to an IxTime timestamp
+   * Add calendar months to an IxTime timestamp (UTC). The day of month is clamped to the
+   * length of the target month, so 31 Jan + 1 month is 28/29 Feb, never 2/3 March.
    */
   static addMonths(ixTime: number | Date, months: number): number {
     const timeMs = ixTime instanceof Date ? ixTime.getTime() : ixTime;
-    const date = new Date(timeMs);
-    date.setMonth(date.getMonth() + months);
-    return date.getTime();
-  }
-
-  /**
-   * Get the in-game month (1-12) from an IxTime timestamp
-   */
-  static getMonthFromTimestamp(ixTime: number | Date): number {
-    const timeMs = ixTime instanceof Date ? ixTime.getTime() : ixTime;
-    const date = new Date(timeMs);
-    return date.getUTCMonth() + 1;
+    const d = new Date(timeMs);
+    const totalMonths = d.getUTCFullYear() * 12 + d.getUTCMonth() + months;
+    const year = Math.floor(totalMonths / 12);
+    const month = totalMonths - year * 12;
+    const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    const day = Math.min(d.getUTCDate(), lastDay);
+    return Date.UTC(
+      year,
+      month,
+      day,
+      d.getUTCHours(),
+      d.getUTCMinutes(),
+      d.getUTCSeconds(),
+      d.getUTCMilliseconds()
+    );
   }
 
   /**
@@ -320,8 +329,7 @@ export class IxTime {
     const botData = await this.fetchFromBot();
 
     if (botData) {
-      this.timeOverride = null;
-      this.multiplierOverride = null;
+      this.applyBotState(botData);
 
       return {
         success: true,
@@ -336,96 +344,67 @@ export class IxTime {
     }
   }
 
-  static async setBotTimeOverride(
-    ixTime: number,
-    multiplier?: number
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await fetch(`${this.BOT_API_URL}/ixtime/override`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ixTimeMs: ixTime, multiplier }),
-        signal: AbortSignal.timeout(5000),
-      });
+  /**
+   * Adopt the Discord bot's clock — the bot is the source of truth for IxTime.
+   * A natural bot (no overrides, not paused) clears the local overrides; otherwise the
+   * local clock takes the bot's time and speed through the continuity-safe setters.
+   */
+  static applyBotState(state: BotClockState): void {
+    if (!state.isPaused && !state.hasTimeOverride && !state.hasMultiplierOverride) {
+      this.clearMultiplierOverride();
+      this.clearTimeOverride();
+      return;
+    }
+    this.adoptBotClock(state.ixTimeTimestamp, state.isPaused ? 0 : state.multiplier);
+  }
 
-      if (!response.ok) {
-        throw new Error(`Bot API returned ${response.status}`);
-      }
-
-      const result = await response.json();
-      return { success: true, message: result.message };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Failed to set bot time override: ${error instanceof Error ? error.message : "Unknown error"}`,
-      };
+  /**
+   * Move the local clock to the bot's time and, when given, its speed. The speed goes first
+   * so the time anchor lands last: the clock only ever reads the bot's reported time.
+   */
+  static adoptBotClock(ixTime: number | null, multiplier: number | null): void {
+    if (multiplier !== null) {
+      this.setNaturalMultiplier(multiplier);
+    }
+    if (ixTime !== null) {
+      this.setTimeOverride(ixTime);
     }
   }
 
-  static async clearBotOverrides(): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await fetch(`${this.BOT_API_URL}/ixtime/clear`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Bot API returned ${response.status}`);
-      }
-
-      const result = await response.json();
-      return { success: true, message: result.message };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Failed to clear bot overrides: ${error instanceof Error ? error.message : "Unknown error"}`,
-      };
-    }
+  static setBotTimeOverride(ixTime: number, multiplier?: number): Promise<BotCommandResult> {
+    return postBotCommand(this.BOT_API_URL, "override", "set bot time override", {
+      ixTimeMs: ixTime,
+      multiplier,
+    });
   }
 
-  static async pauseBotTime(): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await fetch(`${this.BOT_API_URL}/ixtime/pause`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Bot API returned ${response.status}`);
-      }
-
-      const result = await response.json();
-      return { success: true, message: result.message };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Failed to pause bot time: ${error instanceof Error ? error.message : "Unknown error"}`,
-      };
-    }
+  static clearBotOverrides(): Promise<BotCommandResult> {
+    return postBotCommand(this.BOT_API_URL, "clear", "clear bot overrides");
   }
 
-  static async resumeBotTime(): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await fetch(`${this.BOT_API_URL}/ixtime/resume`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(5000),
-      });
+  static pauseBotTime(): Promise<BotCommandResult> {
+    return postBotCommand(this.BOT_API_URL, "pause", "pause bot time");
+  }
 
-      if (!response.ok) {
-        throw new Error(`Bot API returned ${response.status}`);
-      }
+  static resumeBotTime(): Promise<BotCommandResult> {
+    return postBotCommand(this.BOT_API_URL, "resume", "resume bot time");
+  }
 
-      const result = await response.json();
-      return { success: true, message: result.message };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Failed to resume bot time: ${error instanceof Error ? error.message : "Unknown error"}`,
-      };
-    }
+  /** The override state, for sharing the clock with other processes (lib/ixtime/shared-clock). */
+  static getClockState(): IxTimeClockState {
+    return {
+      timeOverride: this.timeOverride,
+      timeOverrideSetAt: this.timeOverrideSetAt,
+      multiplierOverride: this.multiplierOverride,
+    };
+  }
+
+  /** Adopt another process's override state as is (no re-anchoring: its anchor is already set). */
+  static loadClockState(state: IxTimeClockState): void {
+    const anchored = state.timeOverride !== null && state.timeOverrideSetAt !== null;
+    this.timeOverride = anchored ? state.timeOverride : null;
+    this.timeOverrideSetAt = anchored ? state.timeOverrideSetAt : null;
+    this.multiplierOverride = state.multiplierOverride;
   }
 
   // Legacy fallback methods
@@ -439,12 +418,33 @@ export class IxTime {
     this.timeOverrideSetAt = null;
   }
 
+  /** Freeze the current game time as the new reference point before the speed changes. */
+  private static anchorAtCurrentTime(): void {
+    const current = this.getCurrentIxTime();
+    this.timeOverride = current;
+    this.timeOverrideSetAt = Date.now();
+  }
+
+  /**
+   * Change the multiplier override without letting the game clock jump.
+   * Anchors only when the effective speed actually changes, so clearing an
+   * already-natural clock leaves no override behind.
+   */
+  private static applyMultiplier(next: number | null): void {
+    const effectiveBefore = this.getTimeMultiplier();
+    const effectiveAfter = next ?? this.getDefaultMultiplier();
+    if (effectiveBefore !== effectiveAfter) {
+      this.anchorAtCurrentTime(); // must run BEFORE multiplierOverride changes
+    }
+    this.multiplierOverride = next;
+  }
+
   static setMultiplierOverride(multiplier: number): void {
-    this.multiplierOverride = multiplier;
+    this.applyMultiplier(multiplier);
   }
 
   static clearMultiplierOverride(): void {
-    this.multiplierOverride = null;
+    this.applyMultiplier(null);
   }
 
   static getTimeMultiplier(): number {
@@ -466,14 +466,14 @@ export class IxTime {
 
     if (multiplier === naturalMultiplier) {
       // Clear override to use natural progression
-      this.multiplierOverride = null;
+      this.applyMultiplier(null);
       return {
         isNatural: true,
         message: `Set to natural ${multiplier}x speed for current era`,
       };
     } else {
       // Set as override since it doesn't match natural progression
-      this.multiplierOverride = multiplier;
+      this.applyMultiplier(multiplier);
       return {
         isNatural: false,
         message: `Set to ${multiplier}x speed (override)`,
@@ -486,11 +486,6 @@ export class IxTime {
    */
   static isMultiplierNatural(): boolean {
     return this.multiplierOverride === null;
-  }
-
-  static async getCurrentIxTimeFromBot(): Promise<number> {
-    const botData = await this.fetchFromBot();
-    return botData ? botData.ixTimeTimestamp : this.getCurrentIxTime();
   }
 
   static async getStatus() {
@@ -600,14 +595,6 @@ export class IxTime {
   }
 
   /**
-   * Get the real-world timestamp when IxTime reaches Jan 1 of a given game year.
-   */
-  static getRealDateForGameYear(year: number): number {
-    const ixTimestamp = new Date(Date.UTC(year, 0, 1, 0, 0, 0)).getTime();
-    return this.convertFromIxTime(ixTimestamp);
-  }
-
-  /**
    * Calculate how many IxTime days pass per real day at a given multiplier.
    */
   static getIxDaysPerRealDay(multiplier?: number): number {
@@ -623,10 +610,6 @@ export class IxTime {
     const currentIx = this.getCurrentIxTime();
     const realMs = realHours * 60 * 60 * 1000;
     return currentIx + realMs * m;
-  }
-
-  static dateToTimestamp(date: Date): number {
-    return date.getTime();
   }
 
   static timestampToDate(timestamp: number): Date {
@@ -666,4 +649,3 @@ export class IxTime {
     return d !== null ? d.toISOString() : null;
   }
 }
-

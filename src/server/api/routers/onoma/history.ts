@@ -3,14 +3,18 @@
 
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 
 export const onomaHistoryRouter = createTRPCRouter({
   /**
    * Log a generation event with the actual generated names.
    * Extends the existing logGeneration by recording names + parameters.
    */
-  logEvent: protectedProcedure
+  logEvent: rateLimitedMutationProcedure
     .input(
       z.object({
         sessionId: z.string(),
@@ -120,7 +124,7 @@ export const onomaHistoryRouter = createTRPCRouter({
   /**
    * Toggle favorite on a specific name within a generation event.
    */
-  toggleFavorite: protectedProcedure
+  toggleFavorite: rateLimitedMutationProcedure
     .input(
       z.object({
         eventId: z.string(),

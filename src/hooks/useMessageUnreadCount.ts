@@ -29,11 +29,10 @@ export function useMessageUnreadCount() {
   const counts = useMemo(
     () => ({
       inbox: folderCounts?.inbox ?? 0,
-      personal: folderCounts?.personal ?? 0,
+      thinktank: folderCounts?.thinktank ?? 0,
       diplomatic: folderCounts?.diplomatic ?? 0,
-      discussions: folderCounts?.discussions ?? 0,
-      groups: folderCounts?.groups ?? 0,
-      system: folderCounts?.system ?? 0,
+      wiki: folderCounts?.wiki ?? 0,
+      forum: folderCounts?.forum ?? 0,
     }),
     [folderCounts]
   );

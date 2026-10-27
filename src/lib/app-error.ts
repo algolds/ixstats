@@ -1,4 +1,4 @@
-export type ErrorCode =
+type ErrorCode =
   | "NOT_FOUND"
   | "BAD_REQUEST"
   | "UNAUTHORIZED"
@@ -8,7 +8,8 @@ export type ErrorCode =
   | "PRECONDITION_FAILED"
   | "RATE_LIMITED"
   | "VALIDATION"
-  | "SECURITY";
+  | "SECURITY"
+  | "UNAVAILABLE";
 
 const CODE_TO_HTTP_STATUS: Record<ErrorCode, number> = {
   NOT_FOUND: 404,
@@ -21,6 +22,7 @@ const CODE_TO_HTTP_STATUS: Record<ErrorCode, number> = {
   RATE_LIMITED: 429,
   VALIDATION: 400,
   SECURITY: 400,
+  UNAVAILABLE: 503,
 };
 
 const CODE_TO_TRPC_CODE: Record<ErrorCode, string> = {
@@ -34,6 +36,7 @@ const CODE_TO_TRPC_CODE: Record<ErrorCode, string> = {
   RATE_LIMITED: "TOO_MANY_REQUESTS",
   VALIDATION: "BAD_REQUEST",
   SECURITY: "BAD_REQUEST",
+  UNAVAILABLE: "SERVICE_UNAVAILABLE",
 };
 
 export class AppError extends Error {
@@ -89,12 +92,6 @@ export class ConflictError extends AppError {
   }
 }
 
-export class PreconditionFailedError extends AppError {
-  constructor(message: string) {
-    super("PRECONDITION_FAILED", message);
-  }
-}
-
 export class RateLimitError extends AppError {
   readonly resetAt: Date;
 
@@ -108,8 +105,4 @@ export class InternalError extends AppError {
   constructor(message = "Internal server error") {
     super("INTERNAL_SERVER_ERROR", message);
   }
-}
-
-export function isAppError(error: Error | undefined): error is AppError {
-  return error instanceof AppError;
 }

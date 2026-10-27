@@ -1,0 +1,674 @@
+// Transforms MediaWiki Action API HTML into WikiOS-ready content.
+// Extracts infobox, TOC, and transforms links for /wiki/ routing.
+
+import { withBasePath } from "~/lib/base-path";
+import { mapSrcsetUrls } from "~/lib/wiki-os/transformers/srcset";
+import { sisterMediaPath } from "~/lib/wiki-os/sister-media";
+import { SISTER_EMBED_CLASS } from "~/lib/wiki-os/sister-dom";
+import { mediaWikiHostPattern, mediaWikiOrigin } from "~/lib/wiki-os/config";
+import { skipBlanks } from "../wikitext/blank";
+import { forwardFinder, forwardSearch } from "../wikitext/forward-finder";
+import { stripHtmlTags } from "./clean-markup-passes";
+import { transformLinks } from "./html-links";
+import {
+  TAG_BODY,
+  blocks,
+  hasClass,
+  lastAttribute,
+  openingTags,
+  removeBlocks,
+  scanHtml,
+  type BlockSpec,
+  type HtmlScan,
+  type Tag,
+} from "./html-scan";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface TransformedArticle {
+  /** Main article body HTML (infobox and notices removed) */
+  contentHtml: string;
+  /** Extracted infobox HTML (null if no infobox) */
+  infoboxHtml: string | null;
+  /** Extracted page-top notice banners (ambox, hatnotes, etc.) */
+  noticesHtml: string | null;
+  /** Table of contents entries extracted from headings */
+  toc: TocEntry[];
+  /** Image URLs found in the article */
+  images: string[];
+}
+
+export interface TocEntry {
+  id: string;
+  text: string;
+  level: number;
+}
+
+// ---------------------------------------------------------------------------
+// Pre-compiled Regular Expressions (Module-Scoped for Performance)
+// ---------------------------------------------------------------------------
+
+const OUTER_WRAPPER_REGEX =
+  /^<div[^>]*class="[^"]*mw-parser-output[^"]*"[^>]*>([\s\S]*)<\/div>\s*$/u;
+
+/** The page-top notices: a table of class `ambox`, a div of `hatnote` or `dablink`, a div of a message-box class. */
+const AMBOX_NOTICE: BlockSpec = {
+  names: ["table"],
+  closers: ["</table>"],
+  opens: (scan, tag) => hasClass(scan, tag, '"', /ambox/),
+};
+const HATNOTE_NOTICE: BlockSpec = {
+  names: ["div"],
+  closers: ["</div>"],
+  opens: (scan, tag) => hasClass(scan, tag, '"', /hatnote|dablink/),
+};
+const MESSAGE_NOTICE: BlockSpec = {
+  names: ["div"],
+  closers: ["</div>"],
+  opens: (scan, tag) => hasClass(scan, tag, '"', /messagebox|notice|banner-notice|mw-message-box/),
+};
+
+/** ponytail: MAX_NOTICES, 25: the most banners a page's top is read for; a page has a handful, and each one read is cut out of the page by a search of it. */
+const MAX_NOTICES = 25;
+
+const EDIT_SECTION: BlockSpec = {
+  names: ["span"],
+  closers: ["</span>"],
+  opens: (scan, tag) => hasClass(scan, tag, '"', /^mw-editsection/),
+};
+
+/** MediaWiki's own table of contents: a div with `id="toc"`. */
+const BUILTIN_TOC: BlockSpec = {
+  names: ["div"],
+  closers: ["</div>"],
+  opens: (scan, tag) => scan.lower.slice(tag.start, tag.end).includes('id="toc"'),
+};
+
+/** A `<style data-mw-deduplicate>`. */
+const DEDUPLICATED_STYLE: BlockSpec = {
+  names: ["style"],
+  closers: ["</style>"],
+  opens: (scan, tag) => scan.lower.slice(tag.start, tag.end).includes("data-mw-deduplicate"),
+};
+
+/** A tag whose width or height is 1-24px is an icon (a notice's, a link marker's), never the lead image. */
+const TINY_IMG_REGEX = /\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/iu;
+
+const STYLE_EDIT_SECTION_REGEX = /class="mw-editsection"/gu;
+/** The wiki's host (or its `www.` alias) as a regular-expression source: built from the configuration. */
+const MEDIAWIKI_HOST = mediaWikiHostPattern();
+/** `src="` and the start of an address of the wiki's own images or of Wikimedia Commons: the part `extractImageUrls` looks for. */
+const COMMON_IMAGE_SOURCE = new RegExp(
+  `src="https?:\\/\\/(?:${MEDIAWIKI_HOST}\\/images|upload\\.wikimedia\\.org\\/wikipedia\\/commons)`,
+  "y"
+);
+/** An `http:` or protocol-relative spelling of the wiki's own host, which becomes its configured origin. */
+const LEGACY_ORIGIN_SOURCE = `(?:http:)?\\/\\/${MEDIAWIKI_HOST}\\/`;
+const LEGACY_SRC_ORIGIN_REGEX = new RegExp(`src="${LEGACY_ORIGIN_SOURCE}`, "gu");
+const LEGACY_ORIGIN_START_REGEX = new RegExp(`^${LEGACY_ORIGIN_SOURCE}`, "u");
+/** A `src` attribute (not `data-src`) and its double-quoted value. */
+const SRC_ATTRIBUTE_REGEX = /(?<![\w-])src="([^"]*)"/gu;
+
+// ---------------------------------------------------------------------------
+// Main transformer
+// ---------------------------------------------------------------------------
+
+/**
+ * Transform raw MediaWiki parse HTML into WikiOS-ready content.
+ * Extracts infobox, builds TOC from headings, transforms links.
+ */
+export function transformArticleHtml(
+  html: string,
+  basePath: string,
+  wikiSource: "ixwiki" | "iiwiki" | "althistory" = "ixwiki"
+): TransformedArticle {
+  let processed = html;
+
+  // 1. Strip the outer mw-parser-output wrapper if present
+  processed = stripOuterWrapper(processed);
+
+  // 2. Extract page-top notices (ambox, hatnotes) — must come before infobox
+  const { noticesHtml, remainingHtml: afterNotices } = extractNotices(processed);
+  processed = afterNotices;
+
+  // 3. Extract infobox
+  const { infoboxHtml, remainingHtml } = extractInfobox(processed);
+  processed = remainingHtml;
+
+  // 4. Extract TOC from headings
+  const toc = extractTocFromHeadings(processed);
+
+  // 5. Remove MediaWiki's built-in TOC block if present
+  processed = removeBuiltInToc(processed);
+
+  // 6. Transform wiki links from /wiki/ to /wiki/ (another wiki's links stay with that wiki)
+  processed = transformLinks(processed, basePath, wikiSource);
+
+  // 7. Transform image URLs to be absolute. The page's first picture is likely its LCP image: the
+  // infobox's when there is one, else the body's first. It loads eagerly; every other one lazily.
+  processed = transformImages(processed, wikiSource, { eagerFirst: infoboxHtml === null });
+
+  // 8. Add section edit links styling class
+  processed = styleEditSectionLinks(processed);
+
+  // 9. Extract image URLs
+  const images = extractImageUrls(processed);
+
+  return {
+    contentHtml: processed,
+    infoboxHtml: infoboxHtml
+      ? transformLinks(
+          transformImages(infoboxHtml, wikiSource, { eagerFirst: true }),
+          basePath,
+          wikiSource
+        )
+      : null,
+    noticesHtml: noticesHtml
+      ? transformLinks(transformImages(noticesHtml, wikiSource), basePath, wikiSource)
+      : null,
+    toc,
+    images,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Extraction helpers
+// ---------------------------------------------------------------------------
+
+function stripOuterWrapper(html: string): string {
+  const match = html.match(OUTER_WRAPPER_REGEX);
+  return match ? match[1]! : html;
+}
+
+/**
+ * Where the page's first infobox, `mw-heading` or h2-h6 starts (what
+ * `html.search(/<(?:table[^>]*class="[^"]*infobox|div[^>]*class="mw-heading|h[2-6][\s>])/i)` finds), or -1.
+ */
+function contentStart(scan: HtmlScan): number {
+  const { lower, nextGreater } = scan;
+  for (let at = lower.indexOf("<"); at !== -1; at = lower.indexOf("<", at + 1)) {
+    if (/^h[2-6][\s>]/.test(lower.slice(at + 1, at + 4))) return at;
+    const isTable = lower.startsWith("table", at + 1);
+    if (!isTable && !lower.startsWith("div", at + 1)) continue;
+    const close = nextGreater(at + 1);
+    const tag = lower.slice(at, close === -1 || close - at > TAG_BODY ? at + TAG_BODY : close + 1);
+    const value = isTable ? /class="[^"]*infobox/ : /class="mw-heading/;
+    if (value.test(tag)) return at;
+  }
+  return -1;
+}
+
+/**
+ * Extract page-top notice banners (ambox, hatnotes, maintenance templates).
+ * These appear before the infobox/content and should render above everything.
+ */
+function extractNotices(html: string): { noticesHtml: string | null; remainingHtml: string } {
+  const notices: string[] = [];
+
+  // Find the first heading or infobox — notices only appear before those
+  const start = contentStart(scanHtml(html));
+  const searchArea = start > 0 ? html.slice(0, start) : html.slice(0, 3000);
+
+  const scan = scanHtml(searchArea);
+  for (const spec of [AMBOX_NOTICE, HATNOTE_NOTICE, MESSAGE_NOTICE]) {
+    for (const [from, to] of blocks(scan, spec)) {
+      if (notices.length < MAX_NOTICES) notices.push(searchArea.slice(from, to));
+    }
+  }
+
+  if (notices.length === 0) {
+    return { noticesHtml: null, remainingHtml: html };
+  }
+
+  let remaining = html;
+  for (const notice of notices) {
+    remaining = remaining.replace(notice, "");
+  }
+
+  return {
+    noticesHtml: notices.join("\n"),
+    remainingHtml: remaining,
+  };
+}
+
+/** The first tag of `name` whose class (in double quotes) holds `word`, or null. */
+function firstClassedTag(scan: HtmlScan, name: string, word: RegExp): Tag | null {
+  for (const tag of openingTags(scan, [name])) {
+    if (hasClass(scan, tag, '"', word)) return tag;
+  }
+  return null;
+}
+
+function extractInfobox(html: string): { infoboxHtml: string | null; remainingHtml: string } {
+  const scan = scanHtml(html);
+  const infobox = firstClassedTag(scan, "table", /infobox/);
+  if (!infobox) {
+    const portable = firstClassedTag(scan, "aside", /portable-infobox/);
+    if (!portable) {
+      return { infoboxHtml: null, remainingHtml: html };
+    }
+    return extractBalancedTag(html, portable.start, "aside");
+  }
+  return extractBalancedTag(html, infobox.start, "table");
+}
+
+/**
+ * Extract a balanced HTML tag starting at a given position.
+ * Handles nested tags of the same type.
+ */
+function extractBalancedTag(
+  html: string,
+  startPos: number,
+  tagName: string
+): { infoboxHtml: string | null; remainingHtml: string } {
+  const openTag = `<${tagName}`;
+  const closeTag = `</${tagName}>`;
+  // Where the next opener and closer are, looked for once (a search from every tag would be quadratic).
+  const findOpen = forwardFinder(html, openTag);
+  const findClose = forwardFinder(html, closeTag);
+  let depth = 0;
+  let pos = startPos;
+
+  while (pos < html.length) {
+    const nextOpen = findOpen(pos + (depth === 0 ? 0 : 1));
+    const nextClose = findClose(pos);
+
+    if (nextClose === -1) break; // malformed HTML
+
+    if (nextOpen !== -1 && nextOpen < nextClose) {
+      depth++;
+      pos = nextOpen + openTag.length;
+    } else {
+      if (depth <= 1) {
+        const endPos = nextClose + closeTag.length;
+        const extracted = html.slice(startPos, endPos);
+        const remaining = html.slice(0, startPos) + html.slice(endPos);
+        return { infoboxHtml: extracted, remainingHtml: remaining };
+      }
+      depth--;
+      pos = nextClose + closeTag.length;
+    }
+  }
+
+  // Fallback: couldn't balance, return without extraction
+  return { infoboxHtml: null, remainingHtml: html };
+}
+
+/** A heading found in the page: its level, its id and the HTML between its tags. */
+interface FoundHeading {
+  level: number;
+  id: string;
+  html: string;
+  /** Just past the heading's closing tag (and its wrapper's). */
+  end: number;
+}
+
+/** The opening tag around a `mw-headline`: where it starts and ends, and its `id` when it is a `span.mw-headline`. */
+interface Headline {
+  start: number;
+  end: number;
+  id: string | null;
+}
+
+/**
+ * The `id` of the first `<span class="mw-headline" id="…">` between `from` and `to` (a heading's content), or null:
+ * where MediaWiki before 1.43 put a heading's anchor, as older Fandom pages still have it (the heading itself has no
+ * id). An `mw-headline` that is not such a span (a `mw-headline-number`, a headline span without an id) is passed over.
+ * Each `mw-headline` is read once (its span within TAG_BODY before it), and remembers the first span with an id at or
+ * after it, however many headings around it ask, so the calls cost the page's length, not its headings times it.
+ */
+function headlineIdFinder(scan: HtmlScan): (from: number, to: number) => string | null {
+  const { lower } = scan;
+  const nextHeadline = forwardFinder(lower, "mw-headline");
+  /** Per `mw-headline` read: the first span.mw-headline with an id at or after it (null: none in the page). */
+  const firstWithIdFrom = new Map<number, Headline | null>();
+  const headlineAt = (at: number): Headline | null => {
+    const windowStart = Math.max(0, at - TAG_BODY);
+    const opener = lower.slice(windowStart, at).lastIndexOf("<span");
+    const start = windowStart + opener;
+    const close = scan.nextGreater(at);
+    if (opener === -1 || lower.slice(start, at).includes(">") || close === -1) return null;
+    const tag = { start, end: close + 1 };
+    const isHeadline = hasClass(scan, tag, '"', /(?:^|\s)mw-headline(?:\s|$)/);
+    return { ...tag, id: isHeadline ? lastAttribute(scan, tag, "id") : null };
+  };
+  const firstWithId = (from: number): Headline | null => {
+    const walked: number[] = [];
+    let found: Headline | null = null;
+    for (let at = from; at !== -1; at = lower.indexOf("mw-headline", at + 1)) {
+      const known = firstWithIdFrom.get(at);
+      if (known !== undefined) {
+        found = known;
+        break;
+      }
+      walked.push(at);
+      const headline = headlineAt(at);
+      if (headline?.id) {
+        found = headline;
+        break;
+      }
+    }
+    for (const at of walked) firstWithIdFrom.set(at, found);
+    return found;
+  };
+  return (from, to) => {
+    const at = nextHeadline(from);
+    if (at === -1 || at >= to) return null;
+    const found = firstWithId(at);
+    return found && found.start >= from && found.end <= to ? found.id : null;
+  };
+}
+
+/**
+ * The `<h2>`-`<h6>` headings that have an `id` (on the heading, else on the `span.mw-headline` inside it:
+ * `headlineIdFinder`), in order, each with its first closing `</h2>`-`</h6>` after it (what `/<h([2-6])[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/h[2-6]>/gi` finds). With `wrapper`, the heading must be
+ * the first thing in a `<div class="mw-heading…">` and its closing tag the first that only blanks and `</div>`
+ * follow (`/<div[^>]*class="mw-heading[^"]*"[^>]*>\s*<h(…)…<\/h[2-6]>\s*<\/div>/gi`).
+ */
+function* headingsOf(scan: HtmlScan, wrapper: boolean): Generator<FoundHeading> {
+  const { html, lower } = scan;
+  const nextHeadingClose = forwardFinder(lower, /<\/h[2-6]>/g);
+  const nextWrappedClose = forwardSearch((from) => {
+    for (let at = nextHeadingClose(from); at !== -1; at = nextHeadingClose(at + 1)) {
+      if (lower.startsWith("</div>", skipBlanks(lower, at + 5))) return at;
+    }
+    return -1;
+  });
+  const headlineId = headlineIdFinder(scan);
+  let reached = 0;
+  for (const outer of openingTags(scan, wrapper ? ["div"] : ["h2", "h3", "h4", "h5", "h6"])) {
+    if (outer.start < reached) continue;
+    let heading = outer;
+    if (wrapper) {
+      if (!hasClass(scan, outer, '"', /^mw-heading/)) continue;
+      const inner = skipBlanks(lower, outer.end);
+      const close = scan.nextGreater(inner + 1);
+      if (
+        !/^<h[2-6]/.test(lower.slice(inner, inner + 3)) ||
+        close === -1 ||
+        close + 1 - inner > TAG_BODY
+      )
+        continue;
+      heading = { start: inner, end: close + 1 };
+    }
+    const close = wrapper ? nextWrappedClose(heading.end) : nextHeadingClose(heading.end);
+    if (close === -1) return; // no heading after this one has a closer either
+    const id = lastAttribute(scan, heading, "id") ?? headlineId(heading.end, close);
+    if (id === null) continue;
+    reached = wrapper ? skipBlanks(lower, close + 5) + "</div>".length : close + 5;
+    yield {
+      level: Number(lower.charAt(heading.start + 2)),
+      id,
+      html: html.slice(heading.end, close),
+      end: reached,
+    };
+  }
+}
+
+/** The text of a heading's HTML: no `[edit]` link, no tags, trimmed. */
+const headingText = (html: string): string =>
+  stripHtmlTags(removeBlocks(html, EDIT_SECTION)).trim();
+
+function extractTocFromHeadings(html: string): TocEntry[] {
+  const toc: TocEntry[] = [];
+  const scan = scanHtml(html);
+
+  for (const heading of headingsOf(scan, true)) {
+    // Strip HTML tags and [edit] links from heading text
+    const text = headingText(heading.html);
+    if (text) {
+      toc.push({ id: heading.id, text, level: heading.level });
+    }
+  }
+
+  // Fallback: try plain <h2 id="..."> without mw-heading wrapper
+  if (toc.length === 0) {
+    for (const heading of headingsOf(scan, false)) {
+      const text = headingText(heading.html);
+      if (text) {
+        toc.push({ id: heading.id, text, level: heading.level });
+      }
+    }
+  }
+
+  return toc;
+}
+
+function removeBuiltInToc(html: string): string {
+  const scan = scanHtml(html);
+  const pieces: string[] = [];
+  let copied = 0;
+  for (const [start, end] of blocks(scan, BUILTIN_TOC)) {
+    // The block's closing `</div>`, the blanks after it and, when one follows them, one more `</div>`.
+    const blanks = skipBlanks(html, end);
+    pieces.push(html.slice(copied, start));
+    copied = scan.lower.startsWith("</div>", blanks) ? blanks + "</div>".length : blanks;
+  }
+  pieces.push(html.slice(copied));
+  return pieces.join("");
+}
+
+/**
+ * One `srcset` candidate URL of an IxWiki page, absolute like its `src` (`transformImages`): a root-relative
+ * `/images/`, `/thumb/` or `/data/` path gets the origin, an `http:` or protocol-relative spelling of the
+ * wiki's own host becomes the origin, and anything else (a URL that is already absolute, another host's) is
+ * left exactly as it is: it is never prefixed a second time.
+ */
+function absoluteIxWikiSrcsetUrl(url: string, origin: string): string {
+  if (LEGACY_ORIGIN_START_REGEX.test(url))
+    return url.replace(LEGACY_ORIGIN_START_REGEX, `${origin}/`);
+  if (url.startsWith("/images/") || url.startsWith("/data/")) return `${origin}${url}`;
+  if (url.startsWith("/thumb/")) return `${origin}/images${url}`;
+  return url;
+}
+
+/**
+ * `html` with `attribute` (`loading="lazy"`: what `render` makes of the tag's text) put in each `<img` whose tag does
+ * not have one already (what `/<img(?![^>]*loading=)/g` found): the tag ends at the first `>` and holds the
+ * attribute when `loading=` comes before it. Each is looked for once, however many `<img` come before it.
+ */
+function addImageAttribute(html: string, name: string, render: (tag: string) => string): string {
+  const nextGreater = forwardFinder(html, ">");
+  const nextAttribute = forwardFinder(html, name);
+  const pieces: string[] = [];
+  let copied = 0;
+  for (let at = html.indexOf("<img"); at !== -1; at = html.indexOf("<img", at + 4)) {
+    const end = nextGreater(at + 4);
+    const attribute = nextAttribute(at + 4);
+    if (attribute !== -1 && (end === -1 || attribute < end)) continue;
+    // (a tag with no `>` after it is no text at all, as `slice(at, indexOf(">", at) + 1)` gave)
+    const tag = end === -1 ? "" : html.slice(at, Math.min(end + 1, at + TAG_BODY));
+    pieces.push(html.slice(copied, at), `<img ${render(tag)}`);
+    copied = at + 4;
+  }
+  pieces.push(html.slice(copied));
+  return pieces.join("");
+}
+
+export function transformImages(
+  html: string,
+  wikiSource: "ixwiki" | "iiwiki" | "althistory" = "ixwiki",
+  { eagerFirst = false }: { eagerFirst?: boolean } = {}
+): string {
+  let origin = mediaWikiOrigin();
+  let proxyBase = withBasePath("/api/mediawiki/ixwiki");
+
+  if (wikiSource === "iiwiki") {
+    origin = "https://iiwiki.com";
+    proxyBase = withBasePath("/api/mediawiki/iiwiki");
+  } else if (wikiSource === "althistory") {
+    origin = "https://althistory.fandom.com";
+    proxyBase = withBasePath("/api/mediawiki/althistory");
+  }
+
+  let result = html;
+
+  if (wikiSource === "ixwiki") {
+    result = result
+      .replace(LEGACY_SRC_ORIGIN_REGEX, `src="${origin}/`)
+      .replace(/src="\/images\//gu, `src="${origin}/images/`)
+      .replace(/src="\/thumb\//gu, `src="${origin}/images/thumb/`)
+      .replace(/src="\/data\//gu, `src="${origin}/data/`)
+      .replace(/src="\/load\.php/gu, `src="${origin}/load.php`)
+      .replace(
+        /srcset="([^"]*)"/gu,
+        (_match, srcset: string) =>
+          `srcset="${mapSrcsetUrls(srcset, (url) => absoluteIxWikiSrcsetUrl(url, origin))}"`
+      );
+  } else {
+    // A sister wiki's files, relative or absolute (its origin, its upload CDN), go through its media proxy
+    // (sister-media.ts); anything else is left for sanitizeSisterHtml, which drops it.
+    const wiki = wikiSource;
+    const proxied = (url: string) => sisterMediaPath(url, wiki) ?? url;
+    result = result
+      .replace(SRC_ATTRIBUTE_REGEX, (_match, src: string) => `src="${proxied(src)}"`)
+      .replace(
+        /srcset="([^"]*)"/gu,
+        (_match, srcset: string) => `srcset="${mapSrcsetUrls(srcset, proxied)}"`
+      );
+  }
+
+  // 2. Transform url() references in inline CSS
+  if (wikiSource === "ixwiki") {
+    result = result.replace(
+      /url\(["']?(\/(?:images|data|load\.php)[^"')\s]*)["']?\)/gu,
+      (_match, path: string) => `url("${origin}${path}")`
+    );
+  } else {
+    result = result
+      .replace(
+        /url\(["']?(\/(?:images|data|load\.php)[^"')\s]*)["']?\)/gu,
+        (_match, path: string) => `url("${proxyBase}${path}")`
+      )
+      .replace(
+        /url\(["']?https?:\/\/(?:www\.)?iiwiki\.com(\/(?:images|data)[^"')\s]*)["']?\)/gu,
+        (_match, path: string) => `url("${proxyBase}${path}")`
+      );
+  }
+
+  // 3. Transform href for stylesheets (/load.php)
+  result = result.replace(/href="\/load\.php/gu, `href="${origin}/load.php`);
+
+  // 4. Add lazy loading (the first real picture of `html` loads eagerly when asked), async decoding,
+  // and no-referrer
+  let eagerLeft = eagerFirst;
+  result = addImageAttribute(result, "loading=", (tag) => {
+    if (eagerLeft && !TINY_IMG_REGEX.test(tag)) {
+      eagerLeft = false;
+      return 'loading="eager"';
+    }
+    return 'loading="lazy"';
+  });
+  result = addImageAttribute(result, "decoding=", () => 'decoding="async"');
+  result = addImageAttribute(result, "referrerpolicy=", () => 'referrerpolicy="no-referrer"');
+
+  return result;
+}
+
+/**
+ * Append an "Edit" link to every h2/h3 heading under `root` that has none yet, opening the source
+ * editor at that section (`/wiki/{slug}?action=edit&section={heading text}`). `slug` must already be
+ * URI-encoded. It works on the DOM, in place: the reader's article is a live tree React rendered
+ * from the server's HTML, and the links are added to it, never by writing the whole article HTML
+ * again (and the HTML is sanitized already: string surgery on it is not safe, a heading whose
+ * attribute holds `</h2>` would have the link written into that attribute).
+ */
+export function appendSectionEditLinks(root: Element | DocumentFragment, slug: string): void {
+  const document = root.ownerDocument;
+  if (!document) return;
+
+  for (const heading of Array.from(root.querySelectorAll("h2, h3"))) {
+    // a live sister embed's headings are another wiki's (SisterEmbed.tsx): nothing here edits them
+    if (heading.closest(`.${SISTER_EMBED_CLASS}`)) continue;
+    const text = (heading.textContent ?? "").trim();
+    if (!text || heading.querySelector(".wikios-section-edit-link")) continue;
+
+    const link = document.createElement("a");
+    link.className = "wikios-section-edit-link";
+    link.setAttribute(
+      "href",
+      withBasePath(`/wiki/${slug}?action=edit&section=${encodeURIComponent(text)}`)
+    );
+    link.setAttribute("aria-label", `Edit section: ${text}`);
+    link.textContent = "Edit";
+    heading.append(link);
+  }
+}
+
+/** Takes the links `appendSectionEditLinks` added back out of the live tree (the viewer can no longer edit). */
+export function removeSectionEditLinks(root: Element | DocumentFragment): void {
+  for (const link of Array.from(root.querySelectorAll(".wikios-section-edit-link"))) link.remove();
+}
+
+function styleEditSectionLinks(html: string): string {
+  return html.replace(STYLE_EDIT_SECTION_REGEX, 'class="mw-editsection wikios-edit-section"');
+}
+
+function extractImageUrls(html: string): string[] {
+  const urls: string[] = [];
+  const nextGreater = forwardFinder(html, ">");
+  let from = 0;
+  for (let at = html.indexOf("<img"); at !== -1; at = html.indexOf("<img", from)) {
+    from = at + 4;
+    const end = nextGreater(from);
+    if (end === -1) break; // no `>` after this one is a tag's end either
+    if (end - at > TAG_BODY) continue;
+    // The last `src="` of the tag that starts a common address (the expression reads greedily).
+    for (
+      let src = html.lastIndexOf('src="', end);
+      src >= from;
+      src = html.lastIndexOf('src="', src - 1)
+    ) {
+      COMMON_IMAGE_SOURCE.lastIndex = src;
+      const prefix = COMMON_IMAGE_SOURCE.exec(html)?.[0];
+      if (!prefix) continue;
+      const close = html.indexOf('"', src + prefix.length);
+      if (close > src + prefix.length) {
+        urls.push(html.slice(src + 5, close));
+        from = close + 1;
+        break;
+      }
+    }
+  }
+  return urls;
+}
+
+// ---------------------------------------------------------------------------
+// Utility: clean wikitext-generated HTML for display
+// ---------------------------------------------------------------------------
+
+/**
+ * Strip MediaWiki skin-specific CSS while keeping page template styles.
+ */
+export function stripConflictingStyles(html: string): string {
+  const scan = scanHtml(html);
+  const pieces: string[] = [];
+  let copied = 0;
+  for (const [start, end] of blocks(scan, DEDUPLICATED_STYLE)) {
+    const content = html.slice(scan.nextGreater(start + 1) + 1, end - "</style>".length);
+    const isSkinSpecific =
+      content.includes(".skin-citizen") ||
+      content.includes(".skin-vector") ||
+      content.includes("skin-theme-clientpref") ||
+      content.includes(".mw-page-title") ||
+      content.includes(".mw-body-content parsoid-body");
+
+    const hasTemplateStyles =
+      content.includes(".home-grid") ||
+      content.includes(".home-card") ||
+      content.includes("#featured_article") ||
+      content.includes(".home-header") ||
+      content.includes(".home-link") ||
+      content.includes(".infobox") ||
+      content.includes(".template-");
+
+    if (isSkinSpecific && !hasTemplateStyles) {
+      pieces.push(html.slice(copied, start));
+      copied = end;
+    }
+  }
+  pieces.push(html.slice(copied));
+  return pieces.join("");
+}

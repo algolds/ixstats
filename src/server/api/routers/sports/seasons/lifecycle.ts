@@ -6,43 +6,149 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
 import {
-  generateSchedule,
-  matchIntervalMs,
-  raceIntervalMs,
-  transitionSeasonAction,
-  type ArchetypeType,
-} from "~/lib/sports";
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
+import { TRPCError } from "@trpc/server";
+import type { Prisma, PrismaClient } from "@prisma/client";
+import {
+  assertCanManageLeague,
+  viewerCanManageLeague,
+} from "~/server/api/routers/sports/league-access";
+import { computeMatchRevenue } from "~/lib/sports/match-revenue";
+import { TEAM_BADGE, requireOwnedTeam } from "~/server/api/routers/sports/_shared";
+import { persistSeasonSchedule, transitionSeasonAction } from "~/lib/sports";
 
-// ─── Router ───────────────────────────────────────────────────────────────────
+/** Completed matches of `teamId` whose revenue that side hasn't collected yet. */
+function uncollectedMatches(
+  db: Pick<PrismaClient, "sportMatch"> | Prisma.TransactionClient,
+  teamId: string
+) {
+  return db.sportMatch.findMany({
+    where: {
+      status: "completed",
+      OR: [
+        { homeTeamId: teamId, homeRevenueCollectedAt: null },
+        { awayTeamId: teamId, awayRevenueCollectedAt: null },
+      ],
+    },
+    select: { id: true, homeTeamId: true, awayTeamId: true, homeScore: true, awayScore: true },
+  });
+}
+
+type TraceEvent = { actorId?: string; actorName?: string; type?: string; description?: unknown };
+
+/** Rebuild per-player goals/assists/shots from a match trace when no stored player stats exist. */
+async function playerStatsFromTrace(db: PrismaClient, matchId: string, trace: TraceEvent[]) {
+  const playerMap = new Map<string, { goals: number; assists: number; shots: number }>();
+  const actorNames = new Map<string, string>();
+
+  for (const event of trace) {
+    const actorId = event.actorId;
+    if (!actorId) continue;
+
+    if (event.actorName) actorNames.set(actorId, event.actorName);
+    const pStat = playerMap.get(actorId) ?? { goals: 0, assists: 0, shots: 0 };
+    playerMap.set(actorId, pStat);
+
+    if (event.type === "goal") {
+      pStat.goals++;
+    } else if (
+      event.type === "tactic_shift" &&
+      typeof event.description === "string" &&
+      event.description.toLowerCase().includes("shot")
+    ) {
+      pStat.shots++;
+    }
+  }
+
+  // Assign assists to teammates
+  trace.forEach((event, i) => {
+    if (event.type !== "goal" || !event.actorId) return;
+    const candidates = Array.from(playerMap.keys()).filter((id) => id !== event.actorId);
+    if (candidates.length > 0) {
+      playerMap.get(candidates[(i * 7) % candidates.length]!)!.assists++;
+    }
+  });
+
+  const playerIds = Array.from(playerMap.keys());
+  const dbPlayers = await db.sportPlayer.findMany({
+    where: { id: { in: playerIds } },
+    select: { id: true, firstName: true, lastName: true, position: true },
+  });
+  const dbPlayersMap = new Map(dbPlayers.map((p) => [p.id, p]));
+
+  return playerIds.map((id) => {
+    const dbPlayer = dbPlayersMap.get(id);
+    const parts = (actorNames.get(id) || "Player").split(" ");
+    return {
+      id: `temp-${id}`,
+      matchId,
+      playerId: id,
+      stats: playerMap.get(id) || { goals: 0, assists: 0, shots: 0 },
+      createdAt: new Date(),
+      player: {
+        firstName: dbPlayer?.firstName || parts[0] || "Unknown",
+        lastName: dbPlayer?.lastName || parts.slice(1).join(" ") || "Player",
+        position: dbPlayer?.position || "MID",
+      },
+    } as any;
+  });
+}
 
 export const sportsSeasonsLifecycleRouter = createTRPCRouter({
-  // ═══ League Management ══════════════════════════════════════════════════════
-
   // ═══ Team Management ═════════════════════════════════════════════════════════
 
-  collectMatchRevenue: protectedProcedure
+  /** What the caller's club would collect now: completed matches it hasn't been paid for yet. */
+  previewMatchRevenue: protectedProcedure
+    .input(z.object({ teamId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const team = await requireOwnedTeam(ctx.db, input.teamId, ctx.user.id, "own");
+      return computeMatchRevenue(team, await uncollectedMatches(ctx.db, team.id));
+    }),
+
+  /**
+   * Pay the club for completed matches it hasn't collected yet (SL-14): ticket revenue and the
+   * sponsor base fee per home match, the sponsor win bonus per win. Each match pays once.
+   */
+  collectMatchRevenue: rateLimitedMutationProcedure
     .input(z.object({ teamId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const team = await ctx.db.sportTeam.findUnique({ where: { id: input.teamId } });
-        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
-        if (team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this team" });
-        }
+        return await ctx.db.$transaction(async (tx) => {
+          // Serialize collections per team so two clicks can't both pay the same matches
+          await tx.$queryRaw`SELECT id FROM "sport_teams" WHERE id = ${input.teamId} FOR UPDATE`;
+          const team = await requireOwnedTeam(tx, input.teamId, ctx.user.id, "own");
 
-        const ticketRevenue =
-          team.stadiumCapacity * team.ticketPrice * 0.6 * (team.popularity / 100);
-        const sponsorIncome = (team.sponsor as any)?.baseFee ?? 0;
-        const totalIncome = Math.round(ticketRevenue + sponsorIncome);
+          const matches = await uncollectedMatches(tx, team.id);
+          const revenue = computeMatchRevenue(team, matches);
+          if (matches.length === 0) {
+            return { ...revenue, matchesCollected: 0, budget: team.budget ?? 0 };
+          }
 
-        const currentBudget = team.budget ?? 0;
-        return ctx.db.sportTeam.update({
-          where: { id: input.teamId },
-          data: { budget: currentBudget + totalIncome },
+          const now = new Date();
+          const homeIds = matches.filter((m) => m.homeTeamId === team.id).map((m) => m.id);
+          const awayIds = matches.filter((m) => m.awayTeamId === team.id).map((m) => m.id);
+          if (homeIds.length > 0) {
+            await tx.sportMatch.updateMany({
+              where: { id: { in: homeIds } },
+              data: { homeRevenueCollectedAt: now },
+            });
+          }
+          if (awayIds.length > 0) {
+            await tx.sportMatch.updateMany({
+              where: { id: { in: awayIds } },
+              data: { awayRevenueCollectedAt: now },
+            });
+          }
+          const updated = await tx.sportTeam.update({
+            where: { id: team.id },
+            data: { budget: { increment: revenue.total } },
+          });
+          return { ...revenue, matchesCollected: matches.length, budget: updated.budget ?? 0 };
         });
       } catch (error) {
         if (error instanceof TRPCError) throw error;
@@ -55,7 +161,7 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
 
   // ═══ Season & Simulation ════════════════════════════════════════════════════
 
-  startSeason: protectedProcedure
+  startSeason: rateLimitedMutationProcedure
     .input(z.object({ leagueId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -67,6 +173,7 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
         if (!league) {
           throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
         }
+        assertCanManageLeague(ctx, league);
 
         if (league.teams.length === 0) {
           throw new TRPCError({
@@ -93,7 +200,7 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
         });
         const seasonNumber = (maxSeason?.seasonNumber ?? 0) + 1;
 
-        const startIxTime = IxTime.getCurrentIxTime();
+        const startIxTime = Date.now();
 
         const season = await ctx.db.sportSeason.create({
           data: {
@@ -121,73 +228,12 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
           })),
         });
 
-        if (league.archetype === "circuit") {
-          // Generate race calendar
-          const schedule = generateSchedule({
-            archetype: league.archetype as ArchetypeType,
-            teamCount: teamIds.length,
-            raceCount: (league.settings as Record<string, unknown> | null)?.raceCount as
-              number | undefined,
-          });
-          const races = Array.isArray(schedule) ? schedule : [];
-          for (const race of races) {
-            const rRec = race as any;
-            await ctx.db.sportRace.create({
-              data: {
-                seasonId: season.id,
-                raceNumber: rRec.raceNumber as number,
-                circuitName: (rRec.circuitName as string) ?? `Race ${rRec.raceNumber}`,
-                status: "upcoming",
-                raceIxTime:
-                  startIxTime + (rRec.raceNumber as number) * raceIntervalMs(league.settings),
-              },
-            });
-          }
-        } else if (league.archetype === "bracket") {
-          // Create initial bracket matchups: seed teams by index, pair 1vN, 2v(N-1), etc.
-          const shuffled = [...league.teams].sort(() => Math.random() - 0.5);
-          const pairs: Array<[(typeof league.teams)[0], (typeof league.teams)[0]]> = [];
-          for (let i = 0; i < shuffled.length; i += 2) {
-            if (i + 1 < shuffled.length) {
-              pairs.push([shuffled[i], shuffled[i + 1]]);
-            }
-          }
-
-          for (const [fighter1, fighter2] of pairs) {
-            await ctx.db.sportBracket.create({
-              data: {
-                seasonId: season.id,
-                round: 1,
-                fighter1Id: fighter1.id,
-                fighter2Id: fighter2.id,
-                status: "scheduled",
-                scheduledIxTime: startIxTime,
-              },
-            });
-          }
-        } else {
-          // League or division_conference archetype: generate match schedule
-          const schedule = generateSchedule({
-            archetype: league.archetype as ArchetypeType,
-            teamCount: teamIds.length,
-          });
-          const matches = Array.isArray(schedule) ? schedule : [];
-          for (const m of matches) {
-            const mRec = m as any;
-            await ctx.db.sportMatch.create({
-              data: {
-                seasonId: season.id,
-                matchDay: (mRec.matchDay as number) ?? 1,
-                homeTeamId: teamIds[(mRec.homeTeamIndex as number) ?? 0] ?? teamIds[0],
-                awayTeamId:
-                  teamIds[(mRec.awayTeamIndex as number) ?? 1] ?? teamIds[1] ?? teamIds[0],
-                status: "scheduled",
-                scheduledIxTime:
-                  startIxTime + ((mRec.matchDay as number) ?? 1) * matchIntervalMs(league.settings),
-              },
-            });
-          }
-        }
+        await persistSeasonSchedule(ctx.db, {
+          seasonId: season.id,
+          startIxTime,
+          league,
+          teams: league.teams,
+        });
 
         return season;
       } catch (error) {
@@ -216,41 +262,14 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
           },
           standings: {
             include: {
-              team: {
-                select: {
-                  id: true,
-                  name: true,
-                  shortName: true,
-                  color: true,
-                  logo: true,
-                  wikiSlug: true,
-                },
-              },
+              team: TEAM_BADGE,
             },
             orderBy: [{ points: "desc" }, { pointsFor: "desc" }],
           },
           matches: {
             include: {
-              homeTeam: {
-                select: {
-                  id: true,
-                  name: true,
-                  shortName: true,
-                  color: true,
-                  logo: true,
-                  wikiSlug: true,
-                },
-              },
-              awayTeam: {
-                select: {
-                  id: true,
-                  name: true,
-                  shortName: true,
-                  color: true,
-                  logo: true,
-                  wikiSlug: true,
-                },
-              },
+              homeTeam: TEAM_BADGE,
+              awayTeam: TEAM_BADGE,
             },
             orderBy: [{ matchDay: "asc" }, { scheduledIxTime: "asc" }],
           },
@@ -285,24 +304,21 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
         const match = await ctx.db.sportMatch.findUnique({
           where: { id: input.matchId },
           include: {
-            homeTeam: {
+            homeTeam: TEAM_BADGE,
+            awayTeam: TEAM_BADGE,
+            season: {
               select: {
                 id: true,
-                name: true,
-                shortName: true,
-                logo: true,
-                color: true,
-                wikiSlug: true,
-              },
-            },
-            awayTeam: {
-              select: {
-                id: true,
-                name: true,
-                shortName: true,
-                logo: true,
-                color: true,
-                wikiSlug: true,
+                seasonNumber: true,
+                league: {
+                  select: {
+                    id: true,
+                    name: true,
+                    sportPreset: true,
+                    archetype: true,
+                    createdByUserId: true,
+                  },
+                },
               },
             },
             playerStats: {
@@ -324,82 +340,12 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
         const trace = stats?.trace as any[];
 
         if (playerStats.length === 0 && Array.isArray(trace) && trace.length > 0) {
-          const playerMap = new Map<string, { goals: number; assists: number; shots: number }>();
-          const actorNames = new Map<string, string>();
-
-          for (let i = 0; i < trace.length; i++) {
-            const event = trace[i];
-            const actorId = event.actorId;
-            if (!actorId) continue;
-
-            if (event.actorName) {
-              actorNames.set(actorId, event.actorName);
-            }
-
-            if (!playerMap.has(actorId)) {
-              playerMap.set(actorId, { goals: 0, assists: 0, shots: 0 });
-            }
-
-            const pStat = playerMap.get(actorId)!;
-
-            if (event.type === "goal") {
-              pStat.goals++;
-            } else if (
-              event.type === "tactic_shift" &&
-              typeof event.description === "string" &&
-              event.description.toLowerCase().includes("shot")
-            ) {
-              pStat.shots++;
-            }
-          }
-
-          // Assign assists to teammates
-          for (let i = 0; i < trace.length; i++) {
-            const event = trace[i];
-            if (event.type === "goal" && event.actorId) {
-              const scorerId = event.actorId;
-              const candidates = Array.from(playerMap.keys()).filter((id) => id !== scorerId);
-              if (candidates.length > 0) {
-                const idx = (i * 7) % candidates.length;
-                const candidateId = candidates[idx];
-                playerMap.get(candidateId)!.assists++;
-              }
-            }
-          }
-
-          const playerIds = Array.from(playerMap.keys());
-          const dbPlayers = await ctx.db.sportPlayer.findMany({
-            where: { id: { in: playerIds } },
-            select: { id: true, firstName: true, lastName: true, position: true },
-          });
-
-          const dbPlayersMap = new Map(dbPlayers.map((p) => [p.id, p]));
-
-          playerStats = playerIds.map((id) => {
-            const dbPlayer = dbPlayersMap.get(id);
-            const fullName = actorNames.get(id) || "Player";
-            const parts = fullName.split(" ");
-            const firstName = dbPlayer?.firstName || parts[0] || "Unknown";
-            const lastName = dbPlayer?.lastName || parts.slice(1).join(" ") || "Player";
-            const position = dbPlayer?.position || "MID";
-
-            return {
-              id: `temp-${id}`,
-              matchId: input.matchId,
-              playerId: id,
-              stats: playerMap.get(id) || { goals: 0, assists: 0, shots: 0 },
-              createdAt: new Date(),
-              player: {
-                firstName,
-                lastName,
-                position,
-              },
-            } as any;
-          });
+          playerStats = await playerStatsFromTrace(ctx.db, input.matchId, trace);
         }
 
         return {
           ...match,
+          viewerCanManage: viewerCanManageLeague(ctx, match.season.league),
           playerStats,
           evaluation: stats?.evaluation ?? null,
           trace: stats?.trace ?? null,
@@ -414,9 +360,18 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
       }
     }),
 
-  transitionToNextSeason: protectedProcedure
+  transitionToNextSeason: rateLimitedMutationProcedure
     .input(z.object({ seasonId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const season = await ctx.db.sportSeason.findUnique({
+        where: { id: input.seasonId },
+        select: { league: { select: { createdByUserId: true } } },
+      });
+      if (!season) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Season not found" });
+      }
+      assertCanManageLeague(ctx, season.league);
+
       try {
         const result = await transitionSeasonAction(ctx.db as any, input.seasonId);
         return result;
@@ -428,10 +383,4 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
         });
       }
     }),
-
-  // ═══ History & Records ══════════════════════════════════════════════════════
-
-  // ═══ MyClub ══════════════════════════════════════════════════════════════════
-
-  // ═══ Utility ═════════════════════════════════════════════════════════════════
 });

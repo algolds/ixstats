@@ -14,15 +14,18 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { Card, CardContent } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { AdminHeader } from "../_components/AdminHeader";
+import { Card } from "~/components/ui/card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { SportsLabsInspector } from "~/components/admin/sports-labs/SportsLabsInspector";
 import { cn } from "~/lib/utils";
-import { Trophy, Users, Calendar, Swords, Sliders, Database, FlaskConical } from "lucide-react";
+import {
+  Trophy,
+  Group as Users,
+  Calendar,
+  Tournament as Swords,
+  ControlSlider as Sliders,
+} from "iconoir-react";
 
 // Custom Node Component
 function PipelineNode({ data, selected }: NodeProps) {
@@ -33,13 +36,12 @@ function PipelineNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "relative min-w-[210px] rounded-xl border px-4 py-3 shadow-lg backdrop-blur-md transition-all duration-300",
+        "rounded-row duration-fast relative min-w-[210px] border px-4 py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
         selected
-          ? "scale-105 border-amber-500 bg-amber-500/10 shadow-amber-500/10"
-          : "bg-card/90 border-border/80 hover:border-muted-foreground/40"
+          ? "border-yellow bg-yellow/10 scale-105"
+          : "bg-surface border-separator hover:border-separator-opaque"
       )}
     >
-      {/* Target Handles */}
       {inputPositions.map((pos) => {
         let position = Position.Top;
         if (pos === "bottom") position = Position.Bottom;
@@ -52,7 +54,7 @@ function PipelineNode({ data, selected }: NodeProps) {
             type="target"
             id={pos}
             position={position}
-            className="border-background !h-2 !w-2 border !bg-amber-500"
+            className="border-background !bg-yellow !h-2 !w-2 border"
           />
         );
       })}
@@ -60,21 +62,18 @@ function PipelineNode({ data, selected }: NodeProps) {
       <div className="flex items-center gap-3">
         <div
           className={cn(
-            "border-border/40 bg-muted/40 flex h-8 w-8 items-center justify-center rounded-lg border",
-            selected ? "border-amber-500/50 text-amber-500" : "text-muted-foreground"
+            "border-separator bg-fill-3 rounded-control flex h-8 w-8 items-center justify-center border",
+            selected ? "border-yellow/50 text-yellow" : "text-label-secondary"
           )}
         >
           {Icon && <Icon className="h-4.5 w-4.5" />}
         </div>
         <div className="text-left">
-          <div className="text-foreground text-[11px] leading-tight font-bold">
-            {data.label as string}
-          </div>
-          <div className="text-muted-foreground text-[9px]">{data.description as string}</div>
+          <div className="text-label text-caption leading-tight">{data.label as string}</div>
+          <div className="text-label-secondary text-footnote">{data.description as string}</div>
         </div>
       </div>
 
-      {/* Source Handles */}
       {outputPositions.map((pos) => {
         let position = Position.Bottom;
         if (pos === "top") position = Position.Top;
@@ -87,7 +86,7 @@ function PipelineNode({ data, selected }: NodeProps) {
             type="source"
             id={pos}
             position={position}
-            className="border-background !h-2 !w-2 border !bg-amber-500"
+            className="border-background !bg-yellow !h-2 !w-2 border"
           />
         );
       })}
@@ -105,13 +104,13 @@ export default function SportsLabsPanel() {
   const [selectedSport, setSelectedSport] = useState<string>("soccer");
 
   const sportColors: Record<string, string> = {
-    soccer: "#10b981", // emerald green
-    hockey: "#38bdf8", // sky ice blue
-    basketball: "#f97316", // basketball orange
-    football: "#a855f7", // football purple
-    baseball: "#facc15", // baseball yellow
-    f1: "#ef4444", // racing red
-    boxing: "#ec4899", // boxing pink
+    soccer: "var(--color-chart-3)", // emerald green
+    hockey: "var(--color-chart-6)", // sky ice blue
+    basketball: "var(--color-chart-2)", // basketball orange
+    football: "var(--color-chart-4)", // football purple
+    baseball: "var(--color-chart-7)", // baseball yellow
+    f1: "var(--color-chart-8)", // racing red
+    boxing: "var(--color-chart-5)", // boxing pink
   };
 
   const sportBgGlows: Record<string, string> = {
@@ -125,7 +124,7 @@ export default function SportsLabsPanel() {
   };
 
   const dynamicNodes = React.useMemo(() => {
-    const color = sportColors[selectedSport] || "#3b82f6";
+    const color = sportColors[selectedSport] || "var(--color-chart-1)";
     const bgGlow = sportBgGlows[selectedSport] || "rgba(59, 130, 246, 0.05)";
 
     const sportLabel =
@@ -150,7 +149,7 @@ export default function SportsLabsPanel() {
         id: "presets",
         type: "pipelineNode",
         data: {
-          label: "Sport Presets",
+          label: "Sport presets",
           description: `Active Preset: ${sportLabel}`,
           icon: Trophy,
           inputs: [],
@@ -167,7 +166,7 @@ export default function SportsLabsPanel() {
         id: "rosters",
         type: "pipelineNode",
         data: {
-          label: "Talent & Roster Gen",
+          label: "Talent & roster gen",
           description:
             selectedSport === "hockey"
               ? "Supports line shifts, goalies & saints"
@@ -191,7 +190,7 @@ export default function SportsLabsPanel() {
         id: "schedule",
         type: "pipelineNode",
         data: {
-          label: "Schedule Generator",
+          label: "Schedule generator",
           description:
             selectedSport === "f1"
               ? "Supports Circuit race schedules"
@@ -213,7 +212,7 @@ export default function SportsLabsPanel() {
         id: "resolver",
         type: "pipelineNode",
         data: {
-          label: "Match Resolver",
+          label: "Match resolver",
           description:
             selectedSport === "hockey"
               ? "Periods, goalie pulling, shootout, blessings"
@@ -235,7 +234,7 @@ export default function SportsLabsPanel() {
         id: "standings",
         type: "pipelineNode",
         data: {
-          label: "Standings & Table",
+          label: "Standings & table",
           description:
             selectedSport === "f1"
               ? "F1 Championship points standings"
@@ -257,7 +256,7 @@ export default function SportsLabsPanel() {
         id: "aging",
         type: "pipelineNode",
         data: {
-          label: "Aging & Transition",
+          label: "Aging & transition",
           description:
             selectedSport === "soccer" || selectedSport === "hockey"
               ? "Promo-swaps & Quadrennial WC cycles"
@@ -278,7 +277,7 @@ export default function SportsLabsPanel() {
   }, [selectedSport]);
 
   const dynamicEdges = React.useMemo(() => {
-    const color = sportColors[selectedSport] || "#3b82f6";
+    const color = sportColors[selectedSport] || "var(--color-chart-1)";
     return [
       {
         id: "e-presets-rosters",
@@ -332,7 +331,7 @@ export default function SportsLabsPanel() {
         sourceHandle: "left",
         targetHandle: "right",
         animated: true,
-        style: { stroke: "#a855f7", strokeWidth: 1.5 },
+        style: { stroke: "var(--color-chart-4)", strokeWidth: 1.5 },
       },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -355,53 +354,27 @@ export default function SportsLabsPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Header with AdminHeader */}
-      <div className="facet-hierarchy-parent border-border/60 bg-card/40 flex flex-col justify-between gap-4 rounded-xl border p-6 md:flex-row md:items-center">
-        <div className="flex items-center gap-4">
-          <div className="border-border/50 bg-muted/30 flex h-12 w-12 items-center justify-center rounded-xl border text-amber-500">
-            <FlaskConical className="h-6 w-6 animate-pulse" />
-          </div>
-          <div>
-            <h1 className="text-foreground flex items-center gap-2 text-2xl font-bold">
-              MatchResolver
-              <Badge
-                variant="outline"
-                className="border-amber-500/20 bg-amber-500/10 text-[10px] font-semibold text-amber-400 uppercase"
-              >
-                Simulation Kernel Layer
-              </Badge>
-            </h1>
-          </div>
-        </div>
-
-        {/* Toggle Mode */}
-        <div className="bg-muted/20 flex shrink-0 items-center gap-1.5 self-start rounded-lg border p-1 md:self-auto">
-          <Button
+      <PageHeader
+        title="MatchResolver"
+        subtitle="Simulation kernel"
+        actions={
+          <SegmentedControl
             size="sm"
-            variant={isSandbox ? "default" : "ghost"}
-            onClick={() => setIsSandbox(true)}
-            className="h-7.5 px-3 text-xs"
-          >
-            <FlaskConical className="mr-1 h-3.5 w-3.5" />
-            Sandbox Playground
-          </Button>
-          <Button
-            size="sm"
-            variant={!isSandbox ? "default" : "ghost"}
-            onClick={() => setIsSandbox(false)}
-            className="h-7.5 px-3 text-xs"
-          >
-            <Database className="mr-1 h-3.5 w-3.5" />
-            Live DB Inspector
-          </Button>
-        </div>
-      </div>
+            aria-label="Mode"
+            value={isSandbox ? "sandbox" : "live"}
+            onValueChange={(mode) => setIsSandbox(mode === "sandbox")}
+            options={[
+              { value: "sandbox", label: "Sandbox" },
+              { value: "live", label: "Live DB inspector" },
+            ]}
+          />
+        }
+      />
 
       {/* Main Grid: Left canvas + Right inspector */}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-        {/* Canvas Section */}
         <div className="relative flex h-[650px] flex-col lg:col-span-7">
-          <Card className="facet-hierarchy-child border-border/60 bg-card/30 relative flex-1 overflow-hidden rounded-xl">
+          <Card className="rounded-row relative flex flex-1 flex-col gap-6 overflow-hidden py-6">
             <ReactFlow
               nodes={nodes.map((n) => ({
                 ...n,
@@ -420,23 +393,22 @@ export default function SportsLabsPanel() {
               zoomOnDoubleClick={false}
               selectNodesOnDrag={false}
             >
-              <Background color="#555" gap={16} size={1} />
+              <Background color="var(--color-separator-opaque)" gap={16} size={1} />
               <Controls
                 showInteractive={false}
-                className="bg-popover border-border text-foreground border"
+                className="bg-surface-elevated border-separator text-label border"
               />
               <Panel
                 position="top-left"
-                className="bg-background/80 border-border/60 text-muted-foreground rounded-lg border px-3 py-1.5 text-[10px] shadow-sm backdrop-blur-sm select-none"
+                className="bg-background border-separator text-label-secondary rounded-control text-footnote border px-3 py-2 select-none"
               >
-                <span className="mr-1 font-bold text-amber-500">💡 Pipeline Loop:</span> Click nodes
-                to select and configure settings in the inspector.
+                <span className="text-yellow mr-1 font-semibold">💡 Pipeline Loop:</span> Click
+                nodes to select and configure settings in the inspector.
               </Panel>
             </ReactFlow>
           </Card>
         </div>
 
-        {/* Inspector Section */}
         <div className="h-[650px] lg:col-span-5">
           <SportsLabsInspector
             selectedNodeId={selectedNodeId}

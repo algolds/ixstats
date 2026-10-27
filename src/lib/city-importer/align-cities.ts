@@ -22,7 +22,7 @@ export interface SvgCityPoint {
   isCapital: boolean;
 }
 
-export interface CityAlignResult {
+interface CityAlignResult {
   matrix: AffineMatrix | null;
   matchCount: number;
   rmse: number;

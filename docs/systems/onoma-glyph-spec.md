@@ -38,7 +38,7 @@
 
 ## 04 — React `<OnomaGlyph />` Component API
 
-Located in `src/app/labs/onoma/components/glyphs/`:
+Located in `src/app/labs/onoma/components/glyphs/` (24 canonical glyphs in `onoma-glyphs-catalog.tsx`). An interactive catalog of every glyph renders at `/labs/onoma/glyphs`:
 
 ```tsx
 import { OnomaGlyph } from "~/app/labs/onoma/components/glyphs";

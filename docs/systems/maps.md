@@ -1,30 +1,28 @@
-# IxWorld & IxMaps System Documentation
+# 🗺️ Atlas — Spatial Geography & Cartographic Studio
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Top-level App **IxWorld** (`IXWORLD_VERSION = 1.2`), powered by the **Atlas Spatial Engine** (`ATLAS_ENGINE_VERSION = 4`). Canvas sub-version `CANVAS_VERSION = 1`.
+**Last updated:** 2026-10-12
 
----
+**Parent App Suite:** Atlas (app version 3 — `VERSIONS.apps.ixworld`, exported as `IXWORLD_VERSION`; `IxWorld` is the in-code app name)  
+**Engine:** Atlas Spatial Engine (`ATLAS_ENGINE_VERSION = 5`)  
+**Subsystems:** Interactive World Map, Vector Map Editor Studio, Spatial Geographic Analyzer, Atlas admin and World Studio  
+**Primary Action:** `MAP` | **Domain Accent:** Chart shallows (`data-app="maps"`, `#05667a` / `#69cee6`)  
+**Routes:** `/maps` (players edit their own nation in place; `?realm=<slug>&editor=world` opens the World tab), `/mycountry/map-editor` (the same country editor, full-screen), `/admin/maps/editor` (world editor), `/admin/maps` (Atlas, the admin home for every realm's map), `/admin/maps/realms/<slug>` (a realm's page), `/admin/maps/studio` (World Studio), standalone `maps.ixwiki.com` | **Status:** see [SYSTEM_STATUS.md](SYSTEM_STATUS.md) (interactive map and worldgen ✅ Live; map editor 🟡 Partial)  
 
-## Overview & Product Architecture
+Atlas is the spatial, cartographic, and worldbuilding studio for IxStates. Built on **MapLibre GL JS**, it powers interactive vector globe maps, procedural realm generation, grounded manual IxEarth cartography, admin GIS suites, and precision player territory editors.
 
-**IxWorld** is the spatial, cartographic, and worldbuilding engine for the platform. Built on **MapLibre GL JS**, it powers interactive world maps, procedural realm generation, admin cartography suites, embedded nation cards, and player territory editors.
-
-### Product Model: IxWorld vs Realms Platform
-
-- **IxWorld** is the default community realm (`realm="default"`) for the Ixnay community. It is a tenant on the platform.
-- **Realms** is the multi-tenant product platform. External players create their own isolated **Realms** with procedural physical geography, custom nation boundaries, and sovereign simulation instances.
-- **Unified Spatial Engine**: IxWorld and external Realms share identical code paths, data models, tRPC APIs, and WebGL rendering engines.
-- **Dual Deployment Architecture**:
-  - **Standalone App**: Hosted at `maps.ixwiki.com` (port 3002) via `NEXT_PUBLIC_IXWORLD_STANDALONE=true`.
-  - **Embedded Main App**: Interactive `/maps` route within IxStates.
-  - **Embedded Widgets**: Compact interactive cards embedded across `/mycountry`, `/diplomacy`, `/defense`, `/intelligence`, and `/dashboard`.
+### Core Foundation: "Geography is King"
+In IxStates, geography is the source of truth for borders, area and adjacency. Its reach into the economy is narrower than the aspiration:
+- **Topological Ground Truth**: Live neighbour queries use PostGIS spatial geometry (`ST_Touches`, `ST_Intersection`; `geo/core/geo-profile.ts`, `national-issues/neighbors.ts`). The stored `MapLayer.neighbors` column is rebuilt from PostGIS after every map import that carries political regions (the realm map import and its rollback, so imported realms get neighbours too) and by the admin `rebuildAdjacency` mutation (`lib/maps/adjacency.ts`).
+- **Climate & Biomes**: The bbox-estimated geo profile derives `CountryGeoProfile.gdpModifier`, `tradeModifier` and `infraCostModifier` (`computeEconomicGeoModifiers`, `src/lib/maps/geo-analytics.ts`). These are written and displayed only (`GeoProfileContent.tsx`); no economy code reads them. The simulation's geographic inputs are `landArea`, the national-issues snapshot (landlocked, coastline) and the bottom-up rollup. **Geographic resources** (AT-9): the admin **Recalc** action (`geoCore.recalculateGeoProfiles`) only queues the work and returns `{ queued, lastRunAt }` (the toast says when the job last ran, or that no run is recorded): the `geo-profiles` cron job (`geo/core/profile-job.ts`; add it to `CRON_ENABLED_JOBS`, every 5 minutes, one country at a time) recomputes each stale or missing profile and also rewrites the country's `GeographicResource` rows from PostGIS (`src/lib/maps/geographic-resources.ts`): freshwater for its three longest rivers and three largest lakes inside the border, a fishery on the coast (the border not shared with a neighbour) when `coastlineKm > 0`, and farmland weighted by each clipped climate zone's agriculture factor. `quantity` is the measured size on a fixed scale (1000 km of river, 1000 km² of lake, 2000 km of coast, the arable share); only farmland gets a `quality` (its mean agriculture factor), so the Geography tab shows quality for farmland only. There is no geology data, so no mineral, oil, gas or forest resources are written. Like the profiles, they are display only. The Labs pipeline that showed sample profiles and resources is gone: a generated world's nation slots are ordinary `Country` rows with a border, so the same job covers them once they exist.
+- **Dual Pipeline Architecture**: The Atlas Engine unifies two distinct cartographic streams under one high-performance WebGL renderer:
+  1. **Grounded Manual IxEarth Pipeline**: Exact affine transformation ($25625 \times 15729$ viewBox $\to$ WGS84 coordinates), manual hypsometric contour stacking, topological seam-locking, and 12 Trewartha climate biomes.
+  2. **Procedural UPG v2 Vector Pipeline**: ~100,000-seed Voronoi spatial mesh (`WorldGraph`; 63,742 cells after latitude thinning), 5 Lloyd iterations, coastal hypsometric damping, and Catmull-Rom spline vector subdivision (2 passes for polygons, 3 for rivers).
 
 ---
 
 ## Prerequisite Map Conversion & Processing Pipeline
 
-Raw map graphics (SVG vector files or PNG raster maps) undergo a multi-pass parsing, affine coordinate transformation, topological repair, and compression pipeline (`src/lib/map-pipeline.ts`, `src/lib/svg-parser.ts`, `src/lib/geojson-compress.ts`).
+Raw map graphics (SVG vector files or PNG raster maps) undergo a multi-pass parsing, affine coordinate transformation, topological repair, and compression pipeline (`src/lib/maps/geojson-compress.ts`, and `src/lib/flags/svg-parser.ts` for the SVG metadata and path helpers that remain). A realm's political map from a flat-colour image, an SVG of nations or GeoJSON goes through the [realm map import engine](#realm-map-import-engine). The layered Inkscape SVG pipeline (`LayeredSvgPipeline`, `runPipeline`), the per-layer SVG uploader and the old SVG-to-GeoJSON parser and PNG tracer (`parseSvgToGeoJson`, `convertPngToSvg`, `potrace`) are gone; the province importer still uses `extractProvincesFromPng` in `png-to-svg.ts`.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -36,10 +34,10 @@ Raw map graphics (SVG vector files or PNG raster maps) undergo a multi-pass pars
 └──────────────┴──────────────┴──────────────┴──────────────┴──────────────┘
 ```
 
-1. **Vector SVG Parsing (`svg-parser.ts`)**: Server-side parsing with `@xmldom/xmldom` and `svg-path-parser`. Extracts Inkscape layer groups (`political`, `rivers`, `lakes`, `altitudes`, `climate`), flattens Bezier curves, and resolves polygon hole winding order.
-2. **Affine WGS84 Transformation (`svg-coordinate-config.ts`)**: Converts 2D SVG pixel viewBox space (`25625 × 15729` for IxEarth) to geographic coordinates ($[-180, 180] \times [-84, 84]$).
-3. **Topology Locking (`shared-vertex-builder.ts`)**: Merges shared boundary vertices between adjacent nations into a unified vertex lookup topology, preventing tearing or slivers.
-4. **GeoJSON Optimization (`geojson-compress.ts`)**: Visvalingam-Whyatt geometry simplification (`@turf/simplify`), coordinate precision truncation down to 4 decimal places ($\sim 11\text{m}$ resolution), and Sutherland-Hodgman antimeridian clipping.
+1. **SVG helpers (`svg-parser.ts`)**: `extractSvgMetadata` reads an SVG's viewBox, size and layer list with `@xmldom/xmldom`; `pathCommandsToRings` (with `calculateCentroid`, `calculateBoundingBox` and `extractFillColor`) flattens path commands into rings, and `featureIdToDisplayName` names a feature. The old whole-file parser `parseSvgToGeoJson` and the PNG tracer (`convertPngToSvg`, which used `potrace`) were removed with the Labs map pipeline; the realm map import engine and the province importer have their own SVG and PNG readers. Rings are assembled by containment, not winding (`src/lib/maps/ring-assembly.ts`): a ring inside an odd number of rings is a hole of the smallest ring containing it, so a lake stays a lake whichever way it was drawn, and an island in it is land again. A path's explicit `fill-rule: nonzero` follows the windings instead, as a browser draws it. Output is RFC 7946 (outer rings counter-clockwise, holes clockwise), and every area helper subtracts holes.
+2. **Affine WGS84 Transformation (`src/lib/flags/svg-coordinate-config.ts`)**: Converts 2D SVG pixel viewBox space to geographic coordinates with an isotropic affine transform fitted from a calibration (`createConfigFromCalibration`, `svgToWgs84`). The fixed IxEarth configuration (`25625 × 15729`, ~22.77 px per degree) was removed with the parser that used it.
+3. **Topology Locking (`src/lib/maps/shared-vertex-builder.ts`)**: Merges shared boundary vertices between adjacent nations into a unified vertex lookup topology, preventing tearing or slivers.
+4. **GeoJSON Optimization (`geojson-compress.ts`)**: Radial-distance plus Douglas-Peucker geometry simplification (`@turf/simplify`, which comes in through `@turf/turf`), coordinate precision truncation (4 decimal places, $\sim 11\text{m}$, for political borders; 3 for decorative layers), and consecutive duplicate-point removal. Sutherland-Hodgman antimeridian clipping lives in `src/lib/maps/map-utils.ts`.
 
 ---
 
@@ -47,85 +45,597 @@ Raw map graphics (SVG vector files or PNG raster maps) undergo a multi-pass pars
 
 The **Ultra-Fidelity Unified Physical Geography (UPG v2)** vector engine (`src/lib/worldgen/v2/`) generates high-resolution, scientifically accurate fictional world maps:
 
-1. **100,000-Cell Spatial Mesh**: Ultra-dense Voronoi mesh (`WorldGraph`) with 5 Lloyd relaxation iterations.
-2. **Tectonic Plate Simulation**: Continental/oceanic crust assignment, Euler rotation vectors, and convergent/divergent/transform boundary classification.
-3. **Coastal Hypsometric Damping**: Dampens coastal land elevation within 3 cells of water (`coastDist <= 3`), preventing glacial peaks on shorelines:
-   $$H_{\text{final}} = H_{\text{raw}} \cdot \min(1.0, 0.15 + 0.35 \cdot \text{coastDist})$$
+1. **63,742-Cell Spatial Mesh**: Voronoi mesh (`WorldGraph`) with 5 Lloyd relaxation iterations. Seeds are thinned by `cos(latitude)` density up to the poles (`mesh.ts`), so every seed gives 63,742 cells at the default size, not 100,000, each about 8,000 km². The triangulation and relaxation run in Mercator coordinates, which keep shapes true, so a cell near a pole is about as wide as tall on the globe (a mesh relaxed in longitude and latitude made polar cells north-south slivers, 0.1 wide for 1 tall above 80°). The relief and diagnostic rasterisers triangulate in Mercator too, so their triangles are the mesh's, and they carry the nearest cell's value to each pole. A `MeshCache` reuses the mesh while seed, cell count and relaxation stay the same.
+2. **Tectonic Plate Simulation**: Continental/oceanic crust assignment, 2-D linear plate velocity vectors (`tectonics.ts`; no Euler poles), and convergent/divergent/transform boundary classification.
+3. **Coastal Hypsometric Damping**: Exponentially dampens coastal land elevation within 8 cells of water (`coastDist <= 8`, `coastlines.ts`), preventing glacial peaks on shorelines:
+   $$H_{\text{final}} = H_{\text{raw}} \cdot (1.0 - 0.85 \cdot e^{-0.35 \cdot \text{coastDist}})$$
 4. **Unified Hydrology & Biomes**: Coriolis wind simulation, rain shadow calculation, priority-queue depression filling, steepest-descent river tracing, and 12 Trewartha climate biomes.
-5. **RBF Marching Contours & Catmull-Rom Splines**: Projects attributes onto a $2048 \times 1024$ grid via IDW Radial Basis Functions. 4-pass Catmull-Rom spline subdivision ($\tau = 0.5$) processes all 7 vector layers with shared topology.
+5. **Vector Synthesis & Export (`export.ts`)**: Merges cell polygons into rings, then Douglas-Peucker decimation → Catmull-Rom spline subdivision (tangent tension 0.35, `SPLINE_TENSION` in `helpers/chaikin.ts`, so small regions do not swell; 2 passes for polygons, 3 for river lines) → harmonic noise perturbation, across all 7 vector layers with shared topology inside the generator. After import the layers are independent rows and `SharedVertex` is not read back.
+6. **Status:** Live as the World tab of the world editor and as [World Studio](#atlas-and-world-studio) (both below). The engine runs in a browser Web Worker, never on a web request. `countryCountRange` sets the nation count (its middle, capped by the land available); the capital count follows from it, and the town count from the land (one per 50 land cells, 40 to 300). Worldgen biomes are not stored per cell: the 12 Trewartha biomes reach the database as the `climate` layer, and the bbox-estimated profile still derives agriculture from the layers. Engine internals, generate to fit and the derived baseline: [`src/lib/worldgen/README.md`](../../src/lib/worldgen/README.md).
+
+### World generation (the World tab, Atlas Release A)
+
+- **Who and where.** The realm's founder and officers with the `map` power (`canEditRealmMap`; site admins too) on any realm except Ixnay, not archived: **World** tab of the world editor, opened from `/maps?realm=<slug>&editor=world` (Manage → Map links to it, `src/lib/maps/realm-world-editor.ts`). Site admins design worlds in [World Studio](#atlas-and-world-studio) instead.
+- **Controls.** Source: **Preset** (the published presets, [kept in the database](#presets); Earth-like, Ixnay and Eurth to begin with) or **This realm's map** (enabled once the realm's layers have loaded and it has a political layer). Seed with reroll; Continents, Land share, Nations, Temperature (colder to warmer), Rainfall, Development level (Developing, Industrial, Modern); **Advanced**: the continents' southern and northern edge, size spread, islands, polar land in the north and south, an elevation profile (picked from the published presets' curves), rivers, lakes, coast complexity. With the realm's own map the worker rasterises its background and political layers into a land mask and generates the physical layers around its coast, always keeping its borders; the apply writes only the layers the realm has none of (never a land layer; the dry run lists the ones it keeps) and shades the relief from the elevation only when it wrote the elevation; the map decides the land, its shape and its borders, so continents, land share, nations, the latitude edges, size spread, islands, polar land and coast complexity are disabled. Live stats: land share, continents, climate mix, slot count, baseline range.
+- **Preview.** The worker returns the layers as JSON strings. The main thread draws background, altitudes, political, lakes and rivers (climate and ice caps only when asked for, as the Studio does) as draft sources of their own under the live layers, hides the live layers they replace, and shows the hillshade as an image source; "Draft" appears in the status bar. A world that keeps the realm's borders has no political layer, so the live borders and country names stay visible. The recipe (seed and controls) is kept in browser storage per realm and regenerates on reopening; a successful apply clears it and a failed one keeps it. Nothing is stored on the server.
+- **Apply.** **Use this world** gzips a world bundle (`src/lib/maps/import/world-bundle.ts`: 7 layers, slots with `slotKey` on each political feature, packed cells, seed and params), uploads it to `/api/admin/map-import/upload` (kind `world`; 40 MB route cap, 48 MB of JSON, 20,000 features, 4,000,000 positions, 200,000 cells, 500 slots; stored bundles older than 14 days are pruned by the uploads that follow, hourly, except each realm's latest applied world's) and starts a `world` `MapImportJob` (`world-import*.ts` in `src/server/modules/maps/`): a dry run that lists layers, nations and warnings (hand edits, later imports and nations that lose their border, which the world replaces), then an apply job. The dry run records the realm's map version: if the map has moved by the time of the apply, the apply is refused with CONFLICT ("The map changed since the check") and the tab asks for a new check. The tab resumes a check or apply that was in flight after a tab switch or reload, and Cancel works on a check and on an apply that is still queued.
+- **Apply order (preset source).** Guards the person and the lock; takes the rollback snapshot; in one transaction locks the realm's generated countries and then the realm row, retires the previous unowned, unclaimed slots, closes the unowned ones an old claim row keeps (reserved, no land) and creates the new ones unclaimable, with the people scaled to the realm's planet like the land; writes the layers through the realm map writer with `slot_<key>` feature keys linked to their countries; saves `Realm.seed` and `Realm.generationParams` (`{ params, engineVersion, developmentLevel, source }`); opens the slots the founder left claimable; then builds the relief. A failure after the slot transaction restores the snapshot (layers, slots, generation record, relief entry) in a transaction that locks the new slots, closes them and only then reads who holds them, so a claim filed meanwhile is kept, never deleted with its slot.
+- **Apply (realm's own map).** The realm keeps its borders: no political layer is written and no slots are retired. Each political region that has no country gets one, an unowned, claimable nation named after the region.
+- **Lock.** Regeneration and apply are refused while any claim on the realm is pending or approved (re-checked inside the apply transaction, so a claim filed mid-job wins). The tab explains this and links to the realm's claims. Rollback is refused once a slot of the world has been claimed.
+- **Nation slots.** `Country.worldgen` marks a country made by the generator; `Country.claimable = false` reserves it (claims, open-nation counts, the nation search and realm listings skip it). A claimed slot starts with its territory and the derived baseline (population from habitable land by climate, GDP per capita from the development level varied up to 25% by geography); the realm's nation-defaults table never overwrites worldgen countries. After the apply, slots are ordinary features and countries: the existing border tools merge, split and reshape them; the Properties inspector renames and recolours them (renaming an unowned slot's region renames its nation in the same transaction and regenerates its slug, a CONFLICT when another nation of the realm has the name; a held nation keeps its name) and has a **Claimable** toggle (a slot with an owner cannot be reserved), and **Delete slot** removes an unowned, unclaimed one. Deleting a realm deletes its unowned, unclaimed slots.
+- **Output.** Physical layers and nation slots only: no cities, named rivers or lakes, peaks, labels or provinces.
+- **Procedures.** `geoEditor.mapImport.{start, job, applyWorld, rebuildRelief, rollback}` (`world` kind) and `realms.map.{worldStatus, worldPresets, worldSlot, setSlotClaimable, deleteSlot}`.
+
+### Relief (hillshade)
+
+The raster layer `relief` (kind `overlay`: over elevation and climate, under the political fill), built by `src/server/modules/maps/realm-relief.ts` from generator cells (a generated world) or from a realm's stored altitude bands, z0 to 5 in lossy WebP, fully transparent tiles skipped, versioned by a hash of the picture (about 500 to 740 tiles, 3 MB). The `/api/map-rasters` route answers a missing relief tile with one cached transparent tile. It is built after a world apply (a failure leaves the world applied and the tab offers **Rebuild relief**, which reuses the world's own cells), by the `relief` step of the realm map pipeline, or by `bun scripts/realms/build-realm-map.ts --realm <slug> --steps relief --apply`, none of which needs a stored pipeline. A **Relief** row in the editor's Layers panel and the `/maps` layer toggles show it (on by default, off while a painted base map is shown unless chosen). Any realm with stored altitude bands (Ixnay among them) can have its relief built from them; the step reports a realm with none as skipped.
+
+## Atlas and World Studio
+
+Two admin surfaces, built on one `atlas` tRPC router (`src/server/api/routers/atlas/`: `studio`, `presets`, `jobs`, `realms`, `health`). Spec: [`docs/specs/2026-10-12-atlas-studio-design.md`](../specs/2026-10-12-atlas-studio-design.md). **Atlas** (`/admin/maps`) is the admin home for every realm's map. **World Studio** (`/admin/maps/studio`) is the full-screen tool for designing worlds. Both are for site admins only: the admin layout guard, the edge check in `src/proxy.ts` and `adminProcedure` on every `atlas.*` procedure. Founders reach presets only through `realms.map.worldPresets`.
+
+### Routes and access
+
+| Route | Page | Notes |
+| :-- | :-- | :-- |
+| `/admin/maps` | Atlas (`AtlasPanel`, `src/app/admin/maps/_components/atlas/`) | `?importJob=<id>` opens the import wizard on that job |
+| `/admin/maps/realms/<slug>` | A realm's page (`AtlasRealmPage`) | |
+| `/admin/maps/studio` | World Studio (`WorldStudio`, `src/components/maps/studio/`) | Full screen: in `FULL_SCREEN_PATHS` (`src/app/admin/layout.tsx`) and `CHROMELESS_PREFIXES` (`src/lib/navigation/app-sections.ts`); no sidebar entry. `?fit=<slug>` opens it on the fit source for that realm. Below 900 px it shows a notice and mounts nothing else |
+| `/admin/maps/editor`, `/admin/maps/style-editor` | The world editor and the style editor | Unchanged. The editor's sandbox mode (`?sandbox=1`) is gone |
+
+### World Studio
+
+A top bar (Back to Atlas, preset picker, seed with reroll, draft status), a parameter rail on the left, the map in the centre and four inspector tabs on the right: Layers, Calibration, Presets, Ship.
+
+- **Rail.** Every `WorldGenParams` field except the seed, grouped by the stage that reads it (Mesh, Land, Climate, Nations, Output; `STUDIO_GROUPS` in `src/lib/worldgen/studio-fields.ts`), each with its range, the preset's value and a reset, and a Reset group per group. Ranges are a hand table pinned to the zod schema in `world-bundle.ts` by a test. Sliders commit on release (and once per key-press burst), never on every drag tick. Picking another preset while the parameters differ asks first.
+- **Source.** A preset, or **Fit to a realm's map** (any realm with a political layer, Ixnay included). The fit source generates around the realm's background and political layers with its borders kept, as the founder's "This realm's map" does; the fields the map decides are disabled ("Set by the realm's map"). The recipe is kept in browser storage per user (`studio:<clerkUserId>`, versioned with `ATLAS_ENGINE_VERSION`); opening the Studio writes nothing.
+- **Countries on the map.** Clicking a generated country opens a card over the map with its name, area, population and income per person (its nation slot); a click on the sea, Close or a new world clears it. A world fitted to a realm keeps the realm's borders and has no countries of its own to click.
+- **Layers tab.** The map's **Projection**: **Globe** (the default; as on the world map, it turns flat Mercator once zoomed in) or **Flat** (Mercator, which stretches land near the poles). Then political, relief, land, elevation, rivers, lakes, **Ice caps** (on to begin with) and **Climate zones** (off): climate and ice are opt-in draft layers, so the founders' preview is unchanged. The diagnostic buttons and their legend are here.
+- **Generation** runs in the browser worker, on release, restarting from the first stage the change touches. A change made while a run is still in flight waits for it: the newest request is queued (a newer one replaces an older queued one) and goes to the same worker when the run answers, so its stage cache is kept and the change restarts from the stage it touches (for example 0.2 s from climate), not from the mesh. Three quick key taps on a slider therefore cost one extra run, not three fresh workers. The overtaken run's answer is dropped; cancel and reset end the worker and clear the queue; the 30 s timeout ends the worker too, and if a newer request is queued it starts on a fresh worker (the fit layers are sent again) instead of being dropped, else the run fails. The status line shows the stage it restarted at and the time (for example "Draft · 0.4 s from climate"), "Out of date" while a newer run is ahead, and Retry after an error. The last good world stays on the map.
+
+### Staged generator
+
+`generateWorldStaged` (`src/lib/worldgen/v2/index.ts`) runs the generator as five stages over a `StageCache` (`v2/stages.ts`). A changed field restarts at the first stage that reads it (`planRestart`); earlier stages come from snapshots of the graph arrays that later stages mutate, held in the worker. Every stage seeds its own random stream from `seed + offset`, so a restarted run equals a full run; a test pins that for each stage, both seeds and both presets, with and without a land mask. `generateWorld` is a full run of the same code. A restart that throws is run again in full once; a failed first run is not repeated. The founders' World tab uses the same worker, so its changes restart the same way.
+
+| Stage | Reads | Target | Measured (one run) |
+| :-- | :-- | :--: | :--: |
+| mesh | `seed`, `cellCount`, `lloydIterations` | 1000 ms | 593 ms |
+| land | `seed`, `plateCount`, `continentCount`, `continentLatitudeRange`, `continentSizeVariance`, `islandShare`, `polarLand`, `oceanPercentage`, `terrainRoughness`, `coastlineComplexity`, `hypsometry`, the land mask | 600 ms | 307 ms |
+| climate | `temperatureOffset`, `precipitationScale`, `riverDensity`, `lakeCoverage`, `hasRivers`, `hasLakes` | 250 ms | 139 ms |
+| nations | `seed`, `countryCountRange`, `useMarkovNaming`, keep-borders | 250 ms | 76 ms |
+| output | `hasIcecaps`, `developmentLevel` | 200 ms | 64 ms |
+
+The rail lists `developmentLevel` under Nations; the generator reads it only after export, so it restarts at output. Snapshots hold one copy per stage at most: 17 bytes per cell for land, 56 for climate, and the finished graph (60) for nations, so at 66,626 cells 1.1, 3.7 and 4.0 MB. The worker also keeps one rasterised land mask per `maskKey` (`<realm slug>:<mapVersion>`); without it every request on Ixnay would pay 166 ms to rasterise again.
+
+### Presets
+
+`WorldPreset` (`world_presets`: slug, name, description, `sortOrder`, `builtIn`, `publishedVersionId`, `draftVersionId`, `archivedAt`) and `WorldPresetVersion` (`world_preset_versions`: `params`, `note`, `createdBy`, `publishedAt`, `updatedAt`) replace the code-only presets. Logic in `src/server/modules/maps/world-presets.ts`.
+
+- **A recipe, never a seed.** `params` is a `Partial<WorldGenParams>`; a `seed` key or any unknown key is rejected at the router and again in the module.
+- **Built-ins in the database.** Earth-like, Ixnay and Eurth are seeded idempotently on first read from `WORLD_PRESETS` (fixed ids, `skipDuplicates`; no deploy step). `WORLD_PRESETS` stays in code as the factory defaults, test fixtures and the fallback when the presets cannot be read. Built-ins can be edited and published like any preset, cannot be archived, and have **Reset to factory**.
+- **Draft, publish, versions.** Saving writes the draft version (in place; a draft published meanwhile starts a new one, so a published version is never rewritten). **Publish** makes the draft the published version. **Versions** lists the published ones; **Restore** makes a new draft from one, replacing any existing draft, and so does Reset to factory. Presets can be created, renamed (the slug stays), reordered and archived; the Presets tab lists the archived ones behind **Show archived**, each with **Restore**, which brings it back as it was (`atlas.presets.archive` with `archived: false`).
+- **`atlas.presets.*`:** `list`, `create`, `rename`, `reorder`, `archive`, `saveDraft`, `publish`, `versions`, `restore`, `resetToFactory`.
+- **Founders see only published presets.** `realms.map.worldPresets` takes the realm (`realm`) and, for the realm's map editors only (the same check as `worldStatus`: Ixnay is refused for everyone, and an archived realm for its founder and officers, while a site admin still passes there), returns the unarchived presets in order with their published params. A refusal (a client error) is not retried; any other failure is retried once before the built-ins stand in. A draft changes nothing for founders until it is published. The founder's recipe stores the preset slug (recipe version 2; version 1 is still read); an unknown, archived or unpublished slug falls back to Earth-like. The preset's params are merged under the control-derived ones, so tuned fields the founder has no control for (`terrainRoughness`, `hasIcecaps`) still reach the generator. The preset picker is a segmented control for up to three presets and a select (same accessible name) beyond that, so a fourth published preset is never clipped; the elevation-profile control in the Advanced section is the same picker. While the presets load the World tab waits; if the query fails the built-ins stand in and the recipe is not saved.
+
+### Calibration
+
+`measureWorld` (`src/lib/worldgen/measure-world.ts`) is one pure sampler on a 0.5° grid (720 × 360, cos(lat) weights), the method the presets were tuned with. It returns `landShare`, `hypsometry` (nine shares of land), `climate` (shares of the classified land over the seven Trewartha groups, plus `unclassifiedShare`), `nations` (count, median and p90 area) and `coastlineKm` (ring edges not shared by two rings).
+
+- **Generated world.** The worker measures it (`measure` query, once per world; about 100 ms).
+- **A realm.** `atlas.studio.realmMeasures({ realm })` (id or slug; Ixnay is `default` or `ixnay`) reads the `geometry` JSON of the active background, political, altitudes and climate rows (never `geom_postgis`, which is wrong for rows crossing ±180°), measures them and caches the result by map version (`realm-calibration.ts`: 64 entries, one hour, key `realmId:mapVersion` plus the realm's `radiusKm` and `climateKey`; concurrent reads of one version share one load). More than 50,000 features, an unknown realm or a realm with no rows returns `{ ok: false, reason }`, never cached. Ixnay measures in 655 ms cold and 3 ms from cache on the clone.
+- **Climate encodings** are normalised to Trewartha groups in this order: `properties.code` (Trewartha or Köppen), `biomeId`, `climateId` or colour through the realm's `climateKey`, then nearest colour.
+- **Tab.** Compares the world with up to two realms (Ixnay and Eurth to begin with): each figure side by side with the gap, bars for land by elevation and for the climate mix, and one distance per realm from 0 (the same) to 100 (the mean of five equal parts: land share, hypsometry, climate, nations, coastline). A world made on the fit source has no nations of its own, so its distance drops the nations part and is the mean of four. A Studio apply refreshes the applied realm's figures at once; they are otherwise kept for a minute. A realm that cannot be measured says why in its column; the others still show.
+
+### Diagnostics
+
+The worker draws a diagnostic from the world it holds, so toggling one never regenerates: **Height**, **Temperature**, **Rainfall**, **River flow** and **Cells** as images (`diagnostics.ts`; 2048 px wide, warped to Web Mercator rows like the relief, shown one at a time under the relief), each with a legend (temperature fixed at -30 to 38 °C, rainfall 0 to 4500 mm a year, flow on a log scale over this world's rivers, height from the nine elevation zones), and **Nation seeds** (each nation's capital cell) as points. They are raster images, so there is no hover. Queries (`diagnostic`, `seeds`, `render`, `measure`) are routed by their own request id; one in flight is rejected ("The world changed before the answer came") when a newer generate starts, and the Studio asks again for each new result.
+
+### Exports
+
+The Ship tab's **Export** section:
+
+- **GeoJSON**: one zip with a file per layer (`background`, `altitudes`, `climate`, `political`, `rivers`, `lakes`, `icecaps`; `political` is absent when the map's borders were kept, and `icecaps` when the world has no ice caps), written by a small store-only zip writer with CRC32 (`src/lib/worldgen/zip-store.ts`, no dependency). Named `world-<preset>-<seed>.zip`.
+- **PNG**: an equirectangular render (`render-png.ts`, `raster-draw.ts`) at 2048, 4096 or 8192 px wide: ocean, land by height band, optional political fills and borders, relief, ice caps, lakes and rivers. Ice caps are drawn only when the world has them (`hasIcecaps`): every cell of the ice cap layer (`ICE_CAP_BIOME` in `v2/config.ts`, the one predicate `export.ts` and the render both use, so polar sea ice is drawn as on the Studio map), in the Studio map's ice fill (`#f0f4f8` at 70 %), over the land and under the lakes. Drawn in the worker and encoded with `OffscreenCanvas.convertToBlob`; named `world-<preset>-<seed>-<width>.png`. Composing 8192 px takes about 0.8 s with politics (0.5 s without). 8192 × 4096 is over iOS Safari's canvas limit (about 16.7 MP), so a failure there is shown inline with a suggestion to try a smaller width. Only a failure to encode the image says so: 8192 px suggests 4096, 4096 px suggests 2048, and 2048 px says "Your browser could not make the image." (`pngFailureText` in `world-export.ts`). A render outrun by a newer world says "The world changed while the image was being made. Try again.", and any other failure shows its own message. Download PNG is off while the generator is generating or in the error state.
+- A failed export shows an inline message and downloads nothing (the zip failing says "The files could not be made.").
+
+### Applying a world
+
+The Ship tab's **Apply to a realm** section.
+
+- **Any realm except Ixnay** goes through the founder flow unchanged (check, diff, apply, claim lock, owned and claimed nations protected, map-version guard), as an admin. A world made on the fit source can only go to the realm it was fitted to.
+- **The admin layer choice.** Ticking physical layers (elevation, climate, rivers, lakes, ice) sends `options.layers` with a `world` import fitted to the realm's own map (`source: "realm-map"`, `fittedMapVersion` required). It is the only way to write to Ixnay (a world without `layers` on Ixnay is refused), and it is for site admins (a founder or officer sending `layers` gets FORBIDDEN). Only the ticked layers are replaced; a ticked layer the world has none of (the world in view was made with its switch off, or it came out empty; the ticks follow the world in view, not the rail, which may be ahead of it until the world is made again) is refused with a message rather than allowed to remove the realm's, and the tick is disabled with the reason; land, borders and nations are never written, no slots are created or retired, `Realm.seed` and `Realm.generationParams` are untouched, and the claim lock does not apply (`atlas.studio.applyStatus({ realm, layers })` reports it). Relief is rebuilt from the world's cells only when elevation is ticked. The check reports `chosen` and lists the realm's other layers as kept; rollback restores the ticked layers from the usual snapshot, and leaves the relief entry alone unless elevation was ticked, so rolling back a climate-only apply does not touch relief. The same choice works on any realm with the fit source. With no layer ticked on a realm other than Ixnay, the apply is the founder's realm-map apply: only layers the realm does not have yet are added and its own are kept, and a claimable nation is created for each region that has none. This mode has no slot transaction: it relies on the early map-version check and the realm's job lease, so a physical-layer edit racing the apply can be overwritten.
+- **Relief on Ixnay.** `rebuildRelief` works on Ixnay for site admins, building from its altitude bands (all 4,068 of them: the band read had stopped at 1,000 rows).
+- **New realm from a world.** `atlas.studio.createRealm({ name, slug })` makes the realm as `status: "draft"`, `visibility: "unlisted"`, owned by the admin, with its forum categories (the slugs `ixnay`, `ixworld` and `default` are refused). The Studio then runs the normal check and apply on it with one more **Use this world**: two actions (Create realm, then Use this world), plus the usual Apply in the review that follows, preset source only. A failed apply leaves the draft realm in place, listed in Atlas with the failed job. The admin hands the realm over later through the realm admin.
+- **Snapshots read every row.** `captureMapSnapshot`, the world-import diff and the other import, apply and rollback reads had no `take` and Prisma's guarded client capped them at 1,000 rows, so a rollback of a layer with more rows than that restored only part of it. They now take 50,000, and the map-import test fake caps an unbounded `findMany` at 1,000 so a missed read fails a test.
+
+### Atlas
+
+`/admin/maps` has a header (**World Studio**, **Import a map**), a health strip and four tabs: **Realms** (default), **Jobs**, **Edit queue** and **Map style**.
+
+- **Health strip** (`atlas.health.summary`): running and queued jobs, failed jobs in the last 24 hours, the size of `MAP_TILE_DIR`, `MAP_RASTER_DIR` and `MAP_IMPORT_DIR`, and the last run of the `map-tiles`, `geo-profiles` and `map-import` cron jobs (from `CronRun`; "Never ran" when there is none). Each folder walk has a 1.5 s budget, is cached 10 minutes per folder in process (requests that arrive during a walk share it), and shows "Not measured" (or "or more", when it skipped unreadable folders) instead of blocking. Each item switches to the tab that explains it.
+- **Realms tab** (`atlas.realms.overview`, six queries whatever the number of realms): per realm, status, layers present of 7, relief (built, missing, failed, or unknown when the folder check ran out of its 1.5 s budget), linkage (political features linked to a country over all), nations (total, owned, open, reserved), pending claims, last job, and flags for problems (missing layers, relief missing or failed, last job failed, unlinked features, countries with invalid stored geometry). Sortable, filterable by status and by "Has problems". The old statistics tiles are these per-realm figures. A row opens the realm page.
+- **Realm page** (`atlas.realms.get`): the figures, the ten most recent jobs (read through `atlas.jobs.list`; `get` returns none) and the actions **Open in editor**, **Open in Studio** (`?fit=<slug>`), **Rebuild relief**, **Run steps** (`MapPipelinePanel`, moved here; the founder's Manage page keeps its own), **Roll back last import** (disabled unless the realm's latest import is in place with a snapshot) and **Refresh caches** (`atlas.realms.refresh`, which calls `invalidateRealmMap` and returns the new map version). Rebuilding and rolling back ask first; the roll back text says what any import wrote is undone (layers it wrote go back, features it created are removed, nations or slots it made are removed), not borders only. `/admin/realms` → Map has a link per realm instead of the old pipeline tab.
+- **Jobs tab** (`atlas.jobs.list`, `get`, `retry`, `cancel`, `rollback`): every `MapImportJob` of every realm (imports, world checks and applies, pipeline runs), newest first, filterable by realm, kind and status, with a detail sheet (stage, progress, error, result summary). It polls every 5 s while a job is queued or running.
+  - **Cancel** is offered for a queued job and for a running one except a world apply; pipeline runs go through `cancelMapPipelineRun`, the rest through `cancelMapImportJob`.
+  - **Retry** is offered for a failed job whose input still exists: the upload (analysis, world check, world apply) or the parent analysis's result file (the apply of a PNG, SVG or GeoJSON import); otherwise the sheet says why not. It starts a new job with the same inputs, requested by the acting admin: an analysis or a world check again; an apply from its stored analysis; a **world apply as a new world check** from the same upload with the options (`layers` included) and `fittedMapVersion` of the check it was queued from, so it fails if the map has moved since; a pipeline run with its stored options. A retry is refused while another job of the realm on the same upload is queued or running ("A job for this file is already running"; a pipeline run has no upload, so the test is the same realm and kind), so a double click makes one job. A retry runs the same guards as a first run (archived realm refused; for a world, `assertWorldImportAllowed`: Ixnay without `layers`, or a pending claim, is refused). The new job is then continued from the UI: a retried **analysis** opens the import wizard on it (the Atlas page opens its wizard card; from a realm page it goes to `/admin/maps?importJob=<id>`), and a retried **world check** opens in the detail sheet, where **Apply this check** (offered by `atlas.jobs.get`'s `canApply`: a succeeded world check with no apply job) shows the check's result figures, asks, and calls `geoEditor.mapImport.applyWorld`, which runs every guard again; the sheet then follows the apply job.
+  - **Roll back** is offered where the job's import is the realm's latest in place with a snapshot (the confirm text describes any import, not only borders).
+- **Edit queue** is the existing `EditQueuePanel`. **Map style** embeds the style editor (theme picker and the Maputnik frame, `StyleEditorFrame`) at a fixed height, with **Open full screen** to `/admin/maps/style-editor`.
+- **Import a map** opens `RealmMapImportWizard` (the admin picks the realm) in an inline card.
+
+### Removed
+
+`WorldStudioPanel`, `PipelineWizard` (Quick Update and the layered SVG pipeline), `LayeredSvgPipeline`, `SvgUploadManager`, `SvgProcessingDialog`, `SvgPreviewMap`, `MapSettingsTab`, `MapStatsDashboard`; the procedures only they called (`geoAdmin` SVG uploads and commits, `geoEditor.runPipeline` and `importPipelineResult`, `geoCore.getLayerInfo` and `getMapStats`) and `src/lib/maps/map-pipeline.ts`; `/api/admin/upload-svg`; the editor sandbox (`WORLD_SANDBOX_HREF`, `isWorldSandbox`, the `sandbox` prop chain and recipe scope) and `WorldCalibration` with its fixed reference table; and the models `ProceduralWorld`, `WorldTemplate` and `Realm.templateId`. `src/tests/architecture/atlas-removals.test.ts` fails if most of them come back: the deleted files and component names, the removed procedures, the sandbox names in the editor directories, `map-pipeline.ts`, `parseSvgToGeoJson` and `convertPngToSvg`. It does not cover `runPipeline`, the models `ProceduralWorld` and `WorldTemplate`, `Realm.templateId` or the sandbox outside the editor directories. The realm map import wizard covers SVG imports for any realm.
 
 ---
+
+## Runtime Requirements
+
+- **PostGIS geometry triggers.** The spatial SQL reads `geom_postgis`, which triggers fill from the GeoJSON columns of
+  `map_layers`, `subdivisions`, `cities` and `points_of_interest`. `db push` cannot create triggers, so they live in
+  `prisma/migrations/20261007_map_geometry_sync_triggers.sql` (idempotent, with a backfill). `db:bootstrap` applies
+  it; on an existing database run it by hand after `db push` (see the deploy runbook).
+- **Atlas Release 0 migration.** `prisma/migrations/20261021120000_atlas_r0/migration.sql` (idempotent, hand-written; `db push`
+  does not run it) adds `realms."mapVersion"`, the `country_geom_sync` trigger that keeps `"Country".geom_postgis` in step
+  with `geometry` (plus a backfill of countries written before it), and the `atlas_country_union()` function behind a
+  nation's outline. Apply it by hand after `db push` (the file's header has the command).
+- **Atlas and World Studio migration.** `prisma/migrations/20261023120000_atlas_studio/migration.sql` (idempotent,
+  hand-written) creates `world_presets` and `world_preset_versions` and drops `procedural_worlds`, `world_templates` and
+  `realms."templateId"`. Unlike the two above it runs BEFORE `db push`: `db push` without `--accept-data-loss` refuses
+  to drop the non-empty `procedural_worlds`. `scripts/deploy-production.sh`, `start-development.sh`,
+  `scripts/refresh-local-db.sh` and `scripts/setup/bootstrap-dev-db.ts` run it before their push.
+- **`MAP_TILE_DIR`.** The vector tile cache lives under it (`<MAP_TILE_DIR>/<realmId>/f<format>/<version>/<layer>/<z>/<x>/<y>.pbf`);
+  unset, it is `data/cache/map-tiles` under the process's working directory (gitignored). Three processes serve or
+  render tiles: the web app, the IxWorld standalone (maps.ixwiki.com) and the cron worker (`ixstats-cron`). Their
+  working directories differ, so production sets `MAP_TILE_DIR` to one folder outside the repository and `data/` for
+  all three; otherwise each fills a folder of its own, and the cron job pre-renders into one that nobody reads.
+  See [Map delivery](#map-delivery-atlas-release-0).
+- **Realm-scoped spatial SQL.** Realms share one coordinate space. Every raw join on `map_layers` matches the realm of
+  what it measures (`ml."worldId" = <country>."realmId"`); `getTerrainAtPoint` / `getTerrainForArea` take a required
+  realm, and a country's border by id comes from `COUNTRY_BORDER_SQL` (`src/lib/maps/geo-validation.ts`).
+- **Upload limits.** Map images decode through a 64-megapixel limit (`MAX_PNG_PIXELS`, `png-realm-map.ts`), checked
+  from the header before any pixels are decoded; province imports cap their content at the pipeline's 25 MB, the map
+  import's upload route (`/api/admin/map-import/upload`) at 40 MB, and the upload routes refuse an oversize body by its
+  Content-Length before parsing it.
+- **Planet figures.** The radius and degree → km factors (6371 km, 111.32 / 110.574 km per degree) live in
+  `src/lib/maps/planet.ts`; its helpers take an optional radius, and a realm's own radius (`Realm.settings.map.radiusKm`)
+  scales its areas and distances (see [Realm maps](#realm-maps)).
+- **Ixnay only.** The 56.1842° prime meridian, the home view and the R shortcut follow `mapHomeCenter(ixnay)`;
+  other realms' maps centre on the origin with no meridian line. The style editor's preview sources
+  (`/api/maps/editor-source/[layer]`) are admin-only and serve one realm (`?realm=`, Ixnay by default).
+
+- **MapLibre web worker.** MapLibre 6 finds its worker next to its own module, which is a bundled chunk under Turbopack, so `src/lib/maps/load-maplibre.ts` points it at `/maplibre/maplibre-gl-worker.mjs`. `scripts/setup/copy-maplibre-worker.mjs` copies that file and `maplibre-gl-shared.mjs` into the gitignored `public/maplibre/`; it runs from `postinstall`, `build`, `build:fast` and `start-development.sh`. If the files are missing, every map stalls with "Worker failed to load".
+- **Direct dependencies.** Map code imports individual `@turf/*` packages (`@turf/intersect`, `@turf/union`, …). They are declared in `package.json` next to `@turf/turf`; an import of a package that is only a transitive dependency resolves under a hoisted `node_modules` but fails ("Module not found") under isolated installs.
+
+## Realm Maps
+
+Every realm has its own map (`MapLayer.realmId`). What follows is what a realm's own staff can do with it and how the
+viewer shows it.
+
+### Who edits a realm's map
+
+- **The Map power.** A realm officer can hold `map` ("Edit the realm's map, borders and labels, and import maps").
+  `canEditRealmMap` / `canImportRealmMap` (`src/server/modules/realms/realms.access.ts`) allow site admins, the
+  founder and map officers; Ixnay stays with site admins, and an archived realm is read-only (`realmMapAccess`).
+- **World editor procedures are realm-scoped.** Border edit, split and merge (`geo/editor/borders.ts`), region links
+  (`linkage/assignment.ts`), linkage validation and Auto-Match (`linkage/validation.ts`) and realm labels
+  (`geo/features/realm-labels.ts`) call `editableMapRealmId` (`src/server/api/trpc/realm-scope.ts`): the edited
+  realm (`?realm=`, else the caller's) once the caller may edit it, else `FORBIDDEN`. A map officer renames a region
+  but not the nation linked to it, except a generated slot nobody holds, whose nation is renamed with its region
+  (see Nation slots). The realm's map editors also create a nation from an unlinked shape in their own realm
+  (`createNationFromShape`, `realms.shape-nation.ts`: the realm's nation defaults and a free slug, recorded in
+  `AdminAuditLog` as `REALM_NATION_FROM_SHAPE` for site admins) and edit the map features (cities, labels, POIs,
+  peaks, rivers, lakes, subdivisions and their imports, and transport routes) of the realm's unclaimed nations,
+  acting as their owner (`mapFeatureOwnerProcedure`, `src/server/api/trpc/middleware.ts`); story pins stay with the
+  nation's owner. Rebuilding adjacency stays admin-only. A draft session is saved only by its own editor. Border edits filed for review record their realm
+  (`MapEditRequest.realmId`).
+- **Entry points.** Founders and map officers get **World editor** on `/maps?realm=<slug>`; site admins also have
+  `/admin/maps/editor?realm=<slug>`. The map import wizard is in `/admin/maps` → **Import a map** for
+  site admins, and in the realm's Manage tab (**Map import**) for the founder and map officers.
+
+### Map settings (`Realm.settings.map`)
+
+`src/lib/maps/realm-map-settings.ts` is the zod schema; every key is optional and read on its own (a malformed value
+is dropped, not the rest). Edited in the realm's Manage tab (**Map**, holders of `map`) through
+`realms.map.updateSettings`, and read by the viewer through `realms.map.display`.
+
+| Key | Meaning |
+| :-- | :------ |
+| `radiusKm` | The planet radius, 500 to 50,000 km (default 6371). Scales areas and distances measured on the realm's map |
+| `defaultView` | `{ center: [lng, lat], zoom }` where the map opens, saved from the world editor's realm menu (**Save current view as default**); also the R home view |
+| `baseImage` | A base raster image: an `https://` address or an image uploaded through `/api/upload/image` (`isMapBaseImageUrl`) |
+| `attribution` | The credit line (at most 300 characters). Empty: the realm's source sync attribution, if any |
+| `projection` | `equirectangular` (default) or `mercator`: how an imported image's vertical axis maps to latitude |
+| `bounds` | `{ west, south, east, north }`: the lon/lat box a cropped image covers (west < east, south < north) |
+| `controlPoints` | At least three `{ x, y, lon, lat }` pairs (pixel from the top-left ↔ lon/lat), fitted instead of bounds |
+
+Other keys under `map` (the wiki map's `source` and `file`, written by `withRealmWikiMap`, and `pipeline`, the realm's
+map pipeline) are never dropped when the settings are saved.
+
+### Map pipeline (`Realm.settings.map.pipeline`)
+
+A realm's whole map (raster art, physical layers, labels, local flags, default view, border repair and smoothing) is
+built from one config kept with the realm, filled from a source preset or typed in the realm's admin panel (Map), and
+run as a background job (`MapImportJob` kind `map-pipeline`) or by `scripts/realms/build-realm-map.ts`. Runbook:
+[realm-maps.md](realm-maps.md).
+
+### Planet radius
+
+- `src/lib/maps/planet.ts` scales Earth's figures: `scaleAreaToRadius` (`area × (r / 6371)²`), `scaleDistanceToRadius`
+  and `haversineKm(a, b, r)`. Stored `MapLayer.areaSqKm` values are areas on the realm's planet.
+- Applied to: areas the border editor stores on edit, split and merge; the editor's live area readout
+  (`useRealmPlanetRadius`); the geo profile's perimeter, coastline, shared borders and spans (`geo-profile.ts`); the
+  measure tool; the viewer's scale bar.
+- **Recompute areas** (`realms.map.recomputeAreas`, Manage → Map) measures every active polygon feature of the realm
+  again: PostGIS `ST_Area(geom_postgis::geography) × (r / 6371)²`, or the flat helpers at radius r without PostGIS.
+  Run it after changing the radius (the map import already measures on the realm's radius). Nations' stated land area
+  is untouched unless the founder (or a site admin) ticks **Also set nations' land area from the map**, which sets
+  each linked nation's land area to the sum of its regions.
+- Not scaled yet: river `lengthKm` properties written by imports, and the economy's own figures.
+
+### Viewer
+
+`MapContainer` reads `realms.map.display` (`useRealmMapDisplay`) for the realm it shows. A realm's map is IxWorld's
+viewer with the realm's data: the same vector style, colouring, panels and chrome; nothing realm-only is added.
+
+- **Default view:** opened once per realm (`useRealmDefaultView`) unless the URL asks for a place (`?lat=&lng=`,
+  `?zoom=`, a country).
+- **Base image:** a MapLibre `image` source pinned at `[-180, 85]`, `[180, 85]`, `[180, -85]`, `[-180, -85]` and a
+  raster layer under the first data layer (`src/components/maps/core/utils/realm-map-layers.ts`). **Limits:** a full-globe equirectangular image, 2:1, cropped to 85°N to 85°S (the Web Mercator
+  limit). MapLibre stretches it linearly between the corners in the map's projection, so features drift toward the
+  mid-latitudes on Mercator; a Web Mercator image registers exactly. The whole image is one GPU texture: keep it at
+  most 8192 × 4096 (many GPUs cap textures at 8192 or 16384 px). Uploads are at most 5MB; an `https://` host must
+  send CORS headers or WebGL refuses the image.
+- **Raster art** (`display.rasterLayers`): none is shown when the map opens. The layer panel offers the base maps
+  (one at a time, or **None**) and the overlays as switches; a layer's key image shows in the panel while that layer
+  is on, as the climate key does for **Climate Zones**. Art mode (political fills clear except under the pointer,
+  borders and country names off) lasts only while a base map is shown.
+- **Political colours:** the same path as Ixnay (`getColorForFeature`: the feature's `properties.fill`, else a
+  colour hashed from its id). A realm's source sync stores each nation's source colour as `fill`. Unclaimed nations
+  look like any other; the country panel says **Unclaimed**.
+- **Credit line:** the realm's own (`settings.map.attribution`), else its source sync's, shown in the bottom-right
+  credit block above "© 2026 Ixnay" (`MapKeyboardControls`), always (the art's licence asks for it).
+- **Scale bar and coordinates** (`RealmMapScale`): the scale bar measures the middle of the view with `haversineKm` at
+  the realm's radius (MapLibre's own assumes Earth), and the cursor's coordinates show beside it. Both are written to
+  the DOM once per animation frame, never through React state.
+
+### Realm labels
+
+`MapLabel.countryId` is optional and `MapLabel.realmId` names the realm of a **realm label**: an ocean, sea, region or
+continent (`src/lib/maps/realm-labels.ts`) that the realm's map editors place anywhere, with size, weight, colour,
+letter spacing and zoom range (`geoFeatures.listRealmLabels` / `createRealmLabel` / `updateRealmLabel` /
+`deleteRealmLabel`). The world editor's realm menu (**Realm labels…**) manages them; `geoFeatures.getAllMapLabels`
+returns them with the nations' labels (`realmLabel: true`), and the viewer shows them at their own zoom range, globe
+view included (nations' labels start at zoom 4). `fontStyle` (`italic` for oceans and seas) is stored, but the
+self-hosted glyphs have no oblique face, so labels are drawn upright.
+
+### Auto-Match and nations with several regions
+
+- **Auto-Match** (world editor → Links → the wand) reads the edited realm's unlinked regions and nations in id-ordered
+  pages (`findAllById`, never the 1,000-row guard) and matches names after normalising case, accents, hyphens,
+  underscores, punctuation, a leading "The" and state forms ("Republic of", "Kingdom of"…), against each nation's
+  name, wiki page title, `externalSourceKey` and the roster's nation page titles (`src/lib/maps/nation-name-matching.ts`,
+  `linkage/matching.ts`). Confidence: same name 100%, same normalised name 95%, same without the state form 85%,
+  similar spelling (edit similarity ≥ 0.8) scaled below 80%. `geoEditor.suggestLinkageMatches` is the review list;
+  `repairLinkage` `apply_matches` links the picked pairs and `auto_match` alone links matches of at least 85%.
+- **Several regions per nation:** Auto-Match and a claimed nation page (`takeMapRegion`) link every region that names
+  the nation (feature id, display name or source key), and `syncCountryGeometryFromMapLayer` reads all the nation's
+  active regions in its own realm and stores their union (`@turf/union`), summed area, joint bounding box and
+  area-weighted centre.
+
+### Not done yet
+
+- Per-realm overrides of the fixed elevation and climate colour keys (`getZoneByColor`, `resolveClimateFromColor`):
+  every realm still reads Ixnay's keys.
+- A few country-id lookups of `MapLayer` (`getCountryGeometry`, the edit queue, province imports) do not filter by
+  realm; country ids are unique and cross-realm links are refused (`assertCountryInFeatureRealm`).
+
+## Realm Map Import Engine
+
+A realm's political map from a file: a flat-colour **PNG/JPEG/WebP**, an **SVG** with a shape or group per nation, or
+a **GeoJSON** FeatureCollection. Code: `src/lib/maps/import/` (engines, georeferencing, colour keys, name checks),
+`src/server/modules/maps/map-import.*` (jobs, storage, plan and apply, rollback, upload, wiki), router
+`geoEditor.mapImport` (`geo/editor/map-import.ts`), upload route `/api/admin/map-import/upload`, wizard
+`src/app/admin/maps/_components/map-import/`. A generated world uses the same jobs, upload and rollback as kind `world`
+(see [World generation](#world-generation-the-world-tab-atlas-release-a)); the wizard refuses a world bundle.
+
+**Who:** `canImportRealmMap` (site admins, the founder, officers with the Map power; Ixnay admin-only; archived
+realms refused) for uploads, analyses, dry runs, applies and rollbacks.
+
+### Flow and jobs
+
+1. **Upload** (multipart, 40 MB, Content-Length checked first): the kind is read from the bytes; the file is stored by
+   its SHA-256 in `MAP_IMPORT_DIR` (default `.map-imports/` under the app, not public). Never base64 through tRPC.
+2. **Analyse** (`mapImport.start`, or `startMapImport({ realmId, source: { kind, bytes | uploadId, filename },
+   options, requestedBy })` from server code): a `MapImportJob` (status queued, running, succeeded, failed, cancelled;
+   progress 0 to 100 and a stage text) runs the engine and stores its result in `MAP_IMPORT_DIR/results/<job>.json`
+   and a summary (regions, report, georeference extent, suggested mapping) on the job.
+3. **Map regions to nations** in the wizard; **dry run** (`mapImport.preview`): new, changed, unchanged and (replace
+   mode) retired borders, unmatched regions, names that are not nations of the realm (with suggestions), and each
+   nation's area (PostGIS geography × (radiusKm / 6371)², or the flat helpers at the realm's radius).
+4. **Apply** (`mapImport.applyImport`): an apply job writes through the realm map writer (validated geometry, batched
+   transactions, display names, country links, `geom_postgis`, areas on the realm's planet), retires the rest of the
+   political layer in replace mode only, fills a nation's land area from its border **only when it has none** (option,
+   on by default; re-checked at write time), rebuilds adjacency, drops the map caches and keeps a `MapImport`
+   snapshot. Several regions may name one nation: they are merged into one border.
+5. **Roll back** (`mapImport.rollback`): the realm's latest import still in place is restored from its snapshot
+   (touched features as they were, created features deleted, linked countries' outline and land area restored). The
+   snapshot is gzipped and capped at 64 MB of JSON; over the cap the import is applied without one and says so.
+
+**Who runs jobs:** the `map-import` cron job (every minute, `runQueuedMapImports`) when it is in
+`CRON_ENABLED_JOBS`: it runs analyses, with PNG tracing in a Bun worker thread, plus apply jobs left queued for two
+minutes. Otherwise the web process runs the queue itself right after queueing, in-process, yielding to the event loop
+every 40 ms (a Node worker thread cannot load the TypeScript source there). Apply jobs always start in the web process,
+so its in-memory layer cache is dropped at once. A realm runs one job at a time (lease `map-import:<realmId>`); a
+job queued behind it is retried every few seconds; a running job silent for 10 minutes is marked failed; Cancel stops
+a running job at its next progress report. Both processes must see the same `MAP_IMPORT_DIR`.
+
+### PNG engine (`src/lib/maps/import/png/`)
+
+Decode once (sharp, 64-megapixel limit from the header) → **palette**: the colour key's colours, or the image's
+dominant colours from a 15-bit histogram clustered by CIEDE2000 (a third of the tolerance merges; anti-aliasing and
+JPEG halos join their colour) → every pixel snapped to the nearest palette colour within the tolerance (default ΔE 12)
+through a 24-bit lookup table → detected colours that exist only as thin lines are dropped → a 3×3 majority vote
+removes one-pixel lines → **border lines** (dark, nearly grey pixels, or listed line colours) and unmatched pixels are
+grown over from their neighbours, so neighbours touch → regions under the minimum (default 0.002% of the image) merge
+into their largest neighbour (on row runs) → every boundary is traced once along pixel edges, keeping only vertices
+that matter (corners and junctions), so both sides of a border list the same points → rings become polygons with
+holes by containment (`ring-assembly.ts`) → TopoJSON (shared arcs) → topological simplification (Visvalingam, 1.5 px²).
+Nations made of several colours are merged along their shared arcs (`topojson-client` merge). The report lists each
+colour's pixels and pieces, merged specks and unmatched colours. Sea colours are offered as ignored.
+
+**Performance** (synthetic 8000 × 4000 map, about 130 nations with 3 px black borders and anti-aliased edges, Bun):
+about 2 s for the PNG and 4.5 s for a JPEG of it (all distinct JPEG colours classified), plus about 0.1 s to build the
+nations' borders; the old per-colour potrace path (since removed, with the `potrace` dependency) took about 1.1 s per
+colour (about 2.5 minutes for 130 nations) in one tRPC call.
+
+### SVG and GeoJSON engines
+
+- **SVG** (`svg-engine.ts`, on the province importer's building blocks): `<path>` (arcs drawn as arcs),
+  `<polygon>`, `<polyline>`, `<rect>`, `<circle>`, `<ellipse>`, accumulated `transform`s, `fill-rule`, holes by
+  containment. A region is the nearest named `<g>` (`<title>`, Inkscape label, data-name, aria-label or a non-generic
+  id), else the shape's own name, else its fill colour; unnamed regions take the `<text>` drawn over them. A layer
+  named political, countries, nations, states or borders is read when present; sea and background shapes (named so,
+  or covering most of the drawing) are left out. Coordinates are viewBox units, georeferenced like pixels.
+- **GeoJSON** (`geojson-engine.ts`): a FeatureCollection whose `crs` names WGS84 (or none); a projected CRS is refused
+  unless every coordinate is a valid lon/lat anyway. Non-negative coordinates beyond lon/lat range are read as image
+  pixels and georeferenced. The wizard chooses the property holding the nation's name (suggested from `name`,
+  `NAME`, `admin`, `sovereignt`…); features with one value are unioned into one region.
+
+### Georeferencing (`georef.ts`)
+
+Precedence: **control points** (three or more, fitted with the SVG calibration helper's Theil-Sen then least-squares
+fit, with an RMSE warning over 1°), then **bounds** (a crop), then **whole globe** (warns when the image is not 2:1,
+or 1:1 for Mercator). In **Mercator** the vertical axis is linear in Mercator y and the latitude comes from the inverse
+Mercator (control points are fitted in Mercator space). The wizard previews the resulting extent
+(`mapImport.previewGeoreference`), offers the wiki's capital coordinates as control points, and can save the
+georeference as the realm's.
+
+### Colour keys and names
+
+A colour key (CSV: a colour and a name per row in either order, or a name with several colours; JSON:
+`{ "#hex": "Nation" }`, `{ "Nation": ["#hex", …] }` or a list of objects) fills the mapping by nearest colour
+(`colour-key.ts`). Names are checked against the realm's countries and roster pages with the world editor's matcher
+(`nation-name-matching.ts`); unknown names are allowed (a nation claimed later by that name takes the border) and
+flagged with close spellings.
+
+### Import this map (from the realm's wiki)
+
+The wiki panel's chosen map (`Realm.settings.map.source`) has **Import this map**: `mapImport.startFromWiki` fetches
+the original (`fetchChosenWikiMapOriginal`, refused with CONFLICT when the wiki's file changed since it was chosen),
+queues its analysis with the realm's credit line (stored on every imported border) and georeference, and opens the
+wizard on it. The wizard shows each nation's locator map from `realms.wiki.infoboxHints` beside its choice.
+
+### Layer writer (`map-import.pipeline.ts`)
+
+`writePipelineLayers` is the writer under the world import and the realm map pipeline: validated geometry (lines and
+points accepted on non-political layers), batched transactions, display names from `properties.name`, a `MapImport`
+snapshot, and replace mode retires only the stale features of the layer types it imports. The layered Inkscape SVG
+pipeline, the `importPipelineResult` procedure and Quick Update (Ixnay's single-layer SVG commits) were removed with
+the Atlas overhaul; the wizard imports an SVG of nations for any realm.
+
+## Viewer Performance
+
+The public viewer (`/maps`, `MapContainer` → `IxWorldMap`, hooks in `src/components/maps/core/hooks/`) keeps pan, zoom and hover free of React renders and redundant worker work. Rules for anyone changing it:
+
+- **No React state per frame.** Hover hit-testing (`useWorldMapInteractions`) is coalesced to one `queryRenderedFeatures` pass per animation frame and never stores the hovered country in state (hover only warms the country-panel query cache). `onZoomChange` fires on `zoomend`, and `MapContainer` keeps the new zoom only when its LOD bucket changes. `IxWorldMap` is memoised and receives only stable callbacks.
+- **`setData` only on change.** Zoom-filtered point sources (cities, POIs, story pins, custom map labels) are re-filtered on `zoom` but pushed to the worker only when the filtered feature list differs (`setFilteredSourceData` in `utils/map-core-helpers.ts`). Subdivisions are pushed once per data change. The country-label distance fade (`utils/label-fade.ts`) runs on `moveend` and skips `setData` when no fade changed, which is always the case at globe zoom.
+- **Hidden means `visibility: none`.** Base layers that are toggled off (climate, biomes, ice caps, rivers, …) are hidden with layout visibility, not opacity 0, so MapLibre neither tiles nor draws them. The political fill is the exception: it stays at opacity 0 so hover and click still work. Country labels live on one source (`source-country-labels`); there is no generic `source-country_labels`.
+- **Level of detail.** `useMapDataBatched` downloads the first-paint layers (`CRITICAL_LAYERS`) from the layer route at the mid-zoom bucket (the entry `MapPrefetcher` warms: same URL, same query key) and asks for the detail bucket only at zoom ≥ 7. It never refetches a coarser globe bucket after the first zoom. POIs and capitals come from `getMapBundleMarkers`; cities and subdivisions from `getMapBundleDetail`, once the viewer passes zoom 3 (both are asked at the realm's map version, and keep the previous version's data on screen while the new one loads). Extra layers (e.g. climate) load one layer-route request each, and once loaded stay loaded, so toggling them is instant. When the map version moves, the realm's older versions' layers and overlay data are dropped from React Query (the bytes stay in the HTTP cache), so a long editing session does not pile up old maps.
+- **Overlays and style readiness.** Overlay components check `isMapStyleReady()` (`src/lib/maps/geojson-layer-helpers.ts`), not `map.isStyleLoaded()`, which is false whenever any source is re-tiling and made overlays silently skip setup or cleanup mid-pan. `TransportOverlay`'s `styledata` handler is a no-op once its layers exist; it used to call `moveLayer` on every style event, which re-triggered itself and kept the map rendering every frame.
+- **Cache invalidation.** `useMapLiveSync` coalesces bursts of `map_data_changed` SSE events into one invalidation (750 ms trailing), and `useMapPrefetch` warms per-country summaries and wiki intros in idle time after the first bundle arrives.
+
+## Map Delivery (Atlas Release 0)
+
+Layers and tiles reach the browser through versioned routes, not tRPC, so the browser's HTTP cache and the server's byte
+caches do the work. Design: [Atlas Release 0 spec](../specs/2026-10-11-atlas-release-0-performance-design.md).
+
+- **Map version.** `Realm.mapVersion` (Ixnay is realm `default`) is moved by `invalidateRealmMap(db, realmId)`
+  (`src/server/shared/map-invalidation.ts`) to `GREATEST(version + 1, epoch seconds)`: up by one, but never below the
+  clock, so a database restored to an older state jumps past every version its immutable URLs and tile folders carried
+  (a version is ten digits from the first edit on; `parseMapVersion` accepts up to a 32-bit integer). Every write path that changes what a realm's layers hold calls after
+  its transaction commits (border saves, split and merge, imports and rollbacks, linkage, sovereignty, area
+  recomputes). It also clears that realm's assembled layers, runs the hooks of the other caches (packed layers, the tile
+  access memo) and drops the cached map tRPC reads (`MAP_TRPC_KEYS`). `invalidateAllRealmMaps(db)` is for global admin
+  work with no realm. `getRealmMapVersion` memoises the version for 5 s per process, so a bump made by the cron worker
+  shows up in the web process within 5 s.
+- **Layer route** `GET /api/map-layers/<realm>/<version>/<layer>?bucket=<0|1|2>&format=<n>`. `<realm>` is an id or a
+  slug (Ixnay answers to `ixnay`, `ixworld` and `default`); `bucket` is the zoom level of detail (0 globe, 1 mid and the
+  default, 2 detail); `format` is `LAYER_FORMAT_VERSION` (`src/lib/maps/layer-format.ts`), which changes when the packed
+  wire format or the loader does. The body is the packed layer (`geojson-pack.ts`) as a ready string from one
+  `ByteBoundedCache` (256 MB, 24 h TTL, `layer-delivery.ts`) keyed by realm, version, format, layer and bucket; a miss
+  builds the layer once however many requests wait for it. A URL naming the current version and format is served
+  `public, max-age=31536000, immutable` for Ixnay and published realms when it names the realm by id (the client
+  always does) and `public, max-age=300` when it names a slug, which can be renamed, with an `ETag` that
+  `If-None-Match` turns into a 304; a URL naming an older version or format gets the current data with `public, no-cache`. An unpublished (draft or
+  generating) realm's layers go only to those who may see it, as `private, no-store`; a realm the viewer may not see is
+  a 404 (`private, no-store`), and an unknown `bucket` a 400. A realm with no such layer gets an empty FeatureCollection,
+  not an error.
+- **Coverage simplification** (`modules/maps/coverage-simplify.ts`). The political layer is simplified per bucket (0.025,
+  0.008 and 0.002 degrees) with PostGIS `ST_CoverageSimplify` over the realm's active features, so a border two nations
+  share keeps the same vertices on both sides. A row whose bounding box is wider than 180 degrees (it crosses +-180, so
+  its `geom_postgis` is a planar sliver) and a row the simplification empties are left out of the coverage and
+  simplified one polygon at a time from their GeoJSON with turf; if the function is missing, or GEOS refuses the
+  coverage, the whole layer takes that path. The decorative polygon layers are not coverage-simplified.
+- **Vector tiles** `GET /api/map-tiles/<realm>/<version>/f<format>/<layer>/<z>/<x>/<y>` for `altitudes`, `rivers` and `lakes`
+  (z0 to z6), rendered by PostGIS (`modules/maps/tile-render.ts`). `<format>` is `TILE_FORMAT_VERSION` (`src/lib/maps/tile-format.ts`),
+  which any change to what the renderer produces must bump: tiles are `immutable` for a year in browsers and kept on
+  disk, so a new format is a new URL and a new folder (a URL of another format gets this build's tile as
+  `private, no-store`). A rendered tile is written to the tile folder (`MAP_TILE_DIR`,
+  above) and read back from it through a 32 MB in-memory cache (1 h TTL), so a cached tile costs no query. A request
+  for an older version gets the current version's tile as `private, no-store` (it is not that URL's content); a version
+  above the realm's is a 404. Ixnay's and published realms' tiles are `immutable` when the URL names the realm by id and
+  `public, max-age=300` when it names a slug (a slug can be renamed); unpublished realms are `private, no-store`. The
+  realm row (status, owner) behind that decision is memoised for 60 s, the answer for the viewer never is.
+- **Cron jobs** (`src/server/cron/jobs.ts`, both every 5 minutes, both to be named in `CRON_ENABLED_JOBS`):
+  - `map-tiles` renders z0 to z3 of the three layers for Ixnay and every published realm whose current version has no
+    `.done` marker, then removes the folders of versions a newer one has outlived for more than a day. A run stops
+    starting tiles after 15 minutes and the next one continues. Deeper zooms render on first request. It needs the
+    same `MAP_TILE_DIR` as the web app and the IxWorld standalone. Without the job the web process still cleans up
+    after itself: after it renders a tile it removes the realm's outlived version folders (at most once an hour per
+    realm, never the current version), so the disk cannot fill; pre-rendering is what the job adds.
+  - `geo-profiles` recomputes, one country at a time (20 minute run budget), the geo profiles that
+    `geoCore.recalculateGeoProfiles` marked stale, and any country without one. The mutation only queues; the toast
+    says when the job last ran.
+- **Geo profile.** `geoCore.getCountryGeoProfile` is a `cachedStaticProcedure` (1 h). Its queries read the indexed
+  `geom_postgis` columns of `"Country"` and `map_layers` (bounding-box `&&` first, `ST_Subdivide` pieces of the country for
+  the river and lake clips), filter by the country's realm and run together in one `Promise.all`.
+
+### Release 0 acceptance (`bun run perf:atlas`)
+
+`scripts/perf/atlas-bench.ts` ([scripts README](../../scripts/README.md)) runs the targets against
+the local database in process and exits 1 if any fails. The figures below are from one run on 2026-10-12 against the
+`ixstats_wv1` clone (Ixnay only: 183 political features, 93,631 points; WSL2, 8 GB). Timings move from run to run; the
+geo profile has the least headroom against its limit.
+
+| Target | Limit | Measured (one run) |
+| :--- | :---: | :--- |
+| Layer route, event-loop block on a hit (political, buckets 0 to 2, 60 hits) | 50 ms | 8.53 ms max, 0.02 ms median (cold builds 345 / 288 / 269 ms) |
+| Layer route, repeat request with `If-None-Match` | 304 | 304 in 0.19 ms; the versioned URL, asked by realm id, `immutable` |
+| Tile route, DB statements on a warm disk hit (z1 and z2, three layers, 60 tiles, fresh process) | 0 | 0 (cold render 3,455 ms, 120 statements) |
+| Tile route, event-loop block on a warm hit | 50 ms | 1.69 ms max on disk, 0.15 ms max in memory |
+| `getCountryGeoProfile`, Caphiria, tRPC cache bypassed, median of 5 | 400 ms | 294 ms (first call 405 ms) |
+| Border drag, JS per frame on Caphiria (7,279 points, shared vertex), p95 of the 55 frames after 5 warm-up frames | 4 ms | 2.0 ms (mean 1.57 ms) |
+| Region reshape, overlap checks during a 10-move drag / overlap time in the mouse-up frame / checks after mouse-up, when idle | 0 / 16 ms / 1 | 0 / 0 ms / 1 |
+| Autosave payload after 50 drags | 1 MB | 154 KB |
+| Coverage simplify, political features left unsimplified | 0 | 0: 93,631 points raw to 53,742 / 61,870 / 75,348 (buckets 0 / 1 / 2); 178 features by `ST_CoverageSimplify`, the 5 crossing +-180 by the per-polygon fallback |
+
+All 14 gated lines passed in that run, and the script printed two `INFO` lines, which have no limit. The slowest drag
+frame was 4.48 ms, the very first of the 60 (the drag path compiling: it is among the warm-up frames the gate skips),
+and the one overlap check of a region reshape, 66 ms on a 722-point region, ran after the mouse-up frame had been
+handled, when the browser is idle, so it delays no frame (the hook's `requestIdleCallback` is a 50 ms timer in the
+benchmark's jsdom). The benchmark cannot see a browser: a second `/maps` load is checked as the immutable URL and the
+304 the layer route sends, not as a download that does not happen, and the release frame is the overlap work in the
+mouse-up handler over a fake map, not a painted frame. It writes nothing to the database (it counts write statements
+and fails on one) and renders tiles into a temporary folder it removes, never `MAP_TILE_DIR`.
+
+### Release A and Studio acceptance (world generator, `bun run perf:atlas`)
+
+The same script measures the world generator in two fresh child processes (`scripts/perf/atlas-bench-worldgen.ts`): the Eurth preset at the default size (66,626 cells), seed 7, under Bun. One run on 2026-10-12, after the Studio work, all 21 targets of the script passing:
+
+| Target | Limit | Measured (one run) |
+| :--- | :---: | :--- |
+| `generateWorld`, first generation in a cold process | 1000 ms | 874 ms |
+| `generateWorld`, reroll to a new seed (new mesh), median of 5 | 900 ms | 687 ms (648 to 709) |
+| Restart at mesh (change of seed on the stage cache), median of 5 | 1000 ms | 593 ms (561 to 638) |
+| Restart at land (`oceanPercentage`), median of 5 | 600 ms | 307 ms (288 to 316) |
+| Restart at climate (`temperatureOffset`), median of 5 | 250 ms | 139 ms (130 to 147) |
+| Restart at nations (`countryCountRange`), median of 5 | 250 ms | 76 ms (76 to 87) |
+| Restart at output (`hasIcecaps`), median of 5 | 200 ms | 64 ms (57 to 71) |
+
+The output limit is 200 ms, not the spec's 150: the export alone measures 100 to 150 ms on a cold process. The per-stage lines replaced the old "slider change" line. Printed as `INFO` lines, with no limit: the worker's runner (`createWorldRunner`, called directly) end to end per message. First message 1,153 ms (`generateWorld` 948, layer stringify 17, relief preview 61, stats 0.6, buffer copies 1.5, and the remainder the cold start of the code after the generator); slider message 199 ms (median over one change reaching each stage after the mesh) and reroll message 694 ms (median of 5), of which the runner's own work after `generateWorld` is about 75 ms. Not seen: the structured clone of the posted result, the main thread's blob URLs and draft sources, and the browser's engine (the worker runs on V8, Bun on JavaScriptCore; in Node 20 the first generation took about 0.97 s). Running only these lines: the benchmark needs the database for the rest, so the whole of `bun run perf:atlas` runs. Timings move with the box's load: the cold first generation has the least headroom against its limit.
 
 ## Map Layers & Stacking Order
 
-MapLibre GL JS renders 7 primary vector GeoJSON layers. Hydrological layers strictly render **above** political boundaries for correct cartographic presentation:
+MapLibre GL JS renders vector GeoJSON layers. Hydrological layers strictly render **above** political boundaries for correct cartographic presentation:
 
 | Layer | Source File | z-Index | Purpose | Compression Tolerance |
 | :--- | :--- | :---: | :--- | :---: |
-| `rivers` | `rivers.geojson` | **7** | River linestrings with hierarchy | 0.025 |
-| `lakes` | `lakes.geojson` | **6** | Freshwater and saline lakes | 0.015 |
-| `icecaps` | `icecaps.geojson` | **5** | Glacial sheets & polar coverage | 0.000 (exact) |
-| `political` | `political.geojson` | **4** | National borders & territory fills | 0.008 |
-| `altitudes` | `altitudes.geojson` | **3** | 9-zone hypsometric elevation contours | 0.035 |
-| `climate` | `climate.geojson` | **2** | 12 Trewartha biome zone polygons | 0.035 |
-| `background` | `background.geojson`| **0** | Ocean base & landmass geometry | 0.020 |
+| `rivers` | `rivers.geojson` | **7** | River linestrings with flow hierarchy | 0.035 |
+| `lakes` | `lakes.geojson` | **6** | Freshwater and saline lakes | 0.02 |
+| `political` | `political.geojson` | **4** | National borders & sovereign territory fills | 0.008 |
+| `climate` | `climate.geojson` | **2** | 12 Trewartha biome zone polygons | 0.05 |
+| `altitudes` | `altitudes.geojson` | **1** | 9-zone hypsometric elevation contours | 0.05 |
+
+z-index values are `LAYER_CONFIGS` in `src/lib/maps/map-config.ts`; tolerances are the base `LAYER_COMPRESSION` values in `src/server/modules/maps/layer-lod.ts` (mid-zoom defaults; `LOD_OVERRIDES` change them for globe and detail zoom).
 
 ---
 
-## Component Architecture
+## Map Editor Studio Architecture (`/admin/maps/editor`, `/mycountry/map-editor`, in-place on `/maps`)
 
-### Viewer Components (`src/components/maps/core/`)
-- `IxWorldMap.tsx` – Core MapLibre GL JS renderer with WebGL projection switching (Globe, Mercator, Dynamic), label distance fade, and layer styling
-- `MapContainer.tsx` – SSR-safe data loading wrapper with two-tier cache resolution (React Query + IndexedDB)
-- `MapControls.tsx` – Floating layer toggles, projection switcher, coordinate readout, and legends
-- `CountryInfoPanel.tsx` – Right-side nation dossier drawer with MediaWiki extract, flag, and neighbor lists
-- `MapPinInfoPanel.tsx` – Coordinate inspection drawer with Turf.js + PostGIS point lookup data
+The Map Editor (`MapEditorOverlay`, `src/components/maps/editor/`) is a full-screen vector cartography workstation for authoring geography at national, regional, and municipal levels:
 
-### Editor Components (`src/components/maps/editor/`)
-- `MapEditorOverlay.tsx` – Full-screen editor canvas with tool rail, property panel, and status bar
-- `EditorMap.tsx` – Interactive MapLibre editor map with vertex dragging, snap guides, coordinate grid, and province painter
-- `MapEditorToolbar.tsx` – Tool rail: Select (V), City (C), Region (R), POI (P), Route (T), Import (I), Paint (B)
-- `FeaturePropertyPanel.tsx` – Attribute forms + Province Painter map modes (Population, Development, Resources, Wiki Coverage)
+### 1. Authoring Toolset & Entity Types
+- **Sovereign Boundaries & Territories**: Draw, split, merge, and modify national border polygons with shared-vertex topology locking to prevent border overlap slivers or tears.
+- **Sub-National Regions & Provinces**: Partition sovereign territory into administrative subdivisions, states, and cantons with autonomous attribute rollups.
+- **Cities & Municipalities**: Place capital cities, industrial hubs, and ports with population weight and review status.
+- **Points of Interest (POIs) & Landmarks**: Place historical sites, military fortifications, mountain peaks, canal locks, and natural superlatives.
+- **Story Pins & Storylines** (AT-14): the country editor's **Stories** tab (`panels/StorylinesPanel.tsx`) creates, recolours and deletes storylines, adds the country's story pins to one (appended after its last pin), takes them out again, and writes a new event (title, IxTime year, category, text) straight into a storyline at one of the country's cities, POIs, story pins or peaks. It previews the same `StorylineTimeline` the map's story pin modal shows once a storyline has two or more pins. Storyline writes are `geoFeatures.createStoryline` / `updateStoryline` / `deleteStoryline` / `addPinToStoryline` / `removePinFromStoryline` (`geo/features/storylines.ts`; owner of the country or privileged, `assertOwnCountry` plus `findFirst({ id, countryId })`; deleting a storyline keeps its pins). `createStoryPin` / `updateStoryPin` refuse a `storylineId` from another country. These writes bypass the editor's undo history.
+- **Transit & Trade Corridors**: Friction-weighted pathfinding generating realistic highway, rail, and maritime shipping routes following terrain contours.
 
-### Editor Selection & Hit-Testing Model
-- **Deterministic Hit-Testing (`hit-test.ts`)**: Two-phase spatial query (exact point wins, polygon containment second, grab-assist over empty space only).
-- **Transient Pointer State (`transientStore.ts`)**: `useSyncExternalStore` store for cursor movement, eliminating re-render cascades across React components.
-- **GeoJSON Source Diffing (`geoJsonPatcher.ts`)**: Targeted `UPDATE_FEATURE` patches and `setFeatureState` GPU toggles.
+### 2. Precision GIS & Vertex Snapping Model
+- **Polygon Snapping**: Snaps vertices to neighboring borders, coastlines and rivers (per-layer snap toggles, `src/lib/maps/editor-prefs.ts`), with shared-edge cascading (`src/lib/maps/topology-engine.ts`) maintaining topological correctness.
+- **Copy-on-Write Polygon Updates (`border-editor.ts`)**: `cloneRingsWithTarget` avoids full geometry deep-clones during 60fps drag operations.
+- **Two-Phase Hit-Testing (`src/components/maps/editor/utils/hit-test.ts`)**: Exact point selection wins, polygon containment second, grab-assist over empty space only.
+- **Nominal Coordinate Typing (`src/types/maps/editor-domain.ts`)**: TypeScript nominal types (`Lng`, `Lat`, `GeoPoint`, `ScreenPoint`) prevent axis-inversion coordinate bugs.
+- **Import / export**: Province SVG/PNG import in the editor (`province-importer/`); a realm's whole political map from PNG/JPEG, SVG or GeoJSON through the [realm map import](#realm-map-import-engine), through Atlas → **Import a map** or the realm's Manage tab. The editor's Settings menu imports a GeoJSON file (points → cities, or POIs when the feature has a `category`; polygons → regions; lines are skipped) and exports every feature as a GeoJSON FeatureCollection (`src/hooks/map-editor/editor-geo-ops.ts`). An import is one undo step. There is no SVG export.
+
+### 3. Editing Model: Undo, Drafts, Confirmations
+- **Every write is undoable.** Creates, deletes, attribute edits, point drags and arrow-key nudges (a burst of nudges is one save), region reshapes with their topology-cascaded neighbours, duplicates, merges/splits, bulk delete/edit, the city placement tools and GeoJSON imports all land on the history stack (`useMapHistory`, 50 steps). Multi-feature operations record one `"batch"` action. `useHistoryReversalExecutor` replays actions as **partial** patches (only the recorded fields are sent) and keeps an id alias map, because re-creating a deleted feature gives it a new id. Undo/redo run one at a time and close any open vertex/path edit first.
+- **Region reshaping** (select a region → drag vertices, click a midpoint to add, right-click/Backspace to remove) saves through `geoFeatures.updateSubdivision` with `cascadedNeighbors`, writing only the neighbours whose shared vertices actually moved. "Done" saves only when something changed; "Cancel" restores the neighbours.
+- **Tools that were stubs now work:** route and river drawing collect clicks (Enter finishes a route), the split-region tool draws a line and splits into "A"/"B" pieces, scatter cities, regional capitals for regions with no city ("Auto-Create Cities" while gaps are highlighted, `H`), snap city to region border / coastline (the `background` landmass layer, within 3°), bulk edit of region type/level/colour/government type (colour and government type go through `countryGeo.upsertSubdivision`), and the gap / empty-region overlay. Union keeps the merged shape and deletes the others; subtract and intersect reshape the first region and keep the rest.
+- **Drafts:** an unsaved placement or drawing (placed point, closed shape, route waypoints, river path) is mirrored to `localStorage` per country and offered back when the editor reopens (`useEditorDraft`). Saved edits need no draft — they are on the server already.
+- **Leaving:** the status bar shows Saving… / Unsaved / Saved *n* ago and the last error; the exit button asks before discarding unsaved work, and the browser warns on reload/close while work is unsaved.
+- **Confirmations** use a themed AlertDialog (`EditorConfirmDialog`) instead of `window.confirm`; deleting from the Delete key, context menu, inspector, tool bar or header always asks and says the delete can be undone.
+- **Keyboard:** one listener in `useMapEditorOverlayState` owns undo/redo, selection (Ctrl+A / Ctrl+D / Ctrl+J duplicate), Delete, Enter, Escape (close menu → cancel drawing → clear selection → leave tool → exit), `G` grid, `H` gaps, `F` panels, `I` import, `?` shortcut sheet, and the border editor's `V P X M T B`; tool letters (`V M C P K T Y R J U`) go through the plugin provider. The shortcut sheet lists exactly what is wired.
+- **Wiki tab** (country editor): scans unlinked features against IxWiki search, links the best match in one click and lists map-vs-infobox conflicts (`WikiScannerPanel`, `useWikiScanner`).
+
+### 4. Performance Model
+- **Pointer work never re-renders the editor.** Cursor position, hovered feature, terrain-at-cursor and zoom live in `transientMapStore`, which notifies at most once per animation frame; only leaf components (status bar, hover tooltip, elevation HUD) subscribe. Hover hit-testing (`queryRenderedFeatures`), the lasso/marquee outline and cascade previews during a vertex drag are all frame-batched and drawn straight into their GeoJSON sources.
+- **Layers upload only on real change.** `useMapLayers` keys feature uploads on the features array and the visibility *values*; opacity is a paint-property effect. The overlay passes memoised layer props, and the plugin context is stable (plugins read `context.state` through a getter), so map listeners are not re-registered on unrelated renders.
+- **Border vertex drag** (`useBorderDrag.ts`, `src/lib/maps/border-drag.ts`). The shapes live in a ref while a vertex moves: a frame copies only the touched rings (the vertex and the neighbour vertices on it, through `cascadeMoveVertex`), draws a small `border-drag` source (the vertex and its two edges) and the outline's `active-feature` data, and sends the live area through `transientMapStore`. React state is set once, at mouse-up (`commitDrag`), as one undo entry.
+- **Border autosave** (`useBorderAutosave.ts`, `src/lib/maps/border-draft.ts`). After 30 s without a change while dirty, the editor session stores `{ featureId, geometry, dirtyNeighbors, savedAt }` and no undo stack (154 KB after 50 drags on Caphiria, against 15.1 MB before). `startBorderEditSession` returns the draft only for the same user and feature, saved after the feature's last update and less than 24 h ago, minus any moved neighbour that was saved since; the editor offers Restore or Discard (`restoreDraft`, `discardDraft`).
+- **Region reshape** runs no overlap check while a vertex is dragged. Mouse-up runs it once, against the regions that share a vertex with the edited one (`useSubdivisionVertexEdit`).
+- **Rulers** re-render on map move in their own component (`EditorRulers`), so they track the camera without re-rendering the map.
+- **Feature queries** are invalidated through one debounced call per burst (features + routes only; the country border and linkage are not refetched after feature edits).
+- **Phones** mount the bottom sheet only (and only once there is something to fill in); desktop never mounts the hidden sheet, and phones never mount the docked panels.
 
 ---
 
 ## Pluggable Overlay Framework (`OVERLAY_REGISTRY`)
 
-The overlay architecture (`src/lib/overlay-registry.ts`) enables declarative, pluggable map overlays:
-1. **Fill Overlays** (Mutually Exclusive): Recolor political boundaries (`ChoroplethOverlay`, `RiskHeatmapOverlay`).
-2. **Feature Overlays** (Combinable): Interactive vector elements (`TransportOverlay`, `TradeRouteOverlay`).
-3. **Analytics Overlays** (Combinable): Geopolitical analysis (`GeopoliticalOverlay` showing alliances, embassies, conflict hotspots).
+The overlay architecture (`src/lib/maps/overlay-registry.ts`) enables declarative, pluggable map overlays powered by `geojson-layer-helpers.ts`:
+1. **Fill Overlays** (Mutually Exclusive): Recolor political boundaries — wealth, population, economic tier, vitality, health, trade balance, canon density (`ChoroplethOverlay`) and crises (`RiskHeatmapOverlay`).
+2. **Feature Overlays** (Combinable): Cities, POIs, subdivisions, story pins and map labels (visibility toggles rendered by `IxWorldMap`).
+3. **Analytics Overlays** (Combinable): Diplomacy (`GeopoliticalOverlay` showing alliances, embassies, conflict hotspots) and transport networks (`TransportOverlay`).
 
 ---
 
 ## MyCountry Tier-0 Single Source of Truth
 
 Geography serves as the foundational data source across the platform:
-- **Spatial Boundaries**: `MapLayer`, `Territory`, `BorderHistory` are authoritative for geometry, area, centroid, bounding box, and PostGIS `ST_Touches` adjacency.
-- **Settlements**: `City`, `Subdivision`, `PointOfInterest`, `StoryPin`, `MapLabel` foreign-key linked to `Country.id`.
-- **Attribute Rollups**: `hybrid` (default), `top-down`, and `bottom-up` rollup modes aggregate regional metrics into national indicators.
+- **Spatial Boundaries**: `MapLayer` plus the cached geometry columns on `Country` (`src/lib/country-geo/sync.ts`) and `BorderHistory` are authoritative for geometry, area, centroid and bounding box. The unused `Territory` model was dropped with D9 (2026-10-27). Adjacency is computed live with PostGIS `ST_Touches`.
+- **Settlements**: `City`, `Subdivision`, `PointOfInterest`, `StoryPin`, `Storyline`, `MapLabel` foreign-key linked to `Country.id` (a realm label has no country and names its realm instead).
+- **Admin lock**: `editableByOwner: false` on a subdivision, city, peak, named river or lake stops its country's owner from changing or deleting it (`geoFeatures` update/delete, `countryGeo` upserts of an existing row, topology cascades; an owner's batch simplify skips it). Admins can always edit (`server/shared/map-feature-lock.ts`). No UI sets the flag yet.
+- **Attribute Rollups**: `hybrid` (default), `top-down`, and `bottom-up` rollup modes aggregate population and GDP only. Bottom-up overwrites the national figures, and with no approved subdivisions it falls back to the sum of city populations.
 
 ---
 
-## Geo API Routers (`src/server/api/routers/geo/`)
+## Geo API Routers (`src/server/api/routers/`)
 
-- `geo/core.ts` – World map geometry, country bounds, point lookups, and cache management
-- `geo/features.ts` – Cities, subdivisions, POIs, and story pins with geometry precision truncation
-- `geo/editor.ts` – Border editing mutations and spatial submission review
-- `geo/admin.ts` & `geo/admin/cities.ts` – Admin province and city management
-- `geo/sovereignty.ts` – Territorial claims and sovereignty chain tracking
-- `geo/realms-pipeline.ts` – Procedural realm generation pipeline triggers
+- `geo/core/` (`geoCore`) – World map geometry and bundles, country geometry/neighbors, point lookups, geo profiles, overlays, border history, and area/profile recalculation
+- `geo/features/` (`geoFeatures`) – Cities, POIs, subdivisions, story pins and storylines (`getCountryStorylines`, storyline CRUD, add/remove pins), map labels, and named superlatives (`createPeak`, `createNamedRiver`, `createNamedLake`)
+- `geo/editor/` (`geoEditor`) – Border editing mutations, split/merge, linkage, the spatial submission review queue, and the realm map import (`mapImport.*`, including the `world` kind: `applyWorld`, `rebuildRelief`)
+- `geo/admin/` (`geoAdmin`) – Province and city imports (the province and city imports are country-owner procedures, not admin-only)
+- `geo/sovereignty.ts` (`geoSovereignty`), `geo/wiki.ts` (`geoWiki`) – Sovereignty relations; wiki intros/infobox lookups for features
+- `countryGeo.ts` – Geo bundles and compliance, `sampleTerrainAt`, settlement upserts (`upsertCity`, `upsertSubdivision`), rollup mode, and wiki population
+- `transport/` – Friction-based transit corridor generation, route CRUD, travel-time and national mobility queries
+- `realms/` (`realms`) – Realm lookup, nation claims and the claims review queue (see [Realms](../architecture/realms-framework-spec.md)); `realms.map` serves a realm's map display and settings, recomputes its areas ([Realm maps](#realm-maps)) and runs the World tab's lock status, published presets and slot tools (`worldStatus`, `worldPresets`, `worldSlot`, `setSlotClaimable`, `deleteSlot`)
+- `atlas/` (`atlas`) – The admin side of [Atlas and World Studio](#atlas-and-world-studio): `studio` (realm measures, `applyStatus`, `createRealm`), `presets`, `jobs`, `realms` (overview, page figures, cache refresh) and `health`; all `adminProcedure`
 
 ---
 
 ## Related Documentation
 
-- [Oceanography Report](../IXWORLD_OCEANOGRAPHY_REPORT.md)
-- [Autosave Architecture](../AUTOSAVE_ARCHITECTURE.md)
-- [Framework Specification (Realms)](../FRAMEWORK_SPEC.md)
-- [API Reference: Geo Routers](../reference/api-complete.md#geo-routers)
+- [Oceanography Report](../reference/oceanography-report.md)
+- [Framework Specification (Realms)](../architecture/realms-framework-spec.md)
+- [API Reference: Maps & Geography](../reference/api-complete.md#maps--geography)

@@ -1,19 +1,38 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import {
-  AbilityProvider as CaslAbilityProvider,
-  Can as CaslCan,
-  useAbility as useCaslAbility,
-} from "@casl/react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { api } from "~/trpc/react";
-import { type AppAbility, defineAbilityFor } from "~/lib/auth";
+import { type Actions, type AppAbility, type Subjects, defineAbilityFor } from "~/lib/auth";
 import { useUser } from "@clerk/nextjs";
 
-// Re-export Can and useAbility with proper typings for our app
-export const Can = CaslCan;
+const defaultAbility = defineAbilityFor("guest", [], "basic", []);
+const AbilityContext = createContext<AppAbility>(defaultAbility);
+
 export function useAbility(): AppAbility {
-  return useCaslAbility<AppAbility>();
+  return useContext(AbilityContext);
+}
+
+interface CanProps {
+  I: Actions;
+  a: Subjects;
+  field?: any;
+  passThrough?: boolean;
+  children: React.ReactNode | ((allowed: boolean) => React.ReactNode);
+}
+
+export function Can({ I, a, field, passThrough, children }: CanProps) {
+  const ability = useAbility();
+  const allowed = ability.can(I, a, field);
+
+  if (typeof children === "function") {
+    return <>{children(allowed)}</>;
+  }
+
+  if (allowed || passThrough) {
+    return <>{children}</>;
+  }
+
+  return null;
 }
 
 interface AbilityProviderProps {
@@ -29,13 +48,12 @@ export function AbilityProvider({ children }: AbilityProviderProps) {
     refetchOnWindowFocus: false,
   });
 
-  const [ability, setAbility] = useState<AppAbility>(() =>
-    defineAbilityFor("guest", [], "basic", [])
-  );
+  const [ability, setAbility] = useState<AppAbility>(defaultAbility);
 
   // Re-build abilities when data changes
   useEffect(() => {
     if (user && data) {
+      // oxlint-disable-next-line
       setAbility(
         defineAbilityFor(data.role, data.permissions, data.membershipTier, data.unlockedTools)
       );
@@ -57,5 +75,5 @@ export function AbilityProvider({ children }: AbilityProviderProps) {
     };
   }, [refetch]);
 
-  return <CaslAbilityProvider value={ability}>{children}</CaslAbilityProvider>;
+  return <AbilityContext.Provider value={ability}>{children}</AbilityContext.Provider>;
 }

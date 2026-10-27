@@ -1,208 +1,285 @@
 import { useEffect, useRef } from "react";
-import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
+import type { Map as MapLibreMap, GeoJSONSource, MapLayerMouseEvent } from "maplibre-gl";
 import type { EditorFeature, EditorMode } from "~/hooks/useMapEditor";
+import {
+  buildPointFeatures,
+  collection,
+  getGeoJSONSource,
+  pointFeature,
+} from "../utils/map-helpers";
+import {
+  exceedsHysteresis,
+  axisLock,
+  nextLockedAxis,
+  NUDGE_SMALL,
+  NUDGE_LARGE,
+  type DragAxis,
+  type ScreenPoint,
+} from "./drag-utils";
+import { coalesceToFrame } from "~/lib/frame-coalesce";
+import { createListeners, queryNear } from "./map-interaction";
+import { useLatest } from "./useLatest";
+
+const POINT_TYPES = ["city", "poi", "storyPin", "mapLabel", "peak"] as const;
+type PointType = (typeof POINT_TYPES)[number];
+const isPointType = (type: string): type is PointType =>
+  (POINT_TYPES as readonly string[]).includes(type);
 
 interface UsePointDragProps {
   map: MapLibreMap | null;
   isLoaded: boolean;
   mode: EditorMode;
   features: EditorFeature[];
+  selectedFeature?: EditorFeature | null;
   onFeatureSelect?: (feature: EditorFeature | null) => void;
   updatePointCoordinates?: (
     featureId: string,
-    featureType: "city" | "poi" | "storyPin" | "mapLabel",
+    featureType: PointType,
     coordinates: [number, number]
   ) => Promise<void>;
 }
+
+interface DragState {
+  featureId: string;
+  featureType: PointType;
+  originalCoords: [number, number];
+  currentCoords: [number, number];
+  startScreenPoint: ScreenPoint;
+  committed: boolean;
+  lockedAxis: DragAxis | null;
+}
+
+const DRAGGABLE_LAYERS = [
+  "editor-points-capital",
+  "editor-points-city",
+  "editor-points-poi",
+  "editor-points-peak",
+  "editor-points-story-pin",
+  "editor-points-map-label",
+  "editor-points-labels",
+  "editor-map-labels",
+];
+
+const ARROW_DIRECTIONS: Partial<Record<string, [number, number]>> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, 1],
+  ArrowDown: [0, -1],
+};
+
+/** Tools that use the map for placing/drawing, where points must not be dragged. */
+const isPlacementMode = (mode: string) =>
+  /^(add-|import-)|route/.test(mode) ||
+  mode === "split-subdivision" ||
+  mode === "lasso-select" ||
+  mode === "ruler";
 
 export function usePointDrag({
   map,
   isLoaded,
   mode,
   features,
+  selectedFeature,
   onFeatureSelect,
   updatePointCoordinates,
 }: UsePointDragProps) {
-  const dragRef = useRef<{
-    featureId: string;
-    featureType: string;
-    originalCoords: [number, number];
-    currentCoords: [number, number];
-  } | null>(null);
+  const dragRef = useRef<DragState | null>(null);
+  /** Snapshot of all point features, so a 60fps drag only swaps one entry. */
+  const cachedPointFeaturesRef = useRef<ReturnType<typeof buildPointFeatures> | null>(null);
+  const activeFeatureIndexRef = useRef<number>(-1);
 
-  const featuresRef = useRef(features);
-  featuresRef.current = features;
-
-  const modeRef = useRef(mode);
-  modeRef.current = mode;
-
-  const onFeatureSelectRef = useRef(onFeatureSelect);
-  onFeatureSelectRef.current = onFeatureSelect;
-
-  const updatePointCoordinatesRef = useRef(updatePointCoordinates);
-  updatePointCoordinatesRef.current = updatePointCoordinates;
+  const latest = useLatest({
+    features,
+    selectedFeature,
+    mode,
+    onFeatureSelect,
+    updatePointCoordinates,
+  });
 
   useEffect(() => {
     if (!map || !isLoaded) return;
 
-    const draggableLayers = [
-      "editor-points-capital",
-      "editor-points-city",
-      "editor-points-poi",
-      "editor-points-story-pin",
-      "editor-points-map-label",
-      "editor-points-labels",
-      "editor-map-labels",
-    ];
+    const listeners = createListeners(map);
+    const canvas = map.getCanvas();
 
-    const onMouseDown = (e: any) => {
-      const activeMode = modeRef.current;
-      const isAddMode =
-        activeMode.startsWith("add-") ||
-        activeMode.startsWith("import-") ||
-        activeMode.includes("route") ||
-        activeMode === "split-subdivision" ||
-        activeMode === "pan" ||
-        activeMode === "lasso-select" ||
-        activeMode === "ruler" ||
-        activeMode === "paint-fill";
-      if (isAddMode) return;
+    const syncPointsSource = (activeId: string | null, activeCoords: [number, number] | null) => {
+      const source = map.getSource("editor-points") as GeoJSONSource | undefined;
+      if (!source) return;
 
-      const dragBbox = [
-        [e.point.x - 8, e.point.y - 8],
-        [e.point.x + 8, e.point.y + 8],
-      ] as [import("maplibre-gl").PointLike, import("maplibre-gl").PointLike];
-      const hits = map.queryRenderedFeatures(dragBbox, { layers: draggableLayers });
-      if (hits.length === 0) return;
+      const cache = cachedPointFeaturesRef.current;
+      const index = activeFeatureIndexRef.current;
+      if (activeId && activeCoords && cache && index !== -1) {
+        cache[index] = { ...cache[index]!, geometry: { type: "Point", coordinates: activeCoords } };
+        source.setData({ type: "FeatureCollection", features: cache });
+        return;
+      }
 
-      const hit = hits[0]!;
-      const id = hit.properties?.id;
+      const override =
+        activeId && activeCoords ? { id: activeId, coordinates: activeCoords } : undefined;
+      source.setData(collection(buildPointFeatures(latest.current.features, override)));
+    };
 
-      // Look up feature to make sure we drag by ID and get its canonical properties
+    // Mouse events can outpace the display; the source is sent the latest point once per frame.
+    const syncDrag = coalesceToFrame((coords: [number, number]) => {
+      const drag = dragRef.current;
+      if (drag) syncPointsSource(drag.featureId, coords);
+    });
+
+    const setGhost = (coords: [number, number] | null) => {
+      getGeoJSONSource(map, "editor-points-ghost")?.setData(
+        collection(coords ? [pointFeature(coords)] : [])
+      );
+    };
+
+    const clearDragState = () => {
+      dragRef.current = null;
+      cachedPointFeaturesRef.current = null;
+      activeFeatureIndexRef.current = -1;
+    };
+
+    const onMouseDown = (e: MapLayerMouseEvent) => {
+      if (isPlacementMode(latest.current.mode)) return;
+
+      const id = queryNear(map, e.point, 8, DRAGGABLE_LAYERS)[0]?.properties?.id;
       if (!id) return;
-      const feature = featuresRef.current.find((f) => f.id === id);
-      if (!feature || !feature.coordinates) return;
 
-      // Prevent default map behaviors (like panning / box zoom / selection rings)
+      // Drag by id so the canonical feature (not the rendered copy) is the source of truth.
+      const feature = latest.current.features.find((f) => f.id === id);
+      if (!feature?.coordinates || feature.type === "peak" || !isPointType(feature.type)) return;
+
+      // Prevent default map behaviors (like box zoom / canvas text selection)
       e.preventDefault();
-
-      map.dragPan.disable();
 
       dragRef.current = {
         featureId: id,
-        featureType: feature.type, // e.g. "city", "poi", "storyPin", "mapLabel"
-        originalCoords: [...feature.coordinates] as [number, number],
-        currentCoords: [...feature.coordinates] as [number, number],
+        featureType: feature.type,
+        originalCoords: [...feature.coordinates],
+        currentCoords: [...feature.coordinates],
+        startScreenPoint: { x: e.point.x, y: e.point.y },
+        committed: false,
+        lockedAxis: null,
       };
 
-      map.getCanvas().style.cursor = "grabbing";
+      const allPointFeatures = buildPointFeatures(latest.current.features);
+      cachedPointFeaturesRef.current = allPointFeatures;
+      activeFeatureIndexRef.current = allPointFeatures.findIndex((f) => f.properties.id === id);
 
-      // Select feature in editor
-      if (onFeatureSelectRef.current) {
-        onFeatureSelectRef.current(feature);
-      }
-
-      // Populate ghost source at starting coordinates
-      const ghostSource = map.getSource("editor-points-ghost") as GeoJSONSource;
-      if (ghostSource) {
-        ghostSource.setData({
-          type: "FeatureCollection",
-          features: [
-            {
-              type: "Feature",
-              geometry: {
-                type: "Point",
-                coordinates: feature.coordinates,
-              },
-              properties: {},
-            },
-          ],
-        });
-      }
+      latest.current.onFeatureSelect?.(feature);
     };
 
-    const onMouseMove = (e: any) => {
-      if (!dragRef.current) return;
+    const onMouseMove = (e: MapLayerMouseEvent) => {
+      const drag = dragRef.current;
+      if (!drag) return;
 
-      const newCoords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-      dragRef.current.currentCoords = newCoords;
+      const currentScreen: ScreenPoint = { x: e.point.x, y: e.point.y };
 
-      // Directly update the coordinates of the dragged feature on the map source for 60fps responsiveness
-      const source = map.getSource("editor-points") as GeoJSONSource;
-      if (source) {
-        const pointFeatures = featuresRef.current
-          .filter((f) => f.coordinates)
-          .map((f) => {
-            const coords = f.id === dragRef.current?.featureId ? newCoords : f.coordinates!;
-            return {
-              type: "Feature" as const,
-              geometry: {
-                type: "Point" as const,
-                coordinates: coords,
-              },
-              properties: {
-                id: f.id,
-                name: f.name,
-                featureType: f.type,
-                isCapital: f.properties.isNationalCapital ?? false,
-                rotation: Number(f.properties.rotation) || 0,
-                opacity: f.properties.opacity !== undefined ? Number(f.properties.opacity) : 1,
-                color: f.properties.color || "#374151",
-                fontSize: Number(f.properties.fontSize) || 11,
-                fontWeight: f.properties.fontWeight || "normal",
-                letterSpacing: Number(f.properties.letterSpacing) || 0,
-              },
-            };
-          });
-
-        source.setData({
-          type: "FeatureCollection",
-          features: pointFeatures,
-        });
+      // 4px dead zone before a click becomes a drag.
+      if (!drag.committed) {
+        if (!exceedsHysteresis(drag.startScreenPoint, currentScreen)) return;
+        drag.committed = true;
+        map.dragPan.disable();
+        setGhost(drag.originalCoords);
       }
 
-      map.getCanvas().style.cursor = "grabbing";
+      drag.lockedAxis = nextLockedAxis(
+        drag.lockedAxis,
+        e.originalEvent.shiftKey,
+        drag.startScreenPoint,
+        currentScreen
+      );
+      drag.currentCoords = axisLock(
+        drag.originalCoords,
+        [e.lngLat.lng, e.lngLat.lat],
+        drag.lockedAxis
+      );
+
+      syncDrag.schedule(drag.currentCoords);
+      canvas.style.cursor = "grabbing";
+    };
+
+    const finishDrag = () => {
+      map.dragPan.enable();
+      canvas.style.cursor = "";
+      setGhost(null);
     };
 
     const onMouseUp = async () => {
-      if (!dragRef.current) return;
+      const drag = dragRef.current;
+      if (!drag) return;
+      syncDrag.flush(); // the point lands where the pointer stopped
+      clearDragState();
+      if (!drag.committed) return;
 
-      const { featureId, featureType, originalCoords, currentCoords } = dragRef.current;
-      dragRef.current = null;
-
-      map.dragPan.enable();
-      map.getCanvas().style.cursor = "";
-
-      // Hide ghost marker
-      const ghostSource = map.getSource("editor-points-ghost") as GeoJSONSource;
-      if (ghostSource) {
-        ghostSource.setData({ type: "FeatureCollection", features: [] });
-      }
-
-      // If position changed, update in DB
+      finishDrag();
+      const { featureId, featureType, originalCoords, currentCoords } = drag;
       if (originalCoords[0] !== currentCoords[0] || originalCoords[1] !== currentCoords[1]) {
-        if (updatePointCoordinatesRef.current) {
-          await updatePointCoordinatesRef.current(featureId, featureType as any, currentCoords);
-        }
+        await latest.current.updatePointCoordinates?.(featureId, featureType, currentCoords);
       }
     };
 
-    // Wire up events
-    draggableLayers.forEach((layerId) => {
-      map.on("mousedown", layerId, onMouseDown);
-    });
+    let nudgeTimer: ReturnType<typeof setTimeout> | null = null;
+    /** Where nudges left a point whose feature still holds `base` (the feature is never mutated, so undo
+     *  records where it was). */
+    let nudged: { id: string; base: [number, number]; coords: [number, number] } | null = null;
 
-    map.on("mousemove", onMouseMove);
-    map.on("mouseup", onMouseUp);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && dragRef.current) {
+        e.preventDefault();
+        const wasCommitted = dragRef.current.committed;
+        syncDrag.cancel();
+        clearDragState();
+        if (wasCommitted) {
+          syncPointsSource(null, null);
+          finishDrag();
+        }
+        return;
+      }
+
+      // Arrow-key precision nudging for the selected point feature
+      const direction = ARROW_DIRECTIONS[e.key];
+      if (!direction) return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.isContentEditable)
+      ) {
+        return;
+      }
+      const sel = latest.current.selectedFeature;
+      if (!sel?.coordinates || !isPointType(sel.type)) return;
+
+      e.preventDefault();
+      const delta = e.shiftKey ? NUDGE_LARGE : NUDGE_SMALL;
+      // Repeated nudges accumulate here, before and after the save lands
+      const from =
+        nudged?.id === sel.id && nudged.base === sel.coordinates ? nudged.coords : sel.coordinates;
+      const newCoords: [number, number] = [
+        from[0] + direction[0] * delta,
+        from[1] + direction[1] * delta,
+      ];
+      nudged = { id: sel.id, base: sel.coordinates, coords: newCoords };
+      syncPointsSource(sel.id, newCoords);
+
+      // Commit once the arrow keys go quiet: a burst of nudges is one save and one undo step.
+      if (nudgeTimer) clearTimeout(nudgeTimer);
+      const nudgeType = sel.type;
+      const nudgeId = sel.id;
+      nudgeTimer = setTimeout(() => {
+        nudgeTimer = null;
+        void latest.current.updatePointCoordinates?.(nudgeId, nudgeType, newCoords);
+      }, 400);
+    };
+
+    for (const layerId of DRAGGABLE_LAYERS) listeners.onLayer("mousedown", layerId, onMouseDown);
+    listeners.onMap("mousemove", onMouseMove);
+    // Window-scoped so a release or Escape outside the canvas still cleans up.
+    listeners.onDom(window, "mouseup", onMouseUp);
+    listeners.onDom(window, "keydown", onKeyDown);
 
     return () => {
-      draggableLayers.forEach((layerId) => {
-        if (map.getStyle()) {
-          map.off("mousedown", layerId, onMouseDown);
-        }
-      });
-      map.off("mousemove", onMouseMove);
-      map.off("mouseup", onMouseUp);
+      listeners.dispose();
+      syncDrag.cancel();
+      if (nudgeTimer) clearTimeout(nudgeTimer);
     };
   }, [map, isLoaded]);
 }

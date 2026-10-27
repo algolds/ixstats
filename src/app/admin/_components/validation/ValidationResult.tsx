@@ -1,10 +1,16 @@
 "use client";
 
 import React from "react";
-import { CheckCircle, AlertTriangle, XCircle, Loader2, Clock } from "lucide-react";
+import {
+  CheckCircle,
+  WarningTriangle as AlertTriangle,
+  XmarkCircle as XCircle,
+  SystemRestart as Loader2,
+  Clock,
+} from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import type { CheckStatus, ValidationCheck } from "~/lib/system";
-import { getStatusColor } from "~/lib/system";
+import type { CheckStatus, ValidationCheck } from "~/lib/system/system-validation";
+import { getStatusColor } from "~/lib/system/system-validation";
 
 function StatusIcon({ status }: { status: CheckStatus }) {
   const className = `h-4 w-4 ${getStatusColor(status)}`;
@@ -28,15 +34,15 @@ export const ValidationResult = React.memo(function ValidationResult({
   check: ValidationCheck;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-md px-3 py-2 transition-colors hover:bg-white/5">
-      <div className="flex min-w-0 items-center gap-2.5">
+    <div className="rounded-control-sm hover:bg-fill-4 flex items-center justify-between gap-3 px-3 py-2 transition-colors">
+      <div className="flex min-w-0 items-center gap-2">
         <StatusIcon status={check.status} />
-        <span className="text-foreground truncate text-sm font-medium">{check.name}</span>
+        <span className="text-label text-body truncate font-medium">{check.name}</span>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        <span className="text-muted-foreground text-xs">{check.details}</span>
+        <span className="text-label-secondary text-footnote">{check.details}</span>
         {check.count !== undefined && (
-          <Badge variant="outline" className="text-xs tabular-nums">
+          <Badge variant="outline" className="tabular-nums">
             {check.count}
           </Badge>
         )}

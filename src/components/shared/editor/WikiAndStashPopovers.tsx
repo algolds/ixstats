@@ -1,0 +1,342 @@
+"use client";
+// src/components/shared/editor/WikiAndStashPopovers.tsx
+// Search and insertion popovers for MediaWiki articles and Lore Stash assets.
+
+import { Bookmark, SystemRestart as Loader2, Plus } from "iconoir-react";
+import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import { EmojiPicker } from "~/components/thinkpages/EmojiPicker";
+import { cn } from "~/lib/utils";
+import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
+import type { WikiSearchResult } from "./useWikiDialogQueries";
+import { WikiEmbedPreview, type WikiEmbedPreviewProps } from "./WikiEmbedPreview";
+
+/** The wikis the dialog links and embeds from, in the selector's order. */
+const WIKI_SOURCE_OPTIONS: readonly WikiSource[] = ["ixwiki", "iiwiki", "althistory"];
+
+interface WikiAndStashPopoversProps {
+  disabled?: boolean;
+  isWikiOpen: boolean;
+  setIsWikiOpen: (val: boolean) => void;
+  wikiInsertMode: "link" | "embed";
+  setWikiInsertMode: (mode: "link" | "embed") => void;
+  wikiSource: WikiSource;
+  setWikiSource: (source: WikiSource) => void;
+  /** Picks a search result: its title and its own wiki. */
+  selectWikiResult: (result: WikiSearchResult) => void;
+  wikiTarget: string;
+  setWikiTarget: (target: string) => void;
+  wikiLabel: string;
+  setWikiLabel: (label: string) => void;
+  wikiSearchResults: readonly WikiSearchResult[];
+  isSearchingWiki: boolean;
+  wikiIntroQuery: WikiEmbedPreviewProps["introQuery"];
+  wikiImagesQuery: WikiEmbedPreviewProps["imagesQuery"];
+  selectedWikiImageUrl: string;
+  setSelectedWikiImageUrl: (url: string) => void;
+  insertWikiLink: () => void;
+
+  isStashesOpen: boolean;
+  setIsStashesOpen: (val: boolean) => void;
+  stashes: any[];
+  activeStashId: string;
+  setSelectedStashId: (id: string) => void;
+  stashesQuery: any;
+  stashItemsQuery: any;
+  imageItems: any[];
+  resolvedImages: Record<string, any>;
+  insertStashedImage: (url: string, title: string) => void;
+
+  handleSelectEmoji: (emoji: string) => void;
+  setIsEmojiOpen: (val: boolean) => void;
+}
+
+export function WikiAndStashPopovers({
+  disabled,
+  isWikiOpen,
+  setIsWikiOpen,
+  wikiInsertMode,
+  setWikiInsertMode,
+  wikiSource,
+  setWikiSource,
+  selectWikiResult,
+  wikiTarget,
+  setWikiTarget,
+  wikiLabel,
+  setWikiLabel,
+  wikiSearchResults,
+  isSearchingWiki,
+  wikiIntroQuery,
+  wikiImagesQuery,
+  selectedWikiImageUrl,
+  setSelectedWikiImageUrl,
+  insertWikiLink,
+  isStashesOpen,
+  setIsStashesOpen,
+  stashes,
+  activeStashId,
+  setSelectedStashId,
+  stashesQuery,
+  stashItemsQuery,
+  imageItems,
+  resolvedImages,
+  insertStashedImage,
+  handleSelectEmoji,
+  setIsEmojiOpen,
+}: WikiAndStashPopoversProps) {
+  return (
+    <div className="flex items-center gap-1">
+      {/* Wiki Popover */}
+      <Popover open={isWikiOpen} onOpenChange={setIsWikiOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={disabled}
+            className={cn(
+              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
+              isWikiOpen
+                ? "bg-wiki/15 text-wiki ring-wiki/30 ring-1 dark:text-blue-400"
+                : "text-muted-foreground hover:bg-muted hover:text-wiki dark:hover:text-blue-400"
+            )}
+            title="Insert wiki link or embed"
+            aria-label="Insert wiki link or embed"
+          >
+            <WikiOSLogomark className="text-wiki h-3.5 w-3.5 dark:text-blue-400" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          side="top"
+          align="start"
+          className="dark:border-border dark:bg-popover/95 z-[200000] w-80 rounded-2xl border border-neutral-200/80 bg-white/95 p-3 shadow-2xl backdrop-blur-xl"
+        >
+          <div className="space-y-3 text-xs">
+            <div className="flex items-center justify-between border-b pb-2">
+              <span className="text-wiki font-semibold">Wiki integration</span>
+              <div className="flex rounded-md bg-neutral-100 p-0.5 dark:bg-white/5">
+                <button
+                  type="button"
+                  onClick={() => setWikiInsertMode("link")}
+                  className={cn(
+                    "rounded px-2 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                    wikiInsertMode === "link"
+                      ? "text-wiki dark:bg-wiki bg-white shadow-xs dark:text-white"
+                      : "text-neutral-500 hover:text-neutral-800 dark:text-slate-400"
+                  )}
+                >
+                  Link
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWikiInsertMode("embed")}
+                  className={cn(
+                    "rounded px-2 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                    wikiInsertMode === "embed"
+                      ? "text-wiki dark:bg-wiki bg-white shadow-xs dark:text-white"
+                      : "text-neutral-500 hover:text-neutral-800 dark:text-slate-400"
+                  )}
+                >
+                  Embed card
+                </button>
+              </div>
+            </div>
+
+            {/* Source selector */}
+            <div className="flex gap-1" role="group" aria-label="Choose a wiki">
+              {WIKI_SOURCE_OPTIONS.map((source) => (
+                <button
+                  key={source}
+                  type="button"
+                  aria-pressed={wikiSource === source}
+                  onClick={() => setWikiSource(source)}
+                  className={cn(
+                    "flex-1 rounded-lg border py-1 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                    wikiSource === source
+                      ? "border-wiki/50 bg-wiki/10 text-wiki"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  {WIKI_SOURCES[source].name}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs font-medium text-neutral-500 dark:text-slate-400">
+                Article title or search
+              </Label>
+              <Input
+                value={wikiTarget}
+                onChange={(e) => setWikiTarget(e.target.value)}
+                placeholder="Search articles..."
+                className="h-7 text-xs"
+              />
+              {isSearchingWiki && (
+                <div className="flex items-center gap-1.5 py-1 text-xs text-neutral-400">
+                  <Loader2 className="text-wiki h-3 w-3 animate-spin" /> Searching wiki...
+                </div>
+              )}
+              {wikiSearchResults.length > 0 && (
+                <div className="max-h-24 overflow-y-auto rounded-lg border border-neutral-200/60 bg-neutral-50/50 p-1 dark:border-white/5 dark:bg-white/5">
+                  {wikiSearchResults.map((res) => (
+                    <button
+                      key={`${res.source}:${res.title}`}
+                      type="button"
+                      // A result from any wiki is inserted from its own wiki, whatever the selector says.
+                      onClick={() => selectWikiResult(res)}
+                      className="hover:bg-muted flex w-full items-baseline gap-2 rounded px-1.5 py-1 text-left text-xs"
+                    >
+                      <span className="min-w-0 flex-1 truncate">{res.title}</span>
+                      <span className="text-muted-foreground shrink-0">
+                        {WIKI_SOURCES[res.source].name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {wikiInsertMode === "link" && (
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-neutral-500 dark:text-slate-400">
+                  Link Text (Optional)
+                </Label>
+                <Input
+                  value={wikiLabel}
+                  onChange={(e) => setWikiLabel(e.target.value)}
+                  placeholder={wikiTarget || "Defaults to article title"}
+                  className="h-7 text-xs"
+                />
+              </div>
+            )}
+
+            {wikiInsertMode === "embed" && (
+              <WikiEmbedPreview
+                source={wikiSource}
+                introQuery={wikiIntroQuery}
+                imagesQuery={wikiImagesQuery}
+                selectedImageUrl={selectedWikiImageUrl}
+                onSelectImage={setSelectedWikiImageUrl}
+              />
+            )}
+
+            <Button
+              size="sm"
+              onClick={insertWikiLink}
+              disabled={!wikiTarget.trim()}
+              className="bg-wiki h-7 w-full text-xs font-semibold text-white hover:opacity-90"
+            >
+              <Plus className="mr-1 h-3 w-3" /> Insert{" "}
+              {wikiInsertMode === "embed" ? "Embed Card" : "Link"}
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* Lore Stash Popover */}
+      <Popover open={isStashesOpen} onOpenChange={setIsStashesOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={disabled}
+            className={cn(
+              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
+              isStashesOpen
+                ? "bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/30"
+                : "text-muted-foreground hover:bg-muted hover:text-amber-500"
+            )}
+            title="Attach lore stash media"
+            aria-label="Attach lore stash media"
+          >
+            <Bookmark className="h-3.5 w-3.5" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          side="top"
+          align="start"
+          className="dark:border-border dark:bg-popover/95 z-[200000] w-80 rounded-2xl border border-neutral-200/80 bg-white/95 p-3 shadow-2xl backdrop-blur-xl"
+        >
+          <div className="space-y-2.5 text-xs">
+            <div className="flex items-center justify-between border-b pb-2">
+              <span className="flex items-center gap-1.5 font-semibold text-amber-500">
+                <Bookmark className="h-3.5 w-3.5" /> Lore Stash Explorer
+              </span>
+              {stashes.length > 1 && (
+                <select
+                  value={activeStashId}
+                  onChange={(e) => setSelectedStashId(e.target.value)}
+                  className="rounded border border-neutral-200 bg-neutral-100 px-1.5 py-0.5 text-xs text-neutral-700 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
+                >
+                  {stashes.map((s: any) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.itemCount})
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {stashesQuery.isLoading || stashItemsQuery.isLoading ? (
+              <div className="flex items-center justify-center py-6 text-neutral-400">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin text-amber-500" />
+                <span>Loading stash media...</span>
+              </div>
+            ) : imageItems.length === 0 ? (
+              <div className="py-6 text-center text-neutral-400 dark:text-zinc-500">
+                <p className="font-medium">No images in this stash.</p>
+                <p className="mt-1 text-xs">Stash commons images from the repository first.</p>
+              </div>
+            ) : (
+              <div className="thin-scrollbar grid max-h-52 grid-cols-4 gap-1.5 overflow-y-auto p-0.5">
+                {imageItems.map((item: any) => {
+                  const cleanTitle = item.pageTitle.replace(/^commons:/, "");
+                  const imgInfo = resolvedImages[item.pageTitle];
+                  const thumb = imgInfo?.thumbUrl || imgInfo?.url;
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        if (thumb) {
+                          insertStashedImage(thumb, cleanTitle);
+                          setIsStashesOpen(false);
+                        }
+                      }}
+                      className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border border-neutral-200/50 bg-neutral-100 dark:border-white/5 dark:bg-white/5"
+                      title={cleanTitle}
+                    >
+                      {thumb ? (
+                        <img
+                          src={thumb}
+                          alt={cleanTitle}
+                          className="h-full w-full object-cover transition-transform duration-150 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <Loader2 className="h-3 w-3 animate-spin text-neutral-400" />
+                        </div>
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/80 to-transparent p-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+                        {cleanTitle}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* Emoji Picker Integration */}
+      <EmojiPicker
+        onSelectEmoji={(emoji) => handleSelectEmoji(emoji)}
+        onOpenChange={(open) => setIsEmojiOpen(open)}
+        disabled={disabled}
+      />
+    </div>
+  );
+}

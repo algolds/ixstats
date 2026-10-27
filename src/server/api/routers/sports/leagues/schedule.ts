@@ -5,19 +5,16 @@
 import { z } from "zod";
 import {
   createTRPCRouter,
-  protectedProcedure,
   publicProcedure,
+  rateLimitedPublicProcedure,
+  rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import {
-  generateSchedule,
-  matchIntervalMs,
-  raceIntervalMs,
-} from "~/lib/sports";
-import { isSystemOwner } from "~/lib/auth";
-import { IxTime } from "~/lib/ixtime";
-import { generateMatchReport, generateMatchPreview } from "~/lib/sports/commentary/narrator";
+import { persistSeasonSchedule } from "~/lib/sports";
 import { recalculateStandings } from "./helpers";
+import { assertSportsEconomyOpen, TEAM_BADGE } from "~/server/api/routers/sports/_shared";
+import { refundOpenPredictionsTx } from "~/server/api/routers/sports/escrow";
+import { assertOwnsLeague, viewerCanManageLeague } from "~/server/api/routers/sports/league-access";
 
 export const leaguesScheduleRouter = createTRPCRouter({
   getSchedule: publicProcedure
@@ -44,26 +41,8 @@ export const leaguesScheduleRouter = createTRPCRouter({
         const matches = await ctx.db.sportMatch.findMany({
           where: { seasonId: input.seasonId },
           include: {
-            homeTeam: {
-              select: {
-                id: true,
-                name: true,
-                shortName: true,
-                color: true,
-                logo: true,
-                wikiSlug: true,
-              },
-            },
-            awayTeam: {
-              select: {
-                id: true,
-                name: true,
-                shortName: true,
-                color: true,
-                logo: true,
-                wikiSlug: true,
-              },
-            },
+            homeTeam: TEAM_BADGE,
+            awayTeam: TEAM_BADGE,
           },
           orderBy: [{ matchDay: "asc" }, { scheduledIxTime: "asc" }],
         });
@@ -103,7 +82,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
       }
     }),
 
-  resetSeason: protectedProcedure
+  resetSeason: rateLimitedMutationProcedure
     .input(z.object({ seasonId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -112,11 +91,14 @@ export const leaguesScheduleRouter = createTRPCRouter({
           include: { league: true },
         });
         if (!season) throw new TRPCError({ code: "NOT_FOUND", message: "Season not found" });
-        if (season.league.createdByUserId !== ctx.user.id && !isSystemOwner(ctx.auth.userId)) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this league" });
-        }
+        assertOwnsLeague(ctx, season.league);
 
-        await ctx.db.sportMatch.deleteMany({ where: { seasonId: input.seasonId } });
+        await assertSportsEconomyOpen(ctx.db);
+        await ctx.db.$transaction(async (tx) => {
+          // Deleting the matches takes their predictions with them: refund the open stakes first
+          await refundOpenPredictionsTx(tx, { seasonId: input.seasonId });
+          await tx.sportMatch.deleteMany({ where: { seasonId: input.seasonId } });
+        });
         await ctx.db.sportStanding.deleteMany({ where: { seasonId: input.seasonId } });
         await ctx.db.sportBracket.deleteMany({ where: { seasonId: input.seasonId } });
         await ctx.db.sportRace.deleteMany({ where: { seasonId: input.seasonId } });
@@ -133,7 +115,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
       }
     }),
 
-  overrideMatchResult: protectedProcedure
+  overrideMatchResult: rateLimitedMutationProcedure
     .input(
       z.object({
         matchId: z.string(),
@@ -148,12 +130,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
           include: { season: { include: { league: true } } },
         });
         if (!match) throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
-        if (
-          match.season.league.createdByUserId !== ctx.user.id &&
-          !isSystemOwner(ctx.auth.userId)
-        ) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this league" });
-        }
+        assertOwnsLeague(ctx, match.season.league);
 
         const updatedMatch = await ctx.db.sportMatch.update({
           where: { id: input.matchId },
@@ -161,7 +138,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
             homeScore: input.homeScore,
             awayScore: input.awayScore,
             status: "completed",
-            resolvedIxTime: Date.now() / 1000,
+            resolvedIxTime: Date.now(),
           },
         });
 
@@ -177,7 +154,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
       }
     }),
 
-  regenerateSchedule: protectedProcedure
+  regenerateSchedule: rateLimitedMutationProcedure
     .input(z.object({ seasonId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -190,9 +167,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
           },
         });
         if (!season) throw new TRPCError({ code: "NOT_FOUND", message: "Season not found" });
-        if (season.league.createdByUserId !== ctx.user.id && !isSystemOwner(ctx.auth.userId)) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this league" });
-        }
+        assertOwnsLeague(ctx, season.league);
 
         const completedMatch = await ctx.db.sportMatch.findFirst({
           where: { seasonId: input.seasonId, status: "completed" },
@@ -204,78 +179,21 @@ export const leaguesScheduleRouter = createTRPCRouter({
           });
         }
 
-        await ctx.db.sportMatch.deleteMany({ where: { seasonId: input.seasonId } });
+        await assertSportsEconomyOpen(ctx.db);
+        await ctx.db.$transaction(async (tx) => {
+          // Deleting the matches takes their predictions with them: refund the open stakes first
+          await refundOpenPredictionsTx(tx, { seasonId: input.seasonId });
+          await tx.sportMatch.deleteMany({ where: { seasonId: input.seasonId } });
+        });
         await ctx.db.sportRace.deleteMany({ where: { seasonId: input.seasonId } });
         await ctx.db.sportBracket.deleteMany({ where: { seasonId: input.seasonId } });
 
-        const teamIds = season.league.teams.map((t) => t.id);
-        const startIxTime = IxTime.getCurrentIxTime();
-
-        if (season.league.archetype === "circuit") {
-          const schedule = generateSchedule({
-            archetype: season.league.archetype as any,
-            teamCount: teamIds.length,
-            raceCount: (season.league.settings as Record<string, unknown> | null)?.raceCount as
-              number | undefined,
-          });
-          const races = Array.isArray(schedule) ? schedule : [];
-          for (const race of races) {
-            const rRec = race as any;
-            await ctx.db.sportRace.create({
-              data: {
-                seasonId: season.id,
-                raceNumber: rRec.raceNumber as number,
-                circuitName: (rRec.circuitName as string) ?? `Race ${rRec.raceNumber}`,
-                status: "upcoming",
-                raceIxTime:
-                  startIxTime +
-                  (rRec.raceNumber as number) * raceIntervalMs(season.league.settings),
-              },
-            });
-          }
-        } else if (season.league.archetype === "bracket") {
-          const shuffled = [...season.league.teams].sort(() => Math.random() - 0.5);
-          const pairs: Array<[any, any]> = [];
-          for (let i = 0; i < shuffled.length; i += 2) {
-            if (i + 1 < shuffled.length) {
-              pairs.push([shuffled[i], shuffled[i + 1]]);
-            }
-          }
-          for (const [fighter1, fighter2] of pairs) {
-            await ctx.db.sportBracket.create({
-              data: {
-                seasonId: season.id,
-                round: 1,
-                fighter1Id: fighter1.id,
-                fighter2Id: fighter2.id,
-                status: "scheduled",
-                scheduledIxTime: startIxTime,
-              },
-            });
-          }
-        } else {
-          const schedule = generateSchedule({
-            archetype: season.league.archetype as any,
-            teamCount: teamIds.length,
-          });
-          const matches = Array.isArray(schedule) ? schedule : [];
-          for (const m of matches) {
-            const mRec = m as any;
-            await ctx.db.sportMatch.create({
-              data: {
-                seasonId: season.id,
-                matchDay: (mRec.matchDay as number) ?? 1,
-                homeTeamId: teamIds[(mRec.homeTeamIndex as number) ?? 0] ?? teamIds[0],
-                awayTeamId:
-                  teamIds[(mRec.awayTeamIndex as number) ?? 1] ?? teamIds[1] ?? teamIds[0],
-                status: "scheduled",
-                scheduledIxTime:
-                  startIxTime +
-                  ((mRec.matchDay as number) ?? 1) * matchIntervalMs(season.league.settings),
-              },
-            });
-          }
-        }
+        await persistSeasonSchedule(ctx.db, {
+          seasonId: season.id,
+          startIxTime: Date.now(),
+          league: season.league,
+          teams: season.league.teams,
+        });
 
         return { success: true };
       } catch (error) {
@@ -287,119 +205,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
       }
     }),
 
-  generateMatchReport: publicProcedure
-    .input(
-      z.object({
-        matchId: z.string(),
-        config: z
-          .object({
-            provider: z.string().optional(),
-            apiKey: z.string().optional(),
-            apiUrl: z.string().optional(),
-            modelName: z.string().optional(),
-            temperature: z.number().optional(),
-            reasoning: z.boolean().optional(),
-          })
-          .optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const match = await ctx.db.sportMatch.findUnique({
-          where: { id: input.matchId },
-          include: {
-            homeTeam: { select: { id: true, name: true } },
-            awayTeam: { select: { id: true, name: true } },
-            playerStats: {
-              include: {
-                player: { select: { firstName: true, lastName: true } },
-              },
-            },
-            season: {
-              include: {
-                league: { select: { sportPreset: true } },
-              },
-            },
-          },
-        });
-
-        if (!match) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Match not found" });
-        }
-
-        const stats = match.matchStats as any;
-        const events = stats?.trace ?? [];
-
-        const report = await generateMatchReport({
-          homeTeamName: match.homeTeam.name,
-          awayTeamName: match.awayTeam.name,
-          homeScore: match.homeScore ?? 0,
-          awayScore: match.awayScore ?? 0,
-          sport: match.season.league.sportPreset,
-          events: events,
-          playerStats: match.playerStats as any[],
-          config: input.config,
-        });
-
-        return { report };
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to generate match report",
-        });
-      }
-    }),
-
-  generateMatchPreview: publicProcedure
-    .input(
-      z.object({
-        homeTeamId: z.string(),
-        awayTeamId: z.string(),
-        sport: z.string(),
-        standingsContext: z.string().optional(),
-        config: z
-          .object({
-            provider: z.string().optional(),
-            apiKey: z.string().optional(),
-            apiUrl: z.string().optional(),
-            modelName: z.string().optional(),
-            temperature: z.number().optional(),
-            reasoning: z.boolean().optional(),
-          })
-          .optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const [homeTeam, awayTeam] = await Promise.all([
-          ctx.db.sportTeam.findUnique({ where: { id: input.homeTeamId } }),
-          ctx.db.sportTeam.findUnique({ where: { id: input.awayTeamId } }),
-        ]);
-
-        if (!homeTeam || !awayTeam) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "One or both teams not found" });
-        }
-
-        const preview = await generateMatchPreview(
-          { name: homeTeam.name },
-          { name: awayTeam.name },
-          input.sport,
-          input.standingsContext,
-          input.config
-        );
-
-        return { preview };
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to generate match preview",
-        });
-      }
-    }),
-
-  generateMatchCommentary: publicProcedure
+  generateMatchCommentary: rateLimitedPublicProcedure
     .input(
       z.object({
         matchId: z.string(),
@@ -423,7 +229,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
           include: {
             season: {
               include: {
-                league: { select: { sportPreset: true } },
+                league: { select: { sportPreset: true, createdByUserId: true } },
               },
             },
           },
@@ -441,11 +247,17 @@ export const leaguesScheduleRouter = createTRPCRouter({
         }
 
         // Cache-first: commentary is deterministic per match, so serve the stored
-        // copy for free unless an owner explicitly forces a regenerate. This makes
+        // copy for free unless the league's manager forces a regenerate. This makes
         // reloads instant and bounds LLM cost to one call per match.
         const cached = stats.commentary as string[] | undefined;
-        if (!input.force && cached && cached.length > 0) {
-          return { commentary: cached };
+        if (cached && cached.length > 0) {
+          if (!input.force) return { commentary: cached };
+          if (!viewerCanManageLeague(ctx, match.season.league)) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Only the league's manager can regenerate commentary",
+            });
+          }
         }
 
         // Generating fresh commentary hits a paid LLM — gate it behind auth so
@@ -461,7 +273,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
           config: input.config,
         });
 
-        const broadcastAudio = await generateAudioBroadcast(commentary, input.config);
+        const broadcastAudio = await generateAudioBroadcast(commentary);
 
         // Save back to database
         const updatedStats = {

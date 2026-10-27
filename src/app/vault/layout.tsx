@@ -1,21 +1,20 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { AuthenticationGuard } from "~/components/mycountry/primitives";
-import { VaultSidebarLayout } from "~/components/vault/VaultSidebarLayout";
-import { getSectionFromPathname } from "~/components/vault/VaultSidebarNav";
-
-function VaultLayoutInner({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const activeSection = getSectionFromPathname(pathname);
-
-  return <VaultSidebarLayout activeSection={activeSection}>{children}</VaultSidebarLayout>;
-}
+import { PortalTintSync } from "~/components/providers/PortalTintSync";
+import { CardSheetHost } from "~/components/cards/sheet/CardSheetHost";
 
 export default function VaultLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AuthenticationGuard redirectPath="/vault">
-      <VaultLayoutInner>{children}</VaultLayoutInner>
-    </AuthenticationGuard>
+    <div data-app="vault" className="contents">
+      <PortalTintSync />
+      {/* No fixed path: signing in returns to the Vault address the visitor opened, a card's ?card= included. */}
+      <AuthenticationGuard>
+        <div className="container mx-auto space-y-4 px-4 py-4 sm:space-y-6 sm:py-6 md:py-8">
+          {children}
+        </div>
+        <CardSheetHost />
+      </AuthenticationGuard>
+    </div>
   );
 }

@@ -1,17 +1,15 @@
-// src/components/wiki-os/reader/ArticleRenderer.tsx
-// Renders pre-transformed WikiOS article data in reader mode.
-// Composes modular ArticleHeader, ArticleCategories, ArticleFooter, ArticleModals, and ArticlePlaceholders.
-
 "use client";
-
 import React, { useRef, useEffect, useMemo, useState } from "react";
-import { ExternalLink } from "lucide-react";
-import { createPortal } from "react-dom";
-import dynamic from "next/dynamic";
-import type { TocEntry } from "~/lib/wiki-os/html-transformer";
-import { AppleBooksTocDrawer } from "~/components/wiki-os/reader/AppleBooksTocDrawer";
+import {
+  appendSectionEditLinks,
+  removeSectionEditLinks,
+  type TocEntry,
+} from "~/lib/wiki-os/transformers/html-transformer";
 import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
+import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
+import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { InfoboxWithMap } from "~/components/wiki-os/reader/InfoboxWithMap";
 import { useImageLightbox } from "~/components/wiki-os/reader/ImageLightbox";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -21,45 +19,52 @@ import { useWikiNarrator } from "~/hooks/useWikiNarrator";
 import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { getFlagColors } from "~/lib/flags/flag-color-extractor";
-import { safeDecodeURI } from "~/lib/wiki-os/safe-decode";
-import { EMBED_CSS, EMBED_JS } from "~/lib/wiki-os/wiki-embed-shared";
+import { parseWikiSource } from "~/lib/wiki-os/config";
+import { hexToRgb } from "~/lib/color";
+import type { ArticleAuthorInfo } from "~/lib/wiki-os/types/canonical";
 
 // Subcomponent imports
 import { WikiOSHeader } from "./ArticleHeader";
+import { normalizeAuthorInfo } from "./author-info";
 import { QuickHistoryModal, QuickBacklinksModal } from "./ArticleModals";
-import {
-  injectPlaceholderElements,
-  CoordsPill,
-  DynamicStatSpan,
-} from "./ArticlePlaceholders";
+import { ArticleWidgetPortals, useWidgetHtml } from "./ArticleWidgets";
+import { useSisterHash } from "./useSisterHash";
+import { useHydrated } from "~/hooks/useHydrated";
+import { useScrollSpy } from "./useScrollSpy";
+import { leanElementId, parseLeanMarker, resolveLeanHtml } from "~/lib/wiki-os/lean-article";
 import { CategoriesBar } from "./ArticleCategories";
 import { ArticleFooter } from "./ArticleFooter";
+import { ArticleCompanionHUD } from "./ArticleCompanionHUD";
+import { Button } from "~/components/ui/button";
+import { NavArrowLeft, NavArrowRight } from "iconoir-react";
+import { SourceWikiNote } from "./SourceWikiNote";
+import { useEmbedAssets } from "./useEmbedAssets";
+import { useArticleAnnotations } from "./useArticleAnnotations";
+import {
+  MarginGutterPins,
+  MarginShareModal,
+  SelectionCapsule,
+  WikiMarginDrawer,
+} from "./article-lazy";
+import { cn } from "~/lib/utils";
+import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
+import { extractLeadImage } from "~/lib/wiki-os/transformers/image-url";
+import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
+import { heroCardInputs, mayNameCountry } from "~/lib/wiki-os/hero-card";
+import type { SelectionPayload } from "~/components/wiki-os/margin/SelectionCapsule";
 
-const CoordinatesMapEmbed = dynamic(
-  () =>
-    import("~/components/maps/widgets/CoordinatesMapEmbed").then((m) => ({
-      default: m.CoordinatesMapEmbed,
-    })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="wikios-ixworld-loading flex min-h-[200px] items-center justify-center rounded-xl border border-white/10 bg-white/5">
-        <div
-          className="wikios-loading-spinner mr-2 animate-spin"
-          style={{ width: 20, height: 20 }}
-        />
-        <span className="text-xs text-zinc-400">Loading map...</span>
-      </div>
-    ),
-  }
-);
+/** Accent hue by article category keywords (first match wins); otherwise decided by the title prefix. */
+const HUE_RULES: ReadonlyArray<[hue: number, keywords: string[]]> = [
+  [38, ["history", "politics", "executive", "government"]],
+  [0, ["military", "war", "conflict", "defense"]],
+  [188, ["diplomacy", "geography", "relation"]],
+  [142, ["file", "media", "image"]],
+  [262, ["talk", "discussion"]],
+];
 
 function getRgbaColor(colorStr: string, opacity: number): string {
   if (colorStr.startsWith("#")) {
-    const cleanHex = colorStr.replace("#", "");
-    const r = parseInt(cleanHex.substring(0, 2), 16);
-    const g = parseInt(cleanHex.substring(2, 4), 16);
-    const b = parseInt(cleanHex.substring(4, 6), 16);
+    const { r, g, b } = hexToRgb(colorStr);
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   }
   if (colorStr.startsWith("hsl")) {
@@ -77,204 +82,184 @@ interface ArticleRendererProps {
   categories: string[];
   lastModified: string | null;
   wikiSource?: "ixwiki" | "iiwiki" | "althistory";
+  /** Authorship the page already came with (another wiki's page); an IxWiki page loads its own. */
+  authorInfo?: ArticleAuthorInfo | null;
 }
 
-const WIKI_SOURCE_LABELS: Record<string, { label: string; url: string }> = {
-  iiwiki: { label: "iiwiki.com", url: "https://iiwiki.com/wiki/" },
-  althistory: { label: "althistory.fandom.com", url: "https://althistory.fandom.com/wiki/" },
-};
-
- 
-const EMPTY_STATS_DATA: Record<string, any> = {};
+const AUTHORS_STALE_MS = 10 * 60 * 1000;
 
 export function ArticleRenderer({
   title,
-  contentHtml,
-  infoboxHtml,
-  noticesHtml,
+  contentHtml: contentMarker,
+  infoboxHtml: infoboxMarker,
+  noticesHtml: noticesMarker,
   toc,
   categories,
   lastModified,
   wikiSource,
+  authorInfo,
 }: ArticleRendererProps) {
-  const titleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const { setWikiPage, activeModal, setActiveModal, setActiveSectionId } = useWikiContext();
-  const _narrator = useWikiNarrator(contentRef);
+  // In lean mode (lib/wiki-os/lean-article.ts) the three parts arrive as markers, and the real HTML is
+  // read from where the server rendered it: the DOM in the browser, the server's stash in the SSR render.
+  const leanToken = parseLeanMarker(contentMarker)?.token ?? null;
+  const contentHtml = useMemo(() => resolveLeanHtml(contentMarker) ?? "", [contentMarker]);
+  const infoboxHtml = useMemo(() => resolveLeanHtml(infoboxMarker), [infoboxMarker]);
+  const noticesHtml = useMemo(() => resolveLeanHtml(noticesMarker), [noticesMarker]);
+  const {
+    setWikiPage,
+    activeModal,
+    setActiveModal,
+    setActiveSectionId,
+    isMarginOpen,
+    setIsMarginOpen: setMarginOpen,
+    marginTab,
+    setMarginTab,
+    toggleMargin,
+  } = useWikiContext();
   const { isSignedIn } = useWikiAuth();
   const isAuthenticated = isSignedIn;
+  // Another wiki's page (ruling E-l) is read-only here: no section edits, no margin, no IxWiki history.
+  const source = parseWikiSource(wikiSource);
+  const readOnly = source !== "ixwiki";
+  const contained = readOnly ? " wikios-sister-article" : ""; // another wiki's HTML: boxed in (content.css)
+  const marginOpen = isMarginOpen && !readOnly;
+  const marginEnabled = !!title && !readOnly;
+  // The Inspector sheet below 1280px, opened by the header's Contents button.
   const [tocOpen, setTocOpen] = useState(false);
+  // The setting gates the whole Inspector: off, the page opts out of the gutter (ArticlePageClient).
   const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
-
-  // --- Portal & Dynamic Widgets Setup ---
-  const statKeys = useMemo(() => {
-    const keys = new Set<string>();
-    const regex = /\{\{((?:MyCountry|CountryData|BusinessData):[^\}\n]+?)\}\}/gi;
-    let match;
-    while ((match = regex.exec(contentHtml)) !== null) {
-      if (match[1]) keys.add(match[1]);
+  const tocVisible = showWikiToc && toc.length > 0;
+  // From 1280px the sidebar shows only the contents until the page info is opened (remembered
+  // per browser).
+  const wide = useMediaQuery("(min-width: 1280px)");
+  const railCollapsed = useWikiSetting("wikios:railCollapsed", true);
+  const asideShown = showWikiToc && !marginOpen;
+  const toggleRail = () => {
+    try {
+      localStorage.setItem("wikios:railCollapsed", String(!railCollapsed));
+    } catch {
+      return;
     }
-    const linkRegex =
-      /Template(?::|%3a)((?:MyCountry|CountryData|BusinessData)(?::|%3a)[^"|?#&]+)/gi;
-    while ((match = linkRegex.exec(contentHtml)) !== null) {
-      if (match[1]) keys.add(safeDecodeURI(match[1]));
-    }
-    return Array.from(keys);
-  }, [contentHtml]);
+    window.dispatchEvent(new Event("wikios-settings-changed"));
+  };
 
-  const statsQuery = api.wikios.resolveWikiPlaceholders.useQuery(
-    { placeholders: statKeys },
-    { enabled: statKeys.length > 0, staleTime: 5 * 60 * 1000 }
+  const marginDrawerMounted = useMountOnFirstOpen(marginOpen);
+
+  const [marginExpanded, setMarginExpanded] = useState(false);
+  const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
+  const [draftQuote, setDraftQuote] = useState<string | null>(null);
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+
+  const slug = useMemo(() => encodeURIComponent(title.replace(/ /g, "_")), [title]);
+
+  // Authorship loads beside the article, never in front of it (it can take MediaWiki a moment).
+  const authorsQuery = api.wikios.getArticleAuthors.useQuery(
+    { title, wikiSource: source },
+    { enabled: !authorInfo && !!title, staleTime: AUTHORS_STALE_MS, retry: false }
   );
-  const statsData = statsQuery.data || EMPTY_STATS_DATA;
-
-  const { data: currentUserData } = api.users.getCurrentUserWithRole.useQuery(undefined, {
-    enabled: isAuthenticated,
-  });
-  const { data: viewerCountryData } = api.countries.getByIdBasic.useQuery(
-    { id: currentUserData?.user?.country?.id || "" },
-    { enabled: !!currentUserData?.user?.country?.id }
+  const authors = useMemo(
+    () => normalizeAuthorInfo(authorInfo ?? authorsQuery.data),
+    [authorInfo, authorsQuery.data]
   );
-  const viewerCentroid = useMemo(() => {
-    if (!viewerCountryData?.centroid) return null;
-    const c = viewerCountryData.centroid as { lat: number; lng: number } | [number, number];
-    if (Array.isArray(c)) {
-      return { lng: c[0] || 0, lat: c[1] || 0 };
-    }
-    return { lat: c.lat || 0, lng: c.lng || 0 };
-  }, [viewerCountryData]);
 
-  // Inject shared embed CSS + JS
+  // Query discussions for Gutter Pins & counts
+  const { data: marginData } = api.wikios.getArticleMarginData.useQuery(
+    { articleTitle: title, status: "ALL" },
+    { enabled: marginEnabled, staleTime: 15_000 }
+  );
+
+  // Sync activeModal from Toolbar/Sidebar triggers
   useEffect(() => {
-    if (typeof document === "undefined") return;
+    if (activeModal === "margin") {
+      setMarginOpen(true);
+      setActiveModal(null);
+    }
+  }, [activeModal, setActiveModal, setMarginOpen]);
 
-    if (!document.getElementById("ixstats-embed-css")) {
-      const style = document.createElement("style");
-      style.id = "ixstats-embed-css";
-      style.textContent = EMBED_CSS;
-      document.head.appendChild(style);
-    }
-    if (!document.getElementById("ixstats-embed-js")) {
-      const script = document.createElement("script");
-      script.id = "ixstats-embed-js";
-      script.textContent = EMBED_JS;
-      document.head.appendChild(script);
-    }
-    if (!document.getElementById("ixstats-embed-prefetch")) {
-      const link = document.createElement("link");
-      link.id = "ixstats-embed-prefetch";
-      link.rel = "prefetch";
-      link.href = "/maps?embed=true";
-      link.setAttribute("as", "document");
-      document.head.appendChild(link);
-    }
-  }, []);
+  // Global hotkey listener: 'T' or 'I' toggles Margin
+  useEffect(() => {
+    if (readOnly) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+      ) {
+        return;
+      }
+      if (
+        (e.key === "t" || e.key === "T" || e.key === "i" || e.key === "I") &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey
+      ) {
+        e.preventDefault();
+        toggleMargin();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [toggleMargin, readOnly]);
 
-  const processedHtml = useMemo(() => injectPlaceholderElements(contentHtml), [contentHtml]);
-  const processedInfoboxHtml = useMemo(
-    () => (infoboxHtml ? injectPlaceholderElements(infoboxHtml) : null),
-    [infoboxHtml]
+  // Selection Capsule Handlers & Live Sync
+  const { annotationsData, handleAddHighlight, handleStashQuote } = useArticleAnnotations(
+    title,
+    marginEnabled && isAuthenticated
   );
 
-  interface PortalTarget {
-    element: Element;
-    type: "coords" | "map-embed" | "stat";
-     
-    data: any;
-  }
-  const [portalTargets, setPortalTargets] = useState<PortalTarget[]>([]);
+  // Both open the Margin threads tab with the selection quoted in a new-thread draft.
+  const handleOpenThreadDraft = (payload: SelectionPayload) => {
+    setActiveAnchor(null);
+    setDraftQuote(payload.text);
+    setMarginTab("threads");
+    setMarginOpen(true);
+  };
 
+  const [sharePayload, setSharePayload] = useState<SelectionPayload | null>(null);
+
+  useEmbedAssets(contentHtml, infoboxHtml);
+
+  // The placeholder pass needs a DOM, so the server renders the article as it is. The browser's
+  // hydrating pass must start from that same HTML (it does until `hydrated`), and the pass is applied
+  // straight after: a mismatch would leave the server's HTML in place with no placeholders mounted.
+  // Another wiki's page gets no pass: it mounts no IxStates widget (ArticleWidgets.tsx).
+  const hydrated = useHydrated();
+  const processedHtml = useWidgetHtml(contentHtml, hydrated && !readOnly);
+  const processedInfoboxHtml = useWidgetHtml(infoboxHtml, hydrated && !readOnly);
+  useSisterHash(contentRef, readOnly, processedHtml);
+
+  // A signed-in reader's section edit links are added to the live article, in place: signing in
+  // resolves after hydration, and the article's HTML is never written again for it. Signing out
+  // takes them out the same way.
+  const canEdit = isAuthenticated && !readOnly;
   useEffect(() => {
     const container = contentRef.current;
     if (!container) return;
+    if (canEdit) appendSectionEditLinks(container, slug);
+    else removeSectionEditLinks(container);
+  }, [canEdit, slug, processedHtml]);
+  // One markup object per HTML (useHtmlMarkup), so a re-render (a section change in the scroll spy, a query
+  // settling) leaves the article's DOM, its images and its added links alone (React 19). Its app links get
+  // the base path there (`withAppHrefs`), after the placeholder pass above read them bare.
+  const bodyMarkup = useHtmlMarkup(processedHtml);
+  const noticesMarkup = useHtmlMarkup(noticesHtml ?? "");
 
-    const targets: PortalTarget[] = [];
-
-    container.querySelectorAll(".wikios-coords-placeholder").forEach((el) => {
-      const lat = parseFloat(el.getAttribute("data-lat") || "0");
-      const lng = parseFloat(el.getAttribute("data-lng") || "0");
-      const zoom = parseInt(el.getAttribute("data-zoom") || "4", 10);
-      const label = el.getAttribute("data-label") || "Location";
-      targets.push({
-        element: el,
-        type: "coords",
-        data: { lat, lng, zoom, label },
-      });
-    });
-
-    container.querySelectorAll(".wikios-map-embed-placeholder").forEach((el) => {
-      const lat = parseFloat(el.getAttribute("data-lat") || "0");
-      const lng = parseFloat(el.getAttribute("data-lng") || "0");
-      const zoom = parseInt(el.getAttribute("data-zoom") || "4", 10);
-      const options = el.getAttribute("data-options") || "";
-      targets.push({
-        element: el,
-        type: "map-embed",
-        data: { lat, lng, zoom, options },
-      });
-    });
-
-    container.querySelectorAll(".wikios-stat-placeholder").forEach((el) => {
-      const key = el.getAttribute("data-key") || "";
-      targets.push({
-        element: el,
-        type: "stat",
-        data: { key },
-      });
-    });
-
-    setPortalTargets(targets);
-  }, [processedHtml, processedInfoboxHtml]);
-
-  const { data: countryData } = api.countries.getByIdBasic.useQuery(
-    { id: title },
-    {
-      enabled:
-        !!title &&
-        title.trim() !== "" &&
-        title !== "Main Page" &&
-        title !== "Main_Page" &&
-        !title.includes(":"),
-      retry: false,
-    }
-  );
+  const { data: countryData } = api.countries.getByIdBasic.useQuery(heroCardInputs(title).country, {
+    enabled: mayNameCountry(title),
+    retry: false,
+  });
 
   const themeColors = useMemo(() => {
     if (countryData?.name) {
       return getFlagColors(countryData.name);
     }
 
-    let hue = 217;
     const catStr = categories.join(" ").toLowerCase();
-    if (
-      catStr.includes("history") ||
-      catStr.includes("politics") ||
-      catStr.includes("executive") ||
-      catStr.includes("government")
-    ) {
-      hue = 38;
-    } else if (
-      catStr.includes("military") ||
-      catStr.includes("war") ||
-      catStr.includes("conflict") ||
-      catStr.includes("defense")
-    ) {
-      hue = 0;
-    } else if (
-      catStr.includes("diplomacy") ||
-      catStr.includes("geography") ||
-      catStr.includes("relation")
-    ) {
-      hue = 188;
-    } else if (catStr.includes("file") || catStr.includes("media") || catStr.includes("image")) {
-      hue = 142;
-    } else if (catStr.includes("talk") || catStr.includes("discussion")) {
-      hue = 262;
-    } else if (title.startsWith("File:")) {
-      hue = 142;
-    } else if (title.startsWith("Talk:")) {
-      hue = 262;
-    }
+    const rule = HUE_RULES.find(([, keywords]) => keywords.some((k) => catStr.includes(k)));
+    const titleHue = title.startsWith("File:") ? 142 : title.startsWith("Talk:") ? 262 : 217;
+    const hue = rule?.[0] ?? titleHue;
 
     return {
       primary: `hsl(${hue}, 80%, 45%)`,
@@ -285,37 +270,13 @@ export function ArticleRenderer({
   }, [countryData, categories, title]);
 
   useEffect(() => {
-    setWikiPage(title, toc, themeColors);
+    setWikiPage(title, toc, themeColors, source);
     return () => setWikiPage(null, [], null);
-  }, [title, toc, themeColors, setWikiPage]);
+  }, [title, toc, themeColors, source, setWikiPage]);
 
-  // Scroll spy
-  useEffect(() => {
-    if (toc.length === 0) return;
-
-    function tick() {
-      const ids = toc.map((e) => e.id);
-      let current: string | null = null;
-      for (const id of ids) {
-        const el = document.getElementById(id);
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          if (rect.top <= 120) {
-            current = id;
-          }
-        }
-      }
-      setActiveSectionId(current);
-    }
-
-    window.addEventListener("scroll", tick, { passive: true });
-    tick();
-
-    return () => {
-      window.removeEventListener("scroll", tick);
-      setActiveSectionId(null);
-    };
-  }, [toc, setActiveSectionId]);
+  // Scroll spy — keeps WikiContext activeSectionId in sync (offsets cached, one pass per frame)
+  const tocIds = useMemo(() => toc.map((entry) => entry.id), [toc]);
+  useScrollSpy(tocIds, setActiveSectionId);
 
   // Navbox collapse toggle
   useEffect(() => {
@@ -339,54 +300,43 @@ export function ArticleRenderer({
 
     container.addEventListener("click", handleClick, true);
     return () => container.removeEventListener("click", handleClick, true);
+    // oxlint-disable-next-line
   }, [contentHtml]);
 
   const lightboxPortal = useImageLightbox(contentRef);
 
-  const stashQuery = api.wikios.isStashed.useQuery(
-    { pageTitle: title },
-    { enabled: isAuthenticated, retry: false }
-  );
-  const isStashed = stashQuery.data?.stashed ?? false;
-
-  const { toolbarPortal, annotationPopover } = useAnnotationOverlay(
+  useAnnotationOverlay({
     contentRef,
-    title,
-    isAuthenticated,
-    isStashed
-  );
+    annotations: (annotationsData as any) || [],
+    selectedAnnotationId,
+    onSelectAnnotation: (id) => {
+      setSelectedAnnotationId(id);
+      setSelectedThreadId(null);
+      setMarginTab("markup");
+      setMarginOpen(true);
+    },
+  });
 
   const citeTooltipPortal = useCiteTooltips(contentRef);
 
+  // Lorewards and article awards belong to IxWiki pages: another wiki's page asks for none.
   const awardsQuery = api.lorewards.getArticleAwardsAndAchievements.useQuery(
-    { title },
-    { staleTime: 300000 }
+    heroCardInputs(title).awards,
+    { staleTime: 300000, enabled: source === "ixwiki" }
   );
   const awardsData = awardsQuery.data;
 
-  const slug = encodeURIComponent(title.replace(/ /g, "_"));
-
-  const featuredImageUrl = useMemo(() => {
-    const imgRegex = /<img[^>]+src\s*=\s*(?:["']([^"']+)["']|([^>\s"'=]+))/i;
-    let rawUrl: string | null = null;
-    if (infoboxHtml) {
-      const match = infoboxHtml.match(imgRegex);
-      if (match) rawUrl = match[1] || match[2] || null;
-    }
-    if (!rawUrl && contentHtml) {
-      const match = contentHtml.match(imgRegex);
-      if (match) rawUrl = match[1] || match[2] || null;
-    }
-
-    if (rawUrl) {
-      const thumbMatch = rawUrl.match(/\/thumb(\/[^/]+\/[^/]+\/[^/]+)\//);
-      if (thumbMatch) {
-        return rawUrl.replace(/\/thumb(\/[^/]+\/[^/]+\/[^/]+)\/[^/]+$/, "$1");
-      }
-      return rawUrl;
-    }
-    return null;
-  }, [infoboxHtml, contentHtml]);
+  // The lead image and the size of its file (the hero reserves its shape from it, before it loads)
+  const featuredImage = useMemo(
+    () => extractLeadImage(infoboxHtml) ?? extractLeadImage(contentHtml),
+    [infoboxHtml, contentHtml]
+  );
+  const featuredImageUrl = featuredImage?.url ?? null;
+  const featuredImageFile = useMemo(
+    () =>
+      featuredImage ? { width: featuredImage.fileWidth, height: featuredImage.fileHeight } : null,
+    [featuredImage]
+  );
 
   const containerStyle = {
     "--wikios-accent": themeColors.primary,
@@ -396,108 +346,204 @@ export function ArticleRenderer({
     "--wikios-link-hover": themeColors.secondary,
   } as React.CSSProperties;
 
+  const narrator = useWikiNarrator(contentRef);
+
+  const companion = (
+    <ArticleCompanionHUD
+      contentHtml={contentHtml}
+      lastModified={lastModified}
+      authorInfo={authors}
+      authorsPending={!authorInfo && authorsQuery.isLoading}
+      categories={categories}
+      awardsData={awardsData}
+      marginThreadsCount={(marginData?.totalOpenCount ?? 0) + (marginData?.totalResolvedCount ?? 0)}
+      marginAnnotationsCount={(annotationsData as any)?.length ?? 0}
+      onOpenMargin={(tab) => {
+        setMarginTab(tab || "threads");
+        setMarginOpen(true);
+        setTocOpen(false);
+      }}
+      onOpenHistory={() => {
+        setActiveModal("history");
+        setTocOpen(false);
+      }}
+      onOpenBacklinks={() => {
+        setActiveModal("backlinks");
+        setTocOpen(false);
+      }}
+      narrator={narrator}
+      readOnly={readOnly}
+    />
+  );
+
   return (
-    <div className="wikios-article" style={containerStyle}>
-      <div ref={titleRef} className="wikios-title-sentinel" />
-
-      {/* Redesigned Custom WikiOSHeader */}
-      <WikiOSHeader
-        title={title}
-        lastModified={lastModified}
-        wikiSource={wikiSource}
-        countryData={countryData}
-        featuredImageUrl={featuredImageUrl}
-        themeColors={themeColors}
-        awardsData={awardsData}
-        tocLength={toc.length}
-        onTocClick={() => setTocOpen(true)}
-      />
-
-      {/* External wiki source badge */}
-      {wikiSource && wikiSource !== "ixwiki" && WIKI_SOURCE_LABELS[wikiSource] && (
-        <div className="mb-4 flex items-center gap-1.5">
-          <a
-            href={`${WIKI_SOURCE_LABELS[wikiSource]!.url}${encodeURIComponent(title.replace(/ /g, "_"))}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded border border-amber-500/10 bg-amber-50/5 px-2 py-0.5 text-xs text-amber-500 transition-colors hover:bg-amber-500/10"
-          >
-            <ExternalLink size={11} />
-            From {WIKI_SOURCE_LABELS[wikiSource]!.label}
-          </a>
-        </div>
+    <div
+      className={cn(
+        "wikios-article wikios-reader-container relative flex items-start justify-between transition-[margin-right,padding-right] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        marginOpen && (marginExpanded ? "lg:mr-[400px]" : "lg:mr-80")
       )}
+      style={containerStyle}
+    >
+      {/* Reading vessel: the header spans it, the body is centred at the reading width (layout.css) */}
+      <div className="wikios-reading-vessel w-full min-w-0 flex-1">
+        {/* Redesigned Custom WikiOSHeader */}
+        <WikiOSHeader
+          title={title}
+          lastModified={lastModified}
+          wikiSource={wikiSource}
+          countryData={countryData}
+          featuredImageUrl={featuredImageUrl}
+          featuredImageFile={featuredImageFile}
+          themeColors={themeColors}
+          authorInfo={authors}
+          awardsData={awardsData}
+          tocLength={tocVisible ? toc.length : 0}
+          onTocClick={showWikiToc ? () => setTocOpen(true) : undefined}
+        />
+        <SourceWikiNote title={title} wikiSource={source} />
 
-      {/* Page-top notices (WIP, stub, hatnotes) */}
-      {noticesHtml && (
-        <div className="wikios-notices" dangerouslySetInnerHTML={{ __html: noticesHtml }} />
-      )}
+        {/* Mobile Byline Strip (< XL screens where right Intel HUD is hidden) */}
+        {(() => {
+          const creatorName = authors?.creator ?? null;
 
-      {/* Content layout */}
-      <div className="wikios-article-with-toc">
+          if (!creatorName && !lastModified) return null;
+
+          return (
+            <div className="text-label-secondary text-footnote mt-2 mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 px-1 xl:hidden">
+              {creatorName && (
+                <span className="text-label font-medium">
+                  By <span className="font-semibold">{creatorName}</span>
+                </span>
+              )}
+              {lastModified && (
+                <>
+                  {creatorName && <span className="text-label-secondary select-none">•</span>}
+                  <span>
+                    {new Date(lastModified).toLocaleDateString("en-US", {
+                      timeZone: "UTC",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
+                </>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Page-top notices (WIP, stub, hatnotes) */}
+        {noticesHtml && (
+          <div
+            id={leanToken ? leanElementId(leanToken, "notices") : undefined}
+            className={`wikios-notices ${ARTICLE_STYLE_ROOT_CLASS}${contained}`}
+            dangerouslySetInnerHTML={noticesMarkup}
+          />
+        )}
+
+        {/* Content layout */}
         <div className="wikios-article-main" ref={contentRef}>
-          <div className="wikios-article-body wikios-article-content">
+          <div className={`wikios-article-body wikios-article-content${contained}`}>
             {processedInfoboxHtml && (
-              <InfoboxWithMap infoboxHtml={processedInfoboxHtml} articleTitle={title} />
+              <InfoboxWithMap
+                infoboxHtml={processedInfoboxHtml}
+                articleTitle={title}
+                markupId={leanToken ? leanElementId(leanToken, "infobox") : undefined}
+              />
             )}
-            <div dangerouslySetInnerHTML={{ __html: processedHtml }} />
-            {/* Render portals into injected placeholder nodes */}
-            {portalTargets.map((target, _idx) => {
-              if (target.type === "coords") {
-                return createPortal(
-                  <CoordsPill
-                    lat={target.data.lat}
-                    lng={target.data.lng}
-                    zoom={target.data.zoom}
-                    label={target.data.label}
-                    viewerCentroid={viewerCentroid}
-                  />,
-                  target.element
-                );
-              }
-              if (target.type === "map-embed") {
-                return createPortal(
-                  <CoordinatesMapEmbed
-                    lat={target.data.lat}
-                    lng={target.data.lng}
-                    zoom={target.data.zoom}
-                    options={target.data.options}
-                  />,
-                  target.element
-                );
-              }
-              if (target.type === "stat") {
-                return createPortal(
-                  <DynamicStatSpan
-                    placeholderKey={target.data.key}
-                    data={statsData[target.data.key]}
-                  />,
-                  target.element
-                );
-              }
-              return null;
-            })}
+            <div
+              id={leanToken ? leanElementId(leanToken, "body") : undefined}
+              className={ARTICLE_STYLE_ROOT_CLASS}
+              dangerouslySetInnerHTML={bodyMarkup}
+            />
+            {/* Widgets and sister embeds mounted into the article's placeholder nodes */}
+            <ArticleWidgetPortals
+              contentRef={contentRef}
+              source={source}
+              isAuthenticated={isAuthenticated}
+              contentHtml={contentHtml}
+              infoboxHtml={infoboxHtml}
+              renderedHtml={processedHtml}
+              renderedInfoboxHtml={processedInfoboxHtml}
+            />
           </div>
 
           {categories.length > 0 && <CategoriesBar categories={categories} />}
-          <ArticleFooter title={title} lastModified={lastModified} />
-        </div>
+          <ArticleFooter title={title} lastModified={lastModified} wikiSource={source} />
 
-        {showWikiToc && toc.length > 3 && <StickyToc entries={toc} contentRef={contentRef} />}
+          {/* Margin Suite: Gutter Pins aligned to article text */}
+          {!readOnly && (
+            <MarginGutterPins
+              contentRef={contentRef}
+              threads={(marginData?.threads as any) || []}
+              annotations={(annotationsData as any) || []}
+              isMarginOpen={marginOpen}
+              onSelectAnchor={(anchor, id, tab) => {
+                setActiveAnchor(anchor);
+                if (tab === "markup") {
+                  setSelectedAnnotationId(id || null);
+                  setSelectedThreadId(null);
+                } else {
+                  setSelectedThreadId(id || null);
+                  setSelectedAnnotationId(null);
+                }
+                setMarginTab(tab || "threads");
+              }}
+              onOpenDrawer={() => setMarginOpen(true)}
+            />
+          )}
+        </div>
       </div>
 
-      {lightboxPortal}
-      {toolbarPortal}
-      {annotationPopover}
-      {citeTooltipPortal}
+      {/* Contents and page info: a sticky aside in the article row from 1280px, a sheet below.
+          Hiding the sidebar folds the page info away and keeps the contents inline in the row. Out
+          of the margin drawer's way: while that is open the aside steps aside and the header's
+          Contents button opens the sheet. It is in the server HTML (CSS shows it from xl, so it
+          never pops in); after hydration only while wide, so the sheet is the one copy below xl. */}
+      {asideShown && (wide || !hydrated) && (
+        <aside
+          aria-label="Contents"
+          data-slot="wiki-contents-aside"
+          className={cn(
+            "sticky top-(--shell-top-offset) ml-8 hidden max-h-[calc(100vh-var(--shell-top-offset))] w-60 shrink-0 flex-col gap-3 self-start overflow-y-auto border-l pr-1 pb-6 pl-3 xl:flex 2xl:w-70",
+            railCollapsed ? "border-transparent" : "border-separator"
+          )}
+        >
+          <Button
+            variant="ghost"
+            size="xs"
+            className="text-label-secondary self-end"
+            aria-expanded={!railCollapsed}
+            onClick={toggleRail}
+          >
+            {railCollapsed && <NavArrowLeft aria-hidden />}
+            {railCollapsed ? "Page info" : "Hide"}
+            {!railCollapsed && <NavArrowRight aria-hidden />}
+          </Button>
+          {tocVisible && <StickyToc entries={toc} contentRef={contentRef} />}
+          {!railCollapsed && companion}
+        </aside>
+      )}
+      {showWikiToc && !(wide && asideShown) && (
+        <Sheet open={tocOpen} onOpenChange={setTocOpen}>
+          <SheetContent>
+            <SheetTitle>Contents</SheetTitle>
+            <div className="flex flex-col gap-4">
+              {tocVisible && (
+                <StickyToc
+                  entries={toc}
+                  contentRef={contentRef}
+                  onNavigate={() => setTocOpen(false)}
+                />
+              )}
+              {companion}
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
 
-      {/* Table of Contents Drawer */}
-      <AppleBooksTocDrawer
-        isOpen={tocOpen}
-        onClose={() => setTocOpen(false)}
-        entries={toc}
-        themeColors={themeColors}
-      />
+      {lightboxPortal}
+      {citeTooltipPortal}
 
       {/* Quick action modals */}
       {activeModal === "history" && (
@@ -505,6 +551,51 @@ export function ArticleRenderer({
       )}
       {activeModal === "backlinks" && (
         <QuickBacklinksModal title={title} slug={slug} onClose={() => setActiveModal(null)} />
+      )}
+
+      {!readOnly && (
+        <>
+          <SelectionCapsule
+            contentRef={contentRef}
+            isAuthenticated={isAuthenticated}
+            onAddHighlight={handleAddHighlight}
+            onOpenThreadDraft={handleOpenThreadDraft}
+            onSuggestEdit={handleOpenThreadDraft}
+            onStashQuote={handleStashQuote}
+            onShareQuote={setSharePayload}
+          />
+
+          {marginDrawerMounted && (
+            <WikiMarginDrawer
+              isOpen={marginOpen}
+              onClose={() => setMarginOpen(false)}
+              articleTitle={title}
+              initialTab={marginTab}
+              activeAnchor={activeAnchor}
+              draftQuote={draftQuote}
+              onClearDraftQuote={() => setDraftQuote(null)}
+              selectedThreadId={selectedThreadId}
+              onSelectThread={setSelectedThreadId}
+              selectedAnnotationId={selectedAnnotationId}
+              onSelectAnnotation={setSelectedAnnotationId}
+              contentRef={contentRef}
+              isAuthenticated={isAuthenticated}
+              themeColors={themeColors}
+              onExpandedChange={setMarginExpanded}
+            />
+          )}
+
+          {/* Share Modal Dialog */}
+          {sharePayload && (
+            <MarginShareModal
+              isOpen={!!sharePayload}
+              onClose={() => setSharePayload(null)}
+              articleTitle={title}
+              quoteText={sharePayload.text}
+              isAuthenticated={isAuthenticated}
+            />
+          )}
+        </>
       )}
     </div>
   );

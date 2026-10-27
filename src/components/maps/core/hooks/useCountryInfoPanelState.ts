@@ -4,28 +4,16 @@ import { useState, useCallback, useMemo } from "react";
 import { useCountryPanelData } from "~/hooks/useCountryPanelData";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { api } from "~/trpc/react";
-import type { SelectedCountry } from "../IxWorldMap";
+import type { NeighborTarget, SelectedCountry } from "../IxWorldMap";
+import { useMapRealm } from "../MapRealmContext";
 
-export function formatNumber(n: number | null | undefined): string {
-  if (n == null) return "—";
-  if (n >= 1_000_000_000_000) return `$${(n / 1_000_000_000_000).toFixed(1)}T`;
-  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(1)}B`;
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toLocaleString();
-}
+import { formatNumber, formatPopulation, formatCurrency } from "~/lib/utils/format-utils";
 
-export function formatPopulation(n: number | null | undefined): string {
-  if (n == null) return "—";
-  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(2)}B`;
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return n.toLocaleString();
-}
+export { formatNumber, formatPopulation };
 
 export function formatGdpPerCapita(n: number | null | undefined): string {
   if (n == null) return "—";
-  return `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+  return formatCurrency(n, "USD", false);
 }
 
 export function formatArea(n: number | null | undefined): string {
@@ -35,13 +23,7 @@ export function formatArea(n: number | null | undefined): string {
 
 interface UseCountryInfoPanelStateProps {
   country: SelectedCountry;
-  onNeighborClick?: (neighbor: {
-    featureId: string;
-    countryId: string | null;
-    displayName: string;
-    centroidLng?: number;
-    centroidLat?: number;
-  }) => void;
+  onNeighborClick?: (neighbor: NeighborTarget) => void;
 }
 
 export function useCountryInfoPanelState({
@@ -53,10 +35,12 @@ export function useCountryInfoPanelState({
 
   const displayName = summary?.name ?? country.displayName;
   const wikiName = country.displayName;
-  const { flagUrl } = useFlag(displayName);
+  // The name is looked up in the realm the map shows: a realm's nation is not in the viewer's realm
+  const { flagUrl } = useFlag(displayName, useMapRealm());
 
   const { data: wikiRichIntro } = api.countries.getWikiRichIntro.useQuery(
-    { countryName: wikiName },
+    // The country's id reads its own wiki page (realm nations name theirs) instead of its name.
+    { countryName: wikiName, countryId: country.countryId ?? undefined },
     {
       enabled: !!wikiName,
       staleTime: 24 * 60 * 60_000,
@@ -88,13 +72,7 @@ export function useCountryInfoPanelState({
   }, [wikiRichIntro, wikiSections, wikiImages]);
 
   const handleNeighborClick = useCallback(
-    (neighbor: {
-      featureId: string;
-      countryId: string | null;
-      displayName: string;
-      centroidLng?: number;
-      centroidLat?: number;
-    }) => {
+    (neighbor: NeighborTarget) => {
       onNeighborClick?.(neighbor);
     },
     [onNeighborClick]

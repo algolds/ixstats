@@ -12,20 +12,12 @@ updates:
       time: "09:00"
       timezone: "America/New_York"
 
-    # Automatically open pull requests for security updates
-    open-pull-requests-limit: 10
-
-    # Reviewers for dependency PRs
-    reviewers:
-      - "security-team"  # Replace with actual team/user
-
     # Labels for dependency PRs
     labels:
       - "dependencies"
       - "automated"
 
-    # Security updates only (recommended for production)
-    # Remove this to get all dependency updates
+    # At most five open version-update PRs at a time
     open-pull-requests-limit: 5
 
     # Group updates by type
@@ -67,8 +59,9 @@ updates:
     # Allow Dependabot to rebase PRs
     rebase-strategy: "auto"
 
-    # Target branch
-    target-branch: "master"
+    # Target branch: dependency bumps land on the nightly branch first (see docs/processes/contributing.md).
+    # Dependabot reads this file from the default branch (master), so this takes effect once it is promoted.
+    target-branch: "rose-garden"
 
   # GitHub Actions workflows
   - package-ecosystem: "github-actions"
@@ -79,5 +72,6 @@ updates:
     labels:
       - "github-actions"
       - "automated"
+    target-branch: "rose-garden"
     commit-message:
       prefix: "ci"

@@ -1,0 +1,139 @@
+/** @jest-environment node */
+jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
+  renderArticleViaMediaWiki: jest.fn(),
+}));
+import { renderArticleViaMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
+import { buildViewBundle } from "~/lib/wiki-os/services/view-bundle";
+import { ForumError } from "~/server/modules/thinkpages-forum/errors";
+import { assertTokensArePlainText } from "~/server/modules/thinkpages-forum/writes-body";
+import {
+  composePostHtml,
+  FORUM_RENDERER_VERSION,
+  renderLimitUsersForTests,
+  renderPostWikitext,
+  resetRenderLimitsForTests,
+} from "~/server/modules/thinkpages-forum/render";
+
+const render = jest.mocked(renderArticleViaMediaWiki);
+const MW_HTML =
+  '<div class="mw-parser-output"><p>Hello <a href="/wiki/Urcea" title="Urcea">Urcea</a></p><h2><span class="mw-headline" id="Reaction">Reaction</span></h2><p>More</p><script>alert(1)</script></div>';
+const meta = {
+  links: [],
+  templates: [{ ns: 10, title: "Template:Flag" }],
+  images: [],
+  categories: [],
+  displayTitle: null,
+  properties: {},
+};
+
+beforeEach(() => {
+  render.mockReset();
+  resetRenderLimitsForTests();
+});
+
+it("renders through MediaWiki exactly as articles do (same bundle), sanitized", async () => {
+  render.mockResolvedValue({ html: MW_HTML, metadata: meta });
+  const out = await renderPostWikitext("Hello [[Urcea]]", "t1", "u1");
+  expect(render).toHaveBeenCalledWith("Hello [[Urcea]]", "ThinkPages:t1");
+  expect(out.contentHtml).toBe(composePostHtml(buildViewBundle(MW_HTML)));
+  expect(out.contentHtml).not.toContain("<script");
+  expect(out.rendererVersion).toBe(FORUM_RENDERER_VERSION);
+  expect(out.renderedAt).toBeInstanceOf(Date);
+  expect(out.templates).toEqual(["Template:Flag"]);
+  expect(out.plainText).toContain("Hello Urcea");
+});
+
+it("falls back in-process when MediaWiki is unavailable, marked stale", async () => {
+  render.mockResolvedValue(null);
+  const out = await renderPostWikitext("'''Bold''' text", "t1", "u1");
+  expect(out.renderedAt).toBeNull();
+  expect(out.contentHtml).toContain("Bold");
+  expect(out.templates).toEqual([]);
+});
+
+it("keeps an action link inside a table in the plain text, so the post is accepted", async () => {
+  render.mockResolvedValue({
+    html: '<div class="mw-parser-output"><table class="wikitable"><tbody><tr><td>[ixaction=abc123]</td></tr></tbody></table></div>',
+    metadata: meta,
+  });
+  const out = await renderPostWikitext('{| class="wikitable"\n| [ixaction=abc123]\n|}', "t1", "u1");
+  expect(out.plainText).toContain("[ixaction=abc123]");
+  expect(() => assertTokensArePlainText(out.contentHtml, out.plainText)).not.toThrow();
+});
+
+it("refuses guarded input as a BAD_REQUEST without calling MediaWiki", async () => {
+  await expect(renderPostWikitext("sig ~~~~", "t1", "u1")).rejects.toMatchObject({
+    code: "BAD_REQUEST",
+  });
+  expect(render).not.toHaveBeenCalled();
+});
+
+it("limits renders per user", async () => {
+  render.mockResolvedValue({ html: MW_HTML, metadata: meta });
+  for (let i = 0; i < 10; i++) await renderPostWikitext("x", "t1", "u1");
+  await expect(renderPostWikitext("x", "t1", "u1")).rejects.toBeInstanceOf(ForumError);
+  await expect(renderPostWikitext("x", "t1", "u2")).resolves.toBeDefined();
+});
+
+it("sweeps idle users from the per-user limiter once it holds more than 1,000", async () => {
+  render.mockResolvedValue({ html: MW_HTML, metadata: meta });
+  const now = jest.spyOn(Date, "now");
+  try {
+    now.mockReturnValue(1_000_000);
+    for (let i = 0; i < 1_000; i++) await renderPostWikitext("x", "t1", `idle-${i}`);
+    expect(renderLimitUsersForTests()).toBe(1_000);
+    now.mockReturnValue(1_000_000 + 61_000);
+    await renderPostWikitext("x", "t1", "newcomer");
+    expect(renderLimitUsersForTests()).toBe(1);
+  } finally {
+    now.mockRestore();
+  }
+});
+describe("members cannot position their post over the app", () => {
+  const OVERLAY =
+    '<div class="fixed inset-0 z-50 wikitable" style="position:fixed;inset:0;z-index:99999;color:red">Please sign in again</div>';
+
+  function expectClean(html: string): void {
+    expect(html).toContain("Please sign in again");
+    expect(html).toContain('class="wikitable"');
+    expect(html).toContain('style="color:red"');
+    expect(html).not.toMatch(/position|inset|z-index|fixed|z-50/);
+  }
+
+  it("strips overlay styles and classes from the MediaWiki render", async () => {
+    render.mockResolvedValue({
+      html: `<div class="mw-parser-output">${OVERLAY}</div>`,
+      metadata: meta,
+    });
+    expectClean((await renderPostWikitext("x", "t1", "u1")).contentHtml);
+  });
+
+  it("strips them from the in-process fallback too", async () => {
+    render.mockResolvedValue(null);
+    expectClean(
+      (
+        await renderPostWikitext(
+          `<div style="position:fixed;inset:0;z-index:99999;color:red" class="fixed inset-0 z-50 wikitable">Please sign in again</div>`,
+          "t1",
+          "u1"
+        )
+      ).contentHtml
+    );
+  });
+});
+
+describe("a Canvas quote through the post render", () => {
+  // What MediaWiki returns for quoteWikitext(...) followed by a reply paragraph.
+  const MW_HTML =
+    '<div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr">' +
+    '<blockquote class="forum-quote" data-post="cnative12"><div class="forum-quote-author"><b>Heku</b> wrote:</div>' +
+    '<div class="forum-quote-body">Hello there</div></blockquote>\n<p>My reply\n</p></div>';
+  describe("a Canvas quote through the post render", () => {
+    it("keeps the quote's class, data-post and author line in the stored html", () => {
+      const html = composePostHtml(buildViewBundle(MW_HTML));
+      expect(html).toContain('class="forum-quote"');
+      expect(html).toContain('data-post="cnative12"');
+      expect(html).toContain("forum-quote-author");
+    });
+  });
+});

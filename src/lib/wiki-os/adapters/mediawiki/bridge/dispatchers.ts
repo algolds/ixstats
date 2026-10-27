@@ -1,0 +1,482 @@
+// src/lib/wiki-os/bridge/dispatchers.ts
+// Public dispatchers routing requests across PostgreSQL (IxWiki) and HTTP (IIWiki/AltHistory).
+
+import { parseInfobox, parseCoordTemplate } from "~/lib/wiki-os/transformers/infobox-parser";
+import { matchHeading } from "~/lib/wiki-os/wikitext/line-patterns";
+import {
+  type WikiSource,
+  type WikiSearchResult,
+  type WikiArticle,
+  type WikiIntro,
+  type WikiSection,
+  type WikiRecentChange,
+  cacheGet,
+  cacheSet,
+} from "./types";
+import {
+  NativeSearchService,
+  LinkGraphService,
+  CategoryService,
+  MediaAssetService,
+} from "~/lib/wiki-os/core";
+import {
+  ixwikiGetWikitext,
+  ixwikiSearch,
+  ixwikiRecentChanges,
+  ixwikiGetUserContribs,
+  ixwikiGetUserCreatedPages,
+  ixwikiGetUserInfo,
+  ixwikiGetBacklinks,
+  ixwikiGetCategoryMembers,
+  ixwikiGetSiteStats,
+  ixwikiGetRandomPage,
+  ixwikiResolveRedirect,
+  ixwikiGetRevisionWikitext,
+  ixwikiGetCurrentRevMeta,
+  ixwikiSearchTemplates,
+  ixwikiFullTextSearch,
+  ixwikiGetParentCategories,
+  ixwikiGetCategoryInfo,
+  ixwikiGetImageMeta,
+  ixwikiGetPageImages,
+} from "./pg-reader";
+import {
+  readSisterWikitext,
+  searchSisterWiki,
+  fetchPageImagesHttp as httpGetPageImages,
+  httpGetCategoryMembers,
+} from "./http-reader";
+
+// Re-exported from image-url (shared with client-safe code)
+export { getImageUrl } from "~/lib/wiki-os/transformers/image-url";
+
+const wikitextPromises = new Map<string, Promise<WikiArticle | null>>();
+
+/**
+ * Get raw article wikitext. Uses PostgreSQL (<2ms) for ixwiki, HTTP for iiwiki/althistory. Null only for a missing
+ * page: a sister wiki that cannot be reached throws WikiUnavailableError (upstream-guard.ts), and so does everything
+ * below that reads a sister page through it. Callers outside WikiOS's read surfaces that read a missing page and an
+ * unreachable wiki alike wrap the call in `unlessUnavailable`.
+ */
+export async function getArticleWikitext(
+  title: string,
+  wiki: WikiSource = "ixwiki"
+): Promise<WikiArticle | null> {
+  // ixwiki: delegate directly to pg-reader (PG + HTTP fallback, <2ms)
+  if (wiki === "ixwiki") {
+    return ixwikiGetWikitext(title);
+  }
+
+  // Non-ixwiki: HTTP fetch with request deduplication
+  const key = `${wiki}:${title}`;
+  let promise = wikitextPromises.get(key);
+  if (!promise) {
+    promise = (async () => {
+      try {
+        return await readSisterWikitext(wiki, title);
+      } finally {
+        wikitextPromises.delete(key);
+      }
+    })();
+    wikitextPromises.set(key, promise);
+  }
+  return promise;
+}
+
+/**
+ * Get article intro (first paragraph, stripped of markup).
+ * Parses wikitext directly — no PHP processing needed. Null for a missing page; an unreachable sister wiki throws
+ * WikiUnavailableError (`getArticleWikitext`).
+ */
+export async function getArticleIntro(
+  title: string,
+  wiki: WikiSource = "ixwiki"
+): Promise<WikiIntro | null> {
+  const cacheKey = `intro:${wiki}:${title}`;
+  const cached = cacheGet<WikiIntro>(cacheKey);
+  if (cached) return cached;
+
+  const article = await getArticleWikitext(title, wiki);
+  if (!article) return null;
+
+  const intro = extractIntroFromWikitext(article.wikitext);
+  const result: WikiIntro = { title: article.title, text: intro };
+  cacheSet(cacheKey, result);
+  return result;
+}
+
+/**
+ * Search wiki pages by title prefix. Fast path via PostgreSQL (<1.5ms). A sister wiki with no match answers an empty
+ * list; one that cannot be reached throws WikiUnavailableError.
+ */
+export async function searchPages(
+  query: string,
+  limit: number = 10,
+  wiki: WikiSource = "ixwiki"
+): Promise<WikiSearchResult[]> {
+  if (wiki === "ixwiki") {
+    try {
+      const nativeResults = await NativeSearchService.spotlightSearch(query, "ixwiki", limit);
+      if (nativeResults && nativeResults.length > 0) {
+        return nativeResults.map((r, i) => ({
+          title: r.title,
+          pageId: i + 1,
+          length: r.snippet?.length ?? 0,
+        }));
+      }
+    } catch {
+      // Fallback
+    }
+    return ixwikiSearch(query, limit);
+  }
+  return searchSisterWiki(wiki, query, limit);
+}
+
+/**
+ * Parse infobox from article wikitext.
+ */
+export async function getInfobox(
+  title: string,
+  wiki: WikiSource = "ixwiki"
+): Promise<ReturnType<typeof parseInfobox> | null> {
+  const article = await getArticleWikitext(title, wiki);
+  if (!article) return null;
+  return parseInfobox(article.wikitext);
+}
+
+/**
+ * Get article sections/TOC by parsing wikitext headings.
+ */
+export async function getPageSections(
+  title: string,
+  wiki: WikiSource = "ixwiki"
+): Promise<WikiSection[]> {
+  const article = await getArticleWikitext(title, wiki);
+  if (!article) return [];
+  return extractSectionsFromWikitext(article.wikitext);
+}
+
+/**
+ * The `== Heading ==` lines (levels 2 to 6) of `wikitext`, in order. A line at a time, without a regular
+ * expression: `/^(={2,6})\s*(.+?)\s*\1$/gm` read a line of `==` and a long blank run cubically many times
+ * over (4,000 blanks took 26 s).
+ */
+export function extractSectionsFromWikitext(wikitext: string): WikiSection[] {
+  const sections: WikiSection[] = [];
+  for (const line of wikitext.split("\n")) {
+    const heading = matchHeading(line, 2, true);
+    if (!heading) continue;
+    sections.push({ level: heading.level, title: heading.title, index: sections.length });
+  }
+  return sections;
+}
+
+/**
+ * Get recent changes from IxWiki: the edits that went live, plus the parked ones (flagged) when
+ * `includeParked`.
+ */
+export async function getRecentChanges(
+  limit: number = 20,
+  options: { includeParked?: boolean } = {}
+): Promise<WikiRecentChange[]> {
+  return ixwikiRecentChanges(limit, options);
+}
+
+/**
+ * Get user contributions via direct PostgreSQL/MediaWiki bridge.
+ */
+export async function getUserContribs(
+  username: string,
+  limit?: number,
+  offset?: number,
+  namespace: number = 0
+) {
+  return ixwikiGetUserContribs(username, limit, offset, namespace);
+}
+
+/**
+ * Get all pages created by a user from PostgreSQL.
+ */
+export async function getUserCreatedPages(username: string, limit?: number) {
+  return ixwikiGetUserCreatedPages(username, limit);
+}
+
+/**
+ * Get user info from PostgreSQL.
+ */
+export async function getUserInfo(username: string) {
+  return ixwikiGetUserInfo(username);
+}
+
+/**
+ * Get backlinks (pages linking to a page). Fast path via PostgreSQL (<1ms).
+ */
+export async function getBacklinks(title: string, limit?: number, offset?: number) {
+  try {
+    const nativeLinks = await LinkGraphService.getBacklinks(title, "ixwiki", limit || 50);
+    if (nativeLinks && nativeLinks.length > 0) {
+      return nativeLinks.map((l) => ({
+        page_title: l.title,
+        page_namespace: 0,
+        page_is_redirect: 0,
+        page_len: 0,
+        page_latest: 0,
+      }));
+    }
+  } catch {
+    // Fallback
+  }
+  return ixwikiGetBacklinks(title, limit, offset);
+}
+
+export interface CategoryMembersResult {
+  members: Array<{
+    pageid?: number;
+    pageId?: number;
+    title: string;
+    type?: "page" | "subcat" | "file";
+    ns?: number;
+    isSubcategory?: boolean;
+  }>;
+  hasMore?: boolean;
+}
+
+/**
+ * Get category members via PostgreSQL for IxWiki or HTTP bridge for sister wikis. A sister wiki that cannot be
+ * reached throws WikiUnavailableError, never an empty list.
+ */
+export async function getCategoryMembers(
+  category: string,
+  limit?: number,
+  type?: "page" | "subcat" | "file",
+  wiki: WikiSource = "ixwiki"
+): Promise<CategoryMembersResult> {
+  if (wiki === "ixwiki") {
+    try {
+      const native = await CategoryService.getCategoryMembers(category, limit || 50);
+      if (native && native.length > 0) {
+        const filtered = native.filter(
+          (m: { title: string; type: "page" | "subcat" | "file" }) => !type || m.type === type
+        );
+        if (filtered.length > 0) {
+          return {
+            members: filtered.map((m: { title: string; type: "page" | "subcat" | "file" }) => ({
+              title: m.title,
+              type: m.type,
+              pageId: 0,
+              ns: m.type === "subcat" ? 14 : m.type === "file" ? 6 : 0,
+              isSubcategory: m.type === "subcat",
+            })),
+            hasMore: false,
+          };
+        }
+      }
+    } catch {
+      // Fallback
+    }
+
+    const myResult = await ixwikiGetCategoryMembers(category, limit || 50, type);
+    const members: Array<{
+      title: string;
+      type: "page" | "subcat" | "file";
+      pageId: number;
+      ns: number;
+      isSubcategory: boolean;
+    }> = [];
+
+    if (!type || type === "subcat") {
+      for (const sub of myResult.subcategories) {
+        members.push({
+          title: `Category:${sub}`,
+          type: "subcat",
+          pageId: 0,
+          ns: 14,
+          isSubcategory: true,
+        });
+      }
+    }
+
+    if (!type || type === "page") {
+      for (const p of myResult.pages) {
+        members.push({
+          title: p.title,
+          type: "page",
+          pageId: 0,
+          ns: p.ns,
+          isSubcategory: false,
+        });
+      }
+    }
+
+    if (!type || type === "file") {
+      for (const f of myResult.files) {
+        members.push({
+          title: `File:${f}`,
+          type: "file",
+          pageId: 0,
+          ns: 6,
+          isSubcategory: false,
+        });
+      }
+    }
+
+    return {
+      members,
+      hasMore: myResult.hasMore,
+    };
+  }
+  return httpGetCategoryMembers(category, limit, type, wiki);
+}
+
+/**
+ * Get site statistics from PostgreSQL.
+ */
+export async function getSiteStats() {
+  return ixwikiGetSiteStats();
+}
+
+/**
+ * Get a random article title from PostgreSQL.
+ */
+export async function getRandomPage() {
+  return ixwikiGetRandomPage();
+}
+
+/**
+ * Resolve a redirect from Postgres (up to 2 hops): the page to show plus the target fragment.
+ */
+export async function resolveRedirect(title: string) {
+  return ixwikiResolveRedirect(title);
+}
+
+/**
+ * Get a revision's wikitext (plus its article title and timestamp) by revision reference.
+ */
+export async function getRevisionWikitext(ref: string) {
+  return ixwikiGetRevisionWikitext(ref);
+}
+
+/**
+ * Get current revision metadata (revid + timestamp) from PostgreSQL.
+ */
+export async function getCurrentRevMeta(title: string) {
+  return ixwikiGetCurrentRevMeta(title);
+}
+
+/**
+ * Search templates by prefix from PostgreSQL.
+ */
+export async function searchTemplates(query: string, limit?: number) {
+  return ixwikiSearchTemplates(query, limit);
+}
+
+/**
+ * Full-text search of IxWiki's articles (PostgreSQL).
+ */
+export async function fullTextSearch(
+  query: string,
+  limit?: number,
+  offset?: number,
+  namespace?: number
+) {
+  return ixwikiFullTextSearch(query, limit, offset, namespace);
+}
+
+/**
+ * Get parent categories from PostgreSQL.
+ */
+export async function getParentCategories(title: string) {
+  return ixwikiGetParentCategories(title);
+}
+
+/**
+ * Get category info with subcategories from PostgreSQL.
+ */
+export async function getCategoryInfo(category: string) {
+  return ixwikiGetCategoryInfo(category);
+}
+
+/**
+ * Get image metadata. Fast path via PostgreSQL (<1ms).
+ */
+export async function getImageMeta(filename: string) {
+  try {
+    const asset = await MediaAssetService.findAsset(filename);
+    if (asset) {
+      return {
+        name: asset.title,
+        width: asset.width || 800,
+        height: asset.height || 600,
+        size: asset.sizeBytes,
+        mimeType: asset.mimeType,
+        timestamp: asset.updatedAt.toISOString(),
+        url: asset.url,
+        thumbUrl: asset.thumbnailUrl || asset.url,
+      };
+    }
+  } catch {
+    // Fallback
+  }
+  return ixwikiGetImageMeta(filename);
+}
+
+/**
+ * Extract coordinates from article wikitext.
+ */
+export async function getCoordinates(
+  title: string,
+  wiki: WikiSource = "ixwiki"
+): Promise<[number, number] | null> {
+  const article = await getArticleWikitext(title, wiki);
+  if (!article) return null;
+  return parseCoordTemplate(article.wikitext);
+}
+
+/**
+ * Get images referenced on a wiki page with thumbnail URLs. An IxWiki page's come from Postgres (its
+ * redirect followed, as MediaWiki's own image query did); a sister wiki's page asks its own wiki, and
+ * no title is ever tried on a wiki it does not belong to. Null means no images; an unreachable sister wiki
+ * throws WikiUnavailableError.
+ */
+export async function getPageImages(
+  title: string,
+  opts?: {
+    excludePatterns?: RegExp[];
+    thumbWidth?: number;
+    limit?: number;
+    wiki?: WikiSource;
+  }
+) {
+  const wiki = opts?.wiki ?? "ixwiki";
+  if (wiki !== "ixwiki") return httpGetPageImages(title, wiki, opts);
+  const { title: shown } = await ixwikiResolveRedirect(title);
+  return ixwikiGetPageImages(shown, opts);
+}
+
+/**
+ * Search with fallback: try ixwiki first, then iiwiki (which throws WikiUnavailableError when it cannot be reached).
+ */
+export async function searchWithFallback(
+  query: string,
+  limit: number = 10
+): Promise<WikiSearchResult[]> {
+  const results = await searchPages(query, limit, "ixwiki");
+  if (results.length > 0) return results;
+  return searchPages(query, limit, "iiwiki");
+}
+
+// ──────────────────────────────────────────────
+// Wikitext Processing Helpers
+// ──────────────────────────────────────────────
+
+import { cleanExcerpt, cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
+export { cleanWikiMarkup };
+
+/**
+ * Extract the intro paragraph from raw wikitext.
+ * Strips templates, infoboxes, tables, and markup from full wikitext.
+ */
+export function extractIntroFromWikitext(wikitext: string): string {
+  if (!wikitext) return "";
+  return cleanExcerpt(wikitext, 300);
+}

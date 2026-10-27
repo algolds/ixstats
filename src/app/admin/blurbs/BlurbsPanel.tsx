@@ -1,39 +1,183 @@
 "use client";
-export const dynamic = "force-dynamic";
+// src/app/admin/blurbs/BlurbsPanel.tsx
+// Blurbs Topic & Community Prompt Management Suite
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import { Switch } from "~/components/ui/switch";
+import { Label } from "~/components/ui/label";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { ValueSelect } from "~/components/ui/value-select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "~/components/ui/dialog";
 import { api } from "~/trpc/react";
 import {
-  MessageCircle,
+  ChatBubble as MessageCircle,
   Plus,
   Star,
-  StarOff,
+  Star as StarOff,
   Archive,
   CheckCircle,
   Clock,
-  FileText,
-} from "lucide-react";
+  Page as FileText,
+  User,
+  Search,
+} from "iconoir-react";
+import { useNotify } from "~/hooks/useNotify";
+import { Card } from "~/components/ui/card";
 
-// ── Create / Edit Prompt Form ────────────────────────────────────────────────
+function BlurbsPanel() {
+  usePageTitle({ title: "Admin - Blurbs & Prompts" });
+  const [activeTab, setActiveTab] = useState("prompts");
 
-function CreatePromptForm({ onDone }: { onDone: () => void }) {
-  const [title, setTitle] = useState("");
-  const [question, setQuestion] = useState("");
-  const [slug, setSlug] = useState("");
-  const [publishNow, setPublishNow] = useState(true);
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Blurbs and community prompts"
+        subtitle="Weekly Topic Tuesday prompts, discussion topics and response moderation."
+      />
+
+      <BlurbStatsSummary />
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="bg-fill-3 mb-4 flex w-full max-w-md justify-start gap-1 rounded-full p-1">
+          <TabsTrigger
+            value="prompts"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
+          >
+            <FileText className="text-teal h-4 w-4" />
+            Prompt catalog
+          </TabsTrigger>
+          <TabsTrigger
+            value="moderation"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
+          >
+            <MessageCircle className="text-purple h-4 w-4" />
+            Response moderation
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="prompts" className="mt-4 focus-visible:outline-none">
+          <PromptManagementSection />
+        </TabsContent>
+
+        <TabsContent value="moderation" className="mt-4 focus-visible:outline-none">
+          <ResponseModerationSection />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function BlurbStatsSummary() {
+  const { data: blurbCount, isLoading: countLoading } = api.blurbs.getBlurbCount.useQuery();
+  const { data: activePrompts, isLoading: activeLoading } = api.blurbs.getAllPrompts.useQuery({
+    status: "ACTIVE",
+  });
+  const { data: allPrompts, isLoading: allLoading } = api.blurbs.getAllPrompts.useQuery({
+    limit: 100,
+  });
+
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <Card className="p-4">
+        <p className="text-label-secondary text-eyebrow">Total responses</p>
+        {countLoading ? (
+          <Skeleton className="mt-1 h-7 w-16" />
+        ) : (
+          <p className="text-label text-title-2 mt-1 tabular-nums">
+            {(blurbCount ?? 0).toLocaleString()}
+          </p>
+        )}
+      </Card>
+
+      <Card className="p-4">
+        <p className="text-label-secondary text-eyebrow">Active prompts</p>
+        {activeLoading ? (
+          <Skeleton className="mt-1 h-7 w-16" />
+        ) : (
+          <p className="text-title-2 text-green mt-1 tabular-nums">{activePrompts?.length ?? 0}</p>
+        )}
+      </Card>
+
+      <Card className="p-4">
+        <p className="text-label-secondary text-eyebrow">All prompts catalog</p>
+        {allLoading ? (
+          <Skeleton className="mt-1 h-7 w-16" />
+        ) : (
+          <p className="text-title-2 text-teal mt-1 tabular-nums">{allPrompts?.length ?? 0}</p>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+const STATUS_CONFIG = {
+  DRAFT: { label: "Draft", icon: FileText, variant: "default" as const },
+  ACTIVE: { label: "Active", icon: CheckCircle, variant: "secondary" as const },
+  CLOSED: { label: "Closed", icon: Clock, variant: "outline" as const },
+  ARCHIVED: { label: "Archived", icon: Archive, variant: "outline" as const },
+};
+
+function PromptManagementSection() {
+  const notify = useNotify();
+  const [statusFilter, setStatusFilter] = useState<
+    "DRAFT" | "ACTIVE" | "CLOSED" | "ARCHIVED" | undefined
+  >(undefined);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  const [form, setForm] = useState({
+    title: "",
+    question: "",
+    slug: "",
+    publishNow: true,
+  });
+
+  const { data: prompts, isLoading } = api.blurbs.getAllPrompts.useQuery({
+    status: statusFilter,
+    limit: 100,
+  });
 
   const utils = api.useUtils();
+
   const createMutation = api.blurbs.createPrompt.useMutation({
     onSuccess: () => {
+      notify.success("Prompt Created", "New blurb prompt has been registered.");
       utils.blurbs.getAllPrompts.invalidate();
       utils.blurbs.getBlurbCount.invalidate();
-      onDone();
+      setIsCreateOpen(false);
+      setForm({ title: "", question: "", slug: "", publishNow: true });
+    },
+    onError: (err: { message?: string }) => {
+      notify.error("Creation Failed", err.message || "Failed to create prompt.");
+    },
+  });
+
+  const updateMutation = api.blurbs.updatePrompt.useMutation({
+    onSuccess: () => {
+      notify.success("Status Updated", "Prompt state successfully refreshed.");
+      utils.blurbs.getAllPrompts.invalidate();
+      utils.blurbs.getActivePrompts.invalidate();
+    },
+  });
+
+  const featureMutation = api.blurbs.featurePrompt.useMutation({
+    onSuccess: () => {
+      notify.success("Pin Toggled", "Featured prompt pin updated.");
+      utils.blurbs.getAllPrompts.invalidate();
     },
   });
 
@@ -44,132 +188,33 @@ function CreatePromptForm({ onDone }: { onDone: () => void }) {
       .replace(/\s+/g, "-")
       .slice(0, 100);
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">New Prompt</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div>
-          <label className="text-muted-foreground mb-1 block text-xs font-medium">Title</label>
-          <Input
-            value={title}
-            onChange={(e) => {
-              setTitle(e.target.value);
-              if (!slug || slug === autoSlug(title)) {
-                setSlug(autoSlug(e.target.value));
-              }
-            }}
-            placeholder="Topic Tuesday: Fashion"
-            maxLength={200}
-          />
-        </div>
-        <div>
-          <label className="text-muted-foreground mb-1 block text-xs font-medium">Question</label>
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="What kind of clothes are popular in your country?"
-            maxLength={500}
-            rows={3}
-            className="border-input bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
-          />
-          <span className="text-muted-foreground text-xs">{question.length}/500</span>
-        </div>
-        <div>
-          <label className="text-muted-foreground mb-1 block text-xs font-medium">Slug</label>
-          <Input
-            value={slug}
-            onChange={(e) => setSlug(e.target.value.replace(/[^a-z0-9-]/g, ""))}
-            placeholder="topic-tuesday-fashion"
-            maxLength={100}
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="publish-now"
-            checked={publishNow}
-            onChange={(e) => setPublishNow(e.target.checked)}
-            className="rounded"
-          />
-          <label htmlFor="publish-now" className="text-sm">
-            Publish immediately
-          </label>
-        </div>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="ghost" size="sm" onClick={onDone}>
-            Cancel
-          </Button>
-          <Button
-            size="sm"
-            onClick={() =>
-              createMutation.mutate({
-                title,
-                question,
-                slug,
-                status: publishNow ? "ACTIVE" : "DRAFT",
-              })
-            }
-            disabled={!title.trim() || !question.trim() || !slug.trim() || createMutation.isPending}
-          >
-            {createMutation.isPending ? "Creating..." : "Create Prompt"}
-          </Button>
-        </div>
-        {createMutation.error && (
-          <p className="text-destructive text-xs">{createMutation.error.message}</p>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// ── Prompt Management Table ──────────────────────────────────────────────────
-
-const STATUS_CONFIG = {
-  DRAFT: { label: "Draft", icon: FileText, variant: "secondary" as const },
-  ACTIVE: { label: "Active", icon: CheckCircle, variant: "default" as const },
-  CLOSED: { label: "Closed", icon: Clock, variant: "outline" as const },
-  ARCHIVED: { label: "Archived", icon: Archive, variant: "outline" as const },
-};
-
-function PromptManagementSection() {
-  const [statusFilter, setStatusFilter] = useState<
-    "DRAFT" | "ACTIVE" | "CLOSED" | "ARCHIVED" | undefined
-  >(undefined);
-
-  const { data: prompts, isLoading } = api.blurbs.getAllPrompts.useQuery({
-    status: statusFilter,
-    limit: 100,
-  });
-
-  const utils = api.useUtils();
-
-  const updateMutation = api.blurbs.updatePrompt.useMutation({
-    onSuccess: () => {
-      utils.blurbs.getAllPrompts.invalidate();
-      utils.blurbs.getActivePrompts.invalidate();
-    },
-  });
-
-  const featureMutation = api.blurbs.featurePrompt.useMutation({
-    onSuccess: () => {
-      utils.blurbs.getAllPrompts.invalidate();
-    },
+  const filteredPrompts = prompts?.filter((p) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return p.title.toLowerCase().includes(q) || p.question.toLowerCase().includes(q);
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Prompts</CardTitle>
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 items-center gap-2">
+          <div className="relative max-w-sm flex-1">
+            <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
+            <Input
+              placeholder="Search prompts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
+            />
+          </div>
+
           <div className="flex gap-1">
             {[undefined, "ACTIVE", "DRAFT", "CLOSED", "ARCHIVED"].map((s) => (
               <Button
                 key={s ?? "all"}
                 variant={statusFilter === s ? "default" : "ghost"}
                 size="sm"
-                className="text-xs"
+
                 onClick={() =>
                   setStatusFilter(s as "DRAFT" | "ACTIVE" | "CLOSED" | "ARCHIVED" | undefined)
                 }
@@ -179,125 +224,215 @@ function PromptManagementSection() {
             ))}
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        {isLoading && <p className="text-muted-foreground py-4 text-center text-sm">Loading...</p>}
 
-        {!isLoading && (!prompts || prompts.length === 0) && (
-          <p className="text-muted-foreground py-4 text-center text-sm">No prompts found.</p>
-        )}
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm">
+              <Plus className="mr-2 h-3.5 w-3.5" />
+              New prompt
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create community topic prompt</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-3">
+              <div className="space-y-2">
+                <Label className="text-label text-caption">Title</Label>
+                <Input
+                  value={form.title}
+                  onChange={(e) => {
+                    const title = e.target.value;
+                    setForm((prev) => ({
+                      ...prev,
+                      title,
+                      slug:
+                        !prev.slug || prev.slug === autoSlug(prev.title)
+                          ? autoSlug(title)
+                          : prev.slug,
+                    }));
+                  }}
+                  placeholder="Topic Tuesday: National Cuisine"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
+                  maxLength={200}
+                />
+              </div>
 
-        <div className="space-y-2">
-          {prompts?.map((prompt) => {
+              <div className="space-y-2">
+                <Label className="text-label text-caption">Question / Description</Label>
+                <Textarea
+                  value={form.question}
+                  onChange={(e) => setForm((prev) => ({ ...prev, question: e.target.value }))}
+                  placeholder="What is your realm's national dish, and how is it prepared?"
+                  rows={3}
+                  className="md:text-footnote"
+                  maxLength={500}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-label text-caption">URL Slug</Label>
+                <Input
+                  value={form.slug}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      slug: e.target.value.replace(/[^a-z0-9-]/g, ""),
+                    }))
+                  }
+                  placeholder="topic-tuesday-cuisine"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
+                  maxLength={100}
+                />
+              </div>
+
+              <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3">
+                <Label className="text-caption">Publish immediately</Label>
+                <Switch
+                  checked={form.publishNow}
+                  onCheckedChange={(val) => setForm((prev) => ({ ...prev, publishNow: val }))}
+                  className="scale-90"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setIsCreateOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={() =>
+                  createMutation.mutate({
+                    title: form.title,
+                    question: form.question,
+                    slug: form.slug,
+                    status: form.publishNow ? "ACTIVE" : "DRAFT",
+                  })
+                }
+                disabled={
+                  !form.title.trim() ||
+                  !form.question.trim() ||
+                  !form.slug.trim() ||
+                  createMutation.isPending
+                }
+              >
+                {createMutation.isPending ? "Creating..." : "Create Prompt"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="space-y-2">
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="rounded-row h-14 w-full" />
+            ))}
+          </div>
+        ) : !filteredPrompts || filteredPrompts.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-label-secondary text-footnote">No prompts found matching query.</p>
+          </Card>
+        ) : (
+          filteredPrompts.map((prompt) => {
             const config = STATUS_CONFIG[prompt.status];
             const StatusIcon = config.icon;
             return (
-              <div key={prompt.id} className="flex items-center gap-3 rounded-lg border p-3">
-                <StatusIcon className="text-muted-foreground h-4 w-4 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium">{prompt.title}</span>
-                    <Badge variant={config.variant} className="shrink-0 text-[10px]">
-                      {config.label}
-                    </Badge>
-                    {prompt.featured && (
-                      <Badge
-                        variant="outline"
-                        className="shrink-0 border-amber-500/30 text-[10px] text-amber-400"
+              <Card
+                key={prompt.id}
+                className="hover:border-separator flex flex-col justify-between gap-3 p-4 transition-colors sm:flex-row sm:items-center"
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <div className="bg-tint-fill text-tint rounded-row p-2">
+                    <StatusIcon className="h-4 w-4 shrink-0" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-label text-caption truncate">{prompt.title}</span>
+                      <Badge variant={config.variant}>{config.label}</Badge>
+                      {prompt.featured && <Badge variant="warning">Featured</Badge>}
+                    </div>
+                    <p className="text-label-secondary text-footnote mt-0.5 truncate">
+                      {prompt.question}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className="text-label-secondary text-footnote tabular-nums">
+                    {prompt._count.responses} responses
+                  </span>
+
+                  <div className="flex items-center gap-1">
+                    {prompt.status === "ACTIVE" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`rounded-control h-7 w-7 p-0 ${prompt.featured ? "text-yellow" : "text-label-secondary hover:text-label"}`}
+                        onClick={() =>
+                          featureMutation.mutate({
+                            promptId: prompt.id,
+                            featured: !prompt.featured,
+                          })
+                        }
+                        disabled={featureMutation.isPending}
+                        title={prompt.featured ? "Unfeature" : "Feature"}
                       >
-                        Featured
-                      </Badge>
+                        {prompt.featured ? (
+                          <StarOff className="h-3.5 w-3.5" />
+                        ) : (
+                          <Star className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    )}
+
+                    {prompt.status === "DRAFT" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+
+                        onClick={() => updateMutation.mutate({ id: prompt.id, status: "ACTIVE" })}
+                      >
+                        Publish
+                      </Button>
+                    )}
+
+                    {prompt.status === "ACTIVE" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+
+                        onClick={() => updateMutation.mutate({ id: prompt.id, status: "CLOSED" })}
+                      >
+                        Close
+                      </Button>
+                    )}
+
+                    {(prompt.status === "CLOSED" || prompt.status === "DRAFT") && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+
+                        onClick={() => updateMutation.mutate({ id: prompt.id, status: "ARCHIVED" })}
+                      >
+                        Archive
+                      </Button>
                     )}
                   </div>
-                  <p className="text-muted-foreground truncate text-xs">{prompt.question}</p>
                 </div>
-                <div className="text-muted-foreground shrink-0 text-xs">
-                  {prompt._count.responses} responses
-                </div>
-                <div className="flex shrink-0 gap-1">
-                  {prompt.status === "ACTIVE" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={`h-7 w-7 p-0 ${prompt.featured ? "text-amber-400" : ""}`}
-                      onClick={() =>
-                        featureMutation.mutate({
-                          promptId: prompt.id,
-                          featured: !prompt.featured,
-                        })
-                      }
-                      disabled={featureMutation.isPending}
-                      title={prompt.featured ? "Remove featured" : "Feature this prompt"}
-                    >
-                      {prompt.featured ? (
-                        <StarOff className="h-3.5 w-3.5" />
-                      ) : (
-                        <Star className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
-                  )}
-                  {prompt.status === "DRAFT" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs"
-                      onClick={() =>
-                        updateMutation.mutate({
-                          id: prompt.id,
-                          status: "ACTIVE",
-                        })
-                      }
-                      disabled={updateMutation.isPending}
-                    >
-                      Publish
-                    </Button>
-                  )}
-                  {prompt.status === "ACTIVE" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs"
-                      onClick={() =>
-                        updateMutation.mutate({
-                          id: prompt.id,
-                          status: "CLOSED",
-                        })
-                      }
-                      disabled={updateMutation.isPending}
-                    >
-                      Close
-                    </Button>
-                  )}
-                  {(prompt.status === "CLOSED" || prompt.status === "DRAFT") && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs"
-                      onClick={() =>
-                        updateMutation.mutate({
-                          id: prompt.id,
-                          status: "ARCHIVED",
-                        })
-                      }
-                      disabled={updateMutation.isPending}
-                    >
-                      Archive
-                    </Button>
-                  )}
-                </div>
-              </div>
+              </Card>
             );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+          })
+        )}
+      </div>
+    </div>
   );
 }
 
-// ── Response Moderation ──────────────────────────────────────────────────────
-
 function ResponseModerationSection() {
-  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
+  const notify = useNotify();
+  const [selectedPromptId, setSelectedPromptId] = useState<string>("");
 
   const { data: prompts } = api.blurbs.getAllPrompts.useQuery({
     limit: 50,
@@ -309,7 +444,7 @@ function ResponseModerationSection() {
     fetchNextPage,
     hasNextPage,
   } = api.blurbs.getResponsesForPrompt.useInfiniteQuery(
-    { promptId: selectedPromptId ?? "", limit: 20, featuredFirst: true },
+    { promptId: selectedPromptId, limit: 20, featuredFirst: true },
     {
       enabled: !!selectedPromptId,
       getNextPageParam: (lastPage) => lastPage.nextCursor,
@@ -319,10 +454,9 @@ function ResponseModerationSection() {
   const utils = api.useUtils();
   const featureMutation = api.blurbs.featureResponse.useMutation({
     onSuccess: () => {
+      notify.success("Response Pin Toggled", "Response status updated.");
       if (selectedPromptId) {
-        utils.blurbs.getResponsesForPrompt.invalidate({
-          promptId: selectedPromptId,
-        });
+        utils.blurbs.getResponsesForPrompt.invalidate({ promptId: selectedPromptId });
       }
     },
   });
@@ -330,179 +464,92 @@ function ResponseModerationSection() {
   const responses = responsesData?.pages.flatMap((p) => p.responses) ?? [];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Responses</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-3">
-          <select
-            value={selectedPromptId ?? ""}
-            onChange={(e) => setSelectedPromptId(e.target.value || null)}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-          >
-            <option value="">Select a prompt...</option>
-            {prompts?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title} ({p._count.responses} responses)
-              </option>
-            ))}
-          </select>
+    <Card className="space-y-4 p-5">
+      <div className="border-separator max-w-md space-y-2 border-b pb-4">
+        <Label className="text-label-secondary text-subhead">Select discussion prompt</Label>
+        <ValueSelect
+          value={selectedPromptId}
+          onValueChange={setSelectedPromptId}
+          options={
+            prompts?.map((p) => [p.id, `${p.title} (${p._count.responses} responses)`] as const) ??
+            []
+          }
+          size="sm"
+          placeholder="Choose a prompt to view responses..."
+        />
+      </div>
+
+      {!selectedPromptId ? (
+        <p className="text-label-secondary text-footnote p-8 text-center">
+          Select a prompt from the dropdown above to inspect and moderate replies.
+        </p>
+      ) : responsesLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="rounded-row h-16 w-full" />
+          ))}
         </div>
-
-        {!selectedPromptId && (
-          <p className="text-muted-foreground py-4 text-center text-sm">
-            Select a prompt to view responses.
-          </p>
-        )}
-
-        {selectedPromptId && responsesLoading && (
-          <p className="text-muted-foreground py-4 text-center text-sm">Loading...</p>
-        )}
-
-        {selectedPromptId && !responsesLoading && responses.length === 0 && (
-          <p className="text-muted-foreground py-4 text-center text-sm">No responses yet.</p>
-        )}
-
+      ) : responses.length === 0 ? (
+        <p className="text-label-secondary text-footnote p-8 text-center">
+          No responses posted for this topic yet.
+        </p>
+      ) : (
         <div className="space-y-2">
           {responses.map((r) => (
             <div
               key={r.id}
-              className={`rounded-lg border p-3 ${
-                r.featured ? "border-amber-500/30 bg-amber-500/5" : ""
+              className={`rounded-row border p-4 ${
+                r.featured ? "border-yellow/30 bg-yellow/5" : "border-separator bg-fill-3"
               }`}
             >
-              <div className="mb-1 flex items-center justify-between">
+              <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {r.country?.flag && (
-                    <img
-                      src={r.country.flag}
-                      alt=""
-                      className="h-3.5 w-5 rounded-sm object-cover"
-                    />
-                  )}
-                  <span className="text-sm font-medium">{r.country?.name ?? "Unknown"}</span>
-                  {r.featured && (
-                    <Badge
-                      variant="outline"
-                      className="border-amber-500/30 text-[10px] text-amber-400"
-                    >
-                      Featured
-                    </Badge>
-                  )}
+                  <div className="bg-tint-fill text-tint rounded-control p-1">
+                    <User className="h-3.5 w-3.5" />
+                  </div>
+                  <span className="text-label text-caption">
+                    {r.country?.name ?? "Unknown Realm"}
+                  </span>
+                  {r.featured && <Badge variant="warning">Featured</Badge>}
                 </div>
+
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 w-7 p-0"
+                  className="w-7 p-0"
                   onClick={() =>
-                    featureMutation.mutate({
-                      responseId: r.id,
-                      featured: !r.featured,
-                    })
+                    featureMutation.mutate({ responseId: r.id, featured: !r.featured })
                   }
                   disabled={featureMutation.isPending}
-                  title={r.featured ? "Remove featured" : "Feature this response"}
                 >
                   {r.featured ? (
-                    <StarOff className="h-3.5 w-3.5 text-amber-400" />
+                    <StarOff className="text-yellow h-3.5 w-3.5" />
                   ) : (
-                    <Star className="h-3.5 w-3.5" />
+                    <Star className="text-label-secondary h-3.5 w-3.5" />
                   )}
                 </Button>
               </div>
-              <p className="text-muted-foreground text-sm whitespace-pre-wrap">{r.content}</p>
-              <p className="text-muted-foreground/50 mt-1 text-xs">
-                {new Date(r.createdAt).toLocaleDateString()}
+
+              <p className="text-label-secondary text-footnote leading-relaxed whitespace-pre-wrap">
+                {r.content}
               </p>
+              <span className="text-label-secondary text-footnote mt-2 block tabular-nums">
+                {new Date(r.createdAt).toLocaleDateString()}
+              </span>
             </div>
           ))}
-        </div>
 
-        {hasNextPage && (
-          <div className="pt-2 text-center">
-            <Button variant="ghost" size="sm" onClick={() => fetchNextPage()}>
-              Load more
-            </Button>
-          </div>
-        )}
-      </CardContent>
+          {hasNextPage && (
+            <div className="pt-2 text-center">
+              <Button variant="outline" size="sm" onClick={() => fetchNextPage()}>
+                Load more responses
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </Card>
   );
 }
 
-// ── Stats Summary ────────────────────────────────────────────────────────────
-
-function BlurbStatsSummary() {
-  const { data: blurbCount } = api.blurbs.getBlurbCount.useQuery();
-  const { data: activePrompts } = api.blurbs.getAllPrompts.useQuery({
-    status: "ACTIVE",
-  });
-  const { data: allPrompts } = api.blurbs.getAllPrompts.useQuery({
-    limit: 100,
-  });
-
-  const stats = [
-    {
-      label: "Total Responses",
-      value: blurbCount ?? 0,
-      icon: MessageCircle,
-    },
-    {
-      label: "Active Prompts",
-      value: activePrompts?.length ?? 0,
-      icon: CheckCircle,
-    },
-    {
-      label: "Total Prompts",
-      value: allPrompts?.length ?? 0,
-      icon: FileText,
-    },
-  ];
-
-  return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      {stats.map((stat) => (
-        <Card key={stat.label}>
-          <CardContent className="flex items-center gap-3 p-4">
-            <stat.icon className="text-muted-foreground h-5 w-5" />
-            <div>
-              <p className="text-2xl font-bold">{stat.value}</p>
-              <p className="text-muted-foreground text-xs">{stat.label}</p>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-// ── Main Page ────────────────────────────────────────────────────────────────
-
-export default function AdminBlurbsPage() {
-  usePageTitle({ title: "Admin - Blurbs" });
-  const [showCreate, setShowCreate] = useState(false);
-
-  return (
-    <div className="space-y-6">
-      <AdminHeader
-        icon={MessageCircle}
-        title="Blurbs"
-        description="Manage Topic Tuesday prompts and moderate responses"
-      >
-        <Button size="sm" onClick={() => setShowCreate(!showCreate)}>
-          <Plus className="mr-1 h-4 w-4" />
-          New Prompt
-        </Button>
-      </AdminHeader>
-
-      <BlurbStatsSummary />
-
-      {showCreate && <CreatePromptForm onDone={() => setShowCreate(false)} />}
-
-      <PromptManagementSection />
-
-      <ResponseModerationSection />
-    </div>
-  );
-}
+export default BlurbsPanel;

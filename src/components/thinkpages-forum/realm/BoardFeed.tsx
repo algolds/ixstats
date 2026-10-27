@@ -1,0 +1,404 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { keepPreviousData } from "@tanstack/react-query";
+import { ChatBubble, EditPencil } from "iconoir-react";
+import { DiscussionCountsProvider } from "~/components/action-links/DiscussionCountsProvider";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
+import { Skeleton } from "~/components/ui/skeleton";
+import { actionIdsOf, useThreadActionCards } from "~/hooks/useThreadActionCards";
+import { cn } from "~/lib/utils/cn";
+import { api } from "~/trpc/react";
+import type { ModeratorTools } from "../ModeratorMenu";
+import { BoardMessage } from "./BoardMessage";
+import type { BoardAccess, BoardData, BoardMessageData, BoardRealm } from "./types";
+import type { MessageSeek } from "./useScrollToMessageHash";
+
+/** What every message of the feed needs besides itself. */
+interface MessageContext {
+  realm: BoardRealm;
+  access: BoardAccess;
+  canReact: boolean;
+  signedIn: boolean;
+  tools: ModeratorTools | null;
+  onReply: (message: BoardMessageData) => void;
+  onQuote: (message: BoardMessageData) => void;
+  onChanged: () => void;
+}
+
+interface FeedContext {
+  message: MessageContext;
+  /** The message a link points at, which the pages look for. */
+  seek: MessageSeek | null;
+  /** An earlier page is loading: the feed is busy. */
+  setLoadingMore: (loading: boolean) => void;
+}
+
+const NOTHING_SHOWN: ReadonlySet<string> = new Set();
+
+/** Earlier pages a link's search loads (50 messages each) before it leaves the rest to the reader. */
+const MAX_SEEK_PAGES = 10;
+
+const DIVIDER = "border-separator border-t";
+/** The compact header bar's height when it cannot be measured. */
+const FALLBACK_HEADER_PX = 56;
+
+/** "Fiannria is typing", "Fiannria and Kir are typing", "3 people are typing". */
+export function typingLine(names: readonly string[]): string | null {
+  const [first, second] = names;
+  if (first === undefined) return null;
+  if (second === undefined) return `${first} is typing`;
+  return names.length === 2
+    ? `${first} and ${second} are typing`
+    : `${names.length} people are typing`;
+}
+
+interface SectionProps {
+  /** The messages to show, newest first. */
+  messages: readonly BoardMessageData[];
+  /** The id of the oldest message of the page, where the next page starts (not of what is held back). */
+  cursor: string | undefined;
+  hasMore: boolean;
+  /** The first message of the feed carries no divider above it. */
+  first: boolean;
+  /** Messages the pages before this one already show: a moved cursor can return them again, and they show once. */
+  exclude: ReadonlySet<string>;
+  /** How many pages back this one is: 0 for the newest. */
+  depth: number;
+  context: FeedContext;
+}
+
+/** The one line a search for a linked message ends in when it did not find it. */
+function NotFound({ everythingLoaded }: { everythingLoaded: boolean }) {
+  return (
+    <p role="status" className={cn(DIVIDER, "text-footnote text-label-secondary px-5 py-3")}>
+      {everythingLoaded
+        ? "That message is no longer on this board."
+        : "That message is older than what is loaded."}
+    </p>
+  );
+}
+
+/**
+ * One page of messages with its action cards, then the way to the page before it. While a linked message is not on
+ * screen the page before opens by itself, up to `MAX_SEEK_PAGES` back; the page that has the message tells the link.
+ */
+function Section({ messages, cursor, hasMore, first, exclude, depth, context }: SectionProps) {
+  const visible = useMemo(
+    () => (exclude.size === 0 ? messages : messages.filter((m) => !exclude.has(m.id))),
+    [messages, exclude]
+  );
+  const { cards, ready, errored } = useThreadActionCards(visible);
+  const actionIds = useMemo(() => actionIdsOf(visible), [visible]);
+  const [more, setMore] = useState(false);
+  const { seek } = context;
+  const target = seek?.postId;
+  const hasTarget = target !== undefined && visible.some((m) => m.id === target);
+  const found = target !== undefined && (hasTarget || exclude.has(target));
+  const seeking = target !== undefined && !found;
+  const canGoBack = hasMore && !!cursor;
+  const searching = seeking && canGoBack && depth < MAX_SEEK_PAGES;
+  const onFound = seek?.found;
+  useEffect(() => {
+    if (hasTarget) onFound?.();
+  }, [hasTarget, onFound]);
+  const shown = useMemo(
+    () => new Set([...exclude, ...messages.map((m) => m.id)]),
+    [exclude, messages]
+  );
+  return (
+    <DiscussionCountsProvider activityIds={actionIds}>
+      {visible.map((message, index) => (
+        <BoardMessage
+          key={message.id}
+          message={message}
+          {...context.message}
+          cards={cards}
+          cardsReady={ready}
+          cardsErrored={errored}
+          className={cn((!first || index > 0) && DIVIDER)}
+        />
+      ))}
+      {seeking && !searching && !more ? <NotFound everythingLoaded={!canGoBack} /> : null}
+      {canGoBack ? (
+        more || searching ? (
+          <EarlierPage before={cursor} exclude={shown} depth={depth + 1} context={context} />
+        ) : (
+          <div className={cn(DIVIDER, "flex items-center justify-center px-5 py-3")}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-label-secondary pointer-coarse:min-h-11"
+              onClick={() => setMore(true)}
+            >
+              Load earlier messages
+            </Button>
+          </div>
+        )
+      ) : null}
+    </DiscussionCountsProvider>
+  );
+}
+
+/** The page of 50 messages before `before`. It keeps showing its last answer while the cursor moves on a poll. */
+function EarlierPage({
+  before,
+  exclude,
+  depth,
+  context,
+}: {
+  before: string;
+  exclude: ReadonlySet<string>;
+  depth: number;
+  context: FeedContext;
+}) {
+  const { data, isLoading, isError, refetch } = api.thinkpagesForum.getBoard.useQuery(
+    { realm: context.message.realm.slug, before },
+    { placeholderData: keepPreviousData, refetchOnWindowFocus: false }
+  );
+  const { setLoadingMore } = context;
+  const loading = isLoading && !data;
+  useEffect(() => {
+    if (!loading) return;
+    setLoadingMore(true);
+    return () => setLoadingMore(false);
+  }, [loading, setLoadingMore]);
+  if (data) {
+    return (
+      <Section
+        messages={data.messages}
+        cursor={data.messages.at(-1)?.id}
+        hasMore={data.hasMore}
+        first={false}
+        exclude={exclude}
+        depth={depth}
+        context={context}
+      />
+    );
+  }
+  if (isError) {
+    return (
+      <div className={cn(DIVIDER, "flex items-center justify-center gap-3 px-5 py-3")}>
+        <p className="text-footnote text-label-secondary">Could not load earlier messages</p>
+        <Button variant="secondary" size="sm" onClick={() => void refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div aria-busy={isLoading} className={cn(DIVIDER, "space-y-2 px-5 py-3")}>
+      <p className="sr-only">Loading earlier messages</p>
+      <Skeleton className="h-9 w-full" />
+    </div>
+  );
+}
+
+/** The sticky page header's lower edge: the part of the viewport the feed's top is hidden under. */
+function stickyHeaderBottom(): number {
+  const bar = document.querySelector<HTMLElement>('[data-slot="page-header-toolbar"]');
+  if (!bar) return FALLBACK_HEADER_PX;
+  const top = Number.parseFloat(getComputedStyle(bar).top) || 0;
+  return Math.round(top + (bar.getBoundingClientRect().height || FALLBACK_HEADER_PX));
+}
+
+/**
+ * Whether the reader has scrolled the feed's top out of view upward, watched at `sentinel`. The top counts as out of
+ * view once it is under the sticky header. A feed whose top is still below the fold counts as at the top: nothing
+ * has been scrolled past.
+ */
+function useScrolledAway(
+  sentinel: RefObject<HTMLElement | null>,
+  onChange: (away: boolean) => void
+) {
+  const notify = useRef(onChange);
+  useEffect(() => {
+    notify.current = onChange;
+  });
+  useEffect(() => {
+    const element = sentinel.current;
+    if (!element || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        // rootBounds already excludes the header band (rootMargin).
+        const viewportTop = entry.rootBounds?.top ?? 0;
+        notify.current(!entry.isIntersecting && entry.boundingClientRect.top < viewportTop);
+      },
+      { rootMargin: `-${stickyHeaderBottom()}px 0px 0px 0px` }
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [sentinel]);
+}
+
+/** Brings the feed's top into view; a browser without `scrollIntoView` (a test DOM) leaves the page as it is. */
+function scrollToFeedTop(element: HTMLElement | null, block: ScrollLogicalPosition) {
+  if (element && typeof element.scrollIntoView === "function") element.scrollIntoView({ block });
+}
+
+interface BoardFeedProps {
+  realm: BoardRealm & { id: string };
+  /** The board's newest page, kept current by the live hook and the poll. */
+  data: BoardData;
+  /** The names typing now. */
+  typing: readonly string[];
+  /** A live connection that was up has dropped: the page polls and says so. */
+  paused: boolean;
+  signedIn: boolean;
+  tools: ModeratorTools | null;
+  /** The message a link points at: the feed pages back until it has it, then tells the link. */
+  seek?: MessageSeek | null;
+  /** Bumped when the reader posts: show the newest messages and bring the top into view. */
+  showLatest: number;
+  onReply: (message: BoardMessageData) => void;
+  onQuote: (message: BoardMessageData) => void;
+  onChanged: () => void;
+  /** The empty board's way in: takes the writer to the composer. */
+  onStart: () => void;
+  /** The reader is looking at the top of the feed: this is its newest message. The page marks the board read. */
+  onSeen?: (newestMessageId: string) => void;
+  /** The reader scrolled the top of the feed out of view: the page stops waiting to mark the board read. */
+  onAway?: () => void;
+}
+
+/**
+ * The realm board's feed in one pane: newest first, "Load earlier messages" paging back 50 at a time, who is typing,
+ * and the note while live updates are paused. When the reader has scrolled away from the top the list holds still:
+ * new messages wait behind "Jump to newest", while edits and removals still reach the messages on screen.
+ */
+export function BoardFeed({
+  realm,
+  data,
+  typing,
+  paused,
+  signedIn,
+  tools,
+  seek = null,
+  showLatest,
+  onReply,
+  onQuote,
+  onChanged,
+  onStart,
+  onSeen,
+  onAway,
+}: BoardFeedProps) {
+  const top = useRef<HTMLDivElement>(null);
+  const [held, setHeld] = useState<ReadonlySet<string> | null>(null);
+  const latest = useRef<readonly BoardMessageData[]>(data.messages);
+  useEffect(() => {
+    latest.current = data.messages;
+  });
+  useScrolledAway(top, (away) => setHeld(away ? new Set(latest.current.map((m) => m.id)) : null));
+  const newestId = data.messages[0]?.id;
+  useEffect(() => {
+    // Not held back means the reader is at the top, in view of the newest messages.
+    if (held !== null) onAway?.();
+    else if (newestId !== undefined) onSeen?.(newestId);
+  }, [held, newestId, onSeen, onAway]);
+
+  const [seenShowLatest, setSeenShowLatest] = useState(showLatest);
+  if (seenShowLatest !== showLatest) {
+    setSeenShowLatest(showLatest);
+    setHeld(null);
+  }
+  useEffect(() => {
+    if (showLatest > 0) scrollToFeedTop(top.current, "nearest");
+  }, [showLatest]);
+
+  const shown = useMemo(
+    () => (held ? data.messages.filter((m) => held.has(m.id)) : data.messages),
+    [held, data.messages]
+  );
+  const waiting = data.messages.length - shown.length;
+  const [loadingMore, setLoadingMore] = useState(false);
+  const context: FeedContext = {
+    message: {
+      realm,
+      access: data.access,
+      canReact: data.canReact,
+      signedIn,
+      tools,
+      onReply,
+      onQuote,
+      onChanged,
+    },
+    seek,
+    setLoadingMore,
+  };
+  const typingText = typingLine(typing);
+
+  const jumpToNewest = () => {
+    setHeld(null);
+    scrollToFeedTop(top.current, "start");
+  };
+
+  return (
+    <>
+      {/* Told to assistive technology as messages are held back, since the list does not move. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {waiting > 0 ? `${waiting} new ${waiting === 1 ? "message" : "messages"}` : ""}
+      </p>
+      {waiting > 0 ? (
+        <div className="z-sticky sticky top-20 flex h-0 justify-center">
+          <Button size="sm" className="shadow-floating" onClick={jumpToNewest}>
+            Jump to newest
+            <span className="tabular-nums">{`${waiting} new`}</span>
+          </Button>
+        </div>
+      ) : null}
+      <Card content="feed" className="overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-4 sm:px-5">
+          <h2 className="text-headline flex items-center gap-2 leading-none">
+            <ChatBubble aria-hidden className="text-tint size-4" />
+            Realm board
+          </h2>
+          <p aria-live="polite" className="text-footnote text-label-secondary">
+            {typingText}
+          </p>
+        </div>
+        {paused ? (
+          <p role="status" className="text-footnote text-label-secondary px-4 pb-2 sm:px-5">
+            Live updates paused, retrying
+          </p>
+        ) : null}
+        <div ref={top} aria-hidden className="h-px scroll-mt-24" />
+        {shown.length === 0 ? (
+          <EmptyState
+            icon={<ChatBubble className="text-tint" />}
+            className={cn(DIVIDER, "py-10")}
+            title={data.access.canPost ? "Start the conversation" : "No messages yet"}
+            message={data.access.canPost ? `Say something to ${realm.name}` : undefined}
+            action={
+              data.access.canPost ? (
+                <Button onClick={onStart} className="pointer-coarse:min-h-11">
+                  <EditPencil aria-hidden />
+                  Write a message
+                </Button>
+              ) : undefined
+            }
+          />
+        ) : (
+          <div
+            role="feed"
+            aria-busy={loadingMore}
+            aria-label="Realm board messages"
+            className={DIVIDER}
+          >
+            <Section
+              messages={shown}
+              cursor={data.messages.at(-1)?.id}
+              hasMore={data.hasMore}
+              first
+              exclude={NOTHING_SHOWN}
+              depth={0}
+              context={context}
+            />
+          </div>
+        )}
+      </Card>
+    </>
+  );
+}

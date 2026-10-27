@@ -7,18 +7,15 @@
  * Domains:
  *  - relations:  diplomatic-relation CRUD (get/create/update/delete + recent changes)
  *  - influence:  influence breakdown, strength updates, leaderboard, country follow graph
- *  - sharedData: embassy shared-data read/share/revoke across economic/intelligence/research/cultural/policy
  *  - options:    diplomatic-option dictionary and usage analytics
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { diplomaticCoreRelationsRouter } from "./relations";
 import { diplomaticCoreInfluenceRouter } from "./influence";
-import { diplomaticCoreSharedDataRouter } from "./sharedData";
 import { diplomaticCoreOptionsRouter } from "./options";
 
 export const diplomaticCoreRouter = mergeRouters(
   diplomaticCoreRelationsRouter,
   diplomaticCoreInfluenceRouter,
-  diplomaticCoreSharedDataRouter,
   diplomaticCoreOptionsRouter
 );

@@ -2,14 +2,14 @@
 // Unified in-memory cache with TTL, LRU eviction, and stats tracking.
 // Replaces 15+ ad-hoc Map-based caches across the codebase.
 
-export interface CacheEntry<T> {
+interface CacheEntry<T> {
   data: T;
   expires: number;
   hits: number;
   lastAccessed: number;
 }
 
-export interface CacheOptions {
+interface CacheOptions {
   /** Default TTL in ms (applied when set() has no explicit ttl). Default: 300000 (5 min). */
   defaultTtlMs?: number;
   /** Max entries before eviction. Default: 500. */
@@ -18,7 +18,7 @@ export interface CacheOptions {
   namespace?: string;
 }
 
-export interface CacheStats {
+interface CacheStats {
   size: number;
   hits: number;
   misses: number;
@@ -124,8 +124,4 @@ export class Cache<V = unknown> {
       this.store.delete(firstKey);
     }
   }
-}
-
-export function createCache<V = unknown>(opts?: CacheOptions): Cache<V> {
-  return new Cache<V>(opts);
 }

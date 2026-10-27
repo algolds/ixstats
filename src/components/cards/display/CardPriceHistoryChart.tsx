@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Coins } from "lucide-react";
+import { Coins } from "iconoir-react";
 
 interface CardPriceHistoryChartProps {
   cardId: string;
@@ -35,18 +35,16 @@ export const CardPriceHistoryChart: React.FC<CardPriceHistoryChartProps> = ({ ca
   if (isLoading) {
     return (
       <div className="flex h-48 w-full flex-col justify-between p-2">
-        <Skeleton className="h-full w-full rounded bg-white/5" />
+        <Skeleton className="bg-fill-4 h-full w-full rounded" />
       </div>
     );
   }
 
   if (!history || history.length === 0) {
     return (
-      <div className="flex h-48 w-full flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-white/10">
-        <Coins className="h-8 w-8 text-slate-400 opacity-40" />
-        <span className="text-slate-450 mt-2 text-xs dark:text-white/40">
-          No price history available
-        </span>
+      <div className="rounded-control border-separator flex h-48 w-full flex-col items-center justify-center border border-dashed">
+        <Coins className="text-label-secondary h-8 w-8 opacity-40" />
+        <span className="text-label-secondary text-footnote mt-2">No price history available</span>
       </div>
     );
   }
@@ -55,17 +53,17 @@ export const CardPriceHistoryChart: React.FC<CardPriceHistoryChartProps> = ({ ca
     <div className="h-48 w-full pr-4 select-none">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-separator)" vertical={false} />
           <XAxis
             dataKey="date"
-            stroke="#94a3b8"
+            stroke="var(--color-label-secondary)"
             fontSize={9}
             tickLine={false}
             axisLine={false}
             dy={8}
           />
           <YAxis
-            stroke="#94a3b8"
+            stroke="var(--color-label-secondary)"
             fontSize={9}
             tickLine={false}
             axisLine={false}
@@ -74,22 +72,36 @@ export const CardPriceHistoryChart: React.FC<CardPriceHistoryChartProps> = ({ ca
           />
           <Tooltip
             contentStyle={{
-              background: "rgba(15, 23, 42, 0.9)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              borderRadius: "8px",
-              boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.3)",
+              background: "var(--color-surface-elevated)",
+              border: "1px solid var(--color-separator)",
+              borderRadius: "var(--radius-control-sm)",
+              boxShadow: "var(--shadow-floating)",
             }}
-            labelStyle={{ color: "#94a3b8", fontSize: "10px", fontWeight: "bold" }}
-            itemStyle={{ color: "#38bdf8", fontSize: "11px", fontWeight: "black" }}
-            formatter={(value) => [`${value} IxC`, "Value"]}
+            labelStyle={{
+              color: "var(--color-label-secondary)",
+              fontSize: "10px",
+              fontWeight: 600,
+            }}
+            itemStyle={{ color: "var(--color-label)", fontSize: "11px", fontWeight: 600 }}
+            formatter={(value) => [`${value} Credits`, "Value"]}
           />
           <Line
             type="monotone"
             dataKey="value"
-            stroke="#f59e0b"
+            stroke="var(--color-warning)"
             strokeWidth={2}
-            dot={{ r: 3, stroke: "#f59e0b", strokeWidth: 1, fill: "#0f172a" }}
-            activeDot={{ r: 5, stroke: "#fbbf24", strokeWidth: 2, fill: "#f59e0b" }}
+            dot={{
+              r: 3,
+              stroke: "var(--color-warning)",
+              strokeWidth: 1,
+              fill: "var(--color-surface-elevated)",
+            }}
+            activeDot={{
+              r: 5,
+              stroke: "var(--color-surface-elevated)",
+              strokeWidth: 2,
+              fill: "var(--color-warning)",
+            }}
           />
         </LineChart>
       </ResponsiveContainer>

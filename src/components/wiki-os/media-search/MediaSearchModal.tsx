@@ -1,8 +1,7 @@
-// src/components/MediaSearchModal.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Loader2, Download } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { SystemRestart as Loader2, Download } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -11,29 +10,18 @@ import { processImageSelection, isExternalImageUrl } from "~/lib/media";
 import { cn } from "~/lib/utils";
 
 import type { CommonsImage } from "./types";
-import { WebPhotosTab } from "./WebPhotosTab";
 import { WikiRepositoryTab } from "./WikiRepositoryTab";
 import { UploadTab } from "./UploadTab";
-
-// Import WikiOS styles for component support
-import "~/styles/wiki-os/variables.css";
-import "~/styles/wiki-os/components.css";
 
 interface MediaSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   onImageSelect: (imageUrl: string) => void;
-  onFileUpload?: (file: File) => Promise<void>;
 }
 
-type MainTab = "web-photos" | "wiki-repository" | "stash" | "upload";
+type MainTab = "wiki-repository" | "upload";
 
-export function MediaSearchModal({
-  isOpen,
-  onClose,
-  onImageSelect,
-  onFileUpload,
-}: MediaSearchModalProps) {
+export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearchModalProps) {
   const notify = useNotify();
 
   // Active Main Tab
@@ -45,19 +33,32 @@ export function MediaSearchModal({
   const [isDownloading, setIsDownloading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isCategoryExpanded, setIsCategoryExpanded] = useState(false);
+  // The in-flight "use this image" request; set while one runs, aborted when the picker closes.
+  const confirmRef = useRef<AbortController | null>(null);
+
+  const cancelConfirm = () => {
+    confirmRef.current?.abort();
+    confirmRef.current = null;
+  };
+
+  useEffect(() => cancelConfirm, []);
 
   // Reset selections when modal opens or active tab changes
   useEffect(() => {
     if (isOpen) {
+      // oxlint-disable-next-line
       setSelectedImage(null);
       setSelectedImageObj(null);
+      setActiveTab("wiki-repository");
+    } else {
+      cancelConfirm();
     }
     if (!isOpen || activeTab !== "wiki-repository") {
       setIsCategoryExpanded(false);
     }
   }, [isOpen, activeTab]);
 
-  const handleWikiSelectImage = (img: CommonsImage) => {
+  const handleWikiSelectImage = (img: CommonsImage | null) => {
     if (!img) {
       setSelectedImage(null);
       setSelectedImageObj(null);
@@ -68,48 +69,69 @@ export function MediaSearchModal({
   };
 
   const handleSelectConfirm = async () => {
+    if (confirmRef.current) return;
     if (!selectedImage) {
       notify.error("Please select an image first.");
       return;
     }
 
+    const controller = new AbortController();
+    confirmRef.current = controller;
     try {
       if (isExternalImageUrl(selectedImage)) {
         setIsDownloading(true);
         notify.info("Downloading image...");
 
         const processedUrl = await processImageSelection(selectedImage, {
-          onProgress: (message) => console.log("[MediaSearchModal]", message),
-          onError: (error) => console.error("[MediaSearchModal]", error),
+          signal: controller.signal,
         });
+        if (controller.signal.aborted) return;
 
-        notify.success("Image downloaded and ready to use!");
+        notify.success("Image downloaded and ready to use");
         onImageSelect(processedUrl);
       } else {
         onImageSelect(selectedImage);
       }
       onClose();
     } catch (error) {
+      if (controller.signal.aborted) return;
       console.error("[MediaSearchModal] Download failed:", error);
       notify.error("Failed to download image. Try a different source.");
     } finally {
+      if (confirmRef.current === controller) confirmRef.current = null;
       setIsDownloading(false);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (open) return;
+        cancelConfirm();
+        onClose();
+      }}
+    >
       <DialogContent
         className={cn(
-          "glass-hierarchy-modal flex max-h-[92vh] flex-col overflow-hidden p-0 transition-all duration-300 ease-in-out",
+          "flex h-[88vh] max-h-[92vh] flex-col overflow-hidden p-0 transition-[max-width] duration-300 ease-in-out",
           isCategoryExpanded ? "max-w-7xl" : "max-w-5xl"
         )}
         data-dialog-nested="true"
+        onEscapeKeyDown={(e) => {
+          // Escape first cancels a download in flight, then closes the detail panel, then the picker.
+          if (confirmRef.current) {
+            e.preventDefault();
+            cancelConfirm();
+            setIsDownloading(false);
+          } else if (selectedImageObj) {
+            e.preventDefault();
+            handleWikiSelectImage(null);
+          }
+        }}
       >
-        <DialogHeader className="border-border/40 shrink-0 border-b px-6 pt-5 pb-3">
-          <DialogTitle className="text-foreground text-base font-bold">
-            Search Image Library
-          </DialogTitle>
+        <DialogHeader className="border-separator shrink-0 border-b px-6 pt-5 pb-3">
+          <DialogTitle className="text-label text-title-3">Search repository</DialogTitle>
         </DialogHeader>
 
         <Tabs
@@ -117,40 +139,22 @@ export function MediaSearchModal({
           onValueChange={(val) => setActiveTab(val as MainTab)}
           className="flex min-h-0 flex-1 flex-col"
         >
-          <TabsList className="border-border/40 grid w-full grid-cols-3 rounded-none border-b bg-transparent p-0">
+          <TabsList className="border-separator grid w-full grid-cols-2 rounded-none border-b bg-transparent p-0">
             <TabsTrigger
               value="wiki-repository"
-              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-black/5 data-[state=active]:shadow-none dark:data-[state=active]:bg-white/5"
+              className="data-[state=active]:text-label text-footnote data-[state=active]:bg-fill-3 cursor-pointer rounded-none py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none data-[state=active]:shadow-none"
             >
               Repository
             </TabsTrigger>
             <TabsTrigger
-              value="web-photos"
-              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-black/5 data-[state=active]:shadow-none dark:data-[state=active]:bg-white/5"
-            >
-              Web Photos
-            </TabsTrigger>
-            <TabsTrigger
               value="upload"
-              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-black/5 data-[state=active]:shadow-none dark:data-[state=active]:bg-white/5"
+              className="data-[state=active]:text-label text-footnote data-[state=active]:bg-fill-3 cursor-pointer rounded-none py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none data-[state=active]:shadow-none"
             >
               Upload
             </TabsTrigger>
           </TabsList>
 
-          {/* Tab 1: Web Photos (Unsplash) */}
-          <TabsContent
-            value="web-photos"
-            className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
-          >
-            <WebPhotosTab
-              selectedImage={selectedImage}
-              onSelectImage={setSelectedImage}
-              onDoubleClickConfirm={handleSelectConfirm}
-            />
-          </TabsContent>
-
-          {/* Tab 2: Wiki Repository */}
+          {/* Tab 1: Wiki Repository (Commons, IxWiki, IIWiki, My Stash) */}
           <TabsContent
             value="wiki-repository"
             className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
@@ -164,7 +168,7 @@ export function MediaSearchModal({
             />
           </TabsContent>
 
-          {/* Tab 4: Upload */}
+          {/* Tab 2: Upload */}
           <TabsContent
             value="upload"
             className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
@@ -172,7 +176,6 @@ export function MediaSearchModal({
             <UploadTab
               onImageSelect={onImageSelect}
               onClose={onClose}
-              onFileUpload={onFileUpload}
               isUploading={isUploading}
               setIsUploading={setIsUploading}
             />
@@ -181,10 +184,10 @@ export function MediaSearchModal({
 
         {/* Modal Bottom Action Controls */}
         {activeTab !== "upload" && (
-          <div className="border-border/40 bg-card/10 flex shrink-0 items-center justify-end gap-3 border-t px-6 py-4">
+          <div className="border-separator bg-surface flex shrink-0 items-center justify-end gap-3 border-t px-6 py-4">
             {isDownloading && (
-              <div className="flex items-center gap-2 text-xs text-blue-400">
-                <Download className="h-3.5 w-3.5 animate-bounce" />
+              <div className="text-footnote text-tint flex items-center gap-2">
+                <Download className="size-3.5" aria-hidden="true" />
                 <span>Downloading file to local cache...</span>
               </div>
             )}
@@ -192,11 +195,11 @@ export function MediaSearchModal({
               onClick={handleSelectConfirm}
               disabled={!selectedImage || isDownloading}
               size="sm"
-              className="h-8 px-4 text-xs font-semibold"
+              className="text-caption h-8 cursor-pointer px-4 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             >
               {isDownloading ? (
                 <>
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                   Downloading...
                 </>
               ) : (

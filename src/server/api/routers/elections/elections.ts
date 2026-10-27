@@ -1,9 +1,15 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
-import { notificationAPI } from "~/lib/notifications/api";
-import { parseChambers, simulateElectionCore } from "~/lib/government/election-simulation";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import { parseChambers } from "~/lib/government/election-simulation";
+import {
+  MIN_ELECTION_PARTIES,
+  ensureUpcomingElection,
+  resolveElection,
+} from "~/lib/government/election-lifecycle";
+import { clockForCountry } from "~/server/shared/realm-time";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 // ============================================================
 // Election System Router - Extension of Government Sub-System
@@ -12,10 +18,6 @@ import { parseChambers, simulateElectionCore } from "~/lib/government/election-s
 // ============================================================
 
 export const electionsElectionsRouter = createTRPCRouter({
-  // ─── Political Parties ─────────────────────────────────
-
-  // ─── Legislature ───────────────────────────────────────
-
   // ─── Elections ─────────────────────────────────────────
 
   getElections: publicProcedure
@@ -31,166 +33,132 @@ export const electionsElectionsRouter = createTRPCRouter({
       });
     }),
 
-  getElectionById: publicProcedure
-    .input(z.object({ id: z.string() }))
+  // ─── Election status (MC-2: what the politics surface shows) ───
+  // Where the country stands in the lifecycle: setup missing → first election scheduled →
+  // polls closed (due) → results + seat composition. Every figure is read, none invented.
+
+  getElectionStatus: publicProcedure
+    .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      return ctx.db.election.findUnique({
-        where: { id: input.id },
-        include: {
-          candidates: { include: { party: true } },
-          results: {
-            include: { candidate: { include: { party: true } } },
-            orderBy: { seatsWon: "desc" },
-          },
-          legislature: true,
-        },
-      });
+      const nowIxTime = (await clockForCountry(ctx.db, input.countryId)).now();
+      const [legislature, activeParties, upcoming, voting, completedCount, last] =
+        await Promise.all([
+          ctx.db.legislature.findUnique({
+            where: { countryId: input.countryId },
+            select: { id: true, totalSeats: true, termLength: true },
+          }),
+          ctx.db.politicalParty.count({
+            where: { countryId: input.countryId, isActive: true },
+          }),
+          ctx.db.election.findFirst({
+            where: { countryId: input.countryId, status: "upcoming" },
+            orderBy: { scheduledIxTime: "asc" },
+            select: { id: true, name: true, scheduledIxTime: true },
+          }),
+          ctx.db.election.count({ where: { countryId: input.countryId, status: "voting" } }),
+          ctx.db.election.count({ where: { countryId: input.countryId, status: "completed" } }),
+          ctx.db.election.findFirst({
+            where: { countryId: input.countryId, status: "completed" },
+            orderBy: { scheduledIxTime: "desc" },
+            select: {
+              id: true,
+              name: true,
+              scheduledIxTime: true,
+              turnout: true,
+              marginOfVictory: true,
+              results: {
+                orderBy: { seatsWon: "desc" },
+                select: {
+                  votePercentage: true,
+                  seatsWon: true,
+                  candidate: {
+                    select: { party: { select: { id: true, name: true, color: true } } },
+                  },
+                },
+              },
+            },
+          }),
+        ]);
+
+      const seatedSeats = legislature
+        ? await ctx.db.legislativeSeat.count({
+            where: { legislatureId: legislature.id, partyId: { not: null } },
+          })
+        : 0;
+
+      return {
+        nowIxTime,
+        minParties: MIN_ELECTION_PARTIES,
+        hasLegislature: !!legislature,
+        totalSeats: legislature?.totalSeats ?? 0,
+        seatedSeats,
+        activeParties,
+        counting: voting > 0,
+        upcoming: upcoming
+          ? {
+              id: upcoming.id,
+              name: upcoming.name,
+              scheduledIxTime: upcoming.scheduledIxTime,
+              isFirst: completedCount === 0,
+              isDue: upcoming.scheduledIxTime <= nowIxTime,
+            }
+          : null,
+        lastElection: last
+          ? {
+              id: last.id,
+              name: last.name,
+              scheduledIxTime: last.scheduledIxTime,
+              turnout: last.turnout,
+              marginOfVictory: last.marginOfVictory,
+              results: last.results.map((r) => ({
+                partyId: r.candidate.party.id,
+                partyName: r.candidate.party.name,
+                color: r.candidate.party.color,
+                votePercentage: r.votePercentage,
+                seatsWon: r.seatsWon,
+              })),
+            }
+          : null,
+      };
     }),
 
-  scheduleElection: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        name: z.string().min(1).max(200),
-        electionType: z.enum(["general", "special", "referendum"]).default("general"),
-        scheduledIxTime: z.number().optional(),
-      })
-    )
+  /**
+   * Count the votes of an election that has fallen due on the nation's realm clock, without waiting
+   * for the elections cron. Only elections already due resolve — the owner cannot call an
+   * early vote or re-roll a result. Also schedules the first election if setup is complete.
+   */
+  resolveDueElection: rateLimitedMutationProcedure
+    .input(z.object({ countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user?.countryId !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN" });
-      }
+      await assertCountryWriteAccess(ctx, input.countryId);
+      const db = ctx.db as PrismaClient;
+      const now = (await clockForCountry(db, input.countryId)).now();
 
-      const legislature = await ctx.db.legislature.findUnique({
-        where: { countryId: input.countryId },
-      });
-      if (!legislature) {
-        throw new TRPCError({
-          code: "PRECONDITION_FAILED",
-          message: "Configure a legislature before scheduling elections",
-        });
-      }
-
-      const scheduledTime = input.scheduledIxTime ?? IxTime.getCurrentIxTime();
-
-      const election = await ctx.db.election.create({
-        data: {
+      const due = await db.election.findFirst({
+        where: {
           countryId: input.countryId,
-          legislatureId: legislature.id,
-          name: input.name,
-          electionType: input.electionType,
-          scheduledIxTime: scheduledTime,
           status: "upcoming",
+          scheduledIxTime: { lte: now },
         },
+        orderBy: { scheduledIxTime: "asc" },
+        select: { id: true },
       });
-
-      try {
-        await notificationAPI.create({
-          title: "Election Scheduled",
-          message: `${input.electionType === "general" ? "General" : input.electionType === "special" ? "Special" : "Referendum"} election "${input.name}" has been scheduled`,
-          countryId: input.countryId,
-          category: "governance",
-          priority: "high",
-          type: "info",
-          source: "elections",
-          href: "/mycountry/politics",
-        });
-      } catch (e) {
-        console.warn("[Notifications] elections.scheduleElection:", e);
+      if (!due) {
+        const ensured = await ensureUpcomingElection(db, input.countryId, { now });
+        return { resolved: false as const, reason: "not_due" as const, ensured };
       }
 
-      return election;
-    }),
-
-  // ─── Candidates ────────────────────────────────────────
-
-  registerCandidate: protectedProcedure
-    .input(
-      z.object({
-        electionId: z.string(),
-        partyId: z.string(),
-        candidateName: z.string().min(1).max(200),
-        region: z.string().optional(),
-        platform: z.string().optional(),
-        charisma: z.number().min(0).max(100).default(50),
-        politicalCapital: z.number().min(0).max(100).default(50),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const election = await ctx.db.election.findUnique({
-        where: { id: input.electionId },
-      });
-      if (!election) {
-        throw new TRPCError({ code: "NOT_FOUND" });
-      }
-      if (ctx.user?.countryId !== election.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN" });
-      }
-      if (election.status === "completed" || election.status === "cancelled") {
+      const { outcome } = await resolveElection(db, due.id, now);
+      if (outcome === "insufficient_candidates") {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
-          message: "Cannot register candidates for a completed/cancelled election",
+          message: `An election needs at least ${MIN_ELECTION_PARTIES} active parties on the ballot.`,
         });
       }
-
-      return ctx.db.electionCandidate.create({
-        data: {
-          electionId: input.electionId,
-          partyId: input.partyId,
-          candidateName: input.candidateName,
-          region: input.region,
-          platform: input.platform,
-          charisma: input.charisma,
-          politicalCapital: input.politicalCapital,
-        },
-        include: { party: true },
-      });
-    }),
-
-  removeCandidate: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const candidate = await ctx.db.electionCandidate.findUnique({
-        where: { id: input.id },
-        include: { election: { select: { countryId: true } } },
-      });
-      if (!candidate) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+      if (outcome === "not_claimed") {
+        return { resolved: false as const, reason: "already_counting" as const };
       }
-      if (ctx.user?.countryId !== candidate.election.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN" });
-      }
-
-      return ctx.db.electionCandidate.delete({ where: { id: input.id } });
-    }),
-
-  // ─── Election Simulation (Core Algorithm) ──────────────
-
-  simulateElection: protectedProcedure
-    .input(z.object({ electionId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      // Ownership check, then delegate to the shared simulation core
-      // (the scheduled-elections cron calls the same core).
-      const election = await ctx.db.election.findUnique({
-        where: { id: input.electionId },
-        select: { countryId: true },
-      });
-      if (!election) throw new TRPCError({ code: "NOT_FOUND" });
-      if (ctx.user?.countryId !== election.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN" });
-      }
-
-      const result = await simulateElectionCore(ctx.db, input.electionId);
-      if (!result.ok) {
-        if (result.reason === "insufficient_candidates") {
-          throw new TRPCError({
-            code: "PRECONDITION_FAILED",
-            message: "At least 2 candidates from different parties are required",
-          });
-        }
-        throw new TRPCError({ code: "NOT_FOUND" });
-      }
-      return result.election;
+      return { resolved: true as const, electionId: due.id };
     }),
 
   // ─── Current Parliament (for hemicycle visualization) ───

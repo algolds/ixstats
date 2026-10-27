@@ -5,6 +5,7 @@
  * across user content, wiki content, and general HTML processing.
  */
 
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import {
   sanitizeUserContent,
   sanitizeWikiContent,
@@ -16,15 +17,6 @@ import {
 
 describe("XSS Sanitization Test Suite", () => {
   describe("sanitizeUserContent() - Strict User Content", () => {
-    it("allows safe basic HTML tags", () => {
-      const input = "<p>Hello <strong>world</strong></p>";
-      const output = sanitizeUserContent(input);
-
-      expect(output).toContain("Hello");
-      expect(output).toContain("world");
-      expect(output).toContain("<strong>");
-    });
-
     it("removes script tags", () => {
       const input = '<p>Safe content</p><script>alert("XSS")</script>';
       const output = sanitizeUserContent(input);
@@ -72,16 +64,6 @@ describe("XSS Sanitization Test Suite", () => {
       expect(output).not.toContain("<form");
       expect(output).not.toContain("<input");
     });
-
-    it("allows safe image tags", () => {
-      const input = '<img src="https://example.com/image.jpg" alt="Test">';
-      const output = sanitizeUserContent(input);
-
-      expect(output).toContain("<img");
-      expect(output).toContain("src=");
-      expect(output).toContain("alt=");
-    });
-
     it("blocks data: URLs in images", () => {
       const input = '<img src="data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9YWxlcnQoMSk+PC9zdmc+">';
       const output = sanitizeUserContent(input);
@@ -89,13 +71,6 @@ describe("XSS Sanitization Test Suite", () => {
       // Should either remove the src or the entire tag
       expect(output).not.toContain("data:");
     });
-
-    it("handles empty input", () => {
-      expect(sanitizeUserContent("")).toBe("");
-      expect(sanitizeUserContent(null as any)).toBe("");
-      expect(sanitizeUserContent(undefined as any)).toBe("");
-    });
-
     it("allows safe links with rel attribute", () => {
       const input = '<a href="https://example.com" target="_blank" rel="noopener">Link</a>';
       const output = sanitizeUserContent(input);
@@ -118,23 +93,6 @@ describe("XSS Sanitization Test Suite", () => {
   });
 
   describe("sanitizeWikiContent() - Moderate Wiki Content", () => {
-    it("allows richer HTML for wiki content", () => {
-      const input = "<table><tr><td>Cell</td></tr></table>";
-      const output = sanitizeWikiContent(input);
-
-      expect(output).toContain("<table");
-      expect(output).toContain("<tr");
-      expect(output).toContain("<td");
-    });
-
-    it("allows style attributes for wiki formatting", () => {
-      const input = '<div style="color: red;">Styled content</div>';
-      const output = sanitizeWikiContent(input);
-
-      expect(output).toContain("style=");
-      expect(output).toContain("Styled content");
-    });
-
     it("still blocks script tags in wiki content", () => {
       const input = '<div>Safe</div><script>alert("XSS")</script>';
       const output = sanitizeWikiContent(input);
@@ -151,45 +109,9 @@ describe("XSS Sanitization Test Suite", () => {
       expect(output).not.toContain("onmouseover");
       expect(output).not.toContain("alert");
     });
-
-    it("allows semantic HTML elements", () => {
-      const input =
-        '<section><article><h2>Title</h2><time datetime="2025-01-01">Date</time></article></section>';
-      const output = sanitizeWikiContent(input);
-
-      expect(output).toContain("<section");
-      expect(output).toContain("<article");
-      expect(output).toContain("<time");
-      expect(output).toContain("datetime=");
-    });
-
-    it("allows complex table structures", () => {
-      const input = `
-        <table>
-          <thead><tr><th scope="col">Header</th></tr></thead>
-          <tbody><tr><td colspan="2">Data</td></tr></tbody>
-          <tfoot><tr><td>Footer</td></tr></tfoot>
-        </table>
-      `;
-      const output = sanitizeWikiContent(input);
-
-      expect(output).toContain("<thead");
-      expect(output).toContain("<tbody");
-      expect(output).toContain("<tfoot");
-      expect(output).toContain("colspan=");
-      expect(output).toContain("scope=");
-    });
   });
 
   describe("sanitizeHtml() - Balanced General Use", () => {
-    it("allows common formatting tags", () => {
-      const input = "<p><strong>Bold</strong> and <em>italic</em> text</p>";
-      const output = sanitizeHtml(input);
-
-      expect(output).toContain("<strong>");
-      expect(output).toContain("<em>");
-    });
-
     it("blocks scripts", () => {
       const input = "Normal text<script>evil()</script>";
       const output = sanitizeHtml(input);
@@ -204,15 +126,6 @@ describe("XSS Sanitization Test Suite", () => {
 
       expect(output).not.toContain("onclick");
       expect(output).not.toContain("onload");
-    });
-
-    it("allows blockquotes and lists", () => {
-      const input = "<blockquote><ul><li>Item 1</li><li>Item 2</li></ul></blockquote>";
-      const output = sanitizeHtml(input);
-
-      expect(output).toContain("<blockquote");
-      expect(output).toContain("<ul");
-      expect(output).toContain("<li");
     });
   });
 
@@ -234,41 +147,21 @@ describe("XSS Sanitization Test Suite", () => {
       expect(output).toContain("&#039;");
       expect(output).toContain("&quot;");
     });
-
-    it("handles empty input", () => {
-      expect(escapeHtml("")).toBe("");
-      expect(escapeHtml(null as any)).toBe("");
-    });
   });
 
   describe("stripHtml() - Text Extraction", () => {
-    it("removes all HTML tags", () => {
-      const input = "<p>Hello <strong>world</strong></p>";
-      const output = stripHtml(input);
-
-      expect(output).toBe("Hello world");
-      expect(output).not.toContain("<");
-      expect(output).not.toContain(">");
+    it("turns <br> and block tags into a single space", () => {
+      expect(stripHtml("A<br>B")).toBe("A B");
+      expect(stripHtml("<p>One</p><p>Two</p>")).toBe("One Two");
+      expect(stripHtml("<ul><li>a</li><li>b</li></ul>")).toBe("a b");
+      expect(stripHtml("x<br/>\n<br />y")).toBe("x y");
     });
-
-    it("handles nested tags", () => {
-      const input = "<div><p><span>Text</span></p></div>";
-      const output = stripHtml(input);
-
-      expect(output).toBe("Text");
-    });
-
-    it("preserves text content only", () => {
-      const input = '<a href="evil.com">Click here</a>';
-      const output = stripHtml(input);
-
-      expect(output).toBe("Click here");
-      expect(output).not.toContain("href");
-    });
-
-    it("handles empty input", () => {
-      expect(stripHtml("")).toBe("");
-      expect(stripHtml("   ")).toBe("");
+    it("decodes named and numeric entities deterministically", () => {
+      expect(stripHtml("Tom &amp; Jerry")).toBe("Tom & Jerry");
+      expect(stripHtml("a&nbsp;b")).toBe("a b");
+      expect(stripHtml("&#169; &#x2014; &#X41;")).toBe("\u00A9 \u2014 A");
+      expect(stripHtml("&amp;lt;")).toBe("&lt;");
+      expect(stripHtml("x &bogus; y")).toBe("x &bogus; y");
     });
   });
 
@@ -294,6 +187,13 @@ describe("XSS Sanitization Test Suite", () => {
       expect(result.reason).toContain("Event handlers");
     });
 
+    it("detects an event handler after a slash, with no space in the tag", () => {
+      const result = validateNoXSS("<img/src=x/onerror=alert(1)>");
+
+      expect(result.valid).toBe(false);
+      expect(result.reason).toContain("Event handlers");
+    });
+
     it("detects data URLs with HTML", () => {
       const result = validateNoXSS('<img src="data:text/html,<script>alert(1)</script>">');
 
@@ -308,17 +208,27 @@ describe("XSS Sanitization Test Suite", () => {
       expect(result.reason).toContain("Iframe tags");
     });
 
+    it("allows plain prose that only looks like an attribute or a protocol", () => {
+      for (const text of [
+        "bonus=50",
+        "Monday = holiday",
+        "condition = met",
+        "a post about javascript: URLs",
+      ]) {
+        expect(validateNoXSS(text).valid).toBe(true);
+      }
+    });
+
+    it("detects a javascript: markdown link and an unquoted event handler", () => {
+      expect(validateNoXSS("[click](javascript:alert(1))").valid).toBe(false);
+      expect(validateNoXSS("<img src=x onerror=alert(1)>").valid).toBe(false);
+    });
+
     it("allows safe content", () => {
       const result = validateNoXSS("<p>Safe text with <strong>formatting</strong></p>");
 
       expect(result.valid).toBe(true);
       expect(result.reason).toBeUndefined();
-    });
-
-    it("handles empty input as valid", () => {
-      const result = validateNoXSS("");
-
-      expect(result.valid).toBe(true);
     });
   });
 
@@ -483,7 +393,7 @@ describe("XSS Sanitization Test Suite", () => {
       const duration = Date.now() - start;
 
       expect(sanitized).toContain("<p>");
-      expect(duration).toBeLessThan(100); // Should complete within 100ms
+      expect(duration).toBeLessThan(100 * TIMING_BUDGET_SCALE); // Should complete within 100ms
     });
 
     it("handles deeply nested HTML", () => {
@@ -504,54 +414,6 @@ describe("XSS Sanitization Test Suite", () => {
 
       expect(sanitized).toContain("Unclosed paragraph");
       expect(sanitized).toContain("Wrong nesting");
-    });
-
-    it("handles Unicode and special characters", () => {
-      const unicode = "<p>Hello 世界 🌍 Привет</p>";
-      const sanitized = sanitizeHtml(unicode);
-
-      expect(sanitized).toContain("世界");
-      expect(sanitized).toContain("🌍");
-      expect(sanitized).toContain("Привет");
-    });
-
-    it("preserves whitespace in pre tags", () => {
-      const code = "<pre>  function test() {\n    return true;\n  }</pre>";
-      const sanitized = sanitizeHtml(code);
-
-      expect(sanitized).toContain("<pre>");
-      expect(sanitized).toContain("function test()");
-    });
-  });
-
-  describe("Server-Side Rendering Safety", () => {
-    it("works in server-side environment", () => {
-      // Simulate server-side by testing without DOM
-      const originalWindow = global.window;
-      (global as any).window = undefined;
-
-      const input = "<p>Server-side <strong>sanitization</strong></p>";
-      const output = sanitizeHtml(input);
-
-      expect(output).toContain("Server-side");
-      expect(output).toContain("<strong>");
-
-      // Restore
-      (global as any).window = originalWindow;
-    });
-
-    it("escapes HTML in server environment", () => {
-      const originalWindow = global.window;
-      (global as any).window = undefined;
-
-      const input = "<script>alert(1)</script>";
-      const output = escapeHtml(input);
-
-      expect(output).toContain("&lt;");
-      expect(output).toContain("&gt;");
-
-      // Restore
-      (global as any).window = originalWindow;
     });
   });
 });

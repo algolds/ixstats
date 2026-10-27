@@ -1,0 +1,88 @@
+import type { Prisma } from "@prisma/client";
+import { z } from "zod";
+import type { RealmClock } from "~/lib/realms/realm-clock";
+import { readNationGrowthTable, type NationGrowthTable } from "~/lib/realms/nation-growth-defaults";
+
+const RealmSettingsSchema = z.object({
+  maxNationsPerUser: z.number().int().min(1).max(20).catch(1).default(1),
+});
+
+type RealmSettings = z.infer<typeof RealmSettingsSchema>;
+
+/** Typed view of `Realm.settings`. Unknown keys are ignored; bad values fall back to defaults. */
+export function realmSettings(settings: Prisma.JsonValue | null | undefined): RealmSettings {
+  const parsed = RealmSettingsSchema.safeParse(settings ?? {});
+  return parsed.success ? parsed.data : { maxNationsPerUser: 1 };
+}
+
+/** The stored settings object; a non-object becomes `{}`. */
+function storedSettings(settings: Prisma.JsonValue | null | undefined): Prisma.JsonObject {
+  return settings && typeof settings === "object" && !Array.isArray(settings) ? settings : {};
+}
+
+/** `Realm.settings` with the nation cap set; every other stored key is kept (a non-object becomes `{}`). */
+export function withMaxNationsPerUser(
+  settings: Prisma.JsonValue | null | undefined,
+  maxNationsPerUser: number
+): Prisma.JsonObject {
+  return { ...storedSettings(settings), maxNationsPerUser };
+}
+
+/**
+ * `Realm.settings` with the clock set (read it with `storedRealmClock` in `~/server/shared/realm-time`); the retired
+ * in-world date label is dropped, every other key kept.
+ */
+export function withRealmClock(
+  settings: Prisma.JsonValue | null | undefined,
+  clock: RealmClock
+): Prisma.JsonObject {
+  const { clock: _previous, inWorldDate: _label, ...rest } = storedSettings(settings);
+  return { ...rest, clock };
+}
+
+/** The founder line's text when site staff set one (`settings.founderTitle`); null shows the realm's creator. */
+export function realmFounderTitle(settings: Prisma.JsonValue | null | undefined): string | null {
+  const title = storedSettings(settings).founderTitle;
+  return typeof title === "string" && title.trim() ? title.trim() : null;
+}
+
+/** `Realm.settings` with the founder title set, or removed (`null`: the creator again); other keys are kept. */
+export function withFounderTitle(
+  settings: Prisma.JsonValue | null | undefined,
+  founderTitle: string | null
+): Prisma.JsonObject {
+  const { founderTitle: _previous, ...rest } = storedSettings(settings);
+  return founderTitle ? { ...rest, founderTitle } : rest;
+}
+
+/** The growth table the realm's new nations get (`settings.nationDefaults`), else IxStats's defaults. */
+export function realmNationDefaults(
+  settings: Prisma.JsonValue | null | undefined
+): NationGrowthTable {
+  return readNationGrowthTable(storedSettings(settings).nationDefaults);
+}
+
+/** Whether the realm stores its own growth table (otherwise it follows IxStats's defaults). */
+export function hasNationDefaults(settings: Prisma.JsonValue | null | undefined): boolean {
+  return storedSettings(settings).nationDefaults !== undefined;
+}
+
+/** `Realm.settings` with the growth table set, or removed (`null`: IxStats's defaults); other keys are kept. */
+export function withNationDefaults(
+  settings: Prisma.JsonValue | null | undefined,
+  table: NationGrowthTable | null
+): Prisma.JsonObject {
+  const { nationDefaults: _previous, ...rest } = storedSettings(settings);
+  return table ? { ...rest, nationDefaults: table } : rest;
+}
+
+/**
+ * `Realm.settings` with the inactivity rules (ToS §2.8) set: `inactivityDays` (null turns release off) and whether
+ * an inactive nation is kept for its former holder during the reclaim window. Other keys are kept.
+ */
+export function withInactivity(
+  settings: Prisma.JsonValue | null | undefined,
+  input: { inactivityDays: number | null; reclaimWindowExclusive: boolean }
+): Prisma.JsonObject {
+  return { ...storedSettings(settings), ...input };
+}

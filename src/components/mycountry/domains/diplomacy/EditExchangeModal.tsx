@@ -1,7 +1,14 @@
 "use client";
 
+import { EditPencil, FloppyDisk, WarningTriangle } from "iconoir-react";
+
 import React from "react";
 import { useNotify } from "~/hooks/useNotify";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import { Label } from "~/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +16,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "~/components/ui/dialog";
-import { RiEditLine, RiAlertLine, RiSave3Line } from "react-icons/ri";
 
 interface CulturalExchange {
   id: string;
@@ -57,9 +63,9 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <RiEditLine className="h-6 w-6 text-[--intel-gold]" />
-              Edit Cultural Exchange
+            <DialogTitle className="flex items-center gap-2">
+              <EditPencil className="text-label-secondary h-5 w-5" />
+              Edit cultural exchange
             </DialogTitle>
             <DialogDescription>
               Update the title and description of your cultural exchange program
@@ -67,79 +73,55 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* Warning Message */}
-            <div className="flex items-start gap-3 rounded-lg border border-orange-500/30 bg-orange-500/10 p-4">
-              <RiAlertLine className="mt-0.5 h-5 w-5 shrink-0 text-orange-400" />
-              <div className="text-sm text-[--intel-silver]">
-                <p className="mb-1 font-medium text-orange-400">Limited Editing</p>
-                <p>
-                  You can only modify the title and description. Other program details cannot be
-                  changed once the exchange is created.
-                </p>
-              </div>
-            </div>
+            <Alert>
+              <WarningTriangle className="text-yellow" />
+              <AlertTitle>Limited editing</AlertTitle>
+              <AlertDescription>
+                You can only modify the title and description. Other program details cannot be
+                changed once the exchange is created.
+              </AlertDescription>
+            </Alert>
 
-            {/* Edit Form */}
             <div className="space-y-4">
-              <div>
-                <label className="text-foreground mb-2 block text-sm font-medium">
-                  Exchange Title
-                </label>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="edit-exchange-title">Exchange title</Label>
+                <Input
+                  id="edit-exchange-title"
                   type="text"
                   value={formData.title}
                   onChange={handleTitleChange}
-                  className="text-foreground w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 placeholder-[--intel-silver] focus:ring-2 focus:ring-[--intel-gold]/50 focus:outline-none"
                   placeholder="Enter exchange title"
                   maxLength={100}
                 />
-                <p className="mt-1 text-xs text-[--intel-silver]">
+                <p className="text-label-secondary text-footnote tabular-nums">
                   {formData.title.length}/100 characters
                 </p>
               </div>
 
-              <div>
-                <label className="text-foreground mb-2 block text-sm font-medium">
-                  Description
-                </label>
-                <textarea
+              <div className="space-y-2">
+                <Label htmlFor="edit-exchange-description">Description</Label>
+                <Textarea
+                  id="edit-exchange-description"
                   value={formData.description}
                   onChange={handleDescriptionChange}
-                  className="text-foreground min-h-[120px] w-full resize-none rounded-lg border border-white/10 bg-white/5 px-4 py-3 placeholder-[--intel-silver] focus:ring-2 focus:ring-[--intel-gold]/50 focus:outline-none"
+                  className="min-h-[120px] resize-none"
                   placeholder="Enter exchange description"
                   maxLength={500}
                 />
-                <p className="mt-1 text-xs text-[--intel-silver]">
+                <p className="text-label-secondary text-footnote tabular-nums">
                   {formData.description.length}/500 characters
                 </p>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
-              <button
-                onClick={() => onOpenChange(false)}
-                className="flex-1 rounded-lg bg-white/5 px-4 py-3 font-medium text-[--intel-silver] transition-colors hover:bg-white/10"
-              >
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
                 Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isPending}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[--intel-gold]/20 px-4 py-3 font-medium text-[--intel-gold] transition-colors hover:bg-[--intel-gold]/30 disabled:opacity-50"
-              >
-                {isPending ? (
-                  <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[--intel-gold]/20 border-t-[--intel-gold]" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <RiSave3Line className="h-4 w-4" />
-                    Save Changes
-                  </>
-                )}
-              </button>
+              </Button>
+              <Button className="flex-1" onClick={handleSave} disabled={isPending}>
+                <FloppyDisk className="h-4 w-4" />
+                {isPending ? "Saving…" : "Save Changes"}
+              </Button>
             </div>
           </div>
         </DialogContent>

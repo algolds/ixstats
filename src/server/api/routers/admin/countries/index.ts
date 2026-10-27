@@ -8,14 +8,17 @@
  *  - import:  roster file analyze + import (parseRosterFile, create/update country rows)
  *  - godMode: system-owner direct country writes, bulk update, audit log, scenarios, announcements, maintenance
  *  - grid:    admin country grid (sort/filter/search) and per-country detail drill-down
+ *  - growth:  one country's growth fields, validated and audited
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { adminCountriesImportRouter } from "./import";
 import { adminCountriesGodModeRouter } from "./godMode";
 import { adminCountriesGridRouter } from "./grid";
+import { adminCountriesGrowthRouter } from "./growth";
 
 export const adminCountriesRouter = mergeRouters(
   adminCountriesImportRouter,
   adminCountriesGodModeRouter,
-  adminCountriesGridRouter
+  adminCountriesGridRouter,
+  adminCountriesGrowthRouter
 );

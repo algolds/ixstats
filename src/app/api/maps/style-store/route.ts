@@ -1,29 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
-import { isSystemOwner } from "~/lib/auth";
+import { requireAdminSession } from "~/server/shared/route-auth";
 import { join } from "path";
 import { readFile } from "fs/promises";
 import { getMapGlyphsUrl } from "~/lib/base-path";
 
+const THEMES = ["standard", "dark", "paper"];
+
+/** The `theme` query parameter when it names a known theme. */
+function readTheme(request: NextRequest) {
+  const theme = new URL(request.url).searchParams.get("theme");
+  return theme && THEMES.includes(theme) ? theme : null;
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.userId) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    }
-    if (!isSystemOwner(session.userId)) {
-      const role = (session.sessionClaims?.metadata as any)?.role;
-      if (!["admin", "owner", "staff"].includes(role)) {
-        return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-      }
-    }
+    const denied = await requireAdminSession();
+    if (denied instanceof NextResponse) return denied;
 
-    const { searchParams } = new URL(request.url);
-    const theme = searchParams.get("theme");
-    if (!theme || !["standard", "dark", "paper"].includes(theme)) {
-      return NextResponse.json({ error: "Invalid theme parameter" }, { status: 400 });
-    }
+    const theme = readTheme(request);
+    if (!theme) return NextResponse.json({ error: "Invalid theme parameter" }, { status: 400 });
 
     let styleJson: any;
 
@@ -44,11 +40,13 @@ export async function GET(request: NextRequest) {
     // 3. Set glyphs URL dynamically so Maputnik can load fonts
     styleJson.glyphs = getMapGlyphsUrl();
 
-    // 4. Update data URLs of geojson sources for Maputnik preview
+    // 4. Update data URLs of geojson sources for Maputnik preview (one realm's data: ?realm=, Ixnay by default)
+    const realm = new URL(request.url).searchParams.get("realm");
+    const realmQuery = realm ? `?realm=${encodeURIComponent(realm)}` : "";
     if (styleJson.sources) {
       for (const [key, source] of Object.entries(styleJson.sources as Record<string, any>)) {
         if (source.type === "geojson") {
-          source.data = `/api/maps/editor-source/${key}`;
+          source.data = `/api/maps/editor-source/${key}${realmQuery}`;
         }
       }
     }
@@ -68,22 +66,11 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.userId) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    }
-    if (!isSystemOwner(session.userId)) {
-      const role = (session.sessionClaims?.metadata as any)?.role;
-      if (!["admin", "owner", "staff"].includes(role)) {
-        return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-      }
-    }
+    const denied = await requireAdminSession();
+    if (denied instanceof NextResponse) return denied;
 
-    const { searchParams } = new URL(request.url);
-    const theme = searchParams.get("theme");
-    if (!theme || !["standard", "dark", "paper"].includes(theme)) {
-      return NextResponse.json({ error: "Invalid theme parameter" }, { status: 400 });
-    }
+    const theme = readTheme(request);
+    if (!theme) return NextResponse.json({ error: "Invalid theme parameter" }, { status: 400 });
 
     const body = await request.json();
 

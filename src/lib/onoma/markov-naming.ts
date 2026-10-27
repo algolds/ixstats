@@ -9,8 +9,6 @@
 
 import { makeRng } from "~/lib/worldgen/rng";
 
-// ── Types ────────────────────────────────────
-
 export interface LanguageFamily {
   id: string;
   name: string;
@@ -22,18 +20,7 @@ export interface LanguageFamily {
   minLength: number;
   maxLength: number;
   vowelRatio: [number, number];
-  riverTemplates: string[];
-  lakeTemplates: string[];
-  mountainTemplates: string[];
-  seaTemplates: string[];
 }
-
-export interface NamingConfig {
-  families: LanguageFamily[];
-  regionAssignments?: Map<number, string>;
-}
-
-// ── Constants ────────────────────────────────
 
 const VOWELS = new Set("aeiouàáâãäåèéêëìíîïòóôõöùúûüæœ");
 const END_TOKEN = "$";
@@ -45,15 +32,13 @@ function isVowel(c: string): boolean {
   return VOWELS.has(c.toLowerCase());
 }
 
-// ── Syllable Splitting ───────────────────────
-
 /**
  * Split a word into pseudo-syllables (max 5 chars each).
  * Breaks after a vowel followed by a consonant followed by another vowel,
  * keeping consonant clusters with the following vowel.
  * "nordheim" → ["nord","heim"], "istanbul" → ["is","tan","bul"]
  */
-export function splitIntoSyllables(word: string): string[] {
+function splitIntoSyllables(word: string): string[] {
   const w = word.toLowerCase();
   if (w.length <= MAX_SYLL) return [w];
 
@@ -84,8 +69,6 @@ export function splitIntoSyllables(word: string): string[] {
   }
   return out.length > 0 ? out : [w];
 }
-
-// ── Post-processing ──────────────────────────
 
 function removeTripleLetters(s: string): string {
   let r = "";
@@ -121,8 +104,6 @@ function postProcess(s: string): string {
   return collapseDoubleVowels(removeTripleLetters(s));
 }
 
-// ── Training ─────────────────────────────────
-
 /**
  * Build a language family from seed words.
  * Trains syllable-level transitions: outer key = last char of prev syllable
@@ -137,10 +118,6 @@ export function buildLanguageFamily(
     minLength?: number;
     maxLength?: number;
     vowelRatio?: [number, number];
-    riverTemplates?: string[];
-    lakeTemplates?: string[];
-    mountainTemplates?: string[];
-    seaTemplates?: string[];
   } = {}
 ): LanguageFamily {
   const transitions = new Map<string, Map<string, number>>();
@@ -182,14 +159,8 @@ export function buildLanguageFamily(
     minLength: options.minLength ?? 4,
     maxLength: options.maxLength ?? 12,
     vowelRatio: options.vowelRatio ?? [0.3, 0.6],
-    riverTemplates: options.riverTemplates ?? ["$N River", "River $N"],
-    lakeTemplates: options.lakeTemplates ?? ["Lake $N"],
-    mountainTemplates: options.mountainTemplates ?? ["Mount $N", "$N Mountains"],
-    seaTemplates: options.seaTemplates ?? ["Sea of $N", "$N Sea"],
   };
 }
-
-// ── Generation ───────────────────────────────
 
 /**
  * Markov name generator. Deterministic when given a seed.
@@ -316,127 +287,4 @@ export class MarkovNameGenerator {
     this.generated.add(fallback);
     return fallback;
   }
-
-  private fromTemplate(templates: string[]): string {
-    const root = this.generate();
-    return templates[Math.floor(this.rng() * templates.length)]!.replace("$N", root);
-  }
-
-  generateRiverName(): string {
-    return this.fromTemplate(this.family.riverTemplates);
-  }
-  generateLakeName(): string {
-    return this.fromTemplate(this.family.lakeTemplates);
-  }
-  generateMountainName(): string {
-    return this.fromTemplate(this.family.mountainTemplates);
-  }
-  generateSeaName(): string {
-    return this.fromTemplate(this.family.seaTemplates);
-  }
-
-  getGenerated(): ReadonlySet<string> {
-    return this.generated;
-  }
-
-  addExisting(names: Iterable<string>): void {
-    for (const n of names) this.generated.add(n);
-  }
-}
-
-// ── Multi-family coordinator ─────────────────
-
-/**
- * Manages multiple naming generators, one per language family.
- * Assigns families to regions and ensures global name uniqueness.
- */
-export class WorldNamingSystem {
-  private generators: Map<string, MarkovNameGenerator> = new Map();
-  private allNames: Set<string> = new Set();
-  private familyIds: string[];
-  private rng: () => number;
-
-  constructor(families: LanguageFamily[], seed: number) {
-    this.rng = makeRng(seed);
-    this.familyIds = families.map((f) => f.id);
-    for (const family of families) {
-      this.generators.set(family.id, new MarkovNameGenerator(family, seed + hashString(family.id)));
-    }
-  }
-
-  getGenerator(familyId: string): MarkovNameGenerator | undefined {
-    return this.generators.get(familyId);
-  }
-
-  randomFamily(): string {
-    return this.familyIds[Math.floor(this.rng() * this.familyIds.length)]!;
-  }
-
-  /** Assign families to regions via BFS from seed points, with mutation chance */
-  assignFamilies(regionCount: number, neighbors: Map<number, number[]>): Map<number, string> {
-    const assignments = new Map<number, string>();
-    const fc = this.familyIds.length;
-    const seedCount = Math.min(fc, regionCount);
-    const idx = Array.from({ length: regionCount }, (_, i) => i);
-
-    for (let i = idx.length - 1; i > 0; i--) {
-      const j = Math.floor(this.rng() * (i + 1));
-      [idx[i], idx[j]] = [idx[j]!, idx[i]!];
-    }
-    for (let i = 0; i < seedCount; i++) assignments.set(idx[i]!, this.familyIds[i % fc]!);
-
-    const queue = [...idx.slice(0, seedCount)];
-    while (queue.length > 0) {
-      const cur = queue.shift()!;
-      const fam = assignments.get(cur);
-      if (!fam) continue;
-      for (const nb of neighbors.get(cur) ?? []) {
-        if (!assignments.has(nb)) {
-          assignments.set(
-            nb,
-            this.rng() < 0.15 ? this.familyIds[Math.floor(this.rng() * fc)]! : fam
-          );
-          queue.push(nb);
-        }
-      }
-    }
-    for (let i = 0; i < regionCount; i++) {
-      if (!assignments.has(i)) assignments.set(i, this.randomFamily());
-    }
-    return assignments;
-  }
-
-  private withGen(
-    familyId: string,
-    fallback: string,
-    fn: (g: MarkovNameGenerator) => string
-  ): string {
-    const gen = this.generators.get(familyId);
-    if (!gen) return `${fallback}${this.allNames.size}`;
-    gen.addExisting(this.allNames);
-    const name = fn(gen);
-    this.allNames.add(name);
-    return name;
-  }
-
-  generateName(familyId: string, options: { useSuffix?: boolean } = {}): string {
-    return this.withGen(familyId, "Region", (g) => g.generate(options));
-  }
-  generateRiverName(familyId: string): string {
-    return this.withGen(familyId, "River ", (g) => g.generateRiverName());
-  }
-  generateLakeName(familyId: string): string {
-    return this.withGen(familyId, "Lake ", (g) => g.generateLakeName());
-  }
-  generateSeaName(familyId: string): string {
-    return this.withGen(familyId, "Sea ", (g) => g.generateSeaName());
-  }
-}
-
-// ── Utilities ────────────────────────────────
-
-function hashString(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
 }

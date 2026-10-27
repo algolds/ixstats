@@ -1,171 +1,140 @@
+import type { Prisma, PrismaClient } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { isSystemOwner } from "~/lib/auth";
+import { adminProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { invalidateCache } from "~/lib/cache";
-import { clearLayerCache } from "~/server/shared/layer-cache";
+import {
+  COUNTRY_MAP_SELECT,
+  countryMapChanged,
+  invalidateRealmMap,
+  touchesCountryMapFields,
+} from "~/server/shared/map-invalidation";
 
-export const managementLifecycleProcedures = {
-  // SECURITY: Admin-only endpoint for triggering system-wide economic narratives
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { evaluateCountryThresholds } from "~/server/shared/intelligence-alert-thresholds";
+import {
+  MAX_COUNTRY_NAME_LENGTH,
+  checkCountryName,
+  normalizeCountryName,
+  renameCountryInTx,
+} from "~/server/shared/country-rename";
 
-  // General update mutation for country fields (used by editor)
-  update: protectedProcedure
-    .input(
-      z
-        .object({
-          id: z.string(),
-        })
-        .passthrough()
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...updates } = input;
+/**
+ * The rename an update asks for, or null when it names no new name. Refuses (CONFLICT) a name the
+ * country cannot take.
+ */
+async function pendingRename(db: PrismaClient, id: string, rawName: unknown) {
+  if (typeof rawName !== "string") return null;
+  const current = await db.country.findUnique({
+    where: { id },
+    select: { name: true, slug: true, realmId: true },
+  });
+  if (!current || normalizeCountryName(rawName) === current.name) return null;
+  const check = await checkCountryName(db, { ...current, id }, rawName);
+  if (!check.available) {
+    throw new TRPCError({ code: "CONFLICT", message: check.reason ?? "Name not available" });
+  }
+  return { country: { id, slug: current.slug ?? null }, name: rawName };
+}
 
-      if (!ctx.auth?.userId) {
-        throw new Error("Not authenticated");
-      }
+/**
+ * What an owner may change through `countries.update`: the name (Settings rename) and the flag (Settings flag). Strict, so
+ * any other key (a figure the simulation owns, `ownerUserId`, `realmId`, a nested relation write) is refused, not dropped.
+ */
+const ownerUpdateInput = z
+  .object({
+    id: z.string(),
+    name: z.string().trim().min(1).max(MAX_COUNTRY_NAME_LENGTH).optional(),
+    flag: z.string().max(2048).optional(),
+  })
+  .strict();
 
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-      });
+/** What the admin country panel edits: identity columns, the stored figures and the two profile visibility toggles. */
+const adminUpdateInput = z
+  .object({
+    id: z.string(),
+    name: z.string().trim().min(1).max(MAX_COUNTRY_NAME_LENGTH).optional(),
+    continent: z.string().max(100).nullable().optional(),
+    region: z.string().max(100).nullable().optional(),
+    currentPopulation: z.number().finite().nonnegative().optional(),
+    currentGdpPerCapita: z.number().finite().nonnegative().optional(),
+    currentTotalGdp: z.number().finite().nonnegative().optional(),
+    hideDiplomaticOps: z.boolean().optional(),
+    hideStratcommIntel: z.boolean().optional(),
+  })
+  .strict();
 
-      if (!isSystemOwner(ctx.auth.userId) && (!userProfile || userProfile.countryId !== id)) {
-        throw new Error("You do not have permission to edit this country.");
-      }
+type CountryColumnUpdates = Omit<Prisma.CountryUpdateInput, "slug"> & { name?: string };
 
-      try {
-        const filteredUpdates = Object.fromEntries(
-          Object.entries(updates).filter(([_, value]) => value !== undefined)
-        );
+/** Writes allow-listed scalar columns: a new name through the shared rename, then the map and the alert thresholds. */
+async function applyCountryUpdate(
+  ctx: { db: PrismaClient },
+  id: string,
+  updates: CountryColumnUpdates
+) {
+  // A new name renames through the shared path, so the slug, its redirect and the identity's
+  // country name move with it. Checked before the try, so a taken name stays a CONFLICT.
+  const rename = await pendingRename(ctx.db, id, updates.name);
 
-        const updatedCountry = await ctx.db.country.update({
+  try {
+    const filteredUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, value]) => value !== undefined)
+    ) as CountryColumnUpdates;
+
+    // Only a column the political layer reads moves the map, so the before-image is read for those alone
+    const touchesMap = touchesCountryMapFields(filteredUpdates);
+    const before = touchesMap
+      ? await ctx.db.country.findUnique({ where: { id }, select: COUNTRY_MAP_SELECT })
+      : null;
+
+    const { name: _name, ...otherUpdates } = filteredUpdates;
+    const updatedCountry = rename
+      ? await ctx.db.$transaction(
+          async (tx) =>
+            (
+              await renameCountryInTx(tx, rename.country, rename.name, {
+                ...otherUpdates,
+                updatedAt: new Date(),
+              })
+            ).country
+        )
+      : await ctx.db.country.update({
           where: { id },
-          data: {
-            ...filteredUpdates,
-            updatedAt: new Date(),
-          },
+          data: { ...filteredUpdates, updatedAt: new Date() },
         });
 
-        await invalidateCache(["countries."]);
-        clearLayerCache("political");
+    await invalidateCache(["countries."]);
+    if (touchesMap && countryMapChanged(before, updatedCountry)) {
+      await invalidateRealmMap(ctx.db, updatedCountry.realmId);
+    }
 
-        let targetUserId = userProfile?.id;
-        if (!targetUserId) {
-          const countryOwner = await ctx.db.user.findFirst({
-            where: { countryId: id },
-          });
-          targetUserId = countryOwner?.id;
-        }
+    try {
+      await evaluateCountryThresholds(ctx.db, id);
+    } catch (e) {
+      console.error("[Countries API] Error evaluating thresholds on country update:", e);
+    }
 
-        if (targetUserId) {
-          try {
-            const { evaluateThresholds } = await import("../../intelligence/alerts");
-            await evaluateThresholds(ctx.db, id, targetUserId);
-          } catch (e) {
-            console.error("[Countries API] Error evaluating thresholds on country update:", e);
-          }
-        }
+    return updatedCountry;
+  } catch (error) {
+    console.error("[Countries API] Failed to update country:", error);
+    throw new Error(
+      `Failed to update country: ${error instanceof Error ? error.message : "Unknown error"}`,
+      { cause: error }
+    );
+  }
+}
 
-        return updatedCountry;
-      } catch (error) {
-        console.error("[Countries API] Failed to update country:", error);
-        throw new Error(
-          `Failed to update country: ${error instanceof Error ? error.message : "Unknown error"}`
-        );
-      }
-    }),
+export const managementLifecycleProcedures = {
+  /** Owner edits from Settings: the name and the flag only. */
+  update: rateLimitedMutationProcedure.input(ownerUpdateInput).mutation(async ({ ctx, input }) => {
+    const { id, ...updates } = input;
+    await assertCountryWriteAccess(ctx, id);
+    return applyCountryUpdate(ctx, id, updates);
+  }),
 
-  getLiveEvents: publicProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        limit: z.number().optional().default(10),
-        windowHours: z.number().optional().default(48),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const sinceWindow = new Date(Date.now() - input.windowHours * 60 * 60 * 1000);
-
-      const [
-        country,
-        crisisEvents,
-        diplomaticEvents,
-        embassyMissions,
-        cabinetMeetings,
-        securityThreats,
-      ] = await Promise.all([
-        ctx.db.country.findUnique({
-          where: { id: input.countryId },
-        }),
-        ctx.db.crisisEvent.findMany({
-          where: {
-            affectedCountries: { contains: input.countryId },
-            createdAt: { gte: sinceWindow },
-          },
-          orderBy: { createdAt: "desc" },
-          take: input.limit,
-        }),
-        ctx.db.diplomaticEvent.findMany({
-          where: {
-            OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }],
-            createdAt: { gte: sinceWindow },
-          },
-          orderBy: { createdAt: "desc" },
-          take: input.limit,
-        }),
-        ctx.db.embassyMission.findMany({
-          where: {
-            embassy: {
-              OR: [{ hostCountryId: input.countryId }, { guestCountryId: input.countryId }],
-            },
-            OR: [{ updatedAt: { gte: sinceWindow } }, { completesAt: { gte: sinceWindow } }],
-          },
-          include: {
-            embassy: {
-              include: {
-                hostCountry: { select: { name: true, id: true } },
-                guestCountry: { select: { name: true, id: true } },
-              },
-            },
-          },
-          orderBy: { updatedAt: "desc" },
-          take: input.limit,
-        }),
-        ctx.db.cabinetMeeting.findMany({
-          where: {
-            countryId: input.countryId,
-            OR: [
-              { status: { in: ["scheduled", "in_progress"] } },
-              { status: "completed", completedAt: { gte: sinceWindow } },
-            ],
-          },
-          orderBy: [{ scheduledDate: "asc" }, { createdAt: "desc" }],
-          take: input.limit,
-        }),
-        ctx.db.securityThreat.findMany({
-          where: {
-            countryId: input.countryId,
-            isActive: true,
-            OR: [{ updatedAt: { gte: sinceWindow } }, { createdAt: { gte: sinceWindow } }],
-          },
-          orderBy: { updatedAt: "desc" },
-          take: input.limit,
-        }),
-      ]);
-
-      return {
-        country,
-        crisisEvents,
-        diplomaticEvents,
-        embassyMissions,
-        cabinetMeetings,
-        securityThreats,
-      };
-    }),
-
-  // Toggle atomic government mode for a country
-
-  // Recalculate atomic effectiveness
-
-  // Create a new country from builder
-
-  // Storyteller effects endpoints
+  /** The admin country panel: identity, stored figures and profile visibility. */
+  adminUpdate: adminProcedure.input(adminUpdateInput).mutation(async ({ ctx, input }) => {
+    const { id, ...updates } = input;
+    return applyCountryUpdate(ctx, id, updates);
+  }),
 };

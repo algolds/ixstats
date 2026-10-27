@@ -32,7 +32,6 @@ export enum StorytellerEffectType {
   SPECIAL_EVENT = "special_event",
   TRADE_AGREEMENT = "trade_agreement",
   NATURAL_DISASTER = "natural_disaster",
-  ECONOMIC_POLICY = "economic_policy",
 }
 
 // Base country data from Excel roster
@@ -113,6 +112,13 @@ export interface CountryStats extends BaseCountryData {
   localGrowthFactor: number;
   globalGrowthFactor: number;
 
+  /**
+   * Annual GDP per capita growth (decimal) the projection applies at `lastCalculated`: the input
+   * rate after factors, effects, the tier cap and diminishing returns. What surfaces show as GDP
+   * growth; set by `calculateTimeProgression`.
+   */
+  effectiveGdpGrowth?: number;
+
   // Historical data (optional)
   historicalData?: HistoricalDataPoint[];
 }
@@ -184,36 +190,7 @@ export interface EconomicConfig {
 }
 
 // System configuration
-export interface IxStatsConfig {
-  economic: EconomicConfig;
-  timeSettings: {
-    baselineYear: number;
-    currentIxTimeMultiplier: number;
-    updateIntervalSeconds: number;
-  };
-  displaySettings: {
-    defaultCurrency: string;
-    numberFormat: string;
-    showHistoricalData: boolean;
-    chartTimeRange: number;
-  };
-}
-
 // Global economic snapshot
-export interface GlobalEconomicSnapshot {
-  timestamp: any;
-  totalPopulation: number;
-  totalGdp: number;
-  averageGdpPerCapita: number;
-  countryCount: number;
-  economicTierDistribution: Record<EconomicTier, number>;
-  populationTierDistribution: Record<PopulationTier, number>;
-  averagePopulationDensity: number;
-  averageGdpDensity: number;
-  globalGrowthRate: number;
-  ixTimeTimestamp: number;
-}
-
 // Bot time response types
 export interface BotTimeResponse {
   ixTimeTimestamp: number;
@@ -241,7 +218,7 @@ export interface BotEndpointStatusResponse extends BotTimeResponse {
   };
 }
 
-export interface DerivedBotDisplayStatus extends BotTimeResponse {
+interface DerivedBotDisplayStatus extends BotTimeResponse {
   pausedAt?: number | null;
   pauseTimestamp?: number | null;
   botReady: boolean;
@@ -254,7 +231,7 @@ export interface DerivedBotDisplayStatus extends BotTimeResponse {
   uptime?: number;
 }
 
-export interface IxTimeState {
+interface IxTimeState {
   currentRealTime: string;
   currentIxTime: string;
   formattedIxTime: string;
@@ -296,21 +273,6 @@ export interface SystemStatus {
 }
 
 // Calculation result types
-export interface CalculationResult {
-  country: string;
-  oldStats: Partial<CountryStats>;
-  newStats: CountryStats;
-  timeElapsed: number;
-  calculationDate: number;
-  changes?: {
-    population: number;
-    gdpPerCapita: number;
-    totalGdp: number;
-    economicTier?: string;
-    populationTier?: string;
-  };
-}
-
 // Import/Export types
 export interface ImportAnalysis {
   totalCountries: number;
@@ -330,122 +292,6 @@ export interface ImportAnalysis {
   }>;
   analysisTime: number;
 }
-
-export interface ImportResult {
-  imported: number;
-  totalInFile: number;
-  countries: string[];
-  importTime: number;
-  timeSource: string;
-  errors?: string[];
-}
-
-// Time context information
-export interface TimeContext {
-  currentIxTime: number;
-  formattedCurrentTime: string;
-  gameEpoch: number;
-  formattedGameEpoch: string;
-  yearsSinceGameStart: number;
-  currentGameYear: number;
-  gameTimeDescription: string;
-  timeMultiplier: number;
-}
-
-// Forecast data
-export interface ForecastPoint {
-  ixTime: number;
-  formattedTime: string;
-  gameYear: number;
-  population: number;
-  gdpPerCapita: number;
-  totalGdp: number;
-  populationDensity?: number | null;
-  gdpDensity?: number | null;
-  economicTier: EconomicTier;
-  populationTier: PopulationTier;
-}
-
-export interface ForecastRange {
-  countryId: string;
-  countryName: string;
-  startTime: number;
-  endTime: number;
-  dataPoints: ForecastPoint[];
-}
-
-// Chart data types
-export interface ChartDataPoint {
-  date: string;
-  population: number;
-  gdpPerCapita: number;
-  totalGdp: number;
-  populationDensity: number;
-  gdpDensity: number;
-  economicEfficiency: number;
-  areaUtilization: number;
-}
-
-// API response wrappers
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
-
-export interface PaginatedResponse<T = unknown> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  hasNext: boolean;
-  hasPrevious: boolean;
-}
-
-// Form validation types
-export interface ValidationError {
-  field: string;
-  message: string;
-  code?: string;
-}
-
-export interface FormState {
-  isValid: boolean;
-  errors: ValidationError[];
-  isDirty: boolean;
-  isSubmitting: boolean;
-}
-
-// UI State types
-type LoadingState<T = unknown> = {
-  isLoading: boolean;
-  error?: string | null;
-  data?: T;
-};
-
-export interface TableColumn<T = unknown> {
-  key: string;
-  label: string;
-  sortable?: boolean;
-  width?: string;
-  align?: "left" | "center" | "right";
-  render?: (value: T, row: T) => React.ReactNode;
-}
-
-// Theme types
-export type ThemeMode = "light" | "dark" | "system";
-
-export interface ThemeConfig {
-  mode: ThemeMode;
-  colors: Record<string, string>;
-  fonts: Record<string, string>;
-  spacing: Record<string, string>;
-}
-
-// Utility types
-export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
-export type RequiredKeys<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
 
 // Database model types (matching Prisma schema)
 export interface Country {
@@ -478,15 +324,6 @@ export interface Country {
   updatedAt: Date;
 }
 
-export interface SystemConfig {
-  id: string;
-  key: string;
-  value: string;
-  description?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface CalculationLog {
   id: string;
   timestamp: Date;
@@ -497,61 +334,17 @@ export interface CalculationLog {
   notes?: string | null;
 }
 
-// FIXED: Tier mapping utilities
-export const ECONOMIC_TIER_INFO: Record<
-  EconomicTier,
-  { min: number; max: number; maxGrowth: number }
-> = {
-  [EconomicTier.IMPOVERISHED]: { min: 0, max: 9999, maxGrowth: 0.1 },
-  [EconomicTier.DEVELOPING]: { min: 10000, max: 24999, maxGrowth: 0.075 },
-  [EconomicTier.DEVELOPED]: { min: 25000, max: 34999, maxGrowth: 0.05 },
-  [EconomicTier.HEALTHY]: { min: 35000, max: 44999, maxGrowth: 0.035 },
-  [EconomicTier.STRONG]: { min: 45000, max: 54999, maxGrowth: 0.0275 },
-  [EconomicTier.VERY_STRONG]: { min: 55000, max: 64999, maxGrowth: 0.015 },
-  [EconomicTier.EXTRAVAGANT]: { min: 65000, max: Infinity, maxGrowth: 0.005 },
-};
-
-export const POPULATION_TIER_INFO: Record<PopulationTier, { min: number; max: number }> = {
-  [PopulationTier.TIER_1]: { min: 0, max: 9_999_999 },
-  [PopulationTier.TIER_2]: { min: 10_000_000, max: 29_999_999 },
-  [PopulationTier.TIER_3]: { min: 30_000_000, max: 49_999_999 },
-  [PopulationTier.TIER_4]: { min: 50_000_000, max: 79_999_999 },
-  [PopulationTier.TIER_5]: { min: 80_000_000, max: 119_999_999 },
-  [PopulationTier.TIER_6]: { min: 120_000_000, max: 349_999_999 },
-  [PopulationTier.TIER_7]: { min: 350_000_000, max: 499_999_999 },
-  [PopulationTier.TIER_X]: { min: 500_000_000, max: Infinity },
-};
-
-// Helper functions for tier determination
-export function getEconomicTierFromGdpPerCapita(gdpPerCapita: number): EconomicTier {
-  for (const [tier, info] of Object.entries(ECONOMIC_TIER_INFO)) {
-    if (gdpPerCapita >= info.min && gdpPerCapita <= info.max) {
-      return tier as EconomicTier;
-    }
-  }
-  return EconomicTier.IMPOVERISHED;
-}
-
-export function getPopulationTierFromPopulation(population: number): PopulationTier {
-  for (const [tier, info] of Object.entries(POPULATION_TIER_INFO)) {
-    if (population >= info.min && population <= info.max) {
-      return tier as PopulationTier;
-    }
-  }
-  return PopulationTier.TIER_X;
-}
-
-// FIXED: Growth rate conversion utilities
-export function decimalToPercentage(decimal: number): number {
-  return decimal * 100;
-}
-
-export function percentageToDecimal(percentage: number): number {
-  return percentage / 100;
-}
+// Tier mapping utilities & calculation functions (Canonical implementation in ~/lib/tier-utils)
+export {
+  ECONOMIC_TIER_INFO,
+  getEconomicTierFromGdpPerCapita,
+  getPopulationTierFromPopulation,
+  decimalToPercentage,
+  percentageToDecimal,
+} from "~/lib/tier-utils";
 
 // Define explicit types for complex fields
-export interface CalculatedStats {
+interface CalculatedStats {
   gdpGrowth: number;
   populationGrowth: number;
   inflation: number;
@@ -560,14 +353,14 @@ export interface CalculatedStats {
   // Add more fields as needed
 }
 
-export interface Projection {
+interface Projection {
   year: number;
   gdp: number;
   population: number;
   // Add more fields as needed
 }
 
-export interface HistoricalData {
+interface HistoricalData {
   year: number;
   gdp: number;
   population: number;
@@ -583,29 +376,29 @@ export interface StorytellerEffectRecord {
   timestamp: Date;
 }
 
-export interface EconomicProfile {
+interface EconomicProfile {
   sectorBreakdown: Record<string, number>;
   // Add more fields as needed
 }
 
-export interface LaborMarket {
+interface LaborMarket {
   employmentRate: number;
   unemploymentRate: number;
   // Add more fields as needed
 }
 
-export interface FiscalSystem {
+interface FiscalSystem {
   taxRates: Record<string, number>;
   // Add more fields as needed
 }
 
-export interface IncomeDistribution {
+interface IncomeDistribution {
   quintiles: number[];
   economicClasses?: string | any[];
   // Add more fields as needed
 }
 
-export interface GovernmentBudget {
+interface GovernmentBudget {
   total: number;
   categories: Record<string, number>;
   spendingCategories?: string | any[];
@@ -613,7 +406,7 @@ export interface GovernmentBudget {
 }
 
 // National Identity (database relation)
-export interface NationalIdentity {
+interface NationalIdentity {
   countryName?: string | null;
   officialName?: string | null;
   governmentType?: string | null;
@@ -663,7 +456,7 @@ export interface NationalIdentity {
   coatOfArmsUrl?: string | null;
 }
 
-export interface Demographics {
+interface Demographics {
   ageDistribution: Record<string, number>;
   regions?: string | any[];
   educationLevels?: string | any[];
@@ -671,7 +464,7 @@ export interface Demographics {
   // Add more fields as needed
 }
 
-export interface TierChangeProjection {
+interface TierChangeProjection {
   year: number;
   newTier: string;
   // Add more fields as needed
@@ -694,6 +487,10 @@ export interface CountryWithEconomicData {
   governmentType?: string | null;
   religion?: string | null;
   leader?: string | null;
+  /** The wiki the country's own page is on (`ixwiki`, or `iiwiki` for an Eurth nation). */
+  wikiSource?: string | null;
+  /** The country's own wiki page, when it names one (realm nations do). */
+  wikiPageTitle?: string | null;
   areaSqMi?: number | null;
   baselinePopulation: number;
   baselineGdpPerCapita: number;
@@ -789,27 +586,8 @@ export interface CountryWithEconomicData {
 }
 
 // Economic Policy Types
-export type PolicyCategory =
-  "fiscal" | "monetary" | "trade" | "investment" | "labor" | "infrastructure";
-
-export type PolicyStatus =
-  "draft" | "proposed" | "under_review" | "approved" | "rejected" | "implemented";
-
-export interface EconomicPolicy {
-  id: string;
-  title: string;
-  description: string;
-  category: PolicyCategory;
-  status: PolicyStatus;
-  proposedBy: string;
-  proposedDate: Date;
-  impact?: {
-    gdpGrowthProjection?: number;
-    unemploymentImpact?: number;
-    inflationImpact?: number;
-    budgetImpact?: number;
-  };
-  userId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+/**
+ * Time range options for historical charts & metric trend queries.
+ * Includes extended 4y/5y/20y selectors per Dashboard unification.
+ */
+export type TimeRange = "3m" | "6m" | "1y" | "2y" | "4y" | "5y" | "20y" | "all";

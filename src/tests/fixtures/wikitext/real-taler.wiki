@@ -1,0 +1,96 @@
+{{wip}}
+{{Infobox currency
+| currency_name_in_local = Dollarium ({{wp|Ecclesiastical Latin|Latin}})<br />Ħalr ([[Fhasen]]))
+| image_1 =
+| image_title_1 =
+| alt1 =
+| iso_code = LUT
+| issuing_authority = 
+| issuing_authority_website =
+| date_of_introduction = April 1st, 1343
+| date_of_introduction_source =
+| using_countries =
+| inflation_rate =
+| inflation_source_date = ''[https://www.cia.gov/library/publications/the-world-factbook/fields/2092.html The World Factbook]'', 2010 est.
+| subunit_ratio_1 = 1/100
+| subunit_name_1 = Cent
+| symbol = ₮
+| symbol_subunit_1 = ¢
+| nickname = Dollar
+| nickname_subunit_1 = 
+| plural = Talers
+| plural_subunit_1 = Cents
+| frequently_used_coins =
+| rarely_used_coins =
+| frequently_used_banknotes =
+| rarely_used_banknotes =
+}}
+The '''Taler''' (symbol: '''₮'''; ISO code: '''LUT''' for Levantine Union Taler), sometimes known as the '''dollar''', the '''thaler''', and officially as the '''Levantine Taler''', is the official currency of the [[Levantine Union]]. It is subdivided into 100 ''pence'' (singular: ''penny''). At various times, the taler was commodity money or bank notes backed by silver or gold, but it is currently fiat money, backed only by the economy in the areas where it is accepted. The taler is one of the world's oldest currencies still in use and which has been in continuous use since its inception. It is in use throughout the [[Talerzone|talerzone]].
+
+==History==
+The taler began its history as one of many types of coins issued in the medieval [[Holy Levantine Empire]]. The medieval Empire did not use a standardized system of currency, and instead relied on the issuance of precious metal weight-based coins as a unit of exchange, like many other premodern societies. The vassal rulers of the Empire retained the right to mint their own coins, leading to a confusing system of currency within the Empire by the mid-14th century, especially as the vassals had a tendency to debase their own currency. The taler was introduced by the Emperor [[List_of_Emperors_of_the_Levantines#XXX_Dynasty_3|Uc II]] in [[1343]] as part of a reform effort. The taler was a large silver coin, a rather innovative development in the history of Levantine currency. The new Imperial coin became extremely popular due to its reliable value and due to the number of silver mines within the Empire, becoming the main instrument of trade in the Empire by the 15th century. It was standardized in [[1505]] following the issuance of the Imperial Minting Ordinance, which limited the ability of the vassals to mint their own coins and required all coinage minted in the Empire to be a division of the taler or equal to a number of talers. The Ordinance had the practical effect of making the taler the base currency throughout the Empire, and by 1600 it was understood to be the main currency of the Empire, although it was never officially designated as such.
+{{Template:Economy of Urcea sidebar}}
+Several banks were responsible for the issuance and minting of talers by 1800, including the [[Royal Bank of Urcea]], which gradually became the most prominent institution associated with the Taler. The first Taler banknotes were issued in [[1811]]. With the dissolution of the Empire in [[1935]], most users of the currency adopted national currency laws designating it, or an equivalent, as their national currency. These provisions were superseded with the establishment of the [[Levantine Union]], which designated the Taler its official currency. In [[1954]], the Market and Currency Authority of the Levantine Union was established to govern the Taler. In 1966, the Taler replaced the [[Yonderian Argent]] as the official currency of the [[Yonderre|Most Serene Grand Duchy Yonderre]] following a referendum.
+
+==Market and Currency Authority of the Levantine Union==
+==Bills==
+
+The Taler bills, issued in denominations of 1, 5, 10, 20, 50, and 100, each display elements related to different members of the [[Levantine Union]]. Typically, the obverse shows an iconic structure associated with the nation being represented while the reverse depicts a founding figure of the nation. [[Burgundie]]'s represented bill - the 20 Taler note - breaks convention by showing ships on the open sea (an homage to its thalassocratic posture) on the obverse and a national romantic personification on the reverse. Although the specific artwork and design is chosen by the Levantine Union Currency Authority, the specific items to be depicted are established by official acts of the member governments of the Union.
+
+{| class="wikitable" style="text-align:center; width:60%"
+! width="20%" |Obverse!! width="60px" |Reverse!! |Country or Place Represented!! |Symbols and Figures
+|-
+|[[File:1obv.png|330px]]||[[File:1rev.png|330px]]||[[Fiannria]]||[[Old Brídhavn Tyn Hall]] <small>(Obverse)</small><br/>[[St. Bridget the Martyr]] <small>(Reverse)</small>
+|-
+|[[File:5 obverse.png|330px]]||[[File:5 reverse.png|330px]]||[[Yonderre]]||[[Collinebourg Palace]] <small>(Obverse)</small><br/>[[Joanus de Martigueux]] <small>(Reverse)</small>
+|-
+|[[File:10obv.png|330px]]||[[File:10rev.png|330px]]||[[Rhotia]] and [[Lapody]]||Imperial Palace <small>(Obverse)</small><br/>[[Conchobar I, Emperor of the Levantines]] <small>(Reverse)</small>
+|-
+|[[File:20obv.png|330px]]||[[File:20rev.png|330px]]||[[Burgundie]]||16th and 17th century [[Burgundie|Southern Deric]] trade ships <small>(Obverse)</small><br/>Marin-Estelle, personification of Burgundie <small>(Reverse)</small>
+|-
+|[[File:50obver.png|330px]]||[[File:50_reverse.png|330px]]||[[Urcea]]||[[Castle Welute]] <small>(Obverse)</small><br/>[[Gaius Julius Cicurinus|Saint Julius of the Caeline]]<small> (Reverse)</small>
+|-
+|[[File:100obv.png|330px]]||[[File:100 reverse.png|330px]]||[[Avonia]]||[[Anglasweorc]] <small>(Obverse)</small><br/>[[Avonia#Marcher_period|Margrave Edmund I]]<small>(Reverse)</small>
+|}
+==Pegged currencies==
+Currently, there are several currencies {{wpl|Fixed currency|pegged}} to the taler, some with fluctuation bands around a central rate and others with no fluctuations allowed around the central rate. This can be seen as a safety measure, especially for currencies of areas with weak economies. The taler is seen as a stable currency, i.e., there are no dramatic appreciations or depreciations of its value that might suddenly damage the economy or harm trade. Thus it provides security to traders and people holding that currency.
+
+{| class="wikitable sortable"  style="text-align:center; font-size:90%"
+|-
+! class="unsortable"| State
+! Pop. !! Area (km<sup>2</sup>) !! Code !! National currency !! Central rate
+! Pegged since !! Fluctua&shy;tion band !! Formerly pegged to 
+|-
+| {{flag|Kandara}}<br>{{flag|Peshabiwar}}<br>{{flag|Tapakdore}}<br>{{flag|Pukhgundi}}
+| style="text-align:right"| TBD
+| style="text-align:right"| TBD
+| CMS ƒ || Common Middle Sea Florin
+| 655.957 || <span style="display:none">1943</span>1 January [[1943]]
+| 0.00% || Colonial Florin of the Duchy of Bourgondi<br> Burgoignesc Taler ([[1935]]-[[1942]])
+|-
+| {{flag|Pursat}}
+| style="text-align:right"| TBD
+| style="text-align:right"| TBD
+| P₮|| Pursatni Taler
+| 84.73 || <span style="display:none">1943</span>1 January [[1976]]
+| 7.74% || Colonial Martillien Ducat <br> Burgoignesc Taler ([[1935]]-[[1975]])
+|-
+| {{flag|Galata}}
+| style="text-align:right"| 182.756.633
+| style="text-align:right"| 1.665.077
+| GA₳|| Galatan arganton
+| 25.00 || 1990
+| 5% ||
+|}
+[[Category: Levantia]]
+[[Category: Urcea]]
+[[Category: Levantine Union]]
+[[Category: Burgundie]]
+[[Category:Yonderre]]
+[[Category:Currency]]
+[[Category:IXWB]]
+[[Category: Canonical Article]]
+[[Category:Economy of Burgundie]]
+[[Category:Rhotia]]
+[[Category:Lapody]]
+[[Category: Incomplete articles (Urcea)]]

@@ -10,11 +10,19 @@
  */
 
 import { z } from "zod";
+import type { CardAuctionStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { auctionService } from "~/lib/economy/auction-service";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
+import { withAuctionFaces } from "~/lib/cards/hub/market-faces";
+import { INSCRIPTION_OMIT } from "~/lib/cards/inscription";
+import { assertAuthUserId, AUCTION_WITH_SELLER_INCLUDE } from "./_shared";
 
 /**
  * Card Market Router
@@ -25,21 +33,16 @@ export const cardMarketBidsRouter = createTRPCRouter({
    * Place bid on auction
    * Admin-only endpoint
    */
-  placeBid: protectedProcedure
+  placeBid: rateLimitedMutationProcedure
     .input(
       z.object({
         auctionId: z.string().min(1, "Auction ID is required"),
-        amount: z.number().min(1, "Bid amount must be at least 1 IxC"),
+        amount: z.number().min(1, "Bid amount must be at least 1 IxCredit"),
       })
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        if (!ctx.auth?.userId) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "User ID not found in authentication context",
-          });
-        }
+        assertAuthUserId(ctx);
 
         const auctionBefore = await ctx.db.cardAuction.findUnique({
           where: { id: input.auctionId },
@@ -79,14 +82,20 @@ export const cardMarketBidsRouter = createTRPCRouter({
             await notificationAPI.create({
               userId: auction.User.clerkUserId,
               title: "New Bid on Your Auction",
-              message: `Someone bid ${input.amount} IxC on your auction`,
+              message: `Someone bid ${input.amount} IxCredits on your auction`,
               type: "info",
               category: "economic",
               priority: "medium",
               metadata: { auctionId: input.auctionId, amount: input.amount },
             });
           }
-        } catch {}
+        } catch (err) {
+          console.warn(
+            "[Card Market Router] New-bid notification failed for auction",
+            input.auctionId,
+            err
+          );
+        }
 
         await Promise.all([
           globalCache.delete(`user_vault_balance:${ctx.user.id}`),
@@ -105,7 +114,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
 
         return {
           success: true,
-          message: `Bid of ${input.amount} IxC placed successfully!`,
+          message: `Bid of ${input.amount} IxCredits placed successfully!`,
         };
       } catch (error) {
         console.error("[Card Market Router] Error placing bid:", error);
@@ -120,85 +129,30 @@ export const cardMarketBidsRouter = createTRPCRouter({
     }),
 
   /**
-   * Get bid history for an auction
-   * Admin-only endpoint
-   */
-  getBidHistory: protectedProcedure
-    .input(
-      z.object({
-        auctionId: z.string().min(1, "Auction ID is required"),
-        limit: z.number().int().min(1).max(100).optional().default(20),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const bids = await ctx.db.auctionBid.findMany({
-          where: { auctionId: input.auctionId },
-          orderBy: { createdAt: "desc" },
-          take: input.limit,
-          include: {
-            User: {
-              select: {
-                id: true,
-                clerkUserId: true,
-              },
-            },
-          },
-        });
-
-        return { bids };
-      } catch (error) {
-        console.error("[Card Market Router] Error getting bid history:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch bid history",
-        });
-      }
-    }),
-
-  /**
-   * Get user's active bids
-   * Admin-only endpoint
+   * Every running auction the player has bid on, each marked winning (theirs is the top bid) or outbid
    */
   getMyActiveBids: protectedProcedure.query(async ({ ctx }) => {
     try {
-      if (!ctx.auth?.userId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "User ID not found in authentication context",
-        });
-      }
+      assertAuthUserId(ctx);
 
-      // Get auctions where user is current bidder
+      // Running only: an ended one awaits settlement, then shows in history.
       const auctions = await ctx.db.cardAuction.findMany({
         where: {
-          currentBidderId: ctx.user.id,
+          AuctionBid: { some: { bidderId: ctx.user.id } },
           status: "ACTIVE",
+          endTime: { gt: new Date() },
         },
-        include: {
-          CardOwnership: {
-            include: {
-              cards: {
-                select: {
-                  id: true,
-                  title: true,
-                  artwork: true,
-                  rarity: true,
-                },
-              },
-            },
-          },
-          User: {
-            select: {
-              id: true,
-              clerkUserId: true,
-            },
-          },
-        },
+        include: AUCTION_WITH_SELLER_INCLUDE,
         orderBy: { endTime: "asc" },
       });
 
-      return { auctions };
+      const withFaces = await withAuctionFaces(ctx.db, ctx.user.id, auctions);
+      return {
+        auctions: withFaces.map((auction) => ({
+          ...auction,
+          winning: auction.currentBidderId === ctx.user.id,
+        })),
+      };
     } catch (error) {
       console.error("[Card Market Router] Error getting user bids:", error);
       if (error instanceof TRPCError) {
@@ -227,7 +181,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
         const userId = ctx.user.id;
 
         const where = {
-          status: { in: ["COMPLETED", "CANCELLED"] as string[] },
+          status: { in: ["COMPLETED", "CANCELLED"] satisfies CardAuctionStatus[] },
           OR: [
             { sellerId: userId },
             { winnerId: userId },
@@ -241,12 +195,12 @@ export const cardMarketBidsRouter = createTRPCRouter({
             where,
             include: {
               CardOwnership: {
+                omit: INSCRIPTION_OMIT,
                 include: {
                   cards: {
                     select: {
                       id: true,
                       title: true,
-                      artwork: true,
                       rarity: true,
                       cardType: true,
                     },
@@ -279,7 +233,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
         });
 
         return {
-          auctions: enriched,
+          auctions: await withAuctionFaces(ctx.db, userId, enriched),
           total,
           hasMore: input.offset + input.limit < total,
         };

@@ -1,459 +1,158 @@
 # IxStates Versioning & Release Architecture
 
-**Status:** Draft v2
-**Last Updated:** August 2026
+**Status:** Canonical Standard v2  
+**Platform Release:** IxStates 1.5.0 "Lobster Crosby" (Release Candidate)  
+**Last Updated:** October 2026  
 
 ---
 
-# Philosophy
+# 1. Platform Philosophy & Operating Model
 
-IxStates is not a traditional web application.
+IxStates is an integrated worldbuilding and nation-simulation operating system. It uses an **operating-system-style release model** structured into primary **First-Party Apps**, backend **Simulation Engines**, the **Facet UI Design System**, and an incubation **Labs Layer**.
 
-It is a persistent worldbuilding and nation-simulation platform composed of multiple integrated apps, simulation engines, feature systems, and infrastructure layers.
-
-Versioning exists to communicate:
-
-1. Platform evolution
-2. App & system maturity
-3. Simulation capability
-4. Data compatibility
-5. Build reproducibility
-
-The platform follows an **operating-system-inspired version model** rather than a conventional SaaS release model.
+Versioning communicates:
+1. **Platform Evolution** — Operating system epochs, core framework upgrades, and ecosystem scale.
+2. **App Maturity** — Standalone product capability and user-facing boundaries.
+3. **Simulation Capability** — Deterministic engine calculus and living-world fidelity.
+4. **Data Compatibility** — Multi-schema stability across 82+ sovereign nations.
+5. **Build Reproducibility** — Sub-second atomic builds and git short SHA verification.
 
 ---
 
-# Core Principles
+# 2. The IxStates Platform Org Chart
 
-## 1. Significant Components Have Independent Versions
+```text
+====================================================================================================
+                            IXSTATES 1.5.0 "LOBSTER CROSBY" — OPERATING TAXONOMY
+====================================================================================================
 
-The platform is one product, but several of its components evolve on their own timelines and therefore carry their own version histories.
+ ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 1. 🏛️ MYCOUNTRY — Executive Simulation & Sovereign Governance (v6)                             │
+ │    Action: GOVERN | Domain Accent: Amber Gold (#F59E0B) | Route: /mycountry                    │
+ ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+ │ • Command Surface (v6)     │ Single-page executive console across 4 active domains: Identity,  │
+ │                            │ Economy, Politics, Diplomacy. (Defense & Intel in preview).       │
+ │ • Directives System        │ Declare national mandates, balance civil capacity (executive bandwidth), and   │
+ │                            │ resolve factional resistance.                                     │
+ │ • Statecraft Engine (v4)   │ Deterministic sim: 42-tax bracket calculus, parliamentary D'Hondt │
+ │                            │ representation, and composite vitality scoring.                   │
+ │ • Country Builder (v4)     │ Guided wizard stepper, MediaWiki infobox import, archetype        │
+ │                            │ defaults, and atomic policy matrix.                               │
+ └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
-A component earns an independent version only if it can **ship and break independently** — its own surface area, its own capability story a user would notice. Components that don't meet that bar **inherit the platform version**.
+ ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 2. 🗺️ IXWORLD — Spatial Geography & Cartographic Studio (v2)                                   │
+ │    Action: MAP | Domain Accent: Chart shallows (#05667a) | Route: /maps                        │
+ ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+ │ • Interactive Map (v2)     │ WebGL vector globe rendering rivers, lakes, national borders,     │
+ │                            │ topography, and climate biomes.                                   │
+ │ • Map Editor               │ Draw and edit national borders, sub-national regions, provinces,  │
+ │                            │ cities, points of interest (POIs), and snap Voronoi vertices.     │
+ │ • Atlas Engine (v5)        │ "Geography is King" pipeline: grounded manual IxEarth cartography │
+ │                            │ (climate, topography, PostGIS topology) + procedural UPG v2 mesh. │
+ └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
-The components with independent versions are:
+ ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 3. 📖 WIKIOS — Lore & Knowledge Operating System (v1)                                          │
+ │    Action: PUBLISH | Domain Accent: Slate Cyan (#06B6D4) | Route: /wiki                        │
+ ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+ │ • Native Lore Engine (v1)  │ High-speed lore platform with PostgreSQL storage, indexed link    │
+ │                            │ graph (`wiki_links`), and MediaWiki background sync.              │
+ │ • Margin                   │ Split-canvas inspector, text markup, gutter pins, and threaded    │
+ │                            │ discussions directly on article text.                             │
+ │ • Canvas Editor (v1)       │ Visual rich-text authoring with modular content blocks.           │
+ │ • Wiki Awards (LoreWards)  │ Daily, weekly and monthly contests with tiered payouts and trophy │
+ │                            │ cards; one view shared with the Vault (/util/lorewards).          │
+ │ • Stash System (v1)        │ Save articles, quotes, media, and forum threads for later.        │
+ │ • Image Repository (v2)    │ Shared image and media library with instant card generators.      │
+ └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
-- **Apps** — IxWorld, WikiOS, IxVault
-- **Engines** (internal simulation cores) — MyCountry, Concord, Atlas
-- **UI / Feature Systems** — MyCountry, Builder, ThinkPages, Achievements, Stash, Repository, Halo, Onoma
-- **Design system** — Facet
+ ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 4. 💎 VAULT — Collectathon Hub: Wallet, Achievements, Cards & Store (v3)                       │
+ │    Action: COLLECT | Domain Accent: Raspberry (`APP_TINTS.vault`) | Route: /vault              │
+ ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+ │ • Wallet                   │ Bank-statement page: balance card, showcase, statement with       │
+ │                            │ running balance and a Your Vault list; in the sidebar for all.    │
+ │ • Atomic Credit Ledger (v2)│ Safe virtual currency ledger, daily streak bonuses, and the       │
+ │                            │ nightly Vault dividend (collection interest plus activity).       │
+ │ • Cards System (v2)        │ 3D holographic cards across 5 editions: Nation, Lore, Import,     │
+ │                            │ Special, and Community with physics pack opening.                 │
+ │ • Store, Auctions & Trading│ Packs and cosmetics, live auction bidding, and peer trading.      │
+ │ • Achievements System (v3) │ Nation, platform and Loreward achievements, Legacy unlocks,       │
+ │                            │ showcase and leaderboard (/vault/achievements).                   │
+ └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
-Each evolves independently. A major **Concord** release does not require a major **WikiOS** release.
+ ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 5. 💬 THINKPAGES — Real-Time Knowledge Feed & Communications (v3)                              │
+ │    Action: DELIBERATE | Domain Accent: Commons leather (#115536) | Route: /thinkpages          │
+ ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+ │ • Forum                    │ Sitewide and realm boards, threads and replies, posting as        │
+ │                            │ yourself or a persona, and each realm's live board.               │
+ │ • Sovereign Feed (v2)      │ Sovereign micro-posts, `[blurb:slug]` tags, polls, and live wiki  │
+ │                            │ card embeds.                                                      │
+ │ • Account Manager          │ Multi-account switching, automated Discord webhook syndication,   │
+ │                            │ and dispatch feeds.                                               │
+ │ • ThinkTanks               │ Collaborative research groups, treaty drafting rooms, and shared  │
+ │                            │ working papers.                                                   │
+ │ • ThinkShare Messaging     │ Real-time direct messaging, group channels, and secure chats.     │
+ └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
-### What does NOT version independently
+ ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 6. 🗨️ IXFORUM — Archival Community Discourse (Inherited v1.5)                                  │
+ │    Action: DEBATE | Domain Accent: Commons leather (#115536) | Route: /thinkpages              │
+ ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+ │ • XenForo bridge (retired) │ Retired in forum phase 4b; there is no /forum route. The old      │
+ │                            │ forum's threads were imported into the native forum.              │
+ │ • Native forum             │ The community forum lives in ThinkPages at /thinkpages (box 5).   │
+ └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
-These inherit the platform version (they do not carry their own number):
+ ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 7. ⚙️ CONCORD ENGINE — Living-World Simulation Backend (v2)                                    │
+ │    Role: Platform Simulation Backend | Powers living-world state across all apps               │
+ ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+ │ • IxTime Master Clock      │ Continuous world time synchronization, game epochs, and ticks.    │
+ │ • World Events (admin)     │ Admin-authored events that write Storyteller effects; crisis feed │
+ │                            │ is read-only, with no generator (see crisis-events.md).           │
+ │ • Autonomous NPC AI        │ 8 personality traits and 6 behavioral archetypes with dampening.  │
+ └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
-- **IxForum** — folded into the platform version until it is promoted to an App
-- **Platform Utilities** — IxTime, IxnayID
-- **Experimental / Labs** — Vexel, Strata, Dynas, Nomora (carry a `preview` label only)
-- **Navigation Hubs** — Dashboard, Explore/Countries, Feed
+ ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 8. 🎨 FACET UI DESIGN SYSTEM & AMBIENT RUNTIME                                                 │
+ │    Visual, Motion & Tactile Foundation                                                         │
+ ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+ │ • Facet (v4)               │ Layers, content types, tinted canvas, Radix slots.                │
+ │ • Halo Contextual Overlay  │ Floating header capsule, live telemetry, and `Cmd+K` palette (v6).│
+ │ • Cuelume Audio Engine (v1)│ 17 Web Audio synthesized haptic sound cues (`data-cuelume-*`).    │
+ └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
-> **Note:** "IxWiki" is retired as a component name — it was only our name for the wiki, which is the **WikiOS** app. "Canvas" is not a top-level component; it is a **WikiOS sub-system** that carries a sub-version under WikiOS.
+ ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 🧪 LABS — Experimental & Incubation Studio                                                     │
+ │    Incubating Systems & Specialized Simulation Engines                                         │
+ ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+ │ • Onoma Studio (v4)        │ Linguistic engine, phonetic Markov chains, Kokoro TTS (/labs/onoma)
+ │ • MyLeague & MyClub (v1)   │ 7-sport season simulation engine and franchise ownership (/myleague, /myclub)
+ │ • Exchange (Sovereigns)    │ Companies, contracts, shares and sector funds (/labs/exchange)
+ │ • Vexel (v1)               │ Procedural heraldic coat-of-arms and vector flag studio (/labs/vexel)
+ └────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+> **Registry mapping:** `VERSIONS.engines` in `src/lib/buildVersion.ts` has exactly three entries: `mycountry` (the "Statecraft Engine" above; Statecraft has no separate integer), `concord` and `atlas`. Other systems named under Concord (IxTime, crisis events, NPC AI) are a documentation grouping and are not versioned separately. The `MYCOUNTRY_ENGINE_VERSION` and `CONCORD_ENGINE_VERSION` constants are not read anywhere else in `src/`.
 
 ---
 
-## 2. Platform Versions Represent OS Levels
+# 3. Versioning Standards & Granularity Rules
 
-Platform versions are treated as platform epochs.
+The platform maintains strict separation between the **Platform SemVer Level** and the **Component Capability Integers**:
 
-Example:
-
-```text
-IxStates 1.2 Ogma
-IxStates 2.0 Seshat
-IxStates 3.0 Thoth
-```
-
-Platform versions represent major architectural and ecosystem milestones:
-
-- New application architecture
-- Core platform rewrites
-- Fundamental data-model changes
-- Major ecosystem expansion
-
-Platform versions should be rare.
-
-Expected cadence:
-
-- 12–36 months
+1. **Platform**: `Major.Minor.Patch` + Permanent Epoch **Release Name** + **Channel**  
+   *Current:* **`IxStates 1.5.0 "Lobster Crosby"`** (Channel: *Release Candidate*).
+2. **First-Party Apps**: A single monotonic capability integer (`IXWORLD_VERSION = 3`, `WIKIOS_VERSION = 1`, `IXVAULT_VERSION = 3`).
+3. **Simulation Engines**: Internal capability integers surfaced only in the Developer Panel (`MYCOUNTRY_ENGINE_VERSION = 4`, `CONCORD_ENGINE_VERSION = 2`, `ATLAS_ENGINE_VERSION = 5`).
+4. **UI / Feature Systems & Design**: Independent capability integers (`MYCOUNTRY_VERSION = 6`, `BUILDER_VERSION = 4`, `THINKPAGES_VERSION = 3`, `ACHIEVEMENTS_VERSION = 3` (incl. LoreWards / Wiki Awards), `STASH_VERSION = 1`, `REPOSITORY_VERSION = 2`, `HALO_VERSION = 6`, `ONOMA_VERSION = 4`), the design system (`FACET_VERSION = 4`) and the WikiOS sub-system `CANVAS_VERSION = 1`.
+5. **Inherited Components**: Components that do not version independently inherit the platform version: **IxForum** (`1.5`), **IxTime / IxnayID**, **Labs**, and **Navigation Hubs**.
 
 ---
 
-## 3. Release Names Are Permanent
+# 4. Source of Truth
 
-Release names are not temporary codenames. They are part of the public identity of the platform.
-
-```text
-IxStates 1.1 Ogma
-IxStates 2.0 Seshat
-IxStates 3.0 Thoth
-```
-
-Release names remain attached to the version forever.
-
----
-
-## 4. Channels Describe Stability
-
-Channels indicate deployment maturity. Channels are **independent from version numbers**.
-
-Available channels:
-
-```text
-Developer
-Alpha
-Beta
-Release Candidate
-Stable
-```
-
-Examples:
-
-```text
-IxStates 1.1 Ogma Alpha
-IxStates 1.1 Ogma Beta
-IxStates 1.1 Ogma RC1
-IxStates 1.1 Ogma Stable
-```
-
----
-
-# Platform Versioning
-
-The **platform** is the only component that uses a full SemVer triple plus a permanent release name and a channel.
-
-## Format
-
-```text
-Major.Minor.Patch  +  Release Name  +  Channel
-```
-
-Example:
-
-```text
-1.1.0  Ogma  Alpha
-```
-
-> **Legacy note:** Earlier internal numbering (`1.42`, `2.1`) is retired. The platform resets to **`1.0 Ogma`** as the public baseline.
-
-## Major Versions
-
-Platform-wide architectural shifts:
-
-- New rendering architecture
-- New API architecture
-- New persistence layer
-- Major platform redesign
-- Cross-system infrastructure rewrite
-
-```text
-1.0 → 2.0
-```
-
-## Minor Versions
-
-Significant platform improvements:
-
-- New integrated app
-- Major subsystem overhaul
-- Significant feature expansion
-- Large refactor
-
-```text
-1.2 → 1.3
-```
-
-## Patch Versions
-
-- Bug fixes
-- Performance improvements
-- Small enhancements
-- Stability updates
-
-```text
-1.3.1 → 1.3.2
-```
-
----
-
-# Component Versioning (Single Integer)
-
-Apps, Engines, Systems, and the Design system each carry a **single monotonic capability integer** — not a SemVer triple.
-
-```text
-WikiOS 2
-MyCountry 4
-Concord 3
-Facet 1
-```
-
-**Rule:** a component's integer increments only on a **user-noticeable capability leap**. Bug fixes, perf, and small enhancements ride the **platform patch** and the **build identifier** — they do not bump component integers. This keeps the per-component numbers stable and resistant to drift.
-
----
-
-## App Versioning
-
-Apps are integrated products with their own brand identity that ship and break independently.
-
-Apps:
-
-- **IxWorld** (maps)
-- **WikiOS** (wiki software — also powers the IxWiki content)
-- **IxVault** (wallet / economy / trading cards)
-
-```text
-IxStates 1.0 Ogma
-
-IxWorld 1
-WikiOS 1
-IxVault 1
-```
-
-> **Canvas** (visual wiki editor) is a WikiOS sub-system and carries a sub-version under WikiOS, not a top-level App version.
-
----
-
-## Engine Versioning
-
-Engines are **internal-only** simulation cores. They are surfaced in the Developer panel, not in public-facing footers. There are three, derived from the platform's calculation/simulation code.
-
-| Engine        | Scope                                     | What it simulates                                                                                                                                                                                                                                             |
-| ------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **MyCountry** | Nation (per-country, deterministic)       | Economy (tier/growth, projections), Fiscal (tax/budget/passive income), Atomic Government (synergy/conflict), Vitality & Stability (scoring, power tier), National Issues (decisions/consequences), Security & Defense calc, per-nation Intelligence analysis |
-| **Concord**   | World (cross-nation, time-driven, living) | Time/Tick (IxTime + cron orchestration), Diplomacy & NPCs (Markov relationship evolution, personality archetypes, cultural exchange), Crises & World Events, Intelligence broadcast, global rankings & cross-nation effects                                   |
-| **Atlas**     | Foundation (spatial)                      | World generation (procedural/Voronoi pipeline), Geography analytics (geo-math, climate, terrain modifiers), Map pipeline (SVG/PNG → GeoJSON), Transport networks, Province import — **powers the IxWorld app**                                                |
-
-```text
-MyCountry Engine 1
-Concord 1
-Atlas 1
-```
-
-> **MyCountry appears on two axes by design:** the internal **MyCountry Engine** (nation simulation) and the public **MyCountry** UI system below. They version independently.
-
----
-
-## UI / Feature System Versioning
-
-User-facing systems within the platform, independent from the engines that power them.
-
-Systems:
-
-- **MyCountry** (public-facing executive command UI)
-- **Builder** (nation creation wizard)
-- **ThinkPages** (social — feed, groups, messages)
-- **Achievements** (incl. LoreWards)
-- **Stash** (save-for-later wiki articles; formerly LoreStash)
-- **Repository** (WikiOS Commons image explorer)
-- **Halo** (global contextual overlay; formerly "Dynamic Island")
-- **Onoma** (name generation and linguistic dictionary studio)
-
-```text
-MyCountry 1
-Builder 1
-ThinkPages 1
-Halo 1
-Onoma 1
-```
-
-System versions represent capability evolution.
-
----
-
-## Design System Versioning
-
-- **Facet** — the glass / refraction / depth design language used across every surface (formerly "Glass Physics").
-
-```text
-Facet 1
-```
-
-Facet's integer increments on a visual-language break (new depth model, new token system, major motion overhaul).
-
----
-
-# Schema Versioning
-
-Database schemas maintain independent version tracking. Schema versions increase whenever a **breaking** data-structure change occurs.
-
-```text
-Economy Schema v12
-Diplomacy Schema v8
-Military Schema v6
-Vault Schema v4
-```
-
----
-
-# API Versioning
-
-API versions represent compatibility guarantees and should only increase on **breaking** changes.
-
-```text
-Platform API v1
-Maps API v2
-```
-
-This extends the existing router-based strategy (implicit `v1`; future `v2` under `src/server/api/routers/v2/`) — it does not replace it. Per-domain API numbers are namespaced views of that same strategy, not a parallel scheme.
-
----
-
-# Build Versioning
-
-Every deployment has a unique, immutable build identifier.
-
-```text
-Build: 8f4e3b1
-```
-
-Sources (in order of preference):
-
-- Git SHA
-- CI build number
-- Deployment timestamp
-
-The build identifier is the authoritative source of truth for "exactly what is deployed." It is generated at build time into `src/lib/buildVersion.generated.ts` by `scripts/write-build-version.js` (the `prebuild` hook).
-
----
-
-# Public Display Standards
-
-## Footer
-
-```text
-IxStates 1.2 Ogma
-Beta
-Build 8f4e3b1
-```
-
-## About Page
-
-```text
-IxStates 1.2 Ogma
-Channel: Beta
-
-IxWorld 1.2
-WikiOS 1
-IxVault 1
-
-Build 8f4e3b1
-```
-
-## Developer Panel
-
-```text
-Platform
-Version: 1.1.0
-Release: Ogma
-Channel: Alpha
-
-Apps
-IxWorld: 1.2
-WikiOS: 1   (Canvas: 1)
-IxVault: 1
-
-Engines
-MyCountry: 2
-Concord: 2
-Atlas: 2
-
-Systems
-MyCountry: 2
-Builder: 1
-ThinkPages: 1
-Achievements: 1
-Stash: 1
-Repository: 2
-Halo: 1
-
-Design
-Facet: 1
-
-Build
-8f4e3b1
-```
-
----
-
-# Source of Truth
-
-All version information originates from a single **Version Registry**:
-
-```text
-src/lib/buildVersion.ts
-```
-
-No version strings are hardcoded anywhere else. All UI, API, changelog, release feeds, diagnostics, and documentation consume version information from the registry. Documentation (including `docs/reference/branding.md`) must point at the registry rather than quote numbers, so values cannot drift.
-
-The registry is a structured object rather than flat constants:
-
-```ts
-export const VERSIONS = {
-  platform: {
-    major: 1,
-    minor: 2,
-    patch: 7,
-    release: "Ogma",
-    channel: "Beta",
-  },
-
-  apps: {
-    ixworld: 1.2,
-    wikios: 1, // Canvas nests under WikiOS (see subSystems.canvas)
-    ixvault: 1,
-  },
-
-  engines: {
-    mycountry: 4, // nation-scoped deterministic sim
-    concord: 2, // living-world sim (time, diplomacy, crises, NPCs)
-    atlas: 4, // spatial foundation (worldgen, geo, maps) — powers IxWorld
-  },
-
-  systems: {
-    mycountry: 4, // public-facing executive UI
-    builder: 2,
-    thinkpages: 1,
-    achievements: 2, // incl. LoreWards
-    stash: 1,
-    repository: 2,
-    halo: 3, // global contextual overlay (was "Dynamic Island")
-    onoma: 4,
-  },
-
-  design: {
-    facet: 1, // glass/refraction/depth design language (was "Glass Physics")
-  },
-
-  subSystems: {
-    canvas: 1, // visual wiki editor, under WikiOS
-  },
-
-  schemas: {
-    economy: 12,
-    diplomacy: 8,
-  },
-};
-```
-
-Derived display strings (`APP_VERSION`, `WIKIOS_VERSION`, `CHANNEL`, …) are computed from this object and are the only thing UI components import.
-
----
-
-# Changelog Strategy
-
-There is **one aggregated** `CHANGELOG.md` (Keep a Changelog format), organized with per-component sections under each platform release — not one changelog per component. A release entry records the platform version + channel and lists which Apps / Engines / Systems advanced their integers and why.
-
----
-
-# Roadmap
-
-Release names are permanent epochs; future epochs are reserved but unscheduled.
-
-| Epoch          | Status         | Theme focus                                                                                                  |
-| -------------- | -------------- | ------------------------------------------------------------------------------------------------------------ |
-| **1.2 Ogma**   | Current (Beta) | Executive/diplomacy canon track, map overlays, Defense/Politics panels, adjacency graph, waitlist onboarding, intent↔issues resistance rhythm + grounded issue generator, v2 Issue Brief surface |
-| **2.0 Seshat** | Reserved       | TBD — likely real-time simulation depth, advanced economies                                                  |
-| **3.0 Thoth**  | Reserved       | TBD — large-scale diplomacy, AI-assisted systems                                                             |
-
-Future releases TBD.
+The single source of truth for all runtime version constants is [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts). No version strings or numbers may be hardcoded in UI components or routers.

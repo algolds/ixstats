@@ -1,0 +1,411 @@
+/** @jest-environment node */
+// `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
+//
+// The stash keys an item by (stash, content type, title): an Onoma name, a dictionary and an article of one title live
+// side by side, saving or annotating one never overwrites another, and unstashing removes exactly the one asked; a
+// stashed forum thread is listed with its current title only while the reader may still read it (hidden and staff
+// threads drop out), and bridge-era ids are never written or returned.
+jest.mock("~/server/db", () => ({
+  __esModule: true,
+  db: {
+    user: { findUnique: jest.fn(), findFirst: jest.fn() },
+    auditLog: { create: jest.fn() },
+    // The native forum thread's lookup (a public General thread) and the moderator context's reads.
+    forumThread: {
+      findUnique: jest.fn(async () => ({
+        id: "t7",
+        title: "A native thread",
+        authorUserId: "u_other",
+        hidden: false,
+        category: { id: "cat_general", scope: "site", realmId: null, visibility: "public" },
+      })),
+      findMany: jest.fn(),
+    },
+    realm: { findMany: jest.fn(async () => []), findUnique: jest.fn(async () => null) },
+    realmOfficer: { findMany: jest.fn(async () => []) },
+    forumCategoryModerator: { findMany: jest.fn(async () => []) },
+    stash: {
+      findFirst: jest.fn(async () => ({
+        id: "stash_1",
+        userId: "db_user_1",
+        name: "My Stash",
+        isDefault: true,
+      })),
+      findMany: jest.fn(async () => [{ id: "stash_1" }]),
+      create: jest.fn(),
+    },
+    get stashItem() {
+      return fakeStashItem;
+    },
+  },
+  isDatabaseReadOnly: true,
+}));
+jest.mock("~/lib/auth", () => ({
+  __esModule: true,
+  isSystemOwner: () => false,
+  UserManagementService: jest.fn(),
+}));
+jest.mock("~/lib/auth/system-owner-constants", () => ({
+  __esModule: true,
+  isSystemOwner: () => false,
+}));
+jest.mock("~/lib/wiki-os/permissions", () => ({
+  __esModule: true,
+  requireNotBlocked: jest.fn(async () => undefined),
+}));
+
+import { beforeEach, describe, expect, it } from "@jest/globals";
+import { createCallerFactory } from "~/server/api/trpc";
+import { wikiosStashRouter } from "~/server/api/routers/wikios/stash";
+import { onomaNameBankRouter } from "~/server/api/routers/onoma/namebank";
+import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
+import { wikiosWatchlistAnnotationsRouter } from "~/server/api/routers/wikios/watchlist-annotations";
+import { createMockRouterContext } from "~/tests/helpers/router-context";
+import { db } from "~/server/db";
+
+type FakeItem = {
+  id: string;
+  stashId: string;
+  pageTitle: string;
+  pageSlug: string;
+  contentType: string;
+  note?: string | null;
+  contentId?: number | null;
+  savedAt: Date;
+  updatedAt: Date;
+  stash: { id: string; name: string };
+};
+type KeyWhere = {
+  stashId_contentType_pageTitle?: { stashId: string; contentType: string; pageTitle: string };
+};
+type ListWhere = { stashId?: string | { in: string[] }; pageTitle?: string; contentType?: string };
+
+const store: FakeItem[] = [];
+
+function matches(item: FakeItem, where: ListWhere): boolean {
+  const stashOk =
+    where.stashId === undefined ||
+    (typeof where.stashId === "string"
+      ? item.stashId === where.stashId
+      : where.stashId.in.includes(item.stashId));
+  return (
+    stashOk &&
+    (where.pageTitle === undefined || item.pageTitle === where.pageTitle) &&
+    (where.contentType === undefined || item.contentType === where.contentType)
+  );
+}
+
+const fakeStashItem = {
+  upsert: jest.fn(
+    async (args: {
+      where: KeyWhere;
+      create: Partial<FakeItem> & { stashId: string; pageTitle: string; contentType?: string };
+      update: Partial<FakeItem>;
+    }) => {
+      const key = args.where.stashId_contentType_pageTitle;
+      if (!key) throw new Error("upsert must use the stashId_contentType_pageTitle key");
+      const existing = store.find(
+        (i) =>
+          i.stashId === key.stashId &&
+          i.contentType === key.contentType &&
+          i.pageTitle === key.pageTitle
+      );
+      if (existing) {
+        Object.assign(existing, args.update);
+        return existing;
+      }
+      const created: FakeItem = {
+        id: `item_${store.length + 1}`,
+        pageSlug: "",
+        note: null,
+        contentId: null,
+        savedAt: new Date(),
+        updatedAt: new Date(),
+        stash: { id: args.create.stashId, name: "My Stash" },
+        contentType: "wiki",
+        ...args.create,
+      };
+      store.push(created);
+      return created;
+    }
+  ),
+  findMany: jest.fn(async (args: { where: ListWhere }) =>
+    store
+      .filter((i) => matches(i, args.where))
+      .map((i) => ({ ...i, stash: { ...i.stash, color: "#000" } }))
+  ),
+  deleteMany: jest.fn(async (args: { where: ListWhere }) => {
+    const doomed = store.filter((i) => matches(i, args.where));
+    for (const item of doomed) store.splice(store.indexOf(item), 1);
+    return { count: doomed.length };
+  }),
+};
+
+const fakeStash = {
+  id: "stash_1",
+  userId: "db_user_1",
+  name: "My Stash",
+  isDefault: true,
+};
+
+const ctx = () =>
+  createMockRouterContext({
+    auth: { userId: "user_clerk_1" },
+    user: {
+      id: "db_user_1",
+      clerkUserId: "user_clerk_1",
+      countryId: "country_1",
+      role: { name: "user", level: 100 },
+    },
+    db,
+  }) as never;
+
+beforeEach(() => {
+  store.length = 0;
+  jest.clearAllMocks();
+});
+
+describe("one stash holds the same title once per content type", () => {
+  it("keeps an Onoma name and the article of the same title side by side", async () => {
+    const stash = createCallerFactory(wikiosStashRouter)(ctx());
+    const onoma = createCallerFactory(onomaNameBankRouter)(ctx());
+
+    await stash.stashPage({ pageTitle: "Rome" });
+    await onoma.saveToNameBank({ type: "saved-name", title: "Rome", values: ["Rome"] });
+
+    expect(store.map((i) => [i.contentType, i.pageTitle]).sort()).toEqual([
+      ["name", "Rome"],
+      ["wiki", "Rome"],
+    ]);
+  });
+
+  it("saving the same name again updates that item and leaves the article alone", async () => {
+    const stash = createCallerFactory(wikiosStashRouter)(ctx());
+    const onoma = createCallerFactory(onomaNameBankRouter)(ctx());
+    await stash.stashPage({ pageTitle: "Rome" });
+    await onoma.saveToNameBank({ type: "saved-name", title: "Rome", values: ["Rome"] });
+
+    await onoma.saveToNameBank({ type: "saved-name", title: "Rome", values: ["Roma"] });
+
+    expect(store).toHaveLength(2);
+    const article = store.find((i) => i.contentType === "wiki");
+    expect(article?.note ?? null).toBeNull();
+    const name = store.find((i) => i.contentType === "name");
+    expect(name?.note).toContain("Roma");
+  });
+
+  it("a dictionary and a name of the same title coexist too", async () => {
+    const onoma = createCallerFactory(onomaNameBankRouter)(ctx());
+
+    await onoma.saveToNameBank({ type: "saved-name", title: "Rome", values: ["Rome"] });
+    await onoma.saveToNameBank({ type: "dictionary", title: "Rome", values: ["Roma", "Romulus"] });
+
+    expect(store.map((i) => i.contentType).sort()).toEqual(["dictionary", "name"]);
+  });
+
+  it("stashing the same article twice stays one item", async () => {
+    const stash = createCallerFactory(wikiosStashRouter)(ctx());
+
+    await stash.stashPage({ pageTitle: "Rome" });
+    await stash.stashPage({ pageTitle: "Rome" });
+
+    expect(store).toHaveLength(1);
+  });
+
+  it("unstashing the article leaves the Onoma name in place, and isStashed ignores the name", async () => {
+    const stash = createCallerFactory(wikiosStashRouter)(ctx());
+    const onoma = createCallerFactory(onomaNameBankRouter)(ctx());
+    await onoma.saveToNameBank({ type: "saved-name", title: "Rome", values: ["Rome"] });
+    expect((await stash.isStashed({ pageTitle: "Rome" })).stashed).toBe(false);
+
+    await stash.stashPage({ pageTitle: "Rome" });
+    expect((await stash.isStashed({ pageTitle: "Rome" })).stashed).toBe(true);
+    await stash.unstashPage({ pageTitle: "Rome", stashId: "stash_1" });
+
+    expect(store.map((i) => i.contentType)).toEqual(["name"]);
+  });
+
+  it("unstashPage with an explicit contentType removes exactly that item", async () => {
+    const stash = createCallerFactory(wikiosStashRouter)(ctx());
+    const onoma = createCallerFactory(onomaNameBankRouter)(ctx());
+    await stash.stashPage({ pageTitle: "Rome" });
+    await onoma.saveToNameBank({ type: "saved-name", title: "Rome", values: ["Rome"] });
+
+    await stash.unstashPage({ pageTitle: "Rome", contentType: "name" });
+
+    expect(store.map((i) => i.contentType)).toEqual(["wiki"]);
+  });
+
+  it("annotating an article stashes it as a wiki item, not over the Onoma name", async () => {
+    const onoma = createCallerFactory(onomaNameBankRouter)(ctx());
+    const annotations = createCallerFactory(wikiosWatchlistAnnotationsRouter)(ctx());
+    await onoma.saveToNameBank({ type: "saved-name", title: "Rome", values: ["Rome"] });
+    (db as unknown as { stashAnnotation: { create: jest.Mock } }).stashAnnotation = {
+      create: jest.fn(async (args: { data: unknown }) => args.data),
+    };
+    (db as unknown as { stash: { findFirst: jest.Mock } }).stash.findFirst.mockResolvedValue(
+      fakeStash
+    );
+
+    await annotations.addAnnotation({ pageTitle: "Rome", selectedText: "the eternal city" });
+
+    expect(store.map((i) => i.contentType).sort()).toEqual(["name", "wiki"]);
+  });
+});
+
+describe("native forum threads are matched by content type as well as title", () => {
+  const NATIVE = "thinkpages:thread:t7";
+  // The same title under another content type: a stash item the native thread must never be confused with.
+  const otherItem = (): FakeItem => ({
+    id: "item_other",
+    stashId: "stash_1",
+    pageTitle: NATIVE,
+    pageSlug: "",
+    contentType: "wiki",
+    note: null,
+    contentId: null,
+    savedAt: new Date(),
+    updatedAt: new Date(),
+    stash: { id: "stash_1", name: "My Stash" },
+  });
+  const forum = () => createCallerFactory(thinkpagesForumRouter)(ctx());
+
+  it("stashes a thread as a forum_thread item next to a same-titled item of another type", async () => {
+    store.push(otherItem());
+
+    await forum().stashThread({ threadId: "t7" });
+
+    expect(store.map((i) => i.contentType).sort()).toEqual(["forum_thread", "wiki"]);
+    expect(store.find((i) => i.contentType === "forum_thread")).toMatchObject({
+      pageTitle: NATIVE,
+      pageSlug: "/thinkpages/t/t7",
+      contentId: null,
+      note: "A native thread",
+    });
+  });
+
+  it("isThreadStashed ignores a same-titled item of another content type", async () => {
+    store.push(otherItem());
+    expect((await forum().isThreadStashed({ threadId: "t7" })).stashed).toBe(false);
+
+    await forum().stashThread({ threadId: "t7" });
+
+    expect((await forum().isThreadStashed({ threadId: "t7" })).stashed).toBe(true);
+  });
+
+  it.each([
+    ["in one stash", { stashId: "stash_1" }],
+    ["in all the user's stashes", {}],
+  ])("unstashThread removes only the thread, %s", async (_where, extra) => {
+    store.push(otherItem());
+    await forum().stashThread({ threadId: "t7" });
+
+    await forum().unstashThread({ threadId: "t7", ...extra });
+
+    expect(store.map((i) => i.contentType)).toEqual(["wiki"]);
+  });
+
+  it("the stash page's title-only calls mean a forum thread for a native title", async () => {
+    const stash = createCallerFactory(wikiosStashRouter)(ctx());
+    await forum().stashThread({ threadId: "t7" });
+
+    await stash.unstashPage({ pageTitle: NATIVE, stashId: "stash_1" });
+
+    expect(store).toEqual([]);
+  });
+});
+describe("stashPage takes no contentId", () => {
+  it("never writes one: the column only holds bridge-era XenForo ids, which the forum import reads", async () => {
+    const stash = createCallerFactory(wikiosStashRouter)(ctx());
+
+    await stash.stashPage({ pageTitle: "Rome", contentId: 7 } as never);
+    await stash.stashPage({ pageTitle: "Rome", contentId: 8 } as never);
+
+    const [first, second] = fakeStashItem.upsert.mock.calls.map(([args]) => args);
+    expect(first?.create).not.toHaveProperty("contentId");
+    expect(second?.update).toEqual({});
+    expect(store.map((i) => i.contentId)).toEqual([null]);
+  });
+});
+
+describe("stashed forum threads", () => {
+  const general = { id: "cat_general", scope: "site", realmId: null, visibility: "public" };
+  const staff = { id: "cat_staff", scope: "site", realmId: null, visibility: "staff" };
+  const thread = (id: string, extra: object = {}) => ({
+    id,
+    title: `Now ${id}`,
+    authorUserId: "u_other",
+    hidden: false,
+    category: general,
+    ...extra,
+  });
+  const item = (pageTitle: string, note: string | null) => ({
+    id: `i_${pageTitle}`,
+    pageTitle,
+    pageSlug: "/x",
+    note,
+    contentType: null,
+    contentId: null,
+    annotations: [],
+    _count: { annotations: 0 },
+    savedAt: new Date("2026-10-01T00:00:00Z"),
+  });
+
+  const caller = () =>
+    createCallerFactory(wikiosStashRouter)(
+      createMockRouterContext({
+        auth: { userId: "user_1" },
+        user: { id: "db1", clerkUserId: "user_1", role: { name: "user", level: 100 } },
+      }) as never
+    );
+
+  describe("getStashItems and stashed forum threads (I5)", () => {
+    it("re-titles readable native threads, drops unreadable ones and leaves other items alone", async () => {
+      jest
+        .mocked(db.stashItem.findMany)
+        .mockResolvedValue([
+          item("Main_Page", "a wiki note"),
+          item("thinkpages:thread:t_ok", "Old title"),
+          item("thinkpages:thread:t_hidden", "Hidden title"),
+          item("thinkpages:thread:t_staff", "Staff title"),
+          item("thinkpages:thread:t_gone", "Gone title"),
+        ] as never);
+      jest
+        .mocked(db.forumThread.findMany)
+        .mockResolvedValue([
+          thread("t_ok"),
+          thread("t_hidden", { hidden: true }),
+          thread("t_staff", { category: staff }),
+        ] as never);
+
+      const { items } = await caller().getStashItems({ stashId: "s1" });
+
+      expect(items.map((i) => [i.pageTitle, i.note])).toEqual([
+        ["Main_Page", "a wiki note"],
+        ["thinkpages:thread:t_ok", "Now t_ok"],
+      ]);
+    });
+
+    it("leaves out bridge-era forum:thread: items and returns no contentId", async () => {
+      jest.mocked(db.forumThread.findMany).mockResolvedValue([thread("t_ok")] as never);
+      jest
+        .mocked(db.stashItem.findMany)
+        .mockResolvedValue([
+          item("thinkpages:thread:t_ok", "Old title"),
+          { ...item("forum:thread:7", "An old thread"), contentId: 7 },
+        ] as never);
+
+      const { items } = await caller().getStashItems({ stashId: "s1" });
+
+      expect(items.map((i) => i.pageTitle)).toEqual(["thinkpages:thread:t_ok"]);
+      expect(items[0]).not.toHaveProperty("contentId");
+    });
+
+    it("asks nothing of the forum when the page holds no native thread", async () => {
+      jest.mocked(db.forumThread.findMany).mockClear();
+      jest.mocked(db.stashItem.findMany).mockResolvedValue([item("Main_Page", null)] as never);
+      await caller().getStashItems({ stashId: "s1" });
+      expect(db.forumThread.findMany).not.toHaveBeenCalled();
+    });
+  });
+});

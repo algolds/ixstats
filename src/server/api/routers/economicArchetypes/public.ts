@@ -1,115 +1,92 @@
 // src/server/api/routers/economicArchetypes.ts
 // Economic Archetypes API Router - Phase 3 Migration
-// Provides CRUD operations and analytics for economic archetype system
+// The EconomicArchetype table is the source of truth for the archetypes players pick in the
+// builder. The built-in archetypes seed an empty table on first read and are the fallback
+// when the table can't be read.
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
-import type { EconomicArchetype as PrismaArchetype } from "@prisma/client";
-import { memoryConfig } from "~/lib/system";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import { globalCache } from "~/lib/cache";
+import type { EconomicArchetype as PrismaArchetype, PrismaClient } from "@prisma/client";
+import type { EconomicArchetype } from "~/lib/economy/archetypes/types";
+import { parseArchetypeFields } from "./serializer";
+import { memoryConfig } from "~/lib/system/dev-memory-config";
+import {
+  buildArchetypeSeedRows,
+  builtinArchetypes,
+  type ArchetypeEra,
+} from "~/lib/economy/archetypes/seed";
 
-// Import hardcoded fallback data
-import { modernArchetypes } from "~/app/builder/data/archetypes/modern";
-import { historicalArchetypes } from "~/app/builder/data/archetypes/historical";
+/**
+ * Whether `userId` already counted the archetype `id` today. A pick counts once a day per player, so nobody can inflate the
+ * popularity counters by calling the mutation over and over.
+ */
+async function countedToday(userId: string, id: string): Promise<boolean> {
+  const key = `usage:economic-archetype:${userId}:${id}:${new Date().toISOString().slice(0, 10)}`;
+  if (await globalCache.get(key)) return true;
+  await globalCache.set(key, true, { ttl: 86_400 });
+  return false;
+}
+
+/** An archetype as the API serves it: `id` is the row id, `key` the stable archetype id. */
+type CatalogArchetype = EconomicArchetype & {
+  key: string;
+  era: ArchetypeEra;
+  isActive: boolean;
+  isCustom: boolean;
+  usageCount: number;
+};
 
 /**
  * Parse JSON string fields back to objects
  * Transforms database representation to TypeScript interface
  */
-function parseArchetypeJSON(archetype: PrismaArchetype) {
-  try {
-    return {
-      ...archetype,
-      characteristics: JSON.parse(archetype.characteristics) as string[],
-      economicComponents: JSON.parse(archetype.economicComponents) as string[],
-      governmentComponents: JSON.parse(archetype.governmentComponents) as string[],
-      taxProfile: JSON.parse(archetype.taxProfile) as {
-        corporateRate: number;
-        incomeRate: number;
-        consumptionRate: number;
-        revenueEfficiency: number;
-      },
-      sectorFocus: JSON.parse(archetype.sectorFocus) as Record<string, number>,
-      employmentProfile: JSON.parse(archetype.employmentProfile) as {
-        unemploymentRate: number;
-        laborParticipation: number;
-        wageGrowth: number;
-      },
-      growthMetrics: JSON.parse(archetype.growthMetrics) as {
-        gdpGrowth: number;
-        innovationIndex: number;
-        competitiveness: number;
-        stability: number;
-      },
-      strengths: JSON.parse(archetype.strengths) as string[],
-      challenges: JSON.parse(archetype.challenges) as string[],
-      culturalFactors: JSON.parse(archetype.culturalFactors) as string[],
-      modernExamples: JSON.parse(archetype.modernExamples) as string[],
-      recommendations: JSON.parse(archetype.recommendations) as string[],
-    };
-  } catch (error) {
-    console.error("Failed to parse archetype JSON:", error);
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Failed to parse archetype data",
-    });
-  }
+function parseArchetypeJSON(archetype: PrismaArchetype): CatalogArchetype {
+  return {
+    id: archetype.id,
+    key: archetype.key,
+    era: archetype.era === "historical" ? "historical" : "modern",
+    isActive: archetype.isActive,
+    isCustom: archetype.isCustom,
+    usageCount: archetype.usageCount,
+    name: archetype.name,
+    description: archetype.description,
+    region: archetype.region,
+    implementationComplexity: archetype.implementationComplexity.toLowerCase() as
+      "low" | "medium" | "high",
+    historicalContext: archetype.historicalContext,
+    ...parseArchetypeFields(archetype),
+  };
 }
 
 /**
  * Get fallback archetypes from hardcoded data
- * Used when database is empty for graceful degradation
+ * Used when the database can't be read
  */
-function getFallbackArchetypes(era: "modern" | "historical" | "all") {
-  console.warn("[economicArchetypes.ts] Database empty, using fallback hardcoded archetypes");
+function getFallbackArchetypes(era: "modern" | "historical" | "all"): CatalogArchetype[] {
+  console.warn("[economicArchetypes] Database unavailable, using built-in archetypes");
 
-  const modern = Array.from(modernArchetypes.values());
-  const historical = Array.from(historicalArchetypes.values());
-
-  if (era === "modern") return modern;
-  if (era === "historical") return historical;
-  return [...modern, ...historical];
+  return builtinArchetypes()
+    .filter((archetype) => era === "all" || archetype.era === era)
+    .map((archetype) => ({
+      ...archetype,
+      key: archetype.id,
+      isActive: true,
+      isCustom: false,
+      usageCount: 0,
+    }));
 }
 
 /**
- * Zod schema for archetype creation/update
- * Validates input data structure
+ * Seed an empty table from the built-in archetypes. `db:seed` doesn't run in production, so
+ * this is what first fills the table there.
  */
-const archetypeInputSchema = z.object({
-  key: z.string().min(1),
-  name: z.string().min(1),
-  description: z.string().min(1),
-  region: z.string().min(1),
-  era: z.enum(["modern", "historical"]),
-  characteristics: z.array(z.string()),
-  economicComponents: z.array(z.string()),
-  governmentComponents: z.array(z.string()),
-  taxProfile: z.object({
-    corporateRate: z.number().min(0).max(100),
-    incomeRate: z.number().min(0).max(100),
-    consumptionRate: z.number().min(0).max(100),
-    revenueEfficiency: z.number().min(0).max(1),
-  }),
-  sectorFocus: z.record(z.string(), z.number()),
-  employmentProfile: z.object({
-    unemploymentRate: z.number().min(0).max(100),
-    laborParticipation: z.number().min(0).max(100),
-    wageGrowth: z.number(),
-  }),
-  growthMetrics: z.object({
-    gdpGrowth: z.number(),
-    innovationIndex: z.number().min(0).max(100),
-    competitiveness: z.number().min(0).max(100),
-    stability: z.number().min(0).max(100),
-  }),
-  strengths: z.array(z.string()),
-  challenges: z.array(z.string()),
-  culturalFactors: z.array(z.string()),
-  modernExamples: z.array(z.string()),
-  recommendations: z.array(z.string()),
-  implementationComplexity: z.enum(["Low", "Medium", "High"]),
-  historicalContext: z.string(),
-});
+async function ensureSeeded(db: PrismaClient) {
+  if ((await db.economicArchetype.count()) > 0) return;
+  const rows = buildArchetypeSeedRows();
+  await db.economicArchetype.createMany({ data: rows, skipDuplicates: true });
+  console.info(`[economicArchetypes] Seeded empty table with ${rows.length} built-in archetypes`);
+}
 
 export const economicArchetypesPublicRouter = createTRPCRouter({
   // ============================================================================
@@ -118,7 +95,8 @@ export const economicArchetypesPublicRouter = createTRPCRouter({
 
   /**
    * Get all archetypes with optional filters
-   * Falls back to hardcoded data if database is empty
+   * Seeds an empty table from the built-in archetypes; falls back to them if the table
+   * can't be read
    * Memory optimization: Added pagination with default limits
    */
   getAllArchetypes: publicProcedure
@@ -135,6 +113,8 @@ export const economicArchetypesPublicRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
+        await ensureSeeded(ctx.db);
+
         const where = {
           ...(input.era !== "all" && { era: input.era }),
           ...(input.region && { region: input.region }),
@@ -151,20 +131,6 @@ export const economicArchetypesPublicRouter = createTRPCRouter({
           }),
           ctx.db.economicArchetype.count({ where }),
         ]);
-
-        // Fallback to hardcoded if database empty
-        if (archetypes.length === 0 && input.offset === 0) {
-          const fallback = getFallbackArchetypes(input.era);
-          return {
-            archetypes: fallback.slice(0, input.limit),
-            pagination: {
-              total: fallback.length,
-              limit: input.limit,
-              offset: 0,
-              hasMore: fallback.length > input.limit,
-            },
-          };
-        }
 
         // Parse JSON fields back to objects
         return {
@@ -193,79 +159,24 @@ export const economicArchetypesPublicRouter = createTRPCRouter({
     }),
 
   /**
-   * Get single archetype by ID
-   */
-  getArchetypeById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const archetype = await ctx.db.economicArchetype.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!archetype) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Archetype not found",
-        });
-      }
-
-      return parseArchetypeJSON(archetype);
-    }),
-
-  /**
-   * Get archetypes grouped by category (modern/historical)
-   */
-  getArchetypesByCategory: publicProcedure.query(async ({ ctx }) => {
-    try {
-      const archetypes = await ctx.db.economicArchetype.findMany({
-        where: { isActive: true },
-        orderBy: { usageCount: "desc" },
-      });
-
-      // If database empty, use fallback
-      if (archetypes.length === 0) {
-        const fallback = getFallbackArchetypes("all");
-        return {
-          modern: fallback.filter((a) => (a as any).era === "modern"),
-          historical: fallback.filter((a) => (a as any).era === "historical"),
-        };
-      }
-
-      return {
-        modern: archetypes.filter((a) => a.era === "modern").map(parseArchetypeJSON),
-        historical: archetypes.filter((a) => a.era === "historical").map(parseArchetypeJSON),
-      };
-    } catch (error) {
-      console.error("Error fetching archetypes by category:", error);
-      // Fallback on error
-      const fallback = getFallbackArchetypes("all");
-      return {
-        modern: fallback.filter((a) => (a as any).era === "modern"),
-        historical: fallback.filter((a) => (a as any).era === "historical"),
-      };
-    }
-  }),
-
-  /**
    * Increment archetype usage count
-   * Called when user selects an archetype
+   * Called when user selects an archetype; accepts the row id or the archetype key. Signed in, once a day per
+   * player and archetype.
    */
-  incrementArchetypeUsage: publicProcedure
-    .input(z.object({ archetypeId: z.string() }))
+  incrementArchetypeUsage: rateLimitedMutationProcedure
+    .input(z.object({ archetypeId: z.string().min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
       try {
-        return await ctx.db.economicArchetype.update({
-          where: { id: input.archetypeId },
+        if (await countedToday(ctx.user.id, input.archetypeId)) return { count: 0 };
+        const { count } = await ctx.db.economicArchetype.updateMany({
+          where: { OR: [{ id: input.archetypeId }, { key: input.archetypeId }] },
           data: { usageCount: { increment: 1 } },
         });
+        return { count };
       } catch (error) {
         console.error("Error incrementing archetype usage:", error);
         // Don't throw error for usage tracking failures
         return null;
       }
     }),
-
-  // ============================================================================
-  // ADMIN ENDPOINTS
-  // ============================================================================
 });

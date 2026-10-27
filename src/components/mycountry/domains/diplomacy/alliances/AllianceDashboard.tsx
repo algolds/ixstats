@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Users, FileText, Vote, Crown, Eye, UserPlus, LogOut, Loader2 } from "lucide-react";
+import {
+  Group as Users,
+  Page as FileText,
+  CheckSquare as Vote,
+  Crown,
+  Eye,
+  UserPlus,
+  LogOut,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -20,7 +28,10 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { api } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
+import { formatCurrency, formatNumber } from "~/lib/utils/format-utils";
 import { CollectiveActionsPanel } from "./CollectiveActionsPanel";
+import { Card } from "~/components/ui/card";
 
 interface AllianceDashboardProps {
   allianceId: string;
@@ -29,12 +40,13 @@ interface AllianceDashboardProps {
   onLeave?: () => void;
 }
 
-const ROLE_BADGES: Record<string, { color: string; label: string }> = {
-  founder: { color: "bg-yellow-500/20 text-yellow-500", label: "Founder" },
-  leader: { color: "bg-blue-500/20 text-blue-500", label: "Leader" },
-  member: { color: "bg-green-500/20 text-green-500", label: "Member" },
-  observer: { color: "bg-gray-500/20 text-gray-500", label: "Observer" },
-};
+const ROLE_BADGES: Record<string, { variant: "secondary" | "default" | "outline"; label: string }> =
+  {
+    founder: { variant: "secondary", label: "Founder" },
+    leader: { variant: "default", label: "Leader" },
+    member: { variant: "outline", label: "Member" },
+    observer: { variant: "outline", label: "Observer" },
+  };
 
 export function AllianceDashboard({
   allianceId,
@@ -55,35 +67,41 @@ export function AllianceDashboard({
     { enabled: inviteOpen }
   );
 
+  const utils = api.useUtils();
+  const notify = useNotify();
   const inviteMutation = api.diplomaticPolicies.inviteMember.useMutation({
-    onSuccess: () => {
+    onSuccess: (result) => {
+      // A nation nobody plays answers at once; a player answers from their inbox.
+      const answer = "status" in result ? result.status : null;
+      if (answer === "active") notify.success("Invitation accepted", "They joined the alliance.");
+      else if (answer) notify.success("Invitation declined", "They chose not to join.");
+      else notify.success("Invitation sent", "It waits for the other nation's answer.");
       setInviteOpen(false);
       setInviteTarget("");
       void refetch();
+      void utils.diplomaticPolicies.getOutgoingAllianceInvites.invalidate();
     },
+    onError: (error) => notify.error("Could not send the invitation", error.message),
   });
 
   const leaveMutation = api.diplomaticPolicies.leaveAlliance.useMutation({
     onSuccess: () => {
       onLeave?.();
     },
+    onError: (error) => notify.error("Could not leave the alliance", error.message),
   });
 
   if (!alliance) return null;
 
   const canInvite = myRole === "founder" || myRole === "leader";
-  const formatNumber = (n: number) => {
-    if (n >= 1e12) return `$${(n / 1e12).toFixed(1)}T`;
-    if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-    if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
-    return n.toLocaleString();
-  };
-
   const targetCountries = relationships
     ? [
         ...new Map(
           relationships
-            .filter((r) => !alliance.members.some((m) => m.countryId === r.targetCountryId))
+            .filter(
+              (r) =>
+                r.sameRealm && !alliance.members.some((m) => m.countryId === r.targetCountryId)
+            )
             .map((r) => [
               r.targetCountryId,
               { id: r.targetCountryId, name: r.targetCountry ?? r.targetCountryId },
@@ -93,25 +111,21 @@ export function AllianceDashboard({
     : [];
 
   return (
-    <div className="space-y-4 rounded-lg border border-cyan-500/20 p-4">
-      {/* Alliance header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
+    <Card className="rounded-card space-y-4 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <div
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold text-white"
+            className="rounded-control text-headline flex h-10 w-10 shrink-0 items-center justify-center text-white"
+            // The alliance's own chosen colour (user data), so it is applied inline.
             style={{ backgroundColor: alliance.color }}
           >
             {alliance.shortName ?? alliance.name.slice(0, 2).toUpperCase()}
           </div>
           <div>
-            <h3 className="font-semibold">{alliance.name}</h3>
-            <div className="text-muted-foreground flex items-center gap-2 text-xs">
-              <Badge variant="outline" className="text-[10px]">
-                {alliance.type}
-              </Badge>
-              <Badge variant="outline" className="text-[10px]">
-                {alliance.visibility}
-              </Badge>
+            <h3 className="text-label text-title-3 truncate">{alliance.name}</h3>
+            <div className="text-label-secondary text-footnote flex items-center gap-2">
+              <Badge variant="outline">{alliance.type}</Badge>
+              <Badge variant="outline">{alliance.visibility}</Badge>
               <span>{alliance.memberCount} members</span>
             </div>
           </div>
@@ -122,13 +136,13 @@ export function AllianceDashboard({
             <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <UserPlus className="mr-1 h-3 w-3" />
+                  <UserPlus className="h-3.5 w-3.5" />
                   Invite
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Invite Nation</DialogTitle>
+                  <DialogTitle>Invite nation</DialogTitle>
                   <DialogDescription>Invite a country to join {alliance.name}.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -151,10 +165,7 @@ export function AllianceDashboard({
                     disabled={!inviteTarget || inviteMutation.isPending}
                     className="w-full"
                   >
-                    {inviteMutation.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
-                    Send Invitation
+                    {inviteMutation.isPending ? "Sending…" : "Send Invitation"}
                   </Button>
                 </div>
               </DialogContent>
@@ -164,75 +175,71 @@ export function AllianceDashboard({
           <Button
             variant="ghost"
             size="sm"
-            className="text-red-500 hover:text-red-600"
+            className="text-destructive hover:text-destructive"
             onClick={() => leaveMutation.mutate({ allianceId })}
             disabled={leaveMutation.isPending}
           >
-            <LogOut className="mr-1 h-3 w-3" />
+            <LogOut className="h-3.5 w-3.5" />
             Leave
           </Button>
         </div>
       </div>
 
       {alliance.description && (
-        <p className="text-muted-foreground text-sm">{alliance.description}</p>
+        <p className="text-label-secondary text-body">{alliance.description}</p>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 text-center">
-        <div className="rounded-lg border p-2">
-          <p className="text-lg font-bold">{alliance.memberCount}</p>
-          <p className="text-muted-foreground text-xs">Members</p>
-        </div>
-        <div className="rounded-lg border p-2">
-          <p className="text-lg font-bold">{formatNumber(alliance.calculatedTotalGdp)}</p>
-          <p className="text-muted-foreground text-xs">Combined GDP</p>
-        </div>
-        <div className="rounded-lg border p-2">
-          <p className="text-lg font-bold">{formatNumber(alliance.calculatedTotalPopulation)}</p>
-          <p className="text-muted-foreground text-xs">Total Pop.</p>
-        </div>
-      </div>
+      <dl className="grid grid-cols-3 gap-3 text-center">
+        {[
+          { label: "Members", value: String(alliance.memberCount) },
+          { label: "Combined GDP", value: formatCurrency(alliance.calculatedTotalGdp) },
+          { label: "Total pop.", value: formatNumber(alliance.calculatedTotalPopulation) },
+        ].map((stat) => (
+          <div key={stat.label} className="bg-fill-3 rounded-row p-2">
+            <dd className="text-label text-title-3 tabular-nums">{stat.value}</dd>
+            <dt>
+              <span className="text-caption text-label-secondary">{stat.label}</span>
+            </dt>
+          </div>
+        ))}
+      </dl>
 
-      {/* Members list */}
       <div>
-        <h4 className="mb-2 flex items-center gap-1 text-sm font-semibold">
-          <Users className="h-4 w-4" />
+        <h4 className="text-label text-headline mb-2 flex items-center gap-2">
+          <Users className="text-label-secondary h-4 w-4" />
           Members
         </h4>
         <div className="space-y-1">
           {alliance.members.map((m) => {
             const roleBadge = ROLE_BADGES[m.role] ?? ROLE_BADGES.member!;
             return (
-              <div key={m.id} className="flex items-center justify-between py-1 text-sm">
+              <div key={m.id} className="text-body flex items-center justify-between py-1">
                 <div className="flex items-center gap-2">
-                  {m.role === "founder" && <Crown className="h-3 w-3 text-yellow-500" />}
-                  {m.role === "observer" && <Eye className="h-3 w-3 text-gray-400" />}
+                  {m.role === "founder" && <Crown className="text-yellow h-3 w-3" />}
+                  {m.role === "observer" && <Eye className="text-label-secondary h-3 w-3" />}
                   <span className={m.countryId === countryId ? "font-medium" : ""}>
                     {m.country.name}
                   </span>
                 </div>
-                <Badge className={`text-[10px] ${roleBadge.color}`}>{roleBadge.label}</Badge>
+                <Badge variant={roleBadge.variant}>{roleBadge.label}</Badge>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Collective actions */}
       <CollectiveActionsPanel allianceId={allianceId} countryId={countryId} myRole={myRole} />
 
-      {/* Quick stats */}
-      <div className="text-muted-foreground flex items-center gap-4 text-xs">
+      <div className="text-label-secondary text-footnote flex items-center gap-4">
         <span className="flex items-center gap-1">
           <Vote className="h-3 w-3" />
           {alliance.pendingActions} pending proposals
         </span>
         <span className="flex items-center gap-1">
           <FileText className="h-3 w-3" />
-          {(alliance as any)._count?.documents ?? 0} documents
+          {alliance.documents.length} documents
         </span>
       </div>
-    </div>
+    </Card>
   );
 }

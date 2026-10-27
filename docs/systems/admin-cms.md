@@ -1,16 +1,19 @@
-# Admin Content Management System
+# 🛡️ Admin CMS & Platform Control Center
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Platform Administrative Subsystem & CMS Suite.
+**Last updated:** 2026-10-23
 
-Comprehensive guide to IxStates' 50+ administrative interfaces for managing dynamic game content, atomic reference catalogs, user roles, security audits, and system configuration.
+**Parent Platform Layer:** Platform Runtime & Shared Substrate  
+**Subsystems:** Dynamic Reference CMS, Role-Based Access Control (RBAC), Audit Trails, System Oversight  
+**Primary Action:** `ADMINISTER` | **Domain Accent:** Crimson Slate (`#E11D48` / `--color-rose-600`)  
+**Route:** `/admin/*` | **Status:** Release Candidate (platform 1.4.0)  
+
+The Admin CMS provides administrative oversight across 39 sections (plus the live dashboard) rendered by the single-page `AdminRouter` (`src/app/admin/_components/AdminRouter.tsx`), for managing dynamic game catalogs, atomic government/tax parameters, users and roles, logs, and platform health. See [`src/app/admin/README.md`](../../src/app/admin/README.md) for the full route list.
 
 ---
 
 ## Table of Contents
 1. [Overview & Architecture](#overview--architecture)
-2. [Reference Data Management](#reference-data-management)
+2. [Reference Data Management](#reference-data-management-interfaces)
 3. [Intelligence & Crisis Templates](#intelligence--crisis-templates)
 4. [Analytics & Monitoring](#analytics--monitoring)
 5. [User Roles & RBAC](#user-roles--rbac)
@@ -20,15 +23,15 @@ Comprehensive guide to IxStates' 50+ administrative interfaces for managing dyna
 
 ## Overview & Architecture
 
-The Admin CMS ensures **100% dynamic content management**—all game rules, atomic components, scenarios, and catalogs reside in PostgreSQL and can be modified at runtime without requiring code deployments:
+Most reference catalogs live in PostgreSQL and can be changed at runtime without a code deployment:
 
-- 56 atomic government components & synergies
-- 40+ economic policy components
-- 42 tax system components
 - 50+ diplomatic actions & 100+ dynamic scenarios
 - 8 NPC personality traits & archetypes
-- 500+ military equipment items & small arms
-- National issue templates & crisis event triggers
+- Economic archetypes (builder presets)
+- Military equipment, manufacturers & small arms
+- National issue templates
+
+The atomic government components (64) and economic components (27), including their tax impacts, are defined in code (`src/lib/government/data/`, `src/lib/economy/data/`); their admin sections are read-only.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -39,8 +42,8 @@ The Admin CMS ensures **100% dynamic content management**—all game rules, atom
      ┌───────────────────────────┼───────────────────────────┐
      ↓                           ↓                           ↓
 ┌──────────────────┐   ┌───────────────────┐   ┌───────────────────┐
-│ Reference Data   │   │ Analytics & Logs  │   │ System & Security │
-│ 9 Interfaces     │   │ 6 Interfaces      │   │ 5 Interfaces      │
+│ Simulation CMS   │   │ Platform & Logs   │   │ Users & Security  │
+│ 8 CMS sections   │   │ platform, logs    │   │ 4 sections        │
 └──────────────────┘   └───────────────────┘   └───────────────────┘
 ```
 
@@ -50,19 +53,19 @@ The Admin CMS ensures **100% dynamic content management**—all game rules, atom
 
 ### 1. Government Components (`/admin/government-components`)
 - **Router**: `src/server/api/routers/governmentComponents/`
-- **Capabilities**: CRUD operations for 56 atomic components, effectiveness scores (0–100), bilateral synergy matrix relationships, and conflict exclusions.
+- **Capabilities**: Read-only browser of the 64 atomic components (category, effectiveness, complexity, synergies) with adoption stats. The components are defined in code (`src/lib/government/data/`), which the builder, editor and calculations read directly; the `GovernmentComponentData` table only holds usage counts.
 
 ### 2. Economic Components (`/admin/economic-components`)
 - **Router**: `src/server/api/routers/economicComponents/`
-- **Capabilities**: Impact modifiers on GDP growth, employment, innovation, and inequality across 5 policy categories.
+- **Capabilities**: Read-only browser of the 27 economic components and the preset templates, with adoption stats. Defined in code (`src/lib/economy/data/`); the `EconomicComponentData` table only holds usage counts.
 
-### 3. Tax Components (`/admin/tax-components`)
-- **Router**: `src/server/api/routers/taxSystem/` & `atomicTax.ts`
-- **Capabilities**: Rate ranges, revenue calculation formulas, compliance curves, and administrative costs.
+### 3. Tax Components
+- **Router**: `src/server/api/routers/taxSystem/` (`crud.ts`, `analysis.ts`)
+- **Status**: No admin editor. The standalone `/admin/tax-components` route was removed, and each economic component's tax impact is part of the code-defined component library (see above).
 
 ### 4. Economic Archetypes (`/admin/economic-archetypes`)
 - **Router**: `src/server/api/routers/economicArchetypes/`
-- **Capabilities**: Pre-configured macro policy packages (Nordic Model, Developmental State, Free Market, etc.).
+- **Capabilities**: Create, edit and deactivate the archetype presets (Nordic Model, Silicon Valley, British Empire, etc.). The `EconomicArchetype` table is the source of truth for the builder's archetype picker (`useArchetypes`); an empty table is seeded from `src/lib/economy/archetypes/` on first read, and the built-ins are the fallback if it can't be read. Players' builder state stores the archetype `key`.
 
 ### 5. Diplomatic Scenarios & Options (`/admin/diplomatic-scenarios`)
 - **Router**: `src/server/api/routers/diplomaticScenarios/`
@@ -74,7 +77,7 @@ The Admin CMS ensures **100% dynamic content management**—all game rules, atom
 
 ### 7. Military Equipment (`/admin/military-equipment`)
 - **Router**: `src/server/api/routers/militaryEquipment/` & `smallArmsEquipment/`
-- **Capabilities**: 500+ equipment items across aircraft, naval, ground armor, electronics, and small arms.
+- **Capabilities**: Create, edit and deactivate equipment and manufacturers; small arms; analytics. The `MilitaryEquipmentCatalog` and `DefenseManufacturer` tables are the source of truth for the Defense equipment browser (`militaryEquipment.getPlayerCatalog`); empty tables are seeded from `src/lib/military/` on first read, and the built-in list is the fallback if they can't be read.
 
 ---
 
@@ -84,45 +87,59 @@ The Admin CMS ensures **100% dynamic content management**—all game rules, atom
 - **Router**: `src/server/api/routers/national-issues/`
 - **Capabilities**: Authoring templates with JSON condition trees, variable placeholders (`{{neighborName}}`, `{{ministerName}}`), and typed consequence definitions.
 
-### 9. Crisis Events (`/admin/crisis-events`)
+### 9. Crisis Events (no admin UI)
 - **Router**: `src/server/api/routers/crisis-events.ts`
-- **Capabilities**: Manual admin triggering for storytelling, parameter overriding, and escalation management.
+- **Status**: The `/admin/crisis-events` route was removed and no admin panel calls `api.crisisEvents.*`. Manual crisis triggering from the admin console is not available; world events are authored in the Storyteller panel (`/admin/storyteller`).
 
 ---
 
 ## Analytics & Monitoring
 
-- **Autosave Monitor (`/admin/autosave-monitor`)**: Monitors Map Editor spatial autosave queues, failure analysis, and retry buffers (`autosaveMonitoring.ts`).
-- **NationStates Sync (`/admin/ns-sync`)**: Daily dump sync status, region discovery, rate limit compliance (`ns-import/`).
-- **Lore Cards Batch Generator (`/admin/lore-cards/batch-generator`)**: Bulk ingestion of MediaWiki articles into trading cards (`lore-cards/`).
-- **Maps Admin (`/admin/maps`)**: Geo diagnostics, province integrity, boundary conformance review (`geo/admin.ts`).
+- **Autosave Monitor (`/admin/autosave-monitor`)**: Opens the Platform panel's autosave tab — autosave queues, failure analysis, and retry buffers (`autosaveMonitoring.ts`).
+- **Cards (`/admin/cards`)**: nine tabs (Overview, Library, Imports with the wiki importer and NationStates, Curation, Packs, Economy, Seasons, Compliance, Designer), served by `cards.admin.*` (`src/server/api/routers/cards/admin/`). The Imports tab (`src/app/admin/cards/imports/`) runs one importer for IxWiki, IIWiki, AltHistory and Wikimedia Commons as server-side import jobs, and NationStates region syncs; every imported card waits in Curation. The `/admin/ns-sync` and `/admin/lore-cards/batch-generator` routes were removed. See [cards.md](cards.md#cards-admin).
+- **Bot (`/admin/bot`)**: the Discord bot integration center (`BotIntegrationCenter`). Its Lorewards section (`LorewardsBotSection`) holds the PM2 process manager and live logs, the Loreward run console, the **Manual winner override tool** (`LorewardOverrideCard`), **Run full sync** (`lorewards.triggerSync`) beside **Pay now** (`lorewards.payNow`, `LorewardPayNowButton`), and the silent blacklist manager, which still reads the bot's state file (`lorewards.getBlacklist`). **Pay now** settles every recorded place (mints the missing trophy cards, gives the waiting ones, pays the unpaid places from 15 October 2026, each once); its toast (`payNowToast`, `src/lib/lorewards/admin-toasts.ts`) says how many places were paid and trophy cards minted and given, and warns "Loreward bonuses are off" when bonuses are switched off (cards are still minted and given). The same button sits under the payout grid in `/admin/cards` → Economy → Loreward payouts. See [ixcredits.md](ixcredits.md) and [cards.md](cards.md#loreward-trophy-cards).
+- **Maps Admin (`/admin/maps`, `/admin/maps/realms/<slug>`, `/admin/maps/studio`, `/admin/maps/editor`, `/admin/maps/style-editor`)**: Atlas (realm overview, jobs, edit queue, map style, map import, realm pages) and World Studio, served by the `atlas` router (`src/server/api/routers/atlas/`); province and city imports in `geoAdmin` (`src/server/api/routers/geo/admin/`). See [maps.md](maps.md#atlas-and-world-studio).
 
 ---
 
-## User Roles & RBAC (`/admin/membership`)
+## User Roles & RBAC
 
-**Router**: `src/server/api/routers/admin/membership.ts` & `roles/`
+**Routes**: `/admin/user-roles`, `/admin/users`, `/admin/membership`  
+**Router**: `src/server/api/routers/admin/users.ts`; role helpers in `src/lib/auth/` (`ability.ts`, `user-management-service.ts`, `system-owner-constants.ts`)
 
-| Role | Access Level | Permissions |
+System roles seeded by `user-management-service.ts` (lower level = more privilege):
+
+| Role | Level | Permissions |
 | :--- | :--- | :--- |
-| **SYSTEM_OWNER** | Superuser | Full system control, database operations, role assignment |
-| **SUPER_ADMIN** | High Admin | Manage all content, user roles, security audits, ban/unban |
-| **ADMIN** | Standard Admin | Edit reference data, approve map edits, resolve disputes |
-| **MODERATOR** | Content Review | Moderate ThinkPages/Forum posts, manage report queues |
-| **USER** | Player | Standard game and simulation access |
+| **owner** (System Owner) | 0 | Full system control; `SYSTEM_OWNER_IDS` are always treated as owners |
+| **admin** (Administrator) | 10 | Administrative access to the admin console and `adminProcedure` endpoints |
+| **user** (Member) | 100 | Standard game and simulation access |
+
+`/admin/users` (`UsersPanel`) also holds the identity tabs. **Identities** lists each account's country, role, Discord, old
+forum account and approved old IxWiki names (hidden ones too: an admin surface). **Name claims** (`NameClaimsTab`) is
+the queue of old IxWiki name claims by status, with each name's evidence (WikiOS edits, Lorewards standing, imported
+groups, a block in force) and Approve, Reject and Remove; its **Link an old name** sheet (`LinkLegacyNameSheet`)
+finds a name in WikiOS revisions, Lorewards and classic MediaWiki's user list, then the account, and links it
+directly. Only a system owner's approval or link passes a name's imported MediaWiki groups, and an administrator who
+is not a system owner cannot decide a name for their own account. Procedures: `admin.listNameClaims`,
+`searchLegacyWikiNames`, `findNameLinkTargets`, `approveNameClaim`, `rejectNameClaim`, `revokeNameClaim`,
+`linkLegacyWikiName` (`src/server/api/routers/admin/name-claims.ts`). See
+[Wiki identity](ixnayid-passport.md#wiki-identity).
+
+The admin layout (`src/app/admin/layout.tsx`) also admits a `staff` role name. There are no built-in `SUPER_ADMIN` or `MODERATOR` roles. `/admin/membership` manages membership tiers, not roles.
 
 ---
 
 ## Audit Logging & Bulk Operations
 
-All administrative mutations automatically write immutable entries to the `AuditLog` table with:
-- `userId`, `action`, `resourceType`, `resourceId`, `changes` (before/after JSON diff), `ipAddress`, and `timestamp`.
-- Bulk operations support CSV/JSON import, batch validation, and single-transaction rollbacks on schema violations.
+`adminProcedure` runs `auditLogMiddleware` (`src/server/api/trpc/middleware.ts`). It writes an `AuditLog` row only for high-security paths (procedure paths containing `execute`) and for failed calls; other admin calls are logged through `userLoggingMiddleware.admin`. Some routers (e.g. diplomatic scenarios, intelligence templates, military equipment) also write `AuditLog` rows directly.
+- `AuditLog` fields: `userId`, `action`, `target`, `details` (JSON string), `ipAddress`, `userAgent`, `success`, `error`, `timestamp`, `entityType`. There is no before/after diff column.
+- There is no generic CSV/JSON bulk import with transactional rollback; imports are per-feature (roster import in `/admin/countries`, card import in `/admin/cards`).
 
 ---
 
 ## Related Documentation
 
-- [Admin Endpoint Security Map](../ADMIN_ENDPOINT_SECURITY_MAP.md)
+- [Admin Endpoint Security Map](../reference/admin-endpoint-security-map.md)
 - [Database Models Reference](../reference/database.md)
-- [API Reference: Admin Routers](../reference/api-complete.md#admin-router)
+- [API Reference](../reference/api-complete.md)

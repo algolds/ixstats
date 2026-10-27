@@ -1,0 +1,50 @@
+// src/lib/cards/face/sheet-link.ts
+/**
+ * Where a sheet was opened from, when that place shows the card: it opens a card outside the catalogue, and a signed-out
+ * visitor's sheet.
+ */
+export type SheetFrom =
+  | { kind: "showcase"; id: string }
+  | { kind: "offer"; id: string }
+  | { kind: "holder"; handle: string };
+
+type FromBuilder = (value: string) => SheetFrom | null;
+
+/** A showcase's or an offer's id. */
+const ID_VALUE = /^[A-Za-z0-9_-]{1,64}$/;
+
+/**
+ * A passport handle as `passportHandleOf` emits it: a stored handle, a verified wiki name or a forum name (with
+ * spaces and any letters, such as "Takatta Loa"), else a Clerk id. MediaWiki names run to 255 characters.
+ */
+const HANDLE_VALUE = /^[^\p{Cc}]{1,255}$/u;
+
+/**
+ * Each `?from=` kind, building the place from its value when the value fits the kind: the only list of kinds (the
+ * pattern takes any word).
+ */
+const FROM_KINDS: ReadonlyMap<string, FromBuilder> = new Map<string, FromBuilder>([
+  ["showcase", (id) => (ID_VALUE.test(id) ? { kind: "showcase", id } : null)],
+  ["offer", (id) => (ID_VALUE.test(id) ? { kind: "offer", id } : null)],
+  ["holder", (handle) => (HANDLE_VALUE.test(handle) ? { kind: "holder", handle } : null)],
+]);
+
+/** A kind, a dot, and its value; a handle may hold dots of its own, so the first dot splits. */
+const FROM_PATTERN = /^([a-z]+)\.(.+)$/;
+
+export function encodeSheetFrom(from: SheetFrom): string {
+  return from.kind === "holder" ? `holder.${from.handle}` : `${from.kind}.${from.id}`;
+}
+
+/** The `?from=` value, or null when it is missing, malformed or of an unknown kind. */
+export function parseSheetFrom(raw: string | null | undefined): SheetFrom | null {
+  const match = FROM_PATTERN.exec(raw ?? "");
+  return match ? (FROM_KINDS.get(match[1])?.(match[2]) ?? null) : null;
+}
+
+/** A path that opens `cardId`'s sheet (`?card=`), keeping where it was opened from. */
+export function cardSheetHref(path: string, cardId: string, from?: SheetFrom | null): string {
+  const params = new URLSearchParams({ card: cardId });
+  if (from) params.set("from", encodeSheetFrom(from));
+  return `${path}?${params.toString()}`;
+}

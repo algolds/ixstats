@@ -1,42 +1,13 @@
 "use client";
 
 import React from "react";
-import { EmbassyCard } from "./EmbassyCard";
-
-/**
- * Embassy data with calculated synergies
- */
-interface EmbassyWithSynergies {
-  id: string;
-  name: string;
-  hostCountry: string;
-  hostCountryFlag?: string | null;
-  guestCountry: string;
-  guestCountryFlag?: string | null;
-  status: string;
-  strength: number;
-  totalSynergyScore: number;
-  economicBonus: number;
-  diplomaticBonus: number;
-  culturalBonus: number;
-  synergies: Array<{
-    category: string;
-    matchScore: number;
-    sharedComponents: string[];
-    benefits: {
-      economic: number;
-      diplomatic: number;
-      cultural: number;
-    };
-  }>;
-}
+import { EmbassyCard, type EmbassySummary } from "./EmbassyCard";
 
 /**
  * Props for EmbassyGrid component
  */
 interface EmbassyGridProps {
-  /** Array of embassies with calculated synergies */
-  embassies: EmbassyWithSynergies[];
+  embassies: EmbassySummary[];
   /** Whether the current user owns this country */
   isOwner: boolean;
   /** Callback when an embassy card is clicked */
@@ -57,9 +28,9 @@ interface EmbassyGridProps {
  * @example
  * ```tsx
  * <EmbassyGrid
- *   embassies={embassiesWithSynergies}
+ *   embassies={embassies}
  *   isOwner={true}
- *   onEmbassyClick={(id) => setShowSharedData(id)}
+ *   onEmbassyClick={(id) => setSelectedEmbassyId(id)}
  * />
  * ```
  */

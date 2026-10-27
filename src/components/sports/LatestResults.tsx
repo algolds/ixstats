@@ -1,0 +1,270 @@
+"use client";
+
+import React, { useRef, useState } from "react";
+import { cn } from "~/lib/utils";
+import { withBasePath } from "~/lib/base-path";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import Link from "next/link";
+import { OpenBook as BookOpen } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+
+export interface MatchEvent {
+  id: string;
+  matchDay: number;
+  homeTeamName: string;
+  awayTeamName: string;
+  homeTeamId: string;
+  awayTeamId: string;
+  homeScore?: number | null;
+  awayScore?: number | null;
+  status: string;
+  homeColor?: string;
+  awayColor?: string;
+  homeShortName?: string | null;
+  awayShortName?: string | null;
+  homeLogo?: string | null;
+  awayLogo?: string | null;
+  homeWikiSlug?: string | null;
+  awayWikiSlug?: string | null;
+}
+
+interface LatestResultsProps {
+  matches: MatchEvent[];
+  title?: string;
+  onTeamClick?: (teamId: string) => void;
+  onMatchClick?: (matchId: string) => void;
+  className?: string;
+}
+
+export function LatestResults({
+  matches,
+  title = "Latest Results",
+  onTeamClick,
+  onMatchClick,
+  className,
+}: LatestResultsProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  // Filter only completed matches
+  const completedMatches = matches.filter((m) => m.status === "completed");
+
+  if (completedMatches.length === 0) {
+    return (
+      <div className={cn("text-label-secondary mx-auto w-full px-5 py-8 text-center", className)}>
+        No results simulated yet.
+      </div>
+    );
+  }
+
+  // Group matches by matchDay
+  const groupedByMatchDay = completedMatches.reduce<Record<number, MatchEvent[]>>((acc, match) => {
+    if (!acc[match.matchDay]) {
+      acc[match.matchDay] = [];
+    }
+    acc[match.matchDay].push(match);
+    return acc;
+  }, {});
+
+  // Sort matchDays descending to show latest first
+  const sortedMatchDays = Object.keys(groupedByMatchDay)
+    .map(Number)
+    .sort((a, b) => b - a);
+
+  const handleScroll = () => {
+    if (containerRef.current) {
+      const { scrollTop, clientHeight } = containerRef.current;
+      const index = Math.round(scrollTop / clientHeight);
+      if (index !== activeIndex) {
+        setActiveIndex(index);
+      }
+    }
+  };
+
+  const visibleMatchDays = sortedMatchDays.slice(0, 10); // Show up to latest 10 matchdays
+
+  return (
+    <div className={cn("mx-auto w-full px-2 sm:w-[500px]", className)}>
+      <Card className="relative overflow-hidden p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-label text-label-secondary text-eyebrow">{title}</h3>
+          <span className="text-label-secondary text-eyebrow select-none">Swipe Up/Down</span>
+        </div>
+
+        {/* Scrollable Container */}
+        <div
+          ref={containerRef}
+          onScroll={handleScroll}
+          className="no-scrollbar h-[380px] snap-y snap-mandatory overflow-y-auto"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {visibleMatchDays.map((matchDay) => {
+            const dayMatches = groupedByMatchDay[matchDay] || [];
+            return (
+              <div
+                key={matchDay}
+                className="flex h-[380px] snap-start flex-col justify-between py-2"
+              >
+                {/* Match Day Indicator */}
+                <div className="border-separator mb-2 flex items-center justify-between border-b pb-2">
+                  <span className="text-label text-headline">Matchday {matchDay}</span>
+                  <span className="bg-fill-3 text-label-secondary text-footnote rounded-full px-2 py-0.5 font-medium">
+                    {dayMatches.length} Matches
+                  </span>
+                </div>
+
+                {/* Match List for this Day */}
+                <div className="flex-1 space-y-2 overflow-y-auto pr-1">
+                  {dayMatches.map((match) => {
+                    const homeColor = match.homeColor || "#3b82f6";
+                    const awayColor = match.awayColor || "#ef4444";
+                    const homeWon = (match.homeScore ?? 0) > (match.awayScore ?? 0);
+                    const awayWon = (match.awayScore ?? 0) > (match.homeScore ?? 0);
+
+                    return (
+                      <div
+                        key={match.id}
+                        onClick={() => onMatchClick?.(match.id)}
+                        className={cn(
+                          "bg-fill-3 rounded-row flex items-center justify-between p-3 transition-colors",
+                          onMatchClick && "cursor-pointer"
+                        )}
+                      >
+                        {/* Home Team */}
+                        <div className="flex flex-1 items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onTeamClick?.(match.homeTeamId);
+                            }}
+                            className="group h-auto gap-2 p-0 text-left font-normal hover:bg-transparent hover:underline"
+                          >
+                            <div className="border-separator bg-background shadow-card flex aspect-square w-7 shrink-0 items-center justify-center rounded-full border p-0.5">
+                              {match.homeLogo ? (
+                                <img
+                                  src={withBasePath(match.homeLogo)}
+                                  alt={match.homeTeamName}
+                                  className="h-full w-full rounded-full object-contain"
+                                />
+                              ) : (
+                                <div
+                                  className="h-3 w-3 rounded-full"
+                                  style={{ backgroundColor: homeColor }}
+                                />
+                              )}
+                            </div>
+                            <span
+                              className={cn(
+                                "text-footnote font-semibold",
+                                homeWon ? "text-label font-semibold" : "text-label-secondary"
+                              )}
+                            >
+                              {match.homeShortName || match.homeTeamName}
+                            </span>
+                          </Button>
+                          {match.homeWikiSlug && (
+                            <Link
+                              href={titleToWikiOSRoute(match.homeWikiSlug)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-label-secondary hover:text-label opacity-60 transition-opacity hover:opacity-100"
+                              title={`Wiki: ${match.homeTeamName}`}
+                            >
+                              <BookOpen className="h-3 w-3" />
+                            </Link>
+                          )}
+                        </div>
+
+                        {/* Scores */}
+                        <div className="bg-surface-secondary border-separator rounded-control mx-2 flex items-center gap-2 border px-3 py-1 shadow-inner">
+                          <span
+                            className={cn(
+                              "text-footnote font-semibold tabular-nums",
+                              homeWon ? "text-label font-semibold" : "text-label-secondary"
+                            )}
+                          >
+                            {match.homeScore ?? "-"}
+                          </span>
+                          <span className="text-label-tertiary text-footnote">:</span>
+                          <span
+                            className={cn(
+                              "text-footnote font-semibold tabular-nums",
+                              awayWon ? "text-label font-semibold" : "text-label-secondary"
+                            )}
+                          >
+                            {match.awayScore ?? "-"}
+                          </span>
+                        </div>
+
+                        {/* Away Team */}
+                        <div className="flex flex-1 items-center justify-end gap-2">
+                          {match.awayWikiSlug && (
+                            <Link
+                              href={titleToWikiOSRoute(match.awayWikiSlug)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-label-secondary hover:text-label opacity-60 transition-opacity hover:opacity-100"
+                              title={`Wiki: ${match.awayTeamName}`}
+                            >
+                              <BookOpen className="h-3 w-3" />
+                            </Link>
+                          )}
+                          <Button
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onTeamClick?.(match.awayTeamId);
+                            }}
+                            className="group h-auto gap-2 p-0 text-right font-normal hover:bg-transparent hover:underline"
+                          >
+                            <span
+                              className={cn(
+                                "text-footnote font-semibold",
+                                awayWon ? "text-label font-semibold" : "text-label-secondary"
+                              )}
+                            >
+                              {match.awayShortName || match.awayTeamName}
+                            </span>
+                            <div className="border-separator bg-background shadow-card flex aspect-square w-7 shrink-0 items-center justify-center rounded-full border p-0.5">
+                              {match.awayLogo ? (
+                                <img
+                                  src={withBasePath(match.awayLogo)}
+                                  alt={match.awayTeamName}
+                                  className="h-full w-full rounded-full object-contain"
+                                />
+                              ) : (
+                                <div
+                                  className="h-3 w-3 rounded-full"
+                                  style={{ backgroundColor: awayColor }}
+                                />
+                              )}
+                            </div>
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Swipe Pagination Dots */}
+        {visibleMatchDays.length > 1 && (
+          <div className="mt-3 flex items-center justify-center gap-2">
+            {visibleMatchDays.map((_, idx) => (
+              <div
+                key={idx}
+                className={cn(
+                  "h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+                  activeIndex === idx ? "bg-tint w-4" : "bg-fill w-1.5"
+                )}
+              />
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}

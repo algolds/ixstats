@@ -1,51 +1,121 @@
 # Events & Realtime Channels
 
-**Last updated:** May 2026
+**Last updated:** 2026-10-21
 
 This reference summarises realtime channels, notification payloads, and scheduled jobs used across IxStates (IxStats).
 
+> The former `/ws/intelligence` channel and `RealTimeIntelligenceServer` (`pushEconomicUpdate`, `pushDiplomaticUpdate`, `pushCrisisAlert`) no longer exist. Realtime now runs over the two WebSocket servers and the one SSE stream below.
+
 ## WebSocket Channels
-- **Endpoint**: `/ws/intelligence`
-- **Server**: `src/server/websocket-server.ts` (Socket.IO-compatible WebSocket server spun up by `server.mjs`)
-- **Subscriptions**: Clients auto-subscribe to `all` plus type-specific channels (`economic`, `diplomatic`, `government`, `crisis`, `achievement`)
-- **Payload Format**:
+
+Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
+- **`ws-backend.mjs`** — standalone PM2 app `ixstats-ws` (port `WS_BACKEND_PORT`, default `3551`; `GET /healthz`). nginx proxies the WS paths to it, because the ixworld standalone build (`server.js`) has no Socket.IO server attached.
+- **`server.mjs`** — the custom Next.js server; hosts ThinkPages WS in production only (disabled in dev) and Market WS always.
+
+### ThinkPages — `/ws/thinkpages`
+- **Server**: `src/lib/websocket/thinkpages-websocket-server.ts` (Socket.IO), bootstrapped by `src/server/websocket-server.ts`
+- **Auth**: Clerk session token (`createSocketAuthMiddleware`, `src/lib/websocket/socket-auth.ts`); origin allow-list gates both polling and the websocket upgrade
+- **Rooms**: `conversation:<id>` and `group:<id>` (pattern `^(conversation|group):[A-Za-z0-9_-]{1,64}$`); joining requires a membership check
+- **Client → server**: `subscribe`, `unsubscribe`, `presence:update`, `typing:update`, `read:receipt`
+- **Server → client**: `authenticated`, `subscribe:error` (`invalid_channel` | `forbidden`), `message:update`, `conversation:update`, `presence:update`, `typing:update`, `read:receipt`
+- **Cross-process fan-out**: when the calling process does not host Socket.IO, routers publish to the Redis channel `ixstats:thinkpages:broadcast` (`src/server/thinkpages-broadcast-bridge.ts`); the hosting process subscribes and re-emits
+- **Heartbeat**: Socket.IO `pingInterval` 25s, `pingTimeout` 60s
+- **Payload Format** (`message:update`):
   ```json
   {
-    "type": "intelligence_update",
-    "category": "economic",
-    "countryId": "abc123",
-    "data": {...},
-    "timestamp": "2025-10-18T17:12:34.000Z",
-    "priority": "medium"
+    "type": "message:update",
+    "data": { "conversationId": "abc123", "messageId": "msg_1", "accountId": "acc_1" },
+    "timestamp": 1760000000000,
+    "channel": "conversation:abc123"
   }
   ```
-- **Health Checks**: Server pings every 60s; clients respond with `pong`
-- **Graceful Shutdown**: `RealTimeIntelligenceServer.shutdown()` invoked during process exit
+- **Graceful Shutdown**: `SIGTERM`/`SIGINT` close the Redis subscriber and call `ThinkPagesWebSocketServer.shutdown()`
+
+### Market — `/api/market-ws`
+- **Server**: `src/lib/websocket/market-websocket-server.ts` (`ws`); client in `market-websocket-client.ts`
+- **Server → client**: `connected`, `pong`, `bid`, `auction_complete`, `price_update`, `auction_created`
+- **Cross-process fan-out**: bids and buyouts happen in the web process and completions in `ixstats-cron`, so every market event is published to the Redis channel `ixstats:market:broadcast` (`src/server/market-broadcast-bridge.ts`); each process that hosts a market socket subscribes and re-emits it. Without Redis the event goes only to the local socket, if the process has one
+
+### Map updates (SSE) — `/api/sse/map-updates`
+- **Route**: `src/app/api/sse/map-updates/route.ts` (Next.js route handler, `EventSource`), fed by `mapUpdateBus` (`src/lib/maps/map-update-bus.ts`)
+- **Events**: `map_data_changed` after any successful geo mutation (city, subdivision, POI, story pin, map label, …); keep-alive every 15s
 
 ## Notification Pipeline
-- `notifications.ts` router handles alert creation, acknowledgement, and delivery rules
-- Alert categories: compliance, diplomatic, defense, economic, social
-- Webhooks (Discord) triggered via `~/lib/error-logger` when enabled (`DISCORD_WEBHOOK_ENABLED`)
-- In-app notifications appear in compliance modal, intelligence feeds, and activity streams
+- `notifications` router (`src/server/api/routers/notifications/`) handles listing, read state, preferences, and event configuration
+- Event catalog: `src/lib/notifications/events-registry.ts` (13 events in 6 categories: economic, diplomatic, governance, achievement, social, system)
+- `notificationAPI` (`src/lib/notifications/api.ts`) is the server-side creation entry point
+- Discord webhooks: `src/lib/discord/webhook.ts` and `src/lib/logging/error-logger.ts`, enabled by `DISCORD_WEBHOOK_ENABLED=true` (+ `DISCORD_WEBHOOK_URL`)
+- In-app notifications appear in the notification centre, compliance modal, and activity streams
 
 ## Scheduled & Batch Jobs
-Scripts under `scripts/` (execute manually or via cron):
+
+`cron-runner.mjs` (PM2 app `ixstats-cron`, Bun) is the **only** scheduler; the web app, `server.mjs` and `ws-backend.mjs` schedule nothing. Jobs are defined in `src/server/cron/jobs.ts` (35 jobs; five are not listed here: `wiki-mirror`, `wiki-render-stale`, `forum-render-stale`, `story-chain-wiki-sync` and `realm-inactivity`); only those named in `CRON_ENABLED_JOBS` (comma list or `*`) run, each under a lease row in `job_leases` (`withJobLock`, `src/lib/system/job-lock.ts`) that expires after the job's timeout, so a crashed run never blocks the next. Every run is recorded as a `CronRun` row (success, skipped or failed) and a failure alerts the Discord webhook; see [monitoring.md](../operations/monitoring.md#scheduled-jobs). Schedules with a `SystemConfig` override key are read once at startup.
+
+| Job | Default schedule | Override key |
+| --- | --- | --- |
+| `auction-completion` | `* * * * *` | — |
+| `listing-expiry` | `*/10 * * * *` | — |
+| `vault-dividend` | `0 0 * * *` | `cronSchedule_vaultDividend` |
+| `card-values` | `0 */6 * * *` | `cronSchedule_cardValue` |
+| `card-holding-xp` | `30 3-23 * * *` | — |
+| `lore-card-generation` | `0 2 * * *` | — |
+| `card-import-jobs` | `* * * * *` | — |
+| `lorewards-full-sync` | `0 6 * * *` | `cronSchedule_lorewardsScoring` |
+| `lorewards-ool-backfill` | `20 * * * *` | — |
+| `trade-expiry` | `*/5 * * * *` | — |
+| `sports-season-advance` | `*/15 * * * *` | — |
+| `elections` | `*/10 * * * *` | — |
+| `politics-drift` | `0 */6 * * *` | — |
+| `diplomatic-drift` | `0 */6 * * *` | — |
+| `policy-maintenance` | `0 */6 * * *` | — |
+| `national-issues` | `*/30 * * * *` | — |
+| `wiki-recentchanges` | `*/10 * * * *` | `cronSchedule_wikiRecentChanges` |
+| `budget-year-rollover` | `41 * * * *` | — |
+| `stat-progression` | `23 */6 * * *` | `cronSchedule_statProgression` |
+| `thinkpages-trending` | `*/15 * * * *` | `cronSchedule_thinkpagesTrending` |
+| `achievements-evaluate` | `41 * * * *` | — |
+| `exchange-market` | `7 */6 * * *` | — |
+| `exchange-contract-expiry` | `*/15 * * * *` | — |
+| `db-backup` | `17 3 * * *` | — |
+| `log-retention` | `41 4 * * *` | — |
+| `notification-email-digest` | `7 8 * * *` | — |
+| `realm-source-sync` | `37 * * * *` | — |
+| `map-import` | `* * * * *` | — |
+| `geo-profiles` | `*/5 * * * *` | — |
+| `map-tiles` | `*/5 * * * *` | — |
+
+- `auction-completion` settles ended auctions; `listing-expiry` ends fixed-price listings past their 14 days, unlocks their copies and refunds the listing refund share of the fee; `trade-expiry` ends trade offers past their 24 hours ([cards.md](../systems/cards.md#card-economy)).
+- `card-values` rebuilds the card market medians (`CardMarketPrice`) from recent priced sales, then writes every card's reference value (`Card.marketValue`) and a `CardValueHistory` row when it moved (`src/server/modules/cards/market-values.ts`); the Economy tab's Revalue runs the same work.
+- `card-holding-xp` gives every copy held a day or more its daily holding XP within the copy's daily cap, once per UTC day (03:30, with the later hours retrying a failed or missed run); it writes no event rows.
+- `stat-progression` persists the economic projection into each country's stored `current*` stats and writes one `HistoricalDataPoint` per IxTime month; the admin `forceRecalculation` takes the same lease.
+- `thinkpages-trending` scores posts with engagement decay, writes `TrendingTopic` and reconciles the like/reply/repost counters.
+- `achievements-evaluate` evaluates account-level and active-country achievements for recently seen users.
+- `db-backup` writes a `pg_dump` to `backups/` and keeps the newest 14.
+- `notification-email-digest` emails the daily notification digest to users who chose it; it does nothing while email is not configured ([notifications.md](../systems/notifications.md#7-jobs)).
+- `log-retention` prunes user-action logs and log files older than `UserLogger`'s 90-day retention, and `CronRun` rows older than 30 days.
+- `exchange-market` recomputes the four Exchange sector indices, rebalances the sector funds (zero-sum), applies company decisions queued a day earlier and refreshes company fair values; `exchange-contract-expiry` cancels OPEN contracts never awarded within 3 days of bidding closing and refunds their escrow once ([exchange.md](../systems/exchange.md)).
+- `realm-source-sync` runs every realm whose own source sync schedule is due (`RealmSourceSync.intervalHours` since its last applied run), one realm at a time, each under the lease `realm-source-sync:<realmId>` that manual runs share ([realms-eurth-onboarding.md](../systems/realms-eurth-onboarding.md), step 4).
+- `map-import` runs queued realm map import analyses (PNG tracing in a worker thread) and any apply job the web process left queued for two minutes, one realm at a time under the lease `map-import:<realmId>`; without it the web process runs the queue in-process ([maps.md](../systems/maps.md#realm-map-import-engine)).
+- `geo-profiles` recomputes the geo profiles (and map-derived `GeographicResource` rows) that the map editor's Recalc action queued by marking them stale, plus any country with map geometry and no profile, one country at a time under the lease `geo-profiles` ([maps.md](../systems/maps.md)); without it Recalc queues work that never runs.
+- `map-tiles` pre-renders z0 to z3 of the vector tiles (altitudes, rivers, lakes) of Ixnay and every published realm whose current map version has no `.done` marker, so the first visitor after a map change finds them cached, and removes tile folders of versions a newer one outlived for a day (a run starts no tile after 15 minutes). It writes to `MAP_TILE_DIR`, which the web app and the IxWorld standalone must share ([maps.md](../systems/maps.md#map-delivery-atlas-release-0)); without it the web process renders tiles on first request and cleans up old folders itself.
+- `elections` also schedules first elections, and `diplomatic-drift` expires foreign-policy proposals and alliance invites after 14 days.
+
+ixtwitter sync is not a cron job; it runs as the separate `ixstats-ixtwitter` PM2 process.
+
+Manual scripts under `scripts/`:
 - `scripts/audit/audit-trpc-wiring.ts` – Verifies endpoint wiring
-- `scripts/audit/run-all-tests.ts` – Aggregated regression runner
-- `scripts/audit/test-all-crud-operations.ts` – Exercises CRUD endpoints
-- `scripts/audit/verify-economic-calculations.ts` – Validates economic formulas
-- `scripts/setup/backup-db.ts` / `restore-db.ts` – Database maintenance
+- `scripts/setup/backup-db.ts` / `restore-db.ts` – `db:backup` / `db:restore` (`pg_dump -Fc` to `backups/` with retention; `pg_restore`), see [deployment.md](../operations/deployment.md#backups-and-restore)
 
 ## Event Producers
-- **Economic Updates** – `RealTimeIntelligenceServer.pushEconomicUpdate`
-- **Diplomatic Updates** – `pushDiplomaticUpdate`
-- **Crisis Alerts** – `pushCrisisAlert`
-- **Achievements** – `achievements.unlock` mutation triggers notifications & optional realtime events
+- **ThinkShare messages** – `messages` router (`messaging.ts`, `conversations.ts`, `participants.ts`) → `getThinkPagesBroadcaster().broadcastMessage()`
+- **Marketplace auctions** – `src/lib/economy/auction-service.ts` (card-market router and `auction-completion` job) → Market WS broadcasts. Fixed-price listings broadcast nothing; the Market reads them again after a change.
+- **Achievements** – `achievements.unlock` admin mutation (awards 5 credits on first unlock); collector achievements resync via `syncMyCollectorAchievements`
+- **Cron jobs** – economy, politics, diplomacy, national-issue, stats, social and wiki jobs listed above
 
 ## Consumers
-- Intelligence dashboard (`LiveDiplomaticFeed.tsx`, `IntelligenceFeed.tsx`)
+- Messaging (`useThinkPagesWebSocket` in `src/hooks/useThinkPagesWebSocket.ts`, used by `MessagesRouter.tsx`)
+- Vault auctions (`useAuctionWebSocket` in `src/hooks/marketplace/`, used by the cards hub's Market, `src/components/vault/cards/market/MarketPane.tsx`)
 - Compliance modal (`MyCountryComplianceModal.tsx`)
-- Social feeds (`LiveEventsFeed.tsx`)
 - External monitoring channels (Discord webhooks)
 
 Update this document when new channels, event types, or automation scripts are introduced. Keep payload examples and channel lists in sync with the server implementation.

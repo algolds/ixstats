@@ -6,11 +6,10 @@ import {
   ThumbsDown,
   MinusCircle,
   Plus,
-  Loader2,
-  CheckCircle2,
-  XCircle,
+  CheckCircle as CheckCircle2,
+  XmarkCircle as XCircle,
   Clock,
-} from "lucide-react";
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
@@ -32,6 +31,8 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { api } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
+import { CountrySearchSelect } from "../CountrySearchSelect";
 
 interface CollectiveActionsPanelProps {
   allianceId: string;
@@ -40,22 +41,42 @@ interface CollectiveActionsPanelProps {
 }
 
 const STATUS_CONFIG: Record<string, { icon: typeof Clock; color: string }> = {
-  proposed: { icon: Clock, color: "text-yellow-500" },
-  approved: { icon: CheckCircle2, color: "text-blue-500" },
-  active: { icon: CheckCircle2, color: "text-green-500" },
-  rejected: { icon: XCircle, color: "text-red-500" },
-  expired: { icon: MinusCircle, color: "text-gray-500" },
+  proposed: { icon: Clock, color: "text-yellow" },
+  approved: { icon: CheckCircle2, color: "text-label" },
+  active: { icon: CheckCircle2, color: "text-green" },
+  rejected: { icon: XCircle, color: "text-destructive" },
+  expired: { icon: MinusCircle, color: "text-label-secondary" },
 };
 
-export function CollectiveActionsPanel({
-  allianceId,
-  countryId,
-  myRole,
-}: CollectiveActionsPanelProps) {
+type AllianceActionType =
+  "collective_sanction" | "shared_defense" | "trade_bloc" | "joint_statement";
+
+const ACTION_TYPES: ReadonlyArray<{ value: AllianceActionType; label: string }> = [
+  { value: "joint_statement", label: "Joint statement" },
+  { value: "collective_sanction", label: "Collective sanction" },
+  { value: "shared_defense", label: "Shared defense" },
+  { value: "trade_bloc", label: "Trade bloc" },
+];
+
+/** What a targeted action does once the alliance approves it. */
+const TARGET_HELP: Partial<Record<AllianceActionType, string>> = {
+  collective_sanction:
+    "Once approved, every voting member sanctions the target at once, with the same economic effects as a sanction of their own.",
+  trade_bloc:
+    "Once approved, every voting member offers the target free trade. Each offer takes effect when the target accepts it.",
+};
+
+const isAllianceActionType = (value: string): value is AllianceActionType =>
+  ACTION_TYPES.some((t) => t.value === value);
+
+export function CollectiveActionsPanel({ allianceId, myRole }: CollectiveActionsPanelProps) {
+  const notify = useNotify();
   const [proposeOpen, setProposeOpen] = useState(false);
   const [title, setTitle] = useState("");
-  const [actionType, setActionType] = useState<string>("joint_statement");
+  const [actionType, setActionType] = useState<AllianceActionType>("joint_statement");
+  const [targetId, setTargetId] = useState("");
   const [description, setDescription] = useState("");
+  const targetHelp = TARGET_HELP[actionType];
 
   const { data: dashboard, refetch } = api.diplomaticPolicies.getAllianceDashboard.useQuery(
     { allianceId },
@@ -67,13 +88,17 @@ export function CollectiveActionsPanel({
       setProposeOpen(false);
       setTitle("");
       setDescription("");
+      setTargetId("");
       void refetch();
     },
+    onError: (error) => notify.error("Could not propose the action", error.message),
   });
 
   const voteMutation = api.diplomaticPolicies.voteOnAllianceAction.useMutation({
     onSuccess: () => void refetch(),
+    onError: (error) => notify.error("Could not record the vote", error.message),
   });
+  const memberIds = (dashboard?.members ?? []).map((m) => m.countryId);
 
   const actions = dashboard?.actions ?? [];
   const canPropose = myRole !== "observer";
@@ -81,37 +106,53 @@ export function CollectiveActionsPanel({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold">Alliance Actions</h4>
+        <h4 className="text-label text-headline">Alliance actions</h4>
         {canPropose && (
           <Dialog open={proposeOpen} onOpenChange={setProposeOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">
-                <Plus className="mr-1 h-3 w-3" />
+                <Plus className="h-3.5 w-3.5" />
                 Propose
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Propose Alliance Action</DialogTitle>
+                <DialogTitle>Propose alliance action</DialogTitle>
                 <DialogDescription>
                   Create a proposal for the alliance to vote on.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label>Action Type</Label>
-                  <Select value={actionType} onValueChange={setActionType}>
-                    <SelectTrigger>
+                  <Label>Action type</Label>
+                  <Select
+                    value={actionType}
+                    onValueChange={(v) => isAllianceActionType(v) && setActionType(v)}
+                  >
+                    <SelectTrigger aria-label="Action type">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="joint_statement">Joint Statement</SelectItem>
-                      <SelectItem value="collective_sanction">Collective Sanction</SelectItem>
-                      <SelectItem value="shared_defense">Shared Defense</SelectItem>
-                      <SelectItem value="trade_bloc">Trade Bloc</SelectItem>
+                      {ACTION_TYPES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
+                {targetHelp && (
+                  <div>
+                    <Label>Target nation</Label>
+                    <CountrySearchSelect
+                      value={targetId}
+                      onSelect={(id) => setTargetId(id)}
+                      excludeIds={memberIds}
+                      label="Target nation"
+                    />
+                    <p className="text-label-secondary text-footnote mt-1">{targetHelp}</p>
+                  </div>
+                )}
                 <div>
                   <Label>Title</Label>
                   <Input
@@ -133,19 +174,16 @@ export function CollectiveActionsPanel({
                   onClick={() =>
                     proposeMutation.mutate({
                       allianceId,
-                      actionType: actionType as
-                        "collective_sanction" | "shared_defense" | "trade_bloc" | "joint_statement",
+                      actionType,
+                      targetId: targetHelp ? targetId : undefined,
                       title,
                       description: description || undefined,
                     })
                   }
-                  disabled={!title || proposeMutation.isPending}
+                  disabled={!title || (!!targetHelp && !targetId) || proposeMutation.isPending}
                   className="w-full"
                 >
-                  {proposeMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Submit Proposal
+                  {proposeMutation.isPending ? "Submitting…" : "Submit proposal"}
                 </Button>
               </div>
             </DialogContent>
@@ -154,7 +192,7 @@ export function CollectiveActionsPanel({
       </div>
 
       {actions.length === 0 ? (
-        <p className="text-muted-foreground py-4 text-center text-xs">
+        <p className="text-label-secondary text-footnote py-4 text-center">
           No proposals yet. Members can propose collective actions for a vote.
         </p>
       ) : (
@@ -165,18 +203,21 @@ export function CollectiveActionsPanel({
             const isPending = action.status === "proposed";
 
             return (
-              <div key={action.id} className="rounded-lg border p-3 text-sm">
+              <div
+                key={action.id}
+                className="border-separator bg-surface rounded-row text-body border p-3"
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-2">
                       <StatusIcon className={`h-3 w-3 ${statusCfg.color}`} />
-                      <span className="font-medium">{action.title}</span>
+                      <span className="text-label font-medium">{action.title}</span>
                     </div>
                     <div className="mt-1 flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="capitalize">
                         {action.actionType.replace("_", " ")}
                       </Badge>
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-label-secondary text-footnote">
                         Votes: {action.votesFor} for / {action.votesAgainst} against (need{" "}
                         {action.requiredVotes})
                       </span>
@@ -188,33 +229,36 @@ export function CollectiveActionsPanel({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-green-500 hover:text-green-600"
+                        className="text-green hover:text-green h-8 w-8"
+                        aria-label="Vote for"
                         onClick={() => voteMutation.mutate({ actionId: action.id, vote: "for" })}
                         disabled={voteMutation.isPending}
                       >
-                        <ThumbsUp className="h-3 w-3" />
+                        <ThumbsUp className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-red-500 hover:text-red-600"
+                        className="text-destructive hover:text-destructive h-8 w-8"
+                        aria-label="Vote against"
                         onClick={() =>
                           voteMutation.mutate({ actionId: action.id, vote: "against" })
                         }
                         disabled={voteMutation.isPending}
                       >
-                        <ThumbsDown className="h-3 w-3" />
+                        <ThumbsDown className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-gray-500 hover:text-gray-600"
+                        className="text-label-secondary h-8 w-8"
+                        aria-label="Abstain"
                         onClick={() =>
                           voteMutation.mutate({ actionId: action.id, vote: "abstain" })
                         }
                         disabled={voteMutation.isPending}
                       >
-                        <MinusCircle className="h-3 w-3" />
+                        <MinusCircle className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   )}

@@ -1,7 +1,14 @@
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
+
+/** A language pack anyone may build on; a draft is its owner's alone (as the marketplace's fork rule has it). */
+const SHARED_PACK_VISIBILITIES = ["public", "unlisted"];
 
 export const onomaWritingRouter = createTRPCRouter({
   /**
@@ -27,34 +34,9 @@ export const onomaWritingRouter = createTRPCRouter({
     }),
 
   /**
-   * Get a single writing system by ID.
-   */
-  getSystem: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const userId = ctx.user.id;
-      const system = await ctx.db.writingSystem.findFirst({
-        where: { id: input.id, userId },
-      });
-
-      if (!system) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Writing system not found or unauthorized",
-        });
-      }
-
-      return system;
-    }),
-
-  /**
    * Save (create or update) a writing system.
    */
-  saveSystem: protectedProcedure
+  saveSystem: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string().optional(),
@@ -70,6 +52,20 @@ export const onomaWritingRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.user.id;
+
+      // The pack it belongs to: the caller's own, or one shared with everyone; another user's draft is missing
+      if (input.languagePackId) {
+        const pack = await ctx.db.languagePack.findFirst({
+          where: {
+            id: input.languagePackId,
+            OR: [{ userId }, { visibility: { in: SHARED_PACK_VISIBILITIES } }],
+          },
+          select: { id: true },
+        });
+        if (!pack) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Language pack not found" });
+        }
+      }
 
       const data = {
         userId,
@@ -109,7 +105,7 @@ export const onomaWritingRouter = createTRPCRouter({
   /**
    * Delete a writing system.
    */
-  deleteSystem: protectedProcedure
+  deleteSystem: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),

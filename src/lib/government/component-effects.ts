@@ -2,9 +2,8 @@
  * Government Component Effects Engine
  *
  * Applies economic and political effects from active atomic government components
- * to the country's game state. All economic changes flow through StorytellerEffect
- * records (processed by IxStatsCalculator on next tick). Political metrics update
- * GovernmentStructure directly.
+ * to the country's game state. Economic changes are GDP level StorytellerEffects (read by
+ * IxStatsCalculator), political metrics update GovernmentStructure directly.
  *
  * @module government-component-effects
  */
@@ -12,62 +11,57 @@
 import { ComponentType, type PrismaClient } from "@prisma/client";
 import { COMPONENT_CATEGORIES } from "./atomic-data";
 import { calculateGovernmentEffectiveness } from "./atomic-utils";
-import { IxTime } from "~/lib/ixtime";
+import { StorytellerEffectType } from "~/lib/economy/calculations";
+import { syncLevelEffects, type LevelTarget } from "~/lib/economy/storyteller-effects";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
+import { loadEffectiveBudget } from "./budget-allocations";
 
-// Category → StorytellerEffect inputType + base effect value per component
-const CATEGORY_EFFECTS: Record<string, { inputType: string; base: number; desc: string }> = {
-  "Power Distribution": {
-    inputType: "ECONOMIC_POLICY",
-    base: 0.002,
-    desc: "Governance efficiency and economic coordination",
-  },
-  "Decision Process": {
-    inputType: "ECONOMIC_POLICY",
-    base: 0.002,
-    desc: "Policy effectiveness and institutional predictability",
-  },
-  "Legitimacy Sources": {
-    inputType: "ECONOMIC_POLICY",
-    base: 0.002,
-    desc: "Investor confidence and social cohesion",
-  },
-  Institutions: {
-    inputType: "ECONOMIC_POLICY",
-    base: 0.003,
-    desc: "Administrative efficiency and economic throughput",
-  },
-  "Control Mechanisms": {
-    inputType: "ECONOMIC_POLICY",
-    base: 0.0015,
-    desc: "Regulatory predictability and enforcement",
-  },
-  "Administrative Efficiency": {
-    inputType: "GROWTH_RATE_MODIFIER",
-    base: 0.003,
-    desc: "Reduced friction boosts economic growth",
-  },
-  "Social Policy": {
-    inputType: "POPULATION_ADJUSTMENT",
-    base: 0.004,
-    desc: "Population wellbeing and demographic stability",
-  },
-  "International Relations": {
-    inputType: "GROWTH_RATE_MODIFIER",
-    base: 0.003,
-    desc: "Trade and investment channel expansion",
-  },
-  "Innovation & Development": {
-    inputType: "GROWTH_RATE_MODIFIER",
-    base: 0.004,
-    desc: "R&D investment drives long-term growth",
-  },
-  "Crisis Management": {
-    inputType: "ECONOMIC_POLICY",
-    base: 0.002,
-    desc: "Shock protection and economic resilience",
-  },
+/** IxTime years over which a component or broker GDP effect phases in. */
+const COMPONENT_EFFECT_YEARS = 5;
+
+/**
+ * Category → GDP level shift per component (0.002 = +0.2% GDP per capita) and description.
+ * Social Policy has no economic effect: it used to add to the annual population growth rate,
+ * which rewrote the whole projected population history.
+ */
+const CATEGORY_EFFECTS: Record<string, [base: number, desc: string]> = {
+  "Power Distribution": [0.002, "Governance efficiency and economic coordination"],
+  "Decision Process": [0.002, "Policy effectiveness and institutional predictability"],
+  "Legitimacy Sources": [0.002, "Investor confidence and social cohesion"],
+  Institutions: [0.003, "Administrative efficiency and economic throughput"],
+  "Control Mechanisms": [0.0015, "Regulatory predictability and enforcement"],
+  "Administrative Efficiency": [0.003, "Reduced friction boosts economic output"],
+  "International Relations": [0.003, "Trade and investment channel expansion"],
+  "Innovation & Development": [0.004, "R&D investment drives long-term output"],
+  "Crisis Management": [0.002, "Shock protection and economic resilience"],
 };
+
+/**
+ * GDP level effects granted by satisfied power brokers. (The Party's +5% support is applied by
+ * politics-drift's party drift; Technocrats and Generals have no economic effect to write.)
+ */
+const BROKER_EFFECTS: Array<{ id: string; value: number; description: string }> = [
+  {
+    id: "magnates",
+    value: 0.005,
+    description: "[BrokerComponent] The Magnates: +0.5% GDP",
+  },
+];
+
+/** `createdBy` prefixes of the keyed component and broker effects. */
+const COMPONENT_KEY = "component:";
+const BROKER_KEY = "broker:";
+
+/**
+ * Political metric → stored fallback, delta scale and clamp range. Every metric is stored on a
+ * 0-100 scale; deltas (component and broker shifts) are fractions of it (0.1 = 10 points).
+ */
+const POLITICAL_METRICS = {
+  politicalStability: { fallback: 50, scale: 100, min: 0, max: 100 },
+  democracyIndex: { fallback: 50, scale: 100, min: 0, max: 100 },
+  governmentEffectiveness: { fallback: 50, scale: 100, min: 0, max: 100 },
+  ruleOfLaw: { fallback: 50, scale: 100, min: 0, max: 100 },
+} as const;
 
 interface PoliticalDelta {
   politicalStability?: number;
@@ -120,17 +114,187 @@ function computePoliticalDeltas(
   return d;
 }
 
-export function calculateGovernmentEffectivenessScore(componentTypes: ComponentType[]): number {
+function calculateGovernmentEffectivenessScore(componentTypes: ComponentType[]): number {
   const metrics = calculateGovernmentEffectiveness(componentTypes);
   return Math.round(metrics.totalEffectiveness * 100) / 100;
 }
 
+const sumBy = <T>(items: T[], key: (item: T) => string, amount: (item: T) => number) => {
+  const totals: Record<string, number> = {};
+  for (const item of items) totals[key(item)] = (totals[key(item)] || 0) + amount(item);
+  return totals;
+};
+
+type MetricKey = keyof typeof POLITICAL_METRICS;
+type AppliedShift = Partial<Record<MetricKey, number>>;
+
+function parseAppliedShift(raw: string | null): AppliedShift {
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as AppliedShift;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Sets the stored political metrics to base + the component shift (`deltas`), where base is the
+ * stored value minus the shift applied last time (`componentMetricsSnapshot`), so event deltas
+ * (issues, elections) are carried and repeated runs never compound. True when a row was updated.
+ */
+async function applyPoliticalMetrics(
+  db: PrismaClient,
+  countryId: string,
+  deltas: PoliticalDelta
+): Promise<boolean> {
+  const struct = await db.governmentStructure.findUnique({
+    where: { countryId },
+    select: {
+      politicalStability: true,
+      democracyIndex: true,
+      governmentEffectiveness: true,
+      ruleOfLaw: true,
+      componentMetricsSnapshot: true,
+    },
+  });
+  if (!struct) return false;
+
+  const previous = parseAppliedShift(struct.componentMetricsSnapshot);
+  const update: Partial<Record<MetricKey, number>> = {};
+  const applied: AppliedShift = {};
+  for (const [key, { fallback, scale, min, max }] of Object.entries(POLITICAL_METRICS) as Array<
+    [MetricKey, (typeof POLITICAL_METRICS)[MetricKey]]
+  >) {
+    const stored = struct[key] ?? fallback;
+    const previousShift = previous[key];
+    const base = stored - (Number.isFinite(previousShift) ? previousShift! : 0);
+    const next = Math.max(min, Math.min(max, base + (deltas[key] ?? 0) * scale));
+    if (Math.abs(next - base) > 1e-9) applied[key] = next - base;
+    if (Math.abs(next - stored) > 1e-9) update[key] = next;
+  }
+  const snapshot = JSON.stringify(applied);
+  if (Object.keys(update).length === 0 && snapshot === (struct.componentMetricsSnapshot ?? "{}")) {
+    return false;
+  }
+
+  await db.governmentStructure.update({
+    where: { countryId },
+    data: { ...update, componentMetricsSnapshot: snapshot, politicalMetricsUpdated: new Date() },
+  });
+  return true;
+}
+
+/** The keyed GDP level each present category and satisfied broker should hold. */
+function componentLevelTargets(
+  countryId: string,
+  categoryCounts: Record<string, number>,
+  effectivenessMultiplier: number,
+  satisfiedBrokers: ReadonlySet<string>
+): LevelTarget[] {
+  const targets: LevelTarget[] = [];
+  for (const [cat, count] of Object.entries(categoryCounts)) {
+    const cfg = CATEGORY_EFFECTS[cat];
+    if (!cfg || count === 0) continue;
+    const [base, desc] = cfg;
+    const raw = base * count;
+    const value = Math.max(-0.1, Math.min(0.1, raw + raw * effectivenessMultiplier));
+    if (Math.abs(value) < 0.0001) continue;
+    targets.push({
+      countryId,
+      inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
+      value: Math.round(value * 1e6) / 1e6,
+      duration: COMPONENT_EFFECT_YEARS,
+      description: `[GovComponent] ${cat} (${count} component${count !== 1 ? "s" : ""}): ${desc}`,
+      createdBy: `${COMPONENT_KEY}${cat}`,
+    });
+  }
+  for (const { id, value, description } of BROKER_EFFECTS) {
+    if (!satisfiedBrokers.has(id)) continue;
+    targets.push({
+      countryId,
+      inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
+      value,
+      duration: COMPONENT_EFFECT_YEARS,
+      description,
+      createdBy: `${BROKER_KEY}${id}`,
+    });
+  }
+  return targets;
+}
+
+/** Retires the pre-level-effect component rows (growth types, no key); they rewrote history. */
+async function deactivateLegacyComponentEffects(db: PrismaClient, countryId: string) {
+  await db.storytellerEffect.updateMany({
+    where: {
+      countryId,
+      isActive: true,
+      createdBy: null,
+      OR: [
+        { description: { startsWith: "[GovComponent]" } },
+        { description: { startsWith: "[BrokerComponent]" } },
+      ],
+    },
+    data: { isActive: false },
+  });
+}
+
+/**
+ * Moves the keyed component/broker GDP levels to `targets` in place (delta rows only on change), from `now` (the
+ * nation's clock time; read from its realm when omitted).
+ */
+async function syncComponentEffects(
+  db: PrismaClient,
+  countryId: string,
+  targets: LevelTarget[],
+  now?: number
+) {
+  await deactivateLegacyComponentEffects(db, countryId);
+  return syncLevelEffects(
+    db,
+    {
+      countryId,
+      OR: [{ createdBy: { startsWith: COMPONENT_KEY } }, { createdBy: { startsWith: BROKER_KEY } }],
+    },
+    targets,
+    now
+  );
+}
+
+/** Political shift from components plus what satisfied brokers add or stir up. */
+function politicalTarget(
+  activeComponents: Array<{ componentType: ComponentType; effectivenessScore: number }>,
+  satisfiedSet: ReadonlySet<string>,
+  spendByCategory: Record<string, number>
+): PoliticalDelta {
+  const deltas = computePoliticalDeltas(activeComponents);
+  // Fractions of the 0-100 stability scale, like the component deltas (0.1 = +10 points).
+  const stabilityShifts: Array<[applies: boolean, shift: number]> = [
+    [satisfiedSet.has("party"), 0.1],
+    [satisfiedSet.has("clergy"), 0.05],
+    // Over-fed generals trigger tension
+    [satisfiedSet.has("generals") && (spendByCategory["Defense"] || 0) > 30.0, -0.05],
+    // Magnates trigger social inequality tension
+    [satisfiedSet.has("magnates"), -0.03],
+  ];
+  for (const [applies, shift] of stabilityShifts) {
+    if (applies) deltas.politicalStability = (deltas.politicalStability ?? 0) + shift;
+  }
+  return deltas;
+}
+
+/**
+ * Brings a country's component and broker effects to what its active components call for: GDP
+ * level effects keyed per category/broker (written only when a level changes) and political
+ * metrics set to base + component shift. Idempotent, so politics-drift can run it every tick.
+ */
 export async function applyGovernmentComponentEffects(
   db: PrismaClient,
   countryId: string,
   preloaded?: {
     activeComponents?: Array<{ componentType: ComponentType; effectivenessScore: number }>;
     allocations?: Array<{ allocatedPercent: number; department: { category: string } }>;
+    /** The nation's clock time the effects start at; read from its realm when omitted. */
+    now?: number;
   }
 ): Promise<{
   effectsCreated: number;
@@ -144,238 +308,48 @@ export async function applyGovernmentComponentEffects(
       select: { componentType: true, effectivenessScore: true },
     }));
 
-  if (activeComponents.length === 0) {
-    try {
-      await db.governmentStructure.update({
-        where: { countryId },
-        data: { politicalMetricsUpdated: new Date() },
-      });
-    } catch (_e) {
-      /* GovernmentStructure may not exist yet */
-    }
-    return { effectsCreated: 0, politicalMetricsUpdated: false, overallEffectiveness: 50 };
-  }
-
   const componentTypes = activeComponents.map((c) => c.componentType);
-  const overallEffectiveness = calculateGovernmentEffectivenessScore(componentTypes);
+  const overallEffectiveness =
+    componentTypes.length > 0 ? calculateGovernmentEffectivenessScore(componentTypes) : 50;
   const effectivenessMultiplier = (overallEffectiveness - 50) / 100;
 
-  // Deactivate previous government component and broker effects (prevent stacking)
-  const prevIds = await db.storytellerEffect.findMany({
-    where: {
-      countryId,
-      isActive: true,
-      OR: [
-        { description: { startsWith: "[GovComponent]" } },
-        { description: { startsWith: "[BrokerComponent]" } },
-      ],
-    },
-    select: { id: true },
-  });
-  if (prevIds.length > 0) {
-    await db.storytellerEffect.updateMany({
-      where: { id: { in: prevIds.map((e) => e.id) } },
-      data: { isActive: false },
-    });
-  }
+  // Count components per category (anything uncategorised is "Other")
+  const categoryCounts = sumBy(
+    componentTypes,
+    (ct) =>
+      Object.entries(COMPONENT_CATEGORIES).find(([, types]) =>
+        (types as readonly ComponentType[]).includes(ct)
+      )?.[0] ?? "Other",
+    () => 1
+  );
 
-  // Group components by category
-  const categoryCounts: Record<string, number> = {};
-  for (const ct of componentTypes) {
-    let found = false;
-    for (const [name, types] of Object.entries(COMPONENT_CATEGORIES)) {
-      if ((types as readonly ComponentType[]).includes(ct)) {
-        categoryCounts[name] = (categoryCounts[name] ?? 0) + 1;
-        found = true;
-        break;
-      }
-    }
-    if (!found) categoryCounts.Other = (categoryCounts.Other ?? 0) + 1;
-  }
-
-  // Build StorytellerEffect records per category
-  const now = new Date(IxTime.getCurrentIxTime() * 1000);
-  const effectsData: Array<{
-    countryId: string;
-    ixTimeTimestamp: Date;
-    inputType: string;
-    value: number;
-    duration: number;
-    description: string;
-    isActive: boolean;
-  }> = [];
-
-  for (const [cat, count] of Object.entries(categoryCounts)) {
-    const cfg = CATEGORY_EFFECTS[cat];
-    if (!cfg || count === 0) continue;
-    const raw = cfg.base * count;
-    const scaled = raw + raw * effectivenessMultiplier;
-    const clamped = Math.max(-0.1, Math.min(0.1, scaled));
-    if (Math.abs(clamped) < 0.0001) continue;
-    effectsData.push({
-      countryId,
-      ixTimeTimestamp: now,
-      inputType: cfg.inputType,
-      value: clamped,
-      duration: 5,
-      description: `[GovComponent] ${cat} (${count} component${count !== 1 ? "s" : ""}): ${cfg.desc}`,
-      isActive: true,
-    });
-  }
-
-  // Calculate allocations to derive brokers
+  // Allocations derive the brokers (none without components)
   const allocations =
-    preloaded?.allocations ??
-    (await db.budgetAllocation.findMany({
-      where: {
-        governmentStructure: { countryId },
-        budgetYear: new Date().getFullYear(),
-      },
-      include: { department: { select: { category: true } } },
-    }));
-  const spendByCategory: Record<string, number> = {};
-  allocations.forEach((alloc) => {
-    const cat = alloc.department.category;
-    spendByCategory[cat] = (spendByCategory[cat] || 0) + alloc.allocatedPercent;
-  });
+    componentTypes.length === 0
+      ? []
+      : (preloaded?.allocations ?? (await loadEffectiveBudget(db, countryId)).allocations);
+  const spendByCategory = sumBy(
+    allocations,
+    (a) => a.department.category,
+    (a) => a.allocatedPercent
+  );
+  const satisfiedSet = new Set(
+    deriveBrokers(componentTypes, spendByCategory)
+      .filter((b) => b.satisfied)
+      .map((b) => b.id)
+  );
 
-  const activeComponentTypes = activeComponents.map((c) => c.componentType);
-  const activeBrokers = deriveBrokers(activeComponentTypes, spendByCategory);
-  const satisfiedSet = new Set(activeBrokers.filter((b) => b.satisfied).map((b) => b.id));
+  const effectsCreated = await syncComponentEffects(
+    db,
+    countryId,
+    componentLevelTargets(countryId, categoryCounts, effectivenessMultiplier, satisfiedSet),
+    preloaded?.now
+  );
+  const politicalMetricsUpdated = await applyPoliticalMetrics(
+    db,
+    countryId,
+    politicalTarget(activeComponents, satisfiedSet, spendByCategory)
+  );
 
-  // Build StorytellerEffect records for brokers
-  if (satisfiedSet.has("technocrats")) {
-    effectsData.push({
-      countryId,
-      ixTimeTimestamp: now,
-      inputType: "CAPACITY_RELIEF",
-      value: 0.15,
-      duration: 5,
-      description: "[BrokerComponent] The Technocrats: -15% domestic policy upkeep",
-      isActive: true,
-    });
-  }
-  if (satisfiedSet.has("party")) {
-    effectsData.push({
-      countryId,
-      ixTimeTimestamp: now,
-      inputType: "PARTY_INFLUENCE",
-      value: 0.05,
-      duration: 5,
-      description: "[BrokerComponent] The Party: +5% leading-party strength",
-      isActive: true,
-    });
-  }
-  if (satisfiedSet.has("generals")) {
-    effectsData.push({
-      countryId,
-      ixTimeTimestamp: now,
-      inputType: "MILITARY_READINESS",
-      value: 0.1,
-      duration: 5,
-      description: "[BrokerComponent] The Generals: +10% military readiness",
-      isActive: true,
-    });
-  }
-  if (satisfiedSet.has("magnates")) {
-    effectsData.push({
-      countryId,
-      ixTimeTimestamp: now,
-      inputType: "GROWTH_RATE_MODIFIER",
-      value: 0.005, // +0.5% GDP growth
-      duration: 5,
-      description: "[BrokerComponent] The Magnates: +0.5% GDP growth modifier",
-      isActive: true,
-    });
-  }
-
-  if (effectsData.length > 0) {
-    await db.storytellerEffect.createMany({ data: effectsData });
-  }
-
-  // Update GovernmentStructure political metrics
-  const deltas = computePoliticalDeltas(activeComponents);
-
-  // Apply satisfied broker political metric bonuses
-  if (satisfiedSet.has("party")) {
-    deltas.politicalStability = (deltas.politicalStability ?? 0) + 0.1; // +10% stability
-  }
-  if (satisfiedSet.has("clergy")) {
-    deltas.politicalStability = (deltas.politicalStability ?? 0) + 0.05; // +5% stability
-  }
-
-  // Apply satisfied broker tensions
-  if (satisfiedSet.has("generals")) {
-    const defenseSpend = spendByCategory["Defense"] || 0;
-    if (defenseSpend > 30.0) {
-      deltas.politicalStability = (deltas.politicalStability ?? 0) - 0.05; // Over-fed generals trigger tension
-    }
-  }
-  if (satisfiedSet.has("magnates")) {
-    deltas.politicalStability = (deltas.politicalStability ?? 0) - 0.03; // Magnates trigger social inequality tension
-  }
-
-  let politicalMetricsUpdated = false;
-
-  if (Object.keys(deltas).length > 0) {
-    const struct = await db.governmentStructure.findUnique({
-      where: { countryId },
-      select: {
-        politicalStability: true,
-        democracyIndex: true,
-        governmentEffectiveness: true,
-        ruleOfLaw: true,
-      },
-    });
-
-    if (struct) {
-      const update: Record<string, number> = {};
-      const applyDelta = (
-        key: string,
-        current: number,
-        delta: number,
-        min: number,
-        max: number
-      ) => {
-        update[key] = Math.max(min, Math.min(max, current + delta));
-      };
-
-      if (deltas.politicalStability !== undefined)
-        applyDelta(
-          "politicalStability",
-          struct.politicalStability ?? 0.5,
-          deltas.politicalStability,
-          0,
-          1
-        );
-      if (deltas.democracyIndex !== undefined)
-        applyDelta(
-          "democracyIndex",
-          struct.democracyIndex ?? 50,
-          deltas.democracyIndex * 100,
-          0,
-          100
-        );
-      if (deltas.governmentEffectiveness !== undefined)
-        applyDelta(
-          "governmentEffectiveness",
-          struct.governmentEffectiveness ?? 50,
-          deltas.governmentEffectiveness * 100,
-          0,
-          100
-        );
-      if (deltas.ruleOfLaw !== undefined)
-        applyDelta("ruleOfLaw", struct.ruleOfLaw ?? 50, deltas.ruleOfLaw * 100, 0, 100);
-
-      if (Object.keys(update).length > 0) {
-        await db.governmentStructure.update({
-          where: { countryId },
-          data: { ...update, politicalMetricsUpdated: new Date() },
-        });
-        politicalMetricsUpdated = true;
-      }
-    }
-  }
-
-  return { effectsCreated: effectsData.length, politicalMetricsUpdated, overallEffectiveness };
+  return { effectsCreated, politicalMetricsUpdated, overallEffectiveness };
 }

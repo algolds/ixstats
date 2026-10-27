@@ -16,7 +16,6 @@ import { worldMapProcedures } from "./world-map";
 import { countryProcedures } from "./country";
 import { pointQueryProcedures } from "./point-queries";
 import { discoveryProcedures } from "./discovery";
-import { statsProcedures } from "./stats";
 import { geoProfileProcedures } from "./geo-profile";
 import { overlayProcedures } from "./overlays";
 import { adminOpsProcedures } from "./admin-ops";
@@ -28,7 +27,6 @@ export const geoCoreRouter = createTRPCRouter({
   ...countryProcedures,
   ...pointQueryProcedures,
   ...discoveryProcedures,
-  ...statsProcedures,
   ...geoProfileProcedures,
   ...overlayProcedures,
   ...adminOpsProcedures,
@@ -36,6 +34,4 @@ export const geoCoreRouter = createTRPCRouter({
 
 // Preserve the original public API of `geo/core` (resolves to `geo/core/index.ts`),
 // so existing importers across the codebase keep working unchanged.
-export { clearLayerCache, layerCache } from "./cache";
-export { warmGeoCache, warmGeoCacheDev } from "./layer-loader";
-export { extractAllPositions } from "./geometry";
+export { warmGeoCache, warmGeoCacheDev } from "~/server/modules/maps/layer-delivery";

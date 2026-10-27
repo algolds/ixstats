@@ -12,13 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Slider } from "~/components/ui/slider";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Card } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Plus, Search, Check, X, Filter, Rocket } from "lucide-react";
+import { Plus, Search, Check, Xmark as X, Filter, Rocket } from "iconoir-react";
 import { CATEGORIES, SUBCATEGORIES, ERAS, CATEGORY_ICONS } from "~/lib/military/catalog-utils";
 import { EquipmentCard } from "./EquipmentCard";
+import { Card } from "~/components/ui/card";
 
 interface CatalogTabProps {
   selectedCategory: string;
@@ -80,173 +81,162 @@ export function CatalogTab({
   handleDelete,
 }: CatalogTabProps) {
   return (
-    <div className="space-y-6">
-      <div className="glass-card-parent rounded-xl border border-white/10 p-4">
-        {/* Category Tabs */}
-        <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="mb-4">
-          <TabsList className="flex gap-2 overflow-x-auto border-b border-white/10 pb-2">
-            {Object.entries(CATEGORIES).map(([key, label]) => {
-              const Icon = CATEGORY_ICONS[key] || Rocket;
-              return (
-                <TabsTrigger key={key} value={key} className="flex items-center gap-2">
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-        </Tabs>
+    <div className="space-y-4">
+      <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
+        <TabsList className="bg-fill-3 rounded-row flex w-full flex-wrap justify-start gap-1 p-1">
+          {Object.entries(CATEGORIES).map(([key, label]) => {
+            const Icon = CATEGORY_ICONS[key] || Rocket;
+            return (
+              <TabsTrigger
+                key={key}
+                value={key}
+                className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
 
-        {/* Advanced Filters */}
-        <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-5">
-          {/* Search */}
-          <div className="relative md:col-span-2">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
-            <Input
-              placeholder="Search equipment..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative max-w-sm min-w-[200px] flex-1">
+          <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
+          <Input
+            placeholder="Search equipment..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
+          />
+        </div>
 
-          {/* Era filter */}
-          <Select value={eraFilter} onValueChange={setEraFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Eras" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Eras</SelectItem>
-              {ERAS.map((era) => (
-                <SelectItem key={era.value} value={era.value}>
-                  {era.label}
+        <ValueSelect
+          value={eraFilter}
+          onValueChange={setEraFilter}
+          options={[["all", "All eras"], ...ERAS.map((era) => [era.value, era.label] as const)]}
+          size="sm"
+          className="w-36"
+          placeholder="All eras"
+          itemClassName="text-footnote"
+        />
+
+        <Select value={subcategoryFilter} onValueChange={setSubcategoryFilter}>
+          <SelectTrigger size="sm" className="w-40">
+            <SelectValue placeholder="All subcategories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" className="text-footnote">
+              All subcategories
+            </SelectItem>
+            {selectedCategory !== "all" &&
+              SUBCATEGORIES[selectedCategory as keyof typeof SUBCATEGORIES]?.map((sub) => (
+                <SelectItem key={sub} value={sub} className="text-footnote capitalize">
+                  {sub}
                 </SelectItem>
               ))}
-            </SelectContent>
-          </Select>
+          </SelectContent>
+        </Select>
 
-          {/* Subcategory filter */}
-          <Select value={subcategoryFilter} onValueChange={setSubcategoryFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Subcategories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Subcategories</SelectItem>
-              {selectedCategory !== "all" &&
-                SUBCATEGORIES[selectedCategory as keyof typeof SUBCATEGORIES]?.map((sub) => (
-                  <SelectItem key={sub} value={sub} className="capitalize">
-                    {sub}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-
-          {/* Show inactive toggle */}
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="showInactive"
-              checked={showInactive}
-              onCheckedChange={(checked) => setShowInactive(checked as boolean)}
-            />
-            <label htmlFor="showInactive" className="text-foreground cursor-pointer text-sm">
-              Show inactive
-            </label>
-          </div>
-        </div>
-
-        {/* Advanced Filters Row 2 */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Tech Level Range */}
-          <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">
-              Tech Level: {techLevelRange[0]} - {techLevelRange[1]}
-            </label>
-            <Slider
-              value={techLevelRange}
-              onValueChange={(value) => setTechLevelRange(value as [number, number])}
-              min={60}
-              max={100}
-              step={1}
-              className="w-full"
-            />
-          </div>
-
-          {/* Cost Range */}
-          <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">
-              Acquisition Cost: ${(costRange[0] / 1000000).toFixed(1)}M - $
-              {(costRange[1] / 1000000).toFixed(1)}M
-            </label>
-            <Slider
-              value={costRange}
-              onValueChange={(value) => setCostRange(value as [number, number])}
-              min={0}
-              max={10000000}
-              step={100000}
-              className="w-full"
-            />
-          </div>
-        </div>
-
-        {/* Bulk Actions */}
-        {selectedIds.size > 0 && (
-          <div className="mt-4 flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-500/10 p-3">
-            <span className="text-foreground text-sm font-medium">{selectedIds.size} selected</span>
-            <Button size="sm" variant="outline" onClick={() => handleBulkToggle(true)}>
-              <Check className="mr-2 h-4 w-4" />
-              Activate
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => handleBulkToggle(false)}>
-              <X className="mr-2 h-4 w-4" />
-              Deactivate
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
-              Clear Selection
-            </Button>
-          </div>
-        )}
+        <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
+          <Checkbox
+            id="showInactive"
+            checked={showInactive}
+            onCheckedChange={(checked) => setShowInactive(checked as boolean)}
+            className="h-3.5 w-3.5"
+          />
+          <span>Show inactive</span>
+        </label>
       </div>
 
-      {/* Stats Bar */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <Card className="glass-card-child p-4">
-          <p className="text-muted-foreground text-sm">Total Equipment</p>
-          <p className="text-foreground mt-2 text-3xl font-bold">{equipmentData?.length || 0}</p>
+      {/* Advanced Filters Row 2 */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <label className="text-label text-body mb-2 block font-medium">
+            Tech Level: {techLevelRange[0]} - {techLevelRange[1]}
+          </label>
+          <Slider
+            value={techLevelRange}
+            onValueChange={(value) => setTechLevelRange(value as [number, number])}
+            min={60}
+            max={100}
+            step={1}
+            className="w-full"
+          />
+        </div>
+
+        <div>
+          <label className="text-label text-body mb-2 block font-medium">
+            Acquisition Cost: ${(costRange[0] / 1000000).toFixed(1)}M - $
+            {(costRange[1] / 1000000).toFixed(1)}M
+          </label>
+          <Slider
+            value={costRange}
+            onValueChange={(value) => setCostRange(value as [number, number])}
+            min={0}
+            max={10000000}
+            step={100000}
+            className="w-full"
+          />
+        </div>
+      </div>
+
+      {selectedIds.size > 0 && (
+        <div className="rounded-row border-red/30 bg-red/10 text-footnote flex items-center gap-3 border p-3">
+          <span className="text-label font-medium">{selectedIds.size} selected</span>
+          <Button size="sm" variant="outline" onClick={() => handleBulkToggle(true)}>
+            <Check className="mr-1 h-3.5 w-3.5" />
+            Activate
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => handleBulkToggle(false)}>
+            <X className="mr-1 h-3.5 w-3.5" />
+            Deactivate
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+            Clear selection
+          </Button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card className="p-4">
+          <p className="text-label-secondary text-stat-label">Total systems</p>
+          <p className="text-label text-title-2 mt-1 tabular-nums">{equipmentData?.length || 0}</p>
         </Card>
-        <Card className="glass-card-child p-4">
-          <p className="text-muted-foreground text-sm">Active Equipment</p>
-          <p className="mt-2 text-3xl font-bold text-green-400">
+        <Card className="p-4">
+          <p className="text-label-secondary text-stat-label">Active registry</p>
+          <p className="text-title-2 text-green mt-1 tabular-nums">
             {equipmentData?.filter((e: { isActive: boolean }) => e.isActive).length || 0}
           </p>
         </Card>
-        <Card className="glass-card-child p-4">
-          <p className="text-muted-foreground text-sm">Filtered Results</p>
-          <p className="mt-2 text-3xl font-bold text-blue-400">{filteredEquipment.length}</p>
+        <Card className="p-4">
+          <p className="text-label-secondary text-stat-label">Filtered results</p>
+          <p className="text-title-2 text-teal mt-1 tabular-nums">{filteredEquipment.length}</p>
         </Card>
-        <Card className="glass-card-child p-4">
-          <p className="text-muted-foreground text-sm">Manufacturers</p>
-          <p className="mt-2 text-3xl font-bold text-purple-400">{manufacturers?.length || 0}</p>
+        <Card className="p-4">
+          <p className="text-label-secondary text-stat-label">Manufacturers</p>
+          <p className="text-title-2 text-indigo mt-1 tabular-nums">{manufacturers?.length || 0}</p>
         </Card>
       </div>
 
-      {/* Equipment Grid */}
       {isLoading ? (
         <div className="py-12 text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-red-500"></div>
-          <p className="text-muted-foreground">Loading equipment catalog...</p>
+          <div className="border-tint mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+          <p className="text-label-secondary text-footnote">Loading equipment catalog...</p>
         </div>
       ) : filteredEquipment.length === 0 ? (
-        <Card className="glass-card-parent p-12 text-center">
-          <Filter className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-          <p className="text-muted-foreground">No equipment found matching your filters</p>
-          <Button className="mt-4" onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add First Equipment
+        <Card className="p-12 text-center">
+          <Filter className="text-label-secondary mx-auto mb-3 h-8 w-8" />
+          <p className="text-label-secondary text-footnote">
+            No defense equipment matching current filters.
+          </p>
+          <Button size="sm" className="mt-4" onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="mr-2 h-3.5 w-3.5" />
+            Add first equipment
           </Button>
         </Card>
       ) : (
         <>
-          {/* Select All Checkbox */}
           <div className="mb-4 flex items-center gap-2">
             <Checkbox
               id="selectAll"
@@ -255,7 +245,7 @@ export function CatalogTab({
               }
               onCheckedChange={toggleSelectAll}
             />
-            <label htmlFor="selectAll" className="text-foreground cursor-pointer text-sm">
+            <label htmlFor="selectAll" className="text-label text-body cursor-pointer">
               Select all ({filteredEquipment.length} items)
             </label>
           </div>

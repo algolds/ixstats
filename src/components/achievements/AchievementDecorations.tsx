@@ -1,117 +1,91 @@
 "use client";
 
-import React from "react";
-import { Lock } from "lucide-react";
+import React, { type CSSProperties } from "react";
+import { Lock } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { accentColor } from "~/lib/design/identity";
+import { TEXTURE_MAX_OPACITY, TextureOverlay } from "~/components/ui/texture-overlay";
 import type { CategoryTheme } from "./constants";
 
 /**
- * Jewel Achievement Icon with Category-Tuned Metallic Gem Gradient Mask
+ * The aurora's secondary hue (`--facet-accent-2`).
  */
-export function JewelAchievementIcon({
-  iconPath,
-  categoryTheme,
+function auroraStyle(categoryTheme: CategoryTheme): CSSProperties {
+  return { "--facet-accent-2": accentColor(categoryTheme.accent2) } as CSSProperties;
+}
+
+/**
+ * The achievement's icon, in the colour of the pedestal it sits on. Locked: a faint blurred icon
+ * under a lock.
+ */
+export function AchievementIcon({
+  icon: Icon,
   isUnlocked,
-  className = "h-7.5 w-7.5",
+  className = "size-7.5",
 }: {
-  iconPath: string;
-  categoryTheme: CategoryTheme;
+  icon: React.ComponentType<{ className?: string }>;
   isUnlocked: boolean;
   className?: string;
 }) {
   if (!isUnlocked) {
     return (
       <div className="relative flex h-full w-full items-center justify-center">
-        <img
-          src={iconPath}
-          alt=""
-          className="h-6 w-6 object-contain opacity-20 blur-[1.5px] filter"
-          loading="lazy"
-        />
-        <Lock className="absolute h-5 w-5 text-muted-foreground/80 drop-shadow-sm" />
+        <Icon aria-hidden className="size-6 opacity-20 blur-[1.5px]" />
+        <Lock role="img" aria-label="Locked" className="text-label-secondary absolute size-5" />
       </div>
     );
   }
 
-  return (
-    <div
-      className={cn(className, "bg-gradient-to-tr drop-shadow-md", categoryTheme.iconGradient)}
-      style={{
-        maskImage: `url(${iconPath})`,
-        WebkitMaskImage: `url(${iconPath})`,
-        maskSize: "contain",
-        WebkitMaskSize: "contain",
-        maskRepeat: "no-repeat",
-        WebkitMaskRepeat: "no-repeat",
-        maskPosition: "center",
-        WebkitMaskPosition: "center",
-      }}
-    />
-  );
+  return <Icon aria-hidden className={cn(className, "drop-shadow-md")} />;
 }
 
 /**
- * Unified Achievement Card Backdrop combining:
- * - 140px Ghost SVG Heraldic Watermark
- * - Multi-stop Aurora Wave Mesh
- * - Category Bottom-up Radiance
- * - Holographic Foil Sheen (Legendary / Epic)
- * - Apple Frosted Dots Texture Overlay
+ * Achievement card backdrop, layered from the content-art sheet (styles/card-art.css):
+ * - the dot texture, drawn in the category's accent on an unlocked card (neutral ink and fainter on a locked one),
+ * - the multi-stop aurora mesh (`facet-aurora`: category → secondary hue, .4 → .75 on card hover),
+ * - the holographic foil sheen on unlocked epic/legendary achievements (`facet-foil`).
+ * All decorative (`aria-hidden`, no pointer events). Render it as the first children of a
+ * `relative overflow-hidden` card and keep the content `relative`; the hover brighten follows the
+ * card (the layers' direct parent).
  */
 export function AchievementCardBackdrop({
-  iconPath,
   categoryTheme,
   isUnlocked,
   isLegendaryOrEpic = false,
 }: {
-  iconPath: string;
   categoryTheme: CategoryTheme;
   isUnlocked: boolean;
+  /** Adds the foil sheen (unlocked only). */
   isLegendaryOrEpic?: boolean;
 }) {
   return (
     <>
-      <TextureOverlay texture="dots" opacity={0.035} />
-
-      {/* Multi-stop Aurora Wave Mesh */}
-      <div
-        className={cn(
-          "pointer-events-none absolute -inset-px rounded-3xl bg-gradient-to-tr opacity-40 blur-xl transition-opacity duration-300",
-          isUnlocked && "group-hover:opacity-75",
-          categoryTheme.auroraGradient
-        )}
-      />
-
-      {/* Category Ambient Radiance from Bottom */}
-      <div
-        className={cn(
-          "pointer-events-none absolute inset-0 bg-gradient-to-b opacity-45 transition-opacity duration-300",
-          isUnlocked && "group-hover:opacity-70",
-          categoryTheme.cardGlow
-        )}
-      />
-
-      {/* Holographic foil sheen on epic/legendary */}
-      {isLegendaryOrEpic && isUnlocked && (
-        <div className="pointer-events-none absolute -inset-px rounded-3xl bg-gradient-to-tr from-amber-500/15 via-transparent to-purple-500/15 opacity-60 blur-xl" />
+      {isUnlocked ? (
+        <span
+          aria-hidden
+          data-slot="achievement-texture"
+          className="pointer-events-none absolute inset-0"
+          style={{ "--facet-texture-color": accentColor(categoryTheme.accent) } as CSSProperties}
+        >
+          <TextureOverlay texture="dots" opacity={TEXTURE_MAX_OPACITY} />
+        </span>
+      ) : (
+        <TextureOverlay texture="dots" opacity={0.035} />
       )}
 
-      {/* 140px Ghost SVG Watermark in Bottom-Right Corner */}
-      <div
-        className="pointer-events-none absolute -right-6 -bottom-6 h-36 w-36 opacity-[0.065] blur-[0.3px] select-none dark:opacity-[0.095]"
-        style={{
-          maskImage: `url(${iconPath})`,
-          WebkitMaskImage: `url(${iconPath})`,
-          maskSize: "contain",
-          WebkitMaskSize: "contain",
-          maskRepeat: "no-repeat",
-          WebkitMaskRepeat: "no-repeat",
-          maskPosition: "center",
-          WebkitMaskPosition: "center",
-          backgroundColor: "currentColor",
-        }}
+      <span
+        aria-hidden
+        data-interactive={isUnlocked ? "true" : undefined}
+        className="facet-aurora absolute -inset-px rounded-[inherit] print:hidden"
+        style={auroraStyle(categoryTheme)}
       />
+
+      {isLegendaryOrEpic && isUnlocked && (
+        <span
+          aria-hidden
+          className="facet-foil absolute -inset-px rounded-[inherit] print:hidden"
+        />
+      )}
     </>
   );
 }

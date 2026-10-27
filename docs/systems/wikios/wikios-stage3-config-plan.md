@@ -1,13 +1,34 @@
+> **SUPERSEDED (plan 417, September 30, 2026).** This Stage 3 plan is replaced by the WikiOS v1 cutover
+> runbook, [`docs/operations/wikios-v1-cutover.md`](../../operations/wikios-v1-cutover.md): WikiOS now takes over
+> `ixwiki.com/wiki/*` as its own process, classic MediaWiki moves to `/classic/`, and MediaWiki becomes a
+> private render engine on loopback. The vhost and checker this plan refers to
+> (`scripts/ops/stage3-nginx-cutover.conf`, `scripts/ops/verify-stage3-cutover.ts`) were deleted; their
+> successors are `scripts/ops/nginx/wikios-*.conf`, `scripts/ops/mediawiki/wikios-localsettings.php` and
+> `scripts/ops/verify-wikios-takeover.ts`. Kept for history only; do not apply anything below.
+
 # WikiOS Stage 3 — Render-Service Isolation: Config Plan
 
 **Status:** PLANNING ONLY. Nothing in this doc has been applied. Every nginx / `LocalSettings.php`
 snippet below is a **proposal to review** and is marked **DO NOT APPLY without sign-off**.
 
+> **Status update (September 29, 2026).** Still not cut over (see §8). A candidate vhost and a
+> checker existed in this repo (`scripts/ops/stage3-nginx-cutover.conf` and
+> `scripts/ops/verify-stage3-cutover.ts`; both deleted by plan 417). The app still defaults to the public host
+> (`WIKIOS_MEDIAWIKI_API` → `https://ixwiki.com/api.php` in `adapters/mediawiki/write-service.ts`),
+> so prerequisite §8 step 1 is not met in code. File paths in §0–§1 predate the August 2026
+> refactor: `lib/wiki-os/parsoid-client.ts` → `lib/wiki-os/adapters/mediawiki/parsoid.ts`,
+> `csrf-cache.ts` → `adapters/mediawiki/csrf-cache.ts`, `html-transformer.ts` / `fix-editor-images.ts` /
+> `wikitext-diff.ts` → `lib/wiki-os/transformers/`, `routers/wikios/search-categories.ts` →
+> `search.ts` + `categories.ts`. Line numbers are stale. The direct-MySQL bridge (`lib/wiki-bridge.ts`,
+> `mysql2`) described in §0 and §1b was removed on 2026-08-25: reads now come from PostgreSQL, and
+> edits made on MediaWiki arrive through `api.php?action=query&list=recentchanges`
+> (`lib/wiki-os/services/auto-sync-service.ts`), so that call must also stay allowlisted.
+
 **Goal (north star):** the public only ever sees WikiOS at `/wiki/*`; MediaWiki is demoted to a
 locked-down **headless render + template + Lua + edit engine** reachable only as an API/asset
 backend. No data changes, no parser changes — UI is hidden/redirected, everything reversible.
 
-**Scope reality (from `wikios-independence-2b-3.md` §Stage 3):** this is **ops in the OUTER repo**
+**Scope reality (from [wikios-independence-2b-3.md](../../history/systems/wikios/wikios-independence-2b-3.md) §Stage 3, now historical):** this is **ops in the OUTER repo**
 (`/etc/nginx/...`, `/ixwiki/config/LocalSettings.php`, `/ixwiki/mediawiki/...`), executed by a human
 with sign-off. It is independent of Stage 2b. Cross-wiki external sources (iiwiki / althistory /
 commons) are **separate origins and out of Stage 3 scope** — see Open Questions.
@@ -30,10 +51,10 @@ by anonymous GET even though they live under the "UI / Special:" surface we othe
 Over-blocking these = every infobox loses its styling and every flag/image 404s. This is the single
 biggest hazard in Stage 3 and the allowlist below carves them out explicitly.
 
-`action=compare` (diff) is **done client-side** (`lib/wiki-os/wikitext-diff.ts`) — MediaWiki's diff
-endpoint is NOT needed. Reads (wikitext/history/revisions/redirects/categories) go through
-**direct MySQL** in `lib/wiki-bridge.ts` (`mysql2`), NOT over HTTP — so blocking the web UI does not
-touch them at all.
+`action=compare` (diff) is **done client-side** (`lib/wiki-os/transformers/wikitext-diff.ts`) — MediaWiki's diff
+endpoint is NOT needed. Reads (wikitext/history/revisions/redirects/categories) ~~go through
+**direct MySQL** in `lib/wiki-bridge.ts` (`mysql2`)~~ now come from PostgreSQL (see status update);
+the recent-changes sync still calls `api.php` from the app host.
 
 ---
 
@@ -71,7 +92,7 @@ All default to `https://ixwiki.com`.
 Action tally over the wiki layer: **`action=query` ×24, `action=parse` ×5, `action=opensearch` ×1,
 `action=edit/upload/login` (writes)**. `action=compare` is **not** used (client-side diff).
 
-### 1b. Direct MySQL (NOT HTTP — Stage 3 does not touch these)
+### 1b. Direct MySQL (NOT HTTP — Stage 3 does not touch these) — *removed 2026-08-25, historical*
 
 `lib/wiki-bridge.ts` (`mysql2/promise` pool): wikitext, history, revisions, redirects, category
 members, user lookups. Used by `wiki` + `wikios` routers. Independent of the web UI lockdown.
@@ -311,7 +332,7 @@ If any *(public)* asset line fails, **stop / rollback** — that's the over-bloc
 ---
 
 **Reminder:** this document changes nothing. Stage 3 is human-executed ops in the outer repo, behind
-the review gates in `wikios-longevity-workflow.md` (no prod config change without explicit go-ahead).
+the review gates in [wikios-longevity-workflow.md](../../history/systems/wikios/wikios-longevity-workflow.md) (historical) (no prod config change without explicit go-ahead).
 
 ---
 

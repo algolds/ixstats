@@ -3,7 +3,7 @@
 
 import type { NameCategory, GenerateOptions } from "./types";
 
-export type LexiconCat =
+type LexiconCat =
   | "country"
   | "city"
   | "province"
@@ -32,7 +32,9 @@ export const LEXICON_LOADERS: Record<
 /**
  * Maps NameCategory to training data types fetched from backend.
  */
-export function mapCategoryForTraining(cat: NameCategory): "country" | "city" | "province" | "person" {
+export function mapCategoryForTraining(
+  cat: NameCategory
+): "country" | "city" | "province" | "person" {
   if (cat === "city" || cat === "geography") return "city";
   if (cat === "province") return "province";
   if (cat === "military" || cat === "organization" || cat === "person" || cat === "dynasty")

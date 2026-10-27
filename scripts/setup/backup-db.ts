@@ -1,52 +1,30 @@
 #!/usr/bin/env bun
 
 /**
- * Database backup script for IxStats
- * Creates timestamped backups of the database
+ * Database backup script for IxStats (PL-11)
+ * Writes a pg_dump custom-format dump to backups/ixstats-<UTC timestamp>.dump, keeping the newest N.
+ *
+ *   bun run db:backup [-- --keep 14] [--dir backups] [--no-docker]
+ *
+ * Dumps from the `ixstats-postgres` Docker container when it is running, else from DATABASE_URL
+ * (needs pg_dump on the host). Exits non-zero on any failure. See docs/operations/deployment.md.
  */
 
-import { PrismaClient } from "@prisma/client";
-import { execSync } from "child_process";
-import { existsSync, mkdirSync, readdirSync, statSync } from "fs";
-import { join } from "path";
-
-const db = new PrismaClient();
+import { createDatabaseBackup, parseBackupArgs } from "~/lib/system/db-backup";
 
 async function backupDatabase() {
   try {
+    const args = parseBackupArgs(process.argv.slice(2));
     console.log("💾 Creating database backup...");
-
-    // Validate DATABASE_URL is set
-    if (!process.env.DATABASE_URL) {
-      console.error("❌ DATABASE_URL environment variable is not set");
-      process.exit(1);
-    }
-
-    // PostgreSQL backup
-    console.log("⚠️  PostgreSQL backup not implemented yet");
-    console.log("💡 Use pg_dump for PostgreSQL backups:");
-    console.log("   pg_dump $DATABASE_URL > backup_$(date +%Y%m%d_%H%M%S).sql");
-    process.exit(1);
-
-    const backupDir = "./prisma/backups";
-
-    // Create backup directory if it doesn't exist
-    if (!existsSync(backupDir)) {
-      mkdirSync(backupDir, { recursive: true });
-    }
-
-    // Generate timestamp
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-    const backupPath = join(backupDir, `backup_${timestamp}.sql`);
+    const result = await createDatabaseBackup(args);
+    const mb = (result.bytes / 1024 / 1024).toFixed(1);
+    console.log(`✅ Backup written (${result.target}): ${result.file} (${mb} MB)`);
+    for (const name of result.pruned) console.log(`🧹 Removed old backup: ${name}`);
+    console.log(`📦 Retention: newest ${args.keep} backups kept in ${args.dir}/`);
   } catch (error) {
-    console.error("❌ Database backup failed:", error);
+    console.error("❌ Database backup failed:", error instanceof Error ? error.message : error);
     process.exit(1);
-  } finally {
-    await db.$disconnect();
   }
 }
 
-// Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  backupDatabase();
-}
+void backupDatabase();

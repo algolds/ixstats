@@ -1,0 +1,66 @@
+/* ==========================================================================
+   LAYOUT — SCROLLBARS
+
+   Layered: `@layer base` for element defaults, `@layer components` for classes.
+   ========================================================================== */
+
+@layer base {
+  /* ─── Theme-compliant scrollbars ───────────────────────────────────────── */
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+  }
+
+  .dark *,
+  [data-theme="dark"] * {
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  }
+
+  /* WebKit (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.3);
+    border-radius: 9999px;
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.5);
+  }
+
+  .dark ::-webkit-scrollbar-thumb,
+  [data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover,
+  [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+}
+
+@layer components {
+  /* Hidden scrollbars. Tailwind's `scrollbar-none` sets scrollbar-width;
+     these add the WebKit half. */
+  .hide-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar,
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}

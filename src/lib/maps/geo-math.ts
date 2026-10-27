@@ -18,7 +18,7 @@
  * who may need to adjust measurements for their own world.
  */
 
-// ─── IxEarth World Configuration ─────────────────────────────────────────────
+import { EARTH_RADIUS_KM, kmPerDegree, kmPerDegreeLng } from "./planet";
 
 /** Planet reference data */
 const IXEARTH_REFERENCE = {
@@ -27,12 +27,12 @@ const IXEARTH_REFERENCE = {
   /** Earth total surface area in sq mi */
   earthSurfaceAreaSqMi: 196_940_000,
   /** Earth mean radius in km — used for haversine */
-  earthRadiusKm: 6_371,
+  earthRadiusKm: EARTH_RADIUS_KM,
   /** Lore planet ratio (informational, NOT applied to calculations) */
   planetRatio: 352_800_000 / 196_940_000, // ~1.7914
 } as const;
 
-export interface WorldScale {
+interface WorldScale {
   /** Area multiplier applied after PostGIS/haversine calculations. Default: 1.0 (scale is baked in). */
   areaScale: number;
   /** Distance multiplier. Derived: √areaScale. Default: 1.0. */
@@ -46,49 +46,15 @@ export interface WorldScale {
  * Default 1.0 — IxEarth scale is baked into the map geometry.
  * Only change this for communities using a different world/map scale.
  */
-let activeScale: WorldScale = {
+const activeScale: WorldScale = {
   areaScale: 1.0,
   distanceScale: 1.0,
   radiusKm: IXEARTH_REFERENCE.earthRadiusKm,
 };
 
-/**
- * Get the current world scale configuration.
- */
-export function getWorldScale(): Readonly<WorldScale> {
-  return activeScale;
-}
-
-/**
- * Set a custom world scale. Use for licensing to other communities.
- * @param areaScale — Area multiplier (e.g., 1.0 for Earth-sized, 2.0 for 2× Earth surface)
- */
-export function setWorldScale(areaScale: number): void {
-  activeScale = {
-    areaScale,
-    distanceScale: Math.sqrt(areaScale),
-    radiusKm: IXEARTH_REFERENCE.earthRadiusKm * Math.sqrt(areaScale),
-  };
-}
-
-/**
- * Reset to default IxEarth scale (1.0 — baked into map geometry).
- */
-export function resetWorldScale(): void {
-  activeScale = {
-    areaScale: 1.0,
-    distanceScale: 1.0,
-    radiusKm: IXEARTH_REFERENCE.earthRadiusKm,
-  };
-}
-
-// ─── Constants ───────────────────────────────────────────────────────────────
-
 const DEG2RAD = Math.PI / 180;
 const KM_PER_MI = 1.60934;
 const SQKM_PER_SQMI = 2.58999;
-
-// ─── Distance ────────────────────────────────────────────────────────────────
 
 /**
  * Haversine distance between two [lng, lat] points, in IxEarth km.
@@ -104,26 +70,17 @@ export function distanceKm(a: [number, number], b: [number, number]): number {
 }
 
 /**
- * Haversine distance in IxEarth miles.
- */
-export function distanceMi(a: [number, number], b: [number, number]): number {
-  return distanceKm(a, b) / KM_PER_MI;
-}
-
-/**
  * Haversine distance using raw lat/lng numbers (for backward compat with transport router).
  */
 export function distanceKmLatLng(lat1: number, lng1: number, lat2: number, lng2: number): number {
   return distanceKm([lng1, lat1], [lng2, lat2]);
 }
 
-// ─── Area ────────────────────────────────────────────────────────────────────
-
 /**
  * Compute polygon area in IxEarth sq km from a coordinate ring [[lng,lat], ...].
  * Uses the spherical excess formula for accuracy.
  */
-export function ringAreaSqKm(ring: [number, number][]): number {
+function ringAreaSqKm(ring: [number, number][]): number {
   if (ring.length < 3) return 0;
   // Shoelace in coordinate space, then scale by latitude
   let area = 0;
@@ -136,19 +93,12 @@ export function ringAreaSqKm(ring: [number, number][]): number {
 
   // Convert square degrees to square km
   const centroidLat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
-  const latScale = 111.32; // km per degree latitude
-  const lngScale = 111.32 * Math.cos(centroidLat * DEG2RAD); // km per degree longitude
+  const latScale = kmPerDegree(); // km per degree latitude
+  const lngScale = kmPerDegreeLng(centroidLat); // km per degree longitude
   const areaSqKmEarth = area * latScale * lngScale;
 
   // Apply IxEarth scale
   return areaSqKmEarth * activeScale.areaScale;
-}
-
-/**
- * Compute polygon area in IxEarth sq mi.
- */
-export function ringAreaSqMi(ring: [number, number][]): number {
-  return ringAreaSqKm(ring) / SQKM_PER_SQMI;
 }
 
 /**
@@ -190,8 +140,6 @@ export function geometryAreaSqMi(geometry: {
   return geometryAreaSqKm(geometry) / SQKM_PER_SQMI;
 }
 
-// ─── Perimeter ───────────────────────────────────────────────────────────────
-
 /**
  * Compute perimeter of a coordinate ring in IxEarth km.
  */
@@ -210,8 +158,6 @@ export function ringPerimeterKm(ring: [number, number][]): number {
   return total;
 }
 
-// ─── Polyline Length ─────────────────────────────────────────────────────────
-
 /**
  * Compute length of a polyline (route/path) in IxEarth km.
  */
@@ -229,8 +175,6 @@ export function polylineLengthKm(points: [number, number][]): number {
 export function polylineLengthMi(points: [number, number][]): number {
   return polylineLengthKm(points) / KM_PER_MI;
 }
-
-// ─── Bearing ─────────────────────────────────────────────────────────────────
 
 /**
  * Initial bearing from point A to point B in degrees (0-360).
@@ -252,63 +196,6 @@ export function compassDirection(deg: number): string {
   const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
   return dirs[Math.round(deg / 45) % 8]!;
 }
-
-// ─── Formatting ──────────────────────────────────────────────────────────────
-
-/**
- * Format distance with appropriate unit (km or mi with commas).
- */
-export function formatDistance(km: number, unit: "km" | "mi" = "km"): string {
-  const value = unit === "mi" ? km / KM_PER_MI : km;
-  if (value < 1) return `${(value * 1000).toFixed(0)} ${unit === "mi" ? "ft" : "m"}`;
-  if (value < 100) return `${value.toFixed(1)} ${unit}`;
-  return `${Math.round(value).toLocaleString()} ${unit}`;
-}
-
-/**
- * Format area with appropriate unit.
- */
-export function formatArea(sqKm: number, unit: "km²" | "mi²" = "km²"): string {
-  const value = unit === "mi²" ? sqKm / SQKM_PER_SQMI : sqKm;
-  if (value < 1) return `${(value * 1e6).toFixed(0)} ${unit === "mi²" ? "sq ft" : "m²"}`;
-  if (value < 100) return `${value.toFixed(1)} ${unit}`;
-  return `${Math.round(value).toLocaleString()} ${unit}`;
-}
-
-// ─── Coordinate utilities ────────────────────────────────────────────────────
-
-/**
- * Centroid of a coordinate ring.
- */
-export function ringCentroid(ring: [number, number][]): [number, number] {
-  if (ring.length === 0) return [0, 0];
-  let lng = 0,
-    lat = 0;
-  for (const p of ring) {
-    lng += p[0];
-    lat += p[1];
-  }
-  return [lng / ring.length, lat / ring.length];
-}
-
-/**
- * Bounding box of a coordinate ring: [minLng, minLat, maxLng, maxLat].
- */
-export function ringBbox(ring: [number, number][]): [number, number, number, number] {
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity;
-  for (const [x, y] of ring) {
-    if (x < minX) minX = x;
-    if (y < minY) minY = y;
-    if (x > maxX) maxX = x;
-    if (y > maxY) maxY = y;
-  }
-  return [minX, minY, maxX, maxY];
-}
-
-// ─── Terrain Difficulty ──────────────────────────────────────────────────────
 
 /**
  * Normalize a series of elevation samples (meters) to a 0-1 terrain-difficulty

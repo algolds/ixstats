@@ -6,7 +6,8 @@
  * integration (IxWiki, IIWiki, custom wikis) with intelligent content processing.
  */
 
-import { type CountryInfobox } from "~/lib/wiki/legacy-service";
+import type { UnifiedInfoboxData as CountryInfobox } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
+export type { CountryInfobox };
 
 /**
  * Represents a single intelligence section extracted from wiki sources.
@@ -14,7 +15,7 @@ import { type CountryInfobox } from "~/lib/wiki/legacy-service";
  * Each section corresponds to a distinct topic or category of information
  * about a country (e.g., economy, government, history).
  */
-export interface WikiSection {
+interface WikiSection {
   /** Unique identifier for the section (e.g., 'economy', 'government', 'overview') */
   id: string;
 
@@ -129,6 +130,12 @@ export interface DossierTabProps {
   /** Name of the country to fetch intelligence for */
   countryName: string;
 
+  /** The wiki the country's own page is on (`Country.wikiSource`): an Eurth nation's is iiwiki */
+  wikiSource?: string | null;
+
+  /** The country's own wiki page (`Country.wikiPageTitle`), read instead of its name */
+  wikiPageTitle?: string | null;
+
   /** Current country data from IxStats for comparison and fallback */
   countryData: {
     /** Current population count */
@@ -172,8 +179,6 @@ export interface DossierTabProps {
     accent: string;
   };
 }
-
-export type WikiIntelligenceTabProps = DossierTabProps;
 
 /**
  * Configuration settings for wiki intelligence gathering.

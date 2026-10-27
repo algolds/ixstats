@@ -21,9 +21,10 @@
  */
 
 import { db } from "~/server/db";
-import { emitNotificationEvent } from "./emitter";
 import { withBasePath } from "~/lib/base-path";
 import { isNotificationEventEnabled } from "./guard";
+import { recipientAccepts } from "./recipient-preferences";
+import { deliverNotification } from "./delivery/deliver";
 
 function resolveHref(href?: string | null): string | null {
   if (!href) return null;
@@ -34,8 +35,8 @@ function resolveHref(href?: string | null): string | null {
   return withBasePath(href);
 }
 
-export type NotificationPriority = "critical" | "high" | "medium" | "low";
-export type NotificationCategory =
+type NotificationPriority = "critical" | "high" | "medium" | "low";
+type NotificationCategory =
   | "economic"
   | "diplomatic"
   | "governance"
@@ -46,15 +47,17 @@ export type NotificationCategory =
   | "crisis"
   | "opportunity"
   | "cards"
+  | "packs"
   | "policy"
   | "intelligence"
   | "global"
-  | "military";
+  | "military"
+  | "wiki";
 export type NotificationType = "info" | "success" | "warning" | "error" | "alert" | "update";
-export type NotificationSeverity = "urgent" | "important" | "informational";
-export type DeliveryMethod = "toast" | "dynamic-island" | "modal" | "command-palette";
+type NotificationSeverity = "urgent" | "important" | "informational";
+type DeliveryMethod = "toast" | "dynamic-island" | "modal" | "command-palette";
 
-export interface CreateNotificationInput {
+interface CreateNotificationInput {
   // Required fields
   title: string;
 
@@ -75,13 +78,15 @@ export interface CreateNotificationInput {
   relevanceScore?: number;
 }
 
-export interface NotificationTriggerOptions {
+interface NotificationTriggerOptions {
   // Thinkpages notifications
   thinkpage?: {
     id: string;
     title: string;
     action: "created" | "updated" | "commented" | "liked" | "shared";
     authorId: string;
+    /** Display name of the acting persona; shown in the title when present. */
+    authorName?: string;
     targetUserId?: string;
   };
 
@@ -112,6 +117,8 @@ export interface NotificationTriggerOptions {
 
   // Achievement notifications
   achievement?: {
+    /** The achievement's key; the notification opens it in the Vault. */
+    key: string;
     name: string;
     description: string;
     category: string;
@@ -132,7 +139,9 @@ export interface NotificationTriggerOptions {
 
 class NotificationAPIService {
   /**
-   * Create a single notification
+   * Create a single notification.
+   * Returns "" without creating anything when the recipient has switched off the
+   * notification's category or set a higher minimum urgency.
    */
   async create(input: CreateNotificationInput): Promise<string> {
     try {
@@ -140,6 +149,10 @@ class NotificationAPIService {
       if (guardKey && !(await isNotificationEventEnabled(guardKey))) {
         console.debug(`[NotificationAPI] Suppressed by guard: ${guardKey}`);
         throw new Error(`Notification suppressed: ${guardKey} is disabled`);
+      }
+      if (!(await recipientAccepts(input.userId, input.category, input.priority))) {
+        console.debug("[NotificationAPI] Suppressed by recipient preferences:", input.category);
+        return "";
       }
       const notification = await db.notification.create({
         data: {
@@ -161,15 +174,16 @@ class NotificationAPIService {
         },
       });
 
-      // Emit real-time event
-      emitNotificationEvent(notification);
-
-      console.log(
-        "[NotificationAPI] Created notification:",
-        notification.id,
-        "-",
-        notification.title
-      );
+      if (process.env.NODE_ENV !== "test") {
+        console.log(
+          "[NotificationAPI] Created notification:",
+          notification.id,
+          "-",
+          notification.title
+        );
+      }
+      const recipient = notification.userId;
+      if (recipient) void deliverNotification({ ...notification, userId: recipient }, { db });
       return notification.id;
     } catch (error) {
       console.error("[NotificationAPI] Failed to create notification:", error);
@@ -182,27 +196,37 @@ class NotificationAPIService {
    */
   async createMany(inputs: CreateNotificationInput[]): Promise<string[]> {
     try {
+      const accepted = await Promise.all(
+        inputs.map((input) => recipientAccepts(input.userId, input.category, input.priority))
+      );
       const notifications = await db.notification.createMany({
-        data: inputs.map((input) => ({
-          title: input.title,
-          message: input.message ?? null,
-          description: input.description ?? null,
-          userId: input.userId ?? null,
-          countryId: input.countryId ?? null,
-          category: input.category ?? null,
-          type: input.type ?? "info",
-          priority: input.priority ?? "medium",
-          severity: input.severity ?? "informational",
-          href: resolveHref(input.href),
-          source: input.source ?? "system",
-          actionable: input.actionable ?? false,
-          deliveryMethod: input.deliveryMethod ?? null,
-          metadata: input.metadata ? JSON.stringify(input.metadata) : null,
-          relevanceScore: input.relevanceScore ?? null,
-        })),
+        data: inputs
+          .filter((_, i) => accepted[i])
+          .map((input) => ({
+            title: input.title,
+            message: input.message ?? null,
+            description: input.description ?? null,
+            userId: input.userId ?? null,
+            countryId: input.countryId ?? null,
+            category: input.category ?? null,
+            type: input.type ?? "info",
+            priority: input.priority ?? "medium",
+            severity: input.severity ?? "informational",
+            href: resolveHref(input.href),
+            source: input.source ?? "system",
+            actionable: input.actionable ?? false,
+            deliveryMethod: input.deliveryMethod ?? null,
+            metadata: input.metadata ? JSON.stringify(input.metadata) : null,
+            relevanceScore: input.relevanceScore ?? null,
+          })),
       });
 
       console.log("[NotificationAPI] Created", notifications.count, "notifications");
+      inputs.forEach((input, i) => {
+        if (!accepted[i] || !input.userId) return;
+        const n = { ...input, userId: input.userId, href: resolveHref(input.href) };
+        void deliverNotification(n, { db });
+      });
 
       // Note: We can't easily get IDs from createMany, so we return empty array
       // For detailed tracking, use multiple create() calls instead
@@ -219,24 +243,25 @@ class NotificationAPIService {
   async trigger(options: NotificationTriggerOptions): Promise<string | null> {
     // Thinkpages notifications
     if (options.thinkpage) {
-      const { id, title, action, authorId, targetUserId } = options.thinkpage;
+      const { id, title, action, authorId, authorName, targetUserId } = options.thinkpage;
 
       const actionMessages: Record<typeof action, string> = {
-        created: "created a new ThinkPage",
-        updated: "updated their ThinkPage",
-        commented: "commented on your ThinkPage",
-        liked: "liked your ThinkPage",
-        shared: "shared your ThinkPage",
+        created: "created a new post",
+        updated: "updated their post",
+        commented: "commented on your post",
+        liked: "liked your post",
+        shared: "shared your post",
       };
 
+      const actor = authorName?.trim();
       return this.create({
-        title: `ThinkPage ${action}`,
-        message: `${actionMessages[action]}: "${title}"`,
+        title: actor ? `${actor} ${actionMessages[action]}` : `Post ${action}`,
+        message: actor ? `"${title}"` : `${actionMessages[action]}: "${title}"`,
         userId: targetUserId ?? null,
         category: "social",
         type: action === "created" ? "success" : "info",
         priority: action === "commented" ? "medium" : "low",
-        href: withBasePath(`/thinkpages/${id}`),
+        href: withBasePath(`/dashboard/post/${id}`),
         source: "thinkpages",
         actionable: true,
         metadata: { thinkpageId: id, authorId, action },
@@ -329,7 +354,7 @@ class NotificationAPIService {
 
     // Achievement notifications
     if (options.achievement) {
-      const { name, description, category, userId } = options.achievement;
+      const { key, name, description, category, userId } = options.achievement;
 
       return this.create({
         title: `🏆 Achievement Unlocked: ${name}`,
@@ -338,7 +363,7 @@ class NotificationAPIService {
         category: "achievement",
         type: "success",
         priority: "low",
-        href: withBasePath("/achievements"),
+        href: withBasePath(`/vault/achievements?a=${encodeURIComponent(key)}`),
         source: "achievement-system",
         actionable: true,
         metadata: { achievementName: name, achievementCategory: category },
@@ -404,6 +429,7 @@ class NotificationAPIService {
     title: string;
     action: "created" | "updated" | "commented" | "liked" | "shared";
     authorId: string;
+    authorName?: string;
     targetUserId?: string;
   }): Promise<string> {
     return this.trigger({
@@ -412,6 +438,7 @@ class NotificationAPIService {
         title: params.title,
         action: params.action,
         authorId: params.authorId,
+        authorName: params.authorName,
         targetUserId: params.targetUserId,
       },
     }) as Promise<string>;
@@ -560,7 +587,7 @@ class NotificationAPIService {
       category: "social",
       type: "info",
       priority: "low",
-      href: `/messages/groups?group=${params.groupId}`,
+      href: `/thinktanks/${params.groupId}`,
       source: "thinktank",
       actionable: true,
       metadata: {
@@ -664,4 +691,3 @@ class NotificationAPIService {
 export const notificationAPI = new NotificationAPIService();
 
 // Export for convenience
-export default notificationAPI;

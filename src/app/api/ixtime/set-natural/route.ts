@@ -1,24 +1,13 @@
-// src/app/api/ixtime/set-natural/route.ts
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { IxTime } from "~/lib/ixtime";
-import { isSystemOwner } from "~/lib/auth";
+import { requireAdminSession } from "~/server/shared/route-auth";
+import { persistSharedClock } from "~/lib/ixtime/shared-clock";
+import { db } from "~/server/db";
 
 export async function POST(request: Request) {
   try {
-    // Require authentication for time control operations
-    const session = await auth();
-    if (!session?.userId) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    }
-
-    // Only admins/owners can modify time settings
-    if (!isSystemOwner(session.userId)) {
-      const role = (session.sessionClaims?.metadata as any)?.role;
-      if (!["admin", "owner", "staff"].includes(role)) {
-        return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-      }
-    }
+    const denied = await requireAdminSession();
+    if (denied instanceof NextResponse) return denied;
 
     const body = await request.json();
     const { multiplier } = body;
@@ -32,6 +21,7 @@ export async function POST(request: Request) {
 
     // Set natural multiplier
     const result = IxTime.setNaturalMultiplier(multiplier);
+    await persistSharedClock(db);
 
     // Auto-sync with Discord bot
     try {

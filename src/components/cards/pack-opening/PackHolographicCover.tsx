@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * PackHolographicCover — Procedural holographic pack cover
  *
@@ -15,23 +17,21 @@
  *  6. Text overlay (pack name + rarity stamp)
  */
 
-"use client";
-
 import React, { useMemo, useRef } from "react";
 import { cn } from "~/lib/utils";
+import { CardsLogomark } from "~/lib/navigation/icons/CardsLogomark";
 import type { CardRarity } from "@prisma/client";
+import { parseCardRarity } from "~/lib/cards/enums";
 import {
-  getRainbowHolographicGradient,
-  getSparkleGridGradient,
-  getPrismaticWaveGradient,
-  getHolofoilTextureGradient,
   getFoilStampConfig,
   getEmbossedTextShadow,
+  getHolofoilTextureGradient,
+  getPrismaticWaveGradient,
+  getRainbowHolographicGradient,
+  getSparkleGridGradient,
 } from "~/lib/themes";
 
-// ─── Types ──────────────────────────────────────────────────────
-
-export interface PackHolographicCoverProps {
+interface PackHolographicCoverProps {
   packType: string;
   guaranteedRarity?: string | null;
   packName?: string;
@@ -41,7 +41,7 @@ export interface PackHolographicCoverProps {
   size?: "sm" | "md" | "lg";
 }
 
-// ─── Pack-type base themes ──────────────────────────────────────
+// Pack-type base themes
 
 interface PackTheme {
   base: string;
@@ -75,22 +75,9 @@ const PACK_THEMES: Record<string, PackTheme> = {
     accentSoft: "rgba(234,179,8,0.12)",
     hueRotate: 160,
   },
-  LIMITED: {
-    base: "from-emerald-950 via-teal-900 to-emerald-950",
-    accent: "rgba(16,185,129,0.45)",
-    accentSoft: "rgba(16,185,129,0.12)",
-    hueRotate: 120,
-  },
 };
 
-// ─── Rarity helpers ─────────────────────────────────────────────
-
-const VALID_RARITIES = new Set(["COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"]);
-
-function getEffectiveRarity(rarity?: string | null): CardRarity {
-  if (rarity && VALID_RARITIES.has(rarity)) return rarity as CardRarity;
-  return "COMMON";
-}
+// Rarity helpers
 
 function getHoloGradient(rarity: CardRarity): string {
   switch (rarity) {
@@ -131,22 +118,20 @@ function getHoloOpacity(rarity: CardRarity): number {
   return map[rarity] ?? 0.15;
 }
 
-// ─── Size presets ───────────────────────────────────────────────
+// Size presets
 
 const SIZE_CLASSES = { sm: "h-20", md: "h-40", lg: "h-full min-h-[320px]" } as const;
-const LABEL_SIZES = { sm: "text-[9px]", md: "text-xs", lg: "text-base" } as const;
+const LABEL_SIZES = { sm: "text-footnote", md: "text-footnote", lg: "text-body" } as const;
 const STAMP_SIZES = {
-  sm: "text-xs h-5 w-5",
-  md: "text-lg h-8 w-8",
-  lg: "text-3xl h-14 w-14",
+  sm: "text-footnote h-5 w-5",
+  md: "text-title-3 h-8 w-8",
+  lg: "text-large-title h-14 w-14",
 } as const;
-
-// ─── Component ──────────────────────────────────────────────────
 
 export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
   ({ packType, guaranteedRarity, packName, packArtwork, className, size = "sm" }) => {
     const theme = PACK_THEMES[packType.toUpperCase()] ?? PACK_THEMES.BASIC!;
-    const rarity = getEffectiveRarity(guaranteedRarity);
+    const rarity = parseCardRarity(guaranteedRarity) ?? "COMMON";
     const foilStamp = getFoilStampConfig(rarity);
     const sweepDuration = getSweepSpeed(rarity);
     const holoOpacity = getHoloOpacity(rarity);
@@ -266,7 +251,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               style={{ backgroundImage: `url(${packArtwork})` }}
             />
           ) : (
-            <div className={cn("absolute inset-0 bg-gradient-to-br", theme.base)} />
+            <div className={cn("card-art-linear-br absolute inset-0", theme.base)} />
           )}
 
           {/* Layer 2: Holographic foil sweep */}
@@ -395,7 +380,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               <div
                 className={cn(
                   "mb-1 flex items-center justify-center rounded-full",
-                  "bg-gradient-to-br shadow-lg backdrop-blur-sm",
+                  "card-art-linear-br shadow-floating",
                   foilStamp.color,
                   STAMP_SIZES[size]
                 )}
@@ -405,7 +390,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               </div>
             )}
 
-            <div className="relative w-full bg-gradient-to-t from-black/70 via-black/30 to-transparent px-2 pt-4 pb-1.5">
+            <div className="card-art-linear-t relative w-full from-black/70 via-black/30 to-transparent px-2 pt-4 pb-2">
               {packName && size !== "sm" && (
                 <p
                   className={cn(
@@ -423,11 +408,12 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               )}
               <p
                 className={cn(
-                  "text-center font-semibold tracking-wider text-white/40 uppercase",
-                  size === "sm" ? "text-[7px]" : "text-[9px]"
+                  "flex items-center justify-center gap-1 font-semibold text-white/40",
+                  size === "sm" ? "text-[7px]" : "text-footnote"
                 )}
               >
-                IxCards
+                <CardsLogomark />
+                Cards
               </p>
             </div>
           </div>

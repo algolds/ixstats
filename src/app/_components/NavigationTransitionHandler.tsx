@@ -12,6 +12,7 @@ function NavigationTransitionHandlerContent() {
   useEffect(() => {
     setIsPending(false);
     window.dispatchEvent(new CustomEvent("ixstats-nav-end"));
+    // oxlint-disable-next-line
   }, [pathname, searchParams]);
 
   useEffect(() => {
@@ -52,7 +53,9 @@ function NavigationTransitionHandlerContent() {
         ) {
           return;
         }
-      } catch {}
+      } catch {
+        // unparseable href — let the navigation proceed normally
+      }
 
       // Command/Control/Shift clicks should open in a new tab/window without showing the loader
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.button === 1) return;

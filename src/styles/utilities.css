@@ -1,0 +1,75 @@
+/* ==========================================================================
+   UTILITIES — TIER BADGES, COMPACT MODE, SHARED KEYFRAMES
+
+   Layered: element defaults in `@layer base`, classes in `@layer components`, single-class
+   helpers as `@utility`. Increase Contrast lives in facet/tokens.css and print rules in
+   facet/interaction.css.
+   ========================================================================== */
+
+@layer base {
+  html,
+  body {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    transition:
+      color 0.2s ease,
+      background-color 0.2s ease;
+  }
+}
+
+@layer components {
+  /* ─── Economic tier colours (builder CountryGrid / CountrySelector) ───── */
+
+  .tier-advanced {
+    background-color: rgba(139, 92, 246, 0.1);
+    color: var(--color-tier-advanced);
+    border-color: rgba(139, 92, 246, 0.2);
+  }
+
+  .tier-developed {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--color-tier-developed);
+    border-color: rgba(59, 130, 246, 0.2);
+  }
+
+  .tier-emerging {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--color-tier-emerging);
+    border-color: rgba(16, 185, 129, 0.2);
+  }
+
+  .tier-developing {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--color-tier-developing);
+    border-color: rgba(245, 158, 11, 0.2);
+  }
+}
+
+@utility animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* A fixed dark surface (e.g. a black scrim) inside the light theme: system colours take their dark
+   values (the dark-theme ones in facet/tokens.css) so status text and accents stay legible on it.
+   Only raw role utilities (text-green, bg-yellow, from-blue) pick this up; derived tokens such as
+   *-ink, success and destructive are not rebound. A test keeps the values equal to lib/design/tokens.ts. */
+@utility facet-on-dark {
+  --color-red: #f87171;
+  --color-yellow: #facc15;
+  --color-green: #4ade80;
+  --color-blue: #60a5fa;
+  --color-indigo: #818cf8;
+}

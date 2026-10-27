@@ -3,8 +3,17 @@
 import * as React from "react";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 
-import { cn } from "~/lib/utils";
+import { type VariantProps } from "class-variance-authority";
+
+import { cn } from "~/lib/utils/cn";
+import { SurfaceReset } from "~/components/ui/card";
 import { buttonVariants } from "~/components/ui/button";
+import { soundCues } from "~/lib/sound/cuelume";
+import {
+  overlayScrimClassName,
+  overlayScrimMotionClassName,
+  presentMotionClassName,
+} from "~/components/ui/dialog";
 
 function AlertDialog({ ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
@@ -27,10 +36,7 @@ function AlertDialogBackdrop({
   return (
     <AlertDialogPrimitive.Overlay
       data-slot="alert-dialog-backdrop"
-      className={cn(
-        "fixed inset-0 z-[100010] bg-black/50 backdrop-blur-xl transition-opacity duration-150 ease-out data-[state=closed]:opacity-0 data-[state=open]:opacity-100",
-        className
-      )}
+      className={cn(overlayScrimClassName, overlayScrimMotionClassName, className)}
       {...props}
     />
   );
@@ -41,19 +47,25 @@ function AlertDialogContent({
   children,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+  React.useEffect(() => {
+    // Optional calls: many tests mock ~/lib/sound/cuelume with only `soundEffects`.
+    soundCues?.present?.();
+  }, []);
+
   return (
     <AlertDialogPortal>
       <AlertDialogBackdrop />
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
-          "bg-background fixed top-[50%] left-[50%] z-[100011] grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg transition-all duration-150 ease-out outline-none sm:max-w-lg",
-          "data-[state=closed]:scale-95 data-[state=closed]:opacity-0 data-[state=open]:scale-100 data-[state=open]:opacity-100",
+          "z-sheet fixed top-1/2 left-1/2 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 p-6 outline-none sm:max-w-lg",
+          "rounded-sheet facet-overlay text-label",
+          presentMotionClassName,
           className
         )}
         {...props}
       >
-        {children}
+        <SurfaceReset>{children}</SurfaceReset>
       </AlertDialogPrimitive.Content>
     </AlertDialogPortal>
   );
@@ -86,7 +98,7 @@ function AlertDialogTitle({
   return (
     <AlertDialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("text-lg font-semibold", className)}
+      className={cn("text-title-3 text-label", className)}
       {...props}
     />
   );
@@ -99,7 +111,7 @@ function AlertDialogDescription({
   return (
     <AlertDialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn("text-callout text-label-secondary", className)}
       {...props}
     />
   );
@@ -107,37 +119,46 @@ function AlertDialogDescription({
 
 function AlertDialogAction({
   className,
+  variant = "default",
+  onClick,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Action> & {
+  /** Button style; `"destructive"` also plays the destructive-confirm cue. */
+  variant?: VariantProps<typeof buttonVariants>["variant"];
+}) {
   return (
     <AlertDialogPrimitive.Action
       data-slot="alert-dialog-action"
-      className={cn(buttonVariants(), className)}
+      className={cn(buttonVariants({ variant }), className)}
+      onClick={(event) => {
+        if (variant === "destructive") soundCues?.destructive?.();
+        onClick?.(event);
+      }}
       {...props}
     />
   );
 }
 
-// Preserves the legacy `AlertDialogClose` export. Radix's Cancel closes the
-// dialog, matching the original Base UI Close behaviour.
+// Radix's Cancel closes the dialog.
 function AlertDialogClose({
   className,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
   return (
     <AlertDialogPrimitive.Cancel
+      data-cuelume-press="droplet"
       data-slot="alert-dialog-close"
-      className={cn(buttonVariants({ variant: "outline" }), className)}
+      className={cn(buttonVariants({ variant: "secondary" }), className)}
       {...props}
     />
   );
 }
 
+const AlertDialogCancel = AlertDialogClose;
+
 export {
   AlertDialog,
   AlertDialogTrigger,
-  AlertDialogPortal,
-  AlertDialogBackdrop,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogFooter,
@@ -145,4 +166,5 @@ export {
   AlertDialogDescription,
   AlertDialogAction,
   AlertDialogClose,
+  AlertDialogCancel,
 };

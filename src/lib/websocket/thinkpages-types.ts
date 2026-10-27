@@ -1,5 +1,6 @@
 // ThinkPages WebSocket Types
 // Real-time messaging, presence, and group functionality
+import type { BoardLiveEvent } from "~/lib/thinkpages-forum/board-live";
 
 export interface PresenceUpdate {
   id: string;
@@ -31,7 +32,7 @@ export interface MessageUpdate {
   readBy?: string[];
 }
 
-export interface GroupUpdate {
+interface GroupUpdate {
   id: string;
   type: "group:created" | "group:updated" | "group:deleted" | "member:joined" | "member:left";
   groupId: string;
@@ -40,7 +41,7 @@ export interface GroupUpdate {
   timestamp: number;
 }
 
-export interface ConversationUpdate {
+interface ConversationUpdate {
   id: string;
   type: "conversation:created" | "conversation:updated" | "conversation:deleted";
   conversationId: string;
@@ -58,34 +59,6 @@ export interface ReadReceipt {
   readAt: number;
 }
 
-export interface ThinkPagesWebSocketEvent {
-  type:
-    | "presence:update"
-    | "typing:update"
-    | "message:update"
-    | "group:update"
-    | "conversation:update"
-    | "read:receipt";
-  data:
-    | PresenceUpdate
-    | TypingIndicator
-    | MessageUpdate
-    | GroupUpdate
-    | ConversationUpdate
-    | ReadReceipt;
-  timestamp: number;
-  channel: string;
-  accountId?: string;
-}
-
-export interface ThinkPagesSubscription {
-  type: "presence" | "conversations" | "groups" | "account";
-  channel: string;
-  accountId?: string;
-  conversationId?: string;
-  groupId?: string;
-}
-
 export interface ThinkPagesClientState {
   connected: boolean;
   authenticated: boolean;
@@ -101,6 +74,9 @@ export interface ThinkPagesClientState {
 
 export interface ThinkPagesWebSocketHookOptions {
   accountId?: string;
+  /** Connect without a session (a signed-out reader): the server lets it into public realm board rooms only. */
+  anonymous?: boolean;
+  onBoardEvent?: (event: BoardLiveEvent) => void;
   autoReconnect?: boolean;
   heartbeatInterval?: number;
   subscribeToPresence?: boolean;

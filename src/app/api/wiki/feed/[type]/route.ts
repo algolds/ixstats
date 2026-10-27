@@ -1,0 +1,148 @@
+/**
+ * src/app/api/wiki/feed/[type]/route.ts — WikiOS Atom XML & JSON Syndication Feeds
+ *
+ * Recent-changes feed for one realm, as Atom 1.0 (default) or JSON Feed 1.1
+ * (`*.json` or `?format=json`).
+ */
+
+import { type NextRequest, NextResponse } from "next/server";
+import { appOrigin, appUrl, wikiPermalink } from "~/lib/app-url";
+import { parseWikiSource } from "~/lib/wiki-os/config";
+import { db } from "~/server/db";
+
+interface FeedItem {
+  id: string;
+  title: string;
+  link: string;
+  summary: string;
+  author: string;
+  updated: string;
+  /** Overwritten: a later save on the other wiki replaced it. Listed, never the page's live text. */
+  parked: boolean;
+}
+
+/** What an overwritten revision's title says, as the history and recent changes say it. */
+const PARKED_NOTE = "overwritten";
+
+/** The app's host for the entry ids, or null when production has no app URL (app-url.ts throws, and says why). */
+function appHost(): string | null {
+  try {
+    return new URL(appOrigin()).host;
+  } catch (error) {
+    console.error("[wiki feed] No app URL to link the entries on:", error);
+    return null;
+  }
+}
+
+/** The feed while the app URL is missing: a temporary outage, never cached. */
+const UNAVAILABLE_HEADERS = { "Retry-After": "300", "Cache-Control": "no-store" };
+
+export async function GET(req: NextRequest, context: { params: Promise<{ type: string }> }) {
+  // Entry ids are tag URIs on the app's host (earlier ids named another host: a reader may list those entries once more).
+  const host = appHost();
+  if (!host) {
+    return new NextResponse("The feed is unavailable: NEXT_PUBLIC_APP_URL is not configured.", {
+      status: 503,
+      headers: UNAVAILABLE_HEADERS,
+    });
+  }
+  const { type } = await context.params;
+  const search = req.nextUrl.searchParams;
+  const isJson = type.endsWith(".json") || search.get("format") === "json";
+  const requested = Number.parseInt(search.get("limit") ?? "", 10) || 50;
+  const limit = Math.min(100, Math.max(1, requested));
+  const realm = search.get("realm") || "ixwiki";
+
+  const revisions = await db.wikiRevision.findMany({
+    where: { source: realm, article: { status: "PUBLISHED" } },
+    take: limit,
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      author: true,
+      summary: true,
+      minor: true,
+      parked: true,
+      byteDelta: true,
+      createdAt: true,
+      article: { select: { title: true } },
+    },
+  });
+
+  const source = parseWikiSource(realm);
+  const home = appUrl("/wiki/Main_Page");
+  const feedItems: FeedItem[] = revisions.map((r) => ({
+    id: `tag:${host},${r.createdAt.toISOString().slice(0, 10)}:wiki:rev:${r.id}`,
+    title: `${r.article.title} (${r.byteDelta >= 0 ? `+${r.byteDelta}` : r.byteDelta})${r.parked ? ` (${PARKED_NOTE})` : ""}`,
+    link: wikiPermalink(r.article.title, source),
+    summary: r.summary || (r.minor ? "Minor edit" : "Updated article content"),
+    author: r.author || "WikiOS Contributor",
+    updated: r.createdAt.toISOString(),
+    parked: r.parked,
+  }));
+
+  if (isJson) {
+    return NextResponse.json({
+      version: "https://jsonfeed.org/version/1.1",
+      title: "WikiOS Recent Changes Feed",
+      home_page_url: home,
+      feed_url: req.url,
+      description: "Live feed of recent edits, creations, and improvements in WikiOS.",
+      items: feedItems.map((item) => ({
+        id: item.id,
+        url: item.link,
+        title: item.title,
+        content_text: item.summary,
+        date_modified: item.updated,
+        authors: [{ name: item.author }],
+        // JSON Feed extension (names start with an underscore): overwritten, listed but not live.
+        _parked: item.parked,
+      })),
+    });
+  }
+
+  const updatedIso = feedItems[0]?.updated ?? new Date().toISOString();
+  const entries = feedItems
+    .map((item) => {
+      const parkedCategory = item.parked
+        ? `\n    <category term="parked" label="${PARKED_NOTE}" />`
+        : "";
+      return `
+  <entry>
+    <title>${escapeXml(item.title)}</title>
+    <link href="${escapeXml(item.link)}" />
+    <id>${escapeXml(item.id)}</id>
+    <updated>${item.updated}</updated>
+    <summary>${escapeXml(item.summary)}</summary>${parkedCategory}
+    <author>
+      <name>${escapeXml(item.author)}</name>
+    </author>
+  </entry>`;
+    })
+    .join("");
+  const atomXml = `<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>WikiOS Recent Changes (${escapeXml(realm)})</title>
+  <subtitle>Live syndicate feed of encyclopedia revisions and lore documents.</subtitle>
+  <link href="${home}" />
+  <link rel="self" href="${escapeXml(req.url)}" />
+  <id>${appUrl("/wiki/feed/recent-changes")}</id>
+  <updated>${updatedIso}</updated>${entries}
+</feed>`;
+
+  return new NextResponse(atomXml, {
+    headers: {
+      "Content-Type": "application/atom+xml; charset=utf-8",
+      "Cache-Control": "public, max-age=15, s-maxage=30, stale-while-revalidate=60",
+    },
+  });
+}
+
+function escapeXml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}

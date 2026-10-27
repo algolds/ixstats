@@ -1,38 +1,83 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { api } from "~/trpc/react";
-import type { SelectedCountry, SelectedFeature, HoveredCountry } from "../IxWorldMap";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import type { ProjectionMode, MapLayerType } from "~/lib/maps/map-config";
-import type { OverlayVisibility } from "../IxWorldMap";
+import { useNotify } from "~/hooks/useNotify";
+import type {
+  SelectedCountry,
+  SelectedFeature,
+  HoveredCountry,
+  IxWorldMapRef,
+  NeighborTarget,
+  OverlayVisibility,
+} from "../IxWorldMap";
+import type { ProjectionMode } from "~/lib/maps/map-config";
 import { buildDefaultVisibility, applyOverlayToggle } from "~/lib/maps/overlay-registry";
 
 interface UseMapStateProps {
   userCountryId: string | null;
-  isAdmin: boolean;
   onCountrySelect?: (country: SelectedCountry | null) => void;
   mapRef: React.RefObject<any>;
-  measureToolRef: React.RefObject<any>;
-  mapLayers: any[];
-  layerDataMap: Record<string, any>;
+  /**
+   * Returns the loaded map layers at call time. A getter (backed by a ref in MapContainer)
+   * because the layers are fetched after this hook runs; passing them by value handed the
+   * pin tool and neighbour lookup an empty list.
+   */
+  getMapLayers: () => Array<{ type: string; data: any }>;
   isPinToolActive: boolean;
   pinPosition: any;
   dropPin: (lng: number, lat: number, layerDataMap: any) => void;
   clearPin: () => void;
 }
 
+const DEFAULT_COUNTRY_FILL = "#e8e5da";
+
+const SEARCH_RESULT_ZOOM: Record<string, number> = { country: 4, subdivision: 6 };
+
+const toSelectedCountry = (
+  featureId: string,
+  displayName: string,
+  countryId: string | null,
+  centroidLng: number,
+  centroidLat: number
+): SelectedCountry => ({
+  featureId,
+  displayName,
+  fillColor: DEFAULT_COUNTRY_FILL,
+  centroidLng,
+  centroidLat,
+  countryId,
+});
+
+/** Warm the query cache for a hovered country so its panel opens instantly. */
+function prefetchCountry(utils: ReturnType<typeof api.useUtils>, country: HoveredCountry) {
+  const { displayName, countryId } = country;
+  if (!displayName) return;
+  void utils.countries.getWikiRichIntro.prefetch(
+    { countryName: displayName, countryId: countryId ?? undefined },
+    { staleTime: 24 * 60 * 60_000 }
+  );
+  if (!countryId) return;
+  const opts = { staleTime: 10 * 60_000 };
+  void utils.countries.getMapSummary.prefetch({ countryId }, opts);
+  void utils.geoCore.getNeighbors.prefetch({ countryId }, opts);
+  void utils.geoSovereignty.getCountrySovereignty.prefetch({ countryId }, opts);
+}
+
+/** Fly to a country, zooming in to at least level 4 but never out. */
+const flyToCountry = (map: IxWorldMapRef, lng: number, lat: number) => {
+  map.flyTo(lng, lat, Math.max(map.getMap()?.getZoom() ?? 1.8, 4));
+};
+
 export function useMapState({
   userCountryId,
-  isAdmin,
   onCountrySelect,
   mapRef,
-  measureToolRef,
-  mapLayers,
-  layerDataMap,
+  getMapLayers,
   isPinToolActive,
   pinPosition,
   dropPin,
   clearPin,
 }: UseMapStateProps) {
+  const notify = useNotify();
   const utils = api.useUtils();
   const hoverDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -43,7 +88,6 @@ export function useMapState({
   }, []);
 
   const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
-  const [hoveredCountry, setHoveredCountry] = useState<HoveredCountry | null>(null);
   const [selectedFeature, setSelectedFeature] = useState<SelectedFeature | null>(null);
   const [isMeasuring, setIsMeasuring] = useState(false);
   const [mapEngineReady, setMapEngineReady] = useState(false);
@@ -73,31 +117,25 @@ export function useMapState({
     setOverlayVisibility((prev) => applyOverlayToggle(prev, key as string));
   }, []);
 
-  // WebGL Error listeners
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const handleWebGLErrorEvent = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      setWebglError(customEvent.detail?.error || "WebGL Error detected");
-    };
-
-    const handleContextLostEvent = () => {
+    const onWebglError = (e: Event) =>
+      setWebglError((e as CustomEvent).detail?.error || "WebGL Error detected");
+    const onContextLost = () =>
       setWebglError("WebGL context lost. Hardware acceleration might be disabled or overloaded.");
-    };
 
-    window.addEventListener("webgl-error" as any, handleWebGLErrorEvent);
-    window.addEventListener("webgl-context-lost" as any, handleContextLostEvent);
-
+    window.addEventListener("webgl-error", onWebglError);
+    window.addEventListener("webgl-context-lost", onContextLost);
     return () => {
-      window.removeEventListener("webgl-error" as any, handleWebGLErrorEvent);
-      window.removeEventListener("webgl-context-lost" as any, handleContextLostEvent);
+      window.removeEventListener("webgl-error", onWebglError);
+      window.removeEventListener("webgl-context-lost", onContextLost);
     };
   }, []);
 
   const measuringRef = useRef(false);
+  // oxlint-disable-next-line
   measuringRef.current = isMeasuring;
   const pinToolRef = useRef(false);
+  // oxlint-disable-next-line
   pinToolRef.current = isPinToolActive;
 
   const handleFeatureClick = useCallback(
@@ -122,40 +160,23 @@ export function useMapState({
       onCountrySelect?.(country);
 
       if (country && mapRef.current) {
-        const currentZoom = mapRef.current.getMap()?.getZoom() ?? 1.8;
-        const targetZoom = currentZoom >= 4 ? Math.max(currentZoom, 4) : 4;
-        mapRef.current.flyTo(country.centroidLng, country.centroidLat, targetZoom);
+        flyToCountry(mapRef.current, country.centroidLng, country.centroidLat);
       }
     },
     [onCountrySelect, mapRef]
   );
 
+  // Hover only warms the query cache. It deliberately does not store the hovered country in
+  // React state: that re-rendered the whole map container (every panel and control) each
+  // time the pointer crossed a border.
   const handleCountryHover = useCallback(
     (country: HoveredCountry | null) => {
-      setHoveredCountry(country);
       if (hoverDebounceRef.current) {
         clearTimeout(hoverDebounceRef.current);
         hoverDebounceRef.current = undefined;
       }
       if (!country) return;
-      hoverDebounceRef.current = setTimeout(() => {
-        if (country.displayName) {
-          const wikiOpts = { staleTime: 24 * 60 * 60_000 };
-          void utils.countries.getWikiRichIntro.prefetch(
-            { countryName: country.displayName },
-            wikiOpts
-          );
-          const opts = { staleTime: 10 * 60_000 };
-          if (country.countryId) {
-            void utils.countries.getMapSummary.prefetch({ countryId: country.countryId }, opts);
-            void utils.geoCore.getNeighbors.prefetch({ countryId: country.countryId }, opts);
-            void utils.geoSovereignty.getCountrySovereignty.prefetch(
-              { countryId: country.countryId },
-              opts
-            );
-          }
-        }
-      }, 200);
+      hoverDebounceRef.current = setTimeout(() => prefetchCountry(utils, country), 200);
     },
     [utils]
   );
@@ -163,10 +184,12 @@ export function useMapState({
   const handleMapClick = useCallback(
     (lng: number, lat: number) => {
       if (pinToolRef.current) {
+        const layerDataMap: Record<string, any> = {};
+        for (const ml of getMapLayers()) layerDataMap[ml.type] = ml.data;
         dropPin(lng, lat, layerDataMap);
       }
     },
-    [dropPin, layerDataMap]
+    [dropPin, getMapLayers]
   );
 
   const handleClosePanel = useCallback(() => {
@@ -191,9 +214,12 @@ export function useMapState({
       setEditingCountryId(userCountryId);
       setIsEditing(true);
     } else {
-      alert("You must have a country to edit the map. Go to /mycountry to create or claim one.");
+      notify.info(
+        "You need a country to edit the map",
+        "Create or claim one from MyCountry first."
+      );
     }
-  }, [userCountryId]);
+  }, [userCountryId, notify]);
 
   const handleOpenWorldEditor = useCallback(() => {
     setIsWorldEditing(true);
@@ -219,18 +245,17 @@ export function useMapState({
       centroidLng: number;
       centroidLat: number;
     }) => {
-      const zoom = result.type === "country" ? 4 : result.type === "subdivision" ? 6 : 8;
+      const zoom = SEARCH_RESULT_ZOOM[result.type] ?? 8;
       mapRef.current?.flyTo(result.centroidLng, result.centroidLat, zoom);
 
       if (result.type === "country") {
-        const country: SelectedCountry = {
-          featureId: result.id,
-          displayName: result.name,
-          fillColor: "#e8e5da",
-          centroidLng: result.centroidLng,
-          centroidLat: result.centroidLat,
-          countryId: result.countryId,
-        };
+        const country = toSelectedCountry(
+          result.id,
+          result.name,
+          result.countryId,
+          result.centroidLng,
+          result.centroidLat
+        );
         setSelectedCountry(country);
         onCountrySelect?.(country);
       }
@@ -239,57 +264,41 @@ export function useMapState({
   );
 
   const handleNeighborClick = useCallback(
-    (neighbor: {
-      featureId: string;
-      countryId: string | null;
-      displayName: string;
-      centroidLng?: number;
-      centroidLat?: number;
-    }) => {
+    (neighbor: NeighborTarget) => {
       let lng = neighbor.centroidLng ?? 0;
       let lat = neighbor.centroidLat ?? 0;
 
       if (lng === 0 && lat === 0) {
-        const politicalLayer = mapLayers.find((l) => l.type === "political");
-        if (politicalLayer?.data) {
-          const match = politicalLayer.data.features.find(
+        const match = getMapLayers()
+          .find((l) => l.type === "political")
+          ?.data?.features.find(
             (f: any) =>
               f.properties?._id === neighbor.featureId ||
               f.properties?._displayName === neighbor.displayName
           );
-          if (match?.properties) {
-            lng = match.properties._centroidLng ?? 0;
-            lat = match.properties._centroidLat ?? 0;
-          }
-        }
+        lng = match?.properties?._centroidLng ?? 0;
+        lat = match?.properties?._centroidLat ?? 0;
       }
 
-      const country: SelectedCountry = {
-        featureId: neighbor.featureId,
-        displayName: neighbor.displayName,
-        fillColor: "#e8e5da",
-        centroidLng: lng,
-        centroidLat: lat,
-        countryId: neighbor.countryId,
-      };
+      const country = toSelectedCountry(
+        neighbor.featureId,
+        neighbor.displayName,
+        neighbor.countryId,
+        lng,
+        lat
+      );
       setSelectedCountry(country);
       setGeographyFilter(null);
       onCountrySelect?.(country);
 
-      if (mapRef.current && (lng !== 0 || lat !== 0)) {
-        const currentZoom = mapRef.current.getMap()?.getZoom() ?? 1.8;
-        const targetZoom = currentZoom >= 4 ? Math.max(currentZoom, 4) : 4;
-        mapRef.current.flyTo(lng, lat, targetZoom);
-      }
+      if (mapRef.current && (lng !== 0 || lat !== 0)) flyToCountry(mapRef.current, lng, lat);
     },
-    [onCountrySelect, mapLayers, mapRef]
+    [onCountrySelect, getMapLayers, mapRef]
   );
 
   return {
     selectedCountry,
     setSelectedCountry,
-    hoveredCountry,
-    setHoveredCountry,
     selectedFeature,
     setSelectedFeature,
     isMeasuring,
@@ -304,7 +313,6 @@ export function useMapState({
     projectionMode,
     setProjectionMode,
     isEditing,
-    setIsEditing,
     isWorldEditing,
     setIsWorldEditing,
     selectedRouteId,
@@ -312,11 +320,9 @@ export function useMapState({
     storyPinModalId,
     setStoryPinModalId,
     editingCountryId,
-    setEditingCountryId,
     currentZoom,
     setCurrentZoom,
     overlayVisibility,
-    setOverlayVisibility,
     labelsVisible,
     toggleLabels,
     toggleOverlay,

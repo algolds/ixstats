@@ -1,10 +1,12 @@
 "use client";
 
-import { Swords } from "lucide-react";
+import { Tournament as Swords } from "iconoir-react";
 import { DeploymentWizard } from "./operations/DeploymentWizard";
 import { ActiveOperations } from "./operations/ActiveOperations";
 import { PvPConflictPanel } from "./operations/PvPConflictPanel";
+import { DeclaredTerrainCard } from "./operations/DeclaredTerrainCard";
 import { api } from "~/trpc/react";
+import { useCanEdit } from "~/context/MyCountryEditModeContext";
 
 interface OperationsPanelProps {
   countryId: string;
@@ -12,6 +14,8 @@ interface OperationsPanelProps {
 
 export function OperationsPanel({ countryId }: OperationsPanelProps) {
   const utils = api.useUtils();
+  // Deploying is premium, like the other write controls: the free preview hides it.
+  const { canEdit } = useCanEdit();
 
   const handleOperationCreated = () => {
     void utils.security.getOperations.invalidate({ countryId });
@@ -19,20 +23,19 @@ export function OperationsPanel({ countryId }: OperationsPanelProps) {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Swords className="h-4 w-4 text-red-600" />
-          <h3 className="text-sm font-semibold">Military Operations</h3>
+          <Swords aria-hidden="true" className="text-red h-4 w-4" />
+          <h3 className="text-label text-headline">Military operations</h3>
         </div>
-        <DeploymentWizard countryId={countryId} onSuccess={handleOperationCreated} />
+        {canEdit && <DeploymentWizard countryId={countryId} onSuccess={handleOperationCreated} />}
       </div>
 
-      {/* Active operations */}
       <ActiveOperations countryId={countryId} />
 
-      {/* PvP / PvNPC conflicts */}
       <PvPConflictPanel countryId={countryId} />
+
+      <DeclaredTerrainCard countryId={countryId} />
     </div>
   );
 }

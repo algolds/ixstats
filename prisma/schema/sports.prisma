@@ -1,4 +1,9 @@
 // IxStates — Sports, Competition & League models
+//
+// *IxTime columns (startIxTime, scheduledIxTime, resolvedIxTime, raceIxTime, ...) are Float epoch-ms of
+// REAL time (Date.now()) since the realm time switch (2026-10,
+// scripts/migrations/2026-10-realm-time/t3-platform-real-time.sql); the names are historical. Sports are
+// platform-wide and run on no realm's clock; `matchIntervalDays` / `raceIntervalDays` are real days.
 
 model SportLeague {
   id               String        @id @default(cuid())
@@ -173,6 +178,9 @@ model SportMatch {
   homeRatingAfter   Json?
   awayRatingAfter   Json?
   stage             Int             @default(1)
+  /// When each side's club collected its revenue for this match (collectMatchRevenue pays each match once)
+  homeRevenueCollectedAt DateTime?
+  awayRevenueCollectedAt DateTime?
   createdAt         DateTime        @default(now())
 
   season            SportSeason     @relation("SeasonMatches", fields: [seasonId], references: [id], onDelete: Cascade)
@@ -186,6 +194,7 @@ model SportMatch {
   @@index([awayTeamId])
   @@index([status])
   @@index([matchDay])
+  @@index([status, resolvedIxTime])
   @@map("sport_matches")
 }
 

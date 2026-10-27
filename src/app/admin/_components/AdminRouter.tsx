@@ -1,53 +1,47 @@
-// src/app/admin/_components/AdminRouter.tsx
 "use client";
+// src/app/admin/_components/AdminRouter.tsx
+// Central pushState single-page router for the admin sections (see renderContent)
 
-// eslint-disable-next-line unused-imports/no-unused-imports
-import React, { useEffect } from "react";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { usePathname } from "next/navigation";
+import React from "react";
 import dynamic from "next/dynamic";
 import { LiveAdminDashboard } from "./LiveAdminDashboard";
-import { GeneralSettingsContent } from "./GeneralSettingsContent";
 import { BotIntegrationCenter } from "./BotIntegrationCenter";
 import { NotificationsAdmin } from "./NotificationsAdmin";
 import { StashSettingsContent } from "./StashSettingsContent";
 import { ThinkPagesSettingsContent } from "./ThinkPagesSettingsContent";
-import { Loader2, Settings, Sparkles, BookOpen } from "lucide-react";
-import { api } from "~/trpc/react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
-import { AdminHeader } from "./AdminHeader";
-import { useAdminNavigation } from "./AdminNavigationContext";
 
-// Loader skeleton
+import { PageHeader } from "~/components/shell/PageHeader";
+import { useAdminNavigation } from "./AdminNavigationContext";
+import { Skeleton } from "~/components/ui/skeleton";
+
+// Loader wireframe
 const Loader = () => (
-  <div className="flex h-[50vh] items-center justify-center">
-    <div className="space-y-2 text-center">
-      <Loader2 className="mx-auto h-8 w-8 animate-spin text-indigo-500" />
-      <p className="text-muted-foreground text-xs">Loading panel components...</p>
+  <div className="space-y-6">
+    <Skeleton className="rounded-card h-32 w-full" />
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Skeleton key={i} className="rounded-row h-24" />
+      ))}
     </div>
+    <Skeleton className="rounded-card h-96 w-full" />
   </div>
 );
 
-// Dynamic imports
+// Dynamic imports for modular panels
+const PlatformSettingsPanel = dynamic(
+  () => import("../platform/PlatformSettingsPanel").then((m) => m.PlatformSettingsPanel),
+  { loading: Loader, ssr: false }
+);
+
 const StorytellerPanel = dynamic(
   () => import("../storyteller/StorytellerPanel").then((m) => m.default),
   { loading: Loader, ssr: false }
 );
 
-const RealmsTab = dynamic(
-  () => import("../studio/_components/RealmsTab").then((m) => m.RealmsTab),
-  { loading: Loader, ssr: false }
-);
-
-const RealmUsersTab = dynamic(
-  () => import("../studio/_components/RealmUsersTab").then((m) => m.RealmUsersTab),
-  { loading: Loader, ssr: false }
-);
-
-const WorldConfigsTab = dynamic(
-  () => import("../studio/_components/WorldConfigsTab").then((m) => m.WorldConfigsTab),
-  { loading: Loader, ssr: false }
-);
+const RealmsPanel = dynamic(() => import("../realms/RealmsPanel").then((m) => m.RealmsPanel), {
+  loading: Loader,
+  ssr: false,
+});
 
 const CardsPanel = dynamic(() => import("../cards/CardsPanel").then((m) => m.default), {
   loading: Loader,
@@ -58,6 +52,11 @@ const VaultPanel = dynamic(() => import("../vault/VaultPanel").then((m) => m.def
   loading: Loader,
   ssr: false,
 });
+
+const AchievementsPanel = dynamic(
+  () => import("../achievements/AchievementsPanel").then((m) => m.AchievementsPanel),
+  { loading: Loader, ssr: false }
+);
 
 const ReferenceDataPanel = dynamic(
   () => import("../reference-data/ReferenceDataPanel").then((m) => m.default),
@@ -75,17 +74,22 @@ const PollsPanel = dynamic(() => import("../polls/PollsPanel").then((m) => m.def
 });
 
 const NationalIssuesPanel = dynamic(
-  () => import("../national-issues/page").then((m) => m.default),
+  () => import("../national-issues/NationalIssuesPanel").then((m) => m.default),
   { loading: Loader, ssr: false }
 );
 
-const WorldStudioPanel = dynamic(() => import("../maps/WorldStudioPanel").then((m) => m.default), {
-  loading: Loader,
-  ssr: false,
-});
+const AtlasPanel = dynamic(
+  () => import("../maps/_components/atlas/AtlasPanel").then((m) => m.AtlasPanel),
+  { loading: Loader, ssr: false }
+);
 
 const CalculationEditor = dynamic(
-  () => import("./CalculationEditor").then((m) => m.CalculationEditor),
+  () => import("../calculations/CalculationEditor").then((m) => m.CalculationEditor),
+  { loading: Loader, ssr: false }
+);
+
+const RingsAuditPanel = dynamic(
+  () => import("../rings-audit/RingsAuditPanel").then((m) => m.RingsAuditPanel),
   { loading: Loader, ssr: false }
 );
 
@@ -104,47 +108,104 @@ const MyLeagueAdminPanel = dynamic(
   { loading: Loader, ssr: false }
 );
 
-const NarratorAdminPanel = dynamic(
-  () => import("./NarratorAdminPanel").then((m) => m.NarratorAdminPanel),
-  { loading: Loader, ssr: false }
-);
-
 const OnomaAdminPanel = dynamic(() => import("./OnomaAdminPanel").then((m) => m.OnomaAdminPanel), {
   loading: Loader,
   ssr: false,
 });
 
-const UnifiedMediaServiceAdmin = dynamic(
-  () => import("./UnifiedMediaServiceAdmin").then((m) => m.UnifiedMediaServiceAdmin),
+const WikiOSSettingsPanel = dynamic(
+  () => import("../wikios-settings/WikiOSSettingsPanel").then((m) => m.WikiOSSettingsPanel),
   { loading: Loader, ssr: false }
 );
 
-// Import UserManagement directly since it is small/medium
-import { UserManagement } from "./UserManagement";
+const LoreScannerPanel = dynamic(
+  () => import("../lorescanner/LoreScannerPanel").then((m) => m.LoreScannerPanel),
+  { loading: Loader, ssr: false }
+);
 
-// Import exported Wiki sub-panels
-import {
-  WikiLinkStatusSection,
-  ManualLinkEditorSection,
-  BulkScannerSection,
-  AwardsManagerSection,
-  SystemTuningSection,
-} from "../wiki/WikiPanel";
+const ImageRepoPanel = dynamic(
+  () => import("../image-repo/ImageRepoPanel").then((m) => m.ImageRepoPanel),
+  { loading: Loader, ssr: false }
+);
+
+const CountriesAdminPanel = dynamic(
+  () => import("../countries/CountriesAdminPanel").then((m) => m.CountriesAdminPanel),
+  { loading: Loader, ssr: false }
+);
+
+const DiplomaticOptionsPanel = dynamic(
+  () =>
+    import("../diplomatic-options/DiplomaticOptionsPanel").then((m) => m.DiplomaticOptionsPanel),
+  { loading: Loader, ssr: false }
+);
+
+const DiplomaticScenariosPanel = dynamic(
+  () =>
+    import("../diplomatic-scenarios/DiplomaticScenariosPanel").then(
+      (m) => m.DiplomaticScenariosPanel
+    ),
+  { loading: Loader, ssr: false }
+);
+
+const MilitaryEquipmentPanel = dynamic(
+  () =>
+    import("../military-equipment/MilitaryEquipmentPanel").then((m) => m.MilitaryEquipmentPanel),
+  { loading: Loader, ssr: false }
+);
+
+const EconomicArchetypesPanel = dynamic(
+  () =>
+    import("../economic-archetypes/EconomicArchetypesPanel").then((m) => m.EconomicArchetypesPanel),
+  { loading: Loader, ssr: false }
+);
+
+const IntelligenceTemplatesPanel = dynamic(
+  () =>
+    import("../intelligence-templates/IntelligenceTemplatesPanel").then(
+      (m) => m.IntelligenceTemplatesPanel
+    ),
+  { loading: Loader, ssr: false }
+);
+
+const NPCPersonalitiesPanel = dynamic(
+  () => import("../npc-personalities/NPCPersonalitiesPanel").then((m) => m.NPCPersonalitiesPanel),
+  { loading: Loader, ssr: false }
+);
+
+const MembershipPanel = dynamic(
+  () => import("../membership/MembershipPanel").then((m) => m.MembershipPanel),
+  { loading: Loader, ssr: false }
+);
+
+const EconomicComponentsPanel = dynamic(
+  () =>
+    import("../economic-components/EconomicComponentsPanel").then((m) => m.EconomicComponentsPanel),
+  { loading: Loader, ssr: false }
+);
+
+const GovernmentComponentsPanel = dynamic(
+  () =>
+    import("../government-components/GovernmentComponentsPanel").then(
+      (m) => m.GovernmentComponentsPanel
+    ),
+  { loading: Loader, ssr: false }
+);
+
+// Import UserManagement directly
+import { UserManagement } from "./UserManagement";
 
 export function AdminRouter() {
   const { activeSection, onNavigate } = useAdminNavigation();
 
-  // WikiOS API stats query shared by WikiOS components
-  const { data: countriesData, isLoading: countriesLoading } = api.countries.getAll.useQuery(
-    undefined,
-    { enabled: ["wikios-settings", "lorescanner"].includes(activeSection) }
-  );
-
   const renderContent = () => {
     switch (activeSection) {
-      // System Control
-      case "settings":
-        return <GeneralSettingsContent />;
+      // Platform & Systems
+      case "platform":
+        return <PlatformSettingsPanel />;
+      case "autosave-monitor":
+        return <PlatformSettingsPanel defaultTab="autosave" />;
+      case "countries":
+        return <CountriesAdminPanel />;
       case "bot":
         return <BotIntegrationCenter />;
       case "notifications":
@@ -156,136 +217,81 @@ export function AdminRouter() {
       case "blurbs":
         return <BlurbsPanel />;
 
-      // World Config
-      case "world-settings":
-        return (
-          <div className="space-y-6">
-            <AdminHeader
-              icon={Settings}
-              title="World Config Settings"
-              description="High level options for the active game worlds, default zoom, Map projections, and wiki domains."
-            />
-            <WorldConfigsTab />
-          </div>
-        );
+      // World & Simulation
       case "storyteller":
         return <StorytellerPanel />;
       case "realms":
-        return (
-          <div className="space-y-6">
-            <AdminHeader
-              icon={Sparkles}
-              title="Realms & Assignments"
-              description="Create custom game realms, edit status, and bind users to realms."
-            />
-            <Tabs defaultValue="realms">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="realms">Realms</TabsTrigger>
-                <TabsTrigger value="users">User Assignments</TabsTrigger>
-              </TabsList>
-              <TabsContent value="realms" className="mt-6">
-                <RealmsTab />
-              </TabsContent>
-              <TabsContent value="users" className="mt-6">
-                <RealmUsersTab />
-              </TabsContent>
-            </Tabs>
-          </div>
-        );
-      case "worldstudio":
-        return <WorldStudioPanel />;
+        return <RealmsPanel defaultTab="realms" />;
+      case "maps":
+        return <AtlasPanel />;
       case "cards":
         return <CardsPanel />;
       case "vault":
         return <VaultPanel />;
       case "achievements":
-        return (
-          <div className="space-y-6">
-            <AdminHeader
-              icon={BookOpen}
-              title="Achievements & Awards"
-              description="Configure custom article badges, achievement score rules, and system points."
-            />
-            <AwardsManagerSection />
-          </div>
-        );
+        return <AchievementsPanel />;
       case "reference-data":
         return <ReferenceDataPanel />;
       case "national-issues":
         return <NationalIssuesPanel />;
-
-      // Users
-      case "user-management":
-        return <UserManagement mode="users" />;
-      case "user-roles":
-        return <UserManagement mode="roles" />;
-      case "user-logs":
-        return <LogsPanel />;
-
-      // WikiOS
-      case "wikios-settings":
-        return (
-          <div className="space-y-6">
-            <AdminHeader
-              icon={BookOpen}
-              title="WikiOS Base Settings"
-              description="Manage wiki domains integrations and link statuses."
-            />
-            <WikiLinkStatusSection countriesData={countriesData} isLoading={countriesLoading} />
-            <ManualLinkEditorSection countriesData={countriesData} />
-            <SystemTuningSection />
-          </div>
-        );
-
-      case "lorescanner":
-        return (
-          <div className="space-y-6">
-            <AdminHeader
-              icon={BookOpen}
-              title="Wiki Links LoreScanner"
-              description="Automatically scan wiki pages for country names and link them together."
-            />
-            <BulkScannerSection countriesData={countriesData} />
-          </div>
-        );
-      case "image-repo":
-        return (
-          <div className="space-y-6">
-            <AdminHeader
-              icon={BookOpen}
-              title="WikiOS Commons Repository Cache"
-              description="Initialize flag cache caches and synchronize Wikimedia Commons graphics."
-            />
-            <UnifiedMediaServiceAdmin />
-          </div>
-        );
-
-      // Labs
-      case "myleague":
-        return <MyLeagueAdminPanel />;
-      case "narrator":
-        return <NarratorAdminPanel />;
-      case "onoma":
-        return <OnomaAdminPanel />;
-
-      // Ungrouped
-      case "facet-lab":
-        return <FacetLabPanel />;
-      case "polls":
-        return <PollsPanel />;
-
-      // Calculations breakout
       case "calculations":
         return (
           <div className="space-y-6">
-            <AdminHeader
-              icon={Settings}
-              title="Calculation Formula Editor"
-              description="Interactive editor for world-sim economic equations and projection formulas."
+            <PageHeader
+              title="Calculation formula editor"
+              subtitle="Edit world-sim economic equations and projection formulas."
             />
             <CalculationEditor />
           </div>
         );
+      case "rings-audit":
+        return <RingsAuditPanel />;
+
+      // Users & Security
+      case "users":
+        return <UserManagement mode="users" />;
+      case "user-roles":
+        return <UserManagement mode="roles" />;
+      case "membership":
+        return <MembershipPanel />;
+      case "logs":
+        return <LogsPanel />;
+
+      // Simulation Systems (CMS)
+      case "diplomatic-options":
+        return <DiplomaticOptionsPanel />;
+      case "diplomatic-scenarios":
+        return <DiplomaticScenariosPanel />;
+      case "military-equipment":
+        return <MilitaryEquipmentPanel />;
+      case "economic-archetypes":
+        return <EconomicArchetypesPanel />;
+      case "intelligence-templates":
+        return <IntelligenceTemplatesPanel />;
+      case "npc-personalities":
+        return <NPCPersonalitiesPanel />;
+      case "economic-components":
+        return <EconomicComponentsPanel />;
+      case "government-components":
+        return <GovernmentComponentsPanel />;
+
+      // WikiOS
+      case "wikios-settings":
+        return <WikiOSSettingsPanel />;
+      case "lorescanner":
+        return <LoreScannerPanel />;
+      case "image-repo":
+        return <ImageRepoPanel />;
+
+      // Labs
+      case "myleague":
+        return <MyLeagueAdminPanel />;
+      case "onoma":
+        return <OnomaAdminPanel />;
+      case "facet-lab":
+        return <FacetLabPanel />;
+      case "polls":
+        return <PollsPanel />;
 
       // Default
       case "dashboard":
@@ -296,4 +302,3 @@ export function AdminRouter() {
 
   return renderContent();
 }
-export default AdminRouter;

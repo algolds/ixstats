@@ -1,0 +1,567 @@
+/**
+ * unified-wiki-parser.ts — Comprehensive wiki infobox parser with template processing.
+ *
+ * Unified entry point for all wiki parsing across the app.
+ * Handles IxWiki, IIWiki, and AltHistory Wiki uniformly.
+ *
+ * Pipeline:
+ * 1. Fetch wikitext via WikiBridge
+ * 2. Extract infobox via brace-depth parser (wiki-infobox-parser.ts)
+ * 3. Process templates (Switcher, convert, flag, formatnum, etc.)
+ * 4. Return structured UnifiedInfoboxData with 80+ typed fields
+ */
+
+import {
+  parseInfobox,
+  parseMoney,
+  parsePopulation,
+  extractCoordsFromFields,
+  cleanWikiValue,
+} from "~/lib/wiki-os/transformers/infobox-parser";
+import {
+  lowerAscii,
+  replaceInlineTemplates,
+  replaceTagBlocks,
+  rewriteSpans,
+  stripComments,
+  stripHtmlTags,
+  unpackInternalLinks,
+} from "~/lib/wiki-os/transformers/clean-markup-passes";
+import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
+import { forwardFinder } from "~/lib/wiki-os/wikitext/forward-finder";
+import {
+  FIELD_ALIASES,
+  MONEY_FIELD,
+  NUMERIC_FIELDS,
+  NUMERIC_FIELDS_LOWER,
+} from "./unified-field-map";
+export { resolveImageUrl };
+
+// ─── Unified Infobox Data Interface ───────────────────────────────────────────
+
+export interface UnifiedInfoboxData {
+  // Core identification
+  name: string;
+  conventional_long_name?: string;
+  native_name?: string;
+  common_name?: string;
+  official_name?: string;
+
+  // Visual elements
+  image_flag?: string;
+  flag?: string;
+  flagUrl?: string;
+  image_coat?: string;
+  coat_of_arms?: string;
+  coatOfArmsUrl?: string;
+  locator_map?: string;
+  image_map?: string;
+
+  // Geographic data
+  capital?: string;
+  largest_city?: string;
+  area_total?: string;
+  area_km2?: number;
+  area_rank?: string;
+  continent?: string;
+  coordinates?: [number, number];
+  climate?: string;
+
+  // Government data
+  government_type?: string;
+  leader_title1?: string;
+  leader_name1?: string;
+  leader_title2?: string;
+  leader_name2?: string;
+  leader_title3?: string;
+  leader_name3?: string;
+  leader_title4?: string;
+  leader_name4?: string;
+  head_of_state?: string;
+  head_of_government?: string;
+  deputy_leader?: string;
+  legislature?: string;
+  upper_house?: string;
+  lower_house?: string;
+
+  // Economic data
+  GDP_PPP?: string;
+  GDP_PPP_per_capita?: string;
+  GDP_nominal?: string;
+  GDP_nominal_per_capita?: string;
+  gdp?: number;
+  gdp_ppp?: number;
+  gdp_nominal?: number;
+  gdpPerCapita?: number;
+  currency?: string;
+  currency_code?: string;
+
+  // Population data
+  population?: number;
+  population_estimate?: number;
+  population_census?: number;
+  population_density?: string;
+  life_expectancy?: number;
+  literacy_rate?: number;
+  urbanization?: number;
+
+  // Cultural data
+  official_languages?: string;
+  languages?: string;
+  ethnic_groups?: string;
+  religion?: string;
+  demonym?: string;
+  national_anthem?: string;
+  motto?: string;
+
+  // Historical data
+  established?: string;
+  established_event1?: string;
+  established_date1?: string;
+  established_event2?: string;
+  established_date2?: string;
+  established_event3?: string;
+  established_date3?: string;
+  independence_date?: string;
+
+  // Technical data
+  time_zone?: string;
+  drives_on?: string;
+  calling_code?: string;
+  internet_tld?: string;
+  iso_code?: string;
+  electricity?: string;
+
+  // Additional
+  hdi?: string;
+  patron_saint?: string;
+  national_motto?: string;
+  wikiIntro?: string;
+  categories?: string[];
+  rawWikitext?: string;
+
+  // Raw infobox for interactive display
+  rawInfobox?: Record<string, string>;
+  templateName?: string;
+}
+
+// ─── Template Processing Functions ────────────────────────────────────────────
+
+function splitByPipe(content: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let linkDepth = 0;
+  let start = 0;
+
+  for (let i = 0; i < content.length; i++) {
+    if (content[i] === "{" && i + 1 < content.length && content[i + 1] === "{") {
+      depth++;
+      i++;
+    } else if (content[i] === "}" && i + 1 < content.length && content[i + 1] === "}") {
+      depth--;
+      i++;
+    } else if (content[i] === "[" && i + 1 < content.length && content[i + 1] === "[") {
+      linkDepth++;
+      i++;
+    } else if (content[i] === "]" && i + 1 < content.length && content[i + 1] === "]") {
+      linkDepth--;
+      i++;
+    } else if (content[i] === "|" && depth === 0 && linkDepth === 0) {
+      parts.push(content.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(content.slice(start));
+  return parts;
+}
+
+function processSwitcher(value: string): string {
+  const match = /\{\{\s*[Ss]witcher\s*\|([\s\S]*?)\}\}/.exec(value);
+  if (!match) return value;
+  const content = match[1]!;
+  const parts = splitByPipe(content);
+  const first = parts[0]?.trim() || "";
+  if (first.startsWith("File:") || first.startsWith("Image:") || first.startsWith("file:")) {
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (
+        !trimmed.startsWith("File:") &&
+        !trimmed.startsWith("Image:") &&
+        !trimmed.startsWith("file:")
+      ) {
+        return cleanWikiValue(trimmed);
+      }
+    }
+    return cleanWikiValue(first);
+  }
+  return cleanWikiValue(first);
+}
+
+function processConvert(value: string): string {
+  return value
+    .replace(
+      /\{\{convert\|([^|]+)\|([^|]+)[|]?[^}]*\}\}/g,
+      (_m, num, unit) => `${num.trim()} ${unit.trim()}`
+    )
+    .replace(
+      /\{\{convert\|([^|]+)\|([^}]+)\}\}/g,
+      (_m, num, unit) => `${num.trim()} ${unit.trim()}`
+    );
+}
+
+function processFlag(value: string): string {
+  return value.replace(/\{\{flag\|([^}|]+)[^}]*\}\}/g, "$1");
+}
+
+function processFormatnum(value: string): string {
+  return value.replace(/\{\{formatnum[:|]([^}]+)\}\}/g, "$1");
+}
+
+function processNts(value: string): string {
+  return value.replace(/\{\{nts\|([^}]+)\}\}/g, "$1");
+}
+
+function processVal(value: string): string {
+  return value
+    .replace(/\{\{val\|([^|]+)\|unit=([^}]+)\}\}/g, "$1 $2")
+    .replace(/\{\{val\|([^}]+)\}\}/g, "$1");
+}
+
+function processStartDate(value: string): string {
+  return value
+    .replace(/\{\{start date\|(\d{4})\|(\d{1,2})\|(\d{1,2})[^}]*\}\}/g, "$1-$2-$3")
+    .replace(/\{\{start date\|(\d{4})[^}]*\}\}/g, "$1");
+}
+
+function processGdp(value: string): string {
+  let result = value;
+  result = result.replace(/\{\{increase\}\}/g, "").replace(/\{\{decrease\}\}/g, "");
+  result = result.replace(/\{\{flagicon\|[^}]*\}\}/g, "").replace(/\{\{flag\|[^}]*\}\}/g, "");
+  return result;
+}
+
+function processHdi(value: string): string {
+  const hdiMatch = /\{\{HDI data\|[^|]*\|[^|]*\|([^}|]+)[^}]*\}\}/.exec(value);
+  if (hdiMatch) return hdiMatch[1]!;
+  const rankMatch = /\{\{HDI ranking\|[^|]*\|[^|]*\|([^}|]+)[^}]*\}\}/.exec(value);
+  if (rankMatch) return rankMatch[1]!;
+  return value;
+}
+
+function processWikilinks(value: string): string {
+  return unpackInternalLinks(value);
+}
+
+/** `<ref .../>` (what `/<ref[^/>]*\/>/gi` cuts): the first `/` or `>` after `<ref` is a `/` that `>` follows. */
+function stripLooseSelfClosingRefs(value: string): string {
+  const lower = lowerAscii(value);
+  const nextStop = forwardFinder(value, /[/>]/g);
+  return rewriteSpans(value, (from) => {
+    for (
+      let open = lower.indexOf("<ref", from);
+      open !== -1;
+      open = lower.indexOf("<ref", open + 1)
+    ) {
+      const stop = nextStop(open + 4);
+      if (stop === -1) return null;
+      if (value.startsWith("/>", stop)) return [open, stop + 2];
+    }
+    return null;
+  });
+}
+
+function processRefs(value: string): string {
+  const withoutBlocks = stripLooseSelfClosingRefs(replaceTagBlocks(value, "ref", () => "", false));
+  // What follows a `<ref ...>` that nothing closes is cut with it.
+  const open = lowerAscii(withoutBlocks).indexOf("<ref");
+  return open !== -1 && withoutBlocks.indexOf(">", open + 4) !== -1
+    ? withoutBlocks.slice(0, open)
+    : withoutBlocks;
+}
+
+function processBr(value: string): string {
+  return value.replace(/<br\s*\/?>/gi, ", ");
+}
+
+function processSmall(value: string): string {
+  return replaceTagBlocks(value, "small", () => "", false);
+}
+
+function processComments(value: string): string {
+  return stripComments(value);
+}
+
+function processSort(value: string): string {
+  return value
+    .replace(/\{\{sort\|[^|]*\|([^}]+)\}\}/g, "$1")
+    .replace(/\{\{sort\|([^}]+)\}\}/g, "$1");
+}
+
+function processDts(value: string): string {
+  return value
+    .replace(/\{\{dts\|(\d{4})\|(\d{1,2})\|(\d{1,2})[^}]*\}\}/g, "$1-$2-$3")
+    .replace(/\{\{dts\|([^}]+)\}\}/g, "$1");
+}
+
+function processNowiki(value: string): string {
+  return replaceTagBlocks(value, "nowiki", (inside) => inside, false);
+}
+
+function processColor(value: string): string {
+  return value
+    .replace(/\{\{color\|[^|]*\|([^}]+)\}\}/g, "$1")
+    .replace(/\{\{colour\|[^|]*\|([^}]+)\}\}/g, "$1");
+}
+
+function processLang(value: string): string {
+  return value
+    .replace(/\{\{lang\|[^|]*\|([^}]+)\}\}/g, "$1")
+    .replace(/\{\{langx\|[^|]*\|([^}]+)\}\}/g, "$1");
+}
+
+function processWp(value: string): string {
+  return value.replace(/\{\{wp\|([^}|]+)[^}]*\}\}/g, "$1");
+}
+
+function processAbbr(value: string): string {
+  return value.replace(/\{\{abbr\|([^|]+)\|[^}]*\}\}/g, "$1");
+}
+
+function processNobold(value: string): string {
+  return value.replace(/\{\{nobold\|([^}]+)\}\}/g, "$1");
+}
+
+function processList(value: string): string {
+  return value
+    .replace(/\{\{plainlist\|([\s\S]*?)\}\}/g, "$1")
+    .replace(/\{\{flatlist\|([\s\S]*?)\}\}/g, "$1")
+    .replace(/\{\{unbulleted list\|([\s\S]*?)\}\}/g, "$1")
+    .replace(/\{\{bulleted list\|([\s\S]*?)\}\}/g, "$1");
+}
+
+function processCompose(value: string): string {
+  return value.replace(/\{\{compose\|([\s\S]*?)\}\}/g, (_match, content) => {
+    return splitByPipe(content)
+      .map((p) => cleanWikiValue(p.trim()))
+      .filter(Boolean)
+      .join(", ");
+  });
+}
+
+/**
+ * ponytail: MAX_TEMPLATE_ROUNDS, 64: the deepest nesting of templates in an infobox value that is stripped. A
+ * round takes the innermost level of the whole value, so a value nested thousands deep (a text of `{{a|` and
+ * `}}`) was a pass over all of it per level: 240 KB took 8.8 s. Real values nest a handful deep (the clone's
+ * deepest is 5); a level past the 64th is left as text.
+ */
+const MAX_TEMPLATE_ROUNDS = 64;
+
+function processTemplates(value: string): string {
+  let result = value;
+  result = processComments(result);
+  result = processNowiki(result);
+  result = processSwitcher(result);
+  result = processConvert(result);
+  result = processFlag(result);
+  result = processFormatnum(result);
+  result = processNts(result);
+  result = processVal(result);
+  result = processStartDate(result);
+  result = processGdp(result);
+  result = processHdi(result);
+  result = processSort(result);
+  result = processDts(result);
+  result = processColor(result);
+  result = processLang(result);
+  result = processWp(result);
+  result = processAbbr(result);
+  result = processNobold(result);
+  result = processList(result);
+  result = processCompose(result);
+  // Strip nested templates from innermost out, a level a round
+  for (let round = 0; round < MAX_TEMPLATE_ROUNDS; round++) {
+    const stripped = result.replace(/\{\{[^{}]*\}\}/g, "");
+    if (stripped === result) break;
+    result = stripped;
+  }
+  result = processRefs(result);
+  result = processSmall(result);
+  result = processBr(result);
+  result = processWikilinks(result);
+  result = result.replace(/'{2,3}/g, "");
+  result = result
+    .replace(/&\w+;/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\s*,\s*,/g, ",")
+    .replace(/,\s*$/, "")
+    .trim();
+  return result;
+}
+
+// ─── Image/File Extraction Helpers ──────────────────────────────────────────
+
+const IMAGE_FIELDS = new Set<string>([
+  "image_flag",
+  "flag",
+  "image_coat",
+  "coat_of_arms",
+  "locator_map",
+  "image_map",
+]);
+
+function extractFilename(value: string): string {
+  if (!value) return "";
+  // Trim comments first
+  // eslint-disable-next-line prefer-const
+  let clean = stripComments(value).trim();
+
+  // If it's an external URL, return as is
+  if (/^https?:\/\//i.test(clean) || clean.startsWith("//")) {
+    return clean;
+  }
+
+  // Handle [[File:Filename.png|options]] or [[Image:Filename.png|options]]
+  const fileLinkMatch = /\[\[(?:File|Image|file|image):\s*([^|\]]+)/i.exec(clean);
+  if (fileLinkMatch && fileLinkMatch[1]) {
+    return fileLinkMatch[1].trim();
+  }
+
+  // Handle plain [[Filename.png]] (without File: prefix)
+  const plainLinkMatch = /\[\[\s*([^|\]]+)/i.exec(clean);
+  if (plainLinkMatch && plainLinkMatch[1]) {
+    return plainLinkMatch[1].trim();
+  }
+
+  // Handle switcher template
+  const switcherMatch = /\{\{\s*[Ss]witcher\s*\|\s*([^|]+)/i.exec(clean);
+  if (switcherMatch && switcherMatch[1]) {
+    return extractFilename(switcherMatch[1]);
+  }
+
+  // Strip general templates and formatting
+  let plain = unpackInternalLinks(
+    stripHtmlTags(replaceInlineTemplates(clean, /\{\{[^}]*\}\}/, () => ""))
+  ).trim();
+
+  if (plain.includes("|")) {
+    plain = plain.split("|")[0]!.trim();
+  }
+
+  return plain;
+}
+
+// ─── Main Parser ──────────────────────────────────────────────────────────────
+
+/** The page-name magic words a template fills in from the page it is on ("Flag of {{PAGENAME}}.png"). */
+const PAGE_NAME_WORDS = /\{\{\s*(?:FULL|BASE|ROOT|SUB)?PAGENAME\s*\}\}/g;
+
+/**
+ * The infobox source as MediaWiki would read it: comments gone first (a commented-out `|image_flag = …` line is not
+ * a field), and the page-name magic words filled with the page's title when it is known.
+ */
+export function preprocessInfoboxSource(wikitext: string, pageTitle?: string): string {
+  const text = stripComments(wikitext);
+  return pageTitle ? text.replace(PAGE_NAME_WORDS, pageTitle) : text;
+}
+
+export function parseInfoboxWithTemplates(
+  wikitext: string,
+  countryName?: string
+): UnifiedInfoboxData | null {
+  // Guard against excessively large wikitext (potential regex DoS)
+  if (wikitext.length > 500_000) return null;
+
+  const parsed = parseInfobox(preprocessInfoboxSource(wikitext, countryName));
+  if (!parsed) return null;
+
+  const result: UnifiedInfoboxData = {
+    name: countryName || "",
+  };
+  const rawInfobox: Record<string, string> = {};
+
+  for (const field of parsed.fields) {
+    const rawKey = field.key;
+    const unifiedKey = FIELD_ALIASES[rawKey.toLowerCase().replace(/[\s-]/g, "_")];
+
+    // Determine if it is an image field
+    const isImageField = unifiedKey && IMAGE_FIELDS.has(unifiedKey);
+    const processedValue = isImageField
+      ? extractFilename(field.rawValue)
+      : processTemplates(field.rawValue);
+
+    if (!processedValue) continue;
+
+    rawInfobox[rawKey] = processedValue;
+
+    if (unifiedKey) {
+      const isNumeric = NUMERIC_FIELDS.has(unifiedKey) || NUMERIC_FIELDS_LOWER.has(unifiedKey);
+      if (isNumeric) {
+        const num = MONEY_FIELD.test(unifiedKey)
+          ? parseMoney(field.rawValue)
+          : parsePopulation(field.rawValue);
+        if (num !== null) {
+          (result as any)[unifiedKey] = num;
+        } else {
+          (result as any)[unifiedKey] = processedValue;
+        }
+      } else {
+        (result as any)[unifiedKey] = processedValue;
+      }
+    }
+  }
+
+  const coords = extractCoordsFromFields(parsed.fields);
+  if (coords) result.coordinates = coords;
+
+  if (!result.head_of_state && result.leader_title1 && result.leader_name1) {
+    const title = (result.leader_title1 || "").toLowerCase();
+    if (
+      title.includes("president") ||
+      title.includes("monarch") ||
+      title.includes("king") ||
+      title.includes("queen") ||
+      title.includes("emperor") ||
+      title.includes("sultan")
+    ) {
+      result.head_of_state = result.leader_name1;
+    } else if (
+      title.includes("prime minister") ||
+      title.includes("chancellor") ||
+      title.includes("premier")
+    ) {
+      result.head_of_government = result.leader_name1;
+    } else {
+      result.head_of_state = result.leader_name1;
+    }
+  }
+  if (!result.head_of_government && result.leader_name2) {
+    result.head_of_government = result.leader_name2;
+  }
+
+  if (typeof result.GDP_nominal === "string") {
+    const gdpNum = parseMoney(result.GDP_nominal);
+    if (gdpNum !== null) result.gdp_nominal = gdpNum;
+  } else if (typeof result.GDP_nominal === "number") {
+    result.gdp_nominal = result.GDP_nominal;
+  }
+  if (typeof result.GDP_PPP === "string") {
+    const gdpPppNum = parseMoney(result.GDP_PPP);
+    if (gdpPppNum !== null) result.gdp_ppp = gdpPppNum;
+  } else if (typeof result.GDP_PPP === "number") {
+    result.gdp_ppp = result.GDP_PPP;
+  }
+  if (typeof result.GDP_nominal_per_capita === "string") {
+    const gdpPcNum = parseMoney(result.GDP_nominal_per_capita);
+    if (gdpPcNum !== null) result.gdpPerCapita = gdpPcNum;
+  } else if (typeof result.GDP_nominal_per_capita === "number") {
+    result.gdpPerCapita = result.GDP_nominal_per_capita;
+  }
+
+  if (!result.name && result.common_name) result.name = result.common_name;
+  if (!result.name && result.conventional_long_name) result.name = result.conventional_long_name;
+
+  result.rawInfobox = rawInfobox;
+  result.templateName = parsed.templateName;
+
+  return result;
+}

@@ -1,24 +1,26 @@
 "use client";
 
+import { PronunciationEditor } from "../../shared/PronunciationEditor";
 import { useState, useEffect } from "react";
-import { BookOpen, Search, Volume2, Trash2, Pencil, X, RotateCcw } from "lucide-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import {
+  OpenBook as BookOpen,
+  Search,
+  SoundHigh as Volume2,
+  Trash as Trash2,
+  EditPencil as Pencil,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { type StudioState } from "../../../hooks/useStudioState";
 import { api } from "~/trpc/react";
 import { speakName } from "~/lib/onoma/browser-speech";
 import { getNameOverride, setNameOverride } from "~/lib/onoma/ipa-overrides";
 import { useNotify } from "~/hooks/useNotify";
-import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 import { LexiconAnalysis } from "./LexiconAnalysis";
 import { LexiconDefinitionForm } from "./LexiconDefinitionForm";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
+import { ActionPill } from "~/components/ui/action-pill";
+import { Card } from "~/components/ui/card";
 
 interface StudioLexiconProps {
   state: StudioState;
@@ -31,10 +33,6 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
   const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery(undefined, {
     staleTime: 600000,
   });
-  const { data: voicesData } = api.onoma.getKokoroVoices.useQuery(undefined, {
-    staleTime: 600000,
-  });
-  const suggestMutation = api.onoma.suggestPhonemes.useMutation();
 
   const [editingPron, setEditingPron] = useState(false);
   const [ipaDraft, setIpaDraft] = useState("");
@@ -85,6 +83,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
       setIpaDraft(over?.ipa || "");
       setVoiceDraft(over?.voice || "");
     }
+    // oxlint-disable-next-line
   }, [selectedTerm, overridesVersion]);
 
   const hasOverride = selectedTerm ? !!getNameOverride(selectedTerm) : false;
@@ -130,28 +129,28 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
     <div className="animate-in fade-in grid items-start gap-6 duration-300 lg:grid-cols-12">
       {/* Left Column: Terms List (4/12) */}
       <div className="space-y-4 lg:col-span-4">
-        <FacetCard className="border-border/40 bg-secondary/5 space-y-4 border p-4">
+        <Card variant="well" padding="none" className="space-y-4 p-4">
           <div className="space-y-1">
-            <h3 className="text-foreground text-sm font-bold tracking-tight">Lexicon Terms</h3>
-            <p className="text-muted-foreground text-xs">Stashed names and defined vocabulary.</p>
+            <h3 className="text-label text-body font-semibold">Lexicon terms</h3>
+            <p className="text-label-secondary text-footnote">
+              Stashed names and defined vocabulary.
+            </p>
           </div>
 
-          {/* Search */}
           <div className="relative">
-            <Search className="text-muted-foreground absolute top-2.5 left-3 h-4 w-4" />
-            <input
+            <Search className="text-label-secondary absolute top-2 left-3 h-4 w-4" />
+            <Input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search terms, roots..."
-              className="border-border/60 bg-background text-foreground placeholder-muted-foreground w-full rounded-xl border py-2 pr-4 pl-9 text-sm focus:border-[#0091ff]/50 focus:outline-none"
+              className="text-body w-full pr-4 pl-9"
             />
           </div>
 
-          {/* List */}
           <div className="max-h-[500px] space-y-2 overflow-y-auto pr-1">
             {filteredTerms.length === 0 ? (
-              <p className="text-muted-foreground py-6 text-center text-xs">
+              <p className="text-label-secondary text-footnote py-6 text-center">
                 {searchTerm
                   ? "No matching terms found."
                   : "No terms in lexicon. Stash names in the workshop to define them."}
@@ -165,28 +164,30 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                     key={name}
                     onClick={() => setSelectedTerm(name)}
                     className={cn(
-                      "group flex w-full cursor-pointer items-center justify-between rounded-xl border p-3 text-left transition-all duration-200 select-none",
+                      "group rounded-row flex w-full cursor-pointer items-center justify-between border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none",
                       isSelected
-                        ? "text-foreground border-[#0091ff]/30 bg-[#0091ff]/10"
-                        : "bg-background hover:bg-secondary/20 border-border/40 text-foreground"
+                        ? "text-label border-tint/30 bg-tint/10"
+                        : "bg-background hover:bg-fill-4 border-separator text-label"
                     )}
                   >
                     <div className="min-w-0 space-y-0.5 pr-2">
-                      <span className="block truncate font-mono text-sm font-bold">{name}</span>
+                      <span className="text-body block truncate font-mono font-semibold">
+                        {name}
+                      </span>
                       {def ? (
-                        <span className="text-muted-foreground block truncate text-[10px]">
-                          <span className="mr-1 font-bold text-[#0091ff]">
-                            [{def.partOfSpeech}]
-                          </span>
+                        <span className="text-label-secondary text-caption block truncate">
+                          <span className="text-tint mr-1 font-semibold">[{def.partOfSpeech}]</span>
                           {def.meaning}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground block truncate text-[10px] italic">
+                        <span className="text-label-secondary text-caption block truncate italic">
                           Undefined stashed word
                         </span>
                       )}
                     </div>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={async (e) => {
                         e.stopPropagation();
                         if (
@@ -198,37 +199,41 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                         }
                       }}
                       title="Delete term"
-                      className="text-muted-foreground cursor-pointer rounded-lg p-1 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500"
+                      aria-label="Delete term"
+                      className="text-label-secondary hover:text-red hover:bg-red/10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 );
               })
             )}
           </div>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Right Column: Selected Term Details (8/12) */}
       <div className="lg:col-span-8">
         {selectedTerm ? (
-          <FacetCard className="border-border/40 bg-secondary/5 animate-in fade-in space-y-6 border p-5 duration-300">
-            {/* Word Title Header */}
-            <div className="border-border/40 flex items-start justify-between border-b pb-4">
+          <Card
+            variant="well"
+            padding="none"
+            className="animate-in fade-in space-y-6 p-5 duration-300"
+          >
+            <div className="border-separator flex items-start justify-between border-b pb-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-foreground font-mono text-xl font-bold">{selectedTerm}</h3>
+                  <h3 className="text-label text-title-2 font-mono font-bold">{selectedTerm}</h3>
                   {definitions[selectedTerm]?.partOfSpeech && (
-                    <span className="rounded-md bg-[#0091ff]/10 px-2 py-0.5 text-xs font-bold text-[#0091ff] uppercase">
+                    <span className="bg-tint/10 text-tint rounded-control-sm text-eyebrow px-2 py-0.5">
                       {definitions[selectedTerm].partOfSpeech}
                     </span>
                   )}
                 </div>
-                <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-[10px] font-semibold">
+                <div className="text-label-secondary text-caption mt-1 flex flex-wrap items-center gap-2 font-semibold">
                   {effectiveIpa && (
                     <span className="flex items-center">
-                      <button
+                      <ActionPill
                         onClick={async () => {
                           try {
                             await speakName({
@@ -245,42 +250,45 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                           }
                         }}
                         title="Listen to pronunciation"
+                        aria-label={`Listen to pronunciation /${effectiveIpa}/`}
+                        icon={<Volume2 />}
                         className={cn(
-                          "text-muted-foreground border-border/40 bg-background flex cursor-pointer items-center gap-1 rounded-l-full border px-2.5 py-0.5 font-mono text-[10px] transition-all duration-200 hover:bg-[#0091ff]/10 hover:text-[#0091ff]",
-                          hasOverride && "border-[#0091ff]/40 text-[#0091ff]"
+                          "border-separator bg-surface hover:bg-tint/10 hover:text-tint rounded-r-none border font-mono",
+                          hasOverride && "border-tint/40 text-tint"
                         )}
                       >
-                        <Volume2 className="h-3 w-3" />
-                        <span>{effectiveIpa}</span>
-                      </button>
-                      <button
-                        type="button"
+                        {effectiveIpa}
+                      </ActionPill>
+                      <ActionPill
+                        pressed={editingPron}
                         onClick={() => setEditingPron(!editingPron)}
                         title={hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"}
+                        aria-label={
+                          hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"
+                        }
+                        icon={<Pencil />}
                         className={cn(
-                          "text-muted-foreground border-border/40 bg-background flex cursor-pointer items-center rounded-r-full border border-l-0 px-2 py-0.5 transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]",
-                          hasOverride && "border-[#0091ff]/40 text-[#0091ff]"
+                          "border-separator bg-surface hover:bg-tint/10 hover:text-tint rounded-l-none border border-l-0 px-2",
+                          hasOverride && "border-tint/40 text-tint"
                         )}
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </button>
+                      />
                     </span>
                   )}
                   <span>
-                    Culture: <span className="text-foreground capitalize">{classifiedCulture}</span>
+                    Culture: <span className="text-label capitalize">{classifiedCulture}</span>
                   </span>
                   {stashedEntry && (
                     <>
                       <span>•</span>
                       {originLabel && (
-                        <span className="rounded bg-[#0091ff]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#0091ff] capitalize">
+                        <span className="bg-tint/10 text-tint rounded-control-sm text-caption px-2 py-0.5 font-semibold capitalize">
                           {originLabel}
                         </span>
                       )}
                       <span>•</span>
                       <span>
                         Stashed{" "}
-                        <span className="text-foreground font-semibold">
+                        <span className="text-label font-semibold">
                           {new Date(stashedEntry.createdAt).toLocaleDateString(undefined, {
                             year: "numeric",
                             month: "short",
@@ -293,262 +301,153 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                 </div>
               </div>
 
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => {
                   if (confirm(`Are you sure you want to delete "${selectedTerm}"?`)) {
                     handleDeleteTerm(selectedTerm);
                   }
                 }}
-                className="text-muted-foreground bg-background border-border/40 flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs transition-all hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-500"
+                className="text-label-secondary hover:text-red hover:bg-red/10"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                <span>Delete Word</span>
-              </button>
+                <span>Delete word</span>
+              </Button>
             </div>
 
-            {/* Inline Pronunciation Editor */}
             {editingPron && (
-              <div className="border-border/20 animate-in slide-in-from-top-1 relative z-10 w-full space-y-2.5 rounded-xl border bg-[#0091ff]/[0.02] p-3 text-left duration-200">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-foreground text-[10px] font-bold tracking-wider uppercase">
-                    Customize Pronunciation
-                  </h4>
-                  <button
-                    onClick={() => setEditingPron(false)}
-                    title="Close"
-                    className="text-muted-foreground cursor-pointer rounded p-0.5 hover:text-[#0091ff]"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-
-                <div className="space-y-0.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-muted-foreground text-[8px] font-bold uppercase">
-                      IPA (drives Read Naturally phonemes)
-                    </label>
-                    {speechConfig?.kokoro?.enabled &&
-                      speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              const res = await suggestMutation.mutateAsync({ text: selectedTerm });
-                              if (res.phonemes) {
-                                setIpaDraft(res.phonemes);
-                                notify.success("Suggested IPA loaded.");
-                              } else {
-                                notify.error("Could not generate IPA suggestion.");
-                              }
-                            } catch (err: any) {
-                              notify.error(err.message || "Failed to fetch suggestion.");
-                            }
-                          }}
-                          disabled={suggestMutation.isPending}
-                          className="flex cursor-pointer items-center gap-1 text-[8px] font-bold text-[#0091ff] select-none hover:underline disabled:opacity-50"
-                        >
-                          {suggestMutation.isPending ? "Suggesting..." : "Suggest IPA"}
-                        </button>
-                      )}
-                  </div>
-                  <input
-                    type="text"
-                    value={ipaDraft}
-                    onChange={(e) => setIpaDraft(e.target.value)}
-                    placeholder="/ˈeksɑːmpl/"
-                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1 font-mono text-xs focus:outline-none"
-                  />
-                  {speechConfig?.kokoro?.enabled &&
-                    (() => {
-                      const result = ipaToKokoroPhonemes(ipaDraft);
-                      return (
-                        <div className="text-muted-foreground mt-1 flex flex-wrap gap-1 font-mono text-[9px]">
-                          <span>Phonemes: {result.phonemes || "(empty)"}</span>
-                          {result.dropped.length > 0 && (
-                            <span className="font-semibold text-amber-500">
-                              (dropped: {result.dropped.join(", ")})
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()}
-                </div>
-
-                <div className="space-y-0.5">
-                  <label className="text-muted-foreground text-[8px] font-bold uppercase">
-                    Voice
-                  </label>
-                  <Select
-                    value={voiceDraft || "default"}
-                    onValueChange={(val) => setVoiceDraft(val === "default" ? "" : val)}
-                  >
-                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-2 py-1 text-xs transition-colors focus:outline-none">
-                      <SelectValue placeholder="Default / culture voice" />
-                    </SelectTrigger>
-                    <SelectContent className="border-border/40 bg-background/95 max-h-[200px] backdrop-blur-md">
-                      <SelectItem
-                        value="default"
-                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
-                      >
-                        Default / culture voice
-                      </SelectItem>
-                      {(voicesData?.voices ?? []).map((v: string) => (
-                        <SelectItem
-                          key={v}
-                          value={v}
-                          className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
-                        >
-                          {v}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center justify-between gap-1.5 pt-0.5">
-                  <button
-                    onClick={resetPron}
-                    title="Reset to defaults"
-                    className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex cursor-pointer items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors"
-                  >
-                    <RotateCcw className="h-3 w-3" /> Reset
-                  </button>
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={previewPron}
-                      className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex cursor-pointer items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors"
-                    >
-                      <Volume2 className="h-3 w-3" /> Preview
-                    </button>
-                    <button
-                      onClick={savePron}
-                      className="cursor-pointer rounded bg-[#0091ff] px-2.5 py-0.5 text-[9px] font-bold text-white transition-colors hover:bg-[#33a7ff]"
-                    >
-                      Save
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <PronunciationEditor
+                name={selectedTerm}
+                ipaDraft={ipaDraft}
+                setIpaDraft={setIpaDraft}
+                voiceDraft={voiceDraft}
+                setVoiceDraft={setVoiceDraft}
+                onSave={savePron}
+                onCancel={() => setEditingPron(false)}
+                onPreview={previewPron}
+                onReset={resetPron}
+              />
             )}
 
-            {/* Transcriptions Grid */}
             <div className="space-y-2">
-              <h4 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                Orthographic Transcriptions
-              </h4>
+              <h4 className="text-label-secondary text-subhead">Orthographic transcriptions</h4>
               <div className="grid gap-3 sm:grid-cols-3">
-                <div
+                <Button
+                  variant="outline"
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(selectedTermCyrillic);
                       alert(`Copied Cyrillic: ${selectedTermCyrillic}`);
-                    } catch {}
+                    } catch {
+                      // clipboard unavailable (permission denied / insecure context) — nothing copied
+                    }
                   }}
-                  className="border-border/40 bg-background group cursor-pointer rounded-xl border p-3 text-center transition-all duration-200 select-none hover:border-[#0091ff]/40"
+                  className="rounded-row group hover:border-tint/40 h-auto flex-col gap-0 p-3 font-normal whitespace-normal"
                 >
-                  <span className="text-muted-foreground mb-1 block text-xs text-[10px] font-bold tracking-wider uppercase">
+                  <span className="text-label-secondary text-eyebrow text-caption mb-1 block">
                     Cyrillic
                   </span>
-                  <span className="font-mono text-sm font-bold text-[#0091ff]">
+                  <span className="text-tint text-body font-mono font-semibold">
                     {selectedTermCyrillic}
                   </span>
-                  <span className="text-muted-foreground mt-1 block text-[9px] opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="text-label-secondary text-caption mt-1 block opacity-0 transition-opacity group-hover:opacity-100">
                     Click to copy
                   </span>
-                </div>
+                </Button>
 
-                <div
+                <Button
+                  variant="outline"
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(selectedTermGreek);
                       alert(`Copied Greek: ${selectedTermGreek}`);
-                    } catch {}
+                    } catch {
+                      // clipboard unavailable (permission denied / insecure context) — nothing copied
+                    }
                   }}
-                  className="border-border/40 bg-background group cursor-pointer rounded-xl border p-3 text-center transition-all duration-200 select-none hover:border-[#0091ff]/40"
+                  className="rounded-row group hover:border-tint/40 h-auto flex-col gap-0 p-3 font-normal whitespace-normal"
                 >
-                  <span className="text-muted-foreground mb-1 block text-xs text-[10px] font-bold tracking-wider uppercase">
+                  <span className="text-label-secondary text-eyebrow text-caption mb-1 block">
                     Greek
                   </span>
-                  <span className="font-mono text-sm font-bold text-[#0091ff]">
+                  <span className="text-tint text-body font-mono font-semibold">
                     {selectedTermGreek}
                   </span>
-                  <span className="text-muted-foreground mt-1 block text-[9px] opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="text-label-secondary text-caption mt-1 block opacity-0 transition-opacity group-hover:opacity-100">
                     Click to copy
                   </span>
-                </div>
+                </Button>
 
-                <div
+                <Button
+                  variant="outline"
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(selectedTermArabic);
                       alert(`Copied Arabic: ${selectedTermArabic}`);
-                    } catch {}
+                    } catch {
+                      // clipboard unavailable (permission denied / insecure context) — nothing copied
+                    }
                   }}
-                  className="border-border/40 bg-background group cursor-pointer rounded-xl border p-3 text-center transition-all duration-200 select-none hover:border-[#0091ff]/40"
+                  className="rounded-row group hover:border-tint/40 h-auto flex-col gap-0 p-3 font-normal whitespace-normal"
                   dir="rtl"
                 >
                   <span
-                    className="text-muted-foreground mb-1 block text-left font-sans text-xs text-[10px] font-bold tracking-wider uppercase"
+                    className="text-label-secondary text-eyebrow text-caption mb-1 block text-left font-sans"
                     dir="ltr"
                   >
                     Arabic
                   </span>
-                  <span className="font-mono text-sm font-bold text-[#0091ff]">
+                  <span className="text-tint text-body font-mono font-semibold">
                     {selectedTermArabic}
                   </span>
                   <span
-                    className="text-muted-foreground mt-1 block text-left font-sans text-[9px] opacity-0 transition-opacity group-hover:opacity-100"
+                    className="text-label-secondary text-caption mt-1 block text-left font-sans opacity-0 transition-opacity group-hover:opacity-100"
                     dir="ltr"
                   >
                     Click to copy
                   </span>
-                </div>
+                </Button>
               </div>
             </div>
 
-            {/* Lexical & Phonotactic Analysis */}
             <LexiconAnalysis
               selectedTerm={selectedTerm}
               stashedEntry={stashedEntry}
               originLabel={originLabel}
             />
 
-            {/* Case Declension Table */}
             {selectedTermMorphology && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                    Noun Declension (Cases)
-                  </h4>
-                  <span className="text-muted-foreground text-[10px] font-semibold">
+                  <h4 className="text-label-secondary text-subhead">Noun Declension (Cases)</h4>
+                  <span className="text-label-secondary text-caption font-semibold">
                     Gender:{" "}
-                    <span className="font-bold text-[#0091ff] uppercase">
-                      {selectedTermMorphology.gender}
-                    </span>
+                    <span className="text-tint font-semibold">{selectedTermMorphology.gender}</span>
                   </span>
                 </div>
 
-                <div className="border-border/40 bg-background overflow-hidden rounded-xl border">
-                  <div className="bg-secondary/10 border-border/40 text-muted-foreground grid grid-cols-3 border-b px-3 py-2 text-[10px] font-bold tracking-wider uppercase">
+                <div className="border-separator bg-background rounded-row overflow-hidden border">
+                  <div className="bg-fill-4 border-separator text-label-secondary text-eyebrow grid grid-cols-3 border-b px-3 py-2">
                     <span>Case</span>
                     <span>Singular</span>
                     <span>Plural</span>
                   </div>
 
-                  <div className="divide-border/20 divide-y text-xs">
+                  <div className="divide-separator text-footnote divide-y">
                     {Object.entries(selectedTermMorphology.declensionTable).map(
                       ([caseName, declCase]) => (
-                        <div key={caseName} className="grid grid-cols-3 items-center px-3 py-2.5">
+                        <div key={caseName} className="grid grid-cols-3 items-center px-3 py-2">
                           <div className="flex flex-col pr-1">
-                            <span className="text-foreground font-bold capitalize">{caseName}</span>
-                            <span className="text-muted-foreground mt-0.5 text-[9px] leading-normal">
+                            <span className="text-label font-semibold capitalize">{caseName}</span>
+                            <span className="text-label-secondary text-caption mt-0.5 leading-normal">
                               {declCase.descriptionSingular.split(" (")[0]}
                             </span>
                           </div>
-                          <span className="truncate font-mono font-semibold text-[#0091ff]">
+                          <span className="text-tint truncate font-mono font-semibold">
                             {declCase.singular}
                           </span>
-                          <span className="truncate font-mono font-semibold text-[#0091ff]">
+                          <span className="text-tint truncate font-mono font-semibold">
                             {declCase.plural}
                           </span>
                         </div>
@@ -559,7 +458,6 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
               </div>
             )}
 
-            {/* Definition Edit Form */}
             <LexiconDefinitionForm
               lexEditPos={lexEditPos}
               setLexEditPos={setLexEditPos}
@@ -571,16 +469,20 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
               setLexEditOrigin={setLexEditOrigin}
               onSubmit={handleSaveLexiconDefinition}
             />
-          </FacetCard>
+          </Card>
         ) : (
-          <FacetCard className="border-border/40 bg-secondary/5 text-muted-foreground flex min-h-[400px] flex-col items-center justify-center border border-dashed p-8 text-center text-sm">
-            <BookOpen className="mb-3 h-8 w-8 animate-pulse text-[#0091ff]/40" />
+          <Card
+            variant="well"
+            padding="none"
+            className="text-label-secondary text-body flex min-h-[400px] flex-col items-center justify-center border-dashed p-8 text-center"
+          >
+            <BookOpen className="text-tint/40 mb-3 h-8 w-8" />
             <p className="font-semibold">No word selected</p>
-            <p className="text-muted-foreground mt-1 text-xs">
+            <p className="text-label-secondary text-footnote mt-1">
               Select a conlang vocabulary term from the left list to view script transcriptions,
               noun case declensions, and edit its lexical definition.
             </p>
-          </FacetCard>
+          </Card>
         )}
       </div>
     </div>

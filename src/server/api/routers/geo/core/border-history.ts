@@ -1,9 +1,10 @@
 /**
  * Border History tRPC procedures.
  *
- * Read-only historical view of the political layer: given a target IxTime,
+ * Read-only historical view of the political layer: given a target time,
  * return the political FeatureCollection as it would have appeared at that
- * time, with each country's geometry replaced by the latest BorderHistory
+ * time (BorderHistory stamps each edit in real time, `changedAt` defaults to now(); clients show the
+ * dates on the realm's clock), with each country's geometry replaced by the latest BorderHistory
  * snapshot whose `changedAt <= asOf` (or the current geometry if no such
  * snapshot exists).
  *
@@ -12,39 +13,52 @@
  * `validFrom`/`validTo` is a deferred follow-up.
  */
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { cachedPublicProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { mergeBordersAsOf } from "~/lib/maps/border-history-asof";
-import { loadLayerFromDB, loadGeoJSONFromFile } from "./layer-loader";
-import { getZoomBucket } from "./cache";
-import { IxTime } from "~/lib/ixtime";
+import { loadLayerWithFallback } from "~/server/modules/maps/layer-loader";
+import { getZoomBucket } from "~/server/modules/maps/layer-lod";
+import { roundToIxDay } from "~/lib/ixtime/day";
+
+/** Most countries one realm's map can hold: a backstop on the history read, which returns one row per country. */
+const MAX_HISTORY_ROWS = 5000;
 
 export const borderHistoryProcedures = {
   /**
-   * Political FeatureCollection as it appeared at the given IxTime.
-   * Accepts an epoch-ms IxTime number (matches `IxTime.getCurrentIxTime()`).
+   * Political FeatureCollection as it appeared at the given time.
+   * `ixTime` is epoch ms on BorderHistory's real-time stamps (the scrubber's value, inside `getHistoryRange`),
+   * taken as the start of its day: the cache key is that day too, so one answer serves every scrub position
+   * within it.
    */
   getWorldMapAsOf: cachedPublicProcedure
     .input(
       z.object({
         ixTime: z.number(),
         zoom: z.number().min(0).max(20).optional(),
+        ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
-      const asOf = new Date(input.ixTime);
+      const asOf = new Date(roundToIxDay(input.ixTime));
+      const realmId = await viewerRealmId(ctx, input.realm);
 
-      const zoomBucket = getZoomBucket(input.zoom);
-      const politicalFC =
-        (await loadLayerFromDB(ctx.db, "political", zoomBucket)) ??
-        (await loadGeoJSONFromFile("political").catch(() => null));
+      const politicalFC = await loadLayerWithFallback(
+        ctx.db,
+        "political",
+        getZoomBucket(input.zoom),
+        realmId
+      );
 
       if (!politicalFC) {
         return { type: "FeatureCollection" as const, features: [] };
       }
 
+      // The latest snapshot per country of this realm, which is all the merge uses
       const history = await ctx.db.borderHistory.findMany({
-        where: { changedAt: { lte: asOf } },
+        where: { changedAt: { lte: asOf }, country: { realmId } },
+        distinct: ["countryId"],
+        orderBy: [{ countryId: "asc" }, { changedAt: "desc" }],
+        take: MAX_HISTORY_ROWS,
         select: { countryId: true, geometry: true, changedAt: true },
       });
 
@@ -62,75 +76,24 @@ export const borderHistoryProcedures = {
     }),
 
   /**
-   * Slider domain: earliest BorderHistory timestamp + current IxTime ("now").
-   * Returns `minTime: null` when there is no history yet (caller should hide
+   * Slider domain (real ms, as BorderHistory stamps edits): the viewed realm's earliest edit to now, and the
+   * realm's id so the client dates the range on that realm's clock.
+   * Returns `minTime: null` when the realm has no history yet (caller should hide
    * the scrubber in that case).
    */
-  getHistoryRange: cachedPublicProcedure.query(async ({ ctx }) => {
-    const earliest = await ctx.db.borderHistory.findFirst({
-      orderBy: { changedAt: "asc" },
-      select: { changedAt: true },
-    });
-    return {
-      minTime: earliest?.changedAt.getTime() ?? null,
-      maxTime: IxTime.getCurrentIxTime(),
-    };
-  }),
-
-  /**
-   * Dev-only seed: insert a synthetic `BorderHistory` row for a given country
-   * using the country's CURRENT geometry as the snapshot, with a `changedAt`
-   * 24h in the past. The goal is to make the timeline scrubber visible on a
-   * fresh DB without requiring the operator to first perform a real admin
-   * border edit. Refuses to run outside development.
-   *
-   * `countryId` is the `Country.id` (cuid), not the `featureId`. Call once
-   * per country you want to appear in the scrubber domain.
-   */
-  seedBorderHistoryDev: cachedPublicProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        daysAgo: z.number().int().min(1).max(365).default(1),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      if (process.env.NODE_ENV === "production") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "seedBorderHistoryDev is dev-only; refuses to run in production.",
-        });
-      }
-
-      const country = await ctx.db.country.findUnique({
-        where: { id: input.countryId },
-        select: { id: true, geometry: true, name: true },
+  getHistoryRange: cachedPublicProcedure
+    .input(realmScopeInput.optional())
+    .query(async ({ ctx, input }) => {
+      const realmId = await viewerRealmId(ctx, input?.realm);
+      const earliest = await ctx.db.borderHistory.findFirst({
+        where: { country: { realmId } },
+        orderBy: { changedAt: "asc" },
+        select: { changedAt: true },
       });
-      if (!country) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Country not found: ${input.countryId}`,
-        });
-      }
-      if (!country.geometry) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Country has no geometry yet: ${country.name}`,
-        });
-      }
-
-      const changedAt = new Date(Date.now() - input.daysAgo * 24 * 60 * 60 * 1000);
-      const created = await ctx.db.borderHistory.create({
-        data: {
-          countryId: country.id,
-          geometry: country.geometry as any,
-          changedBy: "dev-seed",
-          changedAt,
-          reason: `Dev seed (${input.daysAgo}d ago) for timeline scrubber`,
-        },
-        select: { id: true, countryId: true, changedAt: true },
-      });
-
-      return { created };
+      return {
+        minTime: earliest?.changedAt.getTime() ?? null,
+        maxTime: Date.now(),
+        realmId,
+      };
     }),
 };

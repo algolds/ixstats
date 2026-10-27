@@ -1,17 +1,17 @@
-// src/components/wiki-os/shared/useWikiOSShortcuts.ts
+"use client";
 // Keyboard shortcuts for WikiOS.
 // Listens for the "wikios:edit" custom event (dispatched by Dynamic Island on double-Tab)
 // to navigate to editor mode.
 
-"use client";
-
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
+import { navigateWithBasePath, stripBasePath } from "~/lib/base-path";
+import { canonicalizeTitle, decodeTitleParam } from "~/lib/wiki-os/core/title";
+import { articleHref } from "~/lib/wiki-os/wiki-path";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 
-export function useWikiOSShortcuts() {
+/** `readOnly`: the page is another wiki's, which WikiOS never edits. */
+export function useWikiOSShortcuts(readOnly?: boolean) {
   const router = useRouter();
   const pathname = usePathname();
   const { isSignedIn } = useWikiAuth();
@@ -19,17 +19,15 @@ export function useWikiOSShortcuts() {
   // Listen for "wikios:edit" event from Dynamic Island double-Tab
   useEffect(() => {
     const handleEdit = () => {
-      const match = pathname.match(/\/wiki\/([^/]+)/);
-      if (match) {
-        if (!isSignedIn) return; // only allow edit shortcut for signed-in users
-        const slug = match[1]!;
-        if (!pathname.includes("/edit")) {
-          navigateWithBasePath(`/wiki/${slug}/edit`, router);
-        }
-      }
+      const path = stripBasePath(pathname).match(/^\/wiki\/(.+)$/)?.[1];
+      if (!path) return;
+      if (!isSignedIn || readOnly) return; // signed-in users, IxWiki pages only
+      const canon = canonicalizeTitle(path.split("/").map(decodeTitleParam).join("/"));
+      const editing = new URLSearchParams(window.location.search).get("action") === "edit";
+      if (canon && !editing) navigateWithBasePath(articleHref(canon, { action: "edit" }), router);
     };
 
     window.addEventListener("wikios:edit", handleEdit);
     return () => window.removeEventListener("wikios:edit", handleEdit);
-  }, [router, pathname, isSignedIn]);
+  }, [router, pathname, isSignedIn, readOnly]);
 }

@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": ".next/cache/tsbuildinfo.db",
+    "incremental": true
+  },
+  "include": [
+    "src/server/db.ts",
+    "src/server/db",
+    "src/env.ts"
+  ],
+  "exclude": [
+    "src/app",
+    "src/components",
+    "src/server/api",
+    "src/server/services",
+    "src/server/bridges",
+    "src/server/cron",
+    "src/server/websocket-server.ts",
+    "**/node_modules",
+    "**/.*",
+    ".next",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
+}

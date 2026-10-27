@@ -1,21 +1,30 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { motion } from "motion/react";
-import { Activity, Users, DollarSign, Heart, Scale, Zap } from "lucide-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import React, { useState } from "react";
+import {
+  Activity,
+  Group as Users,
+  Dollar as DollarSign,
+  Heart,
+  ScaleFrameEnlarge as Scale,
+  Flash as Zap,
+} from "iconoir-react";
+import { Button, focusRing } from "~/components/ui/button";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { HealthRing } from "~/components/ui/health-ring";
-import { VitalityBreakdownModal } from "~/components/ui/modals/VitalityBreakdownModal";
-import { CountryDataContext, createVitalityRingsFromCountry } from "~/components/mycountry/shared/primitives";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { VitalityBreakdownModal } from "~/components/mycountry/shared/modals/VitalityBreakdownModal";
+import {
+  useCountryData,
+  createVitalityRingsFromCountry,
+  type VitalityRing,
+} from "~/components/mycountry/shared/primitives";
 import { api } from "~/trpc/react";
-
-function formatCompact(num: number): string {
-  if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
-  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
-  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
-  return (num ?? 0).toLocaleString();
-}
+import { formatCensusValue } from "~/lib/format/census";
+import { cn } from "~/lib/utils";
+import { assetUrl } from "~/lib/base-path";
+import { Card } from "~/components/ui/card";
+import { BandwidthHelp } from "~/components/mycountry/directives/BandwidthHelp";
+import { useInternalStability } from "~/hooks/useInternalStability";
 
 type RatingLabel = "Optimal" | "Strong" | "Moderate" | "Strained";
 
@@ -26,275 +35,411 @@ function getRatingLabel(score: number): RatingLabel {
   return "Strained";
 }
 
-export interface StandingBandsProps {
+interface StandingBandsProps {
   countryId: string;
+}
+
+/** Executive bandwidth state as served by `policies.getPolicyReconContext` (lib/government/exec-bandwidth.ts). */
+interface ExecBandwidthBandInput {
+  capacity: number;
+  used: number;
+  available: number;
+  overCapacity: boolean;
+  breakdown?: {
+    governmentStaff: number;
+    recon: number;
+    policies: number;
+    directives: number;
+    delegatedIssues: number;
+  };
+}
+
+/** The executive bandwidth band: real executive bandwidth used/capacity, with the weekly directive slots in the tooltip. */
+export function describeExecBandwidthBand(
+  execBandwidth: ExecBandwidthBandInput | null | undefined,
+  slots: { used: number; cap: number } | null | undefined
+): { value: string; title: string } {
+  const slotLine = slots
+    ? `Directives this week: ${slots.used}/${slots.cap} slots used.`
+    : "Directive slots unavailable.";
+  if (
+    !execBandwidth ||
+    !Number.isFinite(execBandwidth.capacity) ||
+    !Number.isFinite(execBandwidth.used)
+  ) {
+    return { value: "—", title: `Executive bandwidth unavailable. ${slotLine}` };
+  }
+  const b = execBandwidth.breakdown;
+  const breakdown = b
+    ? ` Staff ${b.governmentStaff}, policies ${b.policies}, directives ${b.directives}, recon ${b.recon}, delegated issues ${b.delegatedIssues}.`
+    : "";
+  const status = execBandwidth.overCapacity ? " Over capacity." : "";
+  return {
+    value: `${Math.round(execBandwidth.used)}/${Math.round(execBandwidth.capacity)}`,
+    title:
+      `Executive bandwidth: ${Math.round(execBandwidth.used)} used of ${Math.round(execBandwidth.capacity)} ` +
+      `(${Math.round(execBandwidth.available)} available).${status}${breakdown} ${slotLine}`,
+  };
+}
+
+function execBandwidthPercent(
+  execBandwidth: ExecBandwidthBandInput | null | undefined
+): number | null {
+  if (!execBandwidth || !Number.isFinite(execBandwidth.capacity) || execBandwidth.capacity <= 0)
+    return null;
+  return Math.min(100, Math.max(0, (execBandwidth.used / execBandwidth.capacity) * 100));
+}
+
+type RingKey =
+  "economicVitality" | "populationWellbeing" | "diplomaticStanding" | "governmentalEfficiency";
+const RING_KEYS: Record<string, RingKey> = {
+  economic: "economicVitality",
+  population: "populationWellbeing",
+  diplomatic: "diplomaticStanding",
+  government: "governmentalEfficiency",
+};
+
+function finiteScore(raw: unknown): number | null {
+  return typeof raw === "number" && Number.isFinite(raw) ? Math.round(raw) : null;
+}
+
+type StandingCountry = ReturnType<typeof useCountryData>["country"];
+type ActivityRings = ReturnType<typeof useCountryData>["activityRingsData"];
+
+/** The four vitality rings, which of them have data, and their composite score. */
+function deriveVitality(country: StandingCountry, activityRingsData: ActivityRings) {
+  // Server-computed vitality (countries.getActivityRingsData); a null score has no data yet
+  const src = (activityRingsData ?? null) as Partial<Record<RingKey, unknown>> | null;
+  const ringScores = {
+    economicVitality: finiteScore(src?.economicVitality),
+    populationWellbeing: finiteScore(src?.populationWellbeing),
+    diplomaticStanding: finiteScore(src?.diplomaticStanding),
+    governmentalEfficiency: finiteScore(src?.governmentalEfficiency),
+  };
+  const rings: VitalityRing[] =
+    country && activityRingsData ? createVitalityRingsFromCountry(ringScores) : [];
+  const knownRings = rings.filter((r) => ringScores[RING_KEYS[r.id]!] !== null);
+  const compositeScore =
+    knownRings.length > 0
+      ? Math.round(knownRings.reduce((sum, r) => sum + r.value, 0) / knownRings.length)
+      : 0;
+  return { ringScores, rings, knownRings, compositeScore };
+}
+
+const positiveOrNull = (value: unknown): number | null =>
+  typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
+
+/**
+ * Population, GDP, approval and stability; null (shown as a dash) when the record has none.
+ * Stability is the score Defense shows (`security.getInternalStability`, computed on read), with the
+ * stored row as the fallback while that loads.
+ */
+export function deriveFigures(country: StandingCountry, computedStability?: number | null) {
+  const population = positiveOrNull(country?.currentPopulation ?? country?.population);
+  const gdpPerCapita = positiveOrNull(country?.currentGdpPerCapita);
+  const totalGdp =
+    positiveOrNull(country?.currentTotalGdp ?? country?.gdp) ??
+    (population !== null && gdpPerCapita !== null ? population * gdpPerCapita : null);
+  return {
+    population,
+    totalGdp,
+    // Country.publicApproval (0-100), moved by issues and directives
+    approvalPct: finiteScore(country?.publicApproval),
+    // Internal stability (0-100): computed, else the stored InternalStabilityMetrics row
+    stabilityPct:
+      finiteScore(computedStability) ?? finiteScore(country?.stabilityMetrics?.stabilityScore),
+  };
+}
+
+/** One vitality ring as a tile that opens the breakdown. */
+function RingTile({
+  ring,
+  known,
+  onOpen,
+}: {
+  ring: VitalityRing;
+  known: boolean;
+  onOpen: () => void;
+}) {
+  return (
+    // Native button: the Button primitive would force its icon size onto HealthRing's svg.
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`${ring.label}: ${known ? `${ring.value} of 100` : "no data yet"}. Open vitality breakdown`}
+      className={cn(
+        "group/ring border-separator bg-surface rounded-row facet-press facet-lift flex cursor-pointer items-center gap-2 border p-2 text-left select-none",
+        focusRing
+      )}
+    >
+      <HealthRing
+        value={known ? ring.value : 0}
+        size={36}
+        color={known ? ring.color : "var(--color-label-secondary)"}
+        label={ring.label}
+      />
+      <div className="min-w-0 flex-1">
+        <span className="text-label-secondary group-hover/ring:text-label group-focus-visible/ring:text-label text-footnote block truncate transition-colors">
+          {ring.label}
+        </span>
+        {known ? (
+          // The ring hue mixed toward the label colour so it stays readable on light surfaces.
+          <span
+            className="text-headline font-semibold tabular-nums"
+            style={{ color: `color-mix(in srgb, ${ring.color} 50%, var(--color-label))` }}
+          >
+            {ring.value}
+            <span className="text-label-secondary text-footnote font-normal">/100</span>
+          </span>
+        ) : (
+          <span className="text-label-secondary text-headline tabular-nums" title="No data yet">
+            —
+          </span>
+        )}
+      </div>
+    </button>
+  );
 }
 
 /** National Standing rail card — population/GDP telemetry + governance strip + 4 vitality rings. */
 function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.Element {
-  const countryContext = React.useContext(CountryDataContext);
+  const { country, activityRingsData } = useCountryData();
+  const flagUrl = assetUrl(country?.flagUrl || country?.flag);
   const [showExactPop, setShowExactPop] = useState(false);
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
 
-  api.mycountry.getCountryDashboard.useQuery(
-    { countryId },
-    { enabled: !!countryId, refetchInterval: 15_000 }
-  );
-
-  // Live Backend Telemetry Queries
+  // Weekly directive slots (shown in the executive bandwidth tooltip)
   const intentStatus = api.intent.getStatus.useQuery(
     { countryId },
-    { enabled: !!countryId, refetchInterval: 15_000 }
+    { enabled: !!countryId, refetchInterval: 20_000 }
   );
-
-  const countryDetails = api.countries.getByIdAtTime.useQuery(
-    { id: countryId },
-    { enabled: !!countryId, staleTime: 30_000 }
-  );
-
-  const govStructure = api.government.getByCountryId.useQuery(
+  // Civil Service Capacity: the shared used/available sum (lib/government/exec-bandwidth.ts)
+  const execBandwidthQuery = api.policies.getPolicyReconContext.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 }
+    { enabled: !!countryId, refetchInterval: 20_000 }
   );
 
-  const country = (countryContext as any)?.country || countryDetails.data;
+  const { ringScores, rings, knownRings, compositeScore } = deriveVitality(
+    country,
+    activityRingsData
+  );
+  const { metrics: stability } = useInternalStability({ countryId });
+  const { population, totalGdp, approvalPct, stabilityPct } = deriveFigures(
+    country,
+    stability?.stabilityScore
+  );
+  const ratingLabelText = getRatingLabel(compositeScore);
+  // formatCensusValue shows a missing figure as a dash.
+  const formattedPop =
+    population !== null && showExactPop
+      ? Math.round(population).toLocaleString()
+      : formatCensusValue({ category: "Population", value: population ?? Number.NaN });
 
-  // 1. Live Public Approval Rating
-  const approvalPct = useMemo(() => {
-    const raw =
-      countryDetails.data?.publicApproval ??
-      country?.currentPublicApproval ??
-      country?.approvalRating ??
-      68;
-    return Math.round(raw > 1 ? raw : raw * 100);
-  }, [
-    countryDetails.data?.publicApproval,
-    country?.currentPublicApproval,
-    country?.approvalRating,
-  ]);
+  // Executive bandwidth used/capacity; directive slots go in the tooltip
+  const execBandwidthData = execBandwidthQuery.data;
+  const execBandwidthBand = describeExecBandwidthBand(
+    execBandwidthData,
+    intentStatus.data ? { used: intentStatus.data.usedThisWeek, cap: intentStatus.data.cap } : null
+  );
+  const execBandwidthPct = execBandwidthPercent(execBandwidthData);
 
-  // 2. Live Political Stability
-  const stabilityPct = useMemo(() => {
-    const raw =
-      govStructure.data?.politicalStability ??
-      country?.currentStability ??
-      country?.stability ??
-      0.78;
-    return Math.round(raw > 1 ? raw : raw * 100);
-  }, [govStructure.data?.politicalStability, country?.currentStability, country?.stability]);
-
-  // 3. Live Statecraft Civil Capacity Throughput
-  const capacityPct = useMemo(() => {
-    const usedSlots = intentStatus.data?.usedThisWeek ?? 0;
-    const slotCap = intentStatus.data?.cap ?? 3;
-    return Math.round(Math.max(10, Math.min(100, ((slotCap - usedSlots) / slotCap) * 100)));
-  }, [intentStatus.data?.usedThisWeek, intentStatus.data?.cap]);
-
-  const rings = useMemo(() => {
-    if (!country) return [];
-    return createVitalityRingsFromCountry(country);
-  }, [country]);
-
-  const compositeScore = useMemo(() => {
-    return rings.length > 0
-      ? Math.round(rings.reduce((sum: number, r: any) => sum + r.value, 0) / rings.length)
-      : 0;
-  }, [rings]);
-
-  const ratingLabelText = useMemo(() => getRatingLabel(compositeScore), [compositeScore]);
-
-  const population = useMemo(() => {
-    return (
-      country?.currentPopulation ?? country?.population ?? (country as any)?.populationTotal ?? 0
-    );
-  }, [country?.currentPopulation, country?.population, (country as any)?.populationTotal]);
-
-  const totalGdp = useMemo(() => {
-    return (
-      country?.currentTotalGdp ??
-      country?.gdp ??
-      (population && country?.currentGdpPerCapita ? population * country.currentGdpPerCapita : 0)
-    );
-  }, [country?.currentTotalGdp, country?.gdp, country?.currentGdpPerCapita, population]);
-
-  const formattedPop = useMemo(() => {
-    return showExactPop ? Math.round(population).toLocaleString() : formatCompact(population);
-  }, [showExactPop, population]);
-
-  const flagUrl = (country as any)?.flagUrl || country?.flag;
+  const handleOpenBreakdown = () => setIsBreakdownOpen(true);
+  const handleTogglePop = () => setShowExactPop((prev) => !prev);
 
   return (
     <>
-      <FacetCard
-        depth={1}
-        className="group/card relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-white/15 bg-white/[0.04] p-3.5 shadow-xl backdrop-blur-2xl transition-all duration-300 before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent dark:border-white/10 dark:bg-black/35 dark:shadow-2xl"
+      <Card
+        className="group flex flex-col gap-3 p-4"
+        aria-labelledby="national-standing-title"
+        role="region"
       >
-        {/* Cinematic Background Flag Watermark Scrim */}
-        {flagUrl && (
-          <div className="pointer-events-none absolute -top-10 -right-10 h-56 w-56 overflow-hidden opacity-[0.14] transition-all duration-700 select-none group-hover/card:scale-105 group-hover/card:opacity-[0.25] dark:opacity-[0.18]">
-            <img
-              src={flagUrl}
-              alt=""
-              className="h-full w-full rounded-full object-cover object-center mix-blend-luminosity blur-[1px] filter dark:mix-blend-normal"
-            />
-            <div className="via-card/75 to-card absolute inset-0 bg-gradient-to-l from-transparent" />
+        {/* Header: title + country chip, and the vitality pill */}
+        <div className="relative flex flex-wrap items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-col">
+            <h2
+              id="national-standing-title"
+              className="text-label-secondary text-footnote font-semibold"
+            >
+              National standing
+            </h2>
+            {country?.name && (
+              <div className="mt-1 flex min-w-0 items-center gap-2">
+                <span className="border-separator bg-surface rounded-control-sm shadow-card flex shrink-0 items-center justify-center overflow-hidden border p-0.5 transition-[scale] duration-200 motion-safe:group-hover:scale-105">
+                  <UnifiedCountryFlag
+                    countryName={country.name}
+                    flagUrl={flagUrl}
+                    size="sm"
+                    showTooltip={false}
+                  />
+                </span>
+                <p className="text-label text-headline truncate">{country.name}</p>
+              </div>
+            )}
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleOpenBreakdown}
+            className="bg-surface h-9 gap-2 rounded-full sm:h-8"
+            title="Open the vitality breakdown"
+          >
+            <Activity aria-hidden="true" />
+            <span>{knownRings.length > 0 ? ratingLabelText : "Vitality"}</span>
+            {knownRings.length > 0 && (
+              <span className="text-label-secondary tabular-nums">{compositeScore}</span>
+            )}
+          </Button>
+        </div>
+
+        {/* Population, GDP, approval, stability and executive bandwidth */}
+        {country && (
+          <Card variant="well" padding="none" className="relative flex flex-col gap-2 p-3">
+            <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
+              <button
+                type="button"
+                onClick={handleTogglePop}
+                aria-pressed={showExactPop}
+                title={showExactPop ? "Show compact population" : "Show exact population"}
+                className={cn(
+                  "group/pop text-footnote rounded-control-sm flex cursor-pointer items-center gap-2 pointer-coarse:min-h-11",
+                  focusRing
+                )}
+              >
+                <Users aria-hidden="true" className="text-label-secondary size-3.5" />
+                <span className="text-label-secondary">Population</span>
+                <strong className="text-label font-semibold tabular-nums group-hover/pop:underline group-focus-visible/pop:underline">
+                  {formattedPop}
+                </strong>
+              </button>
+              <span className="text-footnote flex items-center gap-2">
+                <DollarSign aria-hidden="true" className="text-label-secondary size-3.5" />
+                <span className="text-label-secondary">GDP</span>
+                <strong className="text-label font-semibold tabular-nums">
+                  {formatCensusValue({ category: "Total GDP", value: totalGdp ?? Number.NaN })}
+                </strong>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-1">
+              <VitalCell
+                icon={Heart}
+                label="Approval"
+                value={approvalPct === null ? "—" : `${approvalPct}%`}
+              />
+              <VitalCell
+                icon={Scale}
+                label="Stability"
+                value={stabilityPct === null ? "—" : `${stabilityPct}%`}
+                divided
+              />
+              <BandwidthHelp
+                state={execBandwidthData}
+                trigger={
+                  <button
+                    type="button"
+                    className={cn(
+                      "border-separator hover:bg-fill-3 flex min-w-0 flex-col gap-1 rounded-r-md border-l pl-2 text-left",
+                      focusRing
+                    )}
+                    title={execBandwidthBand.title}
+                    aria-label={`${execBandwidthBand.title} Show the breakdown.`}
+                    data-testid="exec-bandwidth-band"
+                  >
+                    <VitalCell
+                      icon={Zap}
+                      label="Bandwidth"
+                      value={execBandwidthBand.value}
+                      valueClassName={
+                        execBandwidthData?.overCapacity ? "text-destructive" : undefined
+                      }
+                      bare
+                    />
+                    {execBandwidthPct !== null && (
+                      <div
+                        className="bg-fill-3 h-1 overflow-hidden rounded-full"
+                        role="meter"
+                        aria-label="Executive bandwidth used"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={Math.round(execBandwidthPct)}
+                      >
+                        <div
+                          className={cn(
+                            "h-full rounded-full",
+                            execBandwidthData?.overCapacity ? "bg-destructive" : "bg-tint"
+                          )}
+                          style={{ width: `${execBandwidthPct}%` }}
+                        />
+                      </div>
+                    )}
+                  </button>
+                }
+              />
+            </div>
+          </Card>
         )}
 
-        <div className="relative z-10 flex flex-col gap-3">
-          {/* Header Row: Title & Vitality Pill */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex min-w-0 flex-col">
-              <span className="text-muted-foreground/70 text-[8px] font-bold tracking-wider uppercase">
-                National Standing
-              </span>
-              {country?.name && (
-                <div className="mt-0.5 flex min-w-0 items-center gap-2">
-                  <div className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/20 bg-white/10 p-0.5 shadow-xs backdrop-blur-md transition-transform group-hover/card:scale-105">
-                    <UnifiedCountryFlag
-                      countryName={country.name}
-                      flagUrl={flagUrl}
-                      size="sm"
-                      className="rounded-sm object-cover"
-                    />
-                  </div>
-                  <h3 className="text-foreground truncate text-sm font-bold tracking-tight">
-                    {country.name}
-                  </h3>
-                </div>
-              )}
-            </div>
-
-            <motion.button
-              type="button"
-              whileHover={{
-                scale: 1.03,
-                transition: { type: "spring", stiffness: 400, damping: 25 },
-              }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => setIsBreakdownOpen(true)}
-              className="group flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-xs font-bold text-cyan-300 shadow-xs backdrop-blur-md transition-all hover:bg-cyan-500/20 active:scale-95"
-              title="Click for full Vitality Breakdown"
-            >
-              <Activity className="h-3.5 w-3.5 text-cyan-400 transition-transform group-hover:scale-110" />
-              <span className="font-bold">{ratingLabelText}</span>
-              <span className="font-mono text-[9px] font-semibold text-cyan-300/80">
-                ({compositeScore})
-              </span>
-            </motion.button>
-          </div>
-
-          {/* Single Unified Telemetry Glass Container (Pop, GDP, Approval, Stability, Capacity) */}
-          {country && (
-            <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.04] p-2.5 shadow-xs backdrop-blur-md dark:border-white/10 dark:bg-white/[0.03]">
-              {/* Row 1: Population & GDP */}
-              <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-1.5">
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => setShowExactPop((prev) => !prev)}
-                  className="group flex cursor-pointer items-center gap-1.5 text-xs transition-colors"
-                  title="Click to toggle exact population count"
-                >
-                  <Users className="group-hover:text-foreground h-3.5 w-3.5 text-blue-400 transition-colors" />
-                  <span className="text-muted-foreground/70 text-[8px] font-bold tracking-wider uppercase">
-                    Pop:
-                  </span>
-                  <strong className="text-foreground text-xs font-bold tracking-tight group-hover:underline">
-                    {formattedPop}
-                  </strong>
-                </motion.button>
-
-                <div className="flex items-center gap-1.5 text-xs">
-                  <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
-                  <span className="text-muted-foreground/70 text-[8px] font-bold tracking-wider uppercase">
-                    GDP:
-                  </span>
-                  <strong className="text-xs font-bold tracking-tight text-emerald-400">
-                    ${formatCompact(totalGdp)}
-                  </strong>
-                </div>
-              </div>
-
-              {/* Row 2: Executive Governance Telemetry (Approval, Stability, Capacity) */}
-              <div className="grid grid-cols-3 gap-1 pt-0.5">
-                <div className="flex min-w-0 items-center gap-1.5 px-0.5 text-xs">
-                  <Heart className="h-3.5 w-3.5 shrink-0 text-red-400" />
-                  <div className="flex min-w-0 flex-col">
-                    <span className="text-muted-foreground/70 text-[8px] leading-none font-bold tracking-wider uppercase">
-                      Approval
-                    </span>
-                    <span className="text-foreground truncate text-xs leading-tight font-bold">
-                      {approvalPct}%
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex min-w-0 items-center gap-1.5 border-l border-white/10 px-1 text-xs">
-                  <Scale className="h-3.5 w-3.5 shrink-0 text-violet-400" />
-                  <div className="flex min-w-0 flex-col">
-                    <span className="text-muted-foreground/70 text-[8px] leading-none font-bold tracking-wider uppercase">
-                      Stability
-                    </span>
-                    <span className="text-foreground truncate text-xs leading-tight font-bold">
-                      {stabilityPct}%
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex min-w-0 items-center gap-1.5 border-l border-white/10 px-1 text-xs">
-                  <Zap className="h-3.5 w-3.5 shrink-0 text-amber-400" />
-                  <div className="flex min-w-0 flex-col">
-                    <span className="text-muted-foreground/70 text-[8px] leading-none font-bold tracking-wider uppercase">
-                      Capacity
-                    </span>
-                    <span className="text-foreground truncate text-xs leading-tight font-bold">
-                      {capacityPct}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 4 Vitality Rings Grid */}
-          <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-            {rings.map((ring: any) => (
-              <motion.button
-                key={ring.id}
-                type="button"
-                whileHover={{
-                  scale: 1.02,
-                  transition: { type: "spring", stiffness: 400, damping: 25 },
-                }}
-                whileTap={{ scale: 0.96 }}
-                onClick={() => setIsBreakdownOpen(true)}
-                className="group/ring flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-2 text-left backdrop-blur-md transition-all duration-150 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.97]"
-              >
-                <HealthRing value={ring.value} size={34} color={ring.color} label={ring.label} />
-                <div className="min-w-0 flex-1">
-                  <span className="text-muted-foreground/70 group-hover/ring:text-foreground block truncate text-[8px] font-bold tracking-wider uppercase transition-colors">
-                    {ring.label}
-                  </span>
-                  <span className="text-foreground text-xs font-bold" style={{ color: ring.color }}>
-                    {ring.value}
-                    <span className="text-muted-foreground/60 text-[8px] font-normal">/100</span>
-                  </span>
-                </div>
-              </motion.button>
-            ))}
-          </div>
+        {/* The four vitality rings */}
+        <div className="relative grid grid-cols-2 gap-2">
+          {rings.map((ring) => (
+            <RingTile
+              key={ring.id}
+              ring={ring}
+              known={ringScores[RING_KEYS[ring.id]!] !== null}
+              onOpen={handleOpenBreakdown}
+            />
+          ))}
         </div>
-      </FacetCard>
+      </Card>
 
       <VitalityBreakdownModal
         isOpen={isBreakdownOpen}
         onClose={() => setIsBreakdownOpen(false)}
-        rings={rings}
+        rings={knownRings}
         countryName={country?.name}
       />
     </>
+  );
+}
+
+/** One governance figure in the telemetry panel: glyph, sentence-case label, mono value. */
+function VitalCell({
+  icon: Icon,
+  label,
+  value,
+  divided,
+  bare,
+  valueClassName,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  divided?: boolean;
+  bare?: boolean;
+  valueClassName?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 items-center gap-2",
+        !bare && "px-0.5",
+        divided && "border-separator border-l pl-2"
+      )}
+    >
+      <Icon aria-hidden="true" className="text-label-secondary size-3.5 shrink-0" />
+      <div className="flex min-w-0 flex-col">
+        <span className="text-label-secondary text-caption leading-tight">{label}</span>
+        <span
+          className={cn(
+            "text-label text-footnote truncate leading-tight font-semibold tabular-nums",
+            valueClassName
+          )}
+        >
+          {value}
+        </span>
+      </div>
+    </div>
   );
 }
 

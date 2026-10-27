@@ -1,95 +1,79 @@
 import { type PrismaClient } from "@prisma/client";
 import { Cache } from "~/lib/cache";
+import { countStorePurchases } from "./store-purchases";
 
-export interface VaultEffectPerks {
+/** What purchased-perk lookups read: a client, an extended client or a transaction client all fit. */
+export type PerksDb = Pick<PrismaClient, "vaultTransaction" | "vaultStoreItem">;
+
+interface VaultEffectPerks {
   cardCapacity?: number;
   yieldBoost?: number;
-  loreTokens?: number;
   [key: string]: unknown;
 }
 
-export interface VaultEffectItem {
+interface VaultEffectItem {
   perks?: VaultEffectPerks;
   [key: string]: unknown;
 }
 
+/** Vault-wide constants and switches. Store prices live on each VaultStoreItem (VT-10). */
 export interface VaultConfig {
   activeDailyCap: number;
   socialDailyCap: number;
   xpPerLevel: number;
-  maxStreakBonus: number;
   premiumMultiplier: number;
-  priceGoldenProfileGlow: number;
-  priceNeonCyberFrame: number;
-  priceEliteChatBadge: number;
-  priceLoreRequestToken: number;
-  priceCardCapacity: number;
-  pricePassiveYieldBoost: number;
   isEarningEnabled: boolean;
   isTradingEnabled: boolean;
   isAuctionsEnabled: boolean;
   isStoreEnabled: boolean;
-  isCraftingEnabled: boolean;
   isPacksEnabled: boolean;
   isMaintenanceMode: boolean;
   exemptStaffFromLimit: boolean;
+  /** The Exchange (₷): conversion, companies and contracts. MyClub's ₷ spends are not gated. */
+  isExchangeEnabled: boolean;
 }
 
 export const VAULT_CONFIG_DEFAULTS: VaultConfig = {
   activeDailyCap: 100,
   socialDailyCap: 50,
   xpPerLevel: 1000,
-  maxStreakBonus: 7,
   premiumMultiplier: 1.0,
-  priceGoldenProfileGlow: 500,
-  priceNeonCyberFrame: 750,
-  priceEliteChatBadge: 1000,
-  priceLoreRequestToken: 2500,
-  priceCardCapacity: 5000,
-  pricePassiveYieldBoost: 5000,
   isEarningEnabled: true,
   isTradingEnabled: true,
   isAuctionsEnabled: true,
   isStoreEnabled: true,
-  isCraftingEnabled: true,
   isPacksEnabled: true,
   isMaintenanceMode: false,
   exemptStaffFromLimit: true,
+  isExchangeEnabled: true,
 };
 
-export const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
+const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
   activeDailyCap: "vault_activeDailyCap",
   socialDailyCap: "vault_socialDailyCap",
   xpPerLevel: "vault_xpPerLevel",
-  maxStreakBonus: "vault_maxStreakBonus",
   premiumMultiplier: "vault_premiumMultiplier",
-  priceGoldenProfileGlow: "vault_priceGoldenProfileGlow",
-  priceNeonCyberFrame: "vault_priceNeonCyberFrame",
-  priceEliteChatBadge: "vault_priceEliteChatBadge",
-  priceLoreRequestToken: "vault_priceLoreRequestToken",
-  priceCardCapacity: "vault_priceCardCapacity",
-  pricePassiveYieldBoost: "vault_pricePassiveYieldBoost",
   isEarningEnabled: "vault_isEarningEnabled",
   isTradingEnabled: "vault_isTradingEnabled",
   isAuctionsEnabled: "vault_isAuctionsEnabled",
   isStoreEnabled: "vault_isStoreEnabled",
-  isCraftingEnabled: "vault_isCraftingEnabled",
   isPacksEnabled: "vault_isPacksEnabled",
   isMaintenanceMode: "vault_isMaintenanceMode",
   exemptStaffFromLimit: "vault_exemptStaffFromLimit",
+  isExchangeEnabled: "vault_isExchangeEnabled",
 };
 
-export const vaultConfigCache = new Cache<VaultConfig>({
+const vaultConfigCache = new Cache<VaultConfig>({
   defaultTtlMs: 60_000,
   maxSize: 10,
 });
 
-export const userPerksCache = new Cache<VaultEffectItem[]>({
+const userPerksCache = new Cache<VaultEffectItem[]>({
   defaultTtlMs: 300_000,
   maxSize: 500,
 });
 
-export const VAULT_CONFIG_CACHE_KEY = "vault_config";
+const VAULT_CONFIG_CACHE_KEY = "vault_config";
 
 export function invalidateVaultConfigCache(): void {
   vaultConfigCache.delete(VAULT_CONFIG_CACHE_KEY);
@@ -134,29 +118,8 @@ export async function getVaultConfig(db: {
         m.vault_socialDailyCap ?? String(VAULT_CONFIG_DEFAULTS.socialDailyCap)
       ),
       xpPerLevel: parseFloat(m.vault_xpPerLevel ?? String(VAULT_CONFIG_DEFAULTS.xpPerLevel)),
-      maxStreakBonus: parseFloat(
-        m.vault_maxStreakBonus ?? String(VAULT_CONFIG_DEFAULTS.maxStreakBonus)
-      ),
       premiumMultiplier: parseFloat(
         m.vault_premiumMultiplier ?? String(VAULT_CONFIG_DEFAULTS.premiumMultiplier)
-      ),
-      priceGoldenProfileGlow: parseFloat(
-        m.vault_priceGoldenProfileGlow ?? String(VAULT_CONFIG_DEFAULTS.priceGoldenProfileGlow)
-      ),
-      priceNeonCyberFrame: parseFloat(
-        m.vault_priceNeonCyberFrame ?? String(VAULT_CONFIG_DEFAULTS.priceNeonCyberFrame)
-      ),
-      priceEliteChatBadge: parseFloat(
-        m.vault_priceEliteChatBadge ?? String(VAULT_CONFIG_DEFAULTS.priceEliteChatBadge)
-      ),
-      priceLoreRequestToken: parseFloat(
-        m.vault_priceLoreRequestToken ?? String(VAULT_CONFIG_DEFAULTS.priceLoreRequestToken)
-      ),
-      priceCardCapacity: parseFloat(
-        m.vault_priceCardCapacity ?? String(VAULT_CONFIG_DEFAULTS.priceCardCapacity)
-      ),
-      pricePassiveYieldBoost: parseFloat(
-        m.vault_pricePassiveYieldBoost ?? String(VAULT_CONFIG_DEFAULTS.pricePassiveYieldBoost)
       ),
       isEarningEnabled:
         m.vault_isEarningEnabled !== undefined
@@ -174,10 +137,6 @@ export async function getVaultConfig(db: {
         m.vault_isStoreEnabled !== undefined
           ? m.vault_isStoreEnabled === "true"
           : VAULT_CONFIG_DEFAULTS.isStoreEnabled,
-      isCraftingEnabled:
-        m.vault_isCraftingEnabled !== undefined
-          ? m.vault_isCraftingEnabled === "true"
-          : VAULT_CONFIG_DEFAULTS.isCraftingEnabled,
       isPacksEnabled:
         m.vault_isPacksEnabled !== undefined
           ? m.vault_isPacksEnabled === "true"
@@ -190,6 +149,10 @@ export async function getVaultConfig(db: {
         m.vault_exemptStaffFromLimit !== undefined
           ? m.vault_exemptStaffFromLimit === "true"
           : VAULT_CONFIG_DEFAULTS.exemptStaffFromLimit,
+      isExchangeEnabled:
+        m.vault_isExchangeEnabled !== undefined
+          ? m.vault_isExchangeEnabled === "true"
+          : VAULT_CONFIG_DEFAULTS.isExchangeEnabled,
     };
 
     vaultConfigCache.set(VAULT_CONFIG_CACHE_KEY, config);
@@ -205,13 +168,15 @@ export async function getVaultConfig(db: {
  */
 export async function getPurchasedItemsEffects(
   userId: string,
-  db: PrismaClient
+  db: PerksDb
 ): Promise<VaultEffectItem[]> {
   const cacheKey = `user_perks:${userId}`;
   const cached = userPerksCache.get(cacheKey);
   if (cached) return cached;
 
   try {
+    // Every purchase counts: no row limit (stacked upgrades past the 100th purchase used to
+    // drop off), and delisted (inactive) items keep applying to the players who bought them.
     const transactions = await db.vaultTransaction.findMany({
       where: {
         vault: { userId },
@@ -220,25 +185,9 @@ export async function getPurchasedItemsEffects(
       select: {
         metadata: true,
       },
-      orderBy: { createdAt: "desc" },
-      take: 100,
     });
 
-    const purchasedItemCounts: Record<string, number> = {};
-    for (const tx of transactions) {
-      let meta = tx.metadata;
-      if (typeof meta === "string") {
-        try {
-          meta = JSON.parse(meta);
-        } catch {}
-      }
-      if (meta && typeof meta === "object") {
-        const metaObj = meta as Record<string, unknown>;
-        if (metaObj.itemId && typeof metaObj.itemId === "string") {
-          purchasedItemCounts[metaObj.itemId] = (purchasedItemCounts[metaObj.itemId] || 0) + 1;
-        }
-      }
-    }
+    const purchasedItemCounts = countStorePurchases(transactions);
 
     const uniqueIds = Object.keys(purchasedItemCounts);
     if (uniqueIds.length === 0) {
@@ -249,7 +198,6 @@ export async function getPurchasedItemsEffects(
     const storeItems = await db.vaultStoreItem.findMany({
       where: {
         id: { in: uniqueIds },
-        isActive: true,
       },
       select: {
         id: true,
@@ -279,7 +227,7 @@ export async function getPurchasedItemsEffects(
 /**
  * Calculate total card capacity boost from store upgrades
  */
-export async function getCardCapacityBoost(userId: string, db: PrismaClient): Promise<number> {
+export async function getCardCapacityBoost(userId: string, db: PerksDb): Promise<number> {
   const effects = await getPurchasedItemsEffects(userId, db);
   let totalBoost = 0;
   for (const eff of effects) {
@@ -304,52 +252,4 @@ export async function getYieldBoostMultiplier(userId: string, db: PrismaClient):
     }
   }
   return totalBoost;
-}
-
-/**
- * Calculate current lore request tokens balance
- */
-export async function getLoreTokensBalance(userId: string, db: PrismaClient): Promise<number> {
-  const effects = await getPurchasedItemsEffects(userId, db);
-  let totalGranted = 0;
-  for (const eff of effects) {
-    const perks = eff.perks;
-    if (perks && typeof perks.loreTokens === "number") {
-      totalGranted += perks.loreTokens;
-    }
-  }
-
-  const vault = await db.myVault.findUnique({
-    where: { userId },
-    select: { id: true },
-  });
-  if (!vault) return 0;
-
-  const transactions = await db.vaultTransaction.findMany({
-    where: {
-      vaultId: vault.id,
-      source: "LORE_CARD_REQUEST",
-    },
-    select: {
-      metadata: true,
-    },
-  });
-
-  let usedTokenCount = 0;
-  for (const tx of transactions) {
-    let meta = tx.metadata;
-    if (typeof meta === "string") {
-      try {
-        meta = JSON.parse(meta);
-      } catch {}
-    }
-    if (meta && typeof meta === "object") {
-      const metaObj = meta as Record<string, unknown>;
-      if (metaObj.useToken === true) {
-        usedTokenCount++;
-      }
-    }
-  }
-
-  return Math.max(0, totalGranted - usedTokenCount);
 }

@@ -4,35 +4,36 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "~/context/auth-context";
 import { useTheme } from "~/context/theme-context";
-import { useIxTime } from "~/context/IxTimeContext";
+import { keepPreviousData } from "@tanstack/react-query";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useDebounce } from "~/hooks/useDebounce";
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 import { api } from "~/trpc/react";
-import { getGreeting, getTimeDisplay } from "../utils/dynamic-island-helpers";
+import { useContextHour } from "~/hooks/useContextHour";
+import { greetingForHour } from "~/lib/time/greeting";
 import type { MapSearchResult } from "../MapDynamicIsland";
 
 interface UseDynamicIslandStateProps {
   onSearchResult: (result: MapSearchResult) => void;
+  realm?: string;
 }
 
-export function useDynamicIslandState({ onSearchResult }: UseDynamicIslandStateProps) {
+export function useDynamicIslandState({ onSearchResult, realm }: UseDynamicIslandStateProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIdx, setSelectedIdx] = useState(-1);
-  const [timeDisplayMode, setTimeDisplayMode] = useState<"time" | "date" | "both">("time");
   const [isFlashing, setIsFlashing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { user, isLoaded } = useUser();
-  const { ixTimeTimestamp } = useIxTime();
-  const { theme, effectiveTheme, setTheme } = useTheme();
+  // The hour only (useContextHour re-renders on an hour change): subscribing to the raw IxTime timestamp
+  // re-rendered the island (and re-measured its motion `layout` animations) every second.
+  const hour = useContextHour();
+  const greeting = hour === null ? "Welcome" : greetingForHour(hour);
+  const { theme, setTheme } = useTheme();
   const router = useRouter();
-
-  const greeting = useMemo(() => getGreeting(ixTimeTimestamp), [ixTimeTimestamp]);
-  const timeDisplay = useMemo(() => getTimeDisplay(ixTimeTimestamp), [ixTimeTimestamp]);
 
   // Profile data for greeting
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
@@ -70,9 +71,15 @@ export function useDynamicIslandState({ onSearchResult }: UseDynamicIslandStateP
   // Geo Search
   const debouncedQuery = useDebounce(query.trim(), 250);
 
-  const { data: results, isLoading: searchLoading } = api.geoCore.searchFeatures.useQuery(
-    { query: debouncedQuery, limit: 20 },
-    { enabled: debouncedQuery.length >= 2, staleTime: 30_000 }
+  const { data: results, isFetching: searchLoading } = api.geoCore.searchFeatures.useQuery(
+    { query: debouncedQuery, limit: 20, realm },
+    {
+      enabled: debouncedQuery.length >= 2,
+      staleTime: 30_000,
+      // Keep the previous results on screen while the next query loads instead of flashing
+      // "Searching…" between keystrokes.
+      placeholderData: keepPreviousData,
+    }
   );
 
   const grouped = useMemo(() => {
@@ -84,7 +91,6 @@ export function useDynamicIslandState({ onSearchResult }: UseDynamicIslandStateP
     return Object.entries(groups);
   }, [results]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const flatResults = results ?? [];
   const showResults = searchOpen && debouncedQuery.length >= 2;
   const hasResults = grouped.length > 0;
@@ -138,6 +144,7 @@ export function useDynamicIslandState({ onSearchResult }: UseDynamicIslandStateP
         handleSelect(flatResults[selectedIdx]);
       }
     },
+    // oxlint-disable-next-line
     [flatResults, selectedIdx, handleSelect, closeSearch]
   );
 
@@ -156,31 +163,23 @@ export function useDynamicIslandState({ onSearchResult }: UseDynamicIslandStateP
 
   return {
     searchOpen,
-    setSearchOpen,
     query,
     setQuery,
     selectedIdx,
     setSelectedIdx,
-    timeDisplayMode,
-    setTimeDisplayMode,
     isFlashing,
-    setIsFlashing,
     containerRef,
     inputRef,
     user,
     isLoaded,
-    ixTimeTimestamp,
     theme,
-    effectiveTheme,
     setTheme,
     router,
     greeting,
-    timeDisplay,
     countryName,
     messageUnreadCount,
     unreadNotifications,
     totalUnread,
-    results,
     searchLoading,
     grouped,
     flatResults,

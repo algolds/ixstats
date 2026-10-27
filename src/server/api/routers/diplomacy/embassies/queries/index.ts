@@ -9,13 +9,12 @@
  *
  * Concerns:
  *  - embassyListings:   read-only embassy lookups (network listing, single-embassy details)
- *  - embassyCalculators: cost / upgrade computation (establishment cost, available upgrades)
+ *
+ * There is no embassy economy: opening one costs nothing, so no establishment-cost estimate is served.
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { diplomaticEmbassiesQueriesEmbassyListingsRouter } from "./embassyListings";
-import { diplomaticEmbassiesQueriesEmbassyCalculatorsRouter } from "./embassyCalculators";
 
 export const diplomaticEmbassiesQueriesRouter = mergeRouters(
-  diplomaticEmbassiesQueriesEmbassyListingsRouter,
-  diplomaticEmbassiesQueriesEmbassyCalculatorsRouter
+  diplomaticEmbassiesQueriesEmbassyListingsRouter
 );

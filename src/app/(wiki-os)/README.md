@@ -1,127 +1,128 @@
 # WikiOS
 
-**Last updated:** August 18, 2026  
-**Architecture Status:** Production-Ready, Instant, and Structurally Decoupled
+**Last updated:** September 29, 2026  
+**Architecture Status:** Decoupled Native Knowledge Engine (Plan 170 Complete)
 
-WikiOS is a modern, React-based wiki frontend that replaces the MediaWiki UI for IxWiki. MediaWiki continues to run headlessly as the backend — it stores content, processes Lua/Scribunto templates, and exposes the Action API and Parsoid REST API. WikiOS replaces everything the reader and editor see and touch, served from the `(wiki-os)` Next.js route group at `/wiki/*`.
+WikiOS is an ultra-fast, structured knowledge engine and worldbuilding platform. PostgreSQL is the authoritative primary backend for article content, append-only revisions, directed link graphs, and category hierarchies, delivering **sub-2ms reads** and **sub-10ms atomic writes**. Upstream MediaWiki is integrated as a headless render (`action=parse`), asynchronous export, and recent-changes sync adapter over its HTTP Action API (`adapters/mediawiki/`, `services/auto-sync-service.ts`); there is no direct MariaDB connection.
 
-The editor stack provides a custom contentEditable visual editor (HTML ↔ Parsoid ↔ wikitext roundtrip), a **CodeMirror 6** source editor, and a fast in-place zero-navigation editing bridge (`WikiEditBridge`). Article HTML is fetched via Parsoid, cached persistently via IndexedDB, and accelerated using browser-native `content-visibility: auto`.
-
-> Status: **Production-ready & instant.** Reader, dual-mode in-place editor, speculative prefetching, offline-resilient client caching, stash, lorewards, blurbs, and special pages are fully wired to live tRPC and Postgres/MySQL shadow stores.
+The editor stack provides a Plate-based visual editor (WikiAST ↔ wikitext), a **CodeMirror 6** source editor, and a zero-navigation in-place editing bridge (`WikiEditBridge`). Reader rendering is accelerated by server-side pre-compiled HTML, browser-native `content-visibility: auto`, and edge CDN cache tagging.
 
 ---
 
-## 1. Routes (`(wiki-os)` group → `/wiki/*`)
+## 1. Routes (`(wiki-os)` group → `/wiki/*` and `/util/*`)
+
+Utility pages live under `/util/*`. Every `/wiki/<path>` URL is served by one catch-all route, `wiki/[...slug]`. A path is always a title: the old WikiOS tool slugs (`/wiki/recent-changes`, `/wiki/history/Foo`, ...) and `/wiki/<title>/edit`, `/wiki/<title>/talk` are ordinary (sub)page titles now.
+
+The route (plan 412) is a server component: `resolveWikiPath` (`src/lib/wiki-os/wiki-path.ts`) parses the URL, the article is read on the server and primed into the query cache (`HydrateClient`), so the first HTML holds the article; a page that does not exist is a 404 (`not-found.tsx`), a redirect page is a 308 to its target with `?rdfrom=`, a non-canonical spelling is a 308 to the canonical one. `generateMetadata` gives the article its own title, description, canonical URL (WikiOS is the canonical host) and link card.
 
 | Route | File | Purpose |
 |-------|------|---------|
-| `/wiki` | `wiki/page.tsx` | Redirects to `Main_Page` |
-| `/wiki/[slug]` | `wiki/[slug]/page.tsx` | Article reader + In-place Instant Editor Bridge |
-| `/wiki/[slug]/edit` | `wiki/[slug]/edit/page.tsx` | Dedicated editor page (visual + source fallback) |
-| `/wiki/[slug]/talk` | `wiki/[slug]/talk/page.tsx` | Talk / discussion page |
-| `/wiki/search` | `wiki/search/page.tsx` | Sub-3ms PostgreSQL Full-Text & Trigram search |
-| `/wiki/recent-changes` | `wiki/recent-changes/page.tsx` | Global edit feed |
-| `/wiki/history/[slug]` | `wiki/history/[slug]/page.tsx` | Revision history |
-| `/wiki/diff` | `wiki/diff/page.tsx` | Side-by-side visual revision diff viewer |
-| `/wiki/random` | `wiki/random/page.tsx` | Random article redirect |
-| `/wiki/categories/[...slug]` | `wiki/categories/[...slug]/page.tsx` | Category hierarchy browser |
-| `/wiki/whatlinkshere/[slug]` | `wiki/whatlinkshere/[slug]/page.tsx` | Inbound backlinks explorer |
-| `/wiki/contributions/[user]` | `wiki/contributions/[user]/page.tsx` | User contribution history |
-| `/wiki/user/[username]` | `wiki/user/[username]/page.tsx` | User profile & award showcase |
-| `/wiki/lorewards` | `wiki/lorewards/page.tsx` | Lorewards achievements leaderboard & streaks |
-| `/wiki/repository` | `wiki/repository/page.tsx` | Commons image search & category explorer |
-| `/wiki/watchlist` | `wiki/watchlist/page.tsx` | Article watchlist (backed by LoreStash) |
-
-Related routes live **outside** this group: `/stashes` (Lore Stash browser), `/blurbs` + `/blurbs/[slug]`, `/admin/blurbs`, `/admin/lorewards`, `/admin/stash`, `/admin/wikios-settings`.
+| `/wiki` | `wiki/page.tsx` | WikiOS main page (`WikiOSMainPage`) |
+| `/wiki/<title>` (any depth: `/wiki/A/B`) | `wiki/[...slug]/page.tsx` | Article reader + in-place editor bridge. `?action=edit` opens the editor (`&section=new` is "Add topic"), `?action=history` / `?action=info` / `?oldid=` / `?diff=` show those views in place, `?redirect=no` shows a redirect page, `?action=raw` is answered by `/api/wiki/raw`, `?margin=threads` opens Margin, `?source=iiwiki\|althistory` reads another wiki's page read-only |
+| `/wiki/Talk:<title>` and every `<ns> talk:` page | same | Ordinary wikitext pages; the page tabs (Read / Edit / History / Talk, plus Add topic on a talk page) link the pair |
+| `/wiki/User:<name>`, `/wiki/Category:<name>`, `/wiki/File:<name>` | same | The page's wikitext, plus a profile card / the members of the category (200 to a page, `?from=`) / the file |
+| `/wiki/Special:<Name>[/<arg>]` | same | `Special:RecentChanges`, `Watchlist`, `Categories`, `Search`, `Diff/<a>/<b>`, `Contributions/<user>`, `WhatLinksHere/<title>`, `Export`, `Import` and the rights-model pages (`Log[/type]`, `Move`/`MovePage`, `Delete`, `Undelete`, `Protect` with a title, `Block`, `UserRights` with a user, `BlockList`) redirect to the matching `/util/*` tool (`?action=delete|protect|unprotect` on a page go to the same screens); `Random` and `FilePath/<file>` redirect to a page / the file; `AllPages` and `PrefixIndex/<prefix>` list pages in place; any other special page is a 404 |
+| `/wiki-sitemap`, `/wiki-sitemap/<n>`, `/robots.txt` | `src/app/wiki-sitemap/**`, `src/app/robots.txt/route.ts` | Sitemap index and files (50,000 published main-namespace pages each), robots.txt |
+| `/api/wiki/raw` | `src/app/api/wiki/raw/route.ts` | `text/x-wiki` wikitext of a page or revision; `src/proxy.ts` rewrites `/wiki/<title>?action=raw` here |
+| `/util` | `util/page.tsx` | Special directory & utilities deck (`Special:SpecialPages` redirects here) |
+| `/util/search` | `util/search/page.tsx` | Prefix & full-text search |
+| `/util/recent-changes` | `util/recent-changes/page.tsx` | Global append-only edit ledger feed |
+| `/util/history/[slug]` | `util/history/[slug]/page.tsx` | Revision history (scrubbable timeline) |
+| `/util/diff` | `util/diff/page.tsx` | Side-by-side visual revision diff viewer |
+| `/util/random` | `util/random/page.tsx` | Random article redirect |
+| `/util/categories`, `/util/categories/[...slug]` | `util/categories/…` | Category index and recursive category browser |
+| `/util/whatlinkshere/[slug]` | `util/whatlinkshere/[slug]/page.tsx` | Relational backlinks explorer |
+| `/util/contributions/[user]` | `util/contributions/[user]/page.tsx` | User contribution history |
+| `/util/lorewards` | `util/lorewards/page.tsx` | Lorewards: today's race, the all-time standings and recent winners (`LorewardsView focus="contest"`). `?user=<wiki name>` (and `&card=<id>`) opens that winner's trophies above the race, which is where an article's Loreward badge links |
+| `/util/repository` | `util/repository/page.tsx` | Native media commons asset repository (`wiki_assets`), with an Upload button |
+| `/util/upload` | `util/upload/page.tsx` | Special:Upload: upload a file (`POST /api/wiki/upload`, plan 411) |
+| `/util/templates` | `util/templates/page.tsx` | Template browser |
+| `/util/watchlist` | `util/watchlist/page.tsx` | Article watchlist (`WikiWatchlist` model) |
 
 ---
 
-## 2. Key Features (Implemented)
+## 2. Key Features
 
 | Area | Feature |
 |------|---------|
-| **Instant Engine** | **Speculative link prefetching** on pointer hover/touch (`useWikiPrefetch`), **multi-tier IndexedDB client cache** (100 articles + local drafts), **zero-navigation in-place editor bridge** (`WikiEditBridge`), and **idle wikitext pre-warmup** (`requestIdleCallback`) |
-| **DOM Acceleration** | Sub-16ms initial paint via CSS `content-visibility: auto` and section containment on all top-level article headings and infoboxes |
-| **Fast Shadow Search** | Sub-3ms title prefix, trigram fuzzy matching, and body text search with relevance ranking (`search-service.ts`) |
-| **Reader** | Server-side HTML transform (infobox extraction, TOC, notices), 3D tilt hero banner (`ArticleHeader`), sticky TOC, link hover previews (`LinkPreview`), image lightbox, category breadcrumbs, dynamic map embeds (`InfoboxWithMap`, `CoordinatesMapEmbed`), custom Main Page |
-| **Editor** | Seamless visual editor (contentEditable, data-mw roundtrip) & CodeMirror 6 source editor with live preview, modular template dialogs (`template-modals/`), image search/upload modal, edit summary, revert & rollback |
+| **Instant Native Engine** | **Sub-2ms reads** from PostgreSQL pre-compiled `contentHtml`, **$O(1)$ backlinks** via `wiki_links`, **zero-query red links** (`targetArticleId = NULL`), and **sub-10ms atomic writes** |
+| **Speculative Navigation** | Instant link hover/touch prefetching (`useWikiPrefetch`), localStorage client cache (`editor/local-cache.ts`, 24h TTL), and zero-navigation in-place editor bridge (`WikiEditBridge`) |
+| **DOM Acceleration** | Sub-16ms initial paint via CSS `content-visibility: auto` and section containment |
+| **Two-Tier Native Search** | Tier 1 typo-tolerant prefix search (<1.5ms) + Tier 2 weighted `tsvector` full-text search with headline snippets |
+| **Cloudflare Defense** | Automated edge CDN cache purging on save (editing itself needs a signed-in account and is rate-limited and rights-checked) |
+| **Reader** | Pre-rendered HTML transforms, article header (`ArticleHeader`), contents and page info in a sticky aside in the article row that collapses to an edge handle, Read / Edit / History / Talk tabs at MediaWiki's URL forms (`WikiArticleTabs`), link hover previews (`LinkPreview`), image lightbox, category breadcrumbs, dynamic map embeds |
+| **Editor** | Dual-mode Plate visual editor (WikiAST roundtrip) & CodeMirror 6 source editor with live preview, modular template dialogs, image search/upload modal, and instant 1-click rollback |
 | **Stash** | Color-coded collections, one-click stash toggle, text-selection annotations, per-item notes |
-| **Lorewards** | Daily/weekly/monthly awards, leaderboard, streak calendar, user stats, award-winning-article badges, cross-validation vs Discord bot |
-| **Blurbs** | Topic-Tuesday prompts, user responses with linked articles, featured responses, country gallery, admin dashboard |
-| **Search** | Full-text search, command-palette search modal, category tree |
-| **Templates** | Template search, TemplateData sync, live preview, modularized template dialogs |
+| **Lorewards & Streaks** | Prose-quality scoring (`src/lib/lorewards/scoring.ts`), daily/weekly/monthly awards synced from the Discord Lorewards bot's state file, SVG streak heatmap calendar, and article awards (`WikiArticleAward`) |
 
 ---
 
-## 3. Architecture & Component Locations
-
-| Layer | Location | Purpose |
-|-------|----------|---------|
-| **Route group** | `src/app/(wiki-os)/` | Mounts `WikiOSLayout`, `WikiDIPlugin` (Halo/Dynamic Island), and global `useWikiPrefetch` |
-| **Reader components** | `src/components/wiki-os/reader/` | `ArticleRenderer.tsx`, `ArticleHeader.tsx`, `ArticleModals.tsx`, `ArticlePlaceholders.tsx`, `ArticleCategories.tsx`, `ArticleFooter.tsx`, `WikiOSMainPage.tsx`, `StickyToc.tsx`, `InfoboxWithMap.tsx`, `LinkPreview.tsx` |
-| **Editor components** | `src/components/wiki-os/editor/` | `WikiEditBridge.tsx`, `WikiVisualEditor.tsx`, `WikiSourceEditor.tsx`, `template-modals/` (`InfoboxCountryModal`, `CountryStatsModal`, `BusinessStatsModal`, `MapCoordsModal`), `TemplateInserter.tsx`, `ImageSearchModal.tsx` |
-| **Shell & Nav** | `src/components/wiki-os/shared/` | `WikiOSLayout.tsx`, `WikiOSUnifiedSidebar.tsx`, `WikiContext.tsx`, `useWikiOSShortcuts.ts` |
-| **Hooks** | `src/hooks/` | `useWikiPrefetch.ts` (speculative hover/touch prefetcher), `useWikiNarrator.ts` |
-| **Engine Core** | `src/lib/wiki-os/` | Pure standalone wiki engine (`@wikios/core`): `config.ts`, `types.ts`, `storage-driver.ts` + `drivers/`, `wikios-cache.ts`, `sync-queue.ts`, `draft-store.ts`, `parsoid-client.ts`, `html-transformer.ts`, `template-registry.ts`, `template-resolver.ts`, `article-store.ts`, `search-service.ts`, `bridge.ts`, `infobox-parser.ts`, `image-url.ts`, `auth.ts`, `use-wiki-auth.ts`, `storage.ts`, `wikitext-diff.ts`, `csrf-cache.ts`, `fix-editor-images.ts` |
-| **Shared Server** | `src/server/shared/` | `wiki-placeholders.ts` (cross-router dynamic stat resolver), `ixstats-template-provider.ts` (host-app template provider) |
-| **Ops & Cutover** | `scripts/ops/` | `stage3-nginx-cutover.conf` (Nginx lockdown), `verify-stage3-cutover.ts` (verification audit) |
-| **Styles** | `src/styles/wiki-os.css` | Design system entry + variables, `content-visibility`, elements, components, lorewards, animations |
-
-**Parsoid & API Bridge:** `lib/wiki-os/parsoid-client.ts` fetches rendered HTML from the MediaWiki Parsoid REST API (localhost loopback, cached). `html-transformer.ts` post-processes it (infobox/TOC/notice extraction). All wiki network requests strictly send `DEFAULT_USER_AGENT = "IxStats-Builder"` via `src/lib/wiki-os/config.ts`.
-
----
-
-## 4. Multi-Tier Resilient Storage Waterfall
-
-WikiOS uses a 4-tier storage hierarchy to ensure 100% availability even during MediaWiki maintenance:
+## 3. Architecture & Scaffolding Map
 
 ```
-[Tier 1: Fresh PostgreSQL Shadow] (<5ms)
-       │ (Cache Miss)
-       ▼
-[Tier 2: Direct MariaDB MySQL] (~38ms)
-       │ (MySQL Offline / Cold Page)
-       ▼
-[Tier 3: MediaWiki Action API HTTP] (~400ms)
-       │ (Network Down / 502 Bad Gateway)
-       ▼
-[Tier 4: Stale Shadow Fallback] (stale: true, <5ms)
+src/lib/wiki-os/
+├── index.ts                   # Root unified barrel export
+├── config.ts                  # Configuration, WikiSource definitions & endpoints
+├── types.ts                   # Nominal contracts & base types
+├── auth.ts                    # User identity & role abstraction seam
+├── page-ref.ts                # Page reference (title + wiki source)
+│
+├── core/                      # Authoritative PostgreSQL Domain Services
+│   ├── domain-types.ts        # Nominal types
+│   ├── wiki-ast.ts            # IxWiki AST block model
+│   ├── media-asset-service.ts # wiki_assets registry (+ blurhash-service.ts)
+│   ├── article-repository.ts  # Authoritative CRUD repository (<2ms read, <10ms write)
+│   ├── link-graph-service.ts  # Link extractor & O(1) relational backlink graph engine
+│   ├── native-search-service.ts # Two-tier Spotlight autocomplete (<1.5ms) & full-text search
+│   └── category-service.ts    # Recursive category tree DAG & member lookups
+│
+├── guardian/                  # Security & Edge Defense
+│   └── cloudflare-guardian.ts # global CDN cache purges on save
+│
+├── adapters/                  # External Service Adapters & Background Workers
+│   └── mediawiki/             # Legacy MediaWiki compatibility & federation suite
+│       ├── parsoid.ts         # Parsoid & Action API HTML <-> wikitext converter
+│       ├── write-service.ts   # The mirror bot's Action API calls (typed errors, XML import upload)
+│       ├── csrf-cache.ts      # The mirror bot's login + CSRF token (no anonymous fallback)
+│       ├── timestamp.ts       # 14-digit timestamp conversion
+│       └── bridge/            # PostgreSQL readers (pg-*.ts) & external wiki HTTP federators
+│
+├── transformers/              # Content Transformers, Parsers & Formatters
+│   ├── html-transformer.ts    # Server-side HTML post-processor (Infobox, TOC, Notices)
+│   ├── infobox-parser.ts      # Zero-dependency wikitext infobox & template tokenizer
+│   ├── wikitext-diff.ts       # Visual wikitext LCS diff calculator
+│   ├── image-url.ts           # Client-safe image URL & thumbnail resolver
+│   ├── url-compat.ts          # Canonical wiki route rewriting
+│   ├── fix-editor-images.ts   # Image sanitizer for editor visual canvas
+│   ├── safe-decode.ts         # Resilient URI decoder utility
+│   ├── media-theme.ts         # Theme-aware media switcher (Auto/Plinth/Dark)
+│   └── resolve-highres-image.ts # Vector SVG and high-res thumbnail un-scaler
+│
+├── templates/                 # Template Engine & Registry
+│   ├── template-resolver.ts   # Pluggable wikitext template provider registry
+│   ├── template-registry.ts   # Client-side TemplateData registry & parameter schemas
+│   ├── master-presets.ts      # Template presets for the slash menu
+│   └── preview-service.ts     # Tiered template preview cache (+ .server.ts)
+│
+├── editor/                    # Editor State & Embeds
+│   ├── draft-store.ts         # LocalStorage visual & source draft persistence
+│   ├── local-cache.ts         # LocalStorage wiki data cache
+│   └── wiki-embed-shared.ts   # Shared CSS/JS bundle definitions for interactive embeds
+│
+├── wikitext/                  # Wikitext parser & serializer
+└── services/
+    └── auto-sync-service.ts   # MediaWiki recentchanges → PostgreSQL sync (cron + webhook)
 ```
 
-1. **Local Postgres Shadow (`prisma/schema/wiki.prisma`)**: Holds `wiki_articles` (shadow wikitext and pre-rendered transformed HTML) and `wiki_revisions` (append-only revision history).
-2. **Background Warmth Cron (`src/server/cron/sync-wiki-recentchanges.ts`)**: Runs every 2–5 minutes, polling MediaWiki `recentchanges` to keep the local PostgreSQL shadow store 100% warm.
-3. **Dual-Write on Save (`recordArticleRevision`)**: Every user edit writes through to MediaWiki and immediately updates `WikiArticle` and `WikiRevision` locally.
-
 ---
 
-## 5. Packaging & Portability Seams (Graduation to `@wikios/core`)
+## 4. Performance Latency Benchmarks
 
-WikiOS is structurally decoupled from IxStates so it can be packaged independently for any worldbuilding community:
-
-| Seam | File(s) | Swap Point |
-|------|---------|------------|
-| **Auth (identity + admin)** | `lib/wiki-os/auth.ts`, `lib/wiki-os/use-wiki-auth.ts` | Map your auth provider here. **Zero `@clerk` imports remain in WikiOS code** outside `use-wiki-auth.ts`. |
-| **Storage / identity** | `lib/wiki-os/storage.ts` | User↔Country lookups live only here. |
-| **Pluggable Storage Drivers** | `lib/wiki-os/storage-driver.ts`, `lib/wiki-os/drivers/` | Switch between `PostgresStorageDriver`, `SqliteStorageDriver`, or `MemoryStorageDriver`. |
-| **Template Data Providers** | `lib/wiki-os/template-resolver.ts` | Pluggable template resolvers. Host database models (`Country`, `PointOfInterest`) are isolated in `server/shared/ixstats-template-provider.ts`. |
-| **Runtime Config & Loopback** | `lib/wiki-os/config.ts` | Configures endpoints and loopback overrides (`WIKIOS_MEDIAWIKI_INTERNAL_URL`). |
-
----
-
-## 6. Data Sources (Unified tRPC Router)
-
-| Router | File Location | Scope |
-|--------|---------------|-------|
-| `api.wikios.*` | `src/server/api/routers/wikios/` (split: editing, page-content, search-categories, stash, templates, user-talk, watchlist-annotations) | Master WikiOS API (reader, editor, stash, talk, templates, categories, annotations, media search, fast shadow search, recent changes sync) (~65 procedures) |
-| `api.lorewards.*` | `src/server/api/routers/lorewards/` | Awards, leaderboard, streaks, user stats, cross-validation |
-| `api.blurbs.*` | `src/server/api/routers/blurbs/` | Topic-Tuesday prompts & responses |
-| `api.wikiCache.*`, `api.wikiImporter.*` | `src/server/api/routers/wikiCache`, `src/server/api/routers/wikiImporter` | Cache + import support |
-
----
-
-## 7. Architectural Boundaries
-
-1. **Core Engine (`src/lib/wiki-os/`)**: Standalone engine (`@wikios/core`). Zero IxStates game model imports (`Country`, `Card`, `PointOfInterest`). See [`src/lib/wiki-os/README.md`](../../lib/wiki-os/README.md).
-2. **IxStates Game Adapters (`src/lib/wiki/`)**: Host application adapters (Lore Card Studio in `src/lib/cards/`, National Factbooks, Map Pin Mappers) that consume WikiOS through its public APIs. See [`src/lib/wiki/README.md`](../../lib/wiki/README.md).
-
-Version: `WIKIOS_VERSION` in `src/lib/buildVersion.ts`.
+| Operation | Target Latency | Implementation Mechanism |
+| :--- | :--- | :--- |
+| **Article Read** | `< 2 ms` | Pre-compiled `contentHtml` query from PostgreSQL indexed by `(source, title)` |
+| **Spotlight Autocomplete** | `< 1.5 ms` | In-memory prefix matching + PostgreSQL GIN index |
+| **Article Write** | `< 10 ms` | Atomic PostgreSQL transaction + non-blocking background sync queue |
+| **Backlinks Lookup** | `< 1 ms` | Indexed relational lookup on `wiki_links(targetSlug)` |
+| **Category DAG Query** | `< 3 ms` | CTE recursive query traversing hierarchical category tree |
+| **DOM First Paint** | `< 16 ms` | CSS `content-visibility: auto` with layout containment |

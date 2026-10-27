@@ -6,315 +6,192 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { htmlToWikitext, wikitextToHtml } from "~/lib/wiki-os/parsoid-client";
-import { getWikiAuth } from "~/lib/wiki-os/auth";
-import { transformWikiLinks } from "~/lib/wiki-os/url-compat";
+import { TRPCError } from "@trpc/server";
 import {
-  getRevisionWikitextShadow,
-  getArticleHistoryShadow,
-} from "~/lib/wiki-os/article-store";
+  createTRPCRouter,
+  lightMutationProcedure,
+  rateLimitedPublicProcedure,
+  readOnlyProcedure,
+} from "~/server/api/trpc";
+import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
+import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import {
+  transformArticleHtml,
+  stripConflictingStyles,
+} from "~/lib/wiki-os/transformers/html-transformer";
+import { getWikiActorLabel, requireWikiUserId } from "~/lib/wiki-os/auth";
+import {
+  authorizeAction,
+  canSeeDeletedPages,
+  refusals,
+  requireCanonicalTitle,
+  requireRight,
+} from "~/lib/wiki-os/permissions";
+import { assertCanEditArticle, saveOrConflict } from "~/lib/wiki-os/services/edit-service";
+import { revertPage, rollbackPage } from "~/lib/wiki-os/services/revert-service";
+import {
+  overwrittenRestorable,
+  restoreOverwrittenText,
+} from "~/lib/wiki-os/services/conflict-restore";
 
-import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wiki-os/csrf-cache";
-import {
-  saveToMediaWiki,
-  cleanHtmlForParsoid,
-  updateFileUploadActor,
-} from "~/lib/wiki-os/wiki-write-service";
+/** A conflict and one revision it overwrote, as the notice's diff names them. */
+const overwrittenInput = z.object({ conflictId: z.string().max(64), ref: z.string().max(64) });
+
+/** The reason of a refusal as a reader sees it: the message without its MediaWiki-style code (`protectedpage: `). */
+const reasonOf = (message: string): string => message.replace(/^[a-z]+: /, "");
 
 export const wikiosEditingRouter = createTRPCRouter({
-  // ---------------------------------------------------------------------------
-  // Reader endpoints
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // History & Diff endpoints (Phase 3)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Editor endpoints (Phase 2)
-  // ---------------------------------------------------------------------------
+  /**
+   * Whether the caller may edit `title` (or create it, when it does not exist): the gate a save passes
+   * (`assertCanEditArticle`), asked beforehand, so a reader who cannot edit is shown the page's source
+   * instead of an editor whose save would be refused. A refusal is an answer, not an error.
+   */
+  getEditAccess: rateLimitedPublicProcedure
+    .input(z.object({ title: z.string().min(1).max(500) }))
+    .query(async ({ input, ctx }) => {
+      try {
+        await assertCanEditArticle(ctx, requireCanonicalTitle(input.title));
+        return { allowed: true as const, reason: null };
+      } catch (error) {
+        const refused =
+          error instanceof TRPCError &&
+          (error.code === "FORBIDDEN" || error.code === "PRECONDITION_FAILED");
+        if (!refused) throw error;
+        // A deleted page ("PRECONDITION_FAILED: deleted") does not exist for a reader who may not see deleted
+        // pages: they get the answer a missing title gets, so this query never reveals that a page was deleted.
+        if (error.code === "PRECONDITION_FAILED" && !(await canSeeDeletedPages(ctx))) {
+          return { allowed: true as const, reason: null };
+        }
+        return { allowed: false as const, reason: reasonOf(error.message) };
+      }
+    }),
 
   /**
-   * Preview wikitext by converting it to HTML via Parsoid.
+   * Preview wikitext by converting it to HTML via Parsoid. Signed-in only: it forwards up to 200k
+   * characters to MediaWiki's parser, so a public endpoint would be an anonymous render proxy.
    */
-  previewWikitext: publicProcedure
+  previewWikitext: readOnlyProcedure
     .input(
       z.object({
-        wikitext: z.string(),
+        wikitext: z.string().max(200_000),
         title: z.string().min(1).max(500),
       })
     )
     .mutation(async ({ input }) => {
-      const html = await wikitextToHtml(input.wikitext, input.title);
-      return { html: transformWikiLinks(html) };
-    }),
-
-  /**
-   * Convert wikitext directly to editor-ready Parsoid HTML.
-   */
-  convertWikitextToHtml: protectedProcedure
-    .input(
-      z.object({
-        wikitext: z.string(),
-        title: z.string().min(1).max(500),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const html = await wikitextToHtml(input.wikitext, input.title);
-      const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-      const bodyHtml = bodyMatch ? bodyMatch[1]! : html;
-      return { html: bodyHtml };
-    }),
-
-  /**
-   * Convert HTML (from PlateJS editor) back to wikitext via Parsoid.
-   */
-  htmlToWikitext: protectedProcedure
-    .input(
-      z.object({
-        html: z.string(),
-        title: z.string().min(1).max(500),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const result = await htmlToWikitext(input.html, input.title);
-      return { wikitext: result.wikitext };
-    }),
-
-  /**
-   * Save an article edit via MediaWiki Action API.
-   * Converts HTML to wikitext first, then saves.
-   */
-  saveArticle: protectedProcedure
-    .input(
-      z.object({
-        title: z.string().min(1).max(500),
-        html: z.string(),
-        summary: z.string().max(500).default(""),
-        minor: z.boolean().default(false),
-        basetimestamp: z.string().optional(),
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      const cleanedHtml = cleanHtmlForParsoid(input.html);
-      const { wikitext } = await htmlToWikitext(cleanedHtml, input.title);
-      return saveToMediaWiki(
-        input.title,
-        wikitext,
-        input.summary,
-        input.minor,
-        ctx,
-        input.basetimestamp
-      );
+      const rawHtml = await wikitextToHtml(input.wikitext, requireCanonicalTitle(input.title));
+      const transformed = transformArticleHtml(stripConflictingStyles(rawHtml), "", "ixwiki");
+      const infoboxPrefix = transformed.infoboxHtml
+        ? `<div class="wikios-infobox-container mb-4 float-right clear-right max-w-[340px] ml-4">${transformed.infoboxHtml}</div>`
+        : "";
+      const noticesPrefix = transformed.noticesHtml
+        ? `<div class="wikios-notices-container mb-4">${transformed.noticesHtml}</div>`
+        : "";
+      // MediaWiki's HTML, from a user's wikitext: sanitized before it is handed back.
+      return {
+        html: sanitizeWikiArticleHtml(noticesPrefix + infoboxPrefix + transformed.contentHtml),
+      };
     }),
 
   /**
    * Save wikitext directly (from source editor).
    */
-  saveWikitext: protectedProcedure
+  saveWikitext: lightMutationProcedure
     .input(
       z.object({
         title: z.string().min(1).max(500),
-        wikitext: z.string(),
+        // MediaWiki's own page size limit (2 MB).
+        wikitext: z.string().max(2_000_000),
         summary: z.string().max(500).default(""),
         minor: z.boolean().default(false),
-        basetimestamp: z.string().optional(),
+        /** `revisionRef` of the page when the editor loaded it; absent for a page that did not exist. */
+        baseRevisionRef: z.string().max(64).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return saveToMediaWiki(
-        input.title,
-        input.wikitext,
-        input.summary,
-        input.minor,
-        ctx,
-        input.basetimestamp
-      );
+      const title = requireCanonicalTitle(input.title);
+      await assertCanEditArticle(ctx, title);
+
+      // The edit-conflict check is the save's own (atomic, under the page's lock): no base means the editor
+      // believes the page does not exist yet.
+      const outcome = await saveOrConflict(ctx, {
+        title,
+        wikitext: input.wikitext,
+        summary: input.summary,
+        minor: input.minor,
+        expectedHeadRef: input.baseRevisionRef ?? null,
+      });
+      return outcome.success ? { ...outcome, title } : outcome;
     }),
 
-  // ---------------------------------------------------------------------------
-  // Template Registry (Phase 1)
-  // ---------------------------------------------------------------------------
+  /**
+   * "Restore my text": the caller's text a collision overwrote, saved again as a new edit on the page's head (see
+   * conflict-restore.ts). An edit that landed meanwhile returns the edit conflict, as a save does.
+   */
+  restoreOverwritten: lightMutationProcedure
+    .input(overwrittenInput)
+    .mutation(({ input, ctx }) => restoreOverwrittenText(ctx, input)),
 
-  // ---------------------------------------------------------------------------
-  // Lore Stash — save-for-later with color-coded collections
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Annotations
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // User Info (for WikiOS profiles)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Rollback / Undo endpoints
-  // ---------------------------------------------------------------------------
+  /** What the diff view offers for that overwritten text: the restore, editing by hand, or nothing. */
+  overwrittenRestorable: rateLimitedPublicProcedure
+    .input(overwrittenInput)
+    .query(({ input, ctx }) => overwrittenRestorable(ctx, input)),
 
   /**
-   * Revert a page to a specific revision.
-   * Fetches the old revision's wikitext and saves it as a new edit.
+   * Revert a page to a specific revision: its text saved as a new edit, on top of `baseRevisionRef` (the newest revision
+   * the reader saw; absent: the head read now, see revert-service.ts). A newer edit returns the edit conflict, as a save
+   * does.
    */
-  revertToRevision: protectedProcedure
+  revertToRevision: lightMutationProcedure
     .input(
       z.object({
         title: z.string().min(1).max(500),
-        revid: z.number(),
+        revid: z.string().min(1).max(64),
         summary: z.string().max(500).optional(),
+        baseRevisionRef: z.string().min(1).max(64).optional(),
       })
     )
-    .mutation(async ({ input, ctx }) => {
-      const oldRev = await getRevisionWikitextShadow(input.revid, "ixwiki");
-      if (!oldRev) throw new Error("Target revision not found");
-
-      const summary = input.summary ?? `Reverted to revision ${input.revid}`;
-      return saveToMediaWiki(input.title, oldRev.wikitext, summary, false, ctx);
-    }),
+    .mutation(({ input, ctx }) =>
+      revertPage(ctx, { ...input, title: requireCanonicalTitle(input.title) })
+    ),
 
   /**
-   * Quick rollback: revert all consecutive edits by the last editor.
-   * Finds the most recent revision by a different user and reverts to it.
+   * Quick rollback: undoes the consecutive edits of the page's last editor, on top of `baseRevisionRef` (the newest
+   * revision the reader saw; absent: the head the history was read at, see revert-service.ts). A newer edit returns the
+   * edit conflict, as a save does.
    */
-  rollback: protectedProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .mutation(async ({ input, ctx }) => {
-      // Read-through: serve from shadow history with MySQL fallback
-      const history = await getArticleHistoryShadow(input.title, 50, "ixwiki");
-      const revisions = history.revisions;
-      if (revisions.length < 2) throw new Error("Not enough revisions to rollback");
-
-      const lastEditor = revisions[0]!.user;
-      const targetRev = revisions.find((r) => r.user !== lastEditor);
-      if (!targetRev) throw new Error("All revisions are by the same user");
-
-      const oldContent = await getRevisionWikitextShadow(targetRev.revid, "ixwiki");
-      if (!oldContent) throw new Error("Could not fetch target revision content");
-
-      const summary = `Rolled back edits by ${lastEditor} to revision ${targetRev.revid}`;
-      return saveToMediaWiki(input.title, oldContent.wikitext, summary, false, ctx);
-    }),
-
-  // ---------------------------------------------------------------------------
-  // Talk / Discussion Pages
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // File Upload
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Upload a file to MediaWiki.
-   * Accepts base64-encoded file data with metadata.
-   */
-  uploadFile: protectedProcedure
+  rollback: lightMutationProcedure
     .input(
       z.object({
-        filename: z.string().min(1).max(500),
-        fileBase64: z.string(),
-        description: z.string().max(10000).default(""),
-        comment: z.string().max(500).default("Uploaded via WikiOS"),
+        title: z.string().min(1).max(500),
+        baseRevisionRef: z.string().min(1).max(64).optional(),
+      })
+    )
+    .mutation(({ input, ctx }) =>
+      rollbackPage(ctx, requireCanonicalTitle(input.title), input.baseRevisionRef)
+    ),
+
+  /**
+   * Restore an Archived Article
+   */
+  restoreArticle: lightMutationProcedure
+    .input(
+      z.object({
+        title: z.string().min(1).max(500),
+        realm: z.string().default("ixwiki"),
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
-
-      // Validate file size (10MB max)
-      const fileBuffer = Buffer.from(input.fileBase64, "base64");
-      if (fileBuffer.length > 10 * 1024 * 1024) {
-        throw new Error("File size exceeds 10MB limit");
-      }
-
-      let { cookies, csrfToken } = await getUserSessionAndToken(ctx);
-      const { wikiUsername } = getWikiAuth(ctx);
-
-      let attempt = 0;
-      let uploadData: {
-        upload?: {
-          result: string;
-          filename?: string;
-          imageinfo?: { url?: string; descriptionurl?: string };
-        };
-        error?: { code: string; info: string };
-      } | null = null;
-
-      while (attempt < 2) {
-        // Build multipart form data
-        const formData = new FormData();
-        formData.append("action", "upload");
-        formData.append("filename", input.filename);
-        formData.append("comment", `${input.comment} (via WikiOS)`);
-        formData.append("token", csrfToken);
-        formData.append("format", "json");
-        formData.append("ignorewarnings", "1");
-        formData.append("file", new Blob([fileBuffer]), input.filename);
-
-        const uploadRes = await fetch(apiBase, {
-          method: "POST",
-          headers: {
-            Cookie: cookies.join("; "),
-          },
-          body: formData,
-        });
-
-        uploadData = (await uploadRes.json()) as {
-          upload?: {
-            result: string;
-            filename?: string;
-            imageinfo?: { url?: string; descriptionurl?: string };
-          };
-          error?: { code: string; info: string };
-        };
-
-        if (uploadData.error) {
-          if (uploadData.error.code === "badtoken" && attempt === 0) {
-            console.warn(
-              "[Editing Router] Bad token for upload. Invalidating cache and retrying..."
-            );
-            invalidateCsrfToken();
-            const fresh = await getUserSessionAndToken(ctx);
-            cookies = fresh.cookies;
-            csrfToken = fresh.csrfToken;
-            attempt++;
-            continue;
-          }
-          throw new Error(`Upload failed: ${uploadData.error.info}`);
-        }
-
-        break;
-      }
-
-      if (uploadData?.error) {
-        throw new Error(`Upload failed: ${uploadData.error.info}`);
-      }
-
-      if (uploadData?.upload?.result === "Success" && wikiUsername) {
-        await updateFileUploadActor(uploadData.upload.filename ?? input.filename, wikiUsername);
-      }
-
-      return {
-        success: uploadData?.upload?.result === "Success",
-        filename: uploadData?.upload?.filename ?? input.filename,
-        url: uploadData?.upload?.imageinfo?.url ?? null,
-        descriptionUrl: uploadData?.upload?.imageinfo?.descriptionurl ?? null,
-      };
+      // The right first, so a caller without it learns nothing about which titles are valid.
+      await requireRight(ctx, "undelete");
+      const title = requireCanonicalTitle(input.title, input.realm);
+      await authorizeAction(ctx, "undelete", title, input.realm);
+      const { PageManagementService } = await import("~/lib/wiki-os/core/page-management-service");
+      return refusals(
+        PageManagementService.restoreArticle(
+          title,
+          { userId: requireWikiUserId(ctx), name: getWikiActorLabel(ctx) },
+          input.realm
+        )
+      );
     }),
-
-  // ---------------------------------------------------------------------------
-  // Page Properties & Protection (direct MySQL)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Advanced Search (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Category Tree (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Watchlist endpoints (backed by the LoreStash "Watchlist" stash)
-  // ---------------------------------------------------------------------------
 });
-

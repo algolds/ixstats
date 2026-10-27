@@ -140,8 +140,4 @@ export const pollsManagementRouter = createTRPCRouter({
     });
     return { success: true };
   }),
-
-  // Register user vote
-
-  // Get status of a poll for the current user
 });

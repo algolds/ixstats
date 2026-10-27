@@ -5,6 +5,8 @@
  * For direct window.location.href assignments, we need to manually add the base path.
  */
 
+import { toRouterPath } from "~/lib/base-path";
+
 // Get base path from environment (must match next.config.js)
 const BASE_PATH =
   process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true"
@@ -46,19 +48,11 @@ export function createAbsoluteUrl(path: string): string {
 }
 
 /**
- * Creates a properly prefixed asset URL for the current environment
- * @param assetPath - The asset path (should start with /)
- * @returns The full asset path with base path prefix in production
- */
-export function createAssetUrl(assetPath: string): string {
-  return createUrl(assetPath);
-}
-
-/**
- * Helper for Next.js router.push() calls to use correct base path
+ * Helper for Next.js router.push() calls: the router adds the base path itself, so a path that already carries it
+ * (from createUrl) is handed over without it
  * @param router - Next.js router instance
  * @param path - The path to navigate to (should start with /)
  */
 export function navigateTo(router: any, path: string): void {
-  router.push(createUrl(path));
+  router.push(toRouterPath(path));
 }

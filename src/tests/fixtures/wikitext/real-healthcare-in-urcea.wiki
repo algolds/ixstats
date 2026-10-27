@@ -1,0 +1,41 @@
+{{Urcea WIP}}
+[[File:039 Hospital de Sant Pau, edifici d'Administració, cos central i torre del rellotge.JPG|thumb|right|120px|The Carmelite Alms-Medical School at [[Collegium_Scientificum#St._John's_University|Saint John's University]].]]
+'''[[Urcea]]''' has a universal multi-payer health care system paid for by a combination of statutory, state-funded health insurance officially called [[Ministry_of_Administration_of_the_Realm_(Urcea)#Agency_for_the_King.27s_Health_Aid_Administration|King's Health Aid]] (KHA) and private health-insurance. The system, which provides a public health insurance option, sees approximately 65% of citizens using the KHA System and the remaining percent using private health insurance plans. In the 2014-15 fiscal year, expenditures on the King's Health Aid was approximately $4.3 trillion dollars, or around 6% of the GDP and around $3,024 per capita.
+
+In 2020, Urcea ranked highly in the world in life expectancy (80.5 years for men). It had a very low infant mortality rate (4.1 per 1,000 live births), and it ranked highly in the number of practicing physicians, at 3.7 per 1,000 persons. While outcomes, hospital wait times, and quality of care in Urcea are all considered to be "very good", the nation's healthcare system at times has come under criticism for its adherence to Catholic social teaching, and [[Discrimination around the world|LGBT advocates]] as well as [[Abortion around the world|pro-choice advocates]] ranked it the "Most Regressive Healthcare System in the World" in 2021 due to the [[Illegal vice trade in Urcea|illegality of abortion and contraceptives]], among other practices.
+
+== History ==
+Prior to the enactment of the King's Health Aid Act of 2007, Urcea's healthcare system relied primarily on private health-insurance and a series of safety net health insurance programs for the poor and elderly. Healthcare coverage was provided through a combination of private health insurance and this public health coverage system. [[Guilds (Urcea)|Guilds]] made up the largest share of private insurers, but a minority of guilds had the requisite members and funding to self-insure. Despite the emphasis on private coverage, in 2003, 64% of health spending was paid for by the government, and funded via programs as mentioned in addition to the Children's Health Insurance Program, and the [[Ministry of the Armed Services (Urcea)#Department%20for%20Veterans.27%20Health|Veterans' Health Department]]. People aged under 65 typically acquired insurance via their or a family member's employer, by purchasing health insurance on their own, or were uninsured. Health insurance for public sector employees was primarily provided by the government in its role as employer. Healthcare was a major issue within the context of the [[Government of Urcea|politics of Urcea]], with the [[National Pact (Urcea)|National Pact]] supporting deregulating and market-based solutions in order to drive down costs, and the [[Commonwealth Union (Urcea)|Commonwealth Union]] supporting a universal single-payer system. The ascension of [[Michael Witte]] to Commonwealth Union leadership and, eventually, the office of [[Procurator]] brought about a major change in the political discussion, as Witte supported a multi-payer system with the "public option" government insurance joining the myriad of private insurers in order to create the "best of both worlds".
+{{Template:Economy of Urcea sidebar}}
+The Witte administration crafted, and managed to pass through the [[Conshilía Daoni]], the King's Health Aid Act of 2007. The bill combined all previous government health insurance programs into the King's Health Aid Administration, and dramatically expanded its funding in order to have it be a functioning competitor within the insurance marketplace. The Act came into effect in 2010, by which time a slim majority of Urceans had enrolled. A 2012 report issued by the [[Ministry of Administration of the Realm (Urcea)#Agency%20for%20the%20King.27s%20Health%20Aid%20Administration|Royal Administration]] called the program an "unmitigated success", improving healthcare outcomes and dramatically reducing the government economic impact and cost to the average patient. Enrollment in the program reached 60% of Urceans in 2014, and reached 65% by 2015. The availability of public healthcare led to some [[Guilds (Urcea)|guilds]] eliminating their self-insurance program, but 10.4% of Urceans were covered under their guild's health insurance program in 2015.
+
+== Statistics ==
+{| class="wikitable"
+| colspan="8" |'''Urcea 2015 mortality and life expectancy in a global context'''
+|-
+!'''Indictor'''
+!'''[[Urcea]]'''
+!'''[[Levantia]] Region'''
+|-
+|'''Under-five child mortality rate'''
+(deaths per 1000 live births)
+|4.1
+|9.6
+|-
+|'''Maternal mortality ratio'''
+(deaths per 100,000 live births)
+|8
+|16
+|-
+|'''Life expectancy'''
+(at birth in years)
+|84.6 (females)
+80.5 (males)
+|80.2 (females)
+73.2 (males) 
+|}
+[[Category: Urcea]]
+[[Category: Government of Urcea]]
+[[Category: Health]]
+[[Category: IXWB]]
+[[Category:Economy of Urcea]]

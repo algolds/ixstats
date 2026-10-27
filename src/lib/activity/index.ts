@@ -4,5 +4,4 @@
 
 export * from "./generator";
 export * from "./hooks";
-export * from "./auto-post";
 export * from "./event-spine";

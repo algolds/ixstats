@@ -1,6 +1,21 @@
 import * as React from "react";
 
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
+
+/**
+ * Shared field styling: `fill-3` background with a hairline, `rounded-control`, no blur
+ * or refraction; 2px tint focus ring; system red when `aria-invalid`. 16px text below `md` so iOS
+ * does not zoom on focus, `text-body` above.
+ */
+export const fieldStyles = [
+  "border border-separator bg-fill-3 text-label placeholder:text-label-tertiary",
+  "selection:bg-tint selection:text-on-tint",
+  "transition-[color,background-color,border-color,box-shadow] duration-150 ease-out-facet",
+  "hover:bg-fill-2",
+  "outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-tint",
+  "aria-invalid:border-destructive aria-invalid:focus-visible:outline-destructive",
+  "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-fill-3",
+].join(" ");
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
@@ -8,14 +23,9 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       type={type}
       data-slot="input"
       className={cn(
-        "file:text-foreground placeholder:text-muted-foreground/80 selection:bg-primary selection:text-primary-foreground",
-        "flex h-9 w-full min-w-0 rounded-md border border-neutral-200 bg-white/50 dark:border-white/[0.08] dark:bg-white/[0.015]",
-        "px-3 py-1 text-base shadow-[0_1.5px_3px_rgba(0,0,0,0.04)] transition-all duration-200 outline-none hover:shadow-xs dark:shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]",
-        "file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium",
-        "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-        "hover:border-neutral-300 hover:bg-white/70 dark:hover:border-white/[0.12] dark:hover:bg-white/[0.03]",
-        "focus:scale-[1.01] focus:border-amber-500/60 focus:bg-white/95 focus:shadow-md focus:ring-[2.5px] focus:shadow-amber-500/20 focus:ring-amber-500/20 dark:focus:bg-gray-800/90",
-        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+        fieldStyles,
+        "rounded-control md:text-body flex h-(--control-height) w-full min-w-0 px-3 py-1 text-base",
+        "file:text-body file:text-label file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium",
         className
       )}
       {...props}

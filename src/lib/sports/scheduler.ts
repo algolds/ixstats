@@ -1,24 +1,34 @@
+import type { PrismaClient } from "@prisma/client";
 import type { ArchetypeType } from "./presets";
 
-const ONE_IXDAY_MS = 86_400_000;
+const ONE_DAY_MS = 86_400_000;
 
 /**
- * IxTime gap between consecutive matchdays, read from a league's `settings` JSON.
- * Defaults to 1 IxDay (current behavior). Set `matchIntervalDays: 7` for a
- * weekly (in IxTime) cadence.
+ * Default gaps, in real days. Sports used to run on IxTime days (12 real hours at 2×); on real time these halved
+ * defaults keep the old pace.
+ */
+export const DEFAULT_MATCH_INTERVAL_DAYS = 0.5;
+export const DEFAULT_RACE_INTERVAL_DAYS = 1.5;
+/** Gap before a knockout bracket's next round. */
+export const BRACKET_ROUND_GAP_MS = 1 * ONE_DAY_MS;
+
+/**
+ * Real-time gap between consecutive matchdays, read from a league's `settings` JSON.
+ * Defaults to half a day. Set `matchIntervalDays: 3.5` for a twice-weekly cadence. Sports are
+ * platform-wide, so they run on real time, not on a realm clock.
  */
 export function matchIntervalMs(settings: unknown): number {
   const days = (settings as { matchIntervalDays?: number } | null)?.matchIntervalDays;
-  return (typeof days === "number" && days > 0 ? days : 1) * ONE_IXDAY_MS;
+  return (typeof days === "number" && days > 0 ? days : DEFAULT_MATCH_INTERVAL_DAYS) * ONE_DAY_MS;
 }
 
-/** IxTime gap between races; defaults to 3 IxDays. Override via `raceIntervalDays`. */
+/** Real-time gap between races; defaults to a day and a half. Override via `raceIntervalDays`. */
 export function raceIntervalMs(settings: unknown): number {
   const days = (settings as { raceIntervalDays?: number } | null)?.raceIntervalDays;
-  return (typeof days === "number" && days > 0 ? days : 3) * ONE_IXDAY_MS;
+  return (typeof days === "number" && days > 0 ? days : DEFAULT_RACE_INTERVAL_DAYS) * ONE_DAY_MS;
 }
 
-export interface Fixture {
+interface Fixture {
   matchDay: number;
   homeTeamIndex: number;
   awayTeamIndex: number;
@@ -26,7 +36,7 @@ export interface Fixture {
   awayTeamId?: string;
 }
 
-export interface DivisionConfig {
+interface DivisionConfig {
   name: string;
   teamIndices: number[];
 }
@@ -324,5 +334,76 @@ export function generateSchedule(args: {
 
     default:
       throw new Error(`Unknown archetype: ${args.archetype}`);
+  }
+}
+
+/**
+ * Create a new season's fixtures: a race calendar (circuit), round-one bracket pairings
+ * (bracket) or the match schedule (league / division_conference).
+ */
+export async function persistSeasonSchedule(
+  db: Pick<PrismaClient, "sportRace" | "sportBracket" | "sportMatch">,
+  args: {
+    seasonId: string;
+    startIxTime: number;
+    league: { archetype: string; settings: unknown };
+    teams: Array<{ id: string }>;
+  }
+): Promise<void> {
+  const { seasonId, startIxTime, league, teams } = args;
+  const teamIds = teams.map((t) => t.id);
+
+  if (league.archetype === "circuit") {
+    const schedule = generateSchedule({
+      archetype: league.archetype as ArchetypeType,
+      teamCount: teamIds.length,
+      raceCount: (league.settings as Record<string, unknown> | null)?.raceCount as
+        number | undefined,
+    });
+    // The circuit generator emits one fixture per team per race: one race per distinct matchDay.
+    const raceNumbers = [...new Set(schedule.map((f) => f.matchDay))];
+    for (const raceNumber of raceNumbers) {
+      await db.sportRace.create({
+        data: {
+          seasonId,
+          raceNumber,
+          circuitName: `Race ${raceNumber}`,
+          status: "upcoming",
+          raceIxTime: startIxTime + raceNumber * raceIntervalMs(league.settings),
+        },
+      });
+    }
+  } else if (league.archetype === "bracket") {
+    const shuffled = [...teams].sort(() => Math.random() - 0.5);
+    for (let i = 0; i + 1 < shuffled.length; i += 2) {
+      await db.sportBracket.create({
+        data: {
+          seasonId,
+          round: 1,
+          fighter1Id: shuffled[i]!.id,
+          fighter2Id: shuffled[i + 1]!.id,
+          status: "scheduled",
+          scheduledIxTime: startIxTime,
+        },
+      });
+    }
+  } else {
+    const matches = generateSchedule({
+      archetype: league.archetype as ArchetypeType,
+      teamCount: teamIds.length,
+    });
+    for (const m of matches) {
+      const matchDay = m.matchDay;
+      await db.sportMatch.create({
+        data: {
+          seasonId,
+          matchDay,
+          homeTeamId: teamIds[m.homeTeamIndex] ?? teamIds[0],
+          awayTeamId: teamIds[m.awayTeamIndex] ?? teamIds[1] ?? teamIds[0],
+          status: "scheduled",
+          scheduledIxTime: startIxTime + matchDay * matchIntervalMs(league.settings),
+        },
+      });
+    }
   }
 }

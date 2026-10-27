@@ -1,7 +1,8 @@
 import { useEffect } from "react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 export const useWebGLErrorHandler = () => {
+  const notify = useNotify();
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -26,12 +27,10 @@ export const useWebGLErrorHandler = () => {
           })
         );
 
-        toast.error(
+        notify.error(
           "Graphics rendering error detected. Please ensure WebGL and hardware acceleration are enabled in your browser settings.",
-          {
-            id: "webgl-error-toast",
-            duration: 8000,
-          }
+          undefined,
+          { id: "webgl-error-toast", duration: 8000 }
         );
       }
     };
@@ -43,7 +42,7 @@ export const useWebGLErrorHandler = () => {
       // Dispatch event to notify components
       window.dispatchEvent(new CustomEvent("webgl-context-lost"));
 
-      toast.warning("Graphics rendering context lost. Attempting to recover...", {
+      notify.warning("Graphics rendering context lost. Attempting to recover...", undefined, {
         id: "webgl-context-lost-toast",
         duration: 5000,
       });
@@ -55,7 +54,7 @@ export const useWebGLErrorHandler = () => {
       // Dispatch event to notify components
       window.dispatchEvent(new CustomEvent("webgl-context-restored"));
 
-      toast.success("Graphics context restored successfully.", {
+      notify.success("Graphics context restored successfully.", undefined, {
         id: "webgl-context-restored-toast",
         duration: 3000,
       });
@@ -71,5 +70,5 @@ export const useWebGLErrorHandler = () => {
       window.removeEventListener("webglcontextlost", handleContextLost);
       window.removeEventListener("webglcontextrestored", handleContextRestored);
     };
-  }, []);
+  }, [notify]);
 };

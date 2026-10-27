@@ -4,8 +4,11 @@
 // Sentence generator and live translation preview engine
 
 import React from "react";
-import { Cpu, ArrowRight } from "lucide-react";
-import { FacetMaterial } from "~/components/ui/facet";
+import { Cpu, ArrowRight } from "iconoir-react";
+import { Input } from "~/components/ui/input";
+import { ValueSelect } from "~/components/ui/value-select";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Card } from "~/components/ui/card";
 
 interface SyntaxSentenceBuilderProps {
   wordOrder: string;
@@ -87,7 +90,7 @@ export function SyntaxSentenceBuilder({
     const numEnd = isPlural ? pluralSuffix : "";
     const art = isDefinite ? defArticle : indefArticle;
 
-    let adjConlang = adjEnglish ? dictionary[adjEnglish] || adjEnglish : "";
+    const adjConlang = adjEnglish ? dictionary[adjEnglish] || adjEnglish : "";
 
     let nounPhrase = `${baseConlang}${numEnd}${caseEnd}`;
     if (adjConlang) {
@@ -111,7 +114,13 @@ export function SyntaxSentenceBuilder({
   };
 
   // Build the translated sentence
-  const subjectPhrase = inflectNoun(subject, true, subjectPlural, subjectDefinite, subjectAdjective);
+  const subjectPhrase = inflectNoun(
+    subject,
+    true,
+    subjectPlural,
+    subjectDefinite,
+    subjectAdjective
+  );
   const verbPhrase = inflectVerb(verb, verbTense);
   const objectPhrase = inflectNoun(object, false, objectPlural, objectDefinite, objectAdjective);
 
@@ -140,124 +149,113 @@ export function SyntaxSentenceBuilder({
   const englishSentence = `${engSubjArt} ${engSubjAdj}${engSubjNoun} ${engVerb} ${engObjArt} ${engObjAdj}${engObjNoun}.`;
 
   return (
-    <FacetMaterial material="satin" className="rounded-xl border border-border/40 p-5 shadow-sm space-y-4 text-left">
-      <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-        <Cpu className="h-4 w-4 text-[#d946ef]" /> Live Sentence Generator
+    <Card variant="well" padding="none" className="space-y-4 p-5 text-left">
+      <h4 className="text-label text-subhead flex items-center gap-2">
+        <Cpu className="text-indigo h-4 w-4" /> Live sentence generator
       </h4>
 
-      {/* Translation Output Banner */}
-      <div className="rounded-lg border border-[#d946ef]/20 bg-[#d946ef]/5 p-4 space-y-2">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
+      <div className="rounded-control border-indigo/20 bg-indigo/5 space-y-2 border p-4">
+        <div className="text-label-secondary text-footnote flex items-center gap-2 font-semibold">
           <span>Source (English):</span>
-          <span className="text-foreground italic">{englishSentence}</span>
+          <span className="text-label italic">{englishSentence}</span>
         </div>
-        <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-          <ArrowRight className="h-4 w-4 text-[#d946ef]" />
-          <span className="font-mono text-[#d946ef] text-base">{sentence}.</span>
+        <div className="text-label text-body flex items-center gap-2 font-semibold">
+          <ArrowRight className="text-indigo h-4 w-4" />
+          <span className="text-body text-indigo font-mono">{sentence}.</span>
         </div>
       </div>
 
-      {/* Interactive Phrase Tuning */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-xs">
-        {/* Subject */}
-        <div className="space-y-2 rounded-lg border border-border/40 p-3 bg-secondary/10">
-          <span className="font-bold text-foreground block">Subject Noun</span>
-          <input
+      <div className="text-footnote grid grid-cols-1 gap-4 pt-2 md:grid-cols-3">
+        <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
+          <span className="text-label block font-semibold">Subject noun</span>
+          <Input
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="w-full rounded border border-border/60 bg-background px-2 py-1 focus:outline-none"
+            className="w-full"
             placeholder="e.g. dog"
           />
-          <input
+          <Input
             type="text"
             value={subjectAdjective}
             onChange={(e) => setSubjectAdjective(e.target.value)}
-            className="w-full rounded border border-border/60 bg-background px-2 py-1 focus:outline-none"
+            className="w-full"
             placeholder="Adjective (e.g. quick)"
           />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <label className="flex items-center gap-1 cursor-pointer">
-              <input
-                type="checkbox"
+          <div className="text-label-secondary text-caption flex justify-between">
+            <label className="flex cursor-pointer items-center gap-1">
+              <Checkbox
                 checked={subjectPlural}
-                onChange={(e) => setSubjectPlural(e.target.checked)}
-                className="accent-[#d946ef]"
+                onCheckedChange={(checked) => setSubjectPlural(checked === true)}
               />{" "}
               Plural
             </label>
-            <label className="flex items-center gap-1 cursor-pointer">
-              <input
-                type="checkbox"
+            <label className="flex cursor-pointer items-center gap-1">
+              <Checkbox
                 checked={subjectDefinite}
-                onChange={(e) => setSubjectDefinite(e.target.checked)}
-                className="accent-[#d946ef]"
+                onCheckedChange={(checked) => setSubjectDefinite(checked === true)}
               />{" "}
               Definite
             </label>
           </div>
         </div>
 
-        {/* Verb */}
-        <div className="space-y-2 rounded-lg border border-border/40 p-3 bg-secondary/10">
-          <span className="font-bold text-foreground block">Action Verb</span>
-          <input
+        <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
+          <span className="text-label block font-semibold">Action verb</span>
+          <Input
             type="text"
             value={verb}
             onChange={(e) => setVerb(e.target.value)}
-            className="w-full rounded border border-border/60 bg-background px-2 py-1 focus:outline-none"
+            className="w-full"
             placeholder="e.g. eat"
           />
-          <select
+          <ValueSelect
             value={verbTense}
-            onChange={(e) => setVerbTense(e.target.value)}
-            className="w-full rounded border border-border/60 bg-background px-2 py-1 focus:outline-none text-xs"
-          >
-            <option value="present">Present Tense</option>
-            <option value="past">Past Tense</option>
-            <option value="future">Future Tense</option>
-          </select>
+            onValueChange={(v) => setVerbTense(v)}
+            options={[
+              ["present", "Present tense"],
+              ["past", "Past tense"],
+              ["future", "Future tense"],
+            ]}
+            size="sm"
+            className="w-full"
+          />
         </div>
 
-        {/* Object */}
-        <div className="space-y-2 rounded-lg border border-border/40 p-3 bg-secondary/10">
-          <span className="font-bold text-foreground block">Object Noun</span>
-          <input
+        <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
+          <span className="text-label block font-semibold">Object noun</span>
+          <Input
             type="text"
             value={object}
             onChange={(e) => setObject(e.target.value)}
-            className="w-full rounded border border-border/60 bg-background px-2 py-1 focus:outline-none"
+            className="w-full"
             placeholder="e.g. fish"
           />
-          <input
+          <Input
             type="text"
             value={objectAdjective}
             onChange={(e) => setObjectAdjective(e.target.value)}
-            className="w-full rounded border border-border/60 bg-background px-2 py-1 focus:outline-none"
+            className="w-full"
             placeholder="Adjective (e.g. small)"
           />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <label className="flex items-center gap-1 cursor-pointer">
-              <input
-                type="checkbox"
+          <div className="text-label-secondary text-caption flex justify-between">
+            <label className="flex cursor-pointer items-center gap-1">
+              <Checkbox
                 checked={objectPlural}
-                onChange={(e) => setObjectPlural(e.target.checked)}
-                className="accent-[#d946ef]"
+                onCheckedChange={(checked) => setObjectPlural(checked === true)}
               />{" "}
               Plural
             </label>
-            <label className="flex items-center gap-1 cursor-pointer">
-              <input
-                type="checkbox"
+            <label className="flex cursor-pointer items-center gap-1">
+              <Checkbox
                 checked={objectDefinite}
-                onChange={(e) => setObjectDefinite(e.target.checked)}
-                className="accent-[#d946ef]"
+                onCheckedChange={(checked) => setObjectDefinite(checked === true)}
               />{" "}
               Definite
             </label>
           </div>
         </div>
       </div>
-    </FacetMaterial>
+    </Card>
   );
 }

@@ -1,37 +1,55 @@
 "use client";
 
 /**
- * TimelineScrubber — read-only historical timeline control.
- *
- * Lets the user drag a slider to a past IxTime; the host (MapContainer)
- * then swaps the political layer for the snapshot at that IxTime via
- * `api.geoCore.getWorldMapAsOf`. "Return to present" restores the live
- * political layer. The slider is hidden when no BorderHistory rows exist.
+ * Read-only historical timeline: dragging to a past moment makes the host swap the political
+ * layer for that snapshot ("Return to present" restores it). Hidden when no BorderHistory exists.
+ * The slider runs on BorderHistory's real-time stamps; its dates read on the viewed realm's clock,
+ * in its calendar.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api } from "~/trpc/react";
-import { IxTime } from "~/lib/ixtime";
+import { Clock, Xmark } from "iconoir-react";
+import { CLOCK_PENDING, clockTimeAt } from "~/lib/realms/nation-time";
+import { formatRealmDate, type RealmClockReader } from "~/lib/realms/realm-clock";
+import { useHistoryRange, useTimelineClock } from "./hooks/useTimelineClock";
 import { Slider } from "~/components/ui/slider";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetMaterial } from "~/components/ui/facet";
 
 export interface TimelineScrubberProps {
   /** Current scrubber value (epoch ms). `null` = at "now", show live data. */
   value: number | null;
   /** Notify host of new scrub position. `null` means "now". */
   onChange: (value: number | null) => void;
+  /** Realm slug the map shows (`?realm=`); undefined = the viewer's realm. The range is that realm's history. */
+  realm?: string;
   /** Optional: hide entirely (e.g. when no history exists). */
   hidden?: boolean;
+  /** Extra positioning classes from the host (e.g. shift clear of an open side panel). */
+  className?: string;
 }
 
 const SCRUB_DEBOUNCE_MS = 200;
 
-export function TimelineScrubber({ value, onChange, hidden }: TimelineScrubberProps) {
-  const { data: range, isLoading: rangeLoading } = api.geoCore.getHistoryRange.useQuery(undefined, {
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-  });
+/** A real moment as the date it was on the realm's clock, in its calendar ("–" while the clock loads). */
+export function timelineDate(realMs: number, clock: RealmClockReader | null): string {
+  return clock ? formatRealmDate(clockTimeAt(clock, realMs), clock.calendar) : CLOCK_PENDING;
+}
 
-  // No history rows → don't render anything.
+export function TimelineScrubber({
+  value,
+  onChange,
+  realm,
+  hidden,
+  className,
+}: TimelineScrubberProps) {
+  // Collapsed to a small pill by default so the card doesn't sit over the map; it stays open
+  // while a past date is selected.
+  const [expanded, setExpanded] = useState(false);
+  const { data: range, isLoading: rangeLoading } = useHistoryRange(realm);
+  const clock = useTimelineClock(realm);
+
   const hasHistory = !!range && range.minTime !== null;
   const effectivelyHidden = hidden || rangeLoading || !hasHistory;
 
@@ -45,10 +63,11 @@ export function TimelineScrubber({ value, onChange, hidden }: TimelineScrubberPr
   const [draft, setDraft] = useState<number>(currentValue);
   // Keep draft in sync if the parent value changes externally (e.g. "Return to present").
   useEffect(() => {
+    // oxlint-disable-next-line
     setDraft(currentValue);
   }, [currentValue]);
 
-  // Debounce: commit `draft` to parent ~200ms after the user stops dragging.
+  // Commit `draft` to the parent ~200ms after the user stops dragging.
   const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (effectivelyHidden) return;
@@ -68,55 +87,95 @@ export function TimelineScrubber({ value, onChange, hidden }: TimelineScrubberPr
   }, [draft, currentValue, maxTime, onChange, effectivelyHidden]);
 
   const label = useMemo(
-    () => (isAtNow ? "Viewing: now" : `Viewing: ${IxTime.formatIxTime(value as number, true)}`),
-    [isAtNow, value]
+    () => (isAtNow ? "Viewing: now" : `Viewing: ${timelineDate(value as number, clock)}`),
+    [isAtNow, value, clock]
   );
 
   if (effectivelyHidden) return null;
 
+  const stopMapEvents = {
+    onMouseDown: (e: React.MouseEvent) => e.stopPropagation(),
+    onPointerDown: (e: React.PointerEvent) => e.stopPropagation(),
+    onTouchStart: (e: React.TouchEvent) => e.stopPropagation(),
+  };
+
+  if (!expanded && isAtNow) {
+    return (
+      <div {...stopMapEvents} className={`absolute right-4 bottom-12 z-20 ${className ?? ""}`}>
+        <FacetMaterial layer="chrome" className="rounded-full">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setExpanded(true)}
+            aria-expanded={false}
+            className="text-label-secondary rounded-full"
+          >
+            <Clock aria-hidden />
+            Timeline
+          </Button>
+        </FacetMaterial>
+      </div>
+    );
+  }
+
   return (
     <div
-      onMouseDown={(e) => e.stopPropagation()}
-      onPointerDown={(e) => e.stopPropagation()}
-      onTouchStart={(e) => e.stopPropagation()}
-      className="absolute right-4 bottom-20 z-30 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-white/10 bg-black/60 p-4 shadow-2xl backdrop-blur-xl"
+      {...stopMapEvents}
+      className={`absolute right-4 bottom-12 z-20 w-80 max-w-[calc(100vw-2rem)] ${className ?? ""}`}
     >
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-xs font-medium tracking-wide text-white/70 uppercase">
-          Historical Timeline
-        </span>
-        {!isAtNow && (
-          <button
-            type="button"
-            onClick={() => onChange(null)}
-            className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/80 transition-colors hover:bg-white/10"
-          >
-            Return to present
-          </button>
-        )}
-      </div>
+      <FacetMaterial
+        layer="chrome"
+        role="group"
+        aria-label="Historical timeline"
+        className="rounded-card p-4"
+      >
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <Eyebrow>Historical timeline</Eyebrow>
+          <div className="flex items-center gap-1">
+            {!isAtNow && (
+              <Button type="button" variant="outline" size="xs" onClick={() => onChange(null)}>
+                Return to present
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                if (!isAtNow) onChange(null);
+                setExpanded(false);
+              }}
+              className="text-label-secondary h-7 w-7 rounded-full"
+              aria-label={isAtNow ? "Close timeline" : "Return to present and close timeline"}
+            >
+              <Xmark aria-hidden />
+            </Button>
+          </div>
+        </div>
 
-      <Slider
-        min={minTime}
-        max={maxTime}
-        step={Math.max(1, Math.floor((maxTime - minTime) / 1000))}
-        value={[draft]}
-        onValueChange={(v) => setDraft(v[0] ?? maxTime)}
-        aria-label="Historical timeline scrubber"
-      />
+        <Slider
+          min={minTime}
+          max={maxTime}
+          step={Math.max(1, Math.floor((maxTime - minTime) / 1000))}
+          value={[draft]}
+          onValueChange={(v) => setDraft(v[0] ?? maxTime)}
+          aria-label="Historical timeline scrubber"
+        />
 
-      <div className="mt-2 flex items-center justify-between text-[10px] text-white/50">
-        <span>{IxTime.formatIxTime(minTime)}</span>
-        <span className="mx-2 truncate" title={label}>
-          {label}
-        </span>
-        <span>{IxTime.formatIxTime(maxTime)}</span>
-      </div>
+        <div className="text-label-secondary text-footnote mt-2 flex items-center justify-between">
+          <span>{timelineDate(minTime, clock)}</span>
+          <span className="mx-2 truncate" title={label}>
+            {label}
+          </span>
+          <span>{timelineDate(maxTime, clock)}</span>
+        </div>
 
-      <p className="mt-2 text-[10px] leading-snug text-white/40">
-        Shows the political layer as of the selected date. Snapshots reflect editor history;
-        countries without edits show their current border at every date.
-      </p>
+        <p className="text-label-secondary text-footnote mt-2 leading-snug">
+          Shows the political layer as of the selected date. Snapshots reflect editor history;
+          countries without edits show their current border at every date.
+        </p>
+      </FacetMaterial>
     </div>
   );
 }

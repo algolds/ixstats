@@ -16,27 +16,28 @@
 
 import { lazy } from "react";
 import {
-  Building2,
+  City as Building2,
   MapPin,
-  LandPlot,
-  BookOpen,
-  Tag,
-  TrendingUp,
-  Users,
+  Map as LandPlot,
+  OpenBook as BookOpen,
+  Label as Tag,
+  StatUp as TrendingUp,
+  Group as Users,
   Network,
-  AlertTriangle,
-  Truck,
+  WarningTriangle as AlertTriangle,
+  DeliveryTruck as Truck,
   Activity,
-  Gauge,
+  Dashboard as Gauge,
   Heart,
-  Scale,
-  Flame,
-} from "lucide-react";
+  ScaleFrameEnlarge as Scale,
+  FireFlame as Flame,
+} from "iconoir-react";
 import type { FeatureCollection } from "geojson";
 import type {
   OverlayLegend,
   OverlayPluginDefinition,
   OverlayRenderCtx,
+  OverlayRow,
   TRPCUtils,
 } from "./overlay-types";
 
@@ -63,7 +64,7 @@ const TransportOverlay = lazy(() =>
   }))
 );
 
-// ── Legend constants (match AnalyticsLegend's original LEGENDS exactly) ──────
+// Legend constants (match AnalyticsLegend's original LEGENDS exactly)
 
 const WEALTH_LEGEND: OverlayLegend = {
   type: "gradient",
@@ -190,35 +191,30 @@ const CANON_DENSITY_LEGEND: OverlayLegend = {
   ],
 };
 
-// ── renderProps adapters ────────────────────────────────────────────────────
 // Bridge the unified render context to each component's concrete prop shape so
 // IxWorldMap can render every overlay from one loop without rewriting components.
 
-/** ChoroplethOverlay-style fill: data is a FeatureCollection (+ optional metadata). */
+/** ChoroplethOverlay-style fill: data is country rows (+ optional metadata). */
 function choroplethRenderProps(
   colorScale: "wealth" | "population" | "neutral" | "canon",
   layerId: string
 ) {
   return ({ map, data, visible }: OverlayRenderCtx) => {
     if (!data) return null;
-    const fc = data as FeatureCollection & {
-      metadata?: { minVal: number; maxVal: number };
-    };
+    const d = data as { rows: OverlayRow[]; metadata?: { minVal: number; maxVal: number } };
     return {
       map,
-      data: fc,
+      rows: d.rows,
       visible,
       layerId,
       colorScale,
-      metadata: fc.metadata,
+      metadata: d.metadata,
     };
   };
 }
 
-// ── Registry ────────────────────────────────────────────────────────────────
-
-export const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
-  // ── Feature overlays (managed by IxWorldMap's own layers; default-on) ──
+const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
+  // Feature overlays (managed by IxWorldMap's own layers; default-on)
   // No component/fetcher: their visibility is driven by IxWorldMap's overlay
   // visibility effect. Registered so the controls panel is fully data-driven.
   cities: {
@@ -257,7 +253,7 @@ export const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
     defaultVisible: true,
   },
 
-  // ── Fill overlays (recolor fill-political; mutually exclusive) ──
+  // Fill overlays (recolor fill-political; mutually exclusive)
   wealth: {
     id: "wealth",
     label: "Wealth Map",
@@ -299,12 +295,12 @@ export const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
     renderProps: ({ map, data, visible }: OverlayRenderCtx) => {
       if (!data) return null;
       const d = data as {
-        riskMap: FeatureCollection;
+        rows: OverlayRow[];
         crisisEvents: FeatureCollection;
       };
       return {
         map,
-        riskData: d.riskMap,
+        riskRows: d.rows,
         crisisEvents: d.crisisEvents,
         visible,
       };
@@ -312,7 +308,7 @@ export const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
     legend: CRISES_LEGEND,
   },
 
-  // ── Analytics overlays (independent layers; combinable; default-off) ──
+  // Analytics overlays (independent layers; combinable; default-off)
   diplomacy: {
     id: "diplomacy",
     label: "Diplomatic Network",
@@ -354,12 +350,13 @@ export const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
         routeData: data as FeatureCollection,
         visible,
         onRouteClick: onRouteClick ? (id: string) => onRouteClick(id) : undefined,
+        enableDeckGl: true,
       };
     },
     legend: TRANSPORT_LEGEND,
   },
 
-  // ── NEW overlays — prove the ~30-line registry path (reuse ChoroplethOverlay) ──
+  // NEW overlays — prove the ~30-line registry path (reuse ChoroplethOverlay)
   economicTier: {
     id: "economicTier",
     label: "Economic Tier",
@@ -435,11 +432,6 @@ export const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
 
 /** Ordered list view of the registry (insertion order = display order). */
 export const OVERLAY_LIST: OverlayPluginDefinition[] = Object.values(OVERLAY_REGISTRY);
-
-/** Ids of fill-category overlays (mutually exclusive group). */
-export const FILL_OVERLAY_IDS: string[] = OVERLAY_LIST.filter((o) => o.category === "fill").map(
-  (o) => o.id
-);
 
 /** Build the default visibility map from `defaultVisible` flags. */
 export function buildDefaultVisibility(): Record<string, boolean> {

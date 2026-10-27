@@ -4,12 +4,21 @@
  * useCountryMapEmbed - Data hook for country-focused map embeds.
  *
  * Fetches a single country's geometry, neighbors, cities, and POIs
- * via a single unified countryGeo.getCountryGeoBundle tRPC endpoint.
- * All queries share cache settings with the full world map (30min stale, 2hr gc).
+ * via a single unified countryGeo.getCountryGeoBundle tRPC endpoint (30min stale, 2hr gc).
+ * The neighbours come from the political layer /maps downloads: the same versioned layer URL, so the browser's
+ * copy serves both.
  */
 
 import { useMemo } from "react";
 import { api } from "~/trpc/react";
+import { useDecodedMapLayers } from "~/hooks/useMapLayerData";
+
+/** The subdivision fields the embed maps draw. */
+interface EmbedSubdivision {
+  id: string;
+  name: string;
+  geometry: GeoJSON.Geometry | null;
+}
 
 const MAP_CACHE = { staleTime: 30 * 60_000, gcTime: 2 * 60 * 60_000 } as const;
 
@@ -22,11 +31,14 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
     { enabled, ...MAP_CACHE }
   );
 
-  // Fetch world political layer for neighbor rendering (shared cache with main map, 30m staleTime)
-  const { data: worldMap } = api.geoCore.getWorldMap.useQuery(
-    { layers: ["political"] },
-    { enabled, ...MAP_CACHE }
-  );
+  // World political layer for neighbor rendering: the packed layer /maps downloads (same versioned URL), of the
+  // country's realm, which is not the viewer's when the country is another realm's. It waits for the bundle, which
+  // names that realm (a bundle that does not leaves the viewer's realm).
+  const { layers: worldMap } = useDecodedMapLayers({
+    layers: ["political"],
+    realm: bundle?.country?.realmSlug ?? undefined,
+    enabled: enabled && !!bundle,
+  });
 
   return useMemo(() => {
     const cities = bundle?.cities ?? [];
@@ -39,7 +51,7 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
 
     // Derived neighbor feature collection for greyed-out neighbor rendering
     const worldPolitical =
-      ((worldMap as Record<string, unknown>)?.political as import("geojson").FeatureCollection) ??
+      worldMap?.political ??
       (bundle?.neighbors?.length
         ? ({
             type: "FeatureCollection",
@@ -61,7 +73,7 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
       cities,
       capital,
       pois: bundle?.pois ?? [],
-      subdivisions: bundle?.subdivisions ?? [],
+      subdivisions: (bundle?.subdivisions ?? []) as EmbedSubdivision[],
 
       // Neighbors
       neighbors: bundle?.neighbors ?? [],

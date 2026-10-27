@@ -10,19 +10,22 @@
  * 6. Markov naming: names states and cultures using language families
  */
 
-import type {
-  WorldGraph,
-  WorldGenParams,
-  PoliticalState,
-  CulturalRegion,
-  Settlement,
+import {
+  slotKey,
+  type DevelopmentLevel,
+  type PoliticalState,
+  type Settlement,
+  type WorldGenParams,
+  type WorldGraph,
+  type WorldSlot,
 } from "./types";
-import { QUALITY_THRESHOLDS } from "./config";
+import { ICE_CAP_BIOME, QUALITY_THRESHOLDS, TREWARTHA_BIOMES } from "./config";
 import { makeRng, hslToHex } from "./helpers/rng";
-import { cellLat, cellLng, cellAreaKm2 } from "./mesh";
+import { cellLat, cellLng, cellAreaKm2, cellVectors, chord2 } from "./mesh";
 import { dijkstraMultiSource } from "./helpers/flood-fill";
 import { MarkovNameGenerator } from "~/lib/onoma/markov-naming";
 import { getLanguageFamilies } from "~/lib/onoma/language-families";
+import { deriveBaseline } from "../baseline";
 
 /**
  * Generate cultures, settlements, and political states with natural borders.
@@ -46,13 +49,13 @@ export function generatePolitics(graph: WorldGraph, params: WorldGenParams): voi
 
   if (landCells.length === 0) return;
 
-  // ── Step 1: Culture Seeding & Terrain-Cost Expansion ──
+  // Step 1: Culture Seeding & Terrain-Cost Expansion
   generateCultures(graph, params, landCells, rng);
 
-  // ── Step 2: Settlement Placement & Habitability Scoring ──
+  // Step 2: Settlement Placement & Habitability Scoring
   generateSettlements(graph, params, landCells, rng);
 
-  // ── Step 3: Natural Border Resistance Field ──
+  // Step 3: Natural Border Resistance Field
   // Base resistance field: higher value = stronger natural boundary
   const borderResistance = new Float32Array(n);
   for (let i = 0; i < n; i++) {
@@ -67,17 +70,10 @@ export function generatePolitics(graph: WorldGraph, params: WorldGenParams): voi
     }
   }
 
-  // ── Step 4: State Expansion via Natural-Border Dijkstra ──
-  const targetCount = Math.round(
-    ((params.countryCountRange?.[0] ?? 60) + (params.countryCountRange?.[1] ?? 200)) / 2
-  );
-
-  // Select state capitals from top-scoring settlements distributed across continents
-  const capitalBurgs = graph.settlements.filter((s) => s.isCapital);
-  if (capitalBurgs.length === 0) return;
-
-  const actualStateCount = Math.min(targetCount, capitalBurgs.length);
-  const chosenCapitals = capitalBurgs.slice(0, actualStateCount);
+  // Step 4: State Expansion via Natural-Border Dijkstra from the spaced capitals
+  const chosenCapitals = graph.settlements.filter((s) => s.isCapital);
+  if (chosenCapitals.length === 0) return;
+  const actualStateCount = chosenCapitals.length;
 
   // Prepare multi-source Dijkstra from capital locations
   const sources = chosenCapitals.map((b, idx) => ({
@@ -108,16 +104,14 @@ export function generatePolitics(graph: WorldGraph, params: WorldGenParams): voi
   // Fill any remaining unclaimed land cells (e.g. islands without capitals) via BFS spread from neighbors
   fillUnclaimedLandCells(graph, sources);
 
-  // ── Step 5: Exclave Reassignment & Connectivity Repair ──
+  // Step 5: Exclave Reassignment & Connectivity Repair
   repairStateConnectivity(graph, actualStateCount);
 
-  // ── Step 6: Build State Entities & Markov Naming ──
+  // Step 6: Build State Entities & Markov Naming
   buildStateEntities(graph, params, chosenCapitals, rng);
 }
 
-// ──────────────────────────────────────────────
 // Helpers: Cultures
-// ──────────────────────────────────────────────
 
 function generateCultures(
   graph: WorldGraph,
@@ -181,9 +175,37 @@ function generateCultures(
   }
 }
 
-// ──────────────────────────────────────────────
 // Helpers: Settlements
-// ──────────────────────────────────────────────
+
+/**
+ * Greedy spaced pick: walk candidates best-first, keeping those at least `radius` (unit-sphere
+ * chord) from every kept cell; relax the radius until `count` are kept or candidates run out.
+ */
+function pickSpaced(
+  graph: WorldGraph,
+  ranked: number[],
+  count: number,
+  radius: number,
+  taken: number[] = []
+): number[] {
+  const picked: number[] = [];
+  const sphere = cellVectors(graph);
+  const used = new Set<number>(taken);
+  let r = radius;
+  for (let round = 0; round < 6 && picked.length < count; round++, r *= 0.75) {
+    const r2 = r * r;
+    for (const c of ranked) {
+      if (picked.length >= count) break;
+      if (used.has(c)) continue;
+      // ponytail: O(candidates × picked) scan, fine for ≤ a few hundred capitals; grid-bucket it if counts grow
+      const near = (o: number) => chord2(sphere, c, o) < r2;
+      if (taken.some(near) || picked.some(near)) continue;
+      picked.push(c);
+      used.add(c);
+    }
+  }
+  return picked;
+}
 
 function generateSettlements(
   graph: WorldGraph,
@@ -193,70 +215,63 @@ function generateSettlements(
 ): void {
   const { cells } = graph;
 
-  // Habitability score per land cell (0-1)
-  const scores = landCells.map((c) => {
+  // Habitability score per land cell (0-1), with a little jitter so ties break per seed
+  const scoreOf = new Float64Array(cells.n);
+  for (const c of landCells) {
     let score = 0.5;
-
-    // Coastal bonus
-    if (cells.coastDist[c]! === 0) score += 0.25;
-    // River bonus
-    if (cells.river[c]! > 0) score += 0.2;
-    // Temperate climate bonus
+    if (cells.coastDist[c] === 0) score += 0.25; // Coastal bonus
+    if (cells.river[c]! > 0) score += 0.2; // River bonus
     const temp = cells.temp[c]!;
-    if (temp >= 12 && temp <= 25) score += 0.15;
-    // Lowland bonus
-    if (cells.elevZone[c]! <= 2) score += 0.1;
-    // Aridity penalty
-    if (cells.aridity[c]! > 0.6) score -= 0.25;
+    if (temp >= 12 && temp <= 25) score += 0.15; // Temperate climate bonus
+    if (cells.elevZone[c]! <= 2) score += 0.1; // Lowland bonus
+    if (cells.aridity[c]! > 0.6) score -= 0.25; // Aridity penalty
+    if (cells.biome[c] === 10) score -= 0.5; // Ice
+    scoreOf[c] = Math.max(0.01, Math.min(1.0, score + rng() * 0.1));
+  }
+  const ranked = [...landCells].sort((a, b) => scoreOf[b]! - scoreOf[a]!);
 
-    return { cell: c, score: Math.max(0.01, Math.min(1.0, score)) };
-  });
+  // Capitals: one per country, spaced so each gets a comparable share of land
+  const [minCountries, maxCountries] = params.countryCountRange;
+  const stateTarget = Math.max(
+    1,
+    Math.min(Math.round((minCountries + maxCountries) / 2), Math.floor(landCells.length / 8))
+  );
+  const cellSpacing = Math.sqrt((4 * Math.PI) / cells.n); // mean cell spacing in radians
+  const stateRadius = Math.sqrt(landCells.length / stateTarget / Math.PI) * cellSpacing * 1.3;
+  const capitals = pickSpaced(graph, ranked, stateTarget, stateRadius);
 
-  scores.sort((a, b) => b.score - a.score);
-
-  const targetCount = Math.min(150, Math.max(40, Math.floor(landCells.length / 50)));
-  const chosen = scores.slice(0, targetCount);
+  // Towns: further spaced settlements between the capitals
+  const townTarget = Math.max(40, Math.min(300, Math.floor(landCells.length / 50)));
+  const towns = pickSpaced(graph, ranked, townTarget, stateRadius / 2, capitals);
 
   const families = getLanguageFamilies();
   const generators = families.map((f, idx) => new MarkovNameGenerator(f, params.seed + 700 + idx));
 
-  let burgId = 1;
-  for (let i = 0; i < chosen.length; i++) {
-    const { cell, score } = chosen[i]!;
+  [...capitals, ...towns].forEach((cell, i) => {
+    const burgId = i + 1;
+    const score = scoreOf[cell]!;
     const cultureId = cells.culture[cell]!;
     let name = `City ${burgId}`;
-
-    if (params.useMarkovNaming ?? true) {
-      const famIdx = cultureId % generators.length;
-      if (generators[famIdx]) {
-        name = generators[famIdx]!.generate();
-      }
+    if (params.useMarkovNaming) {
+      const generator = generators[cultureId % generators.length];
+      if (generator) name = generator.generate();
     }
-
-    const isCapital = i < 80; // Top 80 are capital candidates
-    const isPort = cells.coastDist[cell]! === 0;
-    const population = Math.round(10000 + score * 500000 + rng() * 50000);
-
     graph.settlements.push({
       id: burgId,
       name,
       cell,
-      state: 0, // assigned in step 6
-      population,
-      isCapital,
-      isPort,
+      state: 0, // assigned with the states
+      population: Math.round(10000 + score * 500000 + rng() * 50000),
+      isCapital: i < capitals.length,
+      isPort: cells.coastDist[cell] === 0,
       lng: cellLng(graph, cell),
       lat: cellLat(graph, cell),
       score,
     });
-
-    burgId++;
-  }
+  });
 }
 
-// ──────────────────────────────────────────────
 // Helpers: Unclaimed Land Filling
-// ──────────────────────────────────────────────
 
 function fillUnclaimedLandCells(
   graph: WorldGraph,
@@ -296,18 +311,13 @@ function fillUnclaimedLandCells(
   }
 
   if (unassigned.length > 0 && sources.length > 0) {
+    const sphere = cellVectors(graph);
     for (const cellId of unassigned) {
-      const cLng = cellLng(graph, cellId);
-      const cLat = cellLat(graph, cellId);
       let closestState = sources[0]!.id;
       let minDistance = Infinity;
 
       for (const src of sources) {
-        const capLng = cellLng(graph, src.cell);
-        const capLat = cellLat(graph, src.cell);
-        const dLng = cLng - capLng;
-        const dLat = cLat - capLat;
-        const distSq = dLng * dLng + dLat * dLat;
+        const distSq = chord2(sphere, cellId, src.cell);
         if (distSq < minDistance) {
           minDistance = distSq;
           closestState = src.id;
@@ -322,11 +332,12 @@ function fillUnclaimedLandCells(
 function repairStateConnectivity(graph: WorldGraph, stateCount: number): void {
   const { cells } = graph;
 
+  // Cells per state, ascending; orphans handed to a later state are appended and re-sorted when it is reached
+  const members: number[][] = Array.from({ length: stateCount + 1 }, () => []);
+  for (let i = 0; i < cells.n; i++) if (cells.state[i]! > 0) members[cells.state[i]!]?.push(i);
+
   for (let sid = 1; sid <= stateCount; sid++) {
-    const sCells: number[] = [];
-    for (let i = 0; i < cells.n; i++) {
-      if (cells.state[i] === sid) sCells.push(i);
-    }
+    const sCells = members[sid]!.sort((a, b) => a - b);
     if (sCells.length < 2) continue;
 
     // BFS connected components
@@ -380,14 +391,13 @@ function repairStateConnectivity(graph: WorldGraph, stateCount: number): void {
 
       for (const oCell of orphans) {
         cells.state[oCell] = bestState;
+        if (bestState !== sid) members[bestState]?.push(oCell);
       }
     }
   }
 }
 
-// ──────────────────────────────────────────────
 // Helpers: State Entity Construction
-// ──────────────────────────────────────────────
 
 function buildStateEntities(
   graph: WorldGraph,
@@ -399,6 +409,24 @@ function buildStateEntities(
 
   const families = getLanguageFamilies();
   const generators = families.map((f, idx) => new MarkovNameGenerator(f, params.seed + 800 + idx));
+
+  // Cells, area and neighbours of every state in one pass over the cells
+  const tally = capitals.map(() => ({
+    cellCount: 0,
+    areaKm2: 0,
+    neighborSet: new Set<number>(),
+  }));
+  for (let i = 0; i < cells.n; i++) {
+    const stateId = cells.state[i]!;
+    const entry = tally[stateId - 1];
+    if (!entry) continue;
+    entry.cellCount++;
+    entry.areaKm2 += cellAreaKm2(graph, i);
+    for (const nb of cells.neighbors[i]!) {
+      const nbState = cells.state[nb]!;
+      if (nbState > 0 && nbState !== stateId) entry.neighborSet.add(nbState);
+    }
+  }
 
   for (let s = 0; s < capitals.length; s++) {
     const stateId = s + 1;
@@ -426,22 +454,7 @@ function buildStateEntities(
     const feature = features.find((f) => f.id === featId);
     const continent = feature?.name ?? "Unknown";
 
-    let cellCount = 0;
-    let areaKm2 = 0;
-    const neighborSet = new Set<number>();
-
-    for (let i = 0; i < cells.n; i++) {
-      if (cells.state[i] === stateId) {
-        cellCount++;
-        areaKm2 += cellAreaKm2(graph, i);
-        for (const nb of cells.neighbors[i]!) {
-          const nbState = cells.state[nb]!;
-          if (nbState > 0 && nbState !== stateId) {
-            neighborSet.add(nbState);
-          }
-        }
-      }
-    }
+    const { cellCount, areaKm2, neighborSet } = tally[s]!;
 
     const stateObj: PoliticalState = {
       id: stateId,
@@ -457,4 +470,81 @@ function buildStateEntities(
 
     graph.states.push(stateObj);
   }
+}
+
+// Nation slots
+
+/** Land above this height (m) is too high to settle. */
+const HABITABLE_MAX_M = 3000;
+/** Land within this many cells of the sea counts as coastal. */
+const COASTAL_HOPS = 1;
+
+interface SlotGeography {
+  cells: number;
+  habitableKm2: number;
+  coastKm2: number;
+  riverKm2: number;
+  climateKm2: Record<string, number>;
+}
+
+/** Climate group (A tropical ... H highland) of each biome id, from its Trewartha code. */
+const BIOME_GROUP = TREWARTHA_BIOMES.map((b) => b.code.charAt(0));
+
+/** Whether cell `i` or a neighbour carries a river. */
+function nearRiver(graph: WorldGraph, i: number): boolean {
+  const { cells } = graph;
+  return cells.river[i]! > 0 || cells.neighbors[i]!.some((nb) => cells.river[nb]! > 0);
+}
+
+function measureSlots(graph: WorldGraph): Map<number, SlotGeography> {
+  const { cells } = graph;
+  const slots = new Map<number, SlotGeography>();
+  for (let i = 0; i < cells.n; i++) {
+    const stateId = cells.state[i]!;
+    if (stateId === 0 || !cells.isLand[i]) continue;
+    let geo = slots.get(stateId);
+    if (!geo) {
+      geo = { cells: 0, habitableKm2: 0, coastKm2: 0, riverKm2: 0, climateKm2: {} };
+      slots.set(stateId, geo);
+    }
+    geo.cells++;
+    const biome = cells.biome[i]!;
+    if (cells.lake[i] || biome === ICE_CAP_BIOME || cells.h[i]! >= HABITABLE_MAX_M) continue;
+    const area = cellAreaKm2(graph, i);
+    const group = BIOME_GROUP[biome] ?? "H";
+    geo.habitableKm2 += area;
+    geo.climateKm2[group] = (geo.climateKm2[group] ?? 0) + area;
+    if (cells.coastDist[i]! <= COASTAL_HOPS) geo.coastKm2 += area;
+    if (nearRiver(graph, i)) geo.riverKm2 += area;
+  }
+  return slots;
+}
+
+/**
+ * One claimable slot per generated state, with the baseline its geography implies: habitable land
+ * by climate group for the population, coast and river access for the GDP per capita.
+ */
+export function buildSlots(graph: WorldGraph, developmentLevel: DevelopmentLevel): WorldSlot[] {
+  const geography = measureSlots(graph);
+  return graph.states.map((state) => {
+    const geo = geography.get(state.id);
+    const habitable = geo?.habitableKm2 ?? 0;
+    const { population, gdpPerCapita } = deriveBaseline({
+      cells: geo?.cells ?? 0,
+      habitableKm2: habitable,
+      climateMix: geo?.climateKm2 ?? {},
+      coastShare: habitable > 0 ? geo!.coastKm2 / habitable : 0,
+      riverShare: habitable > 0 ? geo!.riverKm2 / habitable : 0,
+      developmentLevel,
+    });
+    return {
+      key: slotKey(state.id),
+      name: state.name,
+      colour: state.color,
+      cells: state.cellCount,
+      areaKm2: state.areaKm2,
+      population,
+      gdpPerCapita,
+    };
+  });
 }

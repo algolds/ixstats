@@ -9,7 +9,7 @@ import type { CulturalProfile } from "./types";
 /**
  * Extracts unique IPA phonemes/segments from a cultural profile's seed lists.
  */
-export function getPhonemeInventory(profile: CulturalProfile): Set<string> {
+function getPhonemeInventory(profile: CulturalProfile): Set<string> {
   const phonemes = new Set<string>();
   const categories = Object.keys(CULTURAL_PROFILES[profile] ?? {}) as Array<
     keyof (typeof CULTURAL_PROFILES)[CulturalProfile]
@@ -22,7 +22,7 @@ export function getPhonemeInventory(profile: CulturalProfile): Set<string> {
       for (const seg of segments) {
         if (seg.ipa && /[a-zøɛɔœɨŋʃθðɬʁvjˈ]/.test(seg.ipa)) {
           // Normalize phoneme (remove stress markings or brackets for strict inventory comparison)
-          const cleanPhoneme = seg.ipa.replace(/[ˈ\[\]\/]/g, "").trim();
+          const cleanPhoneme = seg.ipa.replace(/[ˈ[\]/]/g, "").trim();
           if (cleanPhoneme) {
             phonemes.add(cleanPhoneme);
           }
@@ -98,7 +98,7 @@ export function calculateCosineSimilarity(
   return dotProduct / (Math.sqrt(sumA2) * Math.sqrt(sumB2));
 }
 
-export interface ComparisonResult {
+interface ComparisonResult {
   phonemeOverlap: number; // Jaccard similarity percentage (0-100)
   bigramSimilarity: number; // Cosine similarity percentage (0-100)
   entropyDelta: number; // Absolute difference in shannon entropy

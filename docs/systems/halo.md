@@ -1,35 +1,206 @@
-# Halo Plugin System
+# 🎯 Halo — Facet UI Contextual Overlay & Command Palette
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta) — Halo v4  
-**Hierarchy:** Core Feature System (`HALO_VERSION = 4` in Version Registry). Global contextual overlay and wayfinding suite.
+**Last updated:** 2026-10-17
 
-> **Naming & Identifiers:** **Halo** is the canonical brand name (formerly "Dynamic Island"). Code identifiers intentionally retain the `DI*` prefix (`src/components/halo/`, `useDIPlugin`, `types.ts`, `DIPlugin`, `DIAction`, `DIBadge`) to prevent wide merge churn across active branches.
+**Parent Platform Layer:** Facet UI Design System (`FACET_VERSION = 4` / `HALO_VERSION = 6`)  
+**Subsystems:** Contextual Floating Capsule, `Cmd+K` Command Palette, Unified Notification Tray, Plugin Registry  
+**Primary Action:** `NAVIGATE` | **Domain Accent:** Universal Slate / Context-Adaptive  
+**Status:** ✅ Live (Halo v6: standard chrome glass with no glow); see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
 
-Halo is the central interactive overlay element for IxStates. To support diverse application contexts (WikiOS, Forum, MyCountry, Onoma Lab) without hardcoded route branching, the system employs a **plugin-driven external store architecture**.
+> **Facet UI Architecture:** **Halo** (contextual overlay & command palette) and **Cuelume** (audio-tactile haptic feedback) are documented alongside the **Facet UI Design System**, but Halo is an app shell, not a Facet primitive: the Facet primitives do not import Halo, while Halo imports `trpc/react`, `wiki-os`, stores and auth. Plugin components follow the `<Name>Halo` naming convention (e.g., `WikiHalo`, `MyCountryHalo`, `BuilderHalo`, `SportsLiveHalo`). Code identifiers intentionally retain the `DI*` prefix (`src/components/halo/`, `useDIPlugin`, `types.ts`, `DIPlugin`, `DIAction`, `DIBadge`) to prevent wide merge churn across active branches.
+
+Halo is the central interactive overlay element and command center for IxStates. It operates as both a persistent status capsule and a modal command palette, adapting contextually across all application domains (MyCountry, WikiOS, Vault, Labs, and Builder).
 
 ---
 
-## Architecture Overview
+## Directory & Views Architecture
 
-Pages or layouts register their custom plugins on mount. Halo uses `useSyncExternalStore` in `src/components/halo/plugin-context.tsx` to ensure thread-safe concurrent reactivity across React 19 rendering paths, resolving dynamically to the active plugin with the highest priority.
+All core system views are strictly isolated under `src/components/halo/views/`, while domain-specific overlays live in isolated plugin modules under `src/components/halo/plugins/<plugin-name>/`. All files strictly adhere to the `≤700` line architecture ceiling.
+
+```
+src/components/halo/
+├── index.tsx                     # Root Halo shell, gesture handling, and public exports
+├── halo-registry.ts              # Canonical platform command & feature catalog
+├── hooks.ts                      # State management, keyboard shortcuts, and search engine
+├── plugin-context.tsx            # React 19 concurrent external store for plugins
+├── types.ts                      # DIPlugin, DIAction, DIBadge, SearchResult interfaces
+├── presets.ts                    # Capsule size presets (compact, large, tall, …)
+├── HaloPrimitives.tsx            # Shared capsule context & UI primitives
+├── HaloTourContext.tsx           # Onboarding and visual wayfinding guide
+├── HaloTourTooltip.tsx           # Tooltip callouts for Halo controls
+├── views/                        # Core Halo system views ONLY
+│   ├── index.ts                  # Barrel export for base views
+│   ├── CompactView.tsx           # Primary collapsed capsule with action rail & badge (React.memo)
+│   ├── ExpandedView.tsx          # View mode switcher and modal container (React.memo)
+│   ├── SearchView.tsx            # Command palette search and entity lookup (React.memo)
+│   ├── NotificationsView.tsx     # Unified Alert Center and direct message tray (React.memo)
+│   ├── SettingsView.tsx          # Theme, audio, and platform preferences (React.memo)
+│   ├── NavTray.tsx               # Mobile-optimized bottom navigation tray (React.memo)
+│   ├── settings/
+│   │   └── SettingsControls.tsx
+│   └── tray/                     # Alert Center sub-components
+│       ├── types.ts
+│       ├── NotificationRow.tsx
+│       └── MessageTrayItem.tsx
+└── plugins/                      # Domain-specific Halo plugins
+    ├── index.ts                  # Unified barrel export for all plugins
+    ├── mycountry/                # MyCountry executive plugin
+    │   ├── MyCountryHalo.tsx     # Executive KPIs & quick actions registration
+    │   ├── index.ts
+    │   └── views/
+    │       ├── index.ts
+    │       ├── MyCountryView.tsx
+    │       └── MyCountryActionsView.tsx
+    ├── wiki/                     # WikiOS encyclopedia plugin
+    │   ├── WikiHalo.tsx          # Reading progress & narrator player registration
+    │   ├── types.ts              # Voice labels, reading sessions, local drafts
+    │   ├── index.ts
+    │   ├── components/           # WikiNarratorPlayer, WikiWorkspaceTab, WikiSearchDropdown, PlayPauseMorph
+    │   │   └── index.ts
+    │   └── views/
+    │       ├── index.ts
+    │       ├── WikiView.tsx
+    │       ├── WikiNarratorView.tsx
+    │       └── WikiProfileView.tsx
+    ├── builder/                  # Founding (/builder) and the country editor (/mycountry/editor)
+    │   ├── BuilderHalo.tsx       # Registers one command: Jump to section
+    │   ├── types.ts
+    │   ├── index.ts
+    │   └── views/
+    │       ├── index.ts
+    │       └── JumpToSectionView.tsx # Lists the page's steps or sections; a tap jumps there
+    └── sports/                   # Live match activity plugin
+        ├── SportsLiveHalo.tsx    # Deterministic IxTime live match scoreboard (mounted globally via GameProviders)
+        └── index.ts
+```
+
+---
+
+## Standard Plugin Template
+
+Every Halo plugin is a self-contained module in `src/components/halo/plugins/<feature>/`:
+
+1. **`<Name>Halo.tsx`**: Calls `useDIPlugin(pluginConfig)` to mount capsule center content, action buttons, accent color, and custom modal views.
+2. **`views/`**: Contains modal expanded components (e.g. `MyCountryView.tsx`, `WikiView.tsx`).
+3. **`components/`** (optional): Contains sub-widgets (e.g. narrator player, search dropdown, morph toggles).
+4. **`types.ts`** (optional): Contains domain-specific types.
+5. **`index.ts`**: Clean barrel export exporting `<Name>Halo`, views, and backwards-compatible aliases (`*DIPlugin`).
+
+To create a new plugin, copy the smallest existing plugin (e.g. `src/components/halo/plugins/mycountry/`) as a starting point and mount `<FeatureHalo />` in the route layout. (The former `_template/` starter directory was removed.)
+
+---
+
+## Command Palette & Search Engine
+
+Halo features a command palette accessible via `⌘K` or by tapping the search icon.
+
+### 1. Multi-Domain Catalog (`src/components/halo/halo-registry.ts`)
+The registry provides comprehensive coverage across eight platform domains:
+- **Statecraft**: Executive Command (`/mycountry`), Directives (`/mycountry/executive`), Policy Studio (`/mycountry/editor`), Diplomacy (`/mycountry/diplomacy`), Defense (`/mycountry/defense`), Intelligence (`/mycountry/intelligence`), Fiscal Policy (`/mycountry/economy`), Politics (`/mycountry/politics`), and Map Editor (`/mycountry/map-editor`).
+- **Vault**: IxVault cards (`/vault/cards/mine`), Open card packs (`/vault/store?view=packs`), Card market (`/vault/cards/market`), Explore cards (`/vault/cards/explore`) and Import NationStates cards (`/vault/import`).
+- **Geography**: Interactive Map (`/maps`), Country Directory (`/countries`), Leaderboards (`/leaderboards`), and Nation Builder (`/builder`).
+- **Knowledge**: Wiki Main Page (`/wiki/Main_Page`), Recent Changes (`/util/recent-changes`), Random Wiki (`#random-wiki`), Create Article (`/wiki/new`), and Lore Stashes (`/stashes`).
+- **Community**: Messages (`/messages`), ThinkPages, the forum (`/thinkpages`), Home, the feed (`/dashboard`), Accounts (`/dashboard/accounts`), Saved posts (`/dashboard/saved`), ThinkTanks (`/thinktanks`), Forum (the forum home), New Thread (`/thinkpages/c/general/new`), and Achievements (`/vault/achievements`).
+- **Sports**: MyLeague Standings (`/myleague`) and MyClub Squad Roster (`/myclub`).
+- **Labs**: Onoma Linguistics (`/labs/onoma`) and Vexel Heraldry (`/labs/vexel`).
+- **System**: Theme toggles, audio controls, compact mode, mark-all-read, notifications, settings, changelog, and admin.
+
+A second `CORE_FEATURES` list adds quick shortcuts (Dashboard, Leaderboards, Maps, Card Packs, Reload Data, Notifications, Search).
+
+### 2. Search Indexing & Keyword Aliases
+Each entry contains an array of search keywords and synonyms. Queries match against title, description, category, and keywords in a single normalized lookup pass:
+- Typing `"military"`, `"army"`, `"fleet"`, or `"war"` matches **National Defense & Readiness**.
+- Typing `"booster"`, `"unbox"`, or `"gacha"` matches **Open Card Packs**.
+- Typing `"dark mode"`, `"light mode"`, or `"appearance"` matches **Toggle dark or light theme**.
+- Typing `"sfx"`, `"audio"`, `"mute"`, or `"volume"` matches **Toggle sound effects**.
+
+### 3. In-Palette System Execution
+System actions execute instantly via hook callbacks without requiring full-page navigation:
+- `toggle-theme`: Toggles light, dark, and system color schemes.
+- `toggle-sound`: Toggles Cuelume UI audio effects on or off.
+- `toggle-compact`: Switches between standard and high-density layouts.
+- `mark-all-read`: Clears unread alert badges and notification counters.
+- `reload-data`: Refreshes platform telemetry.
+- `random-wiki`: Jumps to a random encyclopedia article.
+- `random-country`: Selects and loads a random world nation (handled in `hooks.ts`; no registry entry currently surfaces it).
+
+### 4. Icon Design Standards
+Registry icons come from `iconoir-react` (the Halo tree does not import `react-icons/gi`). Generic sparkle icons (`Sparkles`) are strictly prohibited in favor of domain-accurate iconography (e.g. `Crown`, `EditPencil`).
+
+---
+
+## 3-Mode Navigation Architecture & Halo Coordination
+
+Halo operates in synergy with the platform's **Unified 3-Mode Navigation Architecture** driven by `useNavigationScroll`:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Mode 1: DEFAULT (Global Scroll-Hide & Morph)                                │
+│ • Standard pages: Home, MyCountry, Dashboard, Vault, ThinkPages, Forum,     │
+│   Countries, Admin, Sports, Settings, Changelog, Studio.                    │
+│ • Sits in top anchor zone (<50px). Morphs tabs inwards (40px → 100px).     │
+│ • Scroll down hides with cubic-bezier / spring; scroll up reveals instantly.│
+│ • Halo pill stays sticky (8px), auto-collapsing to 200x36px after 1200ms.   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Mode 2: HIDDEN (Immersion & Canvas Focus)                                   │
+│ • Canvas & focus surfaces: /messages, /builder, /mycountry/editor,          │
+│   /wiki/*, /blurbs/*                                                        │
+│ • Starts with navbar translated out of view (translateY(-100%)).           │
+│ • Reveals smoothly on upward scroll (>10px) or top-edge hover (<=16px).    │
+│ • Dedicated domain Halo (WikiHalo, BuilderHalo) remains active and floating.│
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Mode 3: MAPS (Chromeless Standalone Exception)                              │
+│ • Maps & spatial workflows: /maps.                                          │
+│ • Global <Navigation /> returns null; MapDynamicIsland handles controls.    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Dynamic Repulsion Physics & Presentation Continuity
+
+When secondary sub-headers, editor toolbars, or filter strips sit beneath the floating Halo:
+
+$$\text{repulsionProgress} = \text{clamp}\left(\frac{\text{scrollY}}{56}, 0, 1\right)$$
+
+1. **Center Branding Glide**: Sub-header center brands glide upward (`y: -repulsionProgress * 40px`), scale (`1 - repulsionProgress * 0.1`), and fade (`opacity: 1 - repulsionProgress`) to clear space for the collapsing Halo pill.
+2. **Seamless Action Tuck**: Right-rail action buttons slide inward directly beneath the floating Halo capsule.
+3. **Ambient Glow**: A subtle blue/purple radial glow appears during transition (`0 0 (1 - repulsionProgress) * 12px`).
+4. **Desktop Sticky Rails**: Desktop sidebars use `lg:sticky lg:top-20` (80px) to guarantee a 16px buffer beneath the 64px floating navbar without overlapping.
+
+---
+
+## Physical Motion & Spring Physics
+
+Motion transitions across capsule expansion, tray reveals, and modal transforms utilize Apple critically damped spring physics. The profile is written inline in `CompactView.tsx` and `NavTray.tsx` (there is no exported constant):
+
+```typescript
+transition={{ type: "spring", stiffness: 420, damping: 38, mass: 0.8 }}
+```
+
+---
+
+## Plugin Architecture Overview
+
+Pages and layouts register their custom plugins on mount. Halo uses `useSyncExternalStore` in `src/components/halo/plugin-context.tsx` for concurrent reactivity across React 19 rendering paths:
 
 ```mermaid
 graph TD
-    subgraph Pages / Layouts
-        Wiki[WikiOS Layout] -- Registers --> PluginW[Wiki DI Plugin]
-        Forum[Forum Layout] -- Registers --> PluginF[Forum DI Plugin]
-        Narrator[WikiOS Narrator] -- Registers --> PluginN[Audio Narrator Plugin]
+    subgraph Pages & Layouts
+        Wiki[WikiOS Layout] -- Registers --> PluginW[WikiHalo]
+        Builder[Founding flow & country editor] -- Registers --> PluginB[BuilderHalo]
+        Country[MyCountry Layout] -- Registers --> PluginC[MyCountryHalo]
     end
 
-    subgraph Halo Plugin Engine
-        PluginW & PluginF & PluginN -- useDIPlugin --> Registry[DIPluginRegistry]
+    subgraph Halo Engine
+        PluginW & PluginB & PluginC -- useDIPlugin --> Registry[DIPluginRegistry]
         Registry -- Resolves active plugin --> Hook[useActiveDIPlugin]
     end
 
-    subgraph Halo Visual Presentation
-        Hook --> CompactPill[Compact Material Pill]
+    subgraph Halo Presentation
+        Hook --> CompactPill[Compact Material Capsule]
         Hook --> ExpandedModal[Expanded Contextual Modal]
+        Hook --> SearchView[Search & Command Palette]
     end
 ```
 
@@ -37,17 +208,26 @@ graph TD
 
 ## Core Interfaces (`src/components/halo/types.ts`)
 
-### `DIPlugin`
+### `DIPlugin` & `DIViewProps`
 ```typescript
-export interface DIPlugin {
-  id: string;                                                        // Unique identifier (e.g. "wiki", "forum", "narrator")
+export interface DIPlugin<F = unknown, C = unknown> {
+  id: string;                                                        // Unique identifier (e.g. "wiki", "mycountry")
   priority?: number;                                                 // Priority weight (highest priority active plugin renders)
   center?: React.ReactNode;                                          // Custom component replacing the default clock/greeting
   actions?: DIAction[];                                              // Action buttons on the pill's right rail
-  expandedViews?: Record<string, React.ComponentType<DIViewProps>>;    // Modal components rendered when expanded
+  expandedViews?: Record<string, React.ComponentType<DIViewProps<F, C>>>; // Modal components rendered when expanded
   badge?: DIBadge;                                                   // Colored status dot or pulsing activity badge
   accentColor?: string;                                              // Underline accent border color
   stickyLabel?: string;                                              // Wayfinding label shown when sticky
+  filter?: F;                                                        // Context filter state (e.g. a wiki filter)
+  context?: C;                                                       // Domain context (e.g. Live match trace)
+}
+
+export interface DIViewProps<F = unknown, C = unknown> {
+  onClose: () => void;
+  onSwitchMode?: (mode: ViewMode) => void;
+  filter?: F;
+  context?: C;
 }
 ```
 
@@ -69,32 +249,18 @@ export interface DIBadge {
 
 ---
 
-## Active Reference Plugins (`src/components/halo/plugins/`)
+## Decoupled Global Components
 
-### 1. WikiDIPlugin (`WikiDIPlugin.tsx`)
-- **Article Mode**: Displays current wiki breadcrumbs, article word count, and enables click-to-expand to open the rich `WikiView` modal.
-- **Root/Special Mode**: Renders `WikiProfileButton` which pops open user contribution stats and recent edit history.
-
-### 2. ForumDIPlugin (`ForumDIPlugin.tsx`)
-- Displays current thread/category breadcrumbs.
-- Activates an animated orange pulsing badge (`#f97316`) when unread forum alerts are detected.
-
-### 3. Audio Narrator Plugin (Onoma / WikiOS)
-- **Pill-Center Equalizer**: Renders a live bouncing waveform visualizer during Kokoro TTS playback.
-- **Scrubber & Controls**: In expanded view, provides interactive playhead seeking, skip/pause triggers, and section-by-section heading jumps.
-
----
-
-## Nesting Safety & HTML Compliance
-
-- **Click-to-Expand Containers**: If a plugin supplies `expandedViews`, Halo automatically wraps the center component in a click-to-expand `<button>`.
-- **Interactive Centers**: If a plugin's `center` contains its own interactive buttons or popover triggers (e.g. `WikiProfileButton`), `expandedViews` must be omitted (`undefined`), allowing Halo to render `center` directly without generating invalid nested `<button>` elements in the DOM.
+Under clean modular boundaries:
+- **`ToastBanner`** lives in `src/components/ui/ToastBanner.tsx` and is consumed by `src/stores/toastQueueStore.tsx`, removing notification toast styling out of the Halo capsule component tree.
+- **`PlayPauseMorph`** lives in `src/components/halo/plugins/wiki/components/PlayPauseMorph.tsx` as a private subcomponent of the Wiki Narrator player.
 
 ---
 
 ## Related Documentation
 
-- [WikiOS System Guide](./wikios.md)
-- [Onoma Voice & Speech Guide](./onoma-voice-guide.md)
-- [Forum Integration](./forum.md)
+- [MyCountry Design & Statecraft Guide](./mycountry.md)
+- [WikiOS System Guide](./wikios/WIKIOS.md)
+- [ThinkPages forum](./forum.md)
+- [Cards & Vault System](./cards.md)
 - [Facet Design System](../reference/facet-design-system.md)

@@ -1,53 +1,62 @@
 /**
- * MyLeague — Sports Router
+ * MyLeague — Sports Transfers Router
  *
- * tRPC router for the IxStates sports & competition engine.
- * Manages leagues, teams, seasons, simulations, and historical records.
+ * tRPC router for transfer listings, player market bids, escrows, and negotiations.
+ *
+ * Escrow safety: every listing, bid and answer runs in one transaction that first locks the
+ * listed player (`escrow.ts`), then re-reads what it acts on. A bid is claimed with a
+ * conditional update (pending → accepted/rejected) and an accepted listing likewise (open →
+ * completed), so a second answer matches nothing and pays nothing; every payout and refund
+ * also carries the bid's idempotency key (`TRANSFER_ACCEPT:<bidId>`, `TRANSFER_BID_REFUND:<bidId>`).
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { exchangeService } from "~/lib/vault";
+import { exchangeService, lockWallet } from "~/lib/vault/exchange-service";
+import { assertSportsEconomyOpen } from "~/server/api/routers/sports/_shared";
+import {
+  MAX_TRANSFER_SOVEREIGNS,
+  lockTransferClub,
+  lockTransferPlayer,
+  refundTransferBidTx,
+} from "~/server/api/routers/sports/escrow";
 
-// ─── Router ───────────────────────────────────────────────────────────────────
+const transferSovereigns = z.number().int().min(1).max(MAX_TRANSFER_SOVEREIGNS);
 
 export const sportsTransfersRouter = createTRPCRouter({
-  // ═══ League Management ══════════════════════════════════════════════════════
-
-  // ═══ Team Management ═════════════════════════════════════════════════════════
-
-  // ═══ Season & Simulation ════════════════════════════════════════════════════
-
-  // ═══ History & Records ══════════════════════════════════════════════════════
-
-  // ═══ MyClub ══════════════════════════════════════════════════════════════════
-
-  // ═══ Utility ═════════════════════════════════════════════════════════════════
-
-  listPlayerForTransfer: protectedProcedure
-    .input(z.object({ playerId: z.string(), price: z.number().min(1) }))
+  listPlayerForTransfer: rateLimitedMutationProcedure
+    .input(z.object({ playerId: z.string(), price: transferSovereigns }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const player = await ctx.db.sportPlayer.findUnique({
-          where: { id: input.playerId },
-          include: { team: true },
-        });
-        if (!player) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Player not found" });
-        }
-        if (player.team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this player" });
-        }
-        return await (ctx.db as any).sportTransferListing.upsert({
-          where: { playerId: input.playerId },
-          update: { price: input.price, status: "open", teamId: player.teamId },
-          create: {
-            playerId: input.playerId,
-            teamId: player.teamId,
-            price: input.price,
-            status: "open",
-          },
+        return await ctx.db.$transaction(async (tx) => {
+          // Under the player's lock, so a relisting can't reopen a listing an accept is closing
+          await lockTransferPlayer(tx, input.playerId);
+          const player = await tx.sportPlayer.findUnique({
+            where: { id: input.playerId },
+            include: { team: true },
+          });
+          if (!player) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Player not found" });
+          }
+          if (!player.team || player.team.ownerUserId !== ctx.user.id) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this player" });
+          }
+          return tx.sportTransferListing.upsert({
+            where: { playerId: input.playerId },
+            update: { price: input.price, status: "open", teamId: player.teamId },
+            create: {
+              playerId: input.playerId,
+              teamId: player.teamId,
+              price: input.price,
+              status: "open",
+            },
+          });
         });
       } catch (error) {
         if (error instanceof TRPCError) throw error;
@@ -58,43 +67,68 @@ export const sportsTransfersRouter = createTRPCRouter({
       }
     }),
 
-  placeTransferBid: protectedProcedure
-    .input(z.object({ listingId: z.string(), amount: z.number().min(1), bidderTeamId: z.string() }))
+  placeTransferBid: rateLimitedMutationProcedure
+    .input(
+      z.object({ listingId: z.string(), amount: transferSovereigns, bidderTeamId: z.string() })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
-        const listing = await (ctx.db as any).sportTransferListing.findUnique({
+        const listing = await ctx.db.sportTransferListing.findUnique({
           where: { id: input.listingId },
+          select: { playerId: true, status: true },
         });
         if (!listing || listing.status !== "open") {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Listing not active" });
         }
-        const bidderTeam = await ctx.db.sportTeam.findUnique({
-          where: { id: input.bidderTeamId },
-        });
-        if (!bidderTeam || bidderTeam.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own the bidding team" });
-        }
-        const spend = await exchangeService.spend(
-          ctx.user.id,
-          input.amount,
-          "SHARE_BUY",
-          `TRANSFER_BID_ESCROW:${input.listingId}`,
-          ctx.db as any
-        );
-        if (!spend.success) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: spend.message ?? "Insufficient balance to place bid",
+        await assertSportsEconomyOpen(ctx.db);
+        return await ctx.db.$transaction(async (tx) => {
+          await lockTransferClub(tx, input.bidderTeamId);
+          const bidderTeam = await tx.sportTeam.findUnique({
+            where: { id: input.bidderTeamId },
           });
-        }
-        return await (ctx.db as any).sportTransferBid.create({
-          data: {
-            listingId: input.listingId,
-            bidderTeamId: input.bidderTeamId,
-            bidderUserId: ctx.user.id,
-            amount: input.amount,
-            status: "pending",
-          },
+          if (!bidderTeam || bidderTeam.ownerUserId !== ctx.user.id) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "You do not own the bidding team" });
+          }
+
+          // Re-read the listing under the player's lock: an accept may have closed it meanwhile
+          await lockTransferPlayer(tx, listing.playerId);
+          const current = await tx.sportTransferListing.findUnique({
+            where: { id: input.listingId },
+            include: { player: { select: { team: { select: { id: true, ownerUserId: true } } } } },
+          });
+          if (!current || current.status !== "open") {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Listing not active" });
+          }
+          const seller = current.player.team;
+          if (seller.id === bidderTeam.id || seller.ownerUserId === ctx.user.id) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "You cannot bid on your own player",
+            });
+          }
+
+          const spend = await exchangeService.spend(
+            ctx.user.id,
+            input.amount,
+            "SHARE_BUY",
+            `TRANSFER_BID_ESCROW:${input.listingId}`,
+            tx
+          );
+          if (!spend.success) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: spend.message ?? "Insufficient balance to place bid",
+            });
+          }
+          return tx.sportTransferBid.create({
+            data: {
+              listingId: input.listingId,
+              bidderTeamId: input.bidderTeamId,
+              bidderUserId: ctx.user.id,
+              amount: input.amount,
+              status: "pending",
+            },
+          });
         });
       } catch (error) {
         if (error instanceof TRPCError) throw error;
@@ -105,119 +139,102 @@ export const sportsTransfersRouter = createTRPCRouter({
       }
     }),
 
-  respondToTransferBid: protectedProcedure
+  respondToTransferBid: rateLimitedMutationProcedure
     .input(z.object({ bidId: z.string(), action: z.enum(["accept", "reject"]) }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const bid = await (ctx.db as any).sportTransferBid.findUnique({
+        const bid = await ctx.db.sportTransferBid.findUnique({
           where: { id: input.bidId },
-          include: {
-            listing: {
-              include: {
-                player: {
-                  include: { team: true },
-                },
-              },
-            },
-          },
+          include: { listing: { select: { playerId: true } } },
         });
         if (!bid || bid.status !== "pending") {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Bid not active" });
         }
-        const sellerTeam = bid.listing.player.team;
-        if (sellerTeam.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You do not own this listing's player",
+        await assertSportsEconomyOpen(ctx.db);
+        return await ctx.db.$transaction(async (tx) => {
+          await lockTransferClub(tx, bid.bidderTeamId);
+          await lockTransferPlayer(tx, bid.listing.playerId);
+          // Re-read under the lock: the bid may have been answered meanwhile, and the seller is
+          // whoever owns the player now
+          const current = await tx.sportTransferBid.findUnique({
+            where: { id: bid.id },
+            include: { listing: { include: { player: { include: { team: true } } } } },
           });
-        }
-        if (input.action === "accept") {
-          return await ctx.db.$transaction(async (tx) => {
-            // Pay out seller
-            const earnResult = await exchangeService.earn(
-              ctx.user.id,
-              bid.amount,
-              "SHARE_SELL",
-              `TRANSFER_ACCEPT:${bid.id}`,
-              tx as any
-            );
-            if (!earnResult.success) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: earnResult.message ?? "Failed to pay out seller",
-              });
+          if (!current || current.status !== "pending") {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Bid not active" });
+          }
+          const listing = current.listing;
+          const sellerTeam = listing.player.team;
+          if (!sellerTeam || sellerTeam.ownerUserId !== ctx.user.id) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "You do not own this listing's player",
+            });
+          }
+
+          if (input.action === "reject") {
+            if (!(await refundTransferBidTx(tx, bid, "rejected"))) {
+              throw new TRPCError({ code: "BAD_REQUEST", message: "Bid not active" });
             }
-
-            // Transfer player ownership
-            await tx.sportPlayer.update({
-              where: { id: bid.listing.playerId },
-              data: { teamId: bid.bidderTeamId },
-            });
-
-            // Update listing status
-            await (tx as any).sportTransferListing.update({
-              where: { id: bid.listingId },
-              data: { status: "completed" },
-            });
-
-            // Accept the bid
-            await (tx as any).sportTransferBid.update({
-              where: { id: bid.id },
-              data: { status: "accepted" },
-            });
-
-            // Reject other bids and refund escrow
-            const otherBids = await (tx as any).sportTransferBid.findMany({
-              where: { listingId: bid.listingId, id: { not: bid.id }, status: "pending" },
-            });
-
-            for (const other of otherBids) {
-              const refundResult = await exchangeService.earn(
-                other.bidderUserId,
-                other.amount,
-                "ADMIN_ADJUSTMENT",
-                `TRANSFER_BID_REFUND:${other.id}`,
-                tx as any
-              );
-              if (!refundResult.success) {
-                throw new TRPCError({
-                  code: "INTERNAL_SERVER_ERROR",
-                  message: refundResult.message ?? `Failed to refund bid ${other.id}`,
-                });
-              }
-              await (tx as any).sportTransferBid.update({
-                where: { id: other.id },
-                data: { status: "rejected" },
-              });
-            }
-
-            return { success: true, message: "Transfer completed successfully." };
-          });
-        } else {
-          return await ctx.db.$transaction(async (tx) => {
-            // Reject bid and refund bidder
-            await (tx as any).sportTransferBid.update({
-              where: { id: bid.id },
-              data: { status: "rejected" },
-            });
-
-            const refundResult = await exchangeService.earn(
-              bid.bidderUserId,
-              bid.amount,
-              "ADMIN_ADJUSTMENT",
-              `TRANSFER_BID_REFUND:${bid.id}`,
-              tx as any
-            );
-            if (!refundResult.success) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: refundResult.message ?? "Failed to refund bidder",
-              });
-            }
-
             return { success: true, message: "Bid rejected and bidder refunded." };
+          }
+
+          // Claim the bid, then the listing: a second accept, or one racing a reject or an
+          // accept of another bid, matches nothing here and pays nothing
+          const claimed = await tx.sportTransferBid.updateMany({
+            where: { id: bid.id, status: "pending" },
+            data: { status: "accepted" },
           });
-        }
+          if (claimed.count !== 1) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Bid not active" });
+          }
+          const closed = await tx.sportTransferListing.updateMany({
+            where: { id: listing.id, status: "open" },
+            data: { status: "completed" },
+          });
+          if (closed.count !== 1) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Listing not active" });
+          }
+
+          // Every wallet this accept pays, locked in one global order (user id) before any move: two
+          // accepts that each pay the other's seller a refund would otherwise deadlock
+          const otherBids = await tx.sportTransferBid.findMany({
+            where: { listingId: listing.id, status: "pending" },
+          });
+          const payees = new Set([ctx.user.id, ...otherBids.map((other) => other.bidderUserId)]);
+          for (const userId of [...payees].sort()) await lockWallet(tx, userId);
+
+          // Pay out seller
+          const payout = `TRANSFER_ACCEPT:${bid.id}`;
+          const earnResult = await exchangeService.earn(
+            ctx.user.id,
+            bid.amount,
+            "SHARE_SELL",
+            payout,
+            tx,
+            undefined,
+            { idempotencyKey: payout }
+          );
+          if (!earnResult.success) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: earnResult.message ?? "Failed to pay out seller",
+            });
+          }
+
+          // Transfer player ownership
+          await tx.sportPlayer.update({
+            where: { id: listing.playerId },
+            data: { teamId: bid.bidderTeamId },
+          });
+
+          // Reject other bids and refund escrow
+          for (const other of otherBids) {
+            await refundTransferBidTx(tx, other, "rejected");
+          }
+
+          return { success: true, message: "Transfer completed successfully." };
+        });
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -227,107 +244,9 @@ export const sportsTransfersRouter = createTRPCRouter({
       }
     }),
 
-  // Bidder withdraws their own pending bid; escrow is refunded.
-  withdrawTransferBid: protectedProcedure
-    .input(z.object({ bidId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const bid = await (ctx.db as any).sportTransferBid.findUnique({
-          where: { id: input.bidId },
-        });
-        if (!bid || bid.status !== "pending") {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Bid not active" });
-        }
-        if (bid.bidderUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Not your bid" });
-        }
-        await exchangeService.earn(
-          ctx.user.id,
-          bid.amount,
-          "ADMIN_ADJUSTMENT",
-          `TRANSFER_BID_REFUND:${bid.id}`,
-          ctx.db as any
-        );
-        await (ctx.db as any).sportTransferBid.update({
-          where: { id: bid.id },
-          data: { status: "withdrawn" },
-        });
-        return { success: true };
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to withdraw bid" });
-      }
-    }),
-
-  // Seller cancels a listing; all pending bids are refunded and rejected.
-  cancelTransferListing: protectedProcedure
-    .input(z.object({ listingId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const listing = await (ctx.db as any).sportTransferListing.findUnique({
-          where: { id: input.listingId },
-          include: { player: { include: { team: true } } },
-        });
-        if (!listing || listing.status !== "open") {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Listing not active" });
-        }
-        if (listing.player.team.ownerUserId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this listing" });
-        }
-        const pendingBids = await (ctx.db as any).sportTransferBid.findMany({
-          where: { listingId: listing.id, status: "pending" },
-        });
-        for (const b of pendingBids) {
-          await exchangeService.earn(
-            b.bidderUserId,
-            b.amount,
-            "ADMIN_ADJUSTMENT",
-            `TRANSFER_BID_REFUND:${b.id}`,
-            ctx.db as any
-          );
-          await (ctx.db as any).sportTransferBid.update({
-            where: { id: b.id },
-            data: { status: "rejected" },
-          });
-        }
-        await (ctx.db as any).sportTransferListing.update({
-          where: { id: listing.id },
-          data: { status: "cancelled" },
-        });
-        return { success: true, refunded: pendingBids.length };
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to cancel listing" });
-      }
-    }),
-
-  getPlayerValuation: publicProcedure
-    .input(z.object({ playerId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const player = await ctx.db.sportPlayer.findUnique({
-          where: { id: input.playerId },
-        });
-        if (!player) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Player not found" });
-        }
-        const ratings = (player.ratings as Record<string, any>) || {};
-        const overall = ratings.overall || 50;
-        const form = ratings.form || 50;
-        const value = Math.max(100, Math.min(10000, overall * 50 * (1 + (form - 50) / 100)));
-        return { valuation: Math.round(value) };
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to calculate player value",
-        });
-      }
-    }),
-
   getOpenTransferListings: publicProcedure.query(async ({ ctx }) => {
     try {
-      return await (ctx.db as any).sportTransferListing.findMany({
+      return await ctx.db.sportTransferListing.findMany({
         where: { status: "open" },
         include: {
           player: {
@@ -336,7 +255,7 @@ export const sportsTransfersRouter = createTRPCRouter({
         },
         orderBy: { createdAt: "desc" },
       });
-    } catch (error) {
+    } catch {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Failed to fetch transfer listings",
@@ -354,7 +273,7 @@ export const sportsTransfersRouter = createTRPCRouter({
         if (!team) {
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
         }
-        const inboundBids = await (ctx.db as any).sportTransferBid.findMany({
+        const inboundBids = await ctx.db.sportTransferBid.findMany({
           where: {
             listing: {
               teamId: input.teamId,
@@ -371,7 +290,7 @@ export const sportsTransfersRouter = createTRPCRouter({
           },
           orderBy: { createdAt: "desc" },
         });
-        const outboundBids = await (ctx.db as any).sportTransferBid.findMany({
+        const outboundBids = await ctx.db.sportTransferBid.findMany({
           where: {
             bidderTeamId: input.teamId,
           },

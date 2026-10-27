@@ -1,0 +1,317 @@
+"use client";
+
+import React, {
+  type ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { cn } from "~/lib/utils/cn";
+import { springSnappy } from "~/lib/design/motion";
+
+// The island morphs with the snappy spring: it answers a press directly, at the same settle
+// speed as the controls inside it.
+const MAX_HEIGHT_MOBILE_ULTRA = 400;
+const MAX_HEIGHT_MOBILE_MASSIVE = 700;
+
+import { type SizePresets, type Preset, SIZE_PRESETS, DynamicIslandSizePresets } from "./presets";
+
+export * from "./presets";
+
+type HaloSizeContextType = {
+  size: SizePresets;
+  setSize: (size: SizePresets) => void;
+};
+
+const HaloSizeContext = createContext<HaloSizeContextType | undefined>(undefined);
+
+interface HaloProviderProps {
+  children: React.ReactNode;
+  initialSize?: SizePresets;
+}
+
+export const HaloProvider: React.FC<HaloProviderProps> = ({
+  children,
+  initialSize = SIZE_PRESETS.DEFAULT,
+}) => {
+  // useState skips the re-render when the size is unchanged, so setSize needs no guard.
+  const [size, setSize] = useState(initialSize);
+  const contextValue = useMemo(() => ({ size, setSize }), [size]);
+
+  return <HaloSizeContext.Provider value={contextValue}>{children}</HaloSizeContext.Provider>;
+};
+
+export const useHaloSize = () => {
+  const context = useContext(HaloSizeContext);
+  if (!context) {
+    throw new Error("useHaloSize must be used within a HaloProvider");
+  }
+  return context;
+};
+const HaloOuterWrapper = ({ children }: { children: ReactNode }) => {
+  return <div className="z-raised flex h-full w-full items-center justify-center">{children}</div>;
+};
+
+const isCompactSize = (size: SizePresets | undefined): boolean => {
+  if (!size) return true;
+  return (
+    size === "compact" ||
+    size === "compactLong" ||
+    size === "compactMedium" ||
+    size === "compactTall" ||
+    size === "minimalLeading" ||
+    size === "minimalTrailing" ||
+    size === "wikiCompact" ||
+    size === "wikiInline" ||
+    size === "default" ||
+    size === "reset" ||
+    size === "empty"
+  );
+};
+
+const calculateDimensions = (
+  size: SizePresets,
+  screenSize: string,
+  currentSize: Preset | undefined
+): { width: string; height: number | string } => {
+  const resolvedSize = currentSize ?? DynamicIslandSizePresets.default;
+
+  const isMassiveOnMobile = size === "massive" && screenSize === "mobile";
+  const isUltraOnMobile = size === "ultra" && screenSize === "mobile";
+  const isWideOnMobile = (size === "extraWide" || size === "fullWidth") && screenSize === "mobile";
+  const isWideOnTablet = (size === "extraWide" || size === "fullWidth") && screenSize === "tablet";
+
+  if (isMassiveOnMobile) {
+    return { width: "350px", height: MAX_HEIGHT_MOBILE_MASSIVE };
+  }
+
+  if (isUltraOnMobile) {
+    return { width: "350px", height: MAX_HEIGHT_MOBILE_ULTRA };
+  }
+
+  if (isWideOnMobile) {
+    return { width: "95vw", height: 64 };
+  }
+
+  if (isWideOnTablet) {
+    return { width: "90vw", height: 72 };
+  }
+
+  if (size === "extraWide") {
+    return { width: "min(1200px, 80vw)", height: 64 };
+  }
+
+  if (size === "fullWidth") {
+    return { width: "min(1400px, 85vw)", height: 80 };
+  }
+
+  if (
+    size === "compact" ||
+    size === "compactLong" ||
+    size === "compactMedium" ||
+    size === "compactTall" ||
+    size === "wikiInline" ||
+    size === "wikiCompact" ||
+    size === "default" ||
+    size === "reset"
+  ) {
+    return { width: "fit-content", height: "auto" };
+  }
+
+  return {
+    width: `${resolvedSize.width}px`,
+    height: resolvedSize.aspectRatio * resolvedSize.width,
+  };
+};
+
+interface DynamicIslandContentProps extends Omit<
+  React.ComponentPropsWithoutRef<typeof motion.div>,
+  "id"
+> {
+  children: React.ReactNode;
+  id: string;
+  screenSize: string;
+}
+
+const DynamicIslandContent = ({
+  children,
+  id,
+  screenSize,
+  ...props
+}: DynamicIslandContentProps) => {
+  const { size } = useHaloSize();
+  const currentSize = DynamicIslandSizePresets[size] ?? DynamicIslandSizePresets.default;
+  const isCompact = isCompactSize(size);
+
+  const dimensions = calculateDimensions(size, screenSize, currentSize);
+
+  const [isImpersonating, setIsImpersonating] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const checkPlayAs = () => {
+      setIsImpersonating(!!localStorage.getItem("ixstats.play_as_user"));
+    };
+    checkPlayAs();
+    window.addEventListener("storage", checkPlayAs);
+    window.addEventListener("ixstats-play-as-change", checkPlayAs);
+    return () => {
+      window.removeEventListener("storage", checkPlayAs);
+      window.removeEventListener("ixstats-play-as-change", checkPlayAs);
+    };
+  }, []);
+
+  const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const element = contentRef.current;
+    if (!element) return;
+
+    const observer = new ResizeObserver((entries) => {
+      if (!entries || entries.length === 0) return;
+      const entry = entries[0];
+      if (entry) {
+        const height = element.scrollHeight || entry.contentRect.height;
+        if (height > 0) {
+          requestAnimationFrame(() => {
+            setMeasuredHeight((prev) => {
+              if (prev !== null && Math.abs(prev - height) < 1.5) {
+                return prev;
+              }
+              return height;
+            });
+          });
+        }
+      }
+    });
+
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+    };
+    // oxlint-disable-next-line
+  }, [size, children]);
+
+  const isAutoHeight = dimensions.height === "auto";
+  const targetHeight = isAutoHeight
+    ? "auto"
+    : measuredHeight !== null
+      ? measuredHeight
+      : dimensions.height;
+
+  return (
+    <div className="relative">
+      <motion.div
+        id={id}
+        data-expanded={!isCompact ? "true" : undefined}
+        // Halo is the acrylic island: a pill, then a frosted sheet once `data-expanded` opens it
+        // into a panel. Content inside stays on opaque roles.
+        className={cn(
+          "facet-chrome relative mx-auto items-center justify-center text-center",
+          isImpersonating && "ring-destructive ring-2"
+        )}
+        initial={{
+          width: dimensions.width,
+          height: targetHeight,
+          borderRadius: currentSize.borderRadius,
+        }}
+        animate={{
+          width: dimensions.width,
+          height: targetHeight,
+          borderRadius: currentSize.borderRadius,
+        }}
+        transition={springSnappy}
+        style={{
+          transform: "translateZ(0)",
+          WebkitFontSmoothing: "antialiased",
+          MozOsxFontSmoothing: "grayscale",
+          isolation: "isolate",
+          overflow: isAutoHeight ? "visible" : "hidden",
+        }}
+        {...props}
+      >
+        <div
+          ref={contentRef}
+          className={`z-raised relative h-auto w-full ${isAutoHeight ? "overflow-visible" : "overflow-hidden"}`}
+        >
+          <AnimatePresence>{children}</AnimatePresence>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+export const Halo = ({ children, id, ...props }: { children: ReactNode; id: string }) => {
+  const [screenSize, setScreenSize] = useState("desktop");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // oxlint-disable-next-line
+    setMounted(true);
+
+    // One measurement per frame; setScreenSize skips the re-render when the bucket is unchanged.
+    let rafId: number | undefined;
+    const handleResize = () => {
+      if (rafId !== undefined) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const width = window.innerWidth;
+        setScreenSize(width <= 640 ? "mobile" : width <= 1024 ? "tablet" : "desktop");
+      });
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize, { passive: true });
+    return () => {
+      if (rafId !== undefined) cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  if (!mounted) {
+    return (
+      <HaloOuterWrapper>
+        <div className="facet-chrome relative isolate mx-auto h-11 items-center justify-center rounded-full px-4 text-center">
+          {children}
+        </div>
+      </HaloOuterWrapper>
+    );
+  }
+
+  return (
+    <HaloOuterWrapper>
+      <DynamicIslandContent id={id} screenSize={screenSize} {...props}>
+        {children}
+      </DynamicIslandContent>
+    </HaloOuterWrapper>
+  );
+};
+
+type DynamicContainerProps = {
+  className?: string;
+  children?: React.ReactNode;
+};
+
+export const HaloContainer = ({ className, children }: DynamicContainerProps) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.98, y: 4 }}
+      animate={{
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        transition: springSnappy,
+      }}
+      exit={{ opacity: 0, scale: 0.98, y: 10, transition: { duration: 0.15, ease: "easeOut" } }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+};

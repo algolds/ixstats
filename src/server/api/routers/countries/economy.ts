@@ -1,264 +1,333 @@
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
+import type { Prisma, PrismaClient, StorytellerEffect } from "@prisma/client";
 import {
   publicProcedure,
-  protectedProcedure,
   rateLimitedPublicProcedure,
   cachedStaticProcedure,
 } from "~/server/api/trpc";
-import { IxTime } from "~/lib/ixtime";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
+import type { CountryStats, EconomicConfig } from "~/types/ixstats";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
+import { tradeFigures } from "~/lib/economy/trade-figures";
 import { getEconomicTierFromGdpPerCapita } from "~/types/ixstats";
+import { loadVitalityExtras, scoreGovernmentalEfficiency } from "~/server/shared/mycountry-helpers";
 import {
-  safelyIncludeRelations,
   prepareBaseCountryData,
   getGrowthRates,
+  mean,
   stddev,
   getCountryComponentsStatsData,
+  resolveCountryRefId,
 } from "./utils";
+import { withoutStandIns } from "~/server/shared/country-helpers";
+import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
+import { redactEconomicBudget } from "~/lib/country/public-record";
+import { clerkPublicProfile } from "~/server/shared/clerk-public-profile";
+
+const HEAVY_COUNTRY_GEO_OMIT = { geometry: true, centroid: true, boundingBox: true } as const;
+
+const SOVEREIGN_OWNER_SELECT = {
+  id: true,
+  clerkUserId: true,
+  handle: true,
+  forumUsername: true,
+  membershipTier: true,
+  role: { select: { displayName: true, name: true } },
+} satisfies Prisma.UserSelect;
+type SovereignOwner = Prisma.UserGetPayload<{ select: typeof SOVEREIGN_OWNER_SELECT }>;
+
+/** One IxTime year (IxTime counts 365.25 days). */
+const ONE_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
+
+const LEAN_INCLUDE = {
+  storytellerEffects: { where: { isActive: true }, orderBy: { ixTimeTimestamp: "desc" } },
+  owner: { select: SOVEREIGN_OWNER_SELECT },
+  // emblemUrl/thumbnail: the realm logo on MyCountry's identity pill.
+  realm: {
+    select: { id: true, name: true, slug: true, status: true, emblemUrl: true, thumbnail: true },
+  },
+} satisfies Prisma.CountryInclude;
+
+const ECONOMIC_INCLUDE = {
+  ...LEAN_INCLUDE,
+  // Read by the MyCountry Standing band (issues and directives move these).
+  stabilityMetrics: {
+    select: { stabilityScore: true, trustInGovernment: true, socialCohesion: true },
+  },
+  economicProfile: true,
+  laborMarket: true,
+  fiscalSystem: true,
+  incomeDistribution: true,
+  governmentBudget: true,
+  demographics: true,
+  nationalIdentity: true,
+} satisfies Prisma.CountryInclude;
+
+/** Country columns surfaced as `undefined` (not `null`) so the client's optional props stay unset. */
+const STORED_FIELDS = [
+  "totalWorkforce",
+  "averageWorkweekHours",
+  "minimumWage",
+  "averageAnnualIncome",
+  "taxRevenuePerCapita",
+  "governmentRevenueTotal",
+  "governmentBudgetGDPPercent",
+  "budgetDeficitSurplus",
+  "internalDebtGDPPercent",
+  "externalDebtGDPPercent",
+  "totalDebtGDPRatio",
+  "debtPerCapita",
+  "interestRates",
+  "debtServiceCosts",
+  "povertyRate",
+  "incomeInequalityGini",
+  "socialMobilityIndex",
+  "spendingGDPPercent",
+  "spendingPerCapita",
+  "lifeExpectancy",
+  "literacyRate",
+  "urbanPopulationPercent",
+  "ruralPopulationPercent",
+] as const;
+
+/** Projected stats that override the stored column, again `undefined` when absent. */
+const STATS_FIELDS = [
+  "populationDensity",
+  "gdpDensity",
+  "unemploymentRate",
+  "taxRevenueGDPPercent",
+  "totalGovernmentSpending",
+  "inflationRate",
+] as const;
+
+type HistoryPoint = Pick<
+  Prisma.HistoricalDataPointGetPayload<object>,
+  "ixTimeTimestamp" | "population" | "gdpPerCapita" | "totalGdp"
+>;
+
+function undefinedIfNull<T, K extends keyof T>(source: T, keys: readonly K[]) {
+  return Object.fromEntries(keys.map((key) => [key, source[key] ?? undefined])) as {
+    [P in K]: NonNullable<T[P]> | undefined;
+  };
+}
+
+/**
+ * The projected figures every read returns in place of the stored (frozen) columns. A figure the
+ * nation never recorded stays undefined even though the engine ran on a stand-in for it.
+ */
+function projectedColumns(stats: CountryStats, recorded: Parameters<typeof withoutStandIns>[0]) {
+  return {
+    currentPopulation: stats.currentPopulation,
+    currentGdpPerCapita: stats.currentGdpPerCapita,
+    currentTotalGdp: stats.currentTotalGdp,
+    nominalGDP: stats.currentTotalGdp,
+    economicTier: stats.economicTier,
+    populationTier: stats.populationTier,
+    ...undefinedIfNull(stats, STATS_FIELDS),
+    ...withoutStandIns(recorded, stats),
+  };
+}
+
+/** The IxTime calendar year of an IxTime timestamp. */
+const ixYear = (ixTime: number) => new Date(ixTime).getUTCFullYear();
+
+function flagsWhere(checks: Record<string, boolean>): string[] {
+  return Object.keys(checks).filter((flag) => checks[flag]);
+}
+
+/**
+ * The first projected IxTime year (projections are one IxTime year apart from `fromIxTime`) whose
+ * GDP per capita crosses the next economic-tier threshold.
+ */
+function projectTierChange(
+  thresholds: number[],
+  currentGdpPc: number,
+  projectedGdpPc: number[],
+  fromIxTime: number
+) {
+  const nextTier = [...thresholds]
+    .sort((a, b) => a - b)
+    .find((threshold) => threshold > currentGdpPc);
+  const crossing = nextTier ? projectedGdpPc.findIndex((gdpPc) => gdpPc >= nextTier) : -1;
+  if (crossing < 0) return null;
+  return {
+    year: ixYear(fromIxTime) + crossing + 1,
+    newTier: getEconomicTierFromGdpPerCapita(projectedGdpPc[crossing]!),
+  };
+}
+
+async function findCountryWithEconomics(db: PrismaClient, countryId: string) {
+  const query = { where: { id: countryId }, omit: HEAVY_COUNTRY_GEO_OMIT };
+  try {
+    return await db.country.findFirst({ ...query, include: ECONOMIC_INCLUDE });
+  } catch {
+    return await db.country.findFirst({ ...query, include: LEAN_INCLUDE });
+  }
+}
+
+/**
+ * The calculator, baseline stats and (epoch-ms) active effects every projection starts from, with the nation's time
+ * now on its realm's clock (`now`, the default target).
+ */
+async function startProgression(
+  db: PrismaClient,
+  country: {
+    id: string;
+    realmId: string;
+    baselineDate: Date;
+    storytellerEffects: StorytellerEffect[];
+  },
+  econCfg: EconomicConfig
+) {
+  const now = (await clockForCountry(db, country)).now();
+  const calc = new IxStatsCalculator(econCfg, country.baselineDate.getTime());
+  const componentsData = await getCountryComponentsStatsData(db, country.id, now);
+  const baselineStats = calc.initializeCountryStats(
+    prepareBaseCountryData(country, componentsData)
+  );
+  const effects = country.storytellerEffects.map((effect) => ({
+    ...effect,
+    ixTimeTimestamp: effect.ixTimeTimestamp.getTime(),
+  }));
+  return { calc, baselineStats, effects, now };
+}
 
 export const economyProcedures = {
+  /**
+   * The country record with its economic relations and projections. Public (profile, factbook,
+   * MyCountry); the sector spending split (`governmentBudget`, `fiscalSystem.spendingByCategory`)
+   * goes to the nation's owner and privileged roles only (`redactEconomicBudget`).
+   */
   getByIdWithEconomicData: rateLimitedPublicProcedure
     .input(
       z.object({
         id: z.string(),
         timestamp: z.number().optional(),
+        ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
-      const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
-      const FIVE_YEARS_MS = 5 * 365 * 24 * 60 * 60 * 1000;
-      const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+      const realmId = await viewerRealmId(ctx, input.realm);
+      const countryId = await resolveCountryRefId(ctx.db, input.id, realmId);
+      if (!countryId) return null;
 
-      const availableRelations = await safelyIncludeRelations(ctx.db);
-
-      const includeObject: any = {
-        storytellerEffects: {
-          where: { isActive: true },
-          orderBy: { ixTimeTimestamp: "desc" },
-        },
-        users: {
-          select: {
-            clerkUserId: true,
-          },
-          take: 1,
-        },
-      };
-
-      if (availableRelations.economicProfile) includeObject.economicProfile = true;
-      if (availableRelations.laborMarket) includeObject.laborMarket = true;
-      if (availableRelations.fiscalSystem) includeObject.fiscalSystem = true;
-      if (availableRelations.incomeDistribution) includeObject.incomeDistribution = true;
-      if (availableRelations.governmentBudget) includeObject.governmentBudget = true;
-      if (availableRelations.demographics) includeObject.demographics = true;
-      if (availableRelations.nationalIdentity) includeObject.nationalIdentity = true;
-
-      let country;
-      try {
-        const slugLower = input.id.toLowerCase();
-        country = await ctx.db.country.findFirst({
-          where: {
-            OR: [{ id: input.id }, { slug: slugLower }, { name: input.id }],
-          },
-          include: includeObject,
-        });
-      } catch (dbError) {
-        const slugLower = input.id.toLowerCase();
-        country = await ctx.db.country.findFirst({
-          where: {
-            OR: [{ id: input.id }, { slug: slugLower }, { name: input.id }],
-          },
-          include: {
-            storytellerEffects: {
-              where: { isActive: true },
-              orderBy: { ixTimeTimestamp: "desc" },
-            },
-          },
-        });
-      }
-
-      if (!country) {
-        return null;
-      }
+      const country = await findCountryWithEconomics(ctx.db, countryId);
+      if (!country) return null;
 
       const econCfg = await getEconomicConfigFromDB(ctx.db);
-      const baselineDate = country.baselineDate ? country.baselineDate.getTime() : Date.now();
-
-      const calc = new IxStatsCalculator(econCfg, baselineDate);
-      const componentsData = await getCountryComponentsStatsData(ctx.db, country.id);
-      const base = prepareBaseCountryData(country, componentsData);
-
-      const baselineStats = calc.initializeCountryStats(base);
-
-      const effects = (country.storytellerEffects as any[]).map((i: any) => ({
-        ...i,
-        ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
-      }));
+      const { calc, baselineStats, effects, now } = await startProgression(
+        ctx.db,
+        country,
+        econCfg
+      );
+      const targetTime = input.timestamp ?? now;
 
       const result = calc.calculateTimeProgression(baselineStats, targetTime, effects);
-      const projections = [];
-      for (let i = 1; i <= 5; i++) {
-        const futureTime = targetTime + i * ONE_YEAR_MS;
-        const proj = calc.calculateTimeProgression(baselineStats, futureTime, effects);
-        projections.push({
-          yearOffset: i,
-          ixTime: futureTime,
-          stats: proj.newStats,
-        });
-      }
+      const projections = Array.from({ length: 5 }, (_, i) => {
+        const ixTime = targetTime + (i + 1) * ONE_YEAR_MS;
+        return {
+          ixTime,
+          stats: calc.calculateTimeProgression(baselineStats, ixTime, effects).newStats,
+        };
+      });
 
-      let historical = await ctx.db.historicalDataPoint.findMany({
+      let historical: HistoryPoint[] = await ctx.db.historicalDataPoint.findMany({
         where: {
           countryId: country.id,
           ixTimeTimestamp: {
-            gte: new Date(targetTime - FIVE_YEARS_MS),
+            gte: new Date(targetTime - 5 * ONE_YEAR_MS),
             lte: new Date(targetTime),
           },
         },
+        select: { ixTimeTimestamp: true, population: true, gdpPerCapita: true, totalGdp: true },
         orderBy: { ixTimeTimestamp: "asc" },
         take: 1000,
       });
-
-      if (!historical || historical.length < 5) {
-        historical = [];
-        for (let i = 5; i >= 1; i--) {
-          const pastTime = targetTime - i * ONE_YEAR_MS;
-          const hist = calc.calculateTimeProgression(baselineStats, pastTime, effects);
-          historical.push({
-            id: "",
-            createdAt: new Date(pastTime),
-            countryId: country.id,
+      if (historical.length < 5) {
+        historical = [5, 4, 3, 2, 1].map((yearsAgo) => {
+          const pastTime = targetTime - yearsAgo * ONE_YEAR_MS;
+          const { newStats } = calc.calculateTimeProgression(baselineStats, pastTime, effects);
+          return {
             ixTimeTimestamp: new Date(pastTime),
-            population: hist.newStats.currentPopulation,
-            gdpPerCapita: hist.newStats.currentGdpPerCapita,
-            totalGdp: hist.newStats.currentTotalGdp,
-            populationGrowthRate: hist.newStats.populationGrowthRate,
-            gdpGrowthRate: hist.newStats.adjustedGdpGrowth,
-            landArea: typeof hist.newStats.landArea === "number" ? hist.newStats.landArea : null,
-            populationDensity:
-              typeof hist.newStats.populationDensity === "number"
-                ? hist.newStats.populationDensity
-                : null,
-            gdpDensity:
-              typeof hist.newStats.gdpDensity === "number" ? hist.newStats.gdpDensity : null,
-          } as any);
-        }
+            population: newStats.currentPopulation,
+            gdpPerCapita: newStats.currentGdpPerCapita,
+            totalGdp: newStats.currentTotalGdp,
+          };
+        });
       }
 
       const popGrowthRates = getGrowthRates(historical, "population");
       const gdpGrowthRates = getGrowthRates(historical, "gdpPerCapita");
-      const avgPopGrowth = popGrowthRates.length
-        ? popGrowthRates.reduce((a: number, b: number) => a + b, 0) / popGrowthRates.length
-        : 0;
-      const avgGdpGrowth = gdpGrowthRates.length
-        ? gdpGrowthRates.reduce((a: number, b: number) => a + b, 0) / gdpGrowthRates.length
-        : 0;
+      const avgPopGrowth = mean(popGrowthRates);
+      const avgGdpGrowth = mean(gdpGrowthRates);
       const popVolatility = stddev(popGrowthRates);
       const gdpVolatility = stddev(gdpGrowthRates);
-      const riskFlags = [];
-      if (avgPopGrowth < 0) riskFlags.push("negative_population_growth");
-      if (avgGdpGrowth < 0) riskFlags.push("negative_gdp_per_capita_growth");
-      if (popVolatility > 0.05) riskFlags.push("high_population_volatility");
-      if (gdpVolatility > 0.05) riskFlags.push("high_gdp_per_capita_volatility");
+      const riskFlags = flagsWhere({
+        negative_population_growth: avgPopGrowth < 0,
+        negative_gdp_per_capita_growth: avgGdpGrowth < 0,
+        high_population_volatility: popVolatility > 0.05,
+        high_gdp_per_capita_volatility: gdpVolatility > 0.05,
+      });
+      const vulnerabilities = flagsWhere({
+        low_population_growth: avgPopGrowth < 0.002,
+        low_gdp_per_capita_growth: avgGdpGrowth < 0.01,
+      });
 
-      let tierChangeProjection = null;
-      const currentGDPPC = result.newStats.currentGdpPerCapita;
-      const projectionsGDPPC = projections.map((p) => p.stats.currentGdpPerCapita);
-      const tierThresholds = Object.values(econCfg.economicTierThresholds)
-        .filter((v): v is number => typeof v === "number")
-        .sort((a, b) => a - b);
-      let nextTier = null;
-      for (let i = 0; i < tierThresholds.length; i++) {
-        if (tierThresholds[i]! > currentGDPPC) {
-          nextTier = tierThresholds[i]!;
-          break;
-        }
-      }
-      if (nextTier) {
-        for (let i = 0; i < projectionsGDPPC.length; i++) {
-          if (projectionsGDPPC[i]! >= nextTier) {
-            tierChangeProjection = {
-              year: new Date().getFullYear() + i + 1,
-              newTier: getEconomicTierFromGdpPerCapita(projectionsGDPPC[i]!),
-            };
-            break;
+      const tierChangeProjection = projectTierChange(
+        Object.values(econCfg.economicTierThresholds),
+        result.newStats.currentGdpPerCapita,
+        projections.map((p) => p.stats.currentGdpPerCapita),
+        targetTime
+      );
+
+      // `country` comes from an `include: any` query, so pin the owner to the shape selected above.
+      const rawUser = country.owner as SovereignOwner | null;
+      const sovereignUser = rawUser
+        ? {
+            id: rawUser.id,
+            username: rawUser.handle || rawUser.forumUsername || rawUser.clerkUserId || null,
+            roleName: rawUser.role?.displayName || rawUser.role?.name || "Sovereign Regent",
+            membershipTier: rawUser.membershipTier || "citizen",
           }
-        }
-      }
-      const vulnerabilities = [];
-      if (avgPopGrowth < 0.002) vulnerabilities.push("low_population_growth");
-      if (avgGdpGrowth < 0.01) vulnerabilities.push("low_gdp_per_capita_growth");
+        : null;
 
+      // The sovereign's Clerk picture and role: the identity pills' avatar and outline, wherever they show.
+      const clerkProfile = await clerkPublicProfile(rawUser?.clerkUserId);
+
+      const { newStats } = result;
       const response = {
         ...country,
-        currentPopulation: result.newStats.currentPopulation,
-        currentGdpPerCapita: result.newStats.currentGdpPerCapita,
-        currentTotalGdp: result.newStats.currentTotalGdp,
-        nominalGDP: result.newStats.currentTotalGdp,
-        populationDensity: result.newStats.populationDensity ?? undefined,
-        gdpDensity: result.newStats.gdpDensity ?? undefined,
-        economicTier: result.newStats.economicTier,
-        populationTier: result.newStats.populationTier,
-        unemploymentRate: result.newStats.unemploymentRate ?? undefined,
-        totalWorkforce: country.totalWorkforce ?? undefined,
-        averageWorkweekHours: country.averageWorkweekHours ?? undefined,
-        minimumWage: country.minimumWage ?? undefined,
-        averageAnnualIncome: country.averageAnnualIncome ?? undefined,
-        taxRevenueGDPPercent: result.newStats.taxRevenueGDPPercent ?? undefined,
-        taxRevenuePerCapita: country.taxRevenuePerCapita ?? undefined,
-        governmentRevenueTotal: country.governmentRevenueTotal ?? undefined,
-        governmentBudgetGDPPercent: country.governmentBudgetGDPPercent ?? undefined,
-        budgetDeficitSurplus: country.budgetDeficitSurplus ?? undefined,
-        internalDebtGDPPercent: country.internalDebtGDPPercent ?? undefined,
-        externalDebtGDPPercent: country.externalDebtGDPPercent ?? undefined,
-        totalDebtGDPRatio: country.totalDebtGDPRatio ?? undefined,
-        debtPerCapita: country.debtPerCapita ?? undefined,
-        interestRates: country.interestRates ?? undefined,
-        debtServiceCosts: country.debtServiceCosts ?? undefined,
-        povertyRate: country.povertyRate ?? undefined,
-        incomeInequalityGini: country.incomeInequalityGini ?? undefined,
-        socialMobilityIndex: country.socialMobilityIndex ?? undefined,
-        totalGovernmentSpending: result.newStats.totalGovernmentSpending ?? undefined,
-        spendingGDPPercent: country.spendingGDPPercent ?? undefined,
-        spendingPerCapita: country.spendingPerCapita ?? undefined,
-        lifeExpectancy: country.lifeExpectancy ?? undefined,
-        literacyRate: country.literacyRate ?? undefined,
-        urbanPopulationPercent: country.urbanPopulationPercent ?? undefined,
-        ruralPopulationPercent: country.ruralPopulationPercent ?? undefined,
-        inflationRate: result.newStats.inflationRate ?? undefined,
+        owner: rawUser
+          ? { ...rawUser, avatarUrl: clerkProfile.imageUrl, clerkRole: clerkProfile.role }
+          : null,
+        sovereignUser,
+        ...undefinedIfNull(country, STORED_FIELDS),
+        ...projectedColumns(newStats, country),
         calculatedStats: {
-          gdpGrowth: result.newStats.adjustedGdpGrowth || 0,
-          populationGrowth: result.newStats.populationGrowthRate || 0,
-          inflation: result.newStats.inflationRate || 0.02,
+          // The engine's rate (tier cap, diminishing returns), not the static input.
+          gdpGrowth: newStats.effectiveGdpGrowth ?? 0,
+          populationGrowth: newStats.populationGrowthRate || 0,
         },
         projections: projections.map((p) => ({
-          year: new Date(p.ixTime).getFullYear(),
+          year: ixYear(p.ixTime),
           gdp: p.stats.currentTotalGdp,
           population: p.stats.currentPopulation,
         })),
-        historical: historical.map((h: any) => ({
-          year: new Date(h.ixTimeTimestamp).getFullYear(),
+        historical: historical.map((h) => ({
+          year: ixYear(h.ixTimeTimestamp.getTime()),
           gdp: h.totalGdp,
           population: h.population,
         })),
-        storytellerEffects: (country.storytellerEffects as any[]).map((dm: any) => ({
-          ...dm,
-          ixTimeTimestamp: dm.ixTimeTimestamp.getTime(),
-        })),
+        storytellerEffects: effects,
         analytics: {
-          growthTrends: {
-            avgPopGrowth,
-            avgGdpGrowth,
-          },
-          volatility: {
-            popVolatility,
-            gdpVolatility,
-          },
+          growthTrends: { avgPopGrowth, avgGdpGrowth },
+          volatility: { popVolatility, gdpVolatility },
           riskFlags,
-          tierChangeProjection: tierChangeProjection || {
-            year: new Date().getFullYear(),
-            newTier: country.economicTier,
+          tierChangeProjection: tierChangeProjection ?? {
+            year: ixYear(targetTime),
+            newTier: newStats.economicTier,
           },
           vulnerabilities,
         },
@@ -266,12 +335,11 @@ export const economyProcedures = {
           country.lastCalculated instanceof Date ? country.lastCalculated.getTime() : Date.now(),
       };
 
-      const ownerClerkUserId = (country as any).users?.[0]?.clerkUserId ?? null;
+      const record = { ...response, ownerClerkUserId: rawUser?.clerkUserId ?? null };
 
-      return {
-        ...response,
-        ownerClerkUserId,
-      } as any;
+      return (
+        (await hasCountryWriteAccess(ctx, country.id)) ? record : redactEconomicBudget(record)
+      ) as any;
     }),
 
   getByIdAtTime: publicProcedure
@@ -279,6 +347,7 @@ export const economyProcedures = {
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findUnique({
         where: { id: input.id },
+        omit: HEAVY_COUNTRY_GEO_OMIT,
         include: {
           storytellerEffects: { where: { isActive: true } },
           nationalIdentity: true,
@@ -287,23 +356,21 @@ export const economyProcedures = {
 
       if (!country) return null;
 
-      const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
       const econCfg = await getEconomicConfigFromDB(ctx.db);
-      const baselineDate = country.baselineDate ? country.baselineDate.getTime() : Date.now();
-      const calc = new IxStatsCalculator(econCfg, baselineDate);
-      const componentsData = await getCountryComponentsStatsData(ctx.db, country.id);
-      const base = prepareBaseCountryData(country, componentsData);
-      const baselineStats = calc.initializeCountryStats(base);
-
-      const effects = (country.storytellerEffects as any[]).map((i: any) => ({
-        ...i,
-        ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
-      }));
+      const { calc, baselineStats, effects, now } = await startProgression(
+        ctx.db,
+        country,
+        econCfg
+      );
+      const targetTime = input.timestamp ?? now;
 
       const calculatedStats = calc.calculateTimeProgression(baselineStats, targetTime, effects);
 
       return {
         ...country,
+        // The stored current* columns are frozen between stat-progression runs; never return
+        // them beside the projection.
+        ...projectedColumns(calculatedStats.newStats, country),
         calculatedStats: {
           currentPopulation: calculatedStats.newStats.currentPopulation,
           currentGdpPerCapita: calculatedStats.newStats.currentGdpPerCapita,
@@ -317,78 +384,32 @@ export const economyProcedures = {
       };
     }),
 
-  // Editor-only loader: the relational subsystems the builder/editor needs to
-  // rehydrate state that getByIdAtTime (kept lean for its 14 hot-path callers)
-  // does not include. Owner/admin gated like updateCountry.
-  getEditorRelations: protectedProcedure
-    .input(z.object({ countryId: z.string() }))
+  getGlobalStats: cachedStaticProcedure
+    .input(realmScopeInput.optional())
     .query(async ({ ctx, input }) => {
-      const user = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        include: { role: true },
+      const countries = await ctx.db.country.findMany({
+        where: { isDemo: false, realmId: await viewerRealmId(ctx, input?.realm) },
+        select: {
+          currentPopulation: true,
+          currentTotalGdp: true,
+          landArea: true,
+        },
       });
-      const role = user?.role?.name;
-      if (user?.countryId !== input.countryId && role !== "admin" && role !== "system-owner") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to load this country's editor data.",
-        });
-      }
 
-      const [
-        demographics,
-        incomeDistribution,
-        governmentBudget,
-        economicProfile,
-        governmentComponents,
-        economicComponents,
-      ] = await Promise.all([
-        ctx.db.demographics.findUnique({ where: { countryId: input.countryId } }),
-        ctx.db.incomeDistribution.findUnique({ where: { countryId: input.countryId } }),
-        ctx.db.governmentBudget.findUnique({ where: { countryId: input.countryId } }),
-        ctx.db.economicProfile.findUnique({ where: { countryId: input.countryId } }),
-        ctx.db.governmentComponent.findMany({
-          where: { countryId: input.countryId, isActive: true },
-        }),
-        ctx.db.economicComponent.findMany({
-          where: { countryId: input.countryId, isActive: true },
-        }),
-      ]);
+      const totalPop = countries.reduce((acc, c) => acc + (c.currentPopulation || 0), 0);
+      const totalGdp = countries.reduce((acc, c) => acc + (c.currentTotalGdp || 0), 0);
+      const totalArea = countries.reduce((acc, c) => acc + (c.landArea || 0), 0);
 
       return {
-        demographics,
-        incomeDistribution,
-        governmentBudget,
-        economicProfile,
-        governmentComponents,
-        economicComponents,
+        totalPopulation: totalPop,
+        totalGdp: totalGdp,
+        totalLandArea: totalArea,
+        avgGdpPerCapita: totalPop > 0 ? totalGdp / totalPop : 0,
+        count: countries.length,
       };
     }),
 
-  getGlobalStats: cachedStaticProcedure.query(async ({ ctx }) => {
-    const countries = await ctx.db.country.findMany({
-      where: { isDemo: false },
-      select: {
-        currentPopulation: true,
-        currentTotalGdp: true,
-        landArea: true,
-      },
-    });
-
-    const totalPop = countries.reduce((acc, c) => acc + (c.currentPopulation || 0), 0);
-    const totalGdp = countries.reduce((acc, c) => acc + (c.currentTotalGdp || 0), 0);
-    const totalArea = countries.reduce((acc, c) => acc + (c.landArea || 0), 0);
-
-    return {
-      totalPopulation: totalPop,
-      totalGdp: totalGdp,
-      totalLandArea: totalArea,
-      avgGdpPerCapita: totalPop > 0 ? totalGdp / totalPop : 0,
-      count: countries.length,
-    };
-  }),
-
-  // Get trade data for a country
+  // Recorded trade figures for a country (percent-of-GDP exports/imports times GDP); null when unrecorded
   getTradeData: publicProcedure
     .input(
       z.object({
@@ -398,31 +419,27 @@ export const economyProcedures = {
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
+        select: {
+          currentTotalGdp: true,
+          economicProfile: { select: { exportsGDPPercent: true, importsGDPPercent: true } },
+        },
       });
 
       if (!country) {
         throw new Error("Country not found");
       }
 
-      // Calculate trade data based on country economic indicators
-      const gdpBase = country.currentTotalGdp || 1000000000;
-      const tradeIntensity = ((country as any).tradeRelationshipStrength || 25) / 100;
-
-      const totalVolume = gdpBase * 0.6 * tradeIntensity; // Trade typically 60% of GDP * relationship strength
-      const exports = totalVolume * 0.52; // Slightly export-oriented
-      const imports = totalVolume * 0.48;
-      const tradeBalance = exports - imports;
+      const { exports, imports, balance } = tradeFigures({
+        nominalGDP: country.currentTotalGdp,
+        ...country.economicProfile,
+      });
+      if (exports === null || imports === null) return null;
 
       return {
-        totalVolume,
+        totalVolume: exports + imports,
         exports,
         imports,
-        tradeBalance,
-        topPartners: [
-          { country: "Major Trade Partner", volume: totalVolume * 0.25 },
-          { country: "Regional Partner", volume: totalVolume * 0.18 },
-          { country: "Economic Ally", volume: totalVolume * 0.12 },
-        ],
+        tradeBalance: balance,
       };
     }),
 
@@ -448,93 +465,51 @@ export const economyProcedures = {
           throw new Error(`Country with ID ${input.countryId} not found`);
         }
 
-        const currentTime = IxTime.getCurrentIxTime();
         const econCfg = await getEconomicConfigFromDB(ctx.db);
-        const baselineDate = country.baselineDate.getTime();
-        const calc = new IxStatsCalculator(econCfg, baselineDate);
-        const componentsData = await getCountryComponentsStatsData(ctx.db, country.id);
-        const base = prepareBaseCountryData(country, componentsData);
-        const baselineStats = calc.initializeCountryStats(base);
-        const effects = (country.storytellerEffects as any[]).map((i: any) => ({
-          ...i,
-          ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
-        }));
-        const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, effects);
+        const { calc, baselineStats, effects, now } = await startProgression(
+          ctx.db,
+          country,
+          econCfg
+        );
+        const currentStats = calc.calculateTimeProgression(baselineStats, now, effects);
 
         const popGrowthRate = currentStats.newStats.populationGrowthRate || 0;
+        const gdpGrowthRate = currentStats.newStats.effectiveGdpGrowth ?? 0;
 
         const calculateEconomicVitality = () => {
           const gdpScore = Math.min(100, (currentStats.newStats.currentGdpPerCapita / 50000) * 100);
-          const growthBonus = Math.min(
-            20,
-            Math.max(-20, currentStats.newStats.adjustedGdpGrowth * 400)
-          );
+          const growthBonus = Math.min(20, Math.max(-20, gdpGrowthRate * 400));
           return Math.min(100, Math.max(0, gdpScore * 0.7 + growthBonus + 30));
         };
 
         const calculatePopulationWellbeing = () => {
           const growthHealth = popGrowthRate > 0 ? 70 : 40;
-          const densityFactor = country.populationDensity
-            ? Math.max(50, 100 - country.populationDensity / 500)
-            : 60;
+          const density = currentStats.newStats.populationDensity;
+          const densityFactor = density ? Math.max(50, 100 - density / 500) : 60;
           return (growthHealth + densityFactor) / 2;
         };
 
-        const calculateDiplomaticStanding = () => {
-          return Math.min(
-            100,
-            Math.max(
-              40,
-              ((country as any).globalDiplomaticInfluence || 50) +
-                ((country as any).tradeRelationshipStrength || 10) +
-                ((country as any).allianceStrength || 15) -
-                ((country as any).diplomaticTensions || 5)
-            )
-          );
-        };
+        // Diplomatic Standing and Governmental Efficiency come from the diplomacy tables and
+        // the government structure (null = no data, shown as "—"), never from stored fields.
+        const vitalityExtras = await loadVitalityExtras(country.id, ctx.db);
+        const diplomaticStanding = vitalityExtras.diplomaticStanding ?? null;
+        const governmentalEfficiency = scoreGovernmentalEfficiency(
+          vitalityExtras.governmentEffectiveness
+        );
+        const diplomaticInputs = vitalityExtras.diplomaticInputs;
 
-        const calculateGovernmentalEfficiency = () => {
-          const economicTierScore =
-            {
-              Extravagant: 95,
-              "Very Strong": 85,
-              Strong: 75,
-              Healthy: 65,
-              Developed: 50,
-              Developing: 35,
-              Impoverished: 25,
-            }[currentStats.newStats.economicTier] || 25;
-          return economicTierScore * 0.8;
-        };
-
-        const economicVitality =
-          country.economicVitality && country.economicVitality > 5
-            ? country.economicVitality
-            : calculateEconomicVitality();
-
-        const populationWellbeing =
-          country.populationWellbeing && country.populationWellbeing > 5
-            ? country.populationWellbeing
-            : calculatePopulationWellbeing();
-
-        const diplomaticStanding =
-          country.diplomaticStanding && country.diplomaticStanding > 5
-            ? country.diplomaticStanding
-            : calculateDiplomaticStanding();
-
-        const governmentalEfficiency =
-          country.governmentalEfficiency && country.governmentalEfficiency > 5
-            ? country.governmentalEfficiency
-            : calculateGovernmentalEfficiency();
+        // Computed every time: the stored vitality columns are stale (nothing writes them).
+        const economicVitality = calculateEconomicVitality();
+        const populationWellbeing = calculatePopulationWellbeing();
 
         return {
           economicVitality: Math.round(economicVitality),
           populationWellbeing: Math.round(populationWellbeing),
-          diplomaticStanding: Math.round(diplomaticStanding),
-          governmentalEfficiency: Math.round(governmentalEfficiency),
+          diplomaticStanding,
+          governmentalEfficiency,
           economicMetrics: {
             gdpPerCapita: `$${currentStats.newStats.currentGdpPerCapita.toLocaleString()}`,
-            growthRate: `${(currentStats.newStats.adjustedGdpGrowth * 100).toFixed(1)}%`,
+            growthRate: `${(gdpGrowthRate * 100).toFixed(1)}%`,
             tier: currentStats.newStats.economicTier,
           },
           populationMetrics: {
@@ -543,31 +518,37 @@ export const economyProcedures = {
             tier: currentStats.newStats.populationTier,
           },
           diplomaticMetrics: {
-            allies: `${Math.floor(((country as any).globalDiplomaticInfluence || 50) / 10) + 3}`,
+            allies: `${diplomaticInputs.allianceMemberships}`,
             reputation:
-              diplomaticStanding > 75
-                ? "Strong"
-                : diplomaticStanding > 50
-                  ? "Stable"
-                  : "Developing",
-            treaties: `${Math.floor(((country as any).tradeRelationshipStrength || 25) / 2) + 5}`,
+              diplomaticStanding === null
+                ? "—"
+                : diplomaticStanding > 75
+                  ? "Strong"
+                  : diplomaticStanding > 50
+                    ? "Stable"
+                    : "Developing",
+            treaties: `${diplomaticInputs.activeTreaties}`,
           },
           governmentMetrics: {
-            approval: `${Math.round(Math.min(95, Math.max(25, 50 + currentStats.newStats.adjustedGdpGrowth * 1500)))}%`,
+            approval: `${Math.round(country.publicApproval)}%`,
             efficiency:
-              governmentalEfficiency > 80
-                ? "Excellent"
-                : governmentalEfficiency > 60
-                  ? "Good"
-                  : "Improving",
+              governmentalEfficiency === null
+                ? "—"
+                : governmentalEfficiency > 80
+                  ? "Excellent"
+                  : governmentalEfficiency > 60
+                    ? "Good"
+                    : "Improving",
             stability:
-              diplomaticStanding > 70 && governmentalEfficiency > 60 ? "Stable" : "Monitored",
+              (diplomaticStanding ?? 0) > 70 && (governmentalEfficiency ?? 0) > 60
+                ? "Stable"
+                : "Monitored",
           },
-          generatedAt: currentTime,
+          generatedAt: now,
         };
       } catch (error) {
         console.error("Failed to generate activity rings data:", error);
-        throw new Error("Failed to generate activity rings data");
+        throw new Error("Failed to generate activity rings data", { cause: error });
       }
     }),
 };

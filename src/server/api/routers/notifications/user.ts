@@ -2,6 +2,7 @@
 // UPDATED: Added rate limiting to all mutation endpoints (v1.1.1)
 
 import { z } from "zod";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import {
   createTRPCRouter,
   publicProcedure,
@@ -9,8 +10,7 @@ import {
   lightMutationProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { observable } from "@trpc/server/observable";
-import { notificationEmitter, emitNotificationEvent } from "~/lib/notifications/emitter";
+import { recipientAccepts } from "~/lib/notifications/recipient-preferences";
 
 const NotificationLevel = z.enum(["low", "medium", "high", "critical"]);
 const NotificationType = z.enum([
@@ -41,6 +41,133 @@ const NotificationCategory = z.enum([
   "military",
 ]);
 
+type NotificationDb = Pick<PrismaClient, "user" | "notification" | "notificationReceipt">;
+
+/**
+ * Notifications a user can see: their own (addressed by either id form, internal or Clerk;
+ * sports results use the internal id), global ones, and their country's. The tray list, the
+ * unread count and the read/dismiss mutations all use this, so the badge never counts a
+ * notification the tray can't show. A country-wide notice is a shared row (no userId); a row
+ * addressed to someone else is never visible because it also names a country.
+ */
+async function visibleNotificationFilters(db: NotificationDb, userId: string) {
+  const userProfile = await db.user.findFirst({
+    where: { OR: [{ clerkUserId: userId }, { id: userId }] },
+    select: { id: true, clerkUserId: true, countryId: true },
+  });
+  const filters: Prisma.NotificationWhereInput[] = [
+    { userId: userProfile?.id ?? userId },
+    { userId: userProfile?.clerkUserId ?? userId },
+    { AND: [{ userId: null }, { countryId: null }] },
+  ];
+  if (userProfile?.countryId) {
+    filters.push({ AND: [{ userId: null }, { countryId: userProfile.countryId }] });
+  }
+  return filters;
+}
+
+/**
+ * Global and country-wide notifications are single shared rows, so their read/dismiss state is
+ * per viewer (NotificationReceipt, keyed by the caller's auth id); a personal row keeps its own
+ * columns. A shared row's `read`/`dismissed` columns are legacy state, frozen: from before
+ * receipts, a mark on a shared row set them for everyone, so a row with one set stays read (or
+ * dismissed) for every viewer, and nothing writes them any more.
+ */
+function unreadFor(viewer: string): Prisma.NotificationWhereInput {
+  return {
+    OR: [
+      { userId: { not: null }, read: false },
+      {
+        userId: null,
+        read: false,
+        receipts: { none: { userId: viewer, readAt: { not: null } } },
+      },
+    ],
+  };
+}
+
+function notDismissedFor(viewer: string): Prisma.NotificationWhereInput {
+  return {
+    OR: [
+      { userId: { not: null }, dismissed: false },
+      {
+        userId: null,
+        dismissed: false,
+        receipts: { none: { userId: viewer, dismissedAt: { not: null } } },
+      },
+    ],
+  };
+}
+
+/** The viewer's receipt, included with a shared row so the list needs no extra query per row. */
+const viewerReceipt = (viewer: string) => ({
+  where: { userId: viewer },
+  select: { readAt: true, dismissedAt: true },
+  take: 1,
+});
+
+type WithReceipts<T> = T & {
+  userId: string | null;
+  read: boolean;
+  dismissed: boolean;
+  receipts?: { readAt: Date | null; dismissedAt: Date | null }[];
+};
+
+/**
+ * A notification as this viewer sees it: a shared row is read/dismissed by its frozen legacy
+ * column or the viewer's receipt.
+ */
+function withViewerState<T>({ receipts, ...notification }: WithReceipts<T>) {
+  if (notification.userId) return notification;
+  const receipt = receipts?.[0];
+  return {
+    ...notification,
+    read: notification.read || !!receipt?.readAt,
+    dismissed: notification.dismissed || !!receipt?.dismissedAt,
+  };
+}
+
+/** Mark a notification the user can see; unauthenticated callers and foreign notifications are rejected. */
+async function markVisibleNotification(
+  db: NotificationDb,
+  userId: string | undefined,
+  notificationId: string,
+  mark: { dismissed?: true }
+) {
+  if (!userId) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "User ID required",
+    });
+  }
+
+  const notification = await db.notification.findFirst({
+    where: { id: notificationId, OR: await visibleNotificationFilters(db, userId) },
+  });
+  if (!notification) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Notification not found or no access",
+    });
+  }
+
+  if (notification.userId) {
+    return db.notification.update({
+      where: { id: notificationId },
+      data: { read: true, ...(mark.dismissed ? { dismissed: true } : {}) },
+    });
+  }
+
+  const now = new Date();
+  const stamps = { readAt: now, ...(mark.dismissed ? { dismissedAt: now } : {}) };
+  const receipt = await db.notificationReceipt.upsert({
+    where: { notificationId_userId: { notificationId, userId } },
+    create: { notificationId, userId, ...stamps },
+    update: stamps,
+  });
+  return withViewerState({ ...notification, receipts: [receipt] });
+}
+
 export const notificationsUserRouter = createTRPCRouter({
   // Get notifications for current user (using auth context)
   getUserNotifications: publicProcedure
@@ -68,50 +195,32 @@ export const notificationsUserRouter = createTRPCRouter({
         };
       }
 
-      // Get user profile to find their country
-      const userProfile = await db.user.findFirst({
-        where: { clerkUserId: userId },
-        include: { country: true },
-      });
+      const orConditions = await visibleNotificationFilters(db, userId);
 
-      // Build OR conditions - only include countryId if user has a country
-      const orConditions: any[] = [
-        { userId }, // Direct user notifications
-        {
-          AND: [{ userId: null }, { countryId: null }],
-        }, // Global notifications
-      ];
-
-      // Only add country-wide notifications if user has a country
-      if (userProfile?.countryId) {
-        orConditions.push({ countryId: userProfile.countryId });
-      }
-
-      const whereConditions = {
+      const whereConditions: Prisma.NotificationWhereInput = {
         AND: [
           { OR: orConditions },
-          { dismissed: false },
-          input.unreadOnly ? { read: false } : {},
+          notDismissedFor(userId),
+          input.unreadOnly ? unreadFor(userId) : {},
           input.type ? { type: input.type } : {},
         ],
       };
 
-      const notifications = await db.notification.findMany({
+      const rows = await db.notification.findMany({
         where: whereConditions,
+        include: { receipts: viewerReceipt(userId) },
         orderBy: { createdAt: "desc" },
         take: input.limit,
         skip: input.offset,
       });
+      const notifications = rows.map(withViewerState);
 
       const totalCount = await db.notification.count({
         where: whereConditions,
       });
 
       const unreadCount = await db.notification.count({
-        where: {
-          ...whereConditions,
-          read: false,
-        },
+        where: { AND: [whereConditions, unreadFor(userId)] },
       });
 
       return {
@@ -128,57 +237,13 @@ export const notificationsUserRouter = createTRPCRouter({
     .input(
       z.object({
         notificationId: z.string(),
+        /** Ignored: the caller's own notifications are always the ones changed. */
         userId: z.string().optional(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
-      const { db } = ctx;
-
-      const userId = input.userId || ctx.auth?.userId;
-
-      if (!userId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "User ID required",
-        });
-      }
-
-      // Get user profile to find their country
-      const userProfile = await db.user.findFirst({
-        where: { clerkUserId: userId },
-        include: { country: true },
-      });
-
-      // Build OR conditions - only include countryId if user has a country
-      const orConditions: any[] = [
-        { userId: userId },
-        { userId: null, countryId: null }, // Global notifications
-      ];
-
-      if (userProfile?.countryId) {
-        orConditions.push({ countryId: userProfile.countryId });
-      }
-
-      // Verify the notification belongs to the user
-      const notification = await db.notification.findFirst({
-        where: {
-          id: input.notificationId,
-          OR: orConditions,
-        },
-      });
-
-      if (!notification) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Notification not found or no access",
-        });
-      }
-
-      return await db.notification.update({
-        where: { id: input.notificationId },
-        data: { read: true },
-      });
-    }),
+    .mutation(async ({ ctx, input }) =>
+      markVisibleNotification(ctx.db, ctx.auth?.userId, input.notificationId, {})
+    ),
 
   // Dismiss notification (hides it from view)
   // RATE LIMITED: Light mutation (100 req/min) - simple toggle operation
@@ -186,94 +251,56 @@ export const notificationsUserRouter = createTRPCRouter({
     .input(
       z.object({
         notificationId: z.string(),
+        /** Ignored: the caller's own notifications are always the ones changed. */
         userId: z.string().optional(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
-      const { db } = ctx;
-
-      const userId = input.userId || ctx.auth?.userId;
-
-      if (!userId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "User ID required",
-        });
-      }
-
-      // Get user profile to find their country
-      const userProfile = await db.user.findFirst({
-        where: { clerkUserId: userId },
-        include: { country: true },
-      });
-
-      // Build OR conditions - only include countryId if user has a country
-      const orConditions: any[] = [
-        { userId: userId },
-        { userId: null, countryId: null }, // Global notifications
-      ];
-
-      if (userProfile?.countryId) {
-        orConditions.push({ countryId: userProfile.countryId });
-      }
-
-      // Verify the notification belongs to the user
-      const notification = await db.notification.findFirst({
-        where: {
-          id: input.notificationId,
-          OR: orConditions,
-        },
-      });
-
-      if (!notification) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Notification not found or no access",
-        });
-      }
-
-      return await db.notification.update({
-        where: { id: input.notificationId },
-        data: { dismissed: true, read: true },
-      });
-    }),
+    .mutation(async ({ ctx, input }) =>
+      markVisibleNotification(ctx.db, ctx.auth?.userId, input.notificationId, {
+        dismissed: true,
+      })
+    ),
 
   // Mark all notifications as read
   // RATE LIMITED: Light mutation (100 req/min) - batch operation but lightweight
   markAllAsRead: lightMutationProcedure
     .input(
       z.object({
-        userId: z.string(),
+        userId: z.string().optional(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx }) => {
       const { db } = ctx;
-      const userId = input.userId;
+      // Always the caller: a client-supplied userId is ignored (it let anyone clear
+      // another user's tray).
+      const userId = ctx.auth?.userId;
 
-      // Get user profile to find their country
-      const userProfile = await db.user.findFirst({
-        where: { clerkUserId: userId },
-        include: { country: true },
-      });
+      if (!userId) return { success: true };
 
-      // Build OR conditions - only include countryId if user has a country
-      const orConditions: any[] = [
-        { userId },
-        {
-          AND: [{ userId: null }, { countryId: null }],
-        },
-      ];
+      const orConditions = await visibleNotificationFilters(db, userId);
 
-      if (userProfile?.countryId) {
-        orConditions.push({ countryId: userProfile.countryId });
-      }
-
+      // Personal rows are the caller's own; shared rows get a receipt each, never a write to the
+      // row itself (that marked a global notice read for everyone).
       await db.notification.updateMany({
-        where: {
-          OR: orConditions,
-        },
+        where: { AND: [{ OR: orConditions }, { userId: { not: null } }, { read: false }] },
         data: { read: true },
       });
+      const unreadShared = await db.notification.findMany({
+        where: { AND: [{ OR: orConditions }, { userId: null }, unreadFor(userId)] },
+        select: { id: true },
+      });
+      if (unreadShared.length > 0) {
+        const now = new Date();
+        const notificationIds = unreadShared.map((n) => n.id);
+        await db.notificationReceipt.updateMany({
+          where: { userId, notificationId: { in: notificationIds } },
+          data: { readAt: now },
+        });
+        await db.notificationReceipt.createMany({
+          data: notificationIds.map((notificationId) => ({ notificationId, userId, readAt: now })),
+          skipDuplicates: true,
+        });
+      }
 
       return { success: true };
     }),
@@ -302,6 +329,12 @@ export const notificationsUserRouter = createTRPCRouter({
 
       // Admin role verified by adminProcedure middleware
 
+      // A notice for one user respects their notification preferences (null = filtered out).
+      // Country-wide and global notices are not filtered.
+      if (input.userId && !(await recipientAccepts(input.userId, input.category, input.level))) {
+        return null;
+      }
+
       const notification = await db.notification.create({
         data: {
           title: input.title,
@@ -318,16 +351,8 @@ export const notificationsUserRouter = createTRPCRouter({
         },
       });
 
-      // Emit real-time event
-      emitNotificationEvent(notification);
-
       return notification;
     }),
-
-  // Get notification preferences for user
-
-  // Update notification preferences
-  // RATE LIMITED: Light mutation (100 req/min) - simple preference updates
 
   // Delete notification (admin only)
   deleteNotification: adminProcedure
@@ -349,134 +374,29 @@ export const notificationsUserRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  // Get notification stats (admin only)
-  getNotificationStats: publicProcedure
-    .input(
-      z.object({
-        adminUserId: z.string().optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const { db } = ctx;
-
-      // Admin role verified by adminProcedure middleware
-
-      const [totalNotifications, unreadNotifications, typeBreakdown] = await Promise.all([
-        db.notification.count(),
-        db.notification.count({ where: { read: false } }),
-        db.notification.groupBy({
-          by: ["type"],
-          _count: { _all: true },
-        }),
-      ]);
-
-      return {
-        totalNotifications,
-        unreadNotifications,
-        readNotifications: totalNotifications - unreadNotifications,
-        typeBreakdown: typeBreakdown.map((item) => ({
-          type: item.type,
-          count: item._count._all,
-        })),
-      };
-    }),
-
-  // Real-time subscription for new notifications
-  onNotificationAdded: publicProcedure
-    .input(
-      z.object({
-        userId: z.string().optional(),
-      })
-    )
-    .subscription(({ input }) => {
-      return observable<{
-        id: string;
-        userId: string | null;
-        countryId: string | null;
-        title: string;
-        description: string | null;
-        message: string | null;
-        read: boolean;
-        dismissed: boolean;
-        href: string | null;
-        type: string | null;
-        category: string | null;
-        priority: string;
-        severity: string;
-        source: string | null;
-        actionable: boolean;
-        metadata: string | null;
-        relevanceScore: number | null;
-        deliveryMethod: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-      }>((emit) => {
-        const onNotification = (data: any) => {
-          // Filter by userId if provided
-          if (input.userId && data.userId !== input.userId) {
-            return;
-          }
-          emit.next(data);
-        };
-
-        notificationEmitter.on("notification", onNotification);
-
-        return () => {
-          notificationEmitter.off("notification", onNotification);
-        };
-      });
-    }),
-
   // Get unread count (for badge display)
-  // Changed from readOnlyProcedure to publicProcedure to prevent auth errors
-  // This endpoint is called before auth completes and should gracefully handle unauthenticated users
-  getUnreadCount: publicProcedure
-    .input(
-      z
-        .object({
-          userId: z.string().optional(),
-        })
-        .optional()
-    )
-    .query(async ({ ctx, input }) => {
-      const { db } = ctx;
-      const userId = input?.userId || ctx.auth?.userId;
+  // Stays publicProcedure — called before auth completes and must gracefully handle
+  // unauthenticated users. Identity comes from ctx only (never input): an attacker-supplied
+  // userId would otherwise let anyone read another user's unread notification count.
+  getUnreadCount: publicProcedure.query(async ({ ctx }) => {
+    const { db } = ctx;
+    const userId = ctx.auth?.userId;
 
-      // Gracefully return 0 for unauthenticated users
-      if (!userId) {
-        return { count: 0 };
-      }
+    // Gracefully return 0 for unauthenticated users
+    if (!userId) {
+      return { count: 0 };
+    }
 
-      // Get user profile to find their country
-      const userProfile = await db.user.findFirst({
-        where: { clerkUserId: userId },
-        include: { country: true },
-      });
+    const orConditions = await visibleNotificationFilters(db, userId);
 
-      // Build OR conditions - only include countryId if user has a country
-      const orConditions: any[] = [
-        { userId },
-        {
-          AND: [{ userId: null }, { countryId: null }],
-        },
-      ];
+    const count = await db.notification.count({
+      where: {
+        AND: [{ OR: orConditions }, unreadFor(userId), notDismissedFor(userId)],
+      },
+    });
 
-      if (userProfile?.countryId) {
-        orConditions.push({ countryId: userProfile.countryId });
-      }
-
-      const count = await db.notification.count({
-        where: {
-          AND: [{ OR: orConditions }, { read: false }, { dismissed: false }],
-        },
-      });
-
-      return { count };
-    }),
-
-  // Get user notification preferences
-
-  // Create or update user notification preferences
+    return { count };
+  }),
 
   // Delete user notification preferences (reset to defaults)
   // Delete all notifications (admin only)
@@ -495,31 +415,4 @@ export const notificationsUserRouter = createTRPCRouter({
 
       return { success: true, count: result.count };
     }),
-
-  // ---- Notification Event Config (Admin) ----
-
-  // Get all notification event configs
-
-  // Seed default event configs from registry
-
-  // Toggle a single event on/off
-
-  // Batch toggle events by filter
-
-  // Update event config (JSON config)
-
-  // ---- Admin Notification Browser ----
-
-  // Get all notifications with admin-level filters
-
-  // ---- Alert Thresholds ----
-
-  // Get all intelligence alert thresholds
-
-  // Create or update an alert threshold
-
-  // Delete an alert threshold
 });
-
-// Re-exported so the notifications barrel (index.ts) keeps exposing it unchanged.
-export { emitNotificationEvent };

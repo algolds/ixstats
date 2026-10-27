@@ -4,14 +4,13 @@
 import type { LinguisticProfile } from "./types";
 
 export const TEMPLATE_PHONETIC_PROFILES: Record<string, LinguisticProfile> = {
-  // --------------------------------------------------------------------------
   // Fantasy Species
-  // --------------------------------------------------------------------------
   "species:elf": {
     id: "species:elf",
     name: "Elven (Sindarin / Eldarin)",
     category: "template",
-    description: "Flowing Tolkien-inspired phonology with dental fricatives (dh, th) and voiceless liquids (lh, rh)",
+    description:
+      "Flowing Tolkien-inspired phonology with dental fricatives (dh, th) and voiceless liquids (lh, rh)",
     rules: [
       ["dh", "ð"],
       ["th", "θ"],
@@ -175,9 +174,7 @@ export const TEMPLATE_PHONETIC_PROFILES: Record<string, LinguisticProfile> = {
     kokoroVoicePersona: "af_nicole",
   },
 
-  // --------------------------------------------------------------------------
   // Organizations, Taverns & Civic Templates
-  // --------------------------------------------------------------------------
   "organization:tavern": {
     id: "organization:tavern",
     name: "Tavern & Inn Phrasing",
@@ -236,9 +233,7 @@ export const TEMPLATE_PHONETIC_PROFILES: Record<string, LinguisticProfile> = {
     kokoroVoicePersona: "am_adam",
   },
 
-  // --------------------------------------------------------------------------
   // Noble Dynastic & Lineage Conventions
-  // --------------------------------------------------------------------------
   "noble:norman": {
     id: "noble:norman",
     name: "Noble Norman / Anglo-French",

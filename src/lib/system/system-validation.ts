@@ -18,7 +18,7 @@ export interface ValidationCategory {
   duration: number;
 }
 
-export interface AuditSummary {
+interface AuditSummary {
   totalChecks: number;
   passed: number;
   warnings: number;

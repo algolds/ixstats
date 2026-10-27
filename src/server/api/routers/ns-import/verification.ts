@@ -5,34 +5,16 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { TRPCError } from "@trpc/server";
 
 export const nsImportVerificationRouter = createTRPCRouter({
   /**
-   * Verify that a NationStates nation exists
-   */
-  verifyNation: protectedProcedure
-    .input(
-      z.object({
-        nationName: z.string().min(1).max(100),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const exists = await nsApiClient.verifyNation(input.nationName);
-
-      return {
-        exists,
-        nationName: input.nationName,
-      };
-    }),
-
-  /**
    * Request verification for nation ownership
    * Returns the URL the user should visit to get their verification code
    */
-  requestVerification: protectedProcedure
+  requestVerification: rateLimitedMutationProcedure
     .input(
       z.object({
         nationName: z.string().min(1).max(100),
@@ -86,7 +68,7 @@ export const nsImportVerificationRouter = createTRPCRouter({
   /**
    * Verify nation ownership with checksum code from NS
    */
-  checkVerification: protectedProcedure
+  checkVerification: rateLimitedMutationProcedure
     .input(
       z.object({
         verificationId: z.string(),
@@ -144,35 +126,4 @@ export const nsImportVerificationRouter = createTRPCRouter({
         nationName: verification.nationName,
       };
     }),
-
-  // ─── Bulk Import Endpoints ────────────────────────────────────────
-
-  // ─── Pause / Play / Stop controls ───
-
-  // ─── Region Discovery ────────────────────────────────────────────
-
-  /**
-   * Check if user has already verified/imported any NS nation
-   */
-  hasImported: protectedProcedure.query(async ({ ctx }) => {
-    // Check if they have verified ownership of any nation
-    const verification = await ctx.db.nSVerification.findFirst({
-      where: {
-        userId: ctx.user.id,
-        verified: true,
-      },
-    });
-    if (verification) return true;
-
-    // Check if they have any card from NS_IMPORT type
-    const cardCount = await ctx.db.cardOwnership.count({
-      where: {
-        userId: ctx.user.id,
-        cards: {
-          cardType: "NS_IMPORT",
-        },
-      },
-    });
-    return cardCount > 0;
-  }),
 });

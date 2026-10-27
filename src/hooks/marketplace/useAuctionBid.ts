@@ -1,10 +1,10 @@
+"use client";
 // src/hooks/marketplace/useAuctionBid.ts
 // Hook for placing bids and buyouts on auctions via tRPC
 
-"use client";
-
 import { api } from "~/trpc/react";
-import { vaultNotify } from "~/lib/vault";
+import { useBidRefresh, useCardsRefresh } from "~/hooks/useCardsRefresh";
+import { vaultNotify } from "~/lib/vault/vault-notifications";
 
 interface UseAuctionBidReturn {
   placeBid: (auctionId: string, amount: number) => void;
@@ -15,16 +15,17 @@ interface UseAuctionBidReturn {
 }
 
 /**
- * Hook for placing bids and executing buyouts on auctions
+ * Hook for placing bids and executing buyouts on auctions. A bid holds its credits, so it reads the Market and the
+ * balance again; a buyout moves the copy, so it reads every card screen again.
  */
 export function useAuctionBid(options?: { onSuccess?: () => void }): UseAuctionBidReturn {
-  const utils = api.useUtils();
+  const refreshCards = useCardsRefresh();
+  const refreshBid = useBidRefresh();
 
   const bidMutation = api.cardMarket.placeBid.useMutation({
     onSuccess: (data) => {
       vaultNotify.success(data.message);
-      void utils.cardMarket.getActiveAuctions.invalidate();
-      void utils.cardMarket.getMyActiveBids.invalidate();
+      refreshBid();
       options?.onSuccess?.();
     },
     onError: (error) => {
@@ -38,9 +39,7 @@ export function useAuctionBid(options?: { onSuccess?: () => void }): UseAuctionB
       if (data.leveledUp && data.newLevel != null) {
         vaultNotify.success(`Card leveled up to Level ${data.newLevel}!`, "Level Up!");
       }
-      void utils.cardMarket.getActiveAuctions.invalidate();
-      void utils.cardMarket.getMyActiveBids.invalidate();
-      void utils.vault.getBalance.invalidate();
+      refreshCards();
       options?.onSuccess?.();
     },
     onError: (error) => {

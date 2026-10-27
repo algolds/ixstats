@@ -1,0 +1,85 @@
+import { renderHook } from "@testing-library/react";
+
+type Handler = (data?: object) => void;
+const fake = {
+  handlers: new Map<string, Handler[]>(),
+  connected: true,
+  emit: jest.fn(),
+  disconnect: jest.fn(),
+  connect: jest.fn(),
+  /** Whether socket.io is still retrying by itself. */
+  active: true,
+  options: undefined as
+    | {
+        auth: (cb: (auth: { token: string }) => void) => void;
+        reconnectionAttempts: number;
+        reconnectionDelay: number;
+        reconnectionDelayMax: number;
+      }
+    | undefined,
+  on(name: string, handler: Handler) {
+    fake.handlers.set(name, [...(fake.handlers.get(name) ?? []), handler]);
+    return fake;
+  },
+};
+const mockIo = jest.fn((_url: string, options: typeof fake.options) => {
+  fake.options = options;
+  return fake;
+});
+jest.mock("socket.io-client", () => ({
+  io: (url: string, options: never) => mockIo(url, options),
+}));
+
+let getToken: (() => Promise<string | null>) | undefined;
+let isSignedIn = true;
+jest.mock("~/context/auth-context", () => ({ useAuth: () => ({ getToken, isSignedIn }) }));
+
+import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
+
+const env = process.env as Record<string, string | undefined>;
+const saved = env.NEXT_PUBLIC_ENABLE_WEBSOCKET;
+beforeEach(() => {
+  env.NEXT_PUBLIC_ENABLE_WEBSOCKET = "true";
+  fake.handlers.clear();
+  fake.connected = true;
+  fake.active = true;
+  fake.connect.mockReset();
+  fake.emit.mockReset();
+  mockIo.mockClear();
+  getToken = async () => "clerk-token";
+  isSignedIn = true;
+  jest.spyOn(console, "log").mockImplementation(() => undefined);
+});
+afterEach(() => {
+  env.NEXT_PUBLIC_ENABLE_WEBSOCKET = saved;
+  jest.restoreAllMocks();
+});
+
+describe("useThinkPagesWebSocket for realm boards", () => {
+  it("does not demote a signed-in user whose token could not be fetched to anonymous", async () => {
+    getToken = async () => {
+      throw new Error("network");
+    };
+    renderHook(() => useThinkPagesWebSocket({ accountId: "user_1", anonymous: true }));
+    const auth = await new Promise<{ token: string }>((resolve) => fake.options!.auth(resolve));
+    expect(auth).toEqual({ token: "" });
+    getToken = async () => null;
+    renderHook(() => useThinkPagesWebSocket({ accountId: "user_1", anonymous: true }));
+    expect(await new Promise((resolve) => fake.options!.auth(resolve))).toEqual({ token: "" });
+  });
+  describe("losing the connection", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+      jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    });
+    afterEach(() => jest.useRealTimers());
+
+    it("never gives up retrying a lost connection, backing off to a cap", () => {
+      renderHook(() => useThinkPagesWebSocket({ anonymous: true }));
+      const { reconnectionAttempts, reconnectionDelay, reconnectionDelayMax } = fake.options!;
+      expect(reconnectionAttempts).toBe(Infinity);
+      expect(reconnectionDelayMax).toBeGreaterThan(reconnectionDelay);
+      expect(reconnectionDelayMax).toBeLessThanOrEqual(60_000);
+    });
+  });
+});

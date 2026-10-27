@@ -1,0 +1,6 @@
+{
+  "$comment": "Shrink-only. Remove an entry when its test passes and lower `ceiling` to match. Adding entries needs reviewer sign-off and CI will reject growth vs the base branch.",
+  "ceiling": 0,
+  "tests": [],
+  "entrypoints": []
+}

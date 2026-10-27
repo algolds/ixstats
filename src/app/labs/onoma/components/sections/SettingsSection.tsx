@@ -4,7 +4,6 @@
 // Onoma Lab — User Voice Settings, Interactive Sandbox, & Local Browser Data Manager
 
 import React, { useState, useEffect } from "react";
-import { Sliders } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import {
@@ -15,7 +14,7 @@ import {
 import { VoiceSandboxPanel } from "./settings/VoiceSandboxPanel";
 import { ConlangDataManagerPanel } from "./settings/ConlangDataManagerPanel";
 
-export function SettingsSection() {
+function SettingsSection() {
   const notify = useNotify();
 
   // Load public speech config (including Kokoro settings)
@@ -159,7 +158,9 @@ export function SettingsSection() {
       handleUpdateAdvancedSetting("onoma-personal-strip-stress", p.stripStress);
       handleUpdateAdvancedSetting("onoma-personal-prosody", p.prosody);
       handleUpdateAdvancedSetting("onoma-personal-voice-blend-active", p.blendActive);
-      notify.success(`Applied ${presetName.charAt(0).toUpperCase() + presetName.slice(1)} voice preset.`);
+      notify.success(
+        `Applied ${presetName.charAt(0).toUpperCase() + presetName.slice(1)} voice preset.`
+      );
     }
   };
 
@@ -264,7 +265,6 @@ export function SettingsSection() {
         <VoiceSandboxPanel voiceOptions={voiceOptions} speechConfig={speechConfig} />
       </div>
 
-      {/* Browser Conlang Data Manager */}
       <ConlangDataManagerPanel onImportComplete={handleImportComplete} />
     </div>
   );

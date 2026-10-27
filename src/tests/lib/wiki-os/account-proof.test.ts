@@ -1,0 +1,139 @@
+import {
+  fetchPageCreator,
+  fetchUserPageHistory,
+  fetchWikiUser,
+  WikiApiError,
+  wikiUserPageUrl,
+} from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+
+const json = (body: object) =>
+  Promise.resolve({
+    ok: true,
+    status: 200,
+    headers: { get: () => "application/json; charset=utf-8" },
+    json: () => Promise.resolve(body),
+  });
+
+describe("account-proof", () => {
+  const realFetch = global.fetch;
+  afterEach(() => {
+    global.fetch = realFetch;
+  });
+  it("reads the user page revisions saved since a time, oldest first (content + author), and the page creator", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockReturnValueOnce(
+        json({
+          query: {
+            pages: [
+              {
+                revisions: [
+                  { user: "some_editor", slots: { main: { content: "hi" } } },
+                  { user: "Kir", slots: { main: { content: "hi ixstates-verify-abc" } } },
+                ],
+              },
+            ],
+          },
+        })
+      )
+      .mockReturnValueOnce(json({ query: { pages: [{ revisions: [{ user: "Founder_Name" }] }] } }));
+    global.fetch = fetchMock as any;
+    await expect(
+      fetchUserPageHistory("ixwiki", "kir", new Date("2026-09-27T12:00:00.123Z"))
+    ).resolves.toEqual({
+      revisions: [
+        { content: "hi", author: "Some editor" },
+        { content: "hi ixstates-verify-abc", author: "Kir" },
+      ],
+      complete: true,
+    });
+    const url = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    expect(url.searchParams.get("titles")).toBe("User:Kir");
+    expect(url.searchParams.get("rvprop")).toBe("content|user");
+    expect(url.searchParams.get("rvlimit")).toBe("20");
+    expect(url.searchParams.get("rvdir")).toBe("newer"); // oldest first…
+    expect(url.searchParams.get("rvstart")).toBe("2026-09-27T12:00:00Z"); // …from that time to now
+    expect(url.searchParams.get("rvend")).toBeNull();
+    await expect(fetchPageCreator("ixwiki", "Aurelia")).resolves.toBe("Founder Name");
+  });
+
+  it("follows a redirect: the page creator is the target page's, not the redirect's", async () => {
+    const fetchMock = jest.fn().mockReturnValueOnce(
+      json({
+        query: {
+          redirects: [{ from: "Aurelia", to: "Federal Republic of Aurelia" }],
+          pages: [
+            {
+              pageid: 12,
+              title: "Federal Republic of Aurelia",
+              revisions: [{ user: "Founder_Name" }],
+            },
+          ],
+        },
+      })
+    );
+    global.fetch = fetchMock as any;
+    await expect(fetchPageCreator("ixwiki", "Aurelia")).resolves.toBe("Founder Name");
+    const url = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    expect(url.searchParams.get("titles")).toBe("Aurelia");
+    expect(url.searchParams.get("redirects")).toBe("1");
+    expect(url.searchParams.get("rvdir")).toBe("newer"); // the first revision
+    expect(url.searchParams.get("rvlimit")).toBe("1");
+  });
+
+  it("reports a truncated window, and a hidden author or content as null (unattributable)", async () => {
+    global.fetch = jest.fn().mockReturnValueOnce(
+      json({
+        continue: { rvcontinue: "20260101000000|42", continue: "||" },
+        query: {
+          pages: [
+            {
+              revisions: [
+                { userhidden: true, slots: { main: { content: "x" } } },
+                { user: "Kir", slots: { main: { texthidden: true } } },
+              ],
+            },
+          ],
+        },
+      })
+    ) as any;
+    await expect(fetchUserPageHistory("ixwiki", "Kir", new Date())).resolves.toEqual({
+      revisions: [
+        { content: "x", author: null },
+        { content: null, author: "Kir" },
+      ],
+      complete: false,
+    });
+  });
+  it("throws WikiApiError on a non-JSON (Cloudflare) response", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: { get: () => "text/html" },
+      json: () => Promise.reject(new Error("html")),
+    }) as any;
+    await expect(fetchWikiUser("iiwiki", "Kir")).rejects.toBeInstanceOf(WikiApiError);
+  });
+
+  describe("wikiUserPageUrl", () => {
+    const original = process.env.WIKIOS_V1_ENABLED;
+    afterEach(() => {
+      if (original === undefined) delete process.env.WIKIOS_V1_ENABLED;
+      else process.env.WIKIOS_V1_ENABLED = original;
+    });
+
+    it("is the wiki's own user page while WikiOS v1 is off", () => {
+      delete process.env.WIKIOS_V1_ENABLED;
+      expect(wikiUserPageUrl("ixwiki", "some_user")).toMatch(
+        /^https:\/\/[^/]+\/wiki\/User:Some_user$/
+      );
+    });
+
+    it("stays the classic wiki's own user page once WikiOS v1 is on (no /classic/ path without the takeover)", () => {
+      process.env.WIKIOS_V1_ENABLED = "1";
+      expect(wikiUserPageUrl("ixwiki", "some user")).toMatch(
+        /^https:\/\/[^/]+\/wiki\/User:Some_user$/
+      );
+    });
+  });
+});

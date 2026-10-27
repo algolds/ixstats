@@ -1,6 +1,7 @@
-import type { FeatureCollection } from "geojson";
+import type { Feature } from "geojson";
+import type { ExpressionSpecification, Map as MapLibreMap } from "maplibre-gl";
 
-export const COUNTRY_LABEL_OPACITY: unknown = ["coalesce", ["get", "_distFade"], 0];
+export const COUNTRY_LABEL_OPACITY: ExpressionSpecification = ["coalesce", ["get", "_distFade"], 0];
 
 /** Escape HTML entities for safe insertion into popup innerHTML */
 export function escHtml(s: string): string {
@@ -9,66 +10,6 @@ export function escHtml(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-}
-
-/** Area thresholds for progressive feature loading based on zoom */
-export const PROGRESSIVE_THRESHOLDS: Record<string, [number, number][]> = {
-  // [zoom, minAreaSqKm] — features below threshold are hidden at low zoom
-  rivers: [
-    [0, 50],
-    [3, 20],
-    [5, 0],
-  ],
-  lakes: [
-    [0, 50],
-    [3, 20],
-    [5, 0],
-  ],
-};
-
-/** Get the minimum area for a layer type at a given zoom level */
-export function getMinArea(layerType: string, zoom: number): number {
-  const thresholds = PROGRESSIVE_THRESHOLDS[layerType];
-  if (!thresholds) return 0;
-  let minArea = thresholds[0][1];
-  for (const [z, area] of thresholds) {
-    if (zoom >= z) minArea = area;
-  }
-  return minArea;
-}
-
-const filterCache = new WeakMap<any, Map<number, FeatureCollection>>();
-
-/** Filter a FeatureCollection by minimum area */
-export function filterByArea(data: FeatureCollection, minArea: number): FeatureCollection {
-  if (minArea <= 0 || !data || !data.features) return data;
-
-  let areaCache = filterCache.get(data);
-  if (!areaCache) {
-    areaCache = new Map();
-    filterCache.set(data, areaCache);
-  }
-
-  let cached = areaCache.get(minArea);
-  if (!cached) {
-    cached = {
-      ...data,
-      features: data.features.filter((f) => {
-        const area =
-          (f.properties?.areaKm2 as number) ??
-          (f.properties?._areaSqKm as number) ??
-          (f.properties?.areaSqKm as number) ??
-          ((f.properties?.lengthKm as number)
-            ? (f.properties?.lengthKm as number) * 50
-            : undefined) ??
-          ((f.properties?.flux as number) ? (f.properties?.flux as number) * 10 : undefined) ??
-          99999;
-        return area >= minArea;
-      }),
-    };
-    areaCache.set(minArea, cached);
-  }
-  return cached;
 }
 
 /**
@@ -104,4 +45,53 @@ export function createStarImage(size: number, fillColor: string, strokeColor: st
   ctx.stroke();
 
   return ctx.getImageData(0, 0, size, size);
+}
+
+/** True when two feature arrays hold the same feature objects in the same order. */
+export function sameFeatureList(a: readonly unknown[] | null, b: readonly unknown[]): boolean {
+  if (!a || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+/**
+ * Push a filtered feature list to a GeoJSON source only when it differs from the list pushed
+ * last time. Zoom-driven filters run on every `zoom` frame; re-sending an unchanged
+ * FeatureCollection makes MapLibre's worker re-tile the whole source each frame, which is
+ * what made zooming stutter. `lastRef` holds the list last sent to this source.
+ */
+export function setFilteredSourceData(
+  source: { setData: (data: GeoJSON.GeoJSON) => unknown } | undefined,
+  features: GeoJSON.Feature[],
+  lastRef: { current: GeoJSON.Feature[] | null },
+  base?: Partial<GeoJSON.FeatureCollection>
+): void {
+  if (!source) return;
+  if (sameFeatureList(lastRef.current, features)) return;
+  lastRef.current = features;
+  source.setData({ ...base, type: "FeatureCollection", features });
+}
+
+/** Whether a feature belongs to the focused country (matched by id, slug or name). */
+export function matchesCountry(f: Feature, countryKey: string): boolean {
+  const p = f.properties;
+  if (!p) return false;
+  return (
+    p.countryId === countryKey ||
+    p.countrySlug === countryKey ||
+    (typeof p.countryName === "string" && p.countryName.toLowerCase() === countryKey.toLowerCase())
+  );
+}
+
+/** Show/hide each of `layerIds` that exists on the map. */
+export function setLayersVisible(
+  map: MapLibreMap,
+  layerIds: string[],
+  visible: boolean | undefined
+) {
+  for (const id of layerIds) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+  }
 }

@@ -1,144 +1,72 @@
-// src/components/wiki-os/reader/ImageLightbox.tsx
-// Lightbox modal for viewing wiki images at full size.
-// Intercepts clicks on image links within articles.
-
 "use client";
+// Click hook for the article's images: opens the lightbox (ImageLightboxModal) on a click. The modal
+// is a separate chunk, fetched on the first click, not with every article.
 
-import { useState, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
-import { X, ExternalLink, ZoomIn, ZoomOut } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
+import {
+  resolveHighResWikiImage,
+  type HighResWikiImageResult,
+} from "~/lib/wiki-os/transformers/resolve-highres-image";
 
-interface LightboxImage {
-  src: string;
-  alt: string;
-  fileUrl: string;
-}
+const ImageLightboxModal = dynamic(
+  () => import("./ImageLightboxModal").then((m) => m.ImageLightboxModal),
+  { ssr: false }
+);
 
 /**
- * Hook: attach to an article container ref to intercept image clicks.
- * Returns a portal element to render in the component tree.
+ * Hook: Attach to an article container ref to intercept image clicks and open the lightbox.
  */
 export function useImageLightbox(containerRef: React.RefObject<HTMLElement | null>) {
-  const [image, setImage] = useState<LightboxImage | null>(null);
+  const [activeImage, setActiveImage] = useState<HighResWikiImageResult | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const handleClick = (e: Event) => {
-      const target = e.target as HTMLElement;
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
 
-      // Only handle clicks on images or their parent links
+      // Don't intercept clicks inside floating toolbars or existing lightbox overlays
+      if (
+        target.closest(".wikios-lightbox-backdrop") ||
+        target.closest(".wikios-annotation-popover")
+      ) {
+        return;
+      }
+
+      // Handle clicks on images or their enclosing link
       const img = target.closest("img") as HTMLImageElement | null;
       if (!img) return;
 
-      const link = img.closest(
-        "a.mw-file-description, a[href*='/wiki/File:'], a[href*='/wiki/File:']"
-      );
-      if (!link) return;
+      const link = img.closest("a") as HTMLAnchorElement | null;
 
-      // Don't intercept infobox flag/coa images (too small to lightbox)
-      const width = img.width || parseInt(img.getAttribute("width") ?? "0", 10);
-      if (width < 80) return;
+      // Ignore tiny utility icons
+      const width = img.naturalWidth || img.width || parseInt(img.getAttribute("width") ?? "0", 10);
+      const height =
+        img.naturalHeight || img.height || parseInt(img.getAttribute("height") ?? "0", 10);
+      if (width > 0 && width < 32 && height > 0 && height < 32 && !img.closest(".thumbinner")) {
+        return;
+      }
 
+      // Prevent navigation to MediaWiki file page when clicking thumbnail
       e.preventDefault();
       e.stopPropagation();
 
-      // Get the full-size image URL — strip the thumbnail path to get original
-      let fullSrc = img.getAttribute("src") ?? "";
-      // Transform thumbnail URL to full size: /thumb/a/ab/File.png/300px-File.png → /a/ab/File.png
-      const thumbMatch = fullSrc.match(/\/thumb(\/[^/]+\/[^/]+\/[^/]+)\//);
-      if (thumbMatch) {
-        fullSrc = fullSrc.replace(/\/thumb(\/[^/]+\/[^/]+\/[^/]+)\/[^/]+$/, "$1");
-      }
-
-      const fileUrl = (link as HTMLAnchorElement).getAttribute("href") ?? "";
-
-      setImage({
-        src: fullSrc,
-        alt: img.getAttribute("alt") ?? "",
-        fileUrl,
-      });
+      const resolved = resolveHighResWikiImage(img, link);
+      setActiveImage(resolved);
     };
 
     container.addEventListener("click", handleClick, true);
     return () => container.removeEventListener("click", handleClick, true);
   }, [containerRef]);
 
-  const close = useCallback(() => setImage(null), []);
+  const handleClose = useCallback(() => setActiveImage(null), []);
 
-  if (!image) return null;
+  if (!activeImage || typeof document === "undefined") {
+    return null;
+  }
 
-  return createPortal(<LightboxModal image={image} onClose={close} />, document.body);
-}
-
-// ---------------------------------------------------------------------------
-function LightboxModal({ image, onClose }: { image: LightboxImage; onClose: () => void }) {
-  const [zoomed, setZoomed] = useState(false);
-
-  // Close on Escape
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [onClose]);
-
-  // Prevent body scroll while open
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, []);
-
-  return (
-    <div className="wikios-lightbox-overlay" onClick={onClose}>
-      <div className="wikios-lightbox-content" onClick={(e) => e.stopPropagation()}>
-        {/* Controls */}
-        <div className="wikios-lightbox-controls">
-          <span className="wikios-lightbox-alt">{image.alt}</span>
-          <div className="wikios-lightbox-buttons">
-            <button
-              onClick={() => setZoomed(!zoomed)}
-              className="wikios-lightbox-btn"
-              title={zoomed ? "Zoom out" : "Zoom in"}
-            >
-              {zoomed ? <ZoomOut className="h-4 w-4" /> : <ZoomIn className="h-4 w-4" />}
-            </button>
-            {image.fileUrl && (
-              <a
-                href={
-                  image.fileUrl.startsWith("/")
-                    ? `https://ixwiki.com${image.fileUrl}`
-                    : image.fileUrl
-                }
-                target="_blank"
-                rel="noreferrer"
-                className="wikios-lightbox-btn"
-                title="View file page"
-              >
-                <ExternalLink className="h-4 w-4" />
-              </a>
-            )}
-            <button onClick={onClose} className="wikios-lightbox-btn" title="Close">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Image */}
-        <div className={`wikios-lightbox-image-wrapper ${zoomed ? "wikios-lightbox-zoomed" : ""}`}>
-          <img
-            src={image.src}
-            alt={image.alt}
-            className="wikios-lightbox-image"
-            referrerPolicy="no-referrer"
-            onClick={() => setZoomed(!zoomed)}
-          />
-        </div>
-      </div>
-    </div>
-  );
+  return <ImageLightboxModal image={activeImage} onClose={handleClose} />;
 }

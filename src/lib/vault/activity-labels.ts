@@ -1,0 +1,45 @@
+import { sentenceCase } from "~/lib/format/sentence-case";
+
+/** Human labels for ledger `source` keys shown in the Vault's recent activity. Only keys whose label differs from the sentence-cased key; the rest fall through. */
+const LABELS: Record<string, string> = {
+  DAILY_DIVIDEND: "Daily nation dividend",
+  VAULT_DIVIDEND: "Vault dividend",
+  DAILY_LOGIN: "Daily reward",
+  DAILY_LOGIN_CREDITS: "Daily reward",
+  DAILY_LOGIN_CARD: "Daily reward card",
+  P2P_TRADE: "Player trade",
+  WALLET_SEED: "Starting balance",
+  EXCHANGE_CONVERT_IN: "Converted to Sovereigns",
+  EXCHANGE_CONVERT_OUT: "Converted to IxCredits",
+  COMPANY_CHARTER: "Company charter",
+  COMPANY_DEPOSIT: "Deposit to company",
+  COMPANY_WITHDRAW: "Withdrawal from company",
+  COMPANY_DISSOLVE: "Company dissolved",
+  SHARES: "Share trade",
+  DIVIDEND: "Dividend",
+  SECTOR_FUND: "Sector fund",
+  TENDER: "Government tender escrow",
+  CONTRACT: "Contract refund",
+  JUNK_CARDS: "Cards junked",
+  SOCIAL_POST: "ThinkPages post",
+  cultural_exchange_created: "Cultural exchange",
+  card_sale_auction: "Card sold at auction",
+  card_sale_buyout: "Card sold by buyout",
+  card_purchase_buyout: "Card bought by buyout",
+  auction_bid_reserve: "Auction bid reserved",
+  card_sale_listing: "Card sold by listing",
+  card_purchase_listing: "Card bought from a listing",
+  card_craft: "Card crafted",
+  forum_action: "Action posted in the forum",
+};
+
+export function activitySourceLabel(key: string): string {
+  const known = LABELS[key];
+  if (known) return known;
+  if (key.startsWith("bonus:loreward")) return "Loreward bonus";
+  if (key.startsWith("bonus:")) return `${sentenceCase(key.slice("bonus:".length))} bonus`;
+  if (key.startsWith("exploit_correction:")) return "Balance correction";
+  // Free-text sources ("Purchase item: Gold frame") are already readable.
+  if (/^[A-Z][a-z]/.test(key) && /\s/.test(key)) return key;
+  return sentenceCase(key);
+}

@@ -1,3 +1,5 @@
+> **Reference copy (not IxStates documentation).** This is a verbatim snapshot of the upstream NationStates API docs (https://www.nationstates.net/pages/api.html), kept for offline reference; the live page is authoritative. IxStates' own NS client is `src/lib/nationstates/api-client.ts` (800 ms request spacing, verification via `a=verify` with a site token, season card dumps `cardlist_S{season}.xml.gz`); see [`docs/systems/ns-integration.md`](../../../../docs/systems/ns-integration.md). Note that the Trading Cards dump is a one-off per season, not a daily dump.
+
 The NationStates API helps scripts and bots interact with the site. It is faster than scraping regular HTML pages, easier on our servers, and the data format is guaranteed not to change unexpectedly. It is also the only way to legally automatically perform certain actions, such as sending telegrams and answering issues.
 
 If your script interacts with regular HTML NationStates pages instead of using this API, you are bound by a bunch of special rules: Please read these Script Rules for HTML site.

@@ -7,18 +7,24 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import type { Geometry, Polygon, MultiPolygon, Position } from "geojson";
+import type { Geometry } from "geojson";
 import { TRPCError } from "@trpc/server";
+import { toPolygonal } from "./polygonal-geometry";
 
-// ──────────────────────────────────────────────
-// Coordinate Validation
-// ──────────────────────────────────────────────
+/**
+ * The country's border ($1 = country id) as a scalar subquery: its political feature in the country's own realm.
+ * Realms share one coordinate space and the same country id can have a political row in another realm's layer,
+ * so the realm is matched as well as the country.
+ */
+export const COUNTRY_BORDER_SQL = `(SELECT ml.geom_postgis FROM map_layers ml
+  JOIN "Country" co ON co.id = ml."countryId" AND ml."worldId" = co."realmId"
+  WHERE ml."layerType" = 'political' AND ml."countryId" = $1 AND ml.geom_postgis IS NOT NULL LIMIT 1)`;
 
 /**
  * Validate that coordinates are within valid WGS84 bounds.
  * Throws TRPCError BAD_REQUEST if invalid.
  */
-export function validateCoordinateBounds(lng: number, lat: number): void {
+function validateCoordinateBounds(lng: number, lat: number): void {
   if (lng < -180 || lng > 180) {
     throw new TRPCError({
       code: "BAD_REQUEST",
@@ -44,10 +50,6 @@ export function validateGeometryBounds(geometry: Geometry): void {
   }
 }
 
-// ──────────────────────────────────────────────
-// PostGIS Availability
-// ──────────────────────────────────────────────
-
 let _postgisAvailable: boolean | null = null;
 
 /**
@@ -71,10 +73,6 @@ export async function isPostGISAvailable(db: PrismaClient): Promise<boolean> {
 export function resetPostGISCache(): void {
   _postgisAvailable = null;
 }
-
-// ──────────────────────────────────────────────
-// Spatial Containment Validation
-// ──────────────────────────────────────────────
 
 /**
  * Validate a point is within a country's borders using PostGIS.
@@ -101,7 +99,7 @@ export async function validatePointContainment(
   try {
     const result = await db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
       `SELECT ST_Covers(
-         ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
+         ST_MakeValid(${COUNTRY_BORDER_SQL}),
          ST_SetSRID(ST_MakePoint($2, $3), 4326)
        ) as is_inside`,
       countryId,
@@ -151,7 +149,7 @@ export async function validatePolygonContainment(
     const geoJson = JSON.stringify(geometry);
     const result = await db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
       `SELECT ST_Covers(
-         ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
+         ST_MakeValid(${COUNTRY_BORDER_SQL}),
          ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
        ) as is_inside`,
       countryId,
@@ -172,37 +170,6 @@ export async function validatePolygonContainment(
       message: "Spatial validation failed. Please try again.",
     });
   }
-}
-
-/**
- * Helper to clean a PostGIS-returned GeoJSON geometry to a Polygon or MultiPolygon.
- * Filters out line strings, points, and other non-polygon components.
- */
-export function cleanPostGISGeometry(
-  geometry:
-    Geometry | { type: string; coordinates?: any; geometries?: Geometry[] } | null | undefined
-): Polygon | MultiPolygon | null {
-  if (!geometry) return null;
-  if (geometry.type === "Polygon" || geometry.type === "MultiPolygon") {
-    return geometry as Polygon | MultiPolygon;
-  }
-  if (geometry.type === "GeometryCollection") {
-    const polygons: Position[][][] = [];
-    const geometries = "geometries" in geometry ? geometry.geometries || [] : [];
-    for (const g of geometries) {
-      if (g.type === "Polygon") {
-        polygons.push(g.coordinates);
-      } else if (g.type === "MultiPolygon") {
-        polygons.push(...g.coordinates);
-      }
-    }
-    if (polygons.length === 0) return null;
-    if (polygons.length === 1 && polygons[0]) {
-      return { type: "Polygon", coordinates: polygons[0] };
-    }
-    return { type: "MultiPolygon", coordinates: polygons };
-  }
-  return null;
 }
 
 /**
@@ -233,7 +200,7 @@ export async function clipAndValidatePolygon(
     const result = await db.$queryRawUnsafe<Array<{ clipped: string }>>(
       `SELECT ST_AsGeoJSON(
          ST_Intersection(
-           ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
+           ST_MakeValid(${COUNTRY_BORDER_SQL}),
            ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
          )
        ) as clipped`,
@@ -250,7 +217,7 @@ export async function clipAndValidatePolygon(
     }
 
     const parsedClipped = JSON.parse(clippedGeoJson);
-    const cleaned = cleanPostGISGeometry(parsedClipped);
+    const cleaned = toPolygonal(parsedClipped);
     if (!cleaned) {
       throw new TRPCError({
         code: "BAD_REQUEST",
@@ -268,10 +235,6 @@ export async function clipAndValidatePolygon(
     });
   }
 }
-
-// ──────────────────────────────────────────────
-// Geometry Validity
-// ──────────────────────────────────────────────
 
 /**
  * Check if a geometry is valid using PostGIS ST_IsValid.
@@ -307,10 +270,6 @@ export async function validateGeometryValid(
     });
   }
 }
-
-// ──────────────────────────────────────────────
-// Collision Detection
-// ──────────────────────────────────────────────
 
 /**
  * Check if a point feature is too close to an existing feature of the same type.
@@ -377,10 +336,6 @@ export async function checkPointCollision(
   }
 }
 
-// ──────────────────────────────────────────────
-// Name Uniqueness
-// ──────────────────────────────────────────────
-
 /**
  * Check for duplicate feature names within a country.
  * Throws TRPCError BAD_REQUEST if a duplicate is found.
@@ -392,80 +347,59 @@ export async function checkNameUniqueness(
   featureType: "city" | "subdivision" | "poi" | "storyPin" | "mapLabel",
   excludeId?: string
 ): Promise<void> {
-  const normalizedName = name.trim().toLowerCase();
+  const insensitive = { equals: name.trim().toLowerCase(), mode: "insensitive" as const };
+  const scope = { countryId, ...(excludeId ? { id: { not: excludeId } } : {}) };
 
-  let existing: { id: string; name: string } | null = null;
+  // Each feature type stores its display name in a different column
+  const finders = {
+    city: async () =>
+      (await db.city.findFirst({ where: { ...scope, name: insensitive }, select: { name: true } }))
+        ?.name,
+    subdivision: async () =>
+      (
+        await db.subdivision.findFirst({
+          where: { ...scope, name: insensitive },
+          select: { name: true },
+        })
+      )?.name,
+    poi: async () =>
+      (
+        await db.pointOfInterest.findFirst({
+          where: { ...scope, name: insensitive },
+          select: { name: true },
+        })
+      )?.name,
+    storyPin: async () =>
+      (
+        await db.storyPin.findFirst({
+          where: { ...scope, title: insensitive },
+          select: { title: true },
+        })
+      )?.title,
+    mapLabel: async () =>
+      (
+        await db.mapLabel.findFirst({
+          where: { ...scope, text: insensitive },
+          select: { text: true },
+        })
+      )?.text,
+  };
+  const labels = {
+    city: "city",
+    subdivision: "subdivision",
+    poi: "point of interest",
+    storyPin: "story pin",
+    mapLabel: "map label",
+  };
 
-  if (featureType === "city") {
-    existing = await db.city.findFirst({
-      where: {
-        countryId,
-        name: { equals: normalizedName, mode: "insensitive" },
-        ...(excludeId ? { id: { not: excludeId } } : {}),
-      },
-      select: { id: true, name: true },
-    });
-  } else if (featureType === "subdivision") {
-    existing = await db.subdivision.findFirst({
-      where: {
-        countryId,
-        name: { equals: normalizedName, mode: "insensitive" },
-        ...(excludeId ? { id: { not: excludeId } } : {}),
-      },
-      select: { id: true, name: true },
-    });
-  } else if (featureType === "poi") {
-    existing = await db.pointOfInterest.findFirst({
-      where: {
-        countryId,
-        name: { equals: normalizedName, mode: "insensitive" },
-        ...(excludeId ? { id: { not: excludeId } } : {}),
-      },
-      select: { id: true, name: true },
-    });
-  } else if (featureType === "storyPin") {
-    existing = (await db.storyPin.findFirst({
-      where: {
-        countryId,
-        title: { equals: normalizedName, mode: "insensitive" },
-        ...(excludeId ? { id: { not: excludeId } } : {}),
-      },
-      select: { id: true, title: true },
-    })) as { id: string; name: string } | null;
-    if (existing) existing.name = (existing as any).title;
-  } else if (featureType === "mapLabel") {
-    existing = (await db.mapLabel.findFirst({
-      where: {
-        countryId,
-        text: { equals: normalizedName, mode: "insensitive" },
-        ...(excludeId ? { id: { not: excludeId } } : {}),
-      },
-      select: { id: true, text: true },
-    })) as { id: string; name: string } | null;
-    if (existing) existing.name = (existing as any).text;
-  }
-
-  if (existing) {
-    const label =
-      featureType === "city"
-        ? "city"
-        : featureType === "subdivision"
-          ? "subdivision"
-          : featureType === "storyPin"
-            ? "story pin"
-            : featureType === "mapLabel"
-              ? "map label"
-              : "point of interest";
+  const existingName = await finders[featureType]();
+  if (existingName) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `A ${label} named "${existing.name}" already exists in this country.`,
+      message: `A ${labels[featureType]} named "${existingName}" already exists in this country.`,
     });
   }
 }
-
-// ──────────────────────────────────────────────
-// Shared Geometry Helpers
-// ──────────────────────────────────────────────
 
 /**
  * Recursively extract all [lng, lat] positions from a GeoJSON geometry.
@@ -484,83 +418,6 @@ function extractAllPositions(geometry: Geometry): [number, number][] {
     scan((geometry as { coordinates: unknown }).coordinates);
   }
   return positions;
-}
-
-// ──────────────────────────────────────────────
-// Geometry Structure Validation (Pure — no DB)
-// ──────────────────────────────────────────────
-
-export interface GeometryValidationError {
-  type: string;
-  message: string;
-}
-
-/**
- * Validate basic GeoJSON geometry structure (rings closed, min vertices, etc.).
- * Returns an array of errors (empty if valid).
- */
-export function validateGeometryStructure(geometry: Geometry): GeometryValidationError[] {
-  const errors: GeometryValidationError[] = [];
-
-  if (!geometry.type) {
-    errors.push({ type: "missing_type", message: "Geometry has no type" });
-    return errors;
-  }
-
-  if (!("coordinates" in geometry)) {
-    errors.push({
-      type: "missing_coordinates",
-      message: "Geometry has no coordinates",
-    });
-    return errors;
-  }
-
-  if (geometry.type === "Polygon") {
-    validatePolygonRings(geometry.coordinates, errors);
-  } else if (geometry.type === "MultiPolygon") {
-    for (let i = 0; i < geometry.coordinates.length; i++) {
-      validatePolygonRings(geometry.coordinates[i]!, errors, `polygon[${i}]`);
-    }
-  }
-
-  return errors;
-}
-
-function validatePolygonRings(
-  rings: number[][][],
-  errors: GeometryValidationError[],
-  prefix = ""
-): void {
-  if (!rings || rings.length === 0) {
-    errors.push({
-      type: "empty_polygon",
-      message: `${prefix ? prefix + ": " : ""}Polygon has no rings`,
-    });
-    return;
-  }
-
-  for (let i = 0; i < rings.length; i++) {
-    const ring = rings[i]!;
-    const label = prefix ? `${prefix}.ring[${i}]` : `ring[${i}]`;
-
-    if (ring.length < 4) {
-      errors.push({
-        type: "too_few_vertices",
-        message: `${label}: Ring must have at least 4 positions (has ${ring.length})`,
-      });
-      continue;
-    }
-
-    // Check ring closure
-    const first = ring[0]!;
-    const last = ring[ring.length - 1]!;
-    if (first[0] !== last[0] || first[1] !== last[1]) {
-      errors.push({
-        type: "ring_not_closed",
-        message: `${label}: Ring is not closed (first and last positions differ)`,
-      });
-    }
-  }
 }
 
 /**
@@ -588,9 +445,8 @@ export async function snapPointToCountryBorder(
       `SELECT
          ST_Covers(ST_MakeValid(geom_postgis), ST_SetSRID(ST_MakePoint($2, $3), 4326)) as is_inside,
          ST_Distance(ST_MakeValid(geom_postgis)::geography, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography) as distance_meters
-       FROM map_layers
-       WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL
-       LIMIT 1`,
+       FROM (SELECT ${COUNTRY_BORDER_SQL} AS geom_postgis) border
+       WHERE geom_postgis IS NOT NULL`,
       countryId,
       lng,
       lat
@@ -616,7 +472,7 @@ export async function snapPointToCountryBorder(
     const closestResult = await db.$queryRawUnsafe<Array<{ closest_point: string }>>(
       `SELECT ST_AsGeoJSON(
          ST_ClosestPoint(
-           ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
+           ST_MakeValid(${COUNTRY_BORDER_SQL}),
            ST_SetSRID(ST_MakePoint($2, $3), 4326)
          )
        ) as closest_point`,
@@ -638,10 +494,10 @@ export async function snapPointToCountryBorder(
     const centroidResult = await db.$queryRawUnsafe<Array<{ c_lng: number; c_lat: number }>>(
       `SELECT ST_X(geom_centroid) as c_lng, ST_Y(geom_centroid) as c_lat
        FROM (
-         SELECT ST_Centroid(geometry::geometry) as geom_centroid
+         SELECT ST_Centroid(geom_postgis) as geom_centroid
          FROM subdivisions
-         WHERE "countryId" = $1
-         ORDER BY geometry::geometry <-> ST_SetSRID(ST_MakePoint($2, $3), 4326)
+         WHERE "countryId" = $1 AND geom_postgis IS NOT NULL
+         ORDER BY geom_postgis <-> ST_SetSRID(ST_MakePoint($2, $3), 4326)
          LIMIT 1
        ) sub`,
       countryId,
@@ -663,9 +519,8 @@ export async function snapPointToCountryBorder(
         Array<{ c_lng: number; c_lat: number }>
       >(
         `SELECT ST_X(ST_Centroid(geom_postgis)) as c_lng, ST_Y(ST_Centroid(geom_postgis)) as c_lat
-         FROM map_layers
-         WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL
-         LIMIT 1`,
+         FROM (SELECT ${COUNTRY_BORDER_SQL} AS geom_postgis) border
+         WHERE geom_postgis IS NOT NULL`,
         countryId
       );
       if (countryCentroidResult[0]) {
@@ -688,7 +543,7 @@ export async function snapPointToCountryBorder(
 
           const insideCheck = await db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
             `SELECT ST_Covers(
-               ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
+               ST_MakeValid(${COUNTRY_BORDER_SQL}),
                ST_SetSRID(ST_MakePoint($2, $3), 4326)
              ) as is_inside`,
             countryId,

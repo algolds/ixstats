@@ -1,12 +1,29 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Loader2 } from "lucide-react";
-import { MdGif as GifIcon } from "react-icons/md";
+import { SystemRestart as Loader2 } from "iconoir-react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
-import { Input } from "~/components/ui/input";
+import { SearchField } from "~/components/ui/search-field";
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
+
+function GifIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <rect x="3" y="4" width="18" height="16" rx="4" />
+      <path d="M7 12h2a1 1 0 0 0 1-1V9.5A1.5 1.5 0 0 0 8.5 8H7v8" />
+      <path d="M13 8v8" />
+      <path d="M16 8h3m-3 4h2m-2 4h1" />
+    </svg>
+  );
+}
 
 interface GiphyGif {
   id: string;
@@ -29,10 +46,12 @@ interface GifPickerProps {
   disabled?: boolean;
 }
 
-const GIPHY_API_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY || "1FCCq4KmjQjC6FdopmB3tr6UUqLepZ0F";
+// The deployment's own key (src/env.ts); without one the picker stays disabled rather than borrowing a shared key.
+const GIPHY_API_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY ?? "";
 
 export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
-  ({ onSelectGif, trigger, disabled = false }, ref) => {
+  ({ onSelectGif, trigger, disabled: disabledProp = false }, ref) => {
+    const disabled = disabledProp || !GIPHY_API_KEY;
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -51,7 +70,7 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
 
     // Fetch GIFs from Giphy API
     useEffect(() => {
-      if (!isOpen) return;
+      if (!isOpen || !GIPHY_API_KEY) return;
 
       const fetchGifs = async () => {
         setIsLoading(true);
@@ -101,39 +120,33 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
               variant="ghost"
               size="sm"
               disabled={disabled}
-              className={cn(
-                "h-8 w-8 cursor-pointer p-0 text-purple-400 transition-colors hover:bg-slate-500/5 hover:text-purple-600 dark:text-purple-400 dark:hover:bg-white/5 dark:hover:text-purple-300",
-                disabled && "cursor-not-allowed opacity-50"
-              )}
+              aria-label="Insert GIF"
+              title={GIPHY_API_KEY ? undefined : "GIFs are not set up on this server"}
+              className="text-tint hover:bg-tint-fill hover:text-tint size-8 p-0"
             >
-              <GifIcon className="h-5 w-5" />
+              <GifIcon className="size-5" />
             </Button>
           )}
         </PopoverTrigger>
-        <PopoverContent
-          align="start"
-          className="glass-hierarchy-child w-80 overflow-hidden border-green-500/20 bg-neutral-900/90 p-0 shadow-xl backdrop-blur-xl"
-        >
-          {/* Search */}
-          <div className="relative border-b border-white/10 p-2">
-            <Search className="text-muted-foreground absolute top-4 left-4 h-3.5 w-3.5" />
-            <Input
+        <PopoverContent align="start" className="w-80 overflow-hidden p-0">
+          <div className="border-separator border-b p-2">
+            <SearchField
+              size="sm"
               placeholder="Search GIPHY..."
+              aria-label="Search GIFs"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 border-white/10 bg-white/5 pl-8 text-xs focus:bg-white/10"
+              onValueChange={setSearchQuery}
             />
           </div>
 
-          {/* GIFs Grid View Area */}
-          <div className="h-72 scrollbar-thin scrollbar-thumb-white/10 overflow-y-auto p-2">
+          <div className="thin-scrollbar h-72 overflow-y-auto p-2">
             {isLoading && gifs.length === 0 ? (
-              <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2 text-xs">
-                <Loader2 className="h-5 w-5 animate-spin text-green-400" />
+              <div className="text-footnote text-label-secondary flex h-full flex-col items-center justify-center gap-2">
+                <Loader2 className="size-5 animate-spin" aria-hidden="true" />
                 <span>Searching GIPHY...</span>
               </div>
             ) : error ? (
-              <div className="flex h-full flex-col items-center justify-center p-4 text-center text-xs text-red-400">
+              <div className="text-footnote text-destructive flex h-full flex-col items-center justify-center p-4 text-center">
                 {error}
               </div>
             ) : gifs.length > 0 ? (
@@ -141,9 +154,11 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
                 {gifs.map((gif) => (
                   <button
                     key={gif.id}
+                    type="button"
                     onClick={() => handleSelectGif(gif)}
                     title={gif.title}
-                    className="group relative aspect-video overflow-hidden rounded-md border border-transparent hover:border-green-400/50"
+                    aria-label={gif.title || "GIF"}
+                    className="border-separator hover:border-tint group rounded-control-sm relative aspect-video overflow-hidden border transition-[border-color,scale] duration-150 hover:scale-[1.02]"
                   >
                     <img
                       src={gif.images.fixed_height.url}
@@ -151,13 +166,13 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
                       className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity group-hover:opacity-100" />
+                    <div className="bg-fill-4 absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100" />
                   </button>
                 ))}
               </div>
             ) : (
-              <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
-                No GIFs found. Try searching for something else!
+              <div className="text-footnote text-label-secondary flex h-full items-center justify-center">
+                No GIFs found. Try another search.
               </div>
             )}
           </div>

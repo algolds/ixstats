@@ -1,9 +1,10 @@
+"use client";
 // src/app/admin/storyteller/_components/SandboxMode.tsx
 // Simulate world events without applying them to the database
-"use client";
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { formatCurrency } from "~/lib/utils/format-utils";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
@@ -17,17 +18,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { FlaskConical, Play, Loader2, TrendingDown, TrendingUp, ArrowRight } from "lucide-react";
+import {
+  Flask as FlaskConical,
+  Play,
+  SystemRestart as Loader2,
+  StatDown as TrendingDown,
+  StatUp as TrendingUp,
+  ArrowRight,
+} from "iconoir-react";
 
 const EVENT_TYPES = [
-  { value: "economic_crisis", label: "Economic Crisis" },
-  { value: "trade_war", label: "Trade War" },
-  { value: "natural_disaster", label: "Natural Disaster" },
-  { value: "political_upheaval", label: "Political Upheaval" },
-  { value: "tech_revolution", label: "Tech Revolution" },
-  { value: "peace_era", label: "Peace & Prosperity" },
+  { value: "economic_crisis", label: "Economic crisis" },
+  { value: "trade_war", label: "Trade war" },
+  { value: "natural_disaster", label: "Natural disaster" },
+  { value: "political_upheaval", label: "Political upheaval" },
+  { value: "tech_revolution", label: "Tech revolution" },
+  { value: "peace_era", label: "Peace & prosperity" },
   { value: "pandemic", label: "Pandemic" },
-  { value: "climate_disaster", label: "Climate Emergency" },
+  { value: "climate_disaster", label: "Climate emergency" },
   { value: "custom", label: "Custom" },
 ];
 
@@ -51,28 +59,18 @@ export function SandboxMode() {
     }
   );
 
-  const fmtBig = (n: number) => {
-    if (Math.abs(n) >= 1e12) return `$${(n / 1e12).toFixed(1)}T`;
-    if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-    if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(0)}M`;
-    return `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
-        <FlaskConical className="h-5 w-5 text-indigo-500" />
-        <h3 className="text-foreground text-lg font-semibold">Sandbox Mode</h3>
-        <Badge variant="outline" className="border-indigo-500/20 text-indigo-600">
-          No changes applied
-        </Badge>
+        <FlaskConical className="text-indigo h-5 w-5" />
+        <h3 className="text-label text-title-3">Sandbox mode</h3>
+        <Badge variant="secondary">No changes applied</Badge>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Configuration */}
         <div className="space-y-5">
           <div>
-            <Label>Event Type</Label>
+            <Label>Event type</Label>
             <Select
               value={type}
               onValueChange={(v) => {
@@ -96,7 +94,7 @@ export function SandboxMode() {
           <div>
             <div className="flex items-center justify-between">
               <Label>Severity</Label>
-              <span className="text-foreground text-sm font-medium">
+              <span className="text-label text-body font-medium">
                 {(severity * 100).toFixed(0)}%
               </span>
             </div>
@@ -116,7 +114,7 @@ export function SandboxMode() {
           <div>
             <div className="flex items-center justify-between">
               <Label>Duration (years)</Label>
-              <span className="text-foreground text-sm font-medium">{duration}</span>
+              <span className="text-label text-body font-medium">{duration}</span>
             </div>
             <Slider
               value={[duration]}
@@ -132,7 +130,7 @@ export function SandboxMode() {
           </div>
 
           <div>
-            <Label className="mb-2 block">Target Countries</Label>
+            <Label className="mb-2 block">Target countries</Label>
             <CountrySelector
               selectedIds={selectedCountryIds}
               onSelectionChange={(ids) => {
@@ -148,74 +146,71 @@ export function SandboxMode() {
             className="w-full"
           >
             <Play className="mr-2 h-4 w-4" />
-            Run Simulation
+            Run simulation
           </Button>
         </div>
 
-        {/* Results */}
         <div>
           {!runSimulation ? (
-            <div className="border-border/50 flex flex-col items-center justify-center rounded-xl border border-dashed py-20 text-center">
-              <FlaskConical className="text-muted-foreground mb-3 h-10 w-10" />
-              <p className="text-foreground font-medium">Configure & Run</p>
-              <p className="text-muted-foreground mt-1 text-sm">
+            <div className="border-separator rounded-row flex flex-col items-center justify-center border border-dashed py-20 text-center">
+              <FlaskConical className="text-label-secondary mb-3 h-10 w-10" />
+              <p className="text-label font-medium">Configure & run</p>
+              <p className="text-label-secondary text-body mt-1">
                 Set parameters and select countries, then click Run Simulation.
               </p>
             </div>
           ) : simulation.isLoading ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <Loader2 className="text-primary h-8 w-8 animate-spin" />
-              <p className="text-muted-foreground mt-3 text-sm">Simulating...</p>
+              <Loader2 className="text-tint h-8 w-8 animate-spin" />
+              <p className="text-label-secondary text-body mt-3">Simulating...</p>
             </div>
           ) : simulation.data ? (
             <div className="space-y-4">
-              {/* Summary */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="border-border/50 rounded-lg border p-3 text-center">
-                  <div className="text-muted-foreground text-xs">Countries</div>
-                  <div className="text-foreground text-xl font-bold">
+                <div className="border-separator rounded-control border p-3 text-center">
+                  <div className="text-label-secondary text-footnote">Countries</div>
+                  <div className="text-label text-title-2">
                     {simulation.data.summary.totalCountriesAffected}
                   </div>
                 </div>
-                <div className="border-border/50 rounded-lg border p-3 text-center">
-                  <div className="text-muted-foreground text-xs">Avg GDP</div>
+                <div className="border-separator rounded-control border p-3 text-center">
+                  <div className="text-label-secondary text-footnote">Avg GDP</div>
                   <div
-                    className={`text-xl font-bold ${
-                      simulation.data.summary.avgGdpChange < 0 ? "text-red-500" : "text-green-500"
+                    className={`text-title-2 ${
+                      simulation.data.summary.avgGdpChange < 0 ? "text-red" : "text-green"
                     }`}
                   >
                     {simulation.data.summary.avgGdpChange >= 0 ? "+" : ""}
                     {(simulation.data.summary.avgGdpChange * 100).toFixed(1)}%
                   </div>
                 </div>
-                <div className="border-border/50 rounded-lg border p-3 text-center">
-                  <div className="text-muted-foreground text-xs">At Risk</div>
-                  <div className="text-foreground text-xl font-bold">
-                    {fmtBig(simulation.data.summary.totalGdpAtRisk)}
+                <div className="border-separator rounded-control border p-3 text-center">
+                  <div className="text-label-secondary text-footnote">At risk</div>
+                  <div className="text-label text-title-2">
+                    {formatCurrency(simulation.data.summary.totalGdpAtRisk)}
                   </div>
                 </div>
               </div>
 
-              {/* Per-country breakdown */}
-              <ScrollArea className="border-border/50 h-[360px] rounded-lg border">
+              <ScrollArea className="border-separator rounded-control h-[360px] border">
                 <div className="space-y-2 p-3">
                   {simulation.data.projectedImpacts.map((p) => (
                     <div
                       key={p.countryId}
-                      className="border-border/20 flex items-center justify-between rounded-lg border p-3"
+                      className="border-separator rounded-control flex items-center justify-between border p-3"
                     >
                       <div>
-                        <div className="text-foreground text-sm font-medium">{p.countryName}</div>
-                        <div className="text-muted-foreground text-xs">
-                          {p.economicTier} - GDP: {fmtBig(p.current.gdp)}
+                        <div className="text-label text-body font-medium">{p.countryName}</div>
+                        <div className="text-label-secondary text-footnote">
+                          {p.economicTier} - GDP: {formatCurrency(p.current.gdp)}
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-right">
                         <div>
-                          <div className="text-muted-foreground text-xs">GDP</div>
+                          <div className="text-label-secondary text-footnote">GDP</div>
                           <div
-                            className={`flex items-center gap-1 font-mono text-sm font-medium ${
-                              p.projected.gdpChange < 0 ? "text-red-500" : "text-green-500"
+                            className={`text-body flex items-center gap-1 font-medium tabular-nums ${
+                              p.projected.gdpChange < 0 ? "text-red" : "text-green"
                             }`}
                           >
                             {p.projected.gdpChange < 0 ? (
@@ -226,11 +221,11 @@ export function SandboxMode() {
                             {(p.projected.gdpChange * 100).toFixed(1)}%
                           </div>
                         </div>
-                        <ArrowRight className="text-muted-foreground h-4 w-4" />
+                        <ArrowRight className="text-label-secondary h-4 w-4" />
                         <div>
-                          <div className="text-muted-foreground text-xs">Projected</div>
-                          <div className="text-foreground text-sm font-medium">
-                            {fmtBig(p.projected.gdp)}
+                          <div className="text-label-secondary text-footnote">Projected</div>
+                          <div className="text-label text-body font-medium">
+                            {formatCurrency(p.projected.gdp)}
                           </div>
                         </div>
                       </div>
@@ -239,9 +234,8 @@ export function SandboxMode() {
                 </div>
               </ScrollArea>
 
-              {/* Apply button */}
-              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-                <p className="text-muted-foreground mb-2 text-xs">
+              <div className="rounded-control border-yellow/20 bg-yellow/5 border p-3">
+                <p className="text-label-secondary text-footnote mb-2">
                   Ready to apply this simulation as a real world event? Use the Event Wizard tab to
                   create it with these parameters.
                 </p>

@@ -1,0 +1,421 @@
+// src/lib/wiki-os/upstream-guard.ts
+// One guard in front of every outbound wiki API call (plan 2026-10-25 sister wikis, C3a). Server only: it calls
+// other people's wikis, so client code never imports it (src/tests/architecture/client-server-entrypoints.test.ts).
+//
+// Per host (`new URL(url).host`), two things stand between a caller and the wiki:
+//   - A breaker. Five failures in a row (a thrown fetch, a timeout, HTTP 403, 429 or 5xx, or a 2xx that is not JSON,
+//     which is how a Cloudflare challenge looks, or whose body is cut short or does not parse) open it for 30 s; meanwhile every call fails fast with no request.
+//     Then exactly one probe goes out while other calls keep failing fast. A successful probe closes the breaker and
+//     resets it; a failed one reopens it for twice as long as last time, never more than 5 minutes. One `console.warn`
+//     when a circuit opens and one when it closes; those name the host, which stays on the server.
+//   - A limiter (`OutboundLimiter`): 8 calls in flight, and a token bucket that holds 240 calls (a burst of 240) and
+//     refills at 4 a second (240 a minute). Past either the call is refused as busy with no request, and that refusal
+//     is not a failure of the wiki. Wikimedia Commons, browsed interactively (a category browser fires several queries
+//     at once, autocomplete one per keystroke), gets 16 in flight and 600 a minute (`HOST_GUARD_OVERRIDES`), with the
+//     same breaker.
+//   - Two lanes. That limiter is WikiOS's own reads' (`lane: "wikios"`, the default). The public api.php proxy
+//     (`src/app/api/mediawiki/[wiki]/api.php/route.ts`) spends a second limiter per host (`lane: "proxy"`, 8 in flight
+//     and 120 a minute, `PROXY_LANE_LIMITS`), so anonymous proxy traffic, even within its per-IP limit, can never use
+//     up the budget WikiOS's readers need. Both lanes share the host's breaker: an outage either one sees is the
+//     other's too, and the proxy sends nothing to a wiki WikiOS already knows is down. So a wiki can see 8 + 8 in
+//     flight and 240 + 120 a minute from one process (before C3d the proxy had no bound but its per-IP limit).
+// A failure throws `WikiUnavailableError`, which the tRPC formatter (`src/server/api/trpc/init.ts`) turns into
+// SERVICE_UNAVAILABLE (503), or TOO_MANY_REQUESTS (429) when the reason is `busy`. The client sees the message ("IIWiki
+// could not be reached just now.") and `{ wiki, reason }`, never the URL, a host or the upstream answer: a host that is
+// not a listed wiki is "The wiki" (`wikiNameForUrl`).
+//
+// JSON API calls only. A non-JSON 2xx is a failure (that is how a challenge page is caught), so file bytes or
+// `action=raw` routed through here would trip the breaker on healthy wikis. A 2xx body is read inside the call (it
+// holds its in-flight slot until then), so a body that does not parse is a failure too, never a success the caller
+// then cannot read. It is read up to `MAX_SISTER_RESPONSE_BYTES` (16 MB) and no further: a longer answer is cancelled and
+// throws SisterResponseTooLargeError (unavailable to the reader, not a failure of the breaker: the wiki answered).
+//
+// State is per process, in memory, and costs no timer: time is read from the clock when a call arrives, so nothing
+// keeps the process alive and nothing leaks between tests. Production runs the Next server and server.mjs's cron jobs;
+// where those are separate processes (or PM2 runs several instances), each has its own breakers and its own limiter,
+// so a wiki can see up to 8 in flight and 240 a minute from each process, and each process learns of an outage on its
+// own five failures. The numbers are a bound per process, not per deployment.
+//
+// Hosts are keyed as they are fetched: in development iiwiki is reached through the maps.ixwiki.com relay
+// (`getMediaWikiApiUrl`), so the relay's host carries the breaker there. Only configured wiki URLs are passed in
+// (`wiki-hosts.ts`, `config.ts`), so the map holds a handful of entries.
+
+import { AppError } from "~/lib/app-error";
+import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { OutboundLimiter, ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
+import {
+  SISTER_WIKI_HOSTS,
+  SISTER_WIKI_IDS,
+  sisterWikiHost,
+  type SisterWikiId,
+} from "~/lib/wiki-os/wiki-hosts";
+
+const isSisterWikiId = (id: string): id is SisterWikiId => sisterWikiHost(id) !== null;
+
+/** Why a wiki gave no answer: it failed (`unreachable`), it is resting after failures (`circuit-open`), or it or we said busy. */
+export type UnavailableReason = "unreachable" | "circuit-open" | "busy";
+
+export class WikiUnavailableError extends AppError {
+  constructor(
+    readonly wiki: string,
+    readonly reason: UnavailableReason
+  ) {
+    const busy = reason === "busy";
+    super(
+      busy ? "RATE_LIMITED" : "UNAVAILABLE",
+      busy ? `${wiki} is busy; try again shortly.` : `${wiki} could not be reached just now.`,
+      { wiki, reason }
+    );
+  }
+}
+
+/**
+ * The most bytes of an answer read from another wiki: far more than a page at MediaWiki's 2 MB limit takes as JSON
+ * wikitext or as parsed HTML, so only a broken or hostile upstream reaches it.
+ */
+export const MAX_SISTER_RESPONSE_BYTES = 16 * 1024 * 1024;
+
+/**
+ * A wiki's answer was longer than `MAX_SISTER_RESPONSE_BYTES` and was not read to the end. To a reader it is the wiki
+ * giving no usable answer (`unreachable`); a render turns it into SisterRenderError. The wiki did answer, so it is not
+ * a failure of the host's breaker.
+ */
+export class SisterResponseTooLargeError extends WikiUnavailableError {
+  constructor(wiki: string) {
+    super(wiki, "unreachable");
+    this.name = "SisterResponseTooLargeError";
+  }
+}
+
+/**
+ * The body of `response` as text, or null (the body cancelled) once it is longer than `limit` bytes: by its
+ * Content-Length before reading, else as it streams in, so an answer that never ends is never buffered.
+ */
+export async function readCappedText(response: Response, limit: number): Promise<string | null> {
+  if (Number(response.headers.get("content-length")) > limit) {
+    await response.body?.cancel().catch(() => undefined);
+    return null;
+  }
+  const reader = response.body?.getReader();
+  if (!reader) return "";
+  const decoder = new TextDecoder();
+  let total = 0;
+  let text = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+  return text + decoder.decode();
+}
+
+export interface HostGuardOptions {
+  /** Failures in a row that open the circuit. */
+  failureThreshold: number;
+  /** The first cooldown; each failed probe doubles it. */
+  openMs: number;
+  /** The longest cooldown. */
+  maxOpenMs: number;
+  maxConcurrent: number;
+  perMinute: number;
+  /** Clock, for tests. */
+  now?: () => number;
+}
+
+export const SISTER_GUARD_OPTIONS: HostGuardOptions = {
+  failureThreshold: 5,
+  openMs: 30_000,
+  maxOpenMs: 300_000,
+  maxConcurrent: 8,
+  perMinute: 240,
+};
+
+/** Limits of one host that differ from the guard's own, by `URL.host`. The breaker is the same for every host. */
+export type HostLimits = Partial<Pick<HostGuardOptions, "maxConcurrent" | "perMinute">>;
+
+/** Commons is browsed interactively, so it gets more room than a sister wiki's page reads. */
+export const HOST_GUARD_OVERRIDES: Readonly<Record<string, HostLimits>> = {
+  "commons.wikimedia.org": { maxConcurrent: 16, perMinute: 600 },
+};
+
+/** Whose budget a call spends: WikiOS's own reads, or the public api.php proxy (see the header). */
+export type GuardLane = "wikios" | "proxy";
+
+/** The proxy lane's limits, on every host. */
+export const PROXY_LANE_LIMITS: Readonly<Required<HostLimits>> = {
+  maxConcurrent: 8,
+  perMinute: 120,
+};
+
+export interface GuardedRequest {
+  /** Clamped to `MAX_TIMEOUT_MS`; a value that is not a positive finite number uses `DEFAULT_TIMEOUT_MS`. */
+  timeoutMs: number;
+  /** Defaults to `DEFAULT_USER_AGENT` (`IxStats-Builder`, which the sister wikis allow-list). */
+  userAgent?: string;
+  /** Defaults to `wikios`. */
+  lane?: GuardLane;
+}
+
+/** The timeout of a request whose `timeoutMs` is not a positive finite number. */
+export const DEFAULT_TIMEOUT_MS = 12_000;
+/** The longest a request may wait. */
+const MAX_TIMEOUT_MS = 30_000;
+
+function timeoutOf(timeoutMs: number): number {
+  return Number.isFinite(timeoutMs) && timeoutMs > 0
+    ? Math.min(timeoutMs, MAX_TIMEOUT_MS)
+    : DEFAULT_TIMEOUT_MS;
+}
+
+/** How a call was let through: an ordinary call, or the one probe of a circuit past its cooldown. */
+type Ticket = "call" | "probe";
+
+/** A breaker's state; pure, the clock is passed in. */
+class Circuit {
+  /** Failures in a row, probes included. */
+  private failures = 0;
+  /** When the cooldown ends; null while closed. */
+  private openUntil: number | null = null;
+  /** Failed probes since the circuit last closed. */
+  private reopenings = 0;
+  private probing = false;
+
+  constructor(private readonly options: HostGuardOptions) {}
+
+  get failureCount(): number {
+    return this.failures;
+  }
+
+  /** null refuses the call (open, or a probe already out). */
+  admit(now: number): Ticket | null {
+    if (this.openUntil === null) return "call";
+    if (now < this.openUntil || this.probing) return null;
+    this.probing = true;
+    return "probe";
+  }
+
+  /** The admitted call never went out. */
+  release(ticket: Ticket): void {
+    if (ticket === "probe") this.probing = false;
+  }
+
+  /** True when this success closed the circuit; only the probe closes it (a call admitted before it opened does not). */
+  succeed(ticket: Ticket): boolean {
+    if (ticket === "probe") {
+      this.failures = 0;
+      this.reopenings = 0;
+      this.openUntil = null;
+      this.probing = false;
+      return true;
+    }
+    // A call admitted before the circuit opened leaves the count of an open circuit alone (the log reports it).
+    if (this.openUntil === null) this.failures = 0;
+    return false;
+  }
+
+  /** The cooldown when this failure opened the circuit, else null. */
+  fail(ticket: Ticket, now: number): number | null {
+    if (ticket === "probe") {
+      this.probing = false;
+      this.failures += 1;
+      this.reopenings += 1;
+      return this.open(now);
+    }
+    if (this.openUntil !== null) return null;
+    this.failures += 1;
+    return this.failures >= this.options.failureThreshold ? this.open(now) : null;
+  }
+
+  private open(now: number): number {
+    const cooldown = Math.min(this.options.openMs * 2 ** this.reopenings, this.options.maxOpenMs);
+    this.openUntil = now + cooldown;
+    return cooldown;
+  }
+}
+
+/** Whether an answer is the wiki's (`ok`) or a failure, and of which kind. */
+function verdictOf(response: Response): "ok" | "unreachable" | "busy" {
+  if (response.status === 429) return "busy";
+  if (response.ok) {
+    return (response.headers.get("content-type") ?? "").includes("json") ? "ok" : "unreachable";
+  }
+  const wikiAnswered = response.status >= 400 && response.status < 500 && response.status !== 403;
+  return wikiAnswered ? "ok" : "unreachable";
+}
+
+/** An answer over `MAX_SISTER_RESPONSE_BYTES`, read no further. */
+type TooLarge = "too-large";
+
+/**
+ * A 2xx answer read whole, up to `MAX_SISTER_RESPONSE_BYTES`: the same answer, still readable, when its body parses as
+ * JSON; `too-large` past the cap (the body cancelled); else `unreachable`.
+ */
+async function parsedAnswer(response: Response): Promise<Response | "unreachable" | TooLarge> {
+  try {
+    const text = await readCappedText(response, MAX_SISTER_RESPONSE_BYTES);
+    if (text === null) return "too-large";
+    JSON.parse(text);
+    const { status, statusText, headers } = response;
+    return new Response(text, { status, statusText, headers });
+  } catch {
+    // a body cut short (the timeout fired while it was read) or JSON that does not parse
+    return "unreachable";
+  }
+}
+
+/** The wiki's answer, or why there is none. */
+async function send(
+  url: string,
+  request: GuardedRequest
+): Promise<Response | UnavailableReason | TooLarge> {
+  const userAgent = request.userAgent ?? DEFAULT_USER_AGENT;
+  const signal = AbortSignal.timeout(timeoutOf(request.timeoutMs));
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: { "User-Agent": userAgent, "Api-User-Agent": userAgent, Accept: "application/json" },
+      signal,
+    });
+  } catch {
+    return "unreachable";
+  }
+  const verdict = verdictOf(response);
+  if (verdict === "ok") return response.ok ? parsedAnswer(response) : response;
+  // Nobody reads a failed answer: release its connection.
+  await response.body?.cancel().catch(() => undefined);
+  return verdict;
+}
+
+interface HostEntry {
+  circuit: Circuit;
+  limiters: Record<GuardLane, OutboundLimiter>;
+}
+
+export class HostGuard {
+  private readonly hosts = new Map<string, HostEntry>();
+  private readonly now: () => number;
+
+  constructor(
+    private readonly options: HostGuardOptions,
+    private readonly hostLimits: Readonly<Record<string, HostLimits>> = {}
+  ) {
+    this.now = options.now ?? (() => Date.now());
+  }
+
+  /**
+   * GET `url`, a JSON API call. Returns the response for a 2xx JSON answer whose body parses or a 4xx other than
+   * 403/429. Never route file bytes or `action=raw` through it: a non-JSON answer counts as a failure and would trip
+   * the breaker.
+   */
+  async fetch(url: string, request: GuardedRequest): Promise<Response> {
+    const wiki = wikiNameForUrl(url);
+    const host = new URL(url).host;
+    const entry = this.entryFor(host);
+    const ticket = entry.circuit.admit(this.now());
+    if (ticket === null) throw new WikiUnavailableError(wiki, "circuit-open");
+    try {
+      return await entry.limiters[request.lane ?? "wikios"].run(() =>
+        this.attempt(url, request, { wiki, host }, entry.circuit, ticket)
+      );
+    } catch (error) {
+      if (!(error instanceof ThrottledError)) throw error;
+      entry.circuit.release(ticket);
+      throw new WikiUnavailableError(wiki, "busy");
+    }
+  }
+
+  private async attempt(
+    url: string,
+    request: GuardedRequest,
+    { wiki, host }: { wiki: string; host: string },
+    circuit: Circuit,
+    ticket: Ticket
+  ): Promise<Response> {
+    const outcome = await send(url, request);
+    if (outcome instanceof Response || outcome === "too-large") {
+      if (circuit.succeed(ticket))
+        console.warn(`[upstream-guard] ${wiki} (${host}): circuit closed; requests resume.`);
+      if (outcome === "too-large") throw new SisterResponseTooLargeError(wiki);
+      return outcome;
+    }
+    const cooldown = circuit.fail(ticket, this.now());
+    if (cooldown !== null) {
+      console.warn(
+        `[upstream-guard] ${wiki} (${host}): circuit open after ${circuit.failureCount} failures in a row; ` +
+          `next try in ${cooldown / 1000} s.`
+      );
+    }
+    throw new WikiUnavailableError(wiki, outcome);
+  }
+
+  private entryFor(host: string): HostEntry {
+    let entry = this.hosts.get(host);
+    if (!entry) {
+      const limits = { ...this.options, ...this.hostLimits[host] };
+      entry = {
+        circuit: new Circuit(this.options),
+        limiters: {
+          wikios: new OutboundLimiter({
+            name: host,
+            maxConcurrent: limits.maxConcurrent,
+            perMinute: limits.perMinute,
+            now: this.now,
+          }),
+          proxy: new OutboundLimiter({
+            name: `${host} (proxy)`,
+            ...PROXY_LANE_LIMITS,
+            now: this.now,
+          }),
+        },
+      };
+      this.hosts.set(host, entry);
+    }
+    return entry;
+  }
+}
+
+/** The process's guard for the sister wikis: one per process (see the header). */
+export const upstreamGuard = new HostGuard(SISTER_GUARD_OPTIONS, HOST_GUARD_OVERRIDES);
+
+/** `/api/mediawiki/<id>/api.php`: the api.php proxy, which the development relay is. */
+const RELAY_PATH = /^\/api\/mediawiki\/([^/]+)\/api\.php$/;
+
+/** What a client may be told a host is called when it is not a listed wiki: never the host itself. */
+const UNLISTED_WIKI = "The wiki";
+
+/** Names an outage message gives a listed wiki in place of its short `name` ("Commons" alone says little). */
+const OUTAGE_NAMES: Partial<Record<SisterWikiId, string>> = { commons: "Wikimedia Commons" };
+
+/** The name an outage message gives the listed wiki `id`. */
+const outageName = (id: SisterWikiId): string => OUTAGE_NAMES[id] ?? SISTER_WIKI_HOSTS[id].name;
+
+/** The name people know a wiki by, for the wiki `url` points at; "The wiki" when it is not a listed wiki. */
+export function wikiNameForUrl(url: string): string {
+  const parsed = new URL(url);
+  const relayed = RELAY_PATH.exec(parsed.pathname)?.[1];
+  if (relayed !== undefined && isSisterWikiId(relayed)) return outageName(relayed);
+  const hostname = parsed.hostname.replace(/^www\./, "");
+  const listed = SISTER_WIKI_IDS.find((id) => {
+    const host = SISTER_WIKI_HOSTS[id];
+    return (
+      new URL(host.origin).hostname === hostname ||
+      (host.mediaHosts as readonly string[]).includes(hostname)
+    );
+  });
+  return listed ? outageName(listed) : UNLISTED_WIKI;
+}
+
+/** `work`'s result, or null when its wiki was unavailable; any other error is rethrown. */
+export async function unlessUnavailable<T>(work: Promise<T>): Promise<T | null> {
+  try {
+    return await work;
+  } catch (error) {
+    if (error instanceof WikiUnavailableError) return null;
+    throw error;
+  }
+}

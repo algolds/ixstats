@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Dumbbell, TrendingUp } from "lucide-react";
+import { SystemRestart as Loader2, Gym as Dumbbell, StatUp as TrendingUp } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { buttonVariants } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import { Button } from "~/components/ui/button";
+import { usePaidActionRequestId } from "~/components/sports/core/usePaidActionRequestId";
 
 interface PlayerTrainingButtonProps {
   playerId: string;
@@ -26,74 +28,70 @@ export function PlayerTrainingButton({
   onTrained,
 }: PlayerTrainingButtonProps) {
   const [open, setOpen] = useState(false);
-  const utils = api.useUtils();
 
+  const trainingRequest = usePaidActionRequestId();
   const trainPlayer = api.sports.trainPlayer.useMutation({
     onSuccess: () => {
-      utils.sports.getMyClubOverview.invalidate({ teamId });
+      trainingRequest.done();
       onTrained?.();
     },
   });
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        className={cn(
-          buttonVariants({ variant: "ghost", size: "sm" }),
-          "text-muted-foreground hover:text-foreground h-7 px-2 text-[10px]"
-        )}
-      >
-        <Dumbbell className="mr-1 h-3 w-3" />
+      <PopoverTrigger className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}>
+        <Dumbbell />
         Train
       </PopoverTrigger>
 
-      <PopoverContent className="border-border bg-card pointer-events-auto w-52 rounded-xl border p-3 shadow-xl backdrop-blur-xl">
-        <p className="text-muted-foreground mb-2 text-[10px] font-semibold tracking-wider uppercase">
-          Focus Attribute
-        </p>
+      <PopoverContent className="pointer-events-auto w-56 p-3">
+        <p className="text-subhead text-label-secondary mb-2">Focus attribute</p>
         <div className="max-h-40 space-y-1 overflow-y-auto">
           {attributes.map((attr) => {
-            const val = currentRatings[attr] ?? 50;
+            const val = currentRatings[attr];
             return (
-              <button
+              <Button
+                variant="ghost"
                 key={attr}
                 disabled={trainPlayer.isPending}
                 onClick={() => {
-                  trainPlayer.mutate({ playerId, attributeFocus: attr });
+                  trainPlayer.mutate({
+                    playerId,
+                    attributeFocus: attr,
+                    requestId: trainingRequest.idFor(`${playerId}:${attr}`),
+                  });
                   setOpen(false);
                 }}
-                className={cn(
-                  "hover:bg-muted flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs transition",
-                  trainPlayer.isPending && "opacity-50"
-                )}
+                className="text-body text-label h-auto w-full justify-between px-2 py-2 font-normal"
               >
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-3 w-3 text-emerald-400" />
+                  <TrendingUp className="text-green size-3.5" aria-hidden />
                   <span className="capitalize">{attr}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge
-                    variant="outline"
-                    className={cn(
-                      "rounded px-1 py-0 text-[9px] font-bold",
-                      val >= 80
-                        ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                        : val >= 70
-                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                          : "border-muted bg-muted/50 text-muted-foreground"
-                    )}
+                    className="tabular-nums"
+                    variant={
+                      val === undefined
+                        ? "default"
+                        : val >= 80
+                          ? "warning"
+                          : val >= 70
+                            ? "success"
+                            : "default"
+                    }
                   >
-                    {val}
+                    {val ?? "—"}
                   </Badge>
-                  <span className="text-muted-foreground text-[9px]">25c</span>
+                  <span className="text-label-secondary text-footnote tabular-nums">25c</span>
                 </div>
-              </button>
+              </Button>
             );
           })}
         </div>
         {trainPlayer.isPending && (
           <div className="mt-2 flex items-center justify-center">
-            <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
+            <Loader2 className="text-label-secondary size-3.5 animate-spin" aria-label="Training" />
           </div>
         )}
       </PopoverContent>

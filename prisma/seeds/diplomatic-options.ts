@@ -457,7 +457,8 @@ async function main() {
   const allOptions = await prisma.diplomaticOption.findMany();
   const categoryStats = allOptions.reduce(
     (acc, option) => {
-      acc[option.category] = (acc[option.category] || 0) + 1;
+      const category = option.category ?? "uncategorized";
+      acc[category] = (acc[category] || 0) + 1;
       return acc;
     },
     {} as Record<string, number>

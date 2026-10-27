@@ -1,15 +1,17 @@
+"use client";
 // src/app/admin/storyteller/_components/CountrySelector.tsx
 // Shared country multi-select for world events
-"use client";
 
 import { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
-import { Search, X, Globe, CheckCircle2 } from "lucide-react";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { Search, Xmark as X, Globe } from "iconoir-react";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 interface CountrySelectorProps {
   selectedIds: string[];
@@ -25,7 +27,7 @@ export function CountrySelector({
 }: CountrySelectorProps) {
   const [search, setSearch] = useState("");
   const { data } = api.countries.getSelectList.useQuery(
-    { limit: 250 },
+    { limit: 250, realm: ALL_REALMS },
     {
       refetchOnWindowFocus: false,
     }
@@ -58,7 +60,7 @@ export function CountrySelector({
       {/* Search + bulk actions */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
             placeholder="Search countries..."
             value={search}
@@ -84,23 +86,25 @@ export function CountrySelector({
         )}
       </div>
 
-      {/* Selected badges */}
       {selectedIds.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {selectedIds.slice(0, 10).map((id) => {
+            // oxlint-disable-next-line eslint/no-shadow -- shadowed 'c' is intentional in this scope
             const c = countries.find((c) => c.id === id);
             if (!c) return null;
             return (
-              <Badge
+              <Button
                 key={id}
+                size="sm"
                 variant="outline"
-                className="hover:bg-destructive/10 cursor-pointer gap-1 pr-1"
+                aria-label={`Remove ${c.name}`}
+                className="hover:bg-destructive/10 gap-1 rounded-full pr-2 pl-2"
                 onClick={() => toggle(id)}
               >
                 <UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="xs" />
                 {c.name}
-                <X className="h-3 w-3" />
-              </Badge>
+                <X aria-hidden className="size-3" />
+              </Button>
             );
           })}
           {selectedIds.length > 10 && (
@@ -109,37 +113,27 @@ export function CountrySelector({
         </div>
       )}
 
-      {/* Country list */}
-      <ScrollArea className="border-border/50 h-[280px] rounded-lg border">
-        <div className="space-y-0.5 p-2">
-          {filtered.map((c) => {
-            const isSelected = selectedIds.includes(c.id);
-            return (
-              <button
-                key={c.id}
-                onClick={() => toggle(c.id)}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                  isSelected ? "border-primary/30 bg-primary/10 border" : "hover:bg-muted/30"
-                }`}
-              >
-                <UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="sm" />
-                <div className="min-w-0 flex-1">
-                  <span className="text-foreground font-medium">{c.name}</span>
-                  <span className="text-muted-foreground ml-2 text-xs">
-                    {c.economicTier ?? "Unknown"}
-                  </span>
-                </div>
-                {isSelected && <CheckCircle2 className="text-primary h-4 w-4 shrink-0" />}
-              </button>
-            );
-          })}
-          {filtered.length === 0 && (
-            <p className="text-muted-foreground py-4 text-center text-sm">No countries found</p>
-          )}
-        </div>
+      <ScrollArea className="border-separator rounded-control h-[280px] border">
+        <FacetListSection variant="plain" aria-label="Countries">
+          {filtered.map((c) => (
+            <FacetRow
+              key={c.id}
+              onClick={() => toggle(c.id)}
+              selected={selectedIds.includes(c.id)}
+              selectionStyle="tint"
+              accessory="check"
+              leading={<UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="sm" />}
+              title={c.name}
+              subtitle={c.economicTier ?? "Unknown"}
+            />
+          ))}
+        </FacetListSection>
+        {filtered.length === 0 && (
+          <p className="text-label-secondary text-body py-4 text-center">No countries found</p>
+        )}
       </ScrollArea>
 
-      <p className="text-muted-foreground text-xs">
+      <p className="text-label-secondary text-footnote">
         {selectedIds.length} of {countries.length} countries selected
       </p>
     </div>

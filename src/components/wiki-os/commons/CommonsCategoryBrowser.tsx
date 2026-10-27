@@ -1,8 +1,18 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { ChevronRight, ChevronDown, Folder, Search } from "lucide-react";
+import { useDebounce } from "~/hooks/useDebounce";
+import { useState, useEffect, useMemo } from "react";
+import {
+  NavArrowRight as ChevronRight,
+  NavArrowDown as ChevronDown,
+  Check,
+  Folder,
+  Plus,
+  Search,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
+import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
 
 // Curated worldbuilding-relevant categories organized by theme
 interface CategoryGroup {
@@ -13,7 +23,7 @@ interface CategoryGroup {
 
 const CATEGORY_GROUPS: CategoryGroup[] = [
   {
-    label: "Government & Royalty",
+    label: "Government & royalty",
     categories: [
       "Royal residences by country",
       "Coats of arms by country",
@@ -26,7 +36,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    label: "Architecture & Places",
+    label: "Architecture & places",
     categories: [
       "Castles by country",
       "Cathedrals by country",
@@ -39,7 +49,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    label: "Military & Warfare",
+    label: "Military & warfare",
     categories: [
       "Military uniforms by country",
       "Battles by country",
@@ -52,7 +62,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    label: "People & Culture",
+    label: "People & culture",
     categories: [
       "Portrait paintings",
       "National costumes by country",
@@ -64,7 +74,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    label: "Geography & Nature",
+    label: "Geography & nature",
     categories: [
       "Landscapes by country",
       "Mountains by country",
@@ -75,7 +85,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
     ],
   },
   {
-    label: "Economy & Trade",
+    label: "Economy & trade",
     categories: [
       "Markets by country",
       "Ships by country",
@@ -98,7 +108,7 @@ const CATEGORY_GROUPS: CategoryGroup[] = [
 
 const THEMATIC_GROUPS = [
   {
-    label: "Government & Royalty",
+    label: "Government & royalty",
     keywords: [
       "government",
       "royal",
@@ -115,7 +125,7 @@ const THEMATIC_GROUPS = [
     ],
   },
   {
-    label: "Architecture & Places",
+    label: "Architecture & places",
     keywords: [
       "architecture",
       "building",
@@ -132,7 +142,7 @@ const THEMATIC_GROUPS = [
     ],
   },
   {
-    label: "Military & Warfare",
+    label: "Military & warfare",
     keywords: [
       "military",
       "uniform",
@@ -148,7 +158,7 @@ const THEMATIC_GROUPS = [
     ],
   },
   {
-    label: "People & Culture",
+    label: "People & culture",
     keywords: [
       "people",
       "costume",
@@ -164,7 +174,7 @@ const THEMATIC_GROUPS = [
     ],
   },
   {
-    label: "Geography & Nature",
+    label: "Geography & nature",
     keywords: [
       "geography",
       "map",
@@ -183,7 +193,7 @@ const THEMATIC_GROUPS = [
     ],
   },
   {
-    label: "Economy & Trade",
+    label: "Economy & trade",
     keywords: [
       "economy",
       "market",
@@ -221,7 +231,7 @@ const mapLocalCategories = (categoriesList: Array<{ name: string; fileCount: num
   }));
 
   const generalGroup = {
-    label: "General & Misc",
+    label: "General & misc",
     categories: [] as string[],
     counts: {} as Record<string, number>,
   };
@@ -258,13 +268,11 @@ const mapLocalCategories = (categoriesList: Array<{ name: string; fileCount: num
 interface CommonsCategoryBrowserProps {
   activeCategories: string[];
   browsingCategory: string | null;
-  onToggleCategory: (category: string) => void;
+  /** Absent when categories cannot be used as filters (the wiki sources): rows then only browse. */
+  onToggleCategory?: (category: string) => void;
   onBrowseCategory: (category: string) => void;
   wiki?: "commons" | "ixwiki" | "iiwiki";
 }
-
-// Flatten all categories for the batch info query (max 20 per call)
-const ALL_CATEGORIES = CATEGORY_GROUPS.flatMap((g) => g.categories);
 
 export function CommonsCategoryBrowser({
   activeCategories,
@@ -275,10 +283,11 @@ export function CommonsCategoryBrowser({
 }: CommonsCategoryBrowserProps) {
   const isCommons = wiki === "commons";
 
-  const { data: localDynamicCats } = api.wikios.getCategories.useQuery(
-    { wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
-    { enabled: !isCommons, staleTime: 30 * 60 * 1000 }
-  );
+  const { data: localDynamicCats, isError: localCategoriesFailed } =
+    api.wikios.getCategories.useQuery(
+      { wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
+      { enabled: !isCommons, staleTime: 30 * 60 * 1000 }
+    );
 
   const groups = useMemo(() => {
     if (isCommons) {
@@ -296,24 +305,18 @@ export function CommonsCategoryBrowser({
   }, [groups]);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const debouncedQuery = useDebounce(searchQuery, 300);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(
-    () => () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    },
-    []
-  );
 
   // Reset expansion states when wiki source changes or groups load
   useEffect(() => {
     if (groups && groups.length > 0) {
+      // oxlint-disable-next-line
       setExpandedGroups({ [groups[0]!.label]: true });
     }
     setExpanded({});
+    // oxlint-disable-next-line
   }, [wiki, groups]);
 
   // Auto-expand parent category and group if browsingCategory is selected
@@ -322,6 +325,7 @@ export function CommonsCategoryBrowser({
 
     // Auto-expand the main category folder
     if (allCats.includes(browsingCategory)) {
+      // oxlint-disable-next-line
       setExpanded((prev) => ({ ...prev, [browsingCategory]: true }));
     }
 
@@ -331,12 +335,6 @@ export function CommonsCategoryBrowser({
       setExpandedGroups((prev) => ({ ...prev, [parentGroup.label]: true }));
     }
   }, [browsingCategory, groups, allCats]);
-
-  const handleSearch = useCallback((val: string) => {
-    setSearchQuery(val);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setDebouncedQuery(val), 300);
-  }, []);
 
   const isSearching = debouncedQuery.length >= 2;
 
@@ -351,20 +349,32 @@ export function CommonsCategoryBrowser({
     { enabled: !isCommons && isSearching, staleTime: 60_000 }
   );
 
+  const emptyMessage = isCommons
+    ? null
+    : localCategoriesFailed
+      ? "Could not load categories."
+      : localDynamicCats && localDynamicCats.length === 0
+        ? "No file categories on this wiki yet. Search by file name instead."
+        : null;
+
   const autocompleteResults = isCommons ? commonsAutocomplete : localAutocomplete;
+  const safeAutocompleteResults = useMemo(
+    () => (autocompleteResults ? autocompleteResults.slice(0, 25) : []),
+    [autocompleteResults]
+  );
 
   const { data: commonsSearchCounts } = api.commons.getCategoryTotalCounts.useQuery(
-    { categories: autocompleteResults ?? [] },
+    { categories: safeAutocompleteResults },
     {
-      enabled: isCommons && isSearching && !!autocompleteResults && autocompleteResults.length > 0,
+      enabled: isCommons && isSearching && safeAutocompleteResults.length > 0,
       staleTime: 30 * 60 * 1000,
     }
   );
 
   const { data: localSearchCounts } = api.wikios.getCategoryTotalCounts.useQuery(
-    { categories: autocompleteResults ?? [], wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
+    { categories: safeAutocompleteResults, wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
     {
-      enabled: !isCommons && isSearching && !!autocompleteResults && autocompleteResults.length > 0,
+      enabled: !isCommons && isSearching && safeAutocompleteResults.length > 0,
       staleTime: 30 * 60 * 1000,
     }
   );
@@ -372,20 +382,21 @@ export function CommonsCategoryBrowser({
   const searchCounts = isCommons ? commonsSearchCounts : localSearchCounts;
 
   return (
-    <div className="wikios-commons-sidebar">
+    <div className="flex h-full flex-col overflow-y-auto py-2">
       {/* Search */}
-      <div className="wikios-commons-sidebar-search">
-        <Search className="wikios-commons-sidebar-search-icon" />
+      <div className="rounded-control bg-fill-3 border-separator focus-within:border-separator mx-2 mb-2 flex items-center gap-2 border px-3 py-2 transition-colors">
+        <Search className="text-label-secondary h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         <input
           type="text"
           value={searchQuery}
-          onChange={(e) => handleSearch(e.target.value)}
+          onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search categories..."
-          className="wikios-commons-sidebar-search-input"
+          aria-label="Search categories"
+          className="text-footnote text-label placeholder:text-label-secondary flex-1 border-none bg-transparent outline-none"
         />
       </div>
 
-      <div className="wikios-commons-sidebar-list">
+      <div className="space-y-0.5 overflow-y-auto px-2">
         {isSearching ? (
           /* Autocomplete search results */
           <>
@@ -397,7 +408,7 @@ export function CommonsCategoryBrowser({
                 isActive={activeCategories.includes(cat)}
                 isExpanded={!!expanded[cat]}
                 browsingCategory={browsingCategory}
-                onToggle={() => onToggleCategory(cat)}
+                onToggle={onToggleCategory ? () => onToggleCategory(cat) : undefined}
                 onBrowse={(catToBrowse) => {
                   onBrowseCategory(catToBrowse);
                   if (!expanded[cat]) {
@@ -409,9 +420,13 @@ export function CommonsCategoryBrowser({
               />
             ))}
             {(!autocompleteResults || autocompleteResults.length === 0) && (
-              <p className="wikios-commons-sidebar-empty">No categories found</p>
+              <p className="text-footnote text-label-secondary py-4 text-center">
+                No categories found
+              </p>
             )}
           </>
+        ) : emptyMessage ? (
+          <p className="text-footnote text-label-secondary py-4 text-center">{emptyMessage}</p>
         ) : (
           groups.map((group) => (
             <CategoryGroupSection
@@ -436,10 +451,6 @@ export function CommonsCategoryBrowser({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Category group section with lazy-loaded counts
-// ---------------------------------------------------------------------------
-
 interface CategoryGroupSectionProps {
   group: CategoryGroup;
   isGroupOpen: boolean;
@@ -447,7 +458,7 @@ interface CategoryGroupSectionProps {
   activeCategories: string[];
   expanded: Record<string, boolean>;
   browsingCategory: string | null;
-  onToggleCategory: (category: string) => void;
+  onToggleCategory?: (category: string) => void;
   onBrowseCategory: (category: string) => void;
   setExpanded: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   wiki?: "commons" | "ixwiki" | "iiwiki";
@@ -475,11 +486,17 @@ function CategoryGroupSection({
   const groupCounts = isCommons ? commonsGroupCounts : group.counts || {};
 
   return (
-    <div className="wikios-commons-group">
-      <button onClick={onToggleGroup} className="wikios-commons-group-header">
+    <div className="mb-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-expanded={isGroupOpen}
+        onClick={onToggleGroup}
+        className="text-eyebrow text-label-secondary hover:text-label h-auto w-full justify-start px-2 py-1"
+      >
         {isGroupOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         <span>{group.label}</span>
-      </button>
+      </Button>
       {isGroupOpen &&
         group.categories.map((cat) => (
           <CategoryRow
@@ -489,7 +506,7 @@ function CategoryGroupSection({
             isActive={activeCategories.includes(cat)}
             isExpanded={!!expanded[cat]}
             browsingCategory={browsingCategory}
-            onToggle={() => onToggleCategory(cat)}
+            onToggle={onToggleCategory ? () => onToggleCategory(cat) : undefined}
             onBrowse={(catToBrowse) => {
               onBrowseCategory(catToBrowse);
               if (!expanded[cat]) {
@@ -503,10 +520,6 @@ function CategoryGroupSection({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Category row with optional subcategory expansion
-// ---------------------------------------------------------------------------
 
 function CategoryRow({
   name,
@@ -524,7 +537,7 @@ function CategoryRow({
   isActive: boolean;
   isExpanded: boolean;
   browsingCategory: string | null;
-  onToggle: () => void;
+  onToggle?: () => void;
   onBrowse: (categoryName: string) => void;
   onExpand: () => void;
   wiki?: "commons" | "ixwiki" | "iiwiki";
@@ -548,54 +561,84 @@ function CategoryRow({
   return (
     <div>
       <div
-        className={`wikios-commons-cat-row ${isActive ? "wikios-commons-cat-row--active" : ""} ${
-          isBrowsingThisCat
-            ? "wikios-commons-cat-row--browsing bg-white/5 font-bold text-[var(--wikios-accent)]"
-            : ""
-        }`}
+        className={cn(
+          "group/row rounded-control-sm text-footnote hover:bg-fill-3 flex items-center gap-2 px-2 py-1 transition-colors select-none",
+          isActive && "bg-tint-fill text-tint",
+          isBrowsingThisCat && "bg-fill-3 text-label font-semibold"
+        )}
       >
-        <button onClick={onExpand} className="wikios-commons-cat-expand">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-expanded={isExpanded}
+          onClick={onExpand}
+          aria-label={isExpanded ? "Collapse subcategories" : "Expand subcategories"}
+          className="text-label-secondary hover:text-label size-5"
+        >
           {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-current={isBrowsingThisCat ? "true" : undefined}
           onClick={() => onBrowse(name)}
-          className="wikios-commons-cat-name"
           title={`Browse ${name}`}
+          className="text-footnote text-label-secondary hover:text-label h-auto min-w-0 flex-1 justify-start truncate px-0 font-normal hover:bg-transparent"
         >
           {name}
-        </button>
+        </Button>
         {totalCount != null && totalCount > 0 && (
-          <span className="wikios-commons-cat-count">{totalCount.toLocaleString()}</span>
+          <span className="text-footnote text-label-secondary mr-1 shrink-0 tabular-nums">
+            {totalCount.toLocaleString()}
+          </span>
         )}
-        <button
-          onClick={onToggle}
-          className={`wikios-commons-cat-chip ${isActive ? "wikios-commons-cat-chip--on" : ""}`}
-          title={isActive ? "Remove filter" : "Add as filter"}
-        >
-          {isActive ? "✓" : "+"}
-        </button>
+        {onToggle && (
+          <Button
+            variant="outline"
+            size="icon-sm"
+            aria-pressed={isActive}
+            onClick={onToggle}
+            className={cn(
+              "text-footnote text-label-secondary hover:border-tint hover:text-tint size-5 shrink-0",
+              isActive && "bg-tint-fill border-tint/40 text-tint font-semibold"
+            )}
+            title={isActive ? "Remove filter" : "Add as filter"}
+            aria-label={isActive ? `Remove ${name} filter` : `Add ${name} filter`}
+          >
+            {isActive ? (
+              <Check className="h-3 w-3" aria-hidden="true" />
+            ) : (
+              <Plus className="h-3 w-3" aria-hidden="true" />
+            )}
+          </Button>
+        )}
       </div>
 
       {isExpanded && subcats && subcats.length > 0 && (
-        <div className="wikios-commons-subcats">
+        <div className="space-y-0.5 py-0.5 pr-1 pl-5">
           {subcats.map((sub) => {
             const isSubActive = browsingCategory === sub;
             return (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-current={isSubActive ? "true" : undefined}
                 key={sub}
                 onClick={() => onBrowse(sub)}
-                className={`wikios-commons-subcat flex w-full items-center gap-1.5 py-1 text-left text-[10px] transition-colors ${
-                  isSubActive
-                    ? "font-bold text-[var(--wikios-accent)]"
-                    : "text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
-                }`}
+                className={cn(
+                  "text-footnote h-auto w-full justify-start px-2 py-1 font-normal",
+                  isSubActive ? "text-tint font-semibold" : "text-label-secondary hover:text-label"
+                )}
                 title={`Browse ${sub}`}
               >
                 <Folder
-                  className={`h-2.5 w-2.5 ${isSubActive ? "text-blue-500 opacity-100" : "opacity-40"}`}
+                  className={cn(
+                    "h-2.5 w-2.5 shrink-0",
+                    isSubActive ? "text-tint opacity-100" : "opacity-40"
+                  )}
                 />
                 <span className="truncate">{sub}</span>
-              </button>
+              </Button>
             );
           })}
         </div>

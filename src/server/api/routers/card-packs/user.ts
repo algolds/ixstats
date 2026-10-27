@@ -3,21 +3,32 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { purchasePack, openPack, getUserPacks } from "~/lib/cards";
-import { syncUserToForum } from "~/server/modules/forum";
-import { notificationAPI } from "~/lib/notifications/api";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
+import {
+  purchasePack,
+  openPack,
+  getUserPacks,
+  bestPulledRarity,
+  PackError,
+} from "~/lib/cards/pack-service";
+import { CardRarity } from "~/lib/cards/enums";
+import { RARITY_LABEL, rarityRank } from "~/lib/cards/face/labels";
+import { cardCount } from "~/lib/cards/curation-limits";
+import { LedgerError } from "~/lib/vault/vault-ledger";
+import { notifyCard } from "~/lib/cards/card-notify";
 import { globalCache } from "~/lib/cache";
+import { queueAchievementCheck } from "~/lib/achievements/queue";
+import { facesAfterCommit } from "~/lib/cards/hub/committed-faces";
 
 /**
  * Card Packs Router
  * Handles pack creation, purchasing, and opening mechanics
  */
 export const cardPacksUserRouter = createTRPCRouter({
-  // ============================================================
-  // PUBLIC ENDPOINTS
-  // ============================================================
-
   // ============================================================
   // PROTECTED ENDPOINTS (Authenticated Users)
   // ============================================================
@@ -64,7 +75,7 @@ export const cardPacksUserRouter = createTRPCRouter({
    * Purchase pack with IxCredits
    * Admin-only endpoint
    */
-  purchasePack: protectedProcedure
+  purchasePack: rateLimitedMutationProcedure
     .input(
       z.object({
         packId: z.string().min(1),
@@ -81,23 +92,13 @@ export const cardPacksUserRouter = createTRPCRouter({
 
         const userPack = await purchasePack(ctx.db, ctx.user.id, input.packId);
 
-        // Sync to forum profile (fire-and-forget)
-        syncUserToForum(ctx.user.id).catch((err: unknown) => {
-          console.error("[CardPacks] Background op failed:", (err as Error).message);
+        await notifyCard(ctx.db, {
+          userId: ctx.user.id,
+          title: "Pack bought",
+          message: "Your card pack is ready to open.",
+          category: "packs",
+          metadata: { packId: input.packId },
         });
-
-        // Notification: pack purchased (fire-and-forget)
-        try {
-          await notificationAPI.create({
-            userId: ctx.user.id,
-            title: "Pack Purchased",
-            message: "Your card pack is ready to open!",
-            type: "info",
-            category: "achievement",
-            priority: "medium",
-            metadata: { packId: input.packId },
-          });
-        } catch {}
 
         await Promise.all([
           ...(ctx.auth?.userId
@@ -112,27 +113,15 @@ export const cardPacksUserRouter = createTRPCRouter({
           userPack,
         };
       } catch (error) {
-        // Handle specific error messages from service
-        if (error instanceof Error) {
-          if (
-            error.message.includes("not found") ||
-            error.message.includes("not available") ||
-            error.message.includes("expired") ||
-            error.message.includes("sold out") ||
-            error.message.includes("limit reached")
-          ) {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: error.message,
-            });
-          }
-
-          if (error.message.includes("Insufficient credits")) {
-            throw new TRPCError({
-              code: "FORBIDDEN",
-              message: error.message,
-            });
-          }
+        if (error instanceof TRPCError) throw error;
+        if (error instanceof LedgerError) {
+          throw new TRPCError({
+            code: error.code === "INSUFFICIENT_CREDITS" ? "FORBIDDEN" : "PRECONDITION_FAILED",
+            message: error.message,
+          });
+        }
+        if (error instanceof PackError) {
+          throw new TRPCError({ code: error.code, message: error.message });
         }
 
         console.error("[CardPacks] Error purchasing pack:", error);
@@ -144,10 +133,9 @@ export const cardPacksUserRouter = createTRPCRouter({
     }),
 
   /**
-   * Open pack and reveal cards
-   * Admin-only endpoint
+   * Opens one of the caller's packs and returns the faces of the copies it minted, in pull order
    */
-  openPack: protectedProcedure
+  openPack: rateLimitedMutationProcedure
     .input(
       z.object({
         userPackId: z.string().cuid(),
@@ -163,60 +151,36 @@ export const cardPacksUserRouter = createTRPCRouter({
         }
 
         const results = await openPack(ctx.db, ctx.user.id, input.userPackId);
+        queueAchievementCheck(ctx.user.id);
 
-        // Sync to forum profile (fire-and-forget)
-        syncUserToForum(ctx.user.id).catch((err: unknown) => {
-          console.error("[CardPacks] Background op failed:", (err as Error).message);
+        const bestRarity = bestPulledRarity(results.map((r) => r.card));
+        await notifyCard(ctx.db, {
+          userId: ctx.user.id,
+          title: "Cards revealed",
+          message: `${cardCount(results.length)}. Best: ${RARITY_LABEL[bestRarity]}.`,
+          category: "packs",
+          // Epic and up, in schema order (Epic ranks above Ultra Rare).
+          priority: rarityRank(bestRarity) >= rarityRank(CardRarity.EPIC) ? "high" : "medium",
+          metadata: { cardCount: results.length, bestRarity },
         });
-
-        // Format cards with rarity reveal data
-        const revealData = results.map(({ card, ownershipId }) => ({
-          id: card.id,
-          ownershipId,
-          name: card.title,
-          rarity: card.rarity,
-          cardType: card.cardType,
-          artwork: card.artwork,
-          season: card.season,
-        }));
-
-        // Notification: cards revealed (fire-and-forget)
-        try {
-          const bestRarity = results.reduce((best, r) => {
-            const order = ["COMMON", "UNCOMMON", "RARE", "EPIC", "ULTRA_RARE", "LEGENDARY"];
-            return order.indexOf(r.card.rarity) > order.indexOf(best) ? r.card.rarity : best;
-          }, "COMMON");
-          await notificationAPI.create({
-            userId: ctx.user.id,
-            title: "Cards Revealed!",
-            message: `${results.length} cards obtained! Best: ${bestRarity.replace("_", " ")}`,
-            type: "info",
-            category: "achievement",
-            priority: bestRarity === "LEGENDARY" || bestRarity === "ULTRA_RARE" ? "high" : "medium",
-            metadata: { cardCount: results.length, bestRarity },
-          });
-        } catch {}
 
         await globalCache.delete(`user_vault_stats:${ctx.user.id}`);
 
+        // Read after the side effects above: the pack is open whether or not this read succeeds.
+        const faces = await facesAfterCommit(
+          ctx.db,
+          results.map((r) => r.ownershipId),
+          "A pack open"
+        );
         return {
           success: true,
           message: `Opened pack and received ${results.length} cards!`,
-          cards: revealData,
+          faces,
         };
       } catch (error) {
-        // Handle specific error messages from service
-        if (error instanceof Error) {
-          if (
-            error.message.includes("not found") ||
-            error.message.includes("Unauthorized") ||
-            error.message.includes("already been opened")
-          ) {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: error.message,
-            });
-          }
+        if (error instanceof TRPCError) throw error;
+        if (error instanceof PackError) {
+          throw new TRPCError({ code: error.code, message: error.message });
         }
 
         console.error("[CardPacks] Error opening pack:", error);
@@ -226,8 +190,4 @@ export const cardPacksUserRouter = createTRPCRouter({
         });
       }
     }),
-
-  // ============================================================
-  // ADMIN ENDPOINTS
-  // ============================================================
 });

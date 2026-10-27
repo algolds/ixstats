@@ -2,22 +2,21 @@
 // Cabinet meetings, government officials, and meeting management
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import {
+  assertCountryResourceWriteAccess,
+  hasCountryWriteAccess,
+} from "~/server/shared/country-authorization";
+import {
+  resolveDepartmentCountryId,
+  resolveOfficialCountryId,
+  resolveStructureCountryId,
+} from "~/server/shared/country-resource-owner";
 
 export const meetingsGovernmentRouter = createTRPCRouter({
-  // ==================== CABINET MEETINGS ====================
-
-  // ==================== MEETING ATTENDANCE ====================
-
-  // ==================== AGENDA ITEMS ====================
-
-  // ==================== DECISIONS ====================
-
-  // ==================== ACTION ITEMS ====================
-
   // ==================== GOVERNMENT OFFICIALS ====================
 
-  appointOfficial: protectedProcedure
+  appointOfficial: rateLimitedMutationProcedure
     .input(
       z.object({
         governmentStructureId: z.string().optional(),
@@ -33,18 +32,37 @@ export const meetingsGovernmentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const { governmentStructureId, departmentId } = input;
+      if (departmentId) {
+        const departmentCountryId = await resolveDepartmentCountryId(ctx.db, departmentId);
+        await assertCountryResourceWriteAccess(ctx, departmentCountryId, "Department");
+      }
+      // With no parent at all, only privileged callers may create a floating official.
+      if (governmentStructureId || !departmentId) {
+        const structureCountryId = governmentStructureId
+          ? await resolveStructureCountryId(ctx.db, governmentStructureId)
+          : null;
+        await assertCountryResourceWriteAccess(ctx, structureCountryId, "Government structure");
+      }
       return await ctx.db.governmentOfficial.create({
         data: input,
       });
     }),
 
+  // One government's officials (a structure or a department is required: never the whole
+  // table). Contact details are the owning government's: redacted for everyone else.
   getOfficials: publicProcedure
     .input(
-      z.object({
-        governmentStructureId: z.string().optional(),
-        departmentId: z.string().optional(),
-        active: z.boolean().optional(),
-      })
+      z
+        .object({
+          governmentStructureId: z.string().optional(),
+          departmentId: z.string().optional(),
+          active: z.boolean().optional(),
+          limit: z.number().int().min(1).max(200).default(100),
+        })
+        .refine((v) => !!v.governmentStructureId || !!v.departmentId, {
+          message: "A government structure or department is required",
+        })
     )
     .query(async ({ ctx, input }) => {
       const where: any = {};
@@ -52,58 +70,22 @@ export const meetingsGovernmentRouter = createTRPCRouter({
       if (input.departmentId) where.departmentId = input.departmentId;
       if (input.active !== undefined) where.isActive = input.active;
 
-      return await ctx.db.governmentOfficial.findMany({
+      const officials = await ctx.db.governmentOfficial.findMany({
         where,
         include: {
           department: true,
         },
         orderBy: [{ title: "asc" }],
+        take: input.limit,
       });
+      const countryId = input.governmentStructureId
+        ? await resolveStructureCountryId(ctx.db, input.governmentStructureId)
+        : await resolveDepartmentCountryId(ctx.db, input.departmentId!);
+      if (countryId && (await hasCountryWriteAccess(ctx, countryId))) return officials;
+      return officials.map((official) => ({ ...official, email: null, phone: null }));
     }),
 
-  getOfficial: publicProcedure
-    .input(
-      z.object({
-        id: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.governmentOfficial.findUnique({
-        where: { id: input.id },
-        include: {
-          meetingAttendances: {
-            include: { meeting: true },
-            orderBy: { meetingId: "desc" },
-            take: 10,
-          },
-        },
-      });
-    }),
-
-  updateOfficial: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string().optional(),
-        title: z.string().optional(),
-        role: z.string().optional(),
-        departmentId: z.string().optional(),
-        termEndDate: z.date().optional(),
-        bio: z.string().optional(),
-        isActive: z.boolean().optional(),
-        email: z.string().optional(),
-        phone: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      return await ctx.db.governmentOfficial.update({
-        where: { id },
-        data,
-      });
-    }),
-
-  removeOfficial: protectedProcedure
+  removeOfficial: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),
@@ -111,89 +93,17 @@ export const meetingsGovernmentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryResourceWriteAccess(
+        ctx,
+        await resolveOfficialCountryId(ctx.db, input.id),
+        "Official"
+      );
       return await ctx.db.governmentOfficial.update({
         where: { id: input.id },
         data: {
           isActive: false,
           termEndDate: new Date(),
         },
-      });
-    }),
-
-  // ==================== GOVERNMENT DEPARTMENTS ====================
-
-  createDepartment: protectedProcedure
-    .input(
-      z.object({
-        governmentStructureId: z.string(),
-        name: z.string().min(1).max(100),
-        category: z.string(),
-        description: z.string().optional(),
-        shortName: z.string().optional(),
-        minister: z.string().optional(),
-        ministerTitle: z.string().optional(),
-        parentDepartmentId: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      return await ctx.db.governmentDepartment.create({
-        data: input,
-      });
-    }),
-
-  getDepartments: publicProcedure
-    .input(
-      z.object({
-        governmentStructureId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.governmentDepartment.findMany({
-        where: { governmentStructureId: input.governmentStructureId },
-        include: {
-          officials: {
-            where: { isActive: true },
-          },
-        },
-        orderBy: { name: "asc" },
-      });
-    }),
-
-  updateDepartment: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string().optional(),
-        description: z.string().optional(),
-        budget: z.number().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { id, budget: _budget, ...data } = input;
-      return await ctx.db.governmentDepartment.update({
-        where: { id },
-        data,
-      });
-    }),
-
-  deleteDepartment: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      // First check if department has officials
-      const officials = await ctx.db.governmentOfficial.count({
-        where: { departmentId: input.id },
-      });
-
-      if (officials > 0) {
-        throw new Error("Cannot delete department with active officials");
-      }
-
-      return await ctx.db.governmentDepartment.delete({
-        where: { id: input.id },
       });
     }),
 });

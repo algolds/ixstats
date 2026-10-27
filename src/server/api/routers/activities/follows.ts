@@ -2,82 +2,79 @@
 // Activities router for live activity feed system
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { TRPCError } from "@trpc/server";
+import { Prisma, type PrismaClient } from "@prisma/client";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import { notificationAPI } from "~/lib/notifications/api";
+import { globalCache } from "~/lib/cache";
+import {
+  ensurePersonalAccount,
+  findPersonalAccount,
+} from "~/server/shared/thinkpages-personal-account";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { recipientsBlockingSender } from "~/server/shared/user-blocks";
+
+/** A persona's owner hears about the same follower at most once in this window (follow/unfollow loops). */
+const FOLLOW_NOTICE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** Persona follow input: the persona to follow, and optionally which of the caller's personas follows. */
+const PersonaFollowInput = z.object({
+  accountId: z.string().min(1),
+  // Defaults to the caller's personal persona ("you"), created on first use.
+  followerAccountId: z.string().min(1).optional(),
+});
+
+/** A persona the caller owns and may act as. */
+async function requireOwnedActivePersona(
+  db: Pick<PrismaClient, "thinkpagesAccount">,
+  clerkUserId: string,
+  accountId: string
+) {
+  const account = await db.thinkpagesAccount.findUnique({ where: { id: accountId } });
+  if (!account || account.clerkUserId !== clerkUserId || !account.isActive) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You can only follow from an active account you own",
+    });
+  }
+  return account;
+}
+
+/**
+ * Whether the owner was already told about this follower persona following this persona in the
+ * window. The key is built from database ids only, so the LIKE match can't be steered by a caller.
+ */
+async function alreadyToldOfFollow(
+  db: Pick<PrismaClient, "notification">,
+  ownerClerkId: string,
+  followKey: string
+) {
+  const earlier = await db.notification.findFirst({
+    where: {
+      userId: ownerClerkId,
+      source: "thinkpages",
+      metadata: { contains: `"followKey":"${followKey}"` },
+      createdAt: { gte: new Date(Date.now() - FOLLOW_NOTICE_WINDOW_MS) },
+    },
+    select: { id: true },
+  });
+  return earlier !== null;
+}
+
+/** Drop the caller's cached Following feed so a follow shows up on the next load. */
+async function invalidateFollowingFeed(clerkUserId: string) {
+  try {
+    await globalCache.deleteByPattern(`user_following_feed:${clerkUserId}:*`);
+  } catch (error) {
+    console.error("[Follows] Failed to invalidate following feed:", error);
+  }
+}
 
 // Input schemas
-const activityFilterSchema = z.object({
-  limit: z.number().min(1).max(80).default(20),
-  cursor: z.string().optional(),
-  filter: z
-    .enum(["all", "achievements", "diplomatic", "economic", "social", "meta"])
-    .default("all"),
-  category: z.enum(["all", "game", "platform", "social"]).default("all"),
-  userId: z.string().optional(),
-});
-
-const createActivitySchema = z.object({
-  type: z.enum(["achievement", "diplomatic", "economic", "social", "meta"]),
-  category: z.enum(["game", "platform", "social"]).default("game"),
-  userId: z.string().optional(),
-  countryId: z.string().optional(),
-  title: z.string().min(1).max(200),
-  description: z.string().min(1).max(1000),
-  metadata: z
-    .record(
-      z.string(),
-      z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.string())])
-    )
-    .optional(),
-  priority: z.enum(["low", "medium", "high", "critical"]).default("medium"),
-  visibility: z.enum(["public", "followers", "friends"]).default("public"),
-  relatedCountries: z.array(z.string()).optional(),
-});
-
-const engagementActionSchema = z.object({
-  activityId: z.string(),
-  action: z.string(),
-  userId: z.string(),
-});
-
-const commentActionSchema = z.object({
-  activityId: z.string(),
-  userId: z.string(),
-  content: z.string().min(1).max(2000),
-});
-
-const getUserEngagementSchema = z.object({
-  activityIds: z.array(z.string()),
-  userId: z.string(),
-});
-
 export const activitiesFollowsRouter = createTRPCRouter({
-  // Test mutation to debug parameter passing
-
-  // Get global activity feed
-
-  // Get feed from countries the user follows
-
-  // Get user-specific activity feed
-
-  // Create new activity
-
-  // Handle engagement actions (like, unlike, share, view)
-
-  // Add comment to activity
-
-  // Get comments for an activity
-
-  // Get user engagement state for activities
-
-  // Get trending topics based on activity data
-
-  // Get activity statistics
-
-  // Get country-specific activity feed combining ActivityFeed and ThinkPages posts
-
   // Country Follow System
   // Follow a country
-  followCountry: protectedProcedure
+  followCountry: rateLimitedMutationProcedure
     .input(
       z.object({
         followerCountryId: z.string(),
@@ -86,9 +83,7 @@ export const activitiesFollowsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Verify user owns the follower country
-      if (ctx.user?.countryId !== input.followerCountryId) {
-        throw new Error("You can only follow countries from your own country");
-      }
+      await assertCountryWriteAccess(ctx, input.followerCountryId);
 
       // Cannot follow yourself
       if (input.followerCountryId === input.followedCountryId) {
@@ -123,125 +118,116 @@ export const activitiesFollowsRouter = createTRPCRouter({
       return { success: true, alreadyFollowing: false, follow };
     }),
 
-  // Unfollow a country
-  unfollowCountry: protectedProcedure
-    .input(
-      z.object({
-        followerCountryId: z.string(),
-        followedCountryId: z.string(),
-      })
-    )
+  // Persona Follow System (ThinkPages)
+  // Follow a persona. followerCount / followingCount move in the same transaction as the row.
+  followPersona: rateLimitedMutationProcedure
+    .input(PersonaFollowInput)
     .mutation(async ({ ctx, input }) => {
-      // Verify user owns the follower country
-      if (ctx.user?.countryId !== input.followerCountryId) {
-        throw new Error("You can only unfollow countries from your own country");
+      const clerkUserId = ctx.auth.userId;
+      const target = await ctx.db.thinkpagesAccount.findUnique({
+        where: { id: input.accountId },
+        select: { id: true, clerkUserId: true, username: true, isActive: true },
+      });
+      if (!target || !target.isActive) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Account not found" });
+      }
+      // Following your own personas would only inflate their counts.
+      if (target.clerkUserId === clerkUserId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "You can't follow your own accounts" });
+      }
+      // Someone who blocked you can't be followed (nor notified of it).
+      if ((await recipientsBlockingSender(ctx.db, clerkUserId, [target.clerkUserId])).length > 0) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can't follow this account" });
       }
 
-      await ctx.db.countryFollow.deleteMany({
-        where: {
-          followerCountryId: input.followerCountryId,
-          followedCountryId: input.followedCountryId,
-        },
-      });
+      const follower = input.followerAccountId
+        ? await requireOwnedActivePersona(ctx.db, clerkUserId, input.followerAccountId)
+        : await ensurePersonalAccount(ctx.db, clerkUserId);
 
-      return { success: true };
+      try {
+        await ctx.db.$transaction(async (tx) => {
+          await tx.thinkpagesFollow.create({
+            data: {
+              followerAccountId: follower.id,
+              followedAccountId: target.id,
+              followerClerkUserId: clerkUserId,
+            },
+          });
+          await tx.thinkpagesAccount.update({
+            where: { id: target.id },
+            data: { followerCount: { increment: 1 } },
+          });
+          await tx.thinkpagesAccount.update({
+            where: { id: follower.id },
+            data: { followingCount: { increment: 1 } },
+          });
+        });
+      } catch (error) {
+        // The unique (follower, followed) pair: already following, and the counts were not touched.
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+          return { success: true, alreadyFollowing: true, followerAccountId: follower.id };
+        }
+        throw error;
+      }
+
+      await invalidateFollowingFeed(clerkUserId);
+
+      // Notify the followed persona's owner (notifications are keyed by Clerk id), once per
+      // follower in the window. Imported IxTwitter personas belong to "system_" ids with no user
+      // behind them.
+      const followKey = `${follower.id}:${target.id}`;
+      if (!target.clerkUserId.startsWith("system_")) {
+        try {
+          if (await alreadyToldOfFollow(ctx.db, target.clerkUserId, followKey)) {
+            return { success: true, alreadyFollowing: false, followerAccountId: follower.id };
+          }
+          await notificationAPI.create({
+            title: "New follower",
+            message: `${follower.displayName} (@${follower.username}) followed @${target.username}`,
+            userId: target.clerkUserId,
+            category: "social",
+            priority: "low",
+            type: "info",
+            href: `/dashboard/profile/${follower.username}`,
+            source: "thinkpages",
+            actionable: false,
+            metadata: { followerAccountId: follower.id, followedAccountId: target.id, followKey },
+          });
+        } catch (error) {
+          console.error("[Follows] Failed to send follow notification:", error);
+        }
+      }
+
+      return { success: true, alreadyFollowing: false, followerAccountId: follower.id };
     }),
 
-  // Get countries that a country is following
-  getFollowing: publicProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        limit: z.number().min(1).max(100).default(50),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const follows = await ctx.db.countryFollow.findMany({
-        where: { followerCountryId: input.countryId },
-        include: {
-          followedCountry: {
-            select: { id: true, name: true, flag: true, slug: true, region: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        take: input.limit,
+  // Unfollow a persona (as the caller's personal persona unless another is given)
+  unfollowPersona: rateLimitedMutationProcedure
+    .input(PersonaFollowInput)
+    .mutation(async ({ ctx, input }) => {
+      const clerkUserId = ctx.auth.userId;
+      const follower = input.followerAccountId
+        ? await requireOwnedActivePersona(ctx.db, clerkUserId, input.followerAccountId)
+        : await findPersonalAccount(ctx.db, clerkUserId);
+      if (!follower) return { success: true, wasFollowing: false };
+
+      const wasFollowing = await ctx.db.$transaction(async (tx) => {
+        const removed = await tx.thinkpagesFollow.deleteMany({
+          where: { followerAccountId: follower.id, followedAccountId: input.accountId },
+        });
+        if (removed.count === 0) return false;
+        await tx.thinkpagesAccount.update({
+          where: { id: input.accountId },
+          data: { followerCount: { decrement: removed.count } },
+        });
+        await tx.thinkpagesAccount.update({
+          where: { id: follower.id },
+          data: { followingCount: { decrement: removed.count } },
+        });
+        return true;
       });
 
-      return follows.map((f) => ({
-        id: f.id,
-        country: f.followedCountry,
-        followedAt: f.createdAt.toISOString(),
-      }));
-    }),
-
-  // Get countries that follow a country (followers)
-  getFollowers: publicProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        limit: z.number().min(1).max(100).default(50),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const followers = await ctx.db.countryFollow.findMany({
-        where: { followedCountryId: input.countryId },
-        include: {
-          followerCountry: {
-            select: { id: true, name: true, flag: true, slug: true, region: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        take: input.limit,
-      });
-
-      return followers.map((f) => ({
-        id: f.id,
-        country: f.followerCountry,
-        followedAt: f.createdAt.toISOString(),
-      }));
-    }),
-
-  // Check if a country is following another
-  isFollowing: publicProcedure
-    .input(
-      z.object({
-        followerCountryId: z.string(),
-        followedCountryId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const follow = await ctx.db.countryFollow.findUnique({
-        where: {
-          followerCountryId_followedCountryId: {
-            followerCountryId: input.followerCountryId,
-            followedCountryId: input.followedCountryId,
-          },
-        },
-      });
-
-      return { isFollowing: !!follow };
-    }),
-
-  // Get follow statistics for a country
-  getFollowStats: publicProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const [followingCount, followersCount] = await Promise.all([
-        ctx.db.countryFollow.count({
-          where: { followerCountryId: input.countryId },
-        }),
-        ctx.db.countryFollow.count({
-          where: { followedCountryId: input.countryId },
-        }),
-      ]);
-
-      return {
-        following: followingCount,
-        followers: followersCount,
-      };
+      if (wasFollowing) await invalidateFollowingFeed(clerkUserId);
+      return { success: true, wasFollowing };
     }),
 });

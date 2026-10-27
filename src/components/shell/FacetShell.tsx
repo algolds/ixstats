@@ -1,0 +1,137 @@
+"use client";
+
+/**
+ * The navigation shell: AppSidebar (≥1024px), TabBar (<1024px) and Halo as the floating island.
+ * Wires the presentational components to the route, the signed-in user, the admin role, the
+ * `labs.access` grant, the admin navigation settings, the persisted sidebar state and the source
+ * list's disclosure state and live badges. Chromeless routes (`CHROMELESS_PREFIXES`: Maps and the
+ * full-screen map editors) get no sidebar or tab bar.
+ */
+
+import { useMemo } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+
+import { useUser } from "~/context/auth-context";
+import { useHasPermission, useHasRoleLevel } from "~/hooks/usePermissions";
+import { useHasMycountryPremium } from "~/hooks/useHasMycountryPremium";
+import { useUserCountry } from "~/hooks/useUserCountry";
+import { getNationUrl } from "~/lib/utils/slug-utils";
+import { api } from "~/trpc/react";
+import { stripBasePath } from "~/lib/base-path";
+import {
+  getVisibleApps,
+  isChromelessPath,
+  type NavAction,
+  type NavigationVisibilitySettings,
+} from "~/lib/navigation/app-sections";
+import { useDailyReward } from "~/components/vault/DailyRewardProvider";
+import { useSidebarCollapsed } from "~/lib/navigation/use-sidebar-collapsed";
+import { useNavExpanded } from "~/lib/navigation/use-nav-expanded";
+import { AccountMenu } from "./AccountMenu";
+import { AppSidebar } from "./AppSidebar";
+import { SidebarVaultCard } from "./SidebarVaultCard";
+import { TabBar } from "./TabBar";
+import { ShellHalo } from "./ShellHalo";
+import { useForumNavFlags } from "./use-forum-nav-flags";
+import { useNavBadges } from "./use-nav-badges";
+import { useHydrated } from "~/hooks/useHydrated";
+
+export function FacetShell() {
+  const pathname = stripBasePath(usePathname() || "/");
+  // No Suspense around this: a boundary hydrates in a later pass, by which time Clerk and the nav
+  // queries may have loaded, so it would hydrate signed-in over signed-out server HTML. The root
+  // layout reads headers(), so every route is dynamic and useSearchParams never blocks prerendering.
+  const searchParams = useSearchParams();
+  const { user } = useUser();
+  const isAdmin = useHasRoleLevel(10);
+  // A `labs.access` grant (or a dev build) shows Labs despite `showLabsTab`.
+  const hasLabsAccess = useHasPermission("labs.access") || process.env.NODE_ENV === "development";
+  // Defense row: MyCountry Premium or the beta-tester role (the Defense page and the server agree).
+  const hasMycountryPremium = useHasMycountryPremium("defense");
+  const { data: navigationSettings } = api.admin.getNavigationSettings.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const { collapsed, setCollapsed } = useSidebarCollapsed();
+  const { expanded, toggle } = useNavExpanded();
+  const { open: openDailyReward } = useDailyReward();
+  const onAction = (action: NavAction) => {
+    if (action === "daily-reward") openDailyReward();
+  };
+
+  const signedIn = Boolean(user);
+  // The server renders the nav knowing nothing (signed out, no queries); the hydrating pass matches it even when a
+  // query already answered (a late or retried hydration), and the live nav follows right after.
+  const hydrated = useHydrated();
+  // Once here so the sidebar and the More sheet never run the queries twice.
+  const badges = useNavBadges(signedIn);
+  const { forumModerator } = useForumNavFlags(signedIn);
+  // Shares AccountMenu's queries; MyCountry's profile and editor buttons appear once it answers.
+  const { country } = useUserCountry();
+  const apps = useMemo(
+    () =>
+      getVisibleApps(
+        hydrated
+          ? {
+              signedIn,
+              isAdmin,
+              hasLabsAccess,
+              hasMycountryPremium,
+              forumModerator,
+              navigationSettings: navigationSettings as NavigationVisibilitySettings | undefined,
+            }
+          : { signedIn: false, isAdmin: false }
+      ),
+    [
+      hydrated,
+      signedIn,
+      isAdmin,
+      hasLabsAccess,
+      hasMycountryPremium,
+      forumModerator,
+      navigationSettings,
+    ]
+  );
+
+  return (
+    <>
+      {!isChromelessPath(pathname) && (
+        <>
+          <AppSidebar
+            pathname={pathname}
+            searchParams={searchParams}
+            apps={apps}
+            collapsed={collapsed}
+            onCollapsedChange={setCollapsed}
+            expanded={expanded}
+            onToggle={toggle}
+            badges={badges}
+            onAction={onAction}
+            countryHref={hydrated && country ? getNationUrl(country.name) : undefined}
+            signedIn={signedIn}
+            vaultCard={
+              signedIn ? (
+                <SidebarVaultCard
+                  expanded={expanded.has("vault-card")}
+                  onToggle={() => toggle("vault-card")}
+                />
+              ) : undefined
+            }
+            account={<AccountMenu layout="sidebar" collapsed={collapsed} />}
+          />
+          <TabBar
+            pathname={pathname}
+            searchParams={searchParams}
+            apps={apps}
+            expanded={expanded}
+            onToggle={toggle}
+            badges={badges}
+            onAction={onAction}
+            account={<AccountMenu layout="sheet" />}
+          />
+        </>
+      )}
+      <ShellHalo />
+    </>
+  );
+}

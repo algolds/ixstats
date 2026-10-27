@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Building2 } from "lucide-react";
+import { City as Building2 } from "iconoir-react";
+import { Card } from "~/components/ui/card";
 
 /**
  * Props for EmptyState component
@@ -43,25 +43,22 @@ export const EmptyState = React.memo(function EmptyState({
   onEstablishEmbassy,
 }: EmptyStateProps) {
   return (
-    <Card>
-      <CardContent className="py-12">
-        <div className="space-y-4 text-center">
-          <Building2 className="text-muted-foreground mx-auto h-16 w-16" />
-          <div>
-            <h3 className="mb-2 text-lg font-semibold">No Embassies Yet</h3>
-            <p className="text-muted-foreground mx-auto max-w-md text-sm">
-              Establish embassies with other countries to unlock atomic synergies and diplomatic
-              bonuses.
-            </p>
-          </div>
-          {isOwner && (
-            <Button onClick={onEstablishEmbassy}>
-              <Building2 className="mr-2 h-4 w-4" />
-              Establish First Embassy
-            </Button>
-          )}
+    <Card className="rounded-card px-6 py-12">
+      <div className="space-y-4 text-center">
+        <Building2 className="text-label-secondary mx-auto h-8 w-8" />
+        <div>
+          <h3 className="text-label text-title-3 mb-1">No embassies yet</h3>
+          <p className="text-label-secondary text-body mx-auto max-w-md">
+            Establish an embassy with another country to earn synergies and diplomatic bonuses.
+          </p>
         </div>
-      </CardContent>
+        {isOwner && (
+          <Button onClick={onEstablishEmbassy}>
+            <Building2 className="h-4 w-4" />
+            Establish first embassy
+          </Button>
+        )}
+      </div>
     </Card>
   );
 });

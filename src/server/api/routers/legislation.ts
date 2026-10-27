@@ -1,9 +1,15 @@
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
+import { ActivityHooks } from "~/lib/activity/hooks";
 import { applyPolicyEffect } from "~/lib/policies";
 import {
   tallyVote,
@@ -12,8 +18,9 @@ import {
   type VotingBloc,
   type VoteResult,
 } from "~/lib/statecraft/legislative-vote";
-import { computeApproval } from "~/lib/government/approval";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { fogVoteProjection } from "~/lib/statecraft/whip";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 /**
  * Legislation — bills go to the floor and parties vote them up or down.
@@ -28,15 +35,6 @@ import { fogVoteProjection } from "~/lib/statecraft/whip";
  */
 
 const IDEOLOGY_VALUES = Object.keys(IDEOLOGY_AXIS) as [Ideology, ...Ideology[]];
-
-function ownsOrThrow(userCountryId: string | null | undefined, countryId: string) {
-  if (userCountryId !== countryId) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "You can only manage legislation for your own country",
-    });
-  }
-}
 
 interface BillMeta {
   ideologyTarget: number;
@@ -81,18 +79,13 @@ async function loadBlocs(db: PrismaClient, countryId: string): Promise<VotingBlo
   return [...blocMap.values()];
 }
 
-/** Government standing (0-100) = approval from party support + political stability. */
+/** Government standing (0-100) = the nation's public approval (50 when it has none yet). */
 async function getGovernmentBacking(db: PrismaClient, countryId: string): Promise<number> {
-  const parties = await db.politicalParty.findMany({
-    where: { countryId, isActive: true },
-    select: { id: true, currentSupport: true },
+  const country = await db.country.findUnique({
+    where: { id: countryId },
+    select: { publicApproval: true },
   });
-  if (parties.length === 0) return 50;
-  const structure = await db.governmentStructure.findUnique({
-    where: { countryId },
-    select: { politicalStability: true },
-  });
-  return computeApproval(parties, structure?.politicalStability ?? null);
+  return country?.publicApproval ?? 50;
 }
 
 export const legislationRouter = createTRPCRouter({
@@ -108,14 +101,14 @@ export const legislationRouter = createTRPCRouter({
         id: b.id,
         name: b.name,
         description: b.description,
-        status: b.status, // in_committee | active | rejected
+        status: b.status, // in_committee | active | rejected | repealed | expired
         gdpEffect: b.gdpEffect,
         createdAt: b.createdAt,
         meta: parseMeta(b.reviewNotes),
       }));
     }),
 
-  proposeBill: protectedProcedure
+  proposeBill: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -127,7 +120,7 @@ export const legislationRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      ownsOrThrow(ctx.user?.countryId, input.countryId);
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       const meta: BillMeta = { ideologyTarget: IDEOLOGY_AXIS[input.ideology] };
       const bill = await ctx.db.policy.create({
@@ -146,14 +139,14 @@ export const legislationRouter = createTRPCRouter({
       return { id: bill.id };
     }),
 
-  holdVote: protectedProcedure
+  holdVote: rateLimitedMutationProcedure
     .input(z.object({ billId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const bill = await ctx.db.policy.findUnique({ where: { id: input.billId } });
       if (!bill || bill.policyType !== "legislative_bill") {
         throw new TRPCError({ code: "NOT_FOUND", message: "Bill not found" });
       }
-      ownsOrThrow(ctx.user?.countryId, bill.countryId);
+      await assertCountryWriteAccess(ctx, bill.countryId);
       if (bill.status !== "in_committee") {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -172,7 +165,7 @@ export const legislationRouter = createTRPCRouter({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
-            "No seated legislature — hold an election (and seat parties) before voting on bills",
+            "No seated legislature yet. Bills can go to a vote once an election seats the parties.",
         });
       }
 
@@ -181,18 +174,25 @@ export const legislationRouter = createTRPCRouter({
       const result = tallyVote(meta.ideologyTarget, blocs, standing / 100);
       const pct = `${result.yesSeats}–${result.noSeats}${result.abstainSeats ? `, ${result.abstainSeats} abstain` : ""}`;
 
-      await ctx.db.policy.update({
-        where: { id: bill.id },
+      // The vote is stamped on the nation's realm clock (a passed bill takes effect then).
+      const votedIxTime = (await clockForCountry(ctx.db, bill.countryId)).now();
+      // Conditional on the bill still being in committee, so two concurrent votes cannot both apply.
+      const claimed = await ctx.db.policy.updateMany({
+        where: { id: bill.id, status: "in_committee" },
         data: {
           status: result.passed ? "active" : "rejected",
           effectiveDate: result.passed ? new Date() : undefined,
+          effectiveIxTime: result.passed ? votedIxTime : undefined,
           reviewNotes: JSON.stringify({
             ...meta,
             voteResult: result,
-            votedIxTime: Date.now(),
+            votedIxTime,
           } satisfies BillMeta),
         },
       });
+      if (claimed.count !== 1) {
+        throw new TRPCError({ code: "CONFLICT", message: "This bill has already been voted on" });
+      }
 
       // Passed bills become real: ride the proven policy → sim effect channel.
       if (result.passed) {
@@ -202,6 +202,12 @@ export const legislationRouter = createTRPCRouter({
           name: bill.name,
           gdpEffect: bill.gdpEffect,
         });
+        void ActivityHooks.Government.onLawPassed(
+          bill.countryId,
+          bill.name,
+          bill.gdpEffect ?? 0,
+          ctx.auth?.userId ?? undefined
+        );
       }
 
       void generateDiplomaticNews(
@@ -238,12 +244,17 @@ export const legislationRouter = createTRPCRouter({
       if (!bill || bill.policyType !== "legislative_bill") {
         throw new TRPCError({ code: "NOT_FOUND", message: "Bill not found" });
       }
+      // The whip count is the government's own intelligence: owner (or privileged roles) only.
+      await assertCountryWriteAccess(ctx, bill.countryId);
       const meta = parseMeta(bill.reviewNotes);
       if (!meta) return { available: false as const, reason: "Bill is missing vote metadata." };
 
       const blocs = await loadBlocs(ctx.db as PrismaClient, bill.countryId);
       if (blocs.length === 0) {
-        return { available: false as const, reason: "No seated legislature to whip." };
+        return {
+          available: false as const,
+          reason: "No seated legislature to whip yet. The next election seats the parties.",
+        };
       }
 
       const standing = await getGovernmentBacking(ctx.db as PrismaClient, bill.countryId);

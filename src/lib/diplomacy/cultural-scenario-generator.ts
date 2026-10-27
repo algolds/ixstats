@@ -15,10 +15,6 @@
 import type { RelationshipState } from "./markov-engine";
 import type { DiplomaticChoice, CumulativeEffects } from "./choice-tracker";
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
 export type CulturalScenarioType =
   | "festival_collaboration"
   | "artifact_repatriation"
@@ -31,12 +27,12 @@ export type CulturalScenarioType =
   | "festival_security"
   | "artistic_freedom";
 
-export type ResponseRequirement = {
+type ResponseRequirement = {
   skill: "negotiation" | "cultural_sensitivity" | "economic" | "legal" | "security";
   level: number; // 0-100
 };
 
-export interface CulturalScenarioTemplate {
+interface CulturalScenarioTemplate {
   type: CulturalScenarioType;
   name: string;
   description: string;
@@ -47,7 +43,7 @@ export interface CulturalScenarioTemplate {
   tags: string[];
 }
 
-export interface ScenarioContext {
+interface ScenarioContext {
   exchangeId: string;
   exchangeType: string;
   country1: {
@@ -69,7 +65,7 @@ export interface ScenarioContext {
   economicTies: number; // 0-100
 }
 
-export interface ResponseOption {
+interface ResponseOption {
   id: string;
   label: string;
   description: string;
@@ -95,12 +91,12 @@ export interface ResponseOption {
   npcsLikelyToChoose: string[]; // Personality archetypes
 }
 
-export type CulturalScenarioRecentAction = Pick<
+type CulturalScenarioRecentAction = Pick<
   DiplomaticChoice,
   "id" | "type" | "targetCountry" | "targetCountryId" | "timestamp" | "ixTimeTimestamp"
 >;
 
-export interface CulturalScenarioMetadata {
+interface CulturalScenarioMetadata {
   triggeredBy: string;
   relevanceScore: number;
   playerReputation?: CumulativeEffects;
@@ -121,9 +117,7 @@ export interface CulturalScenario {
   metadata: CulturalScenarioMetadata;
 }
 
-// ============================================================================
 // SCENARIO TEMPLATES
-// ============================================================================
 
 export const CULTURAL_SCENARIO_TEMPLATES: Record<CulturalScenarioType, CulturalScenarioTemplate> = {
   festival_collaboration: {
@@ -239,9 +233,7 @@ export const CULTURAL_SCENARIO_TEMPLATES: Record<CulturalScenarioType, CulturalS
   },
 };
 
-// ============================================================================
 // SCENARIO GENERATOR CLASS
-// ============================================================================
 
 export class CulturalScenarioGenerator {
   /**
@@ -275,7 +267,7 @@ export class CulturalScenarioGenerator {
     };
 
     return {
-      id: `cultural_scenario_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+      id: `cultural_scenario_${Date.now()}_${crypto.randomUUID()}`,
       type: template.type,
       title: this.generateTitle(template, context),
       narrative,
@@ -472,6 +464,7 @@ Your diplomatic team must navigate this highly public confrontation between arti
       CulturalScenarioType,
       (ctx: ScenarioContext) => ResponseOption[]
     > = {
+      // oxlint-disable-next-line typescript/no-unused-vars
       festival_collaboration: (ctx) => [
         {
           id: "mediation",
@@ -600,6 +593,7 @@ Your diplomatic team must navigate this highly public confrontation between arti
         },
       ],
 
+      // oxlint-disable-next-line typescript/no-unused-vars
       artifact_repatriation: (ctx) => [
         {
           id: "full_repatriation",
@@ -732,6 +726,7 @@ Your diplomatic team must navigate this highly public confrontation between arti
         },
       ],
 
+      // oxlint-disable-next-line typescript/no-unused-vars
       cultural_appropriation: (ctx) => [
         {
           id: "withdraw_collection",
@@ -874,6 +869,7 @@ Your diplomatic team must navigate this highly public confrontation between arti
    */
   private static generateGenericResponseOptions(
     scenarioSubtype: string,
+    // oxlint-disable-next-line typescript/no-unused-vars
     context: ScenarioContext
   ): ResponseOption[] {
     // Generate 3-4 balanced response options with varying approaches

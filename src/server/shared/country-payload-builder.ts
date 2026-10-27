@@ -1,5 +1,73 @@
 import { z } from "zod";
 
+// Object values may be undefined: superjson preserves `undefined` keys from the client
+// (e.g. `parentDepartmentId: undefined`); JSON serialization drops them on write.
+type JsonValue =
+  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue | undefined };
+
+const jsonLiteralSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+
+const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+  z.union([
+    jsonLiteralSchema,
+    z.array(jsonValueSchema),
+    z.record(z.string(), jsonValueSchema.optional()),
+  ])
+);
+
+const jsonRecordSchema = z.record(z.string(), jsonValueSchema.optional());
+
+/** National identity fields shared by the builder payload and country creation. */
+const nationalIdentityFieldsSchema = z.object({
+  countryName: z.string().optional(),
+  officialName: z.string().optional(),
+  governmentType: z.string().optional(),
+  motto: z.string().optional(),
+  mottoNative: z.string().optional(),
+  capitalCity: z.string().optional(),
+  largestCity: z.string().optional(),
+  demonym: z.string().optional(),
+  nationalReligion: z.string().optional(),
+  currency: z.string().optional(),
+  currencySymbol: z.string().optional(),
+  officialLanguages: z.string().optional(),
+  nationalLanguage: z.string().optional(),
+  nationalAnthem: z.string().optional(),
+  nationalDay: z.string().optional(),
+  nationalSport: z.string().optional(),
+  nationalAnimal: z.string().optional(),
+  nationalBird: z.string().optional(),
+  nationalFish: z.string().optional(),
+  founders: z.string().optional(),
+  nationalFlower: z.string().optional(),
+  nationalDish: z.string().optional(),
+  nationalFruit: z.string().optional(),
+  nationalDrink: z.string().optional(),
+  nationalInstrument: z.string().optional(),
+  nationalSymbol: z.string().optional(),
+  nationalAnimalImage: z.string().optional(),
+  nationalBirdImage: z.string().optional(),
+  nationalFishImage: z.string().optional(),
+  foundersImage: z.string().optional(),
+  nationalFlowerImage: z.string().optional(),
+  nationalDishImage: z.string().optional(),
+  nationalFruitImage: z.string().optional(),
+  nationalDrinkImage: z.string().optional(),
+  nationalInstrumentImage: z.string().optional(),
+  nationalSymbolImage: z.string().optional(),
+  callingCode: z.string().optional(),
+  internetTLD: z.string().optional(),
+  drivingSide: z.string().optional(),
+  timeZone: z.string().optional(),
+  isoCode: z.string().optional(),
+  coordinatesLatitude: z.string().optional(),
+  coordinatesLongitude: z.string().optional(),
+  emergencyNumber: z.string().optional(),
+  postalCodeFormat: z.string().optional(),
+  weekStartDay: z.string().optional(),
+  leader: z.string().optional(),
+});
+
 /**
  * Shared Zod schema for economic inputs submitted through Country Builder / Editor.
  */
@@ -14,6 +82,7 @@ export const countryEconomicInputsSchema = z
         inflationRate: z.number().optional(),
         currencyExchangeRate: z.number().optional(),
       })
+      .passthrough()
       .optional(),
     laborEmployment: z
       .object({
@@ -25,6 +94,7 @@ export const countryEconomicInputsSchema = z
         minimumWage: z.number().optional(),
         averageAnnualIncome: z.number().optional(),
       })
+      .passthrough()
       .optional(),
     fiscalSystem: z
       .object({
@@ -42,6 +112,7 @@ export const countryEconomicInputsSchema = z
         debtServiceCosts: z.number().optional(),
         salesTaxRate: z.number().optional(),
       })
+      .passthrough()
       .optional(),
     demographics: z
       .object({
@@ -54,10 +125,35 @@ export const countryEconomicInputsSchema = z
             urban: z.number(),
             rural: z.number(),
           })
+          .passthrough()
           .optional(),
-        ageDistribution: z.array(z.any()).optional(),
-        educationLevels: z.array(z.any()).optional(),
+        ageDistribution: z
+          .array(
+            z
+              .object({
+                group: z.string().optional(),
+                percent: z.number().optional(),
+                percentage: z.number().optional(),
+                color: z.string().optional(),
+              })
+              .passthrough()
+          )
+          .optional(),
+        educationLevels: z
+          .array(
+            z
+              .object({
+                level: z.string().optional(),
+                percent: z.number().optional(),
+                percentage: z.number().optional(),
+                color: z.string().optional(),
+              })
+              .passthrough()
+          )
+          .optional(),
+        regions: z.array(jsonRecordSchema).optional(),
       })
+      .passthrough()
       .optional(),
     incomeWealth: z
       .object({
@@ -65,86 +161,126 @@ export const countryEconomicInputsSchema = z
         povertyRate: z.number().optional(),
         incomeInequalityGini: z.number().optional(),
         socialMobilityIndex: z.number().optional(),
-        economicClasses: z.array(z.any()).optional(),
+        economicClasses: z
+          .array(
+            z
+              .object({
+                class: z.string().optional(),
+                name: z.string().optional(),
+                percent: z.number().optional(),
+                percentage: z.number().optional(),
+                income: z.number().optional(),
+              })
+              .passthrough()
+          )
+          .optional(),
       })
+      .passthrough()
       .optional(),
     governmentSpending: z
       .object({
         totalSpending: z.number().optional(),
         spendingGDPPercent: z.number().optional(),
         spendingPerCapita: z.number().optional(),
-        spendingCategories: z.array(z.any()).optional(),
+        spendingCategories: z
+          .array(
+            z
+              .object({
+                name: z.string().optional(),
+                amount: z.number().optional(),
+                percent: z.number().optional(),
+              })
+              .passthrough()
+          )
+          .optional(),
       })
       .passthrough()
       .optional(),
-    nationalIdentity: z
-      .object({
-        countryName: z.string().optional(),
-        officialName: z.string().optional(),
-        governmentType: z.string().optional(),
-        motto: z.string().optional(),
-        mottoNative: z.string().optional(),
-        capitalCity: z.string().optional(),
-        largestCity: z.string().optional(),
-        demonym: z.string().optional(),
-        nationalReligion: z.string().optional(),
-        currency: z.string().optional(),
-        currencySymbol: z.string().optional(),
-        officialLanguages: z.string().optional(),
-        nationalLanguage: z.string().optional(),
-        nationalAnthem: z.string().optional(),
-        nationalDay: z.string().optional(),
-        nationalSport: z.string().optional(),
-        nationalAnimal: z.string().optional(),
-        nationalBird: z.string().optional(),
-        nationalFish: z.string().optional(),
-        founders: z.string().optional(),
-        nationalFlower: z.string().optional(),
-        nationalDish: z.string().optional(),
-        nationalFruit: z.string().optional(),
-        nationalDrink: z.string().optional(),
-        nationalInstrument: z.string().optional(),
-        nationalSymbol: z.string().optional(),
-        nationalAnimalImage: z.string().optional(),
-        nationalBirdImage: z.string().optional(),
-        nationalFishImage: z.string().optional(),
-        foundersImage: z.string().optional(),
-        nationalFlowerImage: z.string().optional(),
-        nationalDishImage: z.string().optional(),
-        nationalFruitImage: z.string().optional(),
-        nationalDrinkImage: z.string().optional(),
-        nationalInstrumentImage: z.string().optional(),
-        nationalSymbolImage: z.string().optional(),
-        callingCode: z.string().optional(),
-        internetTLD: z.string().optional(),
-        drivingSide: z.string().optional(),
-        timeZone: z.string().optional(),
-        isoCode: z.string().optional(),
-        coordinatesLatitude: z.string().optional(),
-        coordinatesLongitude: z.string().optional(),
-        emergencyNumber: z.string().optional(),
-        postalCodeFormat: z.string().optional(),
-        weekStartDay: z.string().optional(),
-        leader: z.string().optional(),
-      })
-      .optional(),
+    nationalIdentity: nationalIdentityFieldsSchema.passthrough().optional(),
     geography: z
       .object({
         continent: z.string().optional(),
         region: z.string().optional(),
       })
+      .passthrough()
       .optional(),
     flagUrl: z.string().optional(),
     coatOfArmsUrl: z.string().optional(),
   })
+  .passthrough()
   .optional();
 
-export const countryGovernmentComponentSchema = z.object({
-  componentType: z.string(),
-  effectivenessScore: z.number().min(0).max(100).optional(),
-  implementationCost: z.number().optional(),
-  maintenanceCost: z.number().optional(),
-  requiredCapacity: z.number().min(0).max(100).optional(),
-  isActive: z.boolean().optional(),
-  notes: z.string().optional(),
-});
+export const countryGovernmentComponentSchema = z
+  .object({
+    componentType: z.string(),
+    effectivenessScore: z.number().min(0).max(100).optional(),
+    implementationCost: z.number().optional(),
+    maintenanceCost: z.number().optional(),
+    requiredCapacity: z.number().min(0).max(100).optional(),
+    isActive: z.boolean().optional(),
+    notes: z.string().optional(),
+  })
+  .passthrough();
+export const countryTaxSystemInputSchema = z
+  .object({
+    taxSystemName: z.string().optional(),
+    taxAuthority: z.string().optional(),
+    fiscalYear: z.string().optional(),
+    taxCode: z.string().optional(),
+    baseRate: z.number().optional(),
+    progressiveTax: z.boolean().optional(),
+    totalTaxRate: z.number().optional(),
+    flatTaxRate: z.number().optional(),
+    alternativeMinTax: z.boolean().optional(),
+    alternativeMinRate: z.number().optional(),
+    taxHolidays: z.string().optional(),
+    complianceRate: z.number().optional(),
+    collectionEfficiency: z.number().optional(),
+    lastReform: z.string().optional(),
+    taxSystem: jsonValueSchema.optional(),
+    categories: jsonValueSchema.optional(),
+    brackets: jsonValueSchema.optional(),
+    exemptions: jsonValueSchema.optional(),
+    deductions: jsonValueSchema.optional(),
+    selectedAtomicTaxComponents: z.array(z.string()).optional(),
+    isValid: z.boolean().optional(),
+    errors: jsonValueSchema.optional(),
+  })
+  .passthrough();
+
+export const countryGovernmentStructureInputSchema = z
+  .object({
+    governmentName: z.string().optional(),
+    governmentType: z.string().optional(),
+    headOfState: z.string().optional(),
+    headOfGovernment: z.string().optional(),
+    legislatureName: z.string().optional(),
+    executiveName: z.string().optional(),
+    judicialName: z.string().optional(),
+    totalBudget: z.number().optional(),
+    fiscalYear: z.string().optional(),
+    budgetCurrency: z.string().optional(),
+    structure: jsonValueSchema.optional(),
+    departments: jsonValueSchema.optional(),
+    budgetAllocations: jsonValueSchema.optional(),
+    revenueSources: jsonValueSchema.optional(),
+    selectedComponents: z.array(z.string()).optional(),
+    isValid: z.boolean().optional(),
+    errors: jsonValueSchema.optional(),
+  })
+  .passthrough();
+
+export const countryEconomyBuilderStateSchema = z
+  .object({
+    selectedAtomicComponents: z.array(z.string()).optional(),
+    sectors: jsonValueSchema.optional(),
+    structure: jsonValueSchema.optional(),
+    laborMarket: jsonValueSchema.optional(),
+    demographics: jsonValueSchema.optional(),
+    tradeSystem: jsonValueSchema.optional(),
+    errors: jsonValueSchema.optional(),
+    validation: jsonValueSchema.optional(),
+    isValid: z.boolean().optional(),
+    version: z.string().optional(),
+  })
+  .passthrough();

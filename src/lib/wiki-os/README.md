@@ -1,106 +1,97 @@
-# WikiOS Engine Core (`src/lib/wiki-os/`)
+# WikiOS Core Engine (`src/lib/wiki-os/`)
 
-**Architecture Status**: Graduated Standalone-Capable Engine  
-**Target Package**: `@wikios/core` 
-
----
-
-## 1. Purpose & Design Philosophy
-
-`src/lib/wiki-os/` is the pure, standalone-capable core of **WikiOS** — a high-performance modern Next.js/React frontend and multi-tier storage engine for MediaWiki communities and worldbuilding archives.
-
-### Strict Graduation Boundary
-- **Zero Game Couplings**: This directory contains **NO** references to IxStates-specific game domain models (`Country`, `Card`, `LoreCategory`, `PointOfInterest`, `TaxPolicy`).
-- **Pluggable Host Seams**: Any application-specific data (such as national dynamic stats or custom infobox transclusion) connects via pluggable interfaces (`TemplateDataProvider`, `WikiStorageDriver`, `WikiAuthContext`).
-- **Headless MediaWiki**: Uses MediaWiki purely as a backend render and template execution service, while providing local high-speed (<5ms) cached reads and optimistic visual editing.
+**Status**: Primary & Default Encyclopedia Engine  
+**Package**: in-repo module (`~/lib/wiki-os`), not a published package  
+**Runtime**: TypeScript 7.0, Bun 1.4+  
+**Platform**: IxStates 1.4.0 Lobster Crosby (Release Candidate)  
 
 ---
 
-## 2. Component Architecture Map
+## 1. Purpose & Architectural Vision
+
+WikiOS is the **primary and default encyclopedia platform** for the IxStates ecosystem. It replaces traditional MediaWiki user-facing pages with a modern Next.js 16.3 / React 19 visual experience, while maintaining the traditional MediaWiki installation (`https://ixwiki.com/`) as a fully functional **classic/fallback experience**.
+
+```
+                               ┌──────────────────────────────────────────────────────────┐
+                               │                    WikiOS Primary Hub                    │
+                               │           (/wiki, /wiki/[...slug], /util/categories)        │
+                               └────────────────────────────┬─────────────────────────────┘
+                                                            │
+                            ┌───────────────────────────────┴───────────────────────────────┐
+                            ▼                                                               ▼
+             ┌─────────────────────────────┐                                 ┌─────────────────────────────┐
+             │   IxWiki (PostgreSQL store) │                                 │   IIWiki & AltHistory       │
+             │ wiki_articles / _revisions  │                                 │  (Sister Community Realms)  │
+             ├─────────────────────────────┤                                 ├─────────────────────────────┤
+             │ • <2ms Pre-compiled Reads   │                                 │ • Multi-Wiki HTTP Adapter   │
+             │ • <10ms Atomic Writes       │                                 │ • 5-min Memory/LRU Cache    │
+             │ • Direct Taxonomy Graph     │                                 │ • Circuit Breakers (403)    │
+             │ • recentchanges Inbound Sync│                                 │ • Cross-Wiki Parse Proxy    │
+             └──────────────┬──────────────┘                                 └─────────────────────────────┘
+                            │
+                            │ (Asynchronous Export Mirroring)
+                            ▼
+             ┌─────────────────────────────┐
+             │    MediaWiki Export Worker  │
+             │  (Action API, bot session)  │
+             └──────────────┬──────────────┘
+                            │
+                            ▼
+             ┌─────────────────────────────┐
+             │    Classic MediaWiki (Web)  │
+             │   (https://ixwiki.com/wiki) │
+             └─────────────────────────────┘
+```
+
+---
+
+## 2. Storage & Write Pipeline
+
+1. **Read Path (<2ms)**:
+   - Reads articles, wikitext, revisions, categories, and backlinks from PostgreSQL (`WikiArticle`, `WikiRevision`, `WikiLink`, `WikiCategory*`) via `ArticleRepository` and `adapters/mediawiki/bridge/pg-*.ts`. There is no direct MariaDB connection (the `mysql2` pool was removed on 2026-08-25).
+   - Uses the MediaWiki HTTP Action API (`action=parse`) as a headless renderer for templates/Lua, and PostgreSQL (`WikiCache`) for structured infoboxes and country metadata.
+2. **Write Path (<10ms)**:
+   - Saves directly to PostgreSQL `ArticleRepository` in a single transaction.
+   - Inserts a `WikiMirrorJob` (the outbound outbox, `services/mirror-outbox.ts`) in the same transaction: a committed edit always has its job. Moves, deletes, undeletes and protections queue their own jobs (`move | delete | undelete | protect`).
+   - `services/mirror-worker.ts` (cron job `wiki-mirror`, plus an in-process run a couple of seconds after a write) applies the jobs per title in order as the dedicated `WikiOSMirror` bot account: the revision jobs of a title that wait next in line (at most 50, about 6 MB of XML) go out together through ONE `action=import` with `assignknownusers=1` (each credited to its author, dated as it was made; MediaWiki adds one null revision by the bot after the import), the newest text is verified against MediaWiki's current revision, every revision is stamped with its MediaWiki revision, and the newest text goes as an `action=edit` when the import is not current. A failed job backs off (`min(2^attempts x 30 s, 1 h)`) and goes `dead` after 8 attempts (Discord warning; an administrator requeues or discards it in the WikiOS settings panel). A bot login that fails is a failed job, never an anonymous write. `SKIP_MEDIAWIKI_SYNC=true` stops the worker; jobs accumulate.
+3. **Classic MediaWiki Fallback**:
+   - `https://ixwiki.com/` remains accessible at all times for users preferring the classic MediaWiki Vector interface.
+   - Edits made on classic MediaWiki are pulled into PostgreSQL by `services/auto-sync-service.ts` (`runAutoSyncCycle`), run by the `wiki-recentchanges` cron job and the authenticated `/api/wikios/inbound-sync` webhook.
+
+---
+
+## 3. Directory Layout
 
 ```
 src/lib/wiki-os/
-├── config.ts              # Canonical configuration, loopback endpoints & sources
-├── types.ts               # Canonical MediaWiki & WikiOS typed contracts (Branded types)
-├── bridge.ts              # High-speed direct MariaDB/MySQL connector driver (~38ms)
-├── image-url.ts           # Client-safe MediaWiki image URL & thumbnail resolver
-├── infobox-parser.ts      # Zero-dependency wikitext infobox & template tokenizer
-│
-├── storage-driver.ts      # Storage interface (WikiStorageDriver, StoredArticle, StoredRevision)
-├── drivers/
-│   ├── postgres-driver.ts # PostgreSQL (Prisma-backed) storage driver
-│   ├── sqlite-driver.ts   # Standalone SQLite storage driver (zero dependency)
-│   └── memory-driver.ts   # In-memory storage driver for sandboxes and testing
-│
-├── article-store.ts       # 4-tier resilient read pipeline & pre-rendered HTML cache
-├── wikios-cache.ts        # In-memory LRU + IndexedDB multi-tier cache layer
-├── search-service.ts      # PostgreSQL full-text & trigram fuzzy search engine (<3ms)
-├── html-transformer.ts    # Server-side HTML post-processor (Infobox, TOC, Notices)
-├── parsoid-client.ts      # Headless Parsoid REST API bridge (loopback-accelerated)
-│
-├── template-resolver.ts   # Pluggable wikitext template provider registry
-├── template-registry.ts   # Client-side TemplateData registry & parameter schema
-│
-├── sync-queue.ts          # Offline-first client background sync queue (0ms perceived saves)
-├── draft-store.ts         # LocalStorage/IndexedDB visual editor autosave & recovery
-├── fix-editor-images.ts   # Pre-save regex image transformer & sanitizer
-├── wiki-write-service.ts  # CSRF-managed Action API write service
-├── csrf-cache.ts          # MediaWiki CSRF token cache with automatic TTL refresh
-├── wikitext-diff.ts       # LCS visual wikitext diff calculator
-│
-├── auth.ts                # Auth provider abstraction seam
-├── use-wiki-auth.ts       # Client hook abstraction for identity & roles
-├── storage.ts             # Host storage/identity resolution seam
-│
-└── __tests__/             # Engine unit test suites (Storage, Cache, Search)
-    ├── search-service.test.ts
-    ├── storage-driver.test.ts
-    └── wikios-cache.test.ts
+├── adapters/
+│   ├── ixstates/         # Sovereignty & nation eligible country service
+│   ├── mediawiki/        # Core MediaWiki bridge & database readers
+│   │   ├── bridge/
+│   │   │   ├── pg-reader.ts     # PostgreSQL article/wikitext reader (+ pg-search, pg-activity, pg-taxonomy, pg-site)
+│   │   │   ├── http-reader.ts   # Resilient sister-wiki HTTP adapter (IIWiki/AltHistory)
+│   │   │   └── dispatchers.ts   # Public multi-wiki dispatching engine
+│   │   ├── article-store.ts     # PostgreSQL cache & shadow synchronization
+│   │   ├── csrf-cache.ts        # The mirror bot's MediaWiki login + CSRF token (no anonymous fallback)
+│   │   └── write-service.ts     # The mirror's Action API calls (typed errors, import upload)
+├── core/                 # ArticleRepository, link graph, native search, media assets, WikiAST
+├── editor/               # Draft store & local cache (Plate editor UI lives in src/components/wiki-os/editor/)
+├── services/             # auto-sync-service.ts (recentchanges inbound sync); mirror-*.ts (the outbound outbox and worker)
+├── transformers/         # Infobox parsers, image URL hash math, WikiAST ↔ wikitext converter
+├── wikitext/             # Wikitext parser & serializer
+└── templates/            # Custom template resolver, presets & preview cache
 ```
 
 ---
 
-## 3. Storage Drivers (`drivers/`)
+## 4. Multi-Wiki Support
 
-WikiOS abstracts storage through the `WikiStorageDriver` interface:
+WikiOS provides first-class support for sister community wikis via the strict `WikiSource` union:
 
-```typescript
-import { setStorageDriver, MemoryStorageDriver } from "~/lib/wiki-os/storage-driver";
-
-// In unit tests or sandboxes:
-setStorageDriver(new MemoryStorageDriver());
+```ts
+export type WikiSource = "ixwiki" | "iiwiki" | "althistory";
 ```
 
-| Driver | File | Best For |
-|---|---|---|
-| `PostgresStorageDriver` | `drivers/postgres-driver.ts` | Scaled production with PostgreSQL / Prisma |
-| `SqliteStorageDriver` | `drivers/sqlite-driver.ts` | Zero-dependency standalone and embedded deployments |
-| `MemoryStorageDriver` | `drivers/memory-driver.ts` | Ephemeral test runners and Jest suites |
-
----
-
-## 4. Multi-Tier Resilient Storage Pipeline (`article-store.ts`)
-
-Article reads resolve through a 4-tier waterfall:
-
-```
-[Tier 1: Fresh Postgres Shadow] (<5ms)
-       │ (Cache Miss)
-       ▼
-[Tier 2: Direct MariaDB MySQL] (~38ms)
-       │ (MySQL Unavailable / Offline)
-       ▼
-[Tier 3: MediaWiki Action API HTTP] (~400ms)
-       │ (Network Down / 502 Bad Gateway)
-       ▼
-[Tier 4: Stale Shadow Fallback] (stale: true, <5ms)
-```
-
----
-
-## 5. Standalone Extraction Runbook
-
-To package WikiOS as an independent npm library (`@wikios/core`):
-1. Copy `src/lib/wiki-os/` to a dedicated package repository.
-2. Ensure `package.json` specifies optional peer dependencies for `mysql2`, `@prisma/client`, or `better-sqlite3`.
-3. Consumers provide their own auth provider via `auth.ts` and storage adapter via `storage-driver.ts`.
+- **`ixwiki`**: Local PostgreSQL store; the only editable source.
+- **`iiwiki`** & **`althistory`**: External community sister wikis read over HTTP with a 5-minute circuit breaker for offline/403 hosts. In the reader they open via `/wiki/<title>?source=…` and are read-only (links, Watch, edit route and `?margin` follow the page's wiki).
+- **`all`**: Parallel concurrent queries (`Promise.all`) for unified cross-encyclopedia search (`api.wikios.search`).

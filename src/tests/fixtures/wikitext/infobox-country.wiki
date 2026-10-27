@@ -1,0 +1,25 @@
+{{Infobox country
+| name = Republic of Vesperia
+| native_name = ''Republica Vesperia''
+| image_flag = Flag of Vesperia.svg
+| capital = [[Vilena]]
+| population = 12,400,000
+| gdp_nominal = $310 billion
+| government_type = Unitary [[parliamentary republic]]
+}}
+
+'''Vesperia''', officially the '''Republic of Vesperia''', is a sovereign state on the western coast of [[Arcadia]]. Its capital and largest city is [[Vilena]].
+
+== History ==
+=== Founding ===
+The republic was proclaimed in [[1812]] after the [[War of the Two Crowns|Two Crowns War]].
+
+=== Modern era ===
+{{Main|History of Vesperia}}
+Since 1950 the country has been a member of the [[League of Nations]].
+
+== Geography ==
+Vesperia covers {{convert|420000|km2|sqmi}} and borders [[Ostrava]] to the north.
+
+[[Category:Countries of Arcadia]]
+[[Category:Republics]]

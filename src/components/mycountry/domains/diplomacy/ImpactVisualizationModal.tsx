@@ -1,20 +1,19 @@
 "use client";
 
+import { ArrowRight, ArrowUp, StatsReport, Check } from "iconoir-react";
+
 import React from "react";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Progress } from "~/components/ui/progress";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "~/components/ui/dialog";
-import {
-  RiLineChartLine,
-  RiArrowRightLine,
-  RiCheckLine,
-  RiArrowUpLine,
-  RiLightbulbLine,
-} from "react-icons/ri";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "~/components/ui/sheet";
+import { Stat } from "~/components/ui/stat";
+import { Card } from "~/components/ui/card";
 
 interface LongTermEffects {
   culturalTiesStrength?: number;
@@ -48,149 +47,103 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
     const { impact } = impactData;
 
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <RiLineChartLine className="h-6 w-6 text-orange-400" />
-              Exchange Impact Analysis
-            </DialogTitle>
-            <DialogDescription>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent size="wide" className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <StatsReport className="text-label-secondary h-5 w-5" />
+              Exchange impact analysis
+            </SheetTitle>
+            <SheetDescription>
               Detailed breakdown of cultural and diplomatic impact
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
-          <div className="space-y-6">
-            {/* Relationship State Changes */}
-            <div className="glass-hierarchy-child rounded-lg p-6">
-              <h4 className="text-foreground mb-4 font-semibold">Relationship State Evolution</h4>
+          <div className="space-y-4">
+            <Card variant="well" className="p-5">
+              <h4 className="text-label text-headline mb-4">Relationship state evolution</h4>
               <div className="flex items-center justify-center gap-4">
                 <div className="text-center">
-                  <div className="mb-1 text-3xl font-bold text-yellow-400">
-                    {impact.currentState || "Neutral"}
-                  </div>
-                  <div className="text-xs text-[--intel-silver]">Before</div>
+                  <div className="text-label text-title-1 mb-1">{impact.currentState || "—"}</div>
+                  <span className="text-caption text-label-secondary">Before</span>
                 </div>
-                <RiArrowRightLine className="h-8 w-8 text-[--intel-silver]" />
+                <ArrowRight className="text-label-secondary h-6 w-6" />
                 <div className="text-center">
-                  <div className="mb-1 text-3xl font-bold text-green-400">
-                    {impact.newState || "Friendly"}
-                  </div>
-                  <div className="text-xs text-[--intel-silver]">After</div>
+                  <div className="text-label text-title-1 mb-1">{impact.newState || "—"}</div>
+                  <Eyebrow>After</Eyebrow>
                 </div>
               </div>
               {impact.stateChanged && (
-                <div className="mt-4 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-center">
-                  <RiCheckLine className="mx-auto mb-1 h-5 w-5 text-green-400" />
-                  <p className="text-sm font-medium text-green-400">
-                    Relationship state improved! (
-                    {Math.round((impact.transitionProbability || 0) * 100)}% probability)
-                  </p>
-                </div>
+                <p className="text-body text-green mt-4 flex items-center justify-center gap-2 font-medium">
+                  <Check className="h-4 w-4" />
+                  Relationship state improved (
+                  {Math.round((impact.transitionProbability || 0) * 100)}% probability)
+                </p>
               )}
-            </div>
+            </Card>
 
-            {/* Impact Metrics */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="glass-hierarchy-child rounded-lg p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <RiArrowUpLine className="h-4 w-4 text-[--intel-gold]" />
-                  <span className="text-foreground text-sm font-medium">Cultural Bonus</span>
-                </div>
-                <div className="text-2xl font-bold text-[--intel-gold]">
-                  +{impact.culturalBonusDelta || 0}
-                </div>
-              </div>
-              <div className="glass-hierarchy-child rounded-lg p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <RiArrowUpLine className="h-4 w-4 text-blue-400" />
-                  <span className="text-foreground text-sm font-medium">Diplomatic Bonus</span>
-                </div>
-                <div className="text-2xl font-bold text-blue-400">
-                  +{impact.diplomaticBonusDelta || 0}
-                </div>
-              </div>
+              {[
+                { label: "Cultural bonus", value: impact.culturalBonusDelta || 0 },
+                { label: "Diplomatic bonus", value: impact.diplomaticBonusDelta || 0 },
+              ].map((m) => (
+                <Card variant="well" key={m.label} className="p-4">
+                  <Stat
+                    label={m.label}
+                    value={<>+{m.value}</>}
+                    icon={<ArrowUp className="size-3.5" />}
+                  />
+                </Card>
+              ))}
             </div>
 
-            {/* Long-term Effects */}
             {impact.longTermEffects && (
-              <div className="glass-hierarchy-child rounded-lg p-6">
-                <h4 className="text-foreground mb-4 font-semibold">Long-term Effects</h4>
+              <Card variant="well" className="p-5">
+                <h4 className="text-label text-headline mb-4">Long-term effects</h4>
                 <div className="space-y-4">
-                  {impact.longTermEffects.culturalTiesStrength !== undefined && (
-                    <div>
-                      <div className="mb-2 flex items-center justify-between text-sm">
-                        <span className="text-[--intel-silver]">Cultural Ties Strength</span>
-                        <span className="font-medium text-purple-400">
-                          {impact.longTermEffects.culturalTiesStrength}%
-                        </span>
+                  {[
+                    {
+                      label: "Cultural ties strength",
+                      value: impact.longTermEffects.culturalTiesStrength,
+                    },
+                    { label: "Soft power gain", value: impact.longTermEffects.softPowerGain },
+                    {
+                      label: "People-to-People bonds",
+                      value: impact.longTermEffects.peopleTopeopleBonds,
+                    },
+                  ]
+                    .filter((e): e is { label: string; value: number } => e.value !== undefined)
+                    .map((effect) => (
+                      <div key={effect.label}>
+                        <div className="text-body mb-2 flex items-center justify-between">
+                          <span className="text-label-secondary">{effect.label}</span>
+                          <span className="text-label font-medium tabular-nums">
+                            {effect.value}%
+                          </span>
+                        </div>
+                        <Progress value={effect.value} className="h-2" />
                       </div>
-                      <div className="h-3 w-full rounded-full bg-white/10">
-                        <div
-                          className="h-3 rounded-full bg-purple-400"
-                          style={{ width: `${impact.longTermEffects.culturalTiesStrength}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {impact.longTermEffects.softPowerGain !== undefined && (
-                    <div>
-                      <div className="mb-2 flex items-center justify-between text-sm">
-                        <span className="text-[--intel-silver]">Soft Power Gain</span>
-                        <span className="font-medium text-cyan-400">
-                          {impact.longTermEffects.softPowerGain}%
-                        </span>
-                      </div>
-                      <div className="h-3 w-full rounded-full bg-white/10">
-                        <div
-                          className="h-3 rounded-full bg-cyan-400"
-                          style={{ width: `${impact.longTermEffects.softPowerGain}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {impact.longTermEffects.peopleTopeopleBonds !== undefined && (
-                    <div>
-                      <div className="mb-2 flex items-center justify-between text-sm">
-                        <span className="text-[--intel-silver]">People-to-People Bonds</span>
-                        <span className="font-medium text-pink-400">
-                          {impact.longTermEffects.peopleTopeopleBonds}%
-                        </span>
-                      </div>
-                      <div className="h-3 w-full rounded-full bg-white/10">
-                        <div
-                          className="h-3 rounded-full bg-pink-400"
-                          style={{ width: `${impact.longTermEffects.peopleTopeopleBonds}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
+                    ))}
                 </div>
-              </div>
+              </Card>
             )}
 
-            {/* Reasoning */}
             {impact.reasoning && Array.isArray(impact.reasoning) && impact.reasoning.length > 0 && (
-              <div className="rounded-lg bg-white/5 p-4">
-                <h5 className="text-foreground mb-3 flex items-center gap-2 font-semibold">
-                  <RiLightbulbLine className="h-4 w-4 text-yellow-400" />
-                  Analysis Factors
-                </h5>
+              <Card variant="well" className="p-5">
+                <h4 className="text-label text-headline mb-4">Impact analysis</h4>
                 <ul className="space-y-2">
-                  {impact.reasoning.map((reason: string, idx: number) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm text-[--intel-silver]">
-                      <RiCheckLine className="mt-0.5 h-4 w-4 shrink-0 text-green-400" />
+                  {impact.reasoning.map((reason, idx) => (
+                    <li key={idx} className="text-label-secondary text-body flex items-start gap-2">
+                      <Check className="text-green mt-0.5 h-4 w-4 shrink-0" />
                       <span>{reason}</span>
                     </li>
                   ))}
                 </ul>
-              </div>
+              </Card>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     );
   }
 );

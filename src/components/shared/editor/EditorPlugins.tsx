@@ -1,0 +1,145 @@
+"use client";
+// src/components/shared/editor/EditorPlugins.tsx
+// Core PlateJS plugin definitions for shared text editors.
+
+import React from "react";
+import { createPlatePlugin } from "platejs/react";
+import { assetUrl } from "~/lib/base-path";
+import { createUrl } from "~/lib/utils/url-utils";
+import { composerLinkHref, type WikiLinkElement } from "./SlateSerializer";
+
+export const BoldPlugin = createPlatePlugin({
+  key: "bold",
+  node: { isLeaf: true },
+  render: { node: ({ children, attributes }: any) => <strong {...attributes}>{children}</strong> },
+});
+
+export const ItalicPlugin = createPlatePlugin({
+  key: "italic",
+  node: { isLeaf: true },
+  render: { node: ({ children, attributes }: any) => <em {...attributes}>{children}</em> },
+});
+
+export const UnderlinePlugin = createPlatePlugin({
+  key: "underline",
+  node: { isLeaf: true },
+  render: { node: ({ children, attributes }: any) => <u {...attributes}>{children}</u> },
+});
+
+export const UnorderedListPlugin = createPlatePlugin({
+  key: "ul",
+  node: { isElement: true },
+  render: {
+    node: ({ children, attributes }: any) => (
+      <ul {...attributes} className="my-1 list-disc space-y-0.5 pl-5 text-slate-200">
+        {children}
+      </ul>
+    ),
+  },
+});
+
+export const OrderedListPlugin = createPlatePlugin({
+  key: "ol",
+  node: { isElement: true },
+  render: {
+    node: ({ children, attributes }: any) => (
+      <ol {...attributes} className="my-1 list-decimal space-y-0.5 pl-5 text-slate-200">
+        {children}
+      </ol>
+    ),
+  },
+});
+
+export const ListItemPlugin = createPlatePlugin({
+  key: "li",
+  node: { isElement: true },
+  render: {
+    node: ({ children, attributes }: any) => (
+      <li {...attributes} className="text-sm">
+        {children}
+      </li>
+    ),
+  },
+});
+
+export const LinkPlugin = createPlatePlugin({
+  key: "link",
+  node: { isElement: true, isInline: true },
+  render: {
+    node: ({ children, element, attributes }: any) => (
+      <a
+        {...attributes}
+        href={element?.url as string | undefined}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-medium text-blue-400 underline transition-colors hover:text-blue-300"
+      >
+        {children}
+      </a>
+    ),
+  },
+});
+
+interface WikiLinkRenderProps {
+  attributes: React.AnchorHTMLAttributes<HTMLAnchorElement>;
+  children: React.ReactNode;
+  element: WikiLinkElement;
+}
+
+/**
+ * A wiki link in the composer, where it will point once saved (`composerLinkHref`): a plain `<a>` to the article in the
+ * reader on its wiki, under the base path, or (a page the reader does not read as an article) to that page on its
+ * wiki's own site, in a new tab.
+ */
+export const WikiLinkPlugin = createPlatePlugin({
+  key: "wikilink",
+  node: { isElement: true, isInline: true },
+  render: {
+    node: ({ children, element, attributes }: WikiLinkRenderProps) => {
+      const link = composerLinkHref(element.target, element.source);
+      const external = link !== null && !link.reader;
+      return (
+        <a
+          {...attributes}
+          href={link ? (link.reader ? createUrl(link.href) : link.href) : undefined}
+          target={external ? "_blank" : undefined}
+          rel={external ? "noopener noreferrer" : undefined}
+          className="text-wiki font-semibold underline transition-colors hover:opacity-80"
+        >
+          {children}
+        </a>
+      );
+    },
+  },
+});
+
+export const WikiEmbedPlugin = createPlatePlugin({
+  key: "wikiembed",
+  node: { isElement: true, isVoid: true },
+  render: {
+    node: ({ children, element, attributes }: any) => (
+      <div {...attributes} className="border-wiki/30 bg-wiki/10 my-2 rounded-lg border p-3">
+        <span className="text-wiki text-xs font-bold">📖 {element?.title}</span>
+        <p className="mt-1 text-xs text-slate-300">{element?.summary}</p>
+        {children}
+      </div>
+    ),
+  },
+});
+
+export const ImagePlugin = createPlatePlugin({
+  key: "img",
+  node: { isElement: true, isVoid: true },
+  render: {
+    node: ({ children, element, attributes }: any) => (
+      <div {...attributes} className="my-2 overflow-hidden rounded-lg">
+        <img
+          src={assetUrl(element?.src) ?? undefined}
+          alt={element?.alt || ""}
+          className="max-h-64 w-auto object-cover"
+        />
+        {children}
+      </div>
+    ),
+  },
+});

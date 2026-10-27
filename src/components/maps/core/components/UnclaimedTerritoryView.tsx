@@ -1,11 +1,12 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import { MapPin, Globe, BookOpen } from "lucide-react";
+import { MapPin, Globe, OpenBook as BookOpen } from "iconoir-react";
 import { StatCard } from "~/components/maps/core/components/StatCard";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
+import { Button } from "~/components/ui/button";
+import { WikiLinkButton } from "~/components/maps/shared/WikiLinkButton";
 import type { SelectedCountry } from "../IxWorldMap";
 
 interface UnclaimedTerritoryViewProps {
@@ -24,22 +25,25 @@ export function UnclaimedTerritoryView({
   return (
     <div>
       {wikiRichIntro?.paragraphs && wikiRichIntro.paragraphs.length > 0 && (
-        <div className="mb-3 space-y-1.5">
+        <div className="mb-3 space-y-2">
           {wikiRichIntro.paragraphs.slice(0, introExpanded ? 5 : 1).map((p: string, i: number) => (
             <WikiHtmlContent
               key={i}
               as="p"
-              className="text-foreground/80 text-xs leading-relaxed"
+              className="text-label-secondary text-footnote leading-relaxed"
               html={sanitizeWikiContent(p)}
             />
           ))}
           {wikiRichIntro.paragraphs.length > 1 && (
-            <button
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
               onClick={() => setIntroExpanded((v) => !v)}
-              className="text-[10px] font-medium text-blue-600 transition-colors hover:text-blue-500"
+              className="text-blue h-auto px-0"
             >
               {introExpanded ? "Show less" : "Read more..."}
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -52,32 +56,22 @@ export function UnclaimedTerritoryView({
         />
       </div>
 
-      <div className="bg-muted/50 mt-3 flex items-center justify-center gap-1.5 rounded-lg py-2">
-        <Globe className="text-muted-foreground h-3.5 w-3.5" />
-        <span className="text-muted-foreground text-xs font-medium">Unclaimed Territory</span>
-      </div>
+      <p className="text-label-secondary text-caption mt-3 flex items-center justify-center gap-2">
+        <Globe className="h-3.5 w-3.5" aria-hidden />
+        Unclaimed territory
+      </p>
 
       {wikiRichIntro?.wikiUrl && (
         <div className="mt-3">
-          {wikiRichIntro.wikiUrl.startsWith("/") || wikiRichIntro.wikiUrl.includes("/wiki/") ? (
-            <Link
-              href={wikiRichIntro.wikiUrl}
-              className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
-            >
-              <BookOpen className="h-3 w-3" />
-              Read on IxWiki
-            </Link>
-          ) : (
-            <a
-              href={wikiRichIntro.wikiUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
-            >
-              <BookOpen className="h-3 w-3" />
-              Read on {wikiRichIntro.wikiUrl.includes("ixwiki") ? "IxWiki" : "IIWiki"}
-            </a>
-          )}
+          <WikiLinkButton
+            url={wikiRichIntro.wikiUrl}
+            variant="outline"
+            size="sm"
+            className="w-full"
+          >
+            <BookOpen aria-hidden />
+            Read on WikiOS
+          </WikiLinkButton>
         </div>
       )}
     </div>

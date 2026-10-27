@@ -16,12 +16,16 @@ import { useNameBank } from "~/hooks/useNameBank";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { getGoogleFontLink } from "~/lib/onoma/branding-utils";
-import { SECTION_TITLES, studioSubTabLabel, exploreSubTabLabel } from "../components/nav/onoma-tabs";
+import {
+  SECTION_TITLES,
+  studioSubTabLabel,
+  exploreSubTabLabel,
+} from "../components/nav/onoma-tabs";
 import { useOnomaPronunciation } from "./useOnomaPronunciation";
 
 export function useOnomaRouter() {
   const pathname = usePathname();
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn } = useUser();
   const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery();
 
   const fontLink = useMemo(() => {
@@ -58,7 +62,10 @@ export function useOnomaRouter() {
   // Track the last standard CREATE tab visited (default to overview)
   const [lastActiveTab, setLastActiveTab] = useState<OnomaSection>(() => {
     const initial = getSectionFromPathname(pathname);
-    return initial === "bank" || initial === "studio" || initial === "explore" || initial === "settings"
+    return initial === "bank" ||
+      initial === "studio" ||
+      initial === "explore" ||
+      initial === "settings"
       ? "overview"
       : initial;
   });
@@ -86,28 +93,6 @@ export function useOnomaRouter() {
       if (t) clearTimeout(t);
     };
   }, [bankLength]);
-
-  // Dynamic lexicon terms count computation
-  const lexiconCount = useMemo(() => {
-    if (!bank.nameBank) return 0;
-    const stashedNames = bank.nameBank
-      .filter((entry) => entry.type === "saved-name")
-      .map((entry) => entry.title);
-
-    if (typeof window !== "undefined") {
-      const defsJson = localStorage.getItem("onoma-lexicon-definitions");
-      if (defsJson) {
-        try {
-          const defs = JSON.parse(defsJson);
-          const termsSet = new Set<string>([...stashedNames, ...Object.keys(defs)]);
-          return termsSet.size;
-        } catch {
-          // ignore
-        }
-      }
-    }
-    return new Set(stashedNames).size;
-  }, [bank.nameBank]);
 
   // Help walkthrough modal state & mode
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -252,11 +237,14 @@ export function useOnomaRouter() {
     }
   }, [activeSection, activeSubTab, activeExploreSubTab]);
 
-  const handleLoadToStudio = useCallback((words: string[], title: string) => {
-    setStudioInitialWords(words);
-    setStudioInitialTitle(title);
-    handleNavigateStudio("workshop");
-  }, [handleNavigateStudio]);
+  const handleLoadToStudio = useCallback(
+    (words: string[], title: string) => {
+      setStudioInitialWords(words);
+      setStudioInitialTitle(title);
+      handleNavigateStudio("workshop");
+    },
+    [handleNavigateStudio]
+  );
 
   const handleClearStudioInitial = useCallback(() => {
     setStudioInitialWords(undefined);
@@ -269,7 +257,6 @@ export function useOnomaRouter() {
     activeSubTab,
     activeExploreSubTab,
     lastActiveTab,
-    lexiconCount,
     shouldAnimateStash,
     hasInteractedPronunciation,
     setHasInteractedPronunciation,

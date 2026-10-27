@@ -7,13 +7,14 @@ import { useMapPrefetch } from "~/hooks/useMapData";
 /**
  * Invisible component that warms the map data cache.
  *
- * Only activates on map-related pages (not dashboard, not mycountry, etc.)
- * to avoid loading 17.8MB of world GeoJSON data on pages that don't need it.
+ * Only activates on pages that render the full world map (`/maps`, `/admin/maps`) to avoid
+ * loading 17.8MB of world GeoJSON data on pages that don't need it. `/countries` is excluded:
+ * its list renders no map and slug pages only use the small political-layer embed.
  * Once activated, stays active for the rest of the session so cached data
  * persists across SPA navigation.
  */
 
-const MAP_PATHS = ["/maps", "/countries", "/admin/maps"];
+const MAP_PATHS = ["/maps", "/admin/maps"];
 
 export function MapPrefetcher() {
   const pathname = usePathname();

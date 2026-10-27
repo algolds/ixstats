@@ -1,27 +1,24 @@
 import { db } from "~/server/db";
 
-const configCache = new Map<string, boolean | null>();
+const configCache = new Map<string, boolean>();
 let lastFetch = 0;
+let inflight: Promise<void> | null = null;
 const CACHE_TTL = 30_000;
 
 async function refreshCache(): Promise<void> {
   try {
     const configs = await db.notificationEventConfig.findMany({
-      where: { enabled: true },
-      select: { eventKey: true },
-    });
-    const enabledKeys = new Set(configs.map((c) => c.eventKey));
-
-    const allKeys = await db.notificationEventConfig.findMany({
       select: { eventKey: true, enabled: true },
     });
     configCache.clear();
-    for (const c of allKeys) {
+    for (const c of configs) {
       configCache.set(c.eventKey, c.enabled);
     }
-    lastFetch = Date.now();
   } catch {
-    // DB unavailable — default to enabled for all
+    // DB unavailable — keep the previous config (unknown keys default to enabled)
+  } finally {
+    // Also on error, so a failing DB is retried once per TTL rather than on every call
+    lastFetch = Date.now();
   }
 }
 
@@ -29,14 +26,20 @@ function isCacheStale(): boolean {
   return Date.now() - lastFetch > CACHE_TTL;
 }
 
-export async function isNotificationEventEnabled(eventKey: string): Promise<boolean> {
-  if (isCacheStale() || !configCache.has(eventKey)) {
-    await refreshCache();
+/** Refresh at most once per TTL, sharing one in-flight query between concurrent callers. */
+function ensureFresh(): Promise<void> {
+  if (!inflight && isCacheStale()) {
+    inflight = refreshCache().finally(() => {
+      inflight = null;
+    });
   }
+  return inflight ?? Promise.resolve();
+}
 
-  const cached = configCache.get(eventKey);
-  // Default to enabled if not in cache or on error
-  return cached ?? true;
+export async function isNotificationEventEnabled(eventKey: string): Promise<boolean> {
+  await ensureFresh();
+  // Unconfigured events default to enabled
+  return configCache.get(eventKey) ?? true;
 }
 
 export async function guardNotificationEvent(eventKey: string): Promise<boolean> {

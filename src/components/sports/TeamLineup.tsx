@@ -1,0 +1,195 @@
+"use client";
+
+import React, { useMemo } from "react";
+import { cn } from "~/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+import { SPORTS_ABBREVIATIONS } from "~/lib/sports/presets";
+import { Card } from "~/components/ui/card";
+
+interface LineupPlayer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  position: string;
+  number?: number | null;
+  overallRating?: number;
+  x?: number; // percentage (0-100)
+  y?: number; // percentage (0-100)
+}
+
+interface TeamLineupProps {
+  teamName: string;
+  teamColor: string;
+  players: LineupPlayer[];
+  sportPreset?: string;
+  className?: string;
+}
+
+export function TeamLineup({
+  teamName,
+  teamColor = "#3b82f6",
+  players,
+  sportPreset = "soccer",
+  className,
+}: TeamLineupProps) {
+  // Automatically distribute players based on position if x/y aren't provided
+  const positionedPlayers = useMemo(() => {
+    return players.map((player, index) => {
+      if (player.x !== undefined && player.y !== undefined) {
+        return player as Required<LineupPlayer>;
+      }
+
+      // Fallback auto-positioner (Soccer 4-4-2 default layout)
+      const pos = player.position.toUpperCase();
+      let x = 50;
+      let y = 50;
+
+      // Group and arrange players by position
+      const gks = players.filter(
+        (p) => p.position.toUpperCase().includes("GK") || p.position.toUpperCase().includes("GOAL")
+      );
+      const defs = players.filter((p) =>
+        ["D", "CB", "LB", "RB", "DF", "SW"].some((suffix) =>
+          p.position.toUpperCase().includes(suffix)
+        )
+      );
+      const mids = players.filter(
+        (p) =>
+          ["M", "CM", "LM", "RM", "DM", "AM", "MF"].some((suffix) =>
+            p.position.toUpperCase().includes(suffix)
+          ) && !p.position.toUpperCase().includes("GK")
+      );
+      const fwds = players.filter(
+        (p) =>
+          ["F", "ST", "CF", "LW", "RW", "FW"].some((suffix) =>
+            p.position.toUpperCase().includes(suffix)
+          ) && !["D", "M", "GK"].some((s) => p.position.toUpperCase().includes(s))
+      );
+
+      if (pos.includes("GK") || pos.includes("GOAL")) {
+        const gkIdx = gks.indexOf(player);
+        x = gks.length > 1 ? 25 + (50 / (gks.length - 1)) * gkIdx : 50;
+        y = 88;
+      } else if (defs.includes(player)) {
+        const defIdx = defs.indexOf(player);
+        x = defs.length > 1 ? 15 + (70 / (defs.length - 1)) * defIdx : 50;
+        y = 68;
+      } else if (mids.includes(player)) {
+        const midIdx = mids.indexOf(player);
+        x = mids.length > 1 ? 15 + (70 / (mids.length - 1)) * midIdx : 50;
+        y = 44;
+      } else if (fwds.includes(player)) {
+        const fwdIdx = fwds.indexOf(player);
+        x = fwds.length > 1 ? 30 + (40 / (fwds.length - 1)) * fwdIdx : 50;
+        y = 20;
+      } else {
+        // Uniform dispersion fallback
+        const itemsInRow = 4;
+        const rowIndex = Math.floor(index / itemsInRow);
+        const colIndex = index % itemsInRow;
+        x = 20 + colIndex * 20;
+        y = 30 + rowIndex * 20;
+      }
+
+      return { ...player, x, y } as Required<LineupPlayer>;
+    });
+  }, [players]);
+
+  return (
+    <Card
+      className={cn(
+        "border-separator bg-surface rounded-sheet shadow-floating mx-auto w-full max-w-[550px] overflow-hidden border p-6",
+        className
+      )}
+    >
+      <div className="mb-4 text-center">
+        <h3 className="text-label text-title-3 leading-none">{teamName} Lineup</h3>
+        <span className="text-label-secondary text-eyebrow mt-1 inline-block">
+          Active Formation • {sportPreset}
+        </span>
+      </div>
+
+      {/* Field Area */}
+      <div className="border-separator rounded-card bg-green/80 relative aspect-[4/5] w-full overflow-hidden border">
+        {/* Pitch markings */}
+        <svg
+          viewBox="0 0 400 500"
+          className="pointer-events-none absolute inset-0 h-full w-full fill-none stroke-white/40 stroke-[2px]"
+        >
+          {/* Outer Border */}
+          <rect x="15" y="15" width="370" height="470" />
+
+          {/* Halfway Line */}
+          <line x1="15" y1="250" x2="385" y2="250" />
+          <circle cx="200" cy="250" r="60" />
+
+          {/* Penalty Box Top */}
+          <rect x="90" y="15" width="220" height="80" />
+          <rect x="140" y="15" width="120" height="25" />
+          <path d="M150 95 A 60 60 0 0 0 250 95" />
+
+          {/* Penalty Box Bottom */}
+          <rect x="90" y="405" width="220" height="80" />
+          <rect x="140" y="460" width="120" height="25" />
+          <path d="M150 405 A 60 60 0 0 1 250 405" />
+        </svg>
+
+        {/* Player Badges */}
+        <TooltipProvider delayDuration={150}>
+          {positionedPlayers.map((player) => {
+            const initials =
+              `${player.firstName[0] ?? ""}${player.lastName[0] ?? ""}`.toUpperCase();
+
+            return (
+              <div
+                key={player.id}
+                className="absolute z-10 -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+                style={{ left: `${player.x}%`, top: `${player.y}%` }}
+              >
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex flex-col items-center">
+                      {/* Player Circle Token */}
+                      <div
+                        className="text-footnote shadow-card relative flex size-10 items-center justify-center rounded-full border-2 border-white/60 font-semibold text-white"
+                        style={{ backgroundColor: teamColor }}
+                      >
+                        {player.number ?? initials}
+
+                        {/* Rating Overlay Badge */}
+                        <div className="border-separator bg-surface text-caption text-label absolute -top-2 -right-2 flex min-h-5 min-w-5 items-center justify-center rounded-full border px-0.5 font-semibold tabular-nums">
+                          {player.overallRating ?? "—"}
+                        </div>
+                      </div>
+
+                      {/* Mini Name underneath */}
+                      <span className="rounded-control-sm text-caption mt-1 max-w-[70px] truncate bg-black/60 px-2 py-0.5 leading-none text-white">
+                        {player.lastName}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+
+                  <TooltipContent className="max-w-[180px] p-3">
+                    <div className="text-label text-footnote leading-tight font-semibold">
+                      {player.firstName} {player.lastName}
+                    </div>
+                    <div className="text-label-secondary text-eyebrow mt-0.5">
+                      {SPORTS_ABBREVIATIONS[player.position] || player.position} #
+                      {player.number ?? "--"}
+                    </div>
+                    <div className="border-separator text-footnote mt-2 flex items-center justify-between border-t pt-2">
+                      <span className="text-label-secondary font-semibold">RATING:</span>
+                      <span className="text-green font-semibold tabular-nums">
+                        {player.overallRating ?? "—"} overall
+                      </span>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            );
+          })}
+        </TooltipProvider>
+      </div>
+    </Card>
+  );
+}

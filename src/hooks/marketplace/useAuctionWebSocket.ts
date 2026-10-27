@@ -1,13 +1,11 @@
+"use client";
 // src/hooks/marketplace/useAuctionWebSocket.ts
 // React hook for real-time auction updates via WebSocket
 
-"use client";
-
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { api } from "~/trpc/react";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { getMarketWebSocketClient } from "~/lib/websocket/market-websocket-client";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import type { MarketWebSocketMessage } from "~/types/marketplace";
 
 /**
  * React hook that subscribes to real-time marketplace WebSocket events
@@ -17,60 +15,30 @@ import type { MarketWebSocketMessage } from "~/types/marketplace";
  */
 export function useAuctionWebSocket({ enabled = true }: { enabled?: boolean } = {}) {
   const utils = api.useUtils();
-  const clientRef = useRef<ReturnType<typeof getMarketWebSocketClient> | null>(null);
+  const refreshCards = useCardsRefresh();
 
   useEffect(() => {
     if (!enabled) return;
 
     const client = getMarketWebSocketClient();
-    clientRef.current = client;
     client.connect();
 
-    // Subscribe to all bid events (no filter)
-    const bidId = `hook-bid-${Math.random()}`;
-    (client as any).subscriptions.set(bidId, {
-      id: bidId,
-      type: "bid",
-      callback: () => {
-        utils.cardMarket.getActiveAuctions.invalidate();
-        utils.cardMarket.getMyActiveBids.invalidate();
-        utils.cardMarket.getEndingSoon.invalidate();
-      },
-    });
-
-    // Subscribe to all auction complete events
-    const completeId = `hook-complete-${Math.random()}`;
-    (client as any).subscriptions.set(completeId, {
-      id: completeId,
-      type: "auction_complete",
-      callback: () => {
-        utils.cardMarket.getActiveAuctions.invalidate();
-        utils.cardMarket.getMyActiveAuctions.invalidate();
-        utils.cardMarket.getMyAuctionParticipation.invalidate();
-        utils.cardMarket.getEndingSoon.invalidate();
-        utils.vault.getBalance.invalidate();
-      },
-    });
-
-    // Subscribe to all new auction events
-    const newId = `hook-new-${Math.random()}`;
-    (client as any).subscriptions.set(newId, {
-      id: newId,
-      type: "auction_created",
-      callback: () => {
-        utils.cardMarket.getActiveAuctions.invalidate();
-        utils.cardMarket.getMyActiveAuctions.invalidate();
-      },
-    });
+    const unsubscribes = [
+      client.subscribeToAll("bid", () => {
+        void utils.cardMarket.browse.invalidate();
+        void utils.cardMarket.getMyActiveBids.invalidate();
+      }),
+      // A settled auction moves its copy to the winner and its credits to the seller.
+      client.subscribeToAll("auction_complete", () => refreshCards()),
+      client.subscribeToAll("auction_created", () => {
+        void utils.cardMarket.browse.invalidate();
+        void utils.cardMarket.getMyActiveAuctions.invalidate();
+      }),
+    ];
 
     return () => {
-      (client as any).subscriptions.delete(bidId);
-      (client as any).subscriptions.delete(completeId);
-      (client as any).subscriptions.delete(newId);
-      if (clientRef.current) {
-        clientRef.current.disconnect();
-        clientRef.current = null;
-      }
+      unsubscribes.forEach((unsubscribe) => unsubscribe());
+      client.disconnect();
     };
-  }, [enabled, utils]);
+  }, [enabled, utils, refreshCards]);
 }

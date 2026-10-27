@@ -8,13 +8,10 @@
  *
  * Domains:
  *  - impact: Markov-engine cultural exchange impact calculation + outcome persistence
- *  - scores: cultural compatibility scoring and recommended diplomatic partners
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { diplomaticCulturalCompatibilityImpactRouter } from "./impact";
-import { diplomaticCulturalCompatibilityScoresRouter } from "./scores";
 
 export const diplomaticCulturalCompatibilityRouter = mergeRouters(
-  diplomaticCulturalCompatibilityImpactRouter,
-  diplomaticCulturalCompatibilityScoresRouter
+  diplomaticCulturalCompatibilityImpactRouter
 );

@@ -2,16 +2,39 @@
 // Cabinet meetings, government officials, and meeting management
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { TRPCError } from "@trpc/server";
+import {
+  createTRPCRouter,
+  lightMutationProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
+import { assertCountryResourceWriteAccess } from "~/server/shared/country-authorization";
+import { resolveMeetingCountryId } from "~/server/shared/country-resource-owner";
+import { CountryEventSpine } from "~/lib/activity";
+
+/** A meeting in one of these statuses is over and cannot be concluded (again). */
+const CLOSED_MEETING_STATUSES = ["completed", "cancelled"];
+
+const AGENDA_DECISIONS = ["approved", "rejected", "deferred"] as const;
+type AgendaDecision = (typeof AGENDA_DECISIONS)[number];
+
+/** MeetingAgendaItem.status after each decision. */
+const AGENDA_ITEM_STATUS: Record<AgendaDecision, string> = {
+  approved: "decided",
+  rejected: "decided",
+  deferred: "deferred",
+};
+
+const DECISION_LABEL: Record<AgendaDecision, string> = {
+  approved: "Approved",
+  rejected: "Rejected",
+  deferred: "Deferred",
+};
 
 export const meetingsProceedingsRouter = createTRPCRouter({
-  // ==================== CABINET MEETINGS ====================
-
-  // ==================== MEETING ATTENDANCE ====================
-
   // ==================== AGENDA ITEMS ====================
 
-  addAgendaItem: protectedProcedure
+  addAgendaItem: rateLimitedMutationProcedure
     .input(
       z.object({
         meetingId: z.string(),
@@ -26,6 +49,11 @@ export const meetingsProceedingsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryResourceWriteAccess(
+        ctx,
+        await resolveMeetingCountryId(ctx.db, input.meetingId),
+        "Meeting"
+      );
       // `estimatedDuration` maps to the model's `duration` column; `priority` is
       // accepted for client compatibility but has no column on MeetingAgendaItem.
       return await ctx.db.meetingAgendaItem.create({
@@ -42,126 +70,115 @@ export const meetingsProceedingsRouter = createTRPCRouter({
       });
     }),
 
-  getAgendaItems: publicProcedure
-    .input(
-      z.object({
-        meetingId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.meetingAgendaItem.findMany({
-        where: { meetingId: input.meetingId },
-        orderBy: { order: "asc" },
-      });
-    }),
+  // ==================== CONCLUDE ====================
 
-  updateAgendaItem: protectedProcedure
+  /**
+   * Conclude a meeting: record the overall outcome (`CabinetMeeting.notes`) and one
+   * MeetingDecision per decided agenda item, set each item's status and outcome, and mark the
+   * meeting completed. Each decision is also written to the host country's event spine as a
+   * ledger entry (no stat change; decisions do not become policies). Host country owner or
+   * privileged roles only.
+   */
+  concludeMeeting: lightMutationProcedure
     .input(
       z.object({
-        id: z.string(),
-        title: z.string().optional(),
-        description: z.string().optional(),
-        order: z.number().optional(),
-        estimatedDuration: z.number().optional(),
-        priority: z.enum(["high", "medium", "low"]).optional(),
-        status: z.enum(["pending", "in_progress", "completed", "deferred"]).optional(),
+        meetingId: z.string().min(1),
+        outcome: z.string().trim().min(1).max(2000),
+        decisions: z
+          .array(
+            z.object({
+              agendaItemId: z.string().min(1),
+              decision: z.enum(AGENDA_DECISIONS),
+              notes: z.string().trim().max(1000).optional(),
+            })
+          )
+          .max(50)
+          .default([]),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // `estimatedDuration` maps to `duration`; `priority` has no column and is ignored.
-      // Undefined fields are no-ops in Prisma, preserving partial-update behavior.
-      return await ctx.db.meetingAgendaItem.update({
-        where: { id: input.id },
-        data: {
-          title: input.title,
-          description: input.description,
-          order: input.order,
-          duration: input.estimatedDuration,
-          status: input.status,
+      const countryId = await resolveMeetingCountryId(ctx.db, input.meetingId);
+      await assertCountryResourceWriteAccess(ctx, countryId, "Meeting");
+      const meeting = await ctx.db.cabinetMeeting.findUnique({
+        where: { id: input.meetingId },
+        select: {
+          id: true,
+          status: true,
+          title: true,
+          agendaItems: { select: { id: true, title: true } },
         },
       });
-    }),
+      if (!meeting) throw new TRPCError({ code: "NOT_FOUND", message: "Meeting not found" });
+      if (CLOSED_MEETING_STATUSES.includes(meeting.status)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This meeting is already over" });
+      }
 
-  deleteAgendaItem: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      return await ctx.db.meetingAgendaItem.delete({
-        where: { id: input.id },
+      const agendaTitles = new Map(meeting.agendaItems.map((item) => [item.id, item.title]));
+      const seen = new Set<string>();
+      for (const d of input.decisions) {
+        if (!agendaTitles.has(d.agendaItemId) || seen.has(d.agendaItemId)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Each decision must name a different agenda item of this meeting",
+          });
+        }
+        seen.add(d.agendaItemId);
+      }
+
+      const spineEntries: { decisionId: string; description: string }[] = [];
+      const concluded = await ctx.db.$transaction(async (tx) => {
+        // Guarded on status so two concurrent submissions cannot both conclude it.
+        const { count } = await tx.cabinetMeeting.updateMany({
+          where: { id: meeting.id, status: { notIn: CLOSED_MEETING_STATUSES } },
+          data: { status: "completed", completedAt: new Date(), notes: input.outcome },
+        });
+        if (count === 0) {
+          throw new TRPCError({ code: "CONFLICT", message: "This meeting is already over" });
+        }
+
+        for (const d of input.decisions) {
+          const title = agendaTitles.get(d.agendaItemId)!;
+          const outcome = d.notes || DECISION_LABEL[d.decision];
+          const decision = await tx.meetingDecision.create({
+            data: {
+              meetingId: meeting.id,
+              agendaItemId: d.agendaItemId,
+              title,
+              description: outcome,
+              decisionType: d.decision,
+            },
+          });
+          await tx.meetingAgendaItem.update({
+            where: { id: d.agendaItemId },
+            data: { status: AGENDA_ITEM_STATUS[d.decision], outcome },
+          });
+          spineEntries.push({
+            decisionId: decision.id,
+            description:
+              `Cabinet meeting "${meeting.title}": ${title} ${DECISION_LABEL[d.decision].toLowerCase()}` +
+              (d.notes ? ` (${d.notes})` : ""),
+          });
+        }
+
+        return tx.cabinetMeeting.findUnique({
+          where: { id: meeting.id },
+          include: { agendaItems: true, decisions: true },
+        });
       });
+
+      // Best-effort after commit: the spine logs (and swallows) a failed ledger write.
+      if (countryId) {
+        for (const entry of spineEntries) {
+          await CountryEventSpine.recordCountryEvent({
+            db: ctx.db,
+            countryId,
+            sourceType: "meeting",
+            sourceId: entry.decisionId,
+            description: entry.description,
+          });
+        }
+      }
+
+      return concluded;
     }),
-
-  // ==================== DECISIONS ====================
-
-  recordDecision: protectedProcedure
-    .input(
-      z.object({
-        meetingId: z.string(),
-        agendaItemId: z.string().optional(),
-        title: z.string().min(1).max(200),
-        description: z.string(),
-        decisionType: z.enum(["policy", "budget", "personnel", "strategic", "other"]),
-        votesFor: z.number().optional(),
-        votesAgainst: z.number().optional(),
-        votesAbstain: z.number().optional(),
-        outcome: z.enum(["approved", "rejected", "deferred", "requires_review"]),
-        estimatedEffect: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { votesFor, votesAgainst, votesAbstain, ...rest } = input;
-      return await ctx.db.meetingDecision.create({
-        data: {
-          ...rest,
-          implementationStatus: "pending",
-          votingResult: JSON.stringify({
-            for: votesFor ?? 0,
-            against: votesAgainst ?? 0,
-            abstain: votesAbstain ?? 0,
-          }),
-        },
-      });
-    }),
-
-  getDecisions: publicProcedure
-    .input(
-      z.object({
-        meetingId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.meetingDecision.findMany({
-        where: { meetingId: input.meetingId },
-      });
-    }),
-
-  updateDecision: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        title: z.string().optional(),
-        description: z.string().optional(),
-        outcome: z.enum(["approved", "rejected", "deferred", "requires_review"]).optional(),
-        notes: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { id, title, description } = input;
-      return await ctx.db.meetingDecision.update({
-        where: { id },
-        data: {
-          ...(title !== undefined && { title }),
-          ...(description !== undefined && { description }),
-        },
-      });
-    }),
-
-  // ==================== ACTION ITEMS ====================
-
-  // ==================== GOVERNMENT OFFICIALS ====================
-
-  // ==================== GOVERNMENT DEPARTMENTS ====================
 });

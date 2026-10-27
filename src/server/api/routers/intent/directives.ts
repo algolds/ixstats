@@ -1,0 +1,488 @@
+/**
+ * Intent router: directives (design-bible v2, migration plan §1).
+ *
+ * The player-initiated twin of National Issues: state a goal → the government
+ * proposes Measured/Moderate/Extreme packages → commit one → applied through the
+ * CountryEventSpine (bounded stat change + ledger + news). Packages are assembled
+ * server-side and can never touch core stats (Editor-only). Weekly cooldown + cap.
+ */
+
+import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
+import { TRPCError } from "@trpc/server";
+import { currentBudgetYear } from "~/lib/government/budget-year";
+import { clockForCountry } from "~/server/shared/realm-time";
+import { CountryEventSpine } from "~/lib/activity";
+import {
+  declareDirectiveActivity,
+  withdrawDirectiveActivity,
+} from "~/lib/activity/directive-activity";
+import {
+  assemblePackages,
+  weightAcceptance,
+  CATEGORY_TO_BROKER,
+  TIER_RISK,
+  GROWTH_EFFECT_YEARS,
+  type Tier,
+  type Category,
+} from "~/lib/intent/assemble";
+import { spawnIntentResistance } from "~/lib/intent/resistance";
+import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft/power-brokers";
+import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
+import { nudgeDepartmentShare } from "~/server/modules/government/government.budget";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { isPublicDirective } from "~/lib/country/public-record";
+import { generateIntentSummationDraft } from "~/lib/intent/intent-summation";
+import { growthModifierToLevelShift, StorytellerEffectType } from "~/lib/economy/calculations";
+import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
+import { WEEK_MS, assertUnderWeeklyCap, cooldownStatus } from "~/server/modules/intent/weekly-cap";
+
+const COOLDOWN_MS = WEEK_MS; // decided: weekly cooldown between intents
+/** Advisory-lock namespace serialising one nation's directive commits ($executeRaw: the lock returns void). */
+const DIRECTIVE_CAP_LOCK_NAMESPACE = 51001;
+const BUDGET_PCT_MAX = 60; // clamp a single department's allocatedPercent
+
+/**
+ * updateStatus transitions. A draft becomes active only through commit() (which applies the
+ * package and checks the weekly cap); completed and abandoned are final, so a finished directive
+ * cannot be re-activated to hold executive bandwidth again.
+ */
+const STATUS_TRANSITIONS: Record<string, readonly string[]> = {
+  proposed: ["abandoned"],
+  active: ["completed", "abandoned"],
+};
+
+/** Load active Power Brokers for a country at `now` (its clock time; mirrors elections.getPowerBrokers). */
+async function loadBrokers(
+  db: PrismaClient,
+  countryId: string,
+  now: number
+): Promise<ActiveBroker[]> {
+  const [components, allocations] = await Promise.all([
+    db.governmentComponent.findMany({
+      where: { countryId, isActive: true },
+      take: 100,
+      select: { componentType: true },
+    }),
+    loadEffectiveBudget(db, countryId, { take: 50, currentYear: currentBudgetYear(now) }).then(
+      (budget) => budget.allocations
+    ),
+  ]);
+
+  const spendByCategory: Record<string, number> = {};
+  for (const a of allocations)
+    spendByCategory[a.department.category] =
+      (spendByCategory[a.department.category] || 0) + a.allocatedPercent;
+  return deriveBrokers(
+    components.map((c: any) => c.componentType),
+    spendByCategory
+  );
+}
+
+/** Re-weight package acceptance by the aligned broker's disposition. */
+function alignedBroker(brokers: ActiveBroker[], category: Category): ActiveBroker | undefined {
+  const id = CATEGORY_TO_BROKER[category];
+  return id ? brokers.find((b) => b.id === id) : undefined;
+}
+
+type IntentPackage = ReturnType<typeof assemblePackages>["packages"][number];
+
+/** The draft being upgraded must be this country's and still a draft. */
+async function assertCommittableDraft(db: PrismaClient, intentId: string, countryId: string) {
+  // Re-committing an already-active row would re-apply the package without a new row counting
+  // against the weekly cap.
+  const draft = await db.intent.findUnique({
+    where: { id: intentId },
+    select: { countryId: true, status: true },
+  });
+  if (!draft || draft.countryId !== countryId) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Intent not found." });
+  }
+  if (draft.status !== "proposed") {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Only a proposed intent can be committed.",
+    });
+  }
+}
+
+/** Creates the active intent, or upgrades the proposed draft (conditionally, so concurrent commits cannot both apply). */
+async function saveActiveIntent(
+  db: PrismaClient,
+  args: {
+    countryId: string;
+    goal: string;
+    tier: Tier;
+    category: Category;
+    parentId?: string;
+    intentId?: string;
+    pkg: IntentPackage;
+    summary: string;
+    now: number;
+  }
+) {
+  const { countryId, goal, tier, category, intentId, pkg, summary, now } = args;
+  const active = {
+    tier,
+    status: "active",
+    changesJson: JSON.stringify(pkg.changes),
+    summary,
+    cooldownUntil: now + COOLDOWN_MS,
+    createdIxTime: now,
+    riskRating: TIER_RISK[tier],
+    // Held against executive bandwidth while the directive executes (lib/government/exec-bandwidth.ts).
+    execBandwidthCost: pkg.execBandwidthCost,
+  };
+
+  if (!intentId) {
+    return db.intent.create({
+      data: {
+        ...active,
+        countryId,
+        goal,
+        category,
+        target: null,
+        parentId: args.parentId ?? null,
+      },
+    });
+  }
+  const upgraded = await db.intent.updateMany({
+    where: { id: intentId, countryId, status: "proposed" },
+    data: active,
+  });
+  if (upgraded.count !== 1) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Only a proposed intent can be committed.",
+    });
+  }
+  return db.intent.findUniqueOrThrow({ where: { id: intentId } });
+}
+
+/** Structured budget deltas (bounded; never a core stat). Best-effort: a missing row leaves the line descriptive only. */
+/** Each budget line of the package nudges its department's share (the rest give way, see the module). */
+async function applyBudgetChanges(
+  db: PrismaClient,
+  countryId: string,
+  changes: IntentPackage["changes"]
+) {
+  for (const bc of changes) {
+    if (bc.kind !== "budget" || !bc.deptCategory || !bc.deltaPercent) continue;
+    try {
+      await nudgeDepartmentShare(db, {
+        countryId,
+        category: bc.deptCategory,
+        deltaPercent: bc.deltaPercent,
+        max: BUDGET_PCT_MAX,
+      });
+    } catch {
+      /* budget row missing / structure absent — line stays descriptive only */
+    }
+  }
+}
+
+export const intentDirectivesRouter = createTRPCRouter({
+  /**
+   * Propose Measured/Moderate/Extreme packages for a plain-language goal. Owner / privileged
+   * roles only: the result carries the nation's weekly slots and its broker standing (read from
+   * the budget).
+   */
+  suggest: protectedProcedure
+    .input(z.object({ countryId: z.string(), goal: z.string().min(2).max(200) }))
+    .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      const { category, packages } = assemblePackages(input.goal);
+      const now = (await clockForCountry(ctx.db, input.countryId)).now();
+      const status = await cooldownStatus(ctx.db, input.countryId, now);
+
+      // broker-weighted acceptance (falls back to tier-based if brokers unavailable)
+      let broker: ActiveBroker | undefined;
+      try {
+        const brokers = await loadBrokers(ctx.db, input.countryId, now);
+        broker = alignedBroker(brokers, category);
+      } catch {
+        /* ignore — acceptance stays tier-based */
+      }
+      const weighted = packages.map((p) => ({
+        ...p,
+        // The GDP level shift commit() would record (phased in over GROWTH_EFFECT_YEARS, then kept).
+        gdpLevelShift:
+          p.gdpGrowthModifier > 0
+            ? growthModifierToLevelShift(p.gdpGrowthModifier, GROWTH_EFFECT_YEARS)
+            : 0,
+        gdpEffectYears: GROWTH_EFFECT_YEARS,
+        acceptance: broker
+          ? weightAcceptance(p.acceptance, {
+              brokerUnlocked: broker.unlocked,
+              brokerSatisfied: broker.satisfied,
+            })
+          : p.acceptance,
+      }));
+
+      return {
+        goal: input.goal,
+        category,
+        target: null,
+        foreignNeedsTarget: false,
+        packages: weighted,
+        broker: broker
+          ? { name: broker.name, unlocked: broker.unlocked, satisfied: broker.satisfied }
+          : null,
+        status,
+      };
+    }),
+
+  /** Cooldown / cap status for the country (for UI gating). Owner / privileged roles only. */
+  getStatus: protectedProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      return cooldownStatus(
+        ctx.db,
+        input.countryId,
+        (await clockForCountry(ctx.db, input.countryId)).now()
+      );
+    }),
+
+  /** Update status of an intent (e.g. mark completed, abandoned). */
+  updateStatus: rateLimitedMutationProcedure
+    .input(
+      z.object({ id: z.string(), status: z.enum(["proposed", "active", "completed", "abandoned"]) })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const intent = await ctx.db.intent.findUnique({ where: { id: input.id } });
+      if (!intent) throw new TRPCError({ code: "NOT_FOUND" });
+      await assertCountryWriteAccess(ctx, intent.countryId);
+
+      if (!STATUS_TRANSITIONS[intent.status]?.includes(input.status)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `An intent cannot move from ${intent.status} to ${input.status}.`,
+        });
+      }
+
+      // Phase 3 gate: an intent with open (pending/viewed) linked resistance
+      // issues cannot be completed — the player must resolve them first.
+      if (input.status === "completed") {
+        const openResistance = await ctx.db.nationalIssue.findFirst({
+          where: {
+            countryId: intent.countryId,
+            intentId: intent.id,
+            status: { in: ["pending", "viewed"] },
+          },
+          select: { id: true },
+        });
+        if (openResistance) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message:
+              "This intent still faces unresolved resistance (an open national issue). Resolve it before completing the intent.",
+          });
+        }
+      }
+
+      // Abandoning and withdrawing the directive's public row are one write: the directive can never be
+      // abandoned while its row stays public. No row (an older directive, a failed declare) is not an error.
+      const data = { status: input.status };
+      const updated =
+        input.status === "abandoned"
+          ? await ctx.db.$transaction(async (tx) => {
+              const row = await tx.intent.update({ where: { id: input.id }, data });
+              await withdrawDirectiveActivity(tx, input.id);
+              return row;
+            })
+          : await ctx.db.intent.update({ where: { id: input.id }, data });
+
+      if (input.status === "completed") {
+        try {
+          await generateIntentSummationDraft({
+            db: ctx.db,
+            intentId: input.id,
+            countryId: intent.countryId,
+          });
+        } catch (e) {
+          console.warn("[Intent] Failed to auto-generate ThinkPages summation draft:", e);
+        }
+      }
+
+      return updated;
+    }),
+
+  /** Explicitly generate/publish a ThinkPages summation post for an intent. */
+  generateSummationDraft: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        intentId: z.string(),
+        countryId: z.string(),
+        visibility: z.enum(["draft", "public"]).optional(),
+        customContent: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      // The directive must be the authorised country's: the summation quotes its package.
+      const intent = await ctx.db.intent.findUnique({
+        where: { id: input.intentId },
+        select: { countryId: true },
+      });
+      if (!intent || intent.countryId !== input.countryId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Intent not found." });
+      }
+      return await generateIntentSummationDraft({
+        db: ctx.db,
+        intentId: input.intentId,
+        countryId: input.countryId,
+        visibility: input.visibility ?? "draft",
+        customContent: input.customContent,
+      });
+    }),
+
+  /** Commit a chosen package: applies it and records the Intent. */
+  commit: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        goal: z.string().min(2).max(200),
+        tier: z.enum([
+          "proposed",
+          "measured",
+          "moderate",
+          "extreme",
+          "broker_unlocked",
+          "structural_unlocked",
+        ]),
+        parentId: z.string().optional(),
+        intentId: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
+      const { category, packages } = assemblePackages(input.goal);
+      const clock = await clockForCountry(ctx.db, input.countryId);
+      const now = clock.now();
+
+      // Foreign policy is gated at classification time (assemble.classifyGoal throws
+      // on foreign keywords), so no runtime gate is needed here.
+
+      // Handle "proposed" status creation
+      if (input.tier === "proposed") {
+        const intent = await ctx.db.intent.create({
+          data: {
+            countryId: input.countryId,
+            goal: input.goal,
+            tier: "proposed",
+            category,
+            target: null,
+            status: "proposed",
+            changesJson: "[]",
+            summary: `Proposed Goal: ${input.goal}`,
+            parentId: input.parentId ?? null,
+            cooldownUntil: null,
+            createdIxTime: now,
+          },
+        });
+        return { intent, changes: [], summary: intent.summary, activityId: null };
+      }
+
+      const pkg = packages.find((p) => p.tier === (input.tier as Tier));
+      if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown tier." });
+
+      if (input.intentId) await assertCommittableDraft(ctx.db, input.intentId, input.countryId);
+
+      // Auto-summation prose — ThinkPages draft-ready (push deferred to phase 6).
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId },
+        select: { name: true },
+      });
+      const summary =
+        `${country?.name ?? "The government"} pursued "${input.goal}" via a ${input.tier} course: ` +
+        pkg.changes.map((c) => c.label).join("; ") +
+        ".";
+
+      // The cap check and the row it counts are one step under a per-nation lock, so two concurrent commits
+      // cannot both pass the check with the last free slot.
+      const intent = await ctx.db.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${DIRECTIVE_CAP_LOCK_NAMESPACE}::int, hashtext(${input.countryId}))`;
+        await assertUnderWeeklyCap(tx as PrismaClient, input.countryId, clock, now);
+        return saveActiveIntent(tx as PrismaClient, {
+          ...input,
+          tier: input.tier as Tier,
+          category,
+          pkg,
+          summary,
+          now,
+        });
+      });
+
+      // Apply the package through the spine (bounded + audited + narrated), linked to the
+      // Intent row so the ledger entries trace back to this directive.
+      const applied = await CountryEventSpine.recordCountryEvent({
+        db: ctx.db,
+        countryId: input.countryId,
+        now,
+        sourceType: "decision",
+        sourceId: intent.id,
+        description: `Intent (${input.tier}): ${input.goal}`,
+        consequences: pkg.consequences.map((c) => ({
+          targetModel: c.targetModel,
+          targetField: c.targetField,
+          operation: c.operation,
+          value: c.value,
+        })),
+      });
+
+      // Growth-oriented directives move the GDP projection through a gdp_level_adjustment
+      // StorytellerEffect: the growth the modifier would add at a reference rate, phased in over
+      // GROWTH_EFFECT_YEARS and kept after. (A growth_rate_modifier applied to the whole span
+      // since the baseline, so it rewrote past history and never lapsed.)
+      const levelShift =
+        pkg.gdpGrowthModifier > 0
+          ? growthModifierToLevelShift(pkg.gdpGrowthModifier, GROWTH_EFFECT_YEARS)
+          : 0;
+      if (levelShift > 0) {
+        await createStorytellerEffect(ctx.db, {
+          countryId: input.countryId,
+          ixTime: now,
+          inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
+          value: levelShift,
+          description: `Directive: ${input.goal}`,
+          duration: GROWTH_EFFECT_YEARS,
+          createdBy: `intent:${intent.id}`,
+        });
+      }
+
+      await applyBudgetChanges(ctx.db, input.countryId, pkg.changes);
+
+      // Deterministic resistance spawn: never fails the commit (try/catch inside).
+      if (input.tier === "moderate" || input.tier === "extreme") {
+        await spawnIntentResistance({
+          db: ctx.db,
+          countryId: input.countryId,
+          now,
+          intent: { id: intent.id, category, tier: input.tier },
+        });
+      }
+
+      // The directive's public row, so a forum post can link it (last: the commit stands whatever happens here).
+      // isPublicDirective is the public-record rule, applied to the stored row.
+      const activityId = isPublicDirective(intent)
+        ? await declareDirectiveActivity(ctx.db, {
+            intentId: intent.id,
+            countryId: input.countryId,
+            countryName: country?.name ?? "A nation",
+            userId: ctx.user?.clerkUserId ?? null,
+            goal: input.goal,
+            tier: input.tier,
+            category,
+          })
+        : null;
+
+      return { intent, changes: pkg.changes, applied, summary, activityId };
+    }),
+});

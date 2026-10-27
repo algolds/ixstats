@@ -1,6 +1,4 @@
-// src/server/api/routers/admin.ts
-// FIXED: Complete admin router with proper functionality
-
+// src/server/api/routers/admin/system.ts
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
@@ -10,37 +8,16 @@ import {
   invalidateConfigCache,
 } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
-import { IxStatsCalculator } from "~/lib/economy/calculations";
-import type { SystemStatus, BaseCountryData } from "~/types/ixstats";
-import { prepareBaseCountryData, getCountryComponentsStatsData } from "../countries/utils";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { persistSharedClock } from "~/lib/ixtime/shared-clock";
+import { withJobLock } from "~/lib/system/job-lock";
+import { runStatProgression, type StatProgressionResult } from "~/server/cron/stat-progression";
+import { ActivityHooks } from "~/lib/activity/hooks";
+import type { SystemStatus } from "~/types/ixstats";
+import { readConfigKeys, writeConfigKeys } from "./_config-kv";
 
 export const adminSystemRouter = createTRPCRouter({
-  // Internal calculation formulas management
-  getCalculationFormulas: adminProcedure.query(async ({ ctx }) => {
-    const lastCalc = await ctx.db.calculationLog.findFirst({ orderBy: { timestamp: "desc" } });
-    const lastModified = lastCalc?.timestamp ?? new Date();
-
-    return {
-      formulas: [
-        {
-          id: "gdp-growth",
-          name: "GDP Effective Growth Rate",
-          description: "Computes effective GDP growth applying global/local factors and tier caps",
-          category: "economic",
-          isActive: true,
-          version: "1.0.0",
-          lastModified,
-          variables: {
-            baseGrowthRate: 0.02,
-            gdpPerCapita: 20000,
-            globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
-            localGrowthFactor: 1.0,
-          },
-        },
-      ],
-    };
-  }),
-  // Get global statistics for SDI interface
+  // Get global platform statistics
   getGlobalStats: adminProcedure.query(async ({ ctx }) => {
     try {
       const totalNations = await ctx.db.country.count();
@@ -48,20 +25,16 @@ export const adminSystemRouter = createTRPCRouter({
         _sum: { currentTotalGdp: true },
       });
 
-      // Real queries for each stat
-      const activeDiplomats = await ctx.db.user.count(); // Count all users for now
-      // For onlineUsers, you may need a real-time tracking system; fallback to 0 for now
+      const activeDiplomats = await ctx.db.user.count();
       const onlineUsers = 0;
-      // For tradeVolume, fallback to 0 since tradeRecord table doesn't exist
       const tradeVolume = 0;
-      // For activeConflicts, count unresolved crisis events
       const activeConflicts = await ctx.db.crisisEvent.count({
         where: { responseStatus: { not: "resolved" } },
       });
 
       return {
         totalNations,
-        globalGDP: (totalGDP._sum.currentTotalGdp || 0) / 1e12, // Convert to trillions
+        globalGDP: (totalGDP._sum.currentTotalGdp || 0) / 1e12,
         activeDiplomats,
         onlineUsers,
         tradeVolume,
@@ -69,65 +42,7 @@ export const adminSystemRouter = createTRPCRouter({
       };
     } catch (error) {
       console.error("Failed to get global stats:", error);
-      throw new Error("Failed to retrieve global statistics");
-    }
-  }),
-
-  // Get stash statistics (real DB values)
-  getStashStats: adminProcedure.query(async ({ ctx }) => {
-    try {
-      const [totalStashes, totalHighlights] = await Promise.all([
-        ctx.db.stashItem.count(),
-        ctx.db.stashAnnotation.count(),
-      ]);
-      return {
-        totalStashes,
-        totalHighlights,
-        avgCacheSizeKb: 143, // Fallback/average baseline
-      };
-    } catch (error) {
-      console.error("Failed to get stash stats:", error);
-      throw new Error("Failed to retrieve stash statistics");
-    }
-  }),
-
-  // Get ThinkPages statistics (real DB values)
-  getThinkPagesStats: adminProcedure.query(async ({ ctx }) => {
-    try {
-      const [totalPosts, totalAccounts] = await Promise.all([
-        ctx.db.thinkpagesPost.count(),
-        ctx.db.thinkpagesAccount.count(),
-      ]);
-
-      // Calculate weekly engagement growth (real DB ratio of posts in last 7 days vs previous 7 days)
-      const now = new Date();
-      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-
-      const [postsThisWeek, postsLastWeek] = await Promise.all([
-        ctx.db.thinkpagesPost.count({
-          where: { createdAt: { gte: sevenDaysAgo } },
-        }),
-        ctx.db.thinkpagesPost.count({
-          where: { createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo } },
-        }),
-      ]);
-
-      let weeklyGrowth = 0.0;
-      if (postsLastWeek > 0) {
-        weeklyGrowth = ((postsThisWeek - postsLastWeek) / postsLastWeek) * 100;
-      } else if (postsThisWeek > 0) {
-        weeklyGrowth = 100.0;
-      }
-
-      return {
-        totalPosts,
-        totalAccounts,
-        weeklyGrowth: parseFloat(weeklyGrowth.toFixed(1)),
-      };
-    } catch (error) {
-      console.error("Failed to get thinkpages stats:", error);
-      throw new Error("Failed to retrieve ThinkPages statistics");
+      throw new Error("Failed to retrieve global statistics", { cause: error });
     }
   }),
 
@@ -172,11 +87,9 @@ export const adminSystemRouter = createTRPCRouter({
       return systemStatus;
     } catch (error) {
       console.error("Failed to get system status:", error);
-      throw new Error("Failed to retrieve system status");
+      throw new Error("Failed to retrieve system status", { cause: error });
     }
   }),
-
-  // Get bot status with health check
 
   // Get system configuration (includes all economic control parameters)
   getConfig: adminProcedure.query(async ({ ctx }) => {
@@ -199,17 +112,7 @@ export const adminSystemRouter = createTRPCRouter({
     ];
 
     try {
-      const configs = await ctx.db.systemConfig.findMany({
-        where: { key: { in: ALL_CONFIG_KEYS } },
-      });
-
-      const m = configs.reduce(
-        (acc, config) => {
-          acc[config.key] = config.value;
-          return acc;
-        },
-        {} as Record<string, string>
-      );
+      const m = await readConfigKeys(ctx.db, ALL_CONFIG_KEYS);
 
       return {
         globalGrowthFactor: parseFloat(
@@ -320,19 +223,7 @@ export const adminSystemRouter = createTRPCRouter({
           configUpdates.push({ key: "minGrowthFloor", value: input.minGrowthFloor.toString() });
         }
 
-        await ctx.db.$transaction(
-          configUpdates.map((config) =>
-            ctx.db.systemConfig.upsert({
-              where: { key: config.key },
-              update: { value: config.value, updatedAt: new Date() },
-              create: {
-                key: config.key,
-                value: config.value,
-                description: `System configuration for ${config.key}`,
-              },
-            })
-          )
-        );
+        await writeConfigKeys(ctx.db, configUpdates, (key) => `System configuration for ${key}`);
 
         // Invalidate config cache so next calculation uses fresh values
         invalidateConfigCache();
@@ -340,7 +231,7 @@ export const adminSystemRouter = createTRPCRouter({
         return { success: true, message: "Configuration saved successfully" };
       } catch (error) {
         console.error("Failed to save config:", error);
-        throw new Error("Failed to save configuration");
+        throw new Error("Failed to save configuration", { cause: error });
       }
     }),
 
@@ -369,6 +260,7 @@ export const adminSystemRouter = createTRPCRouter({
           if (input.multiplier !== undefined) {
             IxTime.setMultiplierOverride(input.multiplier);
           }
+          await persistSharedClock(ctx.db);
 
           return {
             success: true,
@@ -378,11 +270,9 @@ export const adminSystemRouter = createTRPCRouter({
         }
       } catch (error) {
         console.error("Failed to set custom time:", error);
-        throw new Error("Failed to set custom time");
+        throw new Error("Failed to set custom time", { cause: error });
       }
     }),
-
-  // Bot control operations
 
   // Get calculation logs
   getCalculationLogs: adminProcedure
@@ -418,14 +308,11 @@ export const adminSystemRouter = createTRPCRouter({
           name: error instanceof Error ? error.name : "Unknown",
         });
         throw new Error(
-          `Failed to retrieve calculation logs: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to retrieve calculation logs: ${error instanceof Error ? error.message : "Unknown error"}`,
+          { cause: error }
         );
       }
     }),
-
-  // Analyze import file
-
-  // Import roster data
 
   // Sync epoch time with imported data
   syncEpochWithData: adminProcedure
@@ -436,205 +323,86 @@ export const adminSystemRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      try {
-        const currentEpoch = IxTime.getInGameEpoch();
-        const currentIxTime = IxTime.getCurrentIxTime();
+      const currentEpoch = IxTime.getInGameEpoch();
+      const _currentIxTime = IxTime.getCurrentIxTime();
 
-        // Calculate the time difference
-        const timeDifference = input.targetEpoch - currentEpoch;
-        const yearsDifference = IxTime.getYearsElapsed(currentEpoch, input.targetEpoch);
+      // Calculate the time difference
+      const _timeDifference = input.targetEpoch - currentEpoch;
+      const yearsDifference = IxTime.getYearsElapsed(currentEpoch, input.targetEpoch);
 
-        // Update all countries' baseline dates to the new epoch
-        const updateResult = await ctx.db.country.updateMany({
-          data: {
-            baselineDate: new Date(input.targetEpoch),
-            lastCalculated: new Date(input.targetEpoch),
-          },
-        });
-
-        // Set the bot time override to the new epoch
-        const botResult = await IxTime.setBotTimeOverride(input.targetEpoch);
-
-        // Log the epoch sync
-        await ctx.db.calculationLog.create({
-          data: {
-            timestamp: new Date(),
-            ixTimeTimestamp: new Date(input.targetEpoch),
-            countriesUpdated: updateResult.count,
-            executionTimeMs: 0,
-            globalGrowthFactor: (await getEconomicConfigFromDB(ctx.db)).globalGrowthFactor,
-            notes: `Epoch sync: ${yearsDifference.toFixed(1)} years adjustment. ${updateResult.count} countries updated. ${input.reason || "Manual epoch sync"}.`,
-          },
-        });
-
-        return {
-          success: true,
-          message: `Epoch synchronized successfully. Adjusted ${yearsDifference.toFixed(1)} years.`,
-          previousEpoch: currentEpoch,
-          newEpoch: input.targetEpoch,
-          yearsDifference: yearsDifference,
-          countriesUpdated: updateResult.count,
-          botSyncSuccess: botResult.success,
-        };
-      } catch (error) {
-        console.error("Failed to sync epoch:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to sync epoch time");
-      }
-    }),
-
-  // Force recalculation of all countries
-  forceRecalculation: adminProcedure.mutation(async ({ ctx }) => {
-    try {
-      const startTime = Date.now();
-      const countries = await ctx.db.country.findMany({
-        include: {
-          storytellerEffects: {
-            where: { isActive: true },
-            orderBy: { ixTimeTimestamp: "desc" },
-          },
+      // Move Ixnay's nations' baseline dates to the new epoch: the bot clock is Ixnay's, and every other realm's
+      // nations run on their own realm's clock.
+      const updateResult = await ctx.db.country.updateMany({
+        where: { realmId: DEFAULT_REALM_ID },
+        data: {
+          baselineDate: new Date(input.targetEpoch),
+          lastCalculated: new Date(input.targetEpoch),
         },
       });
 
-      const econConfig = await getEconomicConfigFromDB(ctx.db);
-      const currentIxTime = IxTime.getCurrentIxTime();
+      // Set the bot time override to the new epoch
+      const botResult = await IxTime.setBotTimeOverride(input.targetEpoch);
 
-      let updatedCount = 0;
-
-      for (const country of countries) {
-        try {
-          const calc = new IxStatsCalculator(econConfig, country.baselineDate.getTime());
-
-          const componentsData = await getCountryComponentsStatsData(ctx.db, country.id);
-          const baseCountryData = prepareBaseCountryData(country, componentsData);
-
-          const initialStats = calc.initializeCountryStats(baseCountryData);
-          const effects = country.storytellerEffects.map((d) => ({
-            ...d,
-            ixTimeTimestamp: d.ixTimeTimestamp.getTime(),
-          }));
-
-          const result = calc.calculateTimeProgression(initialStats, currentIxTime, effects);
-
-          await ctx.db.country.update({
-            where: { id: country.id },
-            data: {
-              currentPopulation: result.newStats.currentPopulation,
-              currentGdpPerCapita: result.newStats.currentGdpPerCapita,
-              currentTotalGdp: result.newStats.currentTotalGdp,
-              economicTier: result.newStats.economicTier.toString(),
-              populationTier: result.newStats.populationTier.toString(),
-              populationDensity: result.newStats.populationDensity,
-              gdpDensity: result.newStats.gdpDensity,
-              lastCalculated: new Date(currentIxTime),
-            },
-          });
-
-          updatedCount++;
-        } catch (countryError) {
-          console.error(`Failed to update country ${country.name}:`, countryError);
-        }
-      }
-
-      const executionTime = Date.now() - startTime;
-
-      // Log the calculation
+      // Log the epoch sync
       await ctx.db.calculationLog.create({
         data: {
           timestamp: new Date(),
-          ixTimeTimestamp: new Date(currentIxTime),
-          countriesUpdated: updatedCount,
-          executionTimeMs: executionTime,
-          globalGrowthFactor: econConfig.globalGrowthFactor,
-          notes: "Manual recalculation from admin panel",
+          ixTimeTimestamp: new Date(input.targetEpoch),
+          countriesUpdated: updateResult.count,
+          executionTimeMs: 0,
+          globalGrowthFactor: (await getEconomicConfigFromDB(ctx.db)).globalGrowthFactor,
+          notes: `Epoch sync: ${yearsDifference.toFixed(1)} years adjustment. ${updateResult.count} countries updated. ${input.reason || "Manual epoch sync"}.`,
         },
       });
 
       return {
         success: true,
-        message: `Updated ${updatedCount} countries in ${executionTime}ms`,
-        countriesUpdated: updatedCount,
-        executionTimeMs: executionTime,
+        message: `Epoch synchronized successfully. Adjusted ${yearsDifference.toFixed(1)} years.`,
+        previousEpoch: currentEpoch,
+        newEpoch: input.targetEpoch,
+        yearsDifference: yearsDifference,
+        countriesUpdated: updateResult.count,
+        botSyncSuccess: botResult.success,
       };
+    }),
+
+  // Force recalculation of all countries: the stat-progression job with every country written.
+  forceRecalculation: adminProcedure.mutation(async ({ ctx }) => {
+    let outcome: Awaited<ReturnType<typeof withJobLock<StatProgressionResult>>>;
+    try {
+      outcome = await withJobLock(
+        ctx.db,
+        "stat-progression",
+        () =>
+          runStatProgression({
+            db: ctx.db,
+            force: true,
+            note: "Manual recalculation from admin panel",
+            onEconomicTierChange: ({ countryId, from, to }) =>
+              ActivityHooks.Economic.onEconomicTierChange(countryId, from, to),
+          }),
+        { timeoutMs: 30 * 60_000 }
+      );
     } catch (error) {
       console.error("Failed to force recalculation:", error);
-      throw new Error("Failed to recalculate country statistics");
+      throw new Error("Failed to recalculate country statistics", { cause: error });
     }
-  }),
 
-  // Get system health
-  getSystemHealth: adminProcedure.query(async ({ ctx }) => {
-    try {
-      const [countryCount, recentCalculations, botHealth] = await Promise.all([
-        ctx.db.country.count(),
-        ctx.db.calculationLog.count({
-          where: {
-            timestamp: {
-              gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
-            },
-          },
-        }),
-        IxTime.checkBotHealth(),
-      ]);
-
-      return {
-        database: {
-          connected: true,
-          countries: countryCount,
-          recentCalculations,
-        },
-        bot: botHealth,
-        ixTime: {
-          current: IxTime.getCurrentIxTime(),
-          formatted: IxTime.formatIxTime(IxTime.getCurrentIxTime(), true),
-          multiplier: IxTime.getTimeMultiplier(),
-          isPaused: IxTime.isPaused(),
-        },
-        lastUpdate: new Date().toISOString(),
-      };
-    } catch (error) {
-      console.error("Failed to get system health:", error);
-      throw new Error("Failed to retrieve system health status");
+    if (!outcome.ran) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "Stat progression is already running; try again shortly.",
+      });
     }
+
+    const { updated, executionTimeMs } = outcome.result;
+    return {
+      success: true,
+      message: `Updated ${updated} countries in ${executionTimeMs}ms`,
+      countriesUpdated: updated,
+      executionTimeMs,
+    };
   }),
-
-  // --- Clerk User-Country Mapping Endpoints ---
-  // Note: User procedures are commented out until User model is properly configured
-
-  // Sync with Discord bot
-
-  // === ADMIN USER/COUNTRY MANAGEMENT ENDPOINTS ===
-
-  // List all users and their claimed countries
-
-  // List all countries and their assigned users
-
-  // Assign a user to a country (admin override)
-
-  // Unassign a user from a country (admin override)
-
-  // Get navigation settings (wiki/cards/labs visibility)
-
-  // Update navigation settings (wiki/cards/labs visibility)
-
-  // ============================================================================
-  // GOD MODE - DIRECT COUNTRY DATA MANIPULATION
-  // ============================================================================
-
-  // ============================================================================
-  // DIPLOMATIC OPTIONS MANAGEMENT
-  // ============================================================================
-
-  // ============================================================================
-  // PHASE 2: COUNTRY GRID & UPCOMING EVENTS
-  // ============================================================================
-
-  // ============================================================================
-  // STORYTELLER / WORLD EVENTS
-  // ============================================================================
-
-  // Event Chains
-
-  // ─── Wiki Link Management ──────────────────────────────────────────
 
   getSystemLogs: adminProcedure
     .input(
@@ -729,5 +497,3 @@ export const adminSystemRouter = createTRPCRouter({
     }
   }),
 });
-
-// getWikiDbPool is now imported from "~/lib/wiki/bridge"

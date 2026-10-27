@@ -1,36 +1,39 @@
 "use client";
 
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { AdminSidebarLayout } from "../_components/AdminSidebarLayout";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Vote, PlusCircle, Settings } from "lucide-react";
+import { PlusCircle, Settings } from "iconoir-react";
 import { PollComposer } from "./_components/PollComposer";
 import { PollManager } from "./_components/PollManager";
 import { useState } from "react";
 
-export default function PollsAdminPage() {
+function PollsPanel() {
   usePageTitle({ title: "Admin - Polls" });
   const [activeTab, setActiveTab] = useState("manager");
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Vote}
-        title="Polls Management"
-        description="Create and manage global or targeted polls, view results, and toggle active states."
+      <PageHeader
+        title="Polls"
+        subtitle="Create global or targeted polls, view results and switch them on or off."
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-card/40 border-border/40 mb-4 w-full justify-start rounded-xl border p-1 backdrop-blur-md">
-          <TabsTrigger value="manager" className="gap-2 rounded-lg text-xs font-semibold">
-            <Settings className="h-4 w-4" />
-            Manage Polls
+        <TabsList className="bg-fill-3 rounded-row mb-4 flex w-full flex-wrap justify-start gap-1 p-1 sm:w-auto">
+          <TabsTrigger
+            value="manager"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
+          >
+            <Settings className="h-3.5 w-3.5" />
+            Manage polls
           </TabsTrigger>
-          <TabsTrigger value="composer" className="gap-2 rounded-lg text-xs font-semibold">
-            <PlusCircle className="h-4 w-4" />
-            Create Poll
+          <TabsTrigger
+            value="composer"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
+          >
+            <PlusCircle className="h-3.5 w-3.5" />
+            Create poll
           </TabsTrigger>
         </TabsList>
 
@@ -45,3 +48,5 @@ export default function PollsAdminPage() {
     </div>
   );
 }
+
+export default PollsPanel;

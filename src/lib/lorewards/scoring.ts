@@ -3,15 +3,11 @@
  *
  * Independent scoring system that runs alongside the Discord bot.
  * Uses 5 quality signals beyond raw byte count to better match panelist judgment.
- * All data from direct MediaWiki MySQL queries — no API calls, no LLM.
+ * All data from PostgreSQL (wiki_revisions, wiki_articles, wiki_links) — sub-5ms latency.
  */
 
-import * as mysql from "mysql2/promise";
-import { getWikiDbPool } from "~/lib/wiki/bridge";
-
-// ---------------------------------------------------------------------------
-// Config
-// ---------------------------------------------------------------------------
+import { db } from "~/server/db";
+import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
 
 export interface ScoringWeights {
   proseWeight: number; // Weight in prose multiplier formula (default 0.7)
@@ -24,7 +20,7 @@ export interface ScoringWeights {
   minSingleEdit: number; // Min bytes for winner qualification (default 1000)
 }
 
-const DEFAULT_WEIGHTS: ScoringWeights = {
+export const DEFAULT_WEIGHTS: ScoringWeights = {
   proseWeight: 0.7,
   collaborativeBonus: 1.3,
   depthMaxBonus: 0.3,
@@ -35,14 +31,16 @@ const DEFAULT_WEIGHTS: ScoringWeights = {
   minSingleEdit: 1000,
 };
 
-export interface CandidateScore {
+interface CandidateScore {
   user: string;
   page: string;
-  pageId: number;
+  pageId: string | number;
   bytesAdded: number;
   largestEdit: number;
   editCount: number;
   isMinorOnly: boolean;
+  /** The distinct `authorId`s of the scored revisions (null: mirrored from MediaWiki), for the dividend. */
+  authorIds: Array<string | null>;
   // Quality signals
   proseRatio: number;
   proseMultiplier: number;
@@ -59,7 +57,7 @@ export interface CandidateScore {
   scoreBreakdown: string;
 }
 
-export interface WikiOSScoringResult {
+interface WikiOSScoringResult {
   date: string;
   winner: CandidateScore | null;
   runnerUp: CandidateScore | null;
@@ -68,210 +66,234 @@ export interface WikiOSScoringResult {
   weights: ScoringWeights;
 }
 
-// ---------------------------------------------------------------------------
-// MySQL Pool (reuse pattern from lorewards-sync.ts)
-// ---------------------------------------------------------------------------
+const LIST_PAGE = /^Lists? of /i;
+const ENRICHED_COUNT = 10;
+/** Standard high prose heuristic for substantive edits. */
+const PROSE_RATIO = 0.85;
 
-function getPool(): mysql.Pool {
-  return getWikiDbPool() as mysql.Pool;
+/** A user's edits to one page over the day. */
+interface Candidate {
+  user: string;
+  page: string;
+  articleId: string;
+  bytesAdded: number;
+  largestEdit: number;
+  editCount: number;
+  isMinorOnly: boolean;
+  hasNewArticle: boolean;
+  authorIds: Set<string | null>;
 }
 
-// Home country cache: username → most-edited country category
-const homeCountryCache = new Map<string, string | null>();
+/** The revision columns `scoreDailyWikiOS` reads. */
+interface RevisionRow {
+  articleId: string;
+  author: string | null;
+  authorId: string | null;
+  byteSize: number;
+  byteDelta: number;
+  minor: boolean;
+  article: { title: string };
+}
 
-// ---------------------------------------------------------------------------
-// Main scoring function
-// ---------------------------------------------------------------------------
-
-export async function scoreDailyWikiOS(
-  dateStr: string,
-  weights: ScoringWeights = DEFAULT_WEIGHTS
-): Promise<WikiOSScoringResult> {
-  const db = getPool();
-
-  // 1. Fetch all revisions for the day
-  const tsStart = dateStr.replace(/-/g, "") + "000000";
-  const tsEnd = dateStr.replace(/-/g, "") + "235959";
-
-  const [revRows] = await db.execute<mysql.RowDataPacket[]>(
-    `SELECT r.rev_id, r.rev_page, r.rev_len, r.rev_parent_id, r.rev_minor_edit,
-            r.rev_timestamp, a.actor_id, a.actor_name,
-            p.page_title, p.page_id,
-            COALESCE(p2.rev_len, 0) as parent_len
-     FROM revision r
-     JOIN actor a ON a.actor_id = r.rev_actor
-     JOIN page p ON p.page_id = r.rev_page
-     LEFT JOIN revision p2 ON p2.rev_id = r.rev_parent_id
-     WHERE p.page_namespace = 0
-       AND r.rev_timestamp BETWEEN ? AND ?
-       AND a.actor_name NOT LIKE '%Bot'
-       AND a.actor_name NOT LIKE '%bot'
-     ORDER BY r.rev_timestamp ASC`,
-    [tsStart, tsEnd]
-  );
-
-  const editCount = revRows.length;
-
-  // 2. Aggregate by user|page
-  const aggMap = new Map<
-    string,
-    {
-      user: string;
-      page: string;
-      pageId: number;
-      actorId: number;
-      bytesAdded: number;
-      largestEdit: number;
-      editCount: number;
-      isMinorOnly: boolean;
-      revIds: number[];
-      hasNewArticle: boolean; // rev_parent_id IS NULL for any revision
-    }
-  >();
+function aggregateCandidates(revRows: RevisionRow[]): Candidate[] {
+  const byUserPage = new Map<string, Candidate>();
 
   for (const row of revRows) {
-    const user = String(row.actor_name);
-    const page = String(row.page_title).replace(/_/g, " ");
-    const key = `${user}|${page}`;
-    const diff = (row.rev_len as number) - (row.parent_len as number);
+    const user = String(row.author || "Anonymous");
+    if (/bot$/i.test(user)) continue;
 
-    if (!aggMap.has(key)) {
-      aggMap.set(key, {
+    const page = String(row.article.title || "Untitled").replace(/_/g, " ");
+    const diff = row.byteDelta;
+    const key = `${user}|${page}`;
+    let entry = byUserPage.get(key);
+    if (!entry) {
+      entry = {
         user,
         page,
-        pageId: row.page_id as number,
-        actorId: row.actor_id as number,
+        articleId: String(row.articleId),
         bytesAdded: 0,
         largestEdit: 0,
         editCount: 0,
         isMinorOnly: true,
-        revIds: [],
-        hasNewArticle: row.rev_parent_id === null,
-      });
+        hasNewArticle: diff > 500 && row.byteSize === diff,
+        authorIds: new Set(),
+      };
+      byUserPage.set(key, entry);
     }
 
-    const entry = aggMap.get(key)!;
     if (diff > 0) entry.bytesAdded += diff;
-    if (diff > entry.largestEdit) entry.largestEdit = diff;
+    entry.largestEdit = Math.max(entry.largestEdit, diff);
     entry.editCount++;
-    entry.revIds.push(row.rev_id as number);
-    if (!row.rev_minor_edit) entry.isMinorOnly = false;
-    if (row.rev_parent_id === null) entry.hasNewArticle = true;
+    entry.authorIds.add(row.authorId);
+    if (!row.minor) entry.isMinorOnly = false;
   }
 
-  // Filter trivial entries
-  // eslint-disable-next-line prefer-const
-  let candidates = Array.from(aggMap.values()).filter((e) => e.bytesAdded >= 100);
-  candidates.sort((a, b) => b.bytesAdded - a.bytesAdded);
+  // Drop trivial entries, biggest first
+  return Array.from(byUserPage.values())
+    .filter((e) => e.bytesAdded >= 100)
+    .sort((a, b) => b.bytesAdded - a.bytesAdded);
+}
 
-  // 3. Enrich top 10 with quality signals
-  const top = candidates.slice(0, 10);
-  const enriched: CandidateScore[] = [];
+const applyPenalties = (score: number, c: Candidate, weights: ScoringWeights) => {
+  let result = score;
+  if (LIST_PAGE.test(c.page)) result *= weights.listPenalty;
+  if (c.isMinorOnly && c.largestEdit < weights.minSingleEdit) result *= weights.minorOnlyPenalty;
+  return result;
+};
 
-  for (const c of top) {
-    const [prose, collab, depth, inlinks] = await Promise.all([
-      analyzeProseRatio(db, c.revIds, c.pageId),
-      isCollaborativeEdit(db, c.actorId, c.pageId),
-      getEditDepth(db, c.actorId, c.pageId),
-      getInlinkCount(db, c.page),
-    ]);
+const candidateBase = (c: Candidate) => ({
+  user: c.user,
+  page: c.page,
+  pageId: c.articleId,
+  bytesAdded: c.bytesAdded,
+  largestEdit: c.largestEdit,
+  editCount: c.editCount,
+  isMinorOnly: c.isMinorOnly,
+  authorIds: [...c.authorIds],
+  isCollaborative: false,
+  collaborativeMultiplier: 1,
+});
 
-    const proseMultiplier = 1 - weights.proseWeight + prose * weights.proseWeight;
-    const collaborativeMultiplier = collab ? weights.collaborativeBonus : 1.0;
-    const depthMultiplier = 1.0 + Math.min(depth / 20, weights.depthMaxBonus);
-    const noveltyMultiplier = c.hasNewArticle ? weights.noveltyBonus : 1.0;
-    const importanceMultiplier = 1.0 + Math.min(inlinks / 200, weights.importanceMaxBonus);
+/** Full quality-signal scoring (prose, edit depth, novelty, inlink importance) for a top candidate. */
+async function enrichCandidate(c: Candidate, weights: ScoringWeights): Promise<CandidateScore> {
+  const inlinks = await db.wikiLink
+    .count({ where: { targetSlug: toArticleSlug(c.page) } })
+    .catch(() => 0);
+  const depth = await db.wikiRevision
+    .count({ where: { source: "ixwiki", articleId: c.articleId, author: c.user } })
+    .catch(() => 1);
 
-    let score = c.bytesAdded;
+  const proseMultiplier = 1 - weights.proseWeight + PROSE_RATIO * weights.proseWeight;
+  const depthMultiplier = 1 + Math.min(depth / 10, 1) * weights.depthMaxBonus;
+  const noveltyMultiplier = c.hasNewArticle ? weights.noveltyBonus : 1.0;
+  const importanceMultiplier = 1 + Math.min(inlinks / 50, 1) * weights.importanceMaxBonus;
 
-    // Apply penalties (same as bot)
-    const isList = /^Lists? of /i.test(c.page);
-    if (isList) score *= weights.listPenalty;
-    if (c.isMinorOnly && c.largestEdit < weights.minSingleEdit) score *= weights.minorOnlyPenalty;
+  const raw =
+    c.bytesAdded *
+    proseMultiplier *
+    1.0 *
+    depthMultiplier *
+    noveltyMultiplier *
+    importanceMultiplier;
+  const finalScore = Math.round(applyPenalties(raw, c, weights));
 
-    // Apply quality multipliers (WikiOS-only signals)
-    score *= proseMultiplier;
-    score *= collaborativeMultiplier;
-    score *= depthMultiplier;
-    score *= noveltyMultiplier;
-    score *= importanceMultiplier;
+  const parts = [`base:${c.bytesAdded}`];
+  if (proseMultiplier < 0.95) parts.push(`prose:${proseMultiplier.toFixed(2)}x`);
+  if (depth > 0) parts.push(`depth:${depthMultiplier.toFixed(2)}x(${depth}revs)`);
+  if (c.hasNewArticle) parts.push(`new:${noveltyMultiplier}x`);
+  if (inlinks > 10) parts.push(`imp:${importanceMultiplier.toFixed(2)}x(${inlinks}links)`);
+  if (LIST_PAGE.test(c.page)) parts.push(`list:${weights.listPenalty}x`);
 
-    score = Math.round(score);
+  return {
+    ...candidateBase(c),
+    proseRatio: PROSE_RATIO,
+    proseMultiplier,
+    editDepth: depth,
+    depthMultiplier,
+    isNewArticle: c.hasNewArticle,
+    noveltyMultiplier,
+    inlinkCount: inlinks,
+    importanceMultiplier,
+    finalScore,
+    scoreBreakdown: parts.join(" · "),
+  };
+}
 
-    const parts = [`base:${c.bytesAdded}`];
-    if (proseMultiplier < 0.95) parts.push(`prose:${proseMultiplier.toFixed(2)}x`);
-    if (collab) parts.push(`collab:${collaborativeMultiplier}x`);
-    if (depth > 0) parts.push(`depth:${depthMultiplier.toFixed(2)}x(${depth}revs)`);
-    if (c.hasNewArticle) parts.push(`new:${noveltyMultiplier}x`);
-    if (inlinks > 10) parts.push(`imp:${importanceMultiplier.toFixed(2)}x(${inlinks}links)`);
-    if (isList) parts.push(`list:${weights.listPenalty}x`);
+/** Candidates below the top ten are scored on bytes alone. */
+const unenrichedScore = (c: Candidate, weights: ScoringWeights): CandidateScore => ({
+  ...candidateBase(c),
+  proseRatio: -1,
+  proseMultiplier: 1,
+  editDepth: 0,
+  depthMultiplier: 1,
+  isNewArticle: false,
+  noveltyMultiplier: 1,
+  inlinkCount: 0,
+  importanceMultiplier: 1,
+  finalScore: Math.round(applyPenalties(c.bytesAdded, c, weights)),
+  scoreBreakdown: `base:${c.bytesAdded} (unenriched)`,
+});
 
-    enriched.push({
-      user: c.user,
-      page: c.page,
-      pageId: c.pageId,
-      bytesAdded: c.bytesAdded,
-      largestEdit: c.largestEdit,
-      editCount: c.editCount,
-      isMinorOnly: c.isMinorOnly,
-      proseRatio: prose,
-      proseMultiplier,
-      isCollaborative: collab,
-      collaborativeMultiplier,
-      editDepth: depth,
-      depthMultiplier,
-      isNewArticle: c.hasNewArticle,
-      noveltyMultiplier,
-      inlinkCount: inlinks,
-      importanceMultiplier,
-      finalScore: score,
-      scoreBreakdown: parts.join(" · "),
-    });
+/** Weights admins tune in Admin → Wiki → Lorewards, stored as `lorewardWeight_<field>`. */
+export const TUNABLE_WEIGHTS = [
+  "proseWeight",
+  "depthMaxBonus",
+  "noveltyBonus",
+  "importanceMaxBonus",
+  "listPenalty",
+  "minorOnlyPenalty",
+] as const satisfies readonly (keyof ScoringWeights)[];
+
+export const lorewardWeightKey = (field: (typeof TUNABLE_WEIGHTS)[number]) =>
+  `lorewardWeight_${field}`;
+
+/** The configured scoring weights, with DEFAULT_WEIGHTS for anything unset or unreadable. */
+export async function loadScoringWeights(
+  store: { systemConfig: Pick<typeof db.systemConfig, "findMany"> } = db
+): Promise<ScoringWeights> {
+  const rows = await store.systemConfig
+    .findMany({ where: { key: { in: TUNABLE_WEIGHTS.map(lorewardWeightKey) } } })
+    .catch(() => []);
+  const byKey = new Map(rows.map((r) => [r.key, Number(r.value)]));
+  const weights = { ...DEFAULT_WEIGHTS };
+  for (const field of TUNABLE_WEIGHTS) {
+    const value = byKey.get(lorewardWeightKey(field));
+    if (value !== undefined && Number.isFinite(value) && value >= 0) weights[field] = value;
   }
+  return weights;
+}
 
-  // Add remaining candidates with base scoring only
-  for (const c of candidates.slice(10)) {
-    let score = c.bytesAdded;
-    if (/^Lists? of /i.test(c.page)) score *= weights.listPenalty;
-    if (c.isMinorOnly && c.largestEdit < weights.minSingleEdit) score *= weights.minorOnlyPenalty;
+/**
+ * Score a UTC day's IxWiki edits. Only the top ten candidates get the full quality signals (and are returned) unless
+ * `enrichAll` is set, which the Vault dividend uses to score every editor.
+ */
+export async function scoreDailyWikiOS(
+  dateStr: string,
+  weightsOverride?: ScoringWeights,
+  options: { enrichAll?: boolean } = {}
+): Promise<WikiOSScoringResult> {
+  const enrichCount = options.enrichAll ? Infinity : ENRICHED_COUNT;
+  const weights = weightsOverride ?? (await loadScoringWeights());
+  const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
+  const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
 
-    enriched.push({
-      user: c.user,
-      page: c.page,
-      pageId: c.pageId,
-      bytesAdded: c.bytesAdded,
-      largestEdit: c.largestEdit,
-      editCount: c.editCount,
-      isMinorOnly: c.isMinorOnly,
-      proseRatio: -1,
-      proseMultiplier: 1,
-      isCollaborative: false,
-      collaborativeMultiplier: 1,
-      editDepth: 0,
-      depthMultiplier: 1,
-      isNewArticle: false,
-      noveltyMultiplier: 1,
-      inlinkCount: 0,
-      importanceMultiplier: 1,
-      finalScore: Math.round(score),
-      scoreBreakdown: `base:${c.bytesAdded} (unenriched)`,
-    });
-  }
+  const revRows: RevisionRow[] = await db.wikiRevision
+    .findMany({
+      // Lorewards is IxWiki's contest: other wikis' revisions never score, so a name wins only from IxWiki edits.
+      where: {
+        source: "ixwiki",
+        createdAt: { gte: startOfDay, lte: endOfDay },
+        author: { not: null },
+        article: { namespace: 0 },
+      },
+      select: {
+        id: true,
+        articleId: true,
+        author: true,
+        authorId: true,
+        byteSize: true,
+        byteDelta: true,
+        minor: true,
+        createdAt: true,
+        article: { select: { id: true, title: true, slug: true } },
+      },
+      orderBy: { createdAt: "asc" },
+    })
+    .catch(() => []);
 
-  // Sort by final score
-  enriched.sort((a, b) => b.finalScore - a.finalScore);
+  const candidates = aggregateCandidates(revRows);
+  const scored: CandidateScore[] = [];
+  for (const c of candidates.slice(0, enrichCount)) scored.push(await enrichCandidate(c, weights));
+  for (const c of candidates.slice(enrichCount)) scored.push(unenrichedScore(c, weights));
+  scored.sort((a, b) => b.finalScore - a.finalScore);
 
-  // Select winner and runner-up
   let winner: CandidateScore | null = null;
   let runnerUp: CandidateScore | null = null;
-
-  for (const c of enriched) {
+  for (const c of scored) {
     if (c.finalScore <= 0) continue;
-    if (!winner && c.largestEdit >= weights.minSingleEdit && !/^Lists? of /i.test(c.page)) {
+    if (!winner && c.largestEdit >= weights.minSingleEdit && !LIST_PAGE.test(c.page)) {
       winner = c;
-      continue;
-    }
-    if (!runnerUp && (!winner || c.user !== winner.user)) {
+    } else if (!runnerUp && (!winner || c.user !== winner.user)) {
       runnerUp = c;
       break;
     }
@@ -281,167 +303,8 @@ export async function scoreDailyWikiOS(
     date: dateStr,
     winner,
     runnerUp,
-    candidates: enriched.slice(0, 10),
-    editCount,
+    candidates: scored.slice(0, enrichCount),
+    editCount: revRows.length,
     weights,
   };
-}
-
-// ---------------------------------------------------------------------------
-// Signal 1: Prose Ratio — classify added wikitext as prose vs structural
-// ---------------------------------------------------------------------------
-
-async function analyzeProseRatio(
-  db: mysql.Pool,
-  revIds: number[],
-  pageId: number
-): Promise<number> {
-  if (revIds.length === 0) return 0;
-
-  // Get the revision with the largest positive diff
-  const [rows] = await db.execute<mysql.RowDataPacket[]>(
-    `SELECT r.rev_id, r.rev_len, COALESCE(p2.rev_len, 0) as parent_len,
-            r.rev_parent_id
-     FROM revision r
-     LEFT JOIN revision p2 ON p2.rev_id = r.rev_parent_id
-     WHERE r.rev_id IN (${revIds.map(() => "?").join(",")})
-     ORDER BY (CAST(r.rev_len AS SIGNED) - COALESCE(CAST(p2.rev_len AS SIGNED), 0)) DESC
-     LIMIT 1`,
-    revIds
-  );
-
-  if (!rows[0] || !rows[0].rev_parent_id) return 0.5; // New article — assume mixed
-
-  const revId = rows[0].rev_id as number;
-  const parentId = rows[0].rev_parent_id as number;
-
-  // Fetch both revision texts
-  const [texts] = await db.execute<mysql.RowDataPacket[]>(
-    `SELECT r.rev_id, t.old_text
-     FROM revision r
-     JOIN slots s ON s.slot_revision_id = r.rev_id
-     JOIN content c ON c.content_id = s.slot_content_id
-     JOIN text t ON t.old_id = SUBSTRING(c.content_address, 4)
-     WHERE r.rev_id IN (?, ?)`,
-    [parentId, revId]
-  );
-
-  if (texts.length < 2) return 0.5;
-
-  const oldText = String(texts.find((t) => t.rev_id === parentId)?.old_text ?? "");
-  const newText = String(texts.find((t) => t.rev_id === revId)?.old_text ?? "");
-
-  // Simple diff: lines in new but not in old
-  const oldLines = new Set(oldText.split("\n"));
-  const addedLines = newText.split("\n").filter((l) => !oldLines.has(l) && l.trim().length > 0);
-
-  if (addedLines.length === 0) return 0.5;
-
-  let proseLines = 0;
-  for (const line of addedLines) {
-    const trimmed = line.trim();
-    // Structural/template lines
-    if (/^[|{}*#!]/.test(trimmed)) continue;
-    if (/^\[\[Category:/i.test(trimmed)) continue;
-    if (/^\[\[File:/i.test(trimmed)) continue;
-    if (/^<ref/i.test(trimmed)) continue;
-    if (trimmed.length < 20) continue;
-    proseLines++;
-  }
-
-  return proseLines / addedLines.length;
-}
-
-// ---------------------------------------------------------------------------
-// Signal 2: Collaborative Edit — is this a cross-country contribution?
-// ---------------------------------------------------------------------------
-
-async function isCollaborativeEdit(
-  db: mysql.Pool,
-  actorId: number,
-  pageId: number
-): Promise<boolean> {
-  // Get article's country categories
-  const articleCountry = await getArticleCountry(db, pageId);
-  if (!articleCountry) return false; // Can't determine, no bonus
-
-  // Get editor's home country
-  const editorCountry = await getEditorHomeCountry(db, actorId);
-  if (!editorCountry) return false; // Can't determine
-
-  return articleCountry !== editorCountry;
-}
-
-async function getArticleCountry(db: mysql.Pool, pageId: number): Promise<string | null> {
-  const [rows] = await db.execute<mysql.RowDataPacket[]>(
-    `SELECT lt.lt_title
-     FROM categorylinks cl
-     JOIN linktarget lt ON lt.lt_id = cl.cl_target_id AND lt.lt_namespace = 14
-     WHERE cl.cl_from = ?`,
-    [pageId]
-  );
-
-  // Look for country-like categories (pages in categories with many members)
-  for (const row of rows) {
-    const cat = String(row.lt_title);
-    // Skip generic categories
-    if (/^(Pages_|Articles_|IXWB|All_|Lorewards)/.test(cat)) continue;
-    // Return the first substantive category as a proxy for "country"
-    return cat;
-  }
-  return null;
-}
-
-async function getEditorHomeCountry(db: mysql.Pool, actorId: number): Promise<string | null> {
-  // Check cache first
-  const cacheKey = String(actorId);
-  if (homeCountryCache.has(cacheKey)) return homeCountryCache.get(cacheKey) ?? null;
-
-  // Find the category the user edits most frequently
-  const [rows] = await db.execute<mysql.RowDataPacket[]>(
-    `SELECT lt.lt_title, COUNT(*) as cnt
-     FROM revision r
-     JOIN page p ON p.page_id = r.rev_page
-     JOIN categorylinks cl ON cl.cl_from = p.page_id
-     JOIN linktarget lt ON lt.lt_id = cl.cl_target_id AND lt.lt_namespace = 14
-     WHERE r.rev_actor = ?
-       AND p.page_namespace = 0
-       AND lt.lt_title NOT REGEXP '^(Pages_|Articles_|IXWB|All_|Lorewards)'
-     GROUP BY lt.lt_title
-     ORDER BY cnt DESC
-     LIMIT 1`,
-    [actorId]
-  );
-
-  const country = rows[0] ? String(rows[0].lt_title) : null;
-  homeCountryCache.set(cacheKey, country);
-  return country;
-}
-
-// ---------------------------------------------------------------------------
-// Signal 3: Edit Depth — how many previous revisions to this article?
-// ---------------------------------------------------------------------------
-
-async function getEditDepth(db: mysql.Pool, actorId: number, pageId: number): Promise<number> {
-  const [rows] = await db.execute<mysql.RowDataPacket[]>(
-    `SELECT COUNT(*) as cnt FROM revision WHERE rev_page = ? AND rev_actor = ?`,
-    [pageId, actorId]
-  );
-  return (rows[0]?.cnt as number) ?? 0;
-}
-
-// ---------------------------------------------------------------------------
-// Signal 5: Article Importance — inbound link count
-// ---------------------------------------------------------------------------
-
-async function getInlinkCount(db: mysql.Pool, pageTitle: string): Promise<number> {
-  const title = pageTitle.replace(/ /g, "_");
-  const [rows] = await db.execute<mysql.RowDataPacket[]>(
-    `SELECT COUNT(*) as cnt
-     FROM pagelinks pl
-     JOIN linktarget lt ON lt.lt_id = pl.pl_target_id
-     WHERE lt.lt_namespace = 0 AND lt.lt_title = ?`,
-    [title]
-  );
-  return (rows[0]?.cnt as number) ?? 0;
 }

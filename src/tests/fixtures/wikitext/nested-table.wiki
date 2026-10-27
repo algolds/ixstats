@@ -1,0 +1,20 @@
+Election results by region:
+
+{| class="wikitable" style="width:80%"
+|-
+! Region !! Result
+|-
+| North
+| {| class="wikitable"
+  |-
+  ! Party !! Votes
+  |-
+  | Liberals || 41%
+  |-
+  | Conservatives || 39%
+  |}
+|-
+| South || Liberals
+|}
+
+The table above is nested.

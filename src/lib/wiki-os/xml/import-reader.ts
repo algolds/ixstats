@@ -1,0 +1,409 @@
+/**
+ * import-reader.ts — streaming reader for MediaWiki's XML export format (export-0.11 and earlier).
+ *
+ * `readExport(stream)` parses the dump with saxes as the chunks arrive and yields one `siteinfo`
+ * event, then one `page` event per `<page>` with all of its revisions. A page's history is held in
+ * memory while it is read (it always fits); nothing is kept across pages. Elements the reader does
+ * not know (`<upload>` blocks, extra slots, log items, future additions) are skipped, `<upload>`
+ * children of a page are only counted.
+ *
+ * Reading is by element path below the `<mediawiki>` root, so a `<revision>` child called `<id>`
+ * is never confused with the page's own. The known paths form a trie walked one step per tag: an
+ * element the trie does not know (and everything inside it) costs nothing and buffers nothing,
+ * element names are only ever used as Map keys (a `<__proto__>` element is just an unknown name),
+ * and nesting deeper than `MAX_DEPTH` is refused.
+ */
+
+import { StringDecoder } from "node:string_decoder";
+import { SaxesParser } from "saxes";
+import type { Contributor, SiteInfo, SiteInfoNamespace, XmlRevision } from "./types";
+
+export interface ImportPage {
+  title: string;
+  /** `<ns>`; null when the dump does not say. */
+  ns: number | null;
+  /** `<id>`: the MediaWiki page id; null when absent. */
+  id: number | null;
+  /** The `<redirect title>` target, or null when the page is not a redirect. */
+  redirectTitle: string | null;
+  /** The legacy `<restrictions>` text (`edit=sysop:move=sysop`), or null. */
+  restrictions: string | null;
+  /** How many `<upload>` blocks the page had: counted, never imported. */
+  uploads: number;
+  revisions: XmlRevision[];
+}
+
+export type ImportEvent =
+  { type: "siteinfo"; siteinfo: SiteInfo } | { type: "page"; page: ImportPage };
+
+/** The root element of every export. */
+const ROOT = "mediawiki";
+/** Deepest element nesting accepted (a real export is 5 levels deep). */
+export const MAX_DEPTH = 64;
+
+interface ContributorDraft {
+  username: string | null;
+  id: number | null;
+  ip: string | null;
+  deleted: boolean;
+}
+
+interface TextDraft {
+  bytes: number | null;
+  sha1: string | null;
+  deleted: boolean;
+}
+
+interface ReaderState {
+  /** One entry per open element, the root first: its trie node, or null for an unknown element. */
+  stack: Array<TrieNode | null>;
+  /** Text of the element being read (reset by every opening tag). */
+  text: string;
+  siteinfo: SiteInfo | null;
+  namespace: Pick<SiteInfoNamespace, "key" | "case"> | null;
+  page: ImportPage | null;
+  revision: XmlRevision | null;
+  contributor: ContributorDraft | null;
+  textDraft: TextDraft | null;
+  /** Events produced since the last drain. */
+  events: ImportEvent[];
+}
+
+type Attributes = Record<string, string>;
+type OpenHandler = (state: ReaderState, attributes: Attributes) => void;
+type CloseHandler = (state: ReaderState, value: string) => void;
+
+/** A known element path: what to do when it opens and closes, and the known elements inside it. */
+interface TrieNode {
+  children: Map<string, TrieNode>;
+  open?: OpenHandler;
+  close?: CloseHandler;
+}
+
+/** A whole number from an element's text or an attribute; null when it is not one. */
+function parseInteger(value: string | undefined): number | null {
+  if (value === undefined || !/^\s*-?\d+\s*$/.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
+const blankRevision = (): XmlRevision => ({
+  id: null,
+  parentId: null,
+  timestamp: "",
+  contributor: { deleted: true },
+  minor: false,
+  comment: null,
+  commentDeleted: false,
+  model: "wikitext",
+  format: "text/x-wiki",
+  text: null,
+  textDeleted: false,
+  bytes: null,
+  sha1: null,
+});
+
+const blankPage = (): ImportPage => ({
+  title: "",
+  ns: null,
+  id: null,
+  redirectTitle: null,
+  restrictions: null,
+  uploads: 0,
+  revisions: [],
+});
+
+const blankSiteInfo = (): SiteInfo => ({
+  sitename: "",
+  dbname: "",
+  base: "",
+  generator: "",
+  case: "first-letter",
+  namespaces: [],
+});
+
+/** `mwSha1Base36("")`: the hash a genuinely empty text has. */
+const EMPTY_TEXT_SHA1 = "phoiac9h4m842xq45sp7s6u21eteeq1";
+
+/**
+ * An empty `<text>` whose attributes say it had content (a size above 0, or the hash of
+ * something): the text is not available (an unfilled placeholder), not a blank page.
+ */
+function isTextMissing(content: string, draft: TextDraft): boolean {
+  if (content !== "") return false;
+  return (draft.bytes ?? 0) > 0 || (draft.sha1 !== null && draft.sha1 !== EMPTY_TEXT_SHA1);
+}
+
+function contributorFrom(draft: ContributorDraft): Contributor {
+  if (draft.deleted) return { deleted: true };
+  if (draft.ip !== null) return { ip: draft.ip };
+  if (draft.username !== null) return { username: draft.username, id: draft.id };
+  return { deleted: true };
+}
+
+/** Set one field of the siteinfo being read. */
+const siteInfoField =
+  (field: "sitename" | "dbname" | "base" | "generator" | "case"): CloseHandler =>
+  (state, value) => {
+    if (state.siteinfo) state.siteinfo[field] = value;
+  };
+
+/** Set one field of the page being read. */
+const pageField =
+  (apply: (page: ImportPage, value: string) => void): CloseHandler =>
+  (state, value) => {
+    if (state.page) apply(state.page, value);
+  };
+
+/** Set one field of the revision being read. */
+const revisionField =
+  (apply: (revision: XmlRevision, value: string) => void): CloseHandler =>
+  (state, value) => {
+    if (state.revision) apply(state.revision, value);
+  };
+
+/** Set one field of the contributor being read. */
+const contributorField =
+  (apply: (draft: ContributorDraft, value: string) => void): CloseHandler =>
+  (state, value) => {
+    if (state.contributor) apply(state.contributor, value);
+  };
+
+/** Handlers for an opening tag, keyed by the element's path below the root. */
+const OPEN: Readonly<Record<string, OpenHandler>> = {
+  siteinfo: (state) => {
+    state.siteinfo = blankSiteInfo();
+  },
+  "siteinfo/namespaces/namespace": (state, attributes) => {
+    state.namespace = { key: parseInteger(attributes.key) ?? 0, case: attributes.case ?? "" };
+  },
+  page: (state) => {
+    state.page = blankPage();
+  },
+  "page/redirect": (state, attributes) => {
+    if (state.page) state.page.redirectTitle = attributes.title ?? null;
+  },
+  "page/upload": (state) => {
+    if (state.page) state.page.uploads += 1;
+  },
+  "page/revision": (state) => {
+    state.revision = blankRevision();
+  },
+  "page/revision/contributor": (state, attributes) => {
+    state.contributor = {
+      username: null,
+      id: null,
+      ip: null,
+      deleted: attributes.deleted !== undefined,
+    };
+  },
+  "page/revision/comment": (state, attributes) => {
+    if (state.revision) state.revision.commentDeleted = attributes.deleted !== undefined;
+  },
+  "page/revision/text": (state, attributes) => {
+    state.textDraft = {
+      bytes: parseInteger(attributes.bytes),
+      sha1: attributes.sha1 ?? null,
+      deleted: attributes.deleted !== undefined,
+    };
+  },
+};
+
+/** Handlers for a closing tag (given the element's text), keyed by path below the root. */
+const CLOSE: Readonly<Record<string, CloseHandler>> = {
+  "siteinfo/sitename": siteInfoField("sitename"),
+  "siteinfo/dbname": siteInfoField("dbname"),
+  "siteinfo/base": siteInfoField("base"),
+  "siteinfo/generator": siteInfoField("generator"),
+  "siteinfo/case": siteInfoField("case"),
+  "siteinfo/namespaces/namespace": (state, value) => {
+    if (state.siteinfo && state.namespace) {
+      state.siteinfo.namespaces.push({ ...state.namespace, name: value });
+    }
+    state.namespace = null;
+  },
+  siteinfo: (state) => {
+    if (state.siteinfo) state.events.push({ type: "siteinfo", siteinfo: state.siteinfo });
+    state.siteinfo = null;
+  },
+
+  "page/title": pageField((page, value) => {
+    page.title = value;
+  }),
+  "page/ns": pageField((page, value) => {
+    page.ns = parseInteger(value);
+  }),
+  "page/id": pageField((page, value) => {
+    page.id = parseInteger(value);
+  }),
+  "page/restrictions": pageField((page, value) => {
+    page.restrictions = value.trim() || null;
+  }),
+  page: (state) => {
+    if (state.page) state.events.push({ type: "page", page: state.page });
+    state.page = null;
+  },
+
+  "page/revision/id": revisionField((revision, value) => {
+    revision.id = parseInteger(value);
+  }),
+  "page/revision/parentid": revisionField((revision, value) => {
+    revision.parentId = parseInteger(value);
+  }),
+  "page/revision/timestamp": revisionField((revision, value) => {
+    revision.timestamp = value.trim();
+  }),
+  "page/revision/minor": revisionField((revision) => {
+    revision.minor = true;
+  }),
+  "page/revision/comment": revisionField((revision, value) => {
+    revision.comment = value === "" ? null : value;
+  }),
+  "page/revision/model": revisionField((revision, value) => {
+    revision.model = value.trim() || revision.model;
+  }),
+  "page/revision/format": revisionField((revision, value) => {
+    revision.format = value.trim() || revision.format;
+  }),
+  "page/revision/sha1": revisionField((revision, value) => {
+    revision.sha1 = value.trim() || revision.sha1;
+  }),
+  "page/revision/text": (state, value) => {
+    const { revision, textDraft } = state;
+    if (!revision || !textDraft) return;
+    revision.text = textDraft.deleted || isTextMissing(value, textDraft) ? null : value;
+    revision.textDeleted = textDraft.deleted;
+    revision.bytes = textDraft.bytes;
+    revision.sha1 = revision.sha1 ?? textDraft.sha1;
+    state.textDraft = null;
+  },
+
+  "page/revision/contributor/username": contributorField((draft, value) => {
+    draft.username = value;
+  }),
+  "page/revision/contributor/id": contributorField((draft, value) => {
+    draft.id = parseInteger(value);
+  }),
+  "page/revision/contributor/ip": contributorField((draft, value) => {
+    draft.ip = value;
+  }),
+  "page/revision/contributor": (state) => {
+    if (state.revision && state.contributor) {
+      state.revision.contributor = contributorFrom(state.contributor);
+    }
+    state.contributor = null;
+  },
+
+  "page/revision": (state) => {
+    if (state.page && state.revision) state.page.revisions.push(state.revision);
+    state.revision = null;
+  },
+};
+
+/** The trie of every path in `OPEN` and `CLOSE`; its root is the `<mediawiki>` element. */
+function buildTrie(): TrieNode {
+  const root: TrieNode = { children: new Map() };
+  const nodeAt = (path: string): TrieNode => {
+    let node = root;
+    for (const name of path.split("/")) {
+      let child = node.children.get(name);
+      if (!child) {
+        child = { children: new Map() };
+        node.children.set(name, child);
+      }
+      node = child;
+    }
+    return node;
+  };
+  for (const [path, handler] of Object.entries(OPEN)) nodeAt(path).open = handler;
+  for (const [path, handler] of Object.entries(CLOSE)) nodeAt(path).close = handler;
+  return root;
+}
+
+const ROOT_NODE = buildTrie();
+
+/** The trie node of the element `name` opening inside the current one; null when it is unknown. */
+function enterElement(state: ReaderState, name: string): TrieNode | null {
+  const depth = state.stack.length;
+  if (depth >= MAX_DEPTH) {
+    throw new Error(`The dump nests elements deeper than ${MAX_DEPTH} levels`);
+  }
+  if (depth > 0) return state.stack[depth - 1]?.children.get(name) ?? null;
+  if (name !== ROOT) {
+    throw new Error(`Not a MediaWiki export: the root element is <${name}>, not <${ROOT}>`);
+  }
+  return ROOT_NODE;
+}
+
+/** A saxes parser wired to `state`: feed it text, then drain `state.events`. */
+function createParser(state: ReaderState): SaxesParser {
+  const parser = new SaxesParser();
+  parser.on("opentag", (tag) => {
+    const node = enterElement(state, tag.name);
+    state.stack.push(node);
+    if (!node) return;
+    state.text = "";
+    node.open?.(state, tag.attributes);
+  });
+  const collect = (text: string): void => {
+    if (state.stack[state.stack.length - 1]) state.text += text;
+  };
+  parser.on("text", collect);
+  parser.on("cdata", collect);
+  parser.on("closetag", () => {
+    const node = state.stack.pop();
+    if (!node) return;
+    node.close?.(state, state.text);
+    state.text = "";
+  });
+  return parser;
+}
+
+/** A web `ReadableStream` (an uploaded `File.stream()`, a `fetch` body) as an async iterable. */
+export async function* chunksOfStream(
+  stream: ReadableStream<Uint8Array>
+): AsyncGenerator<Uint8Array> {
+  const reader = stream.getReader();
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) return;
+      yield value;
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+/**
+ * Read an export dump. `stream` yields the file in pieces (strings, or UTF-8 bytes: a character
+ * split across two chunks is reassembled). Throws on malformed XML or a document that is not a
+ * MediaWiki export; pages yielded before the failure were complete.
+ */
+export async function* readExport(
+  stream: AsyncIterable<string | Uint8Array>
+): AsyncGenerator<ImportEvent> {
+  const state: ReaderState = {
+    stack: [],
+    text: "",
+    siteinfo: null,
+    namespace: null,
+    page: null,
+    revision: null,
+    contributor: null,
+    textDraft: null,
+    events: [],
+  };
+  const parser = createParser(state);
+  const decoder = new StringDecoder("utf8");
+
+  const drain = (): ImportEvent[] => state.events.splice(0, state.events.length);
+
+  for await (const chunk of stream) {
+    parser.write(typeof chunk === "string" ? chunk : decoder.write(chunk));
+    yield* drain();
+  }
+  parser.write(decoder.end());
+  parser.close();
+  yield* drain();
+}

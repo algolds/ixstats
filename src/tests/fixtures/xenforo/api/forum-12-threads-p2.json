@@ -1,0 +1,21 @@
+{
+  "threads": [
+    {
+      "thread_id": 102,
+      "node_id": 12,
+      "title": "Third",
+      "user_id": 0,
+      "username": "Guest",
+      "post_date": 1700002000,
+      "last_post_date": 1700002000,
+      "reply_count": 0,
+      "view_count": 1,
+      "first_post_id": 1020,
+      "discussion_open": false,
+      "sticky": false,
+      "discussion_state": "visible",
+      "prefix_id": 3
+    }
+  ],
+  "pagination": { "current_page": 2, "last_page": 2, "per_page": 2, "shown": 1, "total": 3 }
+}

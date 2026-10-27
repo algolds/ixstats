@@ -1,179 +1,94 @@
-// src/server/api/routers/security.ts
-// Comprehensive Security & Defense System Router
+/**
+ * Security Operations Router (Plan 163 / Plan 191)
+ *
+ * Handles military operations lifecycle, unit/asset deployments,
+ * GDP maintenance drag calculations, and mission recall.
+ */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, premiumMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
+import { applyRelationshipImpact } from "~/lib/diplomacy/relationship-impact";
+import {
+  assertCountryWriteAccess,
+  hasCountryWriteAccess,
+} from "~/server/shared/country-authorization";
+import { redactOperationCosts } from "~/lib/military/owner-redaction";
+import { endStorytellerEffects } from "~/lib/economy/storyteller-effects";
+import {
+  COMBAT_OPERATIONS,
+  OPERATION_TYPES,
+  TARGETED_OPERATIONS,
+  combinedRating,
+  operationDailyCost,
+} from "~/lib/military/combat";
+import {
+  GENERALS_READINESS_MULTIPLIER,
+  PEACEKEEPING_BONUS_WINDOW_IXDAYS,
+  PEACEKEEPING_RELATION_BONUS,
+  ixDaysAgo,
+  operationSuccessRating,
+} from "~/lib/military/operation-rules";
+import { DEPLOY_CONDITION_COST } from "~/lib/military/model";
+import { IxTime } from "~/lib/ixtime";
+import { isBrokerSatisfied } from "~/server/modules/security/brokers";
+import { applyOperationReadiness } from "~/server/modules/defense";
+import { assertRealmsMatch } from "~/server/shared/same-realm-guard";
+import {
+  newBattleId,
+  resolveIntervention,
+  sealIntervention,
+} from "~/server/modules/combat";
+import { clockForCountry, type RealmClockReader } from "~/server/shared/realm-time";
+import type { PrismaClient } from "@prisma/client";
 
-// ===========================
-// Input Validation Schemas
-// ===========================
+/** `createdBy` of a military operation's GDP-drain StorytellerEffect (operations before D3; now paid from O&M). */
+const operationEffectKey = (operationId: string) => `operation:${operationId}`;
 
-// Base schema with all fields
-const militaryBranchBaseSchema = z.object({
-  branchType: z.enum([
-    "army",
-    "navy",
-    "air_force",
-    "space_force",
-    "marines",
-    "coast_guard",
-    "cyber_command",
-    "special_forces",
-  ]),
-  name: z.string().min(1, "Branch name is required"),
-  description: z.string().optional(),
-  motto: z.string().optional(),
-  imageUrl: z.string().optional(),
-  established: z.string().optional(),
-  activeDuty: z.number().int().nonnegative().default(0),
-  reserves: z.number().int().nonnegative().default(0),
-  civilianStaff: z.number().int().nonnegative().default(0),
-  annualBudget: z.number().nonnegative().default(0),
-  budgetPercent: z.number().min(0).max(100).default(0),
-  readinessLevel: z.number().min(0).max(100).default(50),
-  technologyLevel: z.number().min(0).max(100).default(50),
-  trainingLevel: z.number().min(0).max(100).default(50),
-  morale: z.number().min(0).max(100).default(50),
-  deploymentCapacity: z.number().min(0).max(100).default(50),
-  sustainmentCapacity: z.number().min(0).max(100).default(50),
-  isActive: z.boolean().default(true),
-});
+/**
+ * The relation a new peacekeeping operation raises: the one with its target, unless an earlier
+ * peacekeeping operation by this nation already raised it within the window on its realm clock
+ * (null then).
+ */
+async function peacekeepingRelation(
+  db: PrismaClient,
+  countryId: string,
+  targetId: string,
+  clock: RealmClockReader
+) {
+  const recentBonus = await db.militaryOperation.findFirst({
+    where: {
+      countryId,
+      targetCountryId: targetId,
+      operationType: "peacekeeping",
+      diplomaticImpact: { gt: 0 },
+      createdAt: { gte: ixDaysAgo(PEACEKEEPING_BONUS_WINDOW_IXDAYS, clock) },
+    },
+    select: { id: true },
+  });
+  if (recentBonus) return null;
+  return db.diplomaticRelation.findFirst({
+    where: {
+      OR: [
+        { country1: countryId, country2: targetId },
+        { country1: targetId, country2: countryId },
+      ],
+    },
+  });
+}
 
-// Create schema - all required fields with defaults
-const militaryBranchCreateSchema = militaryBranchBaseSchema;
-
-// Update schema - all fields optional
-const militaryBranchUpdateSchema = militaryBranchBaseSchema.partial();
-
-const militaryUnitInputSchema = z.object({
-  name: z.string().min(1),
-  unitType: z.string(),
-  designation: z.string().optional(),
-  description: z.string().optional(),
-  personnel: z.number().int().nonnegative().default(0),
-  commanderName: z.string().optional(),
-  commanderRank: z.string().optional(),
-  headquarters: z.string().optional(),
-  readiness: z.number().min(0).max(100).default(50),
-  imageUrl: z.string().optional(),
-});
-
-const militaryAssetInputSchema = z.object({
-  assetType: z.enum(["aircraft", "ship", "vehicle", "weapon_system", "installation"]),
-  category: z.string(),
-  name: z.string().min(1),
-  quantity: z.number().int().positive().default(1),
-  operational: z.number().int().nonnegative().default(1),
-  capability: z.string().optional(),
-  status: z.enum(["operational", "maintenance", "reserve", "retired"]).default("operational"),
-  modernizationLevel: z.number().min(0).max(100).default(50),
-  acquisitionCost: z.number().nonnegative().default(0),
-  maintenanceCost: z.number().nonnegative().default(0),
-  imageUrl: z.string().optional(),
-});
-
-const securityThreatInputSchema = z.object({
-  threatName: z.string().min(1),
-  threatType: z.enum([
-    "military",
-    "terrorism",
-    "insurgency",
-    "cyber",
-    "organized_crime",
-    "espionage",
-    "nuclear",
-    "biological",
-    "natural_disaster",
-  ]),
-  description: z.string().min(10),
-  severity: z.enum(["existential", "critical", "high", "moderate", "low"]),
-  likelihood: z.number().min(0).max(100).default(50),
-  urgency: z.enum(["low", "medium", "high", "immediate"]).default("medium"),
-  actorType: z.enum(["state", "non-state", "terrorist", "criminal", "unknown"]).optional(),
-  actorName: z.string().optional(),
-  actorLocation: z.string().optional(),
-  actorCapability: z.number().min(0).max(100).default(50),
-  potentialCasualties: z.number().int().nonnegative().default(0),
-  economicImpact: z.number().nonnegative().default(0),
-  politicalImpact: z.string().optional(),
-  infrastructureRisk: z.number().min(0).max(100).default(0),
-  responseLevel: z.enum(["minimal", "standard", "elevated", "maximum"]).default("standard"),
-  intelligenceSource: z.string().optional(),
-  confidenceLevel: z.number().min(0).max(100).default(50),
-  estimatedTimeline: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-});
-
-const neighborThreatInputSchema = z.object({
-  neighborName: z.string().min(1),
-  neighborCountryId: z.string().optional(),
-  borderType: z.enum(["land", "maritime", "both"]),
-  borderLength: z.number().nonnegative().optional(),
-  threatLevel: z.enum(["minimal", "low", "moderate", "high", "critical"]).default("low"),
-  threatScore: z.number().min(0).max(100).default(20),
-  militaryThreat: z.number().min(0).max(100).default(10),
-  terrorismRisk: z.number().min(0).max(100).default(15),
-  smugglingRisk: z.number().min(0).max(100).default(25),
-  refugeeFlow: z.number().min(0).max(100).default(20),
-  politicalStability: z.number().min(0).max(100).default(60),
-  diplomaticRelations: z
-    .enum(["hostile", "tense", "neutral", "friendly", "allied"])
-    .default("neutral"),
-  tradeVolume: z.number().nonnegative().default(0),
-  treatyStatus: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-// ===========================
-// Security Router
-// ===========================
+/** An operation row without its server-only battle inputs, and without the seed until it has ended. */
+function withoutBattleInputs<T extends { status: string; inputSnapshot?: string | null; orders?: string | null; seed?: string | null }>(
+  operation: T
+): Omit<T, "inputSnapshot" | "orders"> {
+  const { inputSnapshot: _snapshot, orders: _orders, ...rest } = operation;
+  return { ...rest, seed: operation.status === "completed" ? (operation.seed ?? null) : null };
+}
 
 export const securityOperationsRouter = createTRPCRouter({
-  // ===========================
-  // Security Assessment Endpoints
-  // ===========================
-
-  // ===========================
-  // Military Branch Endpoints
-  // ===========================
-
-  // ===========================
-  // Military Unit Endpoints
-  // ===========================
-
-  // ===========================
-  // Military Asset Endpoints
-  // ===========================
-
-  // ===========================
-  // Defense Budget Endpoints
-  // ===========================
-
-  // ===========================
-  // Internal Stability Endpoints
-  // ===========================
-
-  // ===========================
-  // Border Security Endpoints
-  // ===========================
-
-  // ===========================
-  // Security Threats Endpoints
-  // ===========================
-
-  // ===========================
-  // Integration Endpoints
-  // ===========================
-
-  // ============================================================
-  // Military Operations (Phase 4)
-  // ============================================================
-
-  // Get active and past operations
+  // Get active and past operations. Personnel and costs are the owner's only.
   getOperations: publicProcedure
     .input(
       z.object({
@@ -193,7 +108,7 @@ export const securityOperationsRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
       });
 
-      return operations.map((op) => ({
+      const rows = operations.map(withoutBattleInputs).map((op) => ({
         ...op,
         targetCountry: op.targetCountry
           ? {
@@ -203,80 +118,166 @@ export const securityOperationsRouter = createTRPCRouter({
             }
           : null,
       }));
+      if (await hasCountryWriteAccess(ctx, input.countryId)) return rows;
+      return rows.map(redactOperationCosts);
     }),
 
   // Create a military operation and deploy units/assets
-  createOperation: premiumProcedure
+  createOperation: premiumMutationProcedure
     .input(
       z.object({
         countryId: z.string(),
-        operationType: z.enum([
-          "peacekeeping",
-          "defense_pact",
-          "blockade",
-          "intervention",
-          "training",
-        ]),
+        operationType: z.enum(OPERATION_TYPES),
         name: z.string().min(2),
         description: z.string().optional(),
         targetCountryId: z.string().optional(),
         personnelDeployed: z.number().min(0).default(0),
         unitIds: z.array(z.string()).optional().default([]),
         assetIds: z.array(z.string()).optional().default([]),
-        duration: z.number().min(1).optional(), // Planned IxTime days
+        duration: z.number().min(1).optional(), // Planned in-game days on the realm clock
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
+      if (input.operationType === "peacekeeping" && input.personnelDeployed <= 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "A peacekeeping operation must deploy personnel.",
+        });
+      }
+
       const userProfile = await ctx.db.user.findUnique({
         where: { clerkUserId: ctx.auth.userId },
-        select: { countryId: true, id: true },
+        select: { id: true },
       });
-
-      if (userProfile?.countryId !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only create operations for your own country.",
-        });
+      if (!userProfile) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "User profile not found." });
       }
 
       // Get country GDP for cost calculation
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
-        select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
+        select: {
+          id: true,
+          name: true,
+          realmId: true,
+          currentGdpPerCapita: true,
+          currentPopulation: true,
+        },
       });
 
       if (!country) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
       }
 
-      // Calculate daily cost: (personnel * $200/day) + (asset maintenance * 1.5x)
-      let assetMaintenanceCost = 0;
-      if (input.assetIds.length > 0) {
-        const assets = await ctx.db.militaryAsset.findMany({
-          where: { id: { in: input.assetIds } },
-          select: { maintenanceCost: true },
-        });
-        assetMaintenanceCost = assets.reduce((sum, a) => sum + (a.maintenanceCost ?? 0), 0);
+      // Operations against another nation stay inside the realm.
+      const target = input.targetCountryId
+        ? await ctx.db.country.findUnique({
+            where: { id: input.targetCountryId },
+            select: { id: true, realmId: true },
+          })
+        : null;
+      if (input.targetCountryId && !target) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Target country not found" });
+      }
+      if (target) assertRealmsMatch(country.realmId, target.realmId);
+      if (TARGETED_OPERATIONS.has(input.operationType) && !target) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This operation needs a target nation." });
       }
 
-      const dailyCost = input.personnelDeployed * 200 + assetMaintenanceCost * 1.5;
-      const annualCost = dailyCost * 365;
-      const gdp = (country.currentGdpPerCapita ?? 10000) * (country.currentPopulation ?? 1000000);
-      const gdpDrain = gdp > 0 ? annualCost / gdp : 0;
+      // Units and assets must belong to this nation's active branches.
+      const [ownUnits, ownAssets] = await Promise.all([
+        input.unitIds.length > 0
+          ? ctx.db.militaryUnit.findMany({
+              where: {
+                id: { in: input.unitIds },
+                branch: { countryId: input.countryId, isActive: true },
+              },
+              select: { id: true, personnel: true },
+            })
+          : [],
+        input.assetIds.length > 0
+          ? ctx.db.militaryAsset.findMany({
+              where: {
+                id: { in: input.assetIds },
+                branch: { countryId: input.countryId, isActive: true },
+              },
+              select: { id: true, maintenanceCost: true, quantity: true },
+            })
+          : [],
+      ]);
+      if (
+        ownUnits.length !== new Set(input.unitIds).size ||
+        ownAssets.length !== new Set(input.assetIds).size
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Deploy only your own nation's units and assets.",
+        });
+      }
+      const unitIds = ownUnits.map((u) => u.id);
+      const assetIds = ownAssets.map((a) => a.id);
+
+      // Deployed units bring their own headcount; a typed figure only stands in when no units go.
+      const personnelDeployed =
+        ownUnits.length > 0
+          ? ownUnits.reduce((sum, u) => sum + (u.personnel ?? 0), 0)
+          : input.personnelDeployed;
+
+      // Daily cost on the Defense budget's O&M line (the monthly tick pays operations first): personnel at the
+      // operation type's rate of GDP per capita, plus 1.5x the deployed assets' annual upkeep per day.
+      const dailyCost = operationDailyCost({
+        type: input.operationType,
+        personnel: personnelDeployed,
+        gdpPerCapita: country.currentGdpPerCapita ?? 0,
+        assetMaintenanceAnnual: ownAssets.reduce(
+          (sum, a) => sum + (a.maintenanceCost ?? 0) * Math.max(1, a.quantity ?? 1),
+          0
+        ),
+      });
+      const gdp = (country.currentGdpPerCapita ?? 0) * (country.currentPopulation ?? 0);
+      // Shown as the operation's share of GDP a year; no longer a GDP effect of its own.
+      const gdpDrain = gdp > 0 ? (dailyCost * 365) / gdp : 0;
+
+      // Peacekeeping raises the relation with its target once per target per window.
+      const clock = await clockForCountry(ctx.db, country);
+      const relation =
+        input.operationType === "peacekeeping" && input.targetCountryId
+          ? await peacekeepingRelation(ctx.db, input.countryId, input.targetCountryId, clock)
+          : null;
+
+      // An intervention is sealed now (orders, commit time, seed) and fought on the combat model when it ends.
+      const operationId = newBattleId();
+      const seal =
+        COMBAT_OPERATIONS.has(input.operationType) && target
+          ? await sealIntervention(ctx.db, {
+              operationId,
+              countryId: input.countryId,
+              targetId: target.id,
+              personnel: personnelDeployed,
+              days: input.duration ?? null,
+            })
+          : {};
 
       // Create the operation
       const operation = await ctx.db.militaryOperation.create({
         data: {
+          id: operationId,
+          ...seal,
           countryId: input.countryId,
           operationType: input.operationType,
           name: input.name,
           description: input.description,
           targetCountryId: input.targetCountryId,
           status: "active",
-          personnelDeployed: input.personnelDeployed,
+          personnelDeployed,
           dailyCost,
           gdpDrain,
           duration: input.duration,
+          startIxTime: clock.now(),
+          readinessImpact: -DEPLOY_CONDITION_COST * 100,
+          diplomaticImpact: relation ? PEACEKEEPING_RELATION_BONUS : 0,
         },
         include: {
           targetCountry: { select: { id: true, name: true } },
@@ -284,26 +285,21 @@ export const securityOperationsRouter = createTRPCRouter({
       });
 
       // Create deployments for units
-      if (input.unitIds.length > 0) {
+      if (unitIds.length > 0) {
         await ctx.db.deployment.createMany({
-          data: input.unitIds.map((unitId) => ({
+          data: unitIds.map((unitId) => ({
             operationId: operation.id,
             unitId,
             status: "deployed",
           })),
         });
 
-        // Reduce unit readiness
-        await ctx.db.militaryUnit.updateMany({
-          where: { id: { in: input.unitIds } },
-          data: { readiness: { decrement: 10 } },
-        });
       }
 
       // Create deployments for assets
-      if (input.assetIds.length > 0) {
+      if (assetIds.length > 0) {
         await ctx.db.deployment.createMany({
-          data: input.assetIds.map((assetId) => ({
+          data: assetIds.map((assetId) => ({
             operationId: operation.id,
             assetId,
             status: "deployed",
@@ -311,65 +307,39 @@ export const securityOperationsRouter = createTRPCRouter({
         });
       }
 
-      // Create storyteller effects for GDP drain
-      if (gdpDrain > 0) {
-        await ctx.db.storytellerEffect.create({
-          data: {
-            countryId: input.countryId,
-            ixTimeTimestamp: new Date(),
-            inputType: "GDP_ADJUSTMENT",
-            value: -gdpDrain,
-            description: `Military operation: ${input.name} (${input.operationType})`,
-            duration: input.duration ? Math.ceil(input.duration / 365) : 1,
-            isActive: true,
-            createdBy: userProfile.id,
-          },
-        });
-      }
+      // The deployed branches' equipment condition wears (the model's readiness, not a typed one).
+      await applyOperationReadiness(ctx.db, {
+        countryId: input.countryId,
+        unitIds,
+        assetIds,
+        change: "deploy",
+      });
 
-      // Diplomatic impact for certain operation types
-      if (input.targetCountryId && input.operationType === "peacekeeping") {
-        const relation = await ctx.db.diplomaticRelation.findFirst({
-          where: {
-            OR: [
-              { country1: input.countryId, country2: input.targetCountryId },
-              { country1: input.targetCountryId, country2: input.countryId },
-            ],
-          },
-        });
-        if (relation) {
-          await ctx.db.diplomaticRelation.update({
-            where: { id: relation.id },
-            data: { strength: Math.min(100, relation.strength + 10) },
-          });
-        }
+      if (relation && input.targetCountryId) {
+        await applyRelationshipImpact(
+          ctx.db,
+          input.countryId,
+          input.targetCountryId,
+          PEACEKEEPING_RELATION_BONUS
+        );
       }
 
       // Auto-news: military deployment
       void generateDiplomaticNews(ctx.db as any, input.countryId, "military_deployed", {
         countryName: country.name,
         operationName: input.name,
-        personnel: input.personnelDeployed,
+        personnel: personnelDeployed,
         targetName: operation.targetCountry?.name,
       });
 
-      return operation;
+      return withoutBattleInputs(operation);
     }),
 
-  // Recall a deployment / end an operation
-  endOperation: premiumProcedure
-    .input(
-      z.object({
-        operationId: z.string(),
-        successRating: z.enum(["success", "partial", "failure"]).optional(),
-      })
-    )
+  // Recall a deployment / end an operation. The server rates the outcome from how much of the
+  // planned duration ran, and recalled units recover readiness (training gains overall).
+  endOperation: premiumMutationProcedure
+    .input(z.object({ operationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        select: { countryId: true },
-      });
-
       const operation = await ctx.db.militaryOperation.findUnique({
         where: { id: input.operationId },
         include: { deployments: true },
@@ -379,9 +349,7 @@ export const securityOperationsRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Operation not found." });
       }
 
-      if (operation.countryId !== userProfile?.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Not your operation." });
-      }
+      await assertCountryWriteAccess(ctx, operation.countryId);
 
       if (operation.status !== "active" && operation.status !== "planned") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Operation is not active." });
@@ -393,35 +361,58 @@ export const securityOperationsRouter = createTRPCRouter({
         data: { status: "recalled", recalledAt: new Date() },
       });
 
-      // Restore partial unit readiness (+5 per recalled unit)
-      const unitDeployments = operation.deployments.filter(
-        (d) => d.unitId && d.status === "deployed"
-      );
-      if (unitDeployments.length > 0) {
-        const unitIds = unitDeployments.map((d) => d.unitId!);
-        await ctx.db.militaryUnit.updateMany({
-          where: { id: { in: unitIds } },
-          data: { readiness: { increment: 5 } },
-        });
-      }
+      // A training exercise lifts the deployed branches' training (10% more with the Generals
+      // satisfied); any other operation leaves a reset bill on their equipment condition.
+      const deployed = operation.deployments.filter((d) => d.status === "deployed");
+      const generals = await isBrokerSatisfied(ctx.db, operation.countryId, "generals");
+      await applyOperationReadiness(ctx.db, {
+        countryId: operation.countryId,
+        unitIds: deployed.flatMap((d) => (d.unitId ? [d.unitId] : [])),
+        assetIds: deployed.flatMap((d) => (d.assetId ? [d.assetId] : [])),
+        change: operation.operationType === "training" ? "trainingEnded" : "operationEnded",
+        generalsMultiplier: generals ? GENERALS_READINESS_MULTIPLIER : 1,
+      });
 
-      // End operation
+      // End operation on the nation's realm clock. Rows from before startIxTime was stamped fall
+      // back to their creation (on Ixnay's timeline, which every realm clock shares).
+      const endIxTime = (await clockForCountry(ctx.db, operation.countryId)).now();
+      const durationRating = operationSuccessRating({
+        durationIxDays: operation.duration,
+        startIxTime: operation.startIxTime || IxTime.convertToIxTime(operation.createdAt.getTime()),
+        endIxTime,
+      });
+      // Claim the end once, then fight a sealed intervention against the target's real forces.
+      const claimed = await ctx.db.militaryOperation.updateMany({
+        where: { id: input.operationId, status: { in: ["active", "planned"] } },
+        data: { status: "completed", endIxTime },
+      });
+      if (claimed.count === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Operation is not active." });
+      }
+      const battle = await resolveIntervention(ctx.db, operation);
+      const successRating = combinedRating(durationRating, battle?.result.band ?? null);
       const updated = await ctx.db.militaryOperation.update({
         where: { id: input.operationId },
         data: {
-          status: "completed",
-          successRating: input.successRating,
+          successRating,
+          ...(battle
+            ? {
+                outcomeBand: battle.result.band,
+                casualties: battle.data.initiatorCasualties,
+                inputSnapshot: battle.data.inputSnapshot,
+              }
+            : {}),
         },
       });
 
-      // Deactivate storyteller effects for this operation
-      await ctx.db.storytellerEffect.updateMany({
-        where: {
-          countryId: operation.countryId,
-          description: { contains: operation.name },
-          isActive: true,
-        },
-        data: { isActive: false },
+      // End this operation's GDP drain without rewriting the projected past (rows from before
+      // the operation key are matched by their description).
+      await endStorytellerEffects(ctx.db, {
+        countryId: operation.countryId,
+        OR: [
+          { createdBy: operationEffectKey(operation.id) },
+          { description: `Military operation: ${operation.name} (${operation.operationType})` },
+        ],
       });
 
       // Notification: operation completed (fire-and-forget)
@@ -431,410 +422,21 @@ export const securityOperationsRouter = createTRPCRouter({
             userId: ctx.auth.userId,
             countryId: operation.countryId,
             title: "Operation Complete",
-            message: `Operation "${operation.name}" ended: ${input.successRating ?? "completed"}`,
+            message: `Operation "${operation.name}" ended: ${successRating}`,
             type: "info",
             category: "military",
             priority: "high",
-            metadata: { operationId: input.operationId, result: input.successRating },
+            metadata: { operationId: input.operationId, result: successRating },
           });
         }
-      } catch {}
-
-      return updated;
-    }),
-
-  // Propose a PvP conflict (requires mutual acceptance)
-  proposePvPConflict: premiumProcedure
-    .input(
-      z.object({
-        defenderId: z.string(),
-        reason: z.string().optional(),
-        pvpRules: z
-          .object({
-            victoryConditions: z.string(),
-            maxDuration: z.number(), // IxTime days
-            stakes: z.string(),
-          })
-          .optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        select: { countryId: true },
-      });
-
-      if (!userProfile?.countryId) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Not associated with a country." });
+      } catch (err) {
+        console.warn(
+          "[Security Operations] Completion notification failed for operation",
+          input.operationId,
+          err
+        );
       }
 
-      if (userProfile.countryId === input.defenderId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Cannot declare conflict against yourself.",
-        });
-      }
-
-      // Check for existing active conflict
-      const existing = await ctx.db.militaryConflict.findFirst({
-        where: {
-          OR: [
-            { initiatorId: userProfile.countryId, defenderId: input.defenderId },
-            { initiatorId: input.defenderId, defenderId: userProfile.countryId },
-          ],
-          status: { in: ["proposed", "accepted", "active"] },
-        },
-      });
-
-      if (existing) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "An active or pending conflict already exists between these nations.",
-        });
-      }
-
-      const conflict = await ctx.db.militaryConflict.create({
-        data: {
-          type: "pvp",
-          initiatorId: userProfile.countryId,
-          defenderId: input.defenderId,
-          status: "proposed",
-          initiatorApproved: true,
-          defenderApproved: false,
-          reason: input.reason,
-          pvpRules: input.pvpRules ? JSON.stringify(input.pvpRules) : null,
-        },
-        include: {
-          initiator: { select: { id: true, name: true } },
-          defender: { select: { id: true, name: true } },
-        },
-      });
-
-      // Notification: notify defender about PvP conflict proposal (fire-and-forget)
-      try {
-        const defenderCountry = await ctx.db.country.findUnique({
-          where: { id: input.defenderId },
-          select: { name: true, users: { select: { clerkUserId: true } } },
-        });
-        const defenderUserId = defenderCountry?.users[0]?.clerkUserId;
-        if (defenderUserId) {
-          await notificationAPI.create({
-            userId: defenderUserId,
-            countryId: input.defenderId,
-            title: "Conflict Proposed",
-            message: `${conflict.initiator.name} has proposed a military conflict against your nation`,
-            type: "warning",
-            category: "military",
-            priority: "high",
-            metadata: { conflictId: conflict.id, initiatorId: userProfile.countryId },
-          });
-        }
-      } catch {}
-
-      // Canon news: initiator's feed
-      void generateDiplomaticNews(ctx.db as any, conflict.initiatorId, "pvp_conflict_proposed", {
-        countryName: conflict.initiator.name,
-        targetName: conflict.defender.name,
-        reason: input.reason,
-      });
-
-      // Canon news: defender's feed
-      void generateDiplomaticNews(ctx.db as any, input.defenderId, "pvp_conflict_proposed", {
-        countryName: conflict.initiator.name,
-        targetName: conflict.defender.name,
-        reason: input.reason,
-      });
-
-      return conflict;
-    }),
-
-  // Accept or decline a PvP conflict
-  respondToConflict: premiumProcedure
-    .input(
-      z.object({
-        conflictId: z.string(),
-        accept: z.boolean(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        select: { countryId: true },
-      });
-
-      const conflict = await ctx.db.militaryConflict.findUnique({
-        where: { id: input.conflictId },
-      });
-
-      if (!conflict) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Conflict not found." });
-      }
-
-      if (conflict.defenderId !== userProfile?.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only the defender can respond." });
-      }
-
-      if (conflict.status !== "proposed") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Conflict is not in proposed state." });
-      }
-
-      if (!input.accept) {
-        const declined = await ctx.db.militaryConflict.update({
-          where: { id: input.conflictId },
-          data: { status: "resolved", winner: "declined" },
-        });
-
-        // Notification: notify initiator of decline (fire-and-forget)
-        try {
-          const initiatorCountry = await ctx.db.country.findUnique({
-            where: { id: conflict.initiatorId },
-            select: { users: { select: { clerkUserId: true } } },
-          });
-          const initiatorUserId = initiatorCountry?.users[0]?.clerkUserId;
-          if (initiatorUserId) {
-            await notificationAPI.create({
-              userId: initiatorUserId,
-              countryId: conflict.initiatorId,
-              title: "Conflict Declined",
-              message: "Your conflict proposal was declined",
-              type: "warning",
-              category: "military",
-              priority: "medium",
-              metadata: { conflictId: input.conflictId },
-            });
-          }
-        } catch {}
-
-        return declined;
-      }
-
-      const accepted = await ctx.db.militaryConflict.update({
-        where: { id: input.conflictId },
-        data: {
-          defenderApproved: true,
-          status: "active",
-          startDate: new Date(),
-        },
-        include: {
-          initiator: { select: { id: true, name: true } },
-          defender: { select: { id: true, name: true } },
-        },
-      });
-
-      // Notification: notify initiator of acceptance (fire-and-forget)
-      try {
-        const initiatorCountry = await ctx.db.country.findUnique({
-          where: { id: conflict.initiatorId },
-          select: { users: { select: { clerkUserId: true } } },
-        });
-        const initiatorUserId = initiatorCountry?.users[0]?.clerkUserId;
-        if (initiatorUserId) {
-          await notificationAPI.create({
-            userId: initiatorUserId,
-            countryId: conflict.initiatorId,
-            title: "Conflict Accepted",
-            message: `${accepted.defender.name} has accepted your conflict proposal - hostilities begin`,
-            type: "warning",
-            category: "military",
-            priority: "high",
-            metadata: { conflictId: input.conflictId },
-          });
-        }
-      } catch {}
-
-      // Canon news: defender's feed
-      void generateDiplomaticNews(ctx.db as any, accepted.defenderId, "pvp_conflict_accepted", {
-        countryName: accepted.defender.name,
-        targetName: accepted.initiator.name,
-      });
-
-      // Canon news: initiator's feed
-      void generateDiplomaticNews(ctx.db as any, accepted.initiatorId, "pvp_conflict_accepted", {
-        countryName: accepted.defender.name,
-        targetName: accepted.initiator.name,
-      });
-
-      return accepted;
-    }),
-
-  // Get conflicts involving a country
-  getConflicts: publicProcedure
-    .input(z.object({ countryId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const conflicts = await ctx.db.militaryConflict.findMany({
-        where: {
-          OR: [{ initiatorId: input.countryId }, { defenderId: input.countryId }],
-        },
-        include: {
-          initiator: { select: { id: true, name: true, flag: true } },
-          defender: { select: { id: true, name: true, flag: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      return conflicts.map((c) => ({
-        ...c,
-        initiator: c.initiator
-          ? {
-              id: c.initiator.id,
-              name: c.initiator.name,
-              flagUrl: c.initiator.flag,
-            }
-          : null,
-        defender: c.defender
-          ? {
-              id: c.defender.id,
-              name: c.defender.name,
-              flagUrl: c.defender.flag,
-            }
-          : null,
-      }));
-    }),
-
-  // Resolve a PvNPC conflict automatically
-  resolvePvNPCConflict: premiumProcedure
-    .input(
-      z.object({
-        targetCountryId: z.string(),
-        reason: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        select: { countryId: true, id: true },
-      });
-
-      if (!userProfile?.countryId) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Not associated with a country." });
-      }
-
-      // Get both countries' military data
-      const [initiatorBranches, defenderBranches, initiator, defender] = await Promise.all([
-        ctx.db.militaryBranch.findMany({
-          where: { countryId: userProfile.countryId, isActive: true },
-          include: { units: true, assets: true },
-        }),
-        ctx.db.militaryBranch.findMany({
-          where: { countryId: input.targetCountryId, isActive: true },
-          include: { units: true, assets: true },
-        }),
-        ctx.db.country.findUnique({
-          where: { id: userProfile.countryId },
-          select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
-        }),
-        ctx.db.country.findUnique({
-          where: { id: input.targetCountryId },
-          select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
-        }),
-      ]);
-
-      if (!initiator || !defender) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
-      }
-
-      // Calculate military strength
-      const calcStrength = (branches: typeof initiatorBranches) =>
-        branches.reduce((sum, b) => {
-          const unitStr = b.units.reduce(
-            (s, u) => s + (u.personnel ?? 0) * ((u.readiness ?? 50) / 100),
-            0
-          );
-          const assetStr = b.assets.reduce(
-            (s, a) => s + (a.quantity ?? 0) * (a.operational ?? 0) * 10,
-            0
-          );
-          return sum + unitStr + assetStr;
-        }, 0);
-
-      const initiatorStrength = calcStrength(initiatorBranches);
-      const defenderStrength = calcStrength(defenderBranches);
-      const totalStrength = initiatorStrength + defenderStrength || 1;
-
-      // Random swing factor (10-30%)
-      const swing = 0.1 + Math.random() * 0.2;
-      const effectiveRatio =
-        initiatorStrength / totalStrength + (Math.random() > 0.5 ? swing : -swing);
-
-      const initiatorWins = effectiveRatio > 0.5;
-      const marginOfVictory = Math.abs(effectiveRatio - 0.5);
-
-      // Calculate casualties proportional to strength ratio
-      const baseCasualties = Math.round((initiatorStrength + defenderStrength) * 0.05);
-      const initiatorCasualties = Math.round(
-        baseCasualties * (initiatorWins ? 0.3 : 0.7) * (1 + Math.random() * 0.3)
-      );
-      const defenderCasualties = Math.round(
-        baseCasualties * (initiatorWins ? 0.7 : 0.3) * (1 + Math.random() * 0.3)
-      );
-
-      // Economic damage
-      const econDamage = marginOfVictory < 0.1 ? 0.02 : marginOfVictory < 0.2 ? 0.01 : 0.005;
-
-      const conflict = await ctx.db.militaryConflict.create({
-        data: {
-          type: "pvnpc",
-          initiatorId: userProfile.countryId,
-          defenderId: input.targetCountryId,
-          status: "resolved",
-          initiatorApproved: true,
-          defenderApproved: true,
-          reason: input.reason,
-          startDate: new Date(),
-          endDate: new Date(),
-          winner: initiatorWins ? userProfile.countryId : input.targetCountryId,
-          initiatorCasualties,
-          defenderCasualties,
-          economicDamage: econDamage,
-        },
-        include: {
-          initiator: { select: { id: true, name: true } },
-          defender: { select: { id: true, name: true } },
-        },
-      });
-
-      // Create storyteller effects for economic damage
-      await ctx.db.storytellerEffect.createMany({
-        data: [
-          {
-            countryId: userProfile.countryId,
-            ixTimeTimestamp: new Date(),
-            inputType: "GDP_ADJUSTMENT",
-            value: -econDamage * (initiatorWins ? 0.5 : 1.5),
-            description: `Military conflict with ${defender.name}: ${initiatorWins ? "victory" : "defeat"}`,
-            duration: 2,
-            isActive: true,
-            createdBy: userProfile.id,
-          },
-          {
-            countryId: input.targetCountryId,
-            ixTimeTimestamp: new Date(),
-            inputType: "GDP_ADJUSTMENT",
-            value: -econDamage * (initiatorWins ? 1.5 : 0.5),
-            description: `Military conflict with ${initiator.name}: ${initiatorWins ? "defeat" : "defense"}`,
-            duration: 2,
-            isActive: true,
-            createdBy: userProfile.id,
-          },
-        ],
-      });
-
-      const winnerName = initiatorWins ? initiator.name : defender.name;
-
-      // Canon news: initiator's feed
-      void generateDiplomaticNews(ctx.db as any, userProfile.countryId, "pvnpc_conflict_resolved", {
-        countryName: initiator.name,
-        targetName: defender.name,
-        winner: winnerName,
-      });
-
-      // Canon news: defender's feed
-      void generateDiplomaticNews(ctx.db as any, input.targetCountryId, "pvnpc_conflict_resolved", {
-        countryName: initiator.name,
-        targetName: defender.name,
-        winner: winnerName,
-      });
-
-      return conflict;
+      return withoutBattleInputs(updated);
     }),
 });

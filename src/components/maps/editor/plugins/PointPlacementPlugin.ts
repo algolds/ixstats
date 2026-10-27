@@ -1,49 +1,42 @@
-import { MapPin, Landmark, BookMarked, Type, Mountain } from "lucide-react";
-import type { MapEditorPlugin, MapEditorContextType } from "./types";
+import { MapPin, Bank as Landmark, ModernTv as Mountain } from "iconoir-react";
+import type { MapEditorPlugin, ToolbarItem } from "./types";
+import { toolShortcuts } from "./shortcuts";
+
+const toolbarItems: ToolbarItem[] = [
+  {
+    id: "tool-city",
+    mode: "add-city",
+    icon: MapPin,
+    label: "City",
+    shortcut: "C",
+    group: 1,
+    order: 2,
+  },
+  {
+    id: "tool-poi",
+    mode: "add-poi",
+    icon: Landmark,
+    label: "POI",
+    shortcut: "P",
+    group: 1,
+    order: 3,
+  },
+  {
+    id: "tool-peak",
+    mode: "add-peak",
+    icon: Mountain,
+    label: "Peak",
+    shortcut: "K",
+    group: 3,
+    order: 1,
+  },
+];
 
 export const PointPlacementPlugin: MapEditorPlugin = {
   id: "point-placement",
-  name: "POI & Label Placement",
-  global: true, // Listens globally to C/P/S/L/K keys
-  modes: ["add-city", "add-poi", "add-story-pin", "add-label", "add-peak"],
-
-  toolbarItems: [
-    { id: "tool-city", mode: "add-city", icon: MapPin, label: "City", shortcut: "C", group: 2 },
-    { id: "tool-poi", mode: "add-poi", icon: Landmark, label: "POI", shortcut: "P", group: 2 },
-    { id: "tool-peak", mode: "add-peak", icon: Mountain, label: "Peak", shortcut: "K", group: 2 },
-    {
-      id: "tool-story",
-      mode: "add-story-pin",
-      icon: BookMarked,
-      label: "Story",
-      shortcut: "S",
-      group: 2,
-    },
-    { id: "tool-label", mode: "add-label", icon: Type, label: "Label", shortcut: "L", group: 3 },
-  ],
-
-  onKeyDown(e: KeyboardEvent, context: MapEditorContextType) {
-    const key = e.key.toLowerCase();
-    if (key === "c") {
-      context.onModeChange("add-city");
-      return true;
-    }
-    if (key === "p") {
-      context.onModeChange("add-poi");
-      return true;
-    }
-    if (key === "k") {
-      context.onModeChange("add-peak");
-      return true;
-    }
-    if (key === "s") {
-      context.onModeChange("add-story-pin");
-      return true;
-    }
-    if (key === "l") {
-      context.onModeChange("add-label");
-      return true;
-    }
-    return false;
-  },
+  name: "POI & Feature Placement",
+  global: true,
+  modes: ["add-city", "add-poi", "add-peak"],
+  toolbarItems,
+  onKeyDown: toolShortcuts(toolbarItems, { skipInBorderEdit: true }),
 };

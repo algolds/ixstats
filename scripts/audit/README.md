@@ -1,46 +1,51 @@
 # Audit & Verification Scripts
 
-**Last updated:** May 2026
+**Last updated:** 2026-10-21
 
-Automation under `scripts/audit` provides fast confidence in API wiring, database health, and economic calculations. Invoke these scripts via `tsx` or the corresponding bun scripts.
+Automation under `scripts/audit` provides fast confidence in architecture boundaries, API wiring, security guards and WikiOS parity. Invoke these scripts with `bun <path>` or the corresponding `bun run` alias.
 
 ## Script Catalog
 | Script | bun alias | Purpose |
 | --- | --- | --- |
-| `run-all-tests.ts` | `bun run test:all` | Runs the full audit suite with optional filters (`--only=crud,health`) |
-| `test-all-crud-operations.ts` | `bun run test:crud` | Exercises CRUD endpoints across countries, users, diplomacy, policies, and social content |
-| `test-api-health.ts` | `bun run test:health` | Pings every tRPC procedure for availability and latency |
-| `test-builder-performance.ts` | `bun run test:builder-perf` | **NEW:** Benchmarks builder system performance (government create, queries with limits) |
-| `verify-database-integrity.ts` | `bun run test:db` | Checks referential integrity, indexes, and record counts |
-| `verify-economic-calculations.ts` | `bun run test:economics` | Validates tier calculations, projections, and growth models |
-| `verify-live-data-wiring.ts` | `bun run audit:wiring` | Confirms React components consume live tRPC data rather than mock fixtures |
-| `audit-production-urls.ts` | `bun run audit:urls` | Ensures key routes resolve under the configured base path |
-| `audit-flag-urls.ts` | `bun run audit:flags` | Verifies flag/coat-of-arms assets resolve |
+| `audit-trpc-wiring.ts` | `bun run audit:wiring` (`audit:wiring:json`) | Cross-references Prisma models against tRPC router endpoints; flags missing endpoints and unused models |
+| `audit-arch.ts` (+ `router-residue.ts`) | `bun run audit:arch` (`audit:arch:update`) | Architecture guard (CI): file-size ceilings with a ratchet baseline (`arch-baseline.json`), no cross-router imports, server boundary leaks, split residue (`router-residue-baseline.json`) |
+| `audit-country-idor.ts` | `bun run audit:idor` | Plan 332: every country-data mutation must check caller ownership (`idor-allowlist.json`) |
+| `audit-components.ts` | `bun run audit:components` (`:json`) | Import-graph reachability audit for unused components |
+| `audit-schema-coverage.ts` | `bun run audit:coverage` | Schema coverage report (writes to `scripts/audit/reports/`) |
+| `audit-v1.ts` | `bun run audit:v1` (`:prod`) | Legacy V1 production-readiness audit |
+| `audit-vault-exploits.ts` | `bun run audit:vault-exploits` (`:json`, `:apply`) | Vault ledger report for the M0 exploits (store charges not matching item prices, repeat cosmetic buys, repeated one-time / NS deck-import bonuses) plus the planned corrections; `:apply` writes them as idempotent `ADMIN_ADJUSTMENT` rows (rules in `src/lib/vault/exploit-corrections.ts`; back up first) |
+| `fuzz-template-styles.ts` (+ `scripts/lib/template-styles-fuzz.ts`, `template-styles-oracle*.ts`) | `bun run audit:template-styles` | Deep exact-oracle fuzz of the TemplateStyles scoper (`src/lib/utils/scope-template-styles.ts`): six seeded generators (general, url soup, comment-in-url, host allowlist, sibling combinators, urls and decoys in strings), 300000 sheets each by default (`--iterations=N`, `--seed=N`, `--only=host,sibling`). Two independent oracles read what the scoper emits, lightningcss (`template-styles-oracle.ts`) and the `@csstools/css-tokenizer` spec tokenizer (`template-styles-oracle-tokens.ts`); a selector outside `.mw-parser-output`, an at-rule but `@media`, a `url()` to another host, a script hook, `attr()`, a `<` or a non-idempotent output is a failure (exit 1). The Jest gate `src/tests/security/scope-template-styles-vectors.test.ts` runs the same code at 20000 per generator; run this one after any scoper change or a reported CSS bypass |
+| `audit-wikios-db.ts` | `bun run audit:wikios-db` | WikiOS PostgreSQL store self-audit |
+| `audit-wikios-parity.ts` | `bun run audit:wikios-parity` | MediaWiki ↔ PostgreSQL WikiOS parity audit |
+| `wikios-regex-fuzz.ts` (+ `wikios-regex-fuzz-targets.ts`) | `bun run audit:wikios-regex` | WikiOS regex-DoS fuzz: every function that reads page text on 2 MB of hostile wikitext/HTML/XML, one process each, 200 ms budget; exits 1 on a breach (`--only=`, `--family=`, `--all`, `--json=`). The Jest gate `src/tests/lib/wiki-os/regex-dos.test.ts` runs the same list on 200 KB |
+| `wikios-corpus-diff.ts` | `bun scripts/audit/wikios-corpus-diff.ts --old=<old checkout> --corpus=<dir>` | The same text functions as the fuzz, run in an old checkout and in this tree on every page of a corpus dumped from a clone (JSON lines; read-only SELECTs), answers compared with `isDeepStrictEqual`; prints the differing count per function |
+| `verify-country-links.ts` | `bun run audit:country-links` | User ↔ country linkage integrity |
+| `validate-schema-alignment.ts` | `bun run validate:schemas` | Prisma model fields vs Zod input schemas |
+| `validate-script-targets.ts` | `bun run validate:script-targets` | `package.json` / tsconfig / CI script targets exist; no banned package managers (CI) |
+
+URL and flag audits live one level up: `scripts/audit-production-urls.ts` (`bun run audit:urls`, route resolution under the base path) and `scripts/audit-flag-urls.ts` (`bun run audit:flags`, flag asset resolution).
 
 ## Usage Examples
 ```bash
-# Run everything
-bun run test:all
-
-# Focus on CRUD + database integrity
-bun run test:crud
-bun run test:db
+# Architecture guard (runs in CI)
+bun run audit:arch
 
 # Regenerate wiring report in JSON format
-bun run audit:wiring -- --json-only
+bun run audit:wiring:json
 ```
 
 ## Exit Codes
 - `0` – All checks passed
 - `1` – Critical failures (halting deployment)
-- `2` – Non-blocking warnings; review output before proceeding
 
 ## Recommended Deployment Flow
-1. `bun run audit:wiring`
-2. `bun run test:crud`
-3. `bun run test:db`
-4. `bun run test:health`
-5. `bun run test:economics`
-6. Review reports under `scripts/audit/reports/` (if generated)
+1. `bun run audit:arch`
+2. `bun run audit:wiring`
+3. `bun run validate:schemas`
+4. Review reports under `scripts/audit/reports/` (if generated)
+
+The live-database runners (`test:all`, `test:critical`, `test:crud`, `test:db`, `test:economics`, `test:health`,
+`test:wiring`, `test:builder-perf`) and `verify:production` were retired on 2026-10-21; behaviour is covered by Jest
+(`bun run test`).
 
 Update this README whenever new audit scripts are added or existing scripts change behaviour.

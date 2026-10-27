@@ -3,10 +3,12 @@
  * Multi-layer caching with Redis, in-memory, and intelligent invalidation
  */
 
-import { Redis } from "ioredis";
 // Note: Using globalThis.performance (available in Node.js 16+ and browsers)
+import superjson from "superjson";
+import type { SuperJSONResult } from "superjson";
 
-import { memoryConfig } from "~/lib/system";
+import { memoryConfig } from "~/lib/system/dev-memory-config";
+import { getSharedRedis, isRedisReady, deleteKeysByPattern } from "./redis-client";
 
 // In-memory cache for fallback
 class InMemoryCache {
@@ -50,7 +52,7 @@ class InMemoryCache {
   deleteByPattern(pattern: string): void {
     const isWildcard = pattern.includes("*");
     if (isWildcard) {
-      const regexStr = pattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, (ch) =>
+      const regexStr = pattern.replace(/[-/\\^$*+?.()|[\]{}]/g, (ch) =>
         ch === "*" ? ".*" : "\\" + ch
       );
       const regex = new RegExp(`^${regexStr}$`);
@@ -81,67 +83,38 @@ class InMemoryCache {
   }
 }
 
-// Redis cache interface
+// Redis cache interface (shared client; every key namespaced so clear() never touches other data)
+const KEY_PREFIX = "acs:";
+
 class RedisCache {
-  private redis: Redis | null = null;
-  private enabled = false;
-
-  constructor() {
-    this.initializeRedis();
-  }
-
-  private async initializeRedis(): Promise<void> {
-    try {
-      const redisUrl = process.env.REDIS_URL;
-      const redisEnabled = process.env.REDIS_ENABLED === "true";
-
-      if (redisUrl && redisEnabled) {
-        this.redis = new Redis(redisUrl, {
-          maxRetriesPerRequest: 3,
-          lazyConnect: true,
-        });
-
-        this.redis.on("error", (err) => {
-          console.warn("[RedisCache] Redis connection error:", err.message);
-        });
-
-        this.redis.on("connect", () => {
-          console.log("[RedisCache] Connected to Redis");
-        });
-
-        this.enabled = true;
-      } else if (process.env.NODE_ENV !== "test") {
-        console.warn("[RedisCache] Redis not configured or not enabled, using in-memory fallback");
-      }
-    } catch (error) {
-      console.error("[RedisCache] Failed to initialize:", error);
-    }
-  }
-
   isEnabled(): boolean {
-    return this.enabled;
+    return getSharedRedis() !== null;
   }
 
   isConnected(): boolean {
-    return this.redis?.status === "ready";
+    return isRedisReady(getSharedRedis());
   }
 
   async set(key: string, value: any, ttlSeconds = 300): Promise<void> {
-    if (!this.enabled || !this.redis || !this.isConnected()) return;
+    const redis = getSharedRedis();
+    if (!isRedisReady(redis)) return;
 
     try {
-      await this.redis.setex(key, ttlSeconds, JSON.stringify(value));
+      await redis.setex(KEY_PREFIX + key, ttlSeconds, JSON.stringify(superjson.serialize(value)));
     } catch (error) {
       console.error("[RedisCache] Set failed:", error);
     }
   }
 
   async get(key: string): Promise<any | null> {
-    if (!this.enabled || !this.redis || !this.isConnected()) return null;
+    const redis = getSharedRedis();
+    if (!isRedisReady(redis)) return null;
 
     try {
-      const value = await this.redis.get(key);
-      return value ? JSON.parse(value as string) : null;
+      const raw = await redis.get(KEY_PREFIX + key);
+      if (raw === null) return null;
+      const payload: SuperJSONResult = JSON.parse(raw);
+      return superjson.deserialize(payload) ?? null;
     } catch (error) {
       console.error("[RedisCache] Get failed:", error);
       return null;
@@ -149,47 +122,47 @@ class RedisCache {
   }
 
   async delete(key: string): Promise<void> {
-    if (!this.enabled || !this.redis || !this.isConnected()) return;
+    const redis = getSharedRedis();
+    if (!isRedisReady(redis)) return;
 
     try {
-      await this.redis.del(key);
+      await redis.del(KEY_PREFIX + key);
     } catch (error) {
       console.error("[RedisCache] Delete failed:", error);
     }
   }
 
   async deleteByPattern(pattern: string): Promise<void> {
-    if (!this.enabled || !this.redis || !this.isConnected()) return;
+    const redis = getSharedRedis();
+    if (!isRedisReady(redis)) return;
 
     try {
-      const keys = await this.redis.keys(pattern);
-      if (keys.length > 0) {
-        await this.redis.del(...keys);
-      }
+      await deleteKeysByPattern(redis, KEY_PREFIX + pattern);
     } catch (error) {
       console.error("[RedisCache] Delete by pattern failed:", error);
     }
   }
 
   async clear(): Promise<void> {
-    if (!this.enabled || !this.redis || !this.isConnected()) return;
+    const redis = getSharedRedis();
+    if (!isRedisReady(redis)) return;
 
     try {
-      await this.redis.flushdb();
+      await deleteKeysByPattern(redis, KEY_PREFIX + "*");
     } catch (error) {
       console.error("[RedisCache] Clear failed:", error);
     }
   }
 }
 
-export interface AdvancedCacheOptions {
+interface AdvancedCacheOptions {
   ttl?: number; // Time to live in seconds
   tier?: "critical" | "standard" | "background"; // Cache tier
   tags?: string[]; // For invalidation
   skipRedis?: boolean; // Skip Redis for this item
 }
 
-export interface AdvancedCacheStats {
+interface AdvancedCacheStats {
   memory: {
     size: number;
     hits: number;
@@ -206,10 +179,13 @@ export interface AdvancedCacheStats {
   };
 }
 
+/** Memory-tier TTL cap while Redis is connected: bounds cross-process staleness after invalidation. */
+const L1_MAX_TTL_MS = 30_000;
+
 /**
  * Advanced multi-tier caching system
  */
-export class AdvancedCacheSystem {
+class AdvancedCacheSystem {
   // Exposed for synchronous access by intelligence-cache facade
   readonly memoryCache = new InMemoryCache();
   private redisCache = new RedisCache();
@@ -229,13 +205,16 @@ export class AdvancedCacheSystem {
     const startTime = performance.now();
 
     try {
-      const { ttl = 300, tier = "standard", tags = [], skipRedis = false } = options;
+      const { ttl = 300, tier = "standard", skipRedis = false } = options;
 
-      // Always set in memory cache
-      this.memoryCache.set(key, value, (ttl * 1000) as number);
+      // Redis holds critical and standard tiers (unless skipped) when connected
+      const toRedis =
+        !skipRedis && (tier === "critical" || tier === "standard") && this.redisCache.isConnected();
 
-      // Set in Redis for critical and standard tiers (unless skipped)
-      if (!skipRedis && (tier === "critical" || tier === "standard")) {
+      // Always set in memory cache; short-lived when Redis is the shared source of truth
+      this.memoryCache.set(key, value, toRedis ? Math.min(ttl * 1000, L1_MAX_TTL_MS) : ttl * 1000);
+
+      if (toRedis) {
         await this.redisCache.set(key, value, ttl);
       }
 
@@ -265,7 +244,7 @@ export class AdvancedCacheSystem {
       value = await this.redisCache.get(key);
       if (value !== null) {
         // Store back in memory for faster access
-        this.memoryCache.set(key, value, 300000); // 5 minutes
+        this.memoryCache.set(key, value, L1_MAX_TTL_MS);
         this.recordGetTime(performance.now() - startTime);
         return value;
       }
@@ -353,139 +332,3 @@ export class AdvancedCacheSystem {
 
 // Global cache instance
 export const globalCache = new AdvancedCacheSystem();
-
-/**
- * Cache utilities for common patterns
- */
-export class CacheUtils {
-  /**
-   * Generate cache key with consistent formatting
-   */
-  static generateKey(prefix: string, ...parts: (string | number)[]): string {
-    return `${prefix}:${parts.join(":")}`;
-  }
-
-  /**
-   * Cache with automatic key generation
-   */
-  static async cache<T>(
-    keyGenerator: () => string,
-    dataFetcher: () => Promise<T>,
-    options: AdvancedCacheOptions = {}
-  ): Promise<T> {
-    const key = keyGenerator();
-
-    // Try to get from cache first
-    const cached = await globalCache.get<T>(key);
-    if (cached !== null) {
-      return cached;
-    }
-
-    // Fetch fresh data
-    const data = await dataFetcher();
-
-    // Cache the result
-    await globalCache.set(key, data, options);
-
-    return data;
-  }
-
-  /**
-   * Batch cache operations
-   */
-  static async batchCache<T>(
-    keys: string[],
-    dataFetcher: (keys: string[]) => Promise<Record<string, T>>,
-    options: AdvancedCacheOptions = {}
-  ): Promise<Record<string, T>> {
-    const results: Record<string, T> = {};
-    const missingKeys: string[] = [];
-
-    // Check cache for all keys
-    for (const key of keys) {
-      const cached = await globalCache.get<T>(key);
-      if (cached !== null) {
-        results[key] = cached;
-      } else {
-        missingKeys.push(key);
-      }
-    }
-
-    // Fetch missing data
-    if (missingKeys.length > 0) {
-      const freshData = await dataFetcher(missingKeys);
-
-      // Cache fresh data
-      for (const [key, value] of Object.entries(freshData)) {
-        results[key] = value;
-        await globalCache.set(key, value, options);
-      }
-    }
-
-    return results;
-  }
-
-  /**
-   * Invalidate cache by pattern
-   */
-  static async invalidatePattern(pattern: string): Promise<void> {
-    await globalCache.deleteByPattern(pattern);
-  }
-}
-
-/**
- * Specialized cache decorators for different data types
- */
-export class CacheDecorators {
-  /**
-   * Cache country data
-   */
-  static async cacheCountryData<T>(
-    countryId: string,
-    dataType: string,
-    fetcher: () => Promise<T>,
-    ttl = 600 // 10 minutes
-  ): Promise<T> {
-    const key = CacheUtils.generateKey("country", countryId, dataType);
-    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "standard" });
-  }
-
-  /**
-   * Cache user data
-   */
-  static async cacheUserData<T>(
-    userId: string,
-    dataType: string,
-    fetcher: () => Promise<T>,
-    ttl = 300 // 5 minutes
-  ): Promise<T> {
-    const key = CacheUtils.generateKey("user", userId, dataType);
-    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "critical" });
-  }
-
-  /**
-   * Cache intelligence data
-   */
-  static async cacheIntelligenceData<T>(
-    countryId: string,
-    dataType: string,
-    fetcher: () => Promise<T>,
-    ttl = 180 // 3 minutes
-  ): Promise<T> {
-    const key = CacheUtils.generateKey("intelligence", countryId, dataType);
-    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "critical" });
-  }
-
-  /**
-   * Cache ThinkPages data
-   */
-  static async cacheThinkPagesData<T>(
-    dataType: string,
-    params: Record<string, any>,
-    fetcher: () => Promise<T>,
-    ttl = 120 // 2 minutes
-  ): Promise<T> {
-    const key = CacheUtils.generateKey("thinkpages", dataType, JSON.stringify(params));
-    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "background" });
-  }
-}

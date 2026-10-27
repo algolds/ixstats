@@ -1,99 +1,119 @@
 "use client";
 
-import { LogIn, User, LayoutDashboard, Crown } from "lucide-react";
+import { LogIn, User, Dashboard as LayoutDashboard, Crown } from "iconoir-react";
 import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { getNationUrl } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
+import { cn, getNationUrl } from "~/lib/utils";
 import { useRouter } from "next/navigation";
+import { assetUrl } from "~/lib/base-path";
+
+/**
+ * Controls on the map island (Halo's acrylic pill, which clips at its edge — `overflow-hidden`,
+ * 4px of padding): the focus ring sits just inside the control, as MapDynamicIsland's buttons.
+ */
+const ISLAND_CONTROL = "text-label-secondary hover:text-label focus-visible:-outline-offset-2";
 
 interface AuthSectionProps {
   user: any;
   isLoaded: boolean;
   greeting: string;
   countryName?: string;
-  router: ReturnType<typeof useRouter>;
 }
 
-export function AuthSection({ user, isLoaded, greeting, countryName, router }: AuthSectionProps) {
+export function AuthSection({ user, isLoaded, greeting, countryName }: AuthSectionProps) {
+  const router = useRouter();
   if (!isLoaded) {
-    return <span className="text-muted-foreground text-[11px]">…</span>;
+    return <span className="text-label-secondary text-footnote">…</span>;
   }
 
   if (!user) {
     return (
       <SignInButton mode="modal">
-        <button className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors">
-          <LogIn className="h-3 w-3" />
+        <Button variant="ghost" size="sm" className={cn(ISLAND_CONTROL, "px-2")}>
+          <LogIn className="size-3.5" aria-hidden />
           <span className="hidden sm:inline">Sign in</span>
-        </button>
+          <span className="sr-only sm:hidden">Sign in</span>
+        </Button>
       </SignInButton>
     );
   }
 
   return (
     <Popover>
-      <PopoverTrigger className="text-foreground/80 hover:bg-accent hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors">
-        {user.imageUrl ? (
-          <img
-            src={user.imageUrl}
-            alt=""
-            className="h-4 w-4 rounded-full object-cover ring-1 ring-white/20"
-          />
-        ) : (
-          <User className="h-3 w-3" />
-        )}
-        <span className="hidden whitespace-nowrap sm:inline">
-          {greeting}
-          {user.firstName ? `, ${user.firstName}` : ""}
-        </span>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            ISLAND_CONTROL,
+            "hover:bg-fill-3 rounded-control-sm text-caption gap-2 px-2 font-normal"
+          )}
+        >
+          {user.imageUrl ? (
+            <img
+              src={assetUrl(user.imageUrl) ?? undefined}
+              alt=""
+              className="ring-separator h-4 w-4 rounded-full object-cover ring-1"
+            />
+          ) : (
+            <User aria-hidden className="h-3 w-3" />
+          )}
+          <span className="hidden whitespace-nowrap sm:inline">
+            {greeting}
+            {user.firstName ? `, ${user.firstName}` : ""}
+          </span>
+          {/* Phones hide the greeting: keep the trigger named. */}
+          <span className="sr-only sm:hidden">Account</span>
+        </Button>
       </PopoverTrigger>
       <PopoverContent
         side="bottom"
         align="center"
-        className="glass-none border-border bg-popover mt-2 w-64 rounded-2xl border p-0 shadow-2xl"
+        className="rounded-card mt-2 w-64 p-0"
         sideOffset={8}
       >
-        {/* Header */}
-        <div className="border-border flex items-center gap-3 border-b px-4 py-3">
+        <div className="border-separator flex items-center gap-3 border-b px-4 py-3">
           {user.imageUrl ? (
             <img
-              src={user.imageUrl}
+              src={assetUrl(user.imageUrl) ?? undefined}
               alt=""
-              className="ring-border h-8 w-8 rounded-full object-cover ring-2"
+              className="ring-separator h-8 w-8 rounded-full object-cover ring-2"
             />
           ) : (
-            <div className="bg-accent flex h-8 w-8 items-center justify-center rounded-full">
-              <User className="text-muted-foreground h-4 w-4" />
-            </div>
+            <User className="text-label-secondary h-5 w-5" aria-hidden />
           )}
           <div className="min-w-0 flex-1">
-            <div className="text-foreground truncate text-sm font-semibold">
+            <div className="text-label text-headline truncate">
               {user.firstName || user.emailAddresses?.[0]?.emailAddress || "User"}
             </div>
             {countryName && (
-              <div className="text-muted-foreground truncate text-[11px]">{countryName}</div>
+              <div className="text-label-secondary text-footnote truncate">{countryName}</div>
             )}
           </div>
         </div>
 
-        {/* Quick actions */}
-        <div className="space-y-0.5 p-1.5">
-          <button
+        <div className="space-y-0.5 p-2">
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => router.push("/dashboard")}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-colors"
+            className="text-label-secondary w-full justify-start"
           >
-            <LayoutDashboard className="h-3.5 w-3.5" />
+            <LayoutDashboard aria-hidden />
             Dashboard
-          </button>
+          </Button>
 
           {countryName && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => router.push(getNationUrl(countryName))}
-              className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition-colors"
+              className="text-label-secondary w-full justify-start"
             >
-              <Crown className="h-3.5 w-3.5" />
+              <Crown aria-hidden />
               MyCountry
-            </button>
+            </Button>
           )}
         </div>
       </PopoverContent>

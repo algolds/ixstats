@@ -1,7 +1,7 @@
 "use client";
 
+import React from "react";
 import { Badge } from "~/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   Table,
   TableBody,
@@ -11,8 +11,19 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { cn } from "~/lib/utils";
-import { Clock, Cloud, Flag, MapPin, Zap } from "lucide-react";
+import {
+  Clock,
+  Cloud,
+  WhiteFlag as Flag,
+  MapPin,
+  Flash as Zap,
+  SunLight,
+  Rain,
+  FireFlame as Flame,
+} from "iconoir-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
+import { CircuitMap } from "~/components/sports/surfaces";
+import { Card } from "~/components/ui/card";
 
 interface RaceResultsProps {
   races: Array<{
@@ -37,12 +48,29 @@ interface RaceResultsProps {
   className?: string;
 }
 
-const WEATHER_ICONS: Record<string, string> = {
-  dry: "\u2600\uFE0F",
-  wet: "\uD83C\uDF27\uFE0F",
-  mixed: "\u26C5",
-  hot: "\uD83E\uDD75",
-};
+function WeatherBadge({ weather }: { weather: string }) {
+  const w = weather.toLowerCase();
+  let Icon = Cloud;
+  let colorClass = "text-label-secondary";
+
+  if (w.includes("dry") || w.includes("sun")) {
+    Icon = SunLight;
+    colorClass = "text-yellow";
+  } else if (w.includes("wet") || w.includes("rain")) {
+    Icon = Rain;
+    colorClass = "text-teal";
+  } else if (w.includes("hot")) {
+    Icon = Flame;
+    colorClass = "text-red";
+  }
+
+  return (
+    <span className={cn("text-eyebrow inline-flex items-center gap-1", colorClass)}>
+      <Icon className="h-3.5 w-3.5" />
+      <span>{weather}</span>
+    </span>
+  );
+}
 
 function DriverStandingsTable({ races }: { races: RaceResultsProps["races"] }) {
   const driverTotals = new Map<string, { driverName: string; points: number }>();
@@ -69,188 +97,137 @@ function DriverStandingsTable({ races }: { races: RaceResultsProps["races"] }) {
   if (sorted.length === 0) return null;
 
   return (
-    <Card className="facet-hierarchy-child">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Zap className="h-5 w-5" />
-          Driver Standings
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="decoration-border/60 cursor-help underline decoration-dotted">
-                      #
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>Rank / Position</TooltipContent>
-                </Tooltip>
-              </TableHead>
-              <TableHead>Driver</TableHead>
-              <TableHead className="text-center">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="decoration-border/60 cursor-help font-bold underline decoration-dotted">
-                      Pts
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>Points</TooltipContent>
-                </Tooltip>
-              </TableHead>
+    <Card padding="lg" className="space-y-4 overflow-hidden">
+      <div className="border-separator flex items-center justify-between border-b pb-3">
+        <div className="flex items-center gap-2">
+          <div className="rounded-row border-separator bg-surface-secondary shadow-card flex h-8 w-8 items-center justify-center border">
+            <Zap className="text-yellow h-4 w-4" />
+          </div>
+          <h4 className="text-headline text-label">Driver world championship standings</h4>
+        </div>
+      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-12">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="decoration-border/60 cursor-help underline decoration-dotted">
+                    #
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Rank / Position</TooltipContent>
+              </Tooltip>
+            </TableHead>
+            <TableHead>Driver</TableHead>
+            <TableHead className="text-center">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="decoration-border/60 cursor-help font-semibold underline decoration-dotted">
+                    Pts
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Championship points</TooltipContent>
+              </Tooltip>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sorted.map((d, i) => (
+            <TableRow key={d.driverId}>
+              <TableCell className="font-semibold">
+                {i === 0 ? (
+                  <Badge
+                    className="border-yellow/40 bg-yellow/20 text-footnote text-yellow px-2 py-0 font-semibold"
+                    variant="secondary"
+                  >
+                    P1
+                  </Badge>
+                ) : (
+                  `P${i + 1}`
+                )}
+              </TableCell>
+              <TableCell className="text-label font-medium">{d.driverName}</TableCell>
+              <TableCell className="text-label text-center font-semibold">{d.points}</TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sorted.map((d, i) => (
-              <TableRow key={d.driverId}>
-                <TableCell className="font-medium">{i + 1}</TableCell>
-                <TableCell>{d.driverName}</TableCell>
-                <TableCell className="text-center font-bold">{d.points}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
+          ))}
+        </TableBody>
+      </Table>
     </Card>
   );
 }
 
 export function RaceResults({ races, className }: RaceResultsProps) {
+  if (!races || races.length === 0) {
+    return null;
+  }
+
+  const sortedRaces = [...races].sort((a, b) => a.raceNumber - b.raceNumber);
+
   return (
     <div className={cn("space-y-6", className)}>
       <DriverStandingsTable races={races} />
 
-      {races.map((race) => (
-        <Card key={race.id} className="facet-hierarchy-child">
-          <CardHeader>
-            <div className="flex flex-wrap items-center gap-3">
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                <span className="text-muted-foreground text-sm font-normal">
-                  Round {race.raceNumber}
-                </span>
-                {race.circuitName}
-              </CardTitle>
-              <Badge
-                variant={
-                  race.status === "completed"
-                    ? "secondary"
-                    : race.status === "upcoming"
-                      ? "outline"
-                      : "default"
-                }
-              >
-                {race.status === "qualifying_complete" ? "Qualifying Complete" : race.status}
-              </Badge>
-              {race.weather && (
-                <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                  <Cloud className="h-3.5 w-3.5" />
-                  {WEATHER_ICONS[race.weather] ? (
-                    <>
-                      {WEATHER_ICONS[race.weather]} {race.weather}
-                    </>
-                  ) : (
-                    race.weather
-                  )}
-                </span>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {race.grid && race.grid.length > 0 && (
+      <div className="space-y-6">
+        {sortedRaces.map((race) => (
+          <Card key={race.id} className="relative space-y-6 overflow-hidden p-6 md:p-8">
+            <div className="border-separator flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="rounded-row border-separator bg-surface-secondary shadow-card flex h-9 w-9 items-center justify-center border">
+                  <MapPin className="text-teal h-5 w-5" />
+                </div>
                 <div>
-                  <h4 className="text-muted-foreground mb-2 flex items-center gap-2 text-xs font-semibold">
-                    <Flag className="h-3.5 w-3.5" />
-                    Grid
+                  <h3 className="text-headline text-label">
+                    Round {race.raceNumber}: {race.circuitName}
+                  </h3>
+                  <p className="text-footnote text-label-secondary font-semibold">
+                    Grand Prix venue layout and official session timing.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {race.weather && <WeatherBadge weather={race.weather} />}
+                <Badge
+                  variant={
+                    race.status === "completed"
+                      ? "default"
+                      : race.status === "upcoming"
+                        ? "outline"
+                        : "secondary"
+                  }
+                  className="text-eyebrow"
+                >
+                  {race.status === "qualifying_complete" ? "Qualifying Complete" : race.status}
+                </Badge>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <CircuitMap circuitName={race.circuitName} className="mb-4" />
+
+              {race.grid && race.grid.length > 0 && (
+                <div className="rounded-card border-separator bg-surface-secondary border p-4">
+                  <h4 className="text-label-secondary text-eyebrow mb-3 flex items-center gap-2">
+                    <Flag className="text-label h-3.5 w-3.5" />
+                    Starting grid positions
                   </h4>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-12">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="decoration-border/60 cursor-help underline decoration-dotted">
-                                Pos
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>Grid Position</TooltipContent>
-                          </Tooltip>
-                        </TableHead>
+                        <TableHead className="w-16">Pos</TableHead>
                         <TableHead>Driver</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {race.grid
+                      {[...race.grid]
                         .sort((a, b) => a.position - b.position)
                         .map((g) => (
                           <TableRow key={g.driverId}>
-                            <TableCell className="font-medium">P{g.position}</TableCell>
-                            <TableCell>{g.driverName ?? g.driverId}</TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-
-              {race.results && race.results.length > 0 && (
-                <div>
-                  <h4 className="text-muted-foreground mb-2 flex items-center gap-2 text-xs font-semibold">
-                    <Clock className="h-3.5 w-3.5" />
-                    Race Results
-                  </h4>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="decoration-border/60 cursor-help underline decoration-dotted">
-                                Pos
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>Finish Position</TooltipContent>
-                          </Tooltip>
-                        </TableHead>
-                        <TableHead>Driver</TableHead>
-                        <TableHead className="text-center">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="decoration-border/60 cursor-help font-bold underline decoration-dotted">
-                                Pts
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>Points Earned</TooltipContent>
-                          </Tooltip>
-                        </TableHead>
-                        <TableHead className="w-8 text-center">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="decoration-border/60 cursor-help underline decoration-dotted">
-                                FL
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>Fastest Lap</TooltipContent>
-                          </Tooltip>
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {race.results
-                        .sort((a, b) => a.finishPosition - b.finishPosition)
-                        .map((r) => (
-                          <TableRow key={r.driverId}>
-                            <TableCell className="font-medium">{r.finishPosition}</TableCell>
-                            <TableCell>{r.driverName ?? r.driverId}</TableCell>
-                            <TableCell className="text-center font-bold">{r.points}</TableCell>
-                            <TableCell className="text-center">
-                              {r.fastestLap && (
-                                <Zap className="inline h-3.5 w-3.5 text-amber-400" />
-                              )}
+                            <TableCell className="text-label-secondary font-semibold">
+                              P{g.position}
+                            </TableCell>
+                            <TableCell className="text-label font-medium">
+                              {g.driverName ?? g.driverId}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -259,15 +236,64 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                 </div>
               )}
 
-              {race.status === "upcoming" && (
-                <p className="text-muted-foreground py-4 text-center text-sm">
-                  Race has not started yet.
-                </p>
+              {race.results && race.results.length > 0 && (
+                <div className="rounded-card border-separator bg-surface-secondary border p-4">
+                  <h4 className="text-label-secondary text-eyebrow mb-3 flex items-center gap-2">
+                    <Clock className="text-yellow h-3.5 w-3.5" />
+                    Official Grand Prix classification
+                  </h4>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-16">Pos</TableHead>
+                        <TableHead>Driver</TableHead>
+                        <TableHead className="w-24 text-center">Points</TableHead>
+                        <TableHead className="text-right">Honors</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {[...race.results]
+                        .sort((a, b) => a.finishPosition - b.finishPosition)
+                        .map((r) => (
+                          <TableRow key={r.driverId}>
+                            <TableCell className="font-semibold">
+                              {r.finishPosition === 1 ? (
+                                <Badge
+                                  className="border-yellow/40 bg-yellow/20 text-footnote text-yellow px-2 py-0 font-semibold"
+                                  variant="secondary"
+                                >
+                                  P1
+                                </Badge>
+                              ) : (
+                                `P${r.finishPosition}`
+                              )}
+                            </TableCell>
+                            <TableCell className="text-label font-medium">
+                              {r.driverName ?? r.driverId}
+                            </TableCell>
+                            <TableCell className="text-label text-center font-semibold">
+                              {r.points}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {r.fastestLap && (
+                                <Badge
+                                  variant="outline"
+                                  className="border-indigo/30 bg-indigo/10 text-indigo text-footnote font-semibold"
+                                >
+                                  Fastest lap
+                                </Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-      ))}
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

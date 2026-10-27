@@ -1,10 +1,14 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { compositionSchema } from "~/lib/heraldry/composition-schema";
-import { validateComposition } from "~/lib/heraldry/validation";
-import { generateBlazon } from "~/lib/heraldry/blazon";
 import { generateRandomComposition } from "~/lib/heraldry/generator";
+import { isSystemOwner } from "~/lib/auth";
+
+/** The design's owner or a system owner (Clerk ids). */
+function canSeeDraft(ctx: { auth?: { userId?: string | null } | null }, ownerId: string): boolean {
+  const viewer = ctx.auth?.userId;
+  return !!viewer && (viewer === ownerId || isSystemOwner(viewer));
+}
 
 export const heraldryQueriesRouter = createTRPCRouter({
   getAchievement: publicProcedure
@@ -13,30 +17,14 @@ export const heraldryQueriesRouter = createTRPCRouter({
       const achievement = await ctx.db.heraldryAchievement.findUnique({
         where: { id: input.id },
       });
-      if (!achievement) {
+      // An unpublished design is its owner's draft: anyone else gets NOT_FOUND.
+      if (!achievement || (!achievement.isPublished && !canSeeDraft(ctx, achievement.ownerId))) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: `Heraldry achievement with ID ${input.id} not found`,
         });
       }
       return achievement;
-    }),
-
-  getAchievementsBySubject: publicProcedure
-    .input(
-      z.object({
-        subjectType: z.enum(["COUNTRY", "CHARACTER", "INSTITUTION", "DYNASTY"]),
-        subjectId: z.string().nullable(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return ctx.db.heraldryAchievement.findMany({
-        where: {
-          subjectType: input.subjectType,
-          subjectId: input.subjectId,
-        },
-        orderBy: { updatedAt: "desc" },
-      });
     }),
 
   getChargeLibrary: publicProcedure
@@ -113,19 +101,6 @@ export const heraldryQueriesRouter = createTRPCRouter({
       return charge;
     }),
 
-  getChargeCategories: publicProcedure.query(async ({ ctx }) => {
-    const counts = await ctx.db.heraldryCharge.groupBy({
-      by: ["category"],
-      _count: {
-        id: true,
-      },
-    });
-    return counts.map((c: any) => ({
-      category: c.category,
-      count: c._count.id,
-    }));
-  }),
-
   getRegistry: publicProcedure
     .input(
       z.object({
@@ -151,17 +126,17 @@ export const heraldryQueriesRouter = createTRPCRouter({
       return { items, total };
     }),
 
-  generateBlazon: publicProcedure.input(compositionSchema).query(({ input }) => {
-    return generateBlazon(input);
-  }),
-
-  validateComposition: publicProcedure.input(compositionSchema).query(({ input }) => {
-    return validateComposition(input);
-  }),
-
   getRevisionHistory: protectedProcedure
     .input(z.object({ achievementId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
+      const achievement = await ctx.db.heraldryAchievement.findUnique({
+        where: { id: input.achievementId },
+        select: { ownerId: true },
+      });
+      // Revision history is the owner's working record, published or not.
+      if (!achievement || !canSeeDraft(ctx, achievement.ownerId)) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Design not found" });
+      }
       return ctx.db.heraldryRevision.findMany({
         where: { achievementId: input.achievementId },
         orderBy: { createdAt: "desc" },

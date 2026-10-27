@@ -2,7 +2,7 @@ import { createRNG } from "./resolver";
 import { advanceCareerStage } from "./talent";
 import type { CareerStage } from "./talent";
 
-export interface AgingResult {
+interface AgingResult {
   playerId: string;
   oldStage: CareerStage;
   newStage: CareerStage;

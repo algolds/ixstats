@@ -1,0 +1,332 @@
+/* ===========================================================================
+   WIKIOS FOUNDATIONS — MEDIA THEME, RAIL ICON LIFT & CELEBRATIONS
+
+   Token definitions moved to wiki-os/tokens.css (always loaded from
+   globals.css) because navigation, stashes and blurbs read them outside /wiki.
+
+   Layering: rules are in `@layer components`, except the rail icon-box rules, which sit next
+   to base utilities (`border-*`, `bg-*`, `text-*`, `transition-*`) they are
+   meant to override on hover. They live in `@layer utilities` and win by
+   specificity/order there, with no `!important`.
+   =========================================================================== */
+
+@layer components {
+  /* ─── Media theme & adaptive image inversion ─────────────────────────── */
+  /* Dark is `.dark` / [data-theme="dark"] on <html>; nothing here matches in light mode. */
+
+  .wikios-article-content img,
+  .wikios-infobox img,
+  .thumbinner img,
+  figure img {
+    transition:
+      filter 200ms cubic-bezier(0.23, 1, 0.32, 1),
+      background-color 200ms cubic-bezier(0.23, 1, 0.32, 1),
+      box-shadow 200ms cubic-bezier(0.23, 1, 0.32, 1),
+      border-radius 180ms ease,
+      padding 180ms ease;
+    will-change: filter;
+  }
+
+  /* Global plinth mode (data-media-theme="plinth") in dark mode */
+  :is(html.dark, html[data-theme="dark"])[data-media-theme="plinth"]
+    :is(
+      .wikios-article-content img,
+      .wikios-infobox img,
+      .mwe-math-fallback-image-inline,
+      .mwe-math-element img
+    ):not([data-media-filter="raw"]):not([data-media-filter="invert"]):not(
+      [data-media-filter="auto"]
+    ) {
+    filter: none;
+    background-color: rgba(255, 255, 255, 0.94);
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.25);
+    border-radius: 8px;
+    padding: 6px;
+  }
+
+  /* Global auto / adaptive invert mode in dark mode */
+  :is(html.dark, html[data-theme="dark"]):not([data-media-theme="plinth"])
+    :is(
+      .wikios-article-content img[src*=".svg"],
+      .wikios-article-content img[src*=".svg.png"],
+      .wikios-article-content img[src*="/Special:FilePath/"],
+      .wikios-infobox img[src*=".svg"]
+    ):not([data-media-filter="raw"]):not([data-media-filter="plinth"]):not(
+      [data-media-filter="plate"]
+    ):not([data-media-filter="original"]) {
+    filter: invert(0.92) hue-rotate(180deg) brightness(1.05) contrast(1.02);
+  }
+
+  /* LaTeX / math formula invert */
+  :is(html.dark, html[data-theme="dark"]):not([data-media-theme="plinth"])
+    :is(.mwe-math-fallback-image-inline, .mwe-math-element img):not([data-media-filter="raw"]):not(
+      [data-media-filter="plinth"]
+    ) {
+    filter: brightness(0) invert(1) brightness(0.95);
+  }
+
+  /* Forced invert / auto (dark) */
+  :is(html.dark, html[data-theme="dark"])
+    img:is([data-media-filter="invert"], [data-media-filter="auto"]) {
+    filter: invert(0.92) hue-rotate(180deg) brightness(1.05) contrast(1.02);
+  }
+
+  /* Frosted light plinth / backplate (dark) */
+  :is(html.dark, html[data-theme="dark"])
+    img:is([data-media-filter="plinth"], [data-media-filter="plate"]) {
+    filter: none;
+    background-color: rgba(255, 255, 255, 0.94);
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.25);
+    border-radius: 8px;
+    padding: 6px;
+    display: inline-block;
+  }
+
+  /* Forced raw / original */
+  img:is([data-media-filter="raw"], [data-media-filter="original"]) {
+    filter: none;
+    background-color: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .wikios-article-content .thumb,
+  .wikios-article-content figure,
+  .wikios-infobox .infobox-image,
+  .wikios-article-content .gallerybox {
+    position: relative;
+  }
+
+  /* ===========================================================================
+     Loreward Badge Celebration Particles & Animations
+     =========================================================================== */
+
+  .loreward-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: var(--color-yellow);
+    box-shadow: 0 0 6px var(--color-yellow);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 10;
+    top: 50%;
+    left: 50%;
+  }
+
+  .loreward-particle-1 {
+    animation: loreward-particle-1 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  .loreward-particle-2 {
+    animation: loreward-particle-2 1.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  .loreward-particle-3 {
+    animation: loreward-particle-3 1.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  .loreward-particle-4 {
+    animation: loreward-particle-4 1.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  .loreward-particle-5 {
+    animation: loreward-particle-5 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  .loreward-particle-6 {
+    animation: loreward-particle-6 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  .loreward-particle-7 {
+    animation: loreward-particle-7 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  .loreward-particle-8 {
+    animation: loreward-particle-8 1.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+
+  .loreward-badge-celebrate {
+    animation: loreward-badge-celebrate 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  /* Reduced motion: target the classes that actually animate (the rail guard is in the
+     utilities layer below, next to the rules it cancels). */
+  @media (prefers-reduced-motion: reduce) {
+    .wikios-article-content img,
+    .wikios-infobox img {
+      transition: opacity 120ms ease;
+    }
+
+    .loreward-badge-celebrate,
+    [class*="loreward-particle-"] {
+      animation: none;
+    }
+  }
+}
+
+/* ===========================================================================
+   Media theme for pictures that say what they are (the hero art, the lightbox picture)
+
+   Such a picture (and the hero's backdrop around it) carries `data-media-kind` (svg | diagram |
+   math | photo | unknown) and, only when that one picture has a mode of its own,
+   `data-media-mode` (auto | plinth). The theme is not in the markup: it is `<html>`'s, which the
+   pre-paint script sets before the first frame, and the reader's mode is `<html data-media-theme>`.
+   So the server and the first client render write the same attributes, and a reader of either theme
+   sees the right picture from the first paint. (The theme used to be read while rendering and put
+   in an inline `filter`: the server could only guess dark, and a light reader's page hydrated to a
+   different style.) Dark theme only: in the light theme nothing here matches and every picture is
+   shown as it is.
+
+   Layer: utilities. The plinth's padding and radius used to be inline styles; as rules they still
+   have to win over the pictures' own `p-*` utilities.
+   =========================================================================== */
+@layer utilities {
+  /* Auto (the default): vector art and diagrams are inverted with their hues kept, so black linework
+     reads on the dark page; a formula becomes white. Photos are not touched. */
+  img:is(
+      :is(html.dark, html[data-theme="dark"]):not([data-media-theme="plinth"])
+        [data-media-kind]:not([data-media-mode="plinth"]),
+      :is(html.dark, html[data-theme="dark"]) [data-media-kind][data-media-mode="auto"]
+    ):is([data-media-kind="svg"], [data-media-kind="diagram"]) {
+    filter: invert(0.92) hue-rotate(180deg) brightness(1.05) contrast(1.02);
+  }
+
+  img:is(
+      :is(html.dark, html[data-theme="dark"]):not([data-media-theme="plinth"])
+        [data-media-kind]:not([data-media-mode="plinth"]),
+      :is(html.dark, html[data-theme="dark"]) [data-media-kind][data-media-mode="auto"]
+    )[data-media-kind="math"] {
+    filter: brightness(0) invert(1);
+  }
+
+  /* Plinth: everything that is not a photo sits on a light plate (the hero's backdrop is the plate
+     of its art; the picture itself also gets the mat). */
+  :is(
+    :is(html.dark, html[data-theme="dark"])[data-media-theme="plinth"]
+      [data-media-kind]:not([data-media-mode="auto"]),
+    :is(html.dark, html[data-theme="dark"]) [data-media-kind][data-media-mode="plinth"]
+  ):not([data-media-kind="photo"]) {
+    background-color: rgba(255, 255, 255, 0.94);
+  }
+
+  img:is(
+      :is(html.dark, html[data-theme="dark"])[data-media-theme="plinth"]
+        [data-media-kind]:not([data-media-mode="auto"]),
+      :is(html.dark, html[data-theme="dark"]) [data-media-kind][data-media-mode="plinth"]
+    ):not([data-media-kind="photo"]) {
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 6px;
+  }
+}
+
+@keyframes loreward-particle-1 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-30px, -25px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes loreward-particle-2 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(30px, -20px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes loreward-particle-3 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-15px, -35px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes loreward-particle-4 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(15px, -30px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes loreward-particle-5 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-35px, 10px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes loreward-particle-6 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(35px, 15px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes loreward-particle-7 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-10px, 35px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes loreward-particle-8 {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(10px, -40px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes loreward-badge-celebrate {
+  0% {
+    transform: scale(1);
+    box-shadow: var(--shadow-card);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: var(--shadow-card);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: var(--shadow-card);
+  }
+}

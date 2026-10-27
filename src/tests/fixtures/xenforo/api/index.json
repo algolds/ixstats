@@ -1,0 +1,12 @@
+{
+  "version_id": 2021070,
+  "site_title": "Example Forum",
+  "base_url": "https://forum.example.test",
+  "api_url": "https://forum.example.test/api",
+  "key": {
+    "type": "super",
+    "user_id": null,
+    "allow_all_scopes": false,
+    "scopes": ["node:read", "thread:read", "user:read", "attachment:read"]
+  }
+}

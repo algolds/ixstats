@@ -1,0 +1,30 @@
+# Local development services: PostgreSQL with PostGIS, and Redis.
+#   docker compose -f docker-compose.dev.yml up -d
+#   bun run db:bootstrap
+# Matches DATABASE_URL and REDIS_URL in .env.example. (docker-compose.yml is git-ignored
+# for maintainer-specific setups; this file is the shared one.)
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: ixstats-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ixstats
+    ports:
+      - "5433:5432"
+    volumes:
+      - ixstats-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ixstats"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: ixstats-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  ixstats-pg:

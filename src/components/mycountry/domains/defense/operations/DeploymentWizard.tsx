@@ -1,19 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { Crosshair, Shield, Anchor, Swords, GraduationCap, AlertTriangle } from "lucide-react";
+import {
+  Archery as Crosshair,
+  Shield,
+  SeaWaves as Anchor,
+  Tournament as Swords,
+  GraduationCap,
+  WarningTriangle as AlertTriangle,
+  Eye,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "~/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -22,9 +30,14 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Slider } from "~/components/ui/slider";
+import { Toggle } from "~/components/ui/toggle";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useCanEdit } from "~/context/MyCountryEditModeContext";
+import { formatCurrency } from "~/lib/utils/format-utils";
+import { TARGETED_OPERATIONS, operationDailyCost, type OperationType } from "~/lib/military/combat";
+import { operationTargets } from "~/lib/military/operation-rules";
+import { useCountryData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 
 interface DeploymentWizardProps {
   countryId: string;
@@ -40,36 +53,48 @@ const OP_TYPES = [
   },
   {
     value: "defense_pact",
-    label: "Defense Pact",
+    label: "Defense pact",
     icon: Crosshair,
     description: "Deploy forces to defend an ally",
   },
   {
     value: "blockade",
-    label: "Naval Blockade",
+    label: "Naval blockade",
     icon: Anchor,
     description: "Block enemy ports, high cost",
   },
   {
     value: "intervention",
-    label: "Military Intervention",
+    label: "Military intervention",
     icon: Swords,
-    description: "Direct military action",
+    description: "Fights the target's forces when it ends",
+  },
+  {
+    value: "reconnaissance",
+    label: "Reconnaissance",
+    icon: Eye,
+    description: "Sharpens estimates of the target's forces",
   },
   {
     value: "training",
-    label: "Training Exercise",
+    label: "Training exercise",
     icon: GraduationCap,
     description: "Improve readiness",
   },
-] as const;
+] as const satisfies readonly {
+  value: OperationType;
+  label: string;
+  icon: typeof Shield;
+  description: string;
+}[];
 
 export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps) {
   const notify = useNotify();
   const { canEdit } = useCanEdit();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [operationType, setOperationType] = useState<string>("peacekeeping");
+  const [operationType, setOperationType] = useState<OperationType>("peacekeeping");
+  const { country } = useCountryData();
   const [description, setDescription] = useState("");
   const [targetCountryId, setTargetCountryId] = useState("");
   const [personnel, setPersonnel] = useState(1000);
@@ -97,7 +122,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
 
   const createOperation = api.security.createOperation.useMutation({
     onSuccess: () => {
-      notify.success("Operation launched!", `${name} has been deployed.`);
+      notify.success("Operation launched", `${name} has been deployed.`);
       setOpen(false);
       resetForm();
       onSuccess?.();
@@ -114,8 +139,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
     }
     createOperation.mutate({
       countryId,
-      operationType: operationType as
-        "peacekeeping" | "defense_pact" | "blockade" | "intervention" | "training",
+      operationType,
       name,
       description: description || undefined,
       targetCountryId: targetCountryId || undefined,
@@ -125,30 +149,36 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
     });
   };
 
-  // Flatten units and assets from branches
-  const allUnits = branches?.flatMap((b) => b.units ?? []) ?? [];
-  const allAssets = branches?.flatMap((b) => b.assets ?? []) ?? [];
+  // Units and assets come from the authored force structure (Branches tab).
+  const allUnits =
+    branches?.flatMap((b) => (b.units ?? []).map((u) => ({ ...u, branchName: b.name }))) ?? [];
+  const allAssets =
+    branches?.flatMap((b) => (b.assets ?? []).map((a) => ({ ...a, branchName: b.name }))) ?? [];
 
-  const targetCountries = relationships
-    ? [
-        ...new Map(
-          relationships.map((r) => [
-            r.targetCountryId,
-            { id: r.targetCountryId, name: r.targetCountry ?? r.targetCountryId },
-          ])
-        ).values(),
-      ]
-    : [];
+  const targetCountries = operationTargets(relationships ?? []);
 
-  // Cost estimate
-  const estimatedDailyCost = personnel * 200;
+  // Cost estimate: paid from the Defense budget's O&M line (assets add their upkeep on the server).
+  const estimatedDailyCost = operationDailyCost({
+    type: operationType,
+    personnel,
+    gdpPerCapita: country?.currentGdpPerCapita ?? 0,
+    assetMaintenanceAnnual: 0,
+  });
   const estimatedAnnualCost = estimatedDailyCost * 365;
 
+  // Selecting units sets the deployed personnel to their combined strength.
   const toggleUnit = (id: string) => {
-    setSelectedUnitIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    const next = selectedUnitIds.includes(id)
+      ? selectedUnitIds.filter((x) => x !== id)
+      : [...selectedUnitIds, id];
+    setSelectedUnitIds(next);
+    const unitPersonnel = allUnits
+      .filter((u) => next.includes(u.id))
+      .reduce((sum, u) => sum + (u.personnel ?? 0), 0);
+    if (unitPersonnel > 0) setPersonnel(Math.min(100000, Math.max(100, unitPersonnel)));
   };
+
+  const needsTarget = TARGETED_OPERATIONS.has(operationType);
 
   const toggleAsset = (id: string) => {
     setSelectedAssetIds((prev) =>
@@ -156,32 +186,23 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
     );
   };
 
-  const formatCurrency = (val: number) => {
-    if (val >= 1e9) return `$${(val / 1e9).toFixed(1)}B`;
-    if (val >= 1e6) return `$${(val / 1e6).toFixed(1)}M`;
-    return `$${val.toLocaleString()}`;
-  };
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-red-500 to-orange-500 text-white">
-          Deploy Forces
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Deploy Military Forces</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button size="sm">Deploy forces</Button>
+      </SheetTrigger>
+      <SheetContent size="wide" className="overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Deploy military forces</SheetTitle>
+          <SheetDescription>
             Create a military operation and assign units and assets.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         <div className="space-y-4">
-          {/* Operation name and type */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Operation Name</Label>
+              <Label>Operation name</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -190,7 +211,10 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             </div>
             <div>
               <Label>Type</Label>
-              <Select value={operationType} onValueChange={setOperationType}>
+              <Select
+                value={operationType}
+                onValueChange={(value) => setOperationType(value as OperationType)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -198,7 +222,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
                   {OP_TYPES.map((t) => (
                     <SelectItem key={t.value} value={t.value}>
                       <div className="flex items-center gap-2">
-                        <t.icon className="h-4 w-4" />
+                        <t.icon aria-hidden="true" className="text-label-secondary h-4 w-4" />
                         <span>{t.label}</span>
                       </div>
                     </SelectItem>
@@ -208,9 +232,8 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             </div>
           </div>
 
-          {/* Target and description */}
           <div>
-            <Label>Target Nation (optional)</Label>
+            <Label>{needsTarget ? "Target nation" : "Target nation (optional)"}</Label>
             <Select value={targetCountryId} onValueChange={setTargetCountryId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select target..." />
@@ -235,9 +258,8 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             />
           </div>
 
-          {/* Personnel */}
           <div>
-            <Label>Personnel Deployed: {personnel.toLocaleString()}</Label>
+            <Label>Personnel deployed: {personnel.toLocaleString()}</Label>
             <Slider
               value={[personnel]}
               onValueChange={([v]) => setPersonnel(v ?? 0)}
@@ -247,85 +269,94 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             />
           </div>
 
-          {/* Units selection */}
+          {branches && allUnits.length === 0 && allAssets.length === 0 && (
+            <p className="border-separator rounded-control text-label-secondary text-footnote border border-dashed p-3">
+              No units or assets to deploy yet. Build your force under Branches, then assign its
+              units here.
+            </p>
+          )}
+
           {allUnits.length > 0 && (
             <div>
-              <Label>Deploy Units ({selectedUnitIds.length} selected)</Label>
+              <Label>Deploy units ({selectedUnitIds.length} selected)</Label>
               <div className="mt-1 grid max-h-32 grid-cols-2 gap-2 overflow-y-auto">
                 {allUnits.map((unit) => (
-                  <button
+                  <Toggle
                     key={unit.id}
-                    onClick={() => toggleUnit(unit.id)}
-                    className={`rounded-lg border p-2 text-left text-xs transition-colors ${
-                      selectedUnitIds.includes(unit.id)
-                        ? "border-red-500 bg-red-500/10"
-                        : "border-muted hover:border-red-500/50"
-                    }`}
+                    variant="outline"
+                    pressed={selectedUnitIds.includes(unit.id)}
+                    onPressedChange={() => toggleUnit(unit.id)}
+                    className="text-footnote data-[state=on]:border-red/50 h-auto min-w-0 flex-col items-start gap-0 p-2 text-left"
                   >
-                    <span className="font-medium">{unit.name}</span>
-                    <span className="text-muted-foreground block">
-                      {unit.personnel?.toLocaleString() ?? 0} personnel
+                    <span className="w-full truncate font-medium">{unit.name}</span>
+                    <span className="text-label-secondary block w-full truncate font-normal">
+                      {unit.branchName} · {unit.personnel?.toLocaleString() ?? 0} personnel
                     </span>
-                  </button>
+                  </Toggle>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Assets selection */}
           {allAssets.length > 0 && (
             <div>
-              <Label>Deploy Assets ({selectedAssetIds.length} selected)</Label>
+              <Label>Deploy assets ({selectedAssetIds.length} selected)</Label>
               <div className="mt-1 grid max-h-32 grid-cols-2 gap-2 overflow-y-auto">
                 {allAssets.map((asset) => (
-                  <button
+                  <Toggle
                     key={asset.id}
-                    onClick={() => toggleAsset(asset.id)}
-                    className={`rounded-lg border p-2 text-left text-xs transition-colors ${
-                      selectedAssetIds.includes(asset.id)
-                        ? "border-red-500 bg-red-500/10"
-                        : "border-muted hover:border-red-500/50"
-                    }`}
+                    variant="outline"
+                    pressed={selectedAssetIds.includes(asset.id)}
+                    onPressedChange={() => toggleAsset(asset.id)}
+                    className="text-footnote data-[state=on]:border-red/50 h-auto min-w-0 flex-col items-start gap-0 p-2 text-left"
                   >
-                    <span className="font-medium">{asset.name}</span>
-                    <span className="text-muted-foreground block">Qty: {asset.quantity ?? 0}</span>
-                  </button>
+                    <span className="w-full truncate font-medium">{asset.name}</span>
+                    <span className="text-label-secondary block w-full truncate font-normal">
+                      {asset.branchName} · Qty: {asset.quantity ?? 0}
+                    </span>
+                  </Toggle>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Cost preview */}
-          <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+          <div className="border-separator rounded-control border p-3">
             <div className="mb-2 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-red-500" />
-              <span className="text-sm font-medium">Cost Estimate</span>
+              <AlertTriangle aria-hidden="true" className="text-yellow h-4 w-4" />
+              <span className="text-label text-body font-medium">
+                Cost estimate, from your Defense budget&apos;s O&amp;M line
+              </span>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="text-body grid grid-cols-2 gap-3">
               <div>
-                <p className="text-muted-foreground text-xs">Daily Cost</p>
-                <p className="font-medium">{formatCurrency(estimatedDailyCost)}</p>
+                <span className="text-caption text-label-secondary block">Daily cost</span>
+                <p className="font-medium tabular-nums">{formatCurrency(estimatedDailyCost)}</p>
               </div>
               <div>
-                <p className="text-muted-foreground text-xs">Annual Cost</p>
-                <p className="font-medium text-red-500">{formatCurrency(estimatedAnnualCost)}</p>
+                <span className="text-caption text-label-secondary block">Annual cost</span>
+                <p className="font-medium tabular-nums">{formatCurrency(estimatedAnnualCost)}</p>
               </div>
             </div>
           </div>
 
           <Button
             onClick={handleDeploy}
-            disabled={!canEdit || !name.trim() || createOperation.isPending}
+            disabled={
+              !canEdit ||
+              !name.trim() ||
+              (needsTarget && !targetCountryId) ||
+              createOperation.isPending
+            }
             className="w-full"
           >
             {!canEdit
               ? "Premium required"
               : createOperation.isPending
                 ? "Launching..."
-                : "Launch Operation"}
+                : "Launch operation"}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

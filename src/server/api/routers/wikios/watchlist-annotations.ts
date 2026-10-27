@@ -1,99 +1,99 @@
-/**
- * wikios.ts — WikiOS tRPC router.
- *
- * Provides endpoints for WikiOS article rendering, editing, history, search,
- * template registry, watchlist, advanced search, and category tree.
- */
-
 import { z } from "zod/v4";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { requireWikiUserId } from "~/lib/wiki-os/auth";
+import type { PrismaClient } from "@prisma/client";
+import {
+  createTRPCRouter,
+  lightMutationProcedure,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
+import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
+import { assertPageVisible, requireNotBlocked } from "~/lib/wiki-os/permissions";
+import { stashContentTypeForTitle } from "~/lib/wiki-os/stash-content-type";
+import { markWatchedVisited } from "~/lib/wiki-os/services/watchlist-notify";
 
 import { db } from "~/server/db";
-import { saveToMediaWiki } from "~/lib/wiki-os/wiki-write-service";
+import { getOrCreateDefaultStash } from "~/server/shared/default-stash";
+
+/** The ixwiki article (id and status) for a page title, matching with or without underscores. */
+const findIxwikiArticleId = (client: PrismaClient, pageTitle: string) =>
+  client.wikiArticle.findFirst({
+    where: {
+      source: "ixwiki",
+      OR: [{ title: pageTitle }, { title: pageTitle.replace(/_/g, " ") }],
+    },
+    select: { id: true, status: true },
+  });
 
 export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
-  // ---------------------------------------------------------------------------
-  // Reader endpoints
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // History & Diff endpoints (Phase 3)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Editor endpoints (Phase 2)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Template Registry (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Lore Stash — save-for-later with color-coded collections
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Annotations
-  // ---------------------------------------------------------------------------
-
-  /** Add a text-selection annotation to a stashed page. */
-  addAnnotation: protectedProcedure
+  /** Add a text-selection annotation to a stashed page (or directly by pageTitle). */
+  addAnnotation: rateLimitedMutationProcedure
     .input(
       z.object({
-        itemId: z.string(),
-        anchorSelector: z.string().max(500),
-        anchorOffset: z.number(),
-        focusSelector: z.string().max(500),
-        focusOffset: z.number(),
+        itemId: z.string().max(64).optional(),
+        pageTitle: z.string().min(1).max(500).optional(),
+        anchorSelector: z.string().max(500).default("p"),
+        anchorOffset: z.number().default(0),
+        focusSelector: z.string().max(500).default("p"),
+        focusOffset: z.number().default(0),
         selectedText: z.string().max(2000),
         comment: z.string().max(5000).optional(),
         color: z.string().max(20).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const item = await db.stashItem.findUnique({
-        where: { id: input.itemId },
-        include: { stash: true },
-      });
-      if (!item || item.stash.userId !== requireWikiUserId(ctx)) throw new Error("Item not found");
-      return db.stashAnnotation.create({ data: input });
-    }),
+      const userId = requireWikiUserId(ctx);
+      await requireNotBlocked(ctx);
+      const userIds = requireWikiUserIds(ctx);
+      let targetItemId = input.itemId;
 
-  /** Update an annotation's comment or color. */
-  updateAnnotation: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        comment: z.string().max(5000).optional(),
-        color: z.string().max(20).optional(),
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      const ann = await db.stashAnnotation.findUnique({
-        where: { id: input.id },
-        include: { item: { include: { stash: true } } },
-      });
-      if (!ann || ann.item.stash.userId !== requireWikiUserId(ctx))
-        throw new Error("Annotation not found");
-      return db.stashAnnotation.update({
-        where: { id: input.id },
+      if (!targetItemId) {
+        if (!input.pageTitle) throw new Error("Either itemId or pageTitle is required");
+        const defaultStash = await getOrCreateDefaultStash(db, userIds, userId);
+        const pageSlug = encodeURIComponent(input.pageTitle.replace(/ /g, "_"));
+        const contentType = stashContentTypeForTitle(input.pageTitle);
+        const item = await db.stashItem.upsert({
+          where: {
+            stashId_contentType_pageTitle: {
+              stashId: defaultStash.id,
+              contentType,
+              pageTitle: input.pageTitle,
+            },
+          },
+          create: { stashId: defaultStash.id, pageTitle: input.pageTitle, pageSlug, contentType },
+          update: {},
+        });
+        targetItemId = item.id;
+      } else {
+        const item = await db.stashItem.findUnique({
+          where: { id: targetItemId },
+          include: { stash: true },
+        });
+        if (!item || !userIds.includes(item.stash.userId)) throw new Error("Item not found");
+      }
+
+      return db.stashAnnotation.create({
         data: {
-          ...(input.comment !== undefined && { comment: input.comment }),
-          ...(input.color && { color: input.color }),
+          itemId: targetItemId,
+          anchorSelector: input.anchorSelector,
+          anchorOffset: input.anchorOffset,
+          focusSelector: input.focusSelector,
+          focusOffset: input.focusOffset,
+          selectedText: input.selectedText,
+          comment: input.comment || null,
+          color: input.color || "#fbbf24",
         },
       });
     }),
 
   /** Delete an annotation. */
-  deleteAnnotation: protectedProcedure
-    .input(z.object({ id: z.string() }))
+  deleteAnnotation: rateLimitedMutationProcedure
+    .input(z.object({ id: z.string().max(64) }))
     .mutation(async ({ input, ctx }) => {
       const ann = await db.stashAnnotation.findUnique({
         where: { id: input.id },
         include: { item: { include: { stash: true } } },
       });
-      if (!ann || ann.item.stash.userId !== requireWikiUserId(ctx))
+      if (!ann || !requireWikiUserIds(ctx).includes(ann.item.stash.userId))
         throw new Error("Annotation not found");
       await db.stashAnnotation.delete({ where: { id: input.id } });
       return { success: true };
@@ -103,9 +103,14 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
   getAnnotations: protectedProcedure
     .input(z.object({ pageTitle: z.string().min(1).max(500) }))
     .query(async ({ input, ctx }) => {
-      const userId = requireWikiUserId(ctx);
       const annotations = await db.stashAnnotation.findMany({
-        where: { item: { pageTitle: input.pageTitle, stash: { userId } } },
+        where: {
+          item: {
+            pageTitle: input.pageTitle,
+            contentType: stashContentTypeForTitle(input.pageTitle),
+            stash: { userId: { in: requireWikiUserIds(ctx) } },
+          },
+        },
         orderBy: { createdAt: "asc" },
       });
       return annotations.map((a) => ({
@@ -121,110 +126,248 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
     }),
 
   // ---------------------------------------------------------------------------
-  // User Info (for WikiOS profiles)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Rollback / Undo endpoints
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Talk / Discussion Pages
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // File Upload
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Page Properties & Protection (direct MySQL)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Advanced Search (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Category Tree (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
   // Watchlist endpoints (backed by the LoreStash "Watchlist" stash)
   // ---------------------------------------------------------------------------
 
   /**
-   * Add a page to the user's watchlist stash.
+   * Add a page to the user's watchlist (both native WikiWatchlist and Stash).
    */
-  watchPage: protectedProcedure
-    .input(z.object({ pageTitle: z.string() }))
+  watchPage: rateLimitedMutationProcedure
+    .input(z.object({ pageTitle: z.string().max(512) }))
     .mutation(async ({ ctx, input }) => {
       const userId = requireWikiUserId(ctx);
-      // Find or create the "Watchlist" stash
+
+      // 1. Find article in PostgreSQL
+      const article = await findIxwikiArticleId(ctx.db, input.pageTitle);
+      // A deleted page does not exist to someone who may not browse deleted pages: they cannot watch it.
+      await assertPageVisible(ctx, article, input.pageTitle);
+
+      if (article) {
+        await ctx.db.wikiWatchlist.upsert({
+          where: { userId_articleId: { userId, articleId: article.id } },
+          create: { userId, articleId: article.id },
+          update: {},
+        });
+      }
+
+      // 2. Also sync to LoreStash "Watchlist"
       let watchlistStash = await ctx.db.stash.findFirst({
-        where: { userId, name: "Watchlist" },
+        where: { userId: { in: requireWikiUserIds(ctx) }, name: "Watchlist" },
       });
       if (!watchlistStash) {
         watchlistStash = await ctx.db.stash.create({
           data: { userId, name: "Watchlist", color: "#f59e0b", icon: "eye", isDefault: false },
         });
       }
-      // Add page (upsert to avoid duplicates)
       await ctx.db.stashItem.upsert({
-        where: { stashId_pageTitle: { stashId: watchlistStash.id, pageTitle: input.pageTitle } },
+        where: {
+          stashId_contentType_pageTitle: {
+            stashId: watchlistStash.id,
+            contentType: "wiki",
+            pageTitle: input.pageTitle,
+          },
+        },
         create: {
           stashId: watchlistStash.id,
           pageTitle: input.pageTitle,
           pageSlug: input.pageTitle.replace(/ /g, "_"),
+          articleId: article?.id || null,
         },
-        update: {},
+        update: {
+          articleId: article?.id || undefined,
+        },
       });
+
       return { success: true };
     }),
 
   /**
-   * Remove a page from the user's watchlist stash.
+   * Remove a page from the user's watchlist.
    */
-  unwatchPage: protectedProcedure
-    .input(z.object({ pageTitle: z.string() }))
+  unwatchPage: rateLimitedMutationProcedure
+    .input(z.object({ pageTitle: z.string().max(512) }))
     .mutation(async ({ ctx, input }) => {
       const userId = requireWikiUserId(ctx);
+
+      // 1. Remove from WikiWatchlist
+      const article = await findIxwikiArticleId(ctx.db, input.pageTitle);
+
+      if (article) {
+        await ctx.db.wikiWatchlist.deleteMany({
+          where: { userId, articleId: article.id },
+        });
+      }
+
+      // 2. Remove from Stash
       const watchlistStash = await ctx.db.stash.findFirst({
-        where: { userId, name: "Watchlist" },
+        where: { userId: { in: requireWikiUserIds(ctx) }, name: "Watchlist" },
       });
-      if (!watchlistStash) return { success: true };
-      await ctx.db.stashItem.deleteMany({
-        where: { stashId: watchlistStash.id, pageTitle: input.pageTitle },
-      });
+      if (watchlistStash) {
+        await ctx.db.stashItem.deleteMany({
+          where: { stashId: watchlistStash.id, pageTitle: input.pageTitle, contentType: "wiki" },
+        });
+      }
+
       return { success: true };
     }),
 
   /**
-   * Get the user's full watchlist (most recently saved first, max 100).
+   * Get the user's full watchlist items.
    */
   getWatchlist: protectedProcedure.query(async ({ ctx }) => {
     const userId = requireWikiUserId(ctx);
+    const watched = await ctx.db.wikiWatchlist.findMany({
+      where: { userId },
+      include: {
+        article: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            summary: true,
+            updatedAt: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+
+    if (watched.length > 0) {
+      return watched.map((w) => ({
+        id: w.id,
+        pageTitle: w.article.title,
+        pageSlug: w.article.slug,
+        articleId: w.articleId,
+        savedAt: w.createdAt,
+        lastViewedTime: w.lastViewedTime,
+        notificationTime: w.notificationTime,
+      }));
+    }
+
+    // Fallback to Stash items
     const watchlistStash = await ctx.db.stash.findFirst({
-      where: { userId, name: "Watchlist" },
+      where: { userId: { in: requireWikiUserIds(ctx) }, name: "Watchlist" },
       include: { items: { orderBy: { savedAt: "desc" }, take: 100 } },
     });
     return watchlistStash?.items ?? [];
   }),
 
   /**
+   * Get real-time activity feed for watched articles with revision diff previews.
+   */
+  getWatchlistFeed: protectedProcedure
+    .input(
+      z.object({
+        days: z.number().min(1).max(30).default(7),
+        limit: z.number().min(1).max(100).default(50),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const userId = requireWikiUserId(ctx);
+      const sinceDate = new Date(Date.now() - input.days * 24 * 60 * 60 * 1000);
+
+      // Get user's watched article IDs
+      const watched = await ctx.db.wikiWatchlist.findMany({
+        where: { userId },
+        select: { articleId: true, lastViewedTime: true },
+      });
+
+      const watchedMap = new Map(watched.map((w) => [w.articleId, w.lastViewedTime]));
+      const articleIds = Array.from(watchedMap.keys());
+
+      if (articleIds.length === 0) {
+        return [];
+      }
+
+      // Query recent revisions on watched articles
+      const revisions = await ctx.db.wikiRevision.findMany({
+        where: {
+          articleId: { in: articleIds },
+          createdAt: { gte: sinceDate },
+        },
+        include: {
+          article: {
+            select: { id: true, title: true, slug: true, namespacePrefix: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: input.limit,
+      });
+
+      return revisions.map((rev) => {
+        const lastViewed = watchedMap.get(rev.articleId);
+        const isUnread = !lastViewed || new Date(rev.createdAt) > new Date(lastViewed);
+
+        return {
+          id: rev.id,
+          articleId: rev.articleId,
+          articleTitle: rev.article.title,
+          articleSlug: rev.article.slug,
+          namespacePrefix: rev.article.namespacePrefix,
+          mwRevId: rev.mwRevId,
+          author: rev.author || "Community Contributor",
+          summary: rev.summary,
+          minor: rev.minor,
+          // A MediaWiki edit that did not go live (conflict): listed, never the page's live text.
+          parked: rev.parked,
+          byteSize: rev.byteSize,
+          byteDelta: rev.byteDelta,
+          createdAt: rev.createdAt,
+          isUnread,
+          wikitext: rev.wikitext,
+        };
+      });
+    }),
+
+  /**
+   * Mark all watched articles as visited (clearing unread indicator dots and the "already
+   * notified" mark, so the next change to any of them notifies again).
+   */
+  markAllWatchedVisited: rateLimitedMutationProcedure.mutation(async ({ ctx }) => {
+    const userId = requireWikiUserId(ctx);
+    await ctx.db.wikiWatchlist.updateMany({
+      where: { userId },
+      data: { lastViewedTime: new Date(), notificationTime: null },
+    });
+    return { success: true };
+  }),
+
+  /**
+   * The reader viewed a watched page: clear its unread dot and the "already notified" mark, so the
+   * next change to it notifies this watcher again. Does nothing for a page they do not watch.
+   */
+  markWatchedVisited: lightMutationProcedure
+    .input(z.object({ pageTitle: z.string().min(1).max(512) }))
+    .mutation(async ({ ctx, input }) => {
+      await markWatchedVisited(requireWikiUserId(ctx), input.pageTitle);
+      return { success: true };
+    }),
+
+  /**
    * Check whether a page is on the user's watchlist.
    */
   isPageWatched: protectedProcedure
-    .input(z.object({ pageTitle: z.string() }))
+    .input(z.object({ pageTitle: z.string().max(512) }))
     .query(async ({ ctx, input }) => {
       const userId = requireWikiUserId(ctx);
+
+      const article = await findIxwikiArticleId(ctx.db, input.pageTitle);
+
+      if (article) {
+        const entry = await ctx.db.wikiWatchlist.findUnique({
+          where: { userId_articleId: { userId, articleId: article.id } },
+        });
+        if (entry) return true;
+      }
+
       const watchlistStash = await ctx.db.stash.findFirst({
-        where: { userId, name: "Watchlist" },
+        where: { userId: { in: requireWikiUserIds(ctx) }, name: "Watchlist" },
       });
       if (!watchlistStash) return false;
       const item = await ctx.db.stashItem.findFirst({
-        where: { stashId: watchlistStash.id, pageTitle: input.pageTitle },
+        where: { stashId: watchlistStash.id, pageTitle: input.pageTitle, contentType: "wiki" },
       });
       return !!item;
     }),
 });
-

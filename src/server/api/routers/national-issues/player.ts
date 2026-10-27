@@ -2,6 +2,9 @@
  * National Issues API Router
  *
  * Manages the National Issues Engine - dynamic decision/event generation system.
+ * Every procedure here is the owner's: it requires the nation's owner (the user acting as it,
+ * or its `ownerUserId`) or a privileged role (`~/server/shared/country-authorization`).
+ * Visitors read resolved outcomes through `countries.getPublicRecord`.
  * Provides endpoints for:
  * - Player issue inbox, response, and history
  * - Admin template CRUD, preview, and diagnostics
@@ -9,230 +12,64 @@
 
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { NationalIssuesEngine } from "~/lib/national-issues";
 import type { ResponseOptionTemplate } from "~/lib/national-issues";
 import { NationalIssuesConsequences } from "~/lib/national-issues";
 import { notificationAPI } from "~/lib/notifications/api";
+import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
-import { IxTime } from "~/lib/ixtime";
+import { withEnforcedDeadline } from "~/lib/national-issues/deadline-visibility";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { revealConsequences } from "~/lib/statecraft/recon";
+import { isAppliedIssueConsequence } from "~/lib/national-issues/projection-effects";
+import { loadExecBandwidthState, RECON_CAPACITY_COST } from "~/lib/government/exec-bandwidth";
+import { loadProjectedPopulation } from "~/server/shared/projected-population";
 import {
-  calculateCivilServiceCapacity,
-  calculateTotalConsumedStaff,
-} from "~/lib/government/atomic-utils";
-import { deriveBrokers } from "~/lib/statecraft/power-brokers";
-
-const SPLASH_SHOWCASE_TAG = "Splash showcase seed";
+  assertCountryResourceWriteAccess,
+  assertCountryWriteAccess,
+} from "~/server/shared/country-authorization";
 
 // Statecraft recon (S1.D). Tunables — see plans/statecraft-stage1.md.
-const RECON_CAPACITY_COST = 20; // Capacity reserved per in-progress recon Meeting
-const RECON_DELAY_MS = 1.5 * 24 * 60 * 60 * 1000; // ~1.5 IxTime days; CONSTANT across gov quality (penalty = fog, not time)
-const DELEGATION_WINDOW_MS = 5 * 24 * 60 * 60 * 1000; // delegated issues keep consuming CivCap for 5 IxTime days
+const RECON_DELAY_MS = 1.5 * 24 * 60 * 60 * 1000; // ~1.5 days of the nation's realm clock; CONSTANT across gov quality (penalty = fog, not time)
 
 /**
  * Recon context for a country: its atomic build (for the fog) + Capacity state.
  * `used` includes in-progress recon Meetings, so over-committing recon over-extends
- * the civil service and clouds results (the Capacity lever biting).
+ * the civil service and clouds results (the Capacity lever biting). The executive bandwidth sum
+ * itself lives in lib/government/exec-bandwidth.ts (shared with policies and the MyCountry band).
  */
 async function loadReconContext(db: PrismaClient, countryId: string) {
-  const now = IxTime.getCurrentIxTime();
-  const [
-    country,
-    structure,
-    components,
-    pendingRecon,
-    allocations,
-    activePoliciesSum,
-    dismissedIssuesCount,
-  ] = await Promise.all([
-    db.country.findUnique({
-      where: { id: countryId },
-      select: { currentPopulation: true, governmentalEfficiency: true },
-    }),
-    db.governmentStructure.findUnique({
-      where: { countryId },
-      select: {
-        governmentEffectiveness: true,
-        departments: { where: { isActive: true }, select: { category: true } },
-      },
-    }),
-    db.governmentComponent.findMany({
-      where: { countryId, isActive: true },
-      select: { componentType: true },
-    }),
-    db.nationalIssue.count({ where: { countryId, reconReadyIxTime: { gt: now } } }),
-    db.budgetAllocation.findMany({
-      where: {
-        governmentStructure: { countryId },
-        budgetYear: new Date().getFullYear(),
-      },
-      include: { department: { select: { category: true } } },
-    }),
-    db.policy.aggregate({
-      where: { countryId, status: "active" },
-      _sum: { civCapCost: true },
-    }),
-    db.nationalIssue.count({
-      where: {
-        countryId,
-        status: "dismissed",
-        respondedIxTime: { gte: now - DELEGATION_WINDOW_MS },
-      },
-    }),
-  ]);
-
-  const spendByCategory: Record<string, number> = {};
-  allocations.forEach((alloc) => {
-    const cat = alloc.department.category;
-    spendByCategory[cat] = (spendByCategory[cat] || 0) + alloc.allocatedPercent;
-  });
-
-  const activeComponentTypes = components.map((c) => c.componentType);
-  const activeBrokers = deriveBrokers(activeComponentTypes, spendByCategory);
-  const isTechnocratsSatisfied = activeBrokers.some((b) => b.id === "technocrats" && b.satisfied);
-
-  const effectiveness = structure?.governmentEffectiveness ?? country?.governmentalEfficiency ?? 50;
-  const capacity = calculateCivilServiceCapacity(country?.currentPopulation ?? 0, effectiveness);
-
-  const govStaff = calculateTotalConsumedStaff(
-    components.map((c) => c.componentType as any),
-    [],
-    []
-  );
-
-  // Apply 15% domestic policy upkeep Capacity relief if satisfied
-  const effectiveGovStaff = isTechnocratsSatisfied ? Math.round(govStaff * 0.85) : govStaff;
-  const policyCivCap = activePoliciesSum._sum.civCapCost ?? 0;
-  const dismissedCivCap = dismissedIssuesCount * 15;
-  const used =
-    effectiveGovStaff + pendingRecon * RECON_CAPACITY_COST + policyCivCap + dismissedCivCap;
-
+  const population = await loadProjectedPopulation(db, countryId);
+  const execBandwidth = await loadExecBandwidthState(db, countryId, { population });
   return {
-    componentTypes: components.map((c) => String(c.componentType)),
-    departmentCategories: (structure?.departments ?? []).map((d) => d.category),
-    capacity,
-    used,
-    available: Math.max(0, capacity - used),
-    overCapacity: used > capacity,
-    lowEfficiency: effectiveness < 40,
+    componentTypes: execBandwidth.componentTypes,
+    departmentCategories: execBandwidth.departmentCategories,
+    capacity: execBandwidth.capacity,
+    used: execBandwidth.used,
+    available: execBandwidth.available,
+    overCapacity: execBandwidth.overCapacity,
+    lowEfficiency: execBandwidth.effectiveness < 40,
   };
-}
-
-/** Ensures ~18 nations each have one force-generated showcase issue for the guest splash (idempotent per country). */
-async function seedSplashShowcaseIssues(db: PrismaClient): Promise<void> {
-  try {
-    const seededCountries = await db.nationalIssue.groupBy({
-      by: ["countryId"],
-      where: { triggerReason: { contains: SPLASH_SHOWCASE_TAG } },
-    });
-
-    if (seededCountries.length >= 18) return;
-
-    const templates = await db.nationalIssueTemplate.findMany({
-      where: { isActive: true },
-      select: { id: true },
-    });
-    if (templates.length === 0) return;
-
-    const seededIds = new Set(seededCountries.map((g) => g.countryId));
-    const allCountries = await db.country.findMany({ select: { id: true } });
-    const candidates = allCountries.map((c) => c.id).filter((id) => !seededIds.has(id));
-
-    for (let i = candidates.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [candidates[i], candidates[j]] = [candidates[j]!, candidates[i]!];
-    }
-
-    const need = Math.min(18 - seededCountries.length, candidates.length);
-
-    for (let i = 0; i < need; i++) {
-      const countryId = candidates[i]!;
-      const template = templates[Math.floor(Math.random() * templates.length)]!;
-      const issueId = await NationalIssuesEngine.forceGenerate(template.id, countryId, db);
-      if (issueId) {
-        await db.nationalIssue.update({
-          where: { id: issueId },
-          data: { triggerReason: SPLASH_SHOWCASE_TAG },
-        });
-      }
-    }
-  } catch (err) {
-    console.error("[Splash showcase seed]", err);
-  }
 }
 
 // ==================== ZOD SCHEMAS ====================
 
-const ConsequenceDefinitionSchema = z.object({
-  targetModel: z.string(),
-  targetField: z.string(),
-  operation: z.enum(["add", "subtract", "multiply", "set"]),
-  value: z.number(),
-  effectType: z.enum(["immediate", "gradual"]).optional(),
-  durationDays: z.number().optional(),
-});
-
-const ResponseOptionSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  description: z.string(),
-  consequences: z.array(ConsequenceDefinitionSchema),
-  previewEffects: z.object({
-    publicApproval: z.number().optional(),
-    economicImpact: z.string().optional(),
-    stabilityImpact: z.string().optional(),
-    diplomaticImpact: z.string().optional(),
-  }),
-  outcomeText: z.string(),
-  isAutoResolveDefault: z.boolean().optional(),
-  triggersFollowUp: z.array(z.string()).optional(),
-  recommendedDirective: z.string().optional(),
-});
-
-const TemplateCreateSchema = z.object({
-  slug: z.string().min(1).max(100),
-  title: z.string().min(1).max(300),
-  description: z.string().min(1).max(2000),
-  longDescription: z.string().max(5000).optional(),
-  domain: z.enum([
-    "economic",
-    "political",
-    "social",
-    "military",
-    "diplomatic",
-    "infrastructure",
-    "environmental",
-  ]),
-  category: z
-    .enum(["economic", "diplomatic", "social", "governance", "security", "infrastructure"])
-    .default("governance"),
-  tags: z.string().optional(),
-  baseSeverity: z.enum(["critical", "high", "medium", "low"]).default("medium"),
-  baseUrgency: z.number().int().min(0).max(100).default(50),
-  deadlineDaysBase: z.number().int().min(1).nullable().optional(),
-  triggerConditions: z.string(), // JSON expression tree
-  cooldownDays: z.number().int().min(1).default(30),
-  maxActivePerCountry: z.number().int().min(1).default(1),
-  responseOptions: z.string(), // JSON array of ResponseOptionTemplate
-  followUpTemplateIds: z.string().optional(),
-  followUpConditions: z.string().optional(),
-  variableDefinitions: z.string().optional(),
-  personalityModifiers: z.string().optional(),
-  isActive: z.boolean().default(true),
-  isGlobal: z.boolean().default(false),
-});
-
-const TemplateUpdateSchema = TemplateCreateSchema.partial().extend({
-  id: z.string(),
-});
-
 export const nationalIssuesPlayerRouter = createTRPCRouter({
   // ==================== PLAYER ENDPOINTS ====================
 
+  // Visibility: every procedure below is the nation's own inbox — the owner (the user acting as
+  // the nation or `Country.ownerUserId`) and privileged roles only; FORBIDDEN for other players.
+  // Visitors read resolved outcomes through `countries.getPublicRecord`.
+
   /**
-   * Get issues for a country. Triggers lazy evaluation if stale.
+   * Get issues for a country (the owner's inbox — open issues included). A read never generates:
+   * new issues come from the `national-issues` cron job (and the admin `triggerEvaluation`).
+   * Owner / privileged roles only; visitors read resolved outcomes through `countries.getPublicRecord`.
    */
   getMyIssues: protectedProcedure
     .input(
@@ -256,24 +93,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      // Auto-generation is opt-in (narrative mode is the default). When off, issues
-      // only appear via DM injection (plan 034) or prior generation.
-      if (GAMEPLAY_FLAGS.issuesAutoGenerate) {
-        const shouldEval = await NationalIssuesEngine.shouldEvaluate(
-          input.countryId,
-          ctx.db as any
-        );
-        if (shouldEval) {
-          // Run evaluation in background - don't block the query
-          NationalIssuesEngine.evaluateCountry(
-            input.countryId,
-            ctx.db as any,
-            input.domain ? { forceDomain: input.domain } : undefined
-          ).catch((err) => {
-            console.error("[NationalIssues] Background evaluation failed:", err);
-          });
-        }
-      }
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       // Build where clause
       const where: any = { countryId: input.countryId };
@@ -310,15 +130,24 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       }
 
       return {
-        issues,
+        issues: issues.map((issue) =>
+          withEnforcedDeadline(issue, GAMEPLAY_FLAGS.issuesEnforceDeadlines)
+        ),
         nextCursor,
       };
     }),
 
   /**
-   * Get a single issue with full detail.
+   * Get a single issue with full detail (response options, applied consequences). Owner /
+   * privileged roles only.
    */
   getIssue: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const owning = await ctx.db.nationalIssue.findUnique({
+      where: { id: input.id },
+      select: { countryId: true },
+    });
+    await assertCountryResourceWriteAccess(ctx, owning?.countryId, "Issue");
+
     const issue = await ctx.db.nationalIssue.findUnique({
       where: { id: input.id },
       include: {
@@ -338,19 +167,20 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       });
     }
 
-    return issue;
+    return withEnforcedDeadline(issue, GAMEPLAY_FLAGS.issuesEnforceDeadlines);
   }),
 
   /**
-   * Mark an issue as viewed.
+   * Mark an issue as viewed. Owner / privileged roles only.
    */
-  markViewed: protectedProcedure
+  markViewed: rateLimitedMutationProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const issue = await ctx.db.nationalIssue.findUnique({
         where: { id: input.id },
-        select: { status: true },
+        select: { status: true, countryId: true },
       });
+      await assertCountryResourceWriteAccess(ctx, issue?.countryId, "Issue");
 
       if (!issue) {
         throw new TRPCError({
@@ -374,7 +204,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
    * Capacity and sets a constant delay; findings land at reconReadyIxTime, revealing
    * the hard consequences with fog (getReconReveal). See plans/statecraft-stage1.md.
    */
-  commissionRecon: protectedProcedure
+  commissionRecon: rateLimitedMutationProcedure
     .input(z.object({ issueId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       if (!GAMEPLAY_FLAGS.statecraftSpine) {
@@ -387,10 +217,8 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         where: { id: input.issueId },
         select: { countryId: true, reconReadyIxTime: true },
       });
+      await assertCountryResourceWriteAccess(ctx, issue?.countryId, "Issue");
       if (!issue) throw new TRPCError({ code: "NOT_FOUND", message: "Issue not found" });
-      if (ctx.user?.countryId !== issue.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Not your country's issue." });
-      }
       if (issue.reconReadyIxTime != null) {
         throw new TRPCError({
           code: "CONFLICT",
@@ -405,7 +233,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
             "Civil service is over capacity — free up administrative capacity before commissioning more research.",
         });
       }
-      const readyIxTime = IxTime.getCurrentIxTime() + RECON_DELAY_MS;
+      const readyIxTime = (await clockForCountry(ctx.db, issue.countryId)).now() + RECON_DELAY_MS;
       await ctx.db.nationalIssue.update({
         where: { id: input.issueId },
         data: { reconReadyIxTime: readyIxTime },
@@ -426,12 +254,10 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         where: { id: input.issueId },
         select: { countryId: true, reconReadyIxTime: true, responseOptions: true },
       });
+      await assertCountryResourceWriteAccess(ctx, issue?.countryId, "Issue");
       if (!issue) throw new TRPCError({ code: "NOT_FOUND", message: "Issue not found" });
-      if (ctx.user?.countryId !== issue.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Not your country's issue." });
-      }
-      const now = IxTime.getCurrentIxTime();
       if (issue.reconReadyIxTime == null) return { status: "none" as const };
+      const now = (await clockForCountry(ctx.db, issue.countryId)).now();
       if (issue.reconReadyIxTime > now) {
         return { status: "pending" as const, readyIxTime: issue.reconReadyIxTime };
       }
@@ -440,7 +266,9 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       let options: ResponseOptionTemplate[] = [];
       try {
         options = JSON.parse(issue.responseOptions);
-      } catch {}
+      } catch (err) {
+        console.warn("[NationalIssues] Malformed responseOptions on issue", input.issueId, err);
+      }
 
       const reconInput = {
         componentTypes: cx.componentTypes,
@@ -449,7 +277,8 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         lowEfficiency: cx.lowEfficiency,
       };
       const optionsOut = options.map((o) => {
-        const cons = o.consequences ?? [];
+        // Only what resolving would actually apply (unmappable projection effects are dropped).
+        const cons = (o.consequences ?? []).filter(isAppliedIssueConsequence);
         const reveals = revealConsequences(
           cons.map((c) => ({ targetField: c.targetField })),
           reconInput
@@ -465,9 +294,9 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
     }),
 
   /**
-   * Respond to an issue - the core player action.
+   * Respond to an issue - the core player action. Owner / privileged roles only.
    */
-  respond: protectedProcedure
+  respond: rateLimitedMutationProcedure
     .input(
       z.object({
         issueId: z.string(),
@@ -479,6 +308,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         where: { id: input.issueId },
         select: { countryId: true, responseOptions: true },
       });
+      await assertCountryResourceWriteAccess(ctx, issue?.countryId, "Issue");
 
       if (!issue) {
         throw new TRPCError({
@@ -490,7 +320,9 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       let options: any[] = [];
       try {
         options = JSON.parse(issue.responseOptions);
-      } catch {}
+      } catch (err) {
+        console.warn("[NationalIssues] Malformed responseOptions on issue", input.issueId, err);
+      }
 
       const option = options.find((o: any) => o.id === input.optionId);
       if (option && option.requiredPolicyKey) {
@@ -527,9 +359,11 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
           message: result.error || "Failed to resolve issue",
         });
       }
+      queueAchievementCheck(ctx.user?.id);
 
       // Notify: national issue decision made
       try {
+        // oxlint-disable-next-line eslint/no-shadow -- shadowed 'issue' is intentional in this scope
         const issue = await ctx.db.nationalIssue.findUnique({
           where: { id: input.issueId },
           select: { title: true, countryId: true, domain: true },
@@ -555,9 +389,9 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
     }),
 
   /**
-   * Dismiss a non-urgent issue (only issues without deadlines).
+   * Dismiss a non-urgent issue (only issues without deadlines). Owner / privileged roles only.
    */
-  dismiss: protectedProcedure
+  dismiss: rateLimitedMutationProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const issue = await ctx.db.nationalIssue.findUnique({
@@ -571,6 +405,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
           intentId: true,
         },
       });
+      await assertCountryResourceWriteAccess(ctx, issue?.countryId, "Issue");
 
       if (!issue) {
         throw new TRPCError({
@@ -611,11 +446,11 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
           message:
-            "Insufficient Civil Capacity to delegate this issue. You need at least 15 available CivCap.",
+            "Not enough executive bandwidth to delegate this issue. You need at least 15 free.",
         });
       }
 
-      const currentIxTime = IxTime.getCurrentIxTime();
+      const currentIxTime = (await clockForCountry(ctx.db, issue.countryId)).now();
 
       await ctx.db.nationalIssue.update({
         where: { id: input.id },
@@ -638,11 +473,14 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
     }),
 
   /**
-   * Get pending issue count for badge display.
+   * Get pending issue count for badge display. Owner / privileged roles only (the public
+   * profile asks only when the viewer owns the nation).
    */
   getPendingCount: protectedProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
       const count = await ctx.db.nationalIssue.count({
         where: {
           countryId: input.countryId,
@@ -650,20 +488,24 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         },
       });
 
-      // Count urgent issues separately for badge styling
-      const urgentCount = await ctx.db.nationalIssue.count({
-        where: {
-          countryId: input.countryId,
-          status: { in: ["pending", "viewed"] },
-          deadlineIxTime: { not: null },
-        },
-      });
+      // "Urgent" = open issues with a deadline that is enforced; none while enforcement is off.
+      const urgentCount = GAMEPLAY_FLAGS.issuesEnforceDeadlines
+        ? await ctx.db.nationalIssue.count({
+            where: {
+              countryId: input.countryId,
+              status: { in: ["pending", "viewed"] },
+              deadlineIxTime: { not: null },
+            },
+          })
+        : 0;
 
       return { total: count, urgent: urgentCount };
     }),
 
   /**
-   * Get issue history with consequences.
+   * Get issue history with consequences — the owner's (or a privileged role's) full record,
+   * expired and dismissed issues and applied consequences included. FORBIDDEN for anyone else:
+   * visitors read resolved outcomes through `countries.getPublicRecord`.
    */
   getHistory: protectedProcedure
     .input(
@@ -674,6 +516,8 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
       const where: any = {
         countryId: input.countryId,
         status: {
@@ -702,18 +546,4 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
 
       return { issues, nextCursor };
     }),
-
-  /**
-   * Get consequences for a specific issue.
-   */
-  getConsequences: protectedProcedure
-    .input(z.object({ issueId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.db.nationalIssueConsequence.findMany({
-        where: { issueId: input.issueId },
-        orderBy: { appliedAt: "asc" },
-      });
-    }),
-
-  // ==================== ADMIN ENDPOINTS ====================
 });

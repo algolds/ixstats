@@ -5,10 +5,1388 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.4 "Ogma"**, channel Release Candidate), while Apps / Engines / Systems each carry a single
+**IxStates 1.5 "Lobster Crosby"**, channel Release Candidate), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
-## [1.4.0] — 2026-08-20 — "Ogma" (Release Candidate)
+## [Unreleased] — `rose-garden` (1.5)
+
+Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the pre-production audit fixes, 2026-10-26) is listed
+first, then the WikiOS launch hardening (2026-10-24 → 10-26), then the Cards mark and trophy art (2026-10-24), then the ThinkPages forum refresh (2026-10-17), then realm nations (2026-10-15), then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
+work. The version registry (`src/lib/buildVersion.ts`) reads 1.5.0 (the Vault collectathon hub below); the next release candidate is not cut yet.
+
+### 🧪 Production-copy rehearsal fixes (2026-10-26)
+
+No version or capability integer moves. The release's schema steps, run on the server against a clone of production's
+database, stopped twice; with these fixes the clone goes through every step, and a second run (the next deploy) is a
+no-op with a clean push.
+
+- **Cards:** `20261027120000_cards_foundations` gives a database older than the September schema the pre-refresh
+  columns the backfill reads and the constraints convert or drop (`cards.category`, `artworkUrl`, `nsData`,
+  `lore_card_requests.category`, the `LoreCategory` type), only while `cards.cardType` is not yet the enum.
+  Production keeps its NS facts in `metadata.nsData` already; categories stay NULL for the category backfill.
+- **WikiOS search:** `wiki_articles."searchVector"` is a plain column a trigger keeps current, no longer GENERATED:
+  Prisma read the generation expression as a default, so every `db push` tried to drop it and stopped. An existing
+  generated column is converted in place.
+- **Diff:** `diffWikitext` skips the edit search when nothing in the middle can be kept (a page created or blanked,
+  texts sharing no line), whose cost grew with the square of the distance; the regex-DoS gate's CRLF case fell from
+  about 40 ms to 2 ms.
+- **Release guide:** the Lorewards weekly merge runs once the schema is in place (B3 step 10), not before the deploy;
+  the push's expected unique constraints are listed, and it is applied with `--accept-data-loss` after the duplicate
+  check (it never prompts).
+
+### 🛡️ Pre-production audit fixes (2026-10-26)
+
+No version or capability integer moves. A full audit of `rose-garden` @ `d913a1e` found the branch could not ship:
+the production build failed, CI had been red for seven pushes, the deploy script broke itself on a second run, and a
+known Next.js RCE was reachable. This block fixes what the audit found.
+
+- **Build and CI.**
+  - The 21 test type errors are fixed (they broke `next build`, which typechecks `tsconfig.json`). The audit-arch
+    fixtures leave the root tsconfig.
+  - CI runs every gate even after one fails, and adds "Typecheck (Next build config)" (`tsc -p tsconfig.json`).
+  - The arch guard is green: eight files are split.
+  - `validate:migrations` is deleted (it read a missing schema file and called `db push --accept-data-loss`).
+  - `package.json` reads 1.5.0.
+- **Schema:** the 49 Prisma models nothing read or wrote are dropped (D9: c15t consent, ScheduledChange, Post, the old
+  archetype, diplomacy, scenario and economy-modelling tables, Territory, the transport segment and media player
+  tables, activity reactions), with the MediaType enum. The deploy's db push drops the empty tables; tables with rows
+  (the old c15t consent records, the elevation legend) are exported to their own dump in the window, then dropped
+  ([drop-unused-models.md](docs/operations/drop-unused-models.md)).
+- **Deploy** (`scripts/deploy-production.sh`; the [release guide](docs/operations/release-guide.md) has the new order).
+  - Every step that can fail runs before the live build is touched. The build moves `.next` to `.next.prev` and puts
+    it back if the build, IxWorld or the reload fails. No more `bun run clean`.
+  - **Additive schema step.** `scripts/deployment/apply-additive-schema.ts` applies only the purely additive part of
+    `prisma migrate diff --from-url` (dry run by default). This breaks the cycle where the pre-push SQL needs tables only
+    the push creates, and the push needs the SQL.
+  - `f-defense.sql` skips the readiness clamp once D2a has dropped the column, so the deploy can run again.
+  - `world_configs` and `territory_claims` are dropped by SQL, and the twelve ThinkPages forum files run before the
+    push.
+  - The legacy notification-link rewrite runs once the new server answers.
+  - `SKIP_SCHEMA_SYNC=1` skips the schema steps. Rollback uses it and never pushes an older schema.
+  - `deploy-ixworld.sh` is pinned to the deploy's commit.
+  - The web server can run under PM2 (`ixstats-web` in `ecosystem.config.example.cjs`). Old servers get SIGTERM before
+    SIGKILL.
+- **Realtime and processes.**
+  - The market socket no longer aborts Socket.IO's websocket upgrades, so ThinkPages realtime (DMs, presence, typing,
+    realm boards) connects again.
+  - The market socket checks Origin, is capped, and no longer broadcasts the bidder's user or Clerk id.
+  - Entry points exit non-zero on failure and on unhandled rejections, so PM2 restarts them.
+  - Cron patterns are bounds-checked.
+  - Map-update SSE streams are capped per process and per client.
+- **Security.**
+  - next 16.4.3, dompurify 3.4.17, and patched sharp, zod, socket.io and engine.io: `bun audit` went from 27 to 6
+    advisories, the rest dev-only or major bumps.
+  - The image optimizer takes no SVGs and only the bundled `/images/*`. This is in both `next.config.js` and the
+    template.
+  - Wiki excerpts in lore cards and feed previews are sanitized; third-party wikitext could draw full-screen overlays.
+  - User HTML (posts, DMs, ThinkTank docs) and first-party article styles lose fixed and overlay positioning.
+  - The Discord and NationStates image proxies are image-only, size-capped and rate-limited, and re-check the host on
+    every redirect. The bot-token refresh runs only for the IxTwitter channel.
+  - Equipment image resolution is admin-only.
+  - Any site may frame only `/maps?embed=true`; on the maps host, IxWiki alone may frame every page but the
+    signed-in tools, which nothing may frame.
+  - Uploads take their type from their bytes.
+  - The hardcoded Giphy key is gone.
+- **Economy.**
+  - Transfer bids settle once under concurrency; parallel accepts or rejects minted Sovereigns. Bids are whole numbers
+    from 1 to 10,000,000, with no bidding on your own player.
+  - Club claims are atomic.
+  - League moves need the target's manager. Deleting a league refunds escrow and prediction stakes, and refuses while
+    other players own clubs; season resets refund stakes.
+  - MyClub ₷ moves honour vault maintenance mode, and its fees charge and write in one transaction (with a per-press
+    request id).
+  - Ticket price is capped at 100.
+  - Pack purchases are serialised per pack, so limits hold.
+  - Dividends are refused during an open primary issue.
+  - Single-choice polls hold under concurrency.
+  - Admin revokes keep the ledger (`revokedAt`).
+- **Privacy and social.**
+  - Shared notifications keep per-user read and dismiss state in `NotificationReceipt` (new table, created by the
+    push). The legacy shared columns are frozen.
+  - Pins need the post's owner or a moderator.
+  - Group adds respect blocks and message settings, and someone who left must accept to come back.
+  - Groups are capped at 50 people and messages at 10,000 characters. Mentions count only names in the text (at most
+    50).
+  - Replies, reposts, reactions and feeds never surface posts the viewer can't read. A reply must be to a message in the
+    same conversation.
+  - Sockets leave a conversation or ThinkTank room when the user does.
+  - One participant can no longer erase a group's history.
+  - Public responses carry no Clerk ids. Blocks stop engagement notices, and new-follower notices are deduplicated for
+    30 days.
+  - Officials' contact details and meeting notes are owner-only.
+  - The public reactions list is rate-limited and cached.
+- **WikiOS and limits.**
+  - The unused public `wikios.getSectionContent` is removed: its heading regex blocked the server for minutes on one
+    crafted line. The section scan behind `countries.getWikiSections` is linear too.
+  - Approved story chains re-check edit rights before writing the wiki.
+  - Sister answers are capped at 16 MB (in the upstream guard, which reads every sister answer), the render cache
+    at 64 MB, and the embed reads that miss the cache per caller (`sisterembed`: 20 a minute for a visitor, 60 signed
+    in; cache hits are free).
+  - Template preview and TemplateData caches are keyed by the canonical title and refresh after edits.
+  - Rate limits or sign-in on the remaining unthrottled writes (annotations, watchlist, stash, usage counters,
+    `getCountryProfile`). `refreshCountryCache` is admin-only.
+  - Onoma clones respect private work.
+
+### 📖 WikiOS launch hardening (2026-10-24 → 10-26)
+
+No version or capability integer moves (owner to confirm).
+
+WikiOS launches as the wiki inside IxStates, and ixwiki.com stays classic MediaWiki, public and editable
+([spec](docs/superpowers/specs/2026-10-24-wikios-launch-hardening-design.md)). The ixwiki.com takeover is deferred:
+its MediaWiki parts apply only with `define( 'WIKIOS_TAKEOVER', true )`, which nothing in the launch sets. None of this
+is deployed; WikiOS editing launches with WikiOS v1.
+
+- **Data safety: last writer wins, never silent.** When WikiOS and classic both change a page from the same base, the
+  later save stands on both wikis; a tie within the same second goes to classic. This covers edits, deletes, moves and
+  undeletes, and replaces "park".
+  - One decision function (`services/conflict-rule.ts`) judges the mirror and the inbound sync, in every mode.
+  - Every overwritten editor is told: an in-app notice (and a Discord DM when linked) with the diff and "Restore my
+    text", a note on their classic talk page, and an edit-summary trail on the winning revision. Each collision is a row
+    of the Conflict log in `/admin/wikios-settings`.
+  - An older classic revision never replaces a newer head. Writes wait for the protections import. An inbound step
+    that keeps failing is quarantined so the sync moves on. Dead mirror jobs leave the queue for an admin to requeue or
+    discard, with an alert when the queue fills.
+  - Rollback and revert save on top of the head the editor read. Saves have their own rate limit per group (8 a minute
+    for new accounts, 30 for autoconfirmed).
+  - Classic is the authority for blocks, groups and `MediaWiki:` messages: no save writes a `MediaWiki:` page, and an
+    XML import accepts only classic's own dumps. The suite runs both modes.
+- **Hosts:**
+  - The sync webhook reaches IxStates. The open `/api/ixwiki-proxy/` reverse proxy is gone.
+  - Server-side MediaWiki calls need the loopback renderer.
+  - In-app wiki links and uploaded images stay under the base path. Feeds, Discord and permalinks are built on the app
+    URL.
+  - IxStates' robots rules cover only its own paths and keep `?source=` pages out of the index, with canonical URLs on
+    classic.
+  - The runbook covers bots on `/w/api.php`.
+- **Sister wikis (iiwiki, AltHistory):**
+  - One per-host breaker and limiter guards every outbound wiki call. A wiki that does not answer shows as "could not be
+    reached", never as "not found" or an empty list.
+  - One sanitizer is the trust boundary for their HTML.
+  - Absolute links to their articles open in the in-app reader with `?source=`, as do the composer's, Discord's, the
+    admin link tools' and media search's.
+  - Hover previews work for sister pages.
+  - `{{Sister|iiwiki|Title}}` shows as a link box on classic. WikiOS shows it as a live embed of the page, a section,
+    the infobox or a card, cached about an hour and up to ten a page; the rest stay link boxes.
+- **Proof and docs:**
+  - `scripts/audit/wikios-proof.ts` runs the editor round trip, render parity and the bench under a local, launch or
+    recurring profile, and checks them against `scripts/audit/wikios-proof-thresholds.json`.
+  - The weekly `wikios-proof` cron job runs it on the server. Every deploy refuses a release whose WikiOS code has no
+    committed passing proof ([docs/audits/wikios-proof/](docs/audits/wikios-proof/README.md)). The local proof passed
+    on 2026-10-27 (commit `528f6b69c`): 12,706 of 12,706 pages byte-identical through the editor, and 99.8% of the 495
+    scored pages (of a 497-page parity sample) at 98 or more (mean 99.97, none below 70). The bench's gated run is the launch run.
+  - A render in which MediaWiki could not show a file (a missing-file link or a failed thumbnail, which classic's
+    Commons lookup can produce for one render and not the next) is rendered again once it is a day old.
+  - The unreachable Margin Inspect tab and a stray log line are gone.
+  - SYSTEM_STATUS, WIKIOS.md and the MediaWiki dependencies doc describe the launch shape.
+
+### 🃏 The Cards Mark, and Trophy Art (2026-10-24)
+
+No version or capability integer moves.
+
+- **IxCards is now Cards.** The back's foot, the pack cover, the Passport's empty collection and the NationStates
+  import screens say Cards.
+- **The Cards mark** (`CardsLogomark`): a perforated stamp in Vault velvet, the platform's first mark of its own for
+  the cards.
+  - Its detailed cut, for 48 px and up, engraves a guilloché seal into the stamp, and the seal's centre is a window onto
+    the card back's lattice.
+  - Its small cut, below 48 px, has five lattice marks cut straight out of the stamp.
+  - On a large card back the detailed cut replaces the Vault mark in the middle, and the lattice window takes the card's
+    rarity colour.
+  - The small cut sits beside "Cards" in the back's foot, on the pack cover and on the Vault's Cards row in the sidebar.
+- **Trophy cards show their article's picture:** each Loreward trophy takes the lead picture of its winning article
+  (the infobox picture, else the first file in the body), read from IxWiki's articles in Postgres, never the wiki's API.
+  - The art is listed in Compliance → Licence review with an unknown licence.
+  - A trophy whose article has no picture keeps its procedural face.
+  - `bun scripts/backfill-loreward-trophy-cards.ts --apply` gives the picture to trophies minted before.
+- **A trophy's back repeats its realm's mark** in its lattice, in place of the Special category icon.
+
+### 💬 ThinkPages Forum Refresh, Material Palette and Old URLs Removed (2026-10-15 → 10-17) — ThinkPages v3
+
+- **Security:** a signed-out `loreCards.searchLoreArchive` call with `source: "stash"` returned every user's stash
+  items, notes and annotations, and `fetchLoreMetadata` read any stash item by id. Both now return only the caller's
+  own items, and a signed-out caller reads none.
+- **Material app palette** (2026-10-15, on `rose-garden` itself, before the forum pull requests): every app's tint
+  is a named material, not a colour picked off a wheel. MyCountry is State gold, Wiki is IxWiki navy, Labs is Uranium
+  glass, ThinkPages is Commons leather (`#115536`), Maps is Chart shallows, Realms is Banner purpure, and Vault is
+  Jewel-case velvet. The default (Home, Help, Settings, Admin) is iron-gall ink (`APP_TINTS`, regenerated tint
+  blocks). Labs pages now carry `data-app="labs"`, and about 40 hard-coded app colours now read the tint.
+- **One author line** (`AuthorLine`) on thread posts, realm board messages, the home feed and the rails.
+  - A member shows their flag and role chip.
+  - A persona shows a neutral Government, Media or Citizen chip, and never a flag or a nation.
+  - An imported post shows its old forum name and an "Old forum" chip.
+  - Times are relative IxTime, and they keep the year once it is a past one.
+- **Thread posts:**
+  - The header is the author line and the `#N` permalink; the shaded band is gone.
+  - The body indents to the name column.
+  - In-character posts are set at 17px with 1.6 leading on the Facet prose scale, and out-of-character posts use
+    body type.
+- **Board pages and unread:**
+  - Board rows are denser.
+  - One sort control: column headers from `md` up, a menu below that.
+  - The board description appears once.
+  - Unread has a single look everywhere (`UnreadMark`): a tint dot before a semibold title.
+- **Home:**
+  - A plain page header with a **New thread** menu that lists only the boards you may start a thread in, leaving out
+    boards a site or category ban closes to you.
+  - Your realm in the main column.
+  - Boards show their last post as an inline column.
+  - **New across ThinkPages** is a feed of new threads with an "In character" chip.
+- **Removed pages:** New posts and Watched (`/thinkpages/new`, `/thinkpages/watched`) and their procedures. The
+  `forum_readers` table and its "mark all read" floor are dropped too.
+- **Old URLs removed.** Every legacy redirect is deleted, and the URLs below now 404:
+  - the old `/thinkpages/*` pages, `/@user/<tab>`, `/id/@user/<tab>` and `/profile`
+  - `/achievements` and `/vault/exchange|marketplace|market|packs|trading|admin`
+  - `/builder/import`, `/mycountry/builder` and `/explore`
+  - `/countries/<slug>/factbook` and its `#section` hashes
+  - the old season, help-article and WikiOS tool URLs
+  - every `/forum/*` path, XenForo thread, post, forum and member links included
+
+  `redirects()` is gone from `next.config.js`. The orphaned PWA files (`manifest.json`, `sw.js`, `offline.html`) are
+  deleted.
+- **Old links still inside IxStates are rewritten** to the current pages:
+  - wiki articles' old profile links, when an article renders (renderer version 4) and when an outdated stored copy
+    of an article is read
+  - saved notifications, by a migration
+  - the XenForo import:
+    - Links in imported posts point at the native page. A link whose target an anonymous reader may not see becomes
+      plain text.
+    - Bridge-era notification links point at the native post or thread, or at `/thinkpages` when nothing public is
+      there.
+    - Bridge-era stash items move to their native thread, whatever its visibility. They are deleted only when the
+      thread was never imported (or when the stash already holds the native thread).
+- **Smaller fixes:**
+  - XenForo `/posts/<id>/` links map to the post.
+  - "Jump to unread" answers a real redirect.
+  - The economy drill's Open page goes to the factbook's economy section.
+  - The unused ThinkTank realm board (`realms.getBoard`) and the old forum link previews are deleted.
+- **Owner deploy steps:**
+  - Run `20261027120000_drop_forum_readers` before `db:push:force`; the deploy scripts now do this.
+  - Run `20261028120000_rewrite_legacy_notification_links` once the code is live (deploy step 5e). It must run before
+    the import's `--apply`.
+  - Run the import runbook's steps 2 to 9 soon after the deploy. Until step 6, bridge-era stash items are hidden and
+    `/forum` notification links answer 404.
+  - Delete the redirect blocks in the hand-edited production `next.config.js`.
+  - After XenForo is decommissioned, forum.ixwiki.com answers a 301 home on `/` and a 410 everywhere else (import
+    runbook step 13).
+
+### 🏰 Realm Nations (2026-10-15)
+
+- **`/countries` is retired:** every nation belongs to a realm, so the nation list is the realm's **Nations** tab
+  (`/r/<realm>/nations`). `/countries` (and `/explore`) redirect there: `?realm=<slug>` to that realm's, otherwise to
+  the active nation's realm, or Ixnay when signed out or without a nation. **My realm** in the sidebar follows the
+  same redirect. Nation profiles stay at `/countries/<name>`.
+- **The card grid is back on the Nations tab:** flag cards (hover for figures, click to expand), search, the tier
+  filter, **Feeling lucky** and the stats strip that filters by continent. Your nations come first, then the rest in an
+  order shuffled once per visit (`orderNations`). A card's top corner holds one button showing the nation's state that morphs
+  into its action while the card is hovered: **Unclaimed** → **Claim**, **Active** → **Leave realm**, **Yours** →
+  **Play as** (`MorphLabel`). **Pending review**, or **Unclaimed** when you can't claim, is a plain badge.
+- **Removed:** the filterable list directory (filter sidebar, sort bar, list cards, pages of nine). Region and
+  population filters and sorting go with it; comparing nations stays on a nation's profile.
+- **Realm pages are full width:** `/r/<realm>/…` and `/realms` drop the `max-w-6xl` column and fill the space beside
+  the sidebar.
+
+### 🗨️ ThinkPages Home Texture and Thread Cards (2026-10-15)
+
+- **Masthead:** the forum home's header sits on a ThinkPages tint wash under a chevron texture (`PageHeader`'s
+  backdrop, through `ForumPage`'s new `backdrop` prop), with the sitewide totals as its subtitle ("7 boards · 1,240
+  threads · 9,830 posts").
+- **Paper grain:** a tint paper grain on the home's page canvas (`ForumPage`'s `paperGrain`), behind the panes so it
+  shows through their glass; textures still never sit on data panes, and the 5% cap and Settings switch apply.
+- **Boards:** large icon tiles, each board with its own sanctioned texture (grid for Rules and Staff, chevron for
+  Announcements and Reports, dots for Find a Realm and Side games, paper grain for General), and a tint rule down the
+  left edge of a board with new threads.
+- **Your realm** moves from the main column to the top of the right rail (`YourRealmPanel`), shown only to realm
+  members, with the realm's uploaded emblem (else its thumbnail) as its tile.
+- **Thread cards:** a board's latest-thread card has a headline title, the last poster's flag as a faded watermark from
+  the right edge, and an arrow that nudges on hover. The old-forum thread link preview in posts uses the same look:
+  one pressable Well with the forum's tint tile (no indigo icon, no "View Thread →" text link). Both cards now draw a
+  keyboard focus ring.
+
+### 🧭 ThinkPages Sidebar, One Stash and Vault Leaderboards (2026-10-15)
+
+- **ThinkPages sidebar:** Forums, ThinkTanks, Accounts, Stashes and Moderation. **Your realm**, **New posts** and
+  **Watched** leave it (`/thinkpages/r/mine`, `/thinkpages/new` and `/thinkpages/watched` still work). With them go
+  the Watched and realm-board count badges (the sidebar no longer polls `navCounts`; the dashboard's Your realm panel
+  and the forum home's realm card still read it), the realm-emblem row icon (`realm-nav-icon.tsx`) and the
+  `realm-member` section gate.
+- **One Stash, in the account menu:** stashed threads live in `/stashes` (its Threads tab), the one stash page,
+  opened from **Stash** in the account menu (beside Your profile and Wiki profile); neither ThinkPages nor Wiki lists
+  it. `/thinkpages/stashed` redirects there. The forum-only listing (`StashedPage`,
+  `thinkpagesForum.stashedThreads`, `listStashedThreads`, `STASHED_HREF`) is removed; the I5 check on readable
+  threads stays tested through `readableThreadTitles`, which `/stashes` uses.
+- **Account menu:** your nation (flag and name) opens its public page, replacing the separate Public country page row;
+  then **Passport** (was Your profile; `/@me`), Stash, the nation switcher, Finish setup (when needed), **Passport
+  settings** (was IxnayID connections; Settings' IxnayID & Passport panel), Manage account and Sign out, with Privacy and Terms below. Wiki profile is
+  gone (its wiki lookup with it).
+- **Wiki sidebar:** Main page, Search, Recent changes, Categories, Repository and Utilities. Random article,
+  Contributions and Watchlist open from the Utilities hub; Stashes moved to the account menu; Blurbs keeps its
+  address, the wiki's main page and the dashboard.
+- **Leaderboards under Vault:** the nation boards (`/leaderboards`) get a **Leaderboards** row in the Vault sidebar,
+  after Achievements, and belong to the Vault app (they left the Realms app's routes).
+- **Achievements page:** the big "Achievements" header (and its Global leaderboards button) and the standing card
+  (unlocked, points, rank) are gone; the page opens on its tabs, titled by a visually hidden `h1`.
+
+### 💎 Vault Collectathon Hub (2026-10-14) — platform 1.5.0
+
+The Vault becomes the platform's collectathon hub: achievements, cards and the IxCredits store under one app, in the
+sidebar for every signed-in player, with Lorewards shared between the Vault and WikiOS. IxCredits are now **pure
+metagame**: they reward platform activity, and a player's country plays no part in them. Design:
+[the Vault hub spec](docs/specs/2026-10-14-vault-collectathon-hub-design.md).
+
+- **Versions:** platform **1.4.1 → 1.5.0** (`VERSIONS.platform.minor`; the release name stays "Lobster Crosby", the channel
+  Release Candidate). **IxVault 2 → 3** (`VERSIONS.apps.ixvault`) and **Achievements 2 → 3**
+  (`VERSIONS.systems.achievements`, which covers Lorewards / Wiki Awards). No other capability integer moves.
+- **Vault in the sidebar for everyone:** the `showCardsTab` navigation setting is gone end to end (the type, the admin
+  switch, the `vaultVisible` plumbing and the stored settings row); the rail wallet and sidebar card show for any
+  signed-in player. The Vault group has five rows: **Wallet**, **Daily reward**, **Achievements**, **Cards** and **Store**.
+  Collections and Import fold into Cards. `/vault/marketplace` is now `/vault/store` (the Store, Auctions and Trading
+  `?tab=` values carry over); `/vault/market`, `/vault/packs` and `/vault/trading` redirect into it. The tint block of
+  `[data-app="vault"]` is defined once, with the `APP_TINTS.vault` values.
+- **Achievements in the Vault:** `/vault/achievements` with four tabs (All, Lorewards, Showcase, Leaderboard); the
+  Leaderboard tab ranks achievement points (`achievements.getPlayerLeaderboard`) and `achievements.getMySummary` feeds
+  the standing card. `/achievements` redirects, keeping `?a=<key>`. The nation boards (GDP, population, density, growth)
+  stay at `/leaderboards`. Unlock notifications, Home-feed unlock items and Halo link to the new page.
+- **Exchange moves to Labs:** `/labs/exchange` (a Labs row in the sidebar); `/vault/exchange` redirects. It is behind the
+  Labs gate, so a user without Labs access gets a 404 there, including from Exchange notification links. **The IxCredits
+  and Sovereigns conversion is cut both ways**: `exchange.convert`, `src/lib/exchange/conversion.ts`, the convert card and
+  the `exchange_convert_*` and `exchange_revenue_*` settings are gone; old `SPEND_EXCHANGE` / `EARN_EXCHANGE` rows stay as
+  history.
+- **Expandable sidebar wallet card:** the card keeps its closed form (balance, "+N today", daily reward) and opens to
+  today's earnings by source, achievement progress (unlocked, points, rank) and links to Cards, Store and Achievements.
+  It shows no dividend figure, and the open state is remembered with the sidebar's expanded set.
+- **The Wallet page (`/vault`) as a bank statement:** an account hero (balance, level, "+N today", net worth, streak, the
+  actions that apply), a statement with a running balance grouped by UTC day (filters All, Earned, Spent; "Show earlier";
+  a Vault dividend row expands to its stored breakdown; Loreward and achievement rows name what they paid for), and a
+  holdings column (Achievements, Lorewards, Cards, Store, and a prompt to link a wiki account). `vault.getTransactions`
+  gains an earned or spent filter and returns each row's metadata. The wallet, collection, yield, recent-activity and
+  showcase cards are removed.
+- **The nightly Vault dividend replaces the country dividend:** one itemised, idempotent payout per user per UTC day from
+  the new `vault-dividend` cron job: collection interest (0.25% of deck value, cap 25, trophy cards excluded), wiki (the
+  Lorewards engine's score for the day, 1 credit per 80 points, cap 30, through a verified wiki link), ThinkPages and
+  forum posts (2 each, cap 20), card activity (2 per pack, 5 per trade, 3 per sale, cap 20), a login-streak bonus on the
+  activity parts (up to +50%), the store's dividend boost, and a total cap of 150. It settles up to 7 missed days and never
+  a day before the recorded start (`vault_dividend_started_on`). Removed with it: the `passive-income` job, the country
+  dividend and its primary-nation rule, the budget multiplier, the missed-day catch-up in `getBalance`, the yield
+  projections and `vault.calculatePassiveIncome`, `vault.getBudgetMultiplier` and `vault.checkDailyCap`, and the dead GDP
+  correlation in the card-value job.
+- **IxCredits earnings from country play removed:** embassy and cultural exchange rewards, diplomatic scenario rewards,
+  the per-post ThinkPages reward, the forum action reward (it supersedes the credit reward in the ThinkPages block above),
+  the wiki-import bonus, and the new-player bonus triggers on country creation and realm claims (the bonus is still paid at
+  account creation and on first Vault open). The phantom "IxCredits awarded" on national issues is gone with
+  `NationalIssue.ixCreditsAwarded` and the `ISSUES_AWARD_CREDITS` flag, and the Vault links in the country actions menu and
+  the embassy card are removed. Kept: the daily claim, achievement unlocks, NS deck import, Loreward payouts, card sales,
+  trades and junking, the nation card royalty (2% of a nation card's auction sale to the nation's owner), and admin
+  grants.
+- **Lorewards, shared:** one `LorewardsView` in two homes: WikiOS `/util/lorewards` (now a real page: today's race,
+  standings, recent winners) and the Vault's Lorewards tab (your trophies, streak, payouts and trophy cards). The Passport
+  modal renders the same view, and the article's "Loreward winner" badge opens that winner's trophies
+  (`/util/lorewards?user=<winner>`). New procedures `lorewards.getTodayRace`, `getStandings`, `getTrophies` and
+  `getMyTrophies`; `wiki.awardHistory` is removed from the passport payload.
+- **Tiered Loreward payouts:** by contest and place, for entries dated 2026-10-15 or later: daily 500 winner / 150
+  runner-up, weekly 1,500 / 400, monthly 4,000 / 1,000 (SystemConfig can override a cell; the single
+  `vault_bonus_loreward` setting is gone). Weekly and monthly runner-ups are not recorded in the data, so only recorded
+  places pay.
+- **Trophy cards:** every recorded Loreward place mints a one-of-one lore card of the winning page (Legendary for a
+  monthly winner, Epic for a weekly winner and a monthly runner-up, Rare otherwise), given to the winner through a
+  verified wiki link or held unowned until one exists. `Card.lorewardEntryId` and `Card.lorewardEdition` are new. They
+  count in the Wallet's deck value and net worth but not in collection interest or deck-value achievements.
+- **Nation achievements rebuilt:** around the live MyCountry systems and long-term play, measured in real time so realms
+  with other clocks are on equal footing. One early milestone per system, then late-stage ones: Executive 16, Politics 8,
+  Diplomacy 10, Defense 2, Nation 12 (including Stewardship I to III on the new `Country.ownedSince`). Gameable keys carry
+  real-time floors. A metric-loader registry (`src/lib/achievements/metrics/`) computes the numbers, and the definitions
+  live in `src/lib/achievements/sets/`.
+- **New platform achievements:** Wiki 7, Social 20, Cards 15, Lorewards 8 and General 16, evaluated at account level
+  (62 of the 114 active achievements need no country). Every icon is an iconoir key rendered through one map.
+- **Legacy achievements:** 47 retired definitions (GDP, GDP per capita and population tiers, unwinnable economic and
+  military ones, embassy-count, treaty, trade and alliance-count tiers, atomic components, government types) stop
+  evaluating but keep their unlocks, points and credits, show greyed out, count toward the "unlock N achievements" tiers
+  and are left out of "N of total".
+- **Docs:** `docs/systems/` (Vault, IxCredits, Achievements with Lorewards, Cards, Exchange, status page, passport), the help
+  articles, the WikiOS route table and the API reference describe the above; the spec gains an Implementation notes
+  section listing where execution departed from its text.
+- **Production steps (in order):** apply `prisma/migrations/20261024120000_vault_hub/migration.sql` **before**
+  `db:push:force` (it adds `Country.ownedSince` and the two `cards` columns, drops `national_issues.ixCreditsAwarded`,
+  deletes the `showCardsTab` row); in `CRON_ENABLED_JOBS` replace `passive-income` with `vault-dividend`; run
+  `bun scripts/backfill-country-owned-since.ts --apply` (after any `audit-leader-ownership.ts` run, which sets owners
+  without `ownedSince`); run `bun scripts/backfill-loreward-trophy-cards.ts --apply`; restart (the boot sync retires the
+  Legacy achievements). An admin cron override saved under `cronSchedule_passiveIncome` is orphaned; re-save it under
+  `cronSchedule_vaultDividend`. The full steps are in `docs/operations/deploy-rose-garden-2026-09.md` (5a, 5d and 7).
+
+### 💬 ThinkPages Becomes the IxStates Forum (2026-10-07 → 10-11)
+
+ThinkPages replaces the XenForo forum: a native sitewide forum plus a NationStates-style regional message board
+(RMB) per realm, tied to the game (plan on the board, act in MyCountry, flavour the result back in the forum).
+No version moves in this block.
+
+- **Replacing XenForo (PRs #64–#72):** native sitewide forum and composer at `/thinkpages`, realm sections and the
+  Realm Board migration, moderation (hide, warn, ban, mod log), the XenForo import tooling, the ThinkPages name freed
+  for the forum (personas live on the Dashboard), and the XenForo bridge deleted. Action-linked posts and story
+  chains (PR #61) are the shared module the forum attaches actions through.
+- **Forum redesign:** the forum uses Home's frame (main column plus the Facet Inspector rail). Forums home and board
+  pages are sortable data tables with last-post info, pinned groups and windowed pagination. Posts use a header
+  postbit (avatar, handle, country flag, role), permalinks, post numbers and quotes. Thread posts are written in the
+  WikiOS Canvas editor; wikitext is canonical and rendered at save through the WikiOS parse pipeline, with a cron
+  that re-renders stale posts. IC boards read as WikiOS articles, and imported XenForo wiki BBCode and quotes render
+  again. The phone layout has board chips and rail panels in a sheet.
+- **Live realm board:** each realm page is its board, with messages delivered in real time (Socket.IO) and typing
+  indicators. Visitors from other realms can post (marked "Visitor") unless officers turn them off. Boards have
+  slow mode, the thread moderation tools, quoted replies, and "Continued in a thread".
+- **Unread, watch and notifications:** unread threads are bold, with jump-to-unread, Mark board read and Mark all
+  read (threads older than 30 days never count). Starting or replying to a thread watches it. The sidebar gains
+  New posts, Watched and Stashed with badges. The IxStates bell receives watched replies, @mentions, quotes and
+  board replies, once per post per person. `@handle` autocompletes in the light composer and links to the profile.
+  Persona posts never reveal their player in any of these, and the realm board stays out of every forum list and count.
+- **Reactions:** the Dashboard reaction set on forum posts and board messages, with live counts and a deduplicated
+  bell notice.
+- **Actions in the forum:** any composer can attach a MyCountry action (directives included). MyCountry gains
+  Share to realm, and actions show where they are "Discussed in". The first public post of an action earns a small
+  credit reward (default 5 credits, at most 3 rewarded actions per country per day, set in Admin > Vault > Forum
+  actions). Persona posts are not listed in "Discussed in".
+- **Find a Realm adverts:** one advert thread per realm, created and managed by officers with the `appearance`
+  power and headed by a live realm card with Join. The realm's Manage page has an Advert row. Adverts of draft,
+  hidden or deleted realms are hidden, and an archived realm's advert is locked.
+- **Across IxStates:** Home feed items for forum threads are real post previews. Home's rail has a Your realm panel
+  (new board messages and the latest three). The Realms directory, realm cards and the realm overview link to the
+  realm's board, and `/r/<realm>/board` opens the live board. On phones, Home's feed tabs scroll instead of
+  overflowing.
+- **Final audit (2026-10-11):** slow mode holds against parallel posts (per-member advisory lock); a link to an
+  old board message pages back to it or says it is older than what is loaded; live board updates reconnect after a
+  dropped connection instead of staying paused; a background tab no longer marks the board read; the Posting as
+  list no longer offers your personal account; a Canvas post whose render shows other action links than its text is
+  refused; the realm slug `mine` is reserved; a watcher who blocks one author still hears about other replies;
+  reaction notices skip reactions already taken back and the reactors list refreshes; the @ menu always picks a
+  highlighted name; editing a post keeps action links whose directive was later withdrawn; a story chain never
+  publishes a withdrawn directive to the wiki; lost unique-key races and records deleted mid-write are recognised
+  through the app's db client (adverts, reactions, rewards); Discussed in counts stay right beside a busy action;
+  realm visitor lookups, the unread badge and the realm directory's forum figures load in constant queries.
+- **Production steps:** apply the pending migrations in order, through `20261018120000_thinkpages_realm_adverts`
+  (the forum adds `20261010120000` → `20261018120000`), run `db:generate`, then restart the web app and `ixstats-ws`
+  together. Existing posts re-render for mention links at about 300 an hour. Credit rewards are live from deploy;
+  to stage them, set the reward or cap to 0 first.
+
+### 🏛️ Realms Audit and Eurth Onboarding (2026-10-07) — platform 1.4.1
+
+- **Platform 1.4.0 → 1.4.1** (`VERSIONS.platform.patch`): fixes and page work, no capability integer moves.
+- **Realm page (`/r/[realm]`):** a **Join** card (nations waiting for a player, a few names, a link to Nations)
+  replaces the full claimable list on Overview. The header shows **Open to claim** and "N played", hides a zero
+  population and says "Administered by IxStats staff". The factbook no longer repeats the description: staff get
+  "Write the factbook", visitors a lore card ("Read the lore on IIWiki"). Empty Officers and Census panels are hidden;
+  the banner placeholder wears the Realms tint. The Nations tab says "No nation has been founded yet" instead of
+  "No nation matches", shows "Pending review" for the viewer's pending claims and loads flags through `assetUrl`.
+  A read-only board no longer invites posting, and the board counts the realm's nations, not its board members.
+- **Base path:** realm and directory links no longer wrap `<Link href>` in `createUrl` (Next adds `basePath`
+  itself, so production got `/projects/ixstates/projects/ixstates/...`) and the active tab is highlighted again.
+  `createUrl` stays only inside `redirect_url`. About 25 other pages (country profile among them) still have the
+  pattern.
+- **Realm fixes:** a failed load shows an error with Try again instead of a 404; claiming waits for the realm's
+  rules to load and refreshes the realm, MyCountry and "Play as"; Manage scrolls to `#factbook`/`#rules` and hides
+  Map in archived realms; Passport never links a realm by id; another realm's map no longer shows IxWorld's notes
+  (IxTime, climate, IxWiki) in its welcome dialog.
+- **Security and correctness (server):**
+  - A board ban or mute binds the player who held the nation, so abandoning or re-claiming it no longer lifts it
+    (`realm-board.ts`, from the claim history; nations never claimed still can't be traced without a schema change).
+  - A wiki page counts as taken by the country that carries it (`wikiSource`/`wikiPageTitle`), not by name, so
+    renaming a nation no longer makes its page claimable again.
+  - Factbook and rules HTML go through `sanitizeRealmContent` (no `style`, `class`, `id`, `data-*`), on save and
+    on read: a full-page overlay could be drawn before.
+  - Map mutations return NOT_FOUND for an unknown or hidden slug instead of falling back to IxWorld; archived
+    realms refuse wiki changes and source syncs; happenings hide draft embassy partners; officers lose their post
+    when an admin reassigns or releases their last nation.
+  - Cached reads key a signed-in viewer's `?realm=` reads per viewer (`cacheRealmKey`), so a draft realm seen by
+    its staff is never served to anyone else; sovereignty relations are listed per realm.
+- **Eurth source sync:**
+  - A map entry's wiki link binds only to one of the realm's pages, directly or through a redirect no other nation
+    lands on ("Salvia" → `Sanctum Imperium Catholicum`; "Deseti" → `Orioni` stays unlinked). Other links leave the
+    nation without a wiki page, so its claim goes to manual review instead of to a stranger.
+  - Roster and map names match across a trailing qualifier ("Nanto (Eurth)" and "Nanto"); likely respellings are
+    held back with a warning. Figures in `secondaryFields` rank below the infobox. NPC entries are created and
+    claimable like any other nation.
+  - A re-run re-reads unclaimed nations whose infobox never landed; map areas use the planet radius; loading a
+    preset again fills only what is missing (`--force-preset` overwrites).
+  - The infobox reader (`fetchNationPagePrefill`, also used by approved claims) follows a redirect once, so a
+    nation whose link names a redirect ("Mito" → `Mitō`, "Pentium" → `Republic of Pentium`) gets its flag, leader
+    and identity.
+  - Runbook (`docs/systems/realms-eurth-onboarding.md`) renumbered and corrected.
+- **Local data:** Eurth synced on the dev database (135 unclaimed nations, 115 borders, 8 alliances), founded
+  9 January 2004 (Portal:Eurth), with links to eurth.org, Portal:Eurth, the NationStates region and the map.
+  `Ymutz Mizlan` carries the roster page `Ymutztlaclan-Mizlanuzco`.
+
+### 🌍 Eurth in IxWorld, and a repeatable realm map pipeline (2026-10-07)
+
+The Eurth community map (`a-seth-harrison/eurth-map`; art © Stijn Vogels & Colucci Giovanni, Alemi Cartographic
+Society, used with permission) now lives in the IxWorld map system and looks and behaves like IxWorld's own map.
+Everything is realm-generic: a realm's map is built from its **map pipeline config** (`Realm.settings.map.pipeline`),
+filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spec:
+`docs/specs/2026-10-07-eurth-map-port.md`; runbook for any realm: `docs/systems/realm-maps.md`.
+
+- **IxWorld style by default:** a realm map opens on the standard vector style, centred on its land; bottom-left is
+  the scale only, and the realm's credit line sits in the standard attribution block. Countries use the map's own
+  colours (the source sync stores them as `properties.fill`). The per-nation legend and the unclaimed hatch are
+  gone (the country panel says "Unclaimed").
+- **Physical layers traced from the art** (PNG layer engine): IxWorld's altitude bands (Eurth's 6 legend bands
+  mapped to IxWorld's 8 and the coast band), rivers (centre lines), lakes, ice caps and Köppen climate zones. A
+  realm's `climateKey` drives the climate legend, the pin readout and the Geography tab. Coasts, borders and zones
+  are smoothed as one coverage (`ST_CoverageSimplify`), so neighbours still share edges; smoothing is stamped and
+  idempotent, and the source sync applies it after writing borders.
+- **Raster art, optional:** the map's art is reprojected into Web Mercator tiles (`MAP_RASTER_DIR`,
+  `/api/map-rasters`); base maps and overlays are switches in the layer panel, off by default, with their keys
+  inside the panel. While a base map is on, country fills show under the pointer only.
+- **Ocean and sea labels:** realm labels render through IxWorld's own ocean-label layer (ranks major, medium,
+  minor); Eurth has 83 from the art.
+- **Borders repaired on write:** valid polygons, no repeated points, no strip shared by two neighbours (Eurth: 70
+  overlapping pairs, 13,055 km², and 6 invalid shapes to none). Neighbour queries use `ST_Intersects` (country
+  panel, geo bundle, national issues), so nations meeting along a repaired border are neighbours.
+- **Map pipeline:** `realms.mapPipeline` (get, save, load preset, start, run, runs, cancel; founder, Map officers and
+  site admins) runs the steps repair, physical, rasters, labels, flags, default view and areas as a `map-pipeline`
+  map import job, with dry runs and history; `/admin/realms` → Map and `/r/<realm>/manage` → Map pipeline.
+  `scripts/realms/build-realm-map.ts` runs the same job; the per-step scripts are thin wrappers.
+- **Nations fit the IxStats economy:** realm nations take growth by economic tier from `Realm.settings.nationDefaults`
+  (defaults: IxWorld's medians), editable in `/admin/realms` → Nations and applied to unclaimed nations with a
+  preview; any country's growth is editable in the admin Country Inspector. A new country's max GDP growth follows
+  the tier rule (it was a flat 5%).
+- **Flags local, like IxWorld's:** realm flags and coats of arms are stored in `public/flags/`
+  (`<realm>--<country>.png`, `scripts/realms/localize-realm-flags.ts`); images a wiki confirms missing are cleared.
+- **Country panel and pages:** the capital shows; a realm nation's wiki intro comes from its own page
+  (`wikiSource`/`wikiPageTitle`, redirects followed); the flag lookup uses the map's realm; no "Unknown" region chip,
+  and new countries store an unknown continent or region as empty, as IxWorld does.
+- **Area measuring:** Distance and Area modes; spherical on the realm's radius, antimeridian and polar rings handled.
+- **Fixes found on the way:**
+  - **Security:** deleted `/api/flags/download` and `/api/flags/save-metadata`, unauthenticated routes that wrote any
+    fetched URL to any path (path traversal) and overwrote the flag metadata. **Production still has them**: deploy.
+  - Infobox parsing fills `{{PAGENAME}}` and ignores commented-out fields (broken flags on 26 Eurth nations).
+  - The WikiOS reader no longer says an article "does not exist" when its wiki failed to answer (only `NOT_FOUND`
+    does; a sister wiki's missing page now returns `NOT_FOUND`).
+  - The infobox reader follows a redirect; a cached read keys a signed-in viewer's `?realm=` per viewer (a draft
+    realm is never served to others); sovereignty relations are listed per realm.
+
+### 🗺️ IxWorld Map Performance (2026-10-07) — IxWorld v3
+
+- **IxWorld 2 → 3** (`VERSIONS.apps.ixworld`). The map welcome dialog shows once more for everyone, since it
+  remembers the version it last showed.
+
+- **Vector tiles for terrain:** `/maps` draws altitudes, rivers and lakes from PostGIS vector tiles
+  (`/api/map-tiles/<realm>/<layer>/<z>/<x>/<y>`, cached for a day) instead of whole-world GeoJSON. The first load's
+  map data drops from about 6 MB of JSON to 0.88 MB plus 196 KB of tiles, and countries appear in about 3.2 s
+  instead of 5.8 s on the dev benchmark. Shapes that cross the antimeridian are split exactly as before. Climate
+  stays GeoJSON and loads when switched on.
+- **Smaller map data:** layers travel in a compact delta-encoded format (`geoCore.getWorldMapPacked`,
+  `getMapBundle`). Cities and subdivisions load once the viewer zooms past 3 (`getMapBundleDetail`).
+- **Map editor:** snapping searches a segment grid instead of every segment of every layer (about 8 ms to under
+  0.01 ms per snap on real data, same answers). Vertex and border drags process at most one move per frame, and
+  mouse-up applies the last one. The country editor draws terrain from the same vector tiles and loads the GeoJSON
+  it snaps to after its map is up: 0.8 MB of map JSON before paint instead of 4.6 MB. Each layer loads on its own,
+  so switching one on fetches only that layer.
+- **Fixes:** a failing city, POI or subdivision query no longer blanks continents, countries, rivers and lakes.
+  Countries no longer vanish on a repeat visit or after a theme change. Points of interest fully uncluster before
+  the map's max zoom. Faded-out country names no longer crowd out visible ones.
+- **Ops:** add a Cloudflare Cache Rule making `/projects/ixstats/api/map-tiles/*` (and `/api/map-tiles/*` on
+  maps.ixwiki.com) eligible for cache, respecting the origin's `Cache-Control`.
+
+### 🧭 Realm Map Import Engine (2026-10-07)
+
+- **Background import jobs** (`MapImportJob`): a realm's political map from a flat-colour PNG/JPEG, an SVG of nations
+  or GeoJSON is uploaded through `/api/admin/map-import/upload` (40 MB, Content-Length checked first, stored by
+  SHA-256 in `MAP_IMPORT_DIR`), analysed off the request path (the new `map-import` cron job, PNG tracing in a worker
+  thread; else in-process in the web server), mapped to the realm's nations, dry-run, applied and rolled back. Progress,
+  stage and Cancel in the wizard. `startMapImport({ realmId, source, options, requestedBy })` is the server entry.
+- **New PNG engine:** decoded once, palette from a colour key or detected by perceptual (CIEDE2000) clustering, pixels
+  snapped through a lookup table, border lines and anti-aliasing removed so neighbours touch, specks merged into their
+  largest neighbour, every boundary traced once into a TopoJSON topology so shared borders stay identical after
+  simplification, several colours per nation. About 2 s for an 8000 × 4000 map with 130 nations (was about 2.5
+  minutes in one request).
+- **Georeferencing** (`Realm.settings.map`: `projection`, `bounds`, `controlPoints`): whole globe, a crop's bounds or
+  three or more control points, equirectangular or Mercator (inverse Mercator applied), with an extent preview.
+- **Realm SVG import** on the province importer's engine (transforms, every shape type, `<title>`/id/label names,
+  arcs, fill rules, holes by containment); **GeoJSON bulk import** with a CRS check, pixel-coordinate detection and a
+  name property; **colour-key legends** (CSV/JSON) fill the mapping by nearest colour; names are checked with the
+  editor's fuzzy matcher.
+- **Dry run, apply, rollback:** the diff (new/changed/unchanged/retired borders, unmatched regions, unknown names,
+  areas on the realm's planet), writes through the realm map writer, land area filled only where a nation has none,
+  adjacency rebuilt, caches dropped, and a `MapImport` snapshot for **Roll back**. `importPipelineResult` is now a
+  thin wrapper over the same writer (validated, batched, named, snapshotted; replace mode retires only the imported
+  layer types).
+- **Who:** site admins, the founder and Map officers (`canImportRealmMap`): the wizard is in Full pipeline and in the
+  realm's Manage tab (**Map import**); **Import this map** on the wiki panel imports the map chosen from the realm's
+  wiki, with its credit line, and shows the wiki's locator maps and capitals as helpers.
+- **Deploy:** `prisma/migrations/20261007150000_map_import_jobs/migration.sql` (additive; `db push` applies it) and,
+  optionally, `map-import` in `CRON_ENABLED_JOBS` (deploy runbook steps 4 and 7).
+
+### 📚 Realm Wikis & IIWiki World Discovery (2026-10-07)
+
+- **Realm wiki settings:** each realm names the sister wiki its lore lives on and how its world is found there
+  (`Realm.settings.wiki`: wiki, root category, keyword, nation roster category, portal page, extra map categories;
+  `src/lib/realms/realm-wiki-settings.ts`). Site admins edit them in `/admin/realms` → **Wiki**, the founder in
+  Manage → **Wiki**. The `eurth-map` preset carries Eurth's values and fills them when the realm has none.
+  `bun scripts/realms/import-realm-lore.ts --realm eurth` alone now works once they are set; flags still win.
+- **World discovery** (`src/lib/realms/sources/iiwiki-discovery.ts`): the roster (lore import's roster rule), each
+  nation's infobox hints (flag, coat of arms, capital and its `{{coord}}`, locator map files), and candidate world
+  maps (the world's map categories, the portal's images and page image) ranked for a flat political map, each with
+  its original URL, size, type, SHA-1, licence and author. Run step by step from the panel with progress; reads are
+  sequential, paced and capped, Retry-After is honoured, and a 403 returns what was gathered with `blocked` instead of
+  an error (Continue resumes). A refused discovery no longer takes the wiki offline for the whole app.
+- **Use this map / Re-check:** the original file is fetched straight from the wiki (never through wsrv.nl, which may
+  re-encode colours), only from that wiki's hosts with every redirect re-checked, at most 40 MB, its SHA-1 checked
+  against the wiki's and its dimensions read from the header (64 megapixels at most) before anything decodes it. The
+  choice is stored as `Realm.settings.map` (`source: { wiki, fileTitle, sha1 }`, `attribution`, `file`) for the map
+  import; Re-check compares the wiki's current SHA-1 (unchanged, changed or missing).
+- **Infobox hints export:** `realms.wiki.infoboxHints` gives each roster nation its capital coordinates and a proxied
+  locator map thumbnail, for the map import's colour to nation step.
+- **One list of MediaWiki hosts:** the sister wikis (iiwiki, AltHistory, Commons) are entries of
+  `src/lib/wiki-os/wiki-hosts.ts`; the proxies' allowlists, `WIKI_SOURCES`, account proof and realm wiki settings are
+  built from it, so adding a host is one entry and no setting can name a URL.
+### 🗺️ Realm-Owned Maps & Map Display (2026-10-07)
+
+- **Map officer power:** a realm officer can hold **Map** ("Edit the realm's map, borders and labels, and import
+  maps"). The world editor's border edit, split, merge, region links, linkage validation, Auto-Match and labels now
+  check the edited realm (`editableMapRealmId`): site admins anywhere, the founder and map officers in their own realm
+  only, IxWorld admin-only, archived realms read-only. Founders and map officers get **World editor** on
+  `/maps?realm=<slug>`. A map officer renames a region, not the nation linked to it.
+- **Realm map settings** (`Realm.settings.map`, `src/lib/maps/realm-map-settings.ts`; Manage → **Map**): planet
+  radius (default 6371 km), base map image (upload or `https://`), credit line, default view (saved from the world
+  editor's new realm menu).
+- **Planet radius:** scales the areas the border editor stores, the editor's area readout, the geo profile's
+  perimeter, coastline, borders and spans, the measure tool and the scale bar. **Recompute areas** re-measures the
+  realm's map (PostGIS geography area × (r/6371)²) and leaves nations' stated land area alone unless the founder ticks
+  **Also set nations' land area from the map**.
+- **Viewer:** the realm's default view, its base image under the borders, its credit line (else the source sync's), a
+  collapsible political legend, unclaimed nations hatched with a legend entry, a scale bar measured on the realm's
+  radius and the cursor's coordinates.
+- **Realm labels:** a realm's map editors label its oceans, seas, regions and continents (size, weight, colour,
+  zoom range); they show from globe view.
+- **Auto-Match:** realm-scoped, read in pages past the 1,000-row guard, and fuzzy (case, accents, hyphens,
+  underscores, "The", state forms like "Republic of", plus the roster's nation pages and the nations' source keys),
+  with a review list of suggested matches and their confidence before anything uncertain is linked.
+- **Nations with several regions:** Auto-Match and claimed nation pages link every region that names the nation,
+  and the nation's outline is the union of its regions (summed area, joint bounding box).
+- **Coordinates embeds** in another wiki's article show the map of the realm whose lore index holds the article.
+- **Fix:** a world editor draft session can only be saved by its own editor.
+- **Schema (additive):** `MapLabel.countryId` optional, `MapLabel.realmId` and `MapLabel.fontStyle`,
+  `MapEditRequest.realmId` (`prisma/migrations/20261007_realm_map_labels.sql`; `db push` applies them, see the
+  deploy runbook).
+
+### 🗺️ Realm Source Sync, Unclaimed Nations & Realm Alliances (2026-10-07)
+
+- **Source sync:** a realm's nations, figures, borders and alliances follow an outside source, a public GitHub
+  repository (`RealmSourceSync`, one per realm). Configure, dry-run (the diff: new nations, figure changes, claimed
+  nations left alone, borders, alliances, missing nations, entries left to staff), apply and see the run history in
+  `/admin/realms` → **Source sync** or the founder's Manage → **Source sync**; or
+  `bun scripts/realms/sync-realm-source.ts --realm <slug> [--preset <id>] [--apply]`. Staff decide per entry: match
+  by hand, exclude, pin a field so it is never overwritten, set an alliance's type. Options: add new nations, add
+  roster nations, read new nations' wiki infobox, update unclaimed nations (on), update claimed nations (off),
+  borders, alliances, continents, list missing nations. Nothing is deleted and no claimed nation changes hands.
+- **Nothing hard-coded:** repository, ref, file paths, field names, wiki link prefixes, alliance type rules,
+  attribution, options and the free-text continent table are the realm's settings; Eurth's ship as the `eurth-map`
+  preset (`src/lib/realms/sources/presets/eurth-map.json`, 115 first-guess continents). Fetched JavaScript is read
+  with a literal-only reader, never evaluated; fetches go only to raw.githubusercontent.com (validated parts, no
+  redirects, timeout, 5 MB cap).
+- **Schedule:** per realm (manual, 6 h, 12 h, daily, weekly, custom); the new `realm-source-sync` cron job runs
+  realms that are due, one at a time, each under its own lease shared with manual runs.
+- **Unclaimed nations:** the sync creates every nation up front, unclaimed, through the claim flow's baseline.
+  They are badged **Unclaimed** with **Claim** on the realm's Nations tab, in the map panel and on the country page
+  (**Claim this nation**). A claim hands the existing nation over and its infobox fills only what is still empty; a
+  nation only on the map always goes to manual review. Precedence: map figures, then the infobox, then defaults.
+- **Realm map writer:** `src/lib/maps/realm-map-writer.ts` upserts features keyed by (realm, layer, key) with
+  geometry checks, batched transactions with an explicit timeout, PostGIS geometry and geography areas written
+  directly, display names and country links. The realm map shows its source's attribution line.
+- **Realm alliances:** `Alliance.realmId`; names are unique per realm, invites and acceptances across realms are
+  refused, and the map's alliance overlay is realm-scoped.
+- **Fix:** re-running the lore import no longer turns a claimed or founded nation page back into lore.
+- **Schema:** `realm_source_syncs`, `realm_sync_runs`, `Country.externalSourceKey`, `Alliance.realmId` and
+  `Alliance.externalSourceKey`, Alliance name uniqueness per realm
+  (`prisma/migrations/20261007120000_realm_source_sync/migration.sql`; apply it before `db push`, see the deploy
+  runbook step 4).
+### 🗺️ Map Safety & Correctness (2026-10-07)
+
+- **Upload bombs:** province imports cap their content at 25 MB (`geoAdmin.parseProvinceUpload`), the PNG province
+  extractor reads the image header first and decodes through the shared 64-megapixel limit (an oversize or corrupt
+  image is `BAD_REQUEST`), and `/api/admin/upload-svg` and `/api/upload-province` answer 413 from the Content-Length
+  before buffering the body.
+- **Lakes stay holes:** the SVG parser (and so PNG maps traced with potrace) and the province importer classify rings
+  by containment instead of winding (`src/lib/maps/ring-assembly.ts`), honour an explicit `fill-rule: nonzero`, and
+  wind output per RFC 7946. A lake no longer becomes the outer ring or a separate filled polygon, a nation with
+  islands keeps its holes, and every approximate-area helper subtracts holes.
+- **Fresh databases get the geometry triggers:** `prisma/migrations/20261007_map_geometry_sync_triggers.sql`
+  (re)creates the triggers that fill `geom_postgis` on `map_layers`, `subdivisions`, `cities` and
+  `points_of_interest`, with a backfill; `db:bootstrap` applies it and the
+  [deploy runbook](./docs/operations/deploy-rose-garden-2026-09.md) runs it after the deploy script (step 5b).
+- **Realm-scoped spatial SQL:** subdivision and city spatial profiles, terrain lookups (`countryGeo.sampleTerrainAt`
+  takes `?realm=`) and country border lookups match the realm of what they measure, so IxWorld's climate,
+  altitudes, rivers and lakes are no longer attributed to other realms.
+- **Border snapping works:** `snapPointToCountryBorder` cast the GeoJSON column to geometry, which PostgreSQL refuses,
+  so points were never snapped; it reads `geom_postgis`.
+- **Style editor sources:** `/api/maps/editor-source/[layer]` is admin-only, serves one realm (`?realm=`, IxWorld by
+  default), is rate limited (`map_editor_source`, 120/min per admin) and privately cacheable.
+- **IxWorld leftovers:** the 56.1842° prime meridian line, home view and R shortcut apply to IxWorld only (other
+  realms centre on the origin); a coordinates embed in an IxWiki article shows IxWorld's map.
+- **Planet figures:** the radius and degree → km factors live in `src/lib/maps/planet.ts` (no behaviour change).
+- **Docs:** [maps.md](./docs/systems/maps.md) (pipeline, runtime requirements),
+  [rate-limiting.md](./docs/operations/rate-limiting.md), [local-dev-setup.md](./docs/operations/local-dev-setup.md).
+
+### 🏰 Realm Links, Rules & In-World Date (2026-10-07)
+
+- **Community links:** founders and `appearance` officers add up to 8 links (forum, Discord, wiki, map, website,
+  other; `https://` only) in Manage → **Links**; they show in a **Community** panel on `/r/[realm]`, opened in a new
+  tab with `rel="noopener noreferrer nofollow"`.
+- **Rules:** a **Rules** tab (`/r/[realm]/rules`) with rules written in Manage → **Rules** (the factbook's WikiOS
+  editor; rendered and sanitized on save). In a realm with rules, the claim list asks for **I have read the realm's
+  rules**, and `realms.claimNationPage` / `realms.claimCountry` refuse a claim without `acceptedRules`
+  (`PRECONDITION_FAILED`); the claim records `rulesAcceptedAt`.
+- **In-world date:** a per-realm calendar label in the header's stats strip (`Realm.settings.inWorldDate`): a fixed
+  label, optionally "as of" a real date, or the real year plus an offset with an era. Display only; IxTime is
+  unchanged. Closes roadmap item 12 (per-realm calendar label).
+- **Schema (additive):** `Realm.communityLinks`, `rulesWikitext`, `rulesHtml`, `rulesUpdatedAt`, `rulesUpdatedBy`,
+  `RealmClaim.rulesAcceptedAt` (`prisma/migrations/20261007_realm_links_rules_calendar.sql`; `db push` applies them).
+### 🏰 Realm Ownership & Claims Officers (2026-10-07)
+
+- **Transfer a realm (site admins):** `/admin/realms` → Realms → **Transfer** hands a realm to an active account
+  (found by nation or Clerk id) or back to IxStats staff, confirmed by typing the realm's slug (checked on the
+  server). `realms.region.adminTransferOwner` replaces `assignFounder`; the Founder column is display-only. IxWorld
+  stays with staff.
+- **Hand over (founders):** Manage → **Hand over** lets a founder pass their realm to an officer or a player who owns
+  a nation in it (`realms.region.handOver`), with the same typed confirmation.
+- **Audit and notices:** every handover writes an `AdminAuditLog` row (`REALM_OWNER_TRANSFERRED`, previous and new
+  owner) and notifies the new founder (and a founder staff replaced). **Keep previous owner as officer** keeps the
+  old founder on as a "Former founder" officer with every power; otherwise they lose the founder's powers.
+- **`claims` officer power:** "Claims: review players' claims on the realm's nations". Officers holding it see the
+  Manage tab's Claims section and approve or reject claims in that realm only (`reviewClaim`, `listClaims`); they
+  can't approve their own claim. The Officers section now describes each power. No schema change (`powers` is a
+  string list).
+- **Docs:** [Eurth onboarding](./docs/systems/realms-eurth-onboarding.md) §4.1–4.2 (hand Eurth to its leaders, give
+  reviewers the Claims power), [realms.md](./docs/systems/realms.md) Governance and the
+  [region design](./docs/specs/2026-10-05-realm-regions-design.md) amendments.
+
+### 🧭 Navigation (2026-10-06)
+
+- **Realms sidebar:** the Realms app opens the realm directory (`/realms`). Its sections are **My realm**
+  (`/countries`, the nations of your realm) and **Explore** (`/realms`); Collections and Leaderboards are no longer
+  listed there (both pages still exist).
+- **My realm** is the filterable directory that was `/explore` (search, tier, continent, region, population, sort,
+  compare), scoped to your realm or `?realm=`. `/explore` redirects to it. The shuffled card grid is retired.
+- **MyCountry icon:** the sidebar and the Halo tray show the MyCountry logo's crown badge (`MyCountryLogo`'s gold
+  disc and crown, in its own colours), drawn as one SVG that scales with the icon box.
+- **Maps and Realms icons:** Maps uses iconoir's solid Compass. Realms has its own mark (`RealmsLogomark`): iconoir's
+  Hexagon, filled, with iconoir's Community figures cut out of it, a realm as people sharing a world. Both take the
+  sidebar tint. Realms' Explore row now uses Search, so the people glyph isn't repeated under the app.
+- **One icon family:** every app now wears a solid mark with a cut-out in its tint. Vault has its own mark
+  (`VaultLogomark`): a collectible card with the ccy-icons BNB glyph cut out (`CurrencyIcon` reads the glyph from it).
+  Forum uses iconoir's solid MultiBubble (sidebar and Halo), Labs its solid RoundFlask. Utilities (Home, Help, Admin,
+  Settings) stay line icons. Realms gets its own tint (`data-app="realms"`) instead of the default.
+- **One colour per app:** the app tints are a palette now, not a list. MyCountry gold and the IxWiki navy (the
+  original logo's `#1d4e89`, replacing indigo) are fixed; every other app sits evenly between them in OKLCH hue at
+  one shared lightness, at least 30 degrees from any other (`app-palette.test.ts`). Labs gets its own green and
+  MyLeague and MyClub wear it; Maps moves to cyan, Forum to red, Vault to raspberry. The default (Home, Help,
+  Settings, Admin) is a warm ink instead of indigo, so the apps carry the colour. The crimson Intel tint is gone (Defense and Intelligence wear MyCountry's gold) and so is Sports'
+  teal. Halo's private colour map is deleted: its tray and accent use the app tints.
+- **MyCountry icon colours:** the crown badge paints with literal colours, so it shows without the app's CSS.
+- **Posting no longer breaks the editor:** after a ThinkPages post (and in every composer on the shared rich
+  editor: Forum, Messages) the editor threw "Cannot resolve a DOM node from Slate node" and stopped taking
+  input. Clearing assigned `editor.children` directly, which Slate never renders; it now uses
+  `editor.tf.setValue`, and a guard test forbids the direct assignment.
+- **Dashboard hero alignment:** from 1280px, where the right-hand panel is pinned, the MyCountry hero starts
+  level with the panel's first card instead of one Halo band (72px) higher.
+- **Coloured sidebar icons:** every sidebar icon wears its tint, not just the current row's: section rows,
+  the Settings and Admin footer links, and every app in the collapsed icon rail. Labels stay in the label colour.
+
+### 🧹 Retirements (2026-10-06)
+
+- **Narrator retired (D10):** the `narrator` router, `src/lib/narrator/`, the admin "AI narrator" Labs panel and the
+  `NARRATOR_LLM_*` env keys are gone. Sports commentary keeps the shared chat client and LLM host allowlist, now in
+  `src/lib/llm/`. The wiki article narrator (text to speech) is unaffected.
+- **Scheduled changes deleted (D11):** the service, the `scheduled-changes` cron job and its HTTP route, the
+  `scheduledChanges` router and `usePendingLocks` (and the budget and revenue form locks it drove) are gone. Remove
+  `scheduled-changes` from `CRON_ENABLED_JOBS` if listed. The Prisma models stay until the D9 schema drop.
+
+### 💎 Vault Cleanup (2026-10-05)
+
+- **Crafting retired for now:** every `crafting.*` call refuses (`CRAFTING_ENABLED = false`); the workbench, its
+  sidebar, Halo and help entries and the admin switch are gone, `/vault/crafting` says crafting is retired, and
+  `db:seed` skips the crafting seed. The schema and rows stay until the schema-drop decision. VT-14 and D6 are moot.
+- **Cosmetics visible to other players (VT-12):** the public, batched `vault.getEquippedCosmeticsFor` returns render
+  data only; the passport photo and name and forum post and thread authors now wear their equipped glow, frame and badge.
+- **Archetype Proposal Token retired:** it never did anything. It is hidden and refused, and
+  `db:refund-retired-store-items -- --apply` refunds each purchase once through the ledger.
+
+### 🛡️ Security, CI, Operations & Cron (2026-10-05)
+
+- **Security:** sports commentary no longer sends the server's LLM or TTS key to a caller-supplied URL (a caller config
+  is used only with its own key and an allowlisted host); `generateMatchCommentary` is rate-limited and only the
+  league's manager can force a regenerate. Lorewards `getCrossValidationHistory` / `getBlacklist` and sports
+  `getAdminGlobalStats` / `testLLMNarrator` are `adminProcedure`. Production CSP drops plain `http:` images and `ws:`
+  sockets.
+- **CI:** `docs:check` is green again (`docs:sync`); new blocking steps `typecheck:db`, `typecheck:scripts` (scripts,
+  `proxy.ts`, `instrumentation.ts`, `content/`) and `check:script-imports`; seven package scripts that failed on import
+  work again. CI and the security scan run on `master`, `development` and `rose-garden`; the scan uses `bun audit`;
+  `image-validation.yml` is deleted. The `audit:arch` baseline holds real line counts, so its ratchet fires; the Facet
+  ratchet locks emoji at 530.
+- **Setup:** `bun run db:bootstrap` (`scripts/setup/bootstrap-dev-db.ts`) and `docker-compose.dev.yml` take a fresh
+  clone to a running app on an empty database (PostGIS, schema push, catalog seeds); `db:setup`, `dev:db` and `fresh`
+  use it. `.env.example` lists every `src/env.ts` key (a test enforces it). The small-arms and Onoma default-dictionary
+  seed data are restored, so `db:seed` runs.
+- **Operations:** `scripts/deployment/rollback-deployment.sh <remote-branch> [--restore <dump>] [--yes]` wraps the
+  release guide's rollback; each deploy appends time, commit and dump to `backups/deploy-history.log`, and a failed PM2
+  reload fails the deploy. `ecosystem.config.example.cjs` is the tracked PM2 template. Env files load in one order
+  everywhere (`.env.production.local` beats `.env.production`), and `verify:environment` fails on missing production
+  secrets. `deploy-to-staging.sh` and the legacy `deploy-to-production.sh` are removed.
+- **Cron:** a lease row (`job_leases`) replaces the advisory lock; every run writes a `CronRun` row, a failed run
+  alerts Discord, and `/api/health` shows each job's last run, status and last success plus Redis state. New
+  `log-retention` job (21 jobs in all).
+- **Realtime:** market WebSocket events go through a Redis bridge (`src/server/market-broadcast-bridge.ts`), so bids,
+  buyouts and cron completions reach every socket. `db.ts` logs when an unbounded `findMany` hits the 1,000-row cap.
+- **Docs:** a docs audit against the code and an ordered action plan
+  ([ACTION_PLAN_2026-10-05.md](docs/roadmap/ACTION_PLAN_2026-10-05.md)); the planning, status, onboarding and ops
+  docs follow the code.
+
+### 🧭 Facet 4 & the Sidebar (2026-10-04 → 10-05)
+
+- **Facet 4:** five layers (canvas, pane, well, chrome, overlay), content types as their own axis, a tinted canvas
+  behind glass panes and no glass on glass; eyebrows, em dashes, emoji, `Sparks` and `hover:scale` are counted by a ratchet that only
+  falls. Facet version 3.1 → 4, Halo 5 → 6 (standard chrome glass, no glow).
+- **Sidebar:** one macOS-style source list (`src/lib/navigation/app-sections.ts`) is the only navigation, with a
+  `TabBar` below 1024px. Per-app sidebars, rails and hidden sub-navigation are gone; admin and settings navigation are
+  the sidebar's area lists; the footer carries the Vault card, version, feedback and legal links.
+- **Shell:** a proportional sidebar / content / Inspector grid; WikiOS articles keep contents and page info in the
+  Inspector, and tool pages take the full width. MyCountry's flag is the header cover banner, the Overview shows
+  domain peeks, and the executive console is URL-driven (`?mode=executive`).
+- Docs: [Facet 4 reference](docs/reference/facet-design-system.md) ·
+  [spec](docs/specs/2026-10-04-facet-4-design.md) ·
+  [sidebar spec](docs/specs/2026-10-04-facet-4-sidebar-design.md). The per-app sweep is in progress.
+
+### 🔁 Seven Audit Loops Closed (PR #49, 2026-09-30)
+
+- **Decisions move stats:** issue GDP and population consequences become phased level effects (±3% / ±1% caps);
+  directives use the same effects and consume CivCap; issue stability deltas survive recalculation. The new
+  `stat-progression` job persists stats and writes monthly `HistoricalDataPoint` rows.
+- **Elections:** a first election is scheduled once a legislature has at least 2 parties; candidates come from the
+  parties, results seat them, follow-up elections resolve, and bills can pass.
+- **Diplomacy inbox:** incoming and outgoing foreign-policy proposals and alliance invites with accept, decline and
+  withdraw, a count badge, notifications and 14-day expiry.
+- **Social loop:** mention, repost and quote notifications; the `thinkpages-trending` job; persona follows with real
+  counts; a personal persona for posting as yourself.
+- **IxnayID economy:** the 5,000 IxC welcome bonus at account creation, 19 account-level achievements, background
+  evaluation (`achievements-evaluate`), a passport showcase and ribbons derived from real unlocks; passport privacy is
+  persisted and enforced on the server.
+- **Realms:** nation caps (realm cap and tier), a realm-aware builder, the nav and passport nation switcher, realm
+  boards (`/r/<realm>/board`), a `/realms` directory and a realm filter on the ThinkPages feed.
+- **True numbers:** Diplomatic Standing computed from the real record, Governmental Efficiency from
+  `governmentEffectiveness`, real CivCap in the Capacity band, and realm-scoped World Census rankings.
+- New jobs `stat-progression`, `thinkpages-trending` and `achievements-evaluate` are off until named in
+  `CRON_ENABLED_JOBS`. Additive schema: `ThinkpagesFollow`, `ThinkpagesPersonalAccount`, `PassportPreference`,
+  `RealmBoard` and new fields.
+
+### 🧰 Audit Fix Batch (PR #48, 2026-09-30)
+
+- Fixes from the 2026-09-30 platform audit (ten parallel branches) plus a 17-item site bug list.
+- **Security and integrity:** ThinkShare thinktank conversations need active membership; ThinkPages account creation
+  needs write access to the country and only admins set `verified`; a WikiOS namespace edit policy; the Narrator LLM
+  URL has an SSRF guard; `IXWIKI_DB_PASSWORD` has no hard-coded fallback; Lorewards pays only verified wiki links.
+- **Economy:** packs, junk payouts and lore-card requests go through the ledger; junk rate 0.25 (capped at 0.5);
+  crafting uses ownership IDs.
+- **Loops:** hostile foreign-policy actions apply their effects; cooperative proposals and alliance invites can be
+  accepted; directives move GDP and stability; ThinkTank Chat and Docs tabs are mounted, with invites by username;
+  sports predictions can be placed.
+- **Honest UI:** no fabricated ribbons; Halo and profile Sign Out sign out; dead Create League/Club links removed; the
+  Approval and Stability bands read real values; one premium definition (`hasPremiumTier`).
+- **Site bugs:** flags and seals, the maps build (the 14 `@turf/*` packages declared, the MapLibre worker shipped),
+  icon stroke width, stashes under the old user ID, Daily Prompt, ThinkPages reposts and MyCountry layout fixes.
+- Schema: `AllianceMember.status`.
+
+### 🎨 Facet 3 Design System, Phases 1–2 (2026-09-30)
+
+- **Foundations:** one token source (`src/styles/facet/tokens.css`) with Apple-HIG colour roles, per-app tints
+  (MyCountry gold, Maps sky, ThinkPages emerald, Vault copper, Forum orange, Wiki ink, Intel crimson, Sports teal),
+  named text styles, concentric radii, glass materials for chrome only, one z-index scale and motion springs. All
+  Facet/theme CSS is layered so Tailwind utilities win; the style layer shrank from ~19.8k to ~12.6k lines.
+- **Appearance:** the theme is applied before first paint (no light flash; follows the system by default), and
+  Settings → Appearance & accessibility adds density, text size, Increase Contrast, Reduce Transparency, Reduce Motion
+  and sound.
+- **Primitives:** Button styles and sizes on the app tint, Badge variants, SegmentedControl, ToggleGroup, Stepper,
+  MenuButton, SearchField; opaque FacetCard, FacetList/FacetRow, Stat, EmptyState; opaque dialogs, glass popovers and
+  menus, a responsive Sheet (bottom sheet with detents on phones); full ARIA for tabs, switches and toggles.
+- **Sound:** Cuelume plays only for meaningful moments and is muted by Reduce Motion or the sound setting.
+- Docs: [Facet 3 reference](docs/reference/facet-design-system.md) · [spec](docs/history/specs/2026-09-30-facet-3-design-system.md)
+  · [audit](docs/audits/FACET_STYLE_AUDIT_2026-09-30.md). Facet version 2 → 3.
+
+### 📚 Admin Reference Catalogs Reach Players (2026-09-30)
+
+- **Economic archetypes**: the builder's archetype picker reads the admin catalog. An empty table is seeded from the
+  built-in archetypes on first read (the seed script's broken import is fixed), rows carry their `key` and `era`, and
+  builder state stores the key, so admin edits and deactivations reach players. The admin form now sends what the
+  router validates (tax rates, revenue efficiency, complexity, component keys).
+- **Military equipment**: the Defense equipment browser lists the active `MilitaryEquipmentCatalog` rows and manufacturers
+  (`militaryEquipment.getPlayerCatalog`), falling back to the built-in list if the table can't be read; empty tables
+  seed themselves. Admin create/update accept the fields the form sends, and the seed script uses the shared seed rows.
+- **Government & economic components**: stay code-defined. Their admin sections are read-only browsers; the stub and
+  unused edit endpoints, form and synergy dialogs are gone, and the catalog endpoints serve the code library with usage
+  counts.
+
+### 🏰 Realms Phase 1 & Eurth, the First Hosted Realm (2026-09-27 → 09-29)
+
+- **Realm model**: `worldId` → `realmId` everywhere; countries carry `ownerUserId` and every ownership write goes
+  through `assignNation`. Realm settings, moderation access and nation ownership live in `src/server/modules/realms/`.
+  The Clerk-organisation realm UI and the `WorldConfig` loaders are gone.
+- **Nation claims**: players claim a realm's nation page; a claim from a verified wiki account that created the page is
+  auto-approved, others go to the admin claims queue. Approval creates the realm's country. Claims re-verify and
+  upgrade in place, a cross-realm claim never strands a player's first nation, and "Play as" switches between owned
+  nations.
+- **Realm viewer context**: `?realm` → active nation → IxWorld. Cross-country listings, name lookups and map layers are
+  realm-scoped (the simulation stays global); admins read every realm.
+- **Realm hub & lore index**: admin realm creation, a one-time lore index import, and a realm page listing claimable
+  nations and lore. Eurth nations come from its curated roster.
+- **Realm maps**: PNG realm maps run through the Full Pipeline with colour → nation mapping; claimed nations take their
+  map region; the map's IndexedDB cache is keyed by the realm the server resolved.
+- **Operations**: throttled `lastSeenAt`, the Phase 1 ownership backfill script (refuses `--apply` while owner
+  collisions remain), an admin-set nation cap, and the [Eurth onboarding runbook](docs/systems/realms-eurth-onboarding.md).
+  Spec: [realms-framework-spec.md](docs/architecture/realms-framework-spec.md).
+
+### 🪪 Identity: Verified Wiki Accounts & Passport (Plan 188)
+
+- Wiki accounts on ixwiki, iiwiki and althistory are linked only by a token the player saves to their own user page;
+  the revision that first introduced the token since it was issued must be the account's (rulings F-3, F-6).
+  Unverified wiki linking is removed. Admins can revoke links on any wiki; pending verifications can be unlinked.
+- Passport procedures split into `getPassport` / `getRealms` / `getWork` / `getHistory` (`src/server/modules/identity`)
+  with new Overview and Work tabs; `/@user` is the canonical passport URL and `/r/[realm]/[username]` resolves.
+
+### 🔒 Security & Correctness Hardening (2026-09-23 → 09-27, Plans 326–340)
+
+- Authorization: play-as cannot target equal/higher roles and drops admin rights; every country-scoped mutation checks
+  write access (Plan 332); Commons import and archetype CRUD require admin; custom wiki template writes require auth;
+  vault balance/level queries are scoped to the caller.
+- WebSockets authenticate with a Clerk session token and check the Origin (Plan 333); the unused intelligence socket
+  pair is deleted.
+- Wiki HTML is sanitised on the server, wiki webhooks require `WIKI_SYNC_WEBHOOK_SECRET`, and the image proxy rejects
+  SVG and caps body size (Plan 335).
+- Atomicity: credit moves run inside the caller's transaction (327); trades, daily claims, card serials and scenario
+  choices change state atomically (331); scheduled changes apply once, only for the owner (329).
+- Rate limiting honours per-procedure limits and derives identity from trusted sources (340).
+- One cron scheduler: `cron-runner.mjs` runs a typed job table (`src/server/cron/jobs.ts`) under locks, gated by
+  `CRON_ENABLED_JOBS` (Plan 330). The Discord bot is the IxTime source of truth and the game clock stays continuous
+  across multiplier changes (334). Cache layers are deduplicated and memory-bounded (337).
+- Dependencies: Next 16.3.6, `@xmldom/xmldom` 0.9, `maplibre-gl` 6.x for published advisories.
+
+### 🧹 Codebase Deletion & Consolidation (Plans 312, 341–346)
+
+- Removed 14 dead tRPC mounts and 16 dead router files (341), then 508 zero-caller procedures (312): 1,455 → 947.
+- Untracked 106 MB of artifacts, deleted one-off scripts, dropped 15 unused dependencies and retired the ESLint stack in
+  favour of oxlint (343). Removed the labs sandbox/design-bible and unlinked `/studio` UI; MediaWiki proxies 8 → 2 (344).
+- One toast system, one set of formatters/colour helpers, 27 feature components moved out of `src/components/ui`; help
+  articles, terms and privacy are markdown under `src/content/` rendered by one layout.
+- Facet rules enforced: no `scale(0)` entrances, no sub-12px text, no `transition-all` (346); hard-coded UI colours
+  replaced with tokens where the value matched exactly.
+- The Jest gate is blocking behind a shrink-only quarantine, now empty (326).
+
+### ✍️ WikiOS Canvas Editor on Plate & Multi-Wiki Reading (Plans 196, 205–208, 301–304)
+
+- IxWiki AST block model; the visual editor runs on Plate with lossless atomic blocks, a slash-command menu with
+  template presets, and instant source ↔ visual switching. Templates serialise canonically, TemplateData drives field
+  order, unknown templates survive as placeholders, and saves that would lose content are blocked.
+- Real revision references for history/diff/undo, a Watch button, red links and section edit links (196).
+- `?source=` pages from another wiki keep that wiki's links and stay read-only; the Halo, Watch, edit route, margin
+  and recent/paused pages follow the page's wiki.
+
+### 🛠️ Builder, Map Editor & Sports
+
+- Builder: advanced fields behind a "Show advanced options" disclosure (Plan 003); edit mode gains change markers, a
+  save bar and 50-step undo (Plan 004).
+- Map editor: snap to coastline, trace along rivers and coasts, per-layer snap toggles (Plan 048). Sea routes get
+  current- and wind-aware transit estimates (Plan 049).
+- Sports: hockey 2/1 overtime-loss points, predictions after full-season sims, one team history, replayable knockout
+  bouts.
+
+### RC2 development log (2026-08-21 → 2026-09-22)
+
+
+### 🌍 Countries Page UI/UX Polish & Apple Design Alignment (Plan 319)
+
+- **Permanent Idle Legibility on Country Cards**:
+  - Implemented permanent bottom contrast gradient scrim on `CountryFocusCard.tsx` ensuring Country Name, Tier, and Population are always legible on mobile touch screens and default desktop views without requiring hover.
+  - Replaced hardcoded purple border hover glows with physical Facet depth elevation (`scale(1.015) y(-4px)` with spring physics and translucent glass borders).
+  - Pruned heavy multi-layer `text-shadow` loops in favor of clean anti-aliased typography.
+- **Harmonized Diplomatic Dossier Actions**:
+  - Removed synthetic `Spotlight` radial canvas component from `ExpandedCardContent.tsx`.
+  - Replaced 7 hardcoded 2-color gradient meshes with semantic Facet action buttons, Cuelume haptics (`data-cuelume-press="tick"`), and tactile pointer-down compression (`active:scale-[0.98]`).
+- **Tactile Apple-Style Metric Controls**:
+  - Added `data-cuelume-press="tick"` and `active:scale-[0.98]` to all 4 header metric popover triggers in `CountriesStats.tsx`.
+  - Upgraded skeleton placeholders in `CountriesFocusGridModular.tsx` to mirror matching 16:9 card geometry.
+
+### 🚫 Eradicate AI Design Slop, Rainbow Mesh Gradients & Gratuitous Sparkles (Plan 318)
+
+- **Removed MagicUI Shimmer & Rotating Border Slop**:
+  - Rebuilt desktop navigation in `src/components/navigation/NavigationBar.tsx` with clean semantic tokens, Cuelume haptics, and static crisp iconography.
+  - Deleted `src/components/ui/magicui/shine-border.tsx` and `src/components/ui/magicui/animated-shiny-text.tsx`.
+  - Pruned dead `.glow-text`, `.shimmer-text`, `--animate-shiny-text`, and `--animate-shine` keyframes from `src/styles/globals.css`.
+  - Removed unreferenced `NAV_COLORS` and `DEFAULT_NAV` hardcoded hex tables from `src/lib/navigation-config.ts`.
+- **Eradicated Unmotivated Purple/Pink/Cyan Mesh Gradients**:
+  - Replaced rainbow gradients in `src/components/sports/league/LeagueSidebarNav.tsx`, `src/app/countries/_components/CountriesHeader.tsx`, `src/app/mycountry/layout.tsx`, `src/app/help/page.tsx`, `src/components/thinkpages/account/AccountTypeSelector.tsx`, and `src/components/thinkpages/ThinkPagesAccountHub.tsx` with semantic Facet cards, alerts, and primary buttons.
+- **Replaced Gratuitous Sparkle / Magic Icons**:
+  - Replaced unmotivated `Sparks as Sparkles` icons across step indicators (`ImportStepIndicator.tsx`, `ImportNationStep.tsx`), live embed preview banners (`WikiAndStashPopovers.tsx`), directive composers (`DirectivePresetsCatalog.tsx`, `IntentComposer.tsx`), sports upset pills (`SportsBulletinCard.tsx`), live data drawers (`ComposerLiveDataDrawer.tsx`), and legal docs (`LegalDocumentLayout.tsx`) with purpose-specific semantic icons (`Check`, `Eye`, `Dices`, `Compass`, `Activity`, `Zap`, `Copyright`).
+
+### 💎 Facet Design Anti-Slop, Material Polish & Motion Optimization (Plan 317)
+
+- **Eliminated `transition: all` across Core & Component Surfaces**:
+  - Replaced indiscriminate `transition: all` in `src/styles/facet/core.css`, `src/styles/animations.css`, and `src/styles/wiki-os/` with explicit hardware-accelerated property lists (`transform`, `opacity`, `box-shadow`, `border-color`, `background-color`).
+- **Pruned Synchronous DOM Mutation Observers in FacetContainer**:
+  - Replaced synchronous `MutationObserver` + `window.getComputedStyle` layout scans with pure CSS `.facet-adapt-auto` theme adaptivity, cutting layout thrashing during animations and scrolling.
+- **Asymmetric Drawer & Sheet Timing Curves**:
+  - Re-tuned `sheet.tsx` timing curves from generic 500ms down to 280ms open with `ease-out` / Apple drawer curve and 200ms quick-dismiss.
+- **Eradicated Unmotivated Flash & Singularity Scaling**:
+  - Replaced 3-color rainbow `@keyframes flash-notification` with semantic single-hue brand border/shadow pulses.
+  - Corrected ripple keyframes from `scale(0)` to `scale(0.95)` with initial opacity 0 for natural optical emergence.
+
+### 🧹 Code Quality, Complexity & Architecture Audit Remediation (Plans 312–316)
+
+- **Dead Code & Router Residue Elimination (Plan 312)**:
+  - Pruned all unused schemas, dead sub-router residue, and unreachable statements across `cultural/`, `embassies/`, and `government/` sub-routers.
+  - Reset `scripts/audit/router-residue-baseline.json` to `{}` baseline with 0 dead code.
+- **Centralized Color Math & Formatters (Plan 313)**:
+  - Created canonical `src/lib/color.ts` with zero-dependency native HSL/RGB/Hex conversion math (`hslToHex`, `hslToRgb`, `rgbToHsl`, `hexToRgb`, `hexToHsl`, `parseColorToHsl`).
+  - Standardized number and currency formatting across `CountryPortal.tsx`, `TourHUD.tsx`, `FeatureInfoPanel.tsx`, `useCountryInfoPanelState.ts`, and `compliance.ts`.
+  - Extracted shared metric history filtering hook `useMetricHistoryFilter.ts` across all 6 metric detail modals (`DemographicsHealthModal`, `LaborDetailsModal`, `GovernmentSpendingModal`, `DebtAnalysisModal`, `PopulationDetailsModal`, `GdpDetailsModal`).
+- **Type System Hardening & `any`/`unknown` Eradication (Plan 314)**:
+  - Created canonical chart types in `src/types/charts.ts` (`ChartPayloadEntry`, `ChartTooltipProps`, `ChartSeriesConfig`, `ChartConfig`).
+  - Strongly typed Recharts primitives (`RechartsIntegration.tsx`, `chart.tsx`), Next.js middleware proxy (`src/proxy.ts`), and Facet primitives (`FacetTabs.tsx`, `SwipeableRow.tsx`).
+  - Replaced arbitrary `any`/`unknown` assertions across metric modals and data pipelines, driving `any`/`unknown` occurrences to 0.
+- **Decomposition of High-Complexity Simulation & Geometry Engines (Plan 315)**:
+  - Deconstructed sports match simulation (`src/lib/sports/resolver.ts`) into pure strategy modules: `src/lib/sports/modifiers.ts` and `src/lib/sports/tactics.ts`.
+  - Deconstructed National Issues engine (`src/lib/national-issues/engine.ts`) into table-driven AST condition evaluation `src/lib/national-issues/evaluators/condition-evaluator.ts` and variable substitution `src/lib/national-issues/evaluators/issue-generator.ts`.
+  - Deconstructed SVG geometry parser (`src/lib/flags/svg-parser.ts`) into `src/lib/flags/svg/command-evaluator.ts` and `src/lib/flags/svg/topology-flattener.ts`.
+  - Reduced Cyclomatic Complexity $< 22$, Cognitive Complexity $< 22$, and Halstead Difficulty $< 80$ across all modules.
+- **CRAP Score Reduction, Error Recovery & Mutant Elimination (Plan 316)**:
+  - Eliminated swallowed `catch (_) {}` blocks across map overlays (`RiskHeatmapOverlay.tsx`, `useWorldMapInteractions.ts`), achievement trackers (`progress.ts`), lorewards (`calendars.ts`), and audio narration (`narrator.ts`), replacing them with structured logging and graceful fallbacks.
+  - Added characterization test suites for National Issues Evaluator (`national-issues-evaluator.test.ts`), SVG Geometry (`svg-parser-geometry.test.ts`), and Color Math (`color.test.ts`), driving CRAP $< 25$ and surviving mutants to 0.
+
+### 🖼️ WikiOS Native Media & Asset Engine (Plan 191)
+
+- **PostgreSQL Native Asset Registry (`wiki_assets`)**:
+  - Ingested and indexed **7,555+** media assets (flags, coats of arms, infobox logos, maps, diagrams) into PostgreSQL `wiki_assets`.
+  - Stored canonical metadata pointers (`slug`, `filename`, `width`, `height`, `mimeType`, `sizeBytes`, `url`, `thumbnailUrl`, `@unique md5Hash`) with zero file duplication.
+- **MediaAssetService Core Domain Primitive**:
+  - Implemented `MediaAssetService` (`src/lib/wiki-os/core/media-asset-service.ts`) with typesafe MD5 shard path calculation (`8/8c/File.jpg`), $O(1)$ database asset lookups (<1ms), and multi-source image reference extractors.
+- **JIT & Save-Time Automated Image Processing**:
+  - `ArticleRepository.saveArticle` automatically parses and registers newly referenced images from wikitext (`[[File:...]]`), infobox parameters (`| flag =`, `| logo =`), and HTML `<img />` tags in non-blocking background tasks.
+  - `/api/mediawiki/ixwiki/[...path]` route features JIT lazy registration for newly encountered media files and serves responses with immutable caching (`Cache-Control: public, max-age=31536000, immutable`).
+- **Universal Streaming CLI Ingestion Engine**:
+  - Built `scripts/wiki/migrate-media-assets.ts` supporting continuous pagination across the MediaWiki Action API (`generator=allimages`) and live MariaDB pool with real-time batch logging.
+
+### 🧭 Unified 3-Mode Navigation, Dynamic Repulsion Physics & Apple Design (Plan 179)
+
+- **3-Mode Navigation Architecture**:
+  - **Mode 1: DEFAULT (Global Scroll-Hide & Morph)**: Standard pages (Home, MyCountry, Dashboard, Vault, ThinkPages, Forum, Countries, Admin, Sports, Settings) sit in top anchor zone (<50px) and smoothly hide on downward scroll with cubic-bezier/spring transitions, revealing instantly on upward scroll.
+  - **Mode 2: HIDDEN (Immersion & Canvas Focus)**: Surfaces requiring distraction-free focus (`/messages`, `/builder`, `/mycountry/editor`, `/wiki/*`, `/blurbs/*`) start with navbar translated `-100%`, revealing smoothly on upward scroll (>10px) or top-edge hover (<=16px) while the dedicated `WikiHalo` or `Halo` pill remains interactive.
+  - **Mode 3: MAPS (Chromeless Standalone)**: Standalone spatial surfaces (`/maps`) cleanly bypass global navigation chrome, handing off navigation and wayfinding entirely to `MapDynamicIsland`.
+- **Global Dynamic Repulsion Physics Primitive**:
+  - Promoted repulsion physics to a universal design-system primitive: $\text{repulsionProgress} = \text{clamp}(\text{scrollY} / 56, 0, 1)$.
+  - Coordinates sub-headers, mode toggles, and toolbars under the sticky Halo with center branding glides, action tucks, and ambient refraction glows without jittery unthrottled scroll listeners.
+- **Synchronized Desktop Sticky Rail Clearances (`top-20` / 80px)**:
+  - Standardized all 11 desktop sticky sidebars across Settings, Dashboard, Vault, Sports Leagues, MyCountry Dossier, Citizen Profile, Admin, Builder Import, and Onoma from `sticky top-6` to `sticky top-20` (80px), guaranteeing a clean 16px buffer beneath the 64px floating/sticky header.
+
+### 🎨 Complete Platform Color System & Hardcoded Hex Elimination (Plan 185)
+
+- **100% Elimination of Arbitrary Hex Codes**:
+  - Remediated all arbitrary Tailwind hex classes (`[#...]`) and inline style hex fallbacks (`style={{ color: "#..." }}`) across 20+ TSX components and 4 core stylesheets (`layout.css`, `components.css`, `elements.css`, `lorewards.css`).
+  - Standardized all brand, chart, status, and theme colors on semantic Tailwind v4 tokens (`text-wiki`, `text-onoma-primary`, `bg-map-ocean`, `text-discord`, `border-border/40`, `text-foreground`, `bg-card`).
+- **Semantic CSS Variable Architecture**:
+  - Standardized color fallbacks to use CSS custom properties (`var(--color-...)`, `var(--wikios-...)`, `var(--onoma-...)`) ensuring WCAG AA contrast compliance across both dark and light modes.
+
+### 👤 Unified IxnayID Account Profile System & Universal Resolver (Plan 181)
+
+- **Consolidated `api.ixnayid.getUnifiedProfile` Backend Resolver**:
+  - Implemented a unified tRPC procedure in `src/server/api/routers/ixnayid.ts` consolidating Country, User, MediaWiki, XenForo, ThinkPages, and Vault queries in a single parallel lookup (`Promise.allSettled`).
+  - Supports automatic identity resolution across country slugs, nation names, Clerk IDs, MediaWiki handles, and XenForo user IDs.
+- **Universal Resolver Route (`/id/[username]` & `/id/@username`)**:
+  - Built universal profile route at `/id/[username]` that cleanly strips leading `@` symbols and dynamically discriminates between **Sovereign Profile Mode** (seamless redirect to `/countries/[slug]`) and **Citizen Profile Mode** (dedicated citizen masthead, accolades, forum reputation, and Vault card showcase).
+- **Reusable Facet Tab Primitives**:
+  - Created `<WikiTab />` (`src/app/countries/[slug]/_components/tabs/WikiTab.tsx`) with Lorewards metric tiles, GitHub-style Streak Calendar heatmap, verified award history, and live MediaWiki edits with +/- byte indicators.
+  - Created `<ForumTab />` (`src/app/countries/[slug]/_components/tabs/ForumTab.tsx`) with XenForo member card, reputation score, trophy points, location, HTML bio, and synced custom profile fields.
+- **Expanded Profile Backbone (`/countries/[slug]`)**:
+  - Expanded `CountryTabs.tsx` from 3 to 5 Tier-1 tabs: Factbook (`/factbook`), Dossier (`/dossier`), Wiki & Accolades (`/wiki`), Community (`/forum`), and Activity (`/activity`).
+  - Updated `CountryHeader.tsx` to render the **Dual-Identity Sovereign Hero** with delegate avatar, handle chip, role badges, and staff indicators.
+- **Two-Way Settings & Cross-System Bridges**:
+  - Added direct "Public Profile" link in `/settings` `AccountInformationCard.tsx`.
+  - Added bridge banners across standalone WikiOS user profiles (`/wiki/user/[username]`) and XenForo member pages (`/forum/members/[userId]`) linking back to the unified IxnayID profile.
+
+### 🎨 Universal Iconoir Migration & Facet Design Token Cleanup
+
+- **Comprehensive Iconoir-React Icon Modernization**:
+  - Replaced legacy Lucide icons across 200+ components, pages, navigation rails, and modal dialogs with official `iconoir-react` stroke icons.
+  - Standardized icon aliases and stroke aesthetics across Dashboard, ThinkPages, Vault, MyCountry, WikiOS, Map Editor, Forum, and Admin suites.
+  - Created automated AST and migration scripts (`scripts/migrate-lucide-to-iconoir.ts`) archived in `scripts/archive/migrations/`.
+- **Hardcoded Hex Code Elimination & Design System Token Harmonization**:
+  - Refactored arbitrary raw hex color strings (`#...`) across CSS stylesheets and components to use canonical Facet design tokens (`--facet-*`), Tailwind CSS variables (`text-foreground`, `bg-card`, `border-border`), and theme-aware semantic tokens.
+  - Enhanced theme consistency and visual clarity across both light and dark modes.
+
+### ⚡ Dashboard & ThinkPages Feed Interaction, Comment/Reply, Repost & Reactions Overhaul
+
+- **Keystroke-Stable GlassPlateEditor & Comment/Reply Pipeline**:
+  - Stabilized `useGlassPlateEditor` by decoupling the Plate editor instance from dynamic `initialValue` dependency arrays, eliminating editor recreation on every keystroke.
+  - Added external change synchronization via internal change tracking refs, preserving caret position, active mentions, and focus during typing.
+  - Fixed silent reply submission failures by adding explicit account validation and guiding unauthenticated users to account creation.
+  - Resolved cache invalidation gaps by invalidating `activities.getGlobalFeed` and `activities.getFollowingFeed` alongside `thinkpages.getPost` on reply creation.
+  - Updated `ThreadReplies.tsx` rendering logic to immediately show newly submitted replies without requiring manual page reload.
+- **Instant Like & Optimistic Reaction System**:
+  - Resolved `PostActions.tsx` single-click interaction so clicking the heart icon immediately toggles likes, with right-click or long-press triggering the expanded `ReactionPopup`.
+  - Extended `ReactionCacheUpdater.ts` with Activity Feed array support (`activities.getGlobalFeed`, `activities.getFollowingFeed`), enabling instant, zero-latency optimistic updates in dashboard feeds.
+  - Purged noisy debug `console.log` statements and eliminated the debug `POPUP ACTIVE` UI overlay artifact.
+  - Verified and cleaned up Discord custom emoji rendering and selection in `ReactionPopup.tsx`.
+- **Reposting & Canonical Share Link Permalinks**:
+  - Wired `onReaction` properly across `HeroPostView.tsx`, `StandardPostView.tsx`, and `ThinkpagesPost.tsx`.
+  - Standardized permalink generation using `withBasePath` in `handleShare` across standalone and subpath deployments with native Web Share API and clipboard fallbacks.
+  - Added global and following feed cache invalidation to `useGlassCanvasComposer.ts` upon submitting quote reposts.
+
+### 📑 Stash Research Vault & Apple Design Overhaul (STASH_VERSION: 1)
+
+- **Primary Brand Slogan & Architecture**:
+  - Adopted the official platform slogan: **"Save-for-later, built for lore."** (Retention hook: *"Stash it once. Keep it forever."*).
+  - Published canonical system specification ([`docs/systems/stash.md`](docs/systems/stash.md)) and design style guide ([`docs/systems/stash-style-guide.md`](docs/systems/stash-style-guide.md)) covering cognitive offloading, research workflows, WCAG 2.1 AA contrast matrices, and export schemas.
+- **Apple Design Collection Creation Popover (`CreateStashPopover.tsx`)**:
+  - Replaced the disruptive, layout-shifting inline form with an anchored, non-disruptive Apple Design popover.
+  - Features 100% solid opaque surface (`bg-white dark:bg-[#18181b]`), 8-color preset swatch selector with animated checkmarks, live input autofocus, and keyboard shortcuts (`Enter` to submit, `Escape` to dismiss).
+  - Universally accessible from both the header action toolbar and the collection sidebar rail ([`StashSidebar.tsx`](src/components/wiki-os/stashes/StashSidebar.tsx)).
+- **Apple Design Collection Settings Popover (`StashSettingsMenu.tsx`)**:
+  - Replaced the standalone "Export Markdown" button with an Apple-grade collection management popover.
+  - Includes inline collection renaming, 8-color theme swatch switcher, shareable collection link copying (`?stash=<id>`) with toast confirmation, and destructive collection deletion with a safe confirmation banner.
+  - Implemented dual-format exporting: full Markdown (`.md`) with citation blockquotes and structured JSON (`.json`) for programmatic data backups.
+  - Eliminated background bleed-through with 100% opaque elevation surfaces and replaced muddy dark window scrims with an invisible clickaway capture layer (`fixed inset-0 z-40`).
+- **4-Tab Lore Hub Domain Architecture (`/stashes`)**:
+  - **Articles Tab ([`StashPagesList.tsx`](src/components/wiki-os/stashes/StashPagesList.tsx))**: Displays saved wiki pages with automatic lead image thumbnail resolution via `/api/mediawiki/ixwiki/` image proxy, active `onError` fallback to [`WikiOSLogomark`](src/components/wiki-os/shared/WikiOSLogomark.tsx), word counts, last updated dates, and personal notes.
+  - **Quotes & Highlights Tab ([`StashQuotesList.tsx`](src/components/wiki-os/stashes/StashQuotesList.tsx))**: Full 2-way synchronization with WikiOS Margin annotations, rendering clipped excerpts, highlight color pills, lore notes, one-click clipboard copying, and direct anchor links back to article sections.
+  - **Media Assets Tab ([`StashImagesGrid.tsx`](src/components/wiki-os/stashes/StashImagesGrid.tsx))**: 4-column responsive gallery for Wikimedia Commons graphics and local uploads with aspect ratio tags, wikitext snippet copy (`[[File:...|thumb]]`), and full-screen lightbox inspection.
+  - **Forum Threads Tab ([`StashThreadsList.tsx`](src/components/wiki-os/stashes/StashThreadsList.tsx))**: Bookmarked regional discussion threads with custom summary notes and direct links to live forum debates.
+- **WikiOS Logomark Standardization**:
+  - Replaced all generic book icons with the official vector `WikiOSLogomark` across tabs, empty states, reader steps, and quote cards.
+- **Un-slopped Stash Guide Modal (`StashWelcomeModal.tsx`)**:
+  - Rebuilt the guide modal with clean, concrete, un-slopped prose and Apple Design card layout across 4 structured tabs.
+
+### 📚 WikiOS Direct Database Architecture & Apple / Facet Design Standardization (Plan 180)
+
+- **Dual Editorial & Sculpted Layout Engine (`WikiOSMainPage.tsx`)**:
+  - Engineered dual front-page presentation modes: `editorial-masthead` (Atlantic / Economist long-form editorial hierarchy) and `sculpted-emblem` (spatial floating glass deck).
+  - Streamlined section headers (`Browse by topic`, `Recent activity`, `Explore Countries`) by removing arbitrary colored indicator dots in favor of clean proportional typography.
+  - Implemented dynamic Fisher-Yates randomization for the Explore Countries 12-nation carousel on every page load/mount across all 82 sovereign realms.
+  - Built a deterministic 32-bit Murmur seeded daily hash PRNG for World Almanac spotlight article rotation from `Category:Bureau of International Statistics`.
+- **Volumetric Under-Glow & Refractive Card Physics (`FeaturedImageRefraction.tsx`)**:
+  - Implemented ambient volumetric under-glow physics constrained to the golden ratio ($1 : 1.618$).
+  - Layered tactile paper grain texture overlay, specular sheen, and chromatic aberration chamfered borders without unbounded card expansion.
+- **Infobox-First Image Extraction & Notice Icon Filtering (`image-url.ts`, `mysql-reader.ts`)**:
+  - Built `isNoticeOrUtilityIcon` blacklist blocking 40+ maintenance, WIP, and construction templates (e.g. `Under_construction_icon-red.svg`, `Red_piston.svg`, `Ambox_warning_construction.png`).
+  - Implemented `extractLeadImageFromWikitext` querying MariaDB `text` table directly to prioritize genuine Infobox parameters (`| logo =`, `| image =`, `| flag =`, `| seal =`) before falling back to body figures.
+  - Enhanced `extractLeadImageFromHtml` to strip `.ambox`, `.metadata`, `.hatnote`, and `.wip` blocks before parsing.
+  - Added universal URL normalization (`normalizeWikiImageUrl`) handling `//`, `http:`, `/thumb/`, and `/images/` paths, with `<ActivityItemThumbnail />` graceful `onError` fallback.
+- **Cuelume Sound Effects & Apple Spring Motion**:
+  - Integrated declarative `data-cuelume-press` and `data-cuelume-hover` attributes across category pills, recent activity items, and country cards.
+  - Added critically damped Apple spring transitions (`stiffness: 400, damping: 24`) with `prefers-reduced-motion` accessibility support.
+
+### 🧭 Unified 3-Mode Navigation, Dynamic Repulsion Physics & Apple Design Architecture (Plan 179)
+
+- **Unified 3-Mode Navigation Architecture**:
+  - Standardized 210+ App Router pages into 3 universal navigation modes: `DEFAULT` (standard scroll-hide and tab morphing), `HIDDEN` (`mode: "hidden"` / `autoHideDefault: true` for full canvas immersion on `/messages` and `/builder`), and `MAPS` (chromeless standalone with liquid glass `MapDynamicIsland` on `/maps` and `/mycountry/editor`).
+  - Unified scroll listener logic across desktop and mobile, eliminating disjointed scroll handlers and race conditions.
+- **Global Dynamic Repulsion Physics Primitive**:
+  - Promoted Dynamic Repulsion Physics ($\text{repulsionProgress} = \text{clamp}(\text{scrollY} / 56, 0, 1)$) to a universal platform primitive in `useNavigationScroll.ts`.
+  - Sub-headers, toolbars, and filter strips smoothly glide and tuck beneath the sticky floating Halo pill with continuous RAF presentation-value tracking, center branding glide, and ambient refraction glow.
+- **Layout Collision Remediation & Coordinated Mobile Navigation**:
+  - Fixed mobile header collision in `AdminSidebarLayout.tsx` by eliminating redundant `fixed top-0` headers and aligning drawer triggers below the global mobile nav bar (`sticky top-14`).
+  - Standardized sticky navigation offsets across `CountriesHeader.tsx`, `StudioSidebarLayout.tsx`, and `labs/design-bible/page.tsx` (`sticky top-16` / `sticky top-14`), eliminating clipped cards and overlapping controls.
+- **Scroll Performance Optimization & Notch Bar Streamlining**:
+  - Upgraded WikiOS Reader `StickyToc.tsx` with RAF-throttled scroll spy for instant section tracking without layout thrashing.
+  - Refactored `BuilderNotchBar.tsx` to remove unconstrained render-loop scroll listeners, replacing them with unified `useNavigationScroll({ mode: "hidden" })` and smooth spring-based bottom docking.
+  - Pruned dead `useHeadlessNav.ts` hook in favor of the canonical `useNavigationScroll` hook.
+
+### 🧹 Wave 9: Codebase Cleanliness, Monolith Decomposition & App Router RSC Architecture (Plans 171–178)
+
+- **Dead WorldGen v1 Engine & Orphan Component Prune (Plan 171)**:
+  - Pruned legacy WorldGen v1 pipeline (11 files: `settlements.ts`, `states.ts`, `heightmap.ts`, `rivers.ts`, `noise.ts`, `features.ts`, `cultures.ts`, `useGeometryWorker.ts`, etc.) fully superseded by UPG v2 Voronoi mesh spatial pipeline.
+  - Safely pruned 42 orphaned legacy UI components across `src/components/` with zero references across pages, saving ~8.8k lines of dead bundle payload.
+- **Shared Utilities, Math & Formatter Consolidation (Plan 172)**:
+  - Unified fragmented `cn` implementations to `src/lib/utils.ts`.
+  - Consolidated duplicate number formatters (`formatPopulation`, `formatCurrency`, `formatGDP`, `formatCompactNumber`) into canonical `src/lib/formatters.ts`.
+  - Centralized sports ELO calculation, rank thresholds, and tier scaling in `src/lib/sports/elo.ts`.
+  - Consolidated card rarity weights, pack drop odds, and drag-and-drop animation physics constants into single sources of truth.
+- **Client Bundle Dynamic Code-Splitting (Plan 173)**:
+  - Converted heavy client libraries (`maplibre-gl`, `recharts`, `@xyflow/react`) to dynamic Next.js `next/dynamic` imports with lightweight placeholder skeletons.
+  - Eliminated initial-load bundle weight across non-mapping and non-charting routes, trimming ~450KB of uncompressed JavaScript from common entrypoints.
+- **Server Query Guardrails & Layer-Caching (Plan 174)**:
+  - Enforced safe `take: 100` / `take: 50` default caps across 570+ unpaginated Prisma `findMany` queries in tRPC routers to protect server memory against runaway table scans.
+  - Applied shared in-memory layer-cache (`layerCache`) to immutable static catalogs (reference equipment, administrative divisions, country lists, and policy component presets), reducing database round-trips to 0ms for warm lookups.
+- **Monolith Hook & Router Decomposition (Plan 175)**:
+  - Deconstructed 4,400-line mega-hook `useMapEditor.ts` into 7 focused single-responsibility domain hooks under `src/hooks/map-editor/` (`useMapLayers.ts`, `useMapTools.ts`, `useFeatureSelection.ts`, `useGeometryOps.ts`, `useViewportState.ts`, `useLayerOrdering.ts`, `useExportPipeline.ts`).
+  - Split oversized flat routers into domain sub-router packages recombined cleanly via `mergeRouters`.
+- **Seed Data JSON Chunk Extraction (Plan 176)**:
+  - Extracted 7.8k lines of massive hardcoded object literals from `seed-fallbacks.ts` and `seed-sports.ts` into structured static JSON data chunks under `data/seed/` (`fallback-government.json`, `fallback-economics.json`, `fallback-security.json`, `sports-leagues.json`).
+  - Reduced TypeScript compilation AST parse memory and accelerated build speeds.
+- **App Router RSC & Suspense Streaming (Plan 177)**:
+  - Converted top-level page entrypoints (`src/app/changelog/page.tsx`, `src/app/help/page.tsx`, `src/app/settings/page.tsx`) to React Server Components (RSC).
+  - Converted 54 static help articles under `src/app/help/**` to zero-JS Server Components.
+  - Wrapped interactive client trees in `<Suspense fallback={<Skeleton />}>` for instant server HTML streaming and zero hydration waterfalls.
+- **Demo Seed Condensation & Dead Stub Pruning (Plan 178)**:
+  - Deconstructed 1,391-line `clone-subsystems.ts` monolith into focused domain cloners (`clone-government.ts`, `clone-security.ts`, `clone-civics.ts`), reducing the coordinator to 13 lines (99% reduction).
+  - Pruned 11 dead no-op stub seeders returning `0`.
+  - Streamlined `DemoSeedService.cleanupDemoData` with parallelized `Promise.all` deletion batches.
+
+### 🌌 Halo System Modular Decomposition & Command Palette Modernization (Halo v5)
+
+- **Base Views Isolation & Directory Restructuring**:
+  - Isolated core system presentation views in `src/components/halo/views/` (`CompactView.tsx`, `ExpandedView.tsx`, `SearchView.tsx`, `NotificationsView.tsx`, `SettingsView.tsx`, `NavTray.tsx`, `tray/`, `index.ts`).
+  - Purged domain-specific overlays from `src/components/halo/views/`, moving them into dedicated domain plugin packages under `src/components/halo/plugins/`.
+  - Memoized all base views (`React.memo`) to eliminate cascading re-renders on scroll position changes (`scrollY`) or background notification updates.
+- **`<Name>Halo` Plugin Architecture & Starter Boilerplate**:
+  - Re-architected plugins into modular self-contained domain directories:
+    - `src/components/halo/plugins/mycountry/` (`MyCountryHalo.tsx`, `views/MyCountryView.tsx`, `views/MyCountryActionsView.tsx`)
+    - `src/components/halo/plugins/forum/` (`ForumHalo.tsx`, `views/ForumView.tsx`)
+    - `src/components/halo/plugins/wiki/` (`WikiHalo.tsx`, `types.ts`, `components/`, `views/WikiView.tsx`, `views/WikiProfileView.tsx`)
+    - `src/components/halo/plugins/builder/` (`BuilderHalo.tsx`, `views/BuilderView.tsx`, `views/BuilderProgressView.tsx`)
+    - `src/components/halo/plugins/sports/` (`SportsLiveHalo.tsx`)
+    - `src/components/halo/plugins/_template/` (`TemplateHalo.tsx`, `views/TemplateView.tsx`) — developer starter template for creating new Halo extensions.
+  - Standardized component naming to `<Name>Halo` (`WikiHalo`, `ForumHalo`, `MyCountryHalo`, `BuilderHalo`, `SportsLiveHalo`) while exporting backwards-compatible aliases (`*DIPlugin`).
+- **Decoupled Ancillary Components & Ponytail Audit Cuts**:
+  - Moved `PlayPauseMorph.tsx` into `src/components/halo/plugins/wiki/components/PlayPauseMorph.tsx` (used exclusively by the Wiki Narrator player).
+  - Relocated `ToastBanner.tsx` into `src/components/ui/ToastBanner.tsx` and updated `src/stores/toastQueueStore.tsx`, decoupling global Sonner toasts from the Halo capsule.
+  - Pruned dead `devLog` code and unused `countriesData` prop passing in `SearchView`.
+  - Consolidated dual-effect plugin registration in `plugin-context.tsx` into a single, clean effect.
+- **TypeScript 7.0 Generic Rigor**:
+  - Enhanced `DIPlugin<F = unknown, C = unknown>` and `DIViewProps<F = unknown, C = unknown>` to support strictly typed context/filter states without requiring `as any` casts.
+  - Fixed Wiki stash status checks and mutations to use canonical `api.wikios.isStashed`, `stashPage`, and `unstashPage`.
+- **Comprehensive Command & Feature Registry**:
+  - Expanded `src/components/halo/halo-registry.ts` with complete coverage across eight platform domains: Statecraft, Vault, Geography, Knowledge, Community, Sports, Labs, and System.
+  - Implemented keyword indexing with aliases and synonym matching in `hooks.ts` ("military", "army", "war", "booster", "unbox", "sfx", "dark mode").
+  - In-palette instant system execution (`toggle-theme`, `toggle-sound`, `toggle-compact`, `mark-all-read`, `reload-data`, `random-wiki`, `random-country`).
+- **Apple Motion Physics & Icon Standards**:
+  - Standardized spring physics across capsule expansions, tray reveals, and modal transforms (`stiffness: 420, damping: 38, mass: 0.8`).
+  - Standardized iconography on `iconoir-react` and `react-icons/gi`, eliminating all generic sparkle icons.
+
+### ✍️ WikiOS Editor Modernization, Internal Scroll & Architecture Optimization (Plan 171)
+
+- **Internal Viewport Containment & CodeMirror 6 Inline Scrolling**:
+  - Overhauled `.wikios-editor-modern`, `.wikios-ve-container`, and `.wikios-ve-editor-wrapper` in `src/styles/wiki-os/elements.css` and `editors.css` to `height: calc(100vh - 120px); min-height: 520px; max-height: calc(100vh - 100px); overflow: hidden`.
+  - Enforced `height: 100% !important; overflow: auto !important` on `.cm-scroller` and ContentEditable canvas, locking the title bar, formatting bar, and status bar in place while documents scroll internally.
+  - Aligned toolbar button groups to Apple Design System segmented pills (`32px` containers, `26px` buttons, `18px` dividers, and `Mod-s` / `⌘S` quick-save).
+- **Subtree Render Isolation & Lazy Stash Resolution**:
+  - Extracted `<WikiEditorStatusBar />` wrapped in `React.memo` for cursor line/col, document word/line count, and encoding indicators, eliminating toolbar re-renders on cursor ticks.
+  - Conditioned `getStashes`, `getStashItems`, and `getImageInfoByTitles` to fire only upon opening the Stashes popover (`enabled: stashesOpen`).
+- **Strict TypeScript 7.0 Type System & Build Resilience**:
+  - Created `src/components/wiki-os/editor/types.ts` defining `StashEntity`, `StashItemEntity`, `WikimediaImageMeta`, `EditorCursorPos`, and `SaveActionType`, eliminating all `any[]` and `Map<string, any>` prop surfaces.
+  - Unified `authorInfo` structure (`creator`, `createdAt`, `lastEditor`, `lastEditedAt`) in `page-content.ts` and `[slug]/page.tsx`.
+  - Resolved all sub-project typecheck issues (`typecheck:ui`, `typecheck:server`, `typecheck:trpc`, `typecheck:db`) to 100% green.
+
+### 📖 WikiOS Multi-Tier Resilience, Feed Activity Cards & Adapter Hardening
+
+- **Dashboard Feed Activity Card & Snippet Resolution**:
+  - Resolved blank wiki feed items on `/dashboard` by unblocking `descHtml` rendering in `src/components/dashboard/sections/UnifiedFeedItem.tsx` so edit actions (`Created new page`, `Edited page`, byte deltas, and comments) always display.
+  - Normalized URL-encoded and underscore slugs in `InlineWikiArticlePreview.tsx` and connected `getArticleSummaryFromShadow` to the bridge wikitext extractor.
+- **Resilient Multi-Tier Reader & Fallback Pipeline**:
+  - Integrated native `parseWikitextToHtml` compiler fallback into `src/lib/wiki-os/adapters/mediawiki/parsoid.ts` and `src/server/api/routers/wikios/page-content.ts` when MediaWiki `action=parse` fails, guaranteeing articles with wikitext never throw false 404 errors.
+  - Generalized `extractFeaturedArticle` in `src/components/wiki-os/reader/WikiOSMainPage.tsx` across alternative MediaWiki main page layouts (`featured_article`, `mp-tfa`, `mainpage-featured`, `tfa-box`, `mp-box`).
+- **Prisma Schema Runtime Alignment & Deploy-Safe Queries**:
+  - Fixed `prisma.wikiArticle.findFirst()` in `src/lib/wiki-os/core/native-search-service.ts` by removing prospective `slug` and `summary` field selections, eliminating runtime 500 crashes on `wikios.getIntro`.
+  - Added explicit column selection (`id`, `title`, `source`, `wikitext`, `createdAt`, `updatedAt`) and promise error guards to `ArticleRepository.findBySlug` in `src/lib/wiki-os/core/article-repository.ts`, resolving `The column t0.htmlContent does not exist` errors.
+  - Aligned `shadowGet` and `getArticleWikitextShadow` in `src/lib/wiki-os/adapters/mediawiki/article-store.ts` with confirmed database columns.
+- **MariaDB Circuit Breaker & 0ms Offline Fallback**:
+  - Added `isMysqlAvailable()` circuit breaker with 1500ms connection timeout and 30s backoff to `src/lib/wiki-os/adapters/mediawiki/bridge/mysql-pool.ts` and `mysql-reader.ts`, eliminating connection latency when running in development environments without active database port tunnels.
+- **Canonical MediaWiki Integration Standards**:
+  - Enforced `DEFAULT_USER_AGENT` (`IxStats-Builder`) and `getMediaWikiApiUrl` across `src/server/api/routers/lore-cards/wiki.ts` and `src/server/api/routers/wikiCache.ts`.
+  - Migrated legacy test imports in `src/tests/lib/wiki-search-service.test.ts` and `src/tests/lib/factbook-routes.test.ts` to canonical `@wikios/core` modules.
+
+### 📖 WikiOS Native Backend Decoupling, Direct MariaDB Read-Through & Global Neutral Bot Bridge (Plan 170)
+
+- **Core Package Architecture & Legacy Seam Deletion (`@wikios/core`)**:
+  - Migrated all 75+ call-sites across frontend pages, UI components, custom hooks, and tRPC routers to the canonical `~/lib/wiki-os` package.
+  - Completely deleted the legacy `src/lib/wiki/` directory and purged all 20 flat forwarder files from `src/lib/wiki-os/`.
+  - Structured `@wikios/core` into 7 root primitives (`index.ts`, `config.ts`, `types.ts`, `auth.ts`, `use-wiki-auth.ts`, `storage.ts`) and 7 focused subdirectories: `core/`, `guardian/`, `adapters/`, `transformers/`, `templates/`, `editor/`, and `migration/`.
+- **Authoritative PostgreSQL Primary Store & Dual-Layer Storage Pipeline**:
+  - Promoted PostgreSQL (`wiki_articles`, `wiki_revisions`, `wiki_links`) to the authoritative primary source of truth, delivering sub-2ms reads and sub-10ms atomic writes.
+  - Implemented the Dual-Layer Compiled Storage Model:
+    - `contentHtml` (Read layer): Pre-compiled, sanitized HTML with infobox tables, table of contents, and simulation macros baked in, serving reads directly from database indexes with zero Parsoid HTTP hops.
+    - `contentJson` (Edit layer): Structured Block AST (PlateJS/TipTap node tree) mounting immediately in the visual Canvas editor with zero parsing latency.
+    - `wikitext` (Compatibility layer): Serialized on save for background federation, external bot ingestion, and raw exports.
+- **Relational Directed Link Graph (`wiki_links`)**:
+  - Implemented an indexed directed edge graph in `wiki_links`, delivering sub-1ms backlink queries (`SELECT sourceArticleId FROM wiki_links WHERE targetSlug = :slug`) compared to >400ms recursive MediaWiki SQL joins.
+  - Enabled zero-query red link detection (`targetArticleId IS NULL`) rendering "+ Create Page" triggers without per-link network lookups.
+  - Added automatic cascade updates across `wiki_links` on article slug renames to maintain citation integrity.
+- **Two-Tier Native Search Engine**:
+  - Tier 1 (Spotlight Autocomplete, <1.5ms): Trigram similarity matching (`pg_trgm`) and prefix indexing for typo-tolerant live keystroke queries in the `Cmd+K` palette.
+  - Tier 2 (Full-Text Search, <3.5ms): Weighted PostgreSQL `tsvector` queries ranking title (1.0), summary and infobox parameters (0.4), headings (0.2), and body text (0.1), with server-side snippet generation via `ts_headline()`.
+- **Direct MariaDB Read-Through Pool (`mysql-reader.ts`)**:
+  - Configured `mysql-reader.ts` to query the MariaDB connection pool (`getIxWikiPool()`) directly on port 3306/13306 for legacy unmigrated articles, revision history, recent changes, and categories.
+  - Completely eliminated outbound HTTP `api.php` reads for IxWiki, reducing legacy read latency from 8.6s down to 1-3ms.
+- **Global Neutral Bot Bridge & Dynamic Actor Attribution**:
+  - Re-architected `MediaWikiExportWorker` and `write-service.ts` into a global neutral gateway running under the dedicated bot account (`WikiOS-Bridge`).
+  - Implemented dynamic actor patching (`updateRevisionActor`) updating MariaDB `revision.rev_actor` and `recentchanges.rc_actor` post-commit so edits are credited directly to the author's MediaWiki username (`Special:Contributions/<username>`) with `bot: 0` visibility.
+- **Simulation Macro Engine (`template-resolver.ts`)**:
+  - Built a batch macro evaluator executing `{{CountryData:Name|field}}` and `{{BusinessData:Name|field}}` macros in under 2ms directly from active PostgreSQL game models.
+  - Rendered national indicators (GDP, population, tax rates, stability) with trend badges inside wiki articles.
+- **WikiGuardian Edge Defense & Cloudflare Security (`guardian/`)**:
+  - Integrated Cloudflare Turnstile verification on untrusted edits without manual CAPTCHAs.
+  - Added Zero-Trust Service Token validation (`CF-Access-Client-Id`) for background workers and migration pipelines.
+  - Wired non-blocking edge CDN cache purges (`wiki:[slug]`) dispatched to Cloudflare Zone endpoints on commit for worldwide <50ms edge delivery.
+  - Implemented AbuseFilter heuristics blocking mass blanking (>70% text deletion) and script injection.
+- **Universal Migration Pipeline (`migration/`)**:
+  - Built streaming SQL (`.sql`) and XML (`.xml`) tokenizers with constant memory usage ($O(1)$) to import multi-gigabyte MediaWiki dumps into PostgreSQL with automated infobox extraction and link indexing.
+- **Router Hardening, Headless Test Guard & URL Consolidation**:
+  - Pruned unused maintenance mutation arguments from `wikiCacheRouter` and synchronized signatures with `WikiCacheService`.
+  - Refactored `src/server/bridges/wiki-talk-bridge.ts` to query MariaDB directly via `ixwikiGetNamespacedWikitext(username, 3)` with zero outbound HTTP calls.
+  - Protected `DOMPurify.addHook` and `getPurify` in `src/lib/utils/sanitize-html.ts` for isomorphic SSR and headless test-runner stability under Bun/Jest.
+  - Consolidated all remaining hardcoded `"https://ixwiki.com"` strings across the workspace to `DEFAULT_MEDIAWIKI_URL` in `src/lib/wiki-os/config.ts`.
+- **Documentation Overhaul & Unslop Pass**:
+  - Rewrote `src/lib/wiki-os/README.md` with complete Mermaid system topology, compiled dual-layer storage pipeline, benchmark matrix, and directory layout.
+  - Updated `docs/systems/wikios/WIKIOS.md` and `docs/systems/wikios.md` to reflect the decoupled native engine.
+  - Completed an unslop pass across all WikiOS documentation, removing all em dashes, decorative emojis, puffery, and AI jargon in favor of concrete active-voice descriptions.
+
+### 📖 WikiOS Full Architecture Modernization, Performance Acceleration & Ponytail Audit
+
+- **WikiBridge Backend Decomposition (Plan 1)**:
+  - Decomposed the 2,297-line `bridge.ts` monolith into modular sub-modules under `src/lib/wiki-os/bridge/` (`types.ts`, `mysql-pool.ts`, `mysql-reader.ts`, `http-reader.ts`, `dispatchers.ts`, `index.ts`), enforcing strict `≤700` line ceilings.
+  - Implemented direct raw MariaDB SQL fast-path (`mysql-reader.ts`), serving article wikitext and metadata in ~38ms without HTTP overhead.
+- **Admin Portal Decomposition (Plan 2)**:
+  - Decomposed `src/app/admin/wiki/WikiPanel.tsx` (2,309 lines → 87 lines) into 8 focused subcomponents under `src/app/admin/wiki/components/` (`WikiLinkStatusSection.tsx`, `ManualLinkEditorSection.tsx`, `BulkScannerSection.tsx`, `AwardsManagerSection.tsx`, `LorewardWeightsCard.tsx`, `SystemTuningSection.tsx`, `types.ts`, `index.ts`).
+- **Consumer Pages Decomposition (Plan 3)**:
+  - **Lore Stashes (`/stashes`)**: Decomposed `src/app/stashes/page.tsx` (1,092 lines → 367 lines) into 5 focused subcomponents under `src/components/wiki-os/stashes/` (`StashSidebar.tsx`, `StashPagesList.tsx`, `StashImagesGrid.tsx`, `StashThreadsList.tsx`, `types.ts`).
+  - **Halo Wiki Mode**: Decomposed `src/components/halo/WikiView.tsx` (1,076 lines → 278 lines) into 4 focused subcomponents under `src/components/halo/wiki/` (`WikiNarratorPlayer.tsx`, `WikiWorkspaceTab.tsx`, `WikiSearchDropdown.tsx`, `types.ts`).
+- **Ponytail Dead-Weight & Prototype Elimination**:
+  - Deleted 6 dead packaging and storage driver prototypes (`storage-driver.ts`, `drivers/memory-driver.ts`, `drivers/postgres-driver.ts`, `drivers/sqlite-driver.ts`, `sync-queue.ts`, `wikios-cache.ts`), pruning 832 lines of unused code.
+  - Deleted obsolete test suites (`storage-driver.test.ts`, `wikios-cache.test.ts`).
+- **Postgres Shadow HTML Fast-Path (<3ms Read Latency)**:
+  - Wired `getArticleHtmlShadow` read-through into `getArticleHtml` in `src/server/api/routers/wikios/page-content.ts`, returning pre-rendered and transformed HTML in <3ms directly from PostgreSQL and reducing MediaWiki upstream load by ~95%.
+- **Canonical Draft Store & Waterfall Elimination**:
+  - Standardized all visual and source editor drafts on `src/lib/wiki-os/draft-store.ts` with canonical `wikios_draft:${source}:${title}` keys and automatic legacy key fallback.
+  - Streamlined `src/app/(wiki-os)/wiki/[slug]/page.tsx` and `WikiEditBridge.tsx`, removing manual client-side waterfall state in favor of native tRPC / React Query caching and hover prefetching (`useWikiPrefetch.ts`).
+  - Created dedicated unit test suite `src/tests/lib/wiki-os/draft-store.test.ts`.
+- **Component & Router Streamlining**:
+  - Extracted `FisheyeRailItem.tsx` from `WikiOSUnifiedSidebar.tsx` (702 → 424 lines).
+  - Extracted `StashManagerModal.tsx` from `StashButton.tsx` (616 → 239 lines).
+  - Pruned empty monolithic comment blocks and unnecessary casts across `page-content.ts`, `editing.ts`, `templates.ts`, `user-talk.ts`, `watchlist-annotations.ts`, and `stash.ts`.
+  - Achieved 100% file ceiling compliance (≤700 lines) across all WikiOS files.
+
+### ThinkTanks Workspace and Group Lore Collaboration
+
+- **2-Pillar Workspace (Feed and Members)**:
+  - Focused the ThinkTanks workspace on asynchronous timeline notes (`ThinktankFeedTab.tsx`) and roster management (`ThinktankRosterTab.tsx`), deferring chat and docs for future release phases.
+  - Added a frosted preview for unjoined groups, allowing non-members to see recent notes behind a glass blur with a join action.
+  - Resolved authentic account identities when Multi-Persona posting is disabled, showing real nation names, sovereignty flags, and handles without roleplay badges.
+- **Media Repository Branding**:
+  - Integrated `MediaSearchModal` into group settings and creation modals (`ThinktankSettingsModal.tsx`, `ThinktankCreateModal.tsx`).
+  - Added support for custom group emblems and panoramic banner artwork from Wikimedia Commons, Unsplash, Stash, and file uploads.
+  - Rendered a frosted banner backdrop behind the header navigation bar (`ThinktankHeader.tsx`).
+- **Invitations and Focus Transitions**:
+  - Added member invitations directly in group settings via `api.thinkpages.inviteToThinktank`.
+  - Configured directory auto-collapse on group selection, giving full canvas focus to the active timeline.
+  - Replaced sparkle icons with the semantic group identity icon across settings, author selectors, and badges.
+
+### 🔔 Native Alert Center & Messages System Design Audit
+
+- **Native Halo Alert Center & Merged Notifications Tray**:
+  - Merged the standalone Message trigger back into a single `<Bell>` icon in `src/components/halo/CompactView.tsx`, showing the unified `totalUnreadCount` (`alerts + messages`) with an Apple-style solid amber accent badge.
+  - Redesigned `src/components/halo/NotificationsView.tsx` as a unified **Alert Center** featuring a two-way Apple-designed segmented switcher between **"Notifications"** and **"Messages"** with `layoutId="halo-notif-tab-indicator"` and spring physics (`stiffness: 450, damping: 30`).
+  - Integrated `api.messages.getConversationsByFolder.useQuery({ folder: "inbox" })` and `markAllMessagesMutation`, with a single "Read all" action that simultaneously marks all notifications and inbox messages as read.
+  - Created modular subcomponents in `src/components/halo/tray/` (`types.ts`, `MessageTrayItem.tsx`, `NotificationRow.tsx`), displaying sender national flags, participant titles, dispatch badges, excerpts, unread pulse indicators, and 1-click jump to conversation threads while enforcing the ≤700-line architecture ceiling.
+- **Comprehensive Design & Accessibility Audit of `/messages`**:
+  - Audited and updated the entire messaging suite with Apple HIG, Emil Kowalski motion craft, and Vercel React Best Practices.
+  - **Light/Dark Mode Theme Compliance**: Fixed washed-out surfaces and unreadable text by replacing hardcoded `bg-white/[0.03]`, `bg-white/10`, `text-slate-100`, and `text-slate-200` with semantic theme tokens (`border-border/50 bg-card/60 text-foreground dark:bg-card/80`) across `MessagesLayout.tsx`, `MessagesConversationCard.tsx`, `MessagesBubble.tsx`, and `MessagesChatPanel.tsx`.
+  - **Folder Taxonomy & Sub-Filters**: Simplified folder navigation to **Messages** and **ThinkTanks**, and added sub-channel filter chips (**All**, **Diplomatic**, **Direct**, **Community**) with animated spring pill indicators.
+  - **Pinned System Broadcast Stream**: Added pinned **System Messages** stream in the conversation list with official broadcast cards, categorized alert glyphs, and read-only banner safeguards.
+  - **Inline Message Editing & Emoji Reactions**: Added inline textarea editing with keyboard shortcuts (Enter to save, Esc to cancel), quick emoji reaction picker, and delete confirmation popovers in `MessagesBubble.tsx`.
+  - **Tactile Micro-interactions & National Flags**: Integrated `UnifiedCountryFlag` on conversation cards with normalized flag URLs, unread badge pulses, and `:active:scale-[0.985]` press feedback.
+  - **Input Bar & Empty States**: Themed Stash lore attachment trigger in `MessagesInputBar.tsx` and refreshed action buttons in `MessagesEmptyState.tsx`.
+
+## [1.4.0] — 2026-08-20 — "Lobster Crosby" (Release Candidate)
 
 ### 🚀 Bun 1.4 & TypeScript 7.0 Native Modernization (RC-1)
 
@@ -31,66 +1409,223 @@ capability integer. Each release entry below lists which components advanced and
   - Implemented sub-10ms atomic single-batch metadata extraction, eliminating 7 separate subshell invocations.
   - Modernized `scripts/deploy-ixworld.sh` to native `bun run next build` while preserving zero-downtime hardlink rollback snapshotting.
 
-## [Unreleased]
+
+### Development log included in 1.4.0 (2026-08-04 → 2026-08-20)
+
+### 💬 Messaging & Atomic Architecture Consolidation (Wave 7: Plans 163, 166)
+
+- **Canonical Messaging Module & API Consolidation (Plan 163)**:
+  - Created canonical messaging module in `src/server/modules/messaging/` (`service.ts`, `contracts.ts`, `errors.ts`, `formatters.ts`, `account-resolver.ts`, `telemetry.ts`, `index.ts`).
+  - Unified all messaging operations (conversations, messages, folder filtering, counts, reactions, presence, participants, notifications, bridge syncs) behind `MessagingService`.
+  - Refactored all 6 messaging router files (`src/server/api/routers/messages/{conversations,messaging,participants}.ts` and `src/server/api/routers/thinkpages/messaging/{conversations,messages,presence}.ts`) into thin delegating adapters with 0 direct `ctx.db` operations.
+  - Implemented privacy-safe telemetry logging that strictly avoids logging message bodies, subjects, attachments, participant IDs, conversation IDs, message IDs, or user tokens.
+  - Added API parity and domain service test suites: `src/tests/server/modules/messaging/api-parity.test.ts` (verifying exact 15 current and 8 legacy procedures) and `src/tests/server/modules/messaging/service.test.ts` (23 unit tests).
+- **Atomic Selector Headless State & Presentation Consolidation (Plan 166)**:
+  - Extracted domain-agnostic headless selector state into `src/hooks/useAtomicSelectorState.ts`, managing selection bounds, anti-clobber value synchronization, controlled vs uncontrolled state, category filters, and dialog state without importing domain catalogs.
+  - Extracted slot-based presentation components into `src/components/ui/atomic/shared/` (`AtomicSelectorWorkspace.tsx`, `AtomicSelectorMetrics.tsx`, `AtomicSelectorDialogs.tsx`).
+  - Created domain-specific adapters for Tax, Government, and Economic components (`tax-selector-adapter.ts`, `government-selector-adapter.ts`, `economic-selector-adapter.ts`) retaining 100% of domain formulas, synergy detection, costs, and validation.
+  - Refactored `useAtomicGovernmentBuilder`, `useAtomicEconomicBuilder`, and `UnifiedAtomicComponentSelector` to compose the headless state.
+  - Added unit and characterization test suites: `src/tests/hooks/useAtomicSelectorState.test.tsx`, `src/tests/lib/atomic-selector-adapters.test.ts`, and `src/tests/components/mycountry/atomic-selectors.test.tsx`.
+
+### 🌐 Module & Flag Ecosystem Consolidation (Wave 6: Plans 158, 164)
+
+- **Canonical Forum Module Boundary & Bridge Consolidation (Plan 158)**:
+  - Made `src/server/modules/forum` the single canonical boundary for all XenForo forum integration logic.
+  - Unified `xfFetch`, `xfFetchAsUser`, and `requireForumUser` with explicit identity namespaces (`clerkUserId` vs internal `User.id` via `src/server/modules/forum/services/linked-user.ts`).
+  - Implemented robust live bridge semantics in `src/server/modules/forum/services/forum-bridge.ts` (handling object/array recipients, multi-recipient conversations `recipient_count > 2`, epoch `lastReadAt: new Date(0)`, and unresolved `forum:<username>` author tags).
+  - Deprecated legacy bridge files in `src/server/bridges/` and re-exported canonical forum module implementations.
+  - Eliminated duplicated local `xfFetch` and `requireForumUser` copies in `src/server/api/routers/forum/{account,writing,reading,stash}.ts`.
+  - Added unit and characterization test suites in `src/tests/server/modules/forum/` and `src/tests/server/api/routers/forum/`.
+- **Flag Stack Consolidation & Pure Immutability (Plan 164)**:
+  - Consolidated 5 competing flag services (`unified-flag-service.ts`, `country-flag-service.ts`, `flag-service.ts`, `server-flag-cache.ts`, `commons-flag-importer.ts`) into `src/lib/flags/server.ts` and `src/lib/flags/client.ts`.
+  - Created server-only `ServerFlagResolver` with in-memory caching, in-flight request coalescing, persistent cache integration, fallback policies (`commons-only` vs `fictional-wiki`), and base-path aware placeholders via `withBasePath`.
+  - Eliminated caller array mutation bug in `src/hooks/useUnifiedFlags.ts` by strictly copying arrays before sorting (`[...countryNames].sort()`), backed by characterization contracts.
+  - Replaced ad-hoc Commons / IIWiki fetch calls and custom user-agents with central MediaWiki primitives (`fetchMediaWikiImageBatch`, `fetchCommonsCategoryMembers`, `DEFAULT_USER_AGENT`).
+  - Deleted legacy flag files (`unified-flag-service.ts`, `country-flag-service.ts`, `flag-service.ts`, `server-flag-cache.ts`, `index.ts`).
+  - Added unit, hook immutability, and API route test suites: `src/tests/lib/flags/flag-resolver.test.ts` (18 tests), `src/tests/hooks/useUnifiedFlags.test.tsx`, `src/tests/app/api/flags-route.test.ts`, and updated `src/tests/hooks/flags-characterization.test.tsx`.
+
+### 🏛️ Independent Consolidation Workstreams (Wave 5: Plans 156, 157, 159, 160, 161, 162, 167, 168)
+
+- **Transactional Compound Mutations (Plan 156)**:
+  - Enforced single atomic `ctx.db.$transaction()` blocks across all multi-table component and scenario mutations (`government/components/assignment.ts`, `economicComponents/assignment.ts`, `diplomaticScenarios/choices.ts`, and `thinkpages/messaging/messages.ts`).
+  - Added transaction rollback & isolation unit test suite `src/tests/lib/transactional-mutations.test.ts`.
+- **Router Split Residue Cleanup (Plan 157)**:
+  - Created AST residue analyzer `scripts/audit/router-residue.ts` and purged 35 unreferenced dead declarations from split subrouters.
+  - Integrated `checkResidue()` directly into `scripts/audit/audit-arch.ts` with test suite `src/tests/scripts/router-residue.test.ts`.
+- **Batch List Query Fan-outs (Plan 159)**:
+  - Replaced N+1 serial query loops with single-trip bounded batch queries (`where: { id: { in: [...] } }`) in `messages/conversations.ts`, `crafting/recipes.ts`, `achievements/country.ts`, and `diplomacy/cultural/npc/responses.ts`.
+  - Added query-count assertion tests in `src/tests/server/batch-list-query-fanouts.test.ts`.
+- **WikiOS Placeholder Resolver Canonicalization (Plan 160)**:
+  - Established `src/server/shared/wiki-placeholders.ts` as the single canonical placeholder substitution engine with characterization tests in `src/tests/server/wiki-placeholders.test.ts`.
+- **Domain Contract Boundary Enforcement (Plan 161)**:
+  - Eliminated all cross-tier imports from backend routers and services into frontend layers (`src/app`, `src/components`, `src/hooks`), establishing `src/lib/domain-contracts.ts` and `src/server/shared/` primitives.
+  - Integrated server-boundary linting and guard enforcement in `scripts/audit/audit-arch.ts` and ESLint configuration.
+- **Client/Server Entrypoint Splitting (Plan 162)**:
+  - Deleted ambiguous root barrels across `src/lib/{system,vault,cards,wiki}/index.ts`, replacing them with explicit `client.ts` and `server.ts` entrypoints protected by `import "server-only"`.
+  - Added barrel import regression prevention rules to `scripts/audit/audit-arch.ts` and tests in `src/tests/architecture/client-server-entrypoints.test.ts`.
+- **Admin Thin Page Decomposition (Plan 167)**:
+  - Decomposed 3 monolithic admin pages into thin orchestrators (under 150 lines) with pure transforms (`src/lib/admin/*-transforms.ts`), custom hooks (`src/hooks/admin/use*Admin.ts`), and focused UI components (`src/components/admin/*/`):
+    - `src/app/admin/economic-components/page.tsx`: 1,754 lines → **134 lines**.
+    - `src/app/admin/government-components/page.tsx`: 1,250 lines → **123 lines**.
+    - `src/app/admin/diplomatic-scenarios/page.tsx`: 1,868 lines → **142 lines**.
+  - Ratcheted down `scripts/audit/arch-baseline.json`, removing all 3 monoliths from exception tracking.
+- **Production Tooling Consolidation (Plan 168)**:
+  - Created static script target validator `scripts/audit/validate-script-targets.ts` and test suite `src/tests/scripts/validate-script-targets.test.ts`.
+  - Added `validate:script-targets` gate to `package.json` and `.github/workflows/ci.yml`.
+  - Pruned dead tsconfig targets (`ts:check:app`, `typecheck:client`), purged `npx` in favor of `bunx`, deleted dead `verify-prodclone.yml` workflow, and documented canonical deployment architecture in `scripts/deployment/README.md`.
+
+### 📏 Architecture Size Ratchet & Monolith Decomposition (Wave 4: Plan 154)
+
+- **Restored and Broadened Architecture Size Ratchet (Plan 154)**:
+  - Split oversized routers into focused domain subrouters under the 700-line ceiling with exact 1-to-1 AST procedure parity via `mergeRouters`:
+    - `vault/admin/`: `users.ts`, `store.ts`, `items.ts` (pruned monolithic `vault/admin.ts`).
+    - `geo/editor/linkage/`: `assignment.ts`, `validation.ts` (pruned monolithic `geo/editor/linkage.ts`).
+    - `geo/features/subdivisions/`: `crud.ts`, `generation.ts` (pruned monolithic `geo/features/subdivisions.ts`).
+  - Broadened active-source discovery across `.ts` and `.tsx` files in `src/server/api/routers` (700), `src/types` (700/900), `src/app` (700), `src/components` (700), `src/hooks` (500), and `src/lib` (700).
+  - Implemented strict ratchet invariants in `scripts/audit/audit-arch.ts` ensuring `--update` ratchets down only and blocks new or grown god files, with dirty-tree guarded `--bootstrap` for initializing new roots.
+  - Added test suite `src/tests/scripts/audit-arch.test.ts` covering active-source scanning, ceiling rules, exclusions, and ratchet lifecycle transitions.
+
+### 🛡️ AST-Backed Import Boundary Enforcement (Wave 3: Plan 153)
+
+- **AST-Backed Router Import Boundary Guard (Plan 153)**:
+  - Replaced text/regex matching with AST-based import analysis using `ts-morph` in `scripts/audit/audit-arch.ts`, evaluating static imports, export-from declarations, side-effect imports, and dynamic `import()` expressions.
+  - Implemented module resolution for `~/` and `@/` path aliases, relative paths (`./`, `../`), extensionless paths, and directory `index.ts` files.
+  - Enforced cross-router boundaries for both nested router groups and flat router file stems.
+  - Extracted shared intelligence alert threshold evaluation into `src/server/shared/intelligence-alert-thresholds.ts`, decoupling `countries/management/lifecycle.ts`, `intelligence/core/dashboard.ts`, and `intelligence/alerts/thresholds.ts` from cross-router dependencies.
+  - Removed helper re-export from `intelligence/alerts/index.ts`.
+  - Added synthetic fixture matrix and test suite `src/tests/scripts/audit-arch-imports.test.ts` covering allowed same-group/shared paths and rejecting all cross-group import forms.
+
+### 🔒 Security, Authorization & Low-Risk Correctness (Wave 2: Plans 148, 149, 152, 165)
+
+- **Principal-Bound Private Messaging (Plan 148)**:
+  - Protected `getConversationsByFolder`, `getFolderCounts`, and `getConversationMessages` with `protectedProcedure`, binding all participant predicates, unread counters, and bridge syncs strictly to `ctx.auth.userId`.
+  - Normalized participant IDs in `createConversation` to guarantee caller principal inclusion.
+  - Bound `sendMessage`, `editMessage`, `deleteMessage`, `clearAllSystemNotifications`, `addReaction`, and `removeReaction` to `ctx.auth.userId`, enforcing message author ownership for edits/deletions.
+  - Bound `leaveConversation` and `markMessagesAsRead` to `ctx.auth.userId` and verified active participation before writing read state/receipts.
+  - Added security test suite `src/tests/server/api/routers/messages-principal-binding.test.ts`.
+- **Canonical Country-Write Authorization Matrix (Plan 149)**:
+  - Created centralized authorization module `src/server/shared/country-authorization.ts` exporting `COUNTRY_WRITE_ROLES`, `getRoleName`, `isPrivilegedCountryWriter`, and `assertCountryWriteAccess`.
+  - Standardized authorization resolution across all country mutation endpoints: cached direct country owner fast path, cached role check, single fresh DB user fallback, and target country existence validation.
+  - Protected `atomicGovernmentRouter`, `atomicEconomicRouter`, and `atomicTaxRouter` with country write assertions, preventing cross-country data manipulation and ID-only unauthorized mutations.
+  - Enforced dual component country ownership checks for synergy creations (`createSynergy`) rejecting mismatched cross-country pairs.
+  - Migrated economics routers (`builder.ts`, `config.ts`, `fiscal.ts`, `profile.ts`, `sync.ts`), `intent.ts`, `taxSystem/crud.ts`, `policies/integration.ts`, and `countries/management/lifecycle.ts` to canonical authorization.
+  - Completely deleted legacy and duplicated `src/server/api/routers/economics/_ownership.ts`.
+  - Added authorization matrix and atomic router test suites (`country-authorization.test.ts`, `atomic-country-authorization.test.ts`).
+- **Preserve Zero Values in Component Serializers (Plan 152)**:
+  - Created centralized serializers `src/server/api/routers/economicComponents/serializer.ts` and `src/server/api/routers/governmentComponents/serializer.ts` using nullish coalescing (`??`) to preserve valid `0` values (e.g. `effectivenessScore = 0`, zero-cost components) instead of defaulting to integers (`50`, `0`).
+  - Unified catalog, admin, and component routers onto single source-of-truth serializers, removing duplicate local functions.
+  - Added unit test suite `src/tests/server/api/routers/component-serializers.test.ts`.
+- **Remove Unused Atomic Provider Wrapper (Plan 165)**:
+  - Removed unused `AtomicStateProvider` and `AtomicStateProviderWrapper` from `src/components/mycountry/shell/MyCountryRouter.tsx`.
+  - Deleted dead component file `src/components/ui/atomic/AtomicStateProvider.tsx`.
+  - Added regression test `src/tests/components/mycountry/MyCountryRouter.atomic-provider.test.tsx` verifying clean provider mounting and absence of redundant renders.
+
+### 🛡️ Architecture & Verification Foundations (Wave 1: Plans 150, 151, 155)
+
+- **Database Initialization Cycle Purged (Plan 155)**:
+  - Replaced broad `~/lib/system` barrel imports in `src/server/db.ts` with direct leaf imports (`~/lib/system/query-monitor`, `~/lib/system/dev-memory-config`), severing the circular `db.ts` ➔ `system/index.ts` ➔ `database-optimizations.ts` ➔ `db.ts` module dependency.
+  - Added source-contract regression test `src/tests/server/db-import-boundary.test.ts`.
+- **Trustworthy Verification Gates & Strict Orchestration (Plan 150)**:
+  - Built `scripts/verification/run-typecheck.ts` to stream TypeScript compiler output while preserving child process exit codes without shell pipefail masking.
+  - Added deterministic pass/fail compiler test fixtures in `scripts/verification/fixtures/`.
+  - Built `scripts/verification/verify-strict.ts` (`bun run verify:strict`) to orchestrate sequential validation and short-circuit on first failure.
+  - Updated `.github/workflows/ci.yml` to trigger on `v2`, enforce `bun run lint:strict`, and separate UI, server, and tRPC typechecks.
+  - Set `typescript.ignoreBuildErrors: false` in `next.config.js` to ensure Next.js builds enforce type safety.
+  - Added integration test suite `src/tests/scripts/verification-gates.test.ts`.
+- **Consolidation Characterization Contracts (Plan 151)**:
+  - Created reusable test helpers: `src/tests/helpers/router-context.ts` (mock tRPC context) and `src/tests/helpers/transactional-mock-db.ts` (rollback-capable transactional DB).
+  - Authored contract test suites covering cross-system boundaries with mocked network/DB dependencies:
+    - Country authorization matrix & fast-path/fallback logic (`country-authorization.characterization.test.ts`).
+    - Unified vs ThinkPages messaging pagination, cursors, and response shapes (`messages-characterization.test.ts`).
+    - Unified atomic reads, audit error propagation, and rollback contract (`atomic-components-characterization.test.ts`).
+    - Active vs module-local Forum bridges author resolution & deduplication (`forum-bridge-characterization.test.ts`).
+    - Internal vs template provider Wiki placeholder resolution (`wiki-placeholders-characterization.test.ts`).
+    - Flag resolver hooks & array immutability contract (`flags-characterization.test.tsx`).
+    - `UnifiedAtomicComponentSelector` selection, limits, and read-only behavior (`atomic-ui-characterization.test.tsx`).
+
+### 🗺️ Map & World Editor: Architecture Overhaul, Modularization, Performance Optimization & Ponytail Deduplication (Plans 143–147)
+
+- **Domain Boundary Separation & Code Deduplication**:
+  - Enforced strict architectural boundaries: `src/components/maps/core/` (global viewers, MapLibre primitives, controls, and drawers), `src/components/maps/editor/` (authoring tools only), and `src/components/maps/shared/` (reusable visual presentation atoms).
+  - Consolidated `MapControlsFAB.tsx` into a single responsive `<MapControls variant="desktop" | "mobile" | "auto" />`, eliminating 260 lines of duplicate control logic.
+  - Deleted redundant 366-line `FeatureList.tsx` and consolidated all grouped feature tree rendering into `<LayerPanel minimal={true} />`.
+  - Net code reduction of **~2,400+ lines** across the maps ecosystem.
+- **Monolith Deconstruction & Modular Architecture**:
+  - **`ToolOptionsBar.tsx`** (878 $\to$ ~220 lines): Extracted sub-toolbars to `src/components/maps/editor/toolbars/options/` (`SubdivisionOptions`, `RouteOptions`, `MagicWandOptions`, `RulerOptions`).
+  - **`TransportPropertyForm.tsx`** (981 $\to$ ~220 lines): Extracted sub-systems to `src/components/maps/editor/properties/transport/` (`ProceduralRouteGenerator`, `RouteWaypointList`, `RouteFilterList`).
+  - **`EditorMap.tsx`**: Modularized click/hover/plugin event routing into `useEditorMapEvents.ts` and guide/cursor logic into `useEditorSnapGuide.ts`.
+  - **`useMapEditorOverlayState.ts`**: Extracted dual dock layout management into `useEditorDockLayout.ts` and modal state into `useEditorModalState.ts`.
+  - **Slice Form Hooks**: Centralized entity form data types in `editor-types.ts` and created domain slice hooks (`usePointFeatureEditor`, `useSubdivisionEditor`, `useHydroRouteEditor`).
+- **High-Performance Spatial Engine & Pure Geometry Primitives**:
+  - **Copy-on-Write Polygon Snapping**: Implemented `cloneRingsWithTarget` in `border-editor.ts` to eliminate memory leaks and GC pauses during 60fps live dragging.
+  - **Branded Nominal Coordinate Types**: Added TypeScript nominal types (`Lng`, `Lat`, `GeoPoint`, `ScreenPoint`, `BoundingBox`) in `editor-types.ts` to prevent coordinate axis inversion bugs at compile time.
+  - **Centralized Distance Math**: Extracted pure Great-Circle calculations (`calculateHaversineDistance`, `calculatePolylineDistance`) and unit metrics (`formatDistanceMetrics`) to `src/lib/maps/geo-analytics.ts`.
+  - **Shared MapLibre Lifecycle & GeoJSON Helpers**: Created `useMapLibreInstance.ts` (surface acquisition, ResizeObserver, WebGL context restore) and `geojson-layer-helpers.ts` (`setOrUpdateGeoJSONSource`, `ensureMapLayer`, `removeLayerAndSource`).
+- **Shared Presentation Atoms & Design System**:
+  - Created [`TimelineEraBadge.tsx`](src/components/maps/shared/TimelineEraBadge.tsx) for historical AT/BT IxTime dates.
+  - Created `StoryPinDetailCard.tsx` for rich lore chronicles and event pin cards.
+  - Created `FacetOnboardingDialog.tsx` for keyboard-navigable glassmorphic onboarding carousels.
+- **Server Waterfalls Eliminated**:
+  - Refactored `getCountryGeoBundle` in `src/server/api/routers/country-geo.ts` from 5 sequential database awaits into a single parallel `Promise.all` across 7 spatial entities.
 
 ### ⏱️ IxTime: Temporal Engine Architecture, System Docs & Ponytail Optimizations
 
-- **Canonical System Documentation ([`docs/systems/ixtime.md`](file:///home/jxsig/projects/ixstats/docs/systems/ixtime.md))**:
+- **Canonical System Documentation ([`docs/systems/ixtime.md`](docs/systems/ixtime.md))**:
   - Published comprehensive architectural specification for the platform's world simulation clock and temporal engine.
   - Documented mathematical conversion models ($t_{\text{real}} \leftrightarrow t_{\text{ix}}$), 4.0x historical dilation vs. 2.0x modern continuous era speed pivot (July 27, 2025 $\equiv$ Jan 1, 2040), and realm-first configurability note.
   - Added multi-tier Unicode box architecture diagram, public/admin tRPC routes, REST gateways, PM2 daemons (`ixwiki-discord-bot`), and Statecraft/Halo/Sports/Diplomacy integration points.
-  - Linked entry in master [`docs/README.md`](file:///home/jxsig/projects/ixstats/docs/README.md).
+  - Linked entry in master [`docs/README.md`](docs/README.md).
 - **Ponytail Codebase Auditing & Dead Code Purge**:
-  - Deleted unreferenced legacy route [`src/app/api/ixtime/set-override-direct/`](file:///home/jxsig/projects/ixstats/src/app/api/ixtime/set-override-direct/route.ts).
-  - Streamlined [`src/context/IxTimeContext.tsx`](file:///home/jxsig/projects/ixstats/src/context/IxTimeContext.tsx) to eliminate redundant function wrappers and directly re-export Zustand granular selector hooks for $O(1)$ selective re-rendering.
-  - Cleaned up [`src/app/api/ixtime-status/route.ts`](file:///home/jxsig/projects/ixstats/src/app/api/ixtime-status/route.ts) into a concise diagnostic proxy.
-  - Removed dead/buggy `getCurrentIxTimeInternal()` in [`src/lib/ixtime/core.ts`](file:///home/jxsig/projects/ixstats/src/lib/ixtime/core.ts) and fixed multiplier override pause logic.
+  - Deleted unreferenced legacy route `src/app/api/ixtime/set-override-direct/`.
+  - Streamlined [`src/context/IxTimeContext.tsx`](src/context/IxTimeContext.tsx) to eliminate redundant function wrappers and directly re-export Zustand granular selector hooks for $O(1)$ selective re-rendering.
+  - Cleaned up [`src/app/api/ixtime-status/route.ts`](src/app/api/ixtime-status/route.ts) into a concise diagnostic proxy.
+  - Removed dead/buggy `getCurrentIxTimeInternal()` in [`src/lib/ixtime/core.ts`](src/lib/ixtime/core.ts) and fixed multiplier override pause logic.
 - **Runtime Efficiency, Alerting & Safe Coercion**:
-  - Decoupled 11-test accuracy verification suite execution from the 15-second background server synchronization loop in [`src/lib/ixtime/sync.ts`](file:///home/jxsig/projects/ixstats/src/lib/ixtime/sync.ts).
+  - Decoupled 11-test accuracy verification suite execution from the 15-second background server synchronization loop in [`src/lib/ixtime/sync.ts`](src/lib/ixtime/sync.ts).
   - Added production alert notification hook in `correctDrift()` notifying sysadmins via `/usr/local/bin/ixwiki-notify.sh` when critical drift ($>5,000\text{ms}$) is corrected on the Discord bot daemon.
-  - Added `applyExternalTimeUpdate` to [`src/stores/ixtime-store.ts`](file:///home/jxsig/projects/ixstats/src/stores/ixtime-store.ts) for instant client-side synchronization on WebSocket or admin broadcast events.
-  - Added safe timestamp coercion helpers (`IxTime.toTimestamp`, `IxTime.toDate`, `IxTime.toIsoString`) in [`src/lib/ixtime/core.ts`](file:///home/jxsig/projects/ixstats/src/lib/ixtime/core.ts).
-- **Dedicated Test Suites ([`src/tests/lib/ixtime/`](file:///home/jxsig/projects/ixstats/src/tests/lib/ixtime/))**:
-  - Added [`core.test.ts`](file:///home/jxsig/projects/ixstats/src/tests/lib/ixtime/core.test.ts) covering epochs, pivot conversions, calendar arithmetic, formatting, pause/overrides, and coercion helpers.
-  - Added [`accuracy.test.ts`](file:///home/jxsig/projects/ixstats/src/tests/lib/ixtime/accuracy.test.ts) running all 11 mathematical verification test suites of `IxTimeAccuracyVerifier`.
+  - Added `applyExternalTimeUpdate` to [`src/stores/ixtime-store.ts`](src/stores/ixtime-store.ts) for instant client-side synchronization on WebSocket or admin broadcast events.
+  - Added safe timestamp coercion helpers (`IxTime.toTimestamp`, `IxTime.toDate`, `IxTime.toIsoString`) in [`src/lib/ixtime/core.ts`](src/lib/ixtime/core.ts).
+- **Dedicated Test Suites ([`src/tests/lib/ixtime/`](src/tests/lib/ixtime/))**:
+  - Added [`core.test.ts`](src/tests/lib/ixtime/core.test.ts) covering epochs, pivot conversions, calendar arithmetic, formatting, pause/overrides, and coercion helpers.
+  - Added `accuracy.test.ts` (since folded into [`core.test.ts`](src/tests/lib/ixtime/core.test.ts)) running all 11 mathematical verification test suites of `IxTimeAccuracyVerifier`.
 
 ### 🧪 Test Suite Consolidation, Clean Output & Worker Leak Elimination
 
 - **Centralized Test Architecture (`src/tests/`)**:
-  - Consolidated 151 test suites from across scattered directories (`src/app/**/__tests__`, `src/components/**/__tests__`, `src/lib/**/__tests__`, `src/server/**/__tests__`, `src/sports/**/__tests__`) into the canonical [`src/tests/`](file:///home/jxsig/projects/ixstats/src/tests/) directory structure (`src/tests/{app,components,lib,server,sports,security,auth,validators,hooks}/`).
+  - Consolidated 151 test suites from across scattered directories (`src/app/**/__tests__`, `src/components/**/__tests__`, `src/lib/**/__tests__`, `src/server/**/__tests__`, `src/sports/**/__tests__`) into the canonical [`src/tests/`](src/tests/) directory structure (`src/tests/{app,components,lib,server,sports,security,auth,validators,hooks}/`).
   - Fixed test runner import resolution, mock paths, and missing utility exports across onoma, spatial, intent resistance, and caching benchmarks.
 - **Zero Console Noise & Worker Teardown Leak Elimination**:
-  - Eliminated `A worker process has failed to exit gracefully` teardown failures by adding test environment skips (`process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined"`) and `.unref()` calls to background intervals across [`websocket/server.ts`](file:///home/jxsig/projects/ixstats/src/lib/websocket/server.ts), [`intelligence-websocket-server.ts`](file:///home/jxsig/projects/ixstats/src/lib/websocket/intelligence-websocket-server.ts), [`market-websocket-server.ts`](file:///home/jxsig/projects/ixstats/src/lib/websocket/market-websocket-server.ts), [`production-optimizations.ts`](file:///home/jxsig/projects/ixstats/src/lib/system/production-optimizations.ts), [`ixtime/sync.ts`](file:///home/jxsig/projects/ixstats/src/lib/ixtime/sync.ts), and [`broadcast-service.ts`](file:///home/jxsig/projects/ixstats/src/lib/intelligence/broadcast-service.ts).
-  - Silenced noisy Redis fallback warnings during test execution in [`rate-limiter.ts`](file:///home/jxsig/projects/ixstats/src/lib/cache/rate-limiter.ts) and [`advanced-cache-system.ts`](file:///home/jxsig/projects/ixstats/src/lib/cache/advanced-cache-system.ts).
+  - Eliminated `A worker process has failed to exit gracefully` teardown failures by adding test environment skips (`process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined"`) and `.unref()` calls to background intervals across `websocket/server.ts`, `intelligence-websocket-server.ts`, [`market-websocket-server.ts`](src/lib/websocket/market-websocket-server.ts), [`production-optimizations.ts`](src/lib/system/production-optimizations.ts), [`ixtime/sync.ts`](src/lib/ixtime/sync.ts), and `broadcast-service.ts`.
+  - Silenced noisy Redis fallback warnings during test execution in [`rate-limiter.ts`](src/lib/cache/rate-limiter.ts) and [`advanced-cache-system.ts`](src/lib/cache/advanced-cache-system.ts).
   - Guarded database mock queries against unmocked Prisma tables in sports, activity hooks, and diplomatic news generators.
   - Spied and restored `console.warn` / `console.error` during tests explicitly asserting error handlers (500 status codes, invalid currency codes, corrupted localStorage, WebGL context lost).
-  - Handled concurrent achievement unlock collisions idempotently (catching `P2002` / 409 unique constraint errors) in [`src/lib/achievements/service.ts`](file:///home/jxsig/projects/ixstats/src/lib/achievements/service.ts).
+  - Handled concurrent achievement unlock collisions idempotently (catching `P2002` / 409 unique constraint errors) in [`src/lib/achievements/service.ts`](src/lib/achievements/service.ts).
   - Achieved 100% green, silent test pass rate across **151 test suites** and **1,329 unit/integration tests** in ~18s.
 
 ### 🛠️ Tooling & Reusable Scripts Archive
 
 - **Comprehensive Scripts Directory Reorganization (`scripts/`)**:
-  - Audited all root and sub-folder utility scripts, cataloging active tools in [`scripts/README.md`](file:///home/jxsig/projects/ixstats/scripts/README.md).
-  - **Historical Migrations Archive** ([`scripts/archive/migrations/`](file:///home/jxsig/projects/ixstats/scripts/archive/migrations/)): Preserved reusable ETL scripts (`migrate-messages-to-thinkshare.ts`, `backfill-vault-effects.ts`, `sync-wiki-flags.ts`, `setup-system-owner-access.ts`, `generate-country-slugs.ts`, `seed-map-data.ts`, etc.) for future bulk data transformations.
-  - **Historical GIS Tools & Spatial Calculators Archive** ([`scripts/archive/gis_tools/`](file:///home/jxsig/projects/ixstats/scripts/archive/gis_tools/)): Preserved spatial math algorithms and GeoJSON fixtures (`country-geo-report.ts`, `align-political-to-terrain.ts`, `calculate-scale-factor.ts`, `rebuild-adjacency.ts`, `reprocess-icecaps.ts`, GeoJSON altitude/climate/icecap layers) for projection and geometry reference.
+  - Audited all root and sub-folder utility scripts, cataloging active tools in [`scripts/README.md`](scripts/README.md).
+  - **Historical Migrations Archive** ([`scripts/archive/migrations/`](scripts/archive/migrations/)): Preserved reusable ETL scripts (`migrate-messages-to-thinkshare.ts`, `backfill-vault-effects.ts`, `sync-wiki-flags.ts`, `setup-system-owner-access.ts`, `generate-country-slugs.ts`, `seed-map-data.ts`, etc.) for future bulk data transformations.
+  - **Historical GIS Tools & Spatial Calculators Archive** ([`scripts/archive/gis_tools/`](scripts/archive/gis_tools/)): Preserved spatial math algorithms and GeoJSON fixtures (`country-geo-report.ts`, `align-political-to-terrain.ts`, `calculate-scale-factor.ts`, `rebuild-adjacency.ts`, `reprocess-icecaps.ts`, GeoJSON altitude/climate/icecap layers) for projection and geometry reference.
   - Updated developer references across `AGENTS.md`, `CLAUDE.md`, and `docs/README.md`.
 
 ### 📚 Canonical Developer Bible Overhaul (`docs/`)
 
 - **Full Documentation System Consolidation**:
-  - Restructured the entire [`docs/`](file:///home/jxsig/projects/ixstats/docs/) tree into a unified single-source-of-truth Developer Bible across 9 domains with zero dead links and zero outdated drafts.
+  - Restructured the entire [`docs/`](docs/) tree into a unified single-source-of-truth Developer Bible across 9 domains with zero dead links and zero outdated drafts.
   - **Core Architecture (`docs/architecture/`)**: Standardized documentation for Next.js 16.3 App Router, Facet design hierarchy (depth 1–4), single-page hub controllers, tRPC 90 routers / 1,450+ endpoints, PostgreSQL + PostGIS multi-file schema, `useGenericAutoSync`, multi-tier caching, and partitioned typecheck gates.
-  - **System Bibles (`docs/systems/`)**: Canonically documented all 16 platform systems in [`SYSTEM_STATUS.md`](file:///home/jxsig/projects/ixstats/docs/systems/SYSTEM_STATUS.md), along with dedicated sub-suites for Statecraft game loops (`statecraft/`), WikiOS Stage 2b/3 isolation (`wikios/`), Halo v4 plugin system, UPG v2 Voronoi map engine, Onoma brand/voice, and IxVault collectibles.
+  - **System Bibles (`docs/systems/`)**: Canonically documented all 16 platform systems in [`SYSTEM_STATUS.md`](docs/systems/SYSTEM_STATUS.md), along with dedicated sub-suites for Statecraft game loops (`statecraft/`), WikiOS Stage 2b/3 isolation (`wikios/`), Halo v4 plugin system, UPG v2 Voronoi map engine, Onoma brand/voice, and IxVault collectibles.
   - **Operations & Processes (`docs/operations/`, `docs/processes/`)**: Standardized deployment workflows, standalone build outputs, PM2 process management, Discord DM alert infrastructure, Jest testing best practices, and the 4-layer modular refactoring pattern.
-  - **Interactive Master Index ([`docs/README.md`](file:///home/jxsig/projects/ixstats/docs/README.md))**: Rebuilt master hub index with verified links across all domains.
-  - Archived superseded PRDs, legacy logs, and completed plans into [`docs/archive/`](file:///home/jxsig/projects/ixstats/docs/archive/) and [`plans/archive/`](file:///home/jxsig/projects/ixstats/plans/archive/).
+  - **Interactive Master Index ([`docs/README.md`](docs/README.md))**: Rebuilt master hub index with verified links across all domains.
+  - Archived superseded PRDs, legacy logs, and completed plans into `docs/archive/` and `plans/archive/` (local-only folders, not in the repository).
 
 ### ✂️ Legacy Country Economy Purge, Flag Hook Deduplication & Type Monolith Condensation (Plan 139)
 
 - **Dead Country Economy Subsystem Purge**:
   - Deleted 12 orphaned pre-Factbook components and helpers in `src/app/countries/_components/economy/` (`ComparativeAnalysis.tsx`, `CoreEconomicIndicators.tsx`, `CountryEconomicDataSection.tsx`, `Demographics.tsx`, `EconomicDataDisplay.tsx`, `EconomicSummaryWidget.tsx`, `FiscalSystemComponent.tsx`, `GovernmentSpending.tsx`, `HistoricalEconomicTracker.tsx`, `IncomeWealthDistribution.tsx`, `LaborEmployment.tsx`, `utils.ts`) saving **~7,500 lines** of dead code.
-  - Inlined `calculateBudgetHealth` directly in [`src/hooks/useFiscalData.ts`](file:///home/jxsig/projects/ixstats/src/hooks/useFiscalData.ts).
-  - Retained and updated [`EconomicModelingEngine.tsx`](file:///home/jxsig/projects/ixstats/src/app/countries/_components/economy/EconomicModelingEngine.tsx) for `/countries/[slug]/modeling`.
+  - Inlined `calculateBudgetHealth` directly in `src/hooks/useFiscalData.ts`.
+  - Retained and updated [`EconomicModelingEngine.tsx`](src/app/countries/_components/economy/EconomicModelingEngine.tsx) for `/countries/[slug]/modeling`.
 
 - **Dead Country Infobox Purge**:
   - Deleted unreferenced 900-line monolith `src/app/countries/_components/CountryInfobox.tsx` ($-900\text{L}$).
@@ -98,14 +1633,14 @@ capability integer. Each release entry below lists which components advanced and
 - **Flag Hook & RNG Deduplication**:
   - Migrated `MetricCardGrid.tsx` and `achievements/page.tsx` to canonical `useFlag` from `~/hooks/useUnifiedFlags`.
   - Deleted redundant `src/hooks/useSimpleFlag.ts` ($-135\text{L}$).
-  - Pruned unused `useCountryFlagsRouteAware` from [`src/hooks/useCountryFlagRouteAware.ts`](file:///home/jxsig/projects/ixstats/src/hooks/useCountryFlagRouteAware.ts).
-  - Re-exported [`src/lib/worldgen/rng.ts`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/rng.ts) from canonical `~/lib/worldgen/v2/helpers/rng`.
+  - Pruned unused `useCountryFlagsRouteAware` from `src/hooks/useCountryFlagRouteAware.ts`.
+  - Re-exported [`src/lib/worldgen/rng.ts`](src/lib/worldgen/rng.ts) from canonical `~/lib/worldgen/v2/helpers/rng`.
 
 - **Onoma Library Alignment**:
-  - Relocated `language-families.ts` and `markov-naming.ts` into canonical [`src/lib/onoma/`](file:///home/jxsig/projects/ixstats/src/lib/onoma/) and updated worldgen call sites.
+  - Relocated `language-families.ts` and `markov-naming.ts` into canonical [`src/lib/onoma/`](src/lib/onoma/) and updated worldgen call sites.
 
 - **Economy Builder Type Monolith Condensation**:
-  - Streamlined [`src/types/economy-builder.ts`](file:///home/jxsig/projects/ixstats/src/types/economy-builder.ts) from 1,053 lines down to **397 lines** ($-656\text{L}$).
+  - Streamlined `src/types/economy-builder.ts` from 1,053 lines down to **397 lines** ($-656\text{L}$).
   - Removed `src/types/economy-builder.ts` from `scripts/audit/arch-baseline.json`.
 
 
@@ -113,23 +1648,23 @@ capability integer. Each release entry below lists which components advanced and
 
 - **Radix UI & Dependency Pruning**:
   - Removed unused runtime packages `@radix-ui/react-aspect-ratio` and `@radix-ui/react-switch` (0 consumers in `src/`).
-  - Replaced `@radix-ui/react-separator` with semantic `<hr />` / `<div>` element in [`src/components/ui/separator.tsx`](file:///home/jxsig/projects/ixstats/src/components/ui/separator.tsx) and removed `@radix-ui/react-separator` from `package.json`.
+  - Replaced `@radix-ui/react-separator` with semantic `<hr />` / `<div>` element in [`src/components/ui/separator.tsx`](src/components/ui/separator.tsx) and removed `@radix-ui/react-separator` from `package.json`.
   - Moved `@types/papaparse` from `dependencies` to `devDependencies`.
-  - Merged keyboard shortcut badge and title/description support into [`src/components/ui/tooltip.tsx`](file:///home/jxsig/projects/ixstats/src/components/ui/tooltip.tsx), and pruned [`src/components/ui/enhanced-tooltip.tsx`](file:///home/jxsig/projects/ixstats/src/components/ui/enhanced-tooltip.tsx).
+  - Merged keyboard shortcut badge and title/description support into [`src/components/ui/tooltip.tsx`](src/components/ui/tooltip.tsx), and pruned `src/components/ui/enhanced-tooltip.tsx`.
 
 - **Metric Details Modal Architecture Unification**:
-  - Moved `GdpDetailsModal.tsx` and `PopulationDetailsModal.tsx` into [`src/components/ui/modals/metric-details/`](file:///home/jxsig/projects/ixstats/src/components/ui/modals/metric-details/) extending [`BaseMetricDetailsModal.tsx`](file:///home/jxsig/projects/ixstats/src/components/ui/modals/metric-details/BaseMetricDetailsModal.tsx).
+  - Moved `GdpDetailsModal.tsx` and `PopulationDetailsModal.tsx` into `src/components/ui/modals/metric-details/` extending `BaseMetricDetailsModal.tsx`.
   - Unified all 6 platform metric modals (`GDP`, `Population`, `Debt`, `DemographicsHealth`, `GovernmentSpending`, `Labor`) onto the standard 4-tab caching and responsive layout.
 
 - **Procedural Engine Namespace Relocation**:
-  - Relocated active UPG v2 generators (`climate-system.ts`, `language-families.ts`, `markov-naming.ts`) from legacy `src/lib/procedural-archive/` to [`src/lib/worldgen/procedural/`](file:///home/jxsig/projects/ixstats/src/lib/worldgen/procedural/) and deleted the old directory.
+  - Relocated active UPG v2 generators (`climate-system.ts`, `language-families.ts`, `markov-naming.ts`) from legacy `src/lib/procedural-archive/` to `src/lib/worldgen/procedural/` and deleted the old directory.
 
 - **Builder Monolith Decomposition**:
-  - Extracted 2,540 lines of static component lookup tables from [`src/app/builder/utils/atomicGovernmentIntegration.ts`](file:///home/jxsig/projects/ixstats/src/app/builder/utils/atomicGovernmentIntegration.ts) into [`src/app/builder/data/government-mappings.ts`](file:///home/jxsig/projects/ixstats/src/app/builder/data/government-mappings.ts), shrinking the logic module from 2,953 lines down to 433 lines ($-2,520\text{L}$).
-  - Extracted numeric and government type parsers into [`src/app/builder/lib/builder-parsers.ts`](file:///home/jxsig/projects/ixstats/src/app/builder/lib/builder-parsers.ts).
+  - Extracted 2,540 lines of static component lookup tables from `src/app/builder/utils/atomicGovernmentIntegration.ts` into `src/app/builder/data/government-mappings.ts`, shrinking the logic module from 2,953 lines down to 433 lines ($-2,520\text{L}$).
+  - Extracted numeric and government type parsers into `src/app/builder/lib/builder-parsers.ts`.
 
 - **Country Management Routers Payload Builder**:
-  - Created [`src/server/shared/country-payload-builder.ts`](file:///home/jxsig/projects/ixstats/src/server/shared/country-payload-builder.ts) extracting shared Zod schemas (`countryEconomicInputsSchema`, `countryGovernmentComponentSchema`) across [`create.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/countries/management/create.ts) and [`update.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/countries/management/update.ts) ($-300\text{L}$).
+  - Created [`src/server/shared/country-payload-builder.ts`](src/server/shared/country-payload-builder.ts) extracting shared Zod schemas (`countryEconomicInputsSchema`, `countryGovernmentComponentSchema`) across [`create.ts`](src/server/api/routers/countries/management/create.ts) and `update.ts` ($-300\text{L}$).
 
 
 ### ✂️ Gold Master Over-Engineering Prune, Dependency Trimming & Sports AST Router Splits (Plans 133–137)
@@ -165,7 +1700,7 @@ capability integer. Each release entry below lists which components advanced and
 
 - **Platform-Wide Gold Master Status Across All 16 Systems (`docs/systems/SYSTEM_STATUS.md`)**:
   - Full audit of all 31 system reference documents in `docs/systems/`, modernizing architecture specifications to match the active codebase.
-  - Created [`docs/systems/SYSTEM_STATUS.md`](file:///home/jxsig/projects/ixstats/docs/systems/SYSTEM_STATUS.md) establishing Video Game Dev Cycle release grading (Gold Master, Release Candidate, Beta, Alpha) and elevated **100% of the platform (16/16 systems)** to **Gold Master (1.0.0 GM)**.
+  - Created [`docs/systems/SYSTEM_STATUS.md`](docs/systems/SYSTEM_STATUS.md) establishing Video Game Dev Cycle release grading (Gold Master, Release Candidate, Beta, Alpha) and elevated **100% of the platform (16/16 systems)** to **Gold Master (1.0.0 GM)**.
 
 - **Ponytail Codebase Simplification (`/ponytail-audit`) — Over 2,870 Net Lines Deleted**:
   - **Dead File Elimination**:
@@ -174,26 +1709,26 @@ capability integer. Each release entry below lists which components advanced and
     - Deleted `src/hooks/useUnifiedIntelligence.ts` (`-477L` dead V1 intelligence hook).
     - Deleted `src/lib/onoma/tavern-generator.ts` and `tavern-data.ts` (`-362L` non-standard fantasy generator).
   - **Monolith Reductions & Built-in Consolidations**:
-    - Refactored [`src/lib/cards/category-enums.ts`](file:///home/jxsig/projects/ixstats/src/lib/cards/category-enums.ts) from 707 lines to 205 lines (`-502L`) using root keywords and algorithmic plural stem expansion.
-    - Created [`src/hooks/useGenericAutoSync.ts`](file:///home/jxsig/projects/ixstats/src/hooks/useGenericAutoSync.ts), consolidating auto-sync debounce logic across `useNationalIdentityAutoSync`, `useEconomyBuilderAutoSync`, and `useBuilderAutoSync` (`-593L` boilerplate reduction).
+    - Refactored [`src/lib/cards/category-enums.ts`](src/lib/cards/category-enums.ts) from 707 lines to 205 lines (`-502L`) using root keywords and algorithmic plural stem expansion.
+    - Created `src/hooks/useGenericAutoSync.ts`, consolidating auto-sync debounce logic across `useNationalIdentityAutoSync`, `useEconomyBuilderAutoSync`, and `useBuilderAutoSync` (`-593L` boilerplate reduction).
 
 - **Strict Type Safety & Compiler Zero-Diagnostic Mandate (`/typescript-pro`, `/typescript-expert`)**:
-  - **Eliminated `@ts-nocheck`**: Cleaned and strongly typed [`src/components/mycountry/domains/defense/StabilityPanel.tsx`](file:///home/jxsig/projects/ixstats/src/components/mycountry/domains/defense/StabilityPanel.tsx).
+  - **Eliminated `@ts-nocheck`**: Cleaned and strongly typed [`src/components/mycountry/domains/defense/StabilityPanel.tsx`](src/components/mycountry/domains/defense/StabilityPanel.tsx).
   - **Eliminated `as any` Type Assertions**:
-    - [`src/server/api/routers/elections/legislature.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/elections/legislature.ts) (strongly typed `ElectoralSystem`).
-    - [`src/server/api/routers/thinkpages/feed.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/thinkpages/feed.ts) (strongly-typed `hydratePostDates<T>` and purged dead comment stubs).
-    - [`src/app/achievements/page.tsx`](file:///home/jxsig/projects/ixstats/src/app/achievements/page.tsx) (safe property narrowing).
+    - [`src/server/api/routers/elections/legislature.ts`](src/server/api/routers/elections/legislature.ts) (strongly typed `ElectoralSystem`).
+    - [`src/server/api/routers/thinkpages/feed.ts`](src/server/api/routers/thinkpages/feed.ts) (strongly-typed `hydratePostDates<T>` and purged dead comment stubs).
+    - `src/app/achievements/page.tsx` (since removed; safe property narrowing).
   - **Branded Types & Spatial Mesh Assist**:
-    - Added `VertexKey = string & { readonly __brand: "VertexKey" }` and `snapToNearestVertex` GeoJSON helper in [`src/lib/maps/topology-engine.ts`](file:///home/jxsig/projects/ixstats/src/lib/maps/topology-engine.ts) and unified `TopologyRef` in [`src/lib/maps/shared-vertex-builder.ts`](file:///home/jxsig/projects/ixstats/src/lib/maps/shared-vertex-builder.ts).
+    - Added `VertexKey = string & { readonly __brand: "VertexKey" }` and `snapToNearestVertex` GeoJSON helper in [`src/lib/maps/topology-engine.ts`](src/lib/maps/topology-engine.ts) and unified `TopologyRef` in [`src/lib/maps/shared-vertex-builder.ts`](src/lib/maps/shared-vertex-builder.ts).
   - **Simulation & Engine Robustness**:
-    - Added data-driven `CRISIS_CONFIG` and automated `calculateCrisisSeverity` in [`src/server/api/routers/crisis-events.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/crisis-events.ts).
-    - Added safe probability vector normalization and $[0, 1]$ clamping in [`src/lib/diplomacy/markov-engine.ts`](file:///home/jxsig/projects/ixstats/src/lib/diplomacy/markov-engine.ts).
-    - Added fallback 44-byte silent WAV audio header (`createSilentWavBuffer`) in [`src/app/api/onoma/tts/route.ts`](file:///home/jxsig/projects/ixstats/src/app/api/onoma/tts/route.ts).
+    - Added data-driven `CRISIS_CONFIG` and automated `calculateCrisisSeverity` in [`src/server/api/routers/crisis-events.ts`](src/server/api/routers/crisis-events.ts).
+    - Added safe probability vector normalization and $[0, 1]$ clamping in [`src/lib/diplomacy/markov-engine.ts`](src/lib/diplomacy/markov-engine.ts).
+    - Added fallback 44-byte silent WAV audio header (`createSilentWavBuffer`) in [`src/app/api/onoma/tts/route.ts`](src/app/api/onoma/tts/route.ts).
 
 - **MediaWiki & WikiOS Subsystem Integration**:
-  - Restored clean, type-safe [`src/lib/wiki/data-parser.ts`](file:///home/jxsig/projects/ixstats/src/lib/wiki/data-parser.ts) (`parseRosterFile`) matching `BaseCountryData`.
-  - Added `buildApiUrl` in [`src/lib/wiki-os/config.ts`](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/config.ts) and implemented `getInfobox` / `downloadFile` on `wikiosRouter` in [`src/server/api/routers/wikios/page-content.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/wikios/page-content.ts).
-  - Added `wiki` alias router in [`src/server/api/root.ts`](file:///home/jxsig/projects/ixstats/src/server/api/root.ts) ensuring seamless backward compatibility across all legacy and current WikiOS consumers.
+  - Restored clean, type-safe `src/lib/wiki/data-parser.ts` (`parseRosterFile`) matching `BaseCountryData`.
+  - Added `buildApiUrl` in [`src/lib/wiki-os/config.ts`](src/lib/wiki-os/config.ts) and implemented `getInfobox` / `downloadFile` on `wikiosRouter` in [`src/server/api/routers/wikios/page-content.ts`](src/server/api/routers/wikios/page-content.ts).
+  - Added `wiki` alias router in [`src/server/api/root.ts`](src/server/api/root.ts) ensuring seamless backward compatibility across all legacy and current WikiOS consumers.
 
 - **Verified Partitioned Typecheck Execution**:
   - Validated all 4 sub-project checks (`typecheck:db`, `typecheck:trpc`, `typecheck:server`, `typecheck:ui`) passing sequentially with **0 errors**.
@@ -208,21 +1743,21 @@ capability integer. Each release entry below lists which components advanced and
   - High-contrast Apple light mode refinements: softened tab well to cool translucent zinc (`bg-zinc-100/75 border-zinc-200/80`) with elevated white active indicators.
 
 - **⟨ONOMA⟩ Glyph System v0.1 & Geometric Vector Brand Identity**:
-  - Authored 24 mathematical and linguistic vector glyphs in [`onoma-glyphs-catalog.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/glyphs/onoma-glyphs-catalog.tsx) and [`OnomaGlyph.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/glyphs/OnomaGlyph.tsx), replacing generic icons with precise phonological notation across the suite.
+  - Authored 24 mathematical and linguistic vector glyphs in [`onoma-glyphs-catalog.tsx`](src/app/labs/onoma/components/glyphs/onoma-glyphs-catalog.tsx) and [`OnomaGlyph.tsx`](src/app/labs/onoma/components/glyphs/OnomaGlyph.tsx), replacing generic icons with precise phonological notation across the suite.
   - Replaced generic AI sparkle icon with the Apple Drafting Stylus / Compose mark (`emerge-synthesis`) across creation and synthesis triggers.
-  - Upgraded [`OnomaBrandLogo.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/OnomaBrandLogo.tsx) with authentic mathematical angle brackets `⟨ONOMA⟩` (U+27E8 / U+27E9) and custom geometric SVG wordmark in `public/images/onoma-logo.svg`.
+  - Upgraded `src/app/labs/onoma/components/shared/OnomaBrandLogo.tsx` with authentic mathematical angle brackets `⟨ONOMA⟩` (U+27E8 / U+27E9) and custom geometric SVG wordmark in `public/images/onoma-logo.svg`.
   - Added interactive `/ˈɒnəmə/` IPA pronunciation button with first-visit ping animation and browser speech fallback.
 
 - **Quick Generator UI/UX Refresh & Always-Expanded Seed Words Editor (`QuickGeneratorControls.tsx`)**:
   - Removed seed words accordion: the **Training Seed Words** textarea is now always expanded and connected in real-time to the Markov chain synthesis engine.
   - Removed custom badge; streamlined header to a clean **Dictionary** selector.
-  - Implemented client-side local storage dictionary management in [`src/lib/onoma/custom-dictionaries.ts`](file:///home/jxsig/projects/ixstats/src/lib/onoma/custom-dictionaries.ts) with full CRUD support (**Save As New**, **Update/Save**, **Rename**, **Delete**, and **Revert**), grouped by **Your Lexicons** and **Built-in Presets**.
+  - Implemented client-side local storage dictionary management in [`src/lib/onoma/custom-dictionaries.ts`](src/lib/onoma/custom-dictionaries.ts) with full CRUD support (**Save As New**, **Update/Save**, **Rename**, **Delete**, and **Revert**), grouped by **Your Lexicons** and **Built-in Presets**.
   - **Contextual Action Controls**:
     - **Save As New**: Hidden on pristine presets; smoothly transitions in only when seed words are modified (`isWordsModified === true`).
     - **Dedupe**: Automatically scans draft words on load and keystroke, displaying only when duplicate tokens exist with dynamic count badge.
   - Built Apple-style segmented stepper wells for Markov Order (`n=2`) and Batch Size (`20`) with `NumberFlowDisplay`.
   - Polished primary **Synthesize Batch** action button with tactile spring compression and hover glyph transitions.
-  - Upgraded [`CandidateResultsPanel.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/CandidateResultsPanel.tsx) with floating toolbar actions, count counters, and tactile **Copy All** / **Save to Stash** buttons.
+  - Upgraded `CandidateResultsPanel.tsx` with floating toolbar actions, count counters, and tactile **Copy All** / **Save to Stash** buttons.
 
 - **Feathered Wide-Canvas Footer & Lineage Attribution (`OnomaFooter.tsx`)**:
   - Extended footer canvas width to $1.33\times$ (`max-w-[1720px]`) with vertical ambient gradient bridge (`h-16 bg-gradient-to-b from-transparent via-background/40 to-background/90`) and specular hairline top highlight.
@@ -231,7 +1766,7 @@ capability integer. Each release entry below lists which components advanced and
 
 - **Comprehensive Single-Page Router & Modularization (`src/app/labs/onoma/`)**:
   - Modularized `OnomaRouter.tsx` from an 819-line monolith into a lean coordinator delegating to `useOnomaRouter.ts`, `OnomaHeader.tsx`, `OnomaSectionRenderer.tsx`, and `onoma-tabs.tsx`.
-  - Eliminated 5 duplicate domain wrapper components in favor of declarative [`CategoryDomainSection.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/CategoryDomainSection.tsx) powered by [`domain-taxonomies.ts`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/domain-taxonomies.ts).
+  - Eliminated 5 duplicate domain wrapper components in favor of declarative [`CategoryDomainSection.tsx`](src/app/labs/onoma/components/sections/CategoryDomainSection.tsx) powered by [`domain-taxonomies.ts`](src/app/labs/onoma/components/sections/domain-taxonomies.ts).
   - Deleted dead experimental sandbox (`branding/page.tsx`) and obsolete components (`OnomaDoubleHelixIcon.tsx`).
   - Decomposed 1,204-line `SettingsSection.tsx` into `VoicePreferencesPanel.tsx`, `VoiceSandboxPanel.tsx`, and `ConlangDataManagerPanel.tsx`.
   - Modularized `BatchSection.tsx` (747 lines → 399 lines) and `SyntaxSection.tsx` (729 lines → 329 lines).
@@ -240,17 +1775,17 @@ capability integer. Each release entry below lists which components advanced and
   - Implemented real-time bidirectional corpus pipeline connecting **Create**, **Studio**, **Explore**, and **Stash**.
   - Built `extractPhonemeInventory` for dynamic IPA vowel/consonant distribution extraction from arbitrary custom wordlists.
   - Built `computeShannonEntropy` ($H = -\sum p_i \log_2 p_i$) and `compareDynamicWordLists` calculating Jaccard phoneme overlap, bigram cosine similarity, and composite linguistic distance $[0, 100]$ between any two conlangs or natural cultures.
-  - Created universal Apple SF-styled [`CorpusSelector.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/CorpusSelector.tsx) aggregating Natural Cultures, Lineages, Stash Dictionaries, and Active Studio Lexicon.
-  - Integrated `CorpusSelector` across [`ComparatorSection.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/ComparatorSection.tsx), [`StudioSoundShifts.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioSoundShifts.tsx), [`StudioVisualizer.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioVisualizer.tsx), and [`OrthographySandbox.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/writing/OrthographySandbox.tsx).
-  - Added 1-click **"Send To..."** action buttons in [`SavedDictionaryCard.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/stash/SavedDictionaryCard.tsx) for instant routing to Acoustics Comparison, Sound Shifts, Script Forge, or Studio Workshop.
+  - Created universal Apple SF-styled [`CorpusSelector.tsx`](src/app/labs/onoma/components/shared/CorpusSelector.tsx) aggregating Natural Cultures, Lineages, Stash Dictionaries, and Active Studio Lexicon.
+  - Integrated `CorpusSelector` across [`ComparatorSection.tsx`](src/app/labs/onoma/components/sections/ComparatorSection.tsx), [`StudioSoundShifts.tsx`](src/app/labs/onoma/components/sections/studio/StudioSoundShifts.tsx), [`StudioVisualizer.tsx`](src/app/labs/onoma/components/sections/studio/StudioVisualizer.tsx), and [`OrthographySandbox.tsx`](src/app/labs/onoma/components/sections/writing/OrthographySandbox.tsx).
+  - Added 1-click **"Send To..."** action buttons in [`SavedDictionaryCard.tsx`](src/app/labs/onoma/components/stash/SavedDictionaryCard.tsx) for instant routing to Acoustics Comparison, Sound Shifts, Script Forge, or Studio Workshop.
 
 - **Ponytail Code Audit, Dead Code Elimination & Surface Unification (~2,200 Net Lines Cut)**:
   - Deleted unmounted legacy components: `BatchSection.tsx` (395 lines), `CandidateResultsPanel.tsx` (368 lines), `GeneratorPanel.tsx` (151 lines), `OverviewBanner.tsx` (64 lines), and dead `create/` folder.
-  - Unified synthesis results display into the high-performance [`SynthesisResultsGrid.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/SynthesisResultsGrid.tsx) with adaptive card grid and sortable batch data table.
-  - Extracted 440 lines of static walkthrough guides from `OnomaHelpModal.tsx` into [`onoma-help-data.ts`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/onoma-help-data.ts), reducing component size from 855 to ~420 lines.
-  - Modularized StashItem serialization and mapping from `namebank.ts` into [`namebank-helpers.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/namebank-helpers.ts), reducing router size from 787 to 455 lines (100% compliant with ≤700 arch ceiling).
-  - Centralized lexicon chunk loaders and phonotactic rules into [`lexicon-loader.ts`](file:///home/jxsig/projects/ixstats/src/lib/onoma/lexicon-loader.ts), deduplicating code between `useOnomaGenerator.ts` and `batch.ts`.
-  - Extracted loanword presets to [`loanwords-presets.ts`](file:///home/jxsig/projects/ixstats/src/lib/onoma/loanwords-presets.ts) and removed unused duplicate taxonomies in `batch-constants.ts`.
+  - Unified synthesis results display into the high-performance [`SynthesisResultsGrid.tsx`](src/app/labs/onoma/components/shared/SynthesisResultsGrid.tsx) with adaptive card grid and sortable batch data table.
+  - Extracted 440 lines of static walkthrough guides from `OnomaHelpModal.tsx` into [`onoma-help-data.ts`](src/app/labs/onoma/components/shared/onoma-help-data.ts), reducing component size from 855 to ~420 lines.
+  - Modularized StashItem serialization and mapping from `namebank.ts` into [`namebank-helpers.ts`](src/server/api/routers/onoma/namebank-helpers.ts), reducing router size from 787 to 455 lines (100% compliant with ≤700 arch ceiling).
+  - Centralized lexicon chunk loaders and phonotactic rules into [`lexicon-loader.ts`](src/lib/onoma/lexicon-loader.ts), deduplicating code between `useOnomaGenerator.ts` and `batch.ts`.
+  - Extracted loanword presets to [`loanwords-presets.ts`](src/lib/onoma/loanwords-presets.ts) and removed unused duplicate taxonomies in `batch-constants.ts`.
   - Deduplicated shared functions: replaced local implementations of `pickRandom`, `isVowel`, and `capitalize` with centralized primitives across `morphology.ts`, `species-generator.ts`, `name-generator.ts`, and `phonetics-shared.ts`.
 
 - **Dual-Layer Onoma Stash Architecture & Database Synchronization (`src/server/api/routers/onoma/namebank.ts`)**:
@@ -265,11 +1800,11 @@ capability integer. Each release entry below lists which components advanced and
 
 
 - **Standalone Core Engine & Architectural Decoupling (`src/lib/wiki-os/`)**:
-  - Extracted pure, zero-dependency core engine primitives from `src/lib/wiki/` into `src/lib/wiki-os/` ([config.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/config.ts), [types.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/types.ts), [bridge.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/bridge.ts), [image-url.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/image-url.ts), [infobox-parser.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/infobox-parser.ts)).
+  - Extracted pure, zero-dependency core engine primitives from `src/lib/wiki/` into `src/lib/wiki-os/` ([config.ts](src/lib/wiki-os/config.ts), [types.ts](src/lib/wiki-os/types.ts), `bridge.ts`, `image-url.ts`, `infobox-parser.ts`).
   - Enforced strict graduation boundary: zero game couplings (`Country`, `Card`, `PointOfInterest`) in the core engine, preparing `@wikios/core` for independent packaging and distribution.
-  - Isolated host application template extensions to [ixstats-template-provider.ts](file:///home/jxsig/projects/ixstats/src/server/shared/ixstats-template-provider.ts) and [wiki-placeholders.ts](file:///home/jxsig/projects/ixstats/src/server/shared/wiki-placeholders.ts).
-  - Relocated Lore Card Generator from `src/lib/wiki/` to its canonical domain location in [src/lib/cards/lore-card-generator.ts](file:///home/jxsig/projects/ixstats/src/lib/cards/lore-card-generator.ts) with unit test coverage ([lore-card-generator.test.ts](file:///home/jxsig/projects/ixstats/src/lib/cards/__tests__/lore-card-generator.test.ts)).
-  - Formalized architectural documentation and dependency rules across [src/app/(wiki-os)/README.md](file:///home/jxsig/projects/ixstats/src/app/(wiki-os)/README.md), [src/lib/wiki-os/README.md](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/README.md), and [src/lib/wiki/README.md](file:///home/jxsig/projects/ixstats/src/lib/wiki/README.md).
+  - Isolated host application template extensions to [ixstats-template-provider.ts](src/server/shared/ixstats-template-provider.ts) and [wiki-placeholders.ts](src/server/shared/wiki-placeholders.ts).
+  - Relocated Lore Card Generator from `src/lib/wiki/` to its canonical domain location in [src/lib/cards/lore-card-generator.ts](src/lib/cards/lore-card-generator.ts) with unit test coverage (`lore-card-generator.test.ts`).
+  - Formalized architectural documentation and dependency rules across `src/app/(wiki-os)/README.md`/README.md), [src/lib/wiki-os/README.md](src/lib/wiki-os/README.md), and `src/lib/wiki/README.md`.
 
 - **Pluggable Multi-Driver Storage Architecture (`src/lib/wiki-os/storage-driver.ts` & `drivers/`)**:
   - Introduced pluggable `WikiStorageDriver` interface supporting arbitrary persistence engines.
@@ -279,21 +1814,21 @@ capability integer. Each release entry below lists which components advanced and
 - **4-Tier Resilient Storage Waterfall & Multi-Tier Caching (`src/lib/wiki-os/article-store.ts`, `wikios-cache.ts`)**:
   - Implemented high-availability 4-tier read waterfall: Tier 1 PostgreSQL shadow (<5ms) → Tier 2 Direct MariaDB/MySQL (~38ms) → Tier 3 MediaWiki Action API HTTP (~400ms) → Tier 4 Stale Shadow Fallback (100% uptime guarantee).
   - Multi-tier caching with in-memory LRU, TTL management, and client IndexedDB persistence.
-  - Implemented background client sync queue ([sync-queue.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/sync-queue.ts)) & draft store ([draft-store.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/draft-store.ts)) for optimistic zero-lag saves and offline resilience.
+  - Implemented background client sync queue (`sync-queue.ts`) & draft store (`draft-store.ts`) for optimistic zero-lag saves and offline resilience.
 
 - **Shadow Full-Text & Trigram Fuzzy Search Engine (`src/lib/wiki-os/search-service.ts`)**:
   - Implemented sub-3ms title prefix, trigram fuzzy matching, and body text search with ranked relevance.
 
 - **Instant UI, Speculative Prefetching & DOM Acceleration**:
-  - Added speculative hover/touch prefetching hook [useWikiPrefetch.ts](file:///home/jxsig/projects/ixstats/src/hooks/useWikiPrefetch.ts) for instantaneous link transitions.
-  - Built zero-navigation in-place editing bridge [WikiEditBridge.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/editor/WikiEditBridge.tsx) for instantaneous modal/drawer editing directly on `/wiki/[slug]`.
-  - Accelerated reader DOM rendering with CSS `content-visibility: auto` and section containment in [src/styles/wiki-os/layout.css](file:///home/jxsig/projects/ixstats/src/styles/wiki-os/layout.css).
-  - Modularized reader components from monolith `ArticleRenderer.tsx` into focused modules: [ArticleHeader.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticleHeader.tsx), [ArticleFooter.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticleFooter.tsx), [ArticleCategories.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticleCategories.tsx), [ArticleModals.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticleModals.tsx), and [ArticlePlaceholders.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticlePlaceholders.tsx).
+  - Added speculative hover/touch prefetching hook [useWikiPrefetch.ts](src/hooks/useWikiPrefetch.ts) for instantaneous link transitions.
+  - Built zero-navigation in-place editing bridge [WikiEditBridge.tsx](src/components/wiki-os/editor/WikiEditBridge.tsx) for instantaneous modal/drawer editing directly on `/wiki/[slug]`.
+  - Accelerated reader DOM rendering with CSS `content-visibility: auto` and section containment in [src/styles/wiki-os/layout.css](src/styles/wiki-os/layout.css).
+  - Modularized reader components from monolith `ArticleRenderer.tsx` into focused modules: [ArticleHeader.tsx](src/components/wiki-os/reader/ArticleHeader.tsx), [ArticleFooter.tsx](src/components/wiki-os/reader/ArticleFooter.tsx), [ArticleCategories.tsx](src/components/wiki-os/reader/ArticleCategories.tsx), [ArticleModals.tsx](src/components/wiki-os/reader/ArticleModals.tsx), and [ArticlePlaceholders.tsx](src/components/wiki-os/reader/ArticlePlaceholders.tsx).
 
 - **Router Consolidation & Deprecation Cleanup**:
   - Eliminated deprecated `src/server/api/routers/wiki/` monolith (`articles.ts`, `discovery.ts`, `index.ts`, `media.ts`, `data.ts`), standardizing 100% of wiki API procedures under `api.wikios.*`.
-  - Removed legacy `wiki` router registration from [src/server/api/root.ts](file:///home/jxsig/projects/ixstats/src/server/api/root.ts).
-  - Added Nginx lockdown configs and audit tools ([stage3-nginx-cutover.conf](file:///home/jxsig/projects/ixstats/scripts/ops/stage3-nginx-cutover.conf), [verify-stage3-cutover.ts](file:///home/jxsig/projects/ixstats/scripts/ops/verify-stage3-cutover.ts), [wikios-mw-surface.sh](file:///home/jxsig/projects/ixstats/scripts/audit/wikios-mw-surface.sh)).
+  - Removed legacy `wiki` router registration from [src/server/api/root.ts](src/server/api/root.ts).
+  - Added Nginx lockdown configs and audit tools (stage3-nginx-cutover.conf and verify-stage3-cutover.ts, since renamed [wikios-takeover.conf](scripts/ops/nginx/wikios-takeover.conf) and [verify-wikios-takeover.ts](scripts/ops/verify-wikios-takeover.ts), [wikios-mw-surface.sh](scripts/audit/wikios-mw-surface.sh)).
 
 
 
@@ -325,34 +1860,34 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Global Codebase Typographic Harmonization & Optical Scale Standardization (Phases 1–4)
 
-- **Master Specification & Design Foundations ([2026-08-18-codebase-typography-design.md](file:///home/jxsig/projects/ixstats/docs/superpowers/specs/2026-08-18-codebase-typography-design.md))**:
+- **Master Specification & Design Foundations (`2026-08-18-codebase-typography-design.md`)**:
   - Established a 4-tier semantic type scale, optical tracking laws, discrete subpixel scale, badge styling rules, and domain-phased rollout plan.
   - Standardized WWDC Apple Optical Typography laws across all platform surfaces: positive tracking (`tracking-wider`, $+0.05\text{em}$, `uppercase`, `rounded-full`) on microcopy/eyebrows $\le 11\text{px}$, and negative tracking (`tracking-tight`, $-0.015\text{em}$ to $-0.025\text{em}$) on display titles $\ge 14\text{px}$.
   - Restrained font weight hierarchy to `font-normal` (400) body copy, `font-semibold` (600) titles/subheaders, and `font-bold` (700) hero numerals and display titles, eliminating all 45+ instances of `font-black` (900) across product UI components.
   - Enforced `tabular-nums` (with `font-mono` where appropriate) on 100% of telemetry numbers, treasury balances, GDP statistics, match scores, countdown timers, and leaderboard standings to eliminate column jitter.
 
 - **Phase 1: MyCountry Executive Suite, Economy & Government (23 Components)**:
-  - **Executive Suite**: Aligned [ExecutiveAgenda.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/ExecutiveAgenda.tsx), [CommitmentsAgendaRail.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/CommitmentsAgendaRail.tsx), [CommandBriefingHero.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/CommandBriefingHero.tsx), [IssueDetailBrief.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/IssueDetailBrief.tsx), [DomainContextRail.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/DomainContextRail.tsx), [DrillSheets.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/DrillSheets.tsx), and [SmartStack.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/SmartStack.tsx).
-  - **Economy & Fiscal Policy Consoles**: Aligned [FiscalPolicyConsole.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/FiscalPolicyConsole.tsx), [TaxBreakdownConsole.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/TaxBreakdownConsole.tsx), [ModernMacroeconomicsDashboard.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/ModernMacroeconomicsDashboard.tsx), [LaborMarketDashboard.tsx](file:///home/jxsig/projects/ixstats/src/components/economy/LaborMarketDashboard.tsx), [FiscalHealthDashboard.tsx](file:///home/jxsig/projects/ixstats/src/components/economy/FiscalHealthDashboard.tsx), and [MacroeconomicStabilityDashboard.tsx](file:///home/jxsig/projects/ixstats/src/components/economy/MacroeconomicStabilityDashboard.tsx).
-  - **Government & Politics Hubs**: Aligned [GovernmentDashboard.tsx](file:///home/jxsig/projects/ixstats/src/components/government/GovernmentDashboard.tsx), [GovernmentSpendingDashboard.tsx](file:///home/jxsig/projects/ixstats/src/components/government/GovernmentSpendingDashboard.tsx), [PoliticsDrillDown.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/PoliticsDrillDown.tsx), and [GovernmentSidebarWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/sidebar-widgets/GovernmentSidebarWidget.tsx).
-  - **Metric Modals**: Aligned [GdpMetricDetailsModal.tsx](file:///home/jxsig/projects/ixstats/src/components/modals/metric-details/GdpMetricDetailsModal.tsx), [DebtMetricDetailsModal.tsx](file:///home/jxsig/projects/ixstats/src/components/modals/metric-details/DebtMetricDetailsModal.tsx), and [DemographicsHealthModal.tsx](file:///home/jxsig/projects/ixstats/src/components/modals/metric-details/DemographicsHealthModal.tsx).
+  - **Executive Suite**: Aligned `ExecutiveAgenda.tsx`, `CommitmentsAgendaRail.tsx`, `CommandBriefingHero.tsx`, `IssueDetailBrief.tsx`, `DomainContextRail.tsx`, `DrillSheets.tsx`, and `SmartStack.tsx`.
+  - **Economy & Fiscal Policy Consoles**: Aligned `FiscalPolicyConsole.tsx`, `TaxBreakdownConsole.tsx`, `ModernMacroeconomicsDashboard.tsx`, `LaborMarketDashboard.tsx`, `FiscalHealthDashboard.tsx`, and `MacroeconomicStabilityDashboard.tsx`.
+  - **Government & Politics Hubs**: Aligned `GovernmentDashboard.tsx`, `GovernmentSpendingDashboard.tsx`, `PoliticsDrillDown.tsx`, and `GovernmentSidebarWidget.tsx`.
+  - **Metric Modals**: Aligned `GdpMetricDetailsModal.tsx`, `DebtMetricDetailsModal.tsx`, and `DemographicsHealthModal.tsx`.
 
 - **Phase 2: IxVault & Cards System (28 Components)**:
-  - **IxVault Marketplace & Store**: Aligned [VaultAuctionsTab.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/VaultAuctionsTab.tsx), [VaultTradingTab.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/VaultTradingTab.tsx), [VaultStoreTab.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/VaultStoreTab.tsx), [PackHolographicCard.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), [AuctionCardItem.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/auctions/AuctionCardItem.tsx), [CreateAuctionModal.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/auctions/CreateAuctionModal.tsx), and [StorePurchaseDialog.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx).
-  - **Vault Dashboard & Inventory**: Aligned [VaultNetWorthCard.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/dashboard/VaultNetWorthCard.tsx), [VaultYieldProjectionsCard.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/dashboard/VaultYieldProjectionsCard.tsx), [InventorySidebarContent.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/cards/InventorySidebarContent.tsx), [CollectionsSidebarContent.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/cards/CollectionsSidebarContent.tsx), [GallerySidebarContent.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/cards/GallerySidebarContent.tsx), [ImportVerifyStep.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/import/ImportVerifyStep.tsx), and [ImportConfirmStep.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/import/ImportConfirmStep.tsx).
-  - **Cards System & 3D Viewer**: Aligned [CardBack.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/CardBack.tsx), [CardDisplay.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/CardDisplay.tsx), [CardDetailsModal.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/CardDetailsModal.tsx), [CardOverviewTab.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/modal/CardOverviewTab.tsx), [CardLoreTab.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/modal/CardLoreTab.tsx), [PackHolographicCover.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/pack-opening/PackHolographicCover.tsx), [CraftingWorkbench.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/crafting/CraftingWorkbench.tsx), and [CraftingAnimation.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/crafting/CraftingAnimation.tsx).
+  - **IxVault Marketplace & Store**: Aligned `VaultAuctionsTab.tsx`, `VaultTradingTab.tsx`, [VaultStoreTab.tsx](src/components/vault/sections/marketplace/VaultStoreTab.tsx), [PackHolographicCard.tsx](src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), `AuctionCardItem.tsx`, `CreateAuctionModal.tsx`, and [StorePurchaseDialog.tsx](src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx). `VaultAuctionsTab.tsx`, `VaultTradingTab.tsx`, `AuctionCardItem.tsx` and `CreateAuctionModal.tsx` were removed in the cards refresh (2026-10-17).
+  - **Vault Dashboard & Inventory**: Aligned `src/components/vault/sections/dashboard/VaultNetWorthCard.tsx`, `VaultYieldProjectionsCard.tsx`, `src/components/vault/sections/cards/InventorySidebarContent.tsx`, `src/components/vault/sections/cards/CollectionsSidebarContent.tsx`, `src/components/vault/sections/cards/GallerySidebarContent.tsx`, [ImportVerifyStep.tsx](src/components/vault/sections/import/ImportVerifyStep.tsx), and [ImportConfirmStep.tsx](src/components/vault/sections/import/ImportConfirmStep.tsx).
+  - **Cards System & 3D Viewer**: Aligned `CardBack.tsx`, `CardDisplay.tsx`, `CardDetailsModal.tsx`, `CardOverviewTab.tsx`, `CardLoreTab.tsx`, [PackHolographicCover.tsx](src/components/cards/pack-opening/PackHolographicCover.tsx), `CraftingWorkbench.tsx`, and `CraftingAnimation.tsx` (both removed with crafting, 2026-10-05). `CardBack.tsx`, `CardDisplay.tsx`, `CardDetailsModal.tsx`, `CardOverviewTab.tsx` and `CardLoreTab.tsx` were removed in the cards refresh (2026-10-17).
 
 - **Phase 3: Thinkpages, Sports, MyLeague & Messaging (17 Components)**:
-  - **Thinkpages**: Aligned [SportsBulletinCard.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/SportsBulletinCard.tsx) and [AccountCreationModal.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/AccountCreationModal.tsx).
-  - **Sports Subsystem**: Aligned [Scoreboard1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/scoreboards/Scoreboard1.tsx), [PlayerMatchup1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/player-matchups/PlayerMatchup1.tsx), [PlayerStats1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/player-stats/PlayerStats1.tsx), [MatchCommentary.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/MatchCommentary.tsx), [TeamLineup1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/team-lineups/TeamLineup1.tsx), [MatchSchedule1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/match-schedules/MatchSchedule1.tsx), [PlayerCard1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/player-cards/PlayerCard1.tsx), [Standings1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/standings/Standings1.tsx), and [LatestResults1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/latest-results/LatestResults1.tsx).
-  - **MyLeague**: Aligned [MatchDetailModal.tsx](file:///home/jxsig/projects/ixstats/src/components/myleague/MatchDetailModal.tsx), [TeamRosterModal.tsx](file:///home/jxsig/projects/ixstats/src/components/myleague/TeamRosterModal.tsx), and [MatchTickerSim.tsx](file:///home/jxsig/projects/ixstats/src/components/myleague/MatchTickerSim.tsx).
-  - **Unified Messaging**: Aligned [MessagesChatPanel.tsx](file:///home/jxsig/projects/ixstats/src/components/messages/MessagesChatPanel.tsx), [MessagesConversationCard.tsx](file:///home/jxsig/projects/ixstats/src/components/messages/MessagesConversationCard.tsx), and [MessagesFolderNav.tsx](file:///home/jxsig/projects/ixstats/src/components/messages/MessagesFolderNav.tsx).
+  - **Thinkpages**: Aligned [SportsBulletinCard.tsx](src/components/thinkpages/SportsBulletinCard.tsx) and [AccountCreationModal.tsx](src/components/dashboard/accounts/AccountCreationModal.tsx).
+  - **Sports Subsystem**: Aligned `Scoreboard1.tsx`, `PlayerMatchup1.tsx`, `PlayerStats1.tsx`, [MatchCommentary.tsx](src/components/sports/MatchCommentary.tsx), `TeamLineup1.tsx`, `MatchSchedule1.tsx`, `PlayerCard1.tsx`, `Standings1.tsx`, and `LatestResults1.tsx`.
+  - **MyLeague**: Aligned `MatchDetailModal.tsx`, `TeamRosterModal.tsx`, and `MatchTickerSim.tsx`.
+  - **Unified Messaging**: Aligned [MessagesChatPanel.tsx](src/components/messages/MessagesChatPanel.tsx), [MessagesConversationCard.tsx](src/components/messages/MessagesConversationCard.tsx), and [MessagesFolderNav.tsx](src/components/messages/MessagesFolderNav.tsx).
 
 - **Phase 4: Wiki-OS, Achievements, Diplomatic Network & Subsystems (12 Components)**:
-  - **Wiki-OS & MediaWiki**: Aligned [ArticleRenderer.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticleRenderer.tsx) and [RepositoryWelcomeModal.tsx](file:///home/jxsig/projects/ixstats/src/components/mediawiki/commons/RepositoryWelcomeModal.tsx).
-  - **Diplomatic Network**: Aligned [EmbassyCard.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomatic/embassy-network/EmbassyCard.tsx).
-  - **Achievements & WikiLore**: Aligned [WikiLoreDayModal.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/WikiLoreDayModal.tsx), [WikiLoreTab.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/tabs/WikiLoreTab.tsx), [AllAchievementsTab.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/tabs/AllAchievementsTab.tsx), [LeaderboardTab.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/tabs/LeaderboardTab.tsx), [ShowcaseTab.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/tabs/ShowcaseTab.tsx), [QuestPathCard.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/QuestPathCard.tsx), and [ForumRibbonRack.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/ForumRibbonRack.tsx).
-  - **Defense & MyClub**: Aligned [ReadinessOverviewCard.tsx](file:///home/jxsig/projects/ixstats/src/components/defense/command/ReadinessOverviewCard.tsx) and [ClubResultsCard.tsx](file:///home/jxsig/projects/ixstats/src/components/myclub/ClubResultsCard.tsx).
+  - **Wiki-OS & MediaWiki**: Aligned [ArticleRenderer.tsx](src/components/wiki-os/reader/ArticleRenderer.tsx) and `RepositoryWelcomeModal.tsx`.
+  - **Diplomatic Network**: Aligned `EmbassyCard.tsx`.
+  - **Achievements & WikiLore**: Aligned `WikiLoreDayModal.tsx`, `WikiLoreTab.tsx`, [AllAchievementsTab.tsx](src/components/achievements/tabs/AllAchievementsTab.tsx), [LeaderboardTab.tsx](src/components/achievements/tabs/LeaderboardTab.tsx), [ShowcaseTab.tsx](src/components/achievements/tabs/ShowcaseTab.tsx), `QuestPathCard.tsx`, and `ForumRibbonRack.tsx`.
+  - **Defense & MyClub**: Aligned `ReadinessOverviewCard.tsx` and `ClubResultsCard.tsx`.
 
 - **Verification**:
   - **0 ESLint errors** and clean Prettier formatting across all 80+ modified components.
@@ -364,26 +1899,26 @@ capability integer. Each release entry below lists which components advanced and
   - Standardized the 4-tier dark elevation hierarchy across `src/styles/themes.css` and `src/styles/facet/` (`#090a0f` obsidian canvas, `#12141a` base cards, `#1a1d26` controls, `#222634` floating surface).
   - High-luminance domain accents tuned for dark mode readability (amber-400, blue-400, indigo-400, emerald-400, red-400, purple-400, sky-400, orange-400).
   - Modernized high-traffic components to semantic design tokens:
-    - [src/components/ui/select.tsx](file:///home/jxsig/projects/ixstats/src/components/ui/select.tsx): Replaced legacy slate classes with `bg-popover/95`, `border-border`, `text-foreground`, and backdrop blur.
-    - [src/components/profile/WikiPreferencesCard.tsx](file:///home/jxsig/projects/ixstats/src/components/profile/WikiPreferencesCard.tsx): Aligned preference toggle cards to semantic `card`, `secondary`, and `border-border` tokens.
-    - Vault modals & marketplace: [DailyBonusWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/DailyBonusWidget.tsx), [ImportNationStep.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/import/ImportNationStep.tsx), [StorePurchaseDialog.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx), [PackHolographicCard.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), [CreateAuctionModal.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/auctions/CreateAuctionModal.tsx), [VaultParticleExplosionModal.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/VaultParticleExplosionModal.tsx).
-    - ThinkPages composer & social cards: [SportsBulletinCard.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/SportsBulletinCard.tsx), [GlassCanvasComposer.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/GlassCanvasComposer.tsx), [ComposerPollModal.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/composer/ComposerPollModal.tsx), [ComposerAccountSwitcher.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/composer/ComposerAccountSwitcher.tsx), [MentionMenuPortal.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/editor/MentionMenuPortal.tsx), [WikiAndStashPopovers.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/editor/WikiAndStashPopovers.tsx).
-    - Maps & navigation HUDs: [TourHUD.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/core/components/TourHUD.tsx), [NotificationsView.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/NotificationsView.tsx), [MatchDetailModal.tsx](file:///home/jxsig/projects/ixstats/src/components/myleague/MatchDetailModal.tsx), [DevCountryViewToolbar.tsx](file:///home/jxsig/projects/ixstats/src/components/dev/DevCountryViewToolbar.tsx).
-    - Sports widgets: [PlayerCard1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/player-cards/PlayerCard1.tsx), [Scoreboard1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/scoreboards/Scoreboard1.tsx), [Standings1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/standings/Standings1.tsx), [LatestResults1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/latest-results/LatestResults1.tsx), [PlayerStats1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/player-stats/PlayerStats1.tsx), [MatchSchedule1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/match-schedules/MatchSchedule1.tsx).
+    - [src/components/ui/select.tsx](src/components/ui/select.tsx): Replaced legacy slate classes with `bg-popover/95`, `border-border`, `text-foreground`, and backdrop blur.
+    - `src/components/profile/WikiPreferencesCard.tsx`: Aligned preference toggle cards to semantic `card`, `secondary`, and `border-border` tokens.
+    - Vault modals & marketplace: `src/components/vault/DailyBonusWidget.tsx`, [ImportNationStep.tsx](src/components/vault/sections/import/ImportNationStep.tsx), [StorePurchaseDialog.tsx](src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx), [PackHolographicCard.tsx](src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), `CreateAuctionModal.tsx`, [VaultParticleExplosionModal.tsx](src/components/vault/VaultParticleExplosionModal.tsx). `CreateAuctionModal.tsx` was removed in the cards refresh (2026-10-17).
+    - ThinkPages composer & social cards: [SportsBulletinCard.tsx](src/components/thinkpages/SportsBulletinCard.tsx), [GlassCanvasComposer.tsx](src/components/thinkpages/GlassCanvasComposer.tsx), [ComposerPollModal.tsx](src/components/thinkpages/composer/ComposerPollModal.tsx), [ComposerAccountSwitcher.tsx](src/components/thinkpages/composer/ComposerAccountSwitcher.tsx), `MentionMenuPortal.tsx`, `WikiAndStashPopovers.tsx`.
+    - Maps & navigation HUDs: [TourHUD.tsx](src/components/maps/core/components/TourHUD.tsx), `NotificationsView.tsx`, `MatchDetailModal.tsx`, [DevCountryViewToolbar.tsx](src/components/dev/DevCountryViewToolbar.tsx).
+    - Sports widgets: `PlayerCard1.tsx`, `Scoreboard1.tsx`, `Standings1.tsx`, `LatestResults1.tsx`, `PlayerStats1.tsx`, `MatchSchedule1.tsx`.
 - **Light Mode & Base Theme Harmonization (Apple Design Standards)**:
-  - Fixed inverted light mode text contrast scale in [src/styles/themes.css](file:///home/jxsig/projects/ixstats/src/styles/themes.css): Primary text `#09090b` (zinc-950, **19.2:1 contrast**), secondary text `#52525b` (zinc-600, **6.8:1**), muted text `#71717a` (zinc-500, **4.6:1 WCAG AA**).
+  - Fixed inverted light mode text contrast scale in [src/styles/themes.css](src/styles/themes.css): Primary text `#09090b` (zinc-950, **19.2:1 contrast**), secondary text `#52525b` (zinc-600, **6.8:1**), muted text `#71717a` (zinc-500, **4.6:1 WCAG AA**).
   - Standardized 4-tier light elevation: `#f8fafc` porcelain canvas, `#ffffff` card surfaces (`rgba(255, 255, 255, 0.85)` frosted glass with `rgba(0, 0, 0, 0.08)` border and `inset 0 1px 0 rgba(255, 255, 255, 1)` specular light), `#f1f5f9` recessed controls, `rgba(255, 255, 255, 0.95)` popover surfaces.
-  - Saturated light domain accents in [src/styles/facet/tokens.css](file:///home/jxsig/projects/ixstats/src/styles/facet/tokens.css) ($\ge 5:1$ contrast on light surfaces).
+  - Saturated light domain accents in `src/styles/facet/tokens.css` ($\ge 5:1$ contrast on light surfaces).
   - Updated `.facet-material-satin`, `.facet-hierarchy-parent`, and `.facet-hierarchy-child` in `src/styles/facet/` with specular top highlights and visible boundaries.
-  - Sanitized [src/styles/light-mode-overrides.css](file:///home/jxsig/projects/ixstats/src/styles/light-mode-overrides.css): Purged all dark-mode polluting rules (`.dark [class*="bg-card/95"]`, `.dark .command-palette-dropdown` injecting `#1f2937`) and fragile `!important` monkey patches.
-  - Added tactile button press physics (`active:scale-[0.98]`) to `.btn-primary` and `.btn-secondary` in [src/styles/components.css](file:///home/jxsig/projects/ixstats/src/styles/components.css).
+  - Sanitized `src/styles/light-mode-overrides.css`: Purged all dark-mode polluting rules (`.dark [class*="bg-card/95"]`, `.dark .command-palette-dropdown` injecting `#1f2937`) and fragile `!important` monkey patches.
+  - Added tactile button press physics (`active:scale-[0.98]`) to `.btn-primary` and `.btn-secondary` in [src/styles/components.css](src/styles/components.css).
 - **Dynamic Island / Halo Apple Acrylic Shell & Interactive Material Physics**:
-  - Replaced fragile inline gradient styles with `.dynamic-island-shell` in [src/styles/components.css](file:///home/jxsig/projects/ixstats/src/styles/components.css), eliminating Framer Motion layout morph interpolation bugs.
+  - Replaced fragile inline gradient styles with `.dynamic-island-shell` in [src/styles/components.css](src/styles/components.css), eliminating Framer Motion layout morph interpolation bugs.
   - Implemented Apple HIG dual-state translucency & interactive material physics:
     - **Resting state**: Translucent acrylic (`65%/48%` light, `58%/48%` dark) with `blur(20px) saturate(180%)`, allowing background textures, auroras, and maps to blur through.
     - **Interactive state** (`:hover`, `:focus-within`, `:active`, `[data-expanded="true"]`): Solid frosted acrylic (`94%/88%` light, `92%/95%` dark) with sharpened specular rim lights, `blur(28px) saturate(200%)`, and elevated shadows.
     - Fluid Apple cubic-bezier timing curve (`cubic-bezier(0.16, 1, 0.3, 1)` over `350ms`).
-  - Updated [src/components/ui/dynamic-island.tsx](file:///home/jxsig/projects/ixstats/src/components/ui/dynamic-island.tsx) and [src/components/maps/core/MapDynamicIsland.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/core/MapDynamicIsland.tsx) to attach `.dynamic-island-shell` and sync `data-expanded`.
+  - Updated `src/components/ui/dynamic-island.tsx` and [src/components/maps/core/MapDynamicIsland.tsx](src/components/maps/core/MapDynamicIsland.tsx) to attach `.dynamic-island-shell` and sync `data-expanded`.
 - **Verification**:
   - Ran Jest unit test suite: **38 / 38 test suites passed (331 tests)**.
 
@@ -445,9 +1980,9 @@ capability integer. Each release entry below lists which components advanced and
 ### Refactored & Consolidated (`src/lib/` Phase 8 Caching, System & Utils Package Partitioning)
 
 - **Pure Root Architecture & System Isolation (/ponytail)**:
-  - **Caching & Rate Limiting Subsystem (`src/lib/cache/`)**: Consolidated universal Redis/memory cache client, token-bucket rate limiter, multi-tier advanced cache with stampede protection, outbound HTTP cache, and tRPC query response middleware into `src/lib/cache/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/cache/index.ts)).
-  - **System, Performance & Telemetry Guards (`src/lib/system/`)**: Consolidated structured JSON logger, slow query instrumentation monitor, system boot validation checks, database connection pool optimization, production compression/headers, V8 memory configurations, process error handlers, exponential retry wrappers, standalone subdomain detectors, browser localStorage concurrency mutexes, and consent telemetry helpers into `src/lib/system/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/system/index.ts)).
-  - **Universal Formatting & Data Utilities (`src/lib/utils/`)**: Consolidated compact number/currency formatters, locale date utilities, Recharts canvas utilities, time-series chart data transformers, CSV/PDF report exporter with dynamic imports, HTML/DOMPurify sanitizers, markdown text formatters, and URL/slug generators into `src/lib/utils/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/utils/index.ts)).
+  - **Caching & Rate Limiting Subsystem (`src/lib/cache/`)**: Consolidated universal Redis/memory cache client, rate limiter (Redis sliding window, in-memory fixed window), multi-tier advanced cache with stampede protection, outbound HTTP cache, and tRPC query response middleware into `src/lib/cache/` with master barrel export ([index.ts](src/lib/cache/index.ts)).
+  - **System, Performance & Telemetry Guards (`src/lib/system/`)**: Consolidated structured JSON logger, slow query instrumentation monitor, system boot validation checks, database connection pool optimization, production compression/headers, V8 memory configurations, process error handlers, exponential retry wrappers, standalone subdomain detectors, browser localStorage concurrency mutexes, and consent telemetry helpers into `src/lib/system/` with master barrel export (`index.ts`).
+  - **Universal Formatting & Data Utilities (`src/lib/utils/`)**: Consolidated compact number/currency formatters, locale date utilities, Recharts canvas utilities, time-series chart data transformers, CSV/PDF report exporter with dynamic imports, HTML/DOMPurify sanitizers, markdown text formatters, and URL/slug generators into `src/lib/utils/` with master barrel export ([index.ts](src/lib/utils/index.ts)).
   - **Minimalist `src/lib/` Root (14 Files Only)**:
     - **Core Architecture**: `app-error.ts`, `prisma-error.ts`, `buildVersion.ts`, `buildVersion.generated.ts`, `base-path.ts`, `enums.ts`.
     - **Type Normalization**: `type-guards.ts`, `interface-standardizer.ts`.
@@ -470,7 +2005,7 @@ capability integer. Each release entry below lists which components advanced and
     - `season.ts`: Active card season cycle detector and seasonal reset configuration.
     - `pack-opening-service.ts`: Pack explosion animations, card reveal particle patterns, and sound triggers.
     - `ns-image-proxy.ts`: NationStates card artwork and flag proxy URL signing.
-    - Master barrel export updated in [`src/lib/cards/index.ts`](file:///home/jxsig/projects/ixstats/src/lib/cards/index.ts).
+    - Master barrel export updated in `src/lib/cards/index.ts`.
   - **Clean Codebase-Wide Call Site Migration**: Migrated 50+ import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/lib/`, `src/types/`, and `scripts/` to import from `~/lib/cards`, completely deleting all 12 legacy root files from `src/lib/`.
   - **Zero Card Files in Root Lib**: All card-related logic is completely encapsulated within `src/lib/cards/`.
   - **Verification**: Verified 100% test pass rate across all unit test suites (563/563 full-platform tests passing across 50 test suites).
@@ -478,10 +2013,10 @@ capability integer. Each release entry below lists which components advanced and
 ### Refactored & Consolidated (`src/lib/` Phase 6 Wiki, Country-Geo, Auth & AI Isolation)
 
 - **Domain Isolation & Root Library Completion (/ponytail)**:
-  - **Wiki & Factbook Parser Package (`src/lib/wiki/`)**: Consolidated wikitext data parser, factbook routes provider, and eligible country service into `src/lib/wiki/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/index.ts)).
-  - **Country Geography & PostGIS Compliance Package (`src/lib/country-geo/`)**: Consolidated geography compliance validator, PostGIS spatial queries, base terrain layer queries, and special stats populator into `src/lib/country-geo/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/country-geo/index.ts)).
-  - **Authorization & User Management Package (`src/lib/auth/`)**: Consolidated CASL user permissions builder, user management service, and system-owner security constants into `src/lib/auth/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/auth/index.ts)).
-  - **AI & Sentiment Analysis Package (`src/lib/ai/`)**: Consolidated sentiment analysis NLP helper into `src/lib/ai/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/ai/index.ts)).
+  - **Wiki & Factbook Parser Package (`src/lib/wiki/`)**: Consolidated wikitext data parser, factbook routes provider, and eligible country service into `src/lib/wiki/` with master barrel export (`index.ts`).
+  - **Country Geography & PostGIS Compliance Package (`src/lib/country-geo/`)**: Consolidated geography compliance validator, PostGIS spatial queries, base terrain layer queries, and special stats populator into `src/lib/country-geo/` with master barrel export ([index.ts](src/lib/country-geo/index.ts)).
+  - **Authorization & User Management Package (`src/lib/auth/`)**: Consolidated CASL user permissions builder, user management service, and system-owner security constants into `src/lib/auth/` with master barrel export ([index.ts](src/lib/auth/index.ts)).
+  - **AI & Sentiment Analysis Package (`src/lib/ai/`)**: Consolidated sentiment analysis NLP helper into `src/lib/ai/` with master barrel export (`src/lib/ai/index.ts`).
   - **Clean Codebase-Wide Call Site Migration**: Migrated 60+ import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, `src/tests/`, and `proxy.ts` to import directly from `~/lib/wiki`, `~/lib/country-geo`, `~/lib/auth`, and `~/lib/ai`, completely deleting 11 legacy root files from `src/lib/`.
   - **Root `src/lib/` Purity**: Successfully consolidated and partitioned all domain-specific code into dedicated packages; only global core primitives (`utils.ts`, `logger.ts`, `cache.ts`, `rate-limiter.ts`, `event-bus.ts`, `app-error.ts`, `prisma-error.ts`, `base-path.ts`, formatting, math, and system configurations) remain in the root of `src/lib/`.
   - **Verification**: Verified 100% test pass rate across all unit test suites (558/558 full-platform tests passing across 49 test suites).
@@ -489,92 +2024,92 @@ capability integer. Each release entry below lists which components advanced and
 ### Refactored & Consolidated (`src/lib/` Phase 5 Media, WebSockets, Themes, Vault & Activity Isolation)
 
 - **Platform Infrastructure, Themes & Economy Vault Isolation (/ponytail)**:
-  - **Media & Image Processing Package (`src/lib/media/`)**: Consolidated image cache services, image color palette extractor, image downloader, Unsplash client, country hero image engine, audio/sound service, and active cosmetic badge helpers into `src/lib/media/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/media/index.ts)).
-  - **WebSockets & Real-Time Streaming Package (`src/lib/websocket/`)**: Consolidated marketplace WebSocket client/server, core standalone WebSocket server, socket reconnection wrapper, intelligence live-stream servers, and ThinkPages socket broadcasts into `src/lib/websocket/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/websocket/index.ts)).
-  - **Themes & Visual Design System Package (`src/lib/themes/`)**: Consolidated theme registry, theme utilities, MyCountry custom palette engine, charting color tokens, and holographic card foil shaders into `src/lib/themes/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/themes/index.ts)).
-  - **Vault & Credits Ledger Package (`src/lib/vault/`)**: Consolidated IxVault service facade, daily login bonuses, streak trackers, credit ledger transactions, vault notifications, passive income distributor, perk cache, type guards, and sovereign exchange configs/services into `src/lib/vault/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/vault/index.ts)).
-  - **Activity Feed & Event Spine Package (`src/lib/activity/`)**: Consolidated player activity generator, activity action hooks, auto-posting service, and country event spine state dispatcher into `src/lib/activity/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/activity/index.ts)).
+  - **Media & Image Processing Package (`src/lib/media/`)**: Consolidated image cache services, image color palette extractor, image downloader, Unsplash client, country hero image engine, audio/sound service, and active cosmetic badge helpers into `src/lib/media/` with master barrel export ([index.ts](src/lib/media/index.ts)).
+  - **WebSockets & Real-Time Streaming Package (`src/lib/websocket/`)**: Consolidated marketplace WebSocket client/server, core standalone WebSocket server, socket reconnection wrapper, intelligence live-stream servers, and ThinkPages socket broadcasts into `src/lib/websocket/` with master barrel export (`src/lib/websocket/index.ts`).
+  - **Themes & Visual Design System Package (`src/lib/themes/`)**: Consolidated theme registry, theme utilities, MyCountry custom palette engine, charting color tokens, and holographic card foil shaders into `src/lib/themes/` with master barrel export ([index.ts](src/lib/themes/index.ts)).
+  - **Vault & Credits Ledger Package (`src/lib/vault/`)**: Consolidated IxVault service facade, daily login bonuses, streak trackers, credit ledger transactions, vault notifications, passive income distributor, perk cache, type guards, and sovereign exchange configs/services into `src/lib/vault/` with master barrel export (`index.ts`).
+  - **Activity Feed & Event Spine Package (`src/lib/activity/`)**: Consolidated player activity generator, activity action hooks, auto-posting service, and country event spine state dispatcher into `src/lib/activity/` with master barrel export ([index.ts](src/lib/activity/index.ts)).
   - **Clean Codebase-Wide Call Site Migration**: Migrated 80+ import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, `server.mjs`, and `scripts/` to import directly from `~/lib/media`, `~/lib/websocket`, `~/lib/themes`, `~/lib/vault`, and `~/lib/activity`, completely deleting 26 legacy root files from `src/lib/`.
   - **Verification**: Verified 100% test pass rate across all unit test suites (520/520 full-platform tests passing across 43 test suites).
 
 ### Refactored & Consolidated (`src/lib/` Phase 4 Builder, Policies, Issues, Lorewards, Logging & IxTime Isolation)
 
 - **Systems, Builders & Simulation Engine Isolation (/ponytail)**:
-  - **Builder & Atomic State Package (`src/lib/builder/`)**: Consolidated atomic builder state manager, client calculations, builder theme utilities, unified atomic state coordinator, and MediaWiki dossier parser into `src/lib/builder/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/builder/index.ts)).
-  - **Policies & Reform Engine Package (`src/lib/policies/`)**: Consolidated policy registry, policy recommender, maintenance cron worker, and policy effects synchronizer into `src/lib/policies/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/policies/index.ts)).
-  - **National Issues Simulation Engine Package (`src/lib/national-issues/`)**: Consolidated national issues configuration store, core evaluation/generation engine, choice consequence applicators, generation cron scheduler, geographical neighbor discovery, and grounded context snapshot builders into `src/lib/national-issues/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/national-issues/index.ts)).
-  - **Lorewards & Card Analytics Package (`src/lib/lorewards/`)**: Consolidated Order of Lore wikitext parser, scoring calculator, synchronization worker, constants, card generation cron, and card market value updater into `src/lib/lorewards/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/lorewards/index.ts)).
-  - **Logging & Audit Streams Package (`src/lib/logging/`)**: Consolidated user activity logger, error logger, user action logging middleware, activity analytics aggregators, and browser console capture into `src/lib/logging/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/logging/index.ts)).
-  - **IxTime Chronometry Package (`src/lib/ixtime/`)**: Consolidated IxTime epoch converter, time synchronization service, and sub-millisecond accuracy verifier into `src/lib/ixtime/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/ixtime/index.ts)).
+  - **Builder & Atomic State Package (`src/lib/builder/`)**: Consolidated atomic builder state manager, client calculations, builder theme utilities, unified atomic state coordinator, and MediaWiki dossier parser into `src/lib/builder/` with master barrel export ([index.ts](src/lib/builder/index.ts)).
+  - **Policies & Reform Engine Package (`src/lib/policies/`)**: Consolidated policy registry, policy recommender, maintenance cron worker, and policy effects synchronizer into `src/lib/policies/` with master barrel export ([index.ts](src/lib/policies/index.ts)).
+  - **National Issues Simulation Engine Package (`src/lib/national-issues/`)**: Consolidated national issues configuration store, core evaluation/generation engine, choice consequence applicators, generation cron scheduler, geographical neighbor discovery, and grounded context snapshot builders into `src/lib/national-issues/` with master barrel export ([index.ts](src/lib/national-issues/index.ts)).
+  - **Lorewards & Card Analytics Package (`src/lib/lorewards/`)**: Consolidated Order of Lore wikitext parser, scoring calculator, synchronization worker, constants, card generation cron, and card market value updater into `src/lib/lorewards/` with master barrel export ([index.ts](src/lib/lorewards/index.ts)).
+  - **Logging & Audit Streams Package (`src/lib/logging/`)**: Consolidated user activity logger, error logger, user action logging middleware, activity analytics aggregators, and browser console capture into `src/lib/logging/` with master barrel export ([index.ts](src/lib/logging/index.ts)).
+  - **IxTime Chronometry Package (`src/lib/ixtime/`)**: Consolidated IxTime epoch converter, time synchronization service, and sub-millisecond accuracy verifier into `src/lib/ixtime/` with master barrel export ([index.ts](src/lib/ixtime/index.ts)).
   - **Clean Codebase-Wide Call Site Migration**: Migrated ~60 import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, `server.mjs`, and `scripts/` to import directly from `~/lib/builder`, `~/lib/policies`, `~/lib/national-issues`, `~/lib/lorewards`, `~/lib/logging`, and `~/lib/ixtime`, completely deleting 26 legacy root files from `src/lib/`.
   - **Verification**: Verified 100% test pass rate across all unit test suites (504/504 full-platform tests passing across 39 test suites).
 
 ### Refactored & Consolidated (`src/lib/` Phase 3 Economy, Government, Flags & Maps Isolation)
 
 - **Domain & Geospatial Package Isolation (/ponytail)**:
-  - **Flags & SVG Processing Package (`src/lib/flags/`)**: Consolidated country flag resolution, palette extraction, flag cache, unified flag service, Commons flag importer, PNG-to-SVG converter, SVG coordinate configuration, and SVG parser into `src/lib/flags/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/flags/index.ts)).
-  - **Government & Politics Package (`src/lib/government/`)**: Consolidated atomic government component data, evaluation utilities, builder validation, component effects, spending defaults, component synergy, election simulation, election cron, politics drift cron, and approval ratings into `src/lib/government/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/government/index.ts)).
-  - **Economy & Tax Simulation Package (`src/lib/economy/`)**: Consolidated atomic economic data, client/server integration engines, atomic tax evaluation, unified tax integration, calculation groups, modeling engine, data mapper, factory presets, fiscal calculations, historical transformers, tax builder validation, tax calculator, suggestions engine, budget vault calculator, trade expiry cron, passive income distribution cron, auction completion cron, auction service, transport generators, and resource generators into `src/lib/economy/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/economy/index.ts)).
-  - **Maps & Geospatial Intelligence Package (`src/lib/maps/`)**: Consolidated map configurations, conflict detector, IndexedDB caching, conversion pipeline, point-in-polygon queries, real-time update bus, geo utilities, geospatial analytics, geodesic mathematics, PostGIS geometry validation, GeoJSON compression, border editor, border history as-of queries, border tracing, shared vertex topology, topology engine, territory brush, procedural province generation, great-circle route geometry, route network graphs, story pin enrichment, story pin icons, overlay metrics, overlay registry, overlay types, and elevation zone configs into `src/lib/maps/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/maps/index.ts)).
+  - **Flags & SVG Processing Package (`src/lib/flags/`)**: Consolidated country flag resolution, palette extraction, flag cache, unified flag service, Commons flag importer, PNG-to-SVG converter, SVG coordinate configuration, and SVG parser into `src/lib/flags/` with master barrel export (`index.ts`).
+  - **Government & Politics Package (`src/lib/government/`)**: Consolidated atomic government component data, evaluation utilities, builder validation, component effects, spending defaults, component synergy, election simulation, election cron, politics drift cron, and approval ratings into `src/lib/government/` with barrel export (`index.ts`).
+  - **Economy & Tax Simulation Package (`src/lib/economy/`)**: Consolidated atomic economic data, client/server integration engines, atomic tax evaluation, unified tax integration, calculation groups, modeling engine, data mapper, factory presets, fiscal calculations, historical transformers, tax builder validation, tax calculator, suggestions engine, budget vault calculator, trade expiry cron, passive income distribution cron, auction completion cron, auction service, transport generators, and resource generators into `src/lib/economy/` with barrel export (`index.ts`).
+  - **Maps & Geospatial Intelligence Package (`src/lib/maps/`)**: Consolidated map configurations, conflict detector, IndexedDB caching, conversion pipeline, point-in-polygon queries, real-time update bus, geo utilities, geospatial analytics, geodesic mathematics, PostGIS geometry validation, GeoJSON compression, border editor, border history as-of queries, border tracing, shared vertex topology, topology engine, territory brush, procedural province generation, great-circle route geometry, route network graphs, story pin enrichment, story pin icons, overlay metrics, overlay registry, overlay types, and elevation zone configs into `src/lib/maps/` with barrel export (`index.ts`).
   - **Clean Codebase-Wide Call Site Migration**: Migrated 200+ import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, `server.mjs`, and `scripts/` to import directly from `~/lib/flags`, `~/lib/government`, `~/lib/economy`, and `~/lib/maps`, completely deleting 47 legacy root files from `src/lib/`.
   - **Verification**: Verified 100% test pass rate across all unit test suites (90/90 Phase 3 tests and 113/113 full-platform tests passing).
 
 ### Refactored & Consolidated (`src/lib/` Phase 2 Simulation & Core Engine Isolation)
 
 - **Simulation & Core Engine Package Isolation (/ponytail)**:
-  - **Statecraft Simulation Package (`src/lib/statecraft/`)**: Consolidated simulation calendar, diplomatic intelligence analysis, foreign policy calculations, power broker extraction, reconnaissance reveals, whip vote modeling, stability formulas, cross-pillar engine, synergy calculator, and growth rate normalizers into `src/lib/statecraft/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/statecraft/index.ts)).
-  - **Military & Defense Package (`src/lib/military/`)**: Consolidated branch configurations, equipment catalogs, extended defense inventory, catalog helpers, defense integration, and manufacturer utilities into `src/lib/military/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/military/index.ts)).
-  - **Intelligence Engine Package (`src/lib/intelligence/`)**: Consolidated core intelligence report generator, vitality metric calculator, intelligence cache, and real-time WebSocket broadcast service into `src/lib/intelligence/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/intelligence/index.ts)).
-  - **Diplomacy & Cultural Simulation Package (`src/lib/diplomacy/`)**: Consolidated relation bands, relative development metrics, choice tracking, drift cron, incident logging, Markov relationship engine, news generator, NPC AI personality system, profile options, cultural compatibility matrices, and cultural participation systems into `src/lib/diplomacy/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/diplomacy/index.ts)).
+  - **Statecraft Simulation Package (`src/lib/statecraft/`)**: Consolidated simulation calendar, diplomatic intelligence analysis, foreign policy calculations, power broker extraction, reconnaissance reveals, whip vote modeling, stability formulas, cross-pillar engine, synergy calculator, and growth rate normalizers into `src/lib/statecraft/` with master barrel export (`index.ts`).
+  - **Military & Defense Package (`src/lib/military/`)**: Consolidated branch configurations, equipment catalogs, extended defense inventory, catalog helpers, defense integration, and manufacturer utilities into `src/lib/military/` with barrel export (`src/lib/military/index.ts`).
+  - **Intelligence Engine Package (`src/lib/intelligence/`)**: Consolidated core intelligence report generator, vitality metric calculator, intelligence cache, and real-time WebSocket broadcast service into `src/lib/intelligence/` with barrel export (`index.ts`).
+  - **Diplomacy & Cultural Simulation Package (`src/lib/diplomacy/`)**: Consolidated relation bands, relative development metrics, choice tracking, drift cron, incident logging, Markov relationship engine, news generator, NPC AI personality system, profile options, cultural compatibility matrices, and cultural participation systems into `src/lib/diplomacy/` with barrel export (`index.ts`).
   - **Clean Call Site Migration**: Migrated all ~65 import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, and `src/tests/` to import directly from `~/lib/statecraft`, `~/lib/military`, `~/lib/intelligence`, and `~/lib/diplomacy`, completely deleting 32 legacy root files from `src/lib/`.
   - **Verification**: Verified 100% test pass rate across all simulation and engine test suites (42/42 tests passing).
 
 ### Refactored & Consolidated (`src/lib/` Phase 1 Domain Package Isolation)
 
 - **Domain Package Isolation & Clean Library Architecture (/ponytail)**:
-  - **Achievements Package (`src/lib/achievements/`)**: Consolidated definitions, service, real-time sync, tier scaling math, tests, and card rewards from flat root files into `src/lib/achievements/` with internal relative imports and a master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/achievements/index.ts)).
-  - **Discord Package (`src/lib/discord/`)**: Consolidated Discord client, webhook dispatcher, OAuth user sync, interactive poll generator, IxTwitter sync, and Thinkpages social webhook into `src/lib/discord/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/discord/index.ts)).
-  - **NationStates Package (`src/lib/nationstates/`)**: Consolidated NS API client, import service, sync health monitor, and background delta sync processor into `src/lib/nationstates/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/nationstates/index.ts)).
-  - **Notifications Package (`src/lib/notifications/`)**: Consolidated dispatch API, event emitter, deduplication guard, events registry, React hooks, and delivery optimizer into `src/lib/notifications/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/notifications/index.ts)).
+  - **Achievements Package (`src/lib/achievements/`)**: Consolidated definitions, service, real-time sync, tier scaling math, tests, and card rewards from flat root files into `src/lib/achievements/` with internal relative imports and a master barrel export (`index.ts`).
+  - **Discord Package (`src/lib/discord/`)**: Consolidated Discord client, webhook dispatcher, OAuth user sync, interactive poll generator, IxTwitter sync, and Thinkpages social webhook into `src/lib/discord/` with barrel export (`src/lib/discord/index.ts`).
+  - **NationStates Package (`src/lib/nationstates/`)**: Consolidated NS API client, import service, sync health monitor, and background delta sync processor into `src/lib/nationstates/` with barrel export (`src/lib/nationstates/index.ts`).
+  - **Notifications Package (`src/lib/notifications/`)**: Consolidated dispatch API, event emitter, deduplication guard, events registry, React hooks, and delivery optimizer into `src/lib/notifications/` with barrel export ([index.ts](src/lib/notifications/index.ts)).
   - **Clean Full-Codebase Call Site Migration**: Migrated all ~80 import call sites across components, pages, tRPC routers, server cron jobs, and scripts to import directly from domain packages (`~/lib/achievements`, `~/lib/discord`, `~/lib/nationstates`, `~/lib/notifications`), completely removing 22 legacy root files from `src/lib/`.
   - **Verification**: Verified 100% test pass rate across all migrated domain suites (stability guardrails, discord format, poll payload, achievements scaling, and wiki pipeline).
 
 ### Refactored & Consolidated (Wiki Parser Unification & Package Isolation — `src/lib/wiki/`)
 
 - **Wiki Parser Architecture Consolidation & `src/lib/wiki/` Package Migration**:
-  - **Dedicated Domain Package (`src/lib/wiki/`)**: Consolidated all 19 MediaWiki and wiki parsers, bridges, and domain mappers from the flat `src/lib/` root into a structured `src/lib/wiki/` package with clean internal relative imports and a master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/index.ts)).
-  - **Legacy Monolith Elimination**: Replaced the 2,556-line monolithic legacy `mediawiki-service.ts` with a lightweight, ~200-line compatibility adapter in [legacy-service.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/legacy-service.ts) delegating directly to [bridge.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/bridge.ts) and [unified-parser.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/unified-parser.ts).
-  - **Search Service Streamlining**: Reduced `wiki-search-service.ts` from 1,808 lines down to ~170 lines in [search-service.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/search-service.ts), eliminating dead duplicate scraping and infobox parsing routines.
-  - **Deleted Redundant Client Copy**: Removed `src/lib/wiki-search-service.client.ts` and migrated [country-flag-service.ts](file:///home/jxsig/projects/ixstats/src/lib/country-flag-service.ts) to the core search service.
-  - **Canonical Plaintext Cleaning**: Centralized all plaintext wikitext stripping into `cleanWikiMarkup` / `cleanWikitextExcerpt` in [wikitext-parser.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/wikitext-parser.ts), eliminating 6 ad-hoc duplicate regex stripping routines across `content-extractor.ts`, `dossier-parser.tsx`, and `services/wiki-cache-service.ts`.
-  - **Brace-Depth Infobox & Coordinate Normalization**: Upgraded [infobox-mapper.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/infobox-mapper.ts) to delegate directly to [infobox-parser.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/infobox-parser.ts) for robust template nesting and coordinate extraction.
+  - **Dedicated Domain Package (`src/lib/wiki/`)**: Consolidated all 19 MediaWiki and wiki parsers, bridges, and domain mappers from the flat `src/lib/` root into a structured `src/lib/wiki/` package with clean internal relative imports and a master barrel export (`index.ts`).
+  - **Legacy Monolith Elimination**: Replaced the 2,556-line monolithic legacy `mediawiki-service.ts` with a lightweight, ~200-line compatibility adapter in `legacy-service.ts` delegating directly to `bridge.ts` and `unified-parser.ts`.
+  - **Search Service Streamlining**: Reduced `wiki-search-service.ts` from 1,808 lines down to ~170 lines in `search-service.ts`, eliminating dead duplicate scraping and infobox parsing routines.
+  - **Deleted Redundant Client Copy**: Removed `src/lib/wiki-search-service.client.ts` and migrated `country-flag-service.ts` to the core search service.
+  - **Canonical Plaintext Cleaning**: Centralized all plaintext wikitext stripping into `cleanWikiMarkup` / `cleanWikitextExcerpt` in `wikitext-parser.ts`, eliminating 6 ad-hoc duplicate regex stripping routines across `content-extractor.ts`, `dossier-parser.tsx`, and `services/wiki-cache-service.ts`.
+  - **Brace-Depth Infobox & Coordinate Normalization**: Upgraded `infobox-mapper.ts` to delegate directly to `infobox-parser.ts` for robust template nesting and coordinate extraction.
   - **Full-Codebase Import Migration**: Migrated ~120 import call sites across `src/` (components, pages, tRPC routers, hooks, tests) and `scripts/` to import directly from `~/lib/wiki/...` or `~/lib/wiki`, completely removing the 19 legacy root files from `src/lib/`.
-  - **Unit Test Migration & Parity**: Moved infobox mapper tests to [src/lib/**tests**/wiki-infobox-mapper.test.ts](file:///home/jxsig/projects/ixstats/src/lib/__tests__/wiki-infobox-mapper.test.ts); verified 100% test pass rate across all wiki test suites (61/61 tests passing).
+  - **Unit Test Migration & Parity**: Moved infobox mapper tests to `src/lib/**tests**/wiki-infobox-mapper.test.ts`; verified 100% test pass rate across all wiki test suites (61/61 tests passing).
 
 ### Refactored & Added (Country Profile & Countries Directory Apple Design Redesign)
 
 - **Country Profile & Directory HIG Redesign (/apple-design)**:
-  - **Country Profile Navigation & Header (`/countries/[slug]`)**: Redesigned country header ([CountryHeader.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/_components/CountryHeader.tsx)) and tabs ([CountryTabs.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/_components/CountryTabs.tsx)) using Apple design principles, eliminating double-stacked pill containers, introducing translucent glass surfaces (`backdrop-blur-2xl`), optical typography tracking, and streamlined 4-tab layout (_Overview_, _Factbook_, _Governance_, _Community_).
-  - **Factbook & Activity Panel Overhaul**: Redesigned [FactbookSidebar.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/_components/FactbookSidebar.tsx) and [CountryActivityPanel.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/_components/CountryActivityPanel.tsx) with unified card hierarchy, responsive grid view, and type-safe data transformers ([countryDataTransformers.ts](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/_utils/countryDataTransformers.ts)).
-  - **Countries Directory Hub (`/countries`)**: Upgraded [CountriesHeader.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/_components/CountriesHeader.tsx), [CountriesFocusGridModular.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/_components/CountriesFocusGridModular.tsx), and [CountryFocusCard.tsx](file:///home/jxsig/projects/ixstats/src/components/countries/CountryFocusCard.tsx) with smooth spring transitions, Apple-style search & filter pills, and clean metric badges.
-  - **Design Specs**: Documented full architecture spec in [2026-08-10-countries-apple-design-redesign.md](file:///home/jxsig/projects/ixstats/docs/specs/2026-08-10-countries-apple-design-redesign.md).
+  - **Country Profile Navigation & Header (`/countries/[slug]`)**: Redesigned country header (`CountryHeader.tsx`) and tabs (`CountryTabs.tsx`) (both since removed) using Apple design principles, eliminating double-stacked pill containers, introducing translucent glass surfaces (`backdrop-blur-2xl`), optical typography tracking, and streamlined 4-tab layout (_Overview_, _Factbook_, _Governance_, _Community_).
+  - **Factbook & Activity Panel Overhaul**: Redesigned `FactbookSidebar.tsx` (since removed) and `CountryActivityPanel.tsx` (since removed) with unified card hierarchy, responsive grid view, and type-safe data transformers (`src/app/countries/[slug]/_utils/countryDataTransformers.ts`).
+  - **Countries Directory Hub (`/countries`)**: Upgraded `CountriesHeader.tsx`, `CountriesFocusGridModular.tsx`, and `CountryFocusCard.tsx` with smooth spring transitions, Apple-style search & filter pills, and clean metric badges.
+  - **Design Specs**: Documented full architecture spec in `2026-08-10-countries-apple-design-redesign.md`.
 
 ### Refactored & Modularized (IxCards & IxVault Architecture Decomposition)
 
 - **Monolithic Vault Component Decomposition**:
-  - **Cards Section Modularization**: Decomposed [VaultCardsSection.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/VaultCardsSection.tsx) into dedicated sub-components under `src/components/vault/sections/cards/` (`CardGrid`, `CardFilterBar`, `DeckStatsHeader`, `CardSortControl`, `DeckViewToggle`).
-  - **Dashboard Section Modularization**: Decomposed [VaultDashboardSection.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/VaultDashboardSection.tsx) into focused modules under `src/components/vault/sections/dashboard/`.
-  - **Marketplace & Auctions Decomposition**: Decomposed [VaultStoreTab.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/VaultStoreTab.tsx) and [VaultAuctionsTab.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/VaultAuctionsTab.tsx) into modular sub-components under `sections/marketplace/store/` and `sections/marketplace/auctions/`.
-  - **Card Modal Decomposition**: Modularized [CardDetailsModal.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/CardDetailsModal.tsx) into `src/components/cards/display/modal/` (`CardHeader`, `CardImageStage`, `CardStatsPanel`, `CardActions`).
-  - **Vault Service Modularization**: Split [vault-service.ts](file:///home/jxsig/projects/ixstats/src/lib/vault-service.ts) into domain services under `src/lib/vault/` (`vault-crud.ts`, `vault-market.ts`, `vault-pricing.ts`, `vault-type-guards.ts`).
-  - **NationStates Integration**: Added [NSCardSettingsCard.tsx](file:///home/jxsig/projects/ixstats/src/app/settings/_components/NSCardSettingsCard.tsx) settings control, [NationStatesAttribution.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/NationStatesAttribution.tsx) attribution widget, image proxy route ([proxy-ns-image/route.ts](file:///home/jxsig/projects/ixstats/src/app/api/proxy-ns-image/route.ts)), and updated [ns-integration.md](file:///home/jxsig/projects/ixstats/docs/systems/ns-integration.md).
+  - **Cards Section Modularization**: Decomposed `VaultCardsSection.tsx` into dedicated sub-components under `src/components/vault/sections/cards/` (`CardGrid`, `CardFilterBar`, `DeckStatsHeader`, `CardSortControl`, `DeckViewToggle`). `VaultCardsSection.tsx` and its `sections/cards/` folder were removed in the cards refresh (2026-10-17).
+  - **Dashboard Section Modularization**: Decomposed [VaultDashboardSection.tsx](src/components/vault/sections/VaultDashboardSection.tsx) into focused modules under `src/components/vault/sections/dashboard/`.
+  - **Marketplace & Auctions Decomposition**: Decomposed [VaultStoreTab.tsx](src/components/vault/sections/marketplace/VaultStoreTab.tsx) and `VaultAuctionsTab.tsx` into modular sub-components under `sections/marketplace/store/` and `sections/marketplace/auctions/`. `VaultAuctionsTab.tsx` was removed in the cards refresh (2026-10-17).
+  - **Card Modal Decomposition**: Modularized `CardDetailsModal.tsx` into `src/components/cards/display/modal/` (`CardHeader`, `CardImageStage`, `CardStatsPanel`, `CardActions`). `CardDetailsModal.tsx` was removed in the cards refresh (2026-10-17).
+  - **Vault Service Modularization**: Split `vault-service.ts` into domain services under `src/lib/vault/` (`vault-crud.ts`, `vault-market.ts`, `vault-pricing.ts`, `vault-type-guards.ts`).
+  - **NationStates Integration**: Added `NSCardSettingsCard.tsx` settings control, [NationStatesAttribution.tsx](src/components/cards/display/NationStatesAttribution.tsx) attribution widget, image proxy route ([proxy-ns-image/route.ts](src/app/api/proxy-ns-image/route.ts)), and updated [ns-integration.md](docs/systems/ns-integration.md).
 
 ### Refactored (Achievements Page Header Streamlining & Ribbon Racks)
 
 - **Achievements Header Streamlining (`/achievements`)**:
-  - **Visual Hierarchy Refinement**: Simplified [page.tsx](file:///home/jxsig/projects/ixstats/src/app/achievements/page.tsx) header by removing the secondary Lore Score summary card and legendary badges grid, focusing visual hierarchy on core achievement statistics (Unlocked, Achievement Points, Global Rank).
-  - **Ribbon Rack Components**: Built [FloatingRibbonRack.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/FloatingRibbonRack.tsx) and [ForumRibbonRack.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/ForumRibbonRack.tsx) for displaying achievement ribbons across user profiles and forum embeds.
-  - **Documentation**: Updated [src/app/achievements/README.md](file:///home/jxsig/projects/ixstats/src/app/achievements/README.md) to reflect header streamlining and consolidated standalone `/leaderboards` route capabilities.
+  - **Visual Hierarchy Refinement**: Simplified the `src/app/achievements/page.tsx` header (since removed) by removing the secondary Lore Score summary card and legendary badges grid, focusing visual hierarchy on core achievement statistics (Unlocked, Achievement Points, Global Rank).
+  - **Ribbon Rack Components**: Built [FloatingRibbonRack.tsx](src/components/achievements/FloatingRibbonRack.tsx) and `ForumRibbonRack.tsx` for displaying achievement ribbons across user profiles and forum embeds.
+  - **Documentation**: Updated [src/app/vault/achievements/README.md](src/app/vault/achievements/README.md) to reflect header streamlining and consolidated standalone `/leaderboards` route capabilities.
 
 ### Refactored (Thinkpages Social Knowledge Suite — Component Modularization & Architecture Audit)
 
@@ -583,171 +2118,171 @@ capability integer. Each release entry below lists which components advanced and
     - `ThinkpagesPost.tsx`: Reduced from **2,247 lines → 227 lines** by extracting `<HeroPostView>` (383 lines), `<StandardPostView>` (594 lines), and `useThinkpagesPost` (457 lines).
     - `GlassCanvasComposer.tsx`: Reduced from **1,438 lines → 422 lines** while preserving 100% of original UX, layout, CSS classes, spring animations, avatar account switcher dropdown, and portal modals by extracting `useGlassCanvasComposer` (545 lines), `ComposerAccountSwitcher` (132 lines), `ComposerLiveDataDrawer` (199 lines), `ComposerActionBar` (230 lines), and `ComposerPollModal` (262 lines).
   - **Apple HIG Design Polish & Theme Compliance (/apple-design)**:
-    - **Icon-Only Theme-Compliant Wiki Button**: Converted the composer's Wiki popover trigger in [WikiAndStashPopovers.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/editor/WikiAndStashPopovers.tsx) to an icon-only button (`w-7 h-7 rounded-xl`) featuring the official Wikipedia `FaWikipediaW` icon, styled with the official IxWiki brand hex `#1d4e89` (from `public/images/ix-logo.svg`), and fixed input background/placeholder theme contrast for 100% legibility in light and dark modes.
-    - **Theme-Compliant Sports Embed Card**: Upgraded [SportsBulletinCard.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/SportsBulletinCard.tsx) with theme-adaptive glass surfaces (`bg-white/70 dark:bg-slate-900/60 backdrop-blur-2xl border-black/10 dark:border-white/10 shadow-xl`), clean right-aligned `Open League →` footer button, UFC-style rankings layout (`#<rank>` left badges + `▲`/`▼` delta pills + `Rank #<rank>` right markers per `/apple-design`), active press scale (`active:scale-[0.98]`), and optical typography (`tracking-tight font-bold`).
+    - **Icon-Only Theme-Compliant Wiki Button**: Converted the composer's Wiki popover trigger in `WikiAndStashPopovers.tsx` to an icon-only button (`w-7 h-7 rounded-xl`) featuring the official Wikipedia `FaWikipediaW` icon, styled with the official IxWiki brand hex `#1d4e89` (from `public/images/ix-logo.svg`), and fixed input background/placeholder theme contrast for 100% legibility in light and dark modes.
+    - **Theme-Compliant Sports Embed Card**: Upgraded [SportsBulletinCard.tsx](src/components/thinkpages/SportsBulletinCard.tsx) with theme-adaptive glass surfaces (`bg-white/70 dark:bg-slate-900/60 backdrop-blur-2xl border-black/10 dark:border-white/10 shadow-xl`), clean right-aligned `Open League →` footer button, UFC-style rankings layout (`#<rank>` left badges + `▲`/`▼` delta pills + `Rank #<rank>` right markers per `/apple-design`), active press scale (`active:scale-[0.98]`), and optical typography (`tracking-tight font-bold`).
     - `GlassPlateEditor.tsx`: Reduced from **1,767 lines → 484 lines** by extracting `useGlassPlateEditor` (554 lines), `EditorPlugins` (133 lines), `EditorToolbar` (154 lines), `WikiAndStashPopovers` (314 lines), `MentionMenuPortal` (94 lines), and `SlateSerializer` (242 lines).
     - `AccountCreationModal.tsx`: Reduced from **894 lines → 584 lines** by extracting `AccountTypeSelector` (126 lines) and `AccountDetailsForm` (170 lines).
     - `StandardPostView.tsx`: Further decomposed from 785 lines → 594 lines by extracting `RepostCard` (92 lines), `ReactionPills` (67 lines), and `ThreadReplies` (99 lines).
-  - **Domain Primitives Consolidation**: Built [ThinkpagesPostUtils.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/post/ThinkpagesPostUtils.tsx) (103 lines) to centralize shared domain constants (`ACCOUNT_TYPE_ICONS`, `ACCOUNT_TYPE_COLORS`, `REACTION_ICONS`, `DISCORD_EMOJI_REACTIONS`), helper functions (`getDiscordEmojiUrl`, `proxyDiscordUrl`), and the `<RelativeTimestamp>` component across 7 calling components, eliminating code duplication while preserving 100% type safety.
+  - **Domain Primitives Consolidation**: Built [ThinkpagesPostUtils.tsx](src/components/thinkpages/post/ThinkpagesPostUtils.tsx) (103 lines) to centralize shared domain constants (`ACCOUNT_TYPE_ICONS`, `ACCOUNT_TYPE_COLORS`, `REACTION_ICONS`, `DISCORD_EMOJI_REACTIONS`), helper functions (`getDiscordEmojiUrl`, `proxyDiscordUrl`), and the `<RelativeTimestamp>` component across 7 calling components, eliminating code duplication while preserving 100% type safety.
   - **Zero Files > 700 Lines**: Guaranteed every single component across the entire Thinkpages social knowledge sharing suite strictly satisfies line count ceiling constraints (largest component is `PostActions.tsx` at 700 lines).
-  - **Documentation & Taxonomy**: Created complete file taxonomy map in [src/components/thinkpages/README.md](file:///home/jxsig/projects/ixstats/src/components/thinkpages/README.md).
+  - **Documentation & Taxonomy**: Created complete file taxonomy map in [src/components/thinkpages/README.md](src/components/thinkpages/README.md).
 
 ### Added & Refactored (Dashboard Hero, Trending Topics & Blurb Widget — /apple-design)
 
 - **Dashboard Hero Flag Background & Profile Link**:
-  - **Country Flag Background**: Added country flag image background to [DashboardHero.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/hero/DashboardHero.tsx) with dark/light glass scrim overlays (`bg-cover bg-center`).
+  - **Country Flag Background**: Added country flag image background to [DashboardHero.tsx](src/components/dashboard/hero/DashboardHero.tsx) with dark/light glass scrim overlays (`bg-cover bg-center`).
   - **Country Profile Link**: Fixed country title link in hero card to cleanly navigate to `/countries/[slug]`.
-  - **Color Compliance**: Polished MyCountry pill and standing badge in [DashboardHero.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/hero/DashboardHero.tsx) for contrast compliance across light and dark modes.
+  - **Color Compliance**: Polished MyCountry pill and standing badge in [DashboardHero.tsx](src/components/dashboard/hero/DashboardHero.tsx) for contrast compliance across light and dark modes.
 
 - **Trending Topics & Intelligent Sports News Bulletin Parser**:
-  - **Apple Control Surface Redesign**: Redesigned [TrendingSectionWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/TrendingSectionWidget.tsx) into an Apple Control Surface glass card (`bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-2xl`).
-  - **Streamlined 3-Tab Segmented Control Bar**: Updated category filter tabs in [TrendingSectionWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/TrendingSectionWidget.tsx) to 3 clean tabs (`All`, `Forum`, `Wiki`), eliminating redundancy with the main social feed stream per `/apple-design`.
-  - **Intelligent Sports News Bulletin Parser**: Automatically parses `<!-- sports-bulletin:{...} -->` JSON metadata in [trending.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/activities/trending.ts) and [TrendingSectionWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/TrendingSectionWidget.tsx), extracting clean titles (`⚽ Imperial League — Matchday 15`, `🏆 Imperial League Champion Crowned!`) and matchday narration excerpts.
-  - **Direct Sports Navigation Links**: Attached `/myleague/[leagueId]` and `/myclub/[championId]` target routes to sports bulletin items in [trending.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/activities/trending.ts), utilizing Next.js `<Link>` in [TrendingSectionWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/TrendingSectionWidget.tsx) for instant SPA client-side transitions.
-  - **Apple Ranking & Velocity Decay**: Weighted engagement velocity scoring with exponential recency decay ($\frac{1}{(age + 2)^{1.2}}$) and round-robin channel interleaving in `All` view ([trending.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/activities/trending.ts)).
+  - **Apple Control Surface Redesign**: Redesigned [TrendingSectionWidget.tsx](src/components/dashboard/sections/TrendingSectionWidget.tsx) into an Apple Control Surface glass card (`bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-2xl`).
+  - **Streamlined 3-Tab Segmented Control Bar**: Updated category filter tabs in [TrendingSectionWidget.tsx](src/components/dashboard/sections/TrendingSectionWidget.tsx) to 3 clean tabs (`All`, `Forum`, `Wiki`), eliminating redundancy with the main social feed stream per `/apple-design`.
+  - **Intelligent Sports News Bulletin Parser**: Automatically parses `<!-- sports-bulletin:{...} -->` JSON metadata in [trending.ts](src/server/api/routers/activities/trending.ts) and [TrendingSectionWidget.tsx](src/components/dashboard/sections/TrendingSectionWidget.tsx), extracting clean titles (`⚽ Imperial League — Matchday 15`, `🏆 Imperial League Champion Crowned!`) and matchday narration excerpts.
+  - **Direct Sports Navigation Links**: Attached `/myleague/[leagueId]` and `/myclub/[championId]` target routes to sports bulletin items in [trending.ts](src/server/api/routers/activities/trending.ts), utilizing Next.js `<Link>` in [TrendingSectionWidget.tsx](src/components/dashboard/sections/TrendingSectionWidget.tsx) for instant SPA client-side transitions.
+  - **Apple Ranking & Velocity Decay**: Weighted engagement velocity scoring with exponential recency decay ($\frac{1}{(age + 2)^{1.2}}$) and round-robin channel interleaving in `All` view ([trending.ts](src/server/api/routers/activities/trending.ts)).
 
 - **Standalone 'Blurb of the Day' Apple Glass Widget**:
-  - **Widget Separation**: Unembedded `<BlurbSection />` from `TrendingSectionWidget.tsx` and placed it as a standalone Apple Glass Widget directly below `Trending Topics` in [UnifiedDashboardSection.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/UnifiedDashboardSection.tsx).
-  - **Apple Editorial Quote Vignette**: Redesigned daily prompt box in [BlurbSection.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/BlurbSection.tsx) into an Editorial Quote Vignette with a 3px glowing purple left accent border (`border-l-3 border-purple-500`), subtle `Quote` watermark, `MessageSquareQuote` header icon, and Apple CTA button (`Write Response →`).
+  - **Widget Separation**: Unembedded `<BlurbSection />` from `TrendingSectionWidget.tsx` and placed it as a standalone Apple Glass Widget directly below `Trending Topics` in [UnifiedDashboardSection.tsx](src/components/dashboard/sections/UnifiedDashboardSection.tsx).
+  - **Apple Editorial Quote Vignette**: Redesigned daily prompt box in [BlurbSection.tsx](src/components/dashboard/sections/BlurbSection.tsx) into an Editorial Quote Vignette with a 3px glowing purple left accent border (`border-l-3 border-purple-500`), subtle `Quote` watermark, `MessageSquareQuote` header icon, and Apple CTA button (`Write Response →`).
 
 ### Added & Refactored (IxCards & MyVault Systems)
 
 - **IxCards & MyVault System Overhaul (Plans 121–123)** (Bumped `IXVAULT_VERSION` from `1` → `2`):
-  - **Plan 121 — Domain Type Safety & Prisma Cast Removal**: Added nominal branded types (`UserId`, `CardId`, `AuctionId`, `OwnershipId`) in [cards-display.ts](file:///home/jxsig/projects/ixstats/src/types/cards-display.ts), defined structured schema interfaces (`ArtworkVariants`, `CardStatsData`, `CardEnhancementsData`), replaced loose `any` types on `CardInstance` and `CardCreationData`, and eliminated unsafe `(db as any)` Prisma casts across [vault-service.ts](file:///home/jxsig/projects/ixstats/src/lib/vault-service.ts) and [auction-service.ts](file:///home/jxsig/projects/ixstats/src/lib/auction-service.ts).
-  - **Plan 122 — Atomic Credit Ledger & Concurrency Locks**: Replaced read-then-update logic in `spendCredits` with atomic conditional queries (`credits: { gte: amount }`) inside database transactions, preventing double-spending and negative IxCredits balances under concurrent requests. Verified via a 10-parallel request concurrency stress test suite ([vault-concurrency.test.ts](file:///home/jxsig/projects/ixstats/src/lib/__tests__/vault-concurrency.test.ts)).
+  - **Plan 121 — Domain Type Safety & Prisma Cast Removal**: Added nominal branded types (`UserId`, `CardId`, `AuctionId`, `OwnershipId`) in [cards-display.ts](src/types/cards-display.ts), defined structured schema interfaces (`ArtworkVariants`, `CardStatsData`, `CardEnhancementsData`), replaced loose `any` types on `CardInstance` and `CardCreationData`, and eliminated unsafe `(db as any)` Prisma casts across `vault-service.ts` and `auction-service.ts`.
+  - **Plan 122 — Atomic Credit Ledger & Concurrency Locks**: Replaced read-then-update logic in `spendCredits` with atomic conditional queries (`credits: { gte: amount }`) inside database transactions, preventing double-spending and negative IxCredits balances under concurrent requests. Verified via a 10-parallel request concurrency stress test suite (`vault-concurrency.test.ts`).
   - **Plan 123 — Daily Streak UTC Boundary & Store Perk Caching**: Standardized daily login streak calculations onto UTC calendar day serial numbers (`Date.UTC(y, m, d) / 86,400,000`), resolving streak loss/extension bugs across midnight boundaries. Added `userPerksCache` with a 5-minute TTL and 100-item query cap for `getPurchasedItemsEffects` performance.
 
 ### Added & Refactored (Global Leaderboards & MyCountry v2 Surface)
 
 - **Global Leaderboards Standalone Page & Metric Live-Wiring**:
-  - **Standalone `/leaderboards` Page**: Replaced the redirect stub with a full standalone route ([page.tsx](file:///home/jxsig/projects/ixstats/src/app/leaderboards/page.tsx)) wrapped in `VaultSidebarLayout activeSection="leaderboards"`, featuring a global stats header banner and domain filter integration.
-  - **Prisma Query Repair & Resilient Fallback Engine**: Updated `getCountryLeaderboard` in [country.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/achievements/country.ts) to eliminate silent Prisma validation crashes on non-nullable scalar fields (`currentPopulation`, `currentTotalGdp`, `economicVitality`, etc.). Added dynamic calculations and fallback logic for optional demographic and economic metrics (`totalWorkforce`, `populationDensity`, `literacyRate`, `lifeExpectancy`, `govRevenue`, `govSpending`, `urbanization`) so all 20 metric categories reliably return populated rankings across all 145 member nations.
-  - **Interactive Controls & Top-3 Podium Highlights**: Enhanced [LeaderboardTab.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/tabs/LeaderboardTab.tsx) with search filtering by nation name, Domain Category tabs (_All_, _Economy & Wealth_, _Demographics & Labor_, _Quality & Governance_), row limit controls (10, 25, 50, 100), and top-3 Gold, Silver, and Bronze podium showcase cards.
+  - **Standalone `/leaderboards` Page**: Replaced the redirect stub with a full standalone route ([page.tsx](src/app/leaderboards/page.tsx)) wrapped in `VaultSidebarLayout activeSection="leaderboards"`, featuring a global stats header banner and domain filter integration.
+  - **Prisma Query Repair & Resilient Fallback Engine**: Updated `getCountryLeaderboard` in [country.ts](src/server/api/routers/achievements/country.ts) to eliminate silent Prisma validation crashes on non-nullable scalar fields (`currentPopulation`, `currentTotalGdp`, `economicVitality`, etc.). Added dynamic calculations and fallback logic for optional demographic and economic metrics (`totalWorkforce`, `populationDensity`, `literacyRate`, `lifeExpectancy`, `govRevenue`, `govSpending`, `urbanization`) so all 20 metric categories reliably return populated rankings across all 145 member nations.
+  - **Interactive Controls & Top-3 Podium Highlights**: Enhanced [LeaderboardTab.tsx](src/components/achievements/tabs/LeaderboardTab.tsx) with search filtering by nation name, Domain Category tabs (_All_, _Economy & Wealth_, _Demographics & Labor_, _Quality & Governance_), row limit controls (10, 25, 50, 100), and top-3 Gold, Silver, and Bronze podium showcase cards.
 
 - **MyCountry v2 Command Surface Architecture**:
-  - **Single-Page Command Shell**: Built [V2CommandSurface.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2CommandSurface.tsx), replacing legacy multi-tab WarRooms with a unified single-page command surface. Set as default surface in [MyCountryRouter.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/MyCountryRouter.tsx).
-  - **Top Mirrored Navigation Bar**: Built `V2ModeToggle` and `V2RightPillNav` in [V2ModeToggle.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2ModeToggle.tsx), combining brand logo, operating modes (Home, Declare a Directive), domain pages (Diplomacy, Defense, Politics, Economy), and mirrored right-side **Profile** (`/countries/[slug]`) and **Editor** (`/mycountry/editor`) pills.
-  - **Automatic Viewport Scroll Positioning**: Added `navRef` and mount effect in [V2CommandSurface.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2CommandSurface.tsx) to automatically position the initial viewport directly below the main navigation bar, with smooth scroll-up to reveal the top nav.
+  - **Single-Page Command Shell**: Built `V2CommandSurface.tsx`, replacing legacy multi-tab WarRooms with a unified single-page command surface. Set as default surface in `MyCountryRouter.tsx`.
+  - **Top Mirrored Navigation Bar**: Built `V2ModeToggle` and `V2RightPillNav` in `V2ModeToggle.tsx`, combining brand logo, operating modes (Home, Declare a Directive), domain pages (Diplomacy, Defense, Politics, Economy), and mirrored right-side **Profile** (`/countries/[slug]`) and **Editor** (`/mycountry/editor`) pills.
+  - **Automatic Viewport Scroll Positioning**: Added `navRef` and mount effect in `V2CommandSurface.tsx` to automatically position the initial viewport directly below the main navigation bar, with smooth scroll-up to reveal the top nav.
 - **Intent Engine & Executive Console**:
-  - **Plain-Language Directive Composer**: Built [V2Console.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2Console.tsx), offering 3 pre-computed directive packages (Measured, Moderate, Extreme) + custom policy drafting with show-before-commit diff previews.
-  - **Intent tRPC Backend Router**: Created `intent` router ([intent.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/intent.ts)) with `suggest`, `preview`, `commit`, `getTree`, and `getStatus` procedures. Implemented policy registry filtering, budget deltas, power broker acceptance checks, locked core stat lever protection, and weekly directive cooldown slot enforcement.
-  - **Commitments Agenda Rail**: Built [V2Agenda.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2Agenda.tsx), rendering active directive trees, parent-child follow-up chains, and status badges in the right-side rail.
+  - **Plain-Language Directive Composer**: Built `V2Console.tsx`, offering 3 pre-computed directive packages (Measured, Moderate, Extreme) + custom policy drafting with show-before-commit diff previews.
+  - **Intent tRPC Backend Router**: Created `intent` router ([intent](src/server/api/routers/intent/)) with `suggest`, `preview`, `commit`, `getTree`, and `getStatus` procedures. Implemented policy registry filtering, budget deltas, power broker acceptance checks, locked core stat lever protection, and weekly directive cooldown slot enforcement.
+  - **Commitments Agenda Rail**: Built `V2Agenda.tsx`, rendering active directive trees, parent-child follow-up chains, and status badges in the right-side rail.
 - **Opportunity Briefing Hero & Priority Engine**:
-  - Created [V2OpportunityHero.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2OpportunityHero.tsx) as the primary notification & opportunity layer on the dashboard.
+  - Created `V2OpportunityHero.tsx` as the primary notification & opportunity layer on the dashboard.
   - Dynamically ranks and surfaces top nation opportunities across domains (`Defense/Crisis > Diplomacy/Treaty > Politics/Bills > Economy > Active Intent`) with key metrics telemetry and a 1-click **"Declare Directive to Resolve"** action button.
 - **Realtime Pulse & Weekly Agenda Surface (`V2MyAgenda`)**:
-  - Created [V2MyAgenda.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2MyAgenda.tsx), bringing the full-scale Halo Dynamic Island Calendar & Smart Agenda directly above the Recent Activity feed (`lg:col-span-2`).
+  - Created `V2MyAgenda.tsx`, bringing the full-scale Halo Dynamic Island Calendar & Smart Agenda directly above the Recent Activity feed (`lg:col-span-2`).
   - Features a 7-day interactive horizon date strip, scheduled policy votes, summits, audits, and executive directive slot capacity tracking.
   - Added a **Quick Action Dialog** modal (`Dialog`) for event briefings, telemetry previews, and 1-click directive resolution triggers.
 - **Apple-Design Quick Actions & Visual Polish**:
-  - **Compact Action Card Grid**: Standardized the 4 Quick Action cards (Diplomacy, Defense, Politics, Economy & Budget) in [V2Home.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2Home.tsx) to an ultra-dense ~48px height compact scale.
-  - **Rescaled Background Graphics**: Rescaled ambient background SVG graphics & radial glows in [ActionCardGraphics.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/ActionCardGraphics.tsx) (`DiplomacyGraphic`, `DefenseGraphic`, `PoliticsGraphic`, `EconomyGraphic`) with SF-style optical typography, `tracking-tight` letter spacing, and tight micro-interactions (`active:scale-[0.98] hover:scale-[1.015]`).
+  - **Compact Action Card Grid**: Standardized the 4 Quick Action cards (Diplomacy, Defense, Politics, Economy & Budget) in `V2Home.tsx` to an ultra-dense ~48px height compact scale.
+  - **Rescaled Background Graphics**: Rescaled ambient background SVG graphics & radial glows in `ActionCardGraphics.tsx` (`DiplomacyGraphic`, `DefenseGraphic`, `PoliticsGraphic`, `EconomyGraphic`) with SF-style optical typography, `tracking-tight` letter spacing, and tight micro-interactions (`active:scale-[0.98] hover:scale-[1.015]`).
 - **Domain Surfaces & Drill-Down Sheets**:
-  - Created [V2DomainSurface.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2DomainSurface.tsx) for dedicated domain hero and drill-down views on `/mycountry/diplomacy`, `/defense`, `/politics`, `/economy`.
-  - Created [V2DrillSheets.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2DrillSheets.tsx) for right-side slide-over sheets covering Relations, Defense, Politics, Economy, and Intent tree details.
+  - Created `V2DomainSurface.tsx` for dedicated domain hero and drill-down views on `/mycountry/diplomacy`, `/defense`, `/politics`, `/economy`.
+  - Created `V2DrillSheets.tsx` for right-side slide-over sheets covering Relations, Defense, Politics, Economy, and Intent tree details.
 - **Phase 4 — Country Profile Consolidation (`/countries/[slug]`)**:
-  - **Public Read-Only Stats & Owner Pill**: Consolidated deep stat tabs (`At a Glance`, `Economy`, `Government`, `Geography`) onto the public Country Profile route ([profile-page.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/profile-page.tsx)) and added a floating **"Leader Command Surface → Edit in MyCountry"** pill for nation leaders.
-  - **Merged Recent Activity & Governance Ledger**: Embedded [CountryChangeLogTimeline.tsx](file:///home/jxsig/projects/ixstats/src/components/executive/CountryChangeLogTimeline.tsx) as the integrated **Recent Activity & Governance Ledger** on `/countries/[slug]`, merging direct DB change logs with storyteller effects, diplomatic events, and responded national issues. Added interactive category filter selectors (`All Activity`, `Directives & Policies`, `Diplomacy`, `Elections & Cabinet`).
+  - **Public Read-Only Stats & Owner Pill**: Consolidated deep stat tabs (`At a Glance`, `Economy`, `Government`, `Geography`) onto the public Country Profile route (`profile-page.tsx`) and added a floating **"Leader Command Surface → Edit in MyCountry"** pill for nation leaders.
+  - **Merged Recent Activity & Governance Ledger**: Embedded `CountryChangeLogTimeline.tsx` as the integrated **Recent Activity & Governance Ledger** on `/countries/[slug]`, merging direct DB change logs with storyteller effects, diplomatic events, and responded national issues. Added interactive category filter selectors (`All Activity`, `Directives & Policies`, `Diplomacy`, `Elections & Cabinet`).
   - **Drill Sheet Navigation Bridge**: Added a **"Full Profile Depth →"** button on drill sheets linking directly to `/countries/[slug]#<kind>`.
 - **Phase 5 — Qualitative Relations & Player-Fiat Politics**:
-  - **Bands-Only Relations**: Created [relation-bands.ts](file:///home/jxsig/projects/ixstats/src/lib/diplomacy/relation-bands.ts) mapping raw 0–100 scores to 5 qualitative standing badges (_Aligned_, _Cooperative_, _Neutral_, _Tense_, _Hostile_), refactoring [EmbassyCard.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomatic/embassy-network/EmbassyCard.tsx) to hide raw percentage math.
-  - **Executive Fiat Mode**: Updated [PoliticsDrillDown.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/PoliticsDrillDown.tsx) with an Executive Fiat banner confirming 100% authorial player control over cabinet, parties, legislature, and elections.
+  - **Bands-Only Relations**: Created [relation-bands.ts](src/lib/diplomacy/relation-bands.ts) mapping raw 0–100 scores to 5 qualitative standing badges (_Aligned_, _Cooperative_, _Neutral_, _Tense_, _Hostile_), refactoring `EmbassyCard.tsx` to hide raw percentage math.
+  - **Executive Fiat Mode**: Updated `PoliticsDrillDown.tsx` with an Executive Fiat banner confirming 100% authorial player control over cabinet, parties, legislature, and elections.
 - **Phase 6 — ThinkPages Narrative Summation Draft**:
-  - **Auto-Generated Summation Drafts**: Created [intent-summation.ts](file:///home/jxsig/projects/ixstats/src/lib/intent/intent-summation.ts) to generate narrative prose posts upon directive completion.
-  - **1-Click Share Confirmation Modal**: Built [ThinkPagesShareModal.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/ThinkPagesShareModal.tsx) for text editing and 1-click publishing or saving as draft. Added `getDraftPosts` tRPC procedure in [queries.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/thinkpages/posts/posts/queries.ts).
+  - **Auto-Generated Summation Drafts**: Created [intent-summation.ts](src/lib/intent/intent-summation.ts) to generate narrative prose posts upon directive completion.
+  - **1-Click Share Confirmation Modal**: Built `ThinkPagesShareModal.tsx` for text editing and 1-click publishing or saving as draft. Added `getDraftPosts` tRPC procedure in [queries.ts](src/server/api/routers/thinkpages/posts/posts/queries.ts).
 - **Final v2 Bible Enhancements**:
-  - **Relative-Development Asymmetry in Diplomacy**: Built [relative-development.ts](file:///home/jxsig/projects/ixstats/src/lib/diplomacy/relative-development.ts) to calculate economic tier ratios and asymmetric trade/tariff multipliers (_Superpower Influence_, _Capital Imbalance_, _Resource Synergist_), mounting badges on [EmbassyCard.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomatic/embassy-network/EmbassyCard.tsx).
-  - **Intent Branching Tree Visualizer**: Added `getTree` query procedure in [intent.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/intent.ts) and built `<IntentBranchingTree />` inside `IntentDetail` in [V2DrillSheets.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2DrillSheets.tsx) rendering parent-child decision tree lineages.
-  - **Opt-In Crisis Deliberation Flow**: Added a **"Convene Crisis Cabinet"** button to reactive briefing cards in [V2CommandBriefingHero.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2CommandBriefingHero.tsx), allowing leaders to launch emergency cabinet deliberation flows on urgent national events.
+  - **Relative-Development Asymmetry in Diplomacy**: Built [relative-development.ts](src/lib/diplomacy/relative-development.ts) to calculate economic tier ratios and asymmetric trade/tariff multipliers (_Superpower Influence_, _Capital Imbalance_, _Resource Synergist_), mounting badges on `EmbassyCard.tsx`.
+  - **Intent Branching Tree Visualizer**: Added `getTree` query procedure in [intent](src/server/api/routers/intent/) and built `<IntentBranchingTree />` inside `IntentDetail` in `V2DrillSheets.tsx` rendering parent-child decision tree lineages.
+  - **Opt-In Crisis Deliberation Flow**: Added a **"Convene Crisis Cabinet"** button to reactive briefing cards in `V2CommandBriefingHero.tsx`, allowing leaders to launch emergency cabinet deliberation flows on urgent national events.
 - **Executive Home & Directives-Policy Unification (Plans 032–044 & V2 Refinements)**:
   - **Directives (Frontend) / Statecraft (Backend) Architecture Alignment**: Standardized **Directives** as the universal player-facing brand across all UI components, dialogs, and navigation chips (`"Declare Directive"`, `"Tune Custom Directive"`, `"Executive Directive Guide"`), while reserving **Statecraft** for internal engine & simulation backend logic (`Statecraft Engine`, `statecraft-recon`, `deriveBrokers`, `assemble.ts`).
-  - **Executive Governance Telemetry Migration**: Built a translucent Apple-style **Executive Governance Telemetry Strip** directly into [StandingBands.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/StandingBands.tsx) displaying live Approval rating (`68% Approval`), Stability index (`78% Stability`), and Civil Capacity remaining (`85% Capacity`). Streamlined the agenda header in [V2MyAgenda.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2MyAgenda.tsx) by removing redundant bar complications.
-  - **Interactive Territory & Cartography Widget**: Brought MapLibre GL vector map embed into V2 as `<TerritoryMapWidget />` inside the right sidebar of [V2Home.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2Home.tsx) with a full-bleed edge-to-edge canvas (`height="h-60"`) and hover-activated floating glass badges (`Open Maps` on top-left, `Map Editor` on top-right).
-  - **Priority Issues Top-of-List Sorting**: Priority Issues (`statusLabel === "PRIORITY ISSUE"`, critical/high severity or urgency > 70) now dynamically sort to the top of the horizon event feed in [V2MyAgenda.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2MyAgenda.tsx), [useNationalIssues.ts](file:///home/jxsig/projects/ixstats/src/hooks/useNationalIssues.ts), [V2OpportunityHero.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2OpportunityHero.tsx), and [LegislativeIssues.tsx](file:///home/jxsig/projects/ixstats/src/components/executive/politics/LegislatureIssues.tsx).
-  - **Directives & Policy Unification**: Replaced standalone "Custom Policy" prompt with `"Tune Custom Directive"` in [IntentComposer.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/IntentComposer.tsx), integrating custom policy parameters (Name, Description, Intensity, Spending Allocation, Department) into the Directive tuning workflow. Expanded directive presets to 64 items across 8 categories with a telemetry-reactive "Surprise Me" prompt engine.
-  - **Unified Issue Resolution & Cabinet Meetings**: Added a 4-branch resolution strip in [V2IssueDetail.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2IssueDetail.tsx) (_Delegate_, _Resolve Brief_, _Set Cabinet Meeting_, _Make Directive_). Scheduling a Cabinet Meeting creates an agenda calendar event set for +7 IxTime days, unlocking deep analytical briefings.
-  - **Broker & Structural Response Tiers**: Added `broker_unlocked` and `structural_unlocked` tier types into [assemble.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/intent/assemble.ts) and [intent.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/intent.ts), enabling Power Broker alignment and specialized Government Components to unlock co-investment deals and structural framework protocols.
-  - **Apple Design Polish**: Enlarged `"Issues & Events"` header typography (`text-base sm:text-lg font-black tracking-tight`), added category color accents (`politics`, `diplomacy`, `defense`, `economy`, `directive`, `issue`), macOS translucent keycap badges (`⏎`), instant physical touch scale feedback (`active:scale-95`), and refined slide-over quick action external links from `"Full Profile Depth"` to clean, direct `"Open Page"` typography with `ArrowUpRight` trailing glyph in [DrillSheets.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/DrillSheets.tsx).
+  - **Executive Governance Telemetry Migration**: Built a translucent Apple-style **Executive Governance Telemetry Strip** directly into `StandingBands.tsx` displaying live Approval rating (`68% Approval`), Stability index (`78% Stability`), and Civil Capacity remaining (`85% Capacity`). Streamlined the agenda header in `V2MyAgenda.tsx` by removing redundant bar complications.
+  - **Interactive Territory & Cartography Widget**: Brought MapLibre GL vector map embed into V2 as `<TerritoryMapWidget />` inside the right sidebar of `V2Home.tsx` with a full-bleed edge-to-edge canvas (`height="h-60"`) and hover-activated floating glass badges (`Open Maps` on top-left, `Map Editor` on top-right).
+  - **Priority Issues Top-of-List Sorting**: Priority Issues (`statusLabel === "PRIORITY ISSUE"`, critical/high severity or urgency > 70) now dynamically sort to the top of the horizon event feed in `V2MyAgenda.tsx`, [useNationalIssues.ts](src/hooks/useNationalIssues.ts), `V2OpportunityHero.tsx`, and `LegislativeIssues.tsx`.
+  - **Directives & Policy Unification**: Replaced standalone "Custom Policy" prompt with `"Tune Custom Directive"` in `IntentComposer.tsx`, integrating custom policy parameters (Name, Description, Intensity, Spending Allocation, Department) into the Directive tuning workflow. Expanded directive presets to 64 items across 8 categories with a telemetry-reactive "Surprise Me" prompt engine.
+  - **Unified Issue Resolution & Cabinet Meetings**: Added a 4-branch resolution strip in `V2IssueDetail.tsx` (_Delegate_, _Resolve Brief_, _Set Cabinet Meeting_, _Make Directive_). Scheduling a Cabinet Meeting creates an agenda calendar event set for +7 IxTime days, unlocking deep analytical briefings.
+  - **Broker & Structural Response Tiers**: Added `broker_unlocked` and `structural_unlocked` tier types into `assemble.ts` and [intent](src/server/api/routers/intent/), enabling Power Broker alignment and specialized Government Components to unlock co-investment deals and structural framework protocols.
+  - **Apple Design Polish**: Enlarged `"Issues & Events"` header typography (`text-base sm:text-lg font-black tracking-tight`), added category color accents (`politics`, `diplomacy`, `defense`, `economy`, `directive`, `issue`), macOS translucent keycap badges (`⏎`), instant physical touch scale feedback (`active:scale-95`), and refined slide-over quick action external links from `"Full Profile Depth"` to clean, direct `"Open Page"` typography with `ArrowUpRight` trailing glyph in `DrillSheets.tsx`.
   - **TypeScript Expert & Advanced Types Performance Pass**: Wrapped `StandingBands`, `ExecutiveAgenda`, `ExecutiveOpportunityHero`, `DomainActionTiles`, `TerritoryMapWidget`, `DomainSurface`, `DomainContextRail`, `PoliticsDrillDown`, `EconomyDrillDown`, and `DrillSheets` in `React.memo`. Memoized telemetry calculations, `tiles`, `tabs`, and `metrics` arrays with `useMemo` hooks. Extracted pure helpers (`getRatingLabel`, `getSeverityRank`, `formatCompact`) outside render scopes with explicit return types and strict interface definitions (`StandingBandsProps`, `ExecutiveAgendaProps`, `ExecutiveOpportunityHeroProps`, `DomainSurfaceProps`, `DomainContextRailProps`, `PoliticsDrillDownProps`, `EconomyDrillDownProps`, `DrillSheetsProps`).
 - **MyCountry V2 Promotion & V1 Cleanup**:
   - **Single Production Surface (`MyCountryRouter.tsx`)**: Promoted `CommandSurface` as the sole production command shell across all 7 route entry points (`overview`, `executive`, `diplomacy`, `defense`, `politics`, `economy`, `map-editor`).
   - **Production Component Promotion & File Renaming**: Relocated all components from `src/components/mycountry/v2/` directly to `src/components/mycountry/` and promoted symbols (`CommandSurface`, `ExecutiveHome`, `ExecutiveAgenda`, `ExecutiveOpportunityHero`, `DomainSurface`, `DomainContextRail`, `DrillSheets`, `IssueDetailBrief`, `CommandNavToggle`, `ExecutiveConsole`, `CommitmentsAgendaRail`, `RealtimePulseWidget`). Removed empty `v2` directory.
   - **V1 Legacy Deprecation**: Safely deleted all 18 obsolete V1 components and unused primitives (`Enhanced*Content.tsx`, `OverviewHero.tsx`, `PillarCards.tsx`, `MyCountryTabSystem.tsx`, `MyCountrySidebarLayout.tsx`, `SectionShell.tsx`, `SectionHero.tsx`, `CompactSectionHero.tsx`, `SectionHeaderBackground.tsx`, `primitives/hero/`) and temporary lab routes (`/mycountry/v2`, `/labs/mycountry-v2`).
-  - **IntentComposer Monolith Splitting**: Modularized `IntentComposer.tsx` (1,236 lines down to 211 lines) into focused sub-components under `src/components/mycountry/primitives/composer/` ([DirectivePresetsCatalog.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/primitives/composer/DirectivePresetsCatalog.tsx), [DirectiveTuningControls.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/primitives/composer/DirectiveTuningControls.tsx), [DirectiveDiffPreview.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/primitives/composer/DirectiveDiffPreview.tsx)), bringing all composer files under 250 lines.
-  - **Dynamic Island / Halo Compact Mode Integration**: Wired global `compactMode` from [theme-context.tsx](file:///home/jxsig/projects/ixstats/src/context/theme-context.tsx) into [CommandSurface.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/CommandSurface.tsx) and [CommandNavToggle.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/CommandNavToggle.tsx), supporting seamless toggle between standard (`max-w-[1600px]`) and compact (`max-w-6xl`) viewports.
+  - **IntentComposer Monolith Splitting**: Modularized `IntentComposer.tsx` (1,236 lines down to 211 lines) into focused sub-components under `src/components/mycountry/primitives/composer/` (`DirectivePresetsCatalog.tsx`, `DirectiveTuningControls.tsx`, `DirectiveDiffPreview.tsx`), bringing all composer files under 250 lines.
+  - **Dynamic Island / Halo Compact Mode Integration**: Wired global `compactMode` from [theme-context.tsx](src/context/theme-context.tsx) into `CommandSurface.tsx` and `CommandNavToggle.tsx`, supporting seamless toggle between standard (`max-w-[1600px]`) and compact (`max-w-6xl`) viewports.
   - **Runtime & Module Bug Fixes**: Fixed relative imports across all relocated components, resolved `Set.prototype.has` method call in `CommandSurface.tsx` (`DOMAIN_SECTIONS.has`), and fixed component JSX references in `ExecutiveHome.tsx`.
 
 - **Dashboard Feed & UX Refinements**:
-  - Shortened initial Recent Activity (`RecordFeed`) item count to 5 items in [V2Home.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2Home.tsx).
+  - Shortened initial Recent Activity (`RecordFeed`) item count to 5 items in `V2Home.tsx`.
   - Streamlined button typography and cleaned up icon hierarchy for distraction-free executive interface.
 
 ### Optimized & Refactored
 
 - **Map Editor Performance & Responsiveness Overhaul (Plans 106–109)**:
-  - **Phase 1 — React State Isolation (`transientStore.ts`)**: Decoupled high-frequency mouse pointer movements, cursor telemetry, and hover tooltips into [transientStore.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/utils/transientStore.ts) (`useSyncExternalStore`), eliminating top-level React re-render cascades across Map Editor sidebar panels (`0` re-renders per cursor move).
-  - **Phase 2 — MapLibre Source Diffing Engine (`geoJsonPatcher.ts`)**: Built `GeoJSONPatchEngine` in [geoJsonPatcher.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/utils/geoJsonPatcher.ts) supporting targeted feature patch operations (`UPDATE_FEATURE`, `ADD_FEATURE`, `REMOVE_FEATURE`) and MapLibre `setFeatureState` GPU state toggles, replacing full-collection GeoJSON stringification (`JSON.stringify` of 500+ features) and cutting selection/style delay to $<1\text{ms}$.
-  - **Phase 3 — Web Worker Geometry Offloading (`geometry.worker.ts` & `useGeometryWorker.ts`)**: Offloaded heavy Turf.js spatial operations (`bezierSpline`, `area`, `union`, `difference`) into a dedicated Web Worker ([geometry.worker.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/workers/geometry.worker.ts)) while rendering fast $\mathcal{O}(1)$ polyline drag previews during vertex dragging, keeping editing frame rate locked at 60fps.
-  - **Phase 4 — DOM List Virtualization & CSS Containment (`FeatureList.tsx`)**: Applied native CSS `[content-visibility:auto]` containment and extracted memoized `FeatureRowItem` component with custom equality comparators in [FeatureList.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/editor/FeatureList.tsx), reducing list item diffing overhead by > 99%.
+  - **Phase 1 — React State Isolation (`transientStore.ts`)**: Decoupled high-frequency mouse pointer movements, cursor telemetry, and hover tooltips into [transientStore.ts](src/components/maps/editor/utils/transientStore.ts) (`useSyncExternalStore`), eliminating top-level React re-render cascades across Map Editor sidebar panels (`0` re-renders per cursor move).
+  - **Phase 2 — MapLibre Source Diffing Engine (`geoJsonPatcher.ts`)**: Built `GeoJSONPatchEngine` in `src/components/maps/editor/utils/geoJsonPatcher.ts` supporting targeted feature patch operations (`UPDATE_FEATURE`, `ADD_FEATURE`, `REMOVE_FEATURE`) and MapLibre `setFeatureState` GPU state toggles, replacing full-collection GeoJSON stringification (`JSON.stringify` of 500+ features) and cutting selection/style delay to $<1\text{ms}$.
+  - **Phase 3 — Web Worker Geometry Offloading (`geometry.worker.ts` & `useGeometryWorker.ts`)**: Offloaded heavy Turf.js spatial operations (`bezierSpline`, `area`, `union`, `difference`) into a dedicated Web Worker (`geometry.worker.ts`) while rendering fast $\mathcal{O}(1)$ polyline drag previews during vertex dragging, keeping editing frame rate locked at 60fps.
+  - **Phase 4 — DOM List Virtualization & CSS Containment (`FeatureList.tsx`)**: Applied native CSS `[content-visibility:auto]` containment and extracted memoized `FeatureRowItem` component with custom equality comparators in `FeatureList.tsx`, reducing list item diffing overhead by > 99%.
 - **Map Editor Photoshop-Grade Selection (Plan 120)**:
-  - **Deterministic Distance-Based Hit-Testing (`hit-test.ts`)**: Replaced the fixed ±6px bbox + "points-first" stable sort with a two-phase distance-based hit-test ([hit-test.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/utils/hit-test.ts)): exact-point query first (closest wins, layer-priority tie-break: capital > city > POI > story-pin > map-label), polygon containment second, then a grab-assist fallback (±8px points / ±6px labels) only over empty space — so hover always matches click and a point dot beats a region fill.
+  - **Deterministic Distance-Based Hit-Testing (`hit-test.ts`)**: Replaced the fixed ±6px bbox + "points-first" stable sort with a two-phase distance-based hit-test ([hit-test.ts](src/components/maps/editor/utils/hit-test.ts)): exact-point query first (closest wins, layer-priority tie-break: capital > city > POI > story-pin > map-label), polygon containment second, then a grab-assist fallback (±8px points / ±6px labels) only over empty space — so hover always matches click and a point dot beats a region fill.
   - **Click-vs-Drag Discrimination (`EditorMap.tsx`)**: Tracked mousedown→mouseup screen distance (`pointerDownPosRef`/`wasDragRef`, >4px = drag) so a click after panning no longer selects, deselects, or inserts; `usePointDrag` only enters drag after real movement.
-  - **Rectangle Marquee + Polygon-Enabled Lasso**: Added a rubber-band rect marquee (Shift+drag in `view`, Alt=subtract) and a **Rect/Freehand sub-toggle** for the lasso tool in [ToolOptionsBar.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/editor/ToolOptionsBar.tsx), both reusing the shared `editor-lasso` geometry preview.
-  - **Selection Math Includes Polygons**: Lasso and marquee now share one `selectFeaturesInGeometry` helper in [useMapEditor.ts](file:///home/jxsig/projects/ixstats/src/hooks/useMapEditor.ts) — points via point-in-polygon, subdivisions via Turf `booleanIntersects` — with replace/add/subtract modes.
+  - **Rectangle Marquee + Polygon-Enabled Lasso**: Added a rubber-band rect marquee (Shift+drag in `view`, Alt=subtract) and a **Rect/Freehand sub-toggle** for the lasso tool in [ToolOptionsBar.tsx](src/components/maps/editor/ToolOptionsBar.tsx), both reusing the shared `editor-lasso` geometry preview.
+  - **Selection Math Includes Polygons**: Lasso and marquee now share one `selectFeaturesInGeometry` helper in [useMapEditor.ts](src/hooks/useMapEditor.ts) — points via point-in-polygon, subdivisions via Turf `booleanIntersects` — with replace/add/subtract modes.
   - **Layer-Aware Selection — Locked Layers Unselectable**: Plumbed `lockedLayers` from the LayerPanel through overlay state into hit-testing; locked features show a `not-allowed` cursor and are excluded from selection.
   - **On-Map Selection Visuals (`useMapLayers.ts`)**: Split hover/selection visuals — new `editor-subdivisions-selected` stroke layer and `editor-points-selected` halo circle layer, driven from `selectedFeature.id`/`selectedIds` via filter updates.
   - **Cursor & Hover Polish**: Centralized cursor resolver, cached last-hovered-id (setFilter only on change), and Shift+click add / Alt+click remove multi-select parity with the sidebar list.
 - **IxWorld Main Map Viewer Smoothness & Rendering (Plans 110–114)**:
-  - **Smooth Globe→2D Projection Blend (`projectionTransition.ts`)**: New camera-driven interpolated projection spec transitions continuously between Globe (z ≤ 2.5) and Mercator (z ≥ 5.5), replacing hard projection jumps in [useWorldMapLayers.ts](file:///home/jxsig/projects/ixstats/src/components/maps/core/hooks/useWorldMapLayers.ts).
+  - **Smooth Globe→2D Projection Blend (`projectionTransition.ts`)**: New camera-driven interpolated projection spec transitions continuously between Globe (z ≤ 2.5) and Mercator (z ≥ 5.5), replacing hard projection jumps in [useWorldMapLayers.ts](src/components/maps/core/hooks/useWorldMapLayers.ts).
   - **Progressive Level-of-Detail Streaming (`useMapDataLOD.ts`)**: New LOD-tier hook streaming low-detail overview payloads at z ≤ 4 and lazily loading high-detail subdivisions/markers at z ≥ 5.
-  - **Transient Hover Decoupling**: The main world map now publishes hovered-feature and cursor-coordinate state to the shared `transientStore` ([useWorldMapInteractions.ts](file:///home/jxsig/projects/ixstats/src/components/maps/core/hooks/useWorldMapInteractions.ts)), matching the editor's no-re-render hover model.
+  - **Transient Hover Decoupling**: The main world map now publishes hovered-feature and cursor-coordinate state to the shared `transientStore` ([useWorldMapInteractions.ts](src/components/maps/core/hooks/useWorldMapInteractions.ts)), matching the editor's no-re-render hover model.
   - **Google Maps-Style Dynamic River Hydrography (Plan 114)**: Rivers now render with exponential zoom-ramped line width (0.4px @ z0 → 3.2px @ z9) and a progressive opacity curve across all three themes (`standard`, `dark`, `paper`), with refined river palette (`#5295c4`).
 - **Map Editor Backend & Cache Coherence (Plan 119)**:
-  - **GeoJSON Precision Truncation at the Response Boundary**: `getCountryFeatures` now truncates subdivision geometry to 6 decimal places (~0.11 m) via the new exported `truncateGeometry` in [geojson-compress.ts](file:///home/jxsig/projects/ixstats/src/lib/geojson-compress.ts) — DB keeps full precision, the editor keeps authoritative geometry, payloads shrink.
-  - **Shared Geo Cache Invalidation Keys (`trpc-cache.ts`)**: Consolidated scattered inline key arrays into `GEO_FEATURE_INVALIDATE_KEYS` (+ `_WITH_STORY_PINS`, `_WITH_MAP_LABELS`) in [trpc-cache.ts](file:///home/jxsig/projects/ixstats/src/lib/trpc-cache.ts), applied across all geo feature routers (cities, pois, storyPins, labels, subdivisions) so writes always invalidate the full map-bundle cache set.
+  - **GeoJSON Precision Truncation at the Response Boundary**: `getCountryFeatures` now truncates subdivision geometry to 6 decimal places (~0.11 m) via the new exported `truncateGeometry` in `geojson-compress.ts` — DB keeps full precision, the editor keeps authoritative geometry, payloads shrink.
+  - **Shared Geo Cache Invalidation Keys (`trpc-cache.ts`)**: Consolidated scattered inline key arrays into `GEO_FEATURE_INVALIDATE_KEYS` (+ `_WITH_STORY_PINS`, `_WITH_MAP_LABELS`) in `trpc-cache.ts`, applied across all geo feature routers (cities, pois, storyPins, labels, subdivisions) so writes always invalidate the full map-bundle cache set.
 - **Dushy Feedback Addressal**:
-  - **Daily Reward Copy**: Updated reward payout display in [DailyBonusWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/DailyBonusWidget.tsx) from `"1-10k credits"` to `"1 to 10,000 IxCredits scaled by level & streak"`.
-  - **Legislature Seat Cap (Vatican City Rule)**: Lowered minimum legislature seat count validator in [LegislatureConfig.tsx](file:///home/jxsig/projects/ixstats/src/components/executive/politics/LegislatureConfig.tsx) from 10 down to 1 seat.
-  - **Map Trash Icon UX & Deletion Bug**: Made feature delete action button always visible, 1.25x larger, and styled in red (`text-rose-500 hover:bg-rose-500/20`) in [FeatureList.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/editor/FeatureList.tsx). Added immediate `void refetch()` to feature deletion onSuccess callbacks in [useMapEditor.ts](file:///home/jxsig/projects/ixstats/src/hooks/useMapEditor.ts) to instantly flush state without extra user inputs.
-  - **Map Toolbar POI Label**: Updated toolbar button tooltip label to `"POI / Landmark"` in [MapEditorToolbar.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/editor/MapEditorToolbar.tsx).
+  - **Daily Reward Copy**: Updated reward payout display in `src/components/vault/DailyBonusWidget.tsx` from `"1-10k credits"` to `"1 to 10,000 IxCredits scaled by level & streak"`.
+  - **Legislature Seat Cap (Vatican City Rule)**: Lowered minimum legislature seat count validator in [LegislatureConfig.tsx](src/components/executive/politics/LegislatureConfig.tsx) from 10 down to 1 seat.
+  - **Map Trash Icon UX & Deletion Bug**: Made feature delete action button always visible, 1.25x larger, and styled in red (`text-rose-500 hover:bg-rose-500/20`) in `FeatureList.tsx`. Added immediate `void refetch()` to feature deletion onSuccess callbacks in [useMapEditor.ts](src/hooks/useMapEditor.ts) to instantly flush state without extra user inputs.
+  - **Map Toolbar POI Label**: Updated toolbar button tooltip label to `"POI / Landmark"` in [MapEditorToolbar.tsx](src/components/maps/editor/MapEditorToolbar.tsx).
 
 - **Full-Stack Performance Optimization Suite (Plans A, B, C)**:
   - **Plan A — Quick Wins**:
-    - **Prisma HMR Connection Leak Fix**: Corrected dev singleton pattern in [db.ts](file:///ixwiki/public/projects/ixstats/src/server/db.ts#L406) (`globalForPrisma.prisma = db`), stopping connection pool leaks across hot-reloads.
-    - **Static ErrorLogger Import**: Converted dynamic `import("~/lib/error-logger")` in tRPC errorFormatter ([trpc.ts](file:///ixwiki/public/projects/ixstats/src/server/api/trpc.ts#L15)) to top-level static import.
-    - **React Query Memory Guard**: Reduced `gcTime` from 60m → 10m in [query-client.ts](file:///ixwiki/public/projects/ixstats/src/trpc/query-client.ts#L23) to prevent unbounded memory growth on long client sessions.
-    - **Lodash Bundle Tree-Shaking**: Converted all 10 `lodash` barrel imports to direct subpath imports (`lodash/debounce`, `lodash/isEqual`) and added `"lodash"` to `optimizePackageImports` in [next.config.js](file:///ixwiki/public/projects/ixstats/next.config.js#L77).
+    - **Prisma HMR Connection Leak Fix**: Corrected dev singleton pattern in [db.ts](src/server/db.ts#L406) (`globalForPrisma.prisma = db`), stopping connection pool leaks across hot-reloads.
+    - **Static ErrorLogger Import**: Converted dynamic `import("~/lib/error-logger")` in tRPC errorFormatter (`trpc.ts`) to top-level static import.
+    - **React Query Memory Guard**: Reduced `gcTime` from 60m → 10m in [query-client.ts](src/trpc/query-client.ts#L23) to prevent unbounded memory growth on long client sessions.
+    - **Lodash Bundle Tree-Shaking**: Converted all 10 `lodash` barrel imports to direct subpath imports (`lodash/debounce`, `lodash/isEqual`) and added `"lodash"` to `optimizePackageImports` in `next.config.js`.
   - **Plan B — Client-Side Performance**:
-    - **Lazy Game Provider Split**: Created [GameProviders.tsx](file:///ixwiki/public/projects/ixstats/src/components/providers/GameProviders.tsx) and [LazyGameProviders.tsx](file:///ixwiki/public/projects/ixstats/src/components/providers/LazyGameProviders.tsx). Extracted 7 domain providers + live activity plugins out of [layout.tsx](file:///ixwiki/public/projects/ixstats/src/app/layout.tsx), reducing public route provider count from 17 to 6.
-    - **Visibility-Aware Tab Polling**: Created [useVisibleRefetch.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useVisibleRefetch.ts) hook and wrapped all active `refetchInterval` polling. Immediately pauses background network polling when tab is inactive (`document.hidden`).
-    - **MyCountry Notification Consolidation**: Added `api.mycountry.getNotificationCounts` server procedure in [dashboard.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/mycountry/dashboard.ts#L346) and refactored [useMyCountryNotifications.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMyCountryNotifications.ts), merging 4 separate 60s queries into 1 batched query.
+    - **Lazy Game Provider Split**: Created [GameProviders.tsx](src/components/providers/GameProviders.tsx) and [LazyGameProviders.tsx](src/components/providers/LazyGameProviders.tsx). Extracted 7 domain providers + live activity plugins out of [layout.tsx](src/app/layout.tsx), reducing public route provider count from 17 to 6.
+    - **Visibility-Aware Tab Polling**: Created [useVisibleRefetch.ts](src/hooks/useVisibleRefetch.ts) hook and wrapped all active `refetchInterval` polling. Immediately pauses background network polling when tab is inactive (`document.hidden`).
+    - **MyCountry Notification Consolidation**: Added `api.mycountry.getNotificationCounts` server procedure in [dashboard.ts](src/server/api/routers/mycountry/dashboard.ts#L346) and refactored `useMyCountryNotifications.ts`, merging 4 separate 60s queries into 1 batched query.
     - **Polling Frequency Tuning**: Tuned admin metrics (5s → 30s), admin cards sync (3s → 15s), vault balance (30s → 60s), national issues badge (30s → 60s), and background diplomatic/economic streams (30s/60s → 60s/120s).
-    - **User Logger Dev Singleton**: Attached `__userLoggerInitialized` to `globalThis` in [user-logger.ts](file:///ixwiki/public/projects/ixstats/src/lib/user-logger.ts#L110) to eliminate dev server initialization log spam.
+    - **User Logger Dev Singleton**: Attached `__userLoggerInitialized` to `globalThis` in `user-logger.ts` to eliminate dev server initialization log spam.
   - **Plan C — Server-Side Performance**:
-    - **tRPC Middleware Stack Trimming**: Removed no-op `dataPrivacyMiddleware` from procedure chains in [trpc.ts](file:///ixwiki/public/projects/ixstats/src/server/api/trpc.ts#L820), trimming `adminProcedure` and `executiveProcedure` stacks from 8 to 5 layers. Added early return to `inputValidationMiddleware` and merged procedure timing into `auditLogMiddleware`.
-    - **Selective User Context Query**: Replaced heavy Prisma `include` with explicit `select` in `createTRPCContext` ([trpc.ts](file:///ixwiki/public/projects/ixstats/src/server/api/trpc.ts#L170)) and `UserManagementService` ([user-management-service.ts](file:///ixwiki/public/projects/ixstats/src/lib/user-management-service.ts#L34)), reducing user context payload size by ~90%.
-    - **Protected Endpoint Server Caching**: Introduced `cachedProtectedProcedure` in [trpc.ts](file:///ixwiki/public/projects/ixstats/src/server/api/trpc.ts#L928) (30s user-aware cache) and applied server-side caching to `intelCore.getOverview` and `mycountry.getNotificationCounts`.
+    - **tRPC Middleware Stack Trimming**: Removed no-op `dataPrivacyMiddleware` from procedure chains in `trpc.ts`, trimming `adminProcedure` and `executiveProcedure` stacks from 8 to 5 layers. Added early return to `inputValidationMiddleware` and merged procedure timing into `auditLogMiddleware`.
+    - **Selective User Context Query**: Replaced heavy Prisma `include` with explicit `select` in `createTRPCContext` (`trpc.ts`) and `UserManagementService` (`user-management-service.ts`), reducing user context payload size by ~90%.
+    - **Protected Endpoint Server Caching**: Introduced `cachedProtectedProcedure` in `trpc.ts` (30s user-aware cache) and applied server-side caching to `intelCore.getOverview` and `mycountry.getNotificationCounts`.
 
 ### Added
 
 - **Unified Physical Geography Engine (UPG v2 & Atlas Engine v4)**:
-  - **Fixed 100,000-Cell Spatial Mesh**: Locked default mesh resolution to a high-density 100,000-cell Voronoi spatial mesh (`WorldGraph`, 5 Lloyd relaxation passes) in [config.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/config.ts) and [page.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/map-pipeline/page.tsx). Removed resolution range sliders from [MapPipelineControls.tsx](file:///home/jxsig/projects/ixstats/src/components/labs/map-pipeline/MapPipelineControls.tsx) and added a `"100K RBF Spline Vector Engine"` telemetry badge.
+  - **Fixed 100,000-Cell Spatial Mesh**: Locked default mesh resolution to a high-density 100,000-cell Voronoi spatial mesh (`WorldGraph`, 5 Lloyd relaxation passes) in [config.ts](src/lib/worldgen/v2/config.ts) and `page.tsx`. Removed resolution range sliders from `MapPipelineControls.tsx` and added a `"100K RBF Spline Vector Engine"` telemetry badge.
   - **Option A 3-Stage IxWorld Vector Synthesis Engine**:
-    - **Douglas-Peucker Decimation (`simplifyRing`)**: Integrated `simplifyRing` in [chaikin.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/helpers/chaikin.ts) to strip high-frequency Voronoi cell chatter ($120^\circ$ direction flips) before curve calculation.
+    - **Douglas-Peucker Decimation (`simplifyRing`)**: Integrated `simplifyRing` in [chaikin.ts](src/lib/worldgen/v2/helpers/chaikin.ts) to strip high-frequency Voronoi cell chatter ($120^\circ$ direction flips) before curve calculation.
     - **Control Point Catmull-Rom Subdivision (`catmullRomSmooth`)**: Implemented 3-pass Catmull-Rom spline subdivision ($\tau = 0.5$) through structural control points for continuous, silk-smooth Bezier arcs at all zoom levels without scalloped wave bumps.
     - **Continuous Multi-Octave Harmonic Vector Perturbation (`perturbRing`)**: Morphs vector coordinates with continuous harmonic noise matching IxWorld's `vector-synthesis.ts` architecture for organic fractal cartography.
-  - **Coastal Hypsometric Slope Damping**: Implemented smooth exponential coastal dampening ($H_{\text{damped}}[i] = H[i] \cdot (1.0 - 0.85 \cdot e^{-0.35 \cdot \text{coastDist}[i]})$) for `coastDist <= 8` in [coastlines.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/coastlines.ts), keeping shorelines in lowlands (`zone_0`/`zone_1`, 0–350m) and preventing off-white glacial peaks (`zone_8`) from touching ocean borders.
-  - **Polar Cosine Soft Clamping**: Added high-latitude noise dampening (`polarFactor = cos(((absLat - 70) / 18) * (PI / 2))`) for $|lat| > 70^\circ$ in [terrain.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/terrain.ts). Smoothly clamps South Pole ($lat < -74^\circ$) to a +800m polar continent plateau and North Pole ($lat > 76^\circ$) to a -1500m Arctic sea basin with ice caps (`biome === 10`), eliminating projection stretching/pinching.
-  - **Spatial Heightmap Laplacian Smoothing**: Added 2-pass spatial heightmap diffusion ($H_{\text{smoothed}}[i] = 0.5 \cdot H[i] + 0.5 \cdot \text{avg}(H_{\text{neighbors}})$) in [terrain.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/terrain.ts) to diffuse 1-cell elevation spikes into continuous, natural mountain massifs.
-  - **Blotchy Spot & Island State Alignment**: Filtered out isolated elevation clusters smaller than 6 cells ($Z \ge 3$) in [export.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/export.ts) to eliminate blotchy mountain dots. Fixed unclaimed island land cell assignment in [politics.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/politics.ts) by calculating Euclidean proximity to state capital source seeds.
-  - **Maps Pipeline Lab Page Layer Stack & Progressive Threshold Fixes**: Reordered MapLibre layer stacking so rivers (`zIndex: 7`) and lakes (`zIndex: 6`) render above political country fills (`zIndex: 4`). Fixed `PROGRESSIVE_THRESHOLDS` and `filterByArea` fallback logic in [map-core-helpers.ts](file:///home/jxsig/projects/ixstats/src/components/maps/core/utils/map-core-helpers.ts) to prevent 100% layer filtering at initial zoom.
+  - **Coastal Hypsometric Slope Damping**: Implemented smooth exponential coastal dampening ($H_{\text{damped}}[i] = H[i] \cdot (1.0 - 0.85 \cdot e^{-0.35 \cdot \text{coastDist}[i]})$) for `coastDist <= 8` in [coastlines.ts](src/lib/worldgen/v2/coastlines.ts), keeping shorelines in lowlands (`zone_0`/`zone_1`, 0–350m) and preventing off-white glacial peaks (`zone_8`) from touching ocean borders.
+  - **Polar Cosine Soft Clamping**: Added high-latitude noise dampening (`polarFactor = cos(((absLat - 70) / 18) * (PI / 2))`) for $|lat| > 70^\circ$ in [terrain.ts](src/lib/worldgen/v2/terrain.ts). Smoothly clamps South Pole ($lat < -74^\circ$) to a +800m polar continent plateau and North Pole ($lat > 76^\circ$) to a -1500m Arctic sea basin with ice caps (`biome === 10`), eliminating projection stretching/pinching.
+  - **Spatial Heightmap Laplacian Smoothing**: Added 2-pass spatial heightmap diffusion ($H_{\text{smoothed}}[i] = 0.5 \cdot H[i] + 0.5 \cdot \text{avg}(H_{\text{neighbors}})$) in [terrain.ts](src/lib/worldgen/v2/terrain.ts) to diffuse 1-cell elevation spikes into continuous, natural mountain massifs.
+  - **Blotchy Spot & Island State Alignment**: Filtered out isolated elevation clusters smaller than 6 cells ($Z \ge 3$) in [export.ts](src/lib/worldgen/v2/export.ts) to eliminate blotchy mountain dots. Fixed unclaimed island land cell assignment in [politics.ts](src/lib/worldgen/v2/politics.ts) by calculating Euclidean proximity to state capital source seeds.
+  - **Maps Pipeline Lab Page Layer Stack & Progressive Threshold Fixes**: Reordered MapLibre layer stacking so rivers (`zIndex: 7`) and lakes (`zIndex: 6`) render above political country fills (`zIndex: 4`). Fixed `PROGRESSIVE_THRESHOLDS` and `filterByArea` fallback logic in [map-core-helpers.ts](src/components/maps/core/utils/map-core-helpers.ts) to prevent 100% layer filtering at initial zoom.
   - **Zoom Transition Pop-In/Pop-Out Elimination**:
-    - **WebGL Tile Simplification Guard**: Configured MapLibre GeoJSON sources in [useWorldMapLayers.ts](file:///home/jxsig/projects/ixstats/src/components/maps/core/hooks/useWorldMapLayers.ts) and [useMapLayers.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/hooks/useMapLayers.ts) with `tolerance: 0` and `buffer: 256`, preventing MapLibre's `geojson-vt` tile builder from simplifying polygon features or dropping vertices across zoom tile boundaries.
-    - **Elevation Peak Integrity**: Removed small-component component filtering from `exportAltitudes` in [export.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/export.ts) so mountain peaks and high-elevation clusters remain fully intact without popping out at high zoom.
+    - **WebGL Tile Simplification Guard**: Configured MapLibre GeoJSON sources in [useWorldMapLayers.ts](src/components/maps/core/hooks/useWorldMapLayers.ts) and [useMapLayers.ts](src/components/maps/editor/hooks/useMapLayers.ts) with `tolerance: 0` and `buffer: 256`, preventing MapLibre's `geojson-vt` tile builder from simplifying polygon features or dropping vertices across zoom tile boundaries.
+    - **Elevation Peak Integrity**: Removed small-component component filtering from `exportAltitudes` in [export.ts](src/lib/worldgen/v2/export.ts) so mountain peaks and high-elevation clusters remain fully intact without popping out at high zoom.
   - **Land-Only River & Lake Co-Generation**:
     - **Strict Land Mask Guard**: Updated `coastlines.ts`, `hydro-climate.ts`, and `export.ts` so that rivers and lakes are strictly confined to land cells (`cells.isLand === 1`). Non-land water bodies (`!cells.isLand`) are ALWAYS classified as ocean features, preventing lakes or rivers from generating in ocean waters.
     - **Depression & Sink Lake Generation**: Lakes are co-generated in `hydro-climate.ts` from land hydraulic depressions (`filledH - rawH > 1.5m`) and endorheic river sinks. Rivers flow into inland lakes and exit down slopes to coastal land cells.
     - **River Coast Termination**: Rivers terminate strictly at coastal land cells (`coastDist === 0`) and never push ocean water cells into `river.cells`.
-  - **Comprehensive Engine Documentation**: Created [src/lib/worldgen/README.md](file:///home/jxsig/projects/ixstats/src/lib/worldgen/README.md) documenting UPG v2 principles, 8-stage pipeline, GeoJSON layer contracts, 9 elevation zones, API usage, and test commands.
+  - **Comprehensive Engine Documentation**: Created [src/lib/worldgen/README.md](src/lib/worldgen/README.md) documenting UPG v2 principles, 8-stage pipeline, GeoJSON layer contracts, 9 elevation zones, API usage, and test commands.
 
 ## [1.2.7 Ogma (Beta)] - 2026-08-07
 
@@ -755,25 +2290,25 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Added
 
-- **Intent ↔ Issues Resistance Rhythm** ([plan 002](plans/002-intent-vs-issues-rhythm-verified-implementation.md)):
-  - **Dual spawn mode** (`spawnMode` runtime toggle in [data/national-issues-config.json](file:///home/jxsig/projects/ixstats/data/national-issues-config.json) and `getNationalIssuesConfig()` in [national-issues-config.ts](file:///home/jxsig/projects/ixstats/src/lib/national-issues-config.ts)): `"probability"` (default, existing boosted evaluation) | `"deterministic"` (issue spawns immediately at intent commit) | `"off"`.
-  - **Deterministic spawn engine** [resistance.ts](file:///home/jxsig/projects/ixstats/src/lib/intent/resistance.ts): `spawnIntentResistance()` maps intent categories → template domains (`defense → military/security`, `fiscal/economy → economic`, `social → social`, `infrastructure → infrastructure`, `security → political/governance`), dedupes per intent+template, respects `cooldownDays`/`maxActivePerCountry`, and instantiates via `forceGenerate`. Hooked into `intent.commit` (moderate/extreme only, try/catch — never fails the commit).
-  - **Maintenance cron rework**: [policy-maintenance-cron.ts](file:///home/jxsig/projects/ixstats/src/lib/policy-maintenance-cron.ts) now has a real `spawnVolatileIssues()` covering policies (fixed matching) **and** intents (probability-mode risk roll, mapped categories).
-  - **Intent progress loop**: `recomputeIntentProgress()` in [national-issues-consequences.ts](file:///home/jxsig/projects/ixstats/src/lib/national-issues-consequences.ts) recomputes cached `Intent.progress` = resolved linked issues (responded/auto_resolved/dismissed; pending/viewed excluded) ÷ total, auto-called on resolve/dismiss. New `intent.getLinkedIssues` procedure returns linked issues + `resolvedCount`/`totalCount`/`progress`.
+- **Intent ↔ Issues Resistance Rhythm** (plan 002; `plans/` is a local, git-ignored directory):
+  - **Dual spawn mode** (`spawnMode` runtime toggle in [data/national-issues-config.json](data/national-issues-config.json) and `getNationalIssuesConfig()` in `national-issues-config.ts`): `"probability"` (default, existing boosted evaluation) | `"deterministic"` (issue spawns immediately at intent commit) | `"off"`.
+  - **Deterministic spawn engine** [resistance.ts](src/lib/intent/resistance.ts): `spawnIntentResistance()` maps intent categories → template domains (`defense → military/security`, `fiscal/economy → economic`, `social → social`, `infrastructure → infrastructure`, `security → political/governance`), dedupes per intent+template, respects `cooldownDays`/`maxActivePerCountry`, and instantiates via `forceGenerate`. Hooked into `intent.commit` (moderate/extreme only, try/catch — never fails the commit).
+  - **Maintenance cron rework**: `policy-maintenance-cron.ts` now has a real `spawnVolatileIssues()` covering policies (fixed matching) **and** intents (probability-mode risk roll, mapped categories).
+  - **Intent progress loop**: `recomputeIntentProgress()` in `national-issues-consequences.ts` recomputes cached `Intent.progress` = resolved linked issues (responded/auto_resolved/dismissed; pending/viewed excluded) ÷ total, auto-called on resolve/dismiss. New `intent.getLinkedIssues` procedure returns linked issues + `resolvedCount`/`totalCount`/`progress`.
 - **Grounded Issue Generator** (focused-first; plan 002 §6):
-  - **Real-data snapshot extensions** in `buildCountrySnapshot`: geo (`CountryGeoProfile`: landlocked/island/climate/terrain/arable/coastline/neighborCount), names (capital/largest city, languages, religion, top party, ministers), fiscal/labor, economic profile, diplomatic partners + embassy hosts/guests + world/crisis events, and **live PostGIS `ST_Touches` neighbors** (gated by env `ISSUES_NEIGHBORS` via [country-geo/bundle.ts](file:///home/jxsig/projects/ixstats/src/lib/country-geo/bundle.ts), 60s memo cache).
+  - **Real-data snapshot extensions** in `buildCountrySnapshot`: geo (`CountryGeoProfile`: landlocked/island/climate/terrain/arable/coastline/neighborCount), names (capital/largest city, languages, religion, top party, ministers), fiscal/labor, economic profile, diplomatic partners + embassy hosts/guests + world/crisis events, and **live PostGIS `ST_Touches` neighbors** (gated by env `ISSUES_NEIGHBORS` via [country-geo/bundle.ts](src/lib/country-geo/bundle.ts), 60s memo cache).
   - **Evaluator ops** `count` and `any` (recursive condition over object-array elements) in the safe JSON tree — no `eval`.
   - **Real-name variable resolvers**: `{{neighborName}}`, `{{allyName}}`, `{{rivalName}}`, `{{partnerName}}`, `{{partyName}}`, `{{oppositionParty}}`, `{{ministerName}}`, `{{officialTitle}}`, `{{capitalCity}}`, `{{cityName}}`, `{{dominantClimate}}`, `{{activeIntentGoal}}`; target-country fallback prefers neighbors/partners over a random country.
   - **Seeded grounded templates** (landlocked-port crisis, border incident w/ real neighbor, ally-trade disruption, legislative gridlock w/ real party, union strike gated on `UNION_BASED`, drought gated on `dominantClimate`).
 - **V2 Issue Brief surface** (plan 002 §8):
-  - New [V2IssueDetail.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2IssueDetail.tsx): recon commission (pending/ready), confirm/risky response options, delegate, and a **post-resolve CTA** ("Declare Follow-Up Directive →") that pre-fills the composer via `V2CommandSurface`'s `onDeclare` conduit using the chosen option's `recommendedDirective` (or `"Address: <issue title>"`).
-  - New `{ kind: "issue" }` drill in [V2DrillSheets.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2DrillSheets.tsx); `V2OpportunityHero` top-issue button opens it; `V2MyAgenda` injects active issues as priority events (urgent red/amber).
-  - **Progress UI**: directive-root progress bar in [V2Agenda.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2Agenda.tsx) + "Resistance Progress" card and linked-issue list in the `IntentDetail` drill.
-  - `recommendedDirective?` added to `ResponseOptionTemplate` ([national-issues-engine.ts](file:///home/jxsig/projects/ixstats/src/lib/national-issues-engine.ts)) and to admin template create/update schemas in [templates.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/national-issues/templates.ts) and [engine.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/national-issues/engine.ts).
+  - New `V2IssueDetail.tsx`: recon commission (pending/ready), confirm/risky response options, delegate, and a **post-resolve CTA** ("Declare Follow-Up Directive →") that pre-fills the composer via `V2CommandSurface`'s `onDeclare` conduit using the chosen option's `recommendedDirective` (or `"Address: <issue title>"`).
+  - New `{ kind: "issue" }` drill in `V2DrillSheets.tsx`; `V2OpportunityHero` top-issue button opens it; `V2MyAgenda` injects active issues as priority events (urgent red/amber).
+  - **Progress UI**: directive-root progress bar in `V2Agenda.tsx` + "Resistance Progress" card and linked-issue list in the `IntentDetail` drill.
+  - `recommendedDirective?` added to `ResponseOptionTemplate` (`national-issues-engine.ts`) and to admin template create/update schemas in [templates.ts](src/server/api/routers/national-issues/templates.ts) and [engine.ts](src/server/api/routers/national-issues/engine.ts).
 
 ### Fixed
 
-- **Delegation window bug**: dismissed-issue CivCap count used `now - 5` (5 IxTime-ms ≈ all history); now a real 5-day IxTime window via `DELEGATION_WINDOW_MS` in [player.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/national-issues/player.ts).
+- **Delegation window bug**: dismissed-issue CivCap count used `now - 5` (5 IxTime-ms ≈ all history); now a real 5-day IxTime window via `DELEGATION_WINDOW_MS` in [player.ts](src/server/api/routers/national-issues/player.ts).
 - **Intent vocabulary mismatch**: probability boost now uses the `INTENT_CATEGORY_TO_TEMPLATE` mapping so `economy`/`fiscal`/`defense` intents actually boost their templates (previously only 3 of 6 categories matched).
 - **Duplicate `getTree`** removed (first dead copy); `cooldownStatus` weekly cap now on `createdIxTime` not wall-clock `createdAt`; `"proposed"` added to `updateStatus` enum; dead foreign gate removed; `riskRating` persisted from `TIER_RISK` at commit.
 - **Intent completion gate**: `updateStatus("completed")` returns `PRECONDITION_FAILED` while open (`pending`/`viewed`) linked resistance issues exist.
@@ -785,10 +2320,10 @@ capability integer. Each release entry below lists which components advanced and
 - **Clerk Waitlist & Onboarding Integration**:
   - Integrated Clerk's backend SDK (`clerkClient`) in `UserManagementService` to read `publicMetadata.reservedNationName` from waitlisted or invited users.
   - Automatically create a pre-verified `NSVerification` record for the user during signup, bypassing post-signup verification steps.
-  - Added a new `inviteUserToBypassWaitlist` admin procedure in [users.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/admin/users.ts) to invite VIP users with pre-seeded nation metadata.
-  - Built a beautiful glassmorphic splash dashboard ([WaitlistDashboardSection.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/WaitlistDashboardSection.tsx)) for waitlisted users, featuring queue status cards, priority release indicators, and onboarding checklists.
+  - Added a new `inviteUserToBypassWaitlist` admin procedure in [users.ts](src/server/api/routers/admin/users.ts) to invite VIP users with pre-seeded nation metadata.
+  - Built a beautiful glassmorphic splash dashboard (`WaitlistDashboardSection.tsx`) for waitlisted users, featuring queue status cards, priority release indicators, and onboarding checklists.
 - **Unified NationStates Card Valuation & Sync Consolidation**:
-  - Consolidated the card valuation logic into `computeCardValue` inside [card-valuation.ts](file:///home/jxsig/projects/ixstats/src/lib/card-valuation.ts), replacing multiple duplicate processing helper functions.
+  - Consolidated the card valuation logic into `computeCardValue` inside `card-valuation.ts`, replacing multiple duplicate processing helper functions.
   - Created a unified `ns-sync-processor.ts` helper service to handle nation deck imports and region syncs.
   - Cleaned up duplicate processor copies across `sync.ts`, `cards.ts`, `decks.ts`, and `verification.ts` routers.
   - Updated `refreshCardValues` to apply unified card values.
@@ -822,7 +2357,7 @@ capability integer. Each release entry below lists which components advanced and
 ### Added
 
 - **Shared Map Instance & WebGL Context Conservation**:
-  - **Single Shared Canvas**: Implemented [SharedMapContext.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/core/SharedMapContext.tsx) and registered `SharedMapProvider` globally to reuse a single persistent MapLibre instance across `/maps`, the map editor, and all dashboard/mycountry country widgets.
+  - **Single Shared Canvas**: Implemented `SharedMapContext.tsx` and registered `SharedMapProvider` globally to reuse a single persistent MapLibre instance across `/maps`, the map editor, and all dashboard/mycountry country widgets.
   - **Slot-Based Dom Re-parenting**: Replaced standalone map instances in `IxWorldMap.tsx`, `EditorMap.tsx`, and `useCountryMapEmbedLayers.ts` with slot-based acquisition (`acquireMap`) and dynamic canvas container re-parenting.
   - **Dynamic Layer State Hiding & Cleanup**: Modified the widget embed hook to set base world layers to invisible upon acquisition, append its custom GeoJSON layers (neighbors, subdivisions, cities), and safely restore base layers and clean up custom layers upon release.
 - **Map Interaction & Performance Optimizations**:
@@ -852,57 +2387,57 @@ capability integer. Each release entry below lists which components advanced and
 ### Added
 
 - **MyCountry Decisions-to-Effects Bridge & Agenda Management (MyCountry System v5)**:
-  - **Cabinet Meetings Finalization Flow**: Added a **Complete & Finalize Meeting** dialog flow in [MeetingDetailModal.tsx](file:///home/jxsig/projects/ixstats/src/components/executive/MeetingDetailModal.tsx) to submit final notes and transition cabinet meetings to completed.
-  - **Automatic Calendar & Agenda Sync**: Updated the backend `completeMeeting` mutation in [meetings.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/quickactions/meetings.ts) to also transition related `ActivitySchedule` items to `"completed"`, clearing them from the player's upcoming agenda and daily schedule.
-  - **Decision Implementation & Stat Effects**: Integrated **Implement** buttons next to pending meeting decisions in [MeetingDetailModal.tsx](file:///home/jxsig/projects/ixstats/src/components/executive/MeetingDetailModal.tsx) to invoke the tRPC `implementDecision` mutation, which runs narrative effects, updates stats in the database, logs the event in the country ledger, and creates ThinkPages news.
+  - **Cabinet Meetings Finalization Flow**: Added a **Complete & Finalize Meeting** dialog flow in `MeetingDetailModal.tsx` to submit final notes and transition cabinet meetings to completed.
+  - **Automatic Calendar & Agenda Sync**: Updated the backend `completeMeeting` mutation in [meetings.ts](src/server/api/routers/quickactions/meetings.ts) to also transition related `ActivitySchedule` items to `"completed"`, clearing them from the player's upcoming agenda and daily schedule.
+  - **Decision Implementation & Stat Effects**: Integrated **Implement** buttons next to pending meeting decisions in `MeetingDetailModal.tsx` to invoke the tRPC `implementDecision` mutation, which runs narrative effects, updates stats in the database, logs the event in the country ledger, and creates ThinkPages news.
   - **Custom Decision Recording & Metric Selectors**: Added a **Record New Decision** form to let players record custom decisions with precise percentage adjustments on national metrics (e.g. Political Stability +2% or Poverty Rate -1%), serialized as `estimatedEffect` JSON fields.
-  - **Card Navigation Shortcuts**: Configured click actions in [MeetingsAndDecisionsPanel.tsx](file:///home/jxsig/projects/ixstats/src/components/executive/MeetingsAndDecisionsPanel.tsx) to automatically open the details modal for pending and upcoming meetings.
+  - **Card Navigation Shortcuts**: Configured click actions in `MeetingsAndDecisionsPanel.tsx` to automatically open the details modal for pending and upcoming meetings.
 - **Active Policy Maintenance Costs (Economy System v4)**:
-  - **Policy Maintenance Cron**: Developed [policy-maintenance-cron.ts](file:///home/jxsig/projects/ixstats/src/lib/policy-maintenance-cron.ts) to scan all active policies, sum the `maintenanceCost` for each country, subtract the cost from `GovernmentStructure.totalBudget` using `CountryEventSpine.recordCountryEvent`, and record the transactions in the country's change log ledger.
-  - **Server Integration**: Hooked the new job into [server.mjs](file:///home/jxsig/projects/ixstats/server.mjs) to run as a background task every 6 hours.
+  - **Policy Maintenance Cron**: Developed `policy-maintenance-cron.ts` to scan all active policies, sum the `maintenanceCost` for each country, subtract the cost from `GovernmentStructure.totalBudget` using `CountryEventSpine.recordCountryEvent`, and record the transactions in the country's change log ledger.
+  - **Server Integration**: Hooked the new job into [server.mjs](server.mjs) to run as a background task every 6 hours.
 
 ## [1.1.10 Ogma (Alpha)] - 2026-06-29
 
 ### Added
 
 - **Map Geography Report & Analyzer (Atlas Engine v3)**:
-  - **Named Feature Toolbar & Shortcuts**: Integrated Peaks (shortcut `K`, icon `Mountain`), Rivers (shortcut `Y`, icon `Waves`), and Lakes (shortcut `J`, icon `Droplet`) toolbar items via their respective editor plugins ([PointPlacementPlugin.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/plugins/PointPlacementPlugin.ts), [RouteEditPlugin.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/plugins/RouteEditPlugin.ts), [SubdivisionDrawPlugin.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/plugins/SubdivisionDrawPlugin.ts)).
-  - **Drawing & Placement Canvas Integration**: Updated [EditorMap.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/editor/EditorMap.tsx), [useSubdivisionDraw.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionDraw.ts), and [useMapEditor.ts](file:///home/jxsig/projects/ixstats/src/hooks/useMapEditor.ts) to support polygon drawing for Lakes, click placement coordinates for Peaks, and route waypoints path construction for Rivers.
+  - **Named Feature Toolbar & Shortcuts**: Integrated Peaks (shortcut `K`, icon `Mountain`), Rivers (shortcut `Y`, icon `Waves`), and Lakes (shortcut `J`, icon `Droplet`) toolbar items via their respective editor plugins ([PointPlacementPlugin.ts](src/components/maps/editor/plugins/PointPlacementPlugin.ts), [RouteEditPlugin.ts](src/components/maps/editor/plugins/RouteEditPlugin.ts), [SubdivisionDrawPlugin.ts](src/components/maps/editor/plugins/SubdivisionDrawPlugin.ts)).
+  - **Drawing & Placement Canvas Integration**: Updated [EditorMap.tsx](src/components/maps/editor/EditorMap.tsx), [useSubdivisionDraw.ts](src/components/maps/editor/hooks/useSubdivisionDraw.ts), and [useMapEditor.ts](src/hooks/useMapEditor.ts) to support polygon drawing for Lakes, click placement coordinates for Peaks, and route waypoints path construction for Rivers.
 - **Achievements Auto-Resync (Achievements System v2)**:
-  - **On-Mount Collector Resync**: Modified the achievements page ([page.tsx](file:///home/jxsig/projects/ixstats/src/app/achievements/page.tsx)) to automatically trigger the `syncMyCollectorAchievements` mutation on mount, evaluating live percentiles against the country distribution and immediately unlocking earned achievements.
+  - **On-Mount Collector Resync**: Modified the achievements page (`src/app/achievements/page.tsx`, since removed) to automatically trigger the `syncMyCollectorAchievements` mutation on mount, evaluating live percentiles against the country distribution and immediately unlocking earned achievements.
 - **Editor Economy Styling Polish**:
-  - **Glassmorphic Transparency**: Polished solid backgrounds in builder demographics indicators ([PopulationSection.tsx](file:///home/jxsig/projects/ixstats/src/app/builder/components/enhanced/tabs/demographics/PopulationSection.tsx)) and geographic region rows ([GeographicSection.tsx](file:///home/jxsig/projects/ixstats/src/app/builder/components/enhanced/tabs/demographics/GeographicSection.tsx)) to match Policy card styling using transparent overlays (`border-white/10 bg-white/[0.02]`).
+  - **Glassmorphic Transparency**: Polished solid backgrounds in builder demographics indicators (PopulationSection.tsx) and geographic region rows (GeographicSection.tsx) to match Policy card styling using transparent overlays (`border-white/10 bg-white/[0.02]`).
 
 ## [1.1.9 Ogma (Alpha)] - 2026-06-29
 
 ### Added
 
 - **Shared-Edge Topology Editor (Atlas Engine v3, Builder System v2)**:
-  - **Pure Topology Engine**: Added [topology-engine.ts](file:///home/jxsig/projects/ixstats/src/lib/topology-engine.ts) containing pure geometric spatial indexing functions (`vkey`, `buildTopologyIndex`, `cascadeMoveVertex`) to allow dragging a shared boundary vertex to propagate dynamically to neighbor subdivisions in O(1) time.
-  - **Live Client-Side Drag Cascades**: Connected the topology index to [useSubdivisionVertexEdit.ts](file:///home/jxsig/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionVertexEdit.ts) to update neighbor boundaries visually on MapLibre in real-time as the user drags shared vertices.
-  - **Multi-Feature Undo/Redo**: Upgraded [useMapEditor.ts](file:///home/jxsig/projects/ixstats/src/hooks/useMapEditor.ts) to track `cascadedUpdates` inside `EditorAction`, enabling atomic undo/redo of multi-feature topology edits.
-  - **Transactional Server Writes**: Extended `updateSubdivision` in [subdivisions.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/geo/features/subdivisions.ts) to transactionally write neighbor updates via a Prisma `$transaction`.
+  - **Pure Topology Engine**: Added `topology-engine.ts` containing pure geometric spatial indexing functions (`vkey`, `buildTopologyIndex`, `cascadeMoveVertex`) to allow dragging a shared boundary vertex to propagate dynamically to neighbor subdivisions in O(1) time.
+  - **Live Client-Side Drag Cascades**: Connected the topology index to [useSubdivisionVertexEdit.ts](src/components/maps/editor/hooks/useSubdivisionVertexEdit.ts) to update neighbor boundaries visually on MapLibre in real-time as the user drags shared vertices.
+  - **Multi-Feature Undo/Redo**: Upgraded [useMapEditor.ts](src/hooks/useMapEditor.ts) to track `cascadedUpdates` inside `EditorAction`, enabling atomic undo/redo of multi-feature topology edits.
+  - **Transactional Server Writes**: Extended `updateSubdivision` in `subdivisions.ts` to transactionally write neighbor updates via a Prisma `$transaction`.
 
 ## [1.1.8 Ogma (Alpha)] - 2026-06-29
 
 ### Added
 
 - **Halo Onboarding Walkthrough & On-Page Tour Launch**:
-  - **First-Time User Onboarding Invitation**: Built a session-guarded hook inside [HaloTourContext.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/HaloTourContext.tsx) that automatically triggers a friendly iOS-style toast invitation banner in the Halo when a new user lands on `/dashboard` or `/mycountry` pages.
+  - **First-Time User Onboarding Invitation**: Built a session-guarded hook inside `HaloTourContext.tsx` that automatically triggers a friendly iOS-style toast invitation banner in the Halo when a new user lands on `/dashboard` or `/mycountry` pages.
   - **On-Page Guided Tour**: Clicking "Take Tour" launches the guided tour directly on the active page without requiring redirects.
-  - **Glassmorphic Tooltip Card**: Developed a high-end glassmorphic tooltip card ([HaloTourTooltip.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/HaloTourTooltip.tsx)) that centers in the viewport for compact steps, and moves to the right side of the Halo during expanded steps (2, 4, 5) with a lowered responsive vertical offset (`lg:top-[220px]` on desktop and `top-[320px]` on mobile/tablet) to prevent overlapping layout modules.
+  - **Glassmorphic Tooltip Card**: Developed a high-end glassmorphic tooltip card (`HaloTourTooltip.tsx`) that centers in the viewport for compact steps, and moves to the right side of the Halo during expanded steps (2, 4, 5) with a lowered responsive vertical offset (`lg:top-[220px]` on desktop and `top-[320px]` on mobile/tablet) to prevent overlapping layout modules.
   - **Pulsing Halo Focus Glow**: Added an active pulsing blue focus aura to the Halo container when the tour is active, paired with a page-level backdrop overlay that blurs and dims background content while leaving the Halo fully interactive.
-  - **Decoupled Architecture**: Promoted the tooltip globally to the Command Palette container ([index.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/index.tsx)) using custom window event triggers to decouple states.
+  - **Decoupled Architecture**: Promoted the tooltip globally to the Command Palette container (`index.tsx`) using custom window event triggers to decouple states.
 - **Halo Logo Refinement & Dynamic Styling**:
-  - **Circular Brand Emblem**: Replaced the high-contrast text "IX" logo in [CompactView.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/CompactView.tsx) with the circular brand emblem (`ix-logo.svg`).
+  - **Circular Brand Emblem**: Replaced the high-contrast text "IX" logo in `CompactView.tsx` with the circular brand emblem (`ix-logo.svg`).
   - **CSS Mask Rendering**: Used a CSS mask-image structure so the logo automatically renders in solid black in light mode, solid white in dark mode, and transitions to the primary brand color (`var(--primary)` / platform blue) when hovered.
   - **Apple-style Spring Physics**: Configured dynamic spring transitions (via `motion/react`) for snappier, elastic hover scaling (`scale: 1.15`, `rotate: 8deg`) and press downs (`scale: 0.9`, `rotate: -4deg`).
   - **Minimized Refraction**: Removed the colorful background refraction glow overlay from the home button to keep the header clean and minimalist.
   - **Cleanups**: Deleted temporary labs folders `src/app/labs/halo-tour` and `src/app/labs/halo-calendar` from the workspace.
 - **ThinkPages Sports Embed & Mention Popovers (MyLeague & MyClub Links)**:
-  - **Dynamic Entity HoverCards**: Implemented Radix-UI based `MentionPopover` inside [WikiLinkPreview.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki/WikiLinkPreview.tsx) that fetches rich metadata for leagues, clubs, countries, and users when hovered, rendering quick details (sport preset, archetype, stadium capacity, continent, flag) and actions (View Workspace, View Roster, Open Embassy, Message).
+  - **Dynamic Entity HoverCards**: Implemented Radix-UI based `MentionPopover` inside `WikiLinkPreview.tsx` that fetches rich metadata for leagues, clubs, countries, and users when hovered, rendering quick details (sport preset, archetype, stadium capacity, continent, flag) and actions (View Workspace, View Roster, Open Embassy, Message).
   - **Styled Mention Pills**: Configured relative links to render as beautiful, theme-colored pill badges (Amber for leagues, Blue for clubs, Emerald for countries, Purple for users) with `@` prepended.
-  - **Champion & Playoff Visual Cards**: Designed custom gold celebratory cards for Champion Crowning events and cyan badges for Playoff results inside [SportsBulletinCard.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/SportsBulletinCard.tsx).
+  - **Champion & Playoff Visual Cards**: Designed custom gold celebratory cards for Champion Crowning events and cyan badges for Playoff results inside [SportsBulletinCard.tsx](src/components/thinkpages/SportsBulletinCard.tsx).
 - **Project Onoma — Codebase Modularization & Advanced Custom Studio (Onoma System v4)**:
   - **Overview Section Modularization**: Decomposed the monolithic overview section page into three specialized subcomponents: `OverviewBanner` (welcome text, Greek voice player, animated DNA helix), `QuickGeneratorControls` (presets selects, order sliders, batch flow counters), and `CandidateResultsPanel` (Markov model outputs, glow/refraction styles, save dictionary forms).
   - **Name Result Card Refinement**: Split the complex card component, extracting `PronunciationEditor` (IPA/Kokoro editor panel) and `LinguisticProfile` (stats display, categories, cultures badge).
@@ -956,7 +2491,7 @@ capability integer. Each release entry below lists which components advanced and
 
 - **Diplomatic Relations Strength Percentage Labels**:
   - **Granular 9-Tier Verbal Labels**: Replaced raw percentage (`%`) displays of relationship strength with a 9-tier "Warm & Descriptive" status labeling system (`Deep Alliance`, `Strongly Allied`, `Warmly Friendly`, `Cordial`, `Neutral`, `Strained`, `Tense`, `Bitterly Hostile`, `Cold War`) mapped from relationship strength (`0-100`).
-  - **Comprehensive UI Application**: Integrated the status labels into the diplomacy overview metrics, average strength cards, War Room sidebar panel stats, and individual relationship list items across [DiplomacyOverview.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomacy/DiplomacyOverview.tsx), [EmbassiesAndRelationsPanel.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomacy/EmbassiesAndRelationsPanel.tsx), [DiplomacyWarRoom.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomacy/DiplomacyWarRoom.tsx), and [DiplomaticRelationsList.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomacy/DiplomaticRelationsList.tsx).
+  - **Comprehensive UI Application**: Integrated the status labels into the diplomacy overview metrics, average strength cards, War Room sidebar panel stats, and individual relationship list items across `DiplomacyOverview.tsx`, `EmbassiesAndRelationsPanel.tsx`, `DiplomacyWarRoom.tsx`, and `DiplomaticRelationsList.tsx`.
   - **Dynamic Styling**: Styled individual relationship status labels in the War Room relations card with dedicated visual weight and colors based on range (e.g. font-extrabold emerald for Deep Alliance down to bold red for Cold War).
 - **Sports Bulletin Cleanups**:
   - **Separator Removal**: Replaced legacy double lines (`══════════════════════════════`) and horizontal rules (`---`) with clean spacing (double newlines `\n\n`) across all matchday, champion, and playoff formatters.
@@ -979,10 +2514,10 @@ capability integer. Each release entry below lists which components advanced and
 ### Fixed
 
 - **ThinkPages Relative Link Formatting**:
-  - **Markdown Link Parsing**: Corrected the link-masking regex in [text-formatter.ts](file:///home/jxsig/projects/ixstats/src/lib/text-formatter.ts) to parse relative links (starting with `/`) and apply the production `basePath` wrapper `/projects/ixstates`.
+  - **Markdown Link Parsing**: Corrected the link-masking regex in `text-formatter.ts` to parse relative links (starting with `/`) and apply the production `basePath` wrapper `/projects/ixstates`.
   - **Newline Preservation**: Fixed plain-text formatting in `formatContentEnhanced` to replace raw newlines with HTML `<br />` tags to avoid single-line collapsing.
   - **HTML Comment Display**: Fixed plain-text formatting to strip structured comment blocks (`<!-- sports-bulletin:... -->`) from display, hiding the raw JSON string from the user.
-  - **Resilient Regex Parser**: Hardened regex matching patterns (`[^\s*]+`) in [feed-bulletins.ts](file:///home/jxsig/projects/ixstats/src/lib/sports/feed-bulletins.ts) to parse headers accurately without getting confused by markdown bold asterisks.
+  - **Resilient Regex Parser**: Hardened regex matching patterns (`[^\s*]+`) in [feed-bulletins.ts](src/lib/sports/feed-bulletins.ts) to parse headers accurately without getting confused by markdown bold asterisks.
   - **Database Link Migration**: Upgraded the backfill script to dynamically query `SportLeague` and `SportTeam` models by name, retrieving missing database IDs to populate Markdown links in historical post bodies.
 - **Security Hardening (Plan 090)**:
   - **Middleware Edge Restorations**: Restored global proxy interceptions under `src/proxy.ts` conforming to Next.js 16 conventions to prevent edge router deprecation warnings.
@@ -1000,7 +2535,7 @@ capability integer. Each release entry below lists which components advanced and
 ### Fixed
 
 - **WikiOS Full-Article Narrator**: Swapped the fallback speech endpoint to `/v1/audio/speech` (OpenAI-compatible standard) instead of `/api/v1/audio/speech` when the active engine is `kokoro-fastapi`. This resolves the `404 Not Found` API errors and prevents the narrator from falling back to the browser's native robotic voice.
-- **Onoma Custom Studio Dictionary**: Expanded the dictionary input parsing in [useStudioState.ts](file:///ixwiki/public/projects/ixstats/src/app/labs/onoma/hooks/useStudioState.ts) to split lists using space delimiters (`/[\s,]+/`), enabling support for conlang dictionaries separated by spaces, commas, or linebreaks.
+- **Onoma Custom Studio Dictionary**: Expanded the dictionary input parsing in [useStudioState.ts](src/app/labs/onoma/hooks/useStudioState.ts) to split lists using space delimiters (`/[\s,]+/`), enabling support for conlang dictionaries separated by spaces, commas, or linebreaks.
 
 ## [1.1.5 Ogma (Alpha)] - 2026-06-27
 
@@ -1010,23 +2545,23 @@ capability integer. Each release entry below lists which components advanced and
   - **Phoneme-Native API Synthesis Route**: Re-engineered the `/api/onoma/tts` endpoint to read configured `engine` and `fastApiUrl` values. If the engine is set to `kokoro-fastapi` and an IPA translation is present, it normalizes and cleans the transcription and sends it to `/dev/generate_from_phonemes` for direct high-fidelity speech synthesis.
   - **Fallback-Safe Audio Degradation**: Implemented standard try/catch logic surrounding the fastapi engine pipeline. If fastapi is unconfigured or encounters a network error / non-2xx status, it falls back to the `kokoro-web` `/api/v1/audio/speech` endpoint (using respelled English syllable chunks) so pronunciation never fails completely.
   - **JSON Cache Packaging & Compatibility**: Updated `advanced-cache-system` values for speech keys to store structured JSON (`{ d: base64_audio, ct: content_type }`) to handle both WAV (fastapi) and MP3 (web) formats, maintaining backward compatibility for legacy base64 strings.
-  - **Linguistic Normalization Pipeline**: Created [kokoro-phonemes.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/kokoro-phonemes.ts) scanning incoming IPA strings longest-first to preserve valid misaki-en tokens (stress, length, vowels, and consonants), remap unsupported symbols, and gracefully drop unknown tokens to prevent audio garbling.
-  - **Phoneme Preview & Dropped-Token Warnings**: Added live phoneme previews and amber warning lists to both the custom pronunciation card editor [NameResultCard.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/NameResultCard.tsx) and the rule builder [StudioPhonology.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioPhonology.tsx).
+  - **Linguistic Normalization Pipeline**: Created [kokoro-phonemes.ts](src/lib/onoma/kokoro-phonemes.ts) scanning incoming IPA strings longest-first to preserve valid misaki-en tokens (stress, length, vowels, and consonants), remap unsupported symbols, and gracefully drop unknown tokens to prevent audio garbling.
+  - **Phoneme Preview & Dropped-Token Warnings**: Added live phoneme previews and amber warning lists to both the custom pronunciation card editor [NameResultCard.tsx](src/app/labs/onoma/components/shared/NameResultCard.tsx) and the rule builder [StudioPhonology.tsx](src/app/labs/onoma/components/sections/studio/StudioPhonology.tsx).
   - **IPA Suggestions G2P Integration**: Added the `suggestPhonemes` mutation in the `onoma` router querying fastapi's `/dev/phonemize` endpoint, and wired it to a "Suggest IPA" button in the custom card editor.
-  - **Engine Health & Status Diagnostics**: Added a live `getEngineHealth` query polling `fastapi` and `web` base URLs, showing active indicators in the administration panel [OnomaAdminPanel.tsx](file:///home/jxsig/projects/ixstats/src/app/admin/_components/OnomaAdminPanel.tsx).
+  - **Engine Health & Status Diagnostics**: Added a live `getEngineHealth` query polling `fastapi` and `web` base URLs, showing active indicators in the administration panel [OnomaAdminPanel.tsx](src/app/admin/_components/OnomaAdminPanel.tsx).
   - **Per-Culture Voice Blending**: Enabled a custom voice weight builder (`voice1*w1+voice2*w2`) in the culture voice mapper dropdowns of the admin configuration panel.
-  - **Wav Format Audition Harness**: Extended the [audition-voice.ts](file:///home/jxsig/projects/ixstats/scripts/onoma/audition-voice.ts) script with support for direct phoneme wav synthesis.
-  - **Workspace Settings Section & Voice Sandbox**: Built [SettingsSection.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/SettingsSection.tsx) supporting personal voice select overrides, speed slider overrides, interactive G2P voice sandboxes, and browser local storage conlang backup/restore tools.
-  - **WikiOS Full-Article Audio Narrator**: Developed [useWikiNarrator.ts](file:///home/jxsig/projects/ixstats/src/hooks/useWikiNarrator.ts) and [WikiOSNarratorPlayer.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/WikiOSNarratorPlayer.tsx) reading clean headers and paragraphs out-loud sequentially, highlighting spoken text, pre-buffering future paragraphs, and auto-scrolling to follow text focus.
-  - **Dynamic Island (Halo) Timeline & Scrubber Sync**: Connected the audio narrator state to the expanded Dynamic Island [WikiView.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/WikiView.tsx) and compact [WikiDIPlugin.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/plugins/WikiDIPlugin.tsx) to render bouncing equalizer soundwaves, quick play/pause icons, audio control toolbars, and jump audio playback directly when dragging the playhead or clicking section ticks.
+  - **Wav Format Audition Harness**: Extended the [audition-voice.ts](scripts/onoma/audition-voice.ts) script with support for direct phoneme wav synthesis.
+  - **Workspace Settings Section & Voice Sandbox**: Built [SettingsSection.tsx](src/app/labs/onoma/components/sections/SettingsSection.tsx) supporting personal voice select overrides, speed slider overrides, interactive G2P voice sandboxes, and browser local storage conlang backup/restore tools.
+  - **WikiOS Full-Article Audio Narrator**: Developed [useWikiNarrator.ts](src/hooks/useWikiNarrator.ts) and `WikiOSNarratorPlayer.tsx` reading clean headers and paragraphs out-loud sequentially, highlighting spoken text, pre-buffering future paragraphs, and auto-scrolling to follow text focus.
+  - **Dynamic Island (Halo) Timeline & Scrubber Sync**: Connected the audio narrator state to the expanded Dynamic Island `WikiView.tsx` and compact `WikiDIPlugin.tsx` to render bouncing equalizer soundwaves, quick play/pause icons, audio control toolbars, and jump audio playback directly when dragging the playhead or clicking section ticks.
 
 ### Fixed
 
 - **Onoma Voice & WikiOS Narrator Stability & Theme Polish**:
-  - **Dynamic Theme Compliance**: Updated narrator player container, buttons, selects, and text styles in [WikiOSNarratorPlayer.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/WikiOSNarratorPlayer.tsx) to be theme-compliant across Light, Dark, and Sepia modes.
-  - **React Rules of Hooks Fix**: Re-ordered React queries, state, and effect hook calls to run unconditionally before early return statements in [WikiOSNarratorPlayer.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/WikiOSNarratorPlayer.tsx), resolving runtime hydration and rendering errors.
-  - **Connection Timeout Extension**: Increased the backend API proxy fetch timeout from 15 seconds to 60 seconds in [route.ts](file:///home/jxsig/projects/ixstats/src/app/api/onoma/tts/route.ts) to accommodate full-article paragraph audio synthesis on CPU-bound Kokoro voice containers.
-  - **Console Error Alert Suppression**: Downgraded connection errors and timeouts from `console.error` to `console.warn` in both the frontend [useWikiNarrator.ts](file:///home/jxsig/projects/ixstats/src/hooks/useWikiNarrator.ts) and backend [route.ts](file:///home/jxsig/projects/ixstats/src/app/api/onoma/tts/route.ts) to prevent triggering environment error alarms during SpeechSynthesis fallbacks.
+  - **Dynamic Theme Compliance**: Updated narrator player container, buttons, selects, and text styles in `WikiOSNarratorPlayer.tsx` to be theme-compliant across Light, Dark, and Sepia modes.
+  - **React Rules of Hooks Fix**: Re-ordered React queries, state, and effect hook calls to run unconditionally before early return statements in `WikiOSNarratorPlayer.tsx`, resolving runtime hydration and rendering errors.
+  - **Connection Timeout Extension**: Increased the backend API proxy fetch timeout from 15 seconds to 60 seconds in [route.ts](src/app/api/onoma/tts/route.ts) to accommodate full-article paragraph audio synthesis on CPU-bound Kokoro voice containers.
+  - **Console Error Alert Suppression**: Downgraded connection errors and timeouts from `console.error` to `console.warn` in both the frontend [useWikiNarrator.ts](src/hooks/useWikiNarrator.ts) and backend [route.ts](src/app/api/onoma/tts/route.ts) to prevent triggering environment error alarms during SpeechSynthesis fallbacks.
   - **Build Markup Errors**: Corrected progress track absolute container tags to fix JSX compilation errors.
 
 ## [1.1.4 Ogma (Alpha)] - 2026-06-26
@@ -1034,34 +2569,34 @@ capability integer. Each release entry below lists which components advanced and
 ### Added
 
 - **Project Onoma — Production Speech Synthesis Infrastructure**:
-  - **Browser Native SpeechSynthesis**: Implemented `speakBrowserNative` in [browser-speech.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/browser-speech.ts) wrapping `window.speechSynthesis` with custom pronunciation mapping and accent culture classification (e.g. German voice for Germanic names).
-  - **Phonetic IPA Spelling Translation**: Built `ipaToSpeechSpelling` in [branding-utils.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/branding-utils.ts) translating raw IPA text to readable phonetic English syllables with stressed capitalization (e.g. `/ʃəˈnoʊmə/` $\rightarrow$ `shuh-NOH-muh`).
-  - **Three-Tier Fallback Playback**: Refactored [NameResultCard.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/NameResultCard.tsx) to execute natural voice priorities: Kokoro TTS $\rightarrow$ Browser Native fallback $\rightarrow$ client-side meSpeak.
-  - **Production Docker Configuration**: Configured the self-hosted `kokoro` service container in [docker-compose.yml](file:///home/jxsig/projects/ixstats/docker-compose.yml) mapped to localhost port 3004, enforcing API key authentication via environment variable `KW_SECRET_API_KEY`, mounting persistent model volume cache, and configuring CPU/memory quotas and logging limits.
-  - **Environment Verification Integration**: Added Kokoro connectivity checks to [verify-environment.ts](file:///home/jxsig/projects/ixstats/scripts/deployment/verify-environment.ts) and wired the validation runner before builds start in the IxWorld maps standalone deployment script [deploy-ixworld.sh](file:///home/jxsig/projects/ixstats/scripts/deploy-ixworld.sh).
-  - **Environment Templates**: Added the `KOKORO_API_KEY` environment placeholder to [.env.example](file:///home/jxsig/projects/ixstats/.env.example).
+  - **Browser Native SpeechSynthesis**: Implemented `speakBrowserNative` in [browser-speech.ts](src/lib/onoma/browser-speech.ts) wrapping `window.speechSynthesis` with custom pronunciation mapping and accent culture classification (e.g. German voice for Germanic names).
+  - **Phonetic IPA Spelling Translation**: Built `ipaToSpeechSpelling` in [branding-utils.ts](src/lib/onoma/branding-utils.ts) translating raw IPA text to readable phonetic English syllables with stressed capitalization (e.g. `/ʃəˈnoʊmə/` $\rightarrow$ `shuh-NOH-muh`).
+  - **Three-Tier Fallback Playback**: Refactored [NameResultCard.tsx](src/app/labs/onoma/components/shared/NameResultCard.tsx) to execute natural voice priorities: Kokoro TTS $\rightarrow$ Browser Native fallback $\rightarrow$ client-side meSpeak.
+  - **Production Docker Configuration**: Configured the self-hosted `kokoro` service container in `docker-compose.yml` mapped to localhost port 3004, enforcing API key authentication via environment variable `KW_SECRET_API_KEY`, mounting persistent model volume cache, and configuring CPU/memory quotas and logging limits.
+  - **Environment Verification Integration**: Added Kokoro connectivity checks to [verify-environment.ts](scripts/deployment/verify-environment.ts) and wired the validation runner before builds start in the IxWorld maps standalone deployment script [deploy-ixworld.sh](scripts/deploy-ixworld.sh).
+  - **Environment Templates**: Added the `KOKORO_API_KEY` environment placeholder to [.env.example](.env.example).
 
 ### Changed
 
 - **Global Navigation & Halo Settings Integration**:
-  - Removed the prominent "Admin" link from the global desktop navigation bar and mobile menu in [useNavigationItems.ts](file:///home/jxsig/projects/ixstats/src/hooks/useNavigationItems.ts).
-  - Integrated the Admin Panel link into the Halo (Dynamic Island) settings overlay [SettingsView.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/SettingsView.tsx), restricted to signed-in administrators (`isAdmin && isSignedIn`).
+  - Removed the prominent "Admin" link from the global desktop navigation bar and mobile menu in `src/hooks/useNavigationItems.ts`.
+  - Integrated the Admin Panel link into the Halo (Dynamic Island) settings overlay `SettingsView.tsx`, restricted to signed-in administrators (`isAdmin && isSignedIn`).
 
 ## [1.1.3 Ogma (Alpha)] - 2026-06-26
 
 ### Added
 
 - **Project Onoma — Linguistic Synthesis Lab & Custom Studio Rebuild (Onoma System v1)**:
-  - **Apple-Style Glassmorphic Redesign (Phase 20)**: Replaced the tall vertical watermark in [OverviewSection.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/OverviewSection.tsx) with a floating `28x28` Apple-style glass squircle (`rounded-[22%]`, `backdrop-blur-xl`, border edge highlights) containing the rotating DNA double helix.
-  - **Symmetric Squircle Key Badges (Phase 20)**: Redesigned the [OnomaDoubleHelixIcon.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/OnomaDoubleHelixIcon.tsx) to a `200x200` square aspect ratio with thicker backbone curves (`4.5px`/`4.0px`) and 5 rungs, embedding symbols inside solid, elevated squircle keycaps (`26x26px`, `rx=7`, `key-shadow` drop shadow) for perfect visibility.
+  - **Apple-Style Glassmorphic Redesign (Phase 20)**: Replaced the tall vertical watermark in [OverviewSection.tsx](src/app/labs/onoma/components/sections/OverviewSection.tsx) with a floating `28x28` Apple-style glass squircle (`rounded-[22%]`, `backdrop-blur-xl`, border edge highlights) containing the rotating DNA double helix.
+  - **Symmetric Squircle Key Badges (Phase 20)**: Redesigned the `OnomaDoubleHelixIcon.tsx` to a `200x200` square aspect ratio with thicker backbone curves (`4.5px`/`4.0px`) and 5 rungs, embedding symbols inside solid, elevated squircle keycaps (`26x26px`, `rx=7`, `key-shadow` drop shadow) for perfect visibility.
   - **High-Performance Rotating DNA Helix Animation (Phase 19)**: Implemented a smooth direct-DOM `requestAnimationFrame` mutation phase-shifting loop that runs at 60 FPS with 0% React re-render overhead, smoothly speed-lerping (`1.2 rad/s` to `2.8 rad/s`) on banner hover.
-  - **Studio Dynamic Navigation & Hooks Fix (Phase 18)**: Replaced local sub-tabs with top-level morphing tabs in [OnomaRouter.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/OnomaRouter.tsx) synced to URL routes. Isolated dynamic triggers in `FacetTabs` to avoid hook order violations.
-  - **Interactive Markov Path Visualizer (Phase 9)**: Created a radial-layout graph canvas in [MarkovVisualizer.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/MarkovVisualizer.tsx) using `@xyflow/react` for step-by-step name compilation, center-node panning, and weighted random walk paths.
-  - **Lexicon Explorer & Health Diagnostics (Phase 10)**: Added [LexiconExplorer.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/LexiconExplorer.tsx) computing Shannon entropy, letter densities, n-gram frequencies, and a health score audit report with automatic local storage session caching.
-  - **Grapheme-to-IPA Phonetic Parser (Phase 11)**: Built [phonology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/phonology.ts) converting graphemes to IPA transcriptions according to culture-specific sound mappings, placing primary stress (`ˈ`) via consonant-onset stress heuristics.
-  - **Morphology Declension Simulator (Phase 13)**: Added [morphology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/morphology.ts) detecting genders and declaring singular/plural tables for five core cases (Nominative, Genitive, Accusative, Dative, Ablative).
-  - **Orthography Script Mapping (Phase 13)**: Created [orthography.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/orthography.ts) transcribing IPA sounds to Greek, Cyrillic, and Arabic (RTL) scripts.
-  - **Inline Morphing Details & Card Overlays (Phases 6, 15, 16)**: Modified [NameResultCard.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/NameResultCard.tsx) to expand to span 2 columns with inline declension case tables and definition editors, applying a premium 3D diamond mesh texture overlay and removing bloated global lore-stash exports.
+  - **Studio Dynamic Navigation & Hooks Fix (Phase 18)**: Replaced local sub-tabs with top-level morphing tabs in [OnomaRouter.tsx](src/app/labs/onoma/components/OnomaRouter.tsx) synced to URL routes. Isolated dynamic triggers in `FacetTabs` to avoid hook order violations.
+  - **Interactive Markov Path Visualizer (Phase 9)**: Created a radial-layout graph canvas in [MarkovVisualizer.tsx](src/app/labs/onoma/components/sections/MarkovVisualizer.tsx) using `@xyflow/react` for step-by-step name compilation, center-node panning, and weighted random walk paths.
+  - **Lexicon Explorer & Health Diagnostics (Phase 10)**: Added [LexiconExplorer.tsx](src/app/labs/onoma/components/sections/LexiconExplorer.tsx) computing Shannon entropy, letter densities, n-gram frequencies, and a health score audit report with automatic local storage session caching.
+  - **Grapheme-to-IPA Phonetic Parser (Phase 11)**: Built [phonology.ts](src/lib/onoma/phonology.ts) converting graphemes to IPA transcriptions according to culture-specific sound mappings, placing primary stress (`ˈ`) via consonant-onset stress heuristics.
+  - **Morphology Declension Simulator (Phase 13)**: Added [morphology.ts](src/lib/onoma/morphology.ts) detecting genders and declaring singular/plural tables for five core cases (Nominative, Genitive, Accusative, Dative, Ablative).
+  - **Orthography Script Mapping (Phase 13)**: Created [orthography.ts](src/lib/onoma/orthography.ts) transcribing IPA sounds to Greek, Cyrillic, and Arabic (RTL) scripts.
+  - **Inline Morphing Details & Card Overlays (Phases 6, 15, 16)**: Modified [NameResultCard.tsx](src/app/labs/onoma/components/shared/NameResultCard.tsx) to expand to span 2 columns with inline declension case tables and definition editors, applying a premium 3D diamond mesh texture overlay and removing bloated global lore-stash exports.
   - **Markov Chain Engine Hardening (Phases 1-5, 12)**: Implemented syllable tokenization, multi-order graph training, Markov Backoff fallback chains, phonotactic constraint filters (vowel harmony, cluster limits, double letter filters), and category-aware title prefixes and suffixes.
 
 ## [1.1.2 Ogma (Alpha)] - 2026-06-26
@@ -1083,25 +2618,25 @@ capability integer. Each release entry below lists which components advanced and
   - Fixed a runtime `TypeError` in `useOnomaGenerator.ts` by using `mutateAsync` for logging generation activity instead of `mutate` to allow chaining a `.catch()` block.
 
 - **Project Onoma — Wiki Corpus Training** (Onoma System): trained the generator on the live worldbuilding canon so it produces in-universe-plausible names, while keeping the engine fully client-side.
-  - Offline extraction pipeline ([scripts/onoma/extract-corpus.ts](file:///ixwiki/public/projects/ixstats/scripts/onoma/extract-corpus.ts)) pulling **infobox-typed** names from IxWiki (direct MariaDB SQL via `templatelinks→linktarget`) and from iiwiki + althistory (MediaWiki `list=embeddedin`). **34,373 raw names** harvested.
+  - Offline extraction pipeline (`scripts/onoma/extract-corpus.ts`) pulling **infobox-typed** names from IxWiki (direct MariaDB SQL via `templatelinks→linktarget`) and from iiwiki + althistory (MediaWiki `list=embeddedin`). **34,373 raw names** harvested.
   - Documented the allowlisted `User-Agent: IxStats-Builder` (clears iiwiki's Cloudflare challenge) and the MW 1.43–1.45 normalized `categorylinks`/`templatelinks` schema in `CLAUDE.md` → "External Wiki Access".
-  - Cleaning ([src/lib/onoma/corpus/clean.ts](file:///ixwiki/public/projects/ixstats/src/lib/onoma/corpus/clean.ts)): strips disambiguation/quotes/gov-descriptor/regnal forms, preserves intra-word apostrophes, dedups → **28,424 clean names**.
-  - Culture classifier ([src/lib/onoma/corpus/culture-classifier.ts](file:///ixwiki/public/projects/ixstats/src/lib/onoma/corpus/culture-classifier.ts)): a char n-gram Naive-Bayes model (no ML dependency) trained at load from `CULTURAL_PROFILES`. Resolves each name to a single culture or a **compound `A+B` blend** (e.g. `celtic+germanic`), eliminating the old catch-all "mixed".
-  - Compact dictionaries ([src/lib/onoma/data/corpus/](file:///ixwiki/public/projects/ixstats/src/lib/onoma/data/corpus/)): **13,101 names in 227 KB**, grouped by category × culture bucket (7 singles + top-6 compounds), built by [scripts/onoma/build-dicts.ts](file:///ixwiki/public/projects/ixstats/scripts/onoma/build-dicts.ts). Lazy code-split per category so only the active chunk loads.
+  - Cleaning (`src/lib/onoma/corpus/clean.ts`): strips disambiguation/quotes/gov-descriptor/regnal forms, preserves intra-word apostrophes, dedups → **28,424 clean names**.
+  - Culture classifier (`src/lib/onoma/corpus/culture-classifier.ts`): a char n-gram Naive-Bayes model (no ML dependency) trained at load from `CULTURAL_PROFILES`. Resolves each name to a single culture or a **compound `A+B` blend** (e.g. `celtic+germanic`), eliminating the old catch-all "mixed".
+  - Compact dictionaries (`src/lib/onoma/data/corpus/`): **13,101 names in 227 KB**, grouped by category × culture bucket (7 singles + top-6 compounds), built by [scripts/onoma/build-dicts.ts](scripts/onoma/build-dicts.ts). Lazy code-split per category so only the active chunk loads.
   - New **"IxWiki Corpus"** Markov source (now the default) with a **Culture Bucket** facet in `GeneratorPanel`, wired through `useOnomaGenerator` (`TrainingMode` += `"corpus"`).
   - Restored the generator's missing `src/lib/onoma/data/*` syllable/species/group/tavern data files (silently excluded by a blanket `data/` `.gitignore` rule) so the lab builds.
 
 - **MyLeague Background Automation, Halo Live Activities & Matchday Prediction Market**:
-  - **IxTime auto-advance hardening**: Replaced the one-matchday-per-run drip in [season-cron.ts](file:///ixwiki/public/projects/ixstats/src/lib/sports/season-cron.ts) `advanceSportsSeasons` with a bounded catch-up loop (`MAX_STEPS_PER_RUN = 50`) so seasons that fall behind the clock (e.g. after cron downtime) resolve every due matchday in a single pass instead of drifting. Tightened the cron tick from every 6h to `*/15` with a per-process reentrancy guard in both [cron-runner.mjs](file:///ixwiki/public/projects/ixstats/cron-runner.mjs) and [server.mjs](file:///ixwiki/public/projects/ixstats/server.mjs).
-  - **Per-league match cadence**: Added `matchIntervalMs`/`raceIntervalMs` helpers in [scheduler.ts](file:///ixwiki/public/projects/ixstats/src/lib/sports/scheduler.ts) reading `league.settings.matchIntervalDays` (default 1 IxDay, e.g. 7 for an in-world weekly schedule), applied at all six schedule-write sites (lifecycle / leagues / transition, matches + races). Exposed an "IxDays Between Matchdays" control in [LeagueCreator.tsx](file:///ixwiki/public/projects/ixstats/src/components/myleague/LeagueCreator.tsx).
-  - **Cron feed bulletins**: Extracted a shared `postMatchDayBulletin` helper ([feed-post.ts](file:///ixwiki/public/projects/ixstats/src/lib/sports/feed-post.ts)) — SportsNews ThinkPages post + async LLM narration + Discord mirror — now fired by both the manual sim and the auto-advance cron, so background matchdays post to the feed. Added a "📈 Table Movers" section to `formatMatchDayBulletin` driven by standings rank deltas captured during the cron re-rank.
-  - **Halo Live Activities**: iOS-style live match scoreboard in the Dynamic Island (Halo), built as a high-priority DI plugin ([SportsLiveDIPlugin.tsx](file:///ixwiki/public/projects/ixstats/src/components/DynamicIsland/plugins/SportsLiveDIPlugin.tsx)) mounted globally. Matches resolve instantly but the resolver's event `trace` is replayed deterministically over a broadcast window anchored to `resolvedIxTime` via the pure `computeLiveMatchState` ([live-match.ts](file:///ixwiki/public/projects/ixstats/src/lib/sports/live-match.ts)) — every client agrees with no WebSocket or server ticks. Backed by a new `api.sports.getLiveActivities` query (owned clubs, IxTime-windowed).
-  - **Next-matchday countdown**: [NextMatchCountdown.tsx](file:///ixwiki/public/projects/ixstats/src/components/myleague/NextMatchCountdown.tsx) surfaces the next fixture's IxTime instant plus a live real-world countdown (IxTime gap ÷ clock multiplier) on the league overview.
+  - **IxTime auto-advance hardening**: Replaced the one-matchday-per-run drip in [season-cron.ts](src/lib/sports/season-cron.ts) `advanceSportsSeasons` with a bounded catch-up loop (`MAX_STEPS_PER_RUN = 50`) so seasons that fall behind the clock (e.g. after cron downtime) resolve every due matchday in a single pass instead of drifting. Tightened the cron tick from every 6h to `*/15` with a per-process reentrancy guard in both [cron-runner.mjs](cron-runner.mjs) and [server.mjs](server.mjs).
+  - **Per-league match cadence**: Added `matchIntervalMs`/`raceIntervalMs` helpers in [scheduler.ts](src/lib/sports/scheduler.ts) reading `league.settings.matchIntervalDays` (default 1 IxDay, e.g. 7 for an in-world weekly schedule), applied at all six schedule-write sites (lifecycle / leagues / transition, matches + races). Exposed an "IxDays Between Matchdays" control in `LeagueCreator.tsx`.
+  - **Cron feed bulletins**: Extracted a shared `postMatchDayBulletin` helper ([feed-post.ts](src/lib/sports/feed-post.ts)) — SportsNews ThinkPages post + async LLM narration + Discord mirror — now fired by both the manual sim and the auto-advance cron, so background matchdays post to the feed. Added a "📈 Table Movers" section to `formatMatchDayBulletin` driven by standings rank deltas captured during the cron re-rank.
+  - **Halo Live Activities**: iOS-style live match scoreboard in the Dynamic Island (Halo), built as a high-priority DI plugin (`SportsLiveDIPlugin.tsx`) mounted globally. Matches resolve instantly but the resolver's event `trace` is replayed deterministically over a broadcast window anchored to `resolvedIxTime` via the pure `computeLiveMatchState` ([live-match.ts](src/lib/sports/live-match.ts)) — every client agrees with no WebSocket or server ticks. Backed by a new `api.sports.getLiveActivities` query (owned clubs, IxTime-windowed).
+  - **Next-matchday countdown**: `NextMatchCountdown.tsx` surfaces the next fixture's IxTime instant plus a live real-world countdown (IxTime gap ÷ clock multiplier) on the league overview.
   - **Pause/resume enforcement**: The auto-advance cron now skips leagues with `status = "paused"` (the LeagueSettingsModal status dropdown already wrote it via `updateLeague`).
-  - **Club result notifications**: [club-notify.ts](file:///ixwiki/public/projects/ixstats/src/lib/sports/club-notify.ts) delivers each owned club's matchday result two ways — an in-app `Notification` (the bell, deep-linked to `/myclub`) and a durable record message in a per-user "Sports Desk" ThinkShare channel. Owners can toggle this per club via a "Match Notifications" switch on the MyClub page (new `SportTeam.notifyResults` column + `sports.setClubNotifications` mutation; the cron respects it).
-  - **MyClub overview card**: The MyClub overview now shows the live match ticker only while a game is actually live (driven by `getLiveActivities` for the club, real resolver trace); otherwise it renders a new [ClubResultsCard](file:///ixwiki/public/projects/ixstats/src/components/myclub/ClubResultsCard.tsx) combining a latest-result match overview (both crests, score, head-to-head Wins/Losses/Points bars) with a Last 5 Results list, backed by a new `sports.getClubResultsOverview` query.
-  - **Matchday prediction market**: New parimutuel betting on scheduled matches. Stake Sovereigns on home/draw/away; the whole pool splits pro-rata among correct pickers at kickoff, with full refund if nobody is right. New `SportPrediction` Prisma model, pure tested `computeParimutuel` + idempotent `resolveMatchPredictions` ([predictions.ts](file:///ixwiki/public/projects/ixstats/src/lib/sports/predictions.ts)) wired into both sim paths, a `sports.predictions` router (`placePrediction`/`getMatchPool`/`getMyPredictions`) with `exchangeService` escrow, and a [MatchPredictionWidget](file:///ixwiki/public/projects/ixstats/src/components/myleague/MatchPredictionWidget.tsx) in the match detail modal. Added `PREDICTION_STAKE`/`PREDICTION_PAYOUT` to the Sovereign ledger transaction types.
-  - **Match ticker fix**: Corrected [MatchTickerSim.tsx](file:///ixwiki/public/projects/ixstats/src/components/myleague/MatchTickerSim.tsx) to read the real resolver trace shape (`team`/`description`/`t`) instead of the previously mismatched `teamId`/`commentary`/`minute`, so scores and play-by-play render on real matches.
+  - **Club result notifications**: [club-notify.ts](src/lib/sports/club-notify.ts) delivers each owned club's matchday result two ways — an in-app `Notification` (the bell, deep-linked to `/myclub`) and a durable record message in a per-user "Sports Desk" ThinkShare channel. Owners can toggle this per club via a "Match Notifications" switch on the MyClub page (new `SportTeam.notifyResults` column + `sports.setClubNotifications` mutation; the cron respects it).
+  - **MyClub overview card**: The MyClub overview now shows the live match ticker only while a game is actually live (driven by `getLiveActivities` for the club, real resolver trace); otherwise it renders a new `ClubResultsCard` combining a latest-result match overview (both crests, score, head-to-head Wins/Losses/Points bars) with a Last 5 Results list, backed by a new `sports.getClubResultsOverview` query.
+  - **Matchday prediction market**: New parimutuel betting on scheduled matches. Stake Sovereigns on home/draw/away; the whole pool splits pro-rata among correct pickers at kickoff, with full refund if nobody is right. New `SportPrediction` Prisma model, pure tested `computeParimutuel` + idempotent `resolveMatchPredictions` ([predictions.ts](src/lib/sports/predictions.ts)) wired into both sim paths, a `sports.predictions` router (`placePrediction`/`getMatchPool`/`getMyPredictions`) with `exchangeService` escrow, and a `MatchPredictionWidget` in the match detail modal. Added `PREDICTION_STAKE`/`PREDICTION_PAYOUT` to the Sovereign ledger transaction types.
+  - **Match ticker fix**: Corrected `MatchTickerSim.tsx` to read the real resolver trace shape (`team`/`description`/`t`) instead of the previously mismatched `teamId`/`commentary`/`minute`, so scores and play-by-play render on real matches.
 
 - **Premium Dynamic Particle Cosmetics & Admin Glows**:
   - **High-Fidelity tsParticles Engine**: Integrated `tsParticles` (via `@tsparticles/react` and `@tsparticles/slim`) as the single lightweight 2D canvas particle engine, preventing WebGL context limits when multiple cards render on the page.
@@ -1143,40 +2678,40 @@ capability integer. Each release entry below lists which components advanced and
   - Added a Jest test suite in `src/lib/__tests__/country-event-spine.test.ts` to validate consequence clamping and change log delta formatting.
 
 - **Map Editor Plugin Architecture & Event Delegation Refactoring**:
-  - Implemented a modular **Plugin/Extension Architecture** for the Country Map Editor, migrating domain-specific interactions into separate plugins under [plugins/](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/plugins/).
-  - Created [types.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/plugins/types.ts) for `MapEditorPlugin` and context definitions, [context.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/plugins/context.tsx) for state management and hotkey delegation, and [registry.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/plugins/registry.ts) for static plugin registration.
-  - Implemented centralized event delegation in [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx), routing map interaction events (`click`, `mousemove`, `mousedown`, `mouseup`, `contextmenu`, `dblclick`) dynamically to the active plugin's `mapEvents` hooks.
-  - Unified the snapping pipeline by defining a shared `snapPoint` resolver context callback in [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx), eliminating duplicated, copy-pasted guide-snapping math inside [useSubdivisionDraw.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionDraw.ts) and [useSubdivisionVertexEdit.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionVertexEdit.ts).
+  - Implemented a modular **Plugin/Extension Architecture** for the Country Map Editor, migrating domain-specific interactions into separate plugins under [plugins/](src/components/maps/editor/plugins/).
+  - Created [types.ts](src/components/maps/editor/plugins/types.ts) for `MapEditorPlugin` and context definitions, [context.tsx](src/components/maps/editor/plugins/context.tsx) for state management and hotkey delegation, and [registry.ts](src/components/maps/editor/plugins/registry.ts) for static plugin registration.
+  - Implemented centralized event delegation in [EditorMap.tsx](src/components/maps/editor/EditorMap.tsx), routing map interaction events (`click`, `mousemove`, `mousedown`, `mouseup`, `contextmenu`, `dblclick`) dynamically to the active plugin's `mapEvents` hooks.
+  - Unified the snapping pipeline by defining a shared `snapPoint` resolver context callback in [EditorMap.tsx](src/components/maps/editor/EditorMap.tsx), eliminating duplicated, copy-pasted guide-snapping math inside [useSubdivisionDraw.ts](src/components/maps/editor/hooks/useSubdivisionDraw.ts) and [useSubdivisionVertexEdit.ts](src/components/maps/editor/hooks/useSubdivisionVertexEdit.ts).
   - Cleaned up event logic and options bar references across components to support dynamic toolbar items registration.
-  - Grouped Select/Pan (Select/Hand) and Lasso/Magic Wand (Lasso/Wand) into nested toolbar group items in [MapEditorToolbar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/MapEditorToolbar.tsx). Added right-click, click-and-hold (long-press) flyouts, caret indicators, and active sub-tool memory.
-  - Merged Highlight Gaps and Highlight Empty Regions into a single toggle state, and moved the toggle button from the options bar to the Map Controls Header in [EditorHeader.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/components/EditorHeader.tsx) (next to Toggle Grid and Center on Country).
+  - Grouped Select/Pan (Select/Hand) and Lasso/Magic Wand (Lasso/Wand) into nested toolbar group items in [MapEditorToolbar.tsx](src/components/maps/editor/MapEditorToolbar.tsx). Added right-click, click-and-hold (long-press) flyouts, caret indicators, and active sub-tool memory.
+  - Merged Highlight Gaps and Highlight Empty Regions into a single toggle state, and moved the toggle button from the options bar to the Map Controls Header in [EditorHeader.tsx](src/components/maps/editor/components/EditorHeader.tsx) (next to Toggle Grid and Center on Country).
 
 - **Map Editor Advanced Toolbar, Measuring, Lasso, & Subdivision Operations (Plans 042-044)**:
-  - Added new editor modes (`"lasso-select"`, `"ruler"`, `"paint-fill"`, `"pan"`) to `EditorMode` in [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts).
-  - Added new tool buttons for Hand, Lasso Select, Ruler, and Paint Fill in [MapEditorToolbar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/MapEditorToolbar.tsx) with custom keyboard shortcuts (`H`, `M`, `U`, `G`).
-  - Blocked point feature dragging in non-editable states (hand, lasso-select, ruler, paint-fill) inside [usePointDrag.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/usePointDrag.ts) while enabling intuitive dragging during standard editing modes.
-  - Implemented dynamic MapLibre sources and style layers for Lasso Select (dashed outline + semi-transparent fill) and Ruler (segment lines + segment midpoint geodesic distance text tags) in [useMapLayers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useMapLayers.ts).
-  - Implemented client-side mouse-dragging lasso selection tracking, point-by-point ruler measurement, and paint bucket subdivision coloring within [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx).
-  - Created customizable Options Bar controls for the new tools (including custom color picker, geodesic total distance calculation, and clear triggers) inside [ToolOptionsBar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/ToolOptionsBar.tsx).
-  - Integrated `haversineDistance` and wired lasso, ruler, and paint fill state properties down to the map and options bar in [EnhancedMapEditorContent.tsx](file:///ixwiki/public/projects/ixstats/src/components/mycountry/EnhancedMapEditorContent.tsx).
-  - Implemented selection click prioritization (point markers prioritized over region polygons in small bounding box queries) in [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx).
-  - Prevented coordinate jumps with optimistic client-side updates upon marker drag releases inside [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts).
-  - Added visual highlighting for gaps/negative space and empty subdivisions, complete with an auto-centroid city creation helper inside [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts) and [ToolOptionsBar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/ToolOptionsBar.tsx).
-  - Added support for subdivision splitting/merging, city splitting/merging, slider-based population scaling, and group orbit rotations inside [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts) and [ToolOptionsBar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/ToolOptionsBar.tsx).
+  - Added new editor modes (`"lasso-select"`, `"ruler"`, `"paint-fill"`, `"pan"`) to `EditorMode` in [useMapEditor.ts](src/hooks/useMapEditor.ts).
+  - Added new tool buttons for Hand, Lasso Select, Ruler, and Paint Fill in [MapEditorToolbar.tsx](src/components/maps/editor/MapEditorToolbar.tsx) with custom keyboard shortcuts (`H`, `M`, `U`, `G`).
+  - Blocked point feature dragging in non-editable states (hand, lasso-select, ruler, paint-fill) inside [usePointDrag.ts](src/components/maps/editor/hooks/usePointDrag.ts) while enabling intuitive dragging during standard editing modes.
+  - Implemented dynamic MapLibre sources and style layers for Lasso Select (dashed outline + semi-transparent fill) and Ruler (segment lines + segment midpoint geodesic distance text tags) in [useMapLayers.ts](src/components/maps/editor/hooks/useMapLayers.ts).
+  - Implemented client-side mouse-dragging lasso selection tracking, point-by-point ruler measurement, and paint bucket subdivision coloring within [EditorMap.tsx](src/components/maps/editor/EditorMap.tsx).
+  - Created customizable Options Bar controls for the new tools (including custom color picker, geodesic total distance calculation, and clear triggers) inside [ToolOptionsBar.tsx](src/components/maps/editor/ToolOptionsBar.tsx).
+  - Integrated `haversineDistance` and wired lasso, ruler, and paint fill state properties down to the map and options bar in `EnhancedMapEditorContent.tsx`.
+  - Implemented selection click prioritization (point markers prioritized over region polygons in small bounding box queries) in [EditorMap.tsx](src/components/maps/editor/EditorMap.tsx).
+  - Prevented coordinate jumps with optimistic client-side updates upon marker drag releases inside [useMapEditor.ts](src/hooks/useMapEditor.ts).
+  - Added visual highlighting for gaps/negative space and empty subdivisions, complete with an auto-centroid city creation helper inside [useMapEditor.ts](src/hooks/useMapEditor.ts) and [ToolOptionsBar.tsx](src/components/maps/editor/ToolOptionsBar.tsx).
+  - Added support for subdivision splitting/merging, city splitting/merging, slider-based population scaling, and group orbit rotations inside [useMapEditor.ts](src/hooks/useMapEditor.ts) and [ToolOptionsBar.tsx](src/components/maps/editor/ToolOptionsBar.tsx).
 
 - **Geography Report / Analyzer & Named Features (Plan C-2)**:
-  - Added new models (`Peak`, `NamedRiver`, `NamedLake`) to [maps.prisma](file:///ixwiki/public/projects/ixstats/prisma/schema/maps.prisma) with back-relations in [core.prisma](file:///ixwiki/public/projects/ixstats/prisma/schema/core.prisma) to support named geographical features.
-  - Implemented service-layer CRUD handlers in [named-features.ts](file:///ixwiki/public/projects/ixstats/src/lib/country-geo/named-features.ts) with polyline length/polygon area math and automatic PostGIS database triggers.
-  - Added the `namedFeaturesRouter` in [namedFeatures.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/features/namedFeatures.ts) to handle feature queries, updates, and cache invalidation.
-  - Implemented PostGIS clipping queries in [geo-profile.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/core/geo-profile.ts) to accurately clip rivers/lakes to country bounds (resolving the global hydro count bug) and to compute local superlatives.
-  - Created a comprehensive Geographic Profile UI card in [GeographyContent.tsx](file:///ixwiki/public/projects/ixstats/src/components/mycountry/GeographyContent.tsx) and detailed tabbed modals in [GeographyReportModal.tsx](file:///ixwiki/public/projects/ixstats/src/components/mycountry/GeographyReportModal.tsx) showcasing border lengths, climate/elevation zones, and local superlatives.
-  - Integrated Peak, River, and Lake tools into the vertical map editor toolbar rail inside [MapEditorToolbar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/MapEditorToolbar.tsx) with custom properties forms.
-  - Added robust unit test coverage in [named-features.test.ts](file:///ixwiki/public/projects/ixstats/src/lib/country-geo/__tests__/named-features.test.ts) to validate geometry conversions, validations, and database mutations.
+  - Added new models (`Peak`, `NamedRiver`, `NamedLake`) to [maps.prisma](prisma/schema/maps.prisma) with back-relations in [core.prisma](prisma/schema/core.prisma) to support named geographical features.
+  - Implemented service-layer CRUD handlers in [named-features.ts](src/lib/country-geo/named-features.ts) with polyline length/polygon area math and automatic PostGIS database triggers.
+  - Added the `namedFeaturesRouter` in [namedFeatures.ts](src/server/api/routers/geo/features/namedFeatures.ts) to handle feature queries, updates, and cache invalidation.
+  - Implemented PostGIS clipping queries in [geo-profile.ts](src/server/api/routers/geo/core/geo-profile.ts) to accurately clip rivers/lakes to country bounds (resolving the global hydro count bug) and to compute local superlatives.
+  - Created a comprehensive Geographic Profile UI card in `GeographyContent.tsx` and detailed tabbed modals in `GeographyReportModal.tsx` showcasing border lengths, climate/elevation zones, and local superlatives.
+  - Integrated Peak, River, and Lake tools into the vertical map editor toolbar rail inside [MapEditorToolbar.tsx](src/components/maps/editor/MapEditorToolbar.tsx) with custom properties forms.
+  - Added robust unit test coverage in `named-features.test.ts` to validate geometry conversions, validations, and database mutations.
 
 - **Main Map Zoom-Dependent LOD & Country Focus Filters**:
   - Implemented zoom-dependent Level of Detail (LOD) city filtering on the main interactive map (`/maps`) to render minor, medium, and major cities dynamically based on population and zoom levels.
   - Added country focus-dependent visibility for Story Pins, Points of Interest (POIs), and Custom Map Labels, hiding them when zoomed out globally (zoom < 4.0) unless a specific country is active/selected.
-  - Propagated the `selectedCountryId` prop to the core overlay hooks ([IxWorldMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/IxWorldMap.tsx)) to dynamically reveal local overlays upon clicking/focusing a nation shape.
+  - Propagated the `selectedCountryId` prop to the core overlay hooks ([IxWorldMap.tsx](src/components/maps/core/IxWorldMap.tsx)) to dynamically reveal local overlays upon clicking/focusing a nation shape.
 
 - **MyCountry Overview Hero and Embed Map Optimization**:
   - Implemented zoom-dependent city LOD filters on the small dashboard and MyCountry hero preview maps to keep them clean and highly readable.
@@ -1184,37 +2719,37 @@ capability integer. Each release entry below lists which components advanced and
   - Decluttered the MyCountry Overview Hero by removing the "All systems operational" health status box and hiding the continent/government badges.
 
 - **Map Editor Click-and-Drag Point Feature Markers**:
-  - Implemented intuitive client-side click-and-drag interaction for all point features (cities, national capitals, POIs, story pins, map labels) and their labels in the map editor ([usePointDrag.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/usePointDrag.ts)).
+  - Implemented intuitive client-side click-and-drag interaction for all point features (cities, national capitals, POIs, story pins, map labels) and their labels in the map editor ([usePointDrag.ts](src/components/maps/editor/hooks/usePointDrag.ts)).
   - Wired cursor hover states to turn the cursor into `grab` when hovering over point features/labels and `grabbing` during active drags.
-  - Registered a faint ghost marker layer (`editor-points-ghost-layer`) in [useMapLayers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useMapLayers.ts) to display the original point location during dragging.
-  - Added the `updatePointCoordinates` callback in [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts) to trigger database update mutations (`updateCity`, `updatePOI`, `updateStoryPin`, `updateMapLabel`) on drag release, and sync form states in real-time.
+  - Registered a faint ghost marker layer (`editor-points-ghost-layer`) in [useMapLayers.ts](src/components/maps/editor/hooks/useMapLayers.ts) to display the original point location during dragging.
+  - Added the `updatePointCoordinates` callback in [useMapEditor.ts](src/hooks/useMapEditor.ts) to trigger database update mutations (`updateCity`, `updatePOI`, `updateStoryPin`, `updateMapLabel`) on drag release, and sync form states in real-time.
   - Fully integrated coordinate updates into the undo/redo history (`pushAction`, `reverseAction`, `applyAction`) to restore point positions accurately.
 
 - **Dynamic Embed Map City Hover Labels**:
-  - Hid all non-capital city name labels by default in embedded country maps ([CountryMapEmbed.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/widgets/CountryMapEmbed.tsx)) to eliminate text clutter on the dashboard and MyCountry hero sections.
-  - Wired interactive mouse hover triggers to dynamically reveal city name labels and update the cursor to pointer when hovering over city marker points ([useCountryMapEmbedLayers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/widgets/hooks/useCountryMapEmbedLayers.ts)).
+  - Hid all non-capital city name labels by default in embedded country maps ([CountryMapEmbed.tsx](src/components/maps/widgets/CountryMapEmbed.tsx)) to eliminate text clutter on the dashboard and MyCountry hero sections.
+  - Wired interactive mouse hover triggers to dynamically reveal city name labels and update the cursor to pointer when hovering over city marker points ([useCountryMapEmbedLayers.ts](src/components/maps/widgets/hooks/useCountryMapEmbedLayers.ts)).
 
 - **Map Editor Latency & Snapping Optimizations**:
-  - Implemented cached bounding boxes (`_bbox` and recursive `getGenericBBox` helper) for background layer features and subdivision polygons, reducing vertex snapping search complexity in [border-editor.ts](file:///ixwiki/public/projects/ixstats/src/lib/border-editor.ts) and [map-helpers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/utils/map-helpers.ts).
+  - Implemented cached bounding boxes (`_bbox` and recursive `getGenericBBox` helper) for background layer features and subdivision polygons, reducing vertex snapping search complexity in `border-editor.ts` and [map-helpers.ts](src/components/maps/editor/utils/map-helpers.ts).
   - Pre-filtered snapping targets (`snapPointToGeometries`, `snapPointToNeighborOrBorder`, and `snapToLayerFeatures`) to skip expensive coordinate projection loops on features outside the cursor's tolerance neighborhood.
   - Added bounding box pre-checks in `calculateOverlapGeoJson` to bypass Turf.js polygon intersection checks for non-overlapping subdivisions.
-  - Throttled Turf.js overlap and edge midpoint computations in the vertex editor ([useSubdivisionVertexEdit.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionVertexEdit.ts)) to run at most once every 100ms during dragging, while drawing vertex moves at 60fps.
+  - Throttled Turf.js overlap and edge midpoint computations in the vertex editor ([useSubdivisionVertexEdit.ts](src/components/maps/editor/hooks/useSubdivisionVertexEdit.ts)) to run at most once every 100ms during dragging, while drawing vertex moves at 60fps.
 
 - **Subdivision Custom Colors Support**:
-  - Serialized the `color` property for subdivisions in the public batched map endpoints (`getMapBundle` and `getAllMapFeatures` procedures in [world-map.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/core/world-map.ts)).
-  - Updated map style templates [standard.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/standard.json), [dark.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/dark.json), and [paper.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/paper.json) to dynamically render subdivisions using their custom colors via MapLibre GL coalescing expressions instead of fallback default styles.
-  - Relaxed the color validation schema in the subdivision upsert schema ([countryGeo.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/countryGeo.ts)) to support 3-digit shorthand SVG hex colors (e.g. `#fff`, `#f00`).
+  - Serialized the `color` property for subdivisions in the public batched map endpoints (`getMapBundle` and `getAllMapFeatures` procedures in [world-map.ts](src/server/api/routers/geo/core/world-map.ts)).
+  - Updated map style templates [standard.json](src/lib/map-styles/standard.json), [dark.json](src/lib/map-styles/dark.json), and [paper.json](src/lib/map-styles/paper.json) to dynamically render subdivisions using their custom colors via MapLibre GL coalescing expressions instead of fallback default styles.
+  - Relaxed the color validation schema in the subdivision upsert schema ([countryGeo.ts](src/server/api/routers/countryGeo.ts)) to support 3-digit shorthand SVG hex colors (e.g. `#fff`, `#f00`).
 
 - **Flat Projection Locking for Map Editors**:
-  - Locked [BorderEditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/BorderEditorMap.tsx) and [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx) to mercator projection.
-  - Added a `useEffect` hook in [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx) to explicitly enforce flat mercator projection whenever stylesheets or themes are loaded.
+  - Locked `BorderEditorMap.tsx` and [EditorMap.tsx](src/components/maps/editor/EditorMap.tsx) to mercator projection.
+  - Added a `useEffect` hook in [EditorMap.tsx](src/components/maps/editor/EditorMap.tsx) to explicitly enforce flat mercator projection whenever stylesheets or themes are loaded.
 
 - **Hierarchical City Visibility & De-Clustering (LOD)**:
-  - Disabled city grouping/clustering across [standard.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/standard.json), [dark.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/dark.json), and [paper.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/paper.json) to render cities as individual standard points rather than cluster bubbles.
+  - Disabled city grouping/clustering across [standard.json](src/lib/map-styles/standard.json), [dark.json](src/lib/map-styles/dark.json), and [paper.json](src/lib/map-styles/paper.json) to render cities as individual standard points rather than cluster bubbles.
   - Formulated a client-side three-tier city visibility hierarchy using disjoint filters (Major Tier showing at Zoom 4+ for cities $\ge$ 500k pop or type `"major"`; Medium Tier showing at Zoom 5.5+ for subdivision capitals or cities $\ge$ 100k pop; Minor Tier showing at Zoom 7+ for other cities).
-  - Selected and mapped `isSubdivisionCapital` from the database in the `getMapBundle` procedure inside [world-map.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/core/world-map.ts) to support subdivision capital visibility.
+  - Selected and mapped `isSubdivisionCapital` from the database in the `getMapBundle` procedure inside [world-map.ts](src/server/api/routers/geo/core/world-map.ts) to support subdivision capital visibility.
   - Configured tiered visual weights (larger, bolded labels for Major Tier; standard for Medium Tier; smaller, regular labels for Minor Tier).
-  - Updated the city toggle references list in [useWorldMapDataOverlays.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useWorldMapDataOverlays.ts) to toggle visibility for all six new tiered layers.
+  - Updated the city toggle references list in [useWorldMapDataOverlays.ts](src/components/maps/core/hooks/useWorldMapDataOverlays.ts) to toggle visibility for all six new tiered layers.
 
 - **Comprehensive MapLibre LOD Optimizations**:
   - Implemented dynamic opacity zoom-level interpolations to fade country labels out between zoom 5.5 and 7.0 across standard, dark, and paper map styles.
@@ -1222,19 +2757,19 @@ capability integer. Each release entry below lists which components advanced and
   - Lowered minimum zoom bounds for Points of Interest (POIs) and Story Pins to Zoom 1.5+ to allow global cluster discoverability, and lowered individual POI icon/label gates to Zoom 5.5+/7.0+ (and story pin labels to Zoom 4.5+).
 
 - **Declarative Map Overlays Integration**:
-  - Migrated dynamic map overlay layers (national capitals, subdivisions, cities, points of interest, story pins, and custom map labels) from imperative JavaScript hook additions to declarative MapLibre GL style templates ([standard.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/standard.json), [dark.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/dark.json), [paper.json](file:///ixwiki/public/projects/ixstats/src/lib/map-styles/paper.json)).
-  - Cleaned up client-side hooks [useWorldMapOverlayFeatures.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useWorldMapOverlayFeatures.ts) and [useWorldMapDataOverlays.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useWorldMapDataOverlays.ts) to eliminate all `addSource` and `addLayer` calls, leaving only reactive `setData` and layout visibility toggles.
+  - Migrated dynamic map overlay layers (national capitals, subdivisions, cities, points of interest, story pins, and custom map labels) from imperative JavaScript hook additions to declarative MapLibre GL style templates ([standard.json](src/lib/map-styles/standard.json), [dark.json](src/lib/map-styles/dark.json), [paper.json](src/lib/map-styles/paper.json)).
+  - Cleaned up client-side hooks [useWorldMapOverlayFeatures.ts](src/components/maps/core/hooks/useWorldMapOverlayFeatures.ts) and [useWorldMapDataOverlays.ts](src/components/maps/core/hooks/useWorldMapDataOverlays.ts) to eliminate all `addSource` and `addLayer` calls, leaving only reactive `setData` and layout visibility toggles.
   - Implemented static source-level clustering properties (`clusterMaxZoom`, `clusterRadius`, and `generateId: true`) inside stylesheet sources.
-  - Created a comprehensive test suite in [route.test.ts](file:///ixwiki/public/projects/ixstats/src/app/api/maps/editor-source/%5Blayer%5D/__tests__/route.test.ts) validating the `/api/maps/editor-source/[layer]` endpoint GeoJSON formatting.
-  - Fixed MapLibre spec font validation check in [map-style-spec.test.ts](file:///ixwiki/public/projects/ixstats/src/lib/__tests__/map-style-spec.test.ts) to support advanced conditional formatting expressions.
+  - Created a comprehensive test suite in `route.test.ts` validating the `/api/maps/editor-source/[layer]` endpoint GeoJSON formatting.
+  - Fixed MapLibre spec font validation check in `map-style-spec.test.ts` to support advanced conditional formatting expressions.
 
 - **Canonical Cosmetics Catalog & Server-Backed Equipment**:
-  - Created a canonical catalog in [cosmetics.ts](file:///ixwiki/public/projects/ixstats/src/lib/cosmetics.ts) to map cosmetic item IDs directly to visual style configurations, resolving avatar glow, cyber frame, and chat badge effects even if database effects are null.
-  - Added `equippedCosmetics` column (String? default "") to `MyVault` model in [cards.prisma](file:///ixwiki/public/projects/ixstats/prisma/schema/cards.prisma) to persist active equipped states database-wide.
-  - Implemented new tRPC queries/mutations `getEquippedCosmetics` and `toggleEquipCosmetic` in the user storefront router [store.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/vault/store.ts).
-  - Added matching administrative procedures `adminGetEquippedCosmetics` and `adminToggleEquipCosmetic` to the admin vault router [admin.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/vault/admin.ts) to allow server-backed control.
+  - Created a canonical catalog in `cosmetics.ts` to map cosmetic item IDs directly to visual style configurations, resolving avatar glow, cyber frame, and chat badge effects even if database effects are null.
+  - Added `equippedCosmetics` column (String? default "") to `MyVault` model in [cards.prisma](prisma/schema/cards.prisma) to persist active equipped states database-wide.
+  - Implemented new tRPC queries/mutations `getEquippedCosmetics` and `toggleEquipCosmetic` in the user storefront router [store.ts](src/server/api/routers/vault/store.ts).
+  - Added matching administrative procedures `adminGetEquippedCosmetics` and `adminToggleEquipCosmetic` to the admin vault router `admin.ts` to allow server-backed control.
   - Hooked up `VaultSettingsCard.tsx` toggles to user storefront mutations and seeded the toggled states directly from server-equipped values on load.
-  - Extended the admin Manage Cosmetics dialog in [VaultUserDirectory.tsx](file:///ixwiki/public/projects/ixstats/src/app/admin/vault/VaultUserDirectory.tsx) to allow admins to equip and unequip unlocked cosmetics on behalf of any user.
+  - Extended the admin Manage Cosmetics dialog in [VaultUserDirectory.tsx](src/app/admin/vault/VaultUserDirectory.tsx) to allow admins to equip and unequip unlocked cosmetics on behalf of any user.
   - Replaced the `Sparkles` icon with the `Gem` icon across Settings, UserPreferences, and Admin views for visual polish.
 
 - **Atomic Component ↔ MyCountry Simulation Integration**: Wired government / economic / tax component metrics (implementation cost, annual maintenance, staff required, time-to-implement) directly into the country simulation, policies, and the National Issues Engine.
@@ -1328,35 +2863,35 @@ capability integer. Each release entry below lists which components advanced and
   - Resolved `ReferenceError: Cannot access 'allFeatures' before initialization` inside `useMapEditor.ts` by re-ordering callbacks so that `applyEyedropper`, `applyMagicWand`, and `pathfinderOperation` are declared after the `allFeatures` memoized state.
   - Resolved `ReferenceError: showGuides is not defined` inside `MapEditorOverlay.tsx` by destructuring `showGuides` and `setShowGuides` from the core overlay `state` delegate object.
 
-- **Global Hydrography Counting Discrepancy**: Fixed a bug in [geo-profile.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/core/geo-profile.ts) that caused global river/lake counts and lengths/areas to be reported on the country profile instead of clipping them to the country bounds via PostGIS intersections.
+- **Global Hydrography Counting Discrepancy**: Fixed a bug in [geo-profile.ts](src/server/api/routers/geo/core/geo-profile.ts) that caused global river/lake counts and lengths/areas to be reported on the country profile instead of clipping them to the country bounds via PostGIS intersections.
 
 - **MyCountry Demographics & Economic Data Mismatch (Caphiria)**:
   - Fixed a major discrepancy where the `/mycountry` dashboard displayed inflated demographics and economic statistics for Caphiria (e.g. 5.1B population and $328.7T GDP) compared to the correct progressed values rendered on `/dashboard` (619M population and $39.8T GDP).
-  - Corrected the `getByIdWithEconomicData` query in [economy.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/countries/economy.ts) to return time-progressed values (`result.newStats`) rather than raw database column values.
-  - Fixed the partial roster import logic in [import.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/admin/countries/import.ts) to recalculate and synchronize current stats (`currentPopulation`, `currentGdpPerCapita`, `currentTotalGdp`, `nominalGDP`, `economicTier`, and `populationTier`) when baseline stats are updated.
+  - Corrected the `getByIdWithEconomicData` query in [economy.ts](src/server/api/routers/countries/economy.ts) to return time-progressed values (`result.newStats`) rather than raw database column values.
+  - Fixed the partial roster import logic in [import.ts](src/server/api/routers/admin/countries/import.ts) to recalculate and synchronize current stats (`currentPopulation`, `currentGdpPerCapita`, `currentTotalGdp`, `nominalGDP`, `economicTier`, and `populationTier`) when baseline stats are updated.
 
 - **Zod Schema Validations on Drag Drop**:
   - Resolved Zod schema validation errors when saving point feature coordinates on drag-and-drop release by converting top-level `null` fields (e.g. population, elevation, wikiPageTitle) to `undefined` before sending mutations.
-  - Integrated this Zod-safety wrapper into coordinate edits, undo/redo history, and reverse action callbacks in [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts).
+  - Integrated this Zod-safety wrapper into coordinate edits, undo/redo history, and reverse action callbacks in [useMapEditor.ts](src/hooks/useMapEditor.ts).
 
 - **Map Editor Real-Time Saving and Ghost Border Elimination**:
   - Hardened all database political borders and subdivision geometry calculations with PostGIS `ST_MakeValid` to auto-repair self-intersections or unclosed rings from imported/edited geometries.
-  - Integrated `ST_MakeValid` directly into geometry triggers ([setup-map-triggers.ts](file:///ixwiki/public/projects/ixstats/scripts/migrations/setup-map-triggers.ts)) and manual update helpers ([upsert.ts](file:///ixwiki/public/projects/ixstats/src/lib/country-geo/upsert.ts), [clone-subsystems.ts](file:///ixwiki/public/projects/ixstats/src/lib/demo-seed/clone-subsystems.ts), [spatial.ts](file:///ixwiki/public/projects/ixstats/src/lib/country-geo/spatial.ts), [provinces.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/admin/provinces.ts)).
-  - Reconciled query cache invalidation typo key mismatch: replaced `"geoCore.getCountryGeoBundle"` with the correct `"countryGeo.getCountryGeoBundle"` across all backend routers ([countryGeo.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/countryGeo.ts), [borders.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/editor/borders.ts), [linkage.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/editor/linkage.ts), [cities.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/admin/cities.ts), [provinces.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/admin/provinces.ts)).
-  - Added missing cache invalidation for `"geoCore.getCountryGeometry"` to border mutations in [borders.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/editor/borders.ts).
-  - Wired client-side query cache updates and local state invalidations upon saving, splitting, and merging borders/subdivisions ([useBorderEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useBorderEditor.ts), [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts), [useMapLiveSync.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapLiveSync.ts)) to ensure the editor UI redraws instantly with the latest authoritative shape and eliminates stale ghost borders.
+  - Integrated `ST_MakeValid` directly into geometry triggers (`setup-map-triggers.ts`) and manual update helpers ([upsert.ts](src/lib/country-geo/upsert.ts), `src/lib/demo-seed/clone-subsystems.ts`, [spatial.ts](src/lib/country-geo/spatial.ts), [provinces.ts](src/server/api/routers/geo/admin/provinces.ts)).
+  - Reconciled query cache invalidation typo key mismatch: replaced `"geoCore.getCountryGeoBundle"` with the correct `"countryGeo.getCountryGeoBundle"` across all backend routers ([countryGeo.ts](src/server/api/routers/countryGeo.ts), [borders.ts](src/server/api/routers/geo/editor/borders.ts), `linkage.ts`, [cities.ts](src/server/api/routers/geo/admin/cities.ts), [provinces.ts](src/server/api/routers/geo/admin/provinces.ts)).
+  - Added missing cache invalidation for `"geoCore.getCountryGeometry"` to border mutations in [borders.ts](src/server/api/routers/geo/editor/borders.ts).
+  - Wired client-side query cache updates and local state invalidations upon saving, splitting, and merging borders/subdivisions ([useBorderEditor.ts](src/hooks/useBorderEditor.ts), [useMapEditor.ts](src/hooks/useMapEditor.ts), [useMapLiveSync.ts](src/hooks/useMapLiveSync.ts)) to ensure the editor UI redraws instantly with the latest authoritative shape and eliminates stale ghost borders.
 
 - **IIWiki Flag Image Resolution (Cloudflare Bypass)**: Implemented a deterministic MD5-based upload directory guessing mechanism inside the IIWiki file proxy route `/api/mediawiki/iiwiki/[...path]/route.ts`. This construct instantly resolves MediaWiki local image paths (`images/{first_char}/{first_two_chars}/{filename}`) and verifies the result via `wsrv.nl` before falling back to the standard `api.php` query, bypassing Cloudflare's production 403 API blocks and resolving the import builder 404 image errors.
 - **Province geometry edits silently not saving**: editing a subdivision's shape (vertex drag) in the map editor failed to persist, leaving the original "ghost" border. Root cause was a cascade rather than the geometry path itself:
-  - The geometry-save call in [useMapEditor.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMapEditor.ts) was malformed — it passed `subdivisionId` (stripped by the Zod schema → treated as a create) and omitted the required `name`, so the mutation rejected. Fixed the call to send `id`, made `name` optional on `countryGeo.upsertSubdivision` with a create-time guard ([countryGeo.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/countryGeo.ts)).
-  - The deeper cause: `geoCore.getPointInfo` ran `ST_Contains` over `map_layers.geom_postgis` with **no GiST index** — the index was declared in the Prisma schema but never created (Prisma skips GiST on `Unsupported("geometry")` columns, and `map_layers` lacked the explicit raw-SQL migration every other spatial table has). Each call seq-scanned world-scale multipolygons (~40s), saturating the browser connection pool until the queued `upsertSubdivision` POST's short-lived Clerk JWT expired and the save was rejected `UNAUTHORIZED`. Added the missing index migration [add-map-layer-geom-index.sql](file:///ixwiki/public/projects/ixstats/prisma/migrations/add-map-layer-geom-index.sql) (`idx_map_layer_geom`).
-  - Hardened the point lookups in [point-queries.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/core/point-queries.ts) with a per-statement timeout so a slow spatial query can never again hold a connection long enough to break auth, and gave geometry edits a dedicated mutation that surfaces errors (`onError`) and reconciles the editor cache with the server's authoritative saved geometry for live refresh.
+  - The geometry-save call in [useMapEditor.ts](src/hooks/useMapEditor.ts) was malformed — it passed `subdivisionId` (stripped by the Zod schema → treated as a create) and omitted the required `name`, so the mutation rejected. Fixed the call to send `id`, made `name` optional on `countryGeo.upsertSubdivision` with a create-time guard ([countryGeo.ts](src/server/api/routers/countryGeo.ts)).
+  - The deeper cause: `geoCore.getPointInfo` ran `ST_Contains` over `map_layers.geom_postgis` with **no GiST index** — the index was declared in the Prisma schema but never created (Prisma skips GiST on `Unsupported("geometry")` columns, and `map_layers` lacked the explicit raw-SQL migration every other spatial table has). Each call seq-scanned world-scale multipolygons (~40s), saturating the browser connection pool until the queued `upsertSubdivision` POST's short-lived Clerk JWT expired and the save was rejected `UNAUTHORIZED`. Added the missing index migration [add-map-layer-geom-index.sql](prisma/migrations/add-map-layer-geom-index.sql) (`idx_map_layer_geom`).
+  - Hardened the point lookups in [point-queries.ts](src/server/api/routers/geo/core/point-queries.ts) with a per-statement timeout so a slow spatial query can never again hold a connection long enough to break auth, and gave geometry edits a dedicated mutation that surfaces errors (`onError`) and reconciles the editor cache with the server's authoritative saved geometry for live refresh.
 
 ### Changed
 
 - **Geographic Demographics Sync Consolidation**:
-  - Eliminated multiple duplicate local definitions of `syncGeographicDemographics` across geographic feature routers including [subdivisions.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/features/subdivisions.ts), [cities.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/features/cities.ts), and [pois.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/geo/features/pois.ts).
-  - Consolidated them to import the canonical implementation from [sync.ts](file:///ixwiki/public/projects/ixstats/src/lib/country-geo/sync.ts) which correctly respects the `geoRollupMode === "bottom-up"` guard at the country level.
+  - Eliminated multiple duplicate local definitions of `syncGeographicDemographics` across geographic feature routers including `subdivisions.ts`, [cities.ts](src/server/api/routers/geo/features/cities.ts), and [pois.ts](src/server/api/routers/geo/features/pois.ts).
+  - Consolidated them to import the canonical implementation from [sync.ts](src/lib/country-geo/sync.ts) which correctly respects the `geoRollupMode === "bottom-up"` guard at the country level.
 
 - **Integrated Background Simulations with Database Overrides**: Configured automated match day simulations (`matches.ts`) and end-of-season recaps (`transition.ts`) to query global configurations from the `SystemConfig` database table and apply the custom LLM parameters during simulation runs.
 - **Live-Wired AI Narrator Library & tRPC Routers**: Refactored the core `queryLLM` and all commentary-related generators (`generateMatchReport`, `generateMatchPreview`, `generateSeasonSummary`, and `narrateBulletin`) to accept and execute with client-specified provider, URL, API key, model, and temperature settings overrides. Updated the schemas of `generateMatchReport`, `generateMatchPreview`, and `generateMatchCommentary` in the sports leagues tRPC router to accept the optional config payload.
@@ -1365,7 +2900,7 @@ capability integer. Each release entry below lists which components advanced and
 - **Dashboard hero — premium gating**: the Intelligence and Defense section tabs (and their tRPC queries) are now restricted to MyCountry-premium members; non-premium users see Overview / Executive / Diplomacy only, and the inactivity auto-cycle skips the gated sections.
 - **Dashboard growth precision**: GDP and population growth figures in the hero now display two decimal places.
 - **`FacetTabs` indicator override**: added an optional `indicatorClassName` prop to the shared Facet tab component so individual usages can restyle the moving active indicator (e.g. match a container's corner radius) without changing the global default.
-- **`country-geo-service.ts` modularization**: split the 1,457-line `src/lib/country-geo-service.ts` god-module into focused [country-geo/](file:///ixwiki/public/projects/ixstats/src/lib/country-geo/) modules (`sync`, `bundle`, `spatial`, `policy`, `upsert`) behind an `index.ts` barrel; `country-geo-service.ts` now re-exports through it, so all ~14 importers and the `~/lib/country-geo-service` path are unchanged. Pure mechanical move — function bodies byte-identical, no behavior change.
+- **`country-geo-service.ts` modularization**: split the 1,457-line `src/lib/country-geo-service.ts` god-module into focused [country-geo/](src/lib/country-geo/) modules (`sync`, `bundle`, `spatial`, `policy`, `upsert`) behind an `index.ts` barrel; `country-geo-service.ts` now re-exports through it, so all ~14 importers and the `~/lib/country-geo-service` path are unchanged. Pure mechanical move — function bodies byte-identical, no behavior change.
 
 ### Fixed
 
@@ -1751,8 +3286,8 @@ capability integer. Each release entry below lists which components advanced and
 ### Added
 
 - **Facet Design System Reference & Style Guide**:
-  - Created a comprehensive architectural design and style guide at [facet-design-system.md](file:///ixwiki/public/projects/ixstats/docs/reference/facet-design-system.md) detailing volumetric depth, compounding parent-child blurs, pointer-glow materials (Satin, Paper, Rubber, Metal), adaptive background textures, and performance input exceptions.
-  - Indexed the guide in the global master index [DOCUMENTATION_INDEX.md](file:///ixwiki/public/projects/ixstats/docs/DOCUMENTATION_INDEX.md).
+  - Created a comprehensive architectural design and style guide at [facet-design-system.md](docs/reference/facet-design-system.md) detailing volumetric depth, compounding parent-child blurs, pointer-glow materials (Satin, Paper, Rubber, Metal), adaptive background textures, and performance input exceptions.
+  - Indexed the guide in the global master index `DOCUMENTATION_INDEX.md`.
 - **Facet Materials Lab Configurator Page**:
   - Moved the Facet Materials Lab preview panel from the main dashboard into a dedicated admin playground page at `/admin/facet-materials-lab`.
   - Designed the configurator using a modular structure (types, panel inputs, templates, exporter, and canvas visualization components) to support future extensions.
@@ -1772,7 +3307,7 @@ capability integer. Each release entry below lists which components advanced and
   - Extended the core `<FacetTabs>` component to support custom tab-defined active indicator, text, icon, and glow overrides.
   - Renamed the `onChange` prop to `onChangeAction` inside `MyCountryTabsList` to satisfy Next.js's serializable client boundary props checking and eliminate build-time warnings.
   - Configured each of the four simulation tabs (At a Glance, Economy, Labor, Government) with their respective custom themed styles and colors (Amber, Green, Red, Purple) utilizing CSS custom properties.
-  - Added `!important` to the active-state properties in [mycountry-theming.css](file:///ixwiki/public/projects/ixstats/src/styles/mycountry-theming.css) to prevent the base `TabsTrigger` active utility classes from washing out colors in dark mode.
+  - Added `!important` to the active-state properties in `mycountry-theming.css` to prevent the base `TabsTrigger` active utility classes from washing out colors in dark mode.
 - **Facet Cutout Card Hover & Refraction Upgrades**:
   - Replaced the invalid `hsl(var(--border))` declarations (which fell back to dark/black borders on hover in light mode) with standard `var(--border)` variables across all cutout cards, command palettes, and charts.
   - Implemented dynamic backdrop-filter blur and translucent background overrides on `.facet-cutout-card:hover` to disrupt the background and refract underlying page elements correctly when hovered.
@@ -1789,14 +3324,14 @@ capability integer. Each release entry below lists which components advanced and
   - Renamed "Categories" sidebar control to "Filters" using Lucide-Animated's `SlidersHorizontalIcon`, which now toggles both the sidebar and the metadata filters (Type, Orientation) visibility.
   - Flattened `MyStashTab` navigation to query all stashed page images in parallel, eliminating multi-step page listing pages and ensuring the stash tab only displays images directly.
 - **Cursor Rules Component Glossary Synced**:
-  - Updated the Cursor design rules file [design.mdc](file:///ixwiki/.cursor/rules/design.mdc) to rename legacy headings ("Enhanced Glassmorphism Components" to "Facet Material & Elevation Components"), document modern Facet container/card/modal/navigation component primitives, and link to the new style guide.
+  - Updated the Cursor design rules file `.cursor/rules/design.mdc` to rename legacy headings ("Enhanced Glassmorphism Components" to "Facet Material & Elevation Components"), document modern Facet container/card/modal/navigation component primitives, and link to the new style guide.
 
 ### Fixed
 
 - **ThinkPages Wiki Card Embed Not Rendering on Posts**:
   - Wiki card embeds (inserted via the "Card Embed" mode in the Plate editor) were visible in the editor preview but appeared blank on published posts. The root cause was that Plate's built-in `editor.api.htmlReact.serialize()` did not know how to serialize the custom `wikiembed` void node, silently dropping all embed data (title, summary, image URL, source) from the stored HTML.
-  - Replaced the Plate serializer with a custom `slateNodesToHtml()` function in [GlassPlateEditor.tsx](file:///ixwiki/public/projects/ixstats/src/components/thinkpages/GlassPlateEditor.tsx) that walks the Slate node tree and produces correct HTML for all node types — including `<div data-wikiembed="true" data-title="..." data-summary="..." data-imageurl="..." data-source="...">` for wiki card embeds, as well as `wikilink`, `link`, `img`, lists, and text marks (bold/italic/underline).
-  - The display-side renderer ([WikiHtmlContent](file:///ixwiki/public/projects/ixstats/src/components/wiki/WikiLinkPreview.tsx)) and the HTML sanitizer ([sanitize-html.ts](file:///ixwiki/public/projects/ixstats/src/lib/sanitize-html.ts)) already supported `data-wikiembed` attributes — the issue was purely in serialization.
+  - Replaced the Plate serializer with a custom `slateNodesToHtml()` function in [GlassPlateEditor.tsx](src/components/thinkpages/GlassPlateEditor.tsx) that walks the Slate node tree and produces correct HTML for all node types — including `<div data-wikiembed="true" data-title="..." data-summary="..." data-imageurl="..." data-source="...">` for wiki card embeds, as well as `wikilink`, `link`, `img`, lists, and text marks (bold/italic/underline).
+  - The display-side renderer (`WikiHtmlContent`) and the HTML sanitizer (`sanitize-html.ts`) already supported `data-wikiembed` attributes — the issue was purely in serialization.
   - Note: Previously published posts that were affected by this bug will need to be re-edited and re-saved to restore their wiki card embeds.
 
 ## [1.0.1 Ogma (Public Alpha 2.2.4)] - 2026-06-11
@@ -1808,7 +3343,7 @@ capability integer. Each release entry below lists which components advanced and
 ### Changed
 
 - **Admin Notification Log Modernization**:
-  - Replaced the static HTML table layout in [NotificationBrowser.tsx](file:///ixwiki/public/projects/ixstats/src/app/admin/notifications/_components/NotificationBrowser.tsx) with an iOS-style list powered by `<SwipeableGroup>` and `<SwipeableRow>`.
+  - Replaced the static HTML table layout in [NotificationBrowser.tsx](src/app/admin/notifications/_components/NotificationBrowser.tsx) with an iOS-style list powered by `<SwipeableGroup>` and `<SwipeableRow>`.
   - Implemented `locallyDeletedIds` state to hide deleted notifications immediately on swipe-to-delete.
   - Reorganized detailed notification information inside collapsible drawers.
 - **Wiki Route and Directory Structure Reorganisation (WikiOS System)**:
@@ -1822,8 +3357,8 @@ capability integer. Each release entry below lists which components advanced and
 
 ### Fixed
 
-- **Database Notification Dismissal**: Wired up tRPC `dismissNotification` mutation and introduced a synchronous `locallyDismissedIds` state filter in [NotificationsView.tsx](file:///ixwiki/public/projects/ixstats/src/components/DynamicIsland/NotificationsView.tsx) to eliminate async reload latency.
-- **Composer Action Bar State Transitions**: Reverted composer action bar visibility logic in [GlassCanvasComposer.tsx](file:///ixwiki/public/projects/ixstats/src/components/thinkpages/GlassCanvasComposer.tsx) to hide when editor is empty and unfocused, and corrected the dynamic placeholder transition on focus.
+- **Database Notification Dismissal**: Wired up tRPC `dismissNotification` mutation and introduced a synchronous `locallyDismissedIds` state filter in `NotificationsView.tsx` to eliminate async reload latency.
+- **Composer Action Bar State Transitions**: Reverted composer action bar visibility logic in [GlassCanvasComposer.tsx](src/components/thinkpages/GlassCanvasComposer.tsx) to hide when editor is empty and unfocused, and corrected the dynamic placeholder transition on focus.
 - **Wiki URL Compatibility**: Updated all wiki URL resolution/stripping functions in `url-compat.ts` to cleanly handle `/wiki/` routes.
 - **Plate Editor Wiki Embed Insertion**: Fixed the wiki link auto-detection parser in `GlassPlateEditor.tsx` to handle the new `/wiki/` structures.
 - **Country Wiki Intro Loading Error**: Resolved the undefined reference crash on country profile routes in `wiki.ts` by pulling the base path correctly.
@@ -1835,8 +3370,8 @@ This section includes the complete walkthrough of the changes applied to fix not
 
 #### 1. Database Notification Dismissal & Live Feed Filtering
 
-- **Backend Router**: Updated the `getUserNotifications` procedure in [notifications.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/notifications.ts) to filter out dismissed notifications (`dismissed: false`).
-- **Dynamic Island View**: Modified [NotificationsView.tsx](file:///ixwiki/public/projects/ixstats/src/components/DynamicIsland/NotificationsView.tsx) to:
+- **Backend Router**: Updated the `getUserNotifications` procedure in `notifications.ts` to filter out dismissed notifications (`dismissed: false`).
+- **Dynamic Island View**: Modified `NotificationsView.tsx` to:
   - Wire up the `dismissNotification` mutation from the tRPC API.
   - Implement a unified `handleDismiss` function to handle standard, enhanced, and executive notifications.
   - Introduce `locallyDismissedIds` state to synchronously filter out dismissed items on the first frame of interaction, removing any async latency or UI lag during database refetches.
@@ -1844,22 +3379,22 @@ This section includes the complete walkthrough of the changes applied to fix not
 
 #### 2. Admin Notification Log Modernization
 
-- **Admin Log Page**: Completely refactored [NotificationBrowser.tsx](file:///ixwiki/public/projects/ixstats/src/app/admin/notifications/_components/NotificationBrowser.tsx) by replacing the static HTML table layout with an iOS-style list powered by `<SwipeableGroup>` and `<SwipeableRow>`.
+- **Admin Log Page**: Completely refactored [NotificationBrowser.tsx](src/app/admin/notifications/_components/NotificationBrowser.tsx) by replacing the static HTML table layout with an iOS-style list powered by `<SwipeableGroup>` and `<SwipeableRow>`.
 - **Swipe-to-Delete**: Wired the trailing commit swipe of each row to execute the deletion logic.
 - **Instant Deletions**: Implemented `locallyDeletedIds` to immediately hide deleted notifications in the client while the database query executes the `deleteNotification` mutation in the background.
 - **Accordion Expand**: Embedded the description, full message, scope badge, priority badge, and metadata JSON inside the expanded drawer, yielding a modern and responsive experience.
 
 #### 3. Glass Refraction Removal in Dark Mode
 
-- **Edge Sheens**: Disabled white/light reflection edge highlights (`::before` sheens and `::after` lines on `.glass-refraction`) globally when in dark mode inside [glass-refraction.css](file:///ixwiki/public/projects/ixstats/src/styles/glass-refraction.css).
+- **Edge Sheens**: Disabled white/light reflection edge highlights (`::before` sheens and `::after` lines on `.glass-refraction`) globally when in dark mode inside `glass-refraction.css`.
 - **Surface Contrast**: Smooth-toned all dark mode glass surfaces (including `.glass-base`, `.glass-surface`, `.glass-floating`, `.glass-overlay`, depth classes, and hierarchy components) to use deep neutral/slate backgrounds (`rgba(9, 9, 11, 0.75)` / `rgba(15, 23, 42, 0.75)`) and thin dark borders (`rgba(255, 255, 255, 0.08)`), letting texture overlays shine through cleanly.
 
 #### 4. Composer Action Bar & Placeholder Focus Transitions
 
-- **Collapsible Actions**: Reverted the hardcoded `const showActionBar = true;` inside [GlassCanvasComposer.tsx](file:///ixwiki/public/projects/ixstats/src/components/thinkpages/GlassCanvasComposer.tsx) back to its focus and state-based logic:
+- **Collapsible Actions**: Reverted the hardcoded `const showActionBar = true;` inside [GlassCanvasComposer.tsx](src/components/thinkpages/GlassCanvasComposer.tsx) back to its focus and state-based logic:
   `const showActionBar = isEditorFocused || hasContent || showVisualizationPanel;`
   This ensures action items (live data, image, gif, share options) hide when the editor is empty and unfocused, while keeping the Slate editor at its constant minimum height.
-- **Dynamic Placeholder Transitions**: Updated the placeholder state logic in [GlassCanvasComposer.tsx](file:///ixwiki/public/projects/ixstats/src/components/thinkpages/GlassCanvasComposer.tsx) so that the placeholder text dynamically transitions back to the standard "What's happening?" placeholder when the editor is focused, aligning with the Slate fade-out animation.
+- **Dynamic Placeholder Transitions**: Updated the placeholder state logic in [GlassCanvasComposer.tsx](src/components/thinkpages/GlassCanvasComposer.tsx) so that the placeholder text dynamically transitions back to the standard "What's happening?" placeholder when the editor is focused, aligning with the Slate fade-out animation.
 
 #### 5. Wiki Architecture Reorganisation
 
@@ -1881,7 +3416,7 @@ This section includes the complete walkthrough of the changes applied to fix not
 
 - **Reference Bug Fix**: Fixed an undefined `base` variable in `wiki.ts` country router that crashed flag/intro rendering by referencing the correct `process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || ""`.
 - **Direct SQL Queries for local ixwiki**:
-  - Implemented dynamic-imported direct MySQL queries in [mediawiki-service.ts](file:///ixwiki/public/projects/ixstats/src/lib/mediawiki-service.ts) to query the local MySQL database for wikitext, templates, and file URLs when `wikiSource` is `ixwiki` and executed on the server side (`typeof window === "undefined"`).
+  - Implemented dynamic-imported direct MySQL queries in `mediawiki-service.ts` to query the local MySQL database for wikitext, templates, and file URLs when `wikiSource` is `ixwiki` and executed on the server side (`typeof window === "undefined"`).
   - This avoids client-side JS bundle bloat (such as node-mysql drivers or crypto dependencies) while bypassing HTTP overhead on the server, speeding up page generation times significantly.
 
 ## [1.0 Ogma (Public Alpha 2.2.3)] - 2026-06-11
@@ -1919,16 +3454,16 @@ We refactored the monolithic `UnifiedDashboardSection.tsx` (~2,076 lines) into m
 
 ##### 1. Extracted Sub-Components (co-located in `src/components/dashboard/sections/`)
 
-- **[UnifiedFeedContent.tsx](file:///ixwiki/public/projects/ixstats/src/components/dashboard/sections/UnifiedFeedContent.tsx)**: Coordinates all state and queries (`getGlobalFeed`, `getFollowingFeed`, `getRecentChanges`) for the primary dashboard activity streams.
-- **[UnifiedFeedItem.tsx](file:///ixwiki/public/projects/ixstats/src/components/dashboard/sections/UnifiedFeedItem.tsx)**: Standardizes rendering of activity updates and external links.
-- **[WikiAuthorPopover.tsx](file:///ixwiki/public/projects/ixstats/src/components/dashboard/sections/WikiAuthorPopover.tsx)**: Displays user details and links when hovering over wiki editors.
-- **[TrendingSectionWidget.tsx](file:///ixwiki/public/projects/ixstats/src/components/dashboard/sections/TrendingSectionWidget.tsx)**: Handles the "Trending Now" item cards (with popover preview cards for wiki pages and forum threads).
-- **[CountriesToExploreCard.tsx](file:///ixwiki/public/projects/ixstats/src/components/dashboard/sections/CountriesToExploreCard.tsx)**: Displays recommended random countries to follow.
-- **[BlurbSection.tsx](file:///ixwiki/public/projects/ixstats/src/components/dashboard/sections/BlurbSection.tsx)**: Houses the "Blurb of the Day" prompt, response submission form, and community answers.
+- **[UnifiedFeedContent.tsx](src/components/dashboard/sections/UnifiedFeedContent.tsx)**: Coordinates all state and queries (`getGlobalFeed`, `getFollowingFeed`, `getRecentChanges`) for the primary dashboard activity streams.
+- **[UnifiedFeedItem.tsx](src/components/dashboard/sections/UnifiedFeedItem.tsx)**: Standardizes rendering of activity updates and external links.
+- **[WikiAuthorPopover.tsx](src/components/dashboard/sections/WikiAuthorPopover.tsx)**: Displays user details and links when hovering over wiki editors.
+- **[TrendingSectionWidget.tsx](src/components/dashboard/sections/TrendingSectionWidget.tsx)**: Handles the "Trending Now" item cards (with popover preview cards for wiki pages and forum threads).
+- **[CountriesToExploreCard.tsx](src/components/dashboard/sections/CountriesToExploreCard.tsx)**: Displays recommended random countries to follow.
+- **[BlurbSection.tsx](src/components/dashboard/sections/BlurbSection.tsx)**: Houses the "Blurb of the Day" prompt, response submission form, and community answers.
 
 ##### 2. Simplified Dashboard Coordinator
 
-- Cleaned up [UnifiedDashboardSection.tsx](file:///ixwiki/public/projects/ixstats/src/components/dashboard/sections/UnifiedDashboardSection.tsx) to delegate all state and sub-render trees, reducing size to a clean ~350 lines focusing on outer glassmorphism transitions and layout placements.
+- Cleaned up [UnifiedDashboardSection.tsx](src/components/dashboard/sections/UnifiedDashboardSection.tsx) to delegate all state and sub-render trees, reducing size to a clean ~350 lines focusing on outer glassmorphism transitions and layout placements.
 
 ---
 
@@ -1938,14 +3473,14 @@ We organized the layout components of the dashboard under a dedicated `src/compo
 
 ##### 1. Moved Components
 
-- **[DashboardSidebarLayout.tsx](file:///ixwiki/public/projects/ixstats/src/components/dashboard/sidebar/DashboardSidebarLayout.tsx)**: Main dashboard page grid structure.
-- **[DashboardPlayerWidget.tsx](file:///ixwiki/public/projects/ixstats/src/components/dashboard/sidebar/DashboardPlayerWidget.tsx)**: Core player profile card and active alerts indicators.
-- **[DashboardQuickLinks.tsx](file:///ixwiki/public/projects/ixstats/src/components/dashboard/sidebar/DashboardQuickLinks.tsx)**: Navigation list to help documents and system status.
-- **[ServerDiscordBadge.tsx](file:///ixwiki/public/projects/ixstats/src/components/dashboard/sidebar/ServerDiscordBadge.tsx)**: Server-side wrapper for Discord badge loading.
+- **`src/components/dashboard/sidebar/DashboardSidebarLayout.tsx`**: Main dashboard page grid structure.
+- **`src/components/dashboard/sidebar/DashboardPlayerWidget.tsx`**: Core player profile card and active alerts indicators.
+- **`src/components/dashboard/sidebar/DashboardQuickLinks.tsx`**: Navigation list to help documents and system status.
+- **`src/components/dashboard/sidebar/ServerDiscordBadge.tsx`**: Server-side wrapper for Discord badge loading.
 
 ##### 2. Updated Imports
 
-- Updated imports in [DashboardRouter.tsx](file:///ixwiki/public/projects/ixstats/src/components/dashboard/DashboardRouter.tsx), root page [page.tsx](file:///ixwiki/public/projects/ixstats/src/app/page.tsx), and vault layout [VaultSidebarLayout.tsx](file:///ixwiki/public/projects/ixstats/src/components/vault/VaultSidebarLayout.tsx) to reflect the new paths.
+- Updated imports in [DashboardRouter.tsx](src/components/dashboard/DashboardRouter.tsx), root page [page.tsx](src/app/page.tsx), and vault layout `src/components/vault/VaultSidebarLayout.tsx` to reflect the new paths.
 
 ---
 
@@ -1968,7 +3503,7 @@ We performed a deep audit and deleted obsolete or unreferenced code files:
   - `SocialUserProfile.tsx`
   - `AdminQuickAccess.tsx`
   - `TierVisualization.tsx`
-- Cleaned up exports list in [index.ts](file:///ixwiki/public/projects/ixstats/src/app/_components/index.ts) to prevent build errors.
+- Cleaned up exports list in [index.ts](src/app/_components/index.ts) to prevent build errors.
 
 ##### 3. Next.js/React 19 Compiler Warning Fixes
 
@@ -2000,7 +3535,7 @@ We broke up the monolithic `EditorMap.tsx` (~2,750 lines) into modular custom ho
 
 ##### 1. Shared Map Utilities
 
-- Created [map-helpers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/utils/map-helpers.ts) to consolidate helper functions:
+- Created [map-helpers.ts](src/components/maps/editor/utils/map-helpers.ts) to consolidate helper functions:
   - `getGeoJSONSource`
   - `getFeatureCoords`
   - `calculateOverlapGeoJson`
@@ -2009,21 +3544,21 @@ We broke up the monolithic `EditorMap.tsx` (~2,750 lines) into modular custom ho
 
 ##### 2. Custom Hooks (co-located in `src/components/maps/editor/hooks/`)
 
-- **[useMapLayers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useMapLayers.ts)**: Encapsulates all MapLibre source and layer rendering effects.
-- **[useSubdivisionDraw.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionDraw.ts)**: Encapsulates coordinate collection, drawing visualization previews, snapping, and polygon saving.
-- **[useSubdivisionVertexEdit.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useSubdivisionVertexEdit.ts)**: Encapsulates vertex editing states, mouse/touch dragging, right-click/keyboard deletions, and snap alignments.
-- **[useRouteEdit.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useRouteEdit.ts)**: Encapsulates route dragging on desktop/mobile, midpoint coordinates addition, context-menu deletions, and snap previews.
+- **[useMapLayers.ts](src/components/maps/editor/hooks/useMapLayers.ts)**: Encapsulates all MapLibre source and layer rendering effects.
+- **[useSubdivisionDraw.ts](src/components/maps/editor/hooks/useSubdivisionDraw.ts)**: Encapsulates coordinate collection, drawing visualization previews, snapping, and polygon saving.
+- **[useSubdivisionVertexEdit.ts](src/components/maps/editor/hooks/useSubdivisionVertexEdit.ts)**: Encapsulates vertex editing states, mouse/touch dragging, right-click/keyboard deletions, and snap alignments.
+- **[useRouteEdit.ts](src/components/maps/editor/hooks/useRouteEdit.ts)**: Encapsulates route dragging on desktop/mobile, midpoint coordinates addition, context-menu deletions, and snap previews.
 
 ##### 3. Toolbar Sub-components (co-located in `src/components/maps/editor/toolbars/`)
 
-- **[DrawingToolbar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/toolbars/DrawingToolbar.tsx)**: Subdivision drawing states and controls.
-- **[VertexEditingToolbar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/toolbars/VertexEditingToolbar.tsx)**: Subdivision vertex simplify/save/cancel controls.
-- **[RouteEditingToolbar.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/toolbars/RouteEditingToolbar.tsx)**: Route path save and cancel controls.
-- **[MapHintPill.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/toolbars/MapHintPill.tsx)**: Mode instruction tip pills.
+- **[DrawingToolbar.tsx](src/components/maps/editor/toolbars/DrawingToolbar.tsx)**: Subdivision drawing states and controls.
+- **[VertexEditingToolbar.tsx](src/components/maps/editor/toolbars/VertexEditingToolbar.tsx)**: Subdivision vertex simplify/save/cancel controls.
+- **[RouteEditingToolbar.tsx](src/components/maps/editor/toolbars/RouteEditingToolbar.tsx)**: Route path save and cancel controls.
+- **[MapHintPill.tsx](src/components/maps/editor/toolbars/MapHintPill.tsx)**: Mode instruction tip pills.
 
 ##### 4. Simplified Map Coordinator
 
-- Cleaned up [EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx) to delegate complex hooks and render simple layout toolbars.
+- Cleaned up [EditorMap.tsx](src/components/maps/editor/EditorMap.tsx) to delegate complex hooks and render simple layout toolbars.
 
 ---
 
@@ -2033,7 +3568,7 @@ We modularized the data-fetching container and rendering engine in `src/componen
 
 ##### 1. Shared Core Utilities
 
-- Created [map-core-helpers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/utils/map-core-helpers.ts) to consolidate shared constants and functions:
+- Created [map-core-helpers.ts](src/components/maps/core/utils/map-core-helpers.ts) to consolidate shared constants and functions:
   - `escHtml(s)`
   - `COUNTRY_LABEL_OPACITY`
   - `PROGRESSIVE_THRESHOLDS`
@@ -2043,20 +3578,20 @@ We modularized the data-fetching container and rendering engine in `src/componen
 
 ##### 2. MapContainer Custom Hooks (co-located in `src/components/maps/core/hooks/`)
 
-- **[useMapState.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useMapState.ts)**: Manages all selection states, hover handlers, measuring states, panels visibility, search results flying, projection switches, and key Escape listeners.
-- **[useMapDataQueries.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useMapDataQueries.ts)**: Consolidates tRPC queries (user profile, batched map layers, story pins, map labels, top countries, deep link positioning) and overlay data caches (wealth, population, crisis, diplomacy, economic tier, vitality).
+- **[useMapState.ts](src/components/maps/core/hooks/useMapState.ts)**: Manages all selection states, hover handlers, measuring states, panels visibility, search results flying, projection switches, and key Escape listeners.
+- **[useMapDataQueries.ts](src/components/maps/core/hooks/useMapDataQueries.ts)**: Consolidates tRPC queries (user profile, batched map layers, story pins, map labels, top countries, deep link positioning) and overlay data caches (wealth, population, crisis, diplomacy, economic tier, vitality).
 
 ##### 3. IxWorldMap Custom Hooks (co-located in `src/components/maps/core/hooks/`)
 
-- **[useWorldMapLayers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useWorldMapLayers.ts)**: Sets up base layers (boundaries, altitudes, rivers, lakes, prime meridian/equator references) and ocean labels.
-- **[useWorldMapInteractions.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useWorldMapInteractions.ts)**: Attaches event listeners for country clicks/hovers, popup tooltips, selected outlines, zoom LOD data filters, and distance-fade progressive country label calculations.
-- **[useWorldMapOverlayFeatures.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useWorldMapOverlayFeatures.ts)**: Manages rendering of capital city gold star markers, subdivisions polygons/labels, clustered cities circles, and clustered POIs.
-- **[useWorldMapDataOverlays.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useWorldMapDataOverlays.ts)**: Handles custom text labels, clustered story pins (with category icons and glows), and overlay groups visibility toggles.
+- **[useWorldMapLayers.ts](src/components/maps/core/hooks/useWorldMapLayers.ts)**: Sets up base layers (boundaries, altitudes, rivers, lakes, prime meridian/equator references) and ocean labels.
+- **[useWorldMapInteractions.ts](src/components/maps/core/hooks/useWorldMapInteractions.ts)**: Attaches event listeners for country clicks/hovers, popup tooltips, selected outlines, zoom LOD data filters, and distance-fade progressive country label calculations.
+- **[useWorldMapOverlayFeatures.ts](src/components/maps/core/hooks/useWorldMapOverlayFeatures.ts)**: Manages rendering of capital city gold star markers, subdivisions polygons/labels, clustered cities circles, and clustered POIs.
+- **[useWorldMapDataOverlays.ts](src/components/maps/core/hooks/useWorldMapDataOverlays.ts)**: Handles custom text labels, clustered story pins (with category icons and glows), and overlay groups visibility toggles.
 
 ##### 4. Simplified Map Components
 
-- Refactored [MapContainer.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/MapContainer.tsx) to delegate to `useMapState` and `useMapDataQueries`, reducing complexity and keeping it focused on mounting components.
-- Refactored [IxWorldMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/IxWorldMap.tsx) to orchestrate the four hooks under `hooks/`, dropping from ~2,120 lines to a readable ~270 lines focusing on canvas/popups initialization and registry render loops.
+- Refactored [MapContainer.tsx](src/components/maps/core/MapContainer.tsx) to delegate to `useMapState` and `useMapDataQueries`, reducing complexity and keeping it focused on mounting components.
+- Refactored [IxWorldMap.tsx](src/components/maps/core/IxWorldMap.tsx) to orchestrate the four hooks under `hooks/`, dropping from ~2,120 lines to a readable ~270 lines focusing on canvas/popups initialization and registry render loops.
 
 ---
 
@@ -2069,8 +3604,8 @@ Following refactoring verification, the IDE highlighted two errors in the core m
 
 ##### Resolved Issues
 
-- Added `useCallback` to the React import list at the top of [MapContainer.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/MapContainer.tsx).
-- Exposed the full `handleCountryHover` implementation inside [useMapState.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useMapState.ts), importing `api` from `~/trpc/react` and using `utils = api.useUtils()` to support tRPC prefetching for hover details.
+- Added `useCallback` to the React import list at the top of [MapContainer.tsx](src/components/maps/core/MapContainer.tsx).
+- Exposed the full `handleCountryHover` implementation inside [useMapState.ts](src/components/maps/core/hooks/useMapState.ts), importing `api` from `~/trpc/react` and using `utils = api.useUtils()` to support tRPC prefetching for hover details.
 - Verified that `handleCountryHover` is correctly exposed and destructures cleanly inside `MapContainer.tsx`.
 
 ---
@@ -2081,20 +3616,20 @@ We refactored `MapDynamicIsland.tsx` (~824 lines) into a cleaner layout consisti
 
 ##### 1. Extracted State Hook
 
-- **[useDynamicIslandState.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useDynamicIslandState.ts)**: Coordinates states for autocomplete queries, index highlight offsets, dynamic timing ticks (`ixTime`), keyboard listeners (`Cmd+K` toggles, inputs arrows selection), click outside event listeners, and unread notifications count mutations (Clerk `useUser`, tRPC `api.users.getProfile`, WS `useThinkPagesWebSocket`, etc.).
+- **`useDynamicIslandState.ts`**: Coordinates states for autocomplete queries, index highlight offsets, dynamic timing ticks (`ixTime`), keyboard listeners (`Cmd+K` toggles, inputs arrows selection), click outside event listeners, and unread notifications count mutations (Clerk `useUser`, tRPC `api.users.getProfile`, WS `useThinkPagesWebSocket`, etc.).
 
 ##### 2. Extracted Subcomponents
 
-- **[AuthSection.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/components/AuthSection.tsx)**: Manages Clerk auth states, greeting prompts, and redirect mappings.
-- **[MapSettingsPopover.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/components/MapSettingsPopover.tsx)**: Renders options popover containing theme switches and projection dropdown controls.
+- **[AuthSection.tsx](src/components/maps/core/components/AuthSection.tsx)**: Manages Clerk auth states, greeting prompts, and redirect mappings.
+- **[MapSettingsPopover.tsx](src/components/maps/core/components/MapSettingsPopover.tsx)**: Renders options popover containing theme switches and projection dropdown controls.
 
 ##### 3. Extracted Utilities and Constants
 
-- **[dynamic-island-helpers.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/utils/dynamic-island-helpers.tsx)**: Standardized animations springs (`SPRING`, `SPRING_SOFT`), type metadata representations (`TYPE_META`), greeting and clock formatters (`getGreeting`, `getTimeDisplay`), and a unified `FlagIcon` component.
+- **[dynamic-island-helpers.tsx](src/components/maps/core/utils/dynamic-island-helpers.tsx)**: Standardized animations springs (`SPRING`, `SPRING_SOFT`), type metadata representations (`TYPE_META`), greeting and clock formatters (`getGreeting`, `getTimeDisplay`), and a unified `FlagIcon` component.
 
 ##### 4. Refactored Coordinator
 
-- Simplified [MapDynamicIsland.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/MapDynamicIsland.tsx) to delegate all state and sub-render trees, reducing size to a clean ~250 lines focusing on outer glassmorphism transitions and layout placements.
+- Simplified [MapDynamicIsland.tsx](src/components/maps/core/MapDynamicIsland.tsx) to delegate all state and sub-render trees, reducing size to a clean ~250 lines focusing on outer glassmorphism transitions and layout placements.
 
 ---
 
@@ -2104,21 +3639,21 @@ We refactored `MapEditorOverlay.tsx` (~3,417 lines) into a cleaner layout consis
 
 ##### 1. Extracted State Hook
 
-- **[useMapEditorOverlayState.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useMapEditorOverlayState.ts)**: Relocates all local state hook variables, refs, queries, and mutations (e.g., active country selections, sidebar tabs active states, linkage validation details, edit border parameters, and PostGIS area recalculations).
+- **[useMapEditorOverlayState.ts](src/components/maps/editor/hooks/useMapEditorOverlayState.ts)**: Relocates all local state hook variables, refs, queries, and mutations (e.g., active country selections, sidebar tabs active states, linkage validation details, edit border parameters, and PostGIS area recalculations).
 
 ##### 2. Extracted Subcomponents
 
-- **[EditorHeader.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/components/EditorHeader.tsx)**: Handles the header toolbar bar with path breadcrumbs, badges, action triggers for Undo/Redo commands, grid toggles, simplify actions, and recalculate buttons.
-- **[LinkageValidationPanel.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/components/LinkageValidationPanel.tsx)**: Displays the linkage validation issues list, unlinked country geometry lists, and auto-matching triggers.
-- **[SovereigntyPanel.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/components/SovereigntyPanel.tsx)**: Hosts sovereignty relationship lists, search filters, and autonomy detail edit forms.
+- **[EditorHeader.tsx](src/components/maps/editor/components/EditorHeader.tsx)**: Handles the header toolbar bar with path breadcrumbs, badges, action triggers for Undo/Redo commands, grid toggles, simplify actions, and recalculate buttons.
+- **[LinkageValidationPanel.tsx](src/components/maps/editor/components/LinkageValidationPanel.tsx)**: Displays the linkage validation issues list, unlinked country geometry lists, and auto-matching triggers.
+- **[SovereigntyPanel.tsx](src/components/maps/editor/components/SovereigntyPanel.tsx)**: Hosts sovereignty relationship lists, search filters, and autonomy detail edit forms.
 
 ##### 3. Extracted Utilities and Helpers
 
-- **[editor-overlay-helpers.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/utils/editor-overlay-helpers.tsx)**: Houses static helpers like `countGeometryVertices` along with standard presentation subcomponents `EditorLoadingScreen` and `EditorErrorBoundary`.
+- **[editor-overlay-helpers.tsx](src/components/maps/editor/utils/editor-overlay-helpers.tsx)**: Houses static helpers like `countGeometryVertices` along with standard presentation subcomponents `EditorLoadingScreen` and `EditorErrorBoundary`.
 
 ##### 4. Refactored Coordinator
 
-- Simplified [MapEditorOverlay.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/MapEditorOverlay.tsx) to coordinate the subcomponents and delegate state, cutting the layout code down to a clean, readable JSX file focusing on layout structure and contextual form selections.
+- Simplified [MapEditorOverlay.tsx](src/components/maps/editor/MapEditorOverlay.tsx) to coordinate the subcomponents and delegate state, cutting the layout code down to a clean, readable JSX file focusing on layout structure and contextual form selections.
 
 ---
 
@@ -2128,19 +3663,19 @@ We modularized `CountryInfoPanel.tsx` (~818 lines) into isolated subcomponents, 
 
 ##### 1. Extracted State Hook
 
-- **[useCountryInfoPanelState.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useCountryInfoPanelState.ts)**: Encapsulates all panel states (tab selections, detail modal triggers, lightbox sources, expanded article flags) and coordinates queries for country profile details and ownership status checks.
+- **[useCountryInfoPanelState.ts](src/components/maps/core/hooks/useCountryInfoPanelState.ts)**: Encapsulates all panel states (tab selections, detail modal triggers, lightbox sources, expanded article flags) and coordinates queries for country profile details and ownership status checks.
 
 ##### 2. Extracted Subcomponents
 
-- **[StatCard.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/components/StatCard.tsx)**: Reusable KPI card that handles custom hover effects, icons, and click actions.
-- **[ImageLightbox.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/components/ImageLightbox.tsx)**: Direct fullscreen media overlay showing maps and gallery items with Escape key listeners.
-- **[CountryOverviewTab.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/components/CountryOverviewTab.tsx)**: Encapsulates rendering of general statistics, leaders, sovereignty relationships, neighbor buttons, and full profile routing buttons.
-- **[CountryInfoTab.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/components/CountryInfoTab.tsx)**: Displays WikiOS article introductions, structured tables of contents, and media galleries.
-- **[UnclaimedTerritoryView.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/components/UnclaimedTerritoryView.tsx)**: Renders details for coordinates that do not belong to claimed nations.
+- **[StatCard.tsx](src/components/maps/core/components/StatCard.tsx)**: Reusable KPI card that handles custom hover effects, icons, and click actions.
+- **[ImageLightbox.tsx](src/components/maps/core/components/ImageLightbox.tsx)**: Direct fullscreen media overlay showing maps and gallery items with Escape key listeners.
+- **[CountryOverviewTab.tsx](src/components/maps/core/components/CountryOverviewTab.tsx)**: Encapsulates rendering of general statistics, leaders, sovereignty relationships, neighbor buttons, and full profile routing buttons.
+- **[CountryInfoTab.tsx](src/components/maps/core/components/CountryInfoTab.tsx)**: Displays WikiOS article introductions, structured tables of contents, and media galleries.
+- **[UnclaimedTerritoryView.tsx](src/components/maps/core/components/UnclaimedTerritoryView.tsx)**: Renders details for coordinates that do not belong to claimed nations.
 
 ##### 3. Refactored Coordinator
 
-- Refactored [CountryInfoPanel.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/CountryInfoPanel.tsx) to hook state and dynamically coordinate overview, info, and geography sections.
+- Refactored [CountryInfoPanel.tsx](src/components/maps/core/CountryInfoPanel.tsx) to hook state and dynamically coordinate overview, info, and geography sections.
 
 ---
 
@@ -2150,19 +3685,19 @@ We modularized `CountryMapEmbed.tsx` (~690 lines) into isolated hooks, a custom 
 
 ##### 1. Extracted State Hook
 
-- **[useCountryMapEmbedState.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/widgets/hooks/useCountryMapEmbedState.ts)**: Encapsulates map reference tracking, resize observers, highlights memoization sets, loading triggers, and wrapped queries for country map geometry.
+- **[useCountryMapEmbedState.ts](src/components/maps/widgets/hooks/useCountryMapEmbedState.ts)**: Encapsulates map reference tracking, resize observers, highlights memoization sets, loading triggers, and wrapped queries for country map geometry.
 
 ##### 2. Extracted Style Layers Hook
 
-- **[useCountryMapEmbedLayers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/widgets/hooks/useCountryMapEmbedLayers.ts)**: Houses the MapLibre style layers setup (world political, highlighted nations, subdivisions lines, country outline, capital/city markers, labels), bounding box fitting calculations, and click/hover events bindings.
+- **[useCountryMapEmbedLayers.ts](src/components/maps/widgets/hooks/useCountryMapEmbedLayers.ts)**: Houses the MapLibre style layers setup (world political, highlighted nations, subdivisions lines, country outline, capital/city markers, labels), bounding box fitting calculations, and click/hover events bindings.
 
 ##### 3. Extracted Utilities and Helpers
 
-- **[country-map-helpers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/widgets/utils/country-map-helpers.ts)**: Houses the canvas star image generator helper `createStarImage` used to render capital star markers.
+- **`country-map-helpers.ts`**: Houses the canvas star image generator helper `createStarImage` used to render capital star markers.
 
 ##### 4. Refactored Coordinator
 
-- Simplified [CountryMapEmbed.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/widgets/CountryMapEmbed.tsx) to invoke state and layer hooks, maintaining fallback loaders and missing geometry warning states.
+- Simplified [CountryMapEmbed.tsx](src/components/maps/widgets/CountryMapEmbed.tsx) to invoke state and layer hooks, maintaining fallback loaders and missing geometry warning states.
 
 ---
 
@@ -2172,21 +3707,21 @@ We modularized `StoryPinModal.tsx` (~600 lines) into isolated subcomponents, a c
 
 ##### 1. Extracted State Hook
 
-- **[useStoryPinModalState.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useStoryPinModalState.ts)**: Encapsulates Escape keyboard listeners, body scroll lock side effects, lightbox image selections, and queries for story event summaries, wiki details, and partner suggestions.
+- **[useStoryPinModalState.ts](src/components/maps/core/hooks/useStoryPinModalState.ts)**: Encapsulates Escape keyboard listeners, body scroll lock side effects, lightbox image selections, and queries for story event summaries, wiki details, and partner suggestions.
 
 ##### 2. Extracted Subcomponents
 
-- **[StoryPinLightbox.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/components/StoryPinLightbox.tsx)**: Direct fullscreen media viewport displaying event images.
-- **[StorylineTimeline.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/components/StorylineTimeline.tsx)**: Displays the chronological timeline event checklist and pathways.
-- **[RelatedPinCard.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/components/RelatedPinCard.tsx)**: Displays suggestion cards for adjacent historical events.
+- **[StoryPinLightbox.tsx](src/components/maps/core/components/StoryPinLightbox.tsx)**: Direct fullscreen media viewport displaying event images.
+- **[StorylineTimeline.tsx](src/components/maps/core/components/StorylineTimeline.tsx)**: Displays the chronological timeline event checklist and pathways.
+- **[RelatedPinCard.tsx](src/components/maps/core/components/RelatedPinCard.tsx)**: Displays suggestion cards for adjacent historical events.
 
 ##### 3. Extracted Utilities and Helpers
 
-- **[story-pin-helpers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/utils/story-pin-helpers.ts)**: Centralized config mapping lists for emoji badges (`CATEGORY_ICONS`) and event weightings (`IMPORTANCE_LABELS`).
+- **[story-pin-helpers.ts](src/components/maps/core/utils/story-pin-helpers.ts)**: Centralized config mapping lists for emoji badges (`CATEGORY_ICONS`) and event weightings (`IMPORTANCE_LABELS`).
 
 ##### 4. Refactored Coordinator
 
-- Simplified [StoryPinModal.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/StoryPinModal.tsx) to delegate properties and render blocks, focusing on transition overlays and header elements.
+- Simplified [StoryPinModal.tsx](src/components/maps/core/StoryPinModal.tsx) to delegate properties and render blocks, focusing on transition overlays and header elements.
 
 ---
 
@@ -2196,15 +3731,15 @@ We refactored `MeasureTool.tsx` (~528 lines) into a cleaner layout consisting of
 
 ##### 1. Extracted Mathematics & Formatting Helpers
 
-- **[measure-helpers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/utils/measure-helpers.ts)**: Houses the complex great-circle geodesics math (`sphericalMidpoint`, `segmentCount`, `interpolateGreatCircle`, `buildMeasureLineGeometry`), string formatting for distance ranges (`formatDistance`), and the custom SVG crosshair cursor (`MEASURE_CURSOR`).
+- **[measure-helpers.ts](src/components/maps/core/utils/measure-helpers.ts)**: Houses the complex great-circle geodesics math (`sphericalMidpoint`, `segmentCount`, `interpolateGreatCircle`, `buildMeasureLineGeometry`), string formatting for distance ranges (`formatDistance`), and the custom SVG crosshair cursor (`MEASURE_CURSOR`).
 
 ##### 2. Extracted State Hook
 
-- **[useMeasureToolState.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useMeasureToolState.ts)**: Encapsulates click/drag/touch handlers for MapLibre map features, keyboard event handlers (M key toggling and Escape clearing/deactivating), and the lifecycle management of map sources/layers.
+- **[useMeasureToolState.ts](src/components/maps/core/hooks/useMeasureToolState.ts)**: Encapsulates click/drag/touch handlers for MapLibre map features, keyboard event handlers (M key toggling and Escape clearing/deactivating), and the lifecycle management of map sources/layers.
 
 ##### 3. Refactored Coordinator
 
-- Simplified [MeasureTool.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/MeasureTool.tsx) to coordinate the state hook, exposed ref boundaries, and render clean inline measure control/readout elements.
+- Simplified [MeasureTool.tsx](src/components/maps/core/MeasureTool.tsx) to coordinate the state hook, exposed ref boundaries, and render clean inline measure control/readout elements.
 
 ---
 
@@ -2216,7 +3751,7 @@ We audited all MapLibre GL components in `src/components/maps/` for WebGL leaks,
 
 - **No WebGL Leaks**: Verified all map modules properly invoke `map.remove()` on unmount.
 - **Z-Fighting Prevention**: Confirmed all choropleth and risk heatmap overlays directly manipulate paint configurations on the main geopolitical fill layer rather than drawing duplicate surfaces.
-- **Consolidated Canvas Rendering**: Removed the duplicate `createStarImage` drawing helper from `src/components/maps/widgets/utils/country-map-helpers.ts` and refactored [useCountryMapEmbedLayers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/widgets/hooks/useCountryMapEmbedLayers.ts) to utilize the unified utility under `src/components/maps/core/utils/map-core-helpers.ts`. Removed the empty `src/components/maps/widgets/utils/` directory.
+- **Consolidated Canvas Rendering**: Removed the duplicate `createStarImage` drawing helper from `src/components/maps/widgets/utils/country-map-helpers.ts` and refactored [useCountryMapEmbedLayers.ts](src/components/maps/widgets/hooks/useCountryMapEmbedLayers.ts) to utilize the unified utility under `src/components/maps/core/utils/map-core-helpers.ts`. Removed the empty `src/components/maps/widgets/utils/` directory.
 
 ---
 
@@ -2227,12 +3762,12 @@ We resolved two runtime MapLibre bugs exposed in console error logs during devel
 ##### 1. Guarded Political Feature States
 
 - **Problem**: When the map first loads, mouse hover listeners were invoking `map.setFeatureState` for `source-political` before the geopolitical boundary geometries layer had loaded, throwing `The source 'source-political' does not exist in the map's style` error.
-- **Solution**: Guarded all hover, click, selection, and mouseleave state update calls in [useWorldMapInteractions.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useWorldMapInteractions.ts) with `if (map.getSource("source-political"))` validations.
+- **Solution**: Guarded all hover, click, selection, and mouseleave state update calls in [useWorldMapInteractions.ts](src/components/maps/core/hooks/useWorldMapInteractions.ts) with `if (map.getSource("source-political"))` validations.
 
 ##### 2. Refactored Dynamic Opacity Expressions
 
 - **Problem**: The paint rule for `custom-map-labels` used an `"interpolate"` zoom expression containing per-feature dynamic stops like `["coalesce", ["get", "minZoom"], 4]`. MapLibre requires all zoom stops inside interpolation/step functions to be literal numeric constants, causing a shader compile error.
-- **Solution**: Replaced the `"interpolate"` block in [useWorldMapDataOverlays.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/core/hooks/useWorldMapDataOverlays.ts) with a logical `"case"` expression matching against dynamic zoom values:
+- **Solution**: Replaced the `"interpolate"` block in [useWorldMapDataOverlays.ts](src/components/maps/core/hooks/useWorldMapDataOverlays.ts) with a logical `"case"` expression matching against dynamic zoom values:
   ```typescript
   "text-opacity": [
     "case",
@@ -2253,7 +3788,7 @@ We resolved the following final list of bugs reported in the latest iteration:
 ##### 1. Centering of the Editor in Writer Mode
 
 - **Problem**: In writer mode (`html.wikios-writer-mode`), the keyframe animation `wikios-writer-enter` applied a `to` state of `transform: scale(1) translateY(0);`. This completely discarded/overrode the `transform: translateX(-50%) !important` layout rule needed to center the fixed editor container horizontally. As a result, the editor was shifted entirely off the right side of the screen.
-- **Solution**: Updated `@keyframes wikios-writer-enter` inside [editors.css](file:///ixwiki/public/projects/ixstats/src/styles/wikios/editors.css) to explicitly retain the `translateX(-50%)` component in both the `from` and `to` states.
+- **Solution**: Updated `@keyframes wikios-writer-enter` inside `editors.css` to explicitly retain the `translateX(-50%)` component in both the `from` and `to` states.
 
 ##### 2. CORS/CORP Headers on API Image Proxies
 
@@ -2269,7 +3804,7 @@ We resolved the following final list of bugs reported in the latest iteration:
 ##### 3. Wiki Dynamic Island Logo Removal
 
 - **Problem**: When the Wiki plugin was active on the page, the capsule button on the left of the Dynamic Island still rendered the large `IX WIKI` branding, which felt redundant and cluttered.
-- **Solution**: Modified [CompactView.tsx](file:///ixwiki/public/projects/ixstats/src/components/DynamicIsland/CompactView.tsx) to return `null` and skip rendering the logo button when the active plugin is `"wiki"`.
+- **Solution**: Modified `CompactView.tsx` to return `null` and skip rendering the logo button when the active plugin is `"wiki"`.
 
 ---
 
@@ -2278,7 +3813,7 @@ We resolved the following final list of bugs reported in the latest iteration:
 ##### Resolved Issues
 
 - **Problem**: A diagonal split overlay shadowed exactly half of the map canvas (weird shading issue).
-- **Solution**: Located the issue in [useMapLayers.ts](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/hooks/useMapLayers.ts) line 192, where the non-player mask coordinate vertices (`worldOuter`) were defined as a triangle covering only half the world coordinates (missing corner `[-180, 90]` and duplicate entry `[180, 90]`). Updated it to describe a complete rectangular polygon enclosing the entire world boundaries:
+- **Solution**: Located the issue in [useMapLayers.ts](src/components/maps/editor/hooks/useMapLayers.ts) line 192, where the non-player mask coordinate vertices (`worldOuter`) were defined as a triangle covering only half the world coordinates (missing corner `[-180, 90]` and duplicate entry `[180, 90]`). Updated it to describe a complete rectangular polygon enclosing the entire world boundaries:
   ```typescript
   const worldOuter: Position[] = [
     [-180, -90],
@@ -2297,13 +3832,13 @@ We resolved the following final list of bugs reported in the latest iteration:
 
 - **Problem**: Editor panels were hardcoded in vertical desktop orientations on the left/right sides, with no way to lay them out horizontally or customize/arrange which tabs reside in which panel.
 - **Solution**: Refactored panel layout structure to be dynamic, resizable, dockable, and user-arrangeable:
-  - **[EditorPanel.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorPanel.tsx)**:
+  - **[EditorPanel.tsx](src/components/maps/editor/EditorPanel.tsx)**:
     - Added support for dynamic docking placements: `"left" | "right" | "bottom"`.
     - Added layout toggles in the tab bar headers (Left, Bottom, Right chevron arrows) to easily swap dock positions.
     - Implemented a horizontal layout option for bottom-docking: runs 100% width and supports vertical resize handles dragging to adjust height from 120px to 500px.
     - Implemented native HTML5 drag-and-drop support on tab headers, allowing tabs to be dragged and dropped between panels.
     - Created an empty slot drop target placeholder with layout buttons so that if all tabs are removed from a panel, a dashed placeholder accepts new drops and prevents layout errors.
-  - **[MapEditorOverlay.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/MapEditorOverlay.tsx)**:
+  - **[MapEditorOverlay.tsx](src/components/maps/editor/MapEditorOverlay.tsx)**:
     - Replaced hardcoded left/right collapse hooks with a comprehensive `panelConfigs` state that persists to LocalStorage (`ixworld-editor-panels-config-v2`) to save layout arrangements.
     - Added synchronization effects that dynamically insert/remove appropriate linkages, sovereignty, layers, and properties tabs depending on whether the editor is in world or country mode.
     - Implemented slot divs (`Left panel slot`, `Center slot` with Map canvas, `Bottom panel slot`, `Right panel slot`) that group Panel A and Panel B according to their current placements.
@@ -2316,15 +3851,15 @@ We resolved the following final list of bugs reported in the latest iteration:
 ##### Key Actions
 
 - **State Delegate Extraction**: Delegated all local state hook variables, refs, queries, and mutations to the custom `useMapEditorOverlayState` hook.
-- **Outsourced Right Panel Content**: Extracted `renderRightPanelContent` into a dedicated [PropertiesPanelContent.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/components/PropertiesPanelContent.tsx) subcomponent, removing local imports of `BorderEditorPanel`, `FeaturePropertyPanel`, and `JsonViewer` from the main overlay coordinator.
+- **Outsourced Right Panel Content**: Extracted `renderRightPanelContent` into a dedicated [PropertiesPanelContent.tsx](src/components/maps/editor/components/PropertiesPanelContent.tsx) subcomponent, removing local imports of `BorderEditorPanel`, `FeaturePropertyPanel`, and `JsonViewer` from the main overlay coordinator.
 - **Consolidated Panel slots**: Merged the duplicate render declarations `renderPanelA` and `renderPanelB` in `MapEditorOverlay.tsx` into a single, clean `renderPanel("panelA" | "panelB")` function.
 - **Resolved Hidden UI Bugs**:
   - Identified that `FeaturePropertyPanel` expects `error` (for validation errors) and `pendingPointInfo`/`isPendingPointInfoLoading` (for terrain elevation/climate data).
   - Aligned the prop names passed to `FeaturePropertyPanel` (previously using mismatching names `mutationError` and `pointInfo` that caused components to drop validation errors and location-based metadata).
 - **Outsourced Remaining Core Nodes**:
-  - Extracted the hovered region stats tooltip into [RegionHoverTooltip.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/components/RegionHoverTooltip.tsx) to clean up canvas rendering blocks.
-  - Extracted the context menu actions into [EditorContextMenuWrapper.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/components/EditorContextMenuWrapper.tsx).
-  - Consolidated and moved all modal dialog overlays (Split dialog, Merge dialog, confirm save modal, exit confirm modal) into [EditorDialogs.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/components/EditorDialogs.tsx).
+  - Extracted the hovered region stats tooltip into [RegionHoverTooltip.tsx](src/components/maps/editor/components/RegionHoverTooltip.tsx) to clean up canvas rendering blocks.
+  - Extracted the context menu actions into [EditorContextMenuWrapper.tsx](src/components/maps/editor/components/EditorContextMenuWrapper.tsx).
+  - Consolidated and moved all modal dialog overlays (Split dialog, Merge dialog, confirm save modal, exit confirm modal) into [EditorDialogs.tsx](src/components/maps/editor/components/EditorDialogs.tsx).
 - **Lint Warning & Type Cleanup**:
   - Removed all unused destructured properties (e.g. `showExitConfirm`, `displayName`, `showSplitDialog`, `showMergeDialog`, `showConfirmSaveModal`, `saveReason`, `handleConfirmBorderSave`, etc.) and unused imports (like `useRouter`, `titleToWikiOSPath`, etc.) from the overlay coordinator.
   - Restored `handleRouteClick` in the destructuring block of `MapEditorOverlay.tsx` after it was accidentally omitted.
@@ -2337,7 +3872,7 @@ We resolved the following final list of bugs reported in the latest iteration:
 
 ##### Key Actions
 
-- **Layout Modification**: Hid/removed the Time and Date toggle button along with its adjacent vertical separator from the compact layout view inside [MapDynamicIsland.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/core/MapDynamicIsland.tsx).
+- **Layout Modification**: Hid/removed the Time and Date toggle button along with its adjacent vertical separator from the compact layout view inside [MapDynamicIsland.tsx](src/components/maps/core/MapDynamicIsland.tsx).
 - **Pruned Unused Variables**: Removed `Clock` and `Calendar` imports from `lucide-react` and pruned all unused time-related fields (`timeDisplayMode`, `setTimeDisplayMode`, `ixTimeTimestamp`, `timeDisplay`) from the state destructuring block in the component.
 - **Verification**: Verified clean ESLint status and single-file compilation.
 
@@ -2351,13 +3886,13 @@ We resolved the following final list of bugs reported in the latest iteration:
   - Resolved `TypeError: Cannot read properties of undefined (reading 'border')` at `LayerPanel.tsx:42:38` by marking the `featureCounts` prop as optional in `LayerPanelProps` and initializing it with a default value (`featureCounts = {}`) in the component argument destructuring.
   - Safe-guarded all object lookups using optional chaining: `featureCounts?.[layer.id]`.
 - **Resizable Stacked Panels**:
-  - Refactored Left, Right, and Bottom slots in [MapEditorOverlay.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/MapEditorOverlay.tsx) to support resizable, stackable panel behavior:
+  - Refactored Left, Right, and Bottom slots in [MapEditorOverlay.tsx](src/components/maps/editor/MapEditorOverlay.tsx) to support resizable, stackable panel behavior:
     - Added split ratio states (`leftSplitRatio`, `rightSplitRatio`, `bottomSplitRatio`) and layout drag handlers (`handleVerticalSplitResize`, `handleHorizontalSplitResize`).
     - When both panels share the same placement (stacked), they split the space resizably. A horizontal divider handle is rendered between vertical stacks, and a vertical divider handle is rendered between horizontal stacks.
     - If one panel in the stack is collapsed, it renders as a compact, inline tab-header strip (`h-9`), allowing the expanded panel to take `flex-1` and occupy the rest of the dock height/width.
     - If both panels are collapsed, they both render as compact inline strips.
   - **Inline Stacked Collapsed Layout**:
-    - Updated [EditorPanel.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorPanel.tsx) with a new prop `isStacked?: boolean`.
+    - Updated [EditorPanel.tsx](src/components/maps/editor/EditorPanel.tsx) with a new prop `isStacked?: boolean`.
     - When `collapsed` and `isStacked` are both true, the panel renders as a clean `h-9` inline tab-header bar listing all current tab icons (so the user knows what tabs are inside) and an "Expand" button.
 - **Verification**: Verified clean single-file typescript compilation and clean ESLint status across all modified components.
 
@@ -2369,36 +3904,36 @@ We successfully implemented conversation options, groups navigation back-button,
 
 #### Phase 1: Backend Mutations & Security
 
-- Modified [messages.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/messages.ts) router to add:
+- Modified `messages.ts` router to add:
   - `leaveConversation` (protected procedure): Sets `isActive: false` and `leftAt: new Date()` on the caller's `ConversationParticipant` record, and broadcasts a system message to notify the conversation. Secured with `input.userId === ctx.auth.userId`.
   - `addParticipant` (protected procedure): Upserts/reactivates a `ConversationParticipant` record to add a new user to a group conversation, automatically upgrading direct chats to group chats if needed, and prints a system announcement message. Secured with caller validation check.
 
 #### Phase 2: Dialog Modals
 
-- Created [MessagesViewDetailsModal.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesViewDetailsModal.tsx):
+- Created [MessagesViewDetailsModal.tsx](src/components/messages/MessagesViewDetailsModal.tsx):
   - A glassmorphic overlay displaying conversation details: type (direct vs group), created timestamp, active category tags (diplomatic classification, etc.), and a scrollable list of participants showing their flags/country name and handle.
-- Created [MessagesAddParticipantsModal.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesAddParticipantsModal.tsx):
+- Created [MessagesAddParticipantsModal.tsx](src/components/messages/MessagesAddParticipantsModal.tsx):
   - Allows searching other active users in the system to add to the conversation, filtering out existing participants.
 
 #### Phase 3: Display Name Settings Preference
 
-- Updated [MessagesFolderNav.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesFolderNav.tsx):
+- Updated [MessagesFolderNav.tsx](src/components/messages/MessagesFolderNav.tsx):
   - Added `displayNamePreference: "account" | "country"` to the `MessagesSettings` schema.
   - Inserted a **Show account username** switch inside the Message Settings popover to toggle the setting.
-- Updated [MessagesConversationPanel.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesConversationPanel.tsx) & [MessagesConversationCard.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesConversationCard.tsx):
+- Updated [MessagesConversationPanel.tsx](src/components/messages/MessagesConversationPanel.tsx) & [MessagesConversationCard.tsx](src/components/messages/MessagesConversationCard.tsx):
   - Propagated `settings` down to the cards to resolve names in the list and handle query string search.
   - Rendered `BellOff` mute icon and grayed-out unread badge states.
-- Updated [MessagesBubble.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesBubble.tsx):
+- Updated [MessagesBubble.tsx](src/components/messages/MessagesBubble.tsx):
   - Dynamic name resolution using `displayNamePreference` settings flag for rendering initials, sender label header, and parent reply-to handles.
 
 #### Phase 4: Groups Navigation back button
 
-- Updated [MessagesGroupsPanel.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesGroupsPanel.tsx):
+- Updated `MessagesGroupsPanel.tsx`:
   - Accepted `onBack` callback and added a back arrow (`ChevronLeft`) in the ThinkTank Groups header to close the directory view.
 
 #### Phase 5: Frontend Orchestration
 
-- Modified [MessagesRouter.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesRouter.tsx) & [MessagesChatPanel.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesChatPanel.tsx):
+- Modified [MessagesRouter.tsx](src/components/messages/MessagesRouter.tsx) & [MessagesChatPanel.tsx](src/components/messages/MessagesChatPanel.tsx):
   - Maintained LocalStorage-backed state for `mutedConversations` and `archivedConversations` lists.
   - Mute: suppresses notification sound in WebSocket incoming messages, shows muted badges/cards.
   - Archive: filters the sidebar conversation query; auto-clears archived state if a new incoming message is received.
@@ -2408,14 +3943,14 @@ We successfully implemented conversation options, groups navigation back-button,
 
 #### Phase 6: Forum and Wiki Badge Customizations
 
-- Modified [MessagesIdentityBadge.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesIdentityBadge.tsx):
+- Modified [MessagesIdentityBadge.tsx](src/components/messages/MessagesIdentityBadge.tsx):
   - Removed badgeIcon, badgeColor, and sourceLabel properties from the wiki and forum source configurations in `resolveIdentity` function. This treats forum PMs and wiki talk pages as standard DMs/conversations without rendering distracting social platform icons/badges inline next to handles in bubbles or chat headers.
-- Updated [MessagesConversationCard.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesConversationCard.tsx):
+- Updated [MessagesConversationCard.tsx](src/components/messages/MessagesConversationCard.tsx):
   - Implemented a custom colored left border (`border-l-purple-500`) and a purple typeTag badge labeled **Wiki** for wiki talk page chats (replacing the default green **Personal** badge), while allowing forum PMs to fall back to the standard personal tag and border.
 
 #### Phase 7: Notifications Tab in System Alerts
 
-- Modified [MessagesChatPanel.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesChatPanel.tsx):
+- Modified [MessagesChatPanel.tsx](src/components/messages/MessagesChatPanel.tsx):
   - Created a new `NotificationCard` component using the same high-end glass refraction styling as the `SystemAlertCard`.
   - Added a new `"notifications"` tab to the active category filter buttons inside System Alerts (resulting in: All, Diplomatic, Security, Economic, Notifications).
   - Wired `getUserNotifications` query to fetch user notifications from the tRPC notifications endpoint.
@@ -2424,35 +3959,35 @@ We successfully implemented conversation options, groups navigation back-button,
 
 #### Phase 8: Groups Link in Quick Links Sidebar
 
-- Modified [DashboardQuickLinks.tsx](file:///ixwiki/public/projects/ixstats/src/components/dashboard/DashboardQuickLinks.tsx):
+- Modified `DashboardQuickLinks.tsx`:
   - Imported the `Users` icon from `lucide-react`.
   - Added a new `Groups` link pointing to `/messages/groups` under `Stashes` inside `EXTERNAL_LINKS`.
   - Protected the link with an authentication check, ensuring it only displays for signed-in users.
 
 #### Phase 9: Help Icon and Modal on Groups Page
 
-- Updated [MessagesGroupsPanel.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesGroupsPanel.tsx):
+- Updated `MessagesGroupsPanel.tsx`:
   - Imported the `HelpCircle` icon and `Dialog` UI components.
   - Added a Help (`HelpCircle`) action button in the right side of the header of the ThinkTank Groups panel.
   - Wired up `isHelpOpen` state to control a glassmorphic description modal explaining ThinkTank Groups features (Discovering, group chat integrations, privacy roles, and wiki/lore collaboration).
 
 #### Phase 10: Catch-all Messages Routing (404 Fix)
 
-- Replaced the single-route page at `src/app/messages/page.tsx` with a dynamic optional catch-all route at [page.tsx](file:///ixwiki/public/projects/ixstats/src/app/messages/%5B%5B...folder%5D%5D/page.tsx).
+- Replaced the single-route page at `src/app/messages/page.tsx` with a dynamic optional catch-all route at `page.tsx`.
 - This routes `/messages`, `/messages/system`, and `/messages/groups` all to the client-side `MessagesRouter` component (which parses the pathname to set the correct active tab), preventing 404 errors on deep-links or refreshes.
 
 #### Phase 11: Sidebar Discovery Routing, Group Creation & UI Text Wrapping Fixes
 
 - **Sidebar & Routing Updates**:
-  - Pointed the "Groups" links in the sidebar quick links [DashboardQuickLinks.tsx](file:///ixwiki/public/projects/ixstats/src/components/dashboard/DashboardQuickLinks.tsx), primary navigation config [navigation-config.ts](file:///ixwiki/public/projects/ixstats/src/lib/navigation-config.ts), and redirection page [page.tsx](file:///ixwiki/public/projects/ixstats/src/app/thinkpages/thinktanks/page.tsx) to `/messages/groups?tab=discover`.
-  - Configured [MessagesRouter.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesRouter.tsx) to automatically default to opening the groups directory (`groups_directory`) when the Groups folder is loaded without a specific active conversation.
-  - Implemented query parameter parsing for `tab` inside [MessagesGroupsPanel.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesGroupsPanel.tsx) to automatically highlight the corresponding tab (`discover`, `joined`, or `created`) on mount, and integrated history updates (`pushState`/`replaceState`) when tabs are switched.
+  - Pointed the "Groups" links in the sidebar quick links `DashboardQuickLinks.tsx`, primary navigation config `src/lib/navigation-config.ts`, and redirection page `src/app/thinkpages/thinktanks/page.tsx` (since removed) to `/messages/groups?tab=discover`.
+  - Configured [MessagesRouter.tsx](src/components/messages/MessagesRouter.tsx) to automatically default to opening the groups directory (`groups_directory`) when the Groups folder is loaded without a specific active conversation.
+  - Implemented query parameter parsing for `tab` inside `MessagesGroupsPanel.tsx` to automatically highlight the corresponding tab (`discover`, `joined`, or `created`) on mount, and integrated history updates (`pushState`/`replaceState`) when tabs are switched.
 - **Group Creation Integration**:
-  - Implemented a "Create Group" button in the header of [MessagesGroupsPanel.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesGroupsPanel.tsx) that triggers a dedicated glassmorphic `CreateGroupModal` form dialog.
+  - Implemented a "Create Group" button in the header of `MessagesGroupsPanel.tsx` that triggers a dedicated glassmorphic `CreateGroupModal` form dialog.
   - Wired the form submission directly to the tRPC `createThinktank` backend mutation, auto-selecting the newly created group chat room on success.
 - **UI Text Wrapping Fixes**:
-  - Added `whitespace-nowrap` to the version description text in [DashboardQuickLinks.tsx](file:///ixwiki/public/projects/ixstats/src/components/dashboard/DashboardQuickLinks.tsx) to stop it from wrapping onto a new line.
-  - Added `whitespace-nowrap` to the category tag badges in both [MessagesGroupsPanel.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesGroupsPanel.tsx) and [MessagesGroupsListPanel.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesGroupsListPanel.tsx) to prevent category names (e.g. "Nation Sim") from breaking onto multiple lines.
+  - Added `whitespace-nowrap` to the version description text in `DashboardQuickLinks.tsx` to stop it from wrapping onto a new line.
+  - Added `whitespace-nowrap` to the category tag badges in both `MessagesGroupsPanel.tsx` and `MessagesGroupsListPanel.tsx` to prevent category names (e.g. "Nation Sim") from breaking onto multiple lines.
 
 ---
 
@@ -2462,26 +3997,26 @@ We simplified the post composer layout by eliminating collapsing/compact states,
 
 #### Phase 1: Eliminated Collapsing/Compact States
 
-- **[GlassPlateEditor.tsx](file:///ixwiki/public/projects/ixstats/src/components/thinkpages/GlassPlateEditor.tsx)**:
+- **[GlassPlateEditor.tsx](src/components/thinkpages/GlassPlateEditor.tsx)**:
   - Removed conditional height classes based on editor focus or content length.
   - Set the scrollable container's min-height permanently to `min-h-[96px]` and inner content to `min-h-[80px]`.
   - Added an `italicPlaceholder` prop to dynamically italicize placeholders (applied selectively).
   - Added transition classes to smoothly fade the placeholder to 0% opacity upon focus.
-- **[GlassCanvasComposer.tsx](file:///ixwiki/public/projects/ixstats/src/components/thinkpages/GlassCanvasComposer.tsx)**:
+- **[GlassCanvasComposer.tsx](src/components/thinkpages/GlassCanvasComposer.tsx)**:
   - Hardcoded `showActionBar = true` to keep all composer options (visualizations, media uploads, GIF/emoji pickers, Discord toggle, and share button) visible at all times.
   - Passed `italicPlaceholder={resolvedPlaceholder !== placeholder}` to target only custom/Easter Egg topics.
 
 #### Phase 2: Theme-Compliant Account Switcher Dropdown
 
-- **[GlassCanvasComposer.tsx](file:///ixwiki/public/projects/ixstats/src/components/thinkpages/GlassCanvasComposer.tsx)**:
+- **[GlassCanvasComposer.tsx](src/components/thinkpages/GlassCanvasComposer.tsx)**:
   - Overhauled hardcoded dark colors (slate-900, slate-800, border-white/10) with theme-compliant design tokens: `bg-popover/95`, `text-popover-foreground`, `border-border/50`, and `border-border`.
   - Updated button entries to use `hover:bg-accent hover:text-accent-foreground` for correct styling in light and dark modes.
 
 #### Phase 3: Discord Channel Topic Easter Egg
 
-- **[thinkpages.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/thinkpages.ts)**:
+- **`thinkpages.ts`**:
   - Added public `getDiscordChannelTopic` tRPC query to retrieve the topic description of channel `557016199427522561` using `DISCORD_BOT_TOKEN`.
-- **[GlassCanvasComposer.tsx](file:///ixwiki/public/projects/ixstats/src/components/thinkpages/GlassCanvasComposer.tsx)**:
+- **[GlassCanvasComposer.tsx](src/components/thinkpages/GlassCanvasComposer.tsx)**:
   - Wired the query to evaluate in `useEffect` (100% chance in dev, 10% in production).
   - Replaces default post placeholder with the active Discord channel topic on success.
 
@@ -2493,13 +4028,13 @@ We enhanced the visual presentation of notifications in the Dynamic Island tray,
 
 #### Phase 1: Custom Sizing Support for ExpandableCard
 
-- **[expandable.tsx](file:///ixwiki/public/projects/ixstats/src/components/ui/expandable.tsx)**:
+- **`expandable.tsx`**:
   - Supported `variant?: "default" | "compact"` to bypass deep shadows, heavy paddings, and fixed width layouts.
   - Allowed height to resolve to `auto` instead of collapsing to `0px` during initial content measurements.
 
 #### Phase 2: Premium Frosted Glass Notification Cards
 
-- **[NotificationsView.tsx](file:///ixwiki/public/projects/ixstats/src/components/DynamicIsland/NotificationsView.tsx)**:
+- **`NotificationsView.tsx`**:
   - Wrapped each row inside `<Expandable>` and `<ExpandableCard variant="compact">`.
   - Implemented premium frosted glass background classes (`bg-white/[0.08] backdrop-blur-md border border-white/[0.12]`) with special gradient styling for unread items.
   - Implemented high-contrast text colors to guarantee readability (`text-slate-800 dark:text-slate-900` for titles, `text-slate-600` for descriptions).
@@ -2508,7 +4043,7 @@ We enhanced the visual presentation of notifications in the Dynamic Island tray,
 
 #### Phase 3: Sizing Toggle for Reading UX
 
-- **[NotificationsView.tsx](file:///ixwiki/public/projects/ixstats/src/components/DynamicIsland/NotificationsView.tsx)**:
+- **`NotificationsView.tsx`**:
   - Utilized `useDynamicIslandSize` to detect size states.
   - Added a toggle button in the tray footer to transition width between `TALL` (371px) and `ULTRA` (630px).
   - Dynamically scaled height limits (`max-h-[520px]` in reading view, `max-h-80` in standard view).
@@ -2521,49 +4056,49 @@ We resolved several UX and functional issues on the MyCountry dashboard, includi
 
 #### Phase 1: Cabinet Meeting Scheduler
 
-- **[IntelligenceWarRoom.tsx](file:///ixwiki/public/projects/ixstats/src/components/intelligence/IntelligenceWarRoom.tsx)**:
+- **`IntelligenceWarRoom.tsx`**:
   - Enabled scheduling a meeting even if no officials are selected (empty list).
-- **[management.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/countries/management.ts)**:
+- **`management.ts`**:
   - Made `officialId` parameter nullish and recorded the signed-in Ruler/User as a fallback attendee with the role "Head of State".
 
 #### Phase 2: Alert Thresholds Modal & Checker Engine
 
-- **[IntelligenceWarRoom.tsx](file:///ixwiki/public/projects/ixstats/src/components/intelligence/IntelligenceWarRoom.tsx)**:
+- **`IntelligenceWarRoom.tsx`**:
   - Widened the Alert Threshold popup window to `max-w-4xl` and `max-h-[90vh]`.
-- **[AlertThresholdSettings.tsx](file:///ixwiki/public/projects/ixstats/src/app/mycountry/intelligence/_components/AlertThresholdSettings.tsx)**:
+- **`AlertThresholdSettings.tsx`**:
   - Arranged Critical, High, and Medium priority inputs side-by-side in a responsive grid.
-- **[alerts.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/intelligence/alerts.ts)**:
+- **`alerts.ts`**:
   - Created a dynamic `evaluateThresholds` query checker checking GDP/population growth, security score, and active diplomacy/embassies.
-- **[core.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/intelligence/core.ts)** & **[unified-intelligence.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/unified-intelligence.ts)**:
+- **`core.ts`** & **`unified-intelligence.ts`**:
   - Integrated threshold evaluation on-the-fly inside intelligence overview queries.
 
 #### Phase 3: Diplomatic Relations Seeding & Detailed Lists
 
-- **[seed-fallbacks.ts](file:///ixwiki/public/projects/ixstats/src/lib/demo-seed/seed-fallbacks.ts)**:
+- **`src/lib/demo-seed/seed-fallbacks.ts`**:
   - Removed the `isDemo: false` selection filter so relationships and embassies seed successfully for demo/dev countries.
-- **[DiplomaticRelationsList.tsx](file:///ixwiki/public/projects/ixstats/src/components/diplomacy/DiplomaticRelationsList.tsx)** [NEW]:
+- **`DiplomaticRelationsList.tsx`** [NEW]:
   - Displays country flags, status badges, strength bars, bilateral trade volumes, and last contact dates.
-- **[EmbassiesAndRelationsPanel.tsx](file:///ixwiki/public/projects/ixstats/src/components/diplomacy/EmbassiesAndRelationsPanel.tsx)** & **[DiplomacyWarRoom.tsx](file:///ixwiki/public/projects/ixstats/src/components/diplomacy/DiplomacyWarRoom.tsx)**:
+- **`EmbassiesAndRelationsPanel.tsx`** & **`DiplomacyWarRoom.tsx`**:
   - Rendered the new collapsible detailed relations list in panels and modal popups.
 
 #### Phase 4: Interactive Status Indicators
 
-- **[OverviewHero.tsx](file:///ixwiki/public/projects/ixstats/src/components/mycountry/OverviewHero.tsx)**:
+- **`OverviewHero.tsx`**:
   - Refactored `StatusIndicator` rings to display full labels ("Executive", "Diplomacy", "Politics", "Intelligence", "Defense").
   - Wrapped rings in hover-scaling buttons that trigger client-side section navigation.
 
 #### Phase 5: Immediate Policy Activation
 
-- **[PolicyCreatorSheet.tsx](file:///ixwiki/public/projects/ixstats/src/components/executive/PolicyCreatorSheet.tsx)**:
+- **[PolicyCreatorSheet.tsx](src/components/executive/PolicyCreatorSheet.tsx)**:
   - Added a "Create & Launch" button that immediately calls the `activatePolicy` mutation upon creation.
 
 #### Phase 6: Standardized Page Shell & Active Accent Colors
 
-- **[SectionShell.tsx](file:///ixwiki/public/projects/ixstats/src/components/mycountry/primitives/SectionShell.tsx)**:
-  - Standardized all gameplay sections to render `OverviewHero` (map + status rings) and daily `AgendaBar` (from [PillarCards.tsx](file:///ixwiki/public/projects/ixstats/src/components/mycountry/PillarCards.tsx)) at the top.
-- **[MyCountrySidebarLayout.tsx](file:///ixwiki/public/projects/ixstats/src/components/mycountry/MyCountrySidebarLayout.tsx)**:
+- **`SectionShell.tsx`**:
+  - Standardized all gameplay sections to render `OverviewHero` (map + status rings) and daily `AgendaBar` (from `PillarCards.tsx`) at the top.
+- **`MyCountrySidebarLayout.tsx`**:
   - Tracked section-specific colors (Slate, Amber, Cyan, Indigo, Blue, Red, Emerald) and applied matching top-border gradients and shadows to the content container.
-- **[MyCountrySidebarNav.tsx](file:///ixwiki/public/projects/ixstats/src/components/mycountry/MyCountrySidebarNav.tsx)**:
+- **`MyCountrySidebarNav.tsx`**:
   - Rendered a colored vertical accent line next to the active sidebar link.
 
 ---
@@ -2574,17 +4109,17 @@ We optimized map embeds to conserve performance on initial page loads and integr
 
 #### Phase 1: MediaWiki Embed Optimization
 
-- **[wiki-embed-shared.ts](file:///ixwiki/public/projects/ixstats/src/lib/wiki-embed-shared.ts)**:
+- **`wiki-embed-shared.ts`**:
   - Deferred iframe creation from initial page load to dynamic, on-click placeholder loading.
   - Cleared memory and WebGL context by removing iframe nodes from the DOM on deactivation.
 
 #### Phase 2: WikiOS Coordinates Map Embed Integration
 
-- **[CoordinatesMapEmbed.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/widgets/CoordinatesMapEmbed.tsx)** [NEW]:
+- **[CoordinatesMapEmbed.tsx](src/components/maps/widgets/CoordinatesMapEmbed.tsx)** [NEW]:
   - Implemented width/height/interactive inline options parsing.
   - Configured `IntersectionObserver` to automatically initialize MapLibre GL once scrolled into view.
   - Rendered borders, color fills, labels, and a red marker pin on the map.
-- **[ArticleRenderer.tsx](file:///ixwiki/public/projects/ixstats/src/components/wikios/reader/ArticleRenderer.tsx)**:
+- **`ArticleRenderer.tsx`**:
   - Dynamically imported the coordinates widget to keep articles lightweight.
   - Replaced broken MediaWiki `infobox` map iframes with native `CoordinatesMapEmbed` portal elements.
 
@@ -2596,28 +4131,28 @@ We added category browsing to WikiOS image repository tabs, translated categorie
 
 #### Phase 1: Unified Commons Category Browser
 
-- **[page.tsx](<file:///ixwiki/public/projects/ixstats/src/app/(wikios)/w/repository/page.tsx>)**:
+- **`page.tsx`/w/repository/page.tsx>)**:
   - Embedded `<CommonsCategoryBrowser>` across `commons`, `ixwiki`, and `iiwiki` tabs.
   - Curated a mapping system matching Commons category nested namespaces (e.g. `Flags by country`) to broad local categories (e.g. `Flags`).
-- **[wiki.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/wiki.ts)**:
+- **`wiki.ts`**:
   - Updated `searchFiles` to query category members with metadata via `generator=categorymembers` in a single query.
 
 #### Phase 2: Sidebar Rails and Layout Unification
 
-- **[WikiOSUnifiedSidebar.tsx](file:///ixwiki/public/projects/ixstats/src/components/wikios/shared/WikiOSUnifiedSidebar.tsx)**:
+- **`WikiOSUnifiedSidebar.tsx`**:
   - Cleaned up duplicate static "Stashes" navigation links from the expanded sidebar on active articles.
-- **[WikiOSLayout.tsx](file:///ixwiki/public/projects/ixstats/src/components/wikios/shared/WikiOSLayout.tsx)**:
+- **`WikiOSLayout.tsx`**:
   - Unified the visual and source editors under `WikiOSLayout` with full horizontal width.
   - Restructured the talk pages to register comment threads as dynamically mapped Table of Contents section links in the sidebar.
 
 #### Phase 3: Premium Scrollbars & Theme Overrides
 
-- **[CountryActionsMenu.tsx](file:///ixwiki/public/projects/ixstats/src/components/countries/CountryActionsMenu.tsx)** & **[globals.css](file:///ixwiki/public/projects/ixstats/src/styles/globals.css)**:
+- **`CountryActionsMenu.tsx`** & **[globals.css](src/styles/globals.css)**:
   - Overrode default browser scrollbars with a custom, thin (6px) scrollbar with a transparent track and translucent hoverable thumbs matching theme styles.
 
 #### Phase 4: Threaded Talk Page quoting
 
-- **[MessagesIdentityBadge.tsx](file:///ixwiki/public/projects/ixstats/src/components/messages/MessagesIdentityBadge.tsx)**:
+- **[MessagesIdentityBadge.tsx](src/components/messages/MessagesIdentityBadge.tsx)**:
   - Configured talk page comments parsing to support indentations, author role badges, and quote reply blocks.
 
 ---
@@ -2628,7 +4163,7 @@ We transformed the writing layout in WikiOS with an Apple-style switcher, editor
 
 #### Phase 1: Apple-Style Segmented Toolbars & Switcher
 
-- **[WikiSourceEditor.tsx](file:///ixwiki/public/projects/ixstats/src/components/wikios/editor/WikiSourceEditor.tsx)** & **[WikiVisualEditor.tsx](file:///ixwiki/public/projects/ixstats/src/components/wikios/editor/WikiVisualEditor.tsx)**:
+- **`WikiSourceEditor.tsx`** & **`WikiVisualEditor.tsx`**:
   - Added a titlebar `<AppleSwitch />` centered between "Source" and "Canvas" labels with switcher tooltips.
   - Configured state-preservation during editor switches by converting content dynamically via backend `convertWikitextToHtml`.
   - Re-designed formatting buttons inside translucent pill wrappers with soft glow borders and scale micro-interactions.
@@ -2641,13 +4176,13 @@ We transformed the writing layout in WikiOS with an Apple-style switcher, editor
 
 #### Phase 3: Custom Visual Template Chips
 
-- **[WikiVisualEditor.tsx](file:///ixwiki/public/projects/ixstats/src/components/wikios/editor/WikiVisualEditor.tsx)**:
+- **`WikiVisualEditor.tsx`**:
   - Rendered transcluded stats templates (`MyCountry:`, `CountryData:`, `BusinessData:`) and coordinates/embeds as beautiful, non-editable visual chips.
   - Safe-guarded selections and cursor positions during modal popups by using `saveSelection()` and `restoreSelection()`.
 
 #### Phase 4: Apple-Style Magnetic Repulsion Animation
 
-- **[WikiSourceEditor.tsx](file:///ixwiki/public/projects/ixstats/src/components/wikios/editor/WikiSourceEditor.tsx)** & **[WikiVisualEditor.tsx](file:///ixwiki/public/projects/ixstats/src/components/wikios/editor/WikiVisualEditor.tsx)**:
+- **`WikiSourceEditor.tsx`** & **`WikiVisualEditor.tsx`**:
   - Hooked `useNavigationScroll` to calculate repulsion metrics based on window scroll.
   - Framer Motion animate titlebar height, compression, and switcher position.
 
@@ -2659,19 +4194,19 @@ We overhauled the WikiOS page layout by implementing collapsed sidebar default m
 
 #### Phase 1: Collapsible Sidebar & Content Wrapper
 
-- **[WikiOSLayout.tsx](file:///ixwiki/public/projects/ixstats/src/components/wikios/shared/WikiOSLayout.tsx)**:
+- **`WikiOSLayout.tsx`**:
   - Configured `DashboardSidebarLayout` to start collapsed by default (`defaultCollapsed={true}`) on WikiOS pages.
   - Implemented `WikiOSContentWrapper` to read collapsed states and render a sticky rail of icon widgets beside content.
 
 #### Phase 2: Animated Left Rail
 
-- **[WikiOSLayout.tsx](file:///ixwiki/public/projects/ixstats/src/components/wikios/shared/WikiOSLayout.tsx)**:
+- **`WikiOSLayout.tsx`**:
   - Styled left rail icons (Search, Home, Recent Changes, Edit, Talk, Stash, Country Context) with unique color border tints, hover glow animations, and motion events (spins, bounces, wiggles).
   - Rendered overflow links in a theme-compliant "See More" popover flyout.
 
 #### Phase 3: Aspect-Ratio Locked Hero Redesign
 
-- **[ArticleRenderer.tsx](file:///ixwiki/public/projects/ixstats/src/components/wikios/reader/ArticleRenderer.tsx)**:
+- **`ArticleRenderer.tsx`**:
   - Fetched natural image dimensions in `useEffect` and locked the hero aspect ratio between `2.2` and `4.0`.
   - Converted thumbnail image URLs dynamically to high-resolution originals.
   - Implemented cursor-tracking 3D tilt effects and radial light sheen sweeps.
@@ -2679,14 +4214,14 @@ We overhauled the WikiOS page layout by implementing collapsed sidebar default m
 
 #### Phase 4: Loreward Trophy Badge Celebrations
 
-- **[ArticleRenderer.tsx](file:///ixwiki/public/projects/ixstats/src/components/wikios/reader/ArticleRenderer.tsx)**:
+- **`ArticleRenderer.tsx`**:
   - Displayed a gold trophy badge with multiplier numbers for award-winning pages.
   - Animated a mounting golden pulse and confetti particles on load.
   - Handled citation details inside a click-to-open glass card overlay.
 
 #### Phase 5: Table of Contents Drawer
 
-- **[AppleBooksTocDrawer.tsx](file:///ixwiki/public/projects/ixstats/src/components/wikios/reader/AppleBooksTocDrawer.tsx)** [NEW]:
+- **`AppleBooksTocDrawer.tsx`** [NEW]:
   - Replaced the inline TOC sidebar with an Apple Books-style sliding drawer portal.
   - Implemented scroll spy tracking to highlight the active section.
 
@@ -2698,21 +4233,21 @@ We completed the database schema updates, PostGIS query engine, snapping mechani
 
 #### Phase 1: Database Schema & PostGIS Spatial Profiling
 
-- **[maps.prisma](file:///ixwiki/public/projects/ixstats/prisma/schema/maps.prisma)**:
+- **[maps.prisma](prisma/schema/maps.prisma)**:
   - Extended `Subdivision` with `climateProfile`, `elevationProfile`, and `waterAccess` JSON columns.
   - Extended `City` with `climate` and `waterAccess`.
-- **[country-geo-service.ts](file:///ixwiki/public/projects/ixstats/src/lib/country-geo-service.ts)**:
+- **`country-geo-service.ts`**:
   - Implemented `updateSubdivisionSpatialProfile` to calculate climate intersections, elevation zones, and water bodies (rivers/lakes length and area).
   - Implemented `updateCitySpatialProfile` to detect containing climate zones and compute distances to water.
   - Integrated hooks into `upsertSubdivision` and `upsertCity` for automated calculations on save.
 
 #### Phase 2: Standalone and map editor integrations
 
-- **[EditorMap.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/EditorMap.tsx)**:
+- **[EditorMap.tsx](src/components/maps/editor/EditorMap.tsx)**:
   - Built real-time polygon snapping to national/subdivision borders.
   - Integrated Turf.js to highlight invalid overlaps on a red GeoJSON source layer.
   - Added a floating glassmorphic drawing context bar displaying vertex count and options.
-- **[MapEditorOverlay.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/MapEditorOverlay.tsx)**:
+- **[MapEditorOverlay.tsx](src/components/maps/editor/MapEditorOverlay.tsx)**:
   - Configured dual-sidebar layout: Left sidebar for lists and imports, right sidebar for settings and attributes.
 
 ---
@@ -2723,42 +4258,42 @@ We applied several minor tweaks to ensure stability:
 
 #### Phase 1: Unified Apple-style Physics Switches
 
-- **[switch.tsx](file:///ixwiki/public/projects/ixstats/src/components/ui/switch.tsx)**:
+- **[switch.tsx](src/components/ui/switch.tsx)**:
   - Wrapped `AppleSwitch` inside the central UI Switch definition to upgrade 32+ settings views instantly.
-- **[SettingsView.tsx](file:///ixwiki/public/projects/ixstats/src/components/DynamicIsland/SettingsView.tsx)** & **[GlassInputs.tsx](file:///ixwiki/public/projects/ixstats/src/app/builder/components/glass/GlassInputs.tsx)**:
+- **`SettingsView.tsx`** & **`GlassInputs.tsx`**:
   - Replaced custom inputs with the standard `Switch`/`AppleSwitch` widget.
 
 #### Phase 2: Fix Country Builder Save Crash
 
-- **[management.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/countries/management.ts)**:
+- **`management.ts`**:
   - Stringified the `kpis` array parameters into valid JSON string representations before committing database updates.
-- **[useBuilderState.ts](file:///ixwiki/public/projects/ixstats/src/app/builder/hooks/useBuilderState.ts)**:
+- **useBuilderState.ts**:
   - Safely parsed functions and KPI JSON strings back into valid arrays of objects on edit initialization.
 
 #### Phase 3: Wiki & Lore Tab Feature Expansion
 
-- **[lorewards.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/lorewards.ts)**:
+- **`lorewards.ts`**:
   - Sourced and normalized records from `WikiArticleAward` in a consolidated tRPC endpoint.
-- **[WikiLoreTab.tsx](file:///ixwiki/public/projects/ixstats/src/components/achievements/tabs/WikiLoreTab.tsx)**:
+- **`WikiLoreTab.tsx`**:
   - Expanded into standings, calendar, awards, and resources sub-tabs.
   - Rendered copyable cheatsheet snippets and calculated Rank Score formulas dynamically.
 
 #### Phase 4: Show Discord Reactions & Dialog Focus
 
-- **[thinkpages.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/thinkpages.ts)**:
+- **`thinkpages.ts`**:
   - Mapped transient Discord reactors to local IxnayID credentials to resolve correct user names, bios, and Discord avatar URLs.
-- **[ReactionsDialog.tsx](file:///ixwiki/public/projects/ixstats/src/components/thinkpages/ReactionsDialog.tsx)**:
+- **[ReactionsDialog.tsx](src/components/thinkpages/ReactionsDialog.tsx)**:
   - Wrapped the dialog markup inside React Portal `createPortal(..., document.body)` to escape container clip boundaries and z-index overlap limits.
 
 #### Phase 5: ThinkPages Account Modal Styling & Layering
 
-- **[AccountCreationModal.tsx](file:///ixwiki/public/projects/ixstats/src/components/thinkpages/AccountCreationModal.tsx)** & **[AccountSettingsModal.tsx](file:///ixwiki/public/projects/ixstats/src/components/thinkpages/AccountSettingsModal.tsx)**:
+- **[AccountCreationModal.tsx](src/components/dashboard/accounts/AccountCreationModal.tsx)** & **[AccountSettingsModal.tsx](src/components/dashboard/accounts/AccountSettingsModal.tsx)**:
   - Replaced glassmorphic transparent inputs with solid `bg-[var(--color-bg-secondary)]` and high-contrast texts to guarantee legibility.
   - Portaled dialog overlays directly to `document.body` and set `z-index` to `z-[100000]` to render correctly on top of the navigation bar.
 
 #### Phase 6: World Editor control fixes & exit confirmation
 
-- **[MapEditorOverlay.tsx](file:///ixwiki/public/projects/ixstats/src/components/maps/editor/MapEditorOverlay.tsx)**:
+- **[MapEditorOverlay.tsx](src/components/maps/editor/MapEditorOverlay.tsx)**:
   - Resolved bundle crashes by lazy loading `MapContainer` dynamically.
   - Hoisted hooks and variables to the top of the file to fix temporal dead zone issues.
   - Implemented `hasUnsavedChanges` dirty state calculations and exit confirmation modal dialog.
@@ -2769,4 +4304,4 @@ We applied several minor tweaks to ensure stability:
 
 ## Historical Releases (Pre-Ogma)
 
-For release history prior to the 1.0 Ogma epoch reset (v0.9 through v2.2.0), see [`docs/archive/CHANGELOG_PRE_OGMA.md`](./docs/archive/CHANGELOG_PRE_OGMA.md).
+For release history prior to the 1.0 Ogma epoch reset (v0.9 through v2.2.0), see `docs/archive/CHANGELOG_PRE_OGMA.md` (kept locally; `docs/archive/` is git-ignored and not in the repository).

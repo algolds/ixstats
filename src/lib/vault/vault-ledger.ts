@@ -1,12 +1,54 @@
-import { type PrismaClient, type VaultTransactionType } from "@prisma/client";
-import { syncUserToForum } from "~/server/modules/forum";
-import { getVaultConfig } from "~/lib/vault/vault-perks";
-import { catchUpPassiveIncome } from "~/lib/vault/vault-passive-income";
+import { type Prisma, type PrismaClient, type VaultTransactionType } from "@prisma/client";
+import { getVaultConfig, type VaultConfig } from "~/lib/vault/vault-perks";
+import { computeNextStreak } from "~/lib/vault/daily-roll";
+
+type LedgerErrorCode =
+  | "MAINTENANCE"
+  | "EARNING_DISABLED"
+  | "STORE_DISABLED"
+  | "PACKS_DISABLED"
+  | "INVALID_AMOUNT"
+  | "DAILY_CAP_REACHED"
+  | "INSUFFICIENT_CREDITS";
+
+/**
+ * Thrown by the *Tx ledger functions. A caller running inside a Prisma
+ * interactive transaction lets it propagate so the whole transaction rolls back.
+ * `balance` carries the balance known at the time of the failure (0 if unknown).
+ */
+export class LedgerError extends Error {
+  readonly code: LedgerErrorCode;
+  readonly balance: number;
+
+  constructor(code: LedgerErrorCode, message: string, balance = 0) {
+    super(message);
+    this.name = "LedgerError";
+    this.code = code;
+    this.balance = balance;
+  }
+}
+
+export interface LedgerEarnInput {
+  userId: string;
+  amount: number;
+  type: VaultTransactionType;
+  source: string;
+  metadata?: Record<string, unknown>;
+  createdAt?: Date;
+  idempotencyKey?: string;
+}
+
+export type LedgerSpendInput = Omit<LedgerEarnInput, "createdAt">;
+
+interface LedgerTxResult {
+  newBalance: number;
+  amount: number;
+}
 
 /**
  * Get or create a vault for a user
  */
-export async function getOrCreateVault(userIdOrClerkId: string, db: PrismaClient) {
+export async function getOrCreateVault(userIdOrClerkId: string, db: Prisma.TransactionClient) {
   try {
     const user = await db.user.findFirst({
       where: {
@@ -37,16 +79,16 @@ export async function getOrCreateVault(userIdOrClerkId: string, db: PrismaClient
     return vault;
   } catch (error) {
     console.error(`[Vault Service] Failed to get/create vault for ${userIdOrClerkId}:`, error);
-    throw new Error("Failed to access vault");
+    throw new Error("Failed to access vault", { cause: error });
   }
 }
 
 /**
  * Reset daily earning totals if it's a new day
  */
-export async function checkAndResetDailyEarnings(
+async function checkAndResetDailyEarnings(
   vault: { id: string; lastDailyReset: Date },
-  db: PrismaClient
+  db: Prisma.TransactionClient
 ) {
   try {
     const lastReset = new Date(vault.lastDailyReset);
@@ -81,7 +123,7 @@ export async function checkAndResetDailyEarnings(
 export async function checkDailyCap(
   userId: string,
   earnType: "EARN_ACTIVE" | "EARN_SOCIAL",
-  db: PrismaClient
+  db: Prisma.TransactionClient
 ): Promise<{ canEarn: boolean; remaining: number; cap: number }> {
   try {
     const vault = await getOrCreateVault(userId, db);
@@ -118,7 +160,174 @@ export async function checkDailyCap(
 }
 
 /**
- * Earn IxCredits with transaction logging
+ * Earn types the global earning kill switch stops. REFUND is deliberately exempt: a refund
+ * returns credits the user already paid, it doesn't mint new ones, so it must still land
+ * while earning is off. ADMIN_ADJUSTMENT stays open so admins can still correct balances.
+ * EARN_EXCHANGE (Sovereigns converted back to IxCredits) is stopped too.
+ */
+const KILL_SWITCHED_EARN_TYPES: ReadonlySet<VaultTransactionType> = new Set([
+  "EARN_ACTIVE",
+  "EARN_SOCIAL",
+  "EARN_PASSIVE",
+  "EARN_BONUS",
+  "EARN_CARDS",
+  "EARN_EXCHANGE",
+]);
+
+function assertEarnAllowed(config: VaultConfig, type: VaultTransactionType): void {
+  if (config.isMaintenanceMode) {
+    throw new LedgerError("MAINTENANCE", "Vault economy is currently in maintenance mode.");
+  }
+  if (!config.isEarningEnabled && KILL_SWITCHED_EARN_TYPES.has(type)) {
+    throw new LedgerError("EARNING_DISABLED", "Earning credits is currently disabled globally.");
+  }
+}
+
+function assertSpendAllowed(config: VaultConfig, type: VaultTransactionType): void {
+  if (config.isMaintenanceMode) {
+    throw new LedgerError("MAINTENANCE", "Vault economy is currently in maintenance mode.");
+  }
+  if (!config.isStoreEnabled && (type === "SPEND_COSMETIC" || type === "SPEND_BOOST")) {
+    throw new LedgerError(
+      "STORE_DISABLED",
+      "Storefront purchases are currently disabled globally."
+    );
+  }
+  if (!config.isPacksEnabled && type === "SPEND_PACKS") {
+    throw new LedgerError("PACKS_DISABLED", "Card pack purchases are currently disabled globally.");
+  }
+}
+
+/**
+ * Earn IxCredits inside the caller's transaction.
+ *
+ * Throws LedgerError on any business failure so the surrounding transaction
+ * rolls back.
+ */
+export async function earnCreditsTx(
+  tx: Prisma.TransactionClient,
+  input: LedgerEarnInput
+): Promise<LedgerTxResult> {
+  const { userId, type, source, metadata, createdAt } = input;
+  let amount = input.amount;
+
+  assertEarnAllowed(await getVaultConfig(tx), type);
+  if (amount <= 0) {
+    throw new LedgerError("INVALID_AMOUNT", "Amount must be positive");
+  }
+
+  const vault = await getOrCreateVault(userId, tx);
+
+  if (type === "EARN_ACTIVE" || type === "EARN_SOCIAL") {
+    // Lock the vault row so the daily cap is not check-then-act across concurrent earns
+    await tx.$queryRaw`SELECT id FROM "my_vault" WHERE id = ${vault.id} FOR UPDATE`;
+    const capCheck = await checkDailyCap(userId, type, tx);
+    if (!capCheck.canEarn) {
+      throw new LedgerError(
+        "DAILY_CAP_REACHED",
+        `Daily earning cap reached (${capCheck.cap} IxC/day for ${type === "EARN_ACTIVE" ? "active gameplay" : "social activities"})`
+      );
+    }
+    if (amount > capCheck.remaining) {
+      amount = capCheck.remaining;
+      console.log(`[Vault Service] Capped earning amount to ${amount} (remaining allowance)`);
+    }
+  }
+
+  await checkAndResetDailyEarnings(vault, tx);
+
+  // Sovereigns converted back are the user's own credits returning, not play: no XP, not
+  // "earned today" (otherwise round trips through the Exchange would buy vault levels).
+  const counts = type !== "EARN_EXCHANGE";
+  const updatedVault = await tx.myVault.update({
+    where: { id: vault.id },
+    data: {
+      credits: { increment: amount },
+      lifetimeEarned: { increment: amount },
+      todayEarned: { increment: counts ? amount : 0 },
+      vaultXp: { increment: counts ? Math.floor(amount) : 0 },
+    },
+  });
+
+  await tx.vaultTransaction.create({
+    data: {
+      vaultId: vault.id,
+      credits: amount,
+      balanceAfter: updatedVault.credits,
+      type,
+      source,
+      metadata: metadata ? (JSON.stringify(metadata) as any) : null,
+      createdAt: createdAt ?? new Date(),
+      idempotencyKey: input.idempotencyKey ?? null,
+    },
+  });
+
+  return { newBalance: updatedVault.credits, amount };
+}
+
+/**
+ * Spend IxCredits inside the caller's transaction.
+ *
+ * Throws LedgerError (INSUFFICIENT_CREDITS carries the known balance) so the
+ * surrounding transaction rolls back.
+ */
+export async function spendCreditsTx(
+  tx: Prisma.TransactionClient,
+  input: LedgerSpendInput
+): Promise<LedgerTxResult> {
+  const { userId, amount, type, source, metadata } = input;
+
+  assertSpendAllowed(await getVaultConfig(tx), type);
+  if (amount <= 0) {
+    throw new LedgerError("INVALID_AMOUNT", "Amount must be positive");
+  }
+
+  const vault = await getOrCreateVault(userId, tx);
+  if (vault.credits < amount) {
+    throw new LedgerError(
+      "INSUFFICIENT_CREDITS",
+      `Insufficient credits. You have ${vault.credits} IxC but need ${amount} IxC`,
+      vault.credits
+    );
+  }
+
+  // Conditional decrement: only succeeds if the row still covers the amount
+  const { count } = await tx.myVault.updateMany({
+    where: {
+      id: vault.id,
+      credits: { gte: amount },
+    },
+    data: {
+      credits: { decrement: amount },
+      lifetimeSpent: { increment: amount },
+    },
+  });
+  if (count !== 1) {
+    throw new LedgerError("INSUFFICIENT_CREDITS", "Insufficient credits for transaction.");
+  }
+
+  const updatedVault = await tx.myVault.findUniqueOrThrow({
+    where: { id: vault.id },
+  });
+
+  await tx.vaultTransaction.create({
+    data: {
+      vaultId: vault.id,
+      credits: -amount,
+      balanceAfter: updatedVault.credits,
+      type,
+      source,
+      metadata: metadata ? (JSON.stringify(metadata) as any) : null,
+      idempotencyKey: input.idempotencyKey ?? null,
+    },
+  });
+
+  return { newBalance: updatedVault.credits, amount };
+}
+
+/**
+ * Earn IxCredits with transaction logging (for callers holding a plain client).
+ * Runs earnCreditsTx in its own transaction and maps LedgerError to { success: false }.
  */
 export async function earnCredits(
   userId: string,
@@ -130,91 +339,27 @@ export async function earnCredits(
   createdAt?: Date
 ): Promise<{ success: boolean; newBalance: number; message?: string }> {
   try {
-    const config = await getVaultConfig(db);
-    if (config.isMaintenanceMode) {
-      return {
-        success: false,
-        newBalance: 0,
-        message: "Vault economy is currently in maintenance mode.",
-      };
-    }
-    if (
-      !config.isEarningEnabled &&
-      (type === "EARN_ACTIVE" || type === "EARN_SOCIAL" || type === "EARN_PASSIVE")
-    ) {
-      return {
-        success: false,
-        newBalance: 0,
-        message: "Earning credits is currently disabled globally.",
-      };
-    }
-
-    if (amount <= 0) {
-      return { success: false, newBalance: 0, message: "Amount must be positive" };
-    }
-
-    if (type === "EARN_ACTIVE" || type === "EARN_SOCIAL") {
-      const capCheck = await checkDailyCap(userId, type, db);
-      if (!capCheck.canEarn) {
-        return {
-          success: false,
-          newBalance: 0,
-          message: `Daily earning cap reached (${capCheck.cap} IxC/day for ${type === "EARN_ACTIVE" ? "active gameplay" : "social activities"})`,
-        };
-      }
-
-      if (amount > capCheck.remaining) {
-        amount = capCheck.remaining;
-        console.log(`[Vault Service] Capped earning amount to ${amount} (remaining allowance)`);
-      }
-    }
-
-    const vault = await getOrCreateVault(userId, db);
-    await checkAndResetDailyEarnings(vault, db);
-
-    const finalAmount = amount;
-
-    const result = await db.$transaction(async (tx) => {
-      const updatedVault = await tx.myVault.update({
-        where: { id: vault.id },
-        data: {
-          credits: { increment: finalAmount },
-          lifetimeEarned: { increment: finalAmount },
-          todayEarned: { increment: finalAmount },
-          vaultXp: { increment: Math.floor(finalAmount) },
-        },
-      });
-
-      await tx.vaultTransaction.create({
-        data: {
-          vaultId: vault.id,
-          credits: finalAmount,
-          balanceAfter: updatedVault.credits,
-          type,
-          source,
-          metadata: metadata ? (JSON.stringify(metadata) as any) : null,
-          createdAt: createdAt ?? new Date(),
-        },
-      });
-
-      return updatedVault;
-    });
-
-    console.log(
-      `[Vault Service] User ${userId} earned ${finalAmount} IxC (${type}) - New balance: ${result.credits}`
+    const r = await db.$transaction((tx) =>
+      earnCreditsTx(tx, { userId, amount, type, source, metadata, createdAt })
     );
 
-    syncUserToForum(userId).catch(() => {});
+    console.log(
+      `[Vault Service] User ${userId} earned ${r.amount} IxC (${type}) - New balance: ${r.newBalance}`
+    );
 
-    return { success: true, newBalance: result.credits };
+    return { success: true, newBalance: r.newBalance };
   } catch (error) {
+    if (error instanceof LedgerError) {
+      return { success: false, newBalance: error.balance, message: error.message };
+    }
     console.error(`[Vault Service] Failed to earn credits for ${userId}:`, error);
     return { success: false, newBalance: 0, message: "Failed to earn credits" };
   }
 }
 
 /**
- * Spend IxCredits with validation and transaction logging
+ * Spend IxCredits with validation and transaction logging (for callers holding a plain client).
+ * Runs spendCreditsTx in its own transaction and maps LedgerError to { success: false }.
  */
 export async function spendCredits(
   userId: string,
@@ -225,93 +370,18 @@ export async function spendCredits(
   metadata?: Record<string, unknown>
 ): Promise<{ success: boolean; newBalance: number; message?: string }> {
   try {
-    const config = await getVaultConfig(db);
-    if (config.isMaintenanceMode) {
-      return {
-        success: false,
-        newBalance: 0,
-        message: "Vault economy is currently in maintenance mode.",
-      };
-    }
-
-    if (!config.isStoreEnabled && (type === "SPEND_COSMETIC" || type === "SPEND_BOOST")) {
-      return {
-        success: false,
-        newBalance: 0,
-        message: "Storefront purchases are currently disabled globally.",
-      };
-    }
-
-    if (!config.isPacksEnabled && type === "SPEND_PACKS") {
-      return {
-        success: false,
-        newBalance: 0,
-        message: "Card pack purchases are currently disabled globally.",
-      };
-    }
-
-    if (amount <= 0) {
-      return { success: false, newBalance: 0, message: "Amount must be positive" };
-    }
-
-    const vault = await getOrCreateVault(userId, db);
-
-    if (vault.credits < amount) {
-      return {
-        success: false,
-        newBalance: vault.credits,
-        message: `Insufficient credits. You have ${vault.credits} IxC but need ${amount} IxC`,
-      };
-    }
-
-    const result = await db.$transaction(async (tx) => {
-      const updateResult = await tx.myVault.updateMany({
-        where: {
-          id: vault.id,
-          credits: { gte: amount },
-        },
-        data: {
-          credits: { decrement: amount },
-          lifetimeSpent: { increment: amount },
-        },
-      });
-
-      if (updateResult.count === 0) {
-        throw new Error("INSUFFICIENT_CREDITS_RACE_CONDITION");
-      }
-
-      const updatedVault = await tx.myVault.findUniqueOrThrow({
-        where: { id: vault.id },
-      });
-
-      await tx.vaultTransaction.create({
-        data: {
-          vaultId: vault.id,
-          credits: -amount,
-          balanceAfter: updatedVault.credits,
-          type,
-          source,
-          metadata: metadata ? (JSON.stringify(metadata) as any) : null,
-        },
-      });
-
-      return updatedVault;
-    });
-
-    console.log(
-      `[Vault Service] User ${userId} spent ${amount} IxC (${type}) - New balance: ${result.credits}`
+    const r = await db.$transaction((tx) =>
+      spendCreditsTx(tx, { userId, amount, type, source, metadata })
     );
 
-    syncUserToForum(userId).catch(() => {});
+    console.log(
+      `[Vault Service] User ${userId} spent ${r.amount} IxC (${type}) - New balance: ${r.newBalance}`
+    );
 
-    return { success: true, newBalance: result.credits };
+    return { success: true, newBalance: r.newBalance };
   } catch (error) {
-    if (error instanceof Error && error.message === "INSUFFICIENT_CREDITS_RACE_CONDITION") {
-      return {
-        success: false,
-        newBalance: 0,
-        message: "Insufficient credits for transaction.",
-      };
+    if (error instanceof LedgerError) {
+      return { success: false, newBalance: error.balance, message: error.message };
     }
     console.error(`[Vault Service] Failed to spend credits for ${userId}:`, error);
     return { success: false, newBalance: 0, message: "Failed to spend credits" };
@@ -325,8 +395,6 @@ export async function getBalance(userId: string, db: PrismaClient) {
   try {
     const vault = await getOrCreateVault(userId, db);
     await checkAndResetDailyEarnings(vault, db);
-
-    await catchUpPassiveIncome(userId, db);
 
     const updatedVault =
       (await db.myVault.findUnique({
@@ -360,6 +428,8 @@ export async function getBalance(userId: string, db: PrismaClient) {
       vaultXp: updatedVault.vaultXp,
       loginStreak: updatedVault.loginStreak,
       canClaimDailyBonus,
+      /** The streak today's claim will have (the credit roll's streak boost uses it). */
+      claimStreak: computeNextStreak(lastLoginDate, updatedVault.loginStreak, now),
       premiumMultiplier: vaultCfg.premiumMultiplier,
       isPremium: false,
     };
@@ -373,22 +443,33 @@ export async function getBalance(userId: string, db: PrismaClient) {
       vaultLevel: 1,
       vaultXp: 0,
       loginStreak: 0,
-      canClaimDailyBonus: true,
+      // A failed read cannot know whether today's claim was taken, so never offer one.
+      canClaimDailyBonus: false,
+      claimStreak: 0,
       premiumMultiplier: 1.0,
       isPremium: false,
     };
   }
 }
 
+export type TransactionDirection = "earned" | "spent";
+
+const DIRECTION_FILTER = {
+  earned: { gt: 0 },
+  spent: { lt: 0 },
+} as const;
+
 /**
- * Get transaction history with pagination
+ * Get transaction history with pagination. `direction` keeps only credits in (`earned`) or out
+ * (`spent`); spends are stored negative.
  */
 export async function getTransactionHistory(
   userId: string,
   db: PrismaClient,
   limit: number = 50,
   offset: number = 0,
-  type?: VaultTransactionType
+  type?: VaultTransactionType,
+  direction?: TransactionDirection
 ) {
   try {
     const vault = await getOrCreateVault(userId, db);
@@ -397,6 +478,7 @@ export async function getTransactionHistory(
       where: {
         vaultId: vault.id,
         ...(type ? { type } : {}),
+        ...(direction ? { credits: DIRECTION_FILTER[direction] } : {}),
       },
       orderBy: { createdAt: "desc" },
       take: Math.min(limit, 100),
@@ -410,7 +492,7 @@ export async function getTransactionHistory(
       balanceAfter: tx.balanceAfter,
       type: tx.type,
       source: tx.source,
-      metadata: tx.metadata as Record<string, unknown> | null,
+      metadata: tx.metadata,
       createdAt: new Date(tx.createdAt),
     }));
   } catch (error) {

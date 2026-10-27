@@ -1,27 +1,20 @@
 "use client";
 
+import { Button } from "~/components/ui/button";
 import React, { useState, useCallback } from "react";
-import { Trash2, X, Pencil, Check } from "lucide-react";
+import { Trash as Trash2, Xmark as X, EditPencil as Pencil, Check } from "iconoir-react";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { SUBDIVISION_TYPE_OPTIONS } from "./optionLists";
 
 // Whitelisted editable attributes — intentionally excludes name, id, capital flags.
 const EDITABLE_FIELDS = [
   { value: "color", label: "Color", inputType: "color" as const },
   { value: "type", label: "Type", inputType: "select" as const },
-  { value: "level", label: "Admin Level", inputType: "number" as const },
+  { value: "level", label: "Admin level", inputType: "number" as const },
   { value: "governmentType", label: "Gov. Type", inputType: "text" as const },
 ] as const;
 
-type EditableField = (typeof EDITABLE_FIELDS)[number]["value"];
-
-const SUBDIVISION_TYPES = [
-  { value: "province", label: "Province" },
-  { value: "state", label: "State" },
-  { value: "region", label: "Region" },
-  { value: "territory", label: "Territory" },
-  { value: "district", label: "District" },
-  { value: "county", label: "County" },
-  { value: "department", label: "Department" },
-];
+export type EditableField = (typeof EDITABLE_FIELDS)[number]["value"];
 
 interface BatchActionsBarProps {
   selectedCount: number;
@@ -59,6 +52,7 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
     // Reset value to a sensible default for the new field
     if (nextField === "color") setValue("#3b82f6");
     else if (nextField === "level") setValue("1");
+    else if (nextField === "type") setValue("province");
     else setValue("");
   }, []);
 
@@ -87,70 +81,63 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
   const canBulkEdit = subdivisionCount > 0 && !isMutating;
 
   return (
-    <div className="border-border bg-muted/50 flex min-h-8 flex-wrap items-center gap-2 border-b px-3 py-1 text-xs">
-      <span className="text-foreground font-medium">{selectedCount} selected</span>
+    <div className="text-footnote flex min-h-9 flex-wrap items-center gap-2 px-3 py-1">
+      <span className="text-label font-medium">{selectedCount} selected</span>
       {subdivisionCount > 0 && subdivisionCount < selectedCount && (
-        <span className="text-muted-foreground">
+        <span className="text-label-secondary">
           ({subdivisionCount} subdivision{subdivisionCount !== 1 ? "s" : ""})
         </span>
       )}
 
-      <div className="bg-border mx-1 h-4 w-px" />
+      <div className="bg-separator mx-1 h-4 w-px" />
 
-      <button
+      <Button
+        variant="ghost"
+        size="xs"
+        className="text-label-secondary"
         onClick={onDeselectAll}
         disabled={isMutating}
-        className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1 rounded px-2 py-1 transition-colors disabled:opacity-50"
       >
         <X className="h-3 w-3" />
-        Deselect All
-      </button>
+        Deselect all
+      </Button>
 
-      {/* Bulk Edit — subdivisions only */}
       {canBulkEdit && !editOpen && (
-        <button
+        <Button
+          variant="ghost"
+          size="xs"
+          className="text-label-secondary"
           onClick={() => {
             setEditOpen(true);
             setResultMsg(null);
           }}
           disabled={isMutating}
-          className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1 rounded px-2 py-1 transition-colors disabled:opacity-50"
         >
           <Pencil className="h-3 w-3" />
           Edit {subdivisionCount} region{subdivisionCount !== 1 ? "s" : ""}
-        </button>
+        </Button>
       )}
 
       {editOpen && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          {/* Field picker */}
-          <select
-            value={field}
-            onChange={(e) => handleFieldChange(e.target.value as EditableField)}
+        <div className="flex flex-wrap items-center gap-2">
+          <OptionSelect
             disabled={pending}
-            className="bg-background border-border rounded border px-1.5 py-0.5 text-xs disabled:opacity-50"
-          >
-            {EDITABLE_FIELDS.map((f) => (
-              <option key={f.value} value={f.value}>
-                {f.label}
-              </option>
-            ))}
-          </select>
+            value={field}
+            onValueChange={(v) => handleFieldChange(v as EditableField)}
+            options={EDITABLE_FIELDS}
+            size="sm"
+            className="w-full"
+          />
 
-          {/* Value input — varies by field type */}
           {selectedFieldMeta.inputType === "select" && (
-            <select
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
+            <OptionSelect
               disabled={pending}
-              className="bg-background border-border rounded border px-1.5 py-0.5 text-xs disabled:opacity-50"
-            >
-              {SUBDIVISION_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
+              value={value}
+              onValueChange={(v) => setValue(v)}
+              options={SUBDIVISION_TYPE_OPTIONS}
+              size="sm"
+              className="w-full"
+            />
           )}
 
           {selectedFieldMeta.inputType === "color" && (
@@ -159,7 +146,7 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
               value={value}
               onChange={(e) => setValue(e.target.value)}
               disabled={pending}
-              className="h-6 w-10 cursor-pointer rounded border-0 p-0 disabled:opacity-50"
+              className="rounded-control-sm h-6 w-10 cursor-pointer border-0 p-0 disabled:opacity-50"
               title="Pick color"
             />
           )}
@@ -172,7 +159,7 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
               value={value}
               onChange={(e) => setValue(e.target.value)}
               disabled={pending}
-              className="bg-background border-border w-14 rounded border px-1.5 py-0.5 text-xs disabled:opacity-50"
+              className="bg-surface border-separator text-footnote rounded-control-sm w-14 border px-2 py-0.5 disabled:opacity-50"
               placeholder="1–5"
             />
           )}
@@ -183,41 +170,42 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
               value={value}
               onChange={(e) => setValue(e.target.value)}
               disabled={pending}
-              className="bg-background border-border w-28 rounded border px-1.5 py-0.5 text-xs disabled:opacity-50"
+              className="bg-surface border-separator text-footnote rounded-control-sm w-28 border px-2 py-0.5 disabled:opacity-50"
               placeholder="e.g. monarchy"
             />
           )}
 
-          <button
-            onClick={handleApply}
-            disabled={pending || !value.trim()}
-            className="flex items-center gap-1 rounded bg-blue-600/80 px-2 py-0.5 text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
-          >
+          <Button size="xs" onClick={handleApply} disabled={pending || !value.trim()}>
             <Check className="h-3 w-3" />
             Apply to {subdivisionCount}
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-label-secondary"
             onClick={() => setEditOpen(false)}
             disabled={pending}
-            className="text-muted-foreground hover:text-foreground px-1 transition-colors disabled:opacity-50"
             aria-label="Cancel"
           >
             <X className="h-3 w-3" />
-          </button>
+          </Button>
         </div>
       )}
 
-      {resultMsg && <span className="text-muted-foreground italic">{resultMsg}</span>}
+      {resultMsg && <span className="text-label-secondary italic">{resultMsg}</span>}
 
-      <button
+      <Button
+        variant="ghost"
+        size="xs"
+        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
         onClick={onBatchDelete}
         disabled={isMutating}
-        className="flex items-center gap-1 rounded px-2 py-1 text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300 disabled:opacity-50"
+        title="Delete selected (Delete)"
       >
         <Trash2 className="h-3 w-3" />
-        Delete Selected
-      </button>
+        Delete selected
+      </Button>
     </div>
   );
 });

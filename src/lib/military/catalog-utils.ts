@@ -2,8 +2,7 @@
 // Pure logic + constants for the military equipment catalog admin.
 // No React dependencies — fully unit-testable.
 
-import { Plane, Ship, Car, Rocket, Wrench } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Airplane as Plane, DeliveryTruck as Ship, Car, Rocket, Wrench } from "iconoir-react";
 
 // Equipment categories (must match tRPC router and seed script)
 export const CATEGORIES = {
@@ -39,7 +38,7 @@ export const ERAS = [
   { value: "NEXT_GEN", label: "Next Generation" },
 ];
 
-export const CATEGORY_ICONS: Record<string, LucideIcon> = {
+export const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   aircraft: Plane,
   naval: Ship,
   vehicle: Car,
@@ -87,7 +86,7 @@ export const DEFAULT_EQUIPMENT_FORM: EquipmentFormData = {
   isActive: true,
 };
 
-export interface FilterableEquipmentItem {
+interface FilterableEquipmentItem {
   subcategory?: string | null;
   technologyLevel?: number | null;
   acquisitionCost?: number | null;

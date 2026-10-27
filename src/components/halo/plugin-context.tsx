@@ -1,10 +1,9 @@
 "use client";
 
-// eslint-disable-next-line unused-imports/no-unused-imports
-import React, { createContext, useContext, useCallback, useRef, useSyncExternalStore } from "react";
-import type { DIPlugin, DIViewProps } from "./types";
+import React, { createContext, useContext, useRef, useSyncExternalStore } from "react";
+import type { DIPlugin } from "./types";
 
-// ── Plugin Registry (external store for React 19 concurrency safety) ──
+// Plugin Registry (external store for React 19 concurrency safety)
 
 type Listener = () => void;
 
@@ -45,7 +44,7 @@ class DIPluginRegistry {
   }
 }
 
-// ── Context ──
+// Context
 
 interface DIPluginContextValue {
   registry: DIPluginRegistry;
@@ -53,18 +52,18 @@ interface DIPluginContextValue {
 
 const DIPluginContext = createContext<DIPluginContextValue | null>(null);
 
-// ── Provider ──
+// Provider
 
 export function DIPluginProvider({ children }: { children: React.ReactNode }) {
   const registryRef = useRef<DIPluginRegistry | null>(null);
+  // oxlint-disable-next-line
   if (!registryRef.current) {
     registryRef.current = new DIPluginRegistry();
   }
 
+  // oxlint-disable-next-line
   return <DIPluginContext value={{ registry: registryRef.current }}>{children}</DIPluginContext>;
 }
-
-// ── Hooks ──
 
 const EMPTY_PLUGINS_MAP: Map<string, DIPlugin> = new Map();
 const DUMMY_SUBSCRIBE = () => () => {};
@@ -82,27 +81,16 @@ const DUMMY_SNAPSHOT = () => EMPTY_PLUGINS_MAP;
  *   accentColor: "#3b82f6",
  * });
  */
-export function useDIPlugin(plugin: DIPlugin) {
+export function useDIPlugin<F = unknown, C = unknown>(plugin: DIPlugin<F, C>) {
   const ctx = useContext(DIPluginContext);
   const registry = ctx?.registry;
-  const pluginRef = useRef(plugin);
-  pluginRef.current = plugin;
 
-  // Register on mount, unregister on unmount
-  // Re-register when id changes (stable identity)
   React.useEffect(() => {
     if (!registry) return;
-    registry.register(pluginRef.current);
+    registry.register(plugin as unknown as DIPlugin);
     return () => {
-      registry.unregister(pluginRef.current.id);
+      registry.unregister(plugin.id);
     };
-    // Only re-run if the plugin ID changes
-  }, [registry, plugin.id]);
-
-  // Re-register when plugin content changes (center, actions, etc.)
-  React.useEffect(() => {
-    if (!registry) return;
-    registry.register(plugin);
   }, [registry, plugin]);
 }
 
@@ -132,29 +120,4 @@ export function useActiveDIPlugin(): DIPlugin | null {
   }
 
   return best;
-}
-
-/**
- * Get all registered plugins (for rendering multiple badges, etc.)
- */
-export function useAllDIPlugins(): DIPlugin[] {
-  const ctx = useContext(DIPluginContext);
-  const registry = ctx?.registry;
-  const plugins = useSyncExternalStore(
-    registry?.subscribe ?? DUMMY_SUBSCRIBE,
-    registry?.getSnapshot ?? DUMMY_SNAPSHOT,
-    registry?.getSnapshot ?? DUMMY_SNAPSHOT
-  );
-
-  if (!registry) return [];
-  return Array.from(plugins.values());
-}
-
-/**
- * Look up a specific expanded view component from the active plugin.
- */
-export function useDIPluginView(viewName: string): React.ComponentType<DIViewProps> | null {
-  const plugin = useActiveDIPlugin();
-  if (!plugin?.expandedViews) return null;
-  return plugin.expandedViews[viewName] ?? null;
 }

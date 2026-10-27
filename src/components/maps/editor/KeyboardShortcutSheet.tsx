@@ -4,8 +4,9 @@
  * KeyboardShortcutSheet — Modal overlay listing all map editor keyboard shortcuts.
  */
 
-import React, { useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import React from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 
 interface ShortcutEntry {
   keys: string;
@@ -21,40 +22,73 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
   {
     title: "Tools",
     shortcuts: [
-      { keys: "V", description: "Select / View mode" },
-      { keys: "C / 1", description: "Add City tool" },
-      { keys: "R / 2", description: "Add Region tool" },
-      { keys: "P / 3", description: "Add POI tool" },
-      { keys: "T / 4", description: "Add Route tool" },
-      { keys: "S", description: "Add Story Pin tool" },
-      { keys: "L", description: "Add Label tool" },
-      { keys: "B", description: "Paint / Brush mode" },
-      { keys: "I", description: "Import Provinces" },
+      { keys: "V", description: "Select" },
+      { keys: "M", description: "Lasso / marquee select" },
+      { keys: "C / 1", description: "Add city" },
+      { keys: "R / 2", description: "Draw region" },
+      { keys: "P / 3", description: "Add point of interest" },
+      { keys: "T / 4", description: "Draw route" },
+      { keys: "K", description: "Add mountain peak" },
+      { keys: "Y", description: "Draw river" },
+      { keys: "J", description: "Draw lake" },
+      { keys: "U", description: "Ruler (measure distance & elevation)" },
+      { keys: "I", description: "Import provinces (SVG/PNG)" },
     ],
   },
   {
     title: "Selection",
     shortcuts: [
-      { keys: "Ctrl+A", description: "Select all visible features" },
-      { keys: "Ctrl+D", description: "Deselect all" },
-      { keys: "Delete / Backspace", description: "Delete selected feature" },
+      { keys: "Shift + Click", description: "Add / remove a feature from the selection" },
+      { keys: "Shift + Drag", description: "Box-select features" },
+      { keys: "Ctrl + A", description: "Select all features" },
+      { keys: "Ctrl + D", description: "Deselect all" },
+      { keys: "Delete / Backspace", description: "Delete selection (asks first)" },
+      { keys: "Ctrl + J", description: "Duplicate selected feature" },
+      { keys: "Arrow keys", description: "Nudge selected point (Shift = 10×)" },
+    ],
+  },
+  {
+    title: "Drawing",
+    shortcuts: [
+      { keys: "Enter", description: "Finish route / apply region split" },
+      { keys: "Backspace", description: "Remove last vertex while drawing a region or lake" },
+      {
+        keys: "Ctrl + Z",
+        description: "Remove last point while drawing a route, river or split line",
+      },
+      { keys: "Shift + Drag", description: "Lock vertex drag to an axis" },
+      { keys: "Space + Drag", description: "Pan the map in any tool" },
+      { keys: "Escape", description: "Cancel drawing, then leave the tool" },
     ],
   },
   {
     title: "Edit",
     shortcuts: [
-      { keys: "Ctrl+Z", description: "Undo last action" },
-      { keys: "Ctrl+Shift+Z", description: "Redo last action" },
-      { keys: "Ctrl+S", description: "Save current form" },
-      { keys: "Escape", description: "Cancel / Exit mode" },
+      { keys: "Ctrl + Z", description: "Undo (all feature edits, moves and bulk operations)" },
+      { keys: "Ctrl + Shift + Z / Ctrl + Y", description: "Redo" },
+      { keys: "Ctrl + S", description: "Save the open form" },
     ],
   },
   {
-    title: "Navigation",
+    title: "View",
     shortcuts: [
-      { keys: "F", description: "Toggle side panel" },
-      { keys: "G", description: "Toggle grid" },
-      { keys: "?", description: "Show this shortcut sheet" },
+      { keys: "G", description: "Toggle coordinate grid" },
+      { keys: "H", description: "Highlight gaps & regions without cities" },
+      { keys: "F", description: "Hide / show side panels" },
+      { keys: "?", description: "Show this sheet" },
+    ],
+  },
+  {
+    title: "Border editor (world editor)",
+    shortcuts: [
+      { keys: "V", description: "Select" },
+      { keys: "P", description: "Edit vertices" },
+      { keys: "X", description: "Split borders" },
+      { keys: "M", description: "Merge borders" },
+      { keys: "T", description: "Trace rivers / coast" },
+      { keys: "B", description: "Territory brush" },
+      { keys: "Ctrl + Z / Ctrl + Shift + Z", description: "Undo / redo border edits" },
+      { keys: "Escape", description: "Leave border editing" },
     ],
   },
 ];
@@ -64,63 +98,31 @@ interface KeyboardShortcutSheetProps {
 }
 
 export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
-
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === overlayRef.current) {
-      onClose();
-    }
-  };
-
+  // Opened from the keyboard (?), so it appears and leaves with no animation.
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-      onClick={handleOverlayClick}
-    >
-      <div className="border-border bg-card relative mx-4 max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl border shadow-2xl">
-        {/* Header */}
-        <div className="border-border bg-card sticky top-0 flex items-center justify-between border-b px-5 py-3">
-          <h2 className="text-foreground text-sm font-semibold">Keyboard Shortcuts</h2>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-1 transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="rounded-card max-h-[80vh] gap-0 overflow-y-auto p-0 duration-0 data-[state=closed]:animate-none data-[state=open]:animate-none sm:max-w-lg">
+        <DialogHeader className="border-separator border-b px-5 py-3 pr-12">
+          <DialogTitle className="text-body">Keyboard shortcuts</DialogTitle>
+        </DialogHeader>
 
-        {/* Content */}
         <div className="space-y-5 p-5">
           {SHORTCUT_GROUPS.map((group) => (
             <div key={group.title}>
-              <h3 className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wider uppercase">
-                {group.title}
-              </h3>
+              <Eyebrow className="mb-2 block">{group.title}</Eyebrow>
               <div className="space-y-1">
                 {group.shortcuts.map((shortcut) => (
                   <div
                     key={shortcut.keys}
-                    className="hover:bg-accent/50 flex items-center justify-between rounded-md px-2 py-1.5 text-sm"
+                    className="hover:bg-fill-3 rounded-control-sm text-body flex items-center justify-between px-2 py-2"
                   >
-                    <span className="text-muted-foreground">{shortcut.description}</span>
+                    <span className="text-label-secondary">{shortcut.description}</span>
                     <div className="flex items-center gap-1">
-                      {shortcut.keys.split(/(\+| \/ )/).map((part, i) => {
+                      {shortcut.keys.split(/( \+ | \/ )/).map((part, i) => {
                         const trimmed = part.trim();
                         if (trimmed === "+" || trimmed === "/") {
                           return (
-                            <span key={i} className="text-muted-foreground text-[10px]">
+                            <span key={i} className="text-label-secondary text-footnote">
                               {trimmed}
                             </span>
                           );
@@ -128,7 +130,7 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
                         return (
                           <kbd
                             key={i}
-                            className="border-border bg-muted text-foreground inline-flex min-w-[24px] items-center justify-center rounded border px-1.5 py-0.5 text-[11px] font-medium shadow-sm"
+                            className="border-separator bg-fill-3 text-label text-caption shadow-card rounded-control-sm inline-flex min-w-[24px] items-center justify-center border px-2 py-0.5"
                           >
                             {trimmed}
                           </kbd>
@@ -142,12 +144,14 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
           ))}
         </div>
 
-        {/* Footer */}
-        <div className="border-border text-muted-foreground border-t px-5 py-3 text-center text-[11px]">
-          Press <kbd className="border-border bg-muted rounded border px-1 text-[10px]">Esc</kbd> or
-          click outside to close
+        <div className="border-separator text-label-secondary text-footnote border-t px-5 py-3 text-center">
+          Press{" "}
+          <kbd className="border-separator bg-fill-3 text-footnote rounded-control-sm border px-1">
+            Esc
+          </kbd>{" "}
+          to close
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

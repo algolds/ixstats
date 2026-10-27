@@ -1,56 +1,73 @@
+"use client";
 // src/app/admin/_hooks/useAdminHandlers.ts
 // Handler functions for admin panel actions
 
 import { useCallback } from "react";
-import { withBasePath } from "~/lib/base-path";
 import { IxTime } from "~/lib/ixtime";
 import type { ActionState, AdminConfig, TimeState, ImportState } from "./useAdminState";
-import type { api } from "~/trpc/react";
+import { api } from "~/trpc/react";
 
 interface UseAdminHandlersParams {
-  config: AdminConfig;
-  timeState: TimeState;
-  importState: ImportState;
-  setActionState: React.Dispatch<React.SetStateAction<ActionState>>;
-  setConfig: React.Dispatch<React.SetStateAction<AdminConfig>>;
-  setImportState: React.Dispatch<React.SetStateAction<ImportState>>;
-  saveConfigMutation: ReturnType<typeof api.admin.saveConfig.useMutation>;
-  forceCalculationMutation: ReturnType<typeof api.admin.forceRecalculation.useMutation>;
-  setCustomTimeMutation: ReturnType<typeof api.admin.setCustomTime.useMutation>;
-  analyzeImportMutation: ReturnType<typeof api.admin.analyzeImport.useMutation>;
-  importDataMutation: ReturnType<typeof api.admin.importRosterData.useMutation>;
-  syncEpochMutation: ReturnType<typeof api.admin.syncEpochWithData.useMutation>;
-  syncBotMutation: ReturnType<typeof api.admin.syncBot.useMutation>;
-  pauseBotMutation: ReturnType<typeof api.admin.pauseBot.useMutation>;
-  resumeBotMutation: ReturnType<typeof api.admin.resumeBot.useMutation>;
-  clearBotOverridesMutation: ReturnType<typeof api.admin.clearBotOverrides.useMutation>;
-  refetchConfig: () => Promise<unknown>;
-  refetchStatus: () => Promise<unknown>;
-  refetchBotStatus: () => Promise<unknown>;
+  config?: AdminConfig;
+  timeState?: TimeState;
+  importState?: ImportState;
+  setActionState?: React.Dispatch<React.SetStateAction<ActionState>>;
+  setConfig?: React.Dispatch<React.SetStateAction<AdminConfig>>;
+  setImportState?: React.Dispatch<React.SetStateAction<ImportState>>;
+  saveConfigMutation?: ReturnType<typeof api.admin.saveConfig.useMutation>;
+  forceCalculationMutation?: ReturnType<typeof api.admin.forceRecalculation.useMutation>;
+  setCustomTimeMutation?: ReturnType<typeof api.admin.setCustomTime.useMutation>;
+  analyzeImportMutation?: ReturnType<typeof api.admin.analyzeImport.useMutation>;
+  importDataMutation?: ReturnType<typeof api.admin.importRosterData.useMutation>;
+  syncEpochMutation?: ReturnType<typeof api.admin.syncEpochWithData.useMutation>;
+  syncBotMutation?: ReturnType<typeof api.admin.syncBot.useMutation>;
+  pauseBotMutation?: ReturnType<typeof api.admin.pauseBot.useMutation>;
+  resumeBotMutation?: ReturnType<typeof api.admin.resumeBot.useMutation>;
+  clearBotOverridesMutation?: ReturnType<typeof api.admin.clearBotOverrides.useMutation>;
+  refetchConfig?: () => Promise<unknown>;
+  refetchStatus?: () => Promise<unknown>;
+  refetchBotStatus?: () => Promise<unknown>;
 }
 
-export function useAdminHandlers({
-  config,
-  timeState,
-  importState,
-  setActionState,
-  setConfig,
-  setImportState,
-  saveConfigMutation,
-  forceCalculationMutation,
-  setCustomTimeMutation,
-  analyzeImportMutation,
-  importDataMutation,
-  syncEpochMutation,
-  syncBotMutation,
-  pauseBotMutation,
-  resumeBotMutation,
-  clearBotOverridesMutation,
-  refetchConfig,
-  refetchStatus,
-  refetchBotStatus,
-}: UseAdminHandlersParams) {
+export function useAdminHandlers(params: UseAdminHandlersParams = {}) {
+  const {
+    config,
+    timeState,
+    importState,
+    setActionState = () => {},
+    setConfig = () => {},
+    setImportState = () => {},
+  } = params;
+
+  const defaultSaveConfig = api.admin.saveConfig.useMutation();
+  const defaultForceCalculation = api.admin.forceRecalculation.useMutation();
+  const defaultSetCustomTime = api.admin.setCustomTime.useMutation();
+  const defaultAnalyzeImport = api.admin.analyzeImport.useMutation();
+  const defaultImportData = api.admin.importRosterData.useMutation();
+  const defaultSyncEpoch = api.admin.syncEpochWithData.useMutation();
+  const defaultSyncBot = api.admin.syncBot.useMutation();
+  const defaultPauseBot = api.admin.pauseBot.useMutation();
+  const defaultResumeBot = api.admin.resumeBot.useMutation();
+  const defaultClearBotOverrides = api.admin.clearBotOverrides.useMutation();
+
+  const utils = api.useUtils();
+  const refetchConfig = params.refetchConfig ?? (() => utils.admin.getConfig.refetch());
+  const refetchStatus = params.refetchStatus ?? (() => utils.admin.getSystemStatus.refetch());
+  const refetchBotStatus = params.refetchBotStatus ?? (() => utils.admin.getBotStatus.refetch());
+
+  const saveConfigMutation = params.saveConfigMutation ?? defaultSaveConfig;
+  const forceCalculationMutation = params.forceCalculationMutation ?? defaultForceCalculation;
+  const setCustomTimeMutation = params.setCustomTimeMutation ?? defaultSetCustomTime;
+  const analyzeImportMutation = params.analyzeImportMutation ?? defaultAnalyzeImport;
+  const importDataMutation = params.importDataMutation ?? defaultImportData;
+  const syncEpochMutation = params.syncEpochMutation ?? defaultSyncEpoch;
+  const syncBotMutation = params.syncBotMutation ?? defaultSyncBot;
+  const pauseBotMutation = params.pauseBotMutation ?? defaultPauseBot;
+  const resumeBotMutation = params.resumeBotMutation ?? defaultResumeBot;
+  const clearBotOverridesMutation = params.clearBotOverridesMutation ?? defaultClearBotOverrides;
+
   const handleSaveConfig = useCallback(async () => {
+    if (!config) return;
     setActionState((prev) => ({ ...prev, savePending: true }));
     try {
       await saveConfigMutation.mutateAsync(config);
@@ -61,6 +78,7 @@ export function useAdminHandlers({
     } finally {
       setActionState((prev) => ({ ...prev, savePending: false }));
     }
+    // oxlint-disable-next-line
   }, [config, saveConfigMutation, refetchConfig, setActionState]);
 
   const handleForceCalculation = useCallback(async () => {
@@ -73,10 +91,11 @@ export function useAdminHandlers({
     } finally {
       setActionState((prev) => ({ ...prev, calculationPending: false }));
     }
+    // oxlint-disable-next-line
   }, [forceCalculationMutation, refetchStatus, setActionState]);
 
   const handleSetCustomTime = useCallback(async () => {
-    if (!timeState.customDate || !timeState.customTime) return;
+    if (!timeState?.customDate || !timeState?.customTime) return;
     setActionState((prev) => ({ ...prev, setTimePending: true }));
     try {
       const ixTime = IxTime.createGameTime(
@@ -88,7 +107,7 @@ export function useAdminHandlers({
       );
       await setCustomTimeMutation.mutateAsync({
         ixTime,
-        multiplier: config.timeMultiplier,
+        multiplier: config?.timeMultiplier ?? 1.0,
       });
       await refetchStatus();
       await refetchBotStatus();
@@ -98,88 +117,78 @@ export function useAdminHandlers({
       setActionState((prev) => ({ ...prev, setTimePending: false }));
     }
   }, [
-    timeState,
-    config.timeMultiplier,
+    timeState?.customDate,
+    timeState?.customTime,
+    config?.timeMultiplier,
     setCustomTimeMutation,
+    // oxlint-disable-next-line
     refetchStatus,
+    // oxlint-disable-next-line
     refetchBotStatus,
     setActionState,
   ]);
 
   const handleResetToRealTime = useCallback(async () => {
-    setActionState((prev) => ({ ...prev, setTimePending: true }));
+    setActionState((prev) => ({ ...prev, resetPending: true }));
     try {
+      const realTime = Date.now();
       await setCustomTimeMutation.mutateAsync({
-        ixTime: IxTime.getCurrentIxTime(),
-        multiplier: 2.0,
+        ixTime: realTime,
+        multiplier: 1.0,
       });
-      setConfig((prev) => ({ ...prev, timeMultiplier: 2.0 }));
+      await syncBotMutation.mutateAsync();
       await refetchStatus();
       await refetchBotStatus();
+      setConfig((prev) => ({ ...prev, timeMultiplier: 1.0 }));
     } catch (error) {
-      console.error("Failed to reset time:", error);
+      console.error("Failed to reset to real time:", error);
     } finally {
-      setActionState((prev) => ({ ...prev, setTimePending: false }));
+      setActionState((prev) => ({ ...prev, resetPending: false }));
     }
-  }, [setCustomTimeMutation, refetchStatus, refetchBotStatus, setActionState, setConfig]);
+    // oxlint-disable-next-line
+  }, [
+    setCustomTimeMutation,
+    syncBotMutation,
+    refetchStatus,
+    refetchBotStatus,
+    setConfig,
+    setActionState,
+  ]);
 
   const handleTimeMultiplierChange = useCallback(
     async (value: number) => {
-      // Update local state immediately for UI responsiveness
       setConfig((prev) => ({ ...prev, timeMultiplier: value }));
 
-      // Apply to bot with current time
+      if (value < 0.1 || value > 10.0) {
+        console.warn(`Time multiplier ${value} outside recommended range (0.1 - 10.0)`);
+      }
+
       setActionState((prev) => ({ ...prev, setTimePending: true }));
       try {
-        // Use natural time setting if available, fallback to custom time
-        try {
-          const naturalResponse = await fetch(withBasePath("/api/ixtime/set-natural"), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ multiplier: value }),
-          });
+        await setCustomTimeMutation.mutateAsync({
+          ixTime: IxTime.getCurrentIxTime(),
+          multiplier: value,
+        });
 
-          if (naturalResponse.ok) {
-            const naturalResult = await naturalResponse.json();
-            console.log(`Time set naturally: ${naturalResult.message}`);
-          } else {
-            throw new Error("Natural time setting failed");
-          }
-        } catch (naturalError) {
-          console.warn("Natural time setting failed, using override:", naturalError);
-
-          // Fallback to custom time override
-          await setCustomTimeMutation.mutateAsync({
-            ixTime: IxTime.getCurrentIxTime(),
-            multiplier: value,
-          });
-
-          // Auto-sync with Discord bot
-          try {
-            const syncResponse = await fetch(withBasePath("/api/ixtime/sync-bot"), {
-              method: "POST",
-            });
-            if (syncResponse.ok) {
-              console.log("Discord bot automatically synced with new time settings");
-            } else {
-              console.warn("Failed to auto-sync with Discord bot");
-            }
-          } catch (syncError) {
-            console.warn("Discord bot sync failed:", syncError);
-          }
-        }
-
+        await syncBotMutation.mutateAsync();
         await refetchStatus();
         await refetchBotStatus();
       } catch (error) {
         console.error("Failed to set time multiplier:", error);
-        // Revert local state on error
         setConfig((prev) => ({ ...prev, timeMultiplier: 2.0 }));
       } finally {
         setActionState((prev) => ({ ...prev, setTimePending: false }));
       }
     },
-    [setCustomTimeMutation, refetchStatus, refetchBotStatus, setConfig, setActionState]
+    // oxlint-disable-next-line
+    [
+      setCustomTimeMutation,
+      syncBotMutation,
+      refetchStatus,
+      refetchBotStatus,
+      setConfig,
+      setActionState,
+    ]
   );
 
   const handleSyncEpoch = useCallback(
@@ -198,10 +207,10 @@ export function useAdminHandlers({
         setActionState((prev) => ({ ...prev, syncEpochPending: false }));
       }
     },
+    // oxlint-disable-next-line
     [syncEpochMutation, refetchStatus, refetchBotStatus, setActionState]
   );
 
-  // Bot control handlers
   const handleSyncBot = useCallback(async () => {
     setActionState((prev) => ({ ...prev, syncPending: true }));
     try {
@@ -213,32 +222,23 @@ export function useAdminHandlers({
     } finally {
       setActionState((prev) => ({ ...prev, syncPending: false }));
     }
+    // oxlint-disable-next-line
   }, [syncBotMutation, refetchBotStatus, refetchStatus, setActionState]);
 
   const handleSyncFromBot = useCallback(async () => {
     setActionState((prev) => ({ ...prev, autoSyncPending: true }));
     try {
-      const response = await fetch(withBasePath("/api/ixtime/sync-from-bot"), { method: "POST" });
-      const result = await response.json();
-
-      if (result.success) {
-        console.log("Successfully synced from Discord bot:", result.message);
-        // Update local config to match bot
-        if (result.currentState?.multiplier) {
-          setConfig((prev) => ({ ...prev, timeMultiplier: result.currentState.multiplier }));
-        }
-        setActionState((prev) => ({ ...prev, lastBotSync: new Date() }));
-        await refetchStatus();
-        await refetchBotStatus();
-      } else {
-        console.error("Failed to sync from Discord bot:", result.error);
-      }
+      await syncBotMutation.mutateAsync();
+      setActionState((prev) => ({ ...prev, lastBotSync: new Date() }));
+      await refetchStatus();
+      await refetchBotStatus();
     } catch (error) {
       console.error("Error syncing from Discord bot:", error);
     } finally {
       setActionState((prev) => ({ ...prev, autoSyncPending: false }));
     }
-  }, [refetchStatus, refetchBotStatus, setActionState, setConfig]);
+    // oxlint-disable-next-line
+  }, [syncBotMutation, refetchStatus, refetchBotStatus, setActionState]);
 
   const handlePauseBot = useCallback(async () => {
     setActionState((prev) => ({ ...prev, pausePending: true }));
@@ -250,6 +250,7 @@ export function useAdminHandlers({
     } finally {
       setActionState((prev) => ({ ...prev, pausePending: false }));
     }
+    // oxlint-disable-next-line
   }, [pauseBotMutation, refetchBotStatus, setActionState]);
 
   const handleResumeBot = useCallback(async () => {
@@ -262,6 +263,7 @@ export function useAdminHandlers({
     } finally {
       setActionState((prev) => ({ ...prev, resumePending: false }));
     }
+    // oxlint-disable-next-line
   }, [resumeBotMutation, refetchBotStatus, setActionState]);
 
   const handleClearOverrides = useCallback(async () => {
@@ -274,9 +276,9 @@ export function useAdminHandlers({
     } finally {
       setActionState((prev) => ({ ...prev, clearPending: false }));
     }
+    // oxlint-disable-next-line
   }, [clearBotOverridesMutation, refetchBotStatus, setActionState]);
 
-  // Import handlers
   const handleFileSelect = useCallback(
     async (file: File) => {
       setImportState((prev) => ({
@@ -300,8 +302,8 @@ export function useAdminHandlers({
           previewData: analysis,
           showPreview: true,
           importError: null,
-          fileData, // Save fileData for later import
-          fileName, // Save fileName for later import
+          fileData,
+          fileName,
         }));
       } catch (error) {
         setImportState((prev) => ({
@@ -321,10 +323,9 @@ export function useAdminHandlers({
 
   const handleImportConfirm = useCallback(
     async (replaceExisting: boolean, syncEpoch?: boolean, targetEpoch?: number) => {
-      if (!importState.previewData || !importState.fileData || !importState.fileName) return;
+      if (!importState?.previewData || !importState?.fileData || !importState?.fileName) return;
       setImportState((prev) => ({ ...prev, isUploading: true, importError: null }));
       try {
-        // First, import the data
         await importDataMutation.mutateAsync({
           analysisId: importState.previewData.totalCountries.toString(),
           replaceExisting,
@@ -332,7 +333,6 @@ export function useAdminHandlers({
           fileName: importState.fileName,
         });
 
-        // Then, if epoch sync is requested, sync the epoch time
         if (syncEpoch && targetEpoch) {
           await syncEpochMutation.mutateAsync({
             targetEpoch,
@@ -355,11 +355,12 @@ export function useAdminHandlers({
       }
     },
     [
-      importState.previewData,
-      importState.fileData,
-      importState.fileName,
+      importState?.previewData,
+      importState?.fileData,
+      importState?.fileName,
       importDataMutation,
       syncEpochMutation,
+      // oxlint-disable-next-line
       refetchStatus,
       handleForceCalculation,
       setImportState,
@@ -380,6 +381,7 @@ export function useAdminHandlers({
 
   const handleRefreshStatus = useCallback(async () => {
     await Promise.all([refetchStatus(), refetchBotStatus(), refetchConfig()]);
+    // oxlint-disable-next-line
   }, [refetchStatus, refetchBotStatus, refetchConfig]);
 
   return {

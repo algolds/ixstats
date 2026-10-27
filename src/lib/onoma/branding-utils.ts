@@ -1,7 +1,7 @@
 // src/lib/onoma/branding-utils.ts
 // Onoma Lab — Branding & Typographical utilities
 
-export const GOOGLE_FONTS = [
+const GOOGLE_FONTS = [
   { id: "Gentium Book Plus", family: "Gentium Book Plus", type: "serif" },
   { id: "Cardo", family: "Cardo", type: "serif" },
   { id: "Cinzel", family: "Cinzel", type: "serif" },
@@ -11,8 +11,6 @@ export const GOOGLE_FONTS = [
   { id: "Lora", family: "Lora", type: "serif" },
   { id: "Inter", family: "Inter", type: "sans" },
 ];
-
-
 
 /**
  * Returns the Google Fonts CSS import link for a given font family name.

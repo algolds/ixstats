@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { IxTime } from "~/lib/ixtime";
 
 export const runtime = "nodejs";

@@ -1,30 +1,27 @@
-import { Ruler } from "lucide-react";
-import type { MapEditorPlugin, MapEditorContextType } from "./types";
+import { Ruler } from "iconoir-react";
+import type { MapEditorPlugin, MapEditorContextType, ToolbarItem } from "./types";
+import { toolShortcuts } from "./shortcuts";
+
+const toolbarItems: ToolbarItem[] = [
+  {
+    id: "tool-ruler",
+    mode: "ruler",
+    icon: Ruler,
+    label: "Ruler (Measure)",
+    shortcut: "U",
+    group: 4,
+    order: 1,
+  },
+];
 
 export const RulerGuidesPlugin: MapEditorPlugin = {
   id: "ruler-guides",
   name: "Rulers & Snapping Guides",
-  global: true, // Keydown listens globally to U key
+  global: true,
   modes: ["ruler"],
 
-  toolbarItems: [
-    {
-      id: "tool-ruler",
-      mode: "ruler",
-      icon: Ruler,
-      label: "Ruler (Measure)",
-      shortcut: "U",
-      group: 4,
-    },
-  ],
-
-  onKeyDown(e: KeyboardEvent, context: MapEditorContextType) {
-    if (e.key.toLowerCase() === "u") {
-      context.onModeChange("ruler");
-      return true;
-    }
-    return false;
-  },
+  toolbarItems,
+  onKeyDown: toolShortcuts(toolbarItems),
 
   snapPoint(coords: [number, number], context: MapEditorContextType): [number, number] {
     const map = context.map;

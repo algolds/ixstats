@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Loader2, Shirt, Star, Check } from "lucide-react";
+import { SystemRestart as Loader2, Shop as Shirt, Star, Check } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import type { SportPreset } from "~/lib/sports/presets";
-import TeamLineup1 from "~/components/sports/team-lineups/TeamLineup1";
+import { TeamLineup } from "~/components/sports/TeamLineup";
 import { useNotify } from "~/hooks/useNotify";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
+import type { SportPreset } from "~/lib/sports/presets";
 
 interface LineupBuilderProps {
   teamId: string;
@@ -22,7 +22,7 @@ interface LineupBuilderProps {
     lastName: string;
     position: string;
     number?: number | null;
-    ratings: Record<string, any>;
+    ratings?: Record<string, number | undefined> | null;
   }>;
   presets: SportPreset[];
   sportPreset: string;
@@ -44,7 +44,6 @@ export function LineupBuilder({
   currentLineup,
   onSaved,
 }: LineupBuilderProps) {
-  const utils = api.useUtils();
   const notify = useNotify();
   const preset = presets.find((p) => p.key === sportPreset);
 
@@ -60,22 +59,21 @@ export function LineupBuilder({
         lastName: p.lastName,
         position: p.position,
         number: p.number,
-        overallRating: (p.ratings as any)?.overall ?? 50,
+        overallRating: (p.ratings as Record<string, number> | undefined)?.overall,
       }));
   }, [players, starters]);
 
   const setLineup = api.sports.setLineup.useMutation({
     onSuccess: () => {
-      utils.sports.getMyClubOverview.invalidate({ teamId });
       onSaved?.();
     },
   });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const startingSlots = preset?.startingSlots ?? {};
+  const startingSlots: Record<string, number> =
+    (preset?.startingSlots as Record<string, number>) ?? {};
 
-  const maxStarters = useMemo(() => {
-    return Object.values(startingSlots).reduce((sum, val) => sum + val, 0);
+  const maxStarters: number = useMemo(() => {
+    return Object.values(startingSlots).reduce((sum: number, val: number) => sum + val, 0);
   }, [startingSlots]);
 
   const handleToggleStarter = (playerId: string) => {
@@ -128,15 +126,12 @@ export function LineupBuilder({
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_400px]">
-      <Card className="facet-hierarchy-child bg-card/40 border-border h-full">
+      <Card className="flex h-full flex-col gap-6 py-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base font-bold">
-            <Shirt className="h-5 w-5" style={{ color: teamColor }} />
+          <CardTitle className="flex items-center gap-2">
+            <Shirt className="text-label-secondary size-5" aria-hidden />
             Starting XI
-            <Badge
-              variant="outline"
-              className="border-border text-muted-foreground ml-2 text-[10px]"
-            >
+            <Badge variant="default" className="ml-2 tabular-nums">
               {starterCount} selected
             </Badge>
           </CardTitle>
@@ -145,110 +140,97 @@ export function LineupBuilder({
           <div className="grid max-h-[460px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
             {[...players]
               .sort((a, b) => {
-                const ovrA = (a.ratings as any)?.overall ?? 50;
-                const ovrB = (b.ratings as any)?.overall ?? 50;
+                const ovrA = a.ratings?.overall ?? 50;
+                const ovrB = b.ratings?.overall ?? 50;
                 return ovrB - ovrA;
               })
               .map((player) => {
                 const isStarter = starters.includes(player.id);
                 const isCaptain = captainId === player.id;
-                const ovr = (player.ratings as any)?.overall ?? 50;
+                const ovr = player.ratings?.overall;
 
                 return (
-                  <button
+                  <div
                     key={player.id}
-                    onClick={() => handleToggleStarter(player.id)}
-                    style={
-                      isStarter
-                        ? { borderColor: `${teamColor}60`, backgroundColor: `${teamColor}15` }
-                        : {}
-                    }
                     className={cn(
-                      "flex items-center gap-3 rounded-lg border p-2.5 text-left transition-all",
+                      "rounded-row duration-fast ease-out-facet flex items-center gap-1 border pe-1 transition-colors",
                       isStarter
-                        ? "text-foreground border-transparent"
-                        : "border-border bg-muted/40 hover:bg-muted/80 text-foreground"
+                        ? "border-tint/40 bg-tint-fill"
+                        : "border-separator bg-surface-secondary"
                     )}
                   >
-                    {player.number && (
-                      <span className="text-muted-foreground w-5 text-center text-[10px] font-bold tabular-nums">
-                        #{player.number}
-                      </span>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="truncate text-sm font-medium">
-                          {player.firstName} {player.lastName}
+                    <button
+                      type="button"
+                      aria-pressed={isStarter}
+                      onClick={() => handleToggleStarter(player.id)}
+                      className="focus-visible:outline-tint text-label rounded-row flex min-w-0 flex-1 cursor-pointer items-center gap-3 p-3 text-left focus-visible:outline-2 focus-visible:-outline-offset-2"
+                    >
+                      {player.number && (
+                        <span className="text-label-secondary text-footnote w-6 text-center font-medium tabular-nums">
+                          #{player.number}
                         </span>
-                        {isCaptain && <Star className="h-3 w-3 shrink-0 text-amber-400" />}
-                      </div>
-                      <div className="mt-0.5 flex items-center gap-2">
-                        <PositionTooltip position={player.position}>
-                          <Badge
-                            variant="outline"
-                            className="border-border text-muted-foreground cursor-help rounded px-1 py-0 text-[9px]"
-                          >
-                            {player.position}
-                          </Badge>
-                        </PositionTooltip>
-                        <span
-                          className={cn(
-                            "text-[10px] font-bold",
-                            ovr >= 80
-                              ? "text-amber-400"
-                              : ovr >= 70
-                                ? "text-emerald-400"
-                                : "text-muted-foreground"
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-body truncate font-medium">
+                            {player.firstName} {player.lastName}
+                          </span>
+                          {isCaptain && (
+                            <Star className="text-yellow size-3.5 shrink-0" aria-label="Captain" />
                           )}
-                        >
-                          {ovr}
-                        </span>
+                        </div>
+                        <div className="mt-0.5 flex items-center gap-2">
+                          <PositionTooltip position={player.position}>
+                            <Badge variant="default" className="cursor-help">
+                              {player.position}
+                            </Badge>
+                          </PositionTooltip>
+                          <span
+                            className={cn(
+                              "text-footnote font-semibold tabular-nums",
+                              ovr !== undefined && ovr >= 80
+                                ? "text-yellow"
+                                : ovr !== undefined && ovr >= 70
+                                  ? "text-green"
+                                  : "text-label-secondary"
+                            )}
+                          >
+                            {ovr ?? <span aria-label="Not recorded">—</span>}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    {isStarter && (
-                      <Check className="h-4 w-4 shrink-0" style={{ color: teamColor }} />
-                    )}
+                      {isStarter && <Check className="text-tint size-4 shrink-0" aria-hidden />}
+                    </button>
                     {!isStarter && isCaptain !== false && (
-                      <button
+                      <Button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCaptainId(isCaptain ? null : player.id);
-                        }}
-                        className={cn(
-                          "rounded p-1 text-xs transition",
-                          isCaptain
-                            ? "bg-amber-500/10 text-amber-400"
-                            : "text-muted-foreground hover:text-amber-400"
-                        )}
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => setCaptainId(isCaptain ? null : player.id)}
+                        className={isCaptain ? "text-yellow" : "text-label-secondary"}
                         title={isCaptain ? "Remove captain" : "Set as captain"}
+                        aria-label={isCaptain ? "Remove captain" : "Set as captain"}
                       >
-                        <Star className="h-3.5 w-3.5" />
-                      </button>
+                        <Star />
+                      </Button>
                     )}
-                  </button>
+                  </div>
                 );
               })}
           </div>
 
-          <Button
-            onClick={handleSave}
-            disabled={setLineup.isPending}
-            className="w-full text-xs font-semibold transition-all hover:opacity-90"
-            size="sm"
-            style={{ backgroundColor: teamColor, color: "#ffffff" }}
-          >
-            {setLineup.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
-            Save Lineup
+          <Button onClick={handleSave} disabled={setLineup.isPending} className="w-full" size="sm">
+            {setLineup.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+            Save lineup
           </Button>
         </CardContent>
       </Card>
 
-      <TeamLineup1
+      <TeamLineup
         teamName={teamName}
         teamColor={teamColor}
         players={starterPlayersMapped}
-        sportPreset={sportPreset as any}
+        sportPreset={sportPreset}
       />
     </div>
   );

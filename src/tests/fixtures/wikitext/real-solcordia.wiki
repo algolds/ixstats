@@ -1,0 +1,116 @@
+{{wip}}
+{{Infobox company
+| name = Solcòrdia Energetica S.I.
+| logo = Solcordia-logo.svg
+| image = 
+| image_caption = 
+| native_name = ''Solcòrdia Energetica''
+| type = ''[[Societates dominanae|Societas Imperialis]]''
+| traded_as = SLC
+| industry = {{wpl|Nuclear power}}, {{wpl|Solar energy}}, {{wpl|Hydroelectric power}}, Urban climate management, Desalination, Grid operations
+| predecessors = {{ubl|''Commissio Energetica Imperialis'' (established late 1930s; dissolved 1943)|Seraphim Project Operational Authority (1969–1981)|Aqua Torrentis Imperiale (nationalized 1936; absorbed 1992)}}
+| founded = {{circa|1943}} (wartime consolidation); 1968 (formal ''Societas Imperialis'' designation)
+| hq_location = Aurantius Complex
+| hq_location_city = [[Misena]]
+| hq_location_country = Caphiria
+| area_served = Worldwide
+| key_people = {{ubl|Varessina Solveranieu Maccaris (Chief Executive)|Aldanieus Ruvolti (Principal Executive of Operations)|Crestia Olcavieu (Principal Executive of Safety and Compliance)}}
+| revenue = {{increase}} $320 billion
+| net_income = {{increase}} $41 billion
+| assets = ~$1.1 trillion
+| num_employees = 950,000
+| divisions = {{ubl|Solcordia Fission Systems|Solcordia Hydroterra|Solcordia Helion|Solcordia Caelum Systems|Solcordia Grid & Systems|Solcordia Infrastructure & Construction}}
+| subsid = {{ubl|Seraphim Energy S.A.|Aqua Tersa S.A.|Nexosolcòr S.A.|Caloria International S.A.|Profunditas S.A.}}
+}}
+'''Solcòrdia Energetica S.I.''', commonly known as '''Solcordia''' or colloquially as '''la Solcòr''', is a [[Caphiria|Caphirian]] state-aligned energy, infrastructure, and environmental systems conglomerate with comprehensive control over the Imperium’s power generation and transmission networks. Classified as a ''[[Societates dominanae|Societas Imperialis]]'' under [[Corporate law in Caphiria|Caphirian corporate law]], Solcordia is partially owned by the state and is the largest infrastructure operator in Caphiria by revenue, asset control, and systemic importance. Although it does not formally own the majority of the infrastructure it operates, the company exercises near-total functional authority over the production, distribution, and regulation of energy within the Imperium, making it one of the most critical and least replaceable institutions in the Caphirian state. 
+test
+Solcordia was formed during the [[Second Great War]] through the consolidation of Caphiria’s energy sector and its integration with the [[MIDAS Program]], its atomic research and development initiative. In the late 1930s, the ''Commissio Energetica Imperialis'' (CEI) was established to centralize control over energy systems in response to mounting wartime infrastructural strain. Following the [[atomic bombing of Cavosia]] in 1943, the CEI was dissolved and its authorities consolidated into a unified structure that would become Solcordia Energetica. In the immediate postwar period, the organization worked extensively with the Caphirian government and military on large-scale energy and reconstruction initiatives. This sustained collaboration between Solcordia and the state led to the [[Senate (Caphiria)|Senate]] issuing the ''Concessio Energetica Perpetua'' (Perpetual Energy Concession), formally establishing Solcordia Energetica as the Imperium’s primary energy operator and granting it indefinite operational authority in exchange for heavy regulation. Throughout the 1950s and 60s, Solcordia expanded rapidly, absorbing legacy infrastructure, standardizing transmission systems, and extending operational control across all major energy domains. In 1968, Solcordia was formally designated a ''Societas Imperialis'', with its governance, operational divisions, and relationship to the Caphirian state codified within the postwar administrative framework. By the end of the 20th century, Solcordia had evolved into a fully integrated infrastructural system, controlling not only energy production and transmission but also water systems, environmental management, and large-scale engineering operations across the Imperium
+
+Today, Solcordia is organized as a vertically integrated conglomerate composed of several semi-autonomous divisions: Solcordia Fission Systems (responsible for nuclear energy generation, reactor design, fuel processing, and waste management); Solcordia Hydroterra (responsible for hydroelectric generation, water systems, and riverine infrastructure); Solcordia Helion (responsible for solar generation, desert installations, and off-grid energy systems); and Solcordia Caelum Systems (responsible for climate control, atmospheric engineering, and urban environmental systems). 
+
+Solcordia generates approximately $320 billion in annual revenue and employs roughly 950,000 people globally, [[Slavery in Caphiria|excluding slave labor]]. Its headquarters occupies a promontory of the [[Misena]] coastline immediately adjacent to the Aurantius Nuclear Complex. Since 2010, Varessina Maccaris has been serving as Chief Executive and as Executive Director since 2035. Over its history, Solcordia has attracted sustained scrutiny regarding the concentration of infrastructural authority within a single entity, the opacity of its internal governance, and its role in shaping both economic and environmental policy across the Imperium.
+
+== History ==
+. . . 
+. . .
+
+. . . 
+
+
+[[Coords:-19.17922,20.36534,5|Veropolis]]
+
+
+
+== Organization ==
+Solcordia employs approximately 950,000 people across five operating divisions and subsidiaries. Of the total workforce, roughly 420,000 are free citizens or residents employed under standard labor contracts at [[Colleges (Caphiria)|College]]-certified technical and managerial grades. Approximately 310,000 are Lower Plebeian workers under ''horae gravis'' schedules, concentrated in coastal reactor maintenance, solar farm construction and operations, and transmission infrastructure. The remaining 200,000 are enslaved persons contracted through the [[Slavery in Caphiria#Forum Commercia Servi|Forum Commercia Servi]] system under ''Cautio'' licensing administered by [[Comandivius]], concentrated in reactor construction, dam maintenance in extreme conditions, desert installation labor, and climate system expansion phases. Solcordia's annual reports, unlike those of most comparable ''Societates'', disaggregate slave and free labor costs at the divisional level — a practice that the company attributes to its concession reporting obligations, and which critics characterize as a presentation strategy that distributes the proportion across its divisions simultaneously.
+
+=== Solcordia Fission Systems ===
+=== Solcordia Hydroterra ===
+
+=== Solcordia Helion ===
+
+=== Solcordia Caelum Systems ===
+
+=== Solcordia Grid & Systems ===
+
+=== Solcordia Infrastructure & Construction ===
+
+== Operations ==
+
+== Corporate affairs ==
+
+=== Governance ===
+Solcordia's governance reflects the ''Societas Imperialis'' classification in ways distinguishing it from every other Dominium XI entity. The imperial charter specifies a minimum of three ministry-appointed non-executive directors with active security clearances, giving the Ministry of Infrastructure formal board-level sight lines to internal operational data that no other ministry holds in any other ''Societas''. The Ministry of Defense appointment carries classification requirements not reflected in Solcordia's public governance documentation.
+
+==== Board of directors ====
+The board consists of thirteen members:
+
+* Varessina Conluce Maccaris (Executive Director; Chief Executive)
+
+* Aldano Ruvolti (Executive Director; Principal Executive of Operations)
+
+* Septe Solverani (non-executive director; Solverani Estate representative)
+
+* Merezia Cassini (non-executive director; senior Ministry of Infrastructure appointee)
+
+* Vaurico Dramello (non-executive director; junior Ministry of Infrastructure appointee)
+
+* Corventino Ravella (non-executive director; Ministry of Defense appointee; active security clearance; additional role classified)
+
+* Remia Calluzo (non-executive director; College of Natural Sciences designated observer; non-voting)
+
+* Sursima Olcavieus Teresti (non-executive director; College of Engineering and Architecture designated observer; non-voting)
+
+* Calestino Tasso Prorio (non-executive director; former senior magistrate, Ministry of Commerce; retired)
+
+* Corno Ambrella (non-executive director; institutional investor representative)
+
+* Ottaviano Gassaro (non-executive director; CEO, Crativum)
+
+* Aldonaro Tessaro (non-executive director; former ''Societas Dominans'' counsel; legal advisory capacity)
+
+* Casio Mistrali (non-executive director; elected annually by registered institutional Sortitio bondholders)
+
+==== Executive management ====
+
+=== Finances ===
+Solcordia reported revenues of approximately $320 billion for fiscal year 2040, operating income of $52 billion, net income of $41 billion, and total assets of approximately $1.1 trillion. Market capitalization is estimated at $680 to $740 billion on the Tessellarium.
+
+=== Corporate culture ===
+
+=== Headquarters ===
+
+== Criticism and controversies ==
+
+==See also==
+*''[[Societates dominanae]]''
+*[[Seraphim Project]]
+*[[Magncaelum Project]]
+*[[Ministry of Infrastructure (Caphiria)]]
+
+[[Category:Caphiria]]
+[[Category:Companies in Caphiria]]
+[[Category:Societates dominanae]]
+[[Category:Energy of Caphiria]]
+[[Category:Economy of Caphiria]]
+[[Category:IXWB]]

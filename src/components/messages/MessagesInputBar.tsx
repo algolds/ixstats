@@ -1,7 +1,26 @@
-import React, { useRef, useState } from "react";
-import RichTextEditor, { type RichTextEditorRef } from "~/components/thinkpages/RichTextEditor";
-import { Reply, X, BookmarkPlus } from "lucide-react";
+"use client";
+
+import React, { useRef, useState, useCallback, useEffect } from "react";
+import dynamic from "next/dynamic";
+import type { GlassPlateEditorRef } from "~/components/thinkpages/GlassPlateEditor";
+
+const GlassPlateEditor = dynamic(
+  () => import("~/components/thinkpages/GlassPlateEditor").then((m) => m.GlassPlateEditor),
+  {
+    loading: () => <Skeleton className="rounded-control h-12" />,
+    ssr: false,
+  }
+);
+import {
+  Reply,
+  Xmark as X,
+  Bookmark as BookmarkPlus,
+  Send,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { MessagesStashAttachmentModal } from "./MessagesStashAttachmentModal";
+import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 
 interface ReplyMessage {
   id: string;
@@ -26,65 +45,131 @@ export function MessagesInputBar({
   replyingTo,
   onCancelReply,
 }: MessagesInputBarProps) {
-  const editorRef = useRef<RichTextEditorRef>(null);
+  const editorRef = useRef<GlassPlateEditorRef>(null);
+  const [content, setContent] = useState("");
+  const [plainText, setPlainText] = useState("");
   const [isStashModalOpen, setIsStashModalOpen] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleAttachStashItem = (item: { title: string; url: string }) => {
+  // Handle typing indicator timeout
+  const handleEditorChange = useCallback(
+    (html: string, rawText: string) => {
+      setContent(html);
+      setPlainText(rawText);
+
+      if (rawText.trim().length > 0) {
+        onTyping(true);
+
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+
+        typingTimeoutRef.current = setTimeout(() => {
+          onTyping(false);
+        }, 3000);
+      } else {
+        onTyping(false);
+      }
+    },
+    [onTyping]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleSend = useCallback(() => {
+    if (!plainText.trim() || isSending) return;
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    onTyping(false);
+
+    onSendMessage(content, plainText);
+    setContent("");
+    setPlainText("");
+    editorRef.current?.clear();
+  }, [content, plainText, isSending, onSendMessage, onTyping]);
+
+  const handleAttachStashItem = useCallback((item: { title: string; url: string }) => {
     if (editorRef.current) {
-      const current = editorRef.current.getContent();
-      // Embed an inline link with icons/badge styling
-      const linkHtml = `<a href="${item.url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-indigo-400 hover:text-indigo-300 font-semibold underline">📚 Stash: ${item.title}</a>`;
-      editorRef.current.setContent(current + (current.trim() ? " " : "") + linkHtml);
+      editorRef.current.insertText(` 📚 Stash: ${item.title} (${item.url}) `);
       editorRef.current.focus();
     }
-  };
+  }, []);
+
+  const canSend = plainText.trim().length > 0 && !isSending;
 
   return (
-    <div className="border-border/50 bg-background/60 shrink-0 border-t p-3">
+    <div className="border-separator bg-surface shrink-0 border-t p-3">
       {replyingTo && (
-        <div className="border-primary bg-muted/30 mb-2 flex items-center gap-2 rounded-lg border-l-4 px-3 py-1.5">
-          <Reply className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+        <div className="bg-surface-secondary rounded-control mb-2 flex items-center gap-2 px-3 py-2">
+          <Reply className="text-label-secondary size-3.5 shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            <p className="text-muted-foreground text-[11px] font-medium">
+            <p className="text-caption text-label-secondary">
               Replying to {replyingTo.account.displayName}
             </p>
-            <p className="text-foreground/70 truncate text-xs">
+            <p className="text-footnote text-label truncate">
               {replyingTo.content.replace(/<[^>]*>/g, "").substring(0, 80)}
             </p>
           </div>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onCancelReply}
-            className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-0.5 transition-colors"
+            aria-label="Cancel reply"
+            className="text-label-secondary hover:text-label"
           >
-            <X className="h-3.5 w-3.5" />
-          </button>
+            <X aria-hidden />
+          </Button>
         </div>
       )}
 
       <div className="flex items-end gap-2">
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="icon-lg"
           onClick={() => setIsStashModalOpen(true)}
-          className="mb-1 flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-300 shadow-sm backdrop-blur-md transition-all hover:bg-white/10 hover:text-white"
-          title="Attach Lore Stash Link"
+          className="mb-1 shrink-0"
+          title="Attach lore stash link"
+          aria-label="Attach lore stash link"
         >
-          <BookmarkPlus className="h-4.5 w-4.5 text-indigo-400" />
-        </button>
+          <BookmarkPlus />
+        </Button>
 
         <div className="min-w-0 flex-1">
-          <RichTextEditor
+          <GlassPlateEditor
             ref={editorRef}
-            placeholder="Type a message..."
-            onSubmit={onSendMessage}
-            onTyping={onTyping}
+            value={content}
+            onChange={handleEditorChange}
+            onSubmit={handleSend}
+            submitOnEnter={true}
+            placeholder="Type a message... (Enter to send, Shift+Enter for newline)"
             disabled={isSending}
             minHeight={44}
-            maxHeight={120}
-            showToolbar={true}
-            submitButtonText="Send"
-            className="w-full"
+            maxHeight={140}
+            className="border-separator bg-surface"
           />
         </div>
+
+        <Button
+          type="button"
+          onClick={handleSend}
+          disabled={!canSend}
+          size="icon-lg"
+          className="mb-1 shrink-0"
+          title="Send message (Enter)"
+          aria-label="Send message"
+        >
+          {isSending ? <Loader2 className="animate-spin" /> : <Send />}
+        </Button>
       </div>
 
       <MessagesStashAttachmentModal

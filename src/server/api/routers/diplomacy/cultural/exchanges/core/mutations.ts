@@ -1,72 +1,44 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
+import { clockTimeAt } from "~/lib/realms/realm-time-convert";
+import { clockForCountry } from "~/server/shared/realm-time";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 
-import { vaultService } from "~/lib/vault";
+import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { assertSameRealm } from "~/server/shared/same-realm-guard";
 
-import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
-
-// Helper functions for cultural exchange <-> embassy mission integration
-
-/**
- * Calculate cultural exchange bonus from completed embassy missions
- * Returns percentage boost based on number of completed missions
- * @param completedMissionCount - Number of completed cultural_outreach missions
- * @returns Object with cultural impact and diplomatic value bonus percentages
- */
-function _calculateMissionCulturalBonus(completedMissionCount: number) {
-  // 20% cultural impact bonus per mission (max 60%)
-  const culturalImpactBonus = Math.min(completedMissionCount * 20, 60);
-
-  // 15% diplomatic value bonus per mission (max 45%)
-  const diplomaticValueBonus = Math.min(completedMissionCount * 15, 45);
-
-  return {
-    culturalImpactBonus,
-    diplomaticValueBonus,
-    reasoning:
-      completedMissionCount > 0
-        ? `Embassy mission support provides +${culturalImpactBonus}% cultural impact and +${diplomaticValueBonus}% diplomatic value`
-        : "No embassy mission support",
-  };
-}
-
-/**
- * Apply cultural exchange boost when completing a cultural_outreach mission
- * Increases cultural impact and diplomatic value of linked exchange
- * @param culturalImpact - Base cultural impact boost amount (default: 15)
- * @param diplomaticValue - Base diplomatic value boost amount (default: 10)
- */
-function _getCulturalExchangeBoostValues(culturalImpact = 15, diplomaticValue = 10) {
-  return {
-    culturalImpactBoost: culturalImpact,
-    diplomaticValueBoost: diplomaticValue,
-    reasoning: `Completed embassy mission boosts exchange by +${culturalImpact} cultural impact and +${diplomaticValue} diplomatic value`,
-  };
+/** Joining needs a running public exchange the nation is not hosting or in already, with room left. */
+function assertJoinable(
+  exchange: {
+    status: string;
+    isPublic: boolean;
+    maxParticipants: number | null;
+    hostCountryId: string;
+    participatingCountries: Array<{ countryId: string }>;
+  } | null,
+  countryId: string
+): asserts exchange {
+  if (!exchange) throw new TRPCError({ code: "NOT_FOUND", message: "Cultural exchange not found" });
+  const refusal =
+    exchange.status !== "active"
+      ? "This exchange is not running."
+      : !exchange.isPublic
+        ? "This exchange is invitation only."
+        : exchange.hostCountryId === countryId
+          ? "You are hosting this exchange."
+          : exchange.participatingCountries.some((p) => p.countryId === countryId)
+            ? "Your nation is already taking part."
+            : exchange.maxParticipants !== null &&
+                exchange.participatingCountries.length >= exchange.maxParticipants
+              ? "This exchange is full."
+              : null;
+  if (refusal) throw new TRPCError({ code: "BAD_REQUEST", message: refusal });
 }
 
 export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
-  // Get diplomatic relationships for a country
-
-  // Get recent diplomatic changes
-
-  // Update diplomatic relationship
-
-  // Create a new diplomatic relationship
-
-  // Delete/terminate a diplomatic relationship
-
-  // Embassy Network Operations
-
-  // Diplomatic messaging has been unified into ThinkShare (/messages).
-  // Use api.messages.getConversationsByFolder with folder="diplomatic" instead.
-  // Use api.messages.sendMessage with conversationType="diplomatic" instead.
-
-  // Cultural Exchanges
-
-  createCulturalExchange: protectedProcedure
+  createCulturalExchange: rateLimitedMutationProcedure
     .input(
       z.object({
         title: z.string(),
@@ -105,8 +77,9 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.countryId || ctx.user.countryId !== input.hostCountryId) {
-        throw new Error("You can only create cultural exchanges for your own country.");
+      await assertCountryWriteAccess(ctx, input.hostCountryId);
+      if (input.participantCountryId) {
+        await assertSameRealm(ctx.db, input.hostCountryId, input.participantCountryId);
       }
 
       // Validate embassy mission if provided
@@ -150,6 +123,10 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
         }
       }
 
+      // The host nation's clock; every nation in the exchange shares its realm.
+      const hostClock = await clockForCountry(ctx.db, input.hostCountryId);
+      const hostNow = hostClock.now();
+
       // Create the cultural exchange
       const exchange = await ctx.db.culturalExchange.create({
         data: {
@@ -165,7 +142,7 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
           hostCountryFlag: input.hostCountryFlag,
           startDate: new Date(input.startDate),
           endDate: new Date(input.endDate),
-          ixTimeContext: IxTime.getCurrentIxTime(),
+          ixTimeContext: hostNow,
           status: "planning",
         },
       });
@@ -210,23 +187,23 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
           endDate: input.endDate,
           description: input.description,
         },
-        ixTimeTimestamp: IxTime.getCurrentIxTime(),
+        ixTimeTimestamp: hostNow,
       });
 
       // Auto-create cultural_outreach embassy missions if enabled
       if (input.autoCreateMissions) {
         try {
-          // Find all embassies where this country is the guest (owns embassies in other countries)
+          // The host's active embassies in nations of its own realm (one from before the realm rule gets no mission)
           const embassies = await ctx.db.embassy.findMany({
             where: {
               guestCountryId: input.hostCountryId,
               status: "active",
+              hostCountry: { realmId: hostClock.realmId },
             },
           });
 
           // Shared mission parameters — identical for every embassy, so compute once
           // and batch-insert with createMany instead of N individual create() calls. (audit B3)
-          const ixTimeNow = IxTime.getCurrentIxTime();
           const duration = Math.ceil(
             (new Date(input.endDate).getTime() - new Date(input.startDate).getTime()) /
               (1000 * 60 * 60 * 24)
@@ -260,8 +237,9 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
               economicReward: 0,
               progress: 0,
               successChance: 65, // Base success chance for cultural missions
-              ixTimeStarted: ixTimeNow,
-              ixTimeCompletes: ixTimeNow + duration * 2, // IxTime runs 2x faster
+              ixTimeStarted: hostNow,
+              // When the mission completes in real time, read on the host nation's clock (its own speed).
+              ixTimeCompletes: clockTimeAt(hostClock, completesAt.getTime()),
               culturalExchangeId: exchange.id,
             })),
           });
@@ -274,61 +252,38 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
         }
       }
 
-      // 💰 Award IxCredits for cultural exchange creation
-      let creditsEarned = 0;
-      if (ctx.auth?.userId) {
-        try {
-          const creditReward = 12; // 12 IxC for organizing cultural exchange
-
-          const earnResult = await vaultService.earnCredits(
-            ctx.auth.userId,
-            creditReward,
-            "EARN_ACTIVE",
-            "cultural_exchange_created",
-            ctx.db,
-            {
-              exchangeId: exchange.id,
-              exchangeTitle: input.title,
-              exchangeType: input.type,
-              hostCountryId: input.hostCountryId,
-              participantCountryId: input.participantCountryId,
-            }
-          );
-
-          if (earnResult.success) {
-            creditsEarned = creditReward;
-            console.log(
-              `[Diplomatic] Awarded ${creditReward} IxC to ${ctx.auth.userId} for cultural exchange creation`
-            );
-          }
-        } catch (error) {
-          console.error("[Diplomatic] Failed to award cultural exchange credits:", error);
-        }
-      }
-
-      return { ...exchange, creditsEarned };
+      return exchange;
     }),
 
-  joinCulturalExchange: protectedProcedure
+  joinCulturalExchange: rateLimitedMutationProcedure
     .input(
       z.object({
         exchangeId: z.string(),
         countryId: z.string(),
         countryName: z.string(),
         flagUrl: z.string().optional(),
-        role: z.enum(["co-host", "participant", "observer"]).default("participant"),
+        // Co-hosts are the host's to name; a joiner takes part or observes
+        role: z.enum(["participant", "observer"]).default("participant"),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.countryId || ctx.user.countryId !== input.countryId) {
-        throw new Error("You can only join cultural exchanges with your own country.");
-      }
+      await assertCountryWriteAccess(ctx, input.countryId);
 
-      // Get exchange details for tracking
       const exchange = await ctx.db.culturalExchange.findUnique({
         where: { id: input.exchangeId },
-        select: { title: true, type: true, hostCountryId: true, hostCountryName: true },
+        select: {
+          title: true,
+          type: true,
+          status: true,
+          isPublic: true,
+          maxParticipants: true,
+          hostCountryId: true,
+          hostCountryName: true,
+          participatingCountries: { select: { countryId: true } },
+        },
       });
+      assertJoinable(exchange, input.countryId);
+      await assertSameRealm(ctx.db, input.countryId, exchange.hostCountryId);
 
       const participant = await ctx.db.culturalExchangeParticipant.create({
         data: {
@@ -351,94 +306,20 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
       });
 
       // Track cultural exchange join
-      if (exchange) {
-        await DiplomaticChoiceTracker.recordChoice({
-          countryId: input.countryId,
-          type: "join_cultural_exchange",
-          targetCountry: exchange.hostCountryName,
-          targetCountryId: exchange.hostCountryId,
-          details: {
-            exchangeId: input.exchangeId,
-            exchangeType: exchange.type,
-            exchangeTitle: exchange.title,
-            role: input.role,
-          },
-          ixTimeTimestamp: IxTime.getCurrentIxTime(),
-        });
-      }
+      await DiplomaticChoiceTracker.recordChoice({
+        countryId: input.countryId,
+        type: "join_cultural_exchange",
+        targetCountry: exchange.hostCountryName,
+        targetCountryId: exchange.hostCountryId,
+        details: {
+          exchangeId: input.exchangeId,
+          exchangeType: exchange.type,
+          exchangeTitle: exchange.title,
+          role: input.role,
+        },
+        ixTimeTimestamp: (await clockForCountry(ctx.db, input.countryId)).now(),
+      });
 
       return participant;
     }),
-
-  // Link existing cultural exchange to an embassy mission
-
-  // Embassy Game System Endpoints
-
-  // Embassy Management
-
-  // Embassy Upgrades
-
-  // Embassy Missions
-
-  // Embassy Economics
-
-  // Influence and Relationship Management Procedures
-
-  // Follow/Unfollow system for countries
-
-  // Embassy Shared Data System
-
-  // Embassy Profile Management
-
-  // Get cultural compatibility scores for a country with all other countries
-
-  // Get recommended diplomatic partners based on cultural compatibility
-
-  // Update cultural exchange (only title and description)
-
-  // Cancel cultural exchange (with diplomatic penalties)
-
-  // Get NPC responses for cultural exchange using diplomatic AI
-
-  // ============================================================
-  // Foreign Policy Actions (Phase 2)
-  // ============================================================
-
-  // Get active foreign policies for a country (as initiator or target)
-
-  // Get bilateral trade data between two countries
-
-  // Preview the economic impact of a foreign policy action before confirming
-
-  // Propose / enact a foreign policy action
-
-  // Lift / end an active foreign policy action
-
-  // ============================================================
-  // Alliance / Bloc System (Phase 3)
-  // ============================================================
-
-  // Get alliances a country belongs to
-
-  // Get a single alliance dashboard
-
-  // Create a new alliance
-
-  // Invite a country to join an alliance
-
-  // Leave an alliance
-
-  // Propose an alliance action (collective sanction, shared defense, etc.)
-
-  // Vote on an alliance action
-
-  // Create an alliance document
-
-  // Get documents for an alliance
-
-  // Get active embassy missions for a country
 });
-
-// Helper function to determine category from option value
-// Helper functions for embassy game mechanics
-// Influence and Relationship Mechanics

@@ -1,108 +1,88 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
-import type { MapEditorContextType, MapEditorPlugin } from "./types";
+import type { EditorMode } from "~/hooks/useMapEditor";
+import type { MapEditorContextType, MapEditorOverlayStateReturnType } from "./types";
 import { getPlugins } from "./registry";
+import { isEditorConfirmOpen } from "../components/EditorConfirmDialog";
+import { isKeyboardInputTarget } from "../hooks/drag-utils";
 
 const MapEditorContext = createContext<MapEditorContextType | null>(null);
 
 interface MapEditorPluginProviderProps {
   children: React.ReactNode;
-  state: any; // Overlay state
+  state: MapEditorOverlayStateReturnType;
 }
 
 export function MapEditorPluginProvider({ children, state }: MapEditorPluginProviderProps) {
   const [map, setMap] = useState<MapLibreMap | null>(null);
-  const [pluginStates, setPluginStates] = useState<Record<string, any>>({});
+  // Plugins read `context.state` at event time, so the context exposes it through a
+  // getter over a ref: the context object (and every consumer's callbacks/effects)
+  // stays stable while the editor state changes underneath it.
+  const stateRef = useRef(state);
+  // oxlint-disable-next-line -- latest-value ref read by plugin handlers
+  stateRef.current = state;
 
-  const setPluginState = useCallback((pluginId: string, newState: any) => {
-    setPluginStates((prev) => ({
-      ...prev,
-      [pluginId]: typeof newState === "function" ? newState(prev[pluginId]) : newState,
-    }));
+  const onModeChange = useCallback((newMode: string) => {
+    const current = stateRef.current;
+    const mode = newMode as EditorMode;
+    // Respect the same gating as the tool rail: no tools until a country/shape is ready.
+    if (mode !== "view" && mode !== "lasso-select" && mode !== "ruler") {
+      if (!current.isWorldMode && current.toolsDisabled) return;
+      if (current.disabledTools?.includes(mode)) return;
+    }
+    current.editor?.setMode?.(mode);
   }, []);
-
-  const onModeChange = useCallback(
-    (newMode: string) => {
-      state.editor?.setMode?.(newMode);
-    },
-    [state.editor]
-  );
 
   const contextValue = useMemo<MapEditorContextType>(
     () => ({
-      state,
+      get state() {
+        return stateRef.current;
+      },
       map,
       setMap,
-      pluginStates,
-      setPluginState,
       onModeChange,
     }),
-    [state, map, pluginStates, setPluginState, onModeChange]
+    [map, onModeChange]
   );
 
   // Centralized keyboard event routing
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore keybindings if the user is typing in form controls
-      const activeEl = document.activeElement;
-      const inInput =
-        activeEl &&
-        (activeEl.tagName === "INPUT" ||
-          activeEl.tagName === "TEXTAREA" ||
-          activeEl.tagName === "SELECT" ||
-          activeEl.getAttribute("contenteditable") === "true");
-      if (inInput) return;
-
-      const activeMode = state.editor?.mode ?? "view";
-      const plugins = getPlugins();
-
-      for (const plugin of plugins) {
-        // Run handler if plugin is global or matches current mode
-        const isTargetMode = plugin.global || (plugin.modes && plugin.modes.includes(activeMode));
-        if (isTargetMode && plugin.onKeyDown) {
-          const handled = plugin.onKeyDown(e, contextValue);
-          if (handled) {
-            e.preventDefault();
-            break;
-          }
-        }
+      // Typing in form controls, border editing (its own tool letters) and dialogs own the keyboard.
+      if (isKeyboardInputTarget(document.activeElement)) return;
+      const current = stateRef.current;
+      if (
+        current.activeEditorMode === "border_edit" ||
+        current.showShortcuts ||
+        isEditorConfirmOpen() ||
+        e.defaultPrevented
+      ) {
+        return;
       }
-    };
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-      const activeEl = document.activeElement;
-      const inInput =
-        activeEl &&
-        (activeEl.tagName === "INPUT" ||
-          activeEl.tagName === "TEXTAREA" ||
-          activeEl.tagName === "SELECT" ||
-          activeEl.getAttribute("contenteditable") === "true");
-      if (inInput) return;
-
-      const activeMode = state.editor?.mode ?? "view";
-      const plugins = getPlugins();
-
-      for (const plugin of plugins) {
-        const isTargetMode = plugin.global || (plugin.modes && plugin.modes.includes(activeMode));
-        if (isTargetMode && plugin.onKeyUp) {
-          const handled = plugin.onKeyUp(e, contextValue);
-          if (handled) {
-            e.preventDefault();
-            break;
-          }
+      const activeMode = current.editor?.mode ?? "view";
+      for (const plugin of getPlugins()) {
+        const isTargetMode = plugin.global || plugin.modes?.includes(activeMode);
+        if (isTargetMode && plugin.onKeyDown?.(e, contextValue)) {
+          e.preventDefault();
+          break;
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, [contextValue, state.editor?.mode]);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [contextValue]);
 
   return <MapEditorContext.Provider value={contextValue}>{children}</MapEditorContext.Provider>;
 }

@@ -1,13 +1,22 @@
-// src/components/wiki-os/reader/StickyToc.tsx
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
-import { Search, X, ChevronUp, ChevronDown } from "lucide-react";
-import type { TocEntry } from "~/lib/wiki-os/html-transformer";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import {
+  Search,
+  Xmark as X,
+  NavArrowUp as ChevronUp,
+  NavArrowDown as ChevronDown,
+} from "iconoir-react";
+import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
+import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
+import { Button } from "~/components/ui/button";
+import { scrollToHeading } from "~/components/wiki-os/reader/ArticleToc";
 
 interface StickyTocProps {
   entries: TocEntry[];
   contentRef: React.RefObject<HTMLElement | null>;
+  /** After a heading was picked: the Inspector sheet closes itself here. */
+  onNavigate?: () => void;
 }
 
 function highlightText(element: HTMLElement, query: string) {
@@ -51,8 +60,9 @@ function highlightText(element: HTMLElement, query: string) {
   }
 }
 
-export function StickyToc({ entries, contentRef }: StickyTocProps) {
-  const [activeId, setActiveId] = useState<string | null>(null);
+export function StickyToc({ entries, contentRef, onNavigate }: StickyTocProps) {
+  const { activeSectionId } = useWikiContext();
+  const activeId = activeSectionId;
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [matchCount, setMatchCount] = useState(0);
@@ -77,10 +87,12 @@ export function StickyToc({ entries, contentRef }: StickyTocProps) {
   // Reset search and original HTML when entries (page) change
   useEffect(() => {
     originalHtml.current = null;
+    // oxlint-disable-next-line
     setSearchQuery("");
     setShowSearch(false);
     setMatchCount(0);
     setCurrentMatchIndex(-1);
+    // oxlint-disable-next-line
   }, [entries]);
 
   // Find in page search highlighting effect
@@ -88,26 +100,23 @@ export function StickyToc({ entries, contentRef }: StickyTocProps) {
     const container = contentRef.current;
     if (!container) return;
 
-    // Save original HTML before applying highlight modifications
     if (searchQuery && !originalHtml.current) {
       originalHtml.current = container.innerHTML;
     }
 
-    // Restore clean state first
     if (originalHtml.current) {
       container.innerHTML = originalHtml.current;
     }
 
     if (!searchQuery.trim()) {
+      // oxlint-disable-next-line
       setMatchCount(0);
       setCurrentMatchIndex(-1);
       return;
     }
 
-    // Run text highlight
     highlightText(container, searchQuery.trim());
 
-    // Count highlight elements
     const matches = container.querySelectorAll(".wikios-search-match");
     setMatchCount(matches.length);
     setCurrentMatchIndex(matches.length > 0 ? 0 : -1);
@@ -119,50 +128,31 @@ export function StickyToc({ entries, contentRef }: StickyTocProps) {
     if (!container) return;
 
     const matches = container.querySelectorAll(".wikios-search-match");
-
-    // Remove active highlight from all matches
-    matches.forEach((el) => el.classList.remove("wikios-search-match--active"));
-
-    // Add active class and scroll current element
-    if (currentMatchIndex >= 0 && currentMatchIndex < matches.length) {
-      const activeEl = matches[currentMatchIndex];
-      activeEl.classList.add("wikios-search-match--active");
-      activeEl.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+    matches.forEach((m, idx) => {
+      if (idx === currentMatchIndex) {
+        m.classList.add("wikios-search-match-active");
+        m.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        m.classList.remove("wikios-search-match-active");
+      }
+    });
   }, [currentMatchIndex, contentRef]);
 
   const handleNext = () => {
     if (matchCount <= 0) return;
-    setCurrentMatchIndex((prev) => (prev + 1) % matchCount);
+    setCurrentMatchIndex((prev: number) => (prev + 1) % matchCount);
   };
 
   const handlePrev = () => {
     if (matchCount <= 0) return;
-    setCurrentMatchIndex((prev) => (prev - 1 + matchCount) % matchCount);
+    setCurrentMatchIndex((prev: number) => (prev - 1 + matchCount) % matchCount);
   };
 
-  // Scroll spy — vanilla DOM, runs once after mount
-  useEffect(() => {
-    function tick() {
-      const ids = entries.map((e) => e.id);
-      let current: string | null = null;
-      for (const id of ids) {
-        const el = document.getElementById(id);
-        if (el && el.getBoundingClientRect().top <= 100) {
-          current = id;
-        }
-      }
-      setActiveId(current);
-    }
-
-    window.addEventListener("scroll", tick, { passive: true });
-    return () => window.removeEventListener("scroll", tick);
-  }, [entries]);
-
-  if (entries.length <= 3) return null;
-
   return (
-    <nav className="wikios-sticky-toc">
+    <nav
+      className="wikios-sticky-toc transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out select-none"
+      aria-label="Table of contents"
+    >
       <div className="wikios-sticky-toc-header">
         {showSearch ? (
           <div className="wikios-sticky-toc-search-container">
@@ -171,7 +161,7 @@ export function StickyToc({ entries, contentRef }: StickyTocProps) {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Find..."
+                placeholder="Find in page..."
                 className="wikios-sticky-toc-search-input"
                 autoFocus
                 onKeyDown={(e) => {
@@ -194,53 +184,67 @@ export function StickyToc({ entries, contentRef }: StickyTocProps) {
               )}
             </div>
             <div className="wikios-sticky-toc-search-nav">
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Previous match"
                 onClick={handlePrev}
                 disabled={matchCount === 0}
-                className="wikios-sticky-toc-search-nav-btn"
                 title="Previous match"
-                type="button"
+                className="text-label-secondary size-6 shrink-0"
               >
-                <ChevronUp size={12} />
-              </button>
-              <button
+                <ChevronUp className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Next match"
                 onClick={handleNext}
                 disabled={matchCount === 0}
-                className="wikios-sticky-toc-search-nav-btn"
                 title="Next match"
-                type="button"
+                className="text-label-secondary size-6 shrink-0"
               >
-                <ChevronDown size={12} />
-              </button>
-              <button
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Close search"
                 onClick={handleCloseSearch}
-                className="wikios-sticky-toc-search-close"
                 title="Close search"
-                type="button"
+                className="text-label-secondary hover:text-red size-6 shrink-0"
               >
-                <X size={12} />
-              </button>
+                <X className="h-3 w-3" />
+              </Button>
             </div>
           </div>
         ) : (
           <>
             <span>On this page</span>
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Find on page"
               onClick={() => setShowSearch(true)}
-              className="wikios-sticky-toc-search-btn"
               title="Find on page"
-              type="button"
+              className="text-label-secondary size-6 shrink-0"
             >
-              <Search size={12} />
-            </button>
+              <Search className="h-3 w-3" />
+            </Button>
           </>
         )}
       </div>
       <div className="wikios-sticky-toc-list">
-        {visibleEntries.map((item) => (
+        {visibleEntries.map((item: TocEntry) => (
           <a
             key={item.id}
             href={`#${item.id}`}
+            onClick={(e) => {
+              // The default jump would park the heading under the Halo band.
+              e.preventDefault();
+              scrollToHeading(item.id);
+              onNavigate?.();
+            }}
             className={`wikios-sticky-toc-item ${activeId === item.id ? "wikios-sticky-toc-item--active" : ""}`}
             style={{ paddingLeft: `${(item.level - 2) * 12 + 12}px` }}
           >

@@ -1,53 +1,45 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
+import { clockForCountry } from "~/server/shared/realm-time";
+import { assertRealmsMatch } from "~/server/shared/same-realm-guard";
+import type { PrismaClient } from "@prisma/client";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
+import { NPCPersonalitySystem } from "~/lib/diplomacy/npc-personality";
+import { buildNpcObservableData, toMarkovState } from "~/lib/diplomacy/npc-observable-data";
+
+/** A side of a scenario: openness from its observable diplomacy (as the NPC AI reads it), strength from GDP per head. */
+async function scenarioSide(
+  db: Pick<PrismaClient, "diplomaticRelation" | "embassy">,
+  country: { id: string; name: string; currentGdpPerCapita: number | null }
+) {
+  const [relationships, embassies] = await Promise.all([
+    db.diplomaticRelation.findMany({
+      where: { OR: [{ country1: country.id }, { country2: country.id }] },
+    }),
+    db.embassy.findMany({
+      where: { OR: [{ guestCountryId: country.id }, { hostCountryId: country.id }] },
+    }),
+  ]);
+  const personality = NPCPersonalitySystem.calculatePersonality(
+    country.id,
+    country.name,
+    buildNpcObservableData(relationships, embassies)
+  );
+  return {
+    id: country.id,
+    name: country.name,
+    culturalOpenness: personality.traits.culturalOpenness,
+    economicStrength: Math.min(100, Math.round((country.currentGdpPerCapita ?? 0) / 1000)),
+  };
+}
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCulturalNpcGenerationRouter = createTRPCRouter({
-  // Get diplomatic relationships for a country
-
-  // Get recent diplomatic changes
-
-  // Update diplomatic relationship
-
-  // Create a new diplomatic relationship
-
-  // Delete/terminate a diplomatic relationship
-
-  // Embassy Network Operations
-
-  // Diplomatic messaging has been unified into ThinkShare (/messages).
-  // Use api.messages.getConversationsByFolder with folder="diplomatic" instead.
-  // Use api.messages.sendMessage with conversationType="diplomatic" instead.
-
-  // Cultural Exchanges
-
-  // Link existing cultural exchange to an embassy mission
-
-  // Embassy Game System Endpoints
-
-  // Embassy Management
-
-  // Embassy Upgrades
-
-  // Embassy Missions
-
-  // Embassy Economics
-
-  // Influence and Relationship Management Procedures
-
-  // Follow/Unfollow system for countries
-
-  // Embassy Shared Data System
-
-  // Embassy Profile Management
-
   /**
    * Generate cultural scenario for two countries
    */
-  generateCulturalScenario: protectedProcedure
+  generateCulturalScenario: rateLimitedMutationProcedure
     .input(
       z.object({
         targetCountryId: z.string(),
@@ -87,31 +79,35 @@ export const diplomaticCulturalNpcGenerationRouter = createTRPCRouter({
           message: "Country not found",
         });
       }
+      assertRealmsMatch(userCountry.realmId, targetCountry.realmId);
 
-      // Create scenario context
+      // Scenario context from the two nations and their relation as they stand
+      const [country1, country2, existingExchanges] = await Promise.all([
+        scenarioSide(ctx.db, userCountry),
+        scenarioSide(ctx.db, targetCountry),
+        ctx.db.culturalExchange.count({
+          where: {
+            OR: [
+              {
+                hostCountryId: userCountry.id,
+                participatingCountries: { some: { countryId: targetCountry.id } },
+              },
+              {
+                hostCountryId: targetCountry.id,
+                participatingCountries: { some: { countryId: userCountry.id } },
+              },
+            ],
+          },
+        }),
+      ]);
       const scenarioContext = {
         exchangeId: `exchange_${Date.now()}`,
-        exchangeType: "festival",
-        country1: {
-          id: userCountry.id,
-          name: userCountry.name,
-          culturalOpenness: 60,
-          economicStrength: 55,
-        },
-        country2: {
-          id: targetCountry.id,
-          name: targetCountry.name,
-          culturalOpenness: 60,
-          economicStrength: 55,
-        },
-        relationshipState:
-          relationship.status === "alliance"
-            ? ("allied" as const)
-            : relationship.status === "tension"
-              ? ("tense" as const)
-              : ("neutral" as const),
-        relationshipStrength: 50,
-        existingExchanges: 0,
+        exchangeType: input.preferredScenarioType ?? "festival",
+        country1,
+        country2,
+        relationshipState: toMarkovState(relationship.relationship),
+        relationshipStrength: relationship.strength,
+        existingExchanges,
         historicalTensions: false,
         economicTies: Math.min(100, (relationship.tradeVolume || 0) / 10000),
       };
@@ -168,7 +164,7 @@ export const diplomaticCulturalNpcGenerationRouter = createTRPCRouter({
           diplomaticRisk: template.diplomaticRisk,
           economicCost: template.economicCost,
         },
-        ixTimeTimestamp: IxTime.getCurrentIxTime(),
+        ixTimeTimestamp: (await clockForCountry(ctx.db, userCountry.id)).now(),
       });
 
       return {
@@ -177,56 +173,4 @@ export const diplomaticCulturalNpcGenerationRouter = createTRPCRouter({
         metadata: scenario.metadata,
       };
     }),
-
-  // Get cultural compatibility scores for a country with all other countries
-
-  // Get recommended diplomatic partners based on cultural compatibility
-
-  // Update cultural exchange (only title and description)
-
-  // Cancel cultural exchange (with diplomatic penalties)
-
-  // Get NPC responses for cultural exchange using diplomatic AI
-
-  // ============================================================
-  // Foreign Policy Actions (Phase 2)
-  // ============================================================
-
-  // Get active foreign policies for a country (as initiator or target)
-
-  // Get bilateral trade data between two countries
-
-  // Preview the economic impact of a foreign policy action before confirming
-
-  // Propose / enact a foreign policy action
-
-  // Lift / end an active foreign policy action
-
-  // ============================================================
-  // Alliance / Bloc System (Phase 3)
-  // ============================================================
-
-  // Get alliances a country belongs to
-
-  // Get a single alliance dashboard
-
-  // Create a new alliance
-
-  // Invite a country to join an alliance
-
-  // Leave an alliance
-
-  // Propose an alliance action (collective sanction, shared defense, etc.)
-
-  // Vote on an alliance action
-
-  // Create an alliance document
-
-  // Get documents for an alliance
-
-  // Get active embassy missions for a country
 });
-
-// Helper function to determine category from option value
-// Helper functions for embassy game mechanics
-// Influence and Relationship Mechanics

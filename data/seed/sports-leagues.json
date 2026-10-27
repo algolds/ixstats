@@ -1,0 +1,1000 @@
+{
+  "cityNames": [
+    "Olympus City",
+    "Nova Albion",
+    "Port Azure",
+    "Crownhaven",
+    "Ironforge",
+    "Silverstead",
+    "Goldenfield",
+    "Westhaven",
+    "Eastgate",
+    "Northport",
+    "Southbank",
+    "Riverside",
+    "Highcastle",
+    "Stormwind",
+    "Sunhaven",
+    "Greenwood",
+    "Oakvale",
+    "Stonebridge",
+    "Ashford",
+    "Lakewood"
+  ],
+  "f1ConstructorNames": [
+    "Velocity Racing",
+    "Apex Motorsport",
+    "Titan GP",
+    "Phoenix Racing",
+    "Storm Engineering",
+    "Nova F1 Team",
+    "Precision Motors",
+    "Horizon Racing",
+    "Quantum GP",
+    "Fusion Motorsport"
+  ],
+  "f1ConstructorColors": [
+    "#dc2626",
+    "#2563eb",
+    "#ca8a04",
+    "#16a34a",
+    "#9333ea",
+    "#ea580c",
+    "#0891b2",
+    "#db2777",
+    "#4f46e5",
+    "#65a30d"
+  ],
+  "circuitNames": [
+    "Aurelian Grand Prix Circuit",
+    "Crownstone International Speedway",
+    "Port Azure Street Circuit",
+    "Silverstone Heritage Track",
+    "Monte Cielo Circuit",
+    "Ironforge Motorsport Park",
+    "Goldenfield Raceway",
+    "Westhaven Speed Ring",
+    "Eastgate International Circuit",
+    "Northport Coastal Track",
+    "Southbank City Circuit",
+    "Riverside Grand Prix",
+    "Highcastle Mountain Course",
+    "Stormwind Motor Arena",
+    "Sunhaven Park Circuit",
+    "Greenwood Forest Track",
+    "Oakvale Racing Circuit",
+    "Stonebridge Grand Prix",
+    "Ashford Speedway",
+    "Lakewood International Circuit"
+  ],
+  "caphirianTeams": [
+    {
+      "name": "Catenas Previcatores",
+      "patronSaint": "Saint Previcatus",
+      "color": "#dc2626"
+    },
+    {
+      "name": "Venceia Lupi",
+      "patronSaint": "Saint Rais",
+      "color": "#2563eb"
+    },
+    {
+      "name": "Venceia Ludis",
+      "patronSaint": "Saint Magador",
+      "color": "#0ea5e9"
+    },
+    {
+      "name": "Militaris FC",
+      "patronSaint": "Saint Maurice",
+      "color": "#16a34a"
+    },
+    {
+      "name": "Ludis Consociatio",
+      "patronSaint": "Saint Barbara",
+      "color": "#ea580c"
+    },
+    {
+      "name": "Ferriviaria Consociatio",
+      "patronSaint": "Saint Joseph",
+      "color": "#4f46e5"
+    },
+    {
+      "name": "Casterratti Ludis",
+      "patronSaint": "Saint Casterratus",
+      "color": "#8b5cf6"
+    },
+    {
+      "name": "Sierivi Consociatio",
+      "patronSaint": "Saint Christopher",
+      "color": "#f97316"
+    },
+    {
+      "name": "Sangorina Aquilae",
+      "patronSaint": "Saint Aquila",
+      "color": "#ca8a04"
+    },
+    {
+      "name": "Ampeloniki Bellatores",
+      "patronSaint": "Saint Inonsia",
+      "color": "#eab308"
+    },
+    {
+      "name": "Navalia",
+      "patronSaint": "Saint Nicholas",
+      "color": "#0891b2"
+    },
+    {
+      "name": "Genate Ludis",
+      "patronSaint": "Saint Genate",
+      "color": "#7c3aed"
+    },
+    {
+      "name": "Venatores",
+      "patronSaint": "Saint Hubertus",
+      "color": "#be123c"
+    },
+    {
+      "name": "Mero Pantherae",
+      "patronSaint": "Saint Mero",
+      "color": "#db2777"
+    },
+    {
+      "name": "Arzercavalli Tauri",
+      "patronSaint": "Saint Anthony",
+      "color": "#0d9488"
+    },
+    {
+      "name": "Faber Ferraruis",
+      "patronSaint": "Saint Eloi",
+      "color": "#374151"
+    }
+  ],
+  "yonderreTeams": [
+    {
+      "name": "1. FC Donnebourg",
+      "color": "#dc2626"
+    },
+    {
+      "name": "Artillerie FC",
+      "color": "#2563eb"
+    },
+    {
+      "name": "AS Castruppe",
+      "color": "#ca8a04"
+    },
+    {
+      "name": "AS Gabion-Vandarcôte",
+      "color": "#16a34a"
+    },
+    {
+      "name": "Collinebourg Chevaliers",
+      "color": "#9333ea"
+    },
+    {
+      "name": "Famichez 16",
+      "color": "#ea580c"
+    },
+    {
+      "name": "FC Vandarcholme",
+      "color": "#0891b2"
+    },
+    {
+      "name": "FC Sainte-Catherine",
+      "color": "#db2777"
+    },
+    {
+      "name": "FC Stahl Toubourg",
+      "color": "#4f46e5"
+    },
+    {
+      "name": "FC Willing",
+      "color": "#65a30d"
+    },
+    {
+      "name": "FSV Falcsbourg",
+      "color": "#0d9488"
+    },
+    {
+      "name": "FSV Zwischen",
+      "color": "#be123c"
+    },
+    {
+      "name": "Gabion Giants",
+      "color": "#7c3aed"
+    },
+    {
+      "name": "Lance FC",
+      "color": "#b45309"
+    },
+    {
+      "name": "Sainte-Jule-du-Mont AS",
+      "color": "#059669"
+    },
+    {
+      "name": "SC Sainte-Cataline",
+      "color": "#1d4ed8"
+    },
+    {
+      "name": "Toubourg FC",
+      "color": "#a21caf"
+    },
+    {
+      "name": "Vallonbourg AS",
+      "color": "#b91c1c"
+    }
+  ],
+  "ohlTeams": [
+    {
+      "name": "Auqali Shockers",
+      "city": "Atlomaha, Auqali",
+      "conference": "Eastern",
+      "division": "Southeast",
+      "color": "#eab308",
+      "coach": {
+        "firstName": "Aphío",
+        "lastName": "Antonov"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Porto Alegre Tubarões",
+      "city": "Porto Alegre, Ceylonia",
+      "conference": "Eastern",
+      "division": "Southeast",
+      "color": "#06b6d4",
+      "coach": {
+        "firstName": "Petró",
+        "lastName": "Kiropiki"
+      },
+      "nationName": "Ceylonia"
+    },
+    {
+      "name": "Porvaos Condors",
+      "city": "Porvaos City, Porvaos",
+      "conference": "Eastern",
+      "division": "Southeast",
+      "color": "#3b82f6",
+      "coach": {
+        "firstName": "Lars",
+        "lastName": "Nygaard"
+      },
+      "nationName": "Porlos"
+    },
+    {
+      "name": "Sačia Tropics",
+      "city": "Sačia, Aracadó",
+      "conference": "Eastern",
+      "division": "Southeast",
+      "color": "#f97316",
+      "coach": {
+        "firstName": "Lazón",
+        "lastName": "Ašota"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Santa Maria Blazers",
+      "city": "Santa Maria, Ceylonia",
+      "conference": "Eastern",
+      "division": "Southeast",
+      "color": "#ef4444",
+      "coach": {
+        "firstName": "Ahmad",
+        "lastName": "Ibrahim"
+      },
+      "nationName": "Ceylonia"
+    },
+    {
+      "name": "Tansher Spirit",
+      "city": "Tuwaheekee, Tansher",
+      "conference": "Eastern",
+      "division": "Southeast",
+      "color": "#8b5cf6",
+      "coach": {
+        "firstName": "Daisuke",
+        "lastName": "Sato"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Tawakee Hurricanes",
+      "city": "San Cristóbal, Tawakee",
+      "conference": "Eastern",
+      "division": "Southeast",
+      "color": "#10b981",
+      "coach": {
+        "firstName": "Pamia",
+        "lastName": "Monteriya"
+      },
+      "nationName": "Tawakee"
+    },
+    {
+      "name": "Suqovia Phantoms",
+      "city": "Suqovia, Las Rozas",
+      "conference": "Eastern",
+      "division": "Southeast",
+      "color": "#a855f7",
+      "coach": {
+        "firstName": "Levar",
+        "lastName": "Xirótin"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Bogocía Bluewave",
+      "city": "Holčaq, Bogocía",
+      "conference": "Eastern",
+      "division": "Central",
+      "color": "#2563eb",
+      "coach": {
+        "firstName": "Kil",
+        "lastName": "Faxanen"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Karaba Ocelots",
+      "city": "Karaba, Istrenya",
+      "conference": "Eastern",
+      "division": "Central",
+      "color": "#ea580c",
+      "coach": {
+        "firstName": "Sven",
+        "lastName": "Schmidt"
+      },
+      "nationName": "Istrenya"
+    },
+    {
+      "name": "Hugo Hitmen",
+      "city": "Hugo, Qaleqa",
+      "conference": "Eastern",
+      "division": "Central",
+      "color": "#dc2626",
+      "coach": {
+        "firstName": "Pavlos",
+        "lastName": "Depátaí"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Qabór Phoenix",
+      "city": "Qabór, Las Rozas",
+      "conference": "Eastern",
+      "division": "Central",
+      "color": "#eab308",
+      "coach": {
+        "firstName": "Timê",
+        "lastName": "Qistaanat"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Moscakee Pioneers",
+      "city": "Puerto Rosario, Moscakee",
+      "conference": "Eastern",
+      "division": "Central",
+      "color": "#16a34a",
+      "coach": {
+        "firstName": "Tomás",
+        "lastName": "Morales"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Taisgol Spires",
+      "city": "Woderq, Taisgol",
+      "conference": "Eastern",
+      "division": "Central",
+      "color": "#4f46e5",
+      "coach": {
+        "firstName": "Petr",
+        "lastName": "Tolakov"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Taisgol Marksmen",
+      "city": "Eastern Bend, Taisgol",
+      "conference": "Eastern",
+      "division": "Central",
+      "color": "#0891b2",
+      "coach": {
+        "firstName": "Luca",
+        "lastName": "Bianchi"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Topaqoí Wahoo",
+      "city": "Topaqoí, Telohakee",
+      "conference": "Eastern",
+      "division": "Central",
+      "color": "#ca8a04",
+      "coach": {
+        "firstName": "Arjun",
+        "lastName": "Singh"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Alcosky Prairie Dogs",
+      "city": "Tarhogun, Alcosky",
+      "conference": "Western",
+      "division": "Mountain",
+      "color": "#b45309",
+      "coach": {
+        "firstName": "Pedro",
+        "lastName": "Torres"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Anloiya Blizzard",
+      "city": "Anloiya, Ulunkheria",
+      "conference": "Western",
+      "division": "Mountain",
+      "color": "#0ea5e9",
+      "coach": {
+        "firstName": "Phoenix",
+        "lastName": "Simmons"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Miccubo Heartlanders",
+      "city": "Miccubo, Telohakee",
+      "conference": "Western",
+      "division": "Mountain",
+      "color": "#be123c",
+      "coach": {
+        "firstName": "Oscar",
+        "lastName": "Morales"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "St. Gerónimo Outlaws",
+      "city": "St. Gerónimo, Alcosky",
+      "conference": "Western",
+      "division": "Mountain",
+      "color": "#ea580c",
+      "coach": {
+        "firstName": "Sapalina",
+        "lastName": "Wapaakojòò"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Prisamarina Mystics",
+      "city": "Prisamarina, Ulunkheria",
+      "conference": "Western",
+      "division": "Mountain",
+      "color": "#db2777",
+      "coach": {
+        "firstName": "Ranger",
+        "lastName": "Pauliinet"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Telohakee Wheatmen",
+      "city": "Qatólotay, Telohakee",
+      "conference": "Western",
+      "division": "Mountain",
+      "color": "#ca8a04",
+      "coach": {
+        "firstName": "Maté",
+        "lastName": "Utnalat"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Tulangia Centurions",
+      "city": "Sevier, Ulunkheria",
+      "conference": "Western",
+      "division": "Mountain",
+      "color": "#dc2626",
+      "coach": {
+        "firstName": "Barry",
+        "lastName": "Adriza"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Vernaza Titans",
+      "city": "Vernaza, Telohakee",
+      "conference": "Western",
+      "division": "Mountain",
+      "color": "#6366f1",
+      "coach": {
+        "firstName": "Jason",
+        "lastName": "Saunders"
+      },
+      "nationName": "Tierrador"
+    },
+    {
+      "name": "Alstin Sentinels",
+      "city": "Alstin, CDA",
+      "conference": "Western",
+      "division": "Southwest",
+      "color": "#2563eb",
+      "coach": {
+        "firstName": "Frederic",
+        "lastName": "Lalonde"
+      },
+      "nationName": "Alstin"
+    },
+    {
+      "name": "Cuzco Beserkers",
+      "city": "Cuzco City, Cuzco",
+      "conference": "Western",
+      "division": "Southwest",
+      "color": "#dc2626",
+      "coach": {
+        "firstName": "Karl",
+        "lastName": "Muller"
+      },
+      "nationName": "Alstin"
+    },
+    {
+      "name": "Naqili Hornets",
+      "city": "Naqili, Porlos",
+      "conference": "Western",
+      "division": "Southwest",
+      "color": "#ca8a04",
+      "coach": {
+        "firstName": "Kofi",
+        "lastName": "Okafor"
+      },
+      "nationName": "Porlos"
+    },
+    {
+      "name": "Pacuí Mammoth",
+      "city": "Pacuí, Porlos",
+      "conference": "Western",
+      "division": "Southwest",
+      "color": "#4b5563",
+      "coach": {
+        "firstName": "Sven",
+        "lastName": "Hansen"
+      },
+      "nationName": "Porlos"
+    },
+    {
+      "name": "Sedem Regni Thrones",
+      "city": "Sedem Regni, Betlands",
+      "conference": "Western",
+      "division": "Southwest",
+      "color": "#7c3aed",
+      "coach": {
+        "firstName": "Ivan",
+        "lastName": "Kozlov"
+      },
+      "nationName": "Betlands"
+    },
+    {
+      "name": "Utopia Rouges",
+      "city": "Utopia City, Utopia",
+      "conference": "Western",
+      "division": "Southwest",
+      "color": "#be123c",
+      "coach": {
+        "firstName": "Julius",
+        "lastName": "Roberts"
+      },
+      "nationName": "Alstin"
+    },
+    {
+      "name": "Veraise Raiders",
+      "city": "Gastineau, Veraise",
+      "conference": "Western",
+      "division": "Southwest",
+      "color": "#059669",
+      "coach": {
+        "firstName": "Tim",
+        "lastName": "Terrie"
+      },
+      "nationName": "Veraise"
+    },
+    {
+      "name": "Wallace Clerics",
+      "city": "Wallace, Omepra",
+      "conference": "Western",
+      "division": "Southwest",
+      "color": "#0891b2",
+      "coach": {
+        "firstName": "Tomás",
+        "lastName": "Roux"
+      },
+      "nationName": "Alstin"
+    }
+  ],
+  "historicOhlRecords": [
+    {
+      "year": 2040,
+      "champion": "Sačia Tropics",
+      "score": "4–1",
+      "runnerUp": "St. Gerónimo Outlaws"
+    },
+    {
+      "year": 2039,
+      "champion": "Tawakee Hurricanes",
+      "score": "4–3",
+      "runnerUp": "Tulangia Centurions"
+    },
+    {
+      "year": 2038,
+      "champion": "Auqali Shockers",
+      "score": "4–2",
+      "runnerUp": "Tulangia Centurions"
+    },
+    {
+      "year": 2037,
+      "champion": "Tulangia Centurions",
+      "score": "4–0",
+      "runnerUp": "Auqali Shockers"
+    },
+    {
+      "year": 2036,
+      "champion": "Porto Alegre Tubarões",
+      "score": "4–1",
+      "runnerUp": "Telohakee Wheatmen"
+    },
+    {
+      "year": 2035,
+      "champion": "Veraise Raiders",
+      "score": "4–3",
+      "runnerUp": "Taisgol Spires"
+    },
+    {
+      "year": 2034,
+      "champion": "Tulangia Centurions",
+      "score": "4–3",
+      "runnerUp": "Suqovia Phantoms"
+    },
+    {
+      "year": 2029,
+      "champion": "Tulangia Centurions",
+      "score": "4–2",
+      "runnerUp": "Qabór Phoenix"
+    },
+    {
+      "year": 2025,
+      "champion": "Alstin Sentinels",
+      "score": "4–3",
+      "runnerUp": "Qabór Phoenix"
+    },
+    {
+      "year": 2024,
+      "champion": "Alstin Sentinels",
+      "score": "4–1",
+      "runnerUp": "Sačia Tropics"
+    },
+    {
+      "year": 2022,
+      "champion": "Tulangia Centurions",
+      "score": "4–2",
+      "runnerUp": "Sačia Tropics"
+    },
+    {
+      "year": 2021,
+      "champion": "Sačia Tropics",
+      "score": "4–1",
+      "runnerUp": "Alstin Sentinels"
+    },
+    {
+      "year": 2020,
+      "champion": "Sačia Tropics",
+      "score": "4–3",
+      "runnerUp": "Anloiya Blizzard"
+    }
+  ],
+  "namePools": {
+    "caphiria": {
+      "firsts": [
+        "Lucius",
+        "Gaius",
+        "Marcus",
+        "Aulus",
+        "Flavius",
+        "Tiberius",
+        "Publius",
+        "Servius",
+        "Decimus",
+        "Spurius",
+        "Julius",
+        "Augustus",
+        "Cassius",
+        "Cornelius",
+        "Claudius",
+        "Fabius",
+        "Valerius",
+        "Antonius",
+        "Quintus",
+        "Titus"
+      ],
+      "lasts": [
+        "Aetius",
+        "Decimus",
+        "Aurelius",
+        "Agrippa",
+        "Germanicus",
+        "Severus",
+        "Gracchus",
+        "Cicero",
+        "Venceia",
+        "Previcatus",
+        "Lupus",
+        "Militaris",
+        "Navalius",
+        "Ferrarius",
+        "Bellator",
+        "Aquila",
+        "Taurus",
+        "Sierivi",
+        "Genatus",
+        "Casterratus"
+      ]
+    },
+    "yonderre": {
+      "firsts": [
+        "Joanus",
+        "Rachet",
+        "Edouard",
+        "Franz",
+        "Otto",
+        "Karl",
+        "Wilhelm",
+        "Heinrich",
+        "Ludwig",
+        "Hans",
+        "Dieter",
+        "Fritz",
+        "Gottfried",
+        "Gustav",
+        "Emil",
+        "Paul",
+        "Albert",
+        "Walter",
+        "Rudolf",
+        "Ulrich"
+      ],
+      "lasts": [
+        "Charpentier",
+        "d'Agostino",
+        "Gabion",
+        "Vandarcôte",
+        "Chevalier",
+        "Donnebourg",
+        "Stahl",
+        "Willing",
+        "Zwischen",
+        "Falcsbourg",
+        "Toubourg",
+        "Vallonbourg",
+        "Castruppe",
+        "Famichez",
+        "Lance",
+        "Sainte-Catherine",
+        "Sainte-Cataline",
+        "Schmid",
+        "Weber",
+        "Müller"
+      ]
+    },
+    "ohl": {
+      "firsts": [
+        "Barry",
+        "Lazón",
+        "Sapalina",
+        "Pamia",
+        "Aphío",
+        "Petró",
+        "Tim",
+        "Levar",
+        "Frederic",
+        "Xavier",
+        "Mike",
+        "Vicente",
+        "Hectór",
+        "Pyotr",
+        "Kasperi",
+        "Jason",
+        "Phoenix",
+        "Kil",
+        "Julius",
+        "Kessok"
+      ],
+      "lasts": [
+        "Adriza",
+        "Ašota",
+        "Wapaakojòò",
+        "Monteriya",
+        "Antonov",
+        "Kiropiki",
+        "Terrie",
+        "Xirótin",
+        "Lalonde",
+        "Cristobál",
+        "DeSoto",
+        "Valdueza",
+        "Qosnan",
+        "Časqon",
+        "Aikala",
+        "Saunders",
+        "Simmons",
+        "Faxanen",
+        "Roberts",
+        "Korentin"
+      ]
+    }
+  },
+  "f1Drivers": {
+    "firstNames": [
+      "Alex",
+      "Marco",
+      "Yuki",
+      "Dmitri",
+      "Carlos",
+      "Liam",
+      "Jean",
+      "Hiroshi",
+      "Omar",
+      "Viktor",
+      "Andre",
+      "Sven",
+      "Kwame",
+      "Diego",
+      "Enzo",
+      "Kai",
+      "Sergei",
+      "Pedro",
+      "Luca",
+      "Niko"
+    ],
+    "lastNames": [
+      "Kozlov",
+      "Dubois",
+      "Tanaka",
+      "Muller",
+      "Santos",
+      "Park",
+      "Ferrari",
+      "Jensen",
+      "Nakamura",
+      "Silva",
+      "Petrov",
+      "Kowalski",
+      "Garcia",
+      "Rossi",
+      "Fernandez",
+      "Chen",
+      "Vasquez",
+      "Lindberg",
+      "Costa",
+      "Zhang"
+    ],
+    "teamPrincipalsFirst": [
+      "Henrik",
+      "Matteo",
+      "Bjorn",
+      "Anton",
+      "Gustav",
+      "Erik",
+      "Ravi",
+      "Idris",
+      "Sami",
+      "Boris"
+    ],
+    "teamPrincipalsLast": [
+      "Berg",
+      "Vogel",
+      "Jensen",
+      "Romanov",
+      "Holm",
+      "Sorensen",
+      "Ibrahim",
+      "Mwangi",
+      "Larsson",
+      "Novak"
+    ],
+    "raceEngineersFirst": [
+      "Wei",
+      "Jin",
+      "Ahmad",
+      "Tunde",
+      "Kofi",
+      "Ren",
+      "Ali",
+      "Piotr",
+      "Zain",
+      "Tomás"
+    ],
+    "raceEngineersLast": [
+      "Yamamoto",
+      "Watanabe",
+      "Ito",
+      "Ndiaye",
+      "Choi",
+      "Okafor",
+      "Adebayo",
+      "Singh",
+      "Moreau",
+      "Roux"
+    ]
+  },
+  "boxingFighters": {
+    "firstNames": [
+      "Marco",
+      "Dmitri",
+      "Carlos",
+      "Kwame",
+      "Diego",
+      "Boris",
+      "Tunde",
+      "Enzo",
+      "Sergei",
+      "Pedro",
+      "Mateo",
+      "Thiago",
+      "Arjun",
+      "Luca",
+      "Niko",
+      "Ivan"
+    ],
+    "lastNames": [
+      "Kozlov",
+      "Santos",
+      "Okafor",
+      "Ferrari",
+      "Mwangi",
+      "Petrov",
+      "Ndiaye",
+      "Rossi",
+      "Vasquez",
+      "Silva",
+      "Garcia",
+      "Costa",
+      "Singh",
+      "Bianchi",
+      "Tanaka",
+      "Andersen"
+    ],
+    "nicknames": [
+      "The Hammer",
+      "Iron",
+      "Lightning",
+      "The Wall",
+      "Bulldog",
+      "Hurricane",
+      "Titan",
+      "Cobra",
+      "The Bear",
+      "Falcon",
+      "Wolf",
+      "Dragon",
+      "Gladiator",
+      "Phantom",
+      "Viper",
+      "Cyclone"
+    ],
+    "colors": [
+      "#dc2626",
+      "#2563eb",
+      "#ca8a04",
+      "#16a34a",
+      "#9333ea",
+      "#ea580c",
+      "#0891b2",
+      "#db2777",
+      "#4f46e5",
+      "#65a30d",
+      "#0d9488",
+      "#be123c",
+      "#7c3aed",
+      "#b45309",
+      "#059669",
+      "#1d4ed8"
+    ]
+  }
+}

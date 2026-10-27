@@ -4,19 +4,17 @@
  * Applies effects when a player responds to a national issue (or auto-resolution fires).
  * Handles:
  * - Direct DB field updates on Country, GovernmentStructure, InternalStabilityMetrics
+ *   (through the event spine)
+ * - GDP / population / GDP-growth consequences become StorytellerEffects the economy
+ *   projection applies (see ./projection-effects.ts); direct writes there were overwritten
  * - Field value clamping to sensible bounds
  * - Consequence audit trail (NationalIssueConsequence records)
  * - Follow-up issue chain generation
  * - Activity feed and news generation side effects
- * - IxCredits rewards
  */
 
-import { IxTime } from "~/lib/ixtime";
-import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
-import {
-  calculateCivilServiceCapacity,
-  calculateTotalConsumedStaff,
-} from "~/lib/government/atomic-utils";
+import { clockForCountry } from "~/server/shared/realm-time";
+import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
 import {
   NationalIssuesEngine,
   type ResponseOptionTemplate,
@@ -24,78 +22,12 @@ import {
 } from "./engine";
 import type { PrismaClient } from "@prisma/client";
 import { CountryEventSpine } from "~/lib/activity";
+import { isProjectionConsequence, issueConsequenceToEffect } from "./projection-effects";
 
-// ==================== FIELD BOUNDS ====================
+// FIELD BOUNDS
+// MODEL FIELD MAPPING
 
-/** Sensible min/max bounds for all modifiable numeric fields */
-const FIELD_BOUNDS: Record<string, [number, number]> = {
-  // Country fields
-  publicApproval: [0, 100],
-  unemploymentRate: [0, 50],
-  inflationRate: [-5, 100],
-  infrastructureRating: [0, 100],
-  tradeBalance: [-Infinity, Infinity],
-  currentTotalGdp: [0, Infinity],
-  currentGdpPerCapita: [0, Infinity],
-  currentPopulation: [0, Infinity],
-  povertyRate: [0, 100],
-  incomeInequalityGini: [0, 1],
-  taxRevenueGDPPercent: [0, 100],
-  budgetDeficitSurplus: [-Infinity, Infinity],
-  totalDebtGDPRatio: [0, 500],
-  economicVitality: [0, 100],
-  populationWellbeing: [0, 100],
-  diplomaticStanding: [0, 100],
-  governmentalEfficiency: [0, 100],
-  overallNationalHealth: [0, 100],
-  actualGdpGrowth: [-50, 100],
-  // GovernmentStructure fields
-  politicalStability: [0, 100],
-  democracyIndex: [0, 100],
-  governmentEffectiveness: [0, 100],
-  ruleOfLaw: [0, 100],
-  corruptionIndex: [0, 100],
-  politicalPolarization: [0, 100],
-  // InternalStabilityMetrics fields
-  stabilityScore: [0, 100],
-  crimeRate: [0, 100],
-  protestFrequency: [0, 100],
-  riotRisk: [0, 100],
-  socialCohesion: [0, 100],
-  ethnicTension: [0, 100],
-  trustInGovernment: [0, 100],
-  trustInPolice: [0, 100],
-  fearOfCrime: [0, 100],
-  civilDisobedience: [0, 100],
-  policingEffectiveness: [0, 100],
-  justiceSystemEfficiency: [0, 100],
-};
-
-/** Clamp a value to the field's defined bounds */
-function _clampField(field: string, value: number): number {
-  const bounds = FIELD_BOUNDS[field];
-  if (!bounds) return value;
-  return Math.max(bounds[0], Math.min(bounds[1], value));
-}
-
-// ==================== MODEL FIELD MAPPING ====================
-
-/** Maps targetModel values to their Prisma model name and lookup strategy */
-const _MODEL_CONFIG: Record<string, { prismaModel: string; lookupField: string }> = {
-  Country: { prismaModel: "country", lookupField: "id" },
-  GovernmentStructure: {
-    prismaModel: "governmentStructure",
-    lookupField: "countryId",
-  },
-  InternalStabilityMetrics: {
-    prismaModel: "internalStabilityMetrics",
-    lookupField: "countryId",
-  },
-};
-
-// ==================== TYPES ====================
-
-export interface AppliedConsequence {
+interface AppliedConsequence {
   targetModel: string;
   targetField: string;
   previousValue: number;
@@ -105,17 +37,16 @@ export interface AppliedConsequence {
   effectType: string;
 }
 
-export interface ResolveResult {
+interface ResolveResult {
   success: boolean;
   consequences: AppliedConsequence[];
   consequenceLog: string;
   followUpIssueIds: string[];
-  ixCreditsAwarded: number;
   recommendedDirective?: string;
   error?: string;
 }
 
-// ==================== CONSEQUENCE APPLICATOR ====================
+// CONSEQUENCE APPLICATOR
 
 export class NationalIssuesConsequences {
   /**
@@ -133,7 +64,6 @@ export class NationalIssuesConsequences {
       consequences: [],
       consequenceLog: "",
       followUpIssueIds: [],
-      ixCreditsAwarded: 0,
     };
 
     try {
@@ -171,7 +101,7 @@ export class NationalIssuesConsequences {
 
       result.recommendedDirective = chosenOption.recommendedDirective;
 
-      const currentIxTime = IxTime.getCurrentIxTime();
+      const currentIxTime = (await clockForCountry(db, issue.countryId)).now();
 
       // Apply consequences
       let failedGamble = false;
@@ -193,6 +123,7 @@ export class NationalIssuesConsequences {
             issue.countryId,
             db,
             issueId,
+            issue.title,
             currentIxTime
           );
           if (stabilityHit) result.consequences.push(stabilityHit);
@@ -207,6 +138,7 @@ export class NationalIssuesConsequences {
             issue.countryId,
             db,
             issueId,
+            issue.title,
             currentIxTime
           );
           if (approvalHit) result.consequences.push(approvalHit);
@@ -223,6 +155,7 @@ export class NationalIssuesConsequences {
                 issue.countryId,
                 db,
                 issueId,
+                issue.title,
                 currentIxTime
               );
               if (applied) {
@@ -261,9 +194,6 @@ export class NationalIssuesConsequences {
         }
       }
 
-      // Calculate IxCredits reward
-      result.ixCreditsAwarded = this.calculateIxCredits(issue, isAutoResolve);
-
       // Build consequence log
       result.consequenceLog = this.buildConsequenceLog(
         chosenOption,
@@ -283,7 +213,6 @@ export class NationalIssuesConsequences {
           respondedIxTime: currentIxTime,
           appliedConsequences: JSON.stringify(result.consequences),
           consequenceLog: result.consequenceLog,
-          ixCreditsAwarded: result.ixCreditsAwarded,
         },
       });
 
@@ -379,8 +308,20 @@ export class NationalIssuesConsequences {
     countryId: string,
     db: PrismaClient,
     issueId: string,
+    issueTitle: string,
     currentIxTime: number
   ): Promise<AppliedConsequence | null> {
+    if (isProjectionConsequence(consequence)) {
+      return this.applyProjectionConsequence(
+        consequence,
+        countryId,
+        db,
+        issueId,
+        issueTitle,
+        currentIxTime
+      );
+    }
+
     const appliedList = await CountryEventSpine.recordCountryEvent({
       db,
       countryId,
@@ -422,87 +363,58 @@ export class NationalIssuesConsequences {
   }
 
   /**
-   * Generate a human-readable description of a consequence.
+   * GDP / population / GDP-growth consequences: the projection owns those numbers, so instead
+   * of a field write (overwritten on the next read) the consequence becomes a StorytellerEffect
+   * the economy engine applies. Consequences with no faithful mapping are dropped (null).
    */
-  private static describeConsequence(
-    field: string,
-    previousValue: number,
-    newValue: number,
-    delta: number
-  ): string {
-    const fieldLabels: Record<string, string> = {
-      publicApproval: "Public Approval",
-      unemploymentRate: "Unemployment Rate",
-      inflationRate: "Inflation Rate",
-      currentTotalGdp: "GDP",
-      currentGdpPerCapita: "GDP per Capita",
-      infrastructureRating: "Infrastructure Rating",
-      tradeBalance: "Trade Balance",
-      povertyRate: "Poverty Rate",
-      stabilityScore: "Stability Score",
-      crimeRate: "Crime Rate",
-      protestFrequency: "Protest Frequency",
-      riotRisk: "Riot Risk",
-      socialCohesion: "Social Cohesion",
-      ethnicTension: "Ethnic Tension",
-      trustInGovernment: "Trust in Government",
-      politicalStability: "Political Stability",
-      democracyIndex: "Democracy Index",
-      governmentEffectiveness: "Government Effectiveness",
-      corruptionIndex: "Corruption Index",
-      politicalPolarization: "Political Polarization",
-      totalDebtGDPRatio: "Debt-to-GDP Ratio",
-      economicVitality: "Economic Vitality",
-      ruleOfLaw: "Rule of Law",
+  private static async applyProjectionConsequence(
+    consequence: ConsequenceDefinition,
+    countryId: string,
+    db: PrismaClient,
+    issueId: string,
+    issueTitle: string,
+    currentIxTime: number
+  ): Promise<AppliedConsequence | null> {
+    const spec = issueConsequenceToEffect(consequence);
+    if (!spec) return null;
+
+    await createStorytellerEffect(db, {
+      countryId,
+      ixTime: currentIxTime,
+      inputType: spec.inputType,
+      value: spec.value,
+      description: `National issue: ${issueTitle} (${spec.description})`,
+      duration: spec.duration,
+      createdBy: `issue:${issueId}`,
+    });
+
+    const deltaPct = spec.value * 100;
+    const description = `${spec.description} (economic projection)`;
+
+    await db.nationalIssueConsequence.create({
+      data: {
+        issueId,
+        targetModel: consequence.targetModel,
+        targetField: consequence.targetField,
+        previousValue: null,
+        newValue: JSON.stringify(spec.value),
+        deltaValue: deltaPct,
+        description,
+        effectType: "projection",
+        effectDuration: spec.duration != null ? Math.round(spec.duration * 365) : null,
+        appliedIxTime: currentIxTime,
+      },
+    });
+
+    return {
+      targetModel: consequence.targetModel,
+      targetField: consequence.targetField,
+      previousValue: 0,
+      newValue: deltaPct,
+      delta: deltaPct,
+      description,
+      effectType: "projection",
     };
-
-    const label = fieldLabels[field] || field;
-    const direction = delta > 0 ? "increased" : "decreased";
-    const absStr = Math.abs(delta).toFixed(1);
-
-    return `${label} ${direction} by ${absStr} (${previousValue.toFixed(1)} → ${newValue.toFixed(1)})`;
-  }
-
-  private static calculateIxCredits(
-    issue:
-      | {
-          priority?: string | null;
-          severity?: string | null;
-          deadlineIxTime?: number | null;
-          createdIxTime?: number | null;
-        }
-      | any,
-    isAutoResolve: boolean
-  ): number {
-    if (!GAMEPLAY_FLAGS.issuesAwardCredits) return 0; // narrative mode: no reward farming
-    if (isAutoResolve) return 0; // No reward for inaction
-
-    const severityRewards: Record<string, number> = {
-      critical: 25,
-      CRITICAL: 25,
-      high: 15,
-      HIGH: 15,
-      medium: 8,
-      MEDIUM: 8,
-      low: 3,
-      LOW: 3,
-    };
-
-    const sevKey = issue.severity || issue.priority || "medium";
-    const base = severityRewards[sevKey as string] ?? 5;
-
-    // Bonus for resolving before deadline
-    if (issue.deadlineIxTime && issue.createdIxTime) {
-      const currentIxTime = IxTime.getCurrentIxTime();
-      const remainingTime = issue.deadlineIxTime - currentIxTime;
-      const totalTime = issue.deadlineIxTime - issue.createdIxTime;
-      if (totalTime > 0) {
-        const timeRatio = remainingTime / totalTime;
-        if (timeRatio > 0.5) return base + 5; // Early resolution bonus
-      }
-    }
-
-    return base;
   }
 
   /**

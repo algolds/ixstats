@@ -1,0 +1,12 @@
+/**
+ * Messaging Domain Module Entrypoint (Plan 163)
+ */
+
+export { MessagingService, createMessagingService } from "./service";
+export {
+  MessagingForbiddenError,
+  MessagingNotFoundError,
+  MessagingValidationError,
+} from "./errors";
+export { recordMessagingTelemetry } from "./telemetry";
+export { MAX_GROUP_PARTICIPANTS, MAX_MESSAGE_LENGTH } from "./contracts";

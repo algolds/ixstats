@@ -1,46 +1,66 @@
 "use client";
 
-/**
- * EditorPanel — Sidebar/Bottom panel supporting left, right, and bottom orientation with tabbed navigation.
- */
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  ChevronRight,
-  ChevronLeft,
-  ChevronUp,
-  ChevronDown,
-  Settings2,
-  Layers,
+  NavArrowRight as ChevronRight,
+  NavArrowLeft as ChevronLeft,
+  NavArrowUp as ChevronUp,
+  NavArrowDown as ChevronDown,
+  Settings as Settings2,
+  Component as Layers,
   List,
-  BookOpen,
-  Search,
+  OpenBook as BookOpen,
   Globe,
+  Planet,
   Link as LinkIcon,
-  Layout,
-  History,
-  Inbox,
-} from "lucide-react";
+  ViewGrid as Layout,
+  ClockRotateRight as History,
+  MailIn as Inbox,
+  Bookmark,
+} from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
-import { FeatureListSkeleton } from "~/components/maps/editor/EditorSkeleton";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { FacetMaterial } from "~/components/ui/facet";
+import { FeatureListSkeleton, LayerPanelSkeleton } from "~/components/maps/editor/EditorSkeleton";
+import { cn } from "~/lib/utils/cn";
 
 const PANEL_MIN_W = 256;
 const PANEL_MAX_W = 480;
 const PANEL_DEFAULT_W = 320;
+const PANEL_MIN_H = 120;
+const PANEL_MAX_H = 500;
+const PANEL_DEFAULT_H = 240;
 const PANEL_STORAGE_KEY = "ixworld-editor-panel-size";
 
-export type TabId =
-  "properties" | "layers" | "features" | "wiki" | "linkages" | "sovereignty" | "history" | "queue";
+type Placement = "left" | "right" | "bottom";
 
-const TAB_DEFS: Record<TabId, { label: string; Icon: React.ComponentType<any> }> = {
+export type TabId =
+  | "properties"
+  | "layers"
+  | "features"
+  | "wiki"
+  | "stories"
+  | "linkages"
+  | "sovereignty"
+  | "history"
+  | "queue"
+  | "world";
+
+const TAB_DEFS: Record<
+  TabId,
+  { label: string; Icon: React.ComponentType<{ className?: string; title?: string }> }
+> = {
   layers: { label: "Layers", Icon: Layers },
   features: { label: "Features", Icon: List },
   properties: { label: "Properties", Icon: Settings2 },
   linkages: { label: "Links", Icon: LinkIcon },
   sovereignty: { label: "Sovereign", Icon: Globe },
   wiki: { label: "Wiki", Icon: BookOpen },
+  stories: { label: "Stories", Icon: Bookmark },
   history: { label: "History", Icon: History },
   queue: { label: "Queue", Icon: Inbox },
+  world: { label: "World", Icon: Planet },
 };
 
 interface EditorPanelProps {
@@ -54,18 +74,22 @@ interface EditorPanelProps {
   /** Callback when a tab is dragged and dropped onto this panel */
   onTabDrop?: (tabId: TabId) => void;
   /** Placement: left sidebar, right sidebar, or bottom horizontal pane */
-  placement?: "left" | "right" | "bottom";
+  placement?: Placement;
   /** Callback to change docking placement */
-  onChangePlacement?: (placement: "left" | "right" | "bottom") => void;
+  onChangePlacement?: (placement: Placement) => void;
   /** Content for each section */
   propertiesContent?: React.ReactNode;
   featureListContent?: React.ReactNode;
   layersContent?: React.ReactNode;
   wikiContent?: React.ReactNode;
+  /** Storylines (country editor). */
+  storiesContent?: React.ReactNode;
   linkagesContent?: React.ReactNode;
   sovereigntyContent?: React.ReactNode;
   historyContent?: React.ReactNode;
   queueContent?: React.ReactNode;
+  /** The World tab: generate a world, preview it and tune it (world editor). */
+  worldContent?: React.ReactNode;
   /** Feature count for badge */
   featureCount?: number;
   /** Whether import wizard should take over the panel */
@@ -80,31 +104,298 @@ interface EditorPanelProps {
   panelsLocked?: boolean;
 }
 
-export function EditorPanel({
-  mode,
-  collapsed,
-  onToggleCollapse,
-  tabs,
-  onTabDrop,
-  placement = "right",
+const DOCK_OPTIONS = [
+  { placement: "left", title: "Dock left", Icon: ChevronLeft },
+  { placement: "bottom", title: "Dock bottom", Icon: ChevronDown },
+  { placement: "right", title: "Dock right", Icon: ChevronRight },
+] as const;
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+function readStoredSize(axis: "width" | "height", fallback: number, min: number, max: number) {
+  if (typeof window === "undefined") return fallback;
+  const stored = localStorage.getItem(`${PANEL_STORAGE_KEY}-${axis}`);
+  return stored ? clamp(parseInt(stored), min, max) : fallback;
+}
+
+/** Panel width/height (persisted per axis) with a drag handler that resizes along the docked axis. */
+function usePanelResize(placement: Placement) {
+  const [panelWidth, setPanelWidth] = useState(() =>
+    readStoredSize("width", PANEL_DEFAULT_W, PANEL_MIN_W, PANEL_MAX_W)
+  );
+  const [panelHeight, setPanelHeight] = useState(() =>
+    readStoredSize("height", PANEL_DEFAULT_H, PANEL_MIN_H, PANEL_MAX_H)
+  );
+  const sizeRef = useRef({ width: panelWidth, height: panelHeight });
+  sizeRef.current = { width: panelWidth, height: panelHeight };
+
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      const isBottom = placement === "bottom";
+      const start = isBottom
+        ? { pos: e.clientY, size: sizeRef.current.height }
+        : { pos: e.clientX, size: sizeRef.current.width };
+      const setSize = isBottom ? setPanelHeight : setPanelWidth;
+      const [min, max] = isBottom ? [PANEL_MIN_H, PANEL_MAX_H] : [PANEL_MIN_W, PANEL_MAX_W];
+      const storageKey = `${PANEL_STORAGE_KEY}-${isBottom ? "height" : "width"}`;
+
+      let pending = start.size;
+      let rafId: number | null = null;
+
+      const onMove = (me: MouseEvent) => {
+        const pos = isBottom ? me.clientY : me.clientX;
+        // Dragging toward the map grows the panel: up for bottom, right for left, left for right.
+        const delta = placement === "left" ? pos - start.pos : start.pos - pos;
+        pending = clamp(start.size + delta, min, max);
+        rafId ??= requestAnimationFrame(() => {
+          rafId = null;
+          setSize(pending);
+        });
+      };
+
+      const onUp = () => {
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        setSize(pending);
+        try {
+          localStorage.setItem(storageKey, String(pending));
+        } catch {
+          // Ignore localStorage errors (e.g. quota, private mode)
+        }
+      };
+
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    },
+    [placement]
+  );
+
+  return { panelWidth, panelHeight, handleResizeStart };
+}
+
+function ResizeHandle({
+  placement,
+  onMouseDown,
+}: {
+  placement: Placement;
+  onMouseDown: (e: React.MouseEvent) => void;
+}) {
+  const position =
+    placement === "bottom"
+      ? "top-0 left-0 h-1 w-full cursor-row-resize"
+      : `top-0 ${placement === "left" ? "right-0" : "left-0"} h-full w-1 cursor-col-resize`;
+  return (
+    <div
+      className={`hover:bg-tint/30 active:bg-tint/50 absolute z-20 transition-colors ${position}`}
+      onMouseDown={onMouseDown}
+    />
+  );
+}
+
+function TabBody({
+  tab,
+  props,
+}: {
+  tab: TabId;
+  props: Pick<
+    EditorPanelProps,
+    | "propertiesContent"
+    | "featureListContent"
+    | "layersContent"
+    | "wikiContent"
+    | "storiesContent"
+    | "linkagesContent"
+    | "sovereigntyContent"
+    | "historyContent"
+    | "queueContent"
+    | "worldContent"
+    | "featuresLoading"
+  >;
+}) {
+  const scroll = "h-full overflow-y-auto";
+  const flexScroll = "flex h-full min-h-0 flex-1 flex-col overflow-y-auto";
+  switch (tab) {
+    case "properties":
+      return (
+        props.propertiesContent && (
+          <div className={`${scroll} px-3 py-3`}>{props.propertiesContent}</div>
+        )
+      );
+    case "queue":
+      return (
+        props.queueContent && <div className={`${scroll} px-3 py-3`}>{props.queueContent}</div>
+      );
+    case "world":
+      return props.worldContent && <div className={scroll}>{props.worldContent}</div>;
+    case "linkages":
+      return props.linkagesContent && <div className={scroll}>{props.linkagesContent}</div>;
+    case "sovereignty":
+      return props.sovereigntyContent && <div className={scroll}>{props.sovereigntyContent}</div>;
+    case "history":
+      return props.historyContent && <div className={scroll}>{props.historyContent}</div>;
+    case "stories":
+      return props.storiesContent && <div className={scroll}>{props.storiesContent}</div>;
+    case "layers":
+      return <div className={flexScroll}>{props.layersContent ?? <LayerPanelSkeleton />}</div>;
+    case "features":
+      return (
+        props.featureListContent && (
+          <div className={`${flexScroll} px-3 py-3`}>
+            {props.featuresLoading ? <FeatureListSkeleton /> : props.featureListContent}
+          </div>
+        )
+      );
+    case "wiki":
+      return (
+        <div className={flexScroll}>
+          {props.wikiContent ?? (
+            <div className="text-label-secondary text-footnote flex flex-1 items-center justify-center px-3 py-8 text-center">
+              Select a country to scan its features for wiki pages.
+            </div>
+          )}
+        </div>
+      );
+  }
+}
+
+function DockButtons({
+  placement,
   onChangePlacement,
-  propertiesContent,
-  featureListContent,
-  layersContent,
-  wikiContent,
-  linkagesContent,
-  sovereigntyContent,
-  historyContent,
-  queueContent,
-  featureCount,
-  importWizardContent,
-  featuresLoading,
-  activeTabOverride,
-  onTabChange,
-  isWorldMode = false,
-  isStacked = false,
-  panelsLocked = false,
-}: EditorPanelProps) {
+}: {
+  placement: Placement;
+  onChangePlacement: (placement: Placement) => void;
+}) {
+  return (
+    <div className="border-separator ml-auto flex shrink-0 items-center gap-0.5 border-l px-2 py-1">
+      {DOCK_OPTIONS.map(({ placement: target, title, Icon }) => (
+        <Button
+          key={target}
+          variant="ghost"
+          size="icon"
+          onClick={() => onChangePlacement(target)}
+          aria-pressed={placement === target}
+          className={`h-6 w-6 ${
+            placement === target ? "bg-fill-3 text-label" : "text-label-secondary"
+          }`}
+          title={title}
+          aria-label={title}
+        >
+          <Icon aria-hidden />
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+function EmptySlot({
+  placement,
+  panelsLocked,
+  onTabDrop,
+  onChangePlacement,
+}: Pick<EditorPanelProps, "onTabDrop" | "onChangePlacement"> & {
+  placement: Placement;
+  panelsLocked: boolean;
+}) {
+  return (
+    <div
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        const tabId = e.dataTransfer.getData("tabId") as TabId;
+        if (tabId && onTabDrop) onTabDrop(tabId);
+      }}
+      className="border-separator text-label-secondary hover:border-tint/40 rounded-control text-footnote m-2 flex flex-col items-center justify-center border-2 border-dashed p-4 transition-colors"
+      style={{
+        width: placement === "bottom" ? "100%" : 140,
+        height: placement === "bottom" ? 80 : "100%",
+      }}
+    >
+      <Layout className="text-label-secondary mb-1 h-4 w-4" aria-hidden />
+      <span>Drag tab here</span>
+      {onChangePlacement && !panelsLocked && (
+        <div className="mt-2 flex gap-1">
+          {DOCK_OPTIONS.map(({ placement: target, title, Icon }) => (
+            <Button
+              key={target}
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => onChangePlacement(target)}
+              title={title}
+              aria-label={title}
+              className={cn(
+                "rounded-control-sm size-5",
+                `rounded-control-sm p-0.5 ${placement === target ? "text-tint bg-tint-fill" : "hover:text-label"}`
+              )}
+            >
+              <Icon className="h-3 w-3" />
+            </Button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CollapsedStrip({
+  tabs,
+  placement,
+  onToggleCollapse,
+}: Pick<EditorPanelProps, "tabs" | "onToggleCollapse"> & { placement: Placement }) {
+  return (
+    <FacetMaterial
+      layer="chrome"
+      className={`flex shrink-0 items-center justify-between px-2 py-2 ${
+        placement === "bottom" ? "rounded-control-sm h-9 w-32" : "h-9 w-full rounded-none"
+      }`}
+    >
+      <div className="flex items-center gap-2 overflow-hidden">
+        {tabs.map((tabId) => {
+          const tabDef = TAB_DEFS[tabId];
+          return (
+            tabDef && (
+              <tabDef.Icon
+                key={tabId}
+                className="text-label-secondary h-3.5 w-3.5 shrink-0"
+                title={tabDef.label}
+              />
+            )
+          );
+        })}
+      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onToggleCollapse}
+        className="text-label-secondary h-6 w-6 shrink-0"
+        title="Expand panel"
+        aria-label="Expand panel"
+      >
+        {placement === "bottom" ? <ChevronUp aria-hidden /> : <ChevronDown aria-hidden />}
+      </Button>
+    </FacetMaterial>
+  );
+}
+
+export function EditorPanel(props: EditorPanelProps) {
+  const {
+    mode,
+    collapsed,
+    onToggleCollapse,
+    tabs,
+    onTabDrop,
+    placement = "right",
+    onChangePlacement,
+    featureCount,
+    importWizardContent,
+    activeTabOverride,
+    onTabChange,
+    isWorldMode = false,
+    isStacked = false,
+    panelsLocked = false,
+  } = props;
+
   const [activeTab, setActiveTab] = useState<TabId>(() => {
     if (activeTabOverride) return activeTabOverride;
     if (tabs.length > 0) return tabs[0];
@@ -113,9 +404,9 @@ export function EditorPanel({
 
   const userOverrideRef = useRef(false);
 
-  // Sync tab if overridden
   useEffect(() => {
     if (activeTabOverride) {
+      // oxlint-disable-next-line
       setActiveTab(activeTabOverride);
     }
   }, [activeTabOverride]);
@@ -123,76 +414,19 @@ export function EditorPanel({
   // Keep activeTab in sync with available tabs in this panel
   useEffect(() => {
     if (tabs.length > 0 && !tabs.includes(activeTab)) {
+      // oxlint-disable-next-line
       setActiveTab(tabs[0]);
     }
   }, [tabs, activeTab]);
 
-  // Panel size states
-  const [panelWidth, setPanelWidth] = useState(() => {
-    if (typeof window === "undefined") return PANEL_DEFAULT_W;
-    const stored = localStorage.getItem(`${PANEL_STORAGE_KEY}-width`);
-    return stored
-      ? Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, parseInt(stored)))
-      : PANEL_DEFAULT_W;
-  });
+  const { panelWidth, panelHeight, handleResizeStart } = usePanelResize(placement);
 
-  const [panelHeight, setPanelHeight] = useState(() => {
-    if (typeof window === "undefined") return 240;
-    const stored = localStorage.getItem(`${PANEL_STORAGE_KEY}-height`);
-    return stored ? Math.min(500, Math.max(120, parseInt(stored))) : 240;
-  });
-
-  useEffect(() => {
-    localStorage.setItem(`${PANEL_STORAGE_KEY}-width`, String(panelWidth));
-  }, [panelWidth]);
-
-  useEffect(() => {
-    localStorage.setItem(`${PANEL_STORAGE_KEY}-height`, String(panelHeight));
-  }, [panelHeight]);
-
-  const isDragging = useRef(false);
-
-  const handleResizeStart = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      isDragging.current = true;
-      const startX = e.clientX;
-      const startY = e.clientY;
-      const startW = panelWidth;
-      const startH = panelHeight;
-
-      const onMove = (me: MouseEvent) => {
-        if (!isDragging.current) return;
-        if (placement === "bottom") {
-          const delta = startY - me.clientY;
-          const newH = Math.min(500, Math.max(120, startH + delta));
-          setPanelHeight(newH);
-        } else {
-          const delta = placement === "left" ? me.clientX - startX : startX - me.clientX;
-          const newW = Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, startW + delta));
-          setPanelWidth(newW);
-        }
-      };
-
-      const onUp = () => {
-        isDragging.current = false;
-        document.removeEventListener("mousemove", onMove);
-        document.removeEventListener("mouseup", onUp);
-      };
-
-      document.addEventListener("mousemove", onMove);
-      document.addEventListener("mouseup", onUp);
-    },
-    [panelWidth, panelHeight, placement]
-  );
-
-  // Auto-switch tabs based on mode (for properties tab)
+  // Auto-switch to the properties tab when a feature is being added or edited
   useEffect(() => {
     if (userOverrideRef.current) return;
-    if (mode.startsWith("add-") || mode.startsWith("edit-")) {
-      if (tabs.includes("properties")) {
-        setActiveTab("properties");
-      }
+    if ((mode.startsWith("add-") || mode.startsWith("edit-")) && tabs.includes("properties")) {
+      // oxlint-disable-next-line
+      setActiveTab("properties");
     }
   }, [mode, tabs]);
 
@@ -203,156 +437,59 @@ export function EditorPanel({
   };
 
   if (collapsed && isStacked) {
-    return (
-      <div
-        className={`border-border bg-card/75 flex shrink-0 items-center justify-between px-2 py-1.5 backdrop-blur-md ${
-          placement === "bottom" ? "h-9 w-32 rounded-md border" : "h-9 w-full border-t border-b"
-        }`}
-      >
-        <div className="flex items-center gap-1.5 overflow-hidden">
-          {tabs.map((tabId) => {
-            const tabDef = TAB_DEFS[tabId];
-            if (!tabDef) return null;
-            return (
-              <tabDef.Icon
-                key={tabId}
-                className="text-muted-foreground h-3.5 w-3.5 shrink-0"
-                title={tabDef.label}
-              />
-            );
-          })}
-        </div>
-        <button
-          onClick={onToggleCollapse}
-          className="text-muted-foreground hover:text-foreground hover:bg-accent/40 shrink-0 rounded p-0.5 transition-colors"
-          title="Expand Panel"
-        >
-          {placement === "bottom" ? (
-            <ChevronUp className="h-3.5 w-3.5" />
-          ) : (
-            <ChevronDown className="h-3.5 w-3.5" />
-          )}
-        </button>
-      </div>
-    );
+    return <CollapsedStrip tabs={tabs} placement={placement} onToggleCollapse={onToggleCollapse} />;
   }
+
+  const isBottom = placement === "bottom";
+  const frameStyle = {
+    width: isBottom ? "100%" : panelWidth,
+    height: isBottom ? panelHeight : "100%",
+  };
+  const resizeHandle = !panelsLocked && (
+    <ResizeHandle placement={placement} onMouseDown={handleResizeStart} />
+  );
+  const collapseToggle = (
+    <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} placement={placement} />
+  );
 
   // Import mode takes over the entire panel (only if features tab exists here)
   if (mode === "import-provinces" && importWizardContent && tabs.includes("features")) {
     return (
       <div className="relative flex h-full">
         {!collapsed && (
-          <div
-            className="border-border bg-card/75 relative flex flex-col border-r shadow-lg backdrop-blur-md"
-            style={{
-              width: placement === "bottom" ? "100%" : panelWidth,
-              height: placement === "bottom" ? panelHeight : "100%",
-            }}
-          >
-            {/* Resize handle */}
-            {!panelsLocked && (
-              <div
-                className={`hover:bg-primary/30 active:bg-primary/50 absolute z-20 transition-colors ${
-                  placement === "bottom"
-                    ? "top-0 left-0 h-1 w-full cursor-row-resize"
-                    : placement === "left"
-                      ? "top-0 right-0 h-full w-1 cursor-col-resize"
-                      : "top-0 left-0 h-full w-1 cursor-col-resize"
-                }`}
-                onMouseDown={handleResizeStart}
-              />
-            )}
+          <FacetMaterial layer="chrome" className="flex flex-col rounded-none" style={frameStyle}>
+            {resizeHandle}
             {importWizardContent}
-          </div>
+          </FacetMaterial>
         )}
-        <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} placement={placement} />
+        {collapseToggle}
       </div>
     );
   }
 
-  // Render empty slot placeholder if no tabs are here
   if (tabs.length === 0) {
     return (
-      <div
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          const tabId = e.dataTransfer.getData("tabId") as TabId;
-          if (tabId && onTabDrop) {
-            onTabDrop(tabId);
-          }
-        }}
-        className={`border-border/40 bg-card/20 text-muted-foreground hover:border-primary/40 m-2 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-[11px] backdrop-blur-sm transition-colors`}
-        style={{
-          width: placement === "bottom" ? "100%" : 140,
-          height: placement === "bottom" ? 80 : "100%",
-        }}
-      >
-        <Layout className="text-muted-foreground/60 mb-1 h-4 w-4" />
-        <span>Drag tab here</span>
-        {onChangePlacement && !panelsLocked && (
-          <div className="mt-2 flex gap-1">
-            <button
-              onClick={() => onChangePlacement("left")}
-              className={`rounded p-0.5 ${placement === "left" ? "text-primary bg-primary/10" : "hover:text-foreground"}`}
-              title="Dock Left"
-            >
-              <ChevronLeft className="h-3 w-3" />
-            </button>
-            <button
-              onClick={() => onChangePlacement("bottom")}
-              className={`rounded p-0.5 ${placement === "bottom" ? "text-primary bg-primary/10" : "hover:text-foreground"}`}
-              title="Dock Bottom"
-            >
-              <ChevronDown className="h-3 w-3" />
-            </button>
-            <button
-              onClick={() => onChangePlacement("right")}
-              className={`rounded p-0.5 ${placement === "right" ? "text-primary bg-primary/10" : "hover:text-foreground"}`}
-              title="Dock Right"
-            >
-              <ChevronRight className="h-3 w-3" />
-            </button>
-          </div>
-        )}
-      </div>
+      <EmptySlot
+        placement={placement}
+        panelsLocked={panelsLocked}
+        onTabDrop={onTabDrop}
+        onChangePlacement={onChangePlacement}
+      />
     );
   }
 
   return (
-    <div className={`relative flex ${placement === "bottom" ? "w-full flex-col" : "h-full"}`}>
-      {placement === "right" && (
-        <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} placement={placement} />
-      )}
+    <div className={`relative flex ${isBottom ? "w-full flex-col" : "h-full"}`}>
+      {placement === "right" && collapseToggle}
 
       {!collapsed && (
-        <div
-          className={`border-border bg-card/75 relative flex flex-col shadow-lg backdrop-blur-md ${
-            placement === "bottom"
-              ? "w-full border-t"
-              : placement === "left"
-                ? "h-full border-r"
-                : "h-full border-l"
-          }`}
-          style={{
-            width: placement === "bottom" ? "100%" : panelWidth,
-            height: placement === "bottom" ? panelHeight : "100%",
-          }}
+        <FacetMaterial
+          layer="chrome"
+          className={`flex flex-col rounded-none ${isBottom ? "w-full" : "h-full"}`}
+          style={frameStyle}
         >
-          {/* Resize handle */}
-          {!panelsLocked && (
-            <div
-              className={`hover:bg-primary/30 active:bg-primary/50 absolute z-20 transition-colors ${
-                placement === "bottom"
-                  ? "top-0 left-0 h-1 w-full cursor-row-resize"
-                  : placement === "left"
-                    ? "top-0 right-0 h-full w-1 cursor-col-resize"
-                    : "top-0 left-0 h-full w-1 cursor-col-resize"
-              }`}
-              onMouseDown={handleResizeStart}
-            />
-          )}
+          {resizeHandle}
 
-          {/* Tab bar */}
           <div
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
@@ -361,9 +498,13 @@ export function EditorPanel({
                 onTabDrop(droppedTabId);
               }
             }}
-            className="border-border bg-muted/20 flex h-9 w-full shrink-0 items-center justify-between border-b"
+            className="border-separator flex h-9 w-full shrink-0 items-center justify-between border-b"
           >
-            <div className="flex h-full min-w-0 flex-1 scrollbar-none overflow-x-auto">
+            <div
+              role="tablist"
+              aria-label="Editor panels"
+              className="flex h-full min-w-0 flex-1 scrollbar-none overflow-x-auto"
+            >
               {tabs.map((tabId) => {
                 const tabDef = TAB_DEFS[tabId];
                 if (!tabDef) return null;
@@ -371,142 +512,66 @@ export function EditorPanel({
                 return (
                   <button
                     key={tabId}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-label={tabDef.label}
                     draggable={!panelsLocked}
                     onDragStart={
-                      panelsLocked
-                        ? undefined
-                        : (e) => {
-                            e.dataTransfer.setData("tabId", tabId);
-                          }
+                      panelsLocked ? undefined : (e) => e.dataTransfer.setData("tabId", tabId)
                     }
                     onClick={() => handleTabClick(tabId)}
-                    className={`flex h-full min-w-[60px] flex-shrink-0 cursor-grab items-center justify-center gap-1.5 px-3 text-[10px] font-medium transition-colors sm:text-[11px] ${
+                    className={`text-caption sm:text-footnote flex h-full min-w-[60px] flex-shrink-0 cursor-grab items-center justify-center gap-2 px-3 transition-colors ${
                       isActive
-                        ? "border-primary bg-card/40 text-foreground border-b-2"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
+                        ? "border-tint text-label border-b-2"
+                        : "text-label-secondary hover:text-label hover:bg-fill-3"
                     }`}
                   >
-                    <tabDef.Icon className="h-3 w-3" />
+                    <tabDef.Icon className="h-3.5 w-3.5" aria-hidden />
                     <span className="hidden sm:inline">{tabDef.label}</span>
                     {tabId === "features" && featureCount !== undefined && featureCount > 0 && (
-                      <span className="bg-muted text-muted-foreground rounded-full px-1 text-[9px] tabular-nums">
+                      <Badge variant="default" className="px-1 tabular-nums">
                         {featureCount}
-                      </span>
+                      </Badge>
                     )}
                   </button>
                 );
               })}
             </div>
 
-            {/* Dock selector buttons */}
             {onChangePlacement && !panelsLocked && (
-              <div className="border-border bg-muted/5 ml-auto flex shrink-0 items-center gap-1 border-l px-2 py-1">
-                <button
-                  onClick={() => onChangePlacement("left")}
-                  className={`rounded p-1 transition-colors ${
-                    placement === "left"
-                      ? "bg-primary/20 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
-                  }`}
-                  title="Dock Left"
-                >
-                  <ChevronLeft className="h-3 w-3" />
-                </button>
-                <button
-                  onClick={() => onChangePlacement("bottom")}
-                  className={`rounded p-1 transition-colors ${
-                    placement === "bottom"
-                      ? "bg-primary/20 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
-                  }`}
-                  title="Dock Bottom"
-                >
-                  <ChevronDown className="h-3 w-3" />
-                </button>
-                <button
-                  onClick={() => onChangePlacement("right")}
-                  className={`rounded p-1 transition-colors ${
-                    placement === "right"
-                      ? "bg-primary/20 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
-                  }`}
-                  title="Dock Right"
-                >
-                  <ChevronRight className="h-3 w-3" />
-                </button>
-              </div>
+              <DockButtons placement={placement} onChangePlacement={onChangePlacement} />
             )}
           </div>
 
-          {/* Tab content */}
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             <div
               key={activeTab}
-              className="flex h-full min-h-0 flex-col"
-              style={{ animation: "editorTabFadeIn 150ms ease" }}
+              className="animate-in fade-in flex h-full min-h-0 flex-col duration-150"
             >
-              {activeTab === "properties" && propertiesContent && (
-                <div className="h-full overflow-y-auto px-3 py-3">{propertiesContent}</div>
-              )}
-              {activeTab === "linkages" && linkagesContent && (
-                <div className="h-full overflow-y-auto">{linkagesContent}</div>
-              )}
-              {activeTab === "sovereignty" && sovereigntyContent && (
-                <div className="h-full overflow-y-auto">{sovereigntyContent}</div>
-              )}
-              {activeTab === "history" && historyContent && (
-                <div className="h-full overflow-y-auto">{historyContent}</div>
-              )}
-              {activeTab === "queue" && queueContent && (
-                <div className="h-full overflow-y-auto px-3 py-3">{queueContent}</div>
-              )}
-              {activeTab === "layers" && (
-                <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto">
-                  {layersContent ?? (
-                    <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 py-8 text-xs">
-                      Layers panel coming soon
-                    </div>
-                  )}
-                </div>
-              )}
-              {activeTab === "features" && featureListContent && (
-                <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto px-3 py-3">
-                  {featuresLoading ? <FeatureListSkeleton /> : featureListContent}
-                </div>
-              )}
-              {activeTab === "wiki" && (
-                <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto">
-                  {wikiContent ?? (
-                    <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 py-8 text-xs">
-                      Wiki scanner coming soon
-                    </div>
-                  )}
-                </div>
-              )}
+              <TabBody tab={activeTab} props={props} />
             </div>
           </div>
-
-          <style jsx>{`
-            @keyframes editorTabFadeIn {
-              from {
-                opacity: 0;
-              }
-              to {
-                opacity: 1;
-              }
-            }
-          `}</style>
-        </div>
+        </FacetMaterial>
       )}
 
-      {(placement === "left" || placement === "bottom") && (
-        <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} placement={placement} />
-      )}
+      {placement !== "right" && collapseToggle}
     </div>
   );
 }
 
-// ── Sub-components ──────────────────────────────────────────────────
+const COLLAPSE_POSITION: Record<Placement, string> = {
+  bottom: "-top-3 left-1/2 -translate-x-1/2 rounded-t-control-sm border-b-0 w-6 h-3",
+  left: "-right-3 rounded-r-control-sm border-l-0 w-3 h-6 top-1/2 -translate-y-1/2",
+  right: "-left-3 rounded-l-control-sm border-r-0 w-3 h-6 top-1/2 -translate-y-1/2",
+};
+
+/** The chevron points toward the map edge the panel collapses into (or away from it when collapsed). */
+const COLLAPSE_ICONS: Record<Placement, [open: typeof ChevronUp, closed: typeof ChevronUp]> = {
+  bottom: [ChevronDown, ChevronUp],
+  left: [ChevronLeft, ChevronRight],
+  right: [ChevronRight, ChevronLeft],
+};
 
 function CollapseToggle({
   collapsed,
@@ -515,61 +580,23 @@ function CollapseToggle({
 }: {
   collapsed: boolean;
   onToggle: () => void;
-  placement?: "left" | "right" | "bottom";
+  placement?: Placement;
 }) {
-  let positionClass = "";
-  if (placement === "bottom") {
-    positionClass = "-top-3 left-1/2 -translate-x-1/2 rounded-t-md border-b-0 w-6 h-3";
-  } else if (placement === "left") {
-    positionClass = "-right-3 rounded-r-md border-l-0 w-3 h-6 top-1/2 -translate-y-1/2";
-  } else {
-    positionClass = "-left-3 rounded-l-md border-r-0 w-3 h-6 top-1/2 -translate-y-1/2";
-  }
-
+  const Icon = COLLAPSE_ICONS[placement][collapsed ? 1 : 0];
   return (
-    <button
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-sm"
       onClick={onToggle}
-      className={`bg-card/75 border-border text-muted-foreground hover:text-foreground absolute z-10 flex items-center justify-center border transition-colors ${positionClass} shadow-md backdrop-blur-sm`}
       title={collapsed ? "Show panel" : "Hide panel"}
-    >
-      {placement === "bottom" ? (
-        collapsed ? (
-          <ChevronUp className="h-3 w-3" />
-        ) : (
-          <ChevronDown className="h-3 w-3" />
-        )
-      ) : placement === "left" ? (
-        collapsed ? (
-          <ChevronRight className="h-3 w-3" />
-        ) : (
-          <ChevronLeft className="h-3 w-3" />
-        )
-      ) : collapsed ? (
-        <ChevronLeft className="h-3 w-3" />
-      ) : (
-        <ChevronRight className="h-3 w-3" />
+      aria-label={collapsed ? "Show panel" : "Hide panel"}
+      className={cn(
+        "rounded-control-sm size-5",
+        `bg-surface border-separator text-label-secondary hover:text-label shadow-card absolute z-10 flex items-center justify-center border transition-colors ${COLLAPSE_POSITION[placement]}`
       )}
-    </button>
-  );
-}
-
-export function FeatureSearchFilter({
-  value,
-  onChangeAction,
-}: {
-  value: string;
-  onChangeAction: (value: string) => void;
-}) {
-  return (
-    <div className="relative mb-2">
-      <Search className="text-muted-foreground absolute top-1/2 left-2 h-3 w-3 -translate-y-1/2" />
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChangeAction(e.target.value)}
-        placeholder="Filter features..."
-        className="border-border bg-background focus:ring-primary w-full rounded-md border py-1 pr-2 pl-7 text-xs outline-none focus:ring-1"
-      />
-    </div>
+    >
+      <Icon className="h-3 w-3" />
+    </Button>
   );
 }

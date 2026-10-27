@@ -1,134 +1,26 @@
 @import "tailwindcss";
 @source "../**/*.{ts,tsx,js,jsx}";
-@import "@c15t/nextjs/styles.css";
 
-@theme {
-  --color-background: var(--color-bg-primary);
-  --color-foreground: var(--color-text-primary);
-  --color-card: var(--color-bg-secondary);
-  --color-card-foreground: var(--color-text-primary);
-  --color-popover: var(--color-bg-secondary);
-  --color-popover-foreground: var(--color-text-primary);
-  --color-primary: var(--color-text-primary);
-  --color-primary-foreground: var(--color-bg-primary);
-  --color-secondary: var(--color-bg-tertiary);
-  --color-secondary-foreground: var(--color-text-primary);
-  --color-muted: var(--color-bg-tertiary);
-  --color-muted-foreground: var(--color-text-muted);
-  --color-accent: var(--color-bg-tertiary);
-  --color-accent-foreground: var(--color-text-primary);
-  --color-destructive: var(--color-error);
-  --color-destructive-foreground: var(--color-text-primary);
-  --color-border: var(--color-border-primary);
-  --color-input: var(--color-input-border);
-  --color-ring: var(--color-brand-primary);
-  --color-chart-1: var(--color-chart-1);
-  --color-chart-2: var(--color-chart-2);
-  --color-chart-3: var(--color-chart-3);
-  --color-chart-4: var(--color-chart-4);
-  --color-chart-5: var(--color-chart-5);
-
-  /* Semantic utilities */
-  --color-success: var(--color-success);
-  --color-error: var(--color-error);
-  --color-info: var(--color-info);
-  --color-brand-primary: var(--color-brand-primary);
-  --color-brand-secondary: var(--color-brand-secondary);
-  --color-text-secondary: var(--color-text-secondary);
-
-  /* Domain & Brand Tokens */
-  --color-poll: var(--color-poll);
-  --color-discord: var(--color-discord);
-  --color-discord-hover: var(--color-discord-hover);
-  --color-wiki: var(--color-wiki);
-  --color-wiki-hover: var(--color-wiki-hover);
-  --color-map-ocean: var(--color-map-ocean);
-
-  /* Gold Theme Colors */
-  --color-gold-50: #fffbeb;
-  --color-gold-100: #fef3c7;
-  --color-gold-200: #fde68a;
-  --color-gold-300: #fcd34d;
-  --color-gold-400: #fbbf24;
-  --color-gold-500: #fbbf24;
-  --color-gold-600: #d97706;
-  --color-gold-700: #b45309;
-  --color-gold-800: #92400e;
-  --color-gold-900: #78350f;
-  --color-gold-950: #451a03;
-
-  /* Eurostile Font Family Configuration */
-  --font-eurostile: "Eurostile", sans-serif;
-  --font-eurostile-cond: "Eurostile Condensed", var(--font-eurostile), sans-serif;
-  --font-eurostile-extd: "Eurostile Extended", var(--font-eurostile), sans-serif;
-}
+/* Tokens: colour roles, app tints, type, radius, materials, elevation, z, motion. */
+@import "./facet/tokens.css";
+@import "./facet/layers.css";
+@import "./facet/interaction.css";
 
 /* Import modular CSS files */
-@import "./fonts.css";
-@import "./shared-utilities.css";
-@import "./animations.css";
-@import "./performance.css";
-@import "./compact-mode.css";
-@import "./themes.css";
 @import "./typography.css";
+@import "./utilities.css";
+@import "./animations.css";
+@import "./textures.css";
+@import "./card-art.css";
+@import "./themes.css";
+@import "./theming.css";
 @import "./components.css";
-@import "./charts.css";
-@import "./light-mode-overrides.css";
-@import "./country-theming.css";
-@import "./mycountry-theming.css";
-@import "./facet.css";
-@import "./vault/vault.css";
-@import "./dashboard/dashboard.css";
-@import "./integrations/maps.css";
-@import "./integrations/toast.css";
-@import "./layout/navigation.css";
-@import "./layout/z-index.css";
-@import "./layout/scrollbars.css";
-
-@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
-
-/* Glow text effects for popover numbers and percentages */
-.glow-text {
-  text-shadow:
-    0 0 8px currentColor,
-    0 0 16px currentColor,
-    0 0 24px currentColor;
-  animation: glow-pulse 2s ease-in-out infinite;
-}
-
-@keyframes glow-pulse {
-  0%,
-  100% {
-    text-shadow:
-      0 0 8px currentColor,
-      0 0 16px currentColor,
-      0 0 24px currentColor;
-    opacity: 1;
-  }
-  50% {
-    text-shadow:
-      0 0 12px currentColor,
-      0 0 24px currentColor,
-      0 0 36px currentColor;
-    opacity: 0.8;
-  }
-}
-
-/* Shimmer effect for important numbers */
-.shimmer-text {
-  background: linear-gradient(
-    90deg,
-    currentColor 0%,
-    rgba(255, 255, 255, 0.8) 50%,
-    currentColor 100%
-  );
-  background-size: 200% 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  animation: shimmer 2s linear infinite;
-}
-
-
+@import "./domains.css";
+@import "./wiki-os/tokens.css";
+@import "./integrations.css";
+@import "./layout.css";
+@import "./facet/shell.css";
+@import "./clerk.css";
 
 @theme inline {
   --animate-marquee: marquee var(--duration) infinite linear;
@@ -149,28 +41,11 @@
       transform: translateY(calc(-100% - var(--gap)));
     }
   }
-  --animate-shiny-text: shiny-text 8s infinite;
-  --animate-shine: shine var(--duration) infinite linear;
-  @keyframes shine {
-    0% {
-      background-position: 0% 0%;
-    }
-    50% {
-      background-position: 100% 100%;
-    }
-    to {
-      background-position: 0% 0%;
-    }
-  }
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-  }
-  html,
-  body {
-    @apply bg-background text-foreground;
   }
 }
 
@@ -196,9 +71,9 @@
   position: absolute;
   border-radius: 50%;
   background-color: rgba(255, 255, 255, 0.7); /* White ripple */
-  animation: ripple 0.6s linear forwards;
-  transform: scale(0);
-  opacity: 1;
+  animation: ripple 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform: scale(0.95);
+  opacity: 0;
   top: 50%;
   left: 50%;
   width: 0;
@@ -206,7 +81,11 @@
 }
 
 @keyframes ripple {
-  to {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  100% {
     transform: scale(2);
     opacity: 0;
   }
@@ -222,4 +101,16 @@
    body child, so this only hides the escapee. Upstream fix: pass the element ref. */
 body > canvas[id^="cosmetic-particles-"] {
   display: none !important;
+}
+
+/* Reduced motion accessibility guard */
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-marquee-vertical,
+  .animate-glow-pulse,
+  .animate-shine,
+  .ripple-effect::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

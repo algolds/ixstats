@@ -1,0 +1,470 @@
+"use client";
+
+import React, { useState, useCallback, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useUser } from "~/context/auth-context";
+import { usePageTitle } from "~/hooks/usePageTitle";
+import { api } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { EmptyState } from "~/components/ui/empty-state";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Input } from "~/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "~/components/ui/dialog";
+import { assetUrl, withBasePath } from "~/lib/base-path";
+import { SPORT_PRESETS } from "~/lib/sports/presets";
+import { SportsShell } from "~/components/sports/core/SportsShell";
+import { useUrlSyncedSection } from "~/components/sports/core/useUrlSyncedSection";
+import { CLUB_SECTION_TABS, type SportsNavSection } from "~/components/sports/core/sportsSections";
+import { SportsSectionTabs } from "~/components/sports/core/SportsSectionTabs";
+import { PageHeader } from "~/components/shell/PageHeader";
+import { getSportTheme } from "~/lib/sports/theming";
+import { TeamSettingsModal } from "~/components/sports/league/TeamSettingsModal";
+import { SPORT_EMOJIS, type SportPresetKey } from "~/lib/sports/presets";
+import { ArrowLeft, Trophy, Shield, Settings, MapPin, WhiteFlag as Flag } from "iconoir-react";
+
+// Modular Sections
+import { ClubOverviewSection } from "~/components/sports/club/sections/ClubOverviewSection";
+import {
+  ClubRosterSection,
+  type RosterPlayerItem,
+} from "~/components/sports/club/sections/ClubRosterSection";
+import { ClubTacticsSection } from "~/components/sports/club/sections/ClubTacticsSection";
+import { ClubTransfersSection } from "~/components/sports/club/sections/ClubTransfersSection";
+import { ClubManagementSection } from "~/components/sports/club/sections/ClubManagementSection";
+import { ClubHistorySection } from "~/components/sports/club/sections/ClubHistorySection";
+import { Card } from "~/components/ui/card";
+
+interface ClubRouterProps {
+  teamId: string;
+}
+
+export function ClubRouter({ teamId }: ClubRouterProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { user } = useUser();
+  const notify = useNotify();
+
+  const sectionParam = (searchParams.get("section") ||
+    searchParams.get("tab")) as SportsNavSection | null;
+  const [activeSection, setActiveSection] = useUrlSyncedSection<SportsNavSection>(
+    sectionParam,
+    "overview"
+  );
+
+  const [selectedPlayer, setSelectedPlayer] = useState<RosterPlayerItem | null>(null);
+  const [listPrice, setListPrice] = useState<number>(100);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Client-side instant navigation with URL synchronization
+  const handleNavigate = useCallback((section: SportsNavSection) => {
+    setActiveSection(section);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("section", section);
+      url.searchParams.delete("tab");
+      window.history.pushState(null, "", url.toString());
+    }
+  }, []);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const onPopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const s = (params.get("section") || params.get("tab")) as SportsNavSection | null;
+      if (s) setActiveSection(s);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  const {
+    data: overview,
+    isLoading: overviewLoading,
+    refetch: refetchOverview,
+  } = api.sports.getTeamOverview.useQuery({ teamId }, { enabled: !!teamId });
+
+  const { data: teamPublic } = api.sports.getTeam.useQuery(
+    { id: teamId },
+    { enabled: !overview && !overviewLoading && !!teamId }
+  );
+
+  const { data: liveActivities } = api.sports.getLiveMatches.useQuery(
+    { teamId },
+    { refetchInterval: 10000, enabled: activeSection === "overview" && !!teamId }
+  );
+
+  const updateTeamTactics = api.sports.updateTeamTactics.useMutation({
+    onSuccess: () => {
+      notify.success("Tactics updated");
+      void refetchOverview();
+    },
+    onError: (err) => {
+      notify.error(err.message || "Failed to update tactics");
+    },
+  });
+
+  const setClubNotifications = api.sports.setClubNotifications.useMutation({
+    onSuccess: () => {
+      notify.success("Match notification preferences updated");
+      void refetchOverview();
+    },
+    onError: (err) => {
+      notify.error(err.message || "Failed to update notifications");
+    },
+  });
+
+  const listPlayer = api.sports.listPlayerForTransfer.useMutation({
+    onSuccess: () => {
+      notify.success("Player listed on the transfer market");
+      setSelectedPlayer(null);
+      void refetchOverview();
+    },
+    onError: (err) => {
+      notify.error(err.message || "Failed to list player");
+    },
+  });
+
+  const claimTeam = api.sports.claimTeam.useMutation({
+    onSuccess: () => {
+      notify.success("Team claimed");
+      void refetchOverview();
+      router.refresh();
+    },
+    onError: (err) => {
+      notify.error(err.message || "Failed to claim team");
+    },
+  });
+
+  usePageTitle({
+    title: overview?.team?.name
+      ? `MyClub - ${overview.team.name}`
+      : teamPublic?.name
+        ? `MyClub - ${teamPublic.name}`
+        : "MyClub",
+  });
+
+  if (overviewLoading) {
+    return (
+      <div className="container mx-auto max-w-7xl space-y-6 px-4 py-8">
+        <Skeleton className="rounded-row h-10 w-48" />
+        <Skeleton className="rounded-card h-44 w-full" />
+        <div className="grid gap-6 sm:grid-cols-4">
+          <Skeleton className="rounded-card h-64" />
+          <Skeleton className="rounded-card h-64 sm:col-span-3" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!overview && teamPublic) {
+    const publicEmoji =
+      SPORT_EMOJIS[(teamPublic.league?.sportPreset ?? "") as SportPresetKey] ?? "🏆";
+    const isClaimed = !!teamPublic.ownerUserId;
+    const isOwnedByMe = isClaimed && teamPublic.ownerUserId === user?.id;
+
+    return (
+      <div className="container mx-auto max-w-2xl px-4 py-16">
+        <Card padding="lg" className="text-center">
+          <div
+            className="border-separator bg-surface-secondary rounded-card text-large-title mx-auto mb-4 flex size-20 items-center justify-center overflow-hidden border"
+            style={teamPublic.color ? { borderColor: teamPublic.color } : undefined}
+          >
+            {teamPublic.logo ? (
+              <img
+                src={assetUrl(teamPublic.logo) ?? undefined}
+                alt={teamPublic.name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              publicEmoji
+            )}
+          </div>
+          <h2 className="text-label text-title-1">{teamPublic.name}</h2>
+          <p className="text-label-secondary text-footnote mt-1">
+            {teamPublic.league?.name} • {teamPublic.city ?? "Imperial League"}
+          </p>
+
+          {!isClaimed ? (
+            <div className="mt-6 space-y-4">
+              <p className="text-label-secondary text-body leading-relaxed">
+                This franchise is currently unclaimed. Take ownership of {teamPublic.name} to set
+                lineups, hire talent, and compete for league honors.
+              </p>
+              <Button
+                size="lg"
+                onClick={() => claimTeam.mutate({ teamId })}
+                disabled={claimTeam.isPending}
+              >
+                {claimTeam.isPending ? "Claiming..." : "Claim Club"}
+              </Button>
+            </div>
+          ) : isOwnedByMe ? (
+            <div className="mt-6 space-y-4">
+              <p className="text-label-secondary text-body">
+                You own this club. Refreshing session data...
+              </p>
+              <Button variant="secondary" onClick={() => void refetchOverview()}>
+                Reload dashboard
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-6 space-y-4">
+              <Shield className="text-label-tertiary mx-auto size-8" aria-hidden />
+              <p className="text-label-secondary text-body">
+                This club is managed by another registered director.
+              </p>
+            </div>
+          )}
+        </Card>
+      </div>
+    );
+  }
+
+  if (!overview) {
+    return (
+      <div className="container mx-auto max-w-lg px-4 py-16">
+        <Card>
+          <EmptyState
+            icon={<Trophy />}
+            title="Club not found"
+            message="This club does not exist or was removed."
+            action={
+              <Button onClick={() => router.push("/myclub")}>
+                <ArrowLeft />
+                Back to MyClub lobby
+              </Button>
+            }
+          />
+        </Card>
+      </div>
+    );
+  }
+
+  const { team, activeSeason, currentStandings, upcomingMatches } = overview;
+  const liveMatch =
+    liveActivities?.find(
+      (m: { homeTeamId: string; awayTeamId: string }) =>
+        m.homeTeamId === teamId || m.awayTeamId === teamId
+    ) ?? null;
+  const emoji = SPORT_EMOJIS[(team.league?.sportPreset ?? "") as SportPresetKey] ?? "🏆";
+  const sportPresetAttrs =
+    SPORT_PRESETS.find((p) => p.key === team.league?.sportPreset)?.ratingVector ?? [];
+
+  const heroSection = (
+    <Card className="overflow-hidden">
+      {team.coverImage && (
+        <div className="bg-fill-3 h-28 overflow-hidden">
+          <img src={withBasePath(team.coverImage)} alt="" className="h-full w-full object-cover" />
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div className="flex items-center gap-4">
+          <div
+            className="border-separator bg-surface-secondary rounded-row text-large-title flex size-16 shrink-0 items-center justify-center overflow-hidden border"
+            style={team.color ? { borderColor: team.color } : undefined}
+          >
+            {team.logo ? (
+              <img
+                src={assetUrl(team.logo) ?? undefined}
+                alt={team.name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              emoji
+            )}
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-label text-title-1">{team.name}</h2>
+              {team.shortName && <Badge variant="default">{team.shortName}</Badge>}
+            </div>
+            <div className="text-label-secondary text-footnote mt-1 flex flex-wrap items-center gap-3">
+              {team.city && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {team.city}
+                </span>
+              )}
+              {team.league && (
+                <Link
+                  href={`/myleague/${team.leagueId}`}
+                  className="hover:text-label flex items-center gap-1 hover:underline"
+                >
+                  <Flag className="h-3.5 w-3.5" />
+                  <span>{team.league.name}</span>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={() => setSettingsOpen(true)}>
+            <Settings />
+            Manage club
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+
+  const renderSectionContent = () => {
+    switch (activeSection) {
+      case "overview":
+        return (
+          <ClubOverviewSection
+            team={team as unknown as Parameters<typeof ClubOverviewSection>[0]["team"]}
+            activeSeason={activeSeason}
+            currentStandings={currentStandings}
+            upcomingMatches={upcomingMatches}
+            liveMatch={liveMatch}
+            isUpdatingNotifications={setClubNotifications.isPending}
+            onUpdateNotifications={(enabled) => setClubNotifications.mutate({ teamId, enabled })}
+            onTrained={() => void refetchOverview()}
+          />
+        );
+
+      case "roster":
+        return (
+          <ClubRosterSection
+            team={team as unknown as Parameters<typeof ClubRosterSection>[0]["team"]}
+            sportPresetAttributes={sportPresetAttrs}
+            onListPlayer={(player) => setSelectedPlayer(player)}
+            onTrained={() => void refetchOverview()}
+          />
+        );
+
+      case "tactics":
+        return (
+          <ClubTacticsSection
+            team={team as unknown as Parameters<typeof ClubTacticsSection>[0]["team"]}
+            onUpdateTactics={(params) =>
+              updateTeamTactics.mutate({
+                teamId: team.id,
+                tacticalIntent: params.tacticalIntent ?? team.tacticalIntent ?? "neutral",
+                attackFocus: params.attackFocus ?? 50,
+                teamIntensity: params.teamIntensity ?? 50,
+              })
+            }
+            isUpdatingTactics={updateTeamTactics.isPending}
+            onSavedLineup={() => void refetchOverview()}
+          />
+        );
+
+      case "transfers":
+        return (
+          <ClubTransfersSection
+            teamId={team.id}
+            teamColor={team.color ?? "#3b82f6"}
+            squadPlayers={
+              (team.players ?? []) as unknown as Parameters<
+                typeof ClubTransfersSection
+              >[0]["squadPlayers"]
+            }
+            onRefreshOverview={() => void refetchOverview()}
+          />
+        );
+
+      case "management":
+        return (
+          <ClubManagementSection
+            team={team as unknown as Parameters<typeof ClubManagementSection>[0]["team"]}
+            onRefetchOverview={() => void refetchOverview()}
+          />
+        );
+
+      case "history":
+        return <ClubHistorySection teamId={team.id} />;
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <>
+      <SportsShell
+        sportPreset={team.league?.sportPreset}
+        header={
+          <PageHeader
+            title={team.name}
+            subtitle={getSportTheme(team.league?.sportPreset).name}
+            back={{ href: "/myclub", label: "MyClub" }}
+            bleed
+          />
+        }
+        heroSection={heroSection}
+      >
+        <SportsSectionTabs
+          label="Club views"
+          tabs={CLUB_SECTION_TABS}
+          active={activeSection}
+          onChange={handleNavigate}
+        >
+          {renderSectionContent()}
+        </SportsSectionTabs>
+      </SportsShell>
+
+      {/* List Player on Transfer Market Dialog */}
+      <Dialog open={!!selectedPlayer} onOpenChange={(o) => !o && setSelectedPlayer(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              List {selectedPlayer?.firstName} {selectedPlayer?.lastName}
+            </DialogTitle>
+            <DialogDescription>
+              List this athlete on the open transfer marketplace for sealed escrow bidding.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="my-4 space-y-4">
+            <div>
+              <label htmlFor="list-price" className="text-subhead text-label-secondary mb-2 block">
+                Asking valuation (Sovereigns)
+              </label>
+              <Input
+                id="list-price"
+                type="number"
+                min={10}
+                value={listPrice}
+                onChange={(e) => setListPrice(Number(e.target.value))}
+                className="tabular-nums"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={() => setSelectedPlayer(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedPlayer) {
+                  listPlayer.mutate({ playerId: selectedPlayer.id, price: listPrice });
+                }
+              }}
+              disabled={listPlayer.isPending}
+            >
+              {listPlayer.isPending ? "Listing..." : "Confirm Listing"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <TeamSettingsModal
+        team={team as unknown as Parameters<typeof TeamSettingsModal>[0]["team"]}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        onSaved={() => void refetchOverview()}
+      />
+    </>
+  );
+}

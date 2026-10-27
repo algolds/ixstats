@@ -5,83 +5,38 @@
  * Provides endpoints for:
  * - Balance queries
  * - Transaction history
- * - Daily bonuses and streaks
+ * - The daily reward and streaks
  * - Credit spending
  * - Vault level and earnings summaries
  */
 
+import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
-import { vaultService } from "~/lib/vault";
+import { createTRPCRouter, adminProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import { vaultService } from "~/lib/vault/vault-service";
+import { facesAfterCommit } from "~/lib/cards/hub/committed-faces";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
+import type { CardFaceData } from "~/lib/cards/face/types";
 
 /**
- * Vault transaction type enum for validation
+ * The face of the copy a daily card claim minted. The claimer holds it, so its art shows (a retired card keeps the
+ * placeholder face). The claim has already committed, so a failed read drops the face instead of failing the claim.
  */
-const vaultTransactionTypeEnum = z.enum([
-  "EARN_PASSIVE",
-  "EARN_ACTIVE",
-  "EARN_CARDS",
-  "EARN_SOCIAL",
-  "SPEND_PACKS",
-  "SPEND_MARKET",
-  "SPEND_CRAFT",
-  "SPEND_BOOST",
-  "SPEND_COSMETIC",
-  "ADMIN_ADJUSTMENT",
-]);
+async function claimedFace(
+  db: PrismaClient,
+  ownershipId: string | undefined
+): Promise<CardFaceData | null> {
+  if (!ownershipId) return null;
+  const [face] = await facesAfterCommit(db, [ownershipId], "A daily card claim");
+  return face ?? null;
+}
 
 export const vaultDailyClaimsRouter = createTRPCRouter({
   /**
-   * Get vault balance and stats for a user
-   */
-  claimDailyBonus: protectedProcedure.mutation(async ({ ctx }) => {
-    try {
-      if (!ctx.auth?.userId) {
-        throw new Error("User ID not found in authentication context");
-      }
-
-      const result = await vaultService.claimDailyBonus(ctx.auth.userId, ctx.db as any);
-
-      if (!result.success) {
-        throw new Error(result.message || "Failed to claim daily bonus");
-      }
-
-      await globalCache.delete(`user_vault_balance:${ctx.auth.userId}`);
-
-      // Notification: daily bonus claimed (fire-and-forget)
-      try {
-        await notificationAPI.create({
-          userId: ctx.auth.userId,
-          title: "Daily Bonus Claimed",
-          message: `+${result.bonus} IxC! ${result.streak}-day streak`,
-          type: "info",
-          category: "achievement",
-          priority: "low",
-          metadata: { bonus: result.bonus, streak: result.streak },
-        });
-      } catch {}
-
-      return {
-        success: true,
-        bonus: result.bonus,
-        streak: result.streak,
-        message: `Claimed ${result.bonus} IxC! Streak: ${result.streak} days`,
-      };
-    } catch (error) {
-      console.error("[Vault Router] Error claiming daily bonus:", error);
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error("Failed to claim daily bonus");
-    }
-  }),
-
-  /**
    * Claim combined daily claim (credits jackpot OR random card)
    */
-  claimCombinedDailyClaim: protectedProcedure
+  claimCombinedDailyClaim: rateLimitedMutationProcedure
     .input(z.object({ choice: z.enum(["CREDITS", "CARD"]) }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -92,7 +47,7 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
         const result = await vaultService.claimCombinedDailyClaim(
           ctx.auth.userId,
           input.choice,
-          ctx.db as any
+          ctx.db
         );
 
         if (!result.success) {
@@ -108,7 +63,7 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
         try {
           const rewardMessage =
             result.rewardType === "credits"
-              ? `+${result.creditsAwarded} IxC! ${result.streak}-day streak`
+              ? `+${result.creditsAwarded} IxCredits! ${result.streak}-day streak`
               : `Pulled daily card: ${result.cardAwarded?.title}! ${result.streak}-day streak`;
 
           await notificationAPI.create({
@@ -125,65 +80,15 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
               streak: result.streak,
             },
           });
-        } catch {}
+        } catch (err) {
+          console.warn("[Vault Router] Daily claim notification failed:", err);
+        }
 
-        return result;
+        return { ...result, cardFace: await claimedFace(ctx.db, result.cardAwarded?.ownershipId) };
       } catch (error) {
         console.error("[Vault Router] Error claiming combined daily reward:", error);
         if (error instanceof Error) throw error;
-        throw new Error("Failed to claim combined daily reward");
-      }
-    }),
-
-  /**
-   * Claim streak bonus (updates login streak)
-   */
-  claimStreakBonus: protectedProcedure.mutation(async ({ ctx }) => {
-    try {
-      if (!ctx.auth?.userId) {
-        throw new Error("User ID not found in authentication context");
-      }
-
-      const newStreak = await vaultService.updateLoginStreak(ctx.auth.userId, ctx.db as any);
-
-      await globalCache.delete(`user_vault_balance:${ctx.auth.userId}`);
-
-      return {
-        success: true,
-        streak: newStreak,
-        message: `Login streak updated: ${newStreak} days`,
-      };
-    } catch (error) {
-      console.error("[Vault Router] Error claiming streak bonus:", error);
-      throw new Error("Failed to update login streak");
-    }
-  }),
-
-  /**
-   * Spend IxCredits
-   */
-  checkDailyCap: protectedProcedure
-    .input(
-      z.object({
-        earnType: z.enum(["EARN_ACTIVE", "EARN_SOCIAL"]),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        if (!ctx.auth?.userId) {
-          throw new Error("User ID not found in authentication context");
-        }
-
-        const capCheck = await vaultService.checkDailyCap(
-          ctx.auth.userId,
-          input.earnType,
-          ctx.db as any
-        );
-
-        return capCheck;
-      } catch (error) {
-        console.error("[Vault Router] Error checking daily cap:", error);
-        throw new Error("Failed to check daily earning cap");
+        throw new Error("Failed to claim combined daily reward", { cause: error });
       }
     }),
 
@@ -234,11 +139,7 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
         return { success: true, newStreak };
       } catch (error) {
         console.error("[Vault Router] Error adjusting streak:", error);
-        throw new Error("Failed to adjust user streak");
+        throw new Error("Failed to adjust user streak", { cause: error });
       }
     }),
-
-  /**
-   * Admin: List user vault transactions
-   */
 });

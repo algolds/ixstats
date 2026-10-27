@@ -1,8 +1,7 @@
 import { z } from "zod";
-import { cachedPublicProcedure } from "~/server/api/trpc";
+import type { PrismaClient } from "@prisma/client";
+import { cachedStaticProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import type { Geometry } from "geojson";
 import {
   buildGeoProfile,
   computeEconomicGeoModifiers,
@@ -10,19 +9,168 @@ import {
   computeCrisisRiskFactors,
   estimateTemperature,
   estimatePrecipitation,
-  getAgricultureFactor,
-  resolveClimateFromColor,
-  ELEVATION_ZONES,
-  type ClimateZoneEntry,
-  type ElevationZoneEntry,
 } from "~/lib/maps/geo-analytics";
-import { estimateBboxOverlap } from "./geometry";
+import { kmPerDegree, kmPerDegreeLng, scaleDistanceToRadius } from "~/lib/maps/planet";
+import { parseRealmMapSettings, realmRadiusKm } from "~/lib/maps/realm-map-settings";
+import { buildClimateZones, buildElevationZones, countryZoneFills } from "./profile-zones";
+
+/**
+ * $1 country: how many of the realm's rivers or lakes touch the country and their summed length/area inside it.
+ * The country is cut into pieces of at most 256 vertices (ST_Subdivide) so each overlay is a small one; the
+ * bounding-box test (`&&`) lets the GiST index on `geom_postgis` prune the layer first, and a feature that lies
+ * inside a piece counts whole. The pieces partition the country, so their lengths and areas add up.
+ */
+function clippedLayerSql(layerType: "rivers" | "lakes") {
+  const [measure, perUnit] = layerType === "rivers" ? ["ST_Length", "1000"] : ["ST_Area", "1e6"];
+  return `
+    WITH c AS MATERIALIZED (
+      SELECT "realmId", geom_postgis FROM "Country" WHERE id = $1 AND geom_postgis IS NOT NULL
+    ),
+    parts AS MATERIALIZED (SELECT ST_Subdivide(c.geom_postgis, 256) AS g FROM c),
+    cand AS MATERIALIZED (
+      SELECT ml.id, ml.geom_postgis AS g
+        FROM c JOIN map_layers ml ON ml."layerType" = '${layerType}' AND ml."isActive" = true
+         AND ml."worldId" = c."realmId" AND ml.geom_postgis && c.geom_postgis
+    )
+    SELECT COUNT(DISTINCT cand.id)::int AS count,
+      COALESCE(SUM(${measure}((CASE WHEN ST_CoveredBy(cand.g, parts.g) THEN cand.g
+                                    ELSE ST_Intersection(cand.g, parts.g) END)::geography)), 0) / ${perUnit} AS total
+      FROM cand JOIN parts ON cand.g && parts.g AND ST_Intersects(cand.g, parts.g)`;
+}
+
+/** Count and summed length/area of the realm's rivers or lakes clipped to the country, via PostGIS. */
+async function clippedLayerStats(
+  db: PrismaClient,
+  countryId: string,
+  layerType: "rivers" | "lakes"
+) {
+  const rows = await db.$queryRawUnsafe<Array<{ count: number; total: number }>>(
+    clippedLayerSql(layerType),
+    countryId
+  );
+  return { count: Number(rows[0]?.count ?? 0), total: Number(rows[0]?.total ?? 0) };
+}
+
+/**
+ * Rivers and lakes inside the country. A failing query rejects (nothing is estimated in its place): the profile is
+ * cached for an hour, so a degraded answer would be served to everyone for that long.
+ */
+async function loadHydrography(db: PrismaClient, countryId: string) {
+  const [rivers, lakes] = await Promise.all([
+    clippedLayerStats(db, countryId, "rivers"),
+    clippedLayerStats(db, countryId, "lakes"),
+  ]);
+  return {
+    riverCount: rivers.count,
+    totalRiverLengthKm: rivers.total,
+    lakeCount: lakes.count,
+    totalLakeAreaSqKm: lakes.total,
+  };
+}
+
+/**
+ * $1 country: the other countries' political features of the same realm that touch it, each with the length of
+ * border they share. The `&&` test lets the GiST index on `geom_postgis` prune the realm's features first.
+ */
+const NEIGHBOURS_SQL = `
+  WITH c AS MATERIALIZED (
+    SELECT id, "realmId", geom_postgis, ST_Boundary(geom_postgis) AS edge
+      FROM "Country" WHERE id = $1 AND geom_postgis IS NOT NULL
+  )
+  SELECT DISTINCT ON (c2.id)
+    c2.id, c2.name, c2.slug,
+    ST_Length(ST_Intersection(ST_Boundary(ml.geom_postgis), c.edge)::geography) / 1000 AS shared_border_km
+    FROM c
+    JOIN map_layers ml ON ml."layerType" = 'political' AND ml."isActive" = true
+     AND ml."worldId" = c."realmId" AND ml."countryId" IS NOT NULL AND ml."countryId" != c.id
+     AND ml.geom_postgis && c.geom_postgis
+    JOIN "Country" c2 ON c2.id = ml."countryId" AND c2."realmId" = c."realmId"
+   WHERE ST_Intersects(ml.geom_postgis, c.geom_postgis)
+   ORDER BY c2.id, shared_border_km DESC`;
+
+const PERIMETER_SQL = `
+  SELECT ST_Perimeter(geom_postgis::geography) / 1000 AS perimeter_km
+    FROM "Country" WHERE id = $1 AND geom_postgis IS NOT NULL`;
+
+/**
+ * Neighbours and coastline via PostGIS: intersecting the stored `geom_postgis` shapes gives pixel-perfect
+ * neighbour detection and accurate shared-border lengths. A failing query rejects, like the hydrography's; so does
+ * a country with no `geom_postgis` (the trigger left it NULL for an invalid outline), which cannot be measured.
+ */
+async function loadNeighbours(db: PrismaClient, countryId: string) {
+  const [neighborRows, [perimeter]] = await Promise.all([
+    db.$queryRawUnsafe<
+      Array<{ id: string; name: string; slug: string | null; shared_border_km: number }>
+    >(NEIGHBOURS_SQL, countryId),
+    db.$queryRawUnsafe<Array<{ perimeter_km: number }>>(PERIMETER_SQL, countryId),
+  ]);
+  if (!perimeter) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: "Country has no usable map outline. Re-save its map features to rebuild it.",
+    });
+  }
+  const neighbors = neighborRows
+    .filter((r) => Number(r.shared_border_km) > 0)
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      slug: r.slug,
+      sharedBorderKm: Math.round(Number(r.shared_border_km)),
+    }))
+    .sort((a, b) => b.sharedBorderKm - a.sharedBorderKm);
+
+  const perimeterKm = Math.round(Number(perimeter.perimeter_km ?? 0));
+  const sharedBorderKm = neighbors.reduce((sum, n) => sum + n.sharedBorderKm, 0);
+  return { neighbors, perimeterKm, coastlineKm: Math.max(0, perimeterKm - sharedBorderKm) };
+}
+
+async function loadSuperlatives(db: PrismaClient, countryId: string) {
+  const where = { countryId, status: "approved" } as const;
+  const [peak, river, lake] = await Promise.all([
+    db.peak.findFirst({ where, orderBy: { elevation: "desc" } }),
+    db.namedRiver.findFirst({ where, orderBy: { lengthKm: "desc" } }),
+    db.namedLake.findFirst({ where, orderBy: { areaSqKm: "desc" } }),
+  ]);
+
+  let tallestPeak = null;
+  if (peak) {
+    tallestPeak = {
+      name: peak.name,
+      elevation: peak.elevation,
+      prominence: peak.prominence,
+      type: "peak" as const,
+    };
+  } else {
+    // Fallback: highest city elevation
+    const highestCity = await db.city.findFirst({
+      where,
+      orderBy: { elevation: "desc" },
+      select: { name: true, elevation: true },
+    });
+    if (highestCity && highestCity.elevation !== null) {
+      tallestPeak = {
+        name: highestCity.name,
+        elevation: highestCity.elevation,
+        prominence: null,
+        type: "city" as const,
+      };
+    }
+  }
+
+  return {
+    tallestPeak,
+    longestRiver: river ? { name: river.name, lengthKm: river.lengthKm } : null,
+    largestLake: lake
+      ? { name: lake.name, areaSqKm: lake.areaSqKm, maxDepthM: lake.maxDepthM }
+      : null,
+  };
+}
 
 export const geoProfileProcedures = {
-  getCountryGeoProfile: cachedPublicProcedure
+  getCountryGeoProfile: cachedStaticProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      // 1. Get country geometry and basic info
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
         select: {
@@ -31,9 +179,9 @@ export const geoProfileProcedures = {
           geometry: true,
           centroid: true,
           boundingBox: true,
-          coastlineKm: true,
           landArea: true,
           areaSqMi: true,
+          realmId: true,
         },
       });
 
@@ -41,462 +189,68 @@ export const geoProfileProcedures = {
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
       }
 
-      const countryGeo = country.geometry as import("geojson").Geometry | null;
       const centroid = country.centroid as [number, number] | null;
       const bbox = country.boundingBox as [number, number, number, number] | null;
 
-      if (!countryGeo || !centroid) {
+      if (!country.geometry || !centroid) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
           message: "Country has no map geometry. Link it to a map feature first.",
         });
       }
 
-      // 2. Get intersecting map layers for climate and altitude analysis
-      const [climateLayers, altitudeLayers] = await Promise.all([
-        ctx.db.mapLayer.findMany({
-          where: { layerType: "climate", isActive: true },
-          select: {
-            featureId: true,
-            geometry: true,
-            properties: true,
-            areaSqKm: true,
-            displayName: true,
-          },
-        }),
-        ctx.db.mapLayer.findMany({
-          where: { layerType: "altitudes", isActive: true },
-          select: {
-            featureId: true,
-            geometry: true,
-            properties: true,
-            areaSqKm: true,
-            displayName: true,
-          },
-        }),
+      const realmId = country.realmId;
+      const realm = await ctx.db.realm.findUnique({
+        where: { id: realmId },
+        select: { settings: true },
+      });
+      // Distances measured on Earth's radius (PostGIS geography) scale to the realm's planet
+      const radiusKm = realmRadiusKm(realm?.settings);
+      const onPlanet = (km: number) => scaleDistanceToRadius(km, radiusKm);
+      // Everything below is independent: climate and altitude layers of the country's own realm (its zones named
+      // by its climate key), hydrography, neighbours and perimeter, and the superlatives
+      const [climateFills, altitudeFills, hydro, measured, superlatives] = await Promise.all([
+        countryZoneFills(ctx.db, country, "climate", bbox),
+        countryZoneFills(ctx.db, country, "altitudes", bbox),
+        loadHydrography(ctx.db, input.countryId),
+        loadNeighbours(ctx.db, input.countryId),
+        loadSuperlatives(ctx.db, input.countryId),
       ]);
+      const climateKey = parseRealmMapSettings(realm?.settings).climateKey ?? null;
 
-      // 3. Compute area (use stored value or estimate from geometry)
       const areaKm2 = country.landArea ?? (country.areaSqMi ? country.areaSqMi / 0.386102 : 0);
+      const climateDistribution = buildClimateZones(climateFills, true, climateKey).sort(
+        (a, b) => b.areaSqKm - a.areaSqKm
+      );
+      const elevationProfile = buildElevationZones(altitudeFills).sort(
+        (a, b) => a.minElev - b.minElev
+      );
+      const neighbors = measured.neighbors.map((n) => ({
+        ...n,
+        sharedBorderKm: Math.round(onPlanet(n.sharedBorderKm)),
+      }));
+      const perimeterKm = onPlanet(measured.perimeterKm);
+      const coastlineKm = Math.round(onPlanet(measured.coastlineKm));
 
-      // 4. Build climate distribution
-      // Strategy: match climate features by checking if they overlap the country's bbox
-      // (client-side approximation; PostGIS ST_Intersection would be more precise)
-      const climateDistribution: ClimateZoneEntry[] = [];
-      const countryMinLng = bbox?.[0] ?? -180;
-      const countryMinLat = bbox?.[1] ?? -90;
-      const countryMaxLng = bbox?.[2] ?? 180;
-      const countryMaxLat = bbox?.[3] ?? 90;
-
-      for (const cl of climateLayers) {
-        const props = cl.properties as Record<string, unknown> | null;
-        if (!props) continue;
-
-        // Check rough bbox overlap
-        const clGeo = cl.geometry as import("geojson").Geometry | null;
-        if (!clGeo) continue;
-
-        // Resolve climate type from fill color (SVG paths have no text names)
-        const fill = (props["fill"] as string) ?? "";
-        const climateName = resolveClimateFromColor(fill);
-        if (!climateName) continue;
-
-        // Simple bbox overlap test using the climate feature's centroid or first coord
-        const clArea = cl.areaSqKm ?? 0;
-        if (clArea <= 0) continue;
-
-        // For now, use a proportional estimation based on the feature's total area
-        // and the country's relative size. This will be replaced with PostGIS
-        // ST_Intersection once the endpoint is validated.
-        // We estimate overlap fraction from bbox coverage
-        const overlapFraction = estimateBboxOverlap(
-          clGeo,
-          countryMinLng,
-          countryMinLat,
-          countryMaxLng,
-          countryMaxLat
-        );
-        if (overlapFraction <= 0) continue;
-
-        const overlapArea = clArea * overlapFraction;
-        const agFactor = getAgricultureFactor(climateName);
-
-        // Aggregate same climate types (multiple SVG polygons per zone)
-        const existing = climateDistribution.find((e) => e.type === climateName);
-        if (existing) {
-          existing.areaSqKm += overlapArea;
-        } else {
-          climateDistribution.push({
-            type: climateName,
-            percentArea: 0, // computed below
-            areaSqKm: overlapArea,
-            agricultureFactor: agFactor,
-          });
-        }
-      }
-
-      // Normalize climate percentages
-      const totalClimateArea = climateDistribution.reduce((s, z) => s + z.areaSqKm, 0);
-      for (const z of climateDistribution) {
-        z.percentArea =
-          totalClimateArea > 0 ? Math.round((z.areaSqKm / totalClimateArea) * 100 * 10) / 10 : 0;
-      }
-      // Sort by area descending
-      climateDistribution.sort((a, b) => b.areaSqKm - a.areaSqKm);
-
-      // 5. Build elevation profile
-      const elevationProfile: ElevationZoneEntry[] = [];
-      for (const al of altitudeLayers) {
-        const props = al.properties as Record<string, unknown> | null;
-        if (!props) continue;
-
-        const alGeo = al.geometry as import("geojson").Geometry | null;
-        if (!alGeo) continue;
-
-        const alArea = al.areaSqKm ?? 0;
-        if (alArea <= 0) continue;
-
-        const overlapFraction = estimateBboxOverlap(
-          alGeo,
-          countryMinLng,
-          countryMinLat,
-          countryMaxLng,
-          countryMaxLat
-        );
-        if (overlapFraction <= 0) continue;
-
-        const overlapArea = alArea * overlapFraction;
-
-        // Match to elevation zone by color or name
-        const fill = (props["fill"] as string) ?? "";
-        const zoneMatch = ELEVATION_ZONES.find(
-          (ez) => ez.color.toLowerCase() === fill.toLowerCase()
-        );
-
-        if (zoneMatch) {
-          // Aggregate into existing zone or create new entry
-          const existing = elevationProfile.find((e) => e.zone === zoneMatch.zoneId);
-          if (existing) {
-            existing.areaSqKm += overlapArea;
-          } else {
-            elevationProfile.push({
-              zone: zoneMatch.zoneId,
-              name: zoneMatch.zoneName,
-              percentArea: 0, // computed below
-              areaSqKm: overlapArea,
-              minElev: zoneMatch.elevationMin,
-              maxElev: zoneMatch.elevationMax,
-            });
-          }
-        }
-      }
-
-      // Normalize elevation percentages
-      const totalElevArea = elevationProfile.reduce((s, z) => s + z.areaSqKm, 0);
-      for (const z of elevationProfile) {
-        z.percentArea =
-          totalElevArea > 0 ? Math.round((z.areaSqKm / totalElevArea) * 100 * 10) / 10 : 0;
-      }
-      elevationProfile.sort((a, b) => a.minElev - b.minElev);
-
-      // 6. Hydrography: clip rivers/lakes to country using PostGIS with bbox fallback
-      let riverCount = 0;
-      let totalRiverLengthKm = 0;
-      let lakeCount = 0;
-      let totalLakeAreaSqKm = 0;
-
-      try {
-        const riverStats = await ctx.db.$queryRawUnsafe<
-          Array<{ count: number; length_km: number }>
-        >(
-          `
-          WITH country AS (
-            SELECT id,
-              ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)) as geom
-            FROM "Country"
-            WHERE id = $1
-            LIMIT 1
-          )
-          SELECT
-            COUNT(ml.id)::int as count,
-            COALESCE(SUM(
-              ST_Length(
-                ST_Intersection(
-                  ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(ml.geometry::text), 4326)),
-                  c.geom
-                )::geography
-              )
-            ), 0) / 1000 as length_km
-          FROM country c
-          JOIN map_layers ml ON ml."layerType" = 'rivers' AND ml."isActive" = true
-          WHERE ST_Intersects(
-            ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(ml.geometry::text), 4326)),
-            c.geom
-          )
-          `,
-          input.countryId
-        );
-
-        riverCount = Number(riverStats[0]?.count ?? 0);
-        totalRiverLengthKm = Number(riverStats[0]?.length_km ?? 0);
-
-        const lakeStats = await ctx.db.$queryRawUnsafe<Array<{ count: number; area_sqkm: number }>>(
-          `
-          WITH country AS (
-            SELECT id,
-              ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)) as geom
-            FROM "Country"
-            WHERE id = $1
-            LIMIT 1
-          )
-          SELECT
-            COUNT(ml.id)::int as count,
-            COALESCE(SUM(
-              ST_Area(
-                ST_Intersection(
-                  ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(ml.geometry::text), 4326)),
-                  c.geom
-                )::geography
-              )
-            ), 0) / 1e6 as area_sqkm
-          FROM country c
-          JOIN map_layers ml ON ml."layerType" = 'lakes' AND ml."isActive" = true
-          WHERE ST_Intersects(
-            ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(ml.geometry::text), 4326)),
-            c.geom
-          )
-          `,
-          input.countryId
-        );
-
-        lakeCount = Number(lakeStats[0]?.count ?? 0);
-        totalLakeAreaSqKm = Number(lakeStats[0]?.area_sqkm ?? 0);
-      } catch (err) {
-        console.warn("PostGIS hydro query failed, falling back to bbox estimation:", err);
-        const [fallbackRivers, fallbackLakes] = await Promise.all([
-          ctx.db.mapLayer.findMany({
-            where: { layerType: "rivers", isActive: true },
-            select: {
-              featureId: true,
-              geometry: true,
-              properties: true,
-              areaSqKm: true,
-            },
-          }),
-          ctx.db.mapLayer.findMany({
-            where: { layerType: "lakes", isActive: true },
-            select: {
-              featureId: true,
-              geometry: true,
-              areaSqKm: true,
-            },
-          }),
-        ]);
-
-        const filteredRivers = fallbackRivers.filter((r) => {
-          const rGeo = r.geometry as import("geojson").Geometry | null;
-          if (!rGeo) return false;
-          return (
-            estimateBboxOverlap(rGeo, countryMinLng, countryMinLat, countryMaxLng, countryMaxLat) >
-            0
-          );
-        });
-
-        const filteredLakes = fallbackLakes.filter((l) => {
-          const lGeo = l.geometry as import("geojson").Geometry | null;
-          if (!lGeo) return false;
-          return (
-            estimateBboxOverlap(lGeo, countryMinLng, countryMinLat, countryMaxLng, countryMaxLat) >
-            0
-          );
-        });
-
-        riverCount = filteredRivers.length;
-        totalRiverLengthKm = filteredRivers.reduce((s, r) => {
-          const p = r.properties as Record<string, unknown> | null;
-          return s + ((p?.["lengthKm"] as number) ?? r.areaSqKm ?? 0);
-        }, 0);
-
-        lakeCount = filteredLakes.length;
-        totalLakeAreaSqKm = filteredLakes.reduce((s, l) => s + (l.areaSqKm ?? 0), 0);
-      }
-
-      // 7. Find neighbors + coastline via PostGIS spatial queries
-      // Uses ST_Intersects on JSONB geometry cast to PostGIS geometry for pixel-perfect
-      // neighbor detection and accurate coastline/shared-border computation.
-      interface PostGISNeighborRow {
-        id: string;
-        name: string;
-        slug: string | null;
-        shared_border_km: number;
-      }
-
-      let neighborCountries: Array<{
-        id: string;
-        name: string;
-        slug: string | null;
-        sharedBorderKm: number;
-      }> = [];
-      let perimeterKm = 0;
-      let coastlineKm = 0;
-
-      try {
-        // Query 1: Find all neighboring countries and their shared border lengths
-        const neighborRows = await ctx.db.$queryRawUnsafe<PostGISNeighborRow[]>(
-          `
-          WITH country AS (
-            SELECT id, name,
-              ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)) as geom
-            FROM "Country"
-            WHERE id = $1
-            LIMIT 1
-          )
-          SELECT DISTINCT ON (c2.id)
-            c2.id, c2.name, c2.slug,
-            ST_Length(
-              ST_Intersection(
-                ST_Boundary(ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(ml.geometry::text), 4326))),
-                ST_Boundary(c.geom)
-              )::geography
-            ) / 1000 as shared_border_km
-          FROM country c
-          JOIN map_layers ml ON ml."layerType" = 'political'
-            AND ml."isActive" = true
-            AND ml."countryId" IS NOT NULL
-            AND ml."countryId" != c.id
-          JOIN "Country" c2 ON c2.id = ml."countryId"
-          WHERE ST_Intersects(
-            ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(ml.geometry::text), 4326)),
-            c.geom
-          )
-          ORDER BY c2.id, shared_border_km DESC
-        `,
-          input.countryId
-        );
-
-        neighborCountries = neighborRows
-          .filter((r) => Number(r.shared_border_km) > 0)
-          .map((r) => ({
-            id: r.id,
-            name: r.name,
-            slug: r.slug,
-            sharedBorderKm: Math.round(Number(r.shared_border_km)),
-          }))
-          .sort((a, b) => b.sharedBorderKm - a.sharedBorderKm);
-
-        // Query 2: Get country perimeter for coastline calculation
-        const perimResult = await ctx.db.$queryRawUnsafe<Array<{ perimeter_km: number }>>(
-          `
-          SELECT ST_Perimeter(
-            ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326))::geography
-          ) / 1000 as perimeter_km
-          FROM "Country"
-          WHERE id = $1
-        `,
-          input.countryId
-        );
-
-        perimeterKm = Math.round(Number(perimResult[0]?.perimeter_km ?? 0));
-        const totalSharedBorderKm = neighborCountries.reduce((s, n) => s + n.sharedBorderKm, 0);
-        coastlineKm = Math.max(0, perimeterKm - totalSharedBorderKm);
-      } catch {
-        // PostGIS unavailable or geometry invalid — fall back to bbox estimation
-        const latMid = (countryMinLat + countryMaxLat) / 2;
-        const degToKm = 111.32;
-        const cosLat = Math.cos((latMid * Math.PI) / 180);
-        perimeterKm = Math.round(
-          2 *
-            ((countryMaxLat - countryMinLat) * degToKm +
-              (countryMaxLng - countryMinLng) * degToKm * cosLat) *
-            1.3
-        );
-        coastlineKm = country.coastlineKm ?? perimeterKm;
-      }
-
-      const neighborCount = neighborCountries.length;
       const profile = buildGeoProfile({
         climateDistribution,
         elevationProfile,
         coastlineKm,
-        neighborCount,
-        totalRiverLengthKm,
-        totalLakeAreaSqKm: totalLakeAreaSqKm,
+        neighborCount: neighbors.length,
+        totalRiverLengthKm: hydro.totalRiverLengthKm,
+        totalLakeAreaSqKm: hydro.totalLakeAreaSqKm,
         areaKm2,
       });
 
-      // 8. Query superlatives
-      const [peaks, namedRivers, namedLakes] = await Promise.all([
-        ctx.db.peak.findMany({
-          where: { countryId: input.countryId, status: "approved" },
-          orderBy: { elevation: "desc" },
-          take: 1,
-        }),
-        ctx.db.namedRiver.findMany({
-          where: { countryId: input.countryId, status: "approved" },
-          orderBy: { lengthKm: "desc" },
-          take: 1,
-        }),
-        ctx.db.namedLake.findMany({
-          where: { countryId: input.countryId, status: "approved" },
-          orderBy: { areaSqKm: "desc" },
-          take: 1,
-        }),
-      ]);
-
-      let tallestPeak = null;
-      if (peaks[0]) {
-        tallestPeak = {
-          name: peaks[0].name,
-          elevation: peaks[0].elevation,
-          prominence: peaks[0].prominence,
-          type: "peak" as const,
-        };
-      } else {
-        // Fallback: highest city elevation
-        const highestCity = await ctx.db.city.findFirst({
-          where: { countryId: input.countryId, status: "approved" },
-          orderBy: { elevation: "desc" },
-          select: { name: true, elevation: true },
-        });
-        if (highestCity && highestCity.elevation !== null) {
-          tallestPeak = {
-            name: highestCity.name,
-            elevation: highestCity.elevation,
-            prominence: null,
-            type: "city" as const,
-          };
-        }
-      }
-
-      const longestRiver = namedRivers[0]
-        ? {
-            name: namedRivers[0].name,
-            lengthKm: namedRivers[0].lengthKm,
-          }
-        : null;
-
-      const largestLake = namedLakes[0]
-        ? {
-            name: namedLakes[0].name,
-            areaSqKm: namedLakes[0].areaSqKm,
-            maxDepthM: namedLakes[0].maxDepthM,
-          }
-        : null;
-
-      // 9. Compute gameplay modifiers
-      const economicModifiers = computeEconomicGeoModifiers(profile);
-      const npcModifiers = computeNPCGeoModifiers(profile);
-      const crisisRisk = computeCrisisRiskFactors(profile);
-
-      // 10. Temperature and precipitation estimates
+      const temp = estimateTemperature(
+        centroid[1] ?? 0,
+        profile.meanElevation,
+        climateDistribution
+      );
       const centroidLat = centroid[1] ?? 0;
-      const temp = estimateTemperature(centroidLat, profile.meanElevation, climateDistribution);
-      const precipMm = estimatePrecipitation(climateDistribution, profile.meanElevation);
-
-      // 11. Area metrics (perimeterKm already computed by PostGIS above)
-      const nsSpanKm = bbox ? Math.abs(bbox[3] - bbox[1]) * 111.32 : 0;
+      const nsSpanKm = bbox ? Math.abs(bbox[3] - bbox[1]) * kmPerDegree(radiusKm) : 0;
       const ewSpanKm = bbox
-        ? Math.abs(bbox[2] - bbox[0]) * 111.32 * Math.cos((centroidLat * Math.PI) / 180)
+        ? Math.abs(bbox[2] - bbox[0]) * kmPerDegreeLng(centroidLat, radiusKm)
         : 0;
 
       return {
@@ -514,7 +268,7 @@ export const geoProfileProcedures = {
           dominant: profile.dominantClimate,
           diversityIndex: profile.climateDiversity,
           estMeanTempC: temp.meanTempC,
-          estAnnualPrecipMm: precipMm,
+          estAnnualPrecipMm: estimatePrecipitation(climateDistribution, profile.meanElevation),
           estSummerHighC: temp.summerHighC,
           estWinterLowC: temp.winterLowC,
         },
@@ -525,10 +279,10 @@ export const geoProfileProcedures = {
           terrainRoughness: profile.terrainRoughness,
         },
         hydro: {
-          riverCount,
-          totalRiverLengthKm: Math.round(totalRiverLengthKm),
-          lakeCount,
-          totalLakeAreaSqKm: Math.round(totalLakeAreaSqKm),
+          riverCount: hydro.riverCount,
+          totalRiverLengthKm: Math.round(hydro.totalRiverLengthKm),
+          lakeCount: hydro.lakeCount,
+          totalLakeAreaSqKm: Math.round(hydro.totalLakeAreaSqKm),
           drainageDensity: profile.drainageDensity,
         },
         derived: {
@@ -538,26 +292,11 @@ export const geoProfileProcedures = {
           coastlineKm: profile.coastlineKm,
           neighborCount: profile.neighborCount,
         },
-        neighbors: neighborCountries.map((n) => ({
-          id: n.id,
-          name: n.name,
-          slug: n.slug,
-          sharedBorderKm: n.sharedBorderKm,
-        })),
-        superlatives: {
-          tallestPeak,
-          longestRiver,
-          largestLake,
-        },
-        economic: economicModifiers,
-        npcModifiers,
-        crisisRisk,
+        neighbors,
+        superlatives,
+        economic: computeEconomicGeoModifiers(profile),
+        npcModifiers: computeNPCGeoModifiers(profile),
+        crisisRisk: computeCrisisRiskFactors(profile),
       };
     }),
-
-  /**
-   * Admin endpoint: Recalculate and persist geographic profiles for all countries
-   * (or a single country). Stores results in CountryGeoProfile table for use
-   * by the economic engine and NPC personality drift.
-   */
 };

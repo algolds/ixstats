@@ -1,19 +1,40 @@
 "use client";
 
-/**
- * MapControls - Condensed icon toolbar for map layers, overlays, and tools.
- *
- * Layout: Horizontal row of icon buttons. Each opens a dropdown panel on click.
- * Panels auto-close when clicking outside or switching to another panel.
- *
- * Icons: Layers | Analytics | Tools (measure/pin) | Labels toggle
- */
-
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Layers, BarChart3, Tag, Ruler, MapPin, PenTool, EyeOff, Eye, Globe } from "lucide-react";
+import {
+  Component as Layers,
+  StatsReport as BarChart3,
+  Label as Tag,
+  Ruler,
+  MapPin,
+  EditPencil as PenTool,
+  EyeClosed as EyeOff,
+  Eye,
+  Globe,
+} from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetMaterial } from "~/components/ui/facet";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { cn } from "~/lib/utils/cn";
 import { LAYER_CONFIGS, getClimateLegend, type MapLayerType } from "~/lib/maps/map-config";
+import type { ClimateKey, RealmRasterLayer } from "~/lib/maps/realm-map-settings";
 import { overlaysByCategory } from "~/lib/maps/overlay-registry";
+import { rasterLegendPath } from "~/lib/maps/raster-tiles";
+import { withBasePath } from "~/lib/base-path";
 import type { OverlayVisibility } from "./IxWorldMap";
+import type { RasterSelection } from "./hooks/useRealmMapDisplay";
+
+/** A realm's raster art switches: one base map (or none) and the overlays. */
+export interface RasterControls {
+  /** The realm the art belongs to (its key images are served under it). */
+  realmId: string;
+  layers: readonly RealmRasterLayer[];
+  selection: RasterSelection;
+  onBaseChange: (id: string | null) => void;
+  onToggleOverlay: (id: string) => void;
+}
 
 interface MapControlsProps {
   visibleLayers: Set<MapLayerType>;
@@ -38,13 +59,40 @@ interface MapControlsProps {
   showWorldEditor?: boolean;
   /** Route/callback to open world editor */
   onOpenWorldEditor?: () => void;
+  /** Responsive layout variant: desktop horizontal bar, mobile FAB, or auto */
+  variant?: "desktop" | "mobile" | "auto";
+  /** The vector layer types the realm has (`display.layerTypes`); undefined offers every switch (Ixnay). */
+  layerTypes?: readonly string[];
+  /** The realm's climate classification for the climate legend; null or undefined: Ixnay's Trewartha key. */
+  climateKey?: ClimateKey | null;
+  /** The realm's raster art switches, when it has any. */
+  raster?: RasterControls;
 }
 
-const TOGGLEABLE_LAYERS: MapLayerType[] = ["political", "climate", "rivers", "lakes"];
+const TOGGLEABLE_LAYERS: MapLayerType[] = ["political", "climate", "rivers", "lakes", "icecaps"];
 
-// Overlay toggle lists are derived from the declarative registry (grouped by
-// category) instead of hardcoded arrays. "feature" overlays live in the Layers
-// panel; "fill" + "analytics" overlays drive the Analytics panel.
+/** The layer switches a map offers: countries always, the others when the realm has that layer. */
+function toggleableLayers(layerTypes: readonly string[] | undefined): MapLayerType[] {
+  return TOGGLEABLE_LAYERS.filter(
+    (layer) => layer === "political" || !layerTypes || layerTypes.includes(layer)
+  );
+}
+
+/** The climate legend: the realm's own classification when it has one, else Ixnay's Trewartha key. */
+function climateLegend(climateKey: ClimateKey | null | undefined) {
+  if (!climateKey) return getClimateLegend();
+  return climateKey.zones.map((z) => ({
+    code: z.code,
+    label: `${z.code}: ${z.name}`,
+    color: z.color,
+  }));
+}
+
+/** The base map choice meaning "no base map" (not a valid layer id). */
+const NO_BASE = "_none";
+
+// Overlay toggles come from the registry: "feature" overlays live in the Layers panel,
+// "fill" + "analytics" overlays in the Analytics panel.
 const OVERLAY_GROUPS = overlaysByCategory();
 const FEATURE_OVERLAYS: { key: keyof OverlayVisibility; label: string }[] = (
   OVERLAY_GROUPS.feature ?? []
@@ -73,20 +121,34 @@ export function MapControls({
   onEditMap,
   showWorldEditor,
   onOpenWorldEditor,
+  layerTypes,
+  climateKey,
+  raster,
 }: MapControlsProps) {
   const [openPanel, setOpenPanel] = useState<PanelId>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Close panel on click outside
+  // Close panel on click/tap outside or Escape
   useEffect(() => {
     if (!openPanel) return;
-    function handleClick(e: MouseEvent) {
+    function handlePointer(e: PointerEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpenPanel(null);
       }
     }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    function handleKey(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      // Stop the map's Escape handler from also clearing the selection.
+      e.preventDefault();
+      e.stopPropagation();
+      setOpenPanel(null);
+    }
+    document.addEventListener("pointerdown", handlePointer);
+    window.addEventListener("keydown", handleKey, { capture: true });
+    return () => {
+      document.removeEventListener("pointerdown", handlePointer);
+      window.removeEventListener("keydown", handleKey, { capture: true });
+    };
   }, [openPanel]);
 
   const toggle = useCallback((panel: PanelId) => {
@@ -105,21 +167,27 @@ export function MapControls({
       onTouchStart={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
     >
-      {/* Icon button row */}
-      <div className="flex items-center gap-1">
-        {/* Layers */}
+      <FacetMaterial
+        layer="chrome"
+        role="toolbar"
+        aria-label="Map controls"
+        className="rounded-row flex w-fit items-center gap-0.5 p-1"
+      >
         <IconButton
           icon={<Layers className="h-4 w-4" />}
           label="Layers"
           isActive={openPanel === "layers"}
+          controls="map-controls-panel"
+          expanded={openPanel === "layers"}
           onClick={() => toggle("layers")}
         />
 
-        {/* Analytics */}
         <IconButton
           icon={<BarChart3 className="h-4 w-4" />}
           label="Analytics"
           isActive={openPanel === "analytics"}
+          controls="map-controls-panel"
+          expanded={openPanel === "analytics"}
           hasIndicator={!!hasActiveAnalytics}
           onClick={() => toggle("analytics")}
         />
@@ -134,7 +202,6 @@ export function MapControls({
           />
         )}
 
-        {/* Tool buttons */}
         {toolsVisible && onToggleMeasure && (
           <IconButton
             icon={<Ruler className="h-4 w-4" />}
@@ -154,91 +221,47 @@ export function MapControls({
           />
         )}
 
-        {/* Map Editor shortcut */}
         {canEdit && onEditMap && (
           <IconButton
             icon={<PenTool className="h-4 w-4" />}
-            label="Edit Map"
+            label="Edit map"
             isActive={false}
             variant="default"
             onClick={onEditMap}
           />
         )}
 
-        {/* World Editor button beside edit map icon */}
         {showWorldEditor && onOpenWorldEditor && (
           <IconButton
             icon={<Globe className="h-4 w-4" />}
-            label="World Editor"
+            label="World editor"
             isActive={false}
             variant="default"
             onClick={onOpenWorldEditor}
           />
         )}
-      </div>
+      </FacetMaterial>
 
-      {/* Layers panel */}
       {openPanel === "layers" && (
-        <DropdownPanel>
-          <PanelSection title="Map Layers">
-            {TOGGLEABLE_LAYERS.map((layer) => (
-              <CheckboxRow
-                key={layer}
-                label={LAYER_CONFIGS[layer].label}
-                checked={visibleLayers.has(layer)}
-                onChange={() => onToggleLayer(layer)}
-              />
-            ))}
-          </PanelSection>
-
-          {overlayVisibility && onToggleOverlay && (
-            <PanelSection title="Features">
-              {FEATURE_OVERLAYS.map((item) => (
-                <CheckboxRow
-                  key={item.key}
-                  label={item.label}
-                  checked={overlayVisibility[item.key]}
-                  onChange={() => onToggleOverlay(item.key)}
-                />
-              ))}
-              <ToggleAllRow
-                overlayVisibility={overlayVisibility}
-                onToggleOverlay={onToggleOverlay}
-              />
-            </PanelSection>
-          )}
-
-          {/* Climate legend */}
-          {visibleLayers.has("climate") && (
-            <PanelSection title="Climate Zones">
-              <div className="max-h-40 overflow-y-auto">
-                {getClimateLegend().map((entry) => (
-                  <div key={entry.code} className="flex items-center gap-2 py-0.5">
-                    <span
-                      className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm border border-black/10"
-                      style={{ backgroundColor: entry.color }}
-                    />
-                    <span className="text-foreground text-[11px]">{entry.label}</span>
-                  </div>
-                ))}
-              </div>
-            </PanelSection>
-          )}
-        </DropdownPanel>
+        <LayersPanel
+          visibleLayers={visibleLayers}
+          onToggleLayer={onToggleLayer}
+          overlayVisibility={overlayVisibility}
+          onToggleOverlay={onToggleOverlay}
+          layerTypes={layerTypes}
+          climateKey={climateKey}
+          raster={raster}
+        />
       )}
 
-      {/* Analytics panel */}
       {openPanel === "analytics" && overlayVisibility && onToggleOverlay && (
-        <DropdownPanel>
-          <PanelSection title="Analytics Overlays">
-            {ANALYTICS_OVERLAYS.map((item) => (
-              <CheckboxRow
-                key={item.key}
-                label={item.label}
-                checked={overlayVisibility[item.key]}
-                onChange={() => onToggleOverlay(item.key)}
-              />
-            ))}
+        <DropdownPanel label="Analytics overlays">
+          <PanelSection title="Analytics overlays">
+            <OverlayRows
+              items={ANALYTICS_OVERLAYS}
+              overlayVisibility={overlayVisibility}
+              onToggleOverlay={onToggleOverlay}
+            />
           </PanelSection>
         </DropdownPanel>
       )}
@@ -246,7 +269,138 @@ export function MapControls({
   );
 }
 
-// ── Sub-components ──────────────────────────────────────────────────
+type LayersPanelProps = Pick<
+  MapControlsProps,
+  | "visibleLayers"
+  | "onToggleLayer"
+  | "overlayVisibility"
+  | "onToggleOverlay"
+  | "layerTypes"
+  | "climateKey"
+  | "raster"
+>;
+
+function LayersPanel({
+  visibleLayers,
+  onToggleLayer,
+  overlayVisibility,
+  onToggleOverlay,
+  layerTypes,
+  climateKey,
+  raster,
+}: LayersPanelProps) {
+  const bases = raster?.layers.filter((l) => l.kind === "base") ?? [];
+  return (
+    <DropdownPanel label="Map layers">
+      {raster && bases.length > 0 && <BaseMapSection raster={raster} bases={bases} />}
+
+      <PanelSection title="Map layers">
+        {toggleableLayers(layerTypes).map((layer) => (
+          <CheckboxRow
+            key={layer}
+            label={LAYER_CONFIGS[layer].label}
+            checked={visibleLayers.has(layer)}
+            onChange={() => onToggleLayer(layer)}
+          />
+        ))}
+        {/* The art carries its own names: they start off while a base map is shown */}
+        {raster?.selection.base && (
+          <CheckboxRow
+            label={LAYER_CONFIGS.country_labels.label}
+            checked={visibleLayers.has("country_labels")}
+            onChange={() => onToggleLayer("country_labels")}
+          />
+        )}
+        {raster?.layers
+          .filter((l) => l.kind === "overlay")
+          .map((overlay) => (
+            <CheckboxRow
+              key={overlay.id}
+              label={overlay.label}
+              checked={raster.selection.overlays.includes(overlay.id)}
+              onChange={() => raster.onToggleOverlay(overlay.id)}
+            />
+          ))}
+      </PanelSection>
+
+      {overlayVisibility && onToggleOverlay && (
+        <PanelSection title="Features">
+          <OverlayRows
+            items={FEATURE_OVERLAYS}
+            overlayVisibility={overlayVisibility}
+            onToggleOverlay={onToggleOverlay}
+          />
+          <ToggleAllRow overlayVisibility={overlayVisibility} onToggleOverlay={onToggleOverlay} />
+        </PanelSection>
+      )}
+
+      {raster && <RasterKeys raster={raster} />}
+
+      {visibleLayers.has("climate") && (
+        <PanelSection title="Climate zones">
+          <div className="max-h-40 overflow-y-auto">
+            {climateLegend(climateKey).map((entry) => (
+              <div key={entry.code} className="flex items-center gap-2 py-0.5">
+                <span
+                  className="border-separator inline-block h-2.5 w-2.5 shrink-0 rounded-xs border"
+                  style={{ backgroundColor: entry.color }}
+                />
+                <span className="text-label text-footnote">{entry.label}</span>
+              </div>
+            ))}
+          </div>
+        </PanelSection>
+      )}
+    </DropdownPanel>
+  );
+}
+
+/**
+ * The key image of each raster layer that is switched on and has one, where the climate key shows for Climate
+ * Zones; opens full size in a new tab.
+ */
+function RasterKeys({ raster }: { raster: RasterControls }) {
+  const { base, overlays } = raster.selection;
+  return raster.layers
+    .filter((l) => l.legend && (l.id === base || overlays.includes(l.id)))
+    .map((layer) => {
+      const src = withBasePath(rasterLegendPath(raster.realmId, layer));
+      return (
+        <PanelSection key={layer.id} title={`${layer.label} key`}>
+          <a href={src} target="_blank" rel="noreferrer" className="block px-2 py-1">
+            <img src={src} alt={`${layer.label} key`} className="w-full rounded-xs" />
+          </a>
+        </PanelSection>
+      );
+    });
+}
+
+/** One base map at a time, or none (the map's own fills then show). */
+function BaseMapSection({
+  raster,
+  bases,
+}: {
+  raster: RasterControls;
+  bases: readonly RealmRasterLayer[];
+}) {
+  return (
+    <PanelSection title="Base map">
+      <div className="px-2 pt-1 pb-2">
+        <SegmentedControl
+          aria-label="Base map"
+          size="sm"
+          scrollable
+          value={raster.selection.base ?? NO_BASE}
+          onValueChange={(value) => raster.onBaseChange(value === NO_BASE ? null : value)}
+          options={[
+            ...bases.map((base) => ({ value: base.id, label: base.label })),
+            { value: NO_BASE, label: "None" },
+          ]}
+        />
+      </div>
+    </PanelSection>
+  );
+}
 
 function IconButton({
   icon,
@@ -254,6 +408,8 @@ function IconButton({
   isActive,
   hasIndicator,
   variant = "default",
+  controls,
+  expanded,
   onClick,
 }: {
   icon: React.ReactNode;
@@ -261,44 +417,79 @@ function IconButton({
   isActive?: boolean;
   hasIndicator?: boolean;
   variant?: "default" | "active-tool";
+  /** For panel toggles: id of the panel and whether it is open (disclosure pattern). */
+  controls?: string;
+  expanded?: boolean;
   onClick: () => void;
 }) {
-  const base =
-    "relative flex items-center justify-center rounded-lg shadow-md transition-all duration-150 min-h-[40px] min-w-[40px] sm:min-h-[34px] sm:min-w-[34px]";
-  const colors =
-    variant === "active-tool"
-      ? "bg-blue-500 text-white hover:bg-blue-600"
-      : isActive
-        ? "bg-accent text-foreground"
-        : "bg-card text-muted-foreground hover:bg-accent hover:text-foreground";
-
   return (
-    <button onClick={onClick} className={`${base} ${colors}`} title={label}>
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      onClick={onClick}
+      className={cn(
+        "rounded-control relative h-11 w-11 sm:h-9 sm:w-9",
+        variant === "active-tool"
+          ? "bg-tint text-on-tint hover:bg-tint-hover"
+          : isActive
+            ? "bg-fill-3 text-label"
+            : "text-label-secondary"
+      )}
+      title={label}
+      aria-label={label}
+      {...(controls
+        ? { "aria-expanded": !!expanded, "aria-controls": expanded ? controls : undefined }
+        : { "aria-pressed": !!isActive })}
+    >
       {icon}
       {hasIndicator && (
-        <span className="ring-card absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-500 ring-1" />
+        <span className="ring-card bg-tint absolute top-1 right-1 h-2 w-2 rounded-full ring-1" />
       )}
-    </button>
+    </Button>
   );
 }
 
-function DropdownPanel({ children }: { children: React.ReactNode }) {
+function DropdownPanel({ children, label }: { children: React.ReactNode; label: string }) {
   return (
-    <div className="animate-in fade-in slide-in-from-top-1 bg-card mt-1.5 w-48 rounded-lg p-2 shadow-lg duration-150">
+    <FacetMaterial
+      layer="chrome"
+      id="map-controls-panel"
+      role="region"
+      aria-label={label}
+      className="animate-in fade-in slide-in-from-top-1 rounded-row mt-2 max-h-[min(70dvh,32rem)] w-56 overflow-y-auto overscroll-contain p-2 duration-150"
+    >
       {children}
-    </div>
+    </FacetMaterial>
   );
 }
 
 function PanelSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="[&+&]:border-border [&+&]:mt-1.5 [&+&]:border-t [&+&]:pt-1.5">
-      <div className="text-muted-foreground px-1.5 pb-0.5 text-[10px] font-semibold tracking-wider uppercase">
-        {title}
-      </div>
+    <div className="[&+&]:border-separator [&+&]:mt-2 [&+&]:border-t [&+&]:pt-2">
+      <Eyebrow className="block px-2 pb-0.5">{title}</Eyebrow>
       {children}
     </div>
   );
+}
+
+function OverlayRows({
+  items,
+  overlayVisibility,
+  onToggleOverlay,
+}: {
+  items: { key: keyof OverlayVisibility; label: string }[];
+  overlayVisibility: OverlayVisibility;
+  onToggleOverlay: (key: keyof OverlayVisibility) => void;
+}) {
+  return items.map((item) => (
+    <CheckboxRow
+      key={item.key}
+      label={item.label}
+      checked={overlayVisibility[item.key]}
+      onChange={() => onToggleOverlay(item.key)}
+    />
+  ));
 }
 
 function ToggleAllRow({
@@ -310,31 +501,30 @@ function ToggleAllRow({
 }) {
   const anyFeatureOn = FEATURE_OVERLAYS.some((item) => overlayVisibility[item.key]);
 
-  const handleToggleAll = useCallback(() => {
+  // If any are on, turn all off; if all are off, turn all on
+  const handleToggleAll = () => {
     for (const item of FEATURE_OVERLAYS) {
-      // If any are on, we want to turn all off; if all are off, turn all on
-      if (anyFeatureOn && overlayVisibility[item.key]) {
-        onToggleOverlay(item.key);
-      } else if (!anyFeatureOn && !overlayVisibility[item.key]) {
-        onToggleOverlay(item.key);
-      }
+      if (!!overlayVisibility[item.key] === anyFeatureOn) onToggleOverlay(item.key);
     }
-  }, [anyFeatureOn, overlayVisibility, onToggleOverlay]);
+  };
 
   return (
-    <button
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
       onClick={handleToggleAll}
-      className="hover:bg-accent border-border mt-1 flex w-full cursor-pointer items-center gap-2 rounded border-t px-1.5 py-1.5 text-left transition-colors sm:py-1"
+      className="mt-1 w-full justify-start px-2"
     >
       {anyFeatureOn ? (
-        <EyeOff className="text-muted-foreground h-3.5 w-3.5" />
+        <EyeOff className="text-label-secondary size-3.5" aria-hidden />
       ) : (
-        <Eye className="text-muted-foreground h-3.5 w-3.5" />
+        <Eye className="text-label-secondary size-3.5" aria-hidden />
       )}
-      <span className="text-foreground text-[12px] font-medium">
+      <span className="text-label text-caption">
         {anyFeatureOn ? "Hide All Markers" : "Show All Markers"}
       </span>
-    </button>
+    </Button>
   );
 }
 
@@ -348,14 +538,9 @@ function CheckboxRow({
   onChange: () => void;
 }) {
   return (
-    <label className="hover:bg-accent flex cursor-pointer items-center gap-2 rounded px-1.5 py-1.5 transition-colors sm:py-1">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="border-border h-3.5 w-3.5 rounded text-blue-500 focus:ring-blue-500"
-      />
-      <span className="text-foreground text-[12px]">{label}</span>
+    <label className="hover:bg-fill-4 rounded-control-sm flex cursor-pointer items-center gap-2 px-2 py-2 transition-colors sm:py-1">
+      <Checkbox checked={!!checked} onCheckedChange={() => onChange()} />
+      <span className="text-label text-footnote">{label}</span>
     </label>
   );
 }

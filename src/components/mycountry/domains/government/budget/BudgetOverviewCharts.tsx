@@ -1,0 +1,158 @@
+"use client";
+
+import React from "react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+} from "recharts";
+import type { DepartmentChartItem, RevenueChartItem, BudgetTrendItem } from "./budgetTypes";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Card } from "~/components/ui/card";
+
+interface BudgetOverviewChartsProps {
+  overviewChartMode: "allocation" | "trend";
+  setOverviewChartMode: (mode: "allocation" | "trend") => void;
+  departmentChartData: DepartmentChartItem[];
+  budgetTrendData: BudgetTrendItem[];
+  revenueChartData: RevenueChartItem[];
+  formatCurrency: (amount: number) => string;
+}
+
+export function BudgetOverviewCharts({
+  overviewChartMode,
+  setOverviewChartMode,
+  departmentChartData,
+  budgetTrendData,
+  revenueChartData,
+  formatCurrency,
+}: BudgetOverviewChartsProps) {
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Togglable Budget Allocation vs Historical Trend Chart */}
+      <Card className="space-y-3 p-4">
+        <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+          <h4 className="text-label text-headline">
+            {overviewChartMode === "allocation"
+              ? "Budget allocation by department"
+              : "Budget by year"}
+          </h4>
+          <SegmentedControl
+            aria-label="Chart"
+            size="sm"
+            options={[
+              { value: "allocation", label: "Allocation" },
+              { value: "trend", label: "Trend" },
+            ]}
+            value={overviewChartMode}
+            onValueChange={(id) => setOverviewChartMode(id as "allocation" | "trend")}
+          />
+        </div>
+
+        <div className="h-72">
+          {overviewChartMode === "allocation" && departmentChartData.length === 0 ? (
+            <p className="text-label-secondary text-footnote flex h-full items-center justify-center text-center">
+              No department has an allocation this year. Set each department's share under
+              Departments.
+            </p>
+          ) : overviewChartMode === "trend" && budgetTrendData.length < 2 ? (
+            <p className="text-label-secondary text-footnote flex h-full items-center justify-center text-center">
+              The trend appears once budgets are recorded for two or more years.
+            </p>
+          ) : overviewChartMode === "allocation" ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={departmentChartData}
+                  cx="50%"
+                  cy="45%"
+                  outerRadius="70%"
+                  dataKey="allocated"
+                  nameKey="label"
+                >
+                  {departmentChartData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={budgetTrendData}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                <XAxis
+                  dataKey="year"
+                  stroke="currentColor"
+                  className="text-label-secondary text-footnote"
+                />
+                <YAxis
+                  stroke="currentColor"
+                  className="text-label-secondary text-footnote"
+                  width={72}
+                  tickFormatter={(value: number) => formatCurrency(value)}
+                />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="budget"
+                  stroke="var(--color-amber-500)"
+                  name="Allocated"
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </Card>
+
+      <Card className="space-y-3 p-4">
+        <div className="border-separator border-b pb-3">
+          <h4 className="text-label text-headline">Revenue sources</h4>
+        </div>
+        <div className="h-72">
+          {revenueChartData.length === 0 ? (
+            <p className="text-label-secondary text-footnote flex h-full items-center justify-center text-center">
+              No revenue sources are recorded for this government yet.
+            </p>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={revenueChartData}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                <XAxis
+                  dataKey="name"
+                  stroke="currentColor"
+                  className="text-label-secondary text-footnote"
+                />
+                <YAxis
+                  stroke="currentColor"
+                  className="text-label-secondary text-footnote"
+                  width={72}
+                  tickFormatter={(value: number) => formatCurrency(value)}
+                />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  {revenueChartData.map((entry, index) => (
+                    <Cell key={`revenue-cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}

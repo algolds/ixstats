@@ -1,38 +1,39 @@
 "use client";
 
 // src/app/labs/onoma/components/nav/OnomaHeader.tsx
-// Unified Apple/Facet navigation toolbar for Onoma Lab (Product Model: CREATE · STUDIO · EXPLORE)
-// Features: Prominent Hero Pillar Segmented Controller, Soundwave Pronunciation, and Contextual Tool Strips
+// Onoma page header (Product Model: CREATE · STUDIO · EXPLORE). The wordmark and
+// utility buttons sit on the grouped page; the pillar console is a thin material toolbar holding the
+// pillar and section tabs (SegmentedControl), or the Stash/Settings return bar.
 
 import React from "react";
 import Link from "next/link";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import {
-  HelpCircle,
-  Bookmark,
-  Settings,
-  SoundHigh,
-  Code,
-  ArrowLeft,
-} from "iconoir-react";
-import { FacetTabs } from "~/components/ui/facet";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import { HelpCircle, Bookmark, Settings, SoundHigh, Code, ArrowLeft } from "iconoir-react";
+import { FacetMaterial } from "~/components/ui/facet";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { OnomaBrandLogo } from "../shared/OnomaBrandLogo";
-import type { OnomaSection, StudioSubTab, ExploreSubTab, OnomaProductPillar } from "~/lib/onoma/types";
-import {
-  ONOMA_TABS,
-  ONOMA_PILLAR_TABS,
-  getStudioTabs,
-  getExploreTabs,
-} from "./onoma-tabs";
+import { tweenFast } from "~/lib/design/motion";
+import { OnomaBrandLogo } from "~/components/onoma/OnomaBrandLogo";
+import type {
+  OnomaSection,
+  StudioSubTab,
+  ExploreSubTab,
+  OnomaProductPillar,
+} from "~/lib/onoma/types";
+import { ONOMA_TABS, ONOMA_PILLAR_TABS, getStudioTabs, getExploreTabs } from "./onoma-tabs";
 import { cn } from "~/lib/utils";
+import { ActionPill } from "~/components/ui/action-pill";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+
+const toOptions = (
+  tabs: readonly { id: string; label: string; icon: React.ComponentType<{ className?: string }> }[]
+) => tabs.map(({ id, label, icon: Icon }) => ({ value: id, label, icon: <Icon /> }));
 
 interface OnomaHeaderProps {
   activeSection: OnomaSection;
   activeSubTab: StudioSubTab;
   activeExploreSubTab: ExploreSubTab;
   lastActiveTab: OnomaSection;
-  lexiconCount: number;
   shouldAnimateStash: boolean;
   hasInteractedPronunciation: boolean;
   setHasInteractedPronunciation: (val: boolean) => void;
@@ -43,12 +44,21 @@ interface OnomaHeaderProps {
   onNavigateExplore: (tab: ExploreSubTab) => void;
 }
 
+/** Cross-fade (+ a small lift) between the console's states. */
+function consoleMotion(reduce: boolean | null) {
+  return {
+    initial: reduce ? { opacity: 0 } : { opacity: 0, y: 3 },
+    animate: { opacity: 1, y: 0 },
+    exit: reduce ? { opacity: 0 } : { opacity: 0, y: -2 },
+    transition: tweenFast,
+  };
+}
+
 export function OnomaHeader({
   activeSection,
   activeSubTab,
   activeExploreSubTab,
   lastActiveTab,
-  lexiconCount,
   shouldAnimateStash,
   hasInteractedPronunciation,
   setHasInteractedPronunciation: _setHasInteractedPronunciation,
@@ -65,11 +75,7 @@ export function OnomaHeader({
   const isUtilitySection = activeSection === "bank" || activeSection === "settings";
 
   const activePillar: OnomaProductPillar =
-    activeSection === "studio"
-      ? "studio"
-      : activeSection === "explore"
-        ? "explore"
-        : "create";
+    activeSection === "studio" ? "studio" : activeSection === "explore" ? "explore" : "create";
 
   const returnLabel = React.useMemo(() => {
     if (lastActiveTab === "studio") return "Studio";
@@ -91,333 +97,246 @@ export function OnomaHeader({
     }
   };
 
+  const helpButton = (
+    <Button
+      variant="secondary"
+      size="sm"
+      onClick={onOpenHelp}
+      title="Open contextual help and system reference"
+      aria-label="Help"
+      className="shrink-0"
+    >
+      <HelpCircle />
+      <span className="hidden md:inline">Help</span>
+    </Button>
+  );
+
   return (
-    <div className="space-y-3 border-b border-border/40 pb-3.5">
-      {/* Top Utility Bar (Wordmark, Pronunciation, Subtitle/Description, Guide, Stash, Settings) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-        {/* Left: Brand Lockup with Subtitle stacked directly underneath */}
-        <div className="flex flex-col gap-0.5 min-w-0">
-          <div className="flex items-center gap-2.5 shrink-0">
-            <button
+    <header className="space-y-3">
+      {/* Top bar: wordmark + pronunciation + tagline, and the Glyphs / Stash / Settings utilities */}
+      <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              variant="ghost"
               onClick={() => onNavigate("overview")}
-              className="group/brand inline-flex items-center cursor-pointer transition-transform duration-100 active:scale-[0.97] focus:outline-none select-none"
-              title="Onoma — Overview"
+              className="group/brand h-auto px-1 py-1 hover:bg-transparent"
+              title="Onoma overview"
+              aria-label="Onoma overview"
             >
               <OnomaBrandLogo
                 variant="wordmark"
-                className="h-6 sm:h-6.5 w-auto text-foreground transition-colors duration-150 group-hover/brand:text-[#0091ff]"
+                className="text-label group-hover/brand:text-tint h-6 w-auto transition-colors duration-150"
               />
-            </button>
+            </Button>
             <Tooltip>
               <TooltipTrigger asChild>
-                <button
-                  type="button"
+                <ActionPill
                   onClick={(e) => {
                     e.stopPropagation();
                     playPronunciation();
                   }}
-                  className="group/audio inline-flex cursor-pointer items-center gap-1.5 font-mono text-[11px] text-muted-foreground/80 hover:text-foreground border border-border/50 bg-secondary/30 hover:bg-secondary/60 hover:border-border/80 transition-all duration-150 select-none active:scale-[0.95] focus:outline-none rounded-full px-2 py-0.5"
+                  aria-label="Play the pronunciation of Onoma"
+                  className="group/audio bg-fill-3 hover:bg-fill-2 gap-1 px-2 font-mono"
                 >
-                  <span className="tracking-wide">/ˈɒnəmə/</span>
+                  <span>/ˈɒnəmə/</span>
                   <span className="relative inline-flex items-center justify-center">
-                    {!hasInteractedPronunciation && (
+                    {!hasInteractedPronunciation && !shouldReduceMotion && (
                       <motion.span
-                        className="absolute -inset-1 rounded-full bg-[#0091ff]/40 pointer-events-none"
+                        className="bg-tint/40 pointer-events-none absolute -inset-1 rounded-full"
                         initial={{ scale: 0.8, opacity: 0.8 }}
                         animate={{ scale: [0.8, 1.6, 0.8], opacity: [0.8, 0, 0.8] }}
                         transition={{ duration: 1.2, repeat: 1, ease: "easeOut" }}
                       />
                     )}
-                    <motion.span
-                      initial={false}
-                      animate={
+                    <SoundHigh
+                      className={cn(
+                        "relative size-3.5 transition-[color,opacity] duration-150",
                         !hasInteractedPronunciation
-                          ? {
-                              scale: [1, 1.25, 1, 1.25, 1],
-                              color: ["#0091ff", "#0091ff", "#0091ff", "#0091ff", "currentColor"],
-                            }
-                          : {}
-                      }
-                      transition={{ duration: 2.4, times: [0, 0.25, 0.5, 0.75, 1], ease: "easeInOut" }}
-                    >
-                      <SoundHigh
-                        className={cn(
-                          "relative h-3 w-3 transition-transform duration-200",
-                          !hasInteractedPronunciation
-                            ? "text-[#0091ff]"
-                            : "opacity-60 group-hover/audio:scale-110 group-hover/audio:opacity-100 group-hover/audio:text-[#0091ff]"
-                        )}
-                      />
-                    </motion.span>
+                          ? "text-tint"
+                          : "group-hover/audio:text-tint opacity-60 group-hover/audio:opacity-100"
+                      )}
+                    />
                   </span>
-                </button>
+                </ActionPill>
               </TooltipTrigger>
-              <TooltipContent side="bottom" align="start" className="text-xs font-semibold shadow-md backdrop-blur-md">
-                Click to listen to Greek pronunciation (“name”)
+              <TooltipContent side="bottom" align="start">
+                Listen to the Greek pronunciation (“name”)
               </TooltipContent>
             </Tooltip>
           </div>
 
-          {/* Subtitle & Manifesto Description (Directly Under Logo) */}
-          <div className="flex items-center gap-1.5 select-none pl-0.5 leading-tight">
-            <span className="font-semibold text-[11px] text-foreground tracking-tight whitespace-nowrap">
-              Linguistic Engine
+          <p className="text-footnote flex min-w-0 items-center gap-2 select-none">
+            <span className="text-label font-medium whitespace-nowrap">Linguistic engine</span>
+            <span className="text-label-tertiary" aria-hidden="true">
+              ·
             </span>
-            <span className="text-muted-foreground/40 font-mono text-[10px]">·</span>
-            <span className="text-muted-foreground font-normal text-[11px] truncate">
+            <span className="text-label-secondary truncate">
               Build the language behind your world.
             </span>
-          </div>
+          </p>
         </div>
 
-        {/* Right: Quick Utilities (Glyphs Dev, Guide, Stash, Settings) */}
-        <div className="flex items-center justify-end gap-1.5 shrink-0 self-end sm:self-center">
+        <div className="flex shrink-0 items-center justify-end gap-2 self-end sm:self-center">
           {process.env.NODE_ENV === "development" && (
             <Link
               href="/labs/onoma/glyphs"
-              title="Open Onoma Glyphs Catalog (Dev Tools)"
-              className="border-border/40 bg-secondary/25 text-muted-foreground hover:border-[#0091ff]/30 hover:bg-[#0091ff]/10 hover:text-[#0091ff] flex h-8 cursor-pointer items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all duration-100 active:scale-[0.96]"
+              title="Open the Onoma glyphs catalog (dev tools)"
+              className={buttonVariants({ variant: "secondary", size: "sm" })}
             >
-              <Code className="h-3.5 w-3.5 text-[#0091ff]" />
-              <span className="hidden sm:inline font-mono">Glyphs</span>
+              <Code className="text-tint" />
+              <span className="hidden sm:inline">Glyphs</span>
             </Link>
           )}
 
           <motion.button
+            type="button"
             animate={
               shouldAnimateStash
                 ? shouldReduceMotion
                   ? { opacity: [1, 0.6, 1] }
-                  : { scale: [1, 1.15, 0.95, 1.05, 1] }
+                  : { scale: [1, 1.08, 0.98, 1] }
                 : { scale: 1, opacity: 1 }
             }
             transition={{ duration: 0.4, ease: "easeInOut" }}
             onClick={() => onNavigate("bank")}
-            className={cn(
-              "flex h-8 cursor-pointer items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all duration-100 active:scale-[0.96]",
-              activeSection === "bank"
-                ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold"
-                : "border-border/40 bg-secondary/25 text-muted-foreground hover:border-indigo-500/30 hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400"
-            )}
+            aria-pressed={activeSection === "bank"}
+            className={buttonVariants({
+              variant: activeSection === "bank" ? "secondary" : "secondary",
+              size: "sm",
+            })}
           >
-            <motion.span
-              animate={
-                shouldAnimateStash && !shouldReduceMotion
-                  ? { rotate: [0, -18, 15, -10, 8, 0] }
-                  : { rotate: 0 }
-              }
-              transition={{ duration: 0.5, ease: "easeInOut" }}
-              className="inline-flex"
-            >
-              <Bookmark className="h-3.5 w-3.5" />
-            </motion.span>
+            <Bookmark />
             <span>Stash</span>
           </motion.button>
 
-          <button
+          <Button
+            variant={activeSection === "settings" ? "secondary" : "secondary"}
+            size="sm"
             onClick={() => onNavigate("settings")}
-            className={cn(
-              "flex h-8 cursor-pointer items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all duration-100 active:scale-[0.96]",
-              activeSection === "settings"
-                ? "border-[#0091ff]/40 bg-[#0091ff]/10 text-[#0091ff] dark:text-[#33a7ff] font-bold"
-                : "border-border/40 bg-secondary/25 text-muted-foreground hover:border-[#0091ff]/30 hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
-            )}
-            title="Configure Conlang & Voice Settings"
+            aria-pressed={activeSection === "settings"}
+            title="Configure conlang and voice settings"
           >
-            <Settings className="h-3.5 w-3.5" />
+            <Settings />
             <span className="hidden sm:inline">Settings</span>
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* Dynamic Navigation Container: Contextual Action Breadcrumb for Stash/Settings, or Full 2-Tier Console */}
-      <div className="relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-zinc-100/70 p-1.5 shadow-2xs dark:border-zinc-800/80 dark:bg-zinc-900/50 backdrop-blur-md transition-all duration-300">
+      {/* Console: the return bar for Stash/Settings, or the pillar + section tabs */}
+      <FacetMaterial layer="chrome" className="rounded-card p-2">
         <AnimatePresence mode="wait" initial={false}>
           {isUtilitySection ? (
             <motion.div
               key="utility-breadcrumb"
-              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 3, scale: 0.995 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -2, scale: 0.995 }}
-              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-              className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-1.5 py-0.5"
+              {...consoleMotion(shouldReduceMotion)}
+              className="flex flex-col justify-between gap-2 px-1 py-0.5 sm:flex-row sm:items-center"
             >
-              <div className="flex items-center gap-2.5 min-w-0">
-                {/* Left: 1-Click Return Button */}
-                <button
+              <div className="flex min-w-0 items-center gap-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={handleReturn}
-                  className="border-zinc-300/80 dark:border-zinc-700/80 bg-background/80 hover:bg-[#0091ff]/10 hover:border-[#0091ff]/40 text-foreground hover:text-[#0091ff] flex h-8 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold shadow-2xs transition-all duration-100 cursor-pointer active:scale-[0.96] shrink-0"
                   title={`Return to ${returnLabel}`}
+                  className="shrink-0"
                 >
-                  <ArrowLeft className="h-3.5 w-3.5" />
+                  <ArrowLeft />
                   <span>Back to {returnLabel}</span>
-                </button>
+                </Button>
 
-                {/* Center: Title & Manifesto Subtitle */}
-                <div className="flex flex-col min-w-0 select-none border-l border-border/50 pl-2.5 py-0.5">
-                  {activeSection === "bank" ? (
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <Bookmark className="h-3.5 w-3.5 text-indigo-500" />
-                        <span className="text-xs sm:text-sm font-bold text-foreground tracking-tight">
-                          My Stash
-                        </span>
-                      </div>
-                      <span className="hidden sm:inline text-muted-foreground/40 font-mono text-xs">·</span>
-                      <span className="text-[11px] sm:text-xs text-muted-foreground truncate">
-                        Manage your saved names and custom dictionaries.
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <Settings className="h-3.5 w-3.5 text-[#0091ff]" />
-                        <span className="text-xs sm:text-sm font-bold text-foreground tracking-tight">
-                          Onoma Preferences & Sandbox
-                        </span>
-                      </div>
-                      <span className="hidden sm:inline text-muted-foreground/40 font-mono text-xs">·</span>
-                      <span className="text-[11px] sm:text-xs text-muted-foreground truncate">
-                        Customize playback parameters, preview voices, and manage conlang dictionaries stored in this browser.
-                      </span>
-                    </div>
-                  )}
+                <div className="border-separator flex min-w-0 flex-col border-l py-0.5 pl-3 select-none">
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+                    <h2 className="text-headline text-label flex shrink-0 items-center gap-2">
+                      {activeSection === "bank" ? (
+                        <Bookmark className="text-tint size-4" aria-hidden="true" />
+                      ) : (
+                        <Settings className="text-tint size-4" aria-hidden="true" />
+                      )}
+                      {activeSection === "bank" ? "My stash" : "Onoma preferences & sandbox"}
+                    </h2>
+                    <span className="text-label-tertiary hidden sm:inline" aria-hidden="true">
+                      ·
+                    </span>
+                    <span className="text-footnote text-label-secondary truncate">
+                      {activeSection === "bank"
+                        ? "Manage your saved names and custom dictionaries."
+                        : "Customize playback parameters, preview voices, and manage conlang dictionaries stored in this browser."}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Right: Docked Help Button (Hidden on Settings) */}
+              {/* Help is hidden on Settings */}
               {activeSection !== "settings" && (
-                <button
-                  onClick={onOpenHelp}
-                  title="Open Contextual Help"
-                  className="border-zinc-300/80 dark:border-zinc-700/80 bg-background/60 hover:bg-[#0091ff]/10 hover:border-[#0091ff]/40 text-muted-foreground hover:text-[#0091ff] flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-semibold shadow-2xs transition-all duration-100 cursor-pointer active:scale-[0.96] shrink-0 self-end sm:self-auto"
-                >
-                  <HelpCircle className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">Help</span>
-                </button>
+                <div className="self-end sm:self-auto">{helpButton}</div>
               )}
             </motion.div>
           ) : (
             <motion.div
               key="pillar-console"
-              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 3, scale: 0.995 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -2, scale: 0.995 }}
-              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-              className="space-y-1.5"
+              {...consoleMotion(shouldReduceMotion)}
+              className="space-y-2"
             >
-              {/* 1. Master 3-Pillar Navigation Tabs (CREATE · STUDIO · EXPLORE) */}
-              <FacetTabs
-                tabs={ONOMA_PILLAR_TABS}
-                activeTab={activePillar}
-                onChange={(id) => {
+              {/* 1. Pillar tabs (Create · Studio · Explore) */}
+              <SegmentedControl
+                options={toOptions(ONOMA_PILLAR_TABS)}
+                value={activePillar}
+                onValueChange={(id) => {
                   if (id === "create") onNavigate(lastActiveTab || "overview");
                   else if (id === "studio") onNavigateStudio(activeSubTab || "workshop");
                   else if (id === "explore") onNavigateExplore(activeExploreSubTab || "phonology");
                 }}
-                tone="accent"
-                size="lg"
+                size="md"
+                aria-label="Onoma workspaces"
                 className="w-full"
+                asTabs
               />
 
-              {/* 2. Connected Sub-Nav Shelf with Spatial Alignment & Accent Connector Bridge */}
-              <div className="relative pt-0.5">
-                {/* Subtle Top Specular Line connecting the active pillar to the sub-nav shelf */}
-                <div
-                  className="pointer-events-none absolute -top-1 inset-x-3 h-[1px] opacity-70 transition-all duration-300"
-                  style={{
-                    background: `linear-gradient(90deg, transparent 0%, ${
-                      activePillar === "create"
-                        ? "#0091ff"
-                        : activePillar === "studio"
-                          ? "#ec4899"
-                          : "#8b5cf6"
-                    }60 30%, ${
-                      activePillar === "create"
-                        ? "#0091ff"
-                        : activePillar === "studio"
-                          ? "#ec4899"
-                          : "#8b5cf6"
-                    } 50%, ${
-                      activePillar === "create"
-                        ? "#0091ff"
-                        : activePillar === "studio"
-                          ? "#ec4899"
-                          : "#8b5cf6"
-                    }60 70%, transparent 100%)`,
-                  }}
-                />
-
-                {/* Contextual Sub-Navigation Strip (Emil Kowalski spring ease-out transition) */}
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
-                    key={activePillar}
-                    initial={
-                      shouldReduceMotion
-                        ? { opacity: 0 }
-                        : { opacity: 0, y: 3, scale: 0.995 }
-                    }
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={
-                      shouldReduceMotion
-                        ? { opacity: 0 }
-                        : { opacity: 0, y: -2, scale: 0.995 }
-                    }
-                    transition={{
-                      duration: 0.18,
-                      ease: [0.23, 1, 0.32, 1],
-                    }}
-                    className="flex items-center gap-1.5"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <FacetTabs
-                        tabs={
-                          activePillar === "studio"
-                            ? studioTabs
-                            : activePillar === "explore"
-                              ? exploreTabs
-                              : ONOMA_TABS
+              {/* 2. The active pillar's sections, with contextual help */}
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={activePillar}
+                  {...consoleMotion(shouldReduceMotion)}
+                  className="flex items-center gap-2"
+                >
+                  <div className="min-w-0 flex-1">
+                    <SegmentedControl
+                      options={toOptions(
+                        activePillar === "studio"
+                          ? studioTabs
+                          : activePillar === "explore"
+                            ? exploreTabs
+                            : ONOMA_TABS
+                      )}
+                      value={
+                        activePillar === "studio"
+                          ? activeSubTab
+                          : activePillar === "explore"
+                            ? activeExploreSubTab
+                            : activeSection
+                      }
+                      onValueChange={(id) => {
+                        if (activePillar === "studio") {
+                          onNavigateStudio(id as StudioSubTab);
+                        } else if (activePillar === "explore") {
+                          onNavigateExplore(id as ExploreSubTab);
+                        } else {
+                          onNavigate(id as OnomaSection);
                         }
-                        activeTab={
-                          activePillar === "studio"
-                            ? activeSubTab
-                            : activePillar === "explore"
-                              ? activeExploreSubTab
-                              : activeSection
-                        }
-                        onChange={(id) => {
-                          if (activePillar === "studio") {
-                            onNavigateStudio(id as StudioSubTab);
-                          } else if (activePillar === "explore") {
-                            onNavigateExplore(id as ExploreSubTab);
-                          } else {
-                            onNavigate(id as OnomaSection);
-                          }
-                        }}
-                        tone="accent"
-                        size="md"
-                        className="w-full"
-                      />
-                    </div>
-
-                    {/* Connected Contextual Help Button on the Active Tab Shelf */}
-                    <button
-                      onClick={onOpenHelp}
-                      title="Open Contextual Help & System Reference"
-                      className="border-zinc-300/80 dark:border-zinc-700/80 bg-background/60 hover:bg-[#0091ff]/10 hover:border-[#0091ff]/40 text-muted-foreground hover:text-[#0091ff] flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-semibold shadow-2xs transition-all cursor-pointer active:scale-95 shrink-0"
-                    >
-                      <HelpCircle className="h-3.5 w-3.5" />
-                      <span className="hidden md:inline">Help</span>
-                    </button>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
+                      }}
+                      size="md"
+                      aria-label="Sections"
+                      className="w-full"
+                      asTabs
+                    />
+                  </div>
+                  {helpButton}
+                </motion.div>
+              </AnimatePresence>
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-    </div>
+      </FacetMaterial>
+    </header>
   );
 }
-
-export default OnomaHeader;

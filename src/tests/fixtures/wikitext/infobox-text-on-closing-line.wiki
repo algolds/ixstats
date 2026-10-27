@@ -1,0 +1,7 @@
+{{Infobox company
+| name = Armand-Ere Inc.
+| type = Private
+}}'''Armand-Ere Inc.''' is a [[Urcea]]n multinational {{wp|aerospace}} company.
+
+== History ==
+Founded in 1901.

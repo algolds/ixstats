@@ -33,8 +33,8 @@ export const memoryConfig = {
    * tRPC cache settings (trpc-cache.ts)
    */
   trpc: {
-    /** Maximum cache entries: 100 in dev, 1,000 in prod */
-    maxCacheSize: isDev ? 100 : 1000,
+    /** Memory fallback size cap (bytes held, not entries): 128 MB */
+    maxCacheBytes: 128 * 1024 * 1024,
     /** Cache TTL in seconds: 15s in dev, 60s in prod */
     defaultTTLSeconds: isDev ? 15 : 60,
   },
@@ -125,20 +125,4 @@ export function getMemoryStats(): {
   const rssMB = memUsage.rss / 1024 / 1024;
 
   return { heapUsedMB, heapTotalMB, usagePercent, rssMB };
-}
-
-/**
- * Log current memory configuration (useful for debugging)
- */
-export function logMemoryConfig(): void {
-  console.log(`[MemoryConfig] Environment: ${isDev ? "development" : "production"}`);
-  console.log(`[MemoryConfig] Cache max entries: ${memoryConfig.cache.maxEntries}`);
-  console.log(`[MemoryConfig] tRPC cache size: ${memoryConfig.trpc.maxCacheSize}`);
-  console.log(`[MemoryConfig] Intelligence cache size: ${memoryConfig.intelligence.maxCacheSize}`);
-  console.log(`[MemoryConfig] Query default limit: ${memoryConfig.query.defaultLimit}`);
-
-  const stats = getMemoryStats();
-  console.log(
-    `[MemoryConfig] Current heap: ${stats.heapUsedMB.toFixed(1)}MB / ${stats.heapTotalMB.toFixed(1)}MB (${(stats.usagePercent * 100).toFixed(1)}%)`
-  );
 }

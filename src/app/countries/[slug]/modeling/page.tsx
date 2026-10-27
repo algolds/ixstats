@@ -3,14 +3,12 @@ export const dynamic = "force-dynamic";
 import { use } from "react";
 import { api } from "~/trpc/react";
 import { EconomicModelingEngine } from "~/app/countries/_components/economy";
-import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
+import { Card } from "~/components/ui/card";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
-import Link from "next/link";
 import { Skeleton } from "~/components/ui/skeleton";
-import { AlertTriangle } from "lucide-react";
-import { createUrl } from "~/lib/utils";
+import { WarningTriangle as AlertTriangle } from "iconoir-react";
 import type { EconomicYearData, StorytellerEffect } from "~/types/economics";
-import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";
 
 interface ModelingPageProps {
   params: Promise<{ slug?: string; id?: string }>;
@@ -40,9 +38,9 @@ export default function ModelingPage({ params }: ModelingPageProps) {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8 text-red-500">
+      <div className="text-destructive container mx-auto px-4 py-8">
         <AlertTriangle className="mr-2 inline-block" />
-        Error loading country data: {error.message}
+        Could not load country data: {error.message}
       </div>
     );
   }
@@ -51,54 +49,36 @@ export default function ModelingPage({ params }: ModelingPageProps) {
     return <div className="container mx-auto px-4 py-8">Country not found.</div>;
   }
 
-  // Create a country object with the required economicYears property
-  const countryWithEconomicYears = {
-    ...country,
-    economicYears: [], // Empty array for now, can be populated later if needed
-  };
-
-  // Generate flag-based theme colors
-  const flagColors = getFlagColors(country.name);
-  const flagThemeCSS = generateFlagThemeCSS(flagColors);
-
   return (
     <>
       <SignedIn>
-        <div className="country-themed container mx-auto space-y-6 px-4 py-8" style={flagThemeCSS}>
-          <div className="mb-6">
-            <Link
-              href={createUrl(`/countries/${country.slug}`)}
-              className="text-primary hover:underline"
-            >
-              &larr; Back to {country.name}
-            </Link>
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Economic Modeling for {country.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <EconomicModelingEngine
-                country={{
-                  ...country,
-                  economicYears: Array.isArray(country.historical)
-                    ? (country.historical.map((h: Record<string, any>) => ({
-                        year: h.year,
-                        gdp: h.gdp,
-                        inflation: undefined, // Map if available
-                        unemployment: undefined, // Map if available
-                      })) as EconomicYearData[])
-                    : [],
-                  storytellerEffects:
-                    country.storytellerEffects?.[0]?.id && country.storytellerEffects[0].countryId
-                      ? ({
-                          id: country.storytellerEffects[0].id,
-                          countryId: country.storytellerEffects[0].countryId,
-                        } as StorytellerEffect)
-                      : undefined,
-                }}
-              />
-            </CardContent>
+        <div className="container mx-auto space-y-6 px-4 py-8">
+          <PageHeader
+            title={`Economic modeling for ${country.name}`}
+            back={{ href: `/countries/${country.slug}`, label: country.name }}
+            bleed
+          />
+          <Card padding="md">
+            <EconomicModelingEngine
+              country={{
+                ...country,
+                economicYears: Array.isArray(country.historical)
+                  ? (country.historical.map((h: Record<string, any>) => ({
+                      year: h.year,
+                      gdp: h.gdp,
+                      inflation: undefined, // Map if available
+                      unemployment: undefined, // Map if available
+                    })) as EconomicYearData[])
+                  : [],
+                storytellerEffects:
+                  country.storytellerEffects?.[0]?.id && country.storytellerEffects[0].countryId
+                    ? ({
+                        id: country.storytellerEffects[0].id,
+                        countryId: country.storytellerEffects[0].countryId,
+                      } as StorytellerEffect)
+                    : undefined,
+              }}
+            />
           </Card>
         </div>
       </SignedIn>

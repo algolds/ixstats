@@ -1,29 +1,25 @@
+"use client";
 // src/app/labs/onoma/components/sections/LoanwordsSection.tsx
 // Onoma Lab — Loanword & Contact Registry Section
 // Philosophy: Historical Linguistics × Apple Design × Emil Design Engineering
 
-"use client";
-
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Plus,
-  Trash2,
+  Trash as Trash2,
   ArrowRight,
   Copy,
   Check,
-  RefreshCw,
-  Sliders,
-  Globe2,
+  Refresh as RefreshCw,
+  ControlSlider as Sliders,
+  Globe as Globe2,
   HelpCircle,
-  X,
-  BookOpen,
-  Sparkles,
-} from "lucide-react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { FacetMaterial } from "~/components/ui/facet";
+  Xmark as X,
+  OpenBook as BookOpen,
+} from "iconoir-react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { cn } from "~/lib/utils";
 
 import {
   THEMATIC_PRESETS,
@@ -31,12 +27,28 @@ import {
   type SoundShift,
   type SourceWord,
 } from "~/lib/onoma/loanwords-presets";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { Toggle } from "~/components/ui/toggle";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Slider } from "~/components/ui/slider";
+import { Card } from "~/components/ui/card";
 
 export default function LoanwordsSection() {
   const notify = useNotify();
   const utils = api.useUtils();
   const shouldReduceMotion = useReducedMotion();
-  const donorSelectRef = useRef<HTMLSelectElement | null>(null);
+  const donorSelectRef = useRef<HTMLButtonElement | null>(null);
 
   // Selected contact state
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -80,7 +92,6 @@ export default function LoanwordsSection() {
     [packsData, sourcePackId]
   );
 
-  // Mutations
   const saveContactMutation = api.onoma.saveContact.useMutation({
     onSuccess: (data: { id: string }) => {
       notify.success("Language contact registry saved.");
@@ -260,7 +271,6 @@ export default function LoanwordsSection() {
 
   return (
     <div className="space-y-4">
-      {/* Help Guide Drawer Overlay */}
       <AnimatePresence>
         {showHelpGuide && (
           <motion.div
@@ -270,285 +280,271 @@ export default function LoanwordsSection() {
             transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
             className="overflow-hidden"
           >
-            <FacetMaterial
-              material="satin"
-              className="border-[#0091ff]/30 bg-[#0091ff]/5 space-y-2.5 rounded-2xl border p-4 shadow-sm"
-            >
+            <Card variant="well" padding="none" className="space-y-2 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-[#0091ff]" />
-                  <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
-                    Loanwords & Historical Language Contact Guide
+                  <BookOpen className="text-tint h-4 w-4" />
+                  <h4 className="text-label text-subhead">
+                    Loanwords & historical language contact guide
                   </h4>
                 </div>
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => setShowHelpGuide(false)}
-                  className="hover:bg-secondary/40 text-muted-foreground hover:text-foreground rounded-md p-1 transition-colors cursor-pointer"
+                  aria-label="Close guide"
+                  className="text-label-secondary hover:text-label"
                 >
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
-              <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-3">
+              <div className="text-footnote grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="space-y-1">
-                  <span className="text-foreground font-semibold">1. Contact Channels</span>
-                  <p className="text-muted-foreground text-[11px] leading-relaxed">
-                    Map relationships between Donor (L1) and Recipient (L2) languages across trade, warfare, or academic domains.
+                  <span className="text-label font-semibold">1. Contact Channels</span>
+                  <p className="text-label-secondary text-caption leading-relaxed">
+                    Map relationships between Donor (L1) and Recipient (L2) languages across trade,
+                    warfare, or academic domains.
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-foreground font-semibold">2. Phonetic Shifts</span>
-                  <p className="text-muted-foreground text-[11px] leading-relaxed">
-                    Loanwords mutate to match target phonology (e.g. Greek ⟨ph⟩ → Romance ⟨f⟩ or Grimm&apos;s Consonant Shift).
+                  <span className="text-label font-semibold">2. Phonetic Shifts</span>
+                  <p className="text-label-secondary text-caption leading-relaxed">
+                    Loanwords mutate to match target phonology (e.g. Greek ⟨ph⟩ → Romance ⟨f⟩ or
+                    Grimm&apos;s Consonant Shift).
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-foreground font-semibold">3. Syllable Constraints</span>
-                  <p className="text-muted-foreground text-[11px] leading-relaxed">
-                    Use Coda Drop to strip illegal terminal consonants or Vowel Epenthesis (+V) to maintain open syllable harmony.
+                  <span className="text-label font-semibold">3. Syllable Constraints</span>
+                  <p className="text-label-secondary text-caption leading-relaxed">
+                    Use Coda Drop to strip illegal terminal consonants or Vowel Epenthesis (+V) to
+                    maintain open syllable harmony.
                   </p>
                 </div>
               </div>
-            </FacetMaterial>
+            </Card>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Main Studio Grid */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
         {/* Left Column: Contact Links & Configuration (5 cols) */}
         <div className="space-y-4 lg:col-span-5">
-          {/* Contact Registry List */}
-          <FacetMaterial material="satin" className="border-border/30 space-y-3 rounded-2xl border p-4 shadow-sm">
-            <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
+          <Card variant="well" padding="none" className="space-y-3 p-4">
+            <div className="border-separator flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0091ff]/10 text-[#0091ff]">
+                <div className="bg-tint/10 text-tint rounded-control flex h-6 w-6 items-center justify-center">
                   <Globe2 className="h-3.5 w-3.5" />
                 </div>
-                <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">
-                  Contact Channels
-                </h3>
+                <h3 className="text-label text-subhead">Contact channels</h3>
               </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setShowHelpGuide(!showHelpGuide)}
-                  title="Toggle Contact Guide"
-                  className={cn(
-                    "flex h-6.5 w-6.5 items-center justify-center rounded-lg border transition-all cursor-pointer active:scale-95",
-                    showHelpGuide
-                      ? "border-[#0091ff]/40 bg-[#0091ff]/15 text-[#0091ff]"
-                      : "border-border/40 bg-secondary/20 text-muted-foreground hover:text-foreground"
-                  )}
+              <div className="flex items-center gap-2">
+                <Toggle
+                  variant="outline"
+                  size="sm"
+                  pressed={showHelpGuide}
+                  onPressedChange={setShowHelpGuide}
+                  title="Toggle contact guide"
+                  aria-label="Contact guide"
                 >
                   <HelpCircle className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNewChannel}
-                  className="hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 border-border/40 bg-secondary/20 flex h-6.5 items-center gap-1 rounded-lg border px-2.5 text-[10px] font-bold text-[#0091ff] transition-all cursor-pointer active:scale-[0.97]"
-                >
+                </Toggle>
+                <Button variant="secondary" size="sm" onClick={handleNewChannel}>
                   <Plus className="h-3 w-3" />
-                  <span>New Channel</span>
-                </button>
+                  <span>New channel</span>
+                </Button>
               </div>
             </div>
 
             {contactsLoading ? (
-              <div className="text-muted-foreground py-2 text-xs">Loading contact channels...</div>
+              <div className="text-label-secondary text-footnote py-2">
+                Loading contact channels...
+              </div>
             ) : !contacts || contacts.length === 0 ? (
-              <div className="text-muted-foreground py-3 text-xs italic text-center">
+              <div className="text-label-secondary text-footnote py-3 text-center italic">
                 No active contact channels mapped yet. Click &quot;New Channel&quot; to begin.
               </div>
             ) : (
-              <div className="max-h-44 scrollbar-thin space-y-1.5 overflow-y-auto pr-1">
-                {contacts.map((c: any) => {
-                  const isSelected = selectedContactId === c.id;
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => setSelectedContactId(c.id)}
-                      className={cn(
-                        "flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-xs transition-all cursor-pointer active:scale-[0.98]",
-                        isSelected
-                          ? "border-[#0091ff]/50 bg-[#0091ff]/10 text-[#0091ff] shadow-xs font-semibold"
-                          : "border-border/30 bg-background/50 hover:bg-secondary/20 text-foreground"
-                      )}
-                    >
-                      <div className="flex items-center gap-1.5 truncate">
-                        <span className="font-bold truncate">{c.sourcePack?.name}</span>
-                        <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
-                        <span className="font-bold truncate">{c.targetPack?.name}</span>
-                      </div>
-                      <span className="text-muted-foreground bg-secondary/40 rounded px-1.5 py-0.5 text-[9px] font-mono capitalize shrink-0 ml-1">
-                        {c.domain}
+              <FacetListSection
+                variant="plain"
+                aria-label="Contact channels"
+                groupClassName="max-h-44 overflow-y-auto"
+              >
+                {contacts.map((c: any) => (
+                  <FacetRow
+                    key={c.id}
+                    onClick={() => setSelectedContactId(c.id)}
+                    selected={selectedContactId === c.id}
+                    selectionStyle="tint"
+                    title={
+                      <span className="text-footnote flex items-center gap-2 truncate font-semibold">
+                        <span className="truncate">{c.sourcePack?.name}</span>
+                        <ArrowRight
+                          aria-label="to"
+                          className="text-label-secondary size-3 shrink-0"
+                        />
+                        <span className="truncate">{c.targetPack?.name}</span>
                       </span>
-                    </button>
-                  );
-                })}
-              </div>
+                    }
+                    trailing={
+                      <Badge variant="default" className="font-mono capitalize">
+                        {c.domain}
+                      </Badge>
+                    }
+                  />
+                ))}
+              </FacetListSection>
             )}
-          </FacetMaterial>
+          </Card>
 
           {/* Form to configure Contact Registry */}
-          <FacetMaterial material="satin" className="border-border/30 space-y-4 rounded-2xl border p-4 shadow-sm">
-            <form onSubmit={handleSaveContact} className="space-y-3.5">
-              <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                <div className="flex items-center gap-1.5">
-                  <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
-                    Channel Settings
-                  </h4>
+          <Card variant="well" padding="none" className="space-y-4 p-4">
+            <form onSubmit={handleSaveContact} className="space-y-4">
+              <div className="border-separator flex items-center justify-between border-b pb-2">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-label text-subhead">Channel settings</h4>
                   {!selectedContactId && (
-                    <span className="text-[#0091ff] bg-[#0091ff]/10 border border-[#0091ff]/30 rounded px-1.5 py-0.2 text-[9px] font-mono font-semibold">
+                    <span className="text-tint bg-tint/10 border-tint/30 py-0.2 rounded-control-sm text-caption border px-2 font-mono font-semibold">
                       New
                     </span>
                   )}
                 </div>
                 {selectedContactId && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => deleteContactMutation.mutate({ id: selectedContactId })}
-                    className="text-muted-foreground hover:bg-rose-500/10 hover:text-rose-400 flex items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] font-semibold transition-colors cursor-pointer active:scale-[0.97]"
+                    className="text-label-secondary hover:text-red text-label-secondary hover:text-red hover:bg-red/10"
                   >
                     <Trash2 className="h-3 w-3" />
                     <span>Delete</span>
-                  </button>
+                  </Button>
                 )}
               </div>
 
               {/* Source & Target Language Selectors */}
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
+                  <label className="text-label-secondary text-subhead mb-1 block">
                     Donor Language (L1)
                   </label>
-                  <select
-                    ref={donorSelectRef}
-                    value={sourcePackId}
-                    onChange={(e) => setSourcePackId(e.target.value)}
-                    required
-                    className="bg-background/80 border-border/40 text-foreground focus:border-[#0091ff]/60 w-full rounded-xl border px-2.5 py-1.5 text-xs font-medium transition-all outline-none"
-                  >
-                    <option value="">(Select Donor L1)</option>
-                    {packsData?.packs?.map((p: any) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={sourcePackId} onValueChange={setSourcePackId} required>
+                    <SelectTrigger size="sm" ref={donorSelectRef} className="w-full">
+                      <SelectValue placeholder="(Select Donor L1)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {packsData?.packs?.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
-                  <label className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
+                  <label className="text-label-secondary text-subhead mb-1 block">
                     Recipient Language (L2)
                   </label>
-                  <select
-                    value={targetPackId}
-                    onChange={(e) => setTargetPackId(e.target.value)}
-                    required
-                    className="bg-background/80 border-border/40 text-foreground focus:border-[#0091ff]/60 w-full rounded-xl border px-2.5 py-1.5 text-xs font-medium transition-all outline-none"
-                  >
-                    <option value="">(Select Recipient L2)</option>
-                    {packsData?.packs?.map((p: any) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={targetPackId} onValueChange={setTargetPackId} required>
+                    <SelectTrigger size="sm" className="w-full">
+                      <SelectValue placeholder="(Select Recipient L2)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {packsData?.packs?.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              {/* Contact Domain & Intensity */}
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
-                    Contact Domain
+                  <label className="text-label-secondary text-subhead mb-1 block">
+                    Contact domain
                   </label>
-                  <select
-                    value={domain}
-                    onChange={(e) => setDomain(e.target.value)}
-                    className="bg-background/80 border-border/40 text-foreground focus:border-[#0091ff]/60 w-full rounded-xl border px-2.5 py-1.5 text-xs font-medium transition-all outline-none"
-                  >
-                    <option value="trade">Trade & Commerce</option>
-                    <option value="military">Military & Warfare</option>
-                    <option value="religious">Religion & Ritual</option>
-                    <option value="academic">Sciences & Academia</option>
-                    <option value="general">General Cultural Exchange</option>
-                  </select>
+                  <Select value={domain} onValueChange={(v) => setDomain(v)}>
+                    <SelectTrigger size="sm" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="trade">Trade & commerce</SelectItem>
+                      <SelectItem value="military">Military & warfare</SelectItem>
+                      <SelectItem value="religious">Religion & ritual</SelectItem>
+                      <SelectItem value="academic">Sciences & academia</SelectItem>
+                      <SelectItem value="general">General cultural exchange</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[10px]">
-                    <span className="text-muted-foreground font-bold tracking-wider uppercase">Intensity</span>
-                    <span className="text-[#0091ff] font-mono font-bold bg-[#0091ff]/10 rounded px-1.5 py-0.2">
+                  <div className="text-caption flex items-center justify-between">
+                    <span className="text-label-secondary font-semibold">Intensity</span>
+                    <span className="text-tint bg-tint/10 py-0.2 rounded-control-sm px-2 font-mono font-semibold">
                       {Math.round(intensity * 100)}%
                     </span>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={intensity}
-                    onChange={(e) => setIntensity(Number(e.target.value))}
-                    className="accent-[#0091ff] mt-1 h-1.5 w-full cursor-pointer rounded-lg bg-secondary/40"
+                  <Slider
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={[Number(intensity)]}
+                    onValueChange={([v = 0]) => setIntensity(v)}
+                    className="mt-1"
                   />
                 </div>
               </div>
 
-              {/* Phonological Adaptation Rules Suite */}
-              <div className="border-border/20 space-y-2.5 border-t pt-3">
+              <div className="border-separator space-y-2 border-t pt-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-                    Phonetic Adaptation Rules
+                  <span className="text-label-secondary text-eyebrow">
+                    Phonetic adaptation rules
                   </span>
                   <div className="flex items-center gap-1">
                     {PHONETIC_LAW_PRESETS.map((law) => (
-                      <button
+                      <Button
+                        variant="outline"
+                        size="sm"
                         key={law.name}
-                        type="button"
                         onClick={() => handleApplyPhoneticLaw(law)}
                         title={law.description}
-                        className="hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 border-border/30 bg-secondary/20 rounded-md border px-1.5 py-0.5 text-[9px] font-mono font-semibold transition-all cursor-pointer active:scale-95"
+                        className="font-mono"
                       >
                         {law.name.split(" ")[0]}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
 
                 {/* Syllable Coda & Epenthesis Controls */}
-                <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border/30 bg-secondary/15 p-2 text-xs">
-                  <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs select-none">
-                    <input
-                      type="checkbox"
+                <div className="border-separator bg-fill-4 rounded-row text-footnote flex flex-wrap items-center gap-3 border p-2">
+                  <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 select-none">
+                    <Checkbox
                       checked={codaDrop}
-                      onChange={(e) => setCodaDrop(e.target.checked)}
-                      className="accent-[#0091ff] rounded"
+                      onCheckedChange={(checked) => setCodaDrop(checked === true)}
                     />
                     <span>Coda Drop (Drop final C)</span>
                   </label>
 
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs select-none">
-                      <input
-                        type="checkbox"
+                  <div className="flex items-center gap-2">
+                    <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 select-none">
+                      <Checkbox
                         checked={vowelEpenthesis}
-                        onChange={(e) => setVowelEpenthesis(e.target.checked)}
-                        className="accent-[#0091ff] rounded"
+                        onCheckedChange={(checked) => setVowelEpenthesis(checked === true)}
                       />
                       <span>Epenthesis (+V)</span>
                     </label>
 
                     {vowelEpenthesis && (
-                      <input
+                      <Input
                         type="text"
                         maxLength={1}
                         value={epentheticVowel}
                         onChange={(e) => setEpentheticVowel(e.target.value)}
                         placeholder="a"
-                        className="bg-background/80 border-border/40 text-foreground focus:border-[#0091ff]/60 h-6 w-7 rounded-md border text-center font-mono text-xs font-bold outline-none"
+                        className="text-footnote h-6 w-7 text-center font-mono"
                       />
                     )}
                   </div>
@@ -556,51 +552,56 @@ export default function LoanwordsSection() {
 
                 {/* Sound Shift Builder Input Strip */}
                 <div className="space-y-2">
-                  <div className="flex gap-1.5">
-                    <input
+                  <div className="flex gap-2">
+                    <Input
                       type="text"
                       placeholder="From (e.g. ph)"
                       value={newFrom}
                       onChange={(e) => setNewFrom(e.target.value)}
-                      className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:border-[#0091ff]/60 flex-1 rounded-xl border px-2.5 py-1.5 font-mono text-xs outline-none"
+                      className="text-footnote flex-1 font-mono"
                     />
-                    <span className="text-muted-foreground self-center">→</span>
-                    <input
+                    <span className="text-label-secondary self-center">→</span>
+                    <Input
                       type="text"
                       placeholder="To (e.g. p)"
                       value={newTo}
                       onChange={(e) => setNewTo(e.target.value)}
-                      className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:border-[#0091ff]/60 flex-1 rounded-xl border px-2.5 py-1.5 font-mono text-xs outline-none"
+                      className="text-footnote flex-1 font-mono"
                     />
-                    <button
+                    <Button
+                      variant="outline"
+                      size="sm"
                       type="button"
                       onClick={handleAddShift}
                       disabled={!newFrom.trim()}
-                      className="hover:border-[#0091ff]/40 bg-secondary/30 hover:bg-[#0091ff]/10 text-foreground rounded-xl border border-border/40 px-3 py-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:opacity-30"
                     >
                       Add
-                    </button>
+                    </Button>
                   </div>
 
                   {/* Sound Shifts Active Pill Stream */}
-                  <div className="flex max-h-20 scrollbar-thin flex-wrap gap-1.5 overflow-y-auto pr-1">
+                  <div className="flex max-h-20 scrollbar-thin flex-wrap gap-2 overflow-y-auto pr-1">
                     <AnimatePresence>
                       {soundShifts.map((shift, idx) => (
                         <motion.span
                           key={`${shift.from}-${shift.to}-${idx}`}
-                          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
+                          initial={
+                            shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }
+                          }
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.95 }}
-                          className="bg-[#0091ff]/10 border-[#0091ff]/25 text-[#0091ff] inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 font-mono text-xs font-semibold"
+                          className="bg-tint/10 border-tint/25 text-tint rounded-control text-footnote inline-flex items-center gap-2 border px-2 py-0.5 font-mono font-semibold"
                         >
                           {shift.from} → {shift.to || "∅"}
-                          <button
-                            type="button"
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
                             onClick={() => handleRemoveShift(idx)}
-                            className="text-[#0091ff]/60 hover:text-rose-400 font-bold transition-colors cursor-pointer"
+                            aria-label="Remove shift"
+                            className="text-tint/60 hover:text-red text-tint/60 hover:text-red"
                           >
                             ×
-                          </button>
+                          </Button>
                         </motion.span>
                       ))}
                     </AnimatePresence>
@@ -608,155 +609,160 @@ export default function LoanwordsSection() {
                 </div>
               </div>
 
-              <button
+              <Button
+                size="sm"
                 type="submit"
                 disabled={saveContactMutation.isPending}
-                className="bg-[#0091ff] hover:bg-[#0080e6] disabled:opacity-40 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold text-white shadow-xs transition-all active:scale-[0.97]"
+                className="w-full justify-center"
               >
-                <span>{saveContactMutation.isPending ? "Saving Channel..." : "Save Contact Channel"}</span>
-              </button>
+                <span>
+                  {saveContactMutation.isPending ? "Saving Channel..." : "Save Contact Channel"}
+                </span>
+              </Button>
             </form>
-          </FacetMaterial>
+          </Card>
         </div>
 
         {/* Right Column: Loanword Adaptation Simulator Sandbox (7 cols) */}
         <div className="space-y-4 lg:col-span-7">
-          <FacetMaterial material="satin" className="border-border/30 space-y-4 rounded-2xl border p-4 shadow-sm">
+          <Card variant="well" padding="none" className="space-y-4 p-4">
             {/* Simulator Header & Action Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#0091ff]/10 text-[#0091ff]">
+            <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+              <div className="flex items-center gap-2">
+                <div className="bg-tint/10 text-tint rounded-row flex h-7 w-7 items-center justify-center">
                   <Sliders className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">
-                    Adaptation Simulator
-                  </h3>
-                  <p className="text-muted-foreground text-[10px]">
-                    Real-time phonological mutation & borrowing pipeline
+                  <h3 className="text-label text-subhead">Adaptation simulator</h3>
+                  <p className="text-label-secondary text-caption">
+                    Phonological mutation and borrowing pipeline
                   </p>
                 </div>
               </div>
 
               {/* Source Pack Sync & Presets Toolbar */}
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 {sourcePack && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={handleSyncSourceLexicon}
                     title={`Sync lexicon words from ${sourcePack.name}`}
-                    className="hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 border-border/40 bg-secondary/20 flex items-center gap-1 rounded-xl border px-2.5 py-1 text-[10px] font-bold text-[#0091ff] transition-all cursor-pointer active:scale-95"
                   >
                     <RefreshCw className="h-3 w-3" />
                     <span>Sync {sourcePack.name}</span>
-                  </button>
+                  </Button>
                 )}
 
-                {/* Thematic Preset Selector */}
-                <div className="flex items-center gap-0.5 rounded-xl border border-border/40 bg-secondary/20 p-0.5">
+                <ToggleGroup
+                  type="single"
+                  size="sm"
+                  disallowEmpty
+                  aria-label="Thematic vocabulary preset"
+                  value={activePresetKey}
+                >
                   {Object.keys(THEMATIC_PRESETS).map((key) => {
                     const preset = THEMATIC_PRESETS[key];
-                    const isSelected = activePresetKey === key;
+                    // A click always (re)loads the preset's words, even when it is already active.
                     return (
-                      <button
+                      <ToggleGroupItem
                         key={key}
-                        type="button"
+                        value={key}
                         onClick={() => {
                           setActivePresetKey(key);
                           setTestWords(preset.words);
                           notify.info(`Loaded ${preset.label} vocabulary.`);
                         }}
-                        className={cn(
-                          "rounded-lg px-2 py-1 text-[9px] font-semibold transition-all cursor-pointer active:scale-95",
-                          isSelected
-                            ? "bg-background text-foreground shadow-2xs font-bold"
-                            : "text-muted-foreground hover:text-foreground"
-                        )}
                       >
                         {preset.label.split(" ")[0]}
-                      </button>
+                      </ToggleGroupItem>
                     );
                   })}
-                </div>
+                </ToggleGroup>
               </div>
             </div>
 
-            {/* Simulated Words Output Table */}
-            <div className="border-border/30 overflow-hidden rounded-xl border bg-background/50 dark:bg-card/20 shadow-inner">
-              <div className="bg-secondary/20 text-muted-foreground border-border/20 grid grid-cols-12 gap-2 border-b px-4 py-2 text-[10px] font-bold tracking-wider uppercase select-none">
+            <div className="border-separator bg-surface rounded-row overflow-hidden border shadow-inner">
+              <div className="bg-fill-4 text-label-secondary border-separator text-eyebrow grid grid-cols-12 gap-2 border-b px-4 py-2 select-none">
                 <span className="col-span-4">Donor Word (L1)</span>
-                <span className="col-span-4">Transformation Pipeline</span>
+                <span className="col-span-4">Transformation pipeline</span>
                 <span className="col-span-4 text-right">Adapted Form (L2)</span>
               </div>
 
               {borrowMutation.data?.results && borrowMutation.data.results.length > 0 ? (
-                <div className="divide-border/10 max-h-80 scrollbar-thin divide-y overflow-y-auto">
+                <div className="divide-separator max-h-80 scrollbar-thin divide-y overflow-y-auto">
                   {borrowMutation.data.results.map((res: any, idx: number) => {
                     const isCopied = copiedIndex === idx;
                     const adaptedWord = res.borrowed || res.original;
                     return (
                       <div
                         key={idx}
-                        className="hover:bg-secondary/15 group grid grid-cols-12 items-center gap-2 px-4 py-3 text-xs transition-colors"
+                        className="hover:bg-fill-4 group text-footnote grid grid-cols-12 items-center gap-2 px-4 py-3 transition-colors"
                       >
                         {/* Column 1: Source Word & Meaning */}
                         <div className="col-span-4 flex flex-col">
-                          <span className="text-foreground font-mono font-bold text-xs">{res.original}</span>
-                          <span className="text-muted-foreground truncate text-[10px] italic">
+                          <span className="text-label text-footnote font-mono font-semibold">
+                            {res.original}
+                          </span>
+                          <span className="text-label-secondary text-caption truncate italic">
                             {res.meaning}
                           </span>
                         </div>
 
                         {/* Column 2: Applied Rules Breakdown */}
-                        <div className="col-span-4 flex flex-wrap gap-1 font-mono text-[9px]">
+                        <div className="text-caption col-span-4 flex flex-wrap gap-1 font-mono">
                           {soundShifts.some((s) => res.original.toLowerCase().includes(s.from)) && (
-                            <span className="text-[#0091ff] bg-[#0091ff]/10 rounded px-1.5 py-0.2 font-semibold">
+                            <span className="text-tint bg-tint/10 py-0.2 rounded-control-sm px-2 font-semibold">
                               shift
                             </span>
                           )}
                           {codaDrop && (
-                            <span className="text-amber-500 bg-amber-500/10 rounded px-1.5 py-0.2 font-semibold">
+                            <span className="py-0.2 rounded-control-sm bg-yellow/10 text-yellow px-2 font-semibold">
                               -coda
                             </span>
                           )}
                           {vowelEpenthesis && (
-                            <span className="text-indigo-400 bg-indigo-500/10 rounded px-1.5 py-0.2 font-semibold">
+                            <span className="py-0.2 rounded-control-sm bg-indigo/10 text-indigo px-2 font-semibold">
                               +{epentheticVowel}
                             </span>
                           )}
                           {!soundShifts.some((s) => res.original.toLowerCase().includes(s.from)) &&
                             !codaDrop &&
                             !vowelEpenthesis && (
-                              <span className="text-muted-foreground opacity-60">direct</span>
+                              <span className="text-label-secondary opacity-60">direct</span>
                             )}
                         </div>
 
                         {/* Column 3: Adapted Result & Actions */}
                         <div className="col-span-4 flex items-center justify-end gap-2">
-                          <span className="text-sm font-extrabold font-mono text-[#0091ff] tracking-tight">
+                          <span className="text-tint text-body font-mono font-semibold">
                             {adaptedWord}
                           </span>
                           <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                            <button
-                              type="button"
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
                               onClick={() => handleCopyWord(adaptedWord, idx)}
                               title="Copy adapted word"
-                              className="hover:bg-secondary/60 text-muted-foreground hover:text-foreground rounded p-1 transition-colors cursor-pointer active:scale-90"
+                              aria-label="Copy adapted word"
+                              className="text-label-secondary hover:text-label"
                             >
                               {isCopied ? (
-                                <Check className="h-3 w-3 text-emerald-400" />
+                                <Check className="text-green h-3 w-3" />
                               ) : (
                                 <Copy className="h-3 w-3" />
                               )}
-                            </button>
-                            <button
-                              type="button"
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
                               onClick={() => handleRemoveTestWord(idx)}
                               title="Remove word"
-                              className="text-muted-foreground hover:bg-rose-500/10 hover:text-rose-400 rounded p-1 transition-colors cursor-pointer active:scale-90"
+                              aria-label="Remove word"
+                              className="text-label-secondary hover:text-red hover:bg-red/10"
                             >
                               <Trash2 className="h-3 w-3" />
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -764,44 +770,39 @@ export default function LoanwordsSection() {
                   })}
                 </div>
               ) : (
-                <div className="text-muted-foreground p-8 text-center text-xs italic">
+                <div className="text-label-secondary text-footnote p-8 text-center italic">
                   No source words active in simulator. Choose a preset above or add a word below.
                 </div>
               )}
             </div>
 
             {/* Add Custom Word to Simulator Form */}
-            <form onSubmit={handleAddTestWord} className="border-border/20 space-y-2.5 border-t pt-3.5">
-              <h4 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-                Add Custom Word to Simulator
-              </h4>
+            <form onSubmit={handleAddTestWord} className="border-separator space-y-2 border-t pt-4">
+              <h4 className="text-label-secondary text-subhead">Add custom word to simulator</h4>
               <div className="flex gap-2">
-                <input
+                <Input
                   type="text"
                   required
                   placeholder="Source Word (e.g. centaur)"
                   value={newTestWord}
                   onChange={(e) => setNewTestWord(e.target.value)}
-                  className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:border-[#0091ff]/60 flex-1 rounded-xl border px-3 py-1.5 font-mono text-xs outline-none"
+                  className="text-footnote flex-1 font-mono"
                 />
-                <input
+                <Input
                   type="text"
                   required
                   placeholder="Meaning / Gloss"
                   value={newTestMeaning}
                   onChange={(e) => setNewTestMeaning(e.target.value)}
-                  className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:border-[#0091ff]/60 flex-1 rounded-xl border px-3 py-1.5 text-xs outline-none"
+                  className="text-footnote flex-1"
                 />
-                <button
-                  type="submit"
-                  className="hover:border-[#0091ff]/40 bg-secondary/30 hover:bg-[#0091ff]/10 text-foreground rounded-xl border border-border/40 px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 shrink-0"
-                >
-                  <Plus className="inline h-3.5 w-3.5 mr-1 text-[#0091ff]" />
-                  <span>Add Word</span>
-                </button>
+                <Button variant="outline" size="sm" type="submit" className="shrink-0">
+                  <Plus className="text-tint mr-1 inline h-3.5 w-3.5" />
+                  <span>Add word</span>
+                </Button>
               </div>
             </form>
-          </FacetMaterial>
+          </Card>
         </div>
       </div>
     </div>

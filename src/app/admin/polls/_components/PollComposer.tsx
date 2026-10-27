@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Button } from "~/components/ui/button";
+import { StepIndicator } from "~/components/ui/step-indicator";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -13,27 +15,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ValueSelect } from "~/components/ui/value-select";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import {
-  Trash2,
+  Trash as Trash2,
   Plus,
   Send,
   Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
-  Info,
+  NavArrowLeft as ChevronLeft,
+  NavArrowRight as ChevronRight,
+  Sparks as Sparkles,
+  InfoCircle as Info,
   CheckCircle,
-} from "lucide-react";
-import { toast } from "sonner";
-import { cn } from "~/lib/utils";
+} from "iconoir-react";
+import { useNotify } from "~/hooks/useNotify";
 
 interface PollComposerProps {
   onSuccess?: () => void;
 }
 
 export function PollComposer({ onSuccess }: PollComposerProps) {
+  const notify = useNotify();
   // Wizard Step State
   const [step, setStep] = useState(1);
 
@@ -47,11 +50,14 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
   const [countryId, setCountryId] = useState("");
   const [options, setOptions] = useState<string[]>(["", ""]);
 
-  const { data: countriesData } = api.countries.getSelectList.useQuery({ limit: 250 });
+  const { data: countriesData } = api.countries.getSelectList.useQuery({
+    limit: 250,
+    realm: ALL_REALMS,
+  });
 
   const createMutation = api.polls.create.useMutation({
     onSuccess: () => {
-      toast.success("Poll created and broadcasted successfully!");
+      notify.success("Poll created and broadcasted successfully!");
       if (onSuccess) onSuccess();
       // Reset form
       setQuestion("");
@@ -65,7 +71,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
       setStep(1);
     },
     onError: (err) => {
-      toast.error(err.message || "Failed to create poll");
+      notify.error(err.message || "Failed to create poll");
     },
   });
 
@@ -86,11 +92,11 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
   const nextStep = () => {
     if (step === 1 && !question.trim()) {
-      toast.error("Please enter a question or topic");
+      notify.error("Please enter a question or topic");
       return;
     }
     if (step === 2 && targetScope === "country" && !countryId) {
-      toast.error("Please select a target country");
+      notify.error("Please select a target country");
       return;
     }
     setStep((prev) => Math.min(prev + 1, 3));
@@ -104,13 +110,13 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
     e.preventDefault();
 
     if (!question.trim()) {
-      toast.error("Please enter a question");
+      notify.error("Please enter a question");
       return;
     }
 
     const filteredOptions = options.map((opt) => opt.trim()).filter((opt) => opt.length > 0);
     if (filteredOptions.length < 2) {
-      toast.error("At least 2 options are required");
+      notify.error("At least 2 options are required");
       return;
     }
 
@@ -143,47 +149,30 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
   // Progress Indicators
   const STEPS = [
-    { number: 1, label: "Topic & Context" },
-    { number: 2, label: "Scope & Targeting" },
-    { number: 3, label: "Options & Publish" },
+    { number: 1, label: "Topic & context" },
+    { number: 2, label: "Scope & targeting" },
+    { number: 3, label: "Options & publish" },
   ];
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
-        <Card className="border-border/20 bg-card/10 relative overflow-hidden border backdrop-blur-md">
-          <CardHeader className="border-border/20 border-b">
+        <Card className="relative flex flex-col gap-6 overflow-hidden py-6">
+          <CardHeader className="border-separator border-b">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-foreground flex items-center gap-2 text-base font-bold">
-                <Sparkles className="h-4 w-4 text-[#ff8a65]" />
-                Poll Wizard Composer
+              <CardTitle className="text-label text-headline flex items-center gap-2">
+                <Sparkles className="text-poll h-4 w-4" />
+                Poll wizard composer
               </CardTitle>
-              <span className="text-muted-foreground text-xs font-semibold">Step {step} of 3</span>
+              <span className="text-label-secondary text-caption">Step {step} of 3</span>
             </div>
 
-            {/* Stepper Progress bar */}
-            <div className="mt-4 flex items-center justify-between gap-2">
-              {STEPS.map((s, _idx) => (
-                <div key={s.number} className="flex flex-1 flex-col gap-1.5">
-                  <div className="bg-muted/40 h-1 overflow-hidden rounded-full">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all duration-300",
-                        step >= s.number ? "bg-[#ff8a65]" : "bg-transparent"
-                      )}
-                    />
-                  </div>
-                  <span
-                    className={cn(
-                      "text-[10px] font-bold tracking-tight transition-colors",
-                      step === s.number ? "font-extrabold text-[#ff8a65]" : "text-muted-foreground"
-                    )}
-                  >
-                    {s.label}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <StepIndicator
+              aria-label="Poll wizard progress"
+              className="mt-4"
+              steps={STEPS.map((st) => ({ id: String(st.number), label: st.label }))}
+              current={step - 1}
+            />
           </CardHeader>
 
           <CardContent className="p-6">
@@ -193,12 +182,9 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
             >
               {/* Step 1 Content */}
               {step === 1 && (
-                <div className="animate-in fade-in slide-in-from-right-3 space-y-4 duration-300">
+                <div className="animate-in fade-in slide-in-from-right-3 duration-fast space-y-4">
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="question"
-                      className="text-foreground text-xs font-bold tracking-tight"
-                    >
+                    <Label htmlFor="question" className="text-label text-caption">
                       Poll Question / Topic *
                     </Label>
                     <Input
@@ -206,16 +192,13 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                       placeholder="e.g., What should be our priority for the next national budget?"
                       value={question}
                       onChange={(e) => setQuestion(e.target.value)}
-                      className="bg-background/40 border-border/60 focus-visible:ring-[#ff8a65]"
+
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="description"
-                      className="text-foreground text-xs font-bold tracking-tight"
-                    >
+                    <Label htmlFor="description" className="text-label text-caption">
                       Description / Context (optional)
                     </Label>
                     <Textarea
@@ -223,7 +206,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                       placeholder="Provide additional details or context to help citizens make an informed choice..."
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="bg-background/40 border-border/60 focus-visible:ring-[#ff8a65]"
+
                       rows={5}
                     />
                   </div>
@@ -232,13 +215,11 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
               {/* Step 2 Content */}
               {step === 2 && (
-                <div className="animate-in fade-in slide-in-from-right-3 space-y-4 duration-300">
+                <div className="animate-in fade-in slide-in-from-right-3 duration-fast space-y-4">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label className="text-foreground text-xs font-bold tracking-tight">
-                        Poll Type
-                      </Label>
-                      <Select
+                      <Label className="text-label text-caption">Poll type</Label>
+                      <ValueSelect
                         value={pollType}
                         onValueChange={(val: "choice" | "feature-poll" | "feature-voting") => {
                           setPollType(val);
@@ -246,47 +227,35 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                             setMultiple(true);
                           }
                         }}
-                      >
-                        <SelectTrigger className="bg-background/40 border-border/60">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-card border-border/60">
-                          <SelectItem value="choice">Standard Choice Poll</SelectItem>
-                          <SelectItem value="feature-poll">Feature Priority Poll</SelectItem>
-                          <SelectItem value="feature-voting">Feature Upvoting Board</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        options={[
+                          ["choice", "Standard choice poll"],
+                          ["feature-poll", "Feature priority poll"],
+                          ["feature-voting", "Feature upvoting board"],
+                        ]}
+                      />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-foreground text-xs font-bold tracking-tight">
-                        Scope & Targeting
-                      </Label>
-                      <Select
+                      <Label className="text-label text-caption">Scope & targeting</Label>
+                      <ValueSelect
                         value={targetScope}
                         onValueChange={(val: "global" | "country") => setTargetScope(val)}
-                      >
-                        <SelectTrigger className="bg-background/40 border-border/60">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-card border-border/60">
-                          <SelectItem value="global">Global (All Users)</SelectItem>
-                          <SelectItem value="country">Country Targeted</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        options={[
+                          ["global", "Global (All Users)"],
+                          ["country", "Country targeted"],
+                        ]}
+                      />
                     </div>
                   </div>
 
                   {targetScope === "country" && (
-                    <div className="animate-in fade-in slide-in-from-top-2 space-y-2 duration-200">
-                      <Label className="text-foreground text-xs font-bold tracking-tight">
-                        Target Country *
-                      </Label>
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-fast space-y-2">
+                      <Label className="text-label text-caption">Target Country *</Label>
                       <Select value={countryId} onValueChange={setCountryId}>
-                        <SelectTrigger className="bg-background/40 border-border/60">
+                        <SelectTrigger>
                           <SelectValue placeholder="Select country to restrict voting to" />
                         </SelectTrigger>
-                        <SelectContent className="bg-card border-border/60">
+                        <SelectContent>
                           {countriesData?.map((c: any) => (
                             <SelectItem key={c.id} value={c.id}>
                               {c.name}
@@ -301,9 +270,9 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                     <div className="space-y-2">
                       <Label
                         htmlFor="endDate"
-                        className="text-foreground flex items-center gap-1.5 text-xs font-bold tracking-tight"
+                        className="text-label text-caption flex items-center gap-2"
                       >
-                        <Calendar className="text-muted-foreground h-4 w-4" />
+                        <Calendar className="text-label-secondary h-4 w-4" />
                         Expiry Date (optional)
                       </Label>
                       <Input
@@ -311,7 +280,6 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                         type="datetime-local"
                         value={endDateStr}
                         onChange={(e) => setEndDateStr(e.target.value)}
-                        className="bg-background/40 border-border/60 dark:[color-scheme:dark]"
                       />
                     </div>
 
@@ -320,9 +288,9 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                         <Switch id="multiple" checked={multiple} onCheckedChange={setMultiple} />
                         <Label
                           htmlFor="multiple"
-                          className="text-foreground cursor-pointer text-xs font-bold tracking-tight"
+                          className="text-label text-caption cursor-pointer"
                         >
-                          Allow Multiple Option Choices
+                          Allow multiple option choices
                         </Label>
                       </div>
                     )}
@@ -332,34 +300,34 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
               {/* Step 3 Content */}
               {step === 3 && (
-                <div className="animate-in fade-in slide-in-from-right-3 space-y-4 duration-300">
+                <div className="animate-in fade-in slide-in-from-right-3 duration-fast space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="text-foreground text-xs font-bold">List Poll Options *</Label>
+                    <Label className="text-label text-caption">List Poll Options *</Label>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={handleAddOption}
-                      className="h-8 cursor-pointer gap-1 border-[#ff8a65]/35 text-xs font-semibold text-[#ff8a65] hover:bg-[#ff8a65]/10 dark:text-[#ff8a65]"
+                      className="cursor-pointer gap-1"
                     >
-                      <Plus className="h-3.5 w-3.5" /> Add Option
+                      <Plus className="h-3.5 w-3.5" /> Add option
                     </Button>
                   </div>
 
-                  <div className="max-h-[260px] space-y-2.5 overflow-y-auto pr-1">
+                  <div className="max-h-[260px] space-y-2 overflow-y-auto pr-1">
                     {options.map((option, idx) => (
                       <div
                         key={idx}
-                        className="animate-in fade-in flex items-center gap-2 duration-200"
+                        className="animate-in fade-in duration-fast flex items-center gap-2"
                       >
-                        <span className="text-muted-foreground/60 w-6 text-center text-xs font-bold">
+                        <span className="text-label-secondary text-caption w-6 text-center">
                           {idx + 1}.
                         </span>
                         <Input
                           placeholder={`Option label ${idx + 1}`}
                           value={option}
                           onChange={(e) => handleOptionChange(idx, e.target.value)}
-                          className="bg-background/40 border-border/60 flex-1 text-xs"
+                          className="rounded-control-sm md:text-footnote h-(--control-height-sm) flex-1"
                           required
                         />
                         {options.length > 2 && (
@@ -368,7 +336,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleRemoveOption(idx)}
-                            className="h-8 w-8 shrink-0 cursor-pointer text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
+                            className="text-destructive w-8 shrink-0 cursor-pointer"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -377,47 +345,42 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                     ))}
                   </div>
 
-                  <div className="mt-4 flex items-start gap-2 rounded-lg border border-[#ff8a65]/20 bg-[#ff8a65]/5 p-3 text-xs text-[#ff8a65]">
+                  <div className="border-poll/20 bg-poll/5 text-poll rounded-control text-footnote mt-4 flex items-start gap-2 border p-3">
                     <Info className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>
-                      Review all parameters. Clicking <strong>Create & Publish</strong> will record
+                      Review all parameters. Clicking <strong>Create & publish</strong> will record
                       the poll and publish an announcement card directly to the active feeds.
                     </span>
                   </div>
                 </div>
               )}
 
-              {/* Navigation Actions */}
-              <div className="border-border/20 mt-6 flex justify-between gap-3 border-t pt-4">
+              <div className="border-separator mt-6 flex justify-between gap-3 border-t pt-4">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={prevStep}
                   disabled={step === 1}
-                  className="border-border/60 h-9 cursor-pointer gap-1.5 text-xs font-semibold"
+                  className="cursor-pointer gap-2"
                 >
                   <ChevronLeft className="h-4 w-4" /> Back
                 </Button>
 
                 {step < 3 ? (
-                  <Button
-                    type="button"
-                    onClick={nextStep}
-                    className="h-9 cursor-pointer gap-1.5 bg-[#ff8a65] text-xs font-semibold text-white hover:bg-[#ff8a65]/90"
-                  >
+                  <Button type="button" onClick={nextStep} className="cursor-pointer gap-2">
                     Next <ChevronRight className="h-4 w-4" />
                   </Button>
                 ) : (
                   <Button
                     type="submit"
                     disabled={createMutation.isPending}
-                    className="h-9 cursor-pointer gap-1.5 bg-[#ff8a65] px-6 text-xs font-semibold text-white hover:bg-[#ff8a65]/90"
+                    className="cursor-pointer gap-2"
                   >
                     {createMutation.isPending ? (
                       "Creating..."
                     ) : (
                       <>
-                        <Send className="h-3.5 w-3.5" /> Create & Publish
+                        <Send className="h-3.5 w-3.5" /> Create & publish
                       </>
                     )}
                   </Button>
@@ -428,18 +391,17 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
         </Card>
       </div>
 
-      {/* Guide Card */}
       <div className="space-y-4">
-        <Card className="border-border/20 bg-card/10 border backdrop-blur-md">
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
-            <CardTitle className="text-foreground flex items-center gap-2 text-sm font-bold">
+            <CardTitle className="text-label text-headline flex items-center gap-2">
               🗳️ Poll Creation Guide
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-muted-foreground space-y-3.5 text-xs leading-relaxed">
+          <CardContent className="text-label-secondary text-footnote space-y-4 leading-relaxed">
             <div>
-              <h5 className="text-foreground mb-1 flex items-center gap-1.5 font-bold">
-                <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> Standard Choice Poll
+              <h5 className="text-label mb-1 flex items-center gap-2 font-semibold">
+                <CheckCircle className="text-green h-3.5 w-3.5" /> Standard choice poll
               </h5>
               <p>
                 Classic single or multiple choice query. Displays vote bar charts and raw counts to
@@ -448,8 +410,8 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
             </div>
 
             <div>
-              <h5 className="text-foreground mb-1 flex items-center gap-1.5 font-bold">
-                <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> Feature Priority Poll
+              <h5 className="text-label mb-1 flex items-center gap-2 font-semibold">
+                <CheckCircle className="text-green h-3.5 w-3.5" /> Feature priority poll
               </h5>
               <p>
                 Designed to rank user preferences across proposed ideas, mods, or system features.
@@ -457,16 +419,16 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
             </div>
 
             <div>
-              <h5 className="text-foreground mb-1 flex items-center gap-1.5 font-bold">
-                <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> Feature Upvoting Board
+              <h5 className="text-label mb-1 flex items-center gap-2 font-semibold">
+                <CheckCircle className="text-green h-3.5 w-3.5" /> Feature upvoting board
               </h5>
               <p>
-                Lists feature proposals with upvote cards, enabling citizens to upvote/downvote
-                features in real-time.
+                Lists feature proposals with upvote cards, where citizens can upvote or downvote
+                features.
               </p>
             </div>
 
-            <div className="border-border/20 border-t pt-3.5">
+            <div className="border-separator border-t pt-4">
               <p>
                 <strong>Targeting Note:</strong> Restricting the scope to a country restricts ballot
                 cast actions only to validated residents of that nation.

@@ -4,6 +4,5 @@
 
 export * from "./themes";
 export * from "./theme-utils";
-export * from "./mycountry-theme";
 export * from "./chart-colors";
 export * from "./holographic-effects";

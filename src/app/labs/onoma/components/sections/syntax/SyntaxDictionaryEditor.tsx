@@ -4,8 +4,10 @@
 // Vocabulary lookup and word pair manager for syntax conlang translation
 
 import React, { useState } from "react";
-import { FileText, Trash2, Plus } from "lucide-react";
-import { FacetMaterial } from "~/components/ui/facet";
+import { Page as FileText, Trash as Trash2, Plus } from "iconoir-react";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 interface SyntaxDictionaryEditorProps {
   dictionary: Record<string, string>;
@@ -29,54 +31,52 @@ export function SyntaxDictionaryEditor({
   };
 
   return (
-    <FacetMaterial material="satin" className="rounded-xl border border-border/40 p-5 shadow-sm space-y-4 text-left">
-      <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-        <FileText className="h-4 w-4 text-[#d946ef]" /> Vocabulary Dictionary
+    <Card variant="well" padding="none" className="space-y-4 p-5 text-left">
+      <h4 className="text-label text-subhead flex items-center gap-2">
+        <FileText className="text-indigo h-4 w-4" /> Vocabulary dictionary
       </h4>
 
-      {/* Add Word Row */}
-      <div className="flex gap-2 text-xs">
-        <input
+      <div className="text-footnote flex gap-2">
+        <Input
           type="text"
           placeholder="English Word (e.g. bird)"
           value={newDictKey}
           onChange={(e) => setNewDictKey(e.target.value)}
-          className="flex-1 rounded border border-border/60 bg-background px-2.5 py-1.5 focus:outline-none"
+          className="flex-1"
         />
-        <input
+        <Input
           type="text"
           placeholder="Conlang Word (e.g. avi)"
           value={newDictVal}
           onChange={(e) => setNewDictVal(e.target.value)}
-          className="flex-1 rounded border border-border/60 bg-background px-2.5 py-1.5 focus:outline-none"
+          className="flex-1"
         />
-        <button
-          onClick={handleAdd}
-          className="flex items-center gap-1 rounded bg-[#d946ef] px-3 py-1.5 font-bold text-white hover:bg-[#c026d3] transition-colors cursor-pointer"
-        >
+        <Button variant="default" size="sm" onClick={handleAdd}>
           <Plus className="h-3.5 w-3.5" /> Add
-        </button>
+        </Button>
       </div>
 
-      {/* Word Pairs Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-[220px] overflow-y-auto pr-1">
+      <div className="grid max-h-[220px] grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-4">
         {Object.entries(dictionary).map(([eng, con]) => (
           <div
             key={eng}
-            className="flex items-center justify-between rounded border border-border/40 bg-secondary/10 px-2.5 py-1.5 text-xs"
+            className="border-separator bg-fill-4 rounded-control-sm text-footnote flex items-center justify-between border px-3 py-2"
           >
-            <span className="text-muted-foreground">{eng}:</span>
-            <span className="font-semibold text-foreground">{con}</span>
-            <button
+            <span className="text-label-secondary">{eng}:</span>
+            <span className="text-label font-semibold">{con}</span>
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => onRemoveWord(eng)}
-              className="text-muted-foreground hover:text-red-500 transition-colors p-0.5 cursor-pointer"
               title="Remove word"
+              aria-label="Remove word"
+              className="text-label-secondary hover:text-red"
             >
               <Trash2 className="h-3 w-3" />
-            </button>
+            </Button>
           </div>
         ))}
       </div>
-    </FacetMaterial>
+    </Card>
   );
 }

@@ -1,5 +1,8 @@
 # IxCards Lore-First Rebuild — Design Document
 
+**Date**: 2026-08-13  
+**Status**: Largely implemented — Phases 1–5 shipped, Phases 6–7 partial (verified 2026-09-29; see [Implementation Status](#implementation-status-2026-09-29))
+
 ## The Problem
 
 The current IxCards system was built NS-import-first. The `Card` model has `nsCardId`/`nsSeason` as a unique constraint, `CardDisplay` pipes every image through `proxyNSImage()`, the stat system assumes numeric nation-data (Force/Wealth/Influence/Legacy), and the visual fallback for cards without artwork is a procedural holographic pattern — a bandaid, not a design. Lore cards exist but as a second-class citizen: a request queue where users pay 50 IxC and wait for admin approval to turn a wiki article into a card that still uses the NS-era visual template.
@@ -67,7 +70,7 @@ Icons share visual primitives across families — this creates internal relation
 
 ### The Twelve Category Icons
 
-![Category Icons Reference](/home/jxsig/.gemini/antigravity-ide/brain/8d71cc9d-99f5-4038-9379-1c8a64191e6a/ix_sigils_reference_1786641748266.jpg)
+*(mockup image not in repo)*
 
 | Category | Icon Form | Why |
 |---|---|---|
@@ -80,7 +83,7 @@ Icons share visual primitives across families — this creates internal relation
 | **People** | Profile silhouette in circular medallion | Coin portrait — connects people → portraiture → collectible artifact → card |
 | **Economy** | Central pillar with scales and disc pans | Exchange/balance/value, not just "law" |
 | **Science** | Astrolabe (outer ring, tilted rete, pointer arm) | Distinctive, fits the historical/civilizational character. Not a generic atom/flask |
-| **Geography** | Outer ring with three era divisions, arrow | Time → continuity → record. Visually related to Geography/Science without being identical |
+| **History** | Outer ring with three era divisions, arrow | Time → continuity → record. Visually related to Geography/Science without being identical |
 | **Nation** | Staff with heraldic banner | Institutional banner. Only category where actual national flag becomes Tier 3 artwork |
 | **Special** | Eight-point star (two overlapping diamonds) | The IxCards master mark. Appears on special cards, packs, card backs, authentication |
 
@@ -88,7 +91,7 @@ Icons share visual primitives across families — this creates internal relation
 
 The same SVG at three scales with different purposes:
 
-![Treatment Variants](/home/jxsig/.gemini/antigravity-ide/brain/8d71cc9d-99f5-4038-9379-1c8a64191e6a/sigil_treatments_1786641836580.jpg)
+*(mockup image not in repo)*
 
 | Treatment | Scale | Opacity | Context |
 |---|---|---|---|
@@ -110,7 +113,7 @@ Every icon uses `currentColor` — never baked into the SVG. The category system
 
 The same Military shield exists at every rarity. Only the *rendering quality* changes:
 
-![Rarity Material Progression](/home/jxsig/.gemini/antigravity-ide/brain/8d71cc9d-99f5-4038-9379-1c8a64191e6a/rarity_progression_1786641810197.jpg)
+*(mockup image not in repo)*
 
 | Rarity | Icon Rendering | Card Material |
 |---|---|---|
@@ -137,7 +140,7 @@ The card should feel like a **physical artifact**.
 
 ### Card Face Layout
 
-![Lore Cards Mockup](/home/jxsig/.gemini/antigravity-ide/brain/8d71cc9d-99f5-4038-9379-1c8a64191e6a/lore_cards_mockup_1786641777932.jpg)
+*(mockup image not in repo)*
 
 #### Tier 1-2: Procedural (most cards)
 
@@ -452,3 +455,18 @@ Distribution: Common (40%) → Uncommon (25%) → Rare (20%) → Ultra Rare (10%
      - Left: Real-time `<CardDisplay card={livePreviewCard} size="medium" enable3D={true} />` rendering exact card face, theme colors, pattern overlay, category seal, and rarity glow.
      - Right: Live controls for Title, Lore Category, Rarity Tier, Artwork Source Tier, Artwork URL, Est. Market Value, and Retired Visibility toggle.
 
+---
+
+## Implementation Status (2026-09-29)
+
+| Phase | Status | Evidence / what's missing |
+|---|---|---|
+| **1. Category Icons** | ✅ Shipped | `src/components/cards/icons/CategoryIcon.tsx` + `icon-paths.ts` (watermark / emblem / seal treatments, `currentColor`) |
+| **2. Data Model** | ⚠️ Mostly shipped | `LoreCategory` (13) and `ArtworkSource` enums, `Card.category`, `slug`, `subcategory`, `artworkUrl`, `artworkSource`, `artworkCredit`, `wikiPageId`, `wikiExcerpt`, `wikiImageUrl` exist. Not done: `slug` is indexed but not `@unique`; no `@@unique([wikiArticleTitle, wikiSource])`; `cardType`, `stats`, `attributes`, `enhancements`, `level` were kept rather than removed; `rarity` is a `String`, not `CardRarity` |
+| **3. Card Face** | ✅ Shipped | `CardDisplay.tsx` uses `getCategoryTheme`, `CategoryIcon`, `getHybridRarityMaterial` (`src/lib/cards/rarity-materials.ts`), `CardHolographicCover` (delegates to `LoreCardHolographicCover`); card back (`CardBack.tsx`) with flip in `Card3DViewer.tsx` |
+| **4. Generation Pipeline** | ⚠️ Mostly shipped | `analyzeWikiSignals()` in `src/lib/cards/rarity-algorithm.ts` implements the six weighted signals (used by `loreCards.fetchLoreMetadata`); request queue (`loreCards.getRequestQueue` / `approveRequest` / `rejectRequest`); bulk discovery via the admin Lore Batch tool and the daily `lore-card-generation` cron. The 40/25/20/10/4/1 target distribution is not enforced (fixed score thresholds instead); `lore-card-generator.ts` still computes numeric stats for lore cards |
+| **5. Admin Suite & Studio** | ✅ Shipped | `/admin/cards` explorer + `CardEditDialog` "Card Studio" with live `CardDisplay` preview; `cards.getNSCards` accepts `categoryFilter` and the `LORE`/`LORE_BATCH`/`NS_IMPORT`/`COMMONS_IMPORT`/`USER_CUSTOM` `cardTypeFilter` |
+| **6. Vault Reordering** | ❌ Pending | Card Gallery (`/vault/lore-gallery`, `/vault/ns-library`) is a dev-only sub-tab; Inventory is still the primary Cards view; no category filter in the Vault (filters are rarity / card type / season / source) |
+| **7. Pack & Economy** | ⚠️ Partial | "Lore Card Fusion" crafting recipe and a LORE-only "Lore Master Elite Pack" exist. Pending: category-themed packs (`CardPack.themeFilter` is stored but never applied when opening packs) and category-aware marketplace updates |
+
+Open questions resolved in code: **Card Back** — implemented (`CardBack.tsx`, flipped in `Card3DViewer.tsx`); **Bulk Discovery** — both paths exist (admin batch + daily cron, plus user requests). **Seasons** and **Pack Composition** remain open.

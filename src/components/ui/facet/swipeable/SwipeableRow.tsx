@@ -1,28 +1,19 @@
 "use client";
 
 /**
- * SwipeableRow — iOS-style swipeable row with frosted glass action tray
+ * SwipeableRow: iOS-style swipeable row with an action tray. Compound API:
+ * `SwipeableRow.Leading` / `.Trailing` (swipe actions, optional `commit`), `.Content`,
+ * `.Expanded`; wrap several rows in `SwipeableGroup` to close the others on open.
  *
- * Compound component API:
- *   <SwipeableRow>
- *     <SwipeableRow.Leading commit={...}>
- *       <SwipeActionButton ... />
- *     </SwipeableRow.Leading>
- *     <SwipeableRow.Content>
- *       {children}
- *     </SwipeableRow.Content>
- *     <SwipeableRow.Trailing commit={...}>
- *       <SwipeActionButton ... />
- *     </SwipeableRow.Trailing>
- *     <SwipeableRow.Expanded>
- *       {expandedContent}
- *     </SwipeableRow.Expanded>
- *   </SwipeableRow>
- *
- * Wrap multiple rows in <SwipeableGroup> for auto-close coordination.
+ * Swiping is pointer-only. Keyboard and assistive technology: a row with no focusable content is
+ * itself the tab stop (Enter/Space toggle `Expanded` or open the actions menu, Delete/Backspace run
+ * the trailing commit, Escape closes); Shift+F10 or the ContextMenu key opens an "Actions" menu
+ * listing the swipe actions, and so does a right-click, at the pointer, for mouse users who cannot
+ * swipe. Tray buttons stay in the accessibility tree but out of the tab order.
  */
 
 import React, {
+  type ReactNode,
   createContext,
   useCallback,
   useContext,
@@ -32,43 +23,19 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "motion/react";
-import { cn } from "~/lib/utils";
+import { motion, AnimatePresence, useTransform } from "motion/react";
+import { cn } from "~/lib/utils/cn";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+import { prefersNativeMenu } from "~/components/ui/context-menu";
 import { useSwipePhysics } from "./useSwipePhysics";
 import { GULP_SCALE, SPRING_PRESETS } from "./constants";
-
-/**
- * Lightweight native measure hook replacing react-use-measure
- */
-function useMeasure<T extends HTMLElement = HTMLDivElement>() {
-  const [bounds, setBounds] = useState({ width: 0, height: 0 });
-  const [element, setElement] = useState<T | null>(null);
-
-  const ref = useCallback((node: T | null) => {
-    setElement(node);
-    if (node) {
-      const rect = node.getBoundingClientRect();
-      setBounds({ width: rect.width, height: rect.height });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!element || typeof ResizeObserver === "undefined") return;
-
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        const { width, height } = entry.contentRect;
-        setBounds({ width, height });
-      }
-    });
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [element]);
-
-  return [ref, bounds] as const;
-}
+import { ACTION_BUTTON_BASE, actionButtonStyle } from "./action-styles";
+import { useMeasure } from "./useMeasure";
 import type {
   SwipeableRowProps,
   SwipeableRowLeadingProps,
@@ -79,9 +46,97 @@ import type {
   SwipeActionButtonProps,
   SpringPreset,
   SwipeState,
+  SwipeCommitAction,
 } from "./types";
 
-// ── Group Context ───────────────────────────────────────────────────────
+// Focus helpers
+
+/** Elements that take keyboard focus on their own. */
+const FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "area[href]",
+  "button:not([disabled])",
+  "input:not([disabled]):not([type='hidden'])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "summary",
+  "iframe",
+  "audio[controls]",
+  "video[controls]",
+  "[contenteditable]:not([contenteditable='false'])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
+/** Elements that own their clicks (the row must not also expand or reveal on them). */
+const INTERACTIVE_SELECTOR = `${FOCUSABLE_SELECTOR},[role='button'],[role='link'],[role='checkbox'],[role='switch'],label`;
+
+function isTextEntry(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  if (target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return true;
+  if (target instanceof HTMLInputElement) {
+    return !["button", "checkbox", "radio", "submit", "reset", "range", "color", "file"].includes(
+      target.type
+    );
+  }
+  return false;
+}
+
+// Actions menu model
+
+interface RowMenuAction {
+  key: string;
+  label: string;
+  ariaLabel?: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  run: () => void;
+}
+
+/**
+ * The swipe actions as menu items: each tray's action buttons (by the same label and
+ * aria-label), then its commit action unless a button already carries that label.
+ */
+function collectMenuActions(
+  trays: Array<
+    [
+      "leading" | "trailing",
+      React.ReactElement<{ children?: React.ReactNode; commit?: SwipeCommitAction }> | null,
+    ]
+  >,
+  onCommit: ((side: "leading" | "trailing") => void) | undefined
+): RowMenuAction[] {
+  const actions: RowMenuAction[] = [];
+  const seen = new Set<string>();
+  const add = (action: RowMenuAction) => {
+    if (seen.has(action.label)) return;
+    seen.add(action.label);
+    actions.push(action);
+  };
+  for (const [side, tray] of trays) {
+    if (!tray) continue;
+    React.Children.forEach(tray.props.children, (child) => {
+      if (!React.isValidElement<Partial<SwipeActionButtonProps>>(child)) return;
+      const { id, label, onClick, icon, "aria-label": ariaLabel } = child.props;
+      if (typeof label !== "string" || typeof onClick !== "function") return;
+      add({ key: `${side}:${id ?? label}`, label, ariaLabel, icon, run: onClick });
+    });
+    const commit = tray.props.commit;
+    if (commit) {
+      add({
+        key: `${side}:commit`,
+        label: commit.label,
+        icon: commit.icon,
+        run: () => {
+          commit.action();
+          onCommit?.(side);
+        },
+      });
+    }
+  }
+  return actions;
+}
+
+// Group Context
 
 const SwipeableGroupContext = createContext<SwipeableGroupContextValue | null>(null);
 
@@ -124,29 +179,21 @@ export function SwipeableGroup({ children }: { children: React.ReactNode }) {
   return <SwipeableGroupContext.Provider value={value}>{children}</SwipeableGroupContext.Provider>;
 }
 
-// ── Row Internal Context ────────────────────────────────────────────────
+// Row Internal Context
 
 interface RowInternalContextValue {
-  springX: ReturnType<typeof useSwipePhysics>["springX"];
-  trailingTrayOpacity: ReturnType<typeof useSwipePhysics>["trailingTrayOpacity"];
-  leadingTrayOpacity: ReturnType<typeof useSwipePhysics>["leadingTrayOpacity"];
-  trailingEmphasizeScale: ReturnType<typeof useSwipePhysics>["trailingEmphasizeScale"];
-  leadingEmphasizeScale: ReturnType<typeof useSwipePhysics>["leadingEmphasizeScale"];
-  trailingProgress: ReturnType<typeof useSwipePhysics>["trailingProgress"];
-  leadingProgress: ReturnType<typeof useSwipePhysics>["leadingProgress"];
+  physics: ReturnType<typeof useSwipePhysics>;
   isExpanded: boolean;
   toggleExpand: () => void;
   isCommitting: boolean;
-  commitSide: "leading" | "trailing" | null;
-  commitColor: string | null;
-  handlers: ReturnType<typeof useSwipePhysics>["handlers"];
-  wasDrag: React.RefObject<boolean>;
   springPreset: SpringPreset;
-  thresholdsPx: ReturnType<typeof useSwipePhysics>["thresholdsPx"];
-  settle: (targetX: number) => void;
+  /** Whether a click on the content toggles the expanded state. */
+  canExpand: boolean;
   hasLeading: boolean;
   hasTrailing: boolean;
   containerWidth: number;
+  /** Ref callback for the content card (used to find focusable content). */
+  setContentEl: (el: HTMLDivElement | null) => void;
 }
 
 const RowInternalContext = createContext<RowInternalContextValue | null>(null);
@@ -157,7 +204,217 @@ function useRowInternal() {
   return ctx;
 }
 
-// ── SwipeableRow (Root) ─────────────────────────────────────────────────
+type TrayElement = React.ReactElement<{
+  children?: React.ReactNode;
+  commit?: SwipeCommitAction;
+}> | null;
+
+/**
+ * Keyboard and assistive-technology access to the swipe actions: tab-stop detection, the actions
+ * menu (Shift+F10 / ContextMenu) and Enter/Space/Delete/Escape handling.
+ */
+function useRowKeyboardAccess(args: {
+  disabled: boolean;
+  leadingChild: TrayElement;
+  trailingChild: TrayElement;
+  onCommit: SwipeableRowProps["onCommit"];
+  hasExpandedContent: boolean;
+  isExpanded: boolean;
+  toggleExpand: () => void;
+  collapse: () => void;
+  physics: ReturnType<typeof useSwipePhysics>;
+  runCommit: (side: "leading" | "trailing", commit: SwipeCommitAction) => void;
+}) {
+  const {
+    disabled,
+    leadingChild,
+    trailingChild,
+    onCommit,
+    hasExpandedContent,
+    isExpanded,
+    toggleExpand,
+    collapse,
+    physics,
+    runCommit,
+  } = args;
+
+  const menuActions = collectMenuActions(
+    [
+      ["leading", leadingChild],
+      ["trailing", trailingChild],
+    ],
+    onCommit
+  );
+  const hasMenu = menuActions.length > 0;
+  const trailingCommit = trailingChild?.props?.commit;
+
+  // The row is a tab stop only when its content has nothing focusable of its own.
+  const [contentEl, setContentEl] = useState<HTMLDivElement | null>(null);
+  const [contentHasFocusable, setContentHasFocusable] = useState(true);
+  useEffect(() => {
+    if (!contentEl) return;
+    const check = () => setContentHasFocusable(!!contentEl.querySelector(FOCUSABLE_SELECTOR));
+    check();
+    if (typeof MutationObserver === "undefined") return;
+    const observer = new MutationObserver(check);
+    observer.observe(contentEl, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["disabled", "tabindex", "href", "contenteditable", "type"],
+    });
+    return () => observer.disconnect();
+  }, [contentEl]);
+  const rowFocusable =
+    !disabled && !contentHasFocusable && (hasMenu || hasExpandedContent || !!trailingCommit);
+
+  // Actions menu (Shift+F10 / ContextMenu key)
+  const [menuOpen, setMenuOpen] = useState(false);
+  // Where a right-click opened the menu, relative to the row; null anchors it at the row's end.
+  const [menuPoint, setMenuPoint] = useState<{ x: number; y: number } | null>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const menuOpenedAt = useRef(0);
+  const openMenu = useCallback(
+    (from: HTMLElement | null, point: { x: number; y: number } | null = null) => {
+      returnFocusRef.current = from;
+      menuOpenedAt.current = Date.now();
+      physics.reset();
+      setMenuPoint(point);
+      setMenuOpen(true);
+    },
+    [physics]
+  );
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (disabled) return;
+
+    // Opening the actions menu works from the row and from anything inside it (except text
+    // fields, which keep the browser's own context menu).
+    if (e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey)) {
+      if (!hasMenu || isTextEntry(e.target)) return;
+      e.preventDefault();
+      openMenu(e.target instanceof HTMLElement ? e.target : null);
+      return;
+    }
+
+    const fromRow = e.target === e.currentTarget;
+    const swipedOpen = physics.swipeState.current !== "closed";
+
+    // Escape from inside only closes a swiped-open tray; everything else belongs to the child.
+    if (!fromRow) {
+      if (e.key === "Escape" && swipedOpen && !e.defaultPrevented) {
+        e.preventDefault();
+        physics.reset();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case "Enter":
+      case " ":
+        e.preventDefault();
+        if (hasExpandedContent) toggleExpand();
+        else if (hasMenu) openMenu(e.currentTarget);
+        break;
+      case "Delete":
+      case "Backspace":
+        if (trailingCommit) {
+          e.preventDefault();
+          runCommit("trailing", trailingCommit);
+        }
+        break;
+      case "Escape":
+        if (swipedOpen || isExpanded) {
+          e.preventDefault();
+          physics.reset();
+          collapse();
+        }
+        break;
+    }
+  };
+
+  // Keyboard-invoked context menus also fire a native `contextmenu` event; keep it from
+  // showing the browser menu on top of ours. A right-click opens the menu at the pointer.
+  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (menuOpen || Date.now() - menuOpenedAt.current < 1000) {
+      e.preventDefault();
+      return;
+    }
+    if (disabled || !hasMenu || prefersNativeMenu(e)) return;
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    openMenu(null, { x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
+  return {
+    menuActions,
+    hasMenu,
+    menuOpen,
+    setMenuOpen,
+    menuPoint,
+    returnFocusRef,
+    rowFocusable,
+    trailingCommit,
+    setContentEl,
+    handleKeyDown,
+    handleContextMenu,
+  };
+}
+
+/** Keyboard / assistive-technology path to the swipe actions (an anchor-less dropdown menu). */
+function RowActionsMenu({
+  actions,
+  open,
+  onOpenChange,
+  point,
+  label,
+  returnFocusRef,
+}: {
+  actions: RowMenuAction[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  point: { x: number; y: number } | null;
+  label: string;
+  returnFocusRef: React.RefObject<HTMLElement | null>;
+}) {
+  return (
+    <DropdownMenu open={open} onOpenChange={onOpenChange}>
+      <DropdownMenuTrigger asChild>
+        <span
+          aria-hidden="true"
+          data-swipe-menu-anchor=""
+          className={cn("pointer-events-none absolute size-px", !point && "top-1/2 right-3")}
+          style={point ? { left: point.x, top: point.y } : undefined}
+        />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align={point ? "start" : "end"}
+        sideOffset={point ? 0 : undefined}
+        aria-label={label}
+        aria-labelledby={undefined}
+        onCloseAutoFocus={(event) => {
+          const target = returnFocusRef.current;
+          returnFocusRef.current = null;
+          event.preventDefault();
+          if (target?.isConnected) target.focus();
+        }}
+      >
+        {actions.map(({ key, ariaLabel, icon: Icon, label: text, run }) => (
+          <DropdownMenuItem key={key} aria-label={ariaLabel} onSelect={() => run()}>
+            {Icon && (
+              <span aria-hidden="true" className="flex">
+                <Icon className="size-4" />
+              </span>
+            )}
+            {text}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// SwipeableRow (Root)
 
 function SwipeableRowRoot({
   id: externalId,
@@ -169,6 +426,8 @@ function SwipeableRowRoot({
   onCommit,
   expanded: controlledExpanded,
   onExpandedChange,
+  "aria-label": ariaLabel,
+  actionsLabel = "Actions",
   children,
 }: SwipeableRowProps) {
   const generatedId = useId();
@@ -192,6 +451,9 @@ function SwipeableRowRoot({
 
   const hasLeading = !!leadingChild;
   const hasTrailing = !!trailingChild;
+  const hasExpandedContent = !!expandedChild;
+  // Rows without an `Expanded` panel only track "expanded" when the consumer controls it.
+  const canExpand = hasExpandedContent || controlledExpanded !== undefined;
 
   // Expanded state
   const [internalExpanded, setInternalExpanded] = useState(false);
@@ -222,9 +484,22 @@ function SwipeableRowRoot({
 
   // Commit animation state
   const [isCommitting, setIsCommitting] = useState(false);
-  const [commitSide, setCommitSide] = useState<"leading" | "trailing" | null>(null);
   const [commitColor, setCommitColor] = useState<string | null>(null);
   const [isGulped, setIsGulped] = useState(false);
+
+  /** Gulp animation, then run the commit action. */
+  const runCommit = useCallback(
+    (side: "leading" | "trailing", commit: SwipeCommitAction) => {
+      setIsCommitting(true);
+      setCommitColor(commit.color ?? (side === "trailing" ? "var(--color-error)" : "#22c55e"));
+      setTimeout(() => {
+        commit.action();
+        onCommit?.(side);
+        setIsGulped(true);
+      }, 350);
+    },
+    [onCommit]
+  );
 
   // Watch for commit state from physics
   const prevState = useRef<SwipeState>("closed");
@@ -242,16 +517,7 @@ function SwipeableRowRoot({
           side === "leading" ? leadingChild?.props?.commit : trailingChild?.props?.commit;
 
         if (commitAction) {
-          setIsCommitting(true);
-          setCommitSide(side);
-          setCommitColor(commitAction.color ?? (side === "trailing" ? "#ef4444" : "#22c55e"));
-
-          // Execute commit after gulp animation
-          setTimeout(() => {
-            commitAction.action();
-            onCommit?.(side);
-            setIsGulped(true);
-          }, 350);
+          runCommit(side, commitAction);
         } else {
           // No commit action — snap back to reveal
           physics.settle(
@@ -279,135 +545,49 @@ function SwipeableRowRoot({
     }
   });
 
-  // Keyboard navigation
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (disabled) return;
+  const collapse = useCallback(() => {
+    if (!isExpanded) return;
+    if (controlledExpanded === undefined) setInternalExpanded(false);
+    onExpandedChange?.(false);
+  }, [isExpanded, controlledExpanded, onExpandedChange]);
 
-      switch (e.key) {
-        case "Enter":
-        case " ":
-          e.preventDefault();
-          if (expandedChild) {
-            toggleExpand();
-          }
-          break;
-        case "Delete":
-        case "Backspace": {
-          e.preventDefault();
-          const trailingCommit = trailingChild?.props?.commit;
-          if (trailingCommit) {
-            setIsCommitting(true);
-            setCommitSide("trailing");
-            setCommitColor(trailingCommit.color ?? "#ef4444");
-            setTimeout(() => {
-              trailingCommit.action();
-              onCommit?.("trailing");
-              setIsGulped(true);
-            }, 350);
-          }
-          break;
-        }
-        case "Escape":
-          e.preventDefault();
-          physics.reset();
-          if (isExpanded && controlledExpanded === undefined) {
-            setInternalExpanded(false);
-            onExpandedChange?.(false);
-          }
-          break;
-        case "ArrowLeft":
-          if (physics.swipeState.current !== "closed") {
-            e.preventDefault();
-            // Focus next action button in trailing tray
-            const tray = (e.currentTarget as HTMLElement).querySelector(
-              "[data-swipe-tray='trailing']"
-            );
-            const buttons = tray?.querySelectorAll("button");
-            if (buttons?.length) {
-              const focused = document.activeElement;
-              const idx = Array.from(buttons).indexOf(focused as HTMLButtonElement);
-              const next = buttons[Math.min(idx + 1, buttons.length - 1)];
-              (next as HTMLElement)?.focus();
-            }
-          }
-          break;
-        case "ArrowRight":
-          if (physics.swipeState.current !== "closed") {
-            e.preventDefault();
-            const tray = (e.currentTarget as HTMLElement).querySelector(
-              "[data-swipe-tray='leading']"
-            );
-            const buttons = tray?.querySelectorAll("button");
-            if (buttons?.length) {
-              const focused = document.activeElement;
-              const idx = Array.from(buttons).indexOf(focused as HTMLButtonElement);
-              const next = buttons[Math.max(idx - 1, 0)];
-              (next as HTMLElement)?.focus();
-            }
-          }
-          break;
-      }
-    },
-    [
-      disabled,
-      expandedChild,
-      toggleExpand,
-      trailingChild,
-      physics,
-      isExpanded,
-      controlledExpanded,
-      onExpandedChange,
-      onCommit,
-    ]
-  );
+  const {
+    menuActions,
+    hasMenu,
+    menuOpen,
+    setMenuOpen,
+    menuPoint,
+    returnFocusRef,
+    rowFocusable,
+    trailingCommit,
+    setContentEl,
+    handleKeyDown,
+    handleContextMenu,
+  } = useRowKeyboardAccess({
+    disabled,
+    leadingChild,
+    trailingChild,
+    onCommit,
+    hasExpandedContent,
+    isExpanded,
+    toggleExpand,
+    collapse,
+    physics,
+    runCommit,
+  });
 
-  const contextValue = useMemo<RowInternalContextValue>(
-    () => ({
-      springX: physics.springX,
-      trailingTrayOpacity: physics.trailingTrayOpacity,
-      leadingTrayOpacity: physics.leadingTrayOpacity,
-      trailingEmphasizeScale: physics.trailingEmphasizeScale,
-      leadingEmphasizeScale: physics.leadingEmphasizeScale,
-      trailingProgress: physics.trailingProgress,
-      leadingProgress: physics.leadingProgress,
-      isExpanded,
-      toggleExpand,
-      isCommitting,
-      commitSide,
-      commitColor,
-      handlers: physics.handlers,
-      wasDrag: physics.wasDrag,
-      springPreset,
-      thresholdsPx: physics.thresholdsPx,
-      settle: physics.settle,
-      hasLeading,
-      hasTrailing,
-      containerWidth: containerWidth || 300,
-    }),
-    [
-      physics.springX,
-      physics.trailingTrayOpacity,
-      physics.leadingTrayOpacity,
-      physics.trailingEmphasizeScale,
-      physics.leadingEmphasizeScale,
-      physics.trailingProgress,
-      physics.leadingProgress,
-      isExpanded,
-      toggleExpand,
-      isCommitting,
-      commitSide,
-      commitColor,
-      physics.handlers,
-      physics.wasDrag,
-      springPreset,
-      physics.thresholdsPx,
-      physics.settle,
-      hasLeading,
-      hasTrailing,
-      containerWidth,
-    ]
-  );
+  const contextValue: RowInternalContextValue = {
+    physics,
+    isExpanded,
+    toggleExpand,
+    isCommitting,
+    springPreset,
+    canExpand,
+    hasLeading,
+    hasTrailing,
+    containerWidth: containerWidth || 300,
+    setContentEl,
+  };
 
   return (
     <AnimatePresence>
@@ -416,11 +596,18 @@ function SwipeableRowRoot({
           ref={measureRef}
           data-swipeable-row={rowId}
           className={cn("relative overflow-hidden select-none", className)}
-          tabIndex={0}
-          role="group"
-          aria-expanded={isExpanded}
-          aria-label="Swipeable row"
+          tabIndex={rowFocusable ? 0 : undefined}
+          role={rowFocusable || ariaLabel ? "group" : undefined}
+          aria-label={ariaLabel}
+          aria-expanded={rowFocusable && hasExpandedContent ? isExpanded : undefined}
+          aria-keyshortcuts={
+            rowFocusable
+              ? [hasMenu && "Shift+F10", trailingCommit && "Delete"].filter(Boolean).join(" ") ||
+                undefined
+              : undefined
+          }
           onKeyDown={handleKeyDown}
+          onContextMenu={handleContextMenu}
           layout
           exit={{ height: 0, opacity: 0, marginBottom: 0 }}
           transition={{ type: "spring", ...SPRING_PRESETS[springPreset] }}
@@ -431,7 +618,7 @@ function SwipeableRowRoot({
             <AnimatePresence>
               {isCommitting && commitColor && (
                 <motion.div
-                  className="pointer-events-none absolute inset-0 z-30 rounded-xl"
+                  className="rounded-row pointer-events-none absolute inset-0 z-30"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 0.85 }}
                   exit={{ opacity: 0 }}
@@ -448,6 +635,17 @@ function SwipeableRowRoot({
             {/* Content card (draggable foreground) + Expanded content */}
             {contentChild}
             {expandedChild}
+
+            {hasMenu && (
+              <RowActionsMenu
+                actions={menuActions}
+                open={menuOpen}
+                onOpenChange={setMenuOpen}
+                point={menuPoint}
+                label={actionsLabel}
+                returnFocusRef={returnFocusRef}
+              />
+            )}
           </RowInternalContext.Provider>
         </motion.div>
       )}
@@ -455,164 +653,100 @@ function SwipeableRowRoot({
   );
 }
 
-// ── SwipeableRow.Leading ────────────────────────────────────────────────
+/** The action tray behind the content: it grows with the swipe distance on its side. */
+function SwipeTray({
+  side,
+  children,
+  className,
+}: {
+  side: "leading" | "trailing";
+  children: ReactNode;
+  className?: string;
+}) {
+  const { physics, containerWidth } = useRowInternal();
+  const { springX, leadingTrayOpacity, trailingTrayOpacity } = physics;
+  const sign = side === "leading" ? 1 : -1;
 
-function SwipeableRowLeading({ children, commit: _commit, className }: SwipeableRowLeadingProps) {
-  const { springX, leadingTrayOpacity, containerWidth } = useRowInternal();
-
-  // Dynamic width matching drag distance (only positive values, clamped to containerWidth)
-  const leadingWidth = useTransform(springX, (v) => Math.max(0, Math.min(containerWidth, v)));
-
-  // Remove border-r when closed
-  const borderRightWidth = useTransform(springX, (v) => (v > 0 ? "1px" : "0px"));
-
-  const childrenArray = React.Children.toArray(children);
-  const total = childrenArray.length;
-  const processedChildren = React.Children.map(children, (child, idx) => {
-    if (React.isValidElement(child)) {
-      return React.cloneElement(child, {
-        _index: idx,
-        _total: total,
-        _side: "leading",
-      } as any);
-    }
-    return child;
-  });
+  // Width follows the drag distance on this side (clamped to the container); the border only shows once open
+  const width = useTransform(springX, (v) => Math.max(0, Math.min(containerWidth, sign * v)));
+  const borderWidth = useTransform(springX, (v) => (sign * v > 0 ? "1px" : "0px"));
+  const total = React.Children.count(children);
+  const actions = React.Children.map(children, (child, idx) =>
+    React.isValidElement<Record<string, unknown>>(child)
+      ? React.cloneElement(child, { _index: idx, _total: total, _side: side })
+      : child
+  );
 
   return (
     <motion.div
-      data-swipe-tray="leading"
+      data-swipe-tray={side}
       className={cn(
-        "absolute inset-y-0 left-0 z-0 flex items-center justify-start overflow-hidden",
-        "border-r border-black/[0.08] dark:border-white/10",
+        "bg-surface-secondary border-separator absolute inset-y-0 z-0 flex items-center overflow-hidden",
+        side === "leading" ? "left-0 justify-start border-r" : "right-0 justify-end border-l",
         className
       )}
       style={{
-        width: leadingWidth,
-        borderRightWidth,
-        opacity: leadingTrayOpacity,
+        width,
+        ...(side === "leading"
+          ? { borderRightWidth: borderWidth }
+          : { borderLeftWidth: borderWidth }),
+        opacity: side === "leading" ? leadingTrayOpacity : trailingTrayOpacity,
       }}
       role="group"
-      aria-label="Leading actions"
+      aria-label={side === "leading" ? "Leading actions" : "Trailing actions"}
     >
-      {/* 1. Underlying background color & raw sheens (Z-0) */}
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit] bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005]">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent dark:via-white/10" />
-          <div className="absolute right-0 bottom-0 left-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
-          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/18 to-transparent dark:via-white/10" />
-          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/12 to-transparent dark:via-white/6" />
-        </div>
-      </div>
-
-      {/* 2. Frosted glass backdrop blur filter layer (Z-10) */}
+      {/* Action triggers over the tray's opaque inset surface (content, not chrome: no glass) */}
       <div
-        className="pointer-events-none absolute inset-0 z-10 rounded-[inherit] saturate-[190%] backdrop-blur-[20px]"
-        style={{
-          WebkitBackdropFilter: "blur(20px) saturate(190%)",
-        }}
-      />
-
-      {/* 3. Action Triggers container (Z-20) */}
-      <div className="relative z-20 flex h-full w-full items-center justify-start gap-0.5 px-1">
-        {processedChildren}
+        className={cn(
+          "relative z-20 flex h-full w-full items-center gap-0.5 px-1",
+          side === "leading" ? "justify-start" : "justify-end"
+        )}
+      >
+        {actions}
       </div>
     </motion.div>
   );
 }
 
-// ── SwipeableRow.Trailing ───────────────────────────────────────────────
-
-function SwipeableRowTrailing({ children, commit: _commit, className }: SwipeableRowTrailingProps) {
-  const { springX, trailingTrayOpacity, containerWidth } = useRowInternal();
-
-  // Dynamic width matching drag distance (only negative values made positive, clamped to containerWidth)
-  const trailingWidth = useTransform(springX, (v) => Math.max(0, Math.min(containerWidth, -v)));
-
-  // Remove border-l when closed
-  const borderLeftWidth = useTransform(springX, (v) => (v < 0 ? "1px" : "0px"));
-
-  const childrenArray = React.Children.toArray(children);
-  const total = childrenArray.length;
-  const processedChildren = React.Children.map(children, (child, idx) => {
-    if (React.isValidElement(child)) {
-      return React.cloneElement(child, {
-        _index: idx,
-        _total: total,
-        _side: "trailing",
-      } as any);
-    }
-    return child;
-  });
-
+function SwipeableRowLeading({ children, className }: SwipeableRowLeadingProps) {
   return (
-    <motion.div
-      data-swipe-tray="trailing"
-      className={cn(
-        "absolute inset-y-0 right-0 z-0 flex items-center justify-end overflow-hidden",
-        "border-l border-black/[0.08] dark:border-white/10",
-        className
-      )}
-      style={{
-        width: trailingWidth,
-        borderLeftWidth,
-        opacity: trailingTrayOpacity,
-      }}
-      role="group"
-      aria-label="Trailing actions"
-    >
-      {/* 1. Underlying background color & raw sheens (Z-0) */}
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit] bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005]">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent dark:via-white/10" />
-          <div className="absolute right-0 bottom-0 left-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
-          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/18 to-transparent dark:via-white/10" />
-          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/12 to-transparent dark:via-white/6" />
-        </div>
-      </div>
-
-      {/* 2. Frosted glass backdrop blur filter layer (Z-10) */}
-      <div
-        className="pointer-events-none absolute inset-0 z-10 rounded-[inherit] saturate-[190%] backdrop-blur-[20px]"
-        style={{
-          WebkitBackdropFilter: "blur(20px) saturate(190%)",
-        }}
-      />
-
-      {/* 3. Action Triggers container (Z-20) */}
-      <div className="relative z-20 flex h-full w-full items-center justify-end gap-0.5 px-1">
-        {processedChildren}
-      </div>
-    </motion.div>
+    <SwipeTray side="leading" className={className}>
+      {children}
+    </SwipeTray>
   );
 }
 
-// ── SwipeableRow.Content ────────────────────────────────────────────────
+function SwipeableRowTrailing({ children, className }: SwipeableRowTrailingProps) {
+  return (
+    <SwipeTray side="trailing" className={className}>
+      {children}
+    </SwipeTray>
+  );
+}
+
+// SwipeableRow.Content
 
 function SwipeableRowContent({ children, className }: SwipeableRowContentProps) {
   const {
-    springX,
-    handlers,
-    wasDrag,
+    physics,
     toggleExpand,
     isCommitting,
-    isExpanded,
     springPreset,
     containerWidth,
-    settle,
     hasLeading,
     hasTrailing,
-    thresholdsPx,
+    canExpand,
+    setContentEl,
   } = useRowInternal();
+  const { springX, handlers, wasDrag, settle, thresholdsPx } = physics;
 
-  const suppressNextClick = useRef(false);
-
-  const handleClick = useCallback(
+  // Capture phase: a click that ends a drag, lands during a commit, or taps a swiped-open row
+  // is swallowed before it reaches the content's own buttons and links.
+  const handleClickCapture = useCallback(
     (e: React.MouseEvent) => {
-      if (suppressNextClick.current) {
-        suppressNextClick.current = false;
-        e.preventDefault();
-        e.stopPropagation();
+      // Keyboard activation (and programmatic clicks) have no pointer gesture behind them.
+      if (e.detail === 0) {
+        wasDrag.current = false;
         return;
       }
 
@@ -623,50 +757,55 @@ function SwipeableRowContent({ children, className }: SwipeableRowContentProps) 
         return;
       }
 
-      // Don't expand during commit animation
-      if (isCommitting) return;
+      if (isCommitting) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
 
-      // Close if already swiped open
-      const currentX = springX.get();
-      if (Math.abs(currentX) > 10) {
+      // Tapping a swiped-open row closes it
+      if (Math.abs(springX.get()) > 10) {
         e.preventDefault();
         e.stopPropagation();
         settle(0);
-        return;
       }
-
-      // Click on edges to activate swipe
-      const rect = e.currentTarget.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      const width = rect.width;
-      const edgeThreshold = Math.min(48, width * 0.15); // 48px or 15% of width
-
-      if (clickX < edgeThreshold && hasLeading) {
-        e.preventDefault();
-        e.stopPropagation();
-        settle(thresholdsPx.reveal);
-        return;
-      }
-
-      if (clickX > width - edgeThreshold && hasTrailing) {
-        e.preventDefault();
-        e.stopPropagation();
-        settle(-thresholdsPx.reveal);
-        return;
-      }
-
-      toggleExpand();
     },
-    [
-      wasDrag,
-      toggleExpand,
-      isCommitting,
-      springX,
-      settle,
-      hasLeading,
-      hasTrailing,
-      thresholdsPx.reveal,
-    ]
+    [wasDrag, isCommitting, springX, settle]
+  );
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (isCommitting) return;
+
+      // Clicks on the content's own interactive elements are theirs alone.
+      const owner = (e.target as Element).closest?.(INTERACTIVE_SELECTOR);
+      if (owner && owner !== e.currentTarget && e.currentTarget.contains(owner)) return;
+
+      // Click on edges to activate swipe (pointer clicks only)
+      if (e.detail !== 0) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const width = rect.width;
+        const edgeThreshold = Math.min(48, width * 0.15); // 48px or 15% of width
+
+        if (clickX < edgeThreshold && hasLeading) {
+          e.preventDefault();
+          e.stopPropagation();
+          settle(thresholdsPx.reveal);
+          return;
+        }
+
+        if (clickX > width - edgeThreshold && hasTrailing) {
+          e.preventDefault();
+          e.stopPropagation();
+          settle(-thresholdsPx.reveal);
+          return;
+        }
+      }
+
+      if (canExpand) toggleExpand();
+    },
+    [toggleExpand, isCommitting, settle, hasLeading, hasTrailing, canExpand, thresholdsPx.reveal]
   );
 
   // Clamp the actual translation to prevent stretching/visual bugs
@@ -676,6 +815,7 @@ function SwipeableRowContent({ children, className }: SwipeableRowContentProps) 
 
   return (
     <motion.div
+      ref={setContentEl}
       className={cn("relative z-10 w-full cursor-grab active:cursor-grabbing", className)}
       style={{
         x: clampedX,
@@ -685,6 +825,7 @@ function SwipeableRowContent({ children, className }: SwipeableRowContentProps) 
         scale: isCommitting ? GULP_SCALE : 1,
       }}
       transition={{ type: "spring", ...SPRING_PRESETS[springPreset] }}
+      onClickCapture={handleClickCapture}
       onClick={handleClick}
       {...handlers}
     >
@@ -693,7 +834,7 @@ function SwipeableRowContent({ children, className }: SwipeableRowContentProps) 
   );
 }
 
-// ── SwipeableRow.Expanded ───────────────────────────────────────────────
+// SwipeableRow.Expanded
 
 function SwipeableRowExpanded({ children, className }: SwipeableRowExpandedProps) {
   const { isExpanded, springPreset } = useRowInternal();
@@ -718,202 +859,129 @@ function SwipeableRowExpanded({ children, className }: SwipeableRowExpandedProps
   );
 }
 
-// ── SwipeActionButton ───────────────────────────────────────────────────
+// SwipeActionButton
 
-// Helper mapping Tailwind colors to glass-blended styles
-const tailwindColorMap: Record<string, { light: string; dark: string }> = {
-  red: {
-    light: "bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-700",
-    dark: "dark:bg-red-500/15 dark:hover:bg-red-500/25 dark:border-white/10 dark:text-red-300",
-  },
-  green: {
-    light: "bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-700",
-    dark: "dark:bg-green-500/15 dark:hover:bg-green-500/25 dark:border-white/10 dark:text-green-300",
-  },
-  emerald: {
-    light:
-      "bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-700",
-    dark: "dark:bg-emerald-500/15 dark:hover:bg-emerald-500/25 dark:border-white/10 dark:text-emerald-300",
-  },
-  blue: {
-    light: "bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-700",
-    dark: "dark:bg-blue-500/15 dark:hover:bg-blue-500/25 dark:border-white/10 dark:text-blue-300",
-  },
-  indigo: {
-    light: "bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-700",
-    dark: "dark:bg-indigo-500/15 dark:hover:bg-indigo-500/25 dark:border-white/10 dark:text-indigo-300",
-  },
-  amber: {
-    light: "bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-700",
-    dark: "dark:bg-amber-500/15 dark:hover:bg-amber-500/25 dark:border-white/10 dark:text-amber-300",
-  },
-  yellow: {
-    light: "bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 text-yellow-700",
-    dark: "dark:bg-yellow-500/15 dark:hover:bg-yellow-500/25 dark:border-white/10 dark:text-yellow-300",
-  },
-  slate: {
-    light: "bg-slate-500/10 hover:bg-slate-500/20 border border-slate-500/20 text-slate-700",
-    dark: "dark:bg-slate-500/15 dark:hover:bg-slate-500/25 dark:border-white/10 dark:text-slate-300",
-  },
-};
+const ActionBody = ({ icon: Icon, label }: Pick<SwipeActionButtonProps, "icon" | "label">) => (
+  <>
+    <Icon aria-hidden="true" className="size-4 shrink-0" />
+    <span className="text-caption truncate font-semibold">{label}</span>
+  </>
+);
 
-// ── SwipeActionButton ───────────────────────────────────────────────────
+type TrayItemProps = { _index?: number; _total?: number; _side?: "leading" | "trailing" };
 
-export function SwipeActionButton({
+export function SwipeActionButton(props: SwipeActionButtonProps & TrayItemProps) {
+  const { _index, _total, _side, ...buttonProps } = props;
+  const inTray =
+    useContext(RowInternalContext) && _index !== undefined && _total !== undefined && _side;
+  return inTray ? (
+    <TrayActionButton {...buttonProps} index={_index!} total={_total!} side={_side!} />
+  ) : (
+    <StaticActionButton {...buttonProps} />
+  );
+}
+
+/** Outside a swipeable row: a plain fixed-width button. */
+function StaticActionButton({
   id,
-  icon: Icon,
+  icon,
   label,
   onClick,
   color,
   "aria-label": ariaLabel,
   className,
-  _index,
-  _total,
-  _side,
-}: SwipeActionButtonProps & { _index?: number; _total?: number; _side?: "leading" | "trailing" }) {
-  // Determine if color is a CSS value or a Tailwind class name
-  const isCssColor = color.startsWith("#") || color.startsWith("rgb") || color.startsWith("hsl");
-
-  const btnClass = isCssColor
-    ? "bg-[color-mix(in_srgb,var(--btn-color)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--btn-color)_22%,transparent)] border border-[color-mix(in_srgb,var(--btn-color)_20%,transparent)] text-[color-mix(in_srgb,var(--btn-color)_85%,#0f172a)] dark:text-[color-mix(in_srgb,var(--btn-color)_85%,#f8fafc)]"
-    : tailwindColorMap[color]
-      ? `${tailwindColorMap[color].light} ${tailwindColorMap[color].dark}`
-      : `bg-${color}-500/10 hover:bg-${color}-500/20 border border-${color}-500/20 text-${color}-700 dark:text-${color}-300 dark:border-white/10 dark:bg-${color}-500/15 dark:hover:bg-${color}-500/25`;
-
-  const inlineStyle = isCssColor ? ({ "--btn-color": color } as React.CSSProperties) : undefined;
-
-  const context = useContext(RowInternalContext);
-  const _hasContext = !!(context && _index !== undefined && _total !== undefined && _side);
-
-  // Fallback motion value (used when no context — keeps useTransform hooks unconditional)
-  const fallbackSpringX = useMotionValue(0);
-
-  // Safe defaults for hook calls
-  const safeIndex = _index ?? 0;
-  const safeTotal = _total ?? 1;
-  const safeSide: "leading" | "trailing" = _side ?? "leading";
-  const springX = context?.springX ?? fallbackSpringX;
-  const revealPx = context?.thresholdsPx.reveal ?? 0;
-  const emphasizePx = context?.thresholdsPx.emphasize ?? 0;
-  const commitPx = context?.thresholdsPx.commit ?? 0;
-
-  // Let's compute primary button status
-  const isPrimary = safeSide === "leading" ? safeIndex === 0 : safeIndex === safeTotal - 1;
-
-  // Accordion translation
-  const shiftAmount = safeSide === "trailing" ? (safeTotal - 1 - safeIndex) * 68 : -safeIndex * 68;
-
-  // Create springX mappings
-  const x = useTransform(
-    springX,
-    safeSide === "trailing" ? [0, -revealPx, -commitPx] : [0, revealPx, commitPx],
-    [shiftAmount, 0, 0]
-  );
-
-  // Scale and opacity mappings
-  const scale = useTransform(
-    springX,
-    safeSide === "trailing"
-      ? isPrimary
-        ? [0, -revealPx, -emphasizePx, -commitPx]
-        : [0, -revealPx, -emphasizePx, -emphasizePx - 20]
-      : isPrimary
-        ? [0, revealPx, emphasizePx, commitPx]
-        : [0, revealPx, emphasizePx, emphasizePx + 20],
-    isPrimary ? [0.5, 1.0, 1.0, 1.15] : [0.5, 1.0, 1.0, 0.0]
-  );
-
-  const opacity = useTransform(
-    springX,
-    safeSide === "trailing"
-      ? isPrimary
-        ? [0, -revealPx * 0.5, -revealPx]
-        : [0, -revealPx * 0.5, -revealPx, -emphasizePx, -emphasizePx - 20]
-      : isPrimary
-        ? [0, revealPx * 0.5, revealPx]
-        : [0, revealPx, emphasizePx, emphasizePx + 20],
-    isPrimary ? [0, 0.5, 1.0] : [0, 0.5, 1.0, 1.0, 0.0]
-  );
-
-  // Width and MinWidth mappings (only shrink non-primary buttons to 0, primary expands via flex-grow)
-  const widthTransform = useTransform(
-    springX,
-    safeSide === "trailing"
-      ? [0, -emphasizePx, -emphasizePx - 20]
-      : [0, emphasizePx, emphasizePx + 20],
-    [68, 68, 0]
-  );
-
-  const width = isPrimary ? "68px" : widthTransform;
-  const minWidth = isPrimary ? "68px" : widthTransform;
-  const flexGrow = isPrimary ? 1 : 0;
-
-  // Fallback if not inside SwipeableRow
-  if (!_hasContext) {
-    return (
-      <button
-        data-swipe-action={id}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
-        className={cn(
-          "relative flex h-full flex-col items-center justify-center gap-1 px-3 transition-colors active:brightness-95",
-          "overflow-hidden whitespace-nowrap backdrop-blur-sm",
-          btnClass,
-          className
-        )}
-        style={{
-          ...inlineStyle,
-          width: "68px",
-          minHeight: "100%",
-        }}
-        aria-label={ariaLabel ?? label}
-      >
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent dark:via-white/4" />
-
-        <Icon className="h-4 w-4 shrink-0" />
-        <span className="truncate text-[9px] font-bold">{label}</span>
-      </button>
-    );
-  }
-
+}: SwipeActionButtonProps) {
+  const { className: tone, cssVars } = actionButtonStyle(color);
   return (
-    <motion.button
+    <button
       data-swipe-action={id}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
       }}
-      className={cn(
-        "relative flex h-full flex-col items-center justify-center gap-1 px-3 transition-colors active:brightness-95",
-        "overflow-hidden whitespace-nowrap backdrop-blur-sm",
-        btnClass,
-        className
-      )}
+      className={cn(ACTION_BUTTON_BASE, tone, className)}
+      style={{ ...cssVars, width: "68px", minHeight: "100%" }}
+      aria-label={ariaLabel ?? label}
+    >
+      <ActionBody icon={icon} label={label} />
+    </button>
+  );
+}
+
+/** Inside a tray: slides, scales and fades with the swipe; the primary action grows to fill the tray. */
+function TrayActionButton({
+  id,
+  icon,
+  label,
+  onClick,
+  color,
+  "aria-label": ariaLabel,
+  className,
+  index,
+  total,
+  side,
+}: SwipeActionButtonProps & { index: number; total: number; side: "leading" | "trailing" }) {
+  const { className: tone, cssVars } = actionButtonStyle(color);
+  const { springX, thresholdsPx } = useRowInternal().physics;
+  const { reveal, emphasize, commit } = thresholdsPx;
+  const sign = side === "leading" ? 1 : -1;
+  const isPrimary = side === "leading" ? index === 0 : index === total - 1;
+
+  // The other buttons stack under the primary one and slide out as the tray opens
+  const shiftAmount = side === "trailing" ? (total - 1 - index) * 68 : -index * 68;
+  const x = useTransform(springX, [0, sign * reveal, sign * commit], [shiftAmount, 0, 0]);
+
+  // Secondary buttons shrink away past the emphasize point, the primary one grows slightly
+  const scale = useTransform(
+    springX,
+    (isPrimary ? [0, reveal, emphasize, commit] : [0, reveal, emphasize, emphasize + 20]).map(
+      (v) => sign * v
+    ),
+    isPrimary ? [0.5, 1.0, 1.0, 1.15] : [0.5, 1.0, 1.0, 0.0]
+  );
+  const opacity = useTransform(
+    springX,
+    (isPrimary
+      ? [0, reveal * 0.5, reveal]
+      : [0, reveal * 0.5, reveal, emphasize, emphasize + 20]
+    ).map((v) => sign * v),
+    isPrimary ? [0, 0.5, 1.0] : [0, 0.5, 1.0, 1.0, 0.0]
+  );
+  const secondaryWidth = useTransform(
+    springX,
+    [0, emphasize, emphasize + 20].map((v) => sign * v),
+    [68, 68, 0]
+  );
+
+  return (
+    <motion.button
+      type="button"
+      data-swipe-action={id}
+      // Out of the tab order: keyboard users reach these through the row's actions menu.
+      tabIndex={-1}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      className={cn(ACTION_BUTTON_BASE, tone, className)}
       style={{
-        ...inlineStyle,
+        ...cssVars,
         x,
         scale,
         opacity,
-        width,
-        minWidth,
-        flexGrow,
+        width: isPrimary ? "68px" : secondaryWidth,
+        minWidth: isPrimary ? "68px" : secondaryWidth,
+        flexGrow: isPrimary ? 1 : 0,
         minHeight: "100%",
       }}
       aria-label={ariaLabel ?? label}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent dark:via-white/4" />
-
-      <Icon className="h-4 w-4 shrink-0" />
-      <span className="truncate text-[9px] font-bold">{label}</span>
+      <ActionBody icon={icon} label={label} />
     </motion.button>
   );
 }
 
-// ── Compound Component Assembly ─────────────────────────────────────────
+// Compound Component Assembly
 
 // Attach sub-components to the root
 const SwipeableRow = Object.assign(SwipeableRowRoot, {
@@ -925,19 +993,19 @@ const SwipeableRow = Object.assign(SwipeableRowRoot, {
 
 export { SwipeableRow };
 
-// ── Internal Utilities ──────────────────────────────────────────────────
+// Internal Utilities
 
 /**
  * Find a specific compound child element by its component type.
  * Returns the element (with props accessible) or null.
  */
-function findChild(
+function findChild<P = Record<string, unknown>>(
   children: React.ReactNode,
-  type: React.ComponentType<any>
-): React.ReactElement<any> | null {
-  let found: React.ReactElement<any> | null = null;
+  type: React.ComponentType<P>
+): React.ReactElement<P> | null {
+  let found: React.ReactElement<P> | null = null;
   React.Children.forEach(children, (child) => {
-    if (React.isValidElement(child) && child.type === type) {
+    if (React.isValidElement<P>(child) && child.type === type) {
       found = child;
     }
   });

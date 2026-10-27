@@ -1,7 +1,19 @@
-import { useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Play, Pause, ChevronRight, ChevronLeft, X, MapPin, Users, TrendingUp } from "lucide-react";
+import {
+  Play,
+  Pause,
+  NavArrowRight as ChevronRight,
+  NavArrowLeft as ChevronLeft,
+  Xmark as X,
+  MapPin,
+  Group as Users,
+  StatUp as TrendingUp,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetMaterial } from "~/components/ui/facet";
+import { Skeleton } from "~/components/ui/skeleton";
 import type { TourStep, TourState } from "../hooks/useMapTour";
 
 interface TourHUDProps {
@@ -17,18 +29,43 @@ interface TourHUDProps {
   totalSteps: number;
 }
 
-function formatPopulation(value: number | null | undefined): string {
-  if (value === null || value === undefined) return "—";
-  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
-  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
-  return value.toLocaleString();
-}
+import { formatPopulation, formatCurrency } from "~/lib/utils/format-utils";
+import { Card } from "~/components/ui/card";
+import { assetUrl } from "~/lib/base-path";
 
-function formatGDP(value: number | null | undefined): string {
-  if (value === null || value === undefined) return "—";
-  if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
-  if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
-  return `$${value.toLocaleString()}`;
+const STALE_TIME = { staleTime: 30 * 60_000 };
+
+/** First two sentences of the wiki intro's first paragraph, with link markup stripped. */
+const condenseIntro = (paragraphs: string[] | undefined) =>
+  paragraphs?.[0]
+    ?.replace(/<[^>]+>/g, "")
+    .split(/(?<=[.!?])\s+/)
+    .slice(0, 2)
+    .join(" ") || null;
+
+/** Country record, summary stats and wiki intro for the current tour stop. */
+function useTourStepData(name: string | undefined) {
+  const { data: countryData, isLoading: isCountryLoading } =
+    api.countries.getByNameWithAtomic.useQuery(
+      { name: name ?? "" },
+      { enabled: !!name, ...STALE_TIME }
+    );
+  const { data: stats, isLoading: isStatsLoading } = api.countries.getMapSummary.useQuery(
+    { countryId: countryData?.id ?? "" },
+    { enabled: !!countryData?.id, ...STALE_TIME }
+  );
+  const { data: wikiIntro, isLoading: isWikiLoading } = api.countries.getWikiRichIntro.useQuery(
+    { countryName: name ?? "" },
+    { enabled: !!name, ...STALE_TIME }
+  );
+
+  return {
+    stats,
+    statsLoading: isCountryLoading || isStatsLoading,
+    isWikiLoading,
+    condensedIntro: condenseIntro(wikiIntro?.paragraphs),
+    capital: stats?.capitalCity || countryData?.nationalIdentity?.capitalCity || null,
+  };
 }
 
 export function TourHUD({
@@ -43,189 +80,131 @@ export function TourHUD({
   currentStepData,
   totalSteps,
 }: TourHUDProps) {
+  const { stats, statsLoading, isWikiLoading, condensedIntro, capital } = useTourStepData(
+    currentStepData?.name
+  );
   const isVisible = tourState !== "idle" && tourState !== "completed" && currentStepData;
-
-  // 1. Fetch country ID by name
-  const { data: countryData, isLoading: isCountryLoading } =
-    api.countries.getByNameWithAtomic.useQuery(
-      { name: currentStepData?.name ?? "" },
-      { enabled: !!currentStepData?.name, staleTime: 30 * 60_000 }
-    );
-
-  // 2. Fetch country stats by ID
-  const { data: stats, isLoading: isStatsLoading } = api.countries.getMapSummary.useQuery(
-    { countryId: countryData?.id ?? "" },
-    { enabled: !!countryData?.id, staleTime: 30 * 60_000 }
-  );
-
-  // 3. Fetch wiki intro by name
-  const { data: wikiIntro, isLoading: isWikiLoading } = api.countries.getWikiRichIntro.useQuery(
-    { countryName: currentStepData?.name ?? "" },
-    { enabled: !!currentStepData?.name, staleTime: 30 * 60_000 }
-  );
-
-  const capital = useMemo(() => {
-    return stats?.capitalCity || countryData?.nationalIdentity?.capitalCity || null;
-  }, [stats, countryData]);
-
-  const wikiParagraphs = wikiIntro?.paragraphs;
-  const condensedIntro = useMemo(() => {
-    if (!wikiParagraphs || wikiParagraphs.length === 0) return null;
-    const firstParagraph = wikiParagraphs[0];
-
-    // Strip HTML links tags to extract clean text sentences
-    const cleanText = firstParagraph.replace(/<[^>]+>/g, "");
-
-    const sentences = cleanText.split(/(?<=[.!?])\s+/);
-    const plainCondensed = sentences.slice(0, 2).join(" ");
-    return plainCondensed;
-  }, [wikiParagraphs]);
-
   if (!isVisible || !currentStepData) return null;
+
+  const quickStats = [
+    { icon: MapPin, label: "Capital", value: capital || "—" },
+    { icon: Users, label: "Population", value: formatPopulation(stats?.population) },
+    { icon: TrendingUp, label: "GDP (total)", value: formatCurrency(stats?.totalGdp ?? 0) },
+  ];
 
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        initial={{ opacity: 0, y: 16, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="dark:border-border dark:bg-popover/90 dark:text-foreground fixed bottom-6 left-6 z-[40] w-full max-w-[380px] overflow-hidden rounded-2xl border border-slate-200 bg-white/90 text-slate-800 shadow-2xl backdrop-blur-xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+        exit={{ opacity: 0, y: 12, scale: 0.95 }}
+        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed bottom-6 left-6 z-40 w-[calc(100%-3rem)] max-w-[380px]"
       >
-        {/* Floating background gradient glow */}
-        <div className="pointer-events-none absolute -top-10 -left-10 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl" />
-        <div className="pointer-events-none absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl" />
-
-        {/* HUD Header */}
-        <div className="dark:border-border/60 relative border-b border-slate-100 px-5 py-4">
-          <div className="flex items-start justify-between">
+        <FacetMaterial layer="chrome" className="rounded-card overflow-hidden">
+          <div className="border-separator flex items-start justify-between border-b px-5 py-4">
             <div className="flex items-center gap-3">
-              {isCountryLoading || isStatsLoading ? (
-                <div className="h-5 w-8 animate-pulse rounded bg-slate-200 dark:bg-white/10" />
+              {statsLoading ? (
+                <Skeleton className="rounded-control-sm h-5 w-8" />
               ) : stats?.flagUrl ? (
                 <img
-                  src={stats.flagUrl}
+                  src={assetUrl(stats.flagUrl) ?? undefined}
                   alt={`${currentStepData.name} Flag`}
-                  className="dark:border-border h-5 w-8 rounded border border-slate-200 object-cover shadow-md"
+                  className="border-separator rounded-control-sm h-5 w-8 border object-cover"
                 />
               ) : (
-                <div className="dark:border-border dark:bg-secondary h-5 w-8 rounded border border-slate-200 bg-slate-100" />
+                <div className="border-separator bg-fill-3 rounded-control-sm h-5 w-8 border" />
               )}
               <div>
-                <h3 className="dark:text-foreground text-base font-bold text-slate-900">
-                  {currentStepData.name}
-                </h3>
-                <span className="text-[10px] font-semibold tracking-wider text-blue-600 uppercase dark:text-blue-400">
+                <h3 className="text-label text-title-3">{currentStepData.name}</h3>
+                <Eyebrow className="block">
                   Step {currentStepIndex + 1} of {totalSteps}
-                </span>
+                </Eyebrow>
               </div>
             </div>
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={exitTour}
-              className="dark:bg-secondary dark:text-muted-foreground dark:hover:text-foreground rounded-full bg-slate-100 p-1 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-800 dark:hover:bg-white/10"
+              aria-label="Exit tour"
+              className="text-label-secondary -mt-1 -mr-2 h-8 w-8 rounded-full"
             >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        </div>
-
-        {/* HUD Content / Lore */}
-        <div className="relative space-y-4 px-5 py-4">
-          {isWikiLoading ? (
-            <div className="animate-pulse space-y-2 py-1">
-              <div className="h-3 w-full rounded bg-slate-200 dark:bg-white/10" />
-              <div className="h-3 w-5/6 rounded bg-slate-200 dark:bg-white/10" />
-              <div className="h-3 w-2/3 rounded bg-slate-200 dark:bg-white/10" />
-            </div>
-          ) : (
-            <p className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-300">
-              {condensedIntro || currentStepData.fallbackBlurb}
-            </p>
-          )}
-
-          {/* Quick Stats Grid */}
-          <div className="dark:border-border/60 grid grid-cols-3 gap-2 border-t border-slate-100 pt-3">
-            <div className="dark:border-border/40 dark:bg-secondary/40 space-y-0.5 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-center">
-              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-[9px] tracking-wider text-slate-500 uppercase">
-                <MapPin className="h-2.5 w-2.5 text-blue-500 dark:text-blue-400" />
-                Capital
-              </span>
-              {isCountryLoading || isStatsLoading ? (
-                <div className="mx-auto mt-1 h-3 w-16 animate-pulse rounded bg-slate-200 dark:bg-white/10" />
-              ) : (
-                <p className="dark:text-foreground truncate text-xs font-semibold text-slate-900">
-                  {capital || "—"}
-                </p>
-              )}
-            </div>
-            <div className="dark:border-border/40 dark:bg-secondary/40 space-y-0.5 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-center">
-              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-[9px] tracking-wider text-slate-500 uppercase">
-                <Users className="h-2.5 w-2.5 text-cyan-500 dark:text-cyan-400" />
-                Population
-              </span>
-              {isCountryLoading || isStatsLoading ? (
-                <div className="mx-auto mt-1 h-3 w-16 animate-pulse rounded bg-slate-200 dark:bg-white/10" />
-              ) : (
-                <p className="dark:text-foreground truncate text-xs font-semibold text-slate-900">
-                  {formatPopulation(stats?.population)}
-                </p>
-              )}
-            </div>
-            <div className="dark:border-border/40 dark:bg-secondary/40 space-y-0.5 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-center">
-              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-[9px] tracking-wider text-slate-500 uppercase">
-                <TrendingUp className="h-2.5 w-2.5 text-emerald-500 dark:text-emerald-400" />
-                GDP (Total)
-              </span>
-              {isCountryLoading || isStatsLoading ? (
-                <div className="mx-auto mt-1 h-3 w-16 animate-pulse rounded bg-slate-200 dark:bg-white/10" />
-              ) : (
-                <p className="dark:text-foreground truncate text-xs font-semibold text-slate-900">
-                  {formatGDP(stats?.totalGdp)}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Playback Controls & Skip button */}
-        <div className="dark:border-border/60 dark:bg-secondary/50 relative flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-5 py-3.5">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={prevStep}
-              disabled={currentStepIndex === 0}
-              className="dark:bg-secondary dark:hover:bg-secondary/80 dark:disabled:hover:bg-secondary rounded-lg bg-slate-100 p-2 text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900 disabled:opacity-40 disabled:hover:bg-slate-100 disabled:hover:text-slate-600 dark:text-slate-300 dark:hover:text-white dark:disabled:hover:text-slate-300"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={togglePause}
-              className="rounded-lg bg-blue-600 p-2 text-white shadow-md shadow-blue-500/10 transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-            >
-              {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-            </button>
-            <button
-              onClick={nextStep}
-              className="rounded-lg bg-slate-100 p-2 text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+              <X aria-hidden />
+            </Button>
           </div>
 
-          <button
-            onClick={exitTour}
-            className="rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900 dark:border-white/5 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
-          >
-            Exit Tour
-          </button>
-        </div>
+          <div className="space-y-4 px-5 py-4">
+            {isWikiLoading ? (
+              <div className="space-y-2 py-1">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-5/6" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+            ) : (
+              <p className="text-label-secondary text-body leading-relaxed">
+                {condensedIntro || currentStepData.fallbackBlurb}
+              </p>
+            )}
 
-        {/* Progress Bar indicator */}
-        <div className="relative h-1 w-full bg-slate-100 dark:bg-white/5">
-          <div
-            className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-400 transition-all duration-100"
-            style={{ width: `${tourState === "paused_at_step" ? progress : 0}%` }}
-          />
-        </div>
+            <dl className="border-separator grid grid-cols-3 gap-2 border-t pt-3">
+              {quickStats.map(({ icon: Icon, label, value }) => (
+                <Card variant="well" key={label} className="space-y-1 p-2 text-center">
+                  <dt>
+                    <Eyebrow className="flex items-center justify-center gap-1">
+                      <Icon className="h-3 w-3" aria-hidden />
+                      {label}
+                    </Eyebrow>
+                  </dt>
+                  <dd>
+                    {statsLoading ? (
+                      <Skeleton className="mx-auto h-3 w-16" />
+                    ) : (
+                      <p className="text-label text-caption truncate font-semibold">{value}</p>
+                    )}
+                  </dd>
+                </Card>
+              ))}
+            </dl>
+          </div>
+
+          <div className="border-separator flex items-center justify-between border-t px-5 py-3">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={prevStep}
+                disabled={currentStepIndex === 0}
+                aria-label="Previous stop"
+              >
+                <ChevronLeft aria-hidden />
+              </Button>
+              <Button
+                size="icon"
+                onClick={togglePause}
+                aria-label={isPaused ? "Resume tour" : "Pause tour"}
+                className="bg-tint text-on-tint hover:bg-tint-hover"
+              >
+                {isPaused ? <Play aria-hidden /> : <Pause aria-hidden />}
+              </Button>
+              <Button variant="secondary" size="icon" onClick={nextStep} aria-label="Next stop">
+                <ChevronRight aria-hidden />
+              </Button>
+            </div>
+
+            <Button variant="outline" size="sm" onClick={exitTour}>
+              Exit tour
+            </Button>
+          </div>
+
+          <div className="bg-fill-3 h-1 w-full">
+            <div
+              className="bg-tint h-full origin-left transition-transform duration-100"
+              style={{
+                transform: `scaleX(${tourState === "paused_at_step" ? progress / 100 : 0})`,
+              }}
+            />
+          </div>
+        </FacetMaterial>
       </motion.div>
     </AnimatePresence>
   );

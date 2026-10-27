@@ -1,17 +1,8 @@
 "use client";
 
-import {
-  Bell,
-  Settings,
-  Volume2,
-  Eye,
-  Rows3,
-  MessageSquare,
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  Bookmark,
-  Users,
-  User,
-} from "lucide-react";
+import React from "react";
+import { Settings, SoundHigh, ChatBubble, User, Mail } from "iconoir-react";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import {
   Popover,
@@ -23,192 +14,158 @@ import {
 } from "~/components/ui/popover";
 import { Switch } from "~/components/ui/switch";
 import type { MessageFolder, MessageFolderConfig } from "~/types/messages";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 export interface MessagesSettings {
   notificationSounds: boolean;
-  showReadReceipts: boolean;
-  compactMode: boolean;
   displayNamePreference: "account" | "country";
 }
 
 export const DEFAULT_MESSAGES_SETTINGS: MessagesSettings = {
   notificationSounds: true,
-  showReadReceipts: true,
-  compactMode: false,
   displayNamePreference: "country",
 };
 
 export const MESSAGE_FOLDERS: MessageFolderConfig[] = [
   {
     id: "conversations",
-    icon: MessageSquare,
-    title: "Conversations",
-    description: "All chat conversations",
-    gradient: "text-emerald-500",
-    activeGlow: "bg-emerald-500/10 border-emerald-500/40",
-    emptyTitle: "No conversations yet",
+    icon: ChatBubble as any,
+    title: "Messages",
+    description: "Direct, diplomatic, and wiki discussions",
+    emptyTitle: "No messages yet",
     emptyDescription: "Start a conversation to see it here.",
   },
   {
-    id: "system",
-    icon: Bell,
-    title: "System Alerts",
-    description: "System notifications",
-    gradient: "text-rose-500",
-    activeGlow: "bg-rose-500/10 border-rose-500/40",
-    emptyTitle: "No system alerts",
-    emptyDescription: "Platform notifications will appear here.",
-  },
-  {
-    id: "groups",
-    icon: Users,
-    title: "Groups",
-    description: "ThinkTank group chats",
-    gradient: "text-blue-500",
-    activeGlow: "bg-blue-500/10 border-blue-500/40",
-    emptyTitle: "No groups found",
-    emptyDescription: "Join or create a ThinkTank group to start collaborating.",
+    id: "requests",
+    icon: Mail as any,
+    title: "Requests",
+    description: "Messages from people outside your direct-message audience",
+    emptyTitle: "No message requests",
+    emptyDescription:
+      "Messages from people outside your direct-message audience wait here until you accept them.",
   },
 ];
 
-export function getFolderFromPathname(pathname: string): MessageFolder {
-  const cleaned = pathname.replace(/^\/projects\/ixstats/, "");
-  if (cleaned.startsWith("/messages/system")) return "system";
-  if (cleaned.startsWith("/messages/groups")) return "groups";
+export function getFolderFromPathname(_pathname?: string): MessageFolder {
   return "conversations";
 }
 
 interface MessagesFolderNavProps {
-  activeFolder: MessageFolder;
-  onNavigate: (folder: MessageFolder) => void;
+  activeFolder?: MessageFolder;
+  onNavigate?: (folder: MessageFolder) => void;
   unreadCounts?: Record<MessageFolder, number>;
   settings?: MessagesSettings;
   onSettingsChange?: (settings: MessagesSettings) => void;
 }
 
 export function MessagesFolderNav({
-  activeFolder,
+  activeFolder = "conversations",
   onNavigate,
   unreadCounts,
   settings = DEFAULT_MESSAGES_SETTINGS,
   onSettingsChange,
 }: MessagesFolderNavProps) {
+  const requestCount = unreadCounts?.requests ?? 0;
+  const showRequests = requestCount > 0 || activeFolder === "requests";
   const toggleSetting = (key: keyof MessagesSettings) => {
-    onSettingsChange?.({ ...settings, [key]: !settings[key] });
+    const nextValue = !settings[key];
+    if (key === "notificationSounds") {
+      if (nextValue) {
+        soundEffects.chime();
+      } else {
+        soundEffects.toggle();
+      }
+    } else {
+      soundEffects.toggle();
+    }
+    onSettingsChange?.({ ...settings, [key]: nextValue });
   };
 
-  // Folder-specific dynamic color accents for the cutout header background
-  const folderThemes: Record<MessageFolder, { bg: string; border: string }> = {
-    conversations: {
-      bg: "bg-emerald-500/10",
-      border: "border-b border-emerald-500/20",
-    },
-    system: {
-      bg: "bg-rose-500/10",
-      border: "border-b border-rose-500/20",
-    },
-    groups: {
-      bg: "bg-blue-500/10",
-      border: "border-b border-blue-500/20",
-    },
-  };
-
-  const currentTheme = folderThemes[activeFolder] || folderThemes.conversations;
+  const totalUnread = unreadCounts?.conversations ?? 0;
 
   return (
     <div
       className={cn(
-        "relative z-20 flex w-full shrink-0 items-center gap-1.5 px-3 pt-3 pb-5 transition-colors duration-500",
-        currentTheme.bg,
-        currentTheme.border
+        "border-separator relative flex w-full shrink-0 items-center justify-between gap-2 border-b px-4 py-3"
       )}
     >
-      <div className="relative z-10 flex flex-1 gap-1 rounded-xl border border-white/5 bg-black/20 p-1">
-        {MESSAGE_FOLDERS.map((folder) => {
-          const isActive = folder.id === activeFolder;
-          const Icon = folder.icon;
-          const count = unreadCounts?.[folder.id] ?? 0;
-
-          return (
-            <button
-              key={folder.id}
-              onClick={() => onNavigate(folder.id)}
-              className={cn(
-                "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border py-1.5 text-[11px] font-semibold tracking-tight transition-all duration-200 select-none",
-                isActive
-                  ? "border-white/10 bg-white/10 text-white shadow-sm"
-                  : "border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
-              )}
-              aria-label={folder.title}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              <span className="hidden truncate sm:inline">{folder.title}</span>
-              {count > 0 && (
-                <span className="shrink-0 rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] leading-none font-bold text-white tabular-nums">
-                  {count > 99 ? "99+" : count}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      <div className="flex items-center gap-2">
+        <div className="bg-tint-fill text-tint rounded-control flex size-8 items-center justify-center">
+          <ChatBubble className="size-4" aria-hidden="true" />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-headline text-label">Messages</span>
+          {totalUnread > 0 && (
+            <span className="bg-tint text-caption text-on-tint flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 leading-none tabular-nums">
+              {totalUnread > 99 ? "99+" : totalUnread}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Settings popover button */}
+      {showRequests && (
+        <Button
+          type="button"
+          variant={activeFolder === "requests" ? "secondary" : "ghost"}
+          size="sm"
+          className="ml-auto"
+          aria-pressed={activeFolder === "requests"}
+          onClick={() => onNavigate?.(activeFolder === "requests" ? "conversations" : "requests")}
+        >
+          <Mail aria-hidden="true" />
+          {activeFolder === "requests" ? "Back to messages" : `Requests (${requestCount})`}
+        </Button>
+      )}
+
       <Popover>
         <PopoverTrigger
-          className="relative z-10 flex shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/5 bg-slate-950/30 p-2 text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-200"
-          aria-label="Settings"
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "icon-sm" }),
+            "text-label-secondary"
+          )}
+          aria-label="Message settings"
         >
-          <Settings className="h-4 w-4" />
+          <Settings />
         </PopoverTrigger>
-        <PopoverContent
-          side="bottom"
-          align="end"
-          className="w-64 border-white/10 bg-slate-900 text-white backdrop-blur-xl"
-        >
+        <PopoverContent side="bottom" align="end" className="w-64">
           <PopoverHeader>
-            <PopoverTitle className="text-sm font-semibold tracking-tight text-slate-200">
-              Message Settings
-            </PopoverTitle>
-            <PopoverDescription className="mt-1 text-xs text-slate-400">
+            <PopoverTitle className="text-headline text-label">Message settings</PopoverTitle>
+            <PopoverDescription className="text-footnote text-label-secondary mt-1">
               Customize your messaging experience.
             </PopoverDescription>
           </PopoverHeader>
           <div className="mt-4 flex flex-col gap-3">
             <label className="flex cursor-pointer items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-slate-300">
-                <Volume2 className="h-3.5 w-3.5 text-slate-400" />
-                <span className="text-xs font-semibold">Notification sounds</span>
+              <div className="text-label flex items-center gap-2">
+                <SoundHigh className="text-label-secondary size-4" aria-hidden="true" />
+                <span className="text-body">Notification sounds</span>
               </div>
-              <Switch
-                checked={settings.notificationSounds}
-                onCheckedChange={() => toggleSetting("notificationSounds")}
-              />
+              <div className="flex items-center gap-2">
+                {settings.notificationSounds && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      soundEffects.chime();
+                    }}
+                    title="Test notification sound"
+                  >
+                    Test
+                  </Button>
+                )}
+                <Switch
+                  checked={settings.notificationSounds}
+                  onCheckedChange={() => toggleSetting("notificationSounds")}
+                />
+              </div>
             </label>
             <label className="flex cursor-pointer items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-slate-300">
-                <Eye className="h-3.5 w-3.5 text-slate-400" />
-                <span className="text-xs font-semibold">Read receipts</span>
-              </div>
-              <Switch
-                checked={settings.showReadReceipts}
-                onCheckedChange={() => toggleSetting("showReadReceipts")}
-              />
-            </label>
-            <label className="flex cursor-pointer items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-slate-300">
-                <Rows3 className="h-3.5 w-3.5 text-slate-400" />
-                <span className="text-xs font-semibold">Compact mode</span>
-              </div>
-              <Switch
-                checked={settings.compactMode}
-                onCheckedChange={() => toggleSetting("compactMode")}
-              />
-            </label>
-            <label className="flex cursor-pointer items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-slate-300">
-                <User className="h-3.5 w-3.5 text-slate-400" />
-                <span className="text-xs font-semibold">Show account username</span>
+              <div className="text-label flex items-center gap-2">
+                <User className="text-label-secondary size-4" aria-hidden="true" />
+                <span className="text-body">Show account username</span>
               </div>
               <Switch
                 checked={settings.displayNamePreference === "account"}

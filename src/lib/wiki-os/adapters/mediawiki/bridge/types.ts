@@ -1,0 +1,121 @@
+import { Cache } from "~/lib/cache";
+import { parseMWTimestamp } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
+import { sameTitle } from "~/lib/wiki-os/core/title";
+
+export type WikiSource = "ixwiki" | "iiwiki" | "althistory";
+
+/** A wiki WikiOS does not hold: its pages are read from the wiki itself. */
+export type SisterWikiSource = Exclude<WikiSource, "ixwiki">;
+
+// ──────────────────────────────────────────────
+// Bridge DTO Interfaces
+// ──────────────────────────────────────────────
+
+export interface WikiSearchResult {
+  title: string;
+  pageId: number;
+  /** Article length in bytes */
+  length: number;
+}
+
+export interface WikiArticle {
+  title: string;
+  pageId: number;
+  wikitext: string;
+  length: number;
+  /** The revision the text is of, when the wiki said (a sister wiki's page: what its rendered view is cached under). */
+  revId?: number;
+  /** The redirect title the page was asked for under, when its wiki followed one (a sister wiki's page). */
+  redirectedFrom?: string;
+}
+
+export interface WikiIntro {
+  title: string;
+  text: string;
+}
+
+export interface WikiSection {
+  level: number;
+  title: string;
+  index: number;
+}
+
+export interface WikiRecentChange {
+  title: string;
+  user: string;
+  timestamp: string;
+  comment: string;
+  type: "edit" | "new" | "log";
+  oldLen: number;
+  newLen: number;
+  blurb?: string | null;
+  thumbnail?: string | null;
+  /** A MediaWiki edit that conflicted with WikiOS's head: listed, but never the page's live text. */
+  parked?: boolean;
+}
+
+/** An image used on a page, with the URLs to show it at full size and as a thumbnail. */
+export interface PageImage {
+  /** The file's title, "File:" prefix included. */
+  title: string;
+  url: string;
+  thumbUrl: string;
+  width: number;
+  height: number;
+}
+
+export interface WikiCategoryMembers {
+  category: string;
+  pages: Array<{ title: string; ns: number }>;
+  subcategories: string[];
+  files: string[];
+  hasMore: boolean;
+  nextOffset?: string;
+}
+/** Logs a reader's swallowed error in development only. */
+export function warnDev(err: unknown): void {
+  if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+}
+
+// ──────────────────────────────────────────────
+// In-Memory LRU Cache (L1)
+// ──────────────────────────────────────────────
+
+export const wikiBridgeCache = new Cache<unknown>({
+  defaultTtlMs: 30 * 60 * 1000, // 30 minutes
+  maxSize: 500,
+});
+
+export function cacheGet<T>(key: string): T | null {
+  return (wikiBridgeCache.get(key) as T | undefined) ?? null;
+}
+
+export function cacheSet<T>(key: string, data: T, ttlMs: number = 30 * 60 * 1000): void {
+  wikiBridgeCache.set(key, data, ttlMs);
+}
+
+/**
+ * Forget what the bridge cache holds for the page `title` (intro, wikitext, page images), under every
+ * spelling it was asked for: those keys hold the raw or lower-cased title.
+ */
+export function evictBridgeCacheForTitle(title: string, wiki: WikiSource): number {
+  const prefixes = [`intro:${wiki}:`, `wikitext:${wiki}:`, `pageimages:${wiki}:`];
+  let evicted = 0;
+  for (const key of wikiBridgeCache.keys()) {
+    const prefix = prefixes.find((candidate) => key.startsWith(candidate));
+    if (prefix && sameTitle(key.slice(prefix.length), title, wiki)) {
+      wikiBridgeCache.delete(key);
+      evicted++;
+    }
+  }
+  return evicted;
+}
+
+/**
+ * Format MediaWiki timestamp (YYYYMMDDHHmmss or ISO) to standard ISO string.
+ */
+export function formatMWTimestamp(ts: string | number | null | undefined): string {
+  if (!ts) return "";
+  const iso = parseMWTimestamp(typeof ts === "number" ? String(ts) : ts);
+  return iso ?? String(ts);
+}

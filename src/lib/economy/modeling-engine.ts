@@ -67,7 +67,7 @@ export interface YearProjection {
 /**
  * Adjusted economic rates for a specific year after policy effects
  */
-export interface AdjustedRates {
+interface AdjustedRates {
   gdpGrowthRate: number;
   inflationRate: number;
   unemploymentRate: number;
@@ -111,7 +111,7 @@ export interface ValidationResult {
  * // Returns: { gdpGrowthRate: 3.5, inflationRate: 2.3, unemploymentRate: 4.5 }
  * ```
  */
-export function applyPolicyEffects(
+function applyPolicyEffects(
   year: number,
   policies: PolicyData[],
   baseRates: AdjustedRates
@@ -163,7 +163,7 @@ export function applyPolicyEffects(
  * // Returns: [{ year: "2024", gdp: 1030000000, gdpPerCapita: 206.12, ... }, ...]
  * ```
  */
-export function calculateGdpProjections(
+function calculateGdpProjections(
   parameters: ModelParameters,
   baseGdp: number,
   basePopulation: number,
@@ -370,51 +370,6 @@ export function validateModelParameters(params: ModelParameters): ValidationResu
 }
 
 /**
- * Calculate sectoral growth and updated outputs
- *
- * Applies sector-specific growth rates to sectoral outputs to project
- * future sectoral composition of the economy.
- *
- * @param sectors - Current sectoral output data
- * @param growthRates - Growth rates for each sector
- * @returns Updated sectoral outputs after growth application
- *
- * @example
- * ```ts
- * const updated = calculateSectoralGrowth(
- *   [{ year: 2024, agriculture: 100, industry: 300, services: 500, government: 100, totalGDP: 1000 }],
- *   { agriculture: 2.0, industry: 3.5, services: 4.0, government: 2.0 }
- * );
- * ```
- */
-export function calculateSectoralGrowth(
-  sectors: SectorData[],
-  growthRates: {
-    agriculture: number;
-    industry: number;
-    services: number;
-    government: number;
-  }
-): SectorData[] {
-  return sectors.map((sector) => {
-    const agriculture = sector.agriculture * (1 + growthRates.agriculture / 100);
-    const industry = sector.industry * (1 + growthRates.industry / 100);
-    const services = sector.services * (1 + growthRates.services / 100);
-    const government = sector.government * (1 + growthRates.government / 100);
-    const totalGDP = agriculture + industry + services + government;
-
-    return {
-      year: sector.year + 1,
-      agriculture: parseFloat(agriculture.toFixed(2)),
-      industry: parseFloat(industry.toFixed(2)),
-      services: parseFloat(services.toFixed(2)),
-      government: parseFloat(government.toFixed(2)),
-      totalGDP: parseFloat(totalGDP.toFixed(2)),
-    };
-  });
-}
-
-/**
  * Generate complete yearly projection data
  *
  * Main projection generator that combines all calculation functions to produce
@@ -450,4 +405,30 @@ export function generateYearlyProjectionData(
 
   // Calculate projections
   return calculateGdpProjections(params, baseGdp, baseData.population, policies);
+}
+
+const MODEL_SECTORS = ["agriculture", "industry", "services", "government"] as const;
+
+/**
+ * What a saved model writes to `economics.updateEconomicProfile`: the latest modelled year's
+ * sector mix as shares of GDP (the `{ name: percent }` shape `parseSectorBreakdown` reads), and
+ * the trade balance in dollars when GDP is known. Empty when no year has any output.
+ */
+export function economicProfileFromModel(
+  sectoralOutputs: readonly SectorData[],
+  tradeBalanceGdpPercent: number,
+  gdp: number | null | undefined
+): { sectorBreakdown?: string; tradeBalance?: number } {
+  const latest = [...sectoralOutputs]
+    .filter((s) => MODEL_SECTORS.some((k) => s[k] > 0))
+    .sort((a, b) => b.year - a.year)[0];
+  const total = latest ? MODEL_SECTORS.reduce((sum, k) => sum + Math.max(0, latest[k]), 0) : 0;
+  const shares =
+    latest && total > 0
+      ? Object.fromEntries(MODEL_SECTORS.map((k) => [k, (Math.max(0, latest[k]) / total) * 100]))
+      : null;
+  return {
+    ...(shares && { sectorBreakdown: JSON.stringify(shares) }),
+    ...(gdp != null && gdp > 0 && { tradeBalance: (gdp * tradeBalanceGdpPercent) / 100 }),
+  };
 }

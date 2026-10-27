@@ -2,31 +2,37 @@
 import "~/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Geist, Playfair_Display } from "next/font/google";
 
 import { ClerkProvider } from "@clerk/nextjs";
+import { facetClerkAppearance } from "~/lib/clerk/theme";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/context/theme-context";
 import { AuthProvider } from "~/context/auth-context";
-import { Navigation, NavigationTransitionHandler, RackFocusBlurWrapper } from "~/app/_components";
+import { IconoirProvider } from "iconoir-react";
+import { NavigationTransitionHandler } from "~/app/_components";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
+import { AppShell } from "~/components/shell/AppShell";
 import { WebGLErrorHandler } from "~/components/ui/webgl-error-handler";
-import { ChunkLoadErrorBoundary, ChunkLoadErrorHandler } from "~/components/ui/ChunkLoadErrorBoundary";
-import { ToastProvider } from "~/components/ui/toast";
+import {
+  ChunkLoadErrorBoundary,
+  ChunkLoadErrorHandler,
+} from "~/components/ui/ChunkLoadErrorBoundary";
+import { Toaster } from "~/components/ui/toast";
 import { withBasePath } from "~/lib/base-path";
+import { siteMetadataBase } from "~/lib/site-metadata";
 import { headers } from "next/headers";
-import { isStandaloneRequest } from "~/lib/system";
+import { isStandaloneRequest } from "~/lib/system/standalone-detection";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
-import { GlobalLinkTooltipProvider } from "~/components/wiki-os/shared/GlobalLinkTooltipProvider";
-import { ConsentManager } from "../components/consent-manager";
-import { MediaContextProvider } from "~/components/media/MediaContext";
-import { MiniPlayer } from "~/components/media/MiniPlayer";
+import { GlobalLinkTooltips } from "~/components/wiki-os/shared/GlobalLinkTooltipProvider";
 
 import { AbilityProvider } from "~/components/providers/AbilityProvider";
 import { IxTimeProvider } from "~/context/IxTimeContext";
 import { ExecutiveNotificationProvider } from "~/context/ExecutiveNotificationContext";
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
+import { CuelumeSoundProvider } from "~/components/providers/CuelumeSoundProvider";
+import { FacetMotionConfig } from "~/components/providers/FacetMotionConfig";
+import { AppearanceInitScript } from "~/components/providers/AppearanceInitScript";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -40,20 +46,61 @@ const isClerkConfigured = Boolean(
 );
 
 export const metadata: Metadata = {
-  title: "IxStats — Nations, economy, lore",
+  // Absolute base for canonical, og:url and OG image URLs (origin only; see siteMetadataBase).
+  metadataBase: siteMetadataBase(),
+  title: "IxStates",
   description: "Statistics and simulation game",
   icons: [{ rel: "icon", url: withBasePath("/favicon.ico") }],
 };
 
-const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-});
+const ICON_DEFAULTS = { strokeWidth: 2 } as const;
 
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
-});
+function AppContent({
+  children,
+  isStandalone,
+}: {
+  children: React.ReactNode;
+  isStandalone: boolean;
+}) {
+  return (
+    <TRPCReactProvider>
+      <ThemeProvider>
+        {/*
+          Icons were migrated from lucide-react (stroke 2) to iconoir-react (default stroke 1.5)
+          at the same Tailwind sizes, so small icons (h-3 / h-3.5 / h-4) drew 0.75-1px strokes
+          that looked faint and crunchy. One provider restores lucide-weight strokes site-wide;
+          an explicit strokeWidth prop on an icon still wins.
+        */}
+        <IconoirProvider iconProps={ICON_DEFAULTS}>
+          {/* One switch honours Reduce Motion (the OS or the in-app setting) for every `motion`
+              element in the tree. */}
+          <FacetMotionConfig>
+            <AbilityProvider>
+              <IxTimeProvider>
+                <ExecutiveNotificationProvider>
+                  <WikiContextProvider>
+                    <LazyGameProviders>
+                      <WebGLErrorHandler />
+                      <MapPrefetcher />
+                      <GlobalLinkTooltips />
+                      <NavigationTransitionHandler />
+                      <CuelumeSoundProvider />
+                      <AppShell beforeMain={!isStandalone && <SetupRedirect />}>
+                        {/* Media providers + MiniPlayer live in the (wiki-os) layout (narrator only). */}
+                        {children}
+                      </AppShell>
+                    </LazyGameProviders>
+                    <Toaster />
+                  </WikiContextProvider>
+                </ExecutiveNotificationProvider>
+              </IxTimeProvider>
+            </AbilityProvider>
+          </FacetMotionConfig>
+        </IconoirProvider>
+      </ThemeProvider>
+    </TRPCReactProvider>
+  );
+}
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const headersList = await headers();
@@ -61,48 +108,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const dashboardPath = withBasePath("/dashboard");
   const signInPath = withBasePath("/sign-in");
   const signUpPath = withBasePath("/sign-up");
-
-  const AppContent = () => (
-    <TRPCReactProvider>
-      <GlobalLinkTooltipProvider>
-        <ThemeProvider>
-          <AbilityProvider>
-            <IxTimeProvider>
-              <ExecutiveNotificationProvider>
-                <WikiContextProvider>
-                  <ToastProvider>
-                    <LazyGameProviders>
-                      <WebGLErrorHandler />
-                      <MapPrefetcher />
-                      <NavigationTransitionHandler />
-                      {isStandalone ? (
-                        <div className="flex min-h-screen flex-col">
-                          <Navigation />
-                          <main className="flex flex-1 flex-col">
-                            <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                          </main>
-                        </div>
-                      ) : (
-                        <div className="flex min-h-screen flex-col">
-                          <Navigation />
-                          {/* <GlobalActivityMarquee /> */}
-                          <SetupRedirect />
-                          <main className="flex flex-1 flex-col">
-                            <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                          </main>
-                          <MiniPlayer />
-                        </div>
-                      )}
-                    </LazyGameProviders>
-                  </ToastProvider>
-                </WikiContextProvider>
-              </ExecutiveNotificationProvider>
-            </IxTimeProvider>
-          </AbilityProvider>
-        </ThemeProvider>
-      </GlobalLinkTooltipProvider>
-    </TRPCReactProvider>
-  );
+  // Per-request CSP nonce (set by src/proxy.ts); inline scripts without it are blocked.
+  const nonce = headersList.get("x-csp-nonce") ?? undefined;
 
   if (!isClerkConfigured) {
     throw new Error(
@@ -113,29 +120,34 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang="en"
-      className={`dark ${geist.variable} ${playfair.variable}`}
+      // Server default; the pre-paint script below rewrites theme + preference attributes
+      // (data-theme, data-density, data-contrast, data-transparency, data-motion, data-sound,
+      // --text-scale, and the sidebar's data-sidebar) from storage / the OS before first paint,
+      // hence suppressHydrationWarning.
+      className="dark"
+      data-theme="dark"
+      // Constant: two WikiOS rules still select on it.
       suppressHydrationWarning
     >
+      <head>
+        <AppearanceInitScript nonce={nonce} />
+      </head>
       <body className="min-h-screen transition-colors duration-200">
-        <ConsentManager>
-          <ChunkLoadErrorHandler />
-          <ChunkLoadErrorBoundary>
-            <ClerkProvider
-              publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-              nonce={headersList.get("x-csp-nonce") ?? undefined}
-              signInUrl={signInPath}
-              signUpUrl={signUpPath}
-              signInFallbackRedirectUrl={dashboardPath}
-            >
-              <AuthProvider>
-                <MediaContextProvider>
-                  <AppContent />
-                </MediaContextProvider>
-              </AuthProvider>
-            </ClerkProvider>
-            {/* ToasterProvider removed — DynamicIslandToastManager handles rendering */}
-          </ChunkLoadErrorBoundary>
-        </ConsentManager>
+        <ChunkLoadErrorHandler />
+        <ChunkLoadErrorBoundary>
+          <ClerkProvider
+            publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+            nonce={nonce}
+            signInUrl={signInPath}
+            signUpUrl={signUpPath}
+            signInFallbackRedirectUrl={dashboardPath}
+            appearance={facetClerkAppearance}
+          >
+            <AuthProvider>
+              <AppContent isStandalone={isStandalone}>{children}</AppContent>
+            </AuthProvider>
+          </ClerkProvider>
+        </ChunkLoadErrorBoundary>
       </body>
     </html>
   );

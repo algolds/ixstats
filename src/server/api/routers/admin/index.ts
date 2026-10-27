@@ -11,6 +11,8 @@
  *  - countries:   god-mode country data, roster import, grid/detail, audit, announcements, scenarios
  *  - worldEvents: storyteller world events, event chains, diplomatic options, upcoming events
  *  - wiki:        wiki links, article awards, loreward scoring, templates, cache purges, cron, wiki users
+ *  - thinkpagesFlags: the ThinkPages flag moderation queue (list / resolve)
+ *  - nameClaims:  the wiki name claims queue, decisions, direct links and the legacy name search
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { adminSystemRouter } from "./system";
@@ -20,6 +22,11 @@ import { adminCountriesRouter } from "./countries";
 import { adminWorldEventsRouter } from "./worldEvents";
 import { adminWikiRouter } from "./wiki";
 import { adminThinkpagesDiscordFeedRouter } from "./thinkpagesDiscordFeed";
+import { adminStashRouter } from "./stash";
+import { adminThinkpagesRouter } from "./thinkpages";
+import { adminThinkpagesFlagsRouter } from "./thinkpagesFlags";
+import { adminCronRouter } from "./cron";
+import { adminNameClaimsRouter } from "./name-claims";
 
 export const adminRouter = mergeRouters(
   adminSystemRouter,
@@ -28,5 +35,10 @@ export const adminRouter = mergeRouters(
   adminCountriesRouter,
   adminWorldEventsRouter,
   adminWikiRouter,
-  adminThinkpagesDiscordFeedRouter
+  adminThinkpagesDiscordFeedRouter,
+  adminStashRouter,
+  adminThinkpagesRouter,
+  adminThinkpagesFlagsRouter,
+  adminCronRouter,
+  adminNameClaimsRouter
 );

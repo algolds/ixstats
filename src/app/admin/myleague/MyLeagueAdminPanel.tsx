@@ -1,9 +1,11 @@
 "use client";
+// src/app/admin/myleague/MyLeagueAdminPanel.tsx
+// Unified MyLeague Sports Management Admin Panel
 
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { AdminHeader } from "../_components/AdminHeader";
-import { Trophy, FlaskConical, Database } from "lucide-react";
+import { PageHeader } from "~/components/shell/PageHeader";
+import { Trophy, Flask as FlaskConical, Database } from "iconoir-react";
 import SportsOversightPanel from "./SportsOversightPanel";
 import SportsLabsPanel from "./SportsLabsPanel";
 import SportsSeederPanel from "./SportsSeederPanel";
@@ -11,47 +13,36 @@ import SportsSeederPanel from "./SportsSeederPanel";
 export default function MyLeagueAdminPanel() {
   return (
     <div className="space-y-6">
-      {/* Central Admin Header */}
-      <AdminHeader
-        icon={Trophy}
-        title="MyLeague settings & Labs"
-        description="Comprehensive control center for canonical sports competitions. Configure presets, run sandboxed simulations, and seed simulation databases."
+      <PageHeader
+        title="MyLeague"
+        subtitle="Sports competition presets, sandboxed simulations and database seeding."
       />
 
-      <Tabs defaultValue="oversight" className="w-full space-y-4">
-        <TabsList className="bg-muted/20 border-border/50 grid w-full grid-cols-3 rounded-xl border p-1 md:w-[600px]">
-          <TabsTrigger
-            value="oversight"
-            className="flex items-center gap-1.5 rounded-lg py-2 data-[state=active]:bg-indigo-500 data-[state=active]:text-white"
-          >
-            <Trophy className="h-4 w-4" />
-            Oversight Dashboard
+      <Tabs defaultValue="oversight" className="w-full space-y-6">
+        <TabsList className="bg-fill-3 rounded-row flex w-full flex-wrap justify-start gap-1 p-1 md:w-auto">
+          <TabsTrigger value="oversight" className="text-caption flex items-center gap-2">
+            <Trophy className="text-green h-4 w-4" />
+            Oversight dashboard
           </TabsTrigger>
-          <TabsTrigger
-            value="sandbox"
-            className="flex items-center gap-1.5 rounded-lg py-2 data-[state=active]:bg-indigo-500 data-[state=active]:text-white"
-          >
-            <FlaskConical className="h-4 w-4" />
-            Simulation Sandbox
+          <TabsTrigger value="sandbox" className="text-caption flex items-center gap-2">
+            <FlaskConical className="text-yellow h-4 w-4" />
+            Simulation sandbox
           </TabsTrigger>
-          <TabsTrigger
-            value="seeder"
-            className="flex items-center gap-1.5 rounded-lg py-2 data-[state=active]:bg-indigo-500 data-[state=active]:text-white"
-          >
-            <Database className="h-4 w-4" />
-            Data Lab & Seeder
+          <TabsTrigger value="seeder" className="text-caption flex items-center gap-2">
+            <Database className="text-teal h-4 w-4" />
+            Data lab & seeder
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="oversight" className="focus-visible:ring-0 focus-visible:outline-none">
+        <TabsContent value="oversight" className="focus-visible:outline-none">
           <SportsOversightPanel />
         </TabsContent>
 
-        <TabsContent value="sandbox" className="focus-visible:ring-0 focus-visible:outline-none">
+        <TabsContent value="sandbox" className="focus-visible:outline-none">
           <SportsLabsPanel />
         </TabsContent>
 
-        <TabsContent value="seeder" className="focus-visible:ring-0 focus-visible:outline-none">
+        <TabsContent value="seeder" className="focus-visible:outline-none">
           <SportsSeederPanel />
         </TabsContent>
       </Tabs>

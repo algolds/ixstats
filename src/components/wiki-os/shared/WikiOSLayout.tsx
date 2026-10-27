@@ -1,18 +1,17 @@
-// src/components/wiki-os/shared/WikiOSLayout.tsx
-// WikiOS content wrapper with standard DashboardSidebarLayout.
-
 "use client";
 
 import { type ReactNode, useState, useEffect } from "react";
-import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useWikiOSShortcuts } from "~/components/wiki-os/shared/useWikiOSShortcuts";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
+import { WikiArticleTabs } from "~/components/wiki-os/reader/WikiArticleTabs";
 import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { WIKIOS_VERSION } from "~/lib/buildVersion";
 import { stripBasePath } from "~/lib/base-path";
-import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
+import { getArticleRoute, isNonArticlePath, type ArticleView } from "~/lib/wiki-os/article-route";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { useWikiPrefetch } from "~/hooks/useWikiPrefetch";
 import {
   Popover,
@@ -23,57 +22,50 @@ import {
 } from "~/components/ui/popover";
 
 // Sibling component imports
-import { SearchModal } from "./SearchModal";
-import { WikiOSUnifiedSidebar } from "./WikiOSUnifiedSidebar";
+import { WikiPageActions } from "./WikiPageActions";
 import { WikiOSContentWrapper } from "./WikiOSContentWrapper";
-import { CreatePageModal } from "./CreatePageModal";
+import { WikiOSLogomark } from "./WikiOSLogomark";
+import { useMountOnFirstOpen } from "./useMountOnFirstOpen";
 
-import type { TocEntry } from "~/lib/wiki-os/html-transformer";
+// A dialog nobody has opened when the page paints: fetched the first time it is opened.
+const CreatePageModal = dynamic(() => import("./CreatePageModal").then((m) => m.CreatePageModal), {
+  ssr: false,
+});
 
 export function WikiOSLayout({
   title,
-  sidebarVariant = "wiki",
   hideTitleHeading = false,
-  sections,
+  readOnly,
+  articleView = "read",
   children,
 }: {
   title?: string;
-  sidebarVariant?: "wiki" | "dashboard";
   hideTitleHeading?: boolean;
-  sections?: TocEntry[];
+  /** Another wiki's page shown in WikiOS (ruling E-l): no page tools and no edit shortcut. */
+  readOnly?: boolean;
+  /** The view of the page its path does not say (`?action=edit|history` on /wiki/<title>). */
+  articleView?: ArticleView;
   children: ReactNode;
 }) {
-  useWikiOSShortcuts();
+  useWikiOSShortcuts(readOnly);
   useWikiPrefetch();
-  const { articleTitle, setActiveModal } = useWikiContext();
+  const { articleTitle } = useWikiContext();
   const pathname = usePathname();
-  const [searchOpen, setSearchOpen] = useState(false);
   const [createPageOpen, setCreatePageOpen] = useState(false);
+  const createPageMounted = useMountOnFirstOpen(createPageOpen);
 
   // Check URL params to auto-open page creation modal
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("create") === "true" || params.get("action") === "create-page") {
+        // oxlint-disable-next-line
         setCreatePageOpen(true);
       }
     }
   }, []);
 
-  // Global Cmd+K to open search
-  useEffect(() => {
-    const handleKey = (e: globalThis.KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setSearchOpen((prev) => !prev);
-      }
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, []);
-
   const activeTitle = title || articleTitle || "";
-  const slug = activeTitle ? encodeURIComponent(activeTitle.replace(/ /g, "_")) : null;
 
   const isMainPage =
     activeTitle === "Main Page" ||
@@ -106,124 +98,76 @@ export function WikiOSLayout({
 
   const { isSignedIn } = useWikiAuth();
 
-  const getActiveId = () => {
-    const p = stripBasePath(pathname);
-    if (p.includes("/talk")) return "talk";
-    if (p.includes("/edit")) return "edit";
-    if (p.includes("/wiki/recent")) return "recent";
-    if (p.includes("/wiki/lorewards")) return "lorewards";
-    if (p.includes("/blurbs")) return "blurbs";
-    if (p.includes("/stashes")) return "stashes";
-    if (p.includes("/wiki/repository")) return "images";
-    if (p.includes("/wiki/watchlist")) return "stashes";
-    if (p.includes("/wiki/random")) return "random";
-    if (p.includes("/wiki/search")) return "search";
-    if (p.includes("/wiki/history")) return "history";
-    if (p === "/wiki/Main_Page") return "main";
-    return null;
-  };
-
-  const activeId = getActiveId();
-
-  // A "special page" is anything that is NOT an editable wiki article — the Main Page,
-  // the reserved /wiki/* tool routes, the Special: namespace, and non-article library
-  // routes. Article pages (/wiki/<Title> and their /edit, /talk sub-routes) are NOT
-  // special, so the page-tools (Edit / Talk / History / What Links Here) render for them.
-  // NOTE: previously this matched every "/wiki/" path, which hid page tools on all
-  // articles since every article lives under /wiki/.
-  const RESERVED_WIKI_SLUGS = new Set([
-    "lorewards",
-    "diff",
-    "watchlist",
-    "search",
-    "random",
-    "repository",
-    "recent-changes",
-    "categories",
-    "whatlinkshere",
-    "user",
-    "history",
-    "contributions",
-  ]);
   const cleanPath = stripBasePath(pathname);
-  const wikiSlugMatch = cleanPath.match(/^\/wiki\/([^/]+)/);
-  const wikiSlug = wikiSlugMatch ? decodeURIComponent(wikiSlugMatch[1]) : null;
-  const isReservedWikiPage = !!wikiSlug && RESERVED_WIKI_SLUGS.has(wikiSlug);
-  const isSpecialNamespace = !!wikiSlug && /^special:/i.test(wikiSlug);
-  const isLibraryRoute =
-    cleanPath === "/blurbs" ||
-    cleanPath.startsWith("/blurbs/") ||
-    cleanPath === "/stashes" ||
-    cleanPath.startsWith("/stashes/");
-  // Not under /wiki/<slug> at all → not an article either.
-  const isSpecialPage =
-    isMainPage || isReservedWikiPage || isSpecialNamespace || isLibraryRoute || !wikiSlug;
+  // Another wiki's page is read-only: no tabs, and none of the article's own tools.
+  const articleRoute = readOnly ? null : getArticleRoute(cleanPath, articleView);
+  const hasArticleTools = !(readOnly || isMainPage || isNonArticlePath(cleanPath));
 
-  const sidebarContent = (
-    <WikiOSUnifiedSidebar
-      activeId={activeId}
-      onSearchClick={() => setSearchOpen(true)}
-      onCreatePageClick={() => setCreatePageOpen(true)}
-      title={activeTitle}
-      slug={slug}
-      isSignedIn={isSignedIn}
-      setActiveModal={setActiveModal}
-      countryData={countryData}
-      isSpecialPage={isSpecialPage}
-      pathname={pathname}
-      sections={sections}
+  const tabs = articleRoute && (
+    <WikiArticleTabs title={articleRoute.title} active={articleRoute.tab} canEdit={isSignedIn} />
+  );
+  const actions = (
+    <WikiPageActions
+      onNewPage={() => setCreatePageOpen(true)}
+      pageTools={{
+        title: activeTitle,
+        isSignedIn,
+        country: countryData,
+        articleTools: hasArticleTools,
+      }}
     />
   );
 
   return (
     <div className="wikios-shell wikios-root">
-      <DashboardSidebarLayout
-        sidebarContent={sidebarContent}
-        showFloatingExpand={false}
-        defaultCollapsed={true}
-        disableCollapse={false}
-        variant="rail"
-        expandedWidthClassName="w-48"
-        expandedWidthStyle="12rem"
-        disableGlobalHover={true}
+      <WikiOSContentWrapper
+        title={hideTitleHeading ? undefined : title}
+        actions={actions}
+        tabs={tabs}
       >
-        <WikiOSContentWrapper title={hideTitleHeading ? undefined : title}>
-          {children}
-        </WikiOSContentWrapper>
-      </DashboardSidebarLayout>
+        {children}
+      </WikiOSContentWrapper>
 
-      <footer className="wikios-main-footer text-muted-foreground/40 mt-16 flex flex-col items-center justify-center gap-3 border-t border-white/5 pt-6 pb-8 text-center text-xs">
-        <div className="flex items-center justify-center gap-1.5">
-          <span>Powered by</span>
-          <Popover>
-            <PopoverTrigger className="cursor-pointer font-bold text-[var(--wikios-text)] underline decoration-dotted transition-colors select-none hover:text-blue-400">
-              WikiOS
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-4 text-left">
-              <PopoverTitle className="mb-1 text-sm font-bold text-[var(--wikios-text)]">
-                About WikiOS
-              </PopoverTitle>
-              <PopoverDescription className="text-xs leading-relaxed text-[var(--wikios-text-muted)]">
-                WikiOS is a next-generation wiki platform built for worldbuilding communities. 
-              </PopoverDescription>
-            </PopoverContent>
-          </Popover>
-          <span>v{WIKIOS_VERSION}</span>
-        </div>
-        <div className="text-muted-foreground/60 flex items-center justify-center gap-4 text-[11px]">
-          <Link href="/terms" className="transition-colors hover:text-amber-400">
-            Terms of Service
-          </Link>
+      <footer className="wikios-main-footer text-label-secondary border-separator text-footnote mt-16 flex flex-col items-center justify-center gap-4 border-t pt-8 pb-10 text-center font-[var(--wikios-font-brand)]">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="group flex cursor-pointer flex-col items-center justify-center gap-2 opacity-80 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none hover:opacity-100">
+              <WikiOSLogomark className="text-label h-7 w-auto transition-transform duration-300" />
+              <div className="text-label-secondary group-hover:text-label-secondary text-caption flex items-center gap-2 font-[var(--wikios-font-brand)]">
+                <span className="text-label-secondary group-hover:text-label font-semibold">
+                  Powered by wikiOS
+                </span>
+                <span className="text-label-secondary">•</span>
+                <span className="text-label-secondary font-medium tabular-nums">
+                  v{WIKIOS_VERSION}
+                </span>
+              </div>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-4 text-left font-[var(--wikios-font-ui)]">
+            <PopoverTitle className="text-headline text-label mb-1 font-[var(--wikios-font-brand)]">
+              About WikiOS
+            </PopoverTitle>
+            <PopoverDescription className="text-footnote text-label-secondary leading-relaxed">
+              WikiOS is the wiki reader and editor for IxStates and other worldbuilding communities.
+            </PopoverDescription>
+          </PopoverContent>
+        </Popover>
+
+        <div className="text-label-secondary text-footnote flex items-center justify-center gap-4 font-[var(--wikios-font-ui)]">
+          <a href={ixstatesHref("/terms")} className="hover:text-yellow transition-colors">
+            Terms of service
+          </a>
           <span>•</span>
-          <Link href="/privacy" className="transition-colors hover:text-amber-400">
-            Privacy Policy
-          </Link>
+          <a href={ixstatesHref("/privacy")} className="hover:text-yellow transition-colors">
+            Privacy policy
+          </a>
         </div>
       </footer>
 
-      {/* Search Modal */}
-      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
-      <CreatePageModal open={createPageOpen} onClose={() => setCreatePageOpen(false)} />
+      {createPageMounted && (
+        <CreatePageModal open={createPageOpen} onClose={() => setCreatePageOpen(false)} />
+      )}
     </div>
   );
 }

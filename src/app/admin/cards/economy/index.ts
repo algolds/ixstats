@@ -1,0 +1,1 @@
+export { EconomyTab } from "./EconomyTab";

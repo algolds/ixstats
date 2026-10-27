@@ -1,0 +1,249 @@
+/**
+ * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially useful
+ * for Docker builds.
+ */
+
+import { resolveBasePath } from "./scripts/setup/base-path.cjs";
+
+// Skip env validation in next.config.js to avoid TypeScript import issues
+// The env validation will be handled by the application at runtime
+// This is a common pattern when using TypeScript env files with JavaScript config files
+
+// The base path (deploy under https://ixwiki.com/projects/ixstates): the rule is shared with the stylesheets' PostCSS
+// pass (scripts/setup/postcss-base-path-urls.cjs), so their font URLs carry the same one.
+const basePath = resolveBasePath();
+const assetPrefix = basePath || undefined;
+
+/** @type {import("next").NextConfig} */
+const config = {
+  // Use the dynamic basePath.
+  basePath: basePath,
+  assetPrefix,
+
+  trailingSlash: false,
+  reactStrictMode: true,
+
+  // Performance optimizations
+  // Prevent webpack from bundling heavy server-only packages (loaded via require at runtime)
+  serverExternalPackages: [
+    "@prisma/client",
+    "prisma",
+    "mysql2",
+    "@xmldom/xmldom",
+    "ioredis",
+  ],
+
+  experimental: {
+    // Enable optimizations for heavy packages (tree-shakes unused exports)
+    optimizePackageImports: [
+      // NOTE: lucide-react removed from here — optimizePackageImports was
+      // incorrectly dropping Link2 and other icons. Next.js production builds
+      // still tree-shake unused lucide icons automatically.
+      "recharts", // 8MB charting library
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-select",
+      "@radix-ui/react-tooltip",
+      "@radix-ui/react-popover",
+      "@clerk/nextjs",
+      "@radix-ui/react-accordion",
+      "@radix-ui/react-collapsible",
+      "@radix-ui/react-hover-card",
+      "@radix-ui/react-scroll-area",
+      "@radix-ui/react-slider",
+      "@radix-ui/react-checkbox",
+      "@radix-ui/react-progress",
+      "@radix-ui/react-label",
+      "@radix-ui/react-slot",
+      "@trpc/client",
+      "@trpc/react-query",
+    ],
+    // Next.js 16 App Router navigation caching optimization
+    staleTimes: {
+      dynamic: 0,
+      static: 180,
+    },
+    // Reduce compilation time & memory footprint
+    esmExternals: true,
+    serverSourceMaps: false,
+  },
+
+
+
+  // TypeScript performance
+  typescript: {
+    ignoreBuildErrors: false,
+    tsconfigPath: "./tsconfig.json",
+  },
+
+  // Build performance
+  productionBrowserSourceMaps: false,
+
+  // Strip console.log in production (keeps errors/warnings)
+  compiler: {
+    removeConsole: {
+      exclude: ["error", "warn"],
+    },
+  },
+
+  // Prevent unrelated sibling workspace directories from polluting Turbopack/webpack build graphs.
+  webpack(config) {
+    if (config.resolve) {
+      config.resolve.symlinks = false;
+    }
+
+    if (!config.watchOptions) {
+      config.watchOptions = {};
+    }
+
+    const existingIgnored = config.watchOptions.ignored || [];
+    config.watchOptions.ignored = [
+      existingIgnored,
+      /[\\/]odysseus[\\/]/,
+      /[\\/]odysseus[\\/]venv[\\/]/,
+    ].flat();
+
+    return config;
+  },
+
+  turbopack: {},
+
+  // Compression enabled by default in production (60-70% payload reduction)
+  compress: process.env.NODE_ENV === "production",
+
+  // Production optimizations
+  poweredByHeader: false, // Remove X-Powered-By header
+
+  // Output standalone for Docker/production deployment
+  output: process.env.NODE_ENV === "production" ? "standalone" : undefined,
+
+  // It's good practice to keep your image domains defined.
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "localhost",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "upload.wikimedia.org",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "ixwiki.com",
+      },
+      {
+        protocol: "https",
+        hostname: "iiwiki.com",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.discordapp.com",
+      },
+      {
+        protocol: "https",
+        hostname: "media.discordapp.net",
+      },
+      // Note: NationStates images are now proxied through /api/proxy-ns-image
+      // to bypass hotlinking restrictions, so no NS domains needed here
+    ],
+    // Only the bundled top-level images in public/images (the setup intro) go through the
+    // optimizer; user uploads under /images/uploads and API routes stay out of it
+    localPatterns: [
+      { pathname: "/images/*", search: "" },
+      ...(basePath ? [{ pathname: `${basePath}/images/*`, search: "" }] : []),
+    ],
+    formats: ["image/avif", "image/webp"],
+    // No SVG through the optimizer: next/image serves an .svg src unoptimized on its own
+    dangerouslyAllowSVG: false,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+  },
+
+  async rewrites() {
+    // /@username is the canonical passport URL; it renders the /id/[username] page.
+    // /r/realm/@username is the realm passport; a folder named @x would be a parallel-route slot, so
+    // it renders /r/[realm]/(region)/u/[username].
+    const passportRewrites = [
+      {
+        source: "/@:username",
+        destination: "/id/:username",
+      },
+      {
+        source: "/r/:realm/@:username",
+        destination: "/r/:realm/u/:username",
+      },
+    ];
+
+    const baseRewrites = [
+      ...passportRewrites,
+      // In development (basePath is empty), rewrite production base path routes to root
+      // so that dynamic assets (e.g. Discord images, uploads) load correctly in dev.
+      ...(basePath ? [] : [{ source: "/projects/ixstates/:path*", destination: "/:path*" }]),
+    ];
+
+    if (process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true") {
+      return {
+        beforeFiles: [
+          ...passportRewrites,
+          {
+            // Map root-level slugs to countries/[slug] for standalone mode
+            // Exclude all top-level app routes so existing pages are not intercepted
+            source:
+              "/:slug((?!admin|api|blurbs|builder|countries|dashboard|data|dm-dashboard|explore|favicon\\.ico|feed|flags|fonts|hashtags|health|help|images|leaderboards|maps|messages|myclub|mycountry|myleague|placeholder|settings|setup|sign-in|sign-up|sounds|stashes|studio|thinkpages|vault|w|wiki|_next).*)",
+            destination: "/countries/:slug",
+          },
+        ],
+        fallback: baseRewrites,
+      };
+    }
+
+    return baseRewrites;
+  },
+
+  async headers() {
+    return [
+      {
+        source: "/api/trpc/geo.:path*",
+        headers: [
+          // Let React Query control caching — HTTP cache caused stale data for up to 1hr
+          { key: "Cache-Control", value: "no-cache" },
+        ],
+      },
+      {
+        source: "/images/uploads/:path*",
+        headers: [
+          // User uploads (SVG included) are served from the app origin: sandbox them so a sanitizer miss is not XSS
+          {
+            key: "Content-Security-Policy",
+            value: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox",
+          },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+        ],
+      },
+    ];
+  },
+};
+
+// Bundle analyzer (enabled via ANALYZE=true environment variable)
+// Run: ANALYZE=true bun run build
+let analyzerConfig = config;
+try {
+  const withBundleAnalyzer = (await import("@next/bundle-analyzer")).default;
+  analyzerConfig = withBundleAnalyzer({
+    enabled: process.env.ANALYZE === "true",
+    openAnalyzer: false,
+  })(config);
+} catch {
+  // @next/bundle-analyzer not installed — skip
+}
+
+export default analyzerConfig;

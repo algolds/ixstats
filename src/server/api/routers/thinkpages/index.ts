@@ -8,20 +8,19 @@
  *  - accounts:   ThinkPages account/profile CRUD
  *  - posts:      posts, reactions, bookmarks, flags, pins
  *  - feed:       trending topics, country mood, citizen reactions, Discord topic/emojis
- *  - thinktanks: ThinkTank groups, members, messages, documents
- *  - messaging:  ThinkShare DM conversations, messages, presence
+ *  - thinktanks: ThinkTank groups, members, documents
+ *
+ * DM conversations live under `api.messages.*` (the legacy `messaging` adapter was removed, plan 341).
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { thinkpagesAccountsRouter } from "./accounts";
 import { thinkpagesPostsRouter } from "./posts";
 import { thinkpagesFeedRouter } from "./feed";
 import { thinkpagesThinktanksRouter } from "./thinktanks";
-import { thinkpagesMessagingRouter } from "./messaging";
 
 export const thinkpagesRouter = mergeRouters(
   thinkpagesAccountsRouter,
   thinkpagesPostsRouter,
   thinkpagesFeedRouter,
-  thinkpagesThinktanksRouter,
-  thinkpagesMessagingRouter
+  thinkpagesThinktanksRouter
 );

@@ -64,7 +64,7 @@ export function WaveformVisualizer({
             height={barHeight}
             rx={1.5}
             ry={1.5}
-            className="transition-all duration-150"
+            className="transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150"
             fill={isPlayed ? "var(--color-primary, #f97316)" : "currentColor"}
             opacity={isPlayed ? 1 : 0.25}
           />

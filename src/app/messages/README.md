@@ -1,20 +1,20 @@
 # Messages (ThinkShare)
 
-**Last updated:** June 2026
+**Last updated:** September 2026
 
 Unified messaging backbone for IxStats. ThinkShare is a sub-system of ThinkPages and serves as the platform-wide messaging surface at `/messages`, consolidating personal DMs, ThinkTank group chats, diplomatic/official conversations, and system alerts into a single inbox backed by one set of `thinkshareConversation` data models.
 
 ## Routes
 
-The page is a catch-all (`[[...folder]]`) rendered by `MessagesRouter`, which uses client-side `history.pushState` navigation (no Next.js route transitions). The active folder is derived from the pathname via `getFolderFromPathname`.
+The page is rendered by `MessagesRouter`, which handles unified messaging across direct, diplomatic, community, and system channels.
 
 | Route | Folder | Purpose |
-|-------|--------|---------|
-| `/messages` | `conversations` | All chat conversations (default) |
-| `/messages/system` | `system` | System alerts / notifications |
-| `/messages/groups` | `groups` | ThinkTank group directory + group chats |
+|---|---|---|
+| `/messages` | `conversations` | All direct, diplomatic, wiki & system messages (with pinned System Messages & LoreBot WikiOS feed) |
 
-A `?conversation=<id>` query param deep-links a specific conversation (consumed then cleared from the URL).
+The page lives at `src/app/messages/[[...folder]]/page.tsx`; `conversations` is currently the only entry in `MESSAGE_FOLDERS`.
+
+A `?conversation=<id>` query param deep-links a specific conversation (consumed then cleared from the URL). ThinkTank group collaboration is now hosted in its own dedicated workspace at `/thinktanks`.
 
 ## Key Features
 
@@ -23,25 +23,28 @@ A `?conversation=<id>` query param deep-links a specific conversation (consumed 
 | Direct messages | 1:1 `direct` conversations; existing direct convos are de-duplicated on create |
 | Group chats | `group` type; a direct convo is auto-upgraded to a group when a participant is added |
 | Conversation types | `personal`, `diplomatic`, `official` (with classification, priority, channel type for diplomatic) |
-| Sources | `thinkshare`, `thinktank`, `diplomatic`, `wiki`, `forum`, `system` |
+| System broadcasts | Pinned `System Messages` thread for official platform bulletins and simulation updates |
+| LoreBot feed | Pinned `LoreBot` official account with gold Crown/Official badge for real-time WikiOS recent changes, user watchlist updates & stash dispatches |
+| Storage & auto-pruning | Artificial cap of **1,000 messages** for default users before oldest messages are auto-pruned (admin & premium accounts exempt) |
+| Sources | `thinkshare`, `diplomatic`, `wiki`, `forum`, `system` |
 | Realtime | Socket.IO live message/typing/presence/read updates with optimistic cache patching |
 | Reactions | Add/remove emoji reactions per message |
 | Edit / delete | Messages can be edited and deleted in place |
 | Replies & mentions | `replyToId` threading and `@mention` arrays on send |
 | Attachments | File/image attachments; Stash link attachments via `MessagesStashAttachmentModal` |
 | Per-user state | Mute and archive lists, plus message settings, persisted in `localStorage` |
-| Folder counts | Unread badge counts per folder from the server |
+| Folder counts | Unread badge counts from the server |
 
 ## Architecture
 
 | Component / Hook | Role |
 |------------------|------|
-| `MessagesRouter` (`src/components/messages/`) | Orchestrator: folder/conversation state, mutations, WebSocket wiring; wrapped in `AuthenticationGuard` |
+| `MessagesRouter` (`src/components/messages/`) | Orchestrator: conversation state, mutations, WebSocket wiring; wrapped in `AuthenticationGuard` |
 | `MessagesLayout` | Two-pane (conversation list + chat) shell; collapses list when a conversation is open |
-| `MessagesFolderNav` | Folder tabs + settings; exports `MESSAGE_FOLDERS`, `getFolderFromPathname` |
-| `MessagesConversationPanel` / `MessagesConversationCard` | Conversation list, search, selection |
-| `MessagesGroupsPanel` / `MessagesGroupsListPanel` | ThinkTank groups directory and group list |
+| `MessagesFolderNav` | Header bar + settings; exports `MESSAGE_FOLDERS`, `getFolderFromPathname` |
+| `MessagesConversationPanel` / `MessagesConversationCard` | Conversation list, search, selection, channel filters (All, Diplomatic, Direct, Community) |
 | `MessagesChatPanel` / `MessagesChatHeader` / `MessagesBubble` | Active conversation thread, header, message bubbles |
+| `LoreBotFeedView` | Rich media read-only stream for LoreBot WikiOS updates, watchlist & stash dispatches |
 | `MessagesInputBar` | Composer with Stash attachment hook |
 | `MessagesNewConversationModal` / `MessagesAddParticipantsModal` | Create conversation / add participants |
 | `MessagesStashAttachmentModal` | Attach a Stash link (fed by `api.wikios.getStashes` / `getStashItems`) |
@@ -49,7 +52,7 @@ A `?conversation=<id>` query param deep-links a specific conversation (consumed 
 
 **Realtime mechanism:** The client connects via Socket.IO (`socket.io-client`) to path `/ws/thinkpages`. The server side is initialized in `src/lib/websocket/thinkpages-websocket-server.ts` (loaded by `src/server/websocket-server.ts`, production only). Incoming `message:new` / `message:updated` / `message:deleted` events are applied optimistically to the tRPC query cache (`utils.messages.getConversationMessages.setData`), and folder counts/list previews are updated without a full refetch. Typing and presence are emitted/received over the same socket.
 
-The layout (`src/app/messages/layout.tsx`) wraps content in `DashboardSidebarLayout` and forces dynamic rendering.
+The layout (`src/app/messages/layout.tsx`) wraps content in `DashboardColumn` and forces dynamic rendering.
 
 ## Data Sources
 
@@ -65,17 +68,18 @@ All messaging data flows through the `api.messages` tRPC router (`src/server/api
 | `messages.editMessage` / `deleteMessage` | Edit / delete a message |
 | `messages.addReaction` / `removeReaction` | Message reactions |
 | `messages.addParticipant` / `leaveConversation` | Manage participants |
-| `messages.markMessagesAsRead` | Read receipts |
+| `messages.markMessagesAsRead` / `markAllAsRead` | Read receipts |
+| `messages.getConversation` | Single conversation detail |
+| `messages.sendAdminBroadcast` / `sendAdminMessage` | Admin-only system broadcasts and direct admin messages |
 | `messages.searchUsers` | Participant search for new conversations |
 | `messages.clearAllSystemNotifications` | Clear the system-alerts folder |
-| `messages.syncDiscussions` | Pull wiki talk-page + forum discussions into the inbox |
 | `wikios.getStashes` / `wikios.getStashItems` | Stash attachment picker |
 
 Router source files: `conversations.ts`, `messaging.ts`, `participants.ts`, `index.ts`.
 
 ## Connections
 
-- **ThinkPages** — ThinkShare is a sub-system of ThinkPages (see `docs/systems/social.md`); ThinkTank groups appear in the `groups` folder.
+- **ThinkPages** — ThinkShare is a sub-system of ThinkPages (see `docs/systems/social.md`); ThinkTank groups live in their own workspace at `/thinktanks` (each group has a linked `ThinkshareConversation`, but there is no `groups` folder in `/messages`).
 - **Diplomacy / official messaging** — `diplomatic` and `official` conversation types carry classification (`PUBLIC`…`TOP_SECRET`), priority, and channel type (`BILATERAL`/`MULTILATERAL`/`EMERGENCY`), unifying official channels into the same inbox.
-- **Wiki & Forum** — `syncDiscussions` bridges wiki talk pages and forum threads into conversations (`wiki` / `forum` sources).
+- **Wiki & Forum** — conversations can carry `wiki` / `forum` sources. The messaging service still has a `syncDiscussions` method (`src/server/modules/messaging/`), but its `messages.syncDiscussions` tRPC procedure was removed on 2026-09-27 (plan 312, zero callers), so nothing currently triggers the sync from the UI.
 - **Stash** — message composer can attach Stash links from WikiOS.

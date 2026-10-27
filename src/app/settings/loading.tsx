@@ -1,6 +1,1 @@
-"use client";
-import { GlobalLoader } from "../../components/ui/loader";
-
-export default function Loading() {
-  return <GlobalLoader />;
-}
+export { RootLoading as default } from "~/app/_components/RootLoading";

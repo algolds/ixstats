@@ -1,5 +1,5 @@
 /**
- * Projection Transition Utility (Plan 110: Globe-to-2D Projection Blend)
+ * Projection Transition Utility
  *
  * Provides camera-driven smooth linear interpolation between 3D Globe projection
  * and 2D Mercator projection without view juts.
@@ -8,7 +8,7 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { ProjectionMode } from "~/lib/maps/map-config";
 
-export interface ProjectionSpec {
+interface ProjectionSpec {
   type: string | unknown[];
 }
 
@@ -16,7 +16,7 @@ export interface ProjectionSpec {
  * Returns a continuous interpolated projection spec for dynamic mode
  * that smoothly transitions between globe (z <= 2.5) and mercator (z >= 5.5).
  */
-export function getInterpolatedProjectionSpec(mode: ProjectionMode): ProjectionSpec {
+function getInterpolatedProjectionSpec(mode: ProjectionMode): ProjectionSpec {
   switch (mode) {
     case "globe":
       return { type: "globe" };

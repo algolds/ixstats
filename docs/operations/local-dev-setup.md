@@ -1,6 +1,14 @@
 # Comprehensive WSL2 Local Development Setup Guide
 
+**Last updated:** 2026-10-05
+
 Welcome to the IxStates local development guide. This document details how to set up, configure, and run the entire development stack on your local Windows machine using Windows Subsystem for Linux (WSL2), Docker, and SSH port forwarding.
+
+> **Two paths.** Contributors start from an **empty local database** built from the repository alone
+> ([Part 4](#part-4--create-the-local-database)); no production access is needed. The SSH tunnels, the
+> configuration copied from the VPS and the production dump (Parts 2, 3 Step 2b and 6) are for maintainers with
+> access to the production server. On macOS or Linux, skip the WSL steps of Part 1 and install Docker, Node and Bun
+> directly.
 
 ---
 
@@ -98,9 +106,9 @@ node --version && bun --version
 
 ---
 
-## Part 2 — SSH and Tunnels Configuration
+## Part 2 — SSH and Tunnels Configuration (maintainers)
 
-OpenSSH inside WSL is the primary utility to establish tunnels, transfer files via `scp`, and pull production DB backups.
+You need this only with access to the production VPS. OpenSSH inside WSL is the primary utility to establish tunnels, transfer files via `scp`, and pull production DB backups.
 
 ### Step 1 — Key Generation
 Generate your SSH keys locally in WSL (if not already done) and upload the public key to the production VPS:
@@ -130,16 +138,26 @@ This config allows you to run `ssh ixwiki` to open a shell and automatically spi
 ## Part 3 — Cloning & Configuration Sync
 
 ### Step 1 — Clone the Repository
-Inside WSL, clone the repository into your home directory and switch to the active `v2` branch:
+Inside WSL, clone the repository into your home directory and switch to your working branch: `development` (junior
+devs; stable but experimental) or `rose-garden` (the maintainer's nightly branch). See
+[contributing.md](../processes/contributing.md#branches).
 ```bash
 mkdir -p ~/projects && cd ~/projects
 git clone https://github.com/algolds/ixstats.git
-cd ixstats && git checkout v2
+cd ixstats && git checkout development
 git config core.autocrlf input
 ```
 
-### Step 2 — Fetch Gitignored Configuration Files
-Since environment, editor settings, sub-project TypeScript definitions, and tooling configuration files are excluded from git tracking, copy them over SSH from the VPS:
+### Step 2 — Environment file
+Copy the template and fill in your own Clerk development keys (from a Clerk dev instance):
+```bash
+cp .env.example .env.local
+```
+`.env.example` lists every variable `src/env.ts` declares (a test keeps it complete), and its `DATABASE_URL` and
+`REDIS_URL` already match `docker-compose.dev.yml`.
+
+### Step 2b — Fetch Gitignored Configuration Files (maintainers)
+Environment files, editor settings, Docker specs and several tooling configs are gitignored (see `.gitignore`), so copy them over SSH from the VPS. The `tsconfig*.json` files, `prisma.config.ts`, `.oxlintrc.json` and `bun.lock` are tracked in git, so do not overwrite them from the server:
 ```bash
 cd ~/projects/ixstats
 
@@ -152,9 +170,8 @@ scp ixwiki:"/ixwiki/public/projects/ixstats/.env.local.dev" .
 scp ixwiki:"/ixwiki/public/projects/ixstats/docker-compose.yml" .
 scp -r ixwiki:"/ixwiki/public/projects/ixstats/docker" .
 
-# Copy sibling JS/TS toolchain configs, sub-project tsconfigs, and lockfiles
-scp ixwiki:"/ixwiki/public/projects/ixstats/{prisma.config.ts,c15t-backend.config.ts,next.config.js,eslint.config.js,postcss.config.js,prettier.config.js,components.json,bunfig.toml,opencode.json,skills-lock.json}" .
-scp ixwiki:"/ixwiki/public/projects/ixstats/tsconfig.*.json" .
+# Copy gitignored JS/TS toolchain configs (skip any the server does not have)
+scp ixwiki:"/ixwiki/public/projects/ixstats/{eslint.config.js,prettier.config.js,components.json,bunfig.toml}" .
 
 # Copy editor workspace settings
 scp -r ixwiki:"/ixwiki/public/projects/ixstats/.vscode" .
@@ -162,7 +179,29 @@ scp -r ixwiki:"/ixwiki/public/projects/ixstats/.vscode" .
 
 ---
 
-## Part 4 — Database Modes & Local Edits
+## Part 4 — Create the local database
+
+The supported way to get a working database without production access:
+
+```bash
+docker compose -f docker-compose.dev.yml up -d   # PostgreSQL 16 + PostGIS on 5433, Redis on 6379
+bun run db:setup                                 # db:generate, then db:bootstrap
+bun run dev                                      # http://localhost:3000
+```
+
+`bun run db:bootstrap` (`scripts/setup/bootstrap-dev-db.ts`) enables PostGIS (`CREATE EXTENSION postgis`), pushes the
+Prisma schema, installs the map geometry sync triggers `db push` cannot create
+(`prisma/migrations/20261007_map_geometry_sync_triggers.sql`) and runs the reference-catalog seeds. It refuses to run when `NODE_ENV` is `production`, when
+`DATABASE_URL` points at a non-local host (unless `--allow-remote`), or when the database already holds countries or
+users. `bun run dev:db` (setup, then dev) and `bun run fresh` (clean reinstall, then setup) use the same path.
+
+Then:
+
+1. Sign in, and create a nation in the app at `/builder`. The bootstrap seeds no countries.
+2. To become an admin, add your Clerk user id to `SYSTEM_OWNER_IDS` in `.env.local` and run
+   `bun run set-admin-role`.
+
+## Part 5 — Database Modes & Local Edits
 
 The local Next.js dev server supports two distinct database connection modes depending on how you edit your environment files:
 
@@ -171,10 +210,10 @@ To create countries, manage sports clubs, trade cards, or save stashes, configur
 1. Create or edit `.env.local` (or modify `.env.local.dev`) in the repository root:
    ```ini
    DATABASE_READONLY="false"
-   DATABASE_URL="postgresql://postgres:kxslIz4cICVDon%2FqwP2yrUzOKjtsryQDt9d28hmMjlk%3D@localhost:5433/ixstats?connection_limit=5"
+   DATABASE_URL="postgresql://postgres:PASSWORD@localhost:5433/ixstats?connection_limit=5"
    ```
    *(Note: The password is URL-encoded and connects as the `postgres` superuser on your local Docker container).*
-2. Under this mode, any database updates and codebase schema changes (like `v2` additions) are automatically pushed and synchronized on server boot.
+2. Under this mode, `bun run dev` (`start-development.sh`) runs `bun run db:push:force` on boot whenever a `prisma/schema/*.prisma` file is newer than `.prisma/.schema-push-stamp`, so pulling a schema change updates your local database (set `SKIP_DB_PUSH=1` to skip it).
 
 ### Mode B: Read-Only Mode (Production Replica Inspection)
 To inspect production data securely without making modifications:
@@ -183,34 +222,34 @@ To inspect production data securely without making modifications:
    DATABASE_READONLY="true"
    DATABASE_URL="postgresql://ixstats_readonly:PASSWORD@localhost:5433/ixstats"
    ```
-2. Create the `ixstats_readonly` user credentials inside your local docker container:
+2. Create the `ixstats_readonly` login role inside your local docker container (`./scripts/refresh-local-db.sh` also creates it if it is missing — with login only when `IXSTATS_READONLY_PASSWORD` is set, e.g. `IXSTATS_READONLY_PASSWORD='…' ./scripts/refresh-local-db.sh`). Use the password from your `.env.local.dev`; never paste it into docs:
    ```bash
-   docker exec -it ixstats-postgres psql -U postgres -d ixstats -c "CREATE ROLE ixstats_readonly WITH LOGIN PASSWORD 'Q9ul7FneYGI4vT/s1/jkIokTH97nuZ8Xk9qnmIVMgVs=';"
+   docker exec -it ixstats-postgres psql -U postgres -d ixstats -c "CREATE ROLE ixstats_readonly WITH LOGIN PASSWORD '<password from .env.local.dev>';"
    ```
-3. Under this mode, all write actions and `db push` schema migrations are blocked.
+3. Under this mode (`DATABASE_READONLY="true"`), the Prisma client blocks writes and `start-development.sh` skips its `db push`.
 
 ---
 
-## Part 5 — Automated Workflow Scripts
+## Part 6 — Automated Workflow Scripts (maintainers)
 
-Two primary automation scripts are mapped in `package.json` to simplify daily WSL development:
+Three automation scripts simplify daily WSL development. The first two need SSH access to the production server.
 
 ### 1. Unified Development Bootstrapper (`bun run dev:local`)
 Instead of running Docker, SSH, and Next.js separately, run:
 ```bash
 bun run dev:local
 ```
-This runs the internal [dev-local.sh](file:///ixwiki/public/projects/ixstats/scripts/dev-local.sh) script, which:
-- Starts your background OpenSSH tunnels to `ixwiki`.
-- Spins up local Docker Postgres (`5433`) and Redis (`6379`) containers.
-- Pulls and restores the latest production database dump.
+This runs the internal [dev-local.sh](../../scripts/dev-local.sh) script, which:
+- Opens a background OpenSSH master connection to `ixwiki` (which brings up the `LocalForward` tunnels).
+- Runs `docker compose up -d` for the local Postgres (`5433`) container; `start-development.sh` then starts the `ixstats-redis-cache` Redis container (`6379`) via `scripts/setup-redis.sh`.
+- Pulls and restores a production database dump **only** when you pass `--sync-db` (or `-s`) or the local `ixstats` database does not exist yet; otherwise it keeps your existing local data.
 - **Rsyncs Gitignored Static Assets:** Automatically runs `rsync` to sync flags, fonts, textures, sounds, and public images from the VPS, excluding uploads to save bandwidth.
-- **Runs Schema Reconciler:** Automatically runs `db:push:force` (if running in Write Mode) to align the DB schema with the codebase.
-- Launches the Next.js dev server on `http://localhost:3000` (Turbopack).
+- **Runs Schema Reconciler:** Hands off to `start-development.sh`, which runs `db:push:force` (Write Mode only) when the schema changed or the dump was just restored.
+- Launches the Next.js dev server on `http://localhost:3000` (Turbopack) via `start-development.sh`.
 - Cleans up and kills background OpenSSH tunnel processes gracefully on exit (`Ctrl+C`).
 
 ### 2. Manual Data Refresh (`./scripts/refresh-local-db.sh`)
-To fetch fresh production database dumps and sync static assets without restarting the dev server:
+To fetch a fresh production database dump, sync static assets, run `db:push:force` and the WikiOS integrity check without restarting the dev server:
 ```bash
 ./scripts/refresh-local-db.sh
 ```
@@ -220,12 +259,12 @@ Run code quality checks and push local work to staging/production in one line:
 ```bash
 bun run deploy:local
 ```
-This script runs the [deploy-local.sh](file:///ixwiki/public/projects/ixstats/scripts/deploy-local.sh) wrapper, which:
+This script runs the [deploy-local.sh](../../scripts/deploy-local.sh) wrapper, which:
 - Verifies code formatting with Prettier (`bun run format:check`).
-- Runs strict ESLint checks (`bun run lint:strict`).
-- Runs unit and integration tests (`bun run test`).
-- Pushes the active branch to GitHub.
-- Logs into the VPS and executes the deployment script.
+- Runs Oxlint (`bun run lint`).
+- Runs the Jest suite (`bun run test`).
+- Pushes the active branch to GitHub (`origin`).
+- Logs into the VPS and runs `./scripts/deploy-production.sh`, which deploys the **server** checkout's branch (not necessarily the branch you just pushed) and refuses anything but `master` unless `ALLOW_NON_MASTER_DEPLOY=1` is set (for rollbacks only).
 
 ---
 
@@ -238,7 +277,7 @@ Because `public/` files are gitignored. Run `bun run dev:local` or `./scripts/re
 This means another shell or a Windows app (like PuTTY or WSL session) is already forwarding these ports. You can ignore this warning; the dev server will successfully route traffic over the existing tunnels.
 
 #### 3. Error: `DATABASE_URL is not configured` during prisma commands
-Prisma 6 does not autoload `.env` variables if a config file (`prisma.config.ts`) is present. Sourcing environment variables via `set -a && source .env && set +a` exports the variables to the terminal environment first. Our automation scripts handle this internally.
+Prisma 6 does not autoload `.env` files when a config file is present, so `prisma.config.ts` loads them itself: when `DATABASE_URL` is unset it reads `.env.local.dev`, then `.env.local`, then `.env`, stopping at the first that sets it. If you still see this error, none of those files sets `DATABASE_URL`; add it to `.env.local` (see Part 3 Step 2).
 
 #### 4. The `vmmem` process is consuming too much Windows RAM
 WSL's virtualization process can grow large. You can restrict it by adjusting the `memory=` cap inside `C:\Users\<YourUsername>\.wslconfig` and executing `wsl --shutdown` in PowerShell to clear the cache.

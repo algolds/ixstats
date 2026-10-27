@@ -1,16 +1,20 @@
+import { copyIdsOf } from "~/lib/cards/hub/art-visibility";
+import { unlockCardsTx } from "~/lib/vault/trade-settlement";
 import { db } from "~/server/db";
-import { IxTime } from "~/lib/ixtime";
 
 /**
  * Process all expired pending trades every 5 minutes
- * - Unlocks initiator's locked cards
- * - Marks trade as EXPIRED
+ * - Marks a trade EXPIRED iff it is still pending and expired (an accept, a cancel or a counter-offer that got there
+ *   first leaves it alone; a counter restarts the clock)
+ * - Only then unlocks the proposer's locked cards, those still theirs: a card the trade no longer holds keeps any
+ *   lock it has since taken (a listing, another trade)
  */
 export async function processExpiredTrades() {
   const startTime = Date.now();
   console.log("[CRON] Checking for expired trades at", new Date().toISOString());
 
-  const now = IxTime.getCurrentIxTime();
+  // Trades are created and checked against real time (the trade service), not IxTime.
+  const now = Date.now();
 
   try {
     const expiredTrades = await db.tradeOffer.findMany({
@@ -20,6 +24,8 @@ export async function processExpiredTrades() {
       },
       select: {
         id: true,
+        proposerId: true,
+        initiatorId: true,
         initiatorCardIds: true,
         recipientCardIds: true,
       },
@@ -44,17 +50,15 @@ export async function processExpiredTrades() {
     for (const trade of expiredTrades) {
       try {
         await db.$transaction(async (tx) => {
-          const initiatorCardIds = trade.initiatorCardIds as string[];
-
-          await tx.cardOwnership.updateMany({
-            where: { id: { in: initiatorCardIds } },
-            data: { isLocked: false },
-          });
-
-          await tx.tradeOffer.update({
-            where: { id: trade.id },
+          const expired = await tx.tradeOffer.updateMany({
+            where: { id: trade.id, status: "PENDING", expiresAt: { lt: new Date(now) } },
             data: { status: "EXPIRED" },
           });
+          if (expired.count !== 1) return;
+          const locked = copyIdsOf(
+            trade.proposerId === trade.initiatorId ? trade.initiatorCardIds : trade.recipientCardIds
+          );
+          await unlockCardsTx(tx, locked, trade.proposerId);
         });
 
         successCount++;
@@ -95,9 +99,4 @@ export async function processExpiredTrades() {
       errors: [{ tradeId: "GLOBAL", error: String(error) }],
     };
   }
-}
-
-export async function manualTriggerTradeExpiry() {
-  console.log("[MANUAL] Manually triggering trade expiry");
-  return await processExpiredTrades();
 }

@@ -90,7 +90,7 @@ export function rankCultures(name: string): Array<{ culture: string; score: numb
   }).sort((a, b) => b.score - a.score);
 }
 
-export type CultureResult = {
+type CultureResult = {
   culture: string; // single culture, or "A+B" (components sorted), or "mixed"
   compound: boolean;
   components: string[]; // [single] or [A, B]

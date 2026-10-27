@@ -7,11 +7,9 @@
  */
 
 import type { Position, Polygon, MultiPolygon } from "geojson";
-import { getAllRings } from "./border-editor";
+import { getAllRings, rebuildGeometry } from "./border-editor";
 
-// ── Types ──
-
-export type VertexKey = string & { readonly __brand: "VertexKey" };
+type VertexKey = string & { readonly __brand: "VertexKey" };
 
 export interface TopologyRef {
   featureId: string;
@@ -25,13 +23,11 @@ export interface TopologyRef {
  */
 export type TopologyIndex = Map<VertexKey, TopologyRef[]>;
 
-// ── Coordinate quantization & Branded keys ──
-
 /**
  * Quantize a coordinate to given decimal places (~1.1 m precision at 5 decimals) for
  * spatial-hash bucketing.
  */
-export function toVertexKey(coord: Position, precision = 5): VertexKey {
+function toVertexKey(coord: Position, precision = 5): VertexKey {
   return `${coord[0]!.toFixed(precision)},${coord[1]!.toFixed(precision)}` as VertexKey;
 }
 
@@ -39,7 +35,12 @@ export function vkey(coord: Position): VertexKey {
   return toVertexKey(coord, 5);
 }
 
-// ── Index building ──
+/** Whether the last vertex of a non-empty ring repeats the first. */
+function endsMatch(ring: Position[]): boolean {
+  const first = ring[0]!;
+  const last = ring[ring.length - 1]!;
+  return first[0] === last[0] && first[1] === last[1];
+}
 
 /**
  * Build a spatial-hash topology index from a set of polygon features.
@@ -60,12 +61,7 @@ export function buildTopologyIndex(
     for (let ri = 0; ri < rings.length; ri++) {
       const ring = rings[ri]!;
       // Skip the closing vertex (same as ring[0])
-      const len =
-        ring.length > 0 &&
-        ring[0]![0] === ring[ring.length - 1]![0] &&
-        ring[0]![1] === ring[ring.length - 1]![1]
-          ? ring.length - 1
-          : ring.length;
+      const len = ring.length > 0 && endsMatch(ring) ? ring.length - 1 : ring.length;
       for (let vi = 0; vi < len; vi++) {
         const key = vkey(ring[vi]!);
         let bucket = index.get(key);
@@ -81,48 +77,14 @@ export function buildTopologyIndex(
   return index;
 }
 
-// ── Snap assistance ──
-
-/**
- * Snap a point to the nearest indexed vertex if within tolerance (degrees).
- * Prevents micro-slivers and border tearing during province boundary alignment.
- */
-export function snapToNearestVertex(
-  coord: Position,
-  index: TopologyIndex,
-  tolerance = 0.001
-): Position {
-  let closestKey: VertexKey | null = null;
-  let minDistanceSq = tolerance * tolerance;
-
-  for (const key of index.keys()) {
-    const [kLngStr, kLatStr] = (key as string).split(",");
-    const kLng = parseFloat(kLngStr ?? "0");
-    const kLat = parseFloat(kLatStr ?? "0");
-    const dLng = coord[0]! - kLng;
-    const dLat = coord[1]! - kLat;
-    const distSq = dLng * dLng + dLat * dLat;
-
-    if (distSq < minDistanceSq) {
-      minDistanceSq = distSq;
-      closestKey = key;
-    }
-  }
-
-  if (closestKey) {
-    const [lngStr, latStr] = (closestKey as string).split(",");
-    return [parseFloat(lngStr ?? "0"), parseFloat(latStr ?? "0")];
-  }
-
-  return coord;
-}
-
-// ── Cascade moves ──
-
 /**
  * Given a topology index, move every vertex that shares the `oldKey`
  * coordinate to `newCoord`. Returns a map of featureId → updated geometry
  * for every feature that was modified (including the primary feature).
+ *
+ * Only the rings that hold a moved vertex are copied (and only shallowly);
+ * every other ring, and every other vertex, is shared with the input, so the
+ * inputs stay untouched and undo entries can keep them.
  *
  * **Mutates the index** to keep it in sync (moves refs from oldKey to newKey).
  * Callers should hold a single index ref per editing session.
@@ -138,64 +100,44 @@ export function cascadeMoveVertex(
   const updated = new Map<string, Polygon | MultiPolygon>();
   if (!refs || refs.length === 0) return updated;
 
+  const moved = (): Position => [newCoord[0]!, newCoord[1]!];
+  // Each feature's rings as edited so far, and which of them are already private copies
+  const edited = new Map<string, { rings: Position[][]; copied: Set<number> }>();
+
   for (const ref of refs) {
-    // Get or clone the geometry
-    let geom = updated.get(ref.featureId);
-    if (!geom) {
-      const src = geometries.get(ref.featureId);
-      if (!src) continue;
-      geom = JSON.parse(JSON.stringify(src)) as Polygon | MultiPolygon;
+    const original = geometries.get(ref.featureId);
+    if (!original) continue;
+    const originalRings = getAllRings(original);
+    const originalRing = originalRings[ref.ringIndex];
+    if (!originalRing || ref.vertexIndex >= originalRing.length) continue;
+
+    let entry = edited.get(ref.featureId);
+    if (!entry) {
+      entry = { rings: [...originalRings], copied: new Set() };
+      edited.set(ref.featureId, entry);
     }
-
-    const rings = getAllRings(geom);
-    const ring = rings[ref.ringIndex];
-    if (!ring || ref.vertexIndex >= ring.length) continue;
-
-    // Move the vertex
-    ring[ref.vertexIndex] = [newCoord[0]!, newCoord[1]!];
-
-    // Maintain ring closure: if we moved vertex 0, also update the last vertex
-    if (ref.vertexIndex === 0 && ring.length > 1) {
-      // Check if the ring was closed (last === first before move)
-      const origFirst = geometries.get(ref.featureId);
-      if (origFirst) {
-        const origRings = getAllRings(origFirst);
-        const origRing = origRings[ref.ringIndex];
-        if (origRing && origRing.length > 1) {
-          const of = origRing[0]!;
-          const ol = origRing[origRing.length - 1]!;
-          if (of[0] === ol[0] && of[1] === ol[1]) {
-            ring[ring.length - 1] = [newCoord[0]!, newCoord[1]!];
-          }
-        }
-      }
+    if (!entry.copied.has(ref.ringIndex)) {
+      entry.rings[ref.ringIndex] = [...originalRing];
+      entry.copied.add(ref.ringIndex);
     }
-    // If we moved the last vertex and ring was closed, sync first vertex
-    if (ref.vertexIndex === ring.length - 1 && ring.length > 1) {
-      const origSrc = geometries.get(ref.featureId);
-      if (origSrc) {
-        const origRings = getAllRings(origSrc);
-        const origRing = origRings[ref.ringIndex];
-        if (origRing && origRing.length > 1) {
-          const of2 = origRing[0]!;
-          const ol2 = origRing[origRing.length - 1]!;
-          if (of2[0] === ol2[0] && of2[1] === ol2[1]) {
-            ring[0] = [newCoord[0]!, newCoord[1]!];
-          }
-        }
-      }
-    }
+    const ring = entry.rings[ref.ringIndex]!;
+    ring[ref.vertexIndex] = moved();
 
-    updated.set(ref.featureId, geom);
+    // Keep a closed ring closed: moving the first vertex moves the last, and vice versa
+    if (originalRing.length > 1 && endsMatch(originalRing)) {
+      if (ref.vertexIndex === 0) ring[ring.length - 1] = moved();
+      if (ref.vertexIndex === ring.length - 1) ring[0] = moved();
+    }
+  }
+  for (const [featureId, { rings }] of edited) {
+    updated.set(featureId, rebuildGeometry(geometries.get(featureId)!, rings));
   }
 
-  // Update the index: migrate refs from oldKey to newKey
+  // Migrate refs from the old key to the new one
   const newKey = vkey(newCoord);
   if (vKey !== newKey) {
-    const movedRefs = index.get(vKey) || [];
     index.delete(vKey);
-    const existing = index.get(newKey) || [];
-    index.set(newKey, [...existing, ...movedRefs]);
+    index.set(newKey, [...(index.get(newKey) || []), ...refs]);
   }
 
   return updated;

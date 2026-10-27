@@ -1,0 +1,31 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": ".next/cache/tsbuildinfo.server",
+    "incremental": true
+  },
+  "include": [
+    "src/server",
+    "src/lib",
+    "src/shared",
+    "src/schemas",
+    "src/modules",
+    "src/env.ts"
+  ],
+  "exclude": [
+    "src/app",
+    "src/components",
+    "src/hooks",
+    "src/stores",
+    "src/contexts",
+    "src/context",
+    "src/styles",
+    "**/node_modules",
+    "**/.*",
+    ".next",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ]
+}

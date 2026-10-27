@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { cachedPublicProcedure, adminProcedure } from "~/server/api/trpc";
+import { cachedPublicProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { TRPCError } from "@trpc/server";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import type { FeatureCollection, Feature, Geometry } from "geojson";
+import type { Geometry } from "geojson";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { truncateGeometry } from "~/lib/maps/geojson-compress";
 
@@ -13,6 +13,8 @@ export const countryProcedures = {
         featureId: z.string().optional(),
         countryName: z.string().optional(),
         countryId: z.string().optional(),
+        /** featureId and countryName are only unique within a realm (ruling E-i). */
+        ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
@@ -45,6 +47,7 @@ export const countryProcedures = {
             layerType: "political",
             featureId: input.featureId,
             isActive: true,
+            realmId: await viewerRealmId(ctx, input.realm),
           },
           include: {
             country: {
@@ -59,6 +62,7 @@ export const countryProcedures = {
             layerType: "political",
             displayName: { contains: input.countryName, mode: "insensitive" as const },
             isActive: true,
+            realmId: await viewerRealmId(ctx, input.realm),
           },
           include: {
             country: {
@@ -68,12 +72,8 @@ export const countryProcedures = {
         });
       }
 
-      if (!mapLayer) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Country not found`,
-        });
-      }
+      // A nation without drawn territory has no geometry yet: that is a state, not an error.
+      if (!mapLayer) return null;
 
       const rawC = mapLayer.centroid as
         [number, number] | { coordinates?: [number, number] } | null;
@@ -166,42 +166,48 @@ export const countryProcedures = {
   /**
    * Get map statistics (admin dashboard).
    */
-  getCapitalCities: cachedPublicProcedure.query(async ({ ctx }) => {
-    const capitals = await ctx.db.city.findMany({
-      where: { isNationalCapital: true, status: "approved" },
-      select: {
-        id: true,
-        name: true,
-        coordinates: true,
-        population: true,
-        wikiPageTitle: true,
-        countryId: true,
-        country: { select: { name: true, slug: true } },
-      },
-    });
+  getCapitalCities: cachedPublicProcedure
+    .input(realmScopeInput.optional())
+    .query(async ({ ctx, input }) => {
+      const capitals = await ctx.db.city.findMany({
+        where: {
+          isNationalCapital: true,
+          status: "approved",
+          country: { realmId: await viewerRealmId(ctx, input?.realm) },
+        },
+        select: {
+          id: true,
+          name: true,
+          coordinates: true,
+          population: true,
+          wikiPageTitle: true,
+          countryId: true,
+          country: { select: { name: true, slug: true } },
+        },
+      });
 
-    return {
-      type: "FeatureCollection" as const,
-      features: capitals
-        .filter((c) => Array.isArray(c.coordinates) && (c.coordinates as number[]).length >= 2)
-        .map((c) => {
-          const coords = c.coordinates as [number, number];
-          return {
-            type: "Feature" as const,
-            geometry: { type: "Point" as const, coordinates: coords },
-            properties: {
-              id: c.id,
-              name: c.name,
-              countryId: c.countryId,
-              countryName: c.country.name,
-              countrySlug: c.country.slug,
-              population: c.population,
-              wikiPageTitle: c.wikiPageTitle,
-            },
-          };
-        }),
-    };
-  }),
+      return {
+        type: "FeatureCollection" as const,
+        features: capitals
+          .filter((c) => Array.isArray(c.coordinates) && (c.coordinates as number[]).length >= 2)
+          .map((c) => {
+            const coords = c.coordinates as [number, number];
+            return {
+              type: "Feature" as const,
+              geometry: { type: "Point" as const, coordinates: coords },
+              properties: {
+                id: c.id,
+                name: c.name,
+                countryId: c.countryId,
+                countryName: c.country.name,
+                countrySlug: c.country.slug,
+                population: c.population,
+                wikiPageTitle: c.wikiPageTitle,
+              },
+            };
+          }),
+      };
+    }),
 
   /**
    * Run conflict detection for a country's map features.
@@ -229,22 +235,6 @@ export const countryProcedures = {
       };
     }),
 
-  // ──────────────────────────────────────────────
-  // SVG Upload & Processing Pipeline
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // World Template / Clone System (Phase 3)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // Procedural World Generation (Phase 4)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Pipeline Endpoints
-  // ──────────────────────────────────────────────
-
   /**
    * Get shared vertices for a specific feature (used by border editor).
    */
@@ -264,7 +254,8 @@ export const countryProcedures = {
         return [];
       }
 
-      // Use PostGIS to find touching/intersecting features
+      // Neighbours share an edge. ST_Intersects, not ST_Touches: shapes traced one by one (realm maps) overlap by
+      // rounding slivers along a shared border, and ST_Touches is false for any overlap.
       // Uses pre-computed centroid JSON field instead of ST_Centroid()
       try {
         const neighbors = await ctx.db.$queryRawUnsafe<
@@ -282,10 +273,11 @@ export const countryProcedures = {
            FROM map_layers ml1
            JOIN map_layers ml2 ON ml2."layerType" = 'political'
              AND ml2."isActive" = true
+             AND ml2."worldId" IS NOT DISTINCT FROM ml1."worldId"
              AND ml2.id != ml1.id
              AND ml1.geom_postgis IS NOT NULL
              AND ml2.geom_postgis IS NOT NULL
-             AND ST_Touches(ml1.geom_postgis, ml2.geom_postgis)
+             AND ST_Intersects(ml1.geom_postgis, ml2.geom_postgis)
            WHERE ml1.id = $1`,
           mapLayer.id
         );
@@ -302,52 +294,4 @@ export const countryProcedures = {
         return [];
       }
     }),
-
-  /**
-   * Get all geographic features for a specific country.
-   * Includes subdivisions, cities, and points of interest.
-   */
-  getNeighborGeometries: adminProcedure
-    .input(z.object({ featureId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true },
-        select: { boundingBox: true },
-      });
-      if (!feature) return [];
-
-      const bbox = feature.boundingBox as number[] | null;
-      if (!bbox || bbox.length !== 4) return [];
-
-      const pad = 1;
-      const neighbors = await ctx.db.mapLayer.findMany({
-        where: {
-          layerType: "political",
-          featureId: { not: input.featureId },
-          isActive: true,
-        },
-        select: { featureId: true, displayName: true, geometry: true, boundingBox: true },
-      });
-
-      return neighbors
-        .filter((l) => {
-          const nb = l.boundingBox as number[] | null;
-          if (!nb || nb.length !== 4) return false;
-          return (
-            nb[0]! < bbox[2]! + pad &&
-            nb[2]! > bbox[0]! - pad &&
-            nb[1]! < bbox[3]! + pad &&
-            nb[3]! > bbox[1]! - pad
-          );
-        })
-        .map((l) => ({
-          featureId: l.featureId,
-          displayName: l.displayName,
-          geometry: l.geometry,
-        }));
-    }),
-
-  /**
-   * Admin: Recalculate area for a map feature using PostGIS.
-   */
 };

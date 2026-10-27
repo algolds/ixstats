@@ -1,428 +1,219 @@
 /**
- * Lore Article Classifier & Cataloging Engine
+ * Lore article classifier: a wiki article's lore category, subcategory and confidence (client-safe).
  *
- * Multi-Signal Scoring Classifier for MediaWiki articles.
- * Maps articles from IxWiki and IIWiki directly into the 12 canonical LoreCategory enums.
+ * Signals, each with a strength (`SIGNAL_STRENGTH`) for its lore category:
+ *   - infobox templates, from the raw wikitext and the wiki API's template list (`INFOBOX_RULES`);
+ *   - the wiki's own categories (`categoryTargets`, the shared and per-wiki rules in `category-mappings.ts`);
+ *   - keywords in the title and the lead (`CATEGORY_SYNONYMS`), which name no subcategory.
  *
- * Signal Weights:
- *   - Tier 1 (50 pts): Infobox template type (e.g. Infobox officeholder, Infobox settlement, Infobox military conflict)
- *   - Tier 2 (10 pts/each): Category taxonomy regex patterns (e.g. Category:Rivers of..., Category:Battles of...)
- *   - Tier 3 (1-15 pts): Synonym & lead paragraph keyword scoring against CATEGORY_SYNONYMS
- *
- * Deterministic Tie-Breaking Specificity:
- *   DIPLOMACY / MILITARY / PEOPLE / RELIGION / SCIENCE / ECONOMY > GOVERNMENT / CULTURE > GEOGRAPHY / HISTORY > NATION > SPECIAL
+ * A category's support is its signals combined, 1 - the product of (1 - strength). The highest support wins, ties
+ * broken by specificity (DIPLOMACY / MILITARY / PEOPLE / RELIGION / SCIENCE / ECONOMY > GOVERNMENT / CULTURE >
+ * GEOGRAPHY / HISTORY > NATION > SPECIAL). Nothing scored is `category: null`, never a guess: such a card waits in the
+ * admin's review queue, as does one below `CATEGORY_REVIEW_THRESHOLD`.
  */
 
+import type { CardWikiSource } from "./card-sources";
+import { CATEGORY_SYNONYMS, type LoreCategory } from "./category-enums";
 import {
-  LoreCategory,
-  CATEGORY_SYNONYMS,
-  type LoreCategory as LoreCategoryType,
-} from "./category-enums";
+  categoryTargets,
+  infoboxTarget,
+  templateKey,
+  type InfoboxTarget,
+} from "./category-mappings";
+import { subcategoriesOf } from "./category-taxonomy";
 
 export interface ArticleClassificationInput {
   title?: string | null;
+  /** Plain article text (an extract or cleaned wikitext); its lead is read for keywords. */
   text?: string | null;
-  categories?: Array<string | { title: string }> | null;
-  infoboxes?: string[] | null;
+  /** The raw wikitext, read for infobox templates. */
+  wikitext?: string | null;
+  categories?: ReadonlyArray<string | { title: string }> | null;
+  /** Template titles the wiki API lists for the page; only infoboxes count. */
+  templates?: readonly string[] | null;
+  source?: CardWikiSource | null;
 }
 
+export interface CategoryClassification {
+  category: LoreCategory | null;
+  subcategory: string | null;
+  confidence: number;
+}
+
+/** How sure one signal is, on its own, that the article is its lore category (0 to 1). */
+export const SIGNAL_STRENGTH = {
+  infobox: 0.9,
+  infoboxVariant: 0.7,
+  category: 0.5,
+  keywordsMax: 0.25,
+} as const;
+
+/** Keyword points: each title keyword, and each lead hit up to a cap; FULL_KEYWORD_POINTS earn `keywordsMax`. */
+const KEYWORD_POINTS = { titleKeyword: 5, leadKeywordsMax: 15 } as const;
+const FULL_KEYWORD_POINTS = 20;
+
 /**
- * Tier 1: Canonical mapping of MediaWiki infobox templates to LoreCategory.
+ * Below this confidence a classification waits for review. 0.45 was chosen from the 2026-10-23 dry run, whose
+ * confidence histogram is sparse between 0.4 and 0.5.
  */
-export const INFOBOX_CATEGORY_MAP: Record<string, LoreCategoryType> = {
-  // PEOPLE
-  "infobox person": LoreCategory.PEOPLE,
-  "infobox officeholder": LoreCategory.PEOPLE,
-  "infobox politician": LoreCategory.PEOPLE,
-  "infobox monarch": LoreCategory.PEOPLE,
-  "infobox prime minister": LoreCategory.PEOPLE,
-  "infobox president": LoreCategory.PEOPLE,
-  "infobox leader": LoreCategory.PEOPLE,
-  "infobox military person": LoreCategory.PEOPLE,
-  "infobox royalty": LoreCategory.PEOPLE,
-  "infobox noble": LoreCategory.PEOPLE,
-  "infobox biography": LoreCategory.PEOPLE,
-  "infobox artist": LoreCategory.PEOPLE,
-  "infobox writer": LoreCategory.PEOPLE,
-  "infobox scientist": LoreCategory.PEOPLE,
-  "infobox academic": LoreCategory.PEOPLE,
-  "infobox chancellor": LoreCategory.PEOPLE,
-  "infobox governor": LoreCategory.PEOPLE,
-  "infobox mayor": LoreCategory.PEOPLE,
+export const CATEGORY_REVIEW_THRESHOLD = 0.45;
 
-  // MILITARY
-  "infobox military conflict": LoreCategory.MILITARY,
-  "infobox war": LoreCategory.MILITARY,
-  "infobox battle": LoreCategory.MILITARY,
-  "infobox military unit": LoreCategory.MILITARY,
-  "infobox weapon": LoreCategory.MILITARY,
-  "infobox armed forces": LoreCategory.MILITARY,
-  "infobox military installation": LoreCategory.MILITARY,
-  "infobox military vehicle": LoreCategory.MILITARY,
-  "infobox ship": LoreCategory.MILITARY,
-  "infobox firearm": LoreCategory.MILITARY,
-  "infobox civilian attack": LoreCategory.MILITARY,
-  "infobox siege": LoreCategory.MILITARY,
+/** How much of the text counts as its lead. */
+const LEAD_CHARS = 1500;
+/** Hits one keyword may add from the lead. */
+const MAX_HITS_PER_KEYWORD = 3;
 
-  // DIPLOMACY
-  "infobox treaty": LoreCategory.DIPLOMACY,
-  "infobox bilateral relations": LoreCategory.DIPLOMACY,
-  "infobox diplomatic mission": LoreCategory.DIPLOMACY,
-  "infobox international organization": LoreCategory.DIPLOMACY,
-  "infobox summit": LoreCategory.DIPLOMACY,
-  "infobox accord": LoreCategory.DIPLOMACY,
-  "infobox alliance": LoreCategory.DIPLOMACY,
-
-  // GEOGRAPHY
-  "infobox settlement": LoreCategory.GEOGRAPHY,
-  "infobox city": LoreCategory.GEOGRAPHY,
-  "infobox town": LoreCategory.GEOGRAPHY,
-  "infobox village": LoreCategory.GEOGRAPHY,
-  "infobox river": LoreCategory.GEOGRAPHY,
-  "infobox lake": LoreCategory.GEOGRAPHY,
-  "infobox mountain": LoreCategory.GEOGRAPHY,
-  "infobox mountain range": LoreCategory.GEOGRAPHY,
-  "infobox island": LoreCategory.GEOGRAPHY,
-  "infobox archipelago": LoreCategory.GEOGRAPHY,
-  "infobox sea": LoreCategory.GEOGRAPHY,
-  "infobox ocean": LoreCategory.GEOGRAPHY,
-  "infobox valley": LoreCategory.GEOGRAPHY,
-  "infobox desert": LoreCategory.GEOGRAPHY,
-  "infobox landform": LoreCategory.GEOGRAPHY,
-  "infobox protected area": LoreCategory.GEOGRAPHY,
-  "infobox park": LoreCategory.GEOGRAPHY,
-  "infobox forest": LoreCategory.GEOGRAPHY,
-  "infobox bay": LoreCategory.GEOGRAPHY,
-  "infobox peninsula": LoreCategory.GEOGRAPHY,
-
-  // RELIGION
-  "infobox religious building": LoreCategory.RELIGION,
-  "infobox church": LoreCategory.RELIGION,
-  "infobox temple": LoreCategory.RELIGION,
-  "infobox mosque": LoreCategory.RELIGION,
-  "infobox deity": LoreCategory.RELIGION,
-  "infobox religion": LoreCategory.RELIGION,
-  "infobox religious order": LoreCategory.RELIGION,
-  "infobox holy place": LoreCategory.RELIGION,
-  "infobox cathedral": LoreCategory.RELIGION,
-  "infobox shrine": LoreCategory.RELIGION,
-
-  // GOVERNMENT
-  "infobox government agency": LoreCategory.GOVERNMENT,
-  "infobox legislature": LoreCategory.GOVERNMENT,
-  "infobox parliament": LoreCategory.GOVERNMENT,
-  "infobox ministry": LoreCategory.GOVERNMENT,
-  "infobox court": LoreCategory.GOVERNMENT,
-  "infobox supreme court": LoreCategory.GOVERNMENT,
-  "infobox election": LoreCategory.GOVERNMENT,
-  "infobox political party": LoreCategory.GOVERNMENT,
-  "infobox constitution": LoreCategory.GOVERNMENT,
-  "infobox cabinet": LoreCategory.GOVERNMENT,
-  "infobox law": LoreCategory.GOVERNMENT,
-
-  // ECONOMY
-  "infobox company": LoreCategory.ECONOMY,
-  "infobox corporation": LoreCategory.ECONOMY,
-  "infobox bank": LoreCategory.ECONOMY,
-  "infobox central bank": LoreCategory.ECONOMY,
-  "infobox currency": LoreCategory.ECONOMY,
-  "infobox stock exchange": LoreCategory.ECONOMY,
-  "infobox enterprise": LoreCategory.ECONOMY,
-  "infobox industry": LoreCategory.ECONOMY,
-
-  // SCIENCE
-  "infobox technology": LoreCategory.SCIENCE,
-  "infobox railway": LoreCategory.SCIENCE,
-  "infobox train": LoreCategory.SCIENCE,
-  "infobox aircraft": LoreCategory.SCIENCE,
-  "infobox spacecraft": LoreCategory.SCIENCE,
-  "infobox observatory": LoreCategory.SCIENCE,
-  "infobox laboratory": LoreCategory.SCIENCE,
-  "infobox university": LoreCategory.SCIENCE,
-  "infobox school": LoreCategory.SCIENCE,
-  "infobox academic institution": LoreCategory.SCIENCE,
-
-  // CULTURE
-  "infobox monument": LoreCategory.CULTURE,
-  "infobox building": LoreCategory.CULTURE,
-  "infobox museum": LoreCategory.CULTURE,
-  "infobox artwork": LoreCategory.CULTURE,
-  "infobox festival": LoreCategory.CULTURE,
-  "infobox national symbol": LoreCategory.CULTURE,
-  "infobox regalia": LoreCategory.CULTURE,
-  "infobox palace": LoreCategory.CULTURE,
-  "infobox castle": LoreCategory.CULTURE,
-
-  // HISTORY
-  "infobox historical event": LoreCategory.HISTORY,
-  "infobox historical era": LoreCategory.HISTORY,
-  "infobox revolution": LoreCategory.HISTORY,
-  "infobox crisis": LoreCategory.HISTORY,
-  "infobox timeline": LoreCategory.HISTORY,
-  "infobox period": LoreCategory.HISTORY,
-
-  // NATION
-  "infobox country": LoreCategory.NATION,
-  "infobox nation": LoreCategory.NATION,
-  "infobox former country": LoreCategory.NATION,
-  "infobox sovereign state": LoreCategory.NATION,
-  "infobox state": LoreCategory.NATION,
-  "infobox subdivision": LoreCategory.NATION,
-  "infobox realm": LoreCategory.NATION,
-
-  // SPECIAL
-  "infobox artifact": LoreCategory.SPECIAL,
-  "infobox relic": LoreCategory.SPECIAL,
-  "infobox wonder": LoreCategory.SPECIAL,
-  "infobox anomaly": LoreCategory.SPECIAL,
-  "infobox mystery": LoreCategory.SPECIAL,
+/** Lower wins a tie. */
+const SPECIFICITY_RANK: Record<LoreCategory, number> = {
+  DIPLOMACY: 1,
+  MILITARY: 2,
+  PEOPLE: 3,
+  RELIGION: 4,
+  SCIENCE: 5,
+  ECONOMY: 6,
+  GOVERNMENT: 7,
+  CULTURE: 8,
+  GEOGRAPHY: 9,
+  HISTORY: 10,
+  NATION: 11,
+  SPECIAL: 12,
 };
 
-/**
- * Tier 2: MediaWiki Category taxonomy regex patterns.
- */
-export const CATEGORY_TAXONOMY_PATTERNS: Array<{
-  pattern: RegExp;
-  category: LoreCategoryType;
-}> = [
-  // PEOPLE
-  {
-    pattern:
-      /\b(?:people|persons|biograph(?:y|ies)|births|deaths|politicians|presidents|prime ministers|monarchs|kings|queens|emperors|leaders|heads of state|generals|admirals|artists|writers|scientists|nobility|royalty)\b/i,
-    category: LoreCategory.PEOPLE,
-  },
-
-  // MILITARY
-  {
-    pattern:
-      /\b(?:military|war(?:s|fare)?|battles?|conflicts?|sieges?|campaigns?|armed forces|arm(?:y|ies)|nav(?:y|al|ies)|air force|regiments?|divisions?|weapons?|operations?)\b/i,
-    category: LoreCategory.MILITARY,
-  },
-
-  // DIPLOMACY
-  {
-    pattern:
-      /\b(?:treat(?:y|ies)|alliances?|diploma(?:cy|tic)|accords?|pacts?|summits?|embass(?:y|ies)|bilateral relations|foreign relations|international organizations?)\b/i,
-    category: LoreCategory.DIPLOMACY,
-  },
-
-  // GEOGRAPHY
-  {
-    pattern:
-      /\b(?:geograph(?:y|ic)|cities|towns|villages|settlements|rivers|lakes|mountains?|ranges?|islands?|archipelago|seas|oceans|valleys|deserts|peninsulas|fjords|landforms?)\b/i,
-    category: LoreCategory.GEOGRAPHY,
-  },
-
-  // RELIGION
-  {
-    pattern:
-      /\b(?:religions?|religious|faiths?|churches|temples?|monasteries|mosques?|cathedrals?|deities|gods|goddesses|mytholog(?:y|ies)|cults?|clergy|priesthood|sacred)\b/i,
-    category: LoreCategory.RELIGION,
-  },
-
-  // GOVERNMENT
-  {
-    pattern:
-      /\b(?:governments?|governance|parliaments?|legislatures?|senates?|ministries|courts?|judiciar(?:y|ies)|elections?|political parties|constitutions?|laws?|statutes?|decrees?)\b/i,
-    category: LoreCategory.GOVERNMENT,
-  },
-
-  // ECONOMY
-  {
-    pattern:
-      /\b(?:econom(?:y|ic|ics)|trade|commerce|finance|financial|banks?|banking|currencies|money|corporations?|companies|markets?|stock exchanges?|enterprises?|tariffs?|treasury)\b/i,
-    category: LoreCategory.ECONOMY,
-  },
-
-  // SCIENCE
-  {
-    pattern:
-      /\b(?:science|scientific|technolog(?:y|ies)|innovations?|railways?|railroads?|aviation|aerospace|spaceflights?|observatories|laboratories|universities|academies|research institutes?|engineering)\b/i,
-    category: LoreCategory.SCIENCE,
-  },
-
-  // CULTURE
-  {
-    pattern:
-      /\b(?:culture|cultural|monuments?|heritage|traditions?|arts?|architecture|palaces?|castles?|museums?|festivals?|landmarks?|folklore|literature|symbols?|regalia|relics?)\b/i,
-    category: LoreCategory.CULTURE,
-  },
-
-  // HISTORY
-  {
-    pattern:
-      /\b(?:history|historical|eras?|epochs?|centur(?:y|ies)|decades?|antiquity|medieval|renaissance|revolutions?|rebellions?|crises|timelines?|annals|chronicles?)\b/i,
-    category: LoreCategory.HISTORY,
-  },
-
-  // NATION
-  {
-    pattern:
-      /\b(?:countries|nations|sovereign states|former countries|realms|dominions|confederations|federations)\b/i,
-    category: LoreCategory.NATION,
-  },
-
-  // SPECIAL
-  {
-    pattern:
-      /\b(?:artifacts?|relics?|wonders of the world|anomalies|mysteries|tomes?|masterpieces?)\b/i,
-    category: LoreCategory.SPECIAL,
-  },
-];
-
-/**
- * Specificity rank for deterministic tie-breaking.
- * Lower number = more specific domain = wins ties.
- */
-const SPECIFICITY_RANK: Record<LoreCategoryType, number> = {
-  [LoreCategory.DIPLOMACY]: 1,
-  [LoreCategory.MILITARY]: 2,
-  [LoreCategory.PEOPLE]: 3,
-  [LoreCategory.RELIGION]: 4,
-  [LoreCategory.SCIENCE]: 5,
-  [LoreCategory.ECONOMY]: 6,
-  [LoreCategory.GOVERNMENT]: 7,
-  [LoreCategory.CULTURE]: 8,
-  [LoreCategory.GEOGRAPHY]: 9,
-  [LoreCategory.HISTORY]: 10,
-  [LoreCategory.NATION]: 11,
-  [LoreCategory.SPECIAL]: 12,
-  [LoreCategory.NS_IMPORT]: 99,
-};
-
-/**
- * Helper to extract template names from raw wikitext (e.g. {{Infobox person | ...}} -> "infobox person")
- */
-export function extractInfoboxTemplatesFromWikitext(wikitext: string): string[] {
-  if (!wikitext) return [];
-  const matches = wikitext.match(/\{\{\s*([a-zA-Z0-9_\s-]+)(?:\||\}\})/g) || [];
-  return matches
-    .map((m) =>
-      m
-        .replace(/^\{\{\s*/, "")
-        .replace(/[|}\s]+$/, "")
-        .trim()
-        .toLowerCase()
-    )
-    .filter((name) => name.startsWith("infobox") || name.startsWith("template:infobox"));
+interface SignalHit {
+  category: LoreCategory;
+  subcategory: string | null;
+  strength: number;
+  /** The subcategory is only a default, which any other signal's beats. */
+  fallback: boolean;
 }
 
-/**
- * Classifies a MediaWiki article into one of the 12 canonical LoreCategory enums.
- */
-export function classifyLoreArticle(input: ArticleClassificationInput): LoreCategoryType {
-  const scores: Partial<Record<LoreCategoryType, number>> = {};
+const hit = ({ category, subcategory, fallback }: InfoboxTarget, strength: number): SignalHit => ({
+  category,
+  subcategory: subcategory ?? null,
+  strength,
+  fallback: fallback === true,
+});
 
-  function addScore(cat: LoreCategoryType, points: number) {
-    scores[cat] = (scores[cat] || 0) + points;
-  }
-
-  const rawWikitext = input.text || "";
-  const rawTitle = input.title || "";
-
-  // 1. Resolve Infobox Templates (Tier 1: 50 pts)
-  const infoboxList =
-    input.infoboxes && input.infoboxes.length > 0
-      ? input.infoboxes
-      : extractInfoboxTemplatesFromWikitext(rawWikitext);
-
-  for (const rawInfobox of infoboxList) {
-    const cleanInfobox = rawInfobox
-      .replace(/^template:\s*/i, "")
-      .trim()
-      .toLowerCase();
-    const matchedCategory = INFOBOX_CATEGORY_MAP[cleanInfobox];
-    if (matchedCategory) {
-      addScore(matchedCategory, 50);
-    } else {
-      // Check partial match for infoboxes like "infobox settlement/sandbox" or "infobox officeholder 2"
-      for (const [boxKey, cat] of Object.entries(INFOBOX_CATEGORY_MAP)) {
-        if (cleanInfobox.startsWith(boxKey)) {
-          addScore(cat, 45);
-          break;
-        }
-      }
-    }
-  }
-
-  // 2. Resolve Categories (Tier 2: 10 pts each)
-  const categories = input.categories || [];
-  for (const catEntry of categories) {
-    const catStr = typeof catEntry === "string" ? catEntry : catEntry?.title || "";
-    const cleanCat = catStr.replace(/^Category:\s*/i, "").trim();
-
-    for (const tax of CATEGORY_TAXONOMY_PATTERNS) {
-      if (tax.pattern.test(cleanCat)) {
-        addScore(tax.category, 10);
-      }
-    }
-  }
-
-  // 3. Synonym & NLP Scoring across Title & Lead Section (Tier 3: 1 pt each, max 15)
-  const leadSection = rawWikitext.slice(0, 1500).toLowerCase();
-  const normalizedTitle = rawTitle.toLowerCase();
-  const combinedText = `${normalizedTitle} ${leadSection}`;
-
-  for (const [catStr, synonyms] of Object.entries(CATEGORY_SYNONYMS)) {
-    const cat = catStr as LoreCategoryType;
-    if (cat === LoreCategory.NS_IMPORT) continue;
-
-    let synHits = 0;
-    for (const word of synonyms) {
-      // Title match gives strong weight (5 pts)
-      if (normalizedTitle.includes(word)) {
-        addScore(cat, 5);
-      }
-
-      // Regex whole-word search in lead text
-      const regex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi");
-      const matches = combinedText.match(regex);
-      if (matches) {
-        synHits += Math.min(matches.length, 3);
-      }
-    }
-
-    if (synHits > 0) {
-      addScore(cat, Math.min(synHits, 15));
-    }
-  }
-
-  // 4. Determine Winner with Specificity Arbiter
-  let highestCategory: LoreCategoryType = LoreCategory.NATION;
-  let highestScore = 0;
-
-  for (const [catKey, score] of Object.entries(scores)) {
-    const cat = catKey as LoreCategoryType;
-    if (!score || score <= 0) continue;
-
-    if (score > highestScore) {
-      highestScore = score;
-      highestCategory = cat;
-    } else if (score === highestScore) {
-      // Tie-break with specificity rank
-      const currentRank = SPECIFICITY_RANK[highestCategory] ?? 99;
-      const contenderRank = SPECIFICITY_RANK[cat] ?? 99;
-      if (contenderRank < currentRank) {
-        highestCategory = cat;
-      }
-    }
-  }
-
-  // If no signals scored at all, default to NATION
-  return highestScore > 0 ? highestCategory : LoreCategory.NATION;
+/** Each key's signals combined: 1 - the product of (1 - strength). */
+function supportBy<K>(hits: readonly SignalHit[], keyOf: (h: SignalHit) => K): Map<K, number> {
+  const doubt = new Map<K, number>();
+  for (const h of hits) doubt.set(keyOf(h), (doubt.get(keyOf(h)) ?? 1) * (1 - h.strength));
+  return new Map([...doubt].map(([key, d]) => [key, 1 - d]));
 }
 
-/**
- * Fast one-line classification helper from wikitext string.
- */
-export function classifyFromWikitext(
-  wikitext: string | null | undefined,
-  title?: string | null,
-  categories?: string[]
-): LoreCategoryType {
-  return classifyLoreArticle({
-    text: wikitext,
-    title,
-    categories,
+const escapeRegExp = (word: string) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Each category's keywords as whole-word patterns, compiled once. */
+const KEYWORDS = (
+  Object.entries(CATEGORY_SYNONYMS) as Array<[LoreCategory, readonly string[]]>
+).map(([category, words]) => ({
+  category,
+  patterns: words.map((word) => new RegExp(`\\b${escapeRegExp(word)}\\b`, "gi")),
+}));
+
+/** Template names in wikitext (`{{Infobox person | ...}}` is "Infobox person"). */
+function wikitextTemplates(wikitext: string): string[] {
+  return [...wikitext.matchAll(/\{\{\s*([\w\s:-]+)(?:\||\}\})/g)].map((m) => m[1] ?? "");
+}
+
+function infoboxHits(input: ArticleClassificationInput): SignalHit[] {
+  const names = new Set(
+    [...(input.templates ?? []), ...wikitextTemplates(input.wikitext ?? "")].map(templateKey)
+  );
+  return [...names].flatMap((name) => {
+    const match = infoboxTarget(name);
+    if (!match) return [];
+    const strength = match.exact ? SIGNAL_STRENGTH.infobox : SIGNAL_STRENGTH.infoboxVariant;
+    return [hit(match.target, strength)];
   });
+}
+
+function categoryHits(input: ArticleClassificationInput): SignalHit[] {
+  return (input.categories ?? []).flatMap((entry) =>
+    categoryTargets(typeof entry === "string" ? entry : entry.title, input.source ?? null).map(
+      (found) => hit(found, SIGNAL_STRENGTH.category)
+    )
+  );
+}
+
+/** Whole-word keywords: each in the title scores, lead hits (title included) are capped per keyword and per category. */
+function keywordHits(input: ArticleClassificationInput): SignalHit[] {
+  const title = (input.title ?? "").toLowerCase();
+  const combined = `${title} ${(input.text ?? "").slice(0, LEAD_CHARS).toLowerCase()}`;
+  return KEYWORDS.flatMap(({ category, patterns }) => {
+    let titlePoints = 0;
+    let leadHits = 0;
+    for (const pattern of patterns) {
+      if (title.search(pattern) >= 0) titlePoints += KEYWORD_POINTS.titleKeyword;
+      leadHits += Math.min(combined.match(pattern)?.length ?? 0, MAX_HITS_PER_KEYWORD);
+    }
+    const points = titlePoints + Math.min(leadHits, KEYWORD_POINTS.leadKeywordsMax);
+    const strength = SIGNAL_STRENGTH.keywordsMax * Math.min(1, points / FULL_KEYWORD_POINTS);
+    return points > 0 ? [{ category, subcategory: null, strength, fallback: false }] : [];
+  });
+}
+
+/** Categories by support, highest first, ties by specificity. */
+function ranked(support: Map<LoreCategory, number>): Array<[LoreCategory, number]> {
+  return [...support].sort(
+    ([a, scoreA], [b, scoreB]) => scoreB - scoreA || SPECIFICITY_RANK[a] - SPECIFICITY_RANK[b]
+  );
+}
+
+/**
+ * The winner's subcategory with the most support, ties to the first the taxonomy lists; a fallback only when no other
+ * signal names one; null when none scored.
+ */
+function subcategoryOf(winner: LoreCategory, hits: readonly SignalHit[]): string | null {
+  const named = hits.filter((h) => h.category === winner && h.subcategory !== null);
+  const firm = named.filter((h) => !h.fallback);
+  const support = supportBy(firm.length > 0 ? firm : named, (h) => h.subcategory);
+  let best: string | null = null;
+  let bestSupport = 0;
+  for (const { id } of subcategoriesOf(winner)) {
+    const s = support.get(id) ?? 0;
+    if (s > bestSupport) [best, bestSupport] = [id, s];
+  }
+  return best;
+}
+
+/** The winner's support, discounted by how near the runner-up comes: a tie is 0, a distant one costs little. */
+function confidenceOf(top: number, second: number): number {
+  return Math.round(top * (1 - (second / top) ** 2) * 100) / 100;
+}
+
+/** An article's lore category, subcategory and confidence; `category: null` when nothing scored. */
+export function classifyLoreArticle(input: ArticleClassificationInput): CategoryClassification {
+  const hits = [...infoboxHits(input), ...categoryHits(input), ...keywordHits(input)];
+  const [first, runnerUp] = ranked(supportBy(hits, (h) => h.category));
+  if (!first) return { category: null, subcategory: null, confidence: 0 };
+  const [category, top] = first;
+  return {
+    category,
+    subcategory: subcategoryOf(category, hits),
+    confidence: confidenceOf(top, runnerUp?.[1] ?? 0),
+  };
+}
+
+export function needsCategoryReview(c: CategoryClassification): boolean {
+  return c.category === null || c.confidence < CATEGORY_REVIEW_THRESHOLD;
+}
+
+/** The card columns a classification writes, for the importer and the backfill alike. */
+export interface ClassifierColumns {
+  category: LoreCategory | null;
+  subcategory: string | null;
+  categorySource: "CLASSIFIER";
+  categoryConfidence: number;
+  categoryNeedsReview: boolean;
+}
+
+export function classifierColumns(c: CategoryClassification): ClassifierColumns {
+  return {
+    category: c.category,
+    subcategory: c.subcategory,
+    categorySource: "CLASSIFIER",
+    categoryConfidence: c.confidence,
+    categoryNeedsReview: needsCategoryReview(c),
+  };
 }

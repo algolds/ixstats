@@ -4,44 +4,13 @@
  */
 
 // Context
-export {
-  createTRPCContext,
-  getCachedUserContext,
-  setCachedUserContext,
-  type TRPCContext,
-} from "./context";
+export { createTRPCContext } from "./context";
 
 // Core tRPC initialization & Router factories
-export {
-  t,
-  createCallerFactory,
-  createTRPCRouter,
-  mergeRouters,
-  middleware,
-  procedure,
-} from "./init";
+export { createCallerFactory, createTRPCRouter, mergeRouters } from "./init";
 
 // Middlewares
-export {
-  timingMiddleware,
-  authMiddleware,
-  countryOwnerMiddleware,
-  rateLimitMiddleware,
-  createRateLimitMiddleware,
-  auditLogMiddleware,
-  premiumMiddleware,
-  adminMiddleware,
-  dataPrivacyMiddleware,
-  inputValidationMiddleware,
-  standardMutationRateLimit,
-  lightMutationRateLimit,
-  readOnlyRateLimit,
-  publicRateLimit,
-  standardCacheMiddleware,
-  staticCacheMiddleware,
-  userCacheMiddleware,
-  type RateLimitOptions,
-} from "./middleware";
+export { createRateLimitMiddleware, enforceRateLimit, userCacheMiddleware } from "./middleware";
 
 // Procedure builders
 export {
@@ -50,12 +19,16 @@ export {
   premiumProcedure,
   countryOwnerProcedure,
   adminProcedure,
-  executiveProcedure,
   standardMutationCountryOwnerProcedure,
+  mapFeatureOwnerProcedure,
+  standardMutationMapFeatureOwnerProcedure,
   lightMutationProcedure,
-  readOnlyProcedure,
+  rateLimitedMutationProcedure,
+  premiumMutationProcedure,
   rateLimitedPublicProcedure,
+  readOnlyProcedure,
+  publicReadOnlyProcedure,
+  wikiReadProcedure,
   cachedPublicProcedure,
-  cachedProtectedProcedure,
   cachedStaticProcedure,
 } from "./procedures";

@@ -1,9 +1,11 @@
 "use client";
 
+import React from "react";
 import { Badge } from "~/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
-import { Medal, Swords } from "lucide-react";
+import { Medal, Tournament as Swords, Trophy } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 interface BracketViewProps {
   brackets: Array<{
@@ -20,6 +22,7 @@ interface BracketViewProps {
     result?: unknown;
   }>;
   className?: string;
+  onTeamClick?: (teamId: string) => void;
 }
 
 function formatResult(result: unknown): string {
@@ -31,7 +34,7 @@ function formatResult(result: unknown): string {
   return `${method}${round}${time}`;
 }
 
-export function BracketView({ brackets, className }: BracketViewProps) {
+export function BracketView({ brackets, className, onTeamClick }: BracketViewProps) {
   if (!brackets || brackets.length === 0) {
     return null;
   }
@@ -47,13 +50,28 @@ export function BracketView({ brackets, className }: BracketViewProps) {
       <div className={cn("space-y-6", className)}>
         {weightClasses.map((wc) => {
           const wcBrackets = brackets.filter((b) => b.weightClass === wc);
-          return <BracketRounds key={wc} rounds={rounds} brackets={wcBrackets} title={wc} />;
+          return (
+            <BracketRounds
+              key={wc}
+              rounds={rounds}
+              brackets={wcBrackets}
+              title={wc}
+              onTeamClick={onTeamClick}
+            />
+          );
         })}
       </div>
     );
   }
 
-  return <BracketRounds rounds={rounds} brackets={brackets} className={className} />;
+  return (
+    <BracketRounds
+      rounds={rounds}
+      brackets={brackets}
+      className={className}
+      onTeamClick={onTeamClick}
+    />
+  );
 }
 
 function BracketRounds({
@@ -61,94 +79,166 @@ function BracketRounds({
   brackets,
   title,
   className,
+  onTeamClick,
 }: {
   rounds: number[];
   brackets: BracketViewProps["brackets"];
   title?: string;
   className?: string;
+  onTeamClick?: (teamId: string) => void;
 }) {
   return (
-    <Card className={cn("facet-hierarchy-child", className)}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Swords className="h-5 w-5" />
-          {title ? `${title} Bracket` : "Bracket"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          {rounds.map((round) => {
-            const roundBrackets = brackets.filter((b) => b.round === round);
-            const isFinalRound = round === rounds[0];
+    <Card
+      className={cn(
+        "rounded-sheet border-separator bg-surface shadow-card relative space-y-6 overflow-hidden border p-6 md:p-8",
+        className
+      )}
+    >
+      <div className="border-separator flex items-center justify-between border-b pb-4">
+        <div className="flex items-center gap-2">
+          <div className="rounded-row border-separator bg-surface-secondary text-label shadow-card flex h-9 w-9 items-center justify-center border">
+            <Swords className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-headline text-label">
+              {title ? `${title} Championship Bracket` : "Championship Tournament Bracket"}
+            </h3>
+            <p className="text-footnote text-label-secondary font-semibold">
+              Single-elimination knockout ladder with verified victor advancements.
+            </p>
+          </div>
+        </div>
+      </div>
 
-            return (
-              <div key={round}>
-                <h3 className="text-muted-foreground mb-3 flex items-center gap-2 text-sm font-semibold">
-                  {isFinalRound && <Medal className="h-4 w-4 text-yellow-500" />}
-                  {round === 1
-                    ? "First Round"
-                    : round === 2
-                      ? "Semifinals"
-                      : round === 3
-                        ? "Quarterfinals"
-                        : round === 4
-                          ? "Round of 16"
-                          : `Round ${round}`}
-                </h3>
-                <div className="space-y-2">
-                  {roundBrackets.map((b) => {
-                    const isCompleted = b.status === "completed";
-                    const fighter1IsWinner = isCompleted && b.winnerId === b.fighter1Id;
-                    const fighter2IsWinner = isCompleted && b.winnerId === b.fighter2Id;
-                    const resultText = isCompleted ? formatResult(b.result) : "";
+      <div className="space-y-6">
+        {rounds.map((round) => {
+          const roundBrackets = brackets.filter((b) => b.round === round);
+          const isFinalRound = round === rounds[0];
 
-                    return (
-                      <div
-                        key={b.id}
-                        className="flex items-center gap-3 rounded-lg border px-4 py-3"
-                      >
-                        <div className="flex-1">
+          return (
+            <div key={round} className="space-y-3">
+              <div className="flex items-center gap-2">
+                {isFinalRound ? (
+                  <Badge
+                    className="border-yellow/40 bg-yellow/20 text-eyebrow text-yellow px-3 py-0.5"
+                    variant="secondary"
+                  >
+                    <Trophy className="mr-1 h-3.5 w-3.5" />
+                    Championship final
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="border-separator bg-fill-4 text-eyebrow text-label px-3 py-0.5"
+                  >
+                    {round === 1
+                      ? "First Round"
+                      : round === 2
+                        ? "Semifinals"
+                        : round === 3
+                          ? "Quarterfinals"
+                          : round === 4
+                            ? "Round of 16"
+                            : `Round ${round}`}
+                  </Badge>
+                )}
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {roundBrackets.map((b) => {
+                  const isCompleted = b.status === "completed";
+                  const fighter1IsWinner = isCompleted && b.winnerId === b.fighter1Id;
+                  const fighter2IsWinner = isCompleted && b.winnerId === b.fighter2Id;
+                  const resultText = isCompleted ? formatResult(b.result) : "";
+
+                  return (
+                    <div
+                      key={b.id}
+                      className={cn(
+                        "rounded-card border-separator bg-surface-secondary shadow-card flex items-center justify-between gap-3 border px-4 py-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                        isCompleted && "border-separator bg-surface-secondary"
+                      )}
+                    >
+                      {/* Fighter 1 */}
+                      <div className="min-w-0 flex-1">
+                        <Button
+                          variant="ghost"
+                          onClick={() => onTeamClick?.(b.fighter1Id)}
+                          disabled={!onTeamClick}
+                          className={cn(
+                            "group block h-auto w-full truncate p-0 text-left font-normal hover:bg-transparent disabled:opacity-100",
+                            onTeamClick && "hover:underline"
+                          )}
+                        >
                           <span
                             className={cn(
-                              "font-medium",
-                              fighter1IsWinner && "font-bold text-yellow-500"
+                              "text-footnote block truncate font-semibold",
+                              fighter1IsWinner
+                                ? "text-yellow font-semibold"
+                                : isCompleted
+                                  ? "text-label-secondary line-through opacity-70"
+                                  : "text-label group-hover:text-tint"
                             )}
                           >
                             {b.fighter1Name ?? b.fighter1Id}
                             {fighter1IsWinner && (
-                              <Medal className="ml-1 inline h-3.5 w-3.5 text-yellow-500" />
+                              <Medal className="text-yellow ml-1 inline h-3.5 w-3.5" />
                             )}
                           </span>
-                        </div>
+                        </Button>
+                      </div>
 
-                        <div className="flex flex-col items-center gap-1">
-                          <Badge variant={isCompleted ? "secondary" : "outline"}>
-                            {isCompleted ? resultText || "Won" : "vs"}
-                          </Badge>
-                        </div>
+                      {/* Result Pill */}
+                      <div className="shrink-0">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-eyebrow px-2 py-0.5",
+                            isCompleted
+                              ? "border-yellow/30 bg-yellow/10 text-yellow"
+                              : "border-separator text-label-secondary"
+                          )}
+                        >
+                          {isCompleted ? resultText || "Won" : "vs"}
+                        </Badge>
+                      </div>
 
-                        <div className="flex-1 text-right">
+                      {/* Fighter 2 */}
+                      <div className="min-w-0 flex-1 text-right">
+                        <Button
+                          variant="ghost"
+                          onClick={() => onTeamClick?.(b.fighter2Id)}
+                          disabled={!onTeamClick}
+                          className={cn(
+                            "group block h-auto w-full truncate p-0 text-right font-normal hover:bg-transparent disabled:opacity-100",
+                            onTeamClick && "hover:underline"
+                          )}
+                        >
                           <span
                             className={cn(
-                              "font-medium",
-                              fighter2IsWinner && "font-bold text-yellow-500"
+                              "text-footnote block truncate font-semibold",
+                              fighter2IsWinner
+                                ? "text-yellow font-semibold"
+                                : isCompleted
+                                  ? "text-label-secondary line-through opacity-70"
+                                  : "text-label group-hover:text-tint"
                             )}
                           >
-                            {b.fighter2Name ?? b.fighter2Id}
                             {fighter2IsWinner && (
-                              <Medal className="ml-1 inline h-3.5 w-3.5 text-yellow-500" />
+                              <Medal className="text-yellow mr-1 inline h-3.5 w-3.5" />
                             )}
+                            {b.fighter2Name ?? b.fighter2Id}
                           </span>
-                        </div>
+                        </Button>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-      </CardContent>
+            </div>
+          );
+        })}
+      </div>
     </Card>
   );
 }

@@ -4,46 +4,100 @@
  * Provides endpoints for WikiOS article rendering, editing, history, search,
  * template registry, watchlist, advanced search, and category tree.
  */ import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { TRPCError } from "@trpc/server";
+import {
+  createTRPCRouter,
+  enforceRateLimit,
+  publicProcedure,
+  rateLimitedPublicProcedure,
+  wikiReadProcedure,
+} from "~/server/api/trpc";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
-import { getArticleHtml, getArticleHtmlViaParsoid } from "~/lib/wiki-os/parsoid-client";
+import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import {
   getArticleWikitext,
-  getPageSections,
-  getPageHistory,
   resolveRedirect,
-  getCurrentRevMeta,
-  getPageProps,
-  getPageProtection,
-  getPageLog,
   getInfobox,
   getImageMeta,
-} from "~/lib/wiki-os/bridge";
-import { syncWikiRecentChanges } from "~/server/cron/sync-wiki-recentchanges";
-import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/html-transformer";
-import {
-  extractTemplateKeys,
-  resolveTemplates,
-  applyResolvedTemplates,
-  registerTemplateProvider,
-  type ResolvedTemplate,
-} from "~/lib/wiki-os/template-resolver";
+} from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { cleanExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
+import { registerTemplateProvider } from "~/lib/wiki-os/templates/template-resolver";
 import { ixstatsTemplateProvider } from "~/server/shared/ixstats-template-provider";
-import { computeWikitextDiff } from "~/lib/wiki-os/wikitext-diff";
 import {
   getArticleWikitextShadow,
-  getArticleHistoryShadow,
-  getRevisionWikitextShadow,
-  saveArticleHtmlShadow,
-  getArticleHtmlShadow,
-} from "~/lib/wiki-os/article-store";
-import { getArticleSummaryFromShadow } from "~/lib/wiki-os/search-service";
+  getArticleAuthors,
+} from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-service";
 import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
-
-import { db } from "~/server/db";
+import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
+import { getArticleView, type ImportSource } from "~/lib/wiki-os/services/article-view-service";
+import { getMainPageData } from "~/lib/wiki-os/services/main-page-service";
+import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
+import {
+  renderSisterArticle,
+  SisterRenderError,
+} from "~/lib/wiki-os/services/sister-render-service";
+import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { assertTitleVisible, canSeeDeletedPages, visibleTitles } from "~/lib/wiki-os/permissions";
+import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
+import { downloadMedia } from "~/lib/wiki-os/services/media-download";
+import { readVisiblePage } from "~/lib/wiki-os/services/visible-page";
+import { SISTER_CALLER_LIMITS } from "./search";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
+
+/**
+ * Who is asking, for the MediaWiki import of a page WikiOS does not have yet: the server's own
+ * caller (`x-trpc-source: rsc`, set in `~/trpc/server`) is a page request, which only a request that
+ * asks for HTML may import for; any other caller is the reader's client.
+ */
+function importSourceOf(headers: Headers | undefined): ImportSource {
+  if (headers?.get("x-trpc-source") !== "rsc") return "client";
+  return /\btext\/html\b/i.test(headers.get("accept") ?? "") ? "ssr" : "none";
+}
+
+/**
+ * The reader's view of the IxWiki page `title` (canonical, redirects already followed), or null when
+ * there is none. Not asking MediaWiki about a missing page right now is "busy", not "no such page".
+ */
+async function readIxWikiView(ctx: WikiAuthContext & { headers?: Headers }, title: string) {
+  return getArticleView(
+    title,
+    () => resolveActiveCountryId(ctx),
+    () => canSeeDeletedPages(ctx),
+    importSourceOf(ctx.headers)
+  ).catch((error: Error) => {
+    if (error instanceof ThrottledError) {
+      throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: error.message });
+    }
+    throw error;
+  });
+}
+
+/** The most redirect resolutions (each up to two hops) followed before a chain is called a cycle. */
+const MAX_REDIRECT_ROUNDS = 3;
+
+/**
+ * Where `rawTitle` really leads: the page after its redirects, with the section the last redirect
+ * named. Null when the redirects lead back to a title already seen (A to B to A, A to B to C to A)
+ * or never end: a reader sent to either end of a cycle would be sent round it for ever, so the
+ * caller shows the page asked for.
+ */
+async function followRedirects(
+  rawTitle: string
+): Promise<{ title: string; fragment: string | null } | null> {
+  const seen = new Set([rawTitle]);
+  let current = { title: rawTitle, fragment: null as string | null };
+  for (let round = 0; round < MAX_REDIRECT_ROUNDS; round++) {
+    const next = await resolveRedirect(current.title);
+    if (next.title === current.title) return current; // not a redirect: this is the page
+    if (seen.has(next.title)) return null;
+    seen.add(next.title);
+    current = { title: next.title, fragment: next.fragment ?? current.fragment };
+  }
+  return null;
+}
 
 export const wikiosPageContentRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
@@ -51,11 +105,117 @@ export const wikiosPageContentRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
 
   /**
+   * Everything the Main Page shows, in one answer (featured article, almanac, recent changes, counts,
+   * topic tiles, a blurb prompt), built from Postgres and kept a minute per process.
+   */
+  getMainPage: publicProcedure.query(() => getMainPageData()),
+
+  /**
    * Get pre-transformed article data for the reader mode.
    * ALL transformation (images, links, infobox extraction, TOC, notices)
    * happens here server-side. Client renders with zero regex work.
    */
-  getArticleHtml: publicProcedure
+  getArticleHtml: wikiReadProcedure
+    .input(
+      z.object({
+        title: z.string().min(1).max(500),
+        wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+        /** "no" shows a redirect page itself instead of following it (`?redirect=no`). */
+        redirect: z.literal("no").optional(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const { wikiSource } = input;
+
+      // Another wiki's page: its wikitext is fetched from that wiki (a redirect followed to the page it names) and
+      // rendered by that wiki's own parser (never IxWiki's, whose templates are not its templates), then sanitized
+      // and cached per revision. Only a page that wiki does not have is NOT_FOUND: a wiki that cannot be reached
+      // (for the wikitext or the render) throws WikiUnavailableError, which the formatter sends as
+      // SERVICE_UNAVAILABLE (TOO_MANY_REQUESTS when busy), and the reader offers "Open on <wiki>".
+      if (wikiSource !== "ixwiki") {
+        const article = await getArticleWikitext(input.title, wikiSource);
+        if (!article) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Article "${input.title}" not found on ${wikiSource}`,
+          });
+        }
+
+        const [rendered, authorInfo] = await Promise.all([
+          renderSisterArticle(wikiSource, article).catch((error: Error) => {
+            if (error instanceof SisterRenderError) {
+              throw new TRPCError({ code: "BAD_GATEWAY", message: error.message, cause: error });
+            }
+            throw error;
+          }),
+          getArticleAuthors(article.title, wikiSource),
+        ]);
+
+        return {
+          ...rendered,
+          title: article.title,
+          categories: [] as string[],
+          lastModified: null,
+          isRedirect: false,
+          redirectTarget: null,
+          redirectFragment: null,
+          /** The redirect the reader asked for ("Redirected from"), or null. */
+          resolvedFrom: article.redirectedFrom ?? null,
+          wikiSource,
+          authorInfo,
+          renderQuality: "rendered" as const,
+          stale: false,
+        };
+      }
+
+      // Default ixwiki flow — direct PostgreSQL / in-process wikitext compiler
+      // The client sends the title already URL-decoded; canonicalize it (never decode again).
+      const canon = canonicalizeTitle(input.title);
+      if (!canon) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `"${input.title}" is not a valid page title.`,
+        });
+      }
+      const rawTitle = canon.title;
+
+      // A title is always a page here: a former WikiOS tool slug ("search") is an article title
+      // like any other.
+      const self = { title: rawTitle, fragment: null };
+      const followed = input.redirect === "no" ? self : ((await followRedirects(rawTitle)) ?? self);
+
+      let shown = followed;
+      let view = await readIxWikiView(ctx, followed.title);
+      if (!view && followed.title !== rawTitle) {
+        // The redirect's target does not exist: show the redirect page itself, as MediaWiki does
+        // (its "Redirect to: Target" with a red link), not "no such page" for a page that exists.
+        shown = { title: rawTitle, fragment: null };
+        view = await readIxWikiView(ctx, rawTitle);
+      }
+      if (!view) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `The page "${input.title}" does not exist on WikiOS.`,
+        });
+      }
+
+      return {
+        ...view,
+        isRedirect: false,
+        redirectTarget: null,
+        /** The section the redirect points to, or null. */
+        redirectFragment: shown.fragment,
+        resolvedFrom: shown.title !== rawTitle ? rawTitle : null,
+        wikiSource: "ixwiki" as const,
+        // The reader fetches authorship lazily (getArticleAuthors) so it never holds the article back.
+        authorInfo: null,
+      };
+    }),
+
+  /**
+   * Get article author and latest editor.
+   */
+  getArticleAuthors: publicProcedure
     .input(
       z.object({
         title: z.string().min(1).max(500),
@@ -63,255 +223,71 @@ export const wikiosPageContentRouter = createTRPCRouter({
       })
     )
     .query(async ({ input, ctx }) => {
-      const { wikiSource } = input;
-
-      // For external wikis, fetch wikitext then render via ixwiki's action=parse
-      if (wikiSource !== "ixwiki") {
-        const article = await getArticleWikitext(input.title, wikiSource);
-        if (!article) {
-          throw new Error(`Article "${input.title}" not found on ${wikiSource}`);
-        }
-
-        // Use ixwiki's action=parse as a cross-wiki render proxy.
-        // Templates won't resolve but basic wikitext formatting will work.
-        const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
-        const response = await fetch(apiBase, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            action: "parse",
-            text: article.wikitext,
-            contentmodel: "wikitext",
-            prop: "text",
-            disablelimitreport: "1",
-            disableeditsection: "1",
-            wrapoutputclass: "",
-            formatversion: "2",
-            format: "json",
-          }),
-          signal: AbortSignal.timeout(15000),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Cross-wiki render failed (${response.status})`);
-        }
-
-        const data = (await response.json()) as {
-          parse?: { text: string };
-          error?: { info: string };
-        };
-
-        if (data.error || !data.parse) {
-          throw new Error(`Cross-wiki render error: ${data.error?.info ?? "no parse result"}`);
-        }
-
-        const transformed = transformArticleHtml(
-          stripConflictingStyles(data.parse.text),
-          "",
-          wikiSource
-        );
-
-        return {
-          contentHtml: transformed.contentHtml,
-          infoboxHtml: transformed.infoboxHtml,
-          noticesHtml: transformed.noticesHtml,
-          toc: transformed.toc,
-          title: article.title,
-          categories: [] as string[],
-          lastModified: null,
-          isRedirect: false,
-          redirectTarget: null,
-          resolvedFrom: null,
-          wikiSource,
-        };
-      }
-
-      // Default ixwiki flow — direct Parsoid/MySQL
-      const resolvedTitle = await resolveRedirect(input.title);
-      const article = await getArticleHtml(resolvedTitle);
-
-      const transformed = transformArticleHtml(stripConflictingStyles(article.html), "", "ixwiki");
-
-      // Pre-resolve custom templates (CountryData, BusinessData) server-side
-      // so they render immediately without a client-side second pass.
-      const templateKeys = extractTemplateKeys(transformed.contentHtml);
-      let resolvedMap: Map<string, ResolvedTemplate> | undefined;
-      try {
-        const myCountryId = await resolveActiveCountryId(ctx);
-        resolvedMap = await resolveTemplates(templateKeys, {
-          activeCountryId: myCountryId,
-        });
-      } catch {
-        resolvedMap = undefined;
-      }
-
-      const contentHtml = resolvedMap
-        ? applyResolvedTemplates(transformed.contentHtml, resolvedMap)
-        : transformed.contentHtml;
-      const infoboxHtml =
-        resolvedMap && transformed.infoboxHtml
-          ? applyResolvedTemplates(transformed.infoboxHtml, resolvedMap)
-          : transformed.infoboxHtml;
-      const noticesHtml =
-        resolvedMap && transformed.noticesHtml
-          ? applyResolvedTemplates(transformed.noticesHtml, resolvedMap)
-          : transformed.noticesHtml;
-
-      // Phase 8: Backfill HTML shadow cache in background
-      void saveArticleHtmlShadow(resolvedTitle, contentHtml, "ixwiki");
-
-      return {
-        contentHtml,
-        infoboxHtml,
-        noticesHtml,
-        toc: transformed.toc,
-        title: article.title,
-        categories: article.categories,
-        lastModified: article.lastModified,
-        isRedirect: false,
-        redirectTarget: null,
-        resolvedFrom: resolvedTitle !== input.title ? input.title : null,
-        wikiSource: "ixwiki" as const,
-      };
+      const { title: resolvedTitle } = await resolveRedirect(input.title);
+      await assertTitleVisible(ctx, resolvedTitle, input.wikiSource);
+      return getArticleAuthors(resolvedTitle, input.wikiSource);
     }),
 
   /**
-   * Get raw wikitext for the source editor.
+   * Get raw wikitext for the source editor, or another wiki's page (read only: a country profile's lore), which
+   * has no IxWiki revision to base an edit on. Another wiki that cannot be reached is SERVICE_UNAVAILABLE
+   * (WikiUnavailableError), never an empty page.
    */
   getWikitext: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
+    .input(
+      z.object({
+        title: z.string().min(1).max(500),
+        wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      await assertTitleVisible(ctx, input.title, input.wikiSource);
+      if (input.wikiSource !== "ixwiki") {
+        const page = await getArticleWikitextShadow(input.title, input.wikiSource);
+        return {
+          wikitext: page?.wikitext ?? "",
+          revid: page?.revid ?? null,
+          timestamp: page?.timestamp ?? null,
+          revisionRef: null,
+          revisionRefs: [] as string[],
+        };
+      }
+      // The head revision is read BEFORE the text: a save in between can then only make the text newer
+      // than its ref (a harmless extra conflict), never older (which would let a stale edit overwrite it).
+      // Without the shadow store the editor still loads; it then saves without a base revision.
+      const head = await getHeadRevisionRefs(input.title).catch(() => null);
       // Read-through the Postgres shadow store (resilient to MediaWiki downtime).
-      const result = await getArticleWikitextShadow(input.title, "ixwiki");
+      const result = await getArticleWikitextShadow(input.title, "ixwiki", {
+        includeArchived: true, // visibility was asserted above
+      });
       return {
         wikitext: result?.wikitext ?? "",
         revid: result?.revid ?? null,
         timestamp: result?.timestamp ?? null,
+        /** The latest revision the editor is based on; send it back as `baseRevisionRef` when saving. */
+        revisionRef: head?.revisionRef ?? null,
+        /** Every reference that names that revision (its row id and its MediaWiki rev_id once stamped). */
+        revisionRefs: head?.revisionRefs ?? [],
       };
     }),
 
   /**
-   * Check if a page exists in local DB or MediaWiki.
+   * Check if a page exists in local DB or MediaWiki. A deleted page exists for a reader who may see it, unless
+   * `liveOnly` (the lore writer, whose pieces are live pages only) asks for live pages.
    */
   checkPageExists: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
-      const resolvedTitle = await resolveRedirect(input.title);
-      const article = await getArticleWikitextShadow(resolvedTitle, "ixwiki");
-      return { exists: !!article, resolvedTitle };
-    }),
-
-  /**
-   * Get Parsoid HTML for the visual editor.
-   * Returns raw Parsoid output with data-mw attributes preserved.
-   * This is the HTML that can round-trip back to wikitext via Parsoid.
-   * Do NOT use transformArticleHtml on this — it destroys the metadata.
-   */
-  getEditorHtml: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
-      try {
-        const [article, revMeta] = await Promise.all([
-          getArticleHtmlViaParsoid(input.title),
-          getCurrentRevMeta(input.title),
-        ]);
-
-        // Extract just the <body> content from the full Parsoid HTML document
-        const bodyMatch = article.html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-        const bodyHtml = bodyMatch ? bodyMatch[1]! : article.html;
-
-        return {
-          html: bodyHtml,
-          title: article.title,
-          revid: revMeta?.revid ?? null,
-          timestamp: revMeta?.timestamp ?? null,
-        };
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        if (message.includes("404")) {
-          return {
-            html: "",
-            title: input.title,
-            revid: null,
-            timestamp: null,
-          };
-        }
-        throw err;
-      }
-    }),
-
-  /**
-   * Get article intro with redirect resolution — for link preview tooltips.
-   * Resolves redirects server-side so tooltips never show "#REDIRECT".
-   */
-  getIntroResolved: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
-      const resolvedTitle = await resolveRedirect(input.title);
-      const article = await getArticleWikitext(resolvedTitle, "ixwiki");
-      if (!article) return { title: resolvedTitle, text: "", redirectedFrom: null };
-
-      // Extract first paragraph (intro)
-      const wikitext = article.wikitext;
-      const headingIdx = wikitext.search(/^==[^=]/m);
-      const introRaw =
-        headingIdx > 0 ? wikitext.substring(0, headingIdx) : wikitext.substring(0, 500);
-
-      // Clean wiki markup from the intro
-      const intro = introRaw
-        .replace(/\{\{[^}]*\}\}/g, "") // templates
-        .replace(/\[\[(?:[^|\]]*\|)?([^\]]*)\]\]/g, "$1") // links
-        .replace(/'''([^']+)'''/g, "$1") // bold
-        .replace(/''([^']+)''/g, "$1") // italic
-        .replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "") // refs
-        .replace(/<[^>]+>/g, "") // HTML tags
-        .replace(/\n{2,}/g, " ")
-        .trim();
-
-      return {
-        title: resolvedTitle,
-        text: intro.substring(0, 400),
-        redirectedFrom: resolvedTitle !== input.title ? input.title : null,
-      };
-    }),
-
-  /**
-   * Get fast article intro/summary (plain text) for preview cards and tooltips.
-   * Serves from PostgreSQL shadow store in <3ms.
-   */
-  getArticleSummary: publicProcedure
-    .input(
-      z.object({
-        title: z.string().min(1).max(500),
-        source: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
-      })
-    )
-    .query(async ({ input }) => {
-      const summary = await getArticleSummaryFromShadow(input.title, input.source);
-      return {
-        title: summary.title,
-        intro: summary.intro,
-        text: summary.intro,
-        source: input.source,
-      };
-    }),
-
-  /**
-   * Resolve dynamic stat placeholders (e.g. {{CountryData:...}}) in arbitrary text.
-   */
-  resolvePlaceholders: publicProcedure
-    .input(
-      z.object({
-        placeholders: z.array(z.string()).optional(),
-        text: z.string().optional(),
-        countryId: z.string().optional(),
-      })
-    )
+    .input(z.object({ title: z.string().min(1).max(500), liveOnly: z.boolean().optional() }))
     .query(async ({ input, ctx }) => {
-      const keys = input.placeholders ?? [];
-      const resolved = await resolveWikiPlaceholdersInternal(keys, ctx, input.countryId);
-      return resolved;
+      const { resolvedTitle, wikitext } = await readVisiblePage(ctx, input.title, {
+        includeArchived: !input.liveOnly,
+      });
+      return { exists: wikitext !== null, resolvedTitle };
     }),
+
+  /** Batched existence check for rendered wiki links: returns the titles with no article. */
+  getMissingPages: publicProcedure
+    .input(z.object({ titles: z.array(z.string().min(1).max(255)).max(200) }))
+    .query(({ input }) => ArticleRepository.findMissingTitles(input.titles, "ixwiki")),
 
   /**
    * Alias for resolvePlaceholders.
@@ -319,19 +295,20 @@ export const wikiosPageContentRouter = createTRPCRouter({
   resolveWikiPlaceholders: publicProcedure
     .input(
       z.object({
-        placeholders: z.array(z.string()).optional(),
-        text: z.string().optional(),
-        countryId: z.string().optional(),
+        placeholders: z.array(z.string().max(512)).max(200).optional(),
+        text: z.string().max(200_000).optional(),
+        countryId: z.string().max(64).optional(),
       })
     )
     .query(async ({ input, ctx }) => {
-      const keys = input.placeholders ?? [];
-      const resolved = await resolveWikiPlaceholdersInternal(keys, ctx, input.countryId);
-      return resolved;
+      return resolveWikiPlaceholdersInternal(input.placeholders ?? [], ctx, input.countryId);
     }),
 
   /**
-   * Get intro with backward compatible input signature { title, wiki }.
+   * Get intro with backward compatible input signature { title, wiki }. Another wiki that cannot be reached is
+   * SERVICE_UNAVAILABLE (WikiUnavailableError); a page it does not have is an empty intro, `missing`. Only an IxWiki
+   * title goes through IxWiki's redirects: a sister wiki follows its own (`readSisterWikitext`). A sister wiki's
+   * intro counts against the caller's `SISTER_CALLER_LIMITS.intro` (TOO_MANY_REQUESTS past it).
    */
   getIntro: publicProcedure
     .input(
@@ -340,324 +317,83 @@ export const wikiosPageContentRouter = createTRPCRouter({
         wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
       })
     )
-    .query(async ({ input }) => {
-      const summary = await getArticleSummaryFromShadow(input.title, input.wiki);
+    .use(async ({ ctx, input, path, next }) => {
+      if (input.wiki !== "ixwiki") {
+        await enforceRateLimit(ctx.rateLimitIdentifier, path, SISTER_CALLER_LIMITS.intro);
+      }
+      return next();
+    })
+    .query(async ({ input, ctx }) => {
+      const cleanTitle = input.title.replace(/_/g, " ").trim();
+      const resolvedTitle =
+        input.wiki === "ixwiki" ? (await resolveRedirect(cleanTitle)).title : cleanTitle;
+      await assertTitleVisible(ctx, resolvedTitle, input.wiki);
+
+      const summary = await getArticleSummaryFromShadow(resolvedTitle, input.wiki);
+      if (summary.intro) {
+        return {
+          title: summary.title,
+          intro: summary.intro,
+          text: summary.intro,
+          source: input.wiki,
+          missing: false,
+        };
+      }
+
+      const nativeArticle = await ArticleRepository.findBySlug(resolvedTitle, input.wiki).catch(
+        () => null
+      );
+      const introText =
+        nativeArticle?.summary ||
+        (nativeArticle?.wikitext ? cleanExcerpt(nativeArticle.wikitext, 300) : "");
+
       return {
-        title: summary.title,
-        intro: summary.intro,
-        text: summary.intro,
+        title: nativeArticle?.title || summary.title || resolvedTitle,
+        intro: introText,
+        text: introText,
         source: input.wiki,
+        missing: summary.missing && !nativeArticle,
       };
     }),
 
   /**
-   * Get content of a specific section from a wiki article.
-   */
-  getSectionContent: publicProcedure
-    .input(
-      z.object({
-        title: z.string().min(1),
-        section: z.string().min(1),
-        source: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
-        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
-      })
-    )
-    .query(async ({ input }) => {
-      const src = input.source ?? input.wiki ?? "ixwiki";
-      const article = await getArticleWikitextShadow(input.title, src);
-      if (!article) return null;
-
-      const lines = article.wikitext.split("\n");
-      let capturing = false;
-      let sectionLevel = 0;
-      const content: string[] = [];
-      const sectionLower = input.section.toLowerCase();
-
-      for (const line of lines) {
-        const headingMatch = line.match(/^(={2,})\s*(.+?)\s*={2,}$/);
-        if (headingMatch) {
-          const level = headingMatch[1]!.length;
-          const title = headingMatch[2]!.trim().toLowerCase();
-
-          if (capturing) {
-            if (level <= sectionLevel) break;
-          }
-
-          if (title.includes(sectionLower)) {
-            capturing = true;
-            sectionLevel = level;
-            continue;
-          }
-        }
-
-        if (capturing) {
-          content.push(line);
-        }
-      }
-
-      if (content.length === 0) return null;
-
-      const fileRefs: string[] = [];
-      const filePattern = /\[\[(?:File|Image):([^\]|]+)/gi;
-      const fullContent = content.join("\n");
-      let match;
-      while ((match = filePattern.exec(fullContent)) !== null) {
-        fileRefs.push(match[1]!.trim());
-      }
-
-      return {
-        content: fullContent.trim(),
-        fileReferences: fileRefs,
-        lineCount: content.length,
-      };
-    }),
-
-  /**
-   * Get page images from an article.
+   * Get page images from an article. Another wiki that cannot be reached is SERVICE_UNAVAILABLE
+   * (WikiUnavailableError), never "no images".
    */
   getPageImages: publicProcedure
     .input(
       z.object({
-        title: z.string().min(1),
+        title: z.string().min(1).max(512),
         wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
       })
     )
-    .query(async ({ input }) => {
-      const { getPageImages } = await import("~/lib/wiki/bridge");
-      return getPageImages(input.title);
+    .query(async ({ input, ctx }) => {
+      await assertTitleVisible(ctx, input.title, input.wiki);
+      const { getPageImages } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
+      return getPageImages(input.title, { wiki: input.wiki });
     }),
 
   /**
-   * Get forum thread preview by threadId.
+   * Batch get lead thumbnails for article titles.
    */
-  getForumThreadPreview: publicProcedure
-    .input(z.object({ threadId: z.number().int().positive() }))
-    .query(async ({ input }) => {
-      const { getXfApiKey, getXfApiUrl } = await import("~/server/modules/forum");
-      const apiKey = getXfApiKey();
-      if (!apiKey) return null;
-
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch(`${getXfApiUrl()}/threads/${input.threadId}/`, {
-          headers: { "XF-Api-Key": apiKey },
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-
-        if (!res.ok) return null;
-        const data = (await res.json()) as {
-          thread?: {
-            thread_id: number;
-            title: string;
-            username: string;
-            post_date: number;
-            reply_count: number;
-            view_count: number;
-            Forum?: { title: string };
-            first_post?: { message: string };
-          };
-        };
-
-        const t = data.thread;
-        if (!t) return null;
-
-        const rawMsg = t.first_post?.message ?? "";
-        const excerpt = rawMsg
-          .replace(/\[ATTACH[^\]]*\]\d+\[\/ATTACH\]/gi, "")
-          .replace(/\[\/?(?:b|i|u|url|quote|code|img|media)[^\]]*\]/gi, "")
-          .replace(/\n+/g, " ")
-          .trim()
-          .slice(0, 200);
-
-        return {
-          threadId: t.thread_id,
-          title: t.title,
-          author: t.username,
-          postDate: t.post_date,
-          replyCount: t.reply_count,
-          viewCount: t.view_count,
-          forumTitle: t.Forum?.title ?? null,
-          forumName: t.Forum?.title ?? null,
-          excerpt: excerpt || null,
-        };
-      } catch {
-        return null;
+  getArticleThumbnails: publicProcedure
+    .input(z.object({ titles: z.array(z.string().min(1).max(512)).max(100) }))
+    .query(async ({ input, ctx }) => {
+      if (input.titles.length === 0) return {};
+      const { batchFetchThumbnails } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
+      const map = await batchFetchThumbnails(await visibleTitles(ctx, input.titles));
+      const result: Record<string, string> = {};
+      for (const [title, url] of map.entries()) {
+        result[title] = url;
+        result[title.replace(/ /g, "_")] = url;
+        result[title.replace(/_/g, " ")] = url;
       }
-    }),
-
-  /**
-   * Get article sections (table of contents).
-   */
-  getSections: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
-      return getPageSections(input.title, "ixwiki");
-    }),
-
-  // ---------------------------------------------------------------------------
-  // History & Diff endpoints (Phase 3)
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Get revision history for a page.
-   */
-  getHistory: publicProcedure
-    .input(
-      z.object({
-        title: z.string().min(1).max(500),
-        limit: z.number().min(1).max(100).default(50),
-        offset: z.string().optional(),
-      })
-    )
-    .query(async ({ input }) => {
-      // Read-through: serve local revisions from Postgres (resilient to MediaWiki
-      // downtime), falling back to direct MySQL. Paginated requests (offset) go
-      // straight to MySQL — local history is first-page/recent only.
-      const result = input.offset
-        ? await getPageHistory(input.title, input.limit, parseInt(input.offset, 10))
-        : await getArticleHistoryShadow(input.title, input.limit, "ixwiki");
-      return {
-        revisions: result.revisions,
-        continueToken:
-          result.hasMore && result.revisions.length > 0
-            ? String(result.revisions[result.revisions.length - 1]!.revid)
-            : null,
-      };
-    }),
-
-  /**
-   * Get a visual diff between two revisions.
-   */
-  getDiff: publicProcedure
-    .input(
-      z.object({
-        fromrev: z.number(),
-        torev: z.number(),
-      })
-    )
-    .query(async ({ input }) => {
-      // Node.js diff engine — ~50ms vs ~500ms via API
-      // Fetch both revisions' wikitext via direct MySQL
-      const [fromData, toData] = await Promise.all([
-        getRevisionWikitextShadow(input.fromrev, "ixwiki"),
-        getRevisionWikitextShadow(input.torev, "ixwiki"),
-      ]);
-
-      if (!fromData || !toData) throw new Error("One or both revisions not found");
-
-      // Compute diff using Node.js engine
-      const diffHtml = computeWikitextDiff(fromData.wikitext, toData.wikitext);
-
-      // Get revision metadata (user, comment) from page history
-      const pageTitle = toData.title;
-      const history = await getArticleHistoryShadow(pageTitle, 100, "ixwiki");
-      const fromRev = history.revisions.find((r) => r.revid === input.fromrev);
-      const toRev = history.revisions.find((r) => r.revid === input.torev);
-
-      return {
-        diffHtml,
-        from: {
-          revid: input.fromrev,
-          user: fromRev?.user ?? "",
-          timestamp: fromData.timestamp,
-          comment: fromRev?.comment ?? "",
-        },
-        to: {
-          revid: input.torev,
-          user: toRev?.user ?? "",
-          timestamp: toData.timestamp,
-          comment: toRev?.comment ?? "",
-        },
-      };
-    }),
-
-  // ---------------------------------------------------------------------------
-  // Editor endpoints (Phase 2)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Template Registry (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Lore Stash — save-for-later with color-coded collections
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Annotations
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // User Info (for WikiOS profiles)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Rollback / Undo endpoints
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Get the wikitext of a specific revision (for undo preview).
-   */
-  getRevisionContent: publicProcedure
-    .input(z.object({ revid: z.number() }))
-    .query(async ({ input }) => {
-      const result = await getRevisionWikitextShadow(input.revid, "ixwiki");
-      if (!result) throw new Error("Revision not found");
       return result;
     }),
 
-  // ---------------------------------------------------------------------------
-  // Talk / Discussion Pages
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // File Upload
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Page Properties & Protection (direct MySQL)
-  // ---------------------------------------------------------------------------
-
-  /** Get page properties (displaytitle, defaultsort, page_image, etc.) */
-  getPageProps: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
-      const article = await getArticleWikitext(input.title, "ixwiki");
-      if (!article) return { props: {} };
-      return { props: await getPageProps(article.pageId) };
-    }),
-
-  /** Get page protection status (edit/move restrictions). */
-  getPageProtection: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
-      return { restrictions: await getPageProtection(input.title) };
-    }),
-
-  /** Get page action log (moves, deletes, protections). */
-  getPageLog: publicProcedure
-    .input(
-      z.object({
-        title: z.string().min(1).max(500),
-        limit: z.number().min(1).max(100).default(50),
-      })
-    )
-    .query(async ({ input }) => {
-      return { entries: await getPageLog(input.title, input.limit) };
-    }),
-
-  // ---------------------------------------------------------------------------
-  // Advanced Search (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Category Tree (Phase 1)
-  // ---------------------------------------------------------------------------
-
   /**
-   * Get parsed infobox for a wiki page.
+   * Get parsed infobox for a wiki page. Null for a missing page; another wiki that cannot be reached is
+   * SERVICE_UNAVAILABLE (WikiUnavailableError).
    */
   getInfobox: publicProcedure
     .input(
@@ -666,43 +402,31 @@ export const wikiosPageContentRouter = createTRPCRouter({
         wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await assertTitleVisible(ctx, input.title, input.wiki);
       return getInfobox(input.title, input.wiki);
     }),
 
   /**
-   * Download a media file from the wiki as base64.
+   * Download a media file from the wiki as base64 (allowlisted hosts only, at most 10 MB). Public, so
+   * rate-limited: every call fetches and buffers a file.
    */
-  downloadFile: publicProcedure
-    .input(
-      z.object({
-        filename: z.string().min(1).max(500),
-      })
-    )
+  downloadFile: rateLimitedPublicProcedure
+    .input(z.object({ filename: z.string().min(1).max(500) }))
     .query(async ({ input }) => {
       const cleanFilename = input.filename.replace(/^File:/i, "");
-      const meta = await getImageMeta(cleanFilename);
-      if (!meta?.url) return null;
+      const asset = await MediaAssetService.findAsset(cleanFilename);
+      const url = asset?.url || (await getImageMeta(cleanFilename))?.url;
+      if (!url) return null;
 
       try {
-        const res = await fetch(meta.url);
-        if (!res.ok) return null;
-        const arrayBuffer = await res.arrayBuffer();
-        const base64 = Buffer.from(arrayBuffer).toString("base64");
-        return { content: base64, mime: meta.mimeType || "image/png" };
+        // Allowlisted hosts only, at most 10 MB: this endpoint is public (plan 416).
+        const bytes = await downloadMedia(url);
+        if (!bytes) return null;
+        return { content: bytes.toString("base64"), mime: asset?.mimeType || "image/png" };
       } catch (err) {
         console.error("[WikiOS] Failed to download media file:", err);
         return null;
       }
     }),
-
-  /**
-   * Sync recent changes from MediaWiki into local shadow store.
-   */
-  syncRecentChanges: publicProcedure
-    .input(z.object({ limit: z.number().min(1).max(100).default(50) }).optional())
-    .mutation(async ({ input }) => {
-      return syncWikiRecentChanges(input?.limit ?? 50);
-    }),
 });
-

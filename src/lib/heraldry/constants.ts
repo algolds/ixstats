@@ -180,3 +180,7 @@ export const CHARGE_CATEGORIES = [
   { value: "IXNAY_SPECIFIC", label: "Ixnay Specific" },
   { value: "MISCELLANEOUS", label: "Miscellaneous" },
 ] as const;
+
+/** The only file names the server-side coat-of-arms render writes (served under the uploads prefix). */
+export const RENDERED_IMAGE_URL =
+  /^\/images\/uploads\/heraldry_[0-9a-f-]{36}_[0-9a-f]{16}_(?:256|1024)\.png$/;

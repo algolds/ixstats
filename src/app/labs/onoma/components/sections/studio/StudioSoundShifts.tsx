@@ -7,28 +7,25 @@ import { useState, useMemo } from "react";
 import {
   GitFork,
   Plus,
-  Trash2,
-  Volume2,
-  RotateCcw,
+  Trash as Trash2,
+  SoundHigh as Volume2,
   ArrowRight,
-  HelpCircle,
   Copy,
   Check,
-  ChevronDown,
-  ChevronRight,
-  Layers,
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+  Component as Layers,
   ArrowUp,
   ArrowDown,
   Bookmark,
-  Globe2,
-  FolderDown,
-} from "lucide-react";
+  Globe as Globe2,
+  Folder as FolderDown,
+} from "iconoir-react";
 import {
   SOUND_SHIFT_PRESETS,
   applySoundShifts,
   type SoundShiftEpoch,
   type SoundShiftRule,
-  type SoundShiftPreset,
   type WordEvolutionResult,
 } from "~/lib/onoma/sound-shifts";
 import { speakName } from "~/lib/onoma/browser-speech";
@@ -40,6 +37,12 @@ import { cn } from "~/lib/utils";
 import LoanwordsSection from "../LoanwordsSection";
 import { CorpusSelector } from "../../shared/CorpusSelector";
 import { resolveCorpusWords } from "~/lib/onoma/data-bridge";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Button } from "~/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import { Checkbox } from "~/components/ui/checkbox";
 
 const QUICK_SYMBOLS = [
   { label: "#_ (Initial)", value: "#_" },
@@ -78,7 +81,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
   // Epochs State
   const [epochs, setEpochs] = useState<SoundShiftEpoch[]>(() => {
     const preset = SOUND_SHIFT_PRESETS.find((p) => p.id === "grimms-law")!;
-    return JSON.parse(JSON.stringify(preset.epochs));
+    return structuredClone(preset.epochs);
   });
 
   // Proto-words input state
@@ -106,13 +109,12 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
     setSelectedPresetId(presetId);
     const preset = SOUND_SHIFT_PRESETS.find((p) => p.id === presetId);
     if (preset) {
-      setEpochs(JSON.parse(JSON.stringify(preset.epochs)));
+      setEpochs(structuredClone(preset.epochs));
       setInputWordsText(preset.sampleInput.join("\n"));
       notify.success(`Loaded "${preset.name}" sound shift rules.`);
     }
   };
 
-  // Add Epoch
   const handleAddEpoch = () => {
     const newEpoch: SoundShiftEpoch = {
       id: `epoch-${Date.now()}`,
@@ -131,7 +133,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
     setEpochs([...epochs, newEpoch]);
   };
 
-  // Remove Epoch
   const handleRemoveEpoch = (epochIdx: number) => {
     setEpochs(epochs.filter((_, i) => i !== epochIdx));
   };
@@ -168,7 +169,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
     }
   };
 
-  // Move Rule
   const handleMoveRule = (epochIdx: number, ruleIdx: number, direction: "up" | "down") => {
     const updated = [...epochs];
     const rules = updated[epochIdx]?.rules;
@@ -209,7 +209,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
       .filter(Boolean);
   }, [inputWordsText]);
 
-  // Compute Evolution Results
   const evolutionResults: WordEvolutionResult[] = useMemo(() => {
     return applySoundShifts(parsedWords, epochs);
   }, [parsedWords, epochs]);
@@ -238,7 +237,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
     notify.success(`Copied "${word}" to clipboard.`);
   };
 
-  // Save to Stash
   const handleSaveToStash = async (res: WordEvolutionResult) => {
     try {
       await saveEntry({
@@ -258,463 +256,445 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
   return (
     <div className="space-y-6 text-left">
       {/* Top Controls Bar with Segmented Mode Switch */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
+      <div className="border-separator flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
         <div className="space-y-1">
-          <h3 className="text-foreground text-xl font-bold tracking-tight">
-            Sound Shifts & Phonetic Adaptation
-          </h3>
-          <p className="text-muted-foreground text-xs leading-relaxed">
-            Model chronological diachronic sound change or configure interlinguistic borrowing and loanword adaptation.
+          <h3 className="text-label text-title-2 font-bold">Sound shifts & phonetic adaptation</h3>
+          <p className="text-label-secondary text-footnote leading-relaxed">
+            Model chronological diachronic sound change or configure interlinguistic borrowing and
+            loanword adaptation.
           </p>
         </div>
 
-        {/* Apple-style Segmented Control */}
-        <div className="flex items-center gap-1 rounded-full border border-border/40 bg-secondary/15 p-1 backdrop-blur-md self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setShiftMode("diachronic")}
-            className={cn(
-              "flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer select-none",
-              shiftMode === "diachronic"
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <GitFork className="h-3.5 w-3.5 text-pink-500" />
-            <span>Historical Sound Shifts</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setShiftMode("loanwords")}
-            className={cn(
-              "flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer select-none",
-              shiftMode === "loanwords"
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Globe2 className="h-3.5 w-3.5 text-pink-500" />
-            <span>Loanwords & Contact Adaptation</span>
-          </button>
-        </div>
+        <SegmentedControl
+          size="sm"
+          aria-label="Mode"
+          className="self-start sm:self-auto"
+          value={shiftMode}
+          onValueChange={setShiftMode}
+          options={[
+            { value: "diachronic", label: "Historical sound shifts", icon: <GitFork /> },
+            { value: "loanwords", label: "Loanwords & contact adaptation", icon: <Globe2 /> },
+          ]}
+        />
       </div>
 
       {shiftMode === "loanwords" ? (
         <LoanwordsSection />
       ) : (
         <>
-          {/* Header Banner */}
-          <div className="border-border/40 bg-secondary/5 relative overflow-hidden rounded-2xl border p-5 sm:p-6">
+          <div className="bg-surface-secondary rounded-row relative overflow-hidden p-5 sm:p-6">
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
               <div className="space-y-1">
-                <h4 className="text-foreground text-sm font-bold">
-                  Diachronic Phonetic Transformation
+                <h4 className="text-label text-body font-semibold">
+                  Diachronic phonetic transformation
                 </h4>
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  Define chronological phonetic shift rules (<code>X → Y / ENV</code>) across historical
-                  epochs to systematically derive daughter languages and regional dialects from Proto-Lexicons.
+                <p className="text-label-secondary text-footnote leading-relaxed">
+                  Define chronological phonetic shift rules (<code>X → Y / ENV</code>) across
+                  historical epochs to systematically derive daughter languages and regional
+                  dialects from Proto-Lexicons.
                 </p>
               </div>
 
-              {/* Preset Selector */}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider">
-                  Presets:
-                </span>
-                {SOUND_SHIFT_PRESETS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => handleSelectPreset(preset.id)}
-                    className={cn(
-                      "cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all active:scale-95",
-                      selectedPresetId === preset.id
-                        ? "border-pink-500/40 bg-pink-500/10 text-pink-600 shadow-sm dark:text-pink-400"
-                        : "border-border/40 bg-background/50 text-muted-foreground hover:border-pink-500/30 hover:bg-pink-500/5 hover:text-foreground"
-                    )}
-                  >
-                    {preset.name.split(" ")[0]}
-                  </button>
-                ))}
+                <span className="text-label-secondary text-eyebrow">Presets:</span>
+                <ToggleGroup
+                  type="single"
+                  variant="outline"
+                  size="sm"
+                  disallowEmpty
+                  aria-label="Sound shift preset"
+                  value={selectedPresetId}
+                >
+                  {SOUND_SHIFT_PRESETS.map((preset) => (
+                    <ToggleGroupItem
+                      key={preset.id}
+                      value={preset.id}
+                      onClick={() => handleSelectPreset(preset.id)}
+                    >
+                      {preset.name.split(" ")[0]}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
               </div>
             </div>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-12">
-        {/* Left Column: Chronological Rule Timeline (7 cols) */}
-        <div className="space-y-5 lg:col-span-7">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Layers className="h-4 w-4 text-pink-500" />
-              <h4 className="text-foreground text-sm font-bold">Chronological Epochs & Rules</h4>
+            {/* Left Column: Chronological Rule Timeline (7 cols) */}
+            <div className="space-y-5 lg:col-span-7">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Layers className="text-tint h-4 w-4" />
+                  <h4 className="text-label text-body font-semibold">
+                    Chronological epochs & rules
+                  </h4>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleAddEpoch}>
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Add epoch</span>
+                </Button>
+              </div>
+
+              <div className="border-separator bg-fill-4 rounded-row flex flex-wrap items-center gap-2 border p-3">
+                <span className="text-label-secondary text-eyebrow mr-1">Insert:</span>
+                {QUICK_SYMBOLS.map((sym) => (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    key={sym.label}
+                    onClick={() => handleInsertSymbol(sym.value)}
+                    className="h-7 px-2 font-mono"
+                  >
+                    {sym.label}
+                  </Button>
+                ))}
+              </div>
+
+              <div className="space-y-4">
+                {epochs.map((epoch, epochIdx) => (
+                  <div
+                    key={epoch.id}
+                    className="border-separator bg-surface rounded-row shadow-card relative space-y-3 border p-4"
+                  >
+                    <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
+                      <div className="flex flex-1 items-center gap-2">
+                        <span className="bg-tint/15 text-tint text-caption flex h-5 w-5 items-center justify-center rounded-full font-semibold">
+                          {epochIdx + 1}
+                        </span>
+                        <Input
+                          type="text"
+                          value={epoch.name}
+                          onChange={(e) => {
+                            const updated = [...epochs];
+                            updated[epochIdx]!.name = e.target.value;
+                            setEpochs(updated);
+                          }}
+                          className="text-footnote w-full"
+                          placeholder="Epoch Title (e.g. Phase 1: High Vowel Raising)"
+                        />
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => handleRemoveEpoch(epochIdx)}
+                        disabled={epochs.length <= 1}
+                        title="Delete epoch"
+                        aria-label="Delete epoch"
+                        className="text-label-secondary hover:text-red"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {epoch.rules.map((rule, ruleIdx) => (
+                        <div
+                          key={rule.id}
+                          className={cn(
+                            "border-separator bg-surface rounded-control flex flex-wrap items-center gap-2 border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] sm:flex-nowrap",
+                            !rule.enabled && "opacity-50"
+                          )}
+                        >
+                          <Checkbox
+                            checked={rule.enabled !== false}
+                            onCheckedChange={(checked) =>
+                              handleUpdateRule(epochIdx, ruleIdx, "enabled", checked === true)
+                            }
+                            title="Toggle rule"
+                          />
+
+                          <div className="flex w-20 flex-shrink-0 items-center">
+                            <Input
+                              type="text"
+                              value={rule.source}
+                              onFocus={() =>
+                                setFocusedInput({ epochIdx, ruleIdx, field: "source" })
+                              }
+                              onChange={(e) =>
+                                handleUpdateRule(epochIdx, ruleIdx, "source", e.target.value)
+                              }
+                              placeholder="Source"
+                              className="text-footnote w-full font-mono"
+                            />
+                          </div>
+
+                          <ArrowRight className="text-label-secondary h-3.5 w-3.5 flex-shrink-0" />
+
+                          <div className="flex w-20 flex-shrink-0 items-center">
+                            <Input
+                              type="text"
+                              value={rule.target}
+                              onFocus={() =>
+                                setFocusedInput({ epochIdx, ruleIdx, field: "target" })
+                              }
+                              onChange={(e) =>
+                                handleUpdateRule(epochIdx, ruleIdx, "target", e.target.value)
+                              }
+                              placeholder="Target"
+                              className="text-footnote w-full font-mono"
+                            />
+                          </div>
+
+                          <span className="text-label-secondary text-footnote font-semibold">
+                            /
+                          </span>
+
+                          <div className="flex min-w-[90px] flex-1 items-center">
+                            <Input
+                              type="text"
+                              value={rule.context || ""}
+                              onFocus={() =>
+                                setFocusedInput({ epochIdx, ruleIdx, field: "context" })
+                              }
+                              onChange={(e) =>
+                                handleUpdateRule(epochIdx, ruleIdx, "context", e.target.value)
+                              }
+                              placeholder="Env (e.g. V_V, _[ei], _#)"
+                              className="text-footnote w-full font-mono"
+                            />
+                          </div>
+
+                          {/* Move Up / Down / Delete */}
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleMoveRule(epochIdx, ruleIdx, "up")}
+                              disabled={ruleIdx === 0}
+                              aria-label="Move rule up"
+                              className="text-label-secondary hover:text-label"
+                            >
+                              <ArrowUp className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleMoveRule(epochIdx, ruleIdx, "down")}
+                              disabled={ruleIdx === epoch.rules.length - 1}
+                              aria-label="Move rule down"
+                              className="text-label-secondary hover:text-label"
+                            >
+                              <ArrowDown className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleRemoveRule(epochIdx, ruleIdx)}
+                              aria-label="Remove rule"
+                              className="text-label-secondary hover:text-red"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleAddRule(epochIdx)}
+                        className="text-label-secondary hover:text-tint text-label-secondary hover:text-tint px-2"
+                      >
+                        <Plus className="h-3 w-3" />
+                        <span>Add shift rule</span>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={handleAddEpoch}
-              className="border-border/40 bg-secondary/20 hover:border-pink-500/40 hover:bg-pink-500/10 hover:text-pink-600 dark:hover:text-pink-400 flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-semibold transition-all active:scale-95"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Add Epoch</span>
-            </button>
-          </div>
 
-          {/* Quick Insert Symbols Palette */}
-          <div className="border-border/30 bg-secondary/10 flex flex-wrap items-center gap-1.5 rounded-xl border p-2.5">
-            <span className="text-muted-foreground mr-1 text-[10px] font-bold uppercase">
-              Insert:
-            </span>
-            {QUICK_SYMBOLS.map((sym) => (
-              <button
-                key={sym.label}
-                type="button"
-                onClick={() => handleInsertSymbol(sym.value)}
-                className="border-border/40 bg-background/80 hover:border-pink-500/40 hover:bg-pink-500/10 hover:text-pink-500 cursor-pointer rounded border px-2 py-0.5 font-mono text-[10px] transition-all active:scale-90"
-              >
-                {sym.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Epochs List */}
-          <div className="space-y-4">
-            {epochs.map((epoch, epochIdx) => (
-              <div
-                key={epoch.id}
-                className="border-border/40 bg-card/40 relative space-y-3 rounded-xl border p-4 shadow-sm backdrop-blur-sm"
-              >
-                {/* Epoch Header */}
-                <div className="flex items-center justify-between gap-2 border-b border-border/20 pb-2.5">
-                  <div className="flex flex-1 items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-pink-500/15 text-[10px] font-bold text-pink-600 dark:text-pink-400">
-                      {epochIdx + 1}
-                    </span>
-                    <input
-                      type="text"
-                      value={epoch.name}
-                      onChange={(e) => {
-                        const updated = [...epochs];
-                        updated[epochIdx]!.name = e.target.value;
-                        setEpochs(updated);
+            {/* Right Column: Interactive Lexicon Evolution & Diff (5 cols) */}
+            <div className="space-y-5 lg:col-span-5">
+              <div className="border-separator bg-surface rounded-row shadow-card space-y-2 border p-4">
+                <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+                  <label className="text-label text-footnote font-semibold">
+                    Proto-Language Lexicon Input
+                  </label>
+                  <div className="w-full sm:w-48">
+                    <CorpusSelector
+                      value=""
+                      onChange={(val) => {
+                        const resolved = resolveCorpusWords(val, customDicts, studioWords);
+                        if (resolved.words?.length > 0) {
+                          setInputWordsText(resolved.words.join(", "));
+                          notify.success(
+                            `Loaded ${resolved.words.length} words from "${resolved.label}"`
+                          );
+                        }
                       }}
-                      className="text-foreground w-full bg-transparent text-xs font-bold focus:outline-none"
-                      placeholder="Epoch Title (e.g. Phase 1: High Vowel Raising)"
+                      studioWords={studioWords}
                     />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveEpoch(epochIdx)}
-                    disabled={epochs.length <= 1}
-                    title="Delete Epoch"
-                    className="text-muted-foreground hover:text-rose-500 cursor-pointer p-1 transition-colors disabled:opacity-30"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
                 </div>
-
-                {/* Rules Table / Rows */}
-                <div className="space-y-2">
-                  {epoch.rules.map((rule, ruleIdx) => (
-                    <div
-                      key={rule.id}
-                      className={cn(
-                        "border-border/30 bg-background/50 flex flex-wrap items-center gap-2 rounded-lg border p-2 transition-all sm:flex-nowrap",
-                        !rule.enabled && "opacity-50"
-                      )}
-                    >
-                      {/* Checkbox Enable */}
-                      <input
-                        type="checkbox"
-                        checked={rule.enabled !== false}
-                        onChange={(e) =>
-                          handleUpdateRule(epochIdx, ruleIdx, "enabled", e.target.checked)
-                        }
-                        className="h-3.5 w-3.5 cursor-pointer rounded accent-pink-500"
-                        title="Toggle Rule"
-                      />
-
-                      {/* Source */}
-                      <div className="flex w-20 flex-shrink-0 items-center">
-                        <input
-                          type="text"
-                          value={rule.source}
-                          onFocus={() =>
-                            setFocusedInput({ epochIdx, ruleIdx, field: "source" })
-                          }
-                          onChange={(e) =>
-                            handleUpdateRule(epochIdx, ruleIdx, "source", e.target.value)
-                          }
-                          placeholder="Source"
-                          className="border-border/40 bg-secondary/10 w-full rounded border px-2 py-1 font-mono text-xs focus:border-pink-500 focus:outline-none"
-                        />
-                      </div>
-
-                      <ArrowRight className="text-muted-foreground h-3.5 w-3.5 flex-shrink-0" />
-
-                      {/* Target */}
-                      <div className="flex w-20 flex-shrink-0 items-center">
-                        <input
-                          type="text"
-                          value={rule.target}
-                          onFocus={() =>
-                            setFocusedInput({ epochIdx, ruleIdx, field: "target" })
-                          }
-                          onChange={(e) =>
-                            handleUpdateRule(epochIdx, ruleIdx, "target", e.target.value)
-                          }
-                          placeholder="Target"
-                          className="border-border/40 bg-secondary/10 w-full rounded border px-2 py-1 font-mono text-xs focus:border-pink-500 focus:outline-none"
-                        />
-                      </div>
-
-                      <span className="text-muted-foreground text-xs font-semibold">/</span>
-
-                      {/* Context / Environment */}
-                      <div className="flex min-w-[90px] flex-1 items-center">
-                        <input
-                          type="text"
-                          value={rule.context || ""}
-                          onFocus={() =>
-                            setFocusedInput({ epochIdx, ruleIdx, field: "context" })
-                          }
-                          onChange={(e) =>
-                            handleUpdateRule(epochIdx, ruleIdx, "context", e.target.value)
-                          }
-                          placeholder="Env (e.g. V_V, _[ei], _#)"
-                          className="border-border/40 bg-secondary/10 w-full rounded border px-2 py-1 font-mono text-xs focus:border-pink-500 focus:outline-none"
-                        />
-                      </div>
-
-                      {/* Move Up / Down / Delete */}
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleMoveRule(epochIdx, ruleIdx, "up")}
-                          disabled={ruleIdx === 0}
-                          className="text-muted-foreground hover:text-foreground cursor-pointer p-1 transition-colors disabled:opacity-25"
-                        >
-                          <ArrowUp className="h-3 w-3" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleMoveRule(epochIdx, ruleIdx, "down")}
-                          disabled={ruleIdx === epoch.rules.length - 1}
-                          className="text-muted-foreground hover:text-foreground cursor-pointer p-1 transition-colors disabled:opacity-25"
-                        >
-                          <ArrowDown className="h-3 w-3" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveRule(epochIdx, ruleIdx)}
-                          className="text-muted-foreground hover:text-rose-500 cursor-pointer p-1 transition-colors"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={() => handleAddRule(epochIdx)}
-                    className="text-muted-foreground hover:text-pink-500 flex cursor-pointer items-center gap-1 pt-1 text-[11px] font-semibold transition-colors"
-                  >
-                    <Plus className="h-3 w-3" />
-                    <span>Add Shift Rule</span>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right Column: Interactive Lexicon Evolution & Diff (5 cols) */}
-        <div className="space-y-5 lg:col-span-5">
-          {/* Proto-Lexicon Input */}
-          <div className="border-border/40 bg-card/40 space-y-2.5 rounded-xl border p-4 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <label className="text-foreground text-xs font-bold">
-                Proto-Language Lexicon Input
-              </label>
-              <div className="w-full sm:w-48">
-                <CorpusSelector
-                  value=""
-                  onChange={(val) => {
-                    const resolved = resolveCorpusWords(val, customDicts, studioWords);
-                    if (resolved.words?.length > 0) {
-                      setInputWordsText(resolved.words.join(", "));
-                      notify.success(`Loaded ${resolved.words.length} words from "${resolved.label}"`);
-                    }
-                  }}
-                  studioWords={studioWords}
+                <Textarea
+                  rows={4}
+                  value={inputWordsText}
+                  onChange={(e) => setInputWordsText(e.target.value)}
+                  placeholder="Enter proto-words separated by newlines or commas..."
+                  className="text-footnote w-full font-mono"
                 />
+                <div className="text-label-secondary text-caption flex items-center justify-between">
+                  <span>{parsedWords.length} words loaded</span>
+                  <span>Loaded from Stash or custom text</span>
+                </div>
               </div>
-            </div>
-            <textarea
-              rows={4}
-              value={inputWordsText}
-              onChange={(e) => setInputWordsText(e.target.value)}
-              placeholder="Enter proto-words separated by newlines or commas..."
-              className="border-border/40 bg-background/50 text-foreground w-full rounded-lg border p-2.5 font-mono text-xs focus:border-pink-500 focus:outline-none"
-            />
-            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-              <span>{parsedWords.length} words loaded</span>
-              <span>Loaded from Stash or custom text</span>
-            </div>
-          </div>
 
-          {/* Evolved Daughter Lexicon Results */}
-          <div className="border-border/40 bg-card/40 space-y-3 rounded-xl border p-4 shadow-sm">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <h4 className="text-foreground text-xs font-bold">Evolved Daughter Lexicon</h4>
-                <span className="text-muted-foreground text-[10px]">
-                  {evolutionResults.length} simulated
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={async () => {
-                  const words = evolutionResults.map((r) => r.final);
-                  if (words.length === 0) return;
-                  await saveEntry({
-                    type: "dictionary",
-                    title: `Evolved ${selectedPresetId.replace(/-/g, " ")} Lexicon`,
-                    values: words,
-                  });
-                  notify.success(`Saved ${words.length} evolved words to Stash!`);
-                }}
-                className="border-pink-500/40 bg-pink-500/10 text-pink-600 dark:text-pink-400 hover:bg-pink-500/20 flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-all active:scale-95 shadow-xs"
-              >
-                <FolderDown className="h-3.5 w-3.5" />
-                <span>Save to Stash</span>
-              </button>
-            </div>
-
-            <div className="max-h-[500px] space-y-2 overflow-y-auto pr-1">
-              {evolutionResults.map((res, idx) => {
-                const isExpanded = expandedWordIdx === idx;
-                const hasChanged = res.original.toLowerCase() !== res.final.toLowerCase();
-
-                return (
-                  <div
-                    key={`${res.original}-${idx}`}
-                    className={cn(
-                      "border-border/30 bg-background/60 rounded-lg border p-2.5 transition-all",
-                      hasChanged && "border-pink-500/30 bg-pink-500/[0.02]"
-                    )}
+              <div className="border-separator bg-surface rounded-row shadow-card space-y-3 border p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h4 className="text-label text-footnote font-semibold">
+                      Evolved daughter lexicon
+                    </h4>
+                    <span className="text-label-secondary text-caption">
+                      {evolutionResults.length} simulated
+                    </span>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={async () => {
+                      const words = evolutionResults.map((r) => r.final);
+                      if (words.length === 0) return;
+                      await saveEntry({
+                        type: "dictionary",
+                        title: `Evolved ${selectedPresetId.replace(/-/g, " ")} Lexicon`,
+                        values: words,
+                      });
+                      notify.success(`Saved ${words.length} evolved words to Stash!`);
+                    }}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex min-w-0 flex-1 items-center gap-2">
-                        {/* Proto Word */}
-                        <div className="flex items-center gap-1">
-                          <span className="text-muted-foreground font-mono text-xs">
-                            *{res.original}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handlePlay(res.original)}
-                            title="Pronounce Proto Word"
-                            className="text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
-                          >
-                            <Volume2 className="h-3 w-3" />
-                          </button>
-                        </div>
+                    <FolderDown className="h-3.5 w-3.5" />
+                    <span>Save to Stash</span>
+                  </Button>
+                </div>
 
-                        <ArrowRight className="text-muted-foreground/60 h-3 w-3 flex-shrink-0" />
+                <div className="max-h-[500px] space-y-2 overflow-y-auto pr-1">
+                  {evolutionResults.map((res, idx) => {
+                    const isExpanded = expandedWordIdx === idx;
+                    const hasChanged = res.original.toLowerCase() !== res.final.toLowerCase();
 
-                        {/* Daughter Word */}
-                        <div className="flex items-center gap-1">
-                          <span className="text-foreground font-mono text-xs font-bold">
-                            {res.final}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handlePlay(res.final)}
-                            title="Pronounce Evolved Word"
-                            className="text-pink-500 hover:text-pink-600 cursor-pointer p-0.5"
-                          >
-                            <Volume2 className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </div>
+                    return (
+                      <div
+                        key={`${res.original}-${idx}`}
+                        className={cn(
+                          "border-separator bg-surface rounded-control border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                          hasChanged && "border-tint/30 bg-tint/5"
+                        )}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex min-w-0 flex-1 items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              <span className="text-label-secondary text-footnote font-mono">
+                                *{res.original}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => handlePlay(res.original)}
+                                title="Pronounce proto word"
+                                aria-label="Pronounce proto word"
+                                className="text-label-secondary hover:text-label"
+                              >
+                                <Volume2 className="h-3 w-3" />
+                              </Button>
+                            </div>
 
-                      {/* Actions */}
-                      <div className="flex items-center gap-1">
-                        {/* Save to Stash */}
-                        <button
-                          type="button"
-                          onClick={() => handleSaveToStash(res)}
-                          title="Save to Stash"
-                          className="text-muted-foreground hover:text-pink-500 cursor-pointer rounded p-1 transition-colors"
-                        >
-                          <Bookmark className="h-3.5 w-3.5" />
-                        </button>
+                            <ArrowRight className="text-label-tertiary h-3 w-3 flex-shrink-0" />
 
-                        {/* Copy */}
-                        <button
-                          type="button"
-                          onClick={() => handleCopy(res.final, idx)}
-                          title="Copy Evolved Word"
-                          className="text-muted-foreground hover:text-foreground cursor-pointer rounded p-1 transition-colors"
-                        >
-                          {copiedIdx === idx ? (
-                            <Check className="h-3.5 w-3.5 text-emerald-500" />
-                          ) : (
-                            <Copy className="h-3.5 w-3.5" />
-                          )}
-                        </button>
+                            <div className="flex items-center gap-1">
+                              <span className="text-label text-footnote font-mono font-semibold">
+                                {res.final}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => handlePlay(res.final)}
+                                title="Pronounce evolved word"
+                                aria-label="Pronounce evolved word"
+                                className="text-tint hover:text-tint/80"
+                              >
+                                <Volume2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
 
-                        {/* Trace Step toggle */}
-                        {res.steps.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => setExpandedWordIdx(isExpanded ? null : idx)}
-                            title="Inspect derivation steps"
-                            className="text-muted-foreground hover:text-pink-500 cursor-pointer rounded p-1 transition-colors"
-                          >
-                            {isExpanded ? (
-                              <ChevronDown className="h-3.5 w-3.5" />
-                            ) : (
-                              <ChevronRight className="h-3.5 w-3.5" />
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleSaveToStash(res)}
+                              title="Save to Stash"
+                              aria-label="Save to Stash"
+                              className="text-label-secondary hover:text-tint"
+                            >
+                              <Bookmark className="h-3.5 w-3.5" />
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => handleCopy(res.final, idx)}
+                              title="Copy evolved word"
+                              aria-label="Copy evolved word"
+                              className="text-label-secondary hover:text-label"
+                            >
+                              {copiedIdx === idx ? (
+                                <Check className="text-green h-3.5 w-3.5" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5" />
+                              )}
+                            </Button>
+
+                            {res.steps.length > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => setExpandedWordIdx(isExpanded ? null : idx)}
+                                title="Inspect derivation steps"
+                                aria-label="Inspect derivation steps"
+                                className="text-label-secondary hover:text-tint"
+                              >
+                                {isExpanded ? (
+                                  <ChevronDown className="h-3.5 w-3.5" />
+                                ) : (
+                                  <ChevronRight className="h-3.5 w-3.5" />
+                                )}
+                              </Button>
                             )}
-                          </button>
+                          </div>
+                        </div>
+
+                        {isExpanded && res.steps.length > 0 && (
+                          <div className="border-separator bg-fill-4 rounded-control-sm text-caption mt-2 space-y-2 border p-2">
+                            <div className="text-label-secondary font-semibold">
+                              Derivation trace:
+                            </div>
+                            {res.steps.map((step, sIdx) => (
+                              <div
+                                key={sIdx}
+                                className="border-separator flex items-center justify-between gap-2 border-b pb-1 font-mono last:border-none last:pb-0"
+                              >
+                                <span className="text-label-secondary truncate">
+                                  {step.epochName}
+                                </span>
+                                <span className="text-tint">{step.ruleDescription}</span>
+                                <span className="text-label font-semibold">
+                                  {step.before} → {step.after}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
-                    </div>
-
-                    {/* Step-by-Step Derivation Inspector */}
-                    {isExpanded && res.steps.length > 0 && (
-                      <div className="border-border/30 bg-secondary/10 mt-2 space-y-1.5 rounded border p-2 text-[10px]">
-                        <div className="text-muted-foreground font-bold uppercase tracking-wider">
-                          Derivation Trace:
-                        </div>
-                        {res.steps.map((step, sIdx) => (
-                          <div
-                            key={sIdx}
-                            className="flex items-center justify-between gap-2 border-b border-border/15 pb-1 font-mono last:border-none last:pb-0"
-                          >
-                            <span className="text-muted-foreground truncate">{step.epochName}</span>
-                            <span className="text-pink-600 dark:text-pink-400">
-                              {step.ruleDescription}
-                            </span>
-                            <span className="text-foreground font-bold">
-                              {step.before} → {step.after}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-      </>
+        </>
       )}
     </div>
   );
 }
-
-export default StudioSoundShifts;

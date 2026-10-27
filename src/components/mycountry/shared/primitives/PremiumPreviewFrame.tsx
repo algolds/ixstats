@@ -2,39 +2,29 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Crown, ArrowRight } from "lucide-react";
-import { cn } from "~/lib/utils";
-import { GlassButton } from "~/components/ui/glass-button";
+import { Crown, ArrowRight } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 import { MyCountryEditModeProvider } from "~/context/MyCountryEditModeContext";
-import { GlassPanel } from "~/components/mycountry/cards";
-import type { MyCountryAccent } from "~/components/mycountry/shared/cards/accents";
+import { Card } from "~/components/ui/card";
 
 interface PremiumPreviewFrameProps {
-  feature: "intelligence" | "defense";
+  feature: "defense";
   /** True when the current user is NOT premium (render real content, read-only). */
   locked: boolean;
   children: React.ReactNode;
   onUpgrade?: () => void;
 }
 
-const FEATURE_META: Record<
-  PremiumPreviewFrameProps["feature"],
-  { label: string; accent: MyCountryAccent; blurb: string }
-> = {
-  intelligence: {
-    label: "Intelligence",
-    accent: "blue",
-    blurb: "You're viewing a live preview. Upgrade to act on briefings and unlock secure tools.",
-  },
-  defense: {
-    label: "Defense",
-    accent: "red",
-    blurb: "You're viewing a live preview. Upgrade to build forces and launch operations.",
-  },
-};
+const FEATURE_META: Record<PremiumPreviewFrameProps["feature"], { label: string; blurb: string }> =
+  {
+    defense: {
+      label: "Defense",
+      blurb: "Read-only preview. Upgrade to build forces and launch operations.",
+    },
+  };
 
 /**
- * PremiumPreviewFrame — read-only premium preview.
+ * Read-only premium preview.
  *
  * When `locked`, renders the REAL section content (render-time queries are
  * public/protected, safe for any signed-in user) but provides `canEdit=false`
@@ -60,29 +50,19 @@ export function PremiumPreviewFrame({
   return (
     <MyCountryEditModeProvider canEdit={false} reason="premium">
       <div className="space-y-3 sm:space-y-4">
-        <GlassPanel
-          accent={meta.accent}
-          texture="none"
-          className={cn("sticky top-2 z-30 px-3 py-2.5 sm:px-4")}
-        >
+        <Card className="sticky top-(--shell-top-offset) z-30 px-3 py-2 sm:px-4">
           <div className="flex items-center gap-3">
-            <div className="shrink-0 rounded-lg bg-gradient-to-br from-yellow-500 to-amber-600 p-2 shadow-sm">
-              <Crown className="h-4 w-4 text-white" />
-            </div>
+            <Crown aria-hidden="true" className="text-yellow h-4 w-4 shrink-0" />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <Crown className="h-3.5 w-3.5 text-amber-500" />
-                <span className="text-sm font-semibold">{meta.label} preview</span>
-              </div>
-              <p className="text-muted-foreground truncate text-xs">{meta.blurb}</p>
+              <span className="text-label text-headline">{meta.label} preview</span>
+              <p className="text-label-secondary text-footnote truncate">{meta.blurb}</p>
             </div>
-            <GlassButton variant="primary" className="group shrink-0" onClick={handleUpgrade}>
-              <Crown className="mr-1.5 h-3.5 w-3.5" />
+            <Button variant="default" size="sm" className="shrink-0" onClick={handleUpgrade}>
               Upgrade
-              <ArrowRight className="ml-1.5 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-            </GlassButton>
+              <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
+            </Button>
           </div>
-        </GlassPanel>
+        </Card>
 
         {children}
       </div>

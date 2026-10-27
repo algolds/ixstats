@@ -1,15 +1,20 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import type { Position, Polygon, MultiPolygon } from "geojson";
 import { api } from "~/trpc/react";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import { applyBrushStroke } from "~/lib/maps/territory-brush";
+import type { BorderDraft } from "~/lib/maps/border-draft";
+import type { BorderDragFrame } from "~/lib/maps/border-drag";
+import { invalidateMapViews } from "~/components/maps/editor/hooks/state/geo-invalidation";
+import { useBorderDrag } from "./useBorderDrag";
+import { useBorderAutosave } from "./useBorderAutosave";
 import {
   type UndoStack,
   type VertexRef,
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  type EdgeRef,
   type AltitudeSnapResult,
+  type NeighborChanges,
   createUndoStack,
   pushUndo,
   canUndo,
@@ -18,35 +23,17 @@ import {
   getRedoGeometry,
   undo as undoStack,
   redo as redoStack,
-  moveVertex,
   addVertex,
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  removeVertex,
   findNearestVertex,
   findNearestEdge,
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  findNearestAltitudeSnap,
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  getVertices,
   calculateArea,
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  calculateBBox,
   validateGeometry,
-  distanceDeg,
   smoothGeometry,
   naturalizeGeometry,
   simplifyGeometry,
 } from "~/lib/maps/border-editor";
-import { buildSharedVertexIndex, moveSharedVertex } from "~/lib/maps/shared-vertex-builder";
-import type { SharedVertexData } from "~/lib/maps/shared-vertex-builder";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import type { FeatureVertexRef } from "~/lib/maps/shared-vertex-builder";
 import { traceAlongLayer } from "~/lib/maps/border-trace";
 import type { TraceFeature } from "~/lib/maps/border-trace";
-
-// ──────────────────────────────────────────────
-// Types
-// ──────────────────────────────────────────────
 
 export type BorderEditMode =
   "select" | "vertex_edit" | "freehand" | "split" | "merge" | "trace" | "brush";
@@ -66,23 +53,27 @@ export interface BorderEditorState {
   neighborGeometries: Record<string, Polygon | MultiPolygon>;
   /** Geometries of neighbors changed during this session (sent on submit). */
   dirtyNeighbors: Record<string, Polygon | MultiPolygon>;
+  /** Neighbor geometries as loaded (what revert restores). */
+  originalNeighborGeometries: Record<string, Polygon | MultiPolygon>;
   isDirty: boolean;
   isLoading: boolean;
   error: string | null;
   areaKm2: number | null;
-  /** Shared vertices for the currently loaded feature */
-  sharedVertices: SharedVertexData[];
   /** Active altitude snap indicator */
   altitudeSnap: AltitudeSnapResult | null;
   traceStart: [number, number] | null;
+  /** An unsaved draft of this feature found on load, waiting to be restored or discarded. */
+  pendingDraft: BorderDraft | null;
 }
 
 export interface BorderEditorActions {
   loadFeature: (featureId: string) => void;
   setMode: (mode: BorderEditMode) => void;
   handleMapClick: (lng: number, lat: number) => void;
-  handleVertexDrag: (ref: VertexRef, to: Position) => void;
-  commitDrag: () => void;
+  /** Moves the dragged vertex to the pointer; returns what to draw, no React state changes. */
+  handleVertexDrag: (ref: VertexRef, pointer: Position) => BorderDragFrame | null;
+  /** Ends a drag as one undo step; true when the vertex ended somewhere new. */
+  commitDrag: () => boolean;
   addSplitPoint: (lng: number, lat: number) => void;
   clearSplitLine: () => void;
   toggleMergeTarget: (featureId: string) => void;
@@ -101,6 +92,10 @@ export interface BorderEditorActions {
   simplify: () => void;
   reset: () => void;
   revert: () => void;
+  /** Apply the draft offered on load as unsaved changes. */
+  restoreDraft: (draft: BorderDraft) => void;
+  /** Drop the draft offered on load, and the saved copy; the loaded border stays as it is. */
+  discardDraft: (draft: BorderDraft) => void;
   /** Provide the river/coast layer data used by "trace" mode. */
   setTraceLayerSource: (
     layers: Array<{ type: string; data: { features: TraceFeature[] } }> | undefined,
@@ -116,10 +111,6 @@ export interface BorderEditorActions {
   ) => boolean;
 }
 
-// ──────────────────────────────────────────────
-// Hook
-// ──────────────────────────────────────────────
-
 const INITIAL_STATE: BorderEditorState = {
   mode: "select",
   featureId: null,
@@ -133,29 +124,80 @@ const INITIAL_STATE: BorderEditorState = {
   neighbors: [],
   neighborGeometries: {},
   dirtyNeighbors: {},
+  originalNeighborGeometries: {},
   isDirty: false,
   isLoading: false,
   error: null,
   areaKm2: null,
-  sharedVertices: [],
   altitudeSnap: null,
   traceStart: null,
+  pendingDraft: null,
 };
+
+/**
+ * Neighbour outlines with one undo entry's neighbour changes rolled back ("before") or replayed ("after").
+ * A neighbour back on its loaded outline is no longer dirty.
+ */
+function withNeighborChanges(
+  s: BorderEditorState,
+  changes: NeighborChanges | undefined,
+  side: "before" | "after"
+): Pick<BorderEditorState, "neighborGeometries" | "dirtyNeighbors"> {
+  const moved = Object.fromEntries(
+    Object.entries(changes ?? {}).map(([fid, change]) => [fid, change[side]])
+  );
+  const dirty = Object.entries({ ...s.dirtyNeighbors, ...moved }).filter(
+    ([fid, g]) => g !== s.originalNeighborGeometries[fid]
+  );
+  return {
+    neighborGeometries: { ...s.neighborGeometries, ...moved },
+    dirtyNeighbors: Object.fromEntries(dirty),
+  };
+}
+
+/** The editor state with `geometry` as the new outline, one undo step on. */
+function withEdit(
+  s: BorderEditorState,
+  action: Parameters<typeof pushUndo>[1],
+  geometry: Polygon | MultiPolygon
+): BorderEditorState {
+  if (!s.geometry) return s;
+  return {
+    ...s,
+    geometry,
+    undoStackState: pushUndo(s.undoStackState, action, s.geometry, geometry),
+    isDirty: true,
+    areaKm2: calculateArea(geometry),
+  };
+}
+
+/** Reloads what the map and the country views show after a border change. */
+async function refreshMapViews(utils: ReturnType<typeof api.useUtils>) {
+  invalidateMapViews(utils);
+  await Promise.all([
+    utils.geoCore.getCountryGeometry.invalidate(),
+    utils.countryGeo.getCountryGeoBundle.invalidate(),
+  ]);
+}
 
 export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   const [state, setState] = useState<BorderEditorState>(INITIAL_STATE);
-  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The latest committed state, for actions that must not change identity with it
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  // Feature ids are unique only within a realm: every lookup names the realm being edited
+  const realm = useMapRealm();
 
-  const startSession = api.geoEditor.startBorderEditSession.useMutation();
-  const saveDraft = api.geoEditor.saveBorderEditDraft.useMutation();
-  const submitBorderEdit = api.geoEditor.submitBorderEdit.useMutation();
-  const splitCountry = api.geoEditor.splitCountry.useMutation();
-  const mergeCountries = api.geoEditor.mergeCountries.useMutation();
-  const repairGeometry = api.geoEditor.repairBorderGeometry.useMutation();
+  const { mutate: startSession } = api.geoEditor.startBorderEditSession.useMutation();
+  const { mutateAsync: submitBorderEdit } = api.geoEditor.submitBorderEdit.useMutation();
+  const { mutateAsync: splitCountry } = api.geoEditor.splitCountry.useMutation();
+  const { mutateAsync: mergeCountries } = api.geoEditor.mergeCountries.useMutation();
+  const { mutateAsync: repairGeometry } = api.geoEditor.repairBorderGeometry.useMutation();
   const utils = api.useUtils();
-  const dragStartGeom = useRef<Polygon | MultiPolygon | null>(null);
+  const { handleVertexDrag, commitDrag } = useBorderDrag(stateRef, setState);
+  const { save, clearDraft } = useBorderAutosave(state);
 
-  // ── Trace mode state (mutable refs) ──
+  // Trace mode state (mutable refs)
   /** River/coast layer data updated externally via setTraceLayerSource. */
   const traceLayersRef = useRef<
     Array<{ type: string; data: { features: TraceFeature[] } }> | undefined
@@ -163,51 +205,11 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   /** Currently visible layer IDs (used to filter to "rivers" etc.). */
   const traceVisibleLayersRef = useRef<Set<string>>(new Set());
 
-  // Keep saveDraft in a ref to avoid resetting the auto-save timer on every render
-  const saveDraftRef = useRef(saveDraft);
-  saveDraftRef.current = saveDraft;
-
-  // Ref to always have current auto-save data without resetting the timer
-  const autoSaveDataRef = useRef({
-    geometry: state.geometry,
-    undoStack: state.undoStackState,
-    mode: state.mode,
-  });
-  autoSaveDataRef.current = {
-    geometry: state.geometry,
-    undoStack: state.undoStackState,
-    mode: state.mode,
-  };
-
-  // Auto-save draft every 30 seconds when dirty.
-  // Only depends on isDirty, sessionId, and geometry identity so that mode
-  // switches and undo/redo don't reset the timer. The callback reads current
-  // state from autoSaveDataRef to always save the latest data.
-  useEffect(() => {
-    if (state.isDirty && state.sessionId && state.geometry) {
-      autoSaveTimer.current = setTimeout(() => {
-        const data = autoSaveDataRef.current;
-        if (!data.geometry) return;
-        saveDraftRef.current.mutate({
-          sessionId: state.sessionId!,
-          sessionData: {
-            geometry: data.geometry,
-            undoStack: data.undoStack,
-            mode: data.mode,
-          },
-        });
-      }, 30000);
-    }
-    return () => {
-      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    };
-  }, [state.isDirty, state.sessionId, state.geometry]);
-
   const loadFeature = useCallback(
     (featureId: string) => {
       setState((s) => ({ ...s, isLoading: true, error: null }));
-      startSession.mutate(
-        { featureId },
+      startSession(
+        { featureId, realm },
         {
           onSuccess: (data) => {
             const geom = data.feature.geometry as unknown as Polygon | MultiPolygon;
@@ -222,13 +224,6 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
                 neighborGeoms[n.featureId] = n.geometry as Polygon | MultiPolygon;
               }
             }
-            const sharedVertices = buildSharedVertexIndex([
-              { featureId, geometry: geom },
-              ...Object.entries(neighborGeoms).map(([fid, g]) => ({
-                featureId: fid,
-                geometry: g,
-              })),
-            ]);
             setState((s) => ({
               ...s,
               featureId,
@@ -238,6 +233,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
               neighbors: data.neighbors,
               neighborGeometries: neighborGeoms,
               dirtyNeighbors: {},
+              originalNeighborGeometries: neighborGeoms,
               undoStackState: createUndoStack(),
               selectedVertex: null,
               splitLine: [],
@@ -246,9 +242,9 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
               isLoading: false,
               error: null,
               areaKm2: calculateArea(geom),
-              sharedVertices,
               altitudeSnap: null,
               traceStart: null,
+              pendingDraft: data.draft,
             }));
           },
           onError: (err) => {
@@ -257,7 +253,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
         }
       );
     },
-    [startSession]
+    [startSession, realm]
   );
 
   const setMode = useCallback((mode: BorderEditMode) => {
@@ -270,23 +266,6 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       traceStart: mode === "trace" ? s.traceStart : null,
     }));
   }, []);
-
-  const updateGeometry = useCallback(
-    (newGeom: Polygon | MultiPolygon, action: Parameters<typeof pushUndo>[1]) => {
-      setState((s) => {
-        if (!s.geometry) return s;
-        const newStack = pushUndo(s.undoStackState, action, s.geometry, newGeom);
-        return {
-          ...s,
-          geometry: newGeom,
-          undoStackState: newStack,
-          isDirty: true,
-          areaKm2: calculateArea(newGeom),
-        };
-      });
-    },
-    []
-  );
 
   const handleMapClick = useCallback((lng: number, lat: number) => {
     setState((s) => {
@@ -386,74 +365,6 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     });
   }, []);
 
-  // Drag moves geometry without pushing undo (called per mousemove)
-  const handleVertexDrag = useCallback((ref: VertexRef, to: Position) => {
-    setState((s) => {
-      if (!s.geometry) return s;
-      // Capture the pre-drag geometry on the first drag event
-      if (!dragStartGeom.current) {
-        dragStartGeom.current = s.geometry;
-      }
-
-      // Is the vertex being dragged a shared one? Match on its CURRENT coord.
-      const here = ref.coord;
-      const shared = s.sharedVertices.find((sv) => distanceDeg([sv.lng, sv.lat], here) < 0.001);
-
-      if (shared) {
-        const geomMap = new Map<string, Polygon | MultiPolygon>();
-        geomMap.set(s.featureId!, s.geometry);
-        for (const [fid, g] of Object.entries(s.neighborGeometries)) geomMap.set(fid, g);
-        const updated = moveSharedVertex(shared, to, geomMap);
-
-        const newSelf = updated.get(s.featureId!) ?? s.geometry;
-        const newNeighbors: Record<string, Polygon | MultiPolygon> = { ...s.neighborGeometries };
-        const newDirty: Record<string, Polygon | MultiPolygon> = { ...s.dirtyNeighbors };
-        for (const [fid, g] of updated) {
-          if (fid === s.featureId) continue;
-          newNeighbors[fid] = g;
-          newDirty[fid] = g;
-        }
-        // Update the shared-vertex's stored coord so the next drag event still matches.
-        const newShared = s.sharedVertices.map((sv) =>
-          sv === shared ? { ...sv, lng: to[0], lat: to[1] } : sv
-        );
-        return {
-          ...s,
-          geometry: newSelf,
-          neighborGeometries: newNeighbors,
-          dirtyNeighbors: newDirty,
-          sharedVertices: newShared,
-          isDirty: true,
-          areaKm2: calculateArea(newSelf),
-          selectedVertex: { ...ref, coord: to },
-        };
-      }
-
-      // Not shared — original single-feature behavior.
-      const newGeom = moveVertex(s.geometry, ref, to);
-      return {
-        ...s,
-        geometry: newGeom,
-        isDirty: true,
-        areaKm2: calculateArea(newGeom),
-        selectedVertex: { ...ref, coord: to },
-      };
-    });
-  }, []);
-
-  // Commit the drag as a single undo entry (called on mouseup)
-  const commitDrag = useCallback(() => {
-    setState((s) => {
-      const beforeDrag = dragStartGeom.current;
-      dragStartGeom.current = null;
-      if (!beforeDrag || !s.geometry) return s;
-      // Don't push if geometry didn't actually change
-      if (beforeDrag === s.geometry) return s;
-      const newStack = pushUndo(s.undoStackState, "move_vertex", beforeDrag, s.geometry);
-      return { ...s, undoStackState: newStack };
-    });
-  }, []);
-
   const addSplitPoint = useCallback((lng: number, lat: number) => {
     setState((s) => ({
       ...s,
@@ -479,8 +390,10 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       if (!canUndo(s.undoStackState)) return s;
       const prevGeom = getUndoGeometry(s.undoStackState);
       if (!prevGeom) return s;
+      const entry = s.undoStackState.entries[s.undoStackState.position];
       return {
         ...s,
+        ...withNeighborChanges(s, entry?.neighbors, "before"),
         geometry: prevGeom,
         undoStackState: undoStack(s.undoStackState),
         isDirty: true,
@@ -494,8 +407,10 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       if (!canRedo(s.undoStackState)) return s;
       const nextGeom = getRedoGeometry(s.undoStackState);
       if (!nextGeom) return s;
+      const entry = s.undoStackState.entries[s.undoStackState.position + 1];
       return {
         ...s,
+        ...withNeighborChanges(s, entry?.neighbors, "after"),
         geometry: nextGeom,
         undoStackState: redoStack(s.undoStackState),
         isDirty: true,
@@ -504,107 +419,84 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     });
   }, []);
 
-  const save = useCallback(async () => {
-    if (!state.sessionId || !state.geometry) return;
-    await saveDraft.mutateAsync({
-      sessionId: state.sessionId,
-      sessionData: {
-        geometry: state.geometry,
-        undoStack: state.undoStackState,
-        mode: state.mode,
-      },
-    });
-  }, [state.sessionId, state.geometry, state.undoStackState, state.mode, saveDraft]);
-
   const submitEditAction = useCallback(
     async (applyDirectly = false, reason?: string) => {
-      if (!state.featureId || !state.geometry) {
+      const { featureId, geometry, dirtyNeighbors } = stateRef.current;
+      if (!featureId || !geometry) {
         throw new Error("No feature loaded");
       }
 
-      const validation = validateGeometry(state.geometry);
+      const validation = validateGeometry(geometry);
       if (!validation.valid) {
         throw new Error(`Invalid geometry: ${validation.errors.join(", ")}`);
       }
 
-      const neighborUpdates = Object.entries(state.dirtyNeighbors).map(
-        ([nFeatureId, geometry]) => ({
-          featureId: nFeatureId,
-          geometry: geometry as unknown as Record<string, unknown>,
-        })
-      );
+      const neighborUpdates = Object.entries(dirtyNeighbors).map(([nFeatureId, shape]) => ({
+        featureId: nFeatureId,
+        geometry: { ...shape },
+      }));
 
-      const result = await submitBorderEdit.mutateAsync({
-        featureId: state.featureId,
+      const result = await submitBorderEdit({
+        featureId,
         editSubtype: "vertex_edit",
-        proposedGeometry: state.geometry as unknown as Record<string, unknown>,
+        proposedGeometry: { ...geometry },
         neighborUpdates,
         applyDirectly,
         reason,
+        realm,
       });
 
       if (result.applied) {
-        await utils.geoCore.getWorldMap.invalidate();
-        await utils.geoCore.getMapBundle.invalidate();
-        await utils.geoCore.getCountryGeometry.invalidate();
-        await utils.countryGeo.getCountryGeoBundle.invalidate();
-        await utils.geoCore.getNeighborGeometries.invalidate();
+        await refreshMapViews(utils);
         setState((s) => ({
           ...s,
           originalGeometry: s.geometry,
           isDirty: false,
           dirtyNeighbors: {},
+          originalNeighborGeometries: s.neighborGeometries,
           undoStackState: createUndoStack(),
         }));
       }
 
       return result;
     },
-    [state.featureId, state.geometry, state.dirtyNeighbors, submitBorderEdit, utils]
+    [submitBorderEdit, utils, realm]
   );
 
   const executeSplitAction = useCallback(
     async (nameA: string, nameB: string) => {
-      if (!state.featureId || state.splitLine.length < 2) {
+      const { featureId, splitLine } = stateRef.current;
+      if (!featureId || splitLine.length < 2) {
         throw new Error("Need a feature and at least 2 split line points");
       }
 
-      await splitCountry.mutateAsync({
-        featureId: state.featureId,
-        splitLine: state.splitLine as [number, number][],
+      await splitCountry({
+        featureId,
+        splitLine: splitLine as [number, number][],
         nameA,
         nameB,
+        realm,
       });
 
-      await utils.geoCore.getWorldMap.invalidate();
-      await utils.geoCore.getMapBundle.invalidate();
-      await utils.geoCore.getCountryGeometry.invalidate();
-      await utils.countryGeo.getCountryGeoBundle.invalidate();
-      await utils.geoCore.getNeighborGeometries.invalidate();
+      await refreshMapViews(utils);
       setState(INITIAL_STATE);
     },
-    [state.featureId, state.splitLine, splitCountry, utils]
+    [splitCountry, utils, realm]
   );
 
   const executeMergeAction = useCallback(
     async (newName: string) => {
-      if (!state.featureId || state.mergeTargets.length === 0) {
+      const { featureId, mergeTargets } = stateRef.current;
+      if (!featureId || mergeTargets.length === 0) {
         throw new Error("Select at least one neighbor to merge with");
       }
 
-      await mergeCountries.mutateAsync({
-        featureIds: [state.featureId, ...state.mergeTargets],
-        newName,
-      });
+      await mergeCountries({ featureIds: [featureId, ...mergeTargets], newName, realm });
 
-      await utils.geoCore.getWorldMap.invalidate();
-      await utils.geoCore.getMapBundle.invalidate();
-      await utils.geoCore.getCountryGeometry.invalidate();
-      await utils.countryGeo.getCountryGeoBundle.invalidate();
-      await utils.geoCore.getNeighborGeometries.invalidate();
+      await refreshMapViews(utils);
       setState(INITIAL_STATE);
     },
-    [state.featureId, state.mergeTargets, mergeCountries, utils]
+    [mergeCountries, utils, realm]
   );
 
   const reset = useCallback(() => {
@@ -617,6 +509,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       return {
         ...s,
         geometry: s.originalGeometry,
+        neighborGeometries: s.originalNeighborGeometries,
         dirtyNeighbors: {},
         undoStackState: createUndoStack(),
         selectedVertex: null,
@@ -629,53 +522,53 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     });
   }, []);
 
-  const repairAction = useCallback(async () => {
-    if (!state.geometry) return;
-    const res = await repairGeometry.mutateAsync({
-      geometry: state.geometry as unknown as Record<string, unknown>,
-    });
-    const repaired = res.geometry as Polygon | MultiPolygon;
+  const restoreDraft = useCallback((draft: BorderDraft) => {
     setState((s) => {
-      if (!s.geometry) return s;
-      const stack = pushUndo(s.undoStackState, "snap", s.geometry, repaired);
+      if (s.pendingDraft !== draft || !s.geometry) return s;
+      // Only neighbours of this feature can have moved with it
+      const moved = Object.fromEntries(
+        Object.entries(draft.dirtyNeighbors).filter(([id]) =>
+          Object.hasOwn(s.neighborGeometries, id)
+        )
+      );
       return {
         ...s,
-        geometry: repaired,
-        undoStackState: stack,
+        pendingDraft: null,
+        geometry: draft.geometry,
+        neighborGeometries: { ...s.neighborGeometries, ...moved },
+        dirtyNeighbors: moved,
+        selectedVertex: null,
         isDirty: true,
-        areaKm2: calculateArea(repaired),
-      };
-    });
-  }, [state.geometry, repairGeometry]);
-
-  const smoothAction = useCallback(() => {
-    setState((s) => {
-      if (!s.geometry) return s;
-      const newGeom = smoothGeometry(s.geometry, 1);
-      const stack = pushUndo(s.undoStackState, "smooth", s.geometry, newGeom);
-      return {
-        ...s,
-        geometry: newGeom,
-        undoStackState: stack,
-        isDirty: true,
-        areaKm2: calculateArea(newGeom),
+        areaKm2: calculateArea(draft.geometry),
       };
     });
   }, []);
 
+  const discardDraft = useCallback(
+    (draft: BorderDraft) => {
+      // Only the draft on offer: a late answer for a feature since replaced must not reset another's
+      if (stateRef.current.pendingDraft !== draft) return;
+      setState((s) => (s.pendingDraft === draft ? { ...s, pendingDraft: null } : s));
+      clearDraft();
+    },
+    [clearDraft]
+  );
+
+  const repairAction = useCallback(async () => {
+    const { geometry } = stateRef.current;
+    if (!geometry) return;
+    const res = await repairGeometry({ geometry: { ...geometry } });
+    setState((s) => withEdit(s, "snap", res.geometry as Polygon | MultiPolygon));
+  }, [repairGeometry]);
+
+  const smoothAction = useCallback(() => {
+    setState((s) => (s.geometry ? withEdit(s, "smooth", smoothGeometry(s.geometry, 1)) : s));
+  }, []);
+
   const naturalizeAction = useCallback(() => {
     setState((s) => {
-      if (!s.geometry) return s;
       const seed = Date.now() & 0xffff;
-      const newGeom = naturalizeGeometry(s.geometry, 0.01, seed);
-      const stack = pushUndo(s.undoStackState, "naturalize", s.geometry, newGeom);
-      return {
-        ...s,
-        geometry: newGeom,
-        undoStackState: stack,
-        isDirty: true,
-        areaKm2: calculateArea(newGeom),
-      };
+      return s.geometry ? withEdit(s, "naturalize", naturalizeGeometry(s.geometry, 0.01, seed)) : s;
     });
   }, []);
 
@@ -691,83 +584,92 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   );
 
   const simplifyAction = useCallback(() => {
-    setState((s) => {
-      if (!s.geometry) return s;
-      const newGeom = simplifyGeometry(s.geometry, 0.01);
-      const stack = pushUndo(s.undoStackState, "simplify", s.geometry, newGeom);
-      return {
-        ...s,
-        geometry: newGeom,
-        undoStackState: stack,
-        isDirty: true,
-        areaKm2: calculateArea(newGeom),
-      };
-    });
+    setState((s) => (s.geometry ? withEdit(s, "simplify", simplifyGeometry(s.geometry, 0.01)) : s));
   }, []);
-
-  const brushResultRef = useRef<boolean>(false);
 
   const applyBrushTransferAction = useCallback(
     (strokePoints: [number, number][], radiusKm: number, targetFeatureId: string): boolean => {
-      brushResultRef.current = false;
+      // The stroke's boolean ops (70-130 ms) run here, from the latest state, not inside an updater
+      const { geometry, neighborGeometries } = stateRef.current;
+      const targetGeom = neighborGeometries[targetFeatureId];
+      const result =
+        geometry && targetGeom && applyBrushStroke(strokePoints, radiusKm, geometry, targetGeom);
+      if (!result || !targetGeom) return false;
+
       setState((s) => {
         if (!s.geometry) return s;
-        const targetGeom = s.neighborGeometries[targetFeatureId];
-        if (!targetGeom) return s;
-
-        const result = applyBrushStroke(strokePoints, radiusKm, s.geometry, targetGeom);
-        if (!result) return s;
-
-        const newDirty: Record<string, Polygon | MultiPolygon> = {
-          ...s.neighborGeometries,
-        };
-        newDirty[targetFeatureId] = result.target;
-        for (const [fid] of Object.entries(s.dirtyNeighbors)) {
-          if (fid !== targetFeatureId) newDirty[fid] = s.dirtyNeighbors[fid]!;
-        }
-
-        const newStack = pushUndo(s.undoStackState, "brush", s.geometry, result.source);
-
-        brushResultRef.current = true;
-
+        const newStack = pushUndo(s.undoStackState, "brush", s.geometry, result.source, {
+          [targetFeatureId]: { before: targetGeom, after: result.target },
+        });
         return {
           ...s,
           geometry: result.source,
-          dirtyNeighbors: newDirty,
+          neighborGeometries: { ...s.neighborGeometries, [targetFeatureId]: result.target },
+          dirtyNeighbors: { ...s.dirtyNeighbors, [targetFeatureId]: result.target },
           undoStackState: newStack,
           isDirty: true,
           areaKm2: calculateArea(result.source),
         };
       });
-      return brushResultRef.current;
+      return true;
     },
     []
   );
 
-  const actions: BorderEditorActions = {
-    loadFeature,
-    setMode,
-    handleMapClick,
-    handleVertexDrag,
-    commitDrag,
-    addSplitPoint,
-    clearSplitLine,
-    toggleMergeTarget,
-    undo: undoAction,
-    redo: redoAction,
-    save,
-    submitEdit: submitEditAction,
-    executeSplit: executeSplitAction,
-    executeMerge: executeMergeAction,
-    repair: repairAction,
-    smooth: smoothAction,
-    naturalize: naturalizeAction,
-    simplify: simplifyAction,
-    reset,
-    revert,
-    setTraceLayerSource: setTraceLayerSourceAction,
-    applyBrushTransfer: applyBrushTransferAction,
-  };
+  const actions = useMemo<BorderEditorActions>(
+    () => ({
+      loadFeature,
+      setMode,
+      handleMapClick,
+      handleVertexDrag,
+      commitDrag,
+      addSplitPoint,
+      clearSplitLine,
+      toggleMergeTarget,
+      undo: undoAction,
+      redo: redoAction,
+      save,
+      submitEdit: submitEditAction,
+      executeSplit: executeSplitAction,
+      executeMerge: executeMergeAction,
+      repair: repairAction,
+      smooth: smoothAction,
+      naturalize: naturalizeAction,
+      simplify: simplifyAction,
+      reset,
+      revert,
+      restoreDraft,
+      discardDraft,
+      setTraceLayerSource: setTraceLayerSourceAction,
+      applyBrushTransfer: applyBrushTransferAction,
+    }),
+    [
+      loadFeature,
+      setMode,
+      handleMapClick,
+      handleVertexDrag,
+      commitDrag,
+      addSplitPoint,
+      clearSplitLine,
+      toggleMergeTarget,
+      undoAction,
+      redoAction,
+      save,
+      submitEditAction,
+      executeSplitAction,
+      executeMergeAction,
+      repairAction,
+      smoothAction,
+      naturalizeAction,
+      simplifyAction,
+      reset,
+      revert,
+      restoreDraft,
+      discardDraft,
+      setTraceLayerSourceAction,
+      applyBrushTransferAction,
+    ]
+  );
 
   return [state, actions];
 }

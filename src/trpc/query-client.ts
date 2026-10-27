@@ -1,18 +1,6 @@
 import { defaultShouldDehydrateQuery, QueryClient } from "@tanstack/react-query";
 import SuperJSON from "superjson";
 
-// Selective logger - suppress verbose logs but keep errors
-const selectiveLogger = {
-  log: () => {}, // Suppress info logs
-  warn: () => {}, // Suppress warnings
-  error: (...args: any[]) => {
-    // Only log actual query errors, not React Query internals
-    if (args[0]?.message && !args[0].message.includes("No QueryClient set")) {
-      console.error("[React Query Error]", ...args);
-    }
-  },
-};
-
 export const createQueryClient = () =>
   new QueryClient({
     defaultOptions: {
@@ -30,8 +18,9 @@ export const createQueryClient = () =>
         throwOnError: false,
       },
       mutations: {
-        // Mutations should retry less aggressively
-        retry: process.env.NODE_ENV === "production" ? 1 : 0,
+        // Never re-send a mutation: one that committed but lost its response would run twice (a second bid,
+        // purchase or pack open). The player sees the error and retries on purpose.
+        retry: 0,
         throwOnError: false,
       },
       dehydrate: {

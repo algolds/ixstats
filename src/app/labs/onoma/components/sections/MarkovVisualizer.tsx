@@ -16,20 +16,18 @@ import {
   type Edge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Volume2, RotateCcw, HelpCircle } from "lucide-react";
+import { SoundHigh as Volume2, Undo as RotateCcw, HelpCircle } from "iconoir-react";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { speakBrowserNative } from "~/lib/onoma/browser-speech";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
 
 // Custom node components for React Flow
 function CenterNode({ data }: { data: { label: string } }) {
   return (
-    <div className="text-foreground animate-in scale-in flex min-w-[125px] flex-col items-center gap-0.5 rounded-2xl border-2 border-[#0091ff] bg-[#0091ff]/15 px-5 py-3 text-center font-bold shadow-xl shadow-[#0091ff]/10 backdrop-blur-md duration-200 select-none">
-      <span className="text-[9px] font-extrabold tracking-wider text-[#0091ff] uppercase">
-        Active State
-      </span>
-      <span className="font-mono text-base leading-tight tracking-wide">
-        {data.label || "[Start]"}
-      </span>
+    <div className="text-label animate-in scale-in border-tint bg-tint/15 rounded-card shadow-floating flex min-w-[125px] flex-col items-center gap-0.5 border-2 px-5 py-3 text-center font-semibold duration-200 select-none">
+      <span className="text-tint text-eyebrow">Active state</span>
+      <span className="text-body font-mono leading-tight">{data.label || "[Start]"}</span>
       <Handle
         type="source"
         position={Position.Right}
@@ -65,13 +63,14 @@ function NeighborNode({
 }) {
   return (
     <div className="group relative">
-      <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-[#0091ff]/25 to-[#00d2ff]/25 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100" />
-      <button
+      <Button
+        variant="outline"
+        size="sm"
         onClick={data.onClick}
-        className="border-border/80 bg-background/95 text-foreground relative flex min-w-[85px] cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2 font-mono text-xs font-bold shadow-md backdrop-blur-md transition-all select-none hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 active:scale-95"
+        className="relative min-w-[85px] justify-center font-mono"
       >
-        <span className="font-mono font-extrabold text-[#0091ff]">+{data.label}</span>
-        <span className="text-muted-foreground font-sans text-[9px] font-semibold">
+        <span className="text-tint font-mono font-semibold">+{data.label}</span>
+        <span className="text-label-secondary text-caption font-sans font-semibold">
           ({(data.probability * 100).toFixed(0)}%)
         </span>
         <Handle
@@ -80,7 +79,7 @@ function NeighborNode({
           id="target"
           style={{ opacity: 0, width: 0, height: 0 }}
         />
-      </button>
+      </Button>
     </div>
   );
 }
@@ -92,13 +91,14 @@ function EndNode({
 }) {
   return (
     <div className="group relative">
-      <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-red-500/25 to-amber-500/25 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100" />
-      <button
+      <Button
+        variant="outline"
+        size="sm"
         onClick={data.onClick}
-        className="relative flex min-w-[85px] cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/5 px-3.5 py-2 text-xs font-bold text-red-500 shadow-md backdrop-blur-md transition-all select-none hover:border-red-500/60 hover:bg-red-500/10 active:scale-95 dark:text-red-400"
+        className="text-red relative min-w-[85px] justify-center"
       >
         <span>[End]</span>
-        <span className="font-sans text-[9px] font-semibold text-red-500/80 dark:text-red-400/80">
+        <span className="text-caption text-red/80 font-sans font-semibold">
           ({(data.probability * 100).toFixed(0)}%)
         </span>
         <Handle
@@ -107,7 +107,7 @@ function EndNode({
           id="target"
           style={{ opacity: 0, width: 0, height: 0 }}
         />
-      </button>
+      </Button>
     </div>
   );
 }
@@ -144,6 +144,7 @@ function FlowFitViewController({ activePrefix }: { activePrefix: string }) {
       fitView({ padding: 0.28, duration: 400 });
     }, 60);
     return () => clearTimeout(timer);
+    // oxlint-disable-next-line
   }, [activePrefix, fitView]);
 
   return null;
@@ -156,7 +157,7 @@ interface MarkovVisualizerProps {
   onCompleteName?: (completedName: string) => void;
 }
 
-export function MarkovVisualizerInner({
+function MarkovVisualizerInner({
   chain,
   activePrefix,
   onChangePrefix,
@@ -290,62 +291,61 @@ export function MarkovVisualizerInner({
   };
 
   return (
-    <div className="border-border/40 bg-card/40 relative flex flex-col overflow-hidden rounded-xl border backdrop-blur-md">
-      {/* Control panel bar */}
-      <div className="border-border/30 bg-secondary/5 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+    <div className="border-separator bg-surface rounded-row relative flex flex-col overflow-hidden border">
+      <div className="border-separator bg-fill-4 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#0091ff]" />
-          <h3 className="text-foreground text-xs font-bold tracking-wide uppercase">
-            Markov Path Visualizer
-          </h3>
+          <span className="bg-tint h-2 w-2 animate-pulse rounded-full" />
+          <h3 className="text-label text-subhead">Markov path visualizer</h3>
         </div>
 
         {/* Input box showing active path */}
         <div className="flex max-w-sm flex-1 items-center gap-2 sm:justify-end">
-          <span className="text-muted-foreground hidden text-[10px] font-bold uppercase sm:inline">
-            Path:
-          </span>
-          <input
+          <span className="text-label-secondary text-eyebrow hidden sm:inline">Path:</span>
+          <Input
             type="text"
             value={activePrefix}
             onChange={(e) => onChangePrefix(e.target.value.toLowerCase())}
             placeholder="Type prefix or click nodes..."
-            className="border-border/60 bg-background/80 text-foreground placeholder-muted-foreground flex-1 rounded-lg border px-2.5 py-1 font-mono text-xs focus:border-[#0091ff]/50 focus:outline-none sm:max-w-[200px]"
+            className="text-footnote flex-1 font-mono sm:max-w-[200px]"
           />
 
-          <button
+          <Button
+            variant="outline"
+            size="icon-sm"
             onClick={handleSpeak}
             disabled={!activePrefix}
-            className="border-border/60 bg-background/50 text-muted-foreground cursor-pointer rounded-md border p-1 transition-all hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 hover:text-[#0091ff] disabled:opacity-40"
+
             title="Pronounce name"
           >
             <Volume2 className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleDerivePath}
-            className="flex cursor-pointer items-center justify-center rounded-lg border border-[#0091ff]/30 bg-[#0091ff]/5 px-2.5 py-1 text-xs font-semibold text-[#0091ff] transition-all hover:bg-[#0091ff]/10 active:scale-95"
+            className="justify-center"
             title="Derive remaining path to end"
           >
-            <span>Derive Path</span>
-          </button>
+            <span>Derive path</span>
+          </Button>
 
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => onChangePrefix("")}
-            className="border-border/60 bg-background/50 hover:bg-secondary/40 text-muted-foreground flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all"
+
             title="Reset path to start"
           >
             <RotateCcw className="h-3 w-3" />
             <span>Reset</span>
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* Main Flow Canvas */}
-      <div className="bg-secondary/5 relative h-[380px] w-full">
+      <div className="bg-fill-4 relative h-[380px] w-full">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -359,14 +359,13 @@ export function MarkovVisualizerInner({
           <Background color="var(--border)" gap={20} size={1} className="opacity-40" />
           <Controls
             showInteractive={false}
-            className="!bg-background/80 !border-border/60 !rounded-lg !shadow-md"
+            className="!bg-surface !border-separator !rounded-control !shadow-card"
           />
           <FlowFitViewController activePrefix={activePrefix} />
         </ReactFlow>
 
-        {/* Help tip overlay */}
-        <div className="bg-background/85 border-border/40 text-muted-foreground pointer-events-none absolute right-3 bottom-3 z-20 flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] shadow-sm backdrop-blur-sm select-none">
-          <HelpCircle className="h-3 w-3 text-[#0091ff]/80" />
+        <div className="bg-surface border-separator text-label-secondary rounded-control-sm text-caption shadow-card pointer-events-none absolute right-3 bottom-3 z-20 flex items-center gap-1 border px-2 py-1 select-none">
+          <HelpCircle className="text-tint/80 h-3 w-3" />
           <span>Click neighbor nodes to grow the name token-by-token</span>
         </div>
       </div>
@@ -382,5 +381,3 @@ export function MarkovVisualizer(props: MarkovVisualizerProps) {
     </ReactFlowProvider>
   );
 }
-
-export default MarkovVisualizer;

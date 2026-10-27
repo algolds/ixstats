@@ -1,15 +1,63 @@
 import { z } from "zod/v4";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import type { PrismaClient } from "@prisma/client";
 import { compositionSchema } from "~/lib/heraldry/composition-schema";
 import { validateComposition } from "~/lib/heraldry/validation";
 import { generateBlazon } from "~/lib/heraldry/blazon";
 import { isSystemOwner } from "~/lib/auth";
 import { invalidateCache } from "~/lib/cache";
-import { clearLayerCache } from "~/server/shared/layer-cache";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { sanitizeSvgMarkup } from "~/lib/utils/sanitize-html";
+import { RENDERED_IMAGE_URL } from "~/lib/heraldry/constants";
+import { renderAchievementImages } from "./render";
+
+const MAX_CHARGE_SVG_BYTES = 512 * 1024;
+
+/** https URLs on Wikimedia's file host, the only source "Commons" charges come from. */
+export function isCommonsFileUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && parsed.hostname === "upload.wikimedia.org";
+  } catch {
+    return false;
+  }
+}
+
+/** The achievement, or NOT_FOUND / FORBIDDEN unless the caller owns it (or is a system owner). */
+async function loadOwnedAchievement(
+  ctx: { db: PrismaClient; auth: { userId: string } },
+  id: string,
+  forbiddenMessage: string
+) {
+  const achievement = await ctx.db.heraldryAchievement.findUnique({ where: { id } });
+  if (!achievement) {
+    throw new TRPCError({ code: "NOT_FOUND", message: `Achievement with ID ${id} not found` });
+  }
+  if (achievement.ownerId !== ctx.auth.userId && !isSystemOwner(ctx.auth.userId)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: forbiddenMessage });
+  }
+  return achievement;
+}
+
+/**
+ * Best-effort render for save/publish. On failure both URLs are cleared, so a stale image of an
+ * older version of the design can never be attached; the attach flow renders again on demand.
+ */
+async function tryRenderImages(
+  db: PrismaClient,
+  achievement: { id: string; compositionData: unknown }
+): Promise<{ thumbnailUrl: string | null; largeUrl: string | null }> {
+  try {
+    return await renderAchievementImages(db, achievement);
+  } catch (error) {
+    console.error(`[Vexel] Could not render achievement ${achievement.id}:`, error);
+    return { thumbnailUrl: null, largeUrl: null };
+  }
+}
 
 export const heraldryMutationsRouter = createTRPCRouter({
-  saveAchievement: protectedProcedure
+  saveAchievement: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string().uuid().optional(),
@@ -27,23 +75,11 @@ export const heraldryMutationsRouter = createTRPCRouter({
       let achievement;
 
       if (input.id) {
-        const existing = await ctx.db.heraldryAchievement.findUnique({
-          where: { id: input.id },
-        });
-
-        if (!existing) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: `Achievement with ID ${input.id} not found`,
-          });
-        }
-
-        if (existing.ownerId !== ctx.auth.userId && !isSystemOwner(ctx.auth.userId)) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You do not have permission to update this achievement.",
-          });
-        }
+        await loadOwnedAchievement(
+          ctx,
+          input.id,
+          "You do not have permission to update this achievement."
+        );
 
         achievement = await ctx.db.heraldryAchievement.update({
           where: { id: input.id },
@@ -79,59 +115,72 @@ export const heraldryMutationsRouter = createTRPCRouter({
         },
       });
 
-      return achievement;
+      // Render the saved composition to the PNGs attachToCountry uses as a coat of arms.
+      return ctx.db.heraldryAchievement.update({
+        where: { id: achievement.id },
+        data: await tryRenderImages(ctx.db, {
+          id: achievement.id,
+          compositionData: input.compositionData,
+        }),
+      });
     }),
 
-  publishAchievement: protectedProcedure
+  /** Re-renders the owner's stored design to its thumbnail/large PNGs (e.g. before attaching). */
+  renderAchievementImage: rateLimitedMutationProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.db.heraldryAchievement.findUnique({
-        where: { id: input.id },
+      const achievement = await loadOwnedAchievement(
+        ctx,
+        input.id,
+        "You do not have permission to render this achievement."
+      );
+
+      let images;
+      try {
+        images = await renderAchievementImages(ctx.db, achievement);
+      } catch (error) {
+        console.error(`[Vexel] Could not render achievement ${achievement.id}:`, error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "This design could not be rendered to an image.",
+        });
+      }
+
+      const updated = await ctx.db.heraldryAchievement.update({
+        where: { id: achievement.id },
+        data: images,
       });
+      return { thumbnailUrl: updated.thumbnailUrl, largeUrl: updated.largeUrl };
+    }),
 
-      if (!existing) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Achievement with ID ${input.id} not found`,
-        });
-      }
-
-      if (existing.ownerId !== ctx.auth.userId && !isSystemOwner(ctx.auth.userId)) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to publish this achievement.",
-        });
-      }
+  publishAchievement: rateLimitedMutationProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const achievement = await loadOwnedAchievement(
+        ctx,
+        input.id,
+        "You do not have permission to publish this achievement."
+      );
 
       return ctx.db.heraldryAchievement.update({
         where: { id: input.id },
         data: {
           isPublished: true,
           publishedAt: new Date(),
+          // Designs saved before images were rendered get theirs on publish.
+          ...(achievement.thumbnailUrl ? {} : await tryRenderImages(ctx.db, achievement)),
         },
       });
     }),
 
-  unpublishAchievement: protectedProcedure
+  unpublishAchievement: rateLimitedMutationProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.db.heraldryAchievement.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!existing) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Achievement with ID ${input.id} not found`,
-        });
-      }
-
-      if (existing.ownerId !== ctx.auth.userId && !isSystemOwner(ctx.auth.userId)) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to unpublish this achievement.",
-        });
-      }
+      await loadOwnedAchievement(
+        ctx,
+        input.id,
+        "You do not have permission to unpublish this achievement."
+      );
 
       return ctx.db.heraldryAchievement.update({
         where: { id: input.id },
@@ -142,33 +191,7 @@ export const heraldryMutationsRouter = createTRPCRouter({
       });
     }),
 
-  deleteAchievement: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.db.heraldryAchievement.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!existing) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Achievement with ID ${input.id} not found`,
-        });
-      }
-
-      if (existing.ownerId !== ctx.auth.userId && !isSystemOwner(ctx.auth.userId)) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to delete this achievement.",
-        });
-      }
-
-      return ctx.db.heraldryAchievement.delete({
-        where: { id: input.id },
-      });
-    }),
-
-  importCommonsCharge: protectedProcedure
+  importCommonsCharge: rateLimitedMutationProcedure
     .input(
       z.object({
         name: z.string().min(1),
@@ -205,14 +228,32 @@ export const heraldryMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const res = await fetch(input.url);
+      // The server fetches this URL, so only Wikimedia Commons file hosts are allowed (SSRF),
+      // and the SVG is sanitized before it is stored and shown to other players (XSS).
+      if (!isCommonsFileUrl(input.url)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Charges can only be imported from upload.wikimedia.org over https.",
+        });
+      }
+      const res = await fetch(input.url, {
+        redirect: "error",
+        signal: AbortSignal.timeout(10_000),
+      });
       if (!res.ok) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: `Failed to download SVG from ${input.url}: ${res.statusText}`,
         });
       }
-      const svgData = await res.text();
+      const raw = await res.text();
+      if (raw.length > MAX_CHARGE_SVG_BYTES) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "That SVG is larger than 512 KB." });
+      }
+      const svgData = sanitizeSvgMarkup(raw);
+      if (!/<svg[\s>]/i.test(svgData)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "That file is not an SVG image." });
+      }
 
       return ctx.db.heraldryCharge.create({
         data: {
@@ -229,7 +270,7 @@ export const heraldryMutationsRouter = createTRPCRouter({
       });
     }),
 
-  attachToCountry: protectedProcedure
+  attachToCountry: rateLimitedMutationProcedure
     .input(
       z.object({
         achievementId: z.string().uuid(),
@@ -237,39 +278,26 @@ export const heraldryMutationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const achievement = await ctx.db.heraldryAchievement.findUnique({
-        where: { id: input.achievementId },
-      });
+      const achievement = await loadOwnedAchievement(
+        ctx,
+        input.achievementId,
+        "You do not own this achievement."
+      );
 
-      if (!achievement) {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
+      // Only an image Vexel rendered itself (see render.ts) may become the coat of arms; with none,
+      // writing "" would blank it. The editor renders on demand and retries on this error.
+      const coatOfArmsUrl = [achievement.thumbnailUrl, achievement.largeUrl].find(
+        (url): url is string => !!url && RENDERED_IMAGE_URL.test(url)
+      );
+      if (!coatOfArmsUrl) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Achievement with ID ${input.achievementId} not found`,
+          code: "BAD_REQUEST",
+          message:
+            "This design has no rendered image yet, so it can't be used as a coat of arms. The country's current coat of arms is unchanged.",
         });
       }
-
-      if (achievement.ownerId !== ctx.auth.userId && !isSystemOwner(ctx.auth.userId)) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not own this achievement.",
-        });
-      }
-
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-      });
-
-      if (
-        !isSystemOwner(ctx.auth.userId) &&
-        (!userProfile || userProfile.countryId !== input.countryId)
-      ) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to edit this country.",
-        });
-      }
-
-      const coatOfArmsUrl = achievement.thumbnailUrl || achievement.largeUrl || "";
 
       await ctx.db.country.update({
         where: { id: input.countryId },
@@ -280,7 +308,6 @@ export const heraldryMutationsRouter = createTRPCRouter({
       });
 
       await invalidateCache(["countries."]);
-      clearLayerCache("political");
 
       return { success: true };
     }),

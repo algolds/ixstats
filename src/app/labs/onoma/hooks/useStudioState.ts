@@ -12,7 +12,7 @@ import { translateToIPA } from "~/lib/onoma/phonology";
 import { transcribeToScript } from "~/lib/onoma/orthography";
 import { getMorphologyDetails } from "~/lib/onoma/morphology";
 
-export interface UseStudioStateProps {
+interface UseStudioStateProps {
   initialWords?: string[];
   initialTitle?: string;
   onClearInitial?: () => void;
@@ -433,7 +433,10 @@ export function useStudioState({
       id: existingStashItem?.id,
       type: (existingStashItem?.type as "dictionary" | "saved-name") || "saved-name",
       title: selectedTerm,
-      values: existingStashItem?.values && existingStashItem.values.length > 0 ? existingStashItem.values : [selectedTerm],
+      values:
+        existingStashItem?.values && existingStashItem.values.length > 0
+          ? existingStashItem.values
+          : [selectedTerm],
       category: (existingStashItem?.category as NameCategory) || null,
       lexiconDefinition: newDef,
     });

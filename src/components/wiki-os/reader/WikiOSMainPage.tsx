@@ -1,45 +1,23 @@
-// src/components/wiki-os/reader/WikiOSMainPage.tsx
-// Custom WikiOS main page — inspired by live IxWiki but with
-// IxStats/IxWorld/IxTime integration and modern glass-physics design.
-// No separate WikiOS header — uses the IxStats navigation bar.
-
 "use client";
+// Custom WikiOS main page
 
-import { useState, useMemo } from "react";
-import Link from "next/link";
 import { cn } from "~/lib/utils";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { OpenBook as BookOpen, OpenNewWindow as ExternalLink } from "iconoir-react";
+import { motion, AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
-import { formatMWTimeAgo } from "~/lib/wiki-os/mediawiki-timestamp";
-import { BookOpen, ExternalLink, Star } from "lucide-react";
+import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { WikiOSBrandLockup } from "~/components/wiki-os/shared";
+import { WikiHeroMaster, type WikiHeroVariant } from "./hero";
+import { EditorialMainPageContent, SculptedMainPageContent } from "./main";
+import { assetUrl } from "~/lib/base-path";
 
-// ---------------------------------------------------------------------------
-// Category definitions (matches live IxWiki navigation grid)
-// ---------------------------------------------------------------------------
-
-const CATEGORIES = [
-  { name: "Countries", color: "#3b82f6" },
-  { name: "Companies", color: "#f97316" },
-  { name: "Culture", color: "#a855f7" },
-  { name: "Economy", color: "#22c55e" },
-  { name: "Geography", color: "#14b8a6" },
-  { name: "Government", color: "#6366f1" },
-  { name: "History", color: "#eab308" },
-  { name: "Military", color: "#ef4444" },
-  { name: "Nature", color: "#10b981" },
-  { name: "People", color: "#ec4899" },
-  { name: "Politics", color: "#8b5cf6" },
-  { name: "Technology", color: "#06b6d4" },
-] as const;
-
-// ---------------------------------------------------------------------------
-// Blurb Modal
-// ---------------------------------------------------------------------------
+const STORAGE_KEY = "wikios:heroVariant";
+/** The page's data is built once a minute on the server. */
+const MAIN_PAGE_STALE_MS = 60_000;
 
 function BlurbPromptModal({
   open,
@@ -73,18 +51,18 @@ function BlurbPromptModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="flex max-h-[80vh] max-w-lg flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="rounded-card border-separator bg-surface shadow-floating flex max-h-[80vh] max-w-lg flex-col gap-0 overflow-hidden border p-0">
         {/* Header */}
-        <DialogHeader className="border-b border-white/10 px-5 py-4">
+        <DialogHeader className="border-separator border-b px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="mb-1 flex items-center gap-2">
-                <BookOpen className="h-4 w-4 shrink-0 text-purple-400" />
-                <DialogTitle className="text-base font-semibold">{prompt.title}</DialogTitle>
+                <BookOpen className="text-tint h-4 w-4 shrink-0" />
+                <DialogTitle className="text-title-3">{prompt.title}</DialogTitle>
               </div>
-              <p className="text-muted-foreground text-sm leading-relaxed">{prompt.question}</p>
+              <p className="text-label-secondary text-body leading-relaxed">{prompt.question}</p>
               <div className="mt-2 flex items-center gap-2">
-                <Badge variant="secondary" className="text-[10px]">
+                <Badge variant="default" className="text-footnote">
                   {prompt._count.responses}{" "}
                   {prompt._count.responses === 1 ? "response" : "responses"}
                 </Badge>
@@ -94,37 +72,38 @@ function BlurbPromptModal({
         </DialogHeader>
 
         {/* Responses */}
-        <div className="flex-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-2.5 overflow-y-auto px-5 py-3">
+        <div className="flex-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-2 overflow-y-auto px-5 py-3">
           {responses.length === 0 && (
-            <p className="text-muted-foreground py-6 text-center text-sm">
-              No responses yet. Be the first!
-            </p>
+            <p className="text-label-secondary text-body py-6 text-center">No responses yet.</p>
           )}
 
           {responses.map((r) => (
             <div
               key={r.id}
-              className={`rounded-lg border p-3 ${
-                r.featured ? "border-amber-500/30 bg-amber-500/5" : "border-white/10"
-              }`}
+              className={cn(
+                "rounded-card border p-4",
+                r.featured ? "border-yellow/30 bg-yellow/5" : "bg-fill-4 border-separator"
+              )}
             >
-              <div className="mb-1.5 flex items-center gap-2">
+              <div className="mb-2 flex items-center gap-2">
                 {r.country?.flag && (
-                  <img src={r.country.flag} alt="" className="h-3.5 w-5 rounded-sm object-cover" />
+                  <img
+                    src={assetUrl(r.country.flag) ?? undefined}
+                    alt=""
+                    className="rounded-control-sm h-3.5 w-5 object-cover"
+                  />
                 )}
-                <span className="text-xs font-medium text-[var(--wikios-text)]">
-                  {r.country?.name ?? "Unknown"}
-                </span>
+                <span className="text-label text-caption">{r.country?.name ?? "Unknown"}</span>
                 {r.featured && (
                   <Badge
                     variant="outline"
-                    className="border-amber-500/30 px-1 py-0 text-[9px] text-amber-400"
+                    className="border-yellow/30 text-footnote text-yellow px-1 py-0"
                   >
                     Featured
                   </Badge>
                 )}
               </div>
-              <p className="line-clamp-4 text-sm whitespace-pre-wrap text-[var(--wikios-text-muted)]">
+              <p className="text-label-secondary text-body line-clamp-4 whitespace-pre-wrap">
                 {r.content}
               </p>
             </div>
@@ -135,7 +114,7 @@ function BlurbPromptModal({
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-xs"
+                className="text-footnote"
                 onClick={() => fetchNextPage()}
                 disabled={isFetchingNextPage}
               >
@@ -146,17 +125,17 @@ function BlurbPromptModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-white/10 px-5 py-3">
+        <div className="border-separator flex items-center justify-between border-t px-5 py-3">
           <Link
-            href={withBasePath(`/blurbs/${prompt.slug}`)}
-            className="inline-flex items-center gap-1.5 text-xs text-purple-400 transition-colors hover:text-purple-300"
+            href={ixstatesLinkHref(`/blurbs/${prompt.slug}`)}
+            className="text-footnote text-tint hover:text-wiki-hover inline-flex items-center gap-2 transition-colors"
           >
             <ExternalLink className="h-3 w-3" />
             Open full prompt
           </Link>
           <Link
-            href={withBasePath("/blurbs")}
-            className="text-muted-foreground hover:text-foreground text-xs transition-colors"
+            href={ixstatesLinkHref("/blurbs")}
+            className="text-label-secondary hover:text-label text-footnote transition-colors"
           >
             All prompts →
           </Link>
@@ -166,252 +145,210 @@ function BlurbPromptModal({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Main Page Component
-// ---------------------------------------------------------------------------
-
 export function WikiOSMainPage() {
+  const [variant, setVariant] = useState<WikiHeroVariant>("sculpted-emblem");
   const [blurbModalOpen, setBlurbModalOpen] = useState(false);
 
-  // Fetch Main_Page HTML to extract the featured article from it
-  const { data: mainPageData } = api.wikios.getArticleHtml.useQuery(
-    { title: "Main Page" },
-    { staleTime: 10 * 60 * 1000 }
-  );
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY) as string | null;
+      if (saved === "editorial-masthead") {
+        // oxlint-disable-next-line
+        setVariant("editorial-masthead");
+      } else {
+        setVariant("sculpted-emblem");
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
-  // Fetch recent changes
-  const { data: recentChanges, isLoading: isLoadingRecent } = api.wikios.getRecentChanges.useQuery(
-    { limit: 6 },
-    { staleTime: 30_000 }
-  );
+  const handleSelectVariant = useCallback((newVariant: WikiHeroVariant) => {
+    setVariant(newVariant);
+    try {
+      localStorage.setItem(STORAGE_KEY, newVariant);
+    } catch {
+      // ignore
+    }
+  }, []);
 
-  // Fetch countries for "Explore the World"
-  const { data: countries } = api.countries.getSelectList.useQuery(
-    { limit: 50 },
-    { staleTime: 10 * 60 * 1000 }
-  );
-
-  // Fetch site stats
-  const { data: siteStats } = api.wikios.getSiteStats.useQuery(undefined, {
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Fetch random active blurb prompt (cycles on each page load)
-  const { data: activePrompt } = api.blurbs.getRandomActivePrompt.useQuery(undefined, {
-    staleTime: 60 * 1000,
+  // One answer for the whole page (featured article, almanac, recent changes, counts, topic tiles,
+  // prompt): the route reads it on the server, so it is in the first HTML and not fetched again.
+  const {
+    data: main,
+    error: mainError,
+    refetch: refetchMain,
+  } = api.wikios.getMainPage.useQuery(undefined, {
+    staleTime: MAIN_PAGE_STALE_MS,
     refetchOnWindowFocus: false,
   });
+  // A page that could not be read says so; its sections must not stay skeletons for good
+  const mainFailed = !main && !!mainError;
+  const categories = main?.categories ?? [];
+  const featured = main?.featured ?? null;
+  const recentChanges = main?.recentChanges;
+  const activePrompt = main?.prompt ?? null;
 
-  // Extract featured article from Main_Page contentHtml (server-transformed)
-  const featuredArticleHtml = useMemo(() => {
-    if (!mainPageData?.contentHtml) return null;
-    return extractFeaturedArticle(mainPageData.contentHtml);
-  }, [mainPageData?.contentHtml]);
+  // Fetch countries for "Explore the World" (all realms)
+  const { data: countries } = api.countries.getSelectList.useQuery(
+    { limit: 100 },
+    { staleTime: 10 * 60 * 1000 }
+  );
 
-  // Pick 12 random countries for "Explore the World"
+  // Randomly shuffle countries on mount/reload for Explore Countries grid
   const randomCountries = useMemo(() => {
     if (!countries || countries.length === 0) return [];
-    const shuffled = [...countries].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 12);
+    const copy = [...countries];
+    for (let i = copy.length - 1; i > 0; i--) {
+      // oxlint-disable-next-line
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j]!, copy[i]!];
+    }
+    return copy;
   }, [countries]);
 
+  // Live query author info for the featured article
+  const { data: featuredAuthorInfo } = api.wikios.getArticleAuthors.useQuery(
+    { title: featured?.title ?? "" },
+    {
+      enabled: Boolean(featured?.title && featured.title !== "Featured Article"),
+      staleTime: 5 * 60 * 1000,
+    }
+  );
+
+  const featuredArticleData = useMemo(() => {
+    if (!featured) return null;
+    const creatorName =
+      typeof featuredAuthorInfo?.creator === "object"
+        ? featuredAuthorInfo?.creator?.username
+        : (featuredAuthorInfo?.creator as string | undefined);
+    const lastEditorName =
+      typeof featuredAuthorInfo?.lastEditor === "object"
+        ? featuredAuthorInfo?.lastEditor?.username
+        : (featuredAuthorInfo?.lastEditor as string | undefined);
+
+    return {
+      title: featured.title,
+      slug: featured.slug,
+      imgSrc: featured.image,
+      summary: featured.excerpt,
+      authorInfo: featuredAuthorInfo
+        ? {
+            creator: creatorName || null,
+            creatorAvatar: null,
+            createdAt:
+              typeof featuredAuthorInfo.creator === "object"
+                ? featuredAuthorInfo.creator?.timestamp || null
+                : null,
+            lastEditor: lastEditorName || null,
+            lastEditorAvatar: null,
+            lastEditedAt:
+              typeof featuredAuthorInfo.lastEditor === "object"
+                ? featuredAuthorInfo.lastEditor?.timestamp || null
+                : null,
+          }
+        : null,
+    };
+  }, [featured, featuredAuthorInfo]);
+
+  // Extract latest live dispatch change
+  const latestChange = useMemo(() => {
+    const first = recentChanges?.[0];
+    if (!first) return null;
+    return {
+      title: first.title,
+      user: first.user,
+      timestamp: first.timestamp,
+      comment: first.comment,
+    };
+  }, [recentChanges]);
+
+  // The almanac card: the server picked the day's article and read its lead and picture
+  const almanacSpotlightData = useMemo(() => {
+    const almanac = main?.almanac;
+    if (!almanac) return null;
+    return {
+      ...almanac,
+      excerpt:
+        almanac.excerpt ||
+        `Official comparative statistical catalog of the League of Nations Bureau of International Statistics for ${almanac.title}.`,
+      metricLabel: "B.I.S. Registry",
+      metricValue: "Official Index",
+    };
+  }, [main?.almanac]);
+
   return (
-    <div className="wikios-main">
-      {/* Hero Header */}
-      <header className="wikios-main-hero relative">
-        <div className="wikios-main-hero-inner">
-          <WikiOSBrandLockup />
-        </div>
-        <span className="wikios-hero-est">EST. MMIII</span>
-      </header>
-
-      {/* Quick Stats Bar */}
-      <section className="wikios-main-stats">
-        <div className="wikios-main-stat relative overflow-hidden">
-          <TextureOverlay texture="paperGrain" opacity={0.08} />
-          <span className="wikios-main-stat-value">
-            {siteStats?.articles?.toLocaleString() ?? "..."}
-          </span>
-          <span className="wikios-main-stat-label">Articles</span>
-        </div>
-        <div className="wikios-main-stat relative overflow-hidden">
-          <TextureOverlay texture="paperGrain" opacity={0.08} />
-          <span className="wikios-main-stat-value">
-            {siteStats?.edits?.toLocaleString() ?? "..."}
-          </span>
-          <span className="wikios-main-stat-label">Edits</span>
-        </div>
-        <div className="wikios-main-stat relative overflow-hidden">
-          <TextureOverlay texture="paperGrain" opacity={0.08} />
-          <span className="wikios-main-stat-value">
-            {siteStats?.users?.toLocaleString() ?? "..."}
-          </span>
-          <span className="wikios-main-stat-label">Users</span>
-        </div>
-        {activePrompt ? (
-          <button
-            onClick={() => setBlurbModalOpen(true)}
-            className="wikios-main-stat wikios-main-stat-blurb relative overflow-hidden"
-          >
-            <TextureOverlay texture="paperGrain" opacity={0.08} />
-            <span className="wikios-main-stat-badge">
-              Blurbs
-              {activePrompt.featured && <span className="wikios-main-stat-featured">Featured</span>}
-            </span>
-            <span className="wikios-main-stat-value wikios-main-stat-ixtime">
-              {activePrompt.title}
-            </span>
-            <span className="wikios-main-stat-label wikios-main-stat-question">
-              {activePrompt.question}
-            </span>
-          </button>
-        ) : (
-          <div className="wikios-main-stat relative overflow-hidden">
-            <TextureOverlay texture="paperGrain" opacity={0.08} />
-            <span className="wikios-main-stat-value wikios-main-stat-ixtime">0</span>
-            <span className="wikios-main-stat-label">Blurbs</span>
-          </div>
-        )}
-      </section>
-
-      <div className="wikios-main-content">
-        {/* Featured Article */}
-        {featuredArticleHtml && (
-          <section className="wikios-main-featured glass-hierarchy-child relative overflow-hidden">
-            <TextureOverlay texture="diagonal" opacity={0.05} />
-            <div className="mb-3 flex items-center gap-2">
-              <Badge
-                variant="outline"
-                className="flex items-center gap-1 border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-400 uppercase shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-              >
-                <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> Featured Article
-              </Badge>
-            </div>
-            <div
-              className="wikios-main-featured-content wikios-article-content"
-              dangerouslySetInnerHTML={{ __html: featuredArticleHtml }}
+    <div className="wikios-main w-full pt-1 pb-3">
+      <h1 className="sr-only">WikiOS, the IxStats encyclopedia</h1>
+      <div className="mx-auto w-full max-w-6xl space-y-4 sm:space-y-5">
+        <header className="wikios-main-hero relative w-full">
+          <div className="wikios-main-hero-inner w-full">
+            <WikiHeroMaster
+              variant={variant}
+              onSelectVariant={handleSelectVariant}
+              siteStats={main?.stats}
+              activePrompt={activePrompt}
+              featuredArticleData={featuredArticleData}
+              latestChange={latestChange}
+              onOpenBlurbs={() => setBlurbModalOpen(true)}
             />
-          </section>
-        )}
+          </div>
+        </header>
 
-        {/* Two-column grid: Categories + Recent Changes */}
-        <div className="wikios-main-grid">
-          {/* Category Navigation */}
-          <section className="wikios-main-section">
-            <h2 className="wikios-main-section-title">Browse by topic</h2>
-            <div className="wikios-main-categories">
-              {CATEGORIES.map((cat) => (
-                <Link
-                  key={cat.name}
-                  href={withBasePath(`/wiki/categories/${encodeURIComponent(cat.name)}`)}
-                  className="wikios-main-cat-pill relative overflow-hidden"
-                  style={{ "--cat-color": cat.color } as React.CSSProperties}
-                >
-                  <TextureOverlay texture="halftone" opacity={0.05} />
-                  <span className="wikios-main-cat-name relative z-10">{cat.name}</span>
-                </Link>
-              ))}
+        <main className="w-full">
+          {mainFailed && (
+            <div
+              role="alert"
+              className="border-destructive/40 bg-destructive/10 mb-4 flex flex-col items-center gap-3 rounded-2xl border p-6 text-center"
+            >
+              <p className="text-destructive text-sm font-medium">
+                The Main Page could not be loaded: {mainError.message}
+              </p>
+              <Button variant="outline" size="sm" onClick={() => void refetchMain()}>
+                Try again
+              </Button>
             </div>
-          </section>
-
-          {/* Recent Changes */}
-          <section className="wikios-main-section">
-            <h2 className="wikios-main-section-title">
-              Recent activity
-              <Link
-                href={withBasePath("/wiki/recent-changes")}
-                className="wikios-main-section-more"
+          )}
+          <AnimatePresence mode="wait">
+            {variant === "editorial-masthead" ? (
+              <motion.div
+                key="editorial-content"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               >
-                View all →
-              </Link>
-            </h2>
-            {recentChanges && recentChanges.length > 0 ? (
-              <ul className="wikios-main-recent">
-                {recentChanges.map((rc, idx) => {
-                  const diff = (rc.newLen ?? 0) - (rc.oldLen ?? 0);
-                  const diffSign = diff > 0 ? "+" : "";
-                  const formattedDiff = `${diffSign}${diff.toLocaleString()}`;
-
-                  let diffClass = "text-muted-foreground/60";
-                  if (diff > 0) {
-                    diffClass =
-                      diff >= 500
-                        ? "text-emerald-500 font-bold"
-                        : "text-emerald-600 dark:text-emerald-450";
-                  } else if (diff < 0) {
-                    diffClass =
-                      diff <= -500 ? "text-red-500 font-bold" : "text-red-600 dark:text-red-400";
-                  }
-
-                  return (
-                    <li key={idx} className="wikios-main-recent-item">
-                      <Link
-                        href={withBasePath(
-                          `/wiki/${encodeURIComponent((rc.title ?? "").replace(/ /g, "_"))}`
-                        )}
-                        className="wikios-main-recent-title"
-                      >
-                        {rc.title}
-                      </Link>
-                      <span className="wikios-main-recent-meta flex items-center gap-1.5">
-                        <span>{rc.user}</span>
-                        <span className="opacity-40">·</span>
-                        <span>{formatMWTimeAgo(rc.timestamp)}</span>
-                        <span className="opacity-40">·</span>
-                        <span
-                          className={cn("font-mono text-[10px]", diffClass)}
-                          title={`${rc.oldLen} → ${rc.newLen} bytes`}
-                        >
-                          ({formattedDiff})
-                        </span>
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : isLoadingRecent ? (
-              <p className="text-sm text-[var(--wikios-text-dim)]">Loading recent changes...</p>
+                <EditorialMainPageContent
+                  categories={categories}
+                  recentChanges={recentChanges}
+                  isLoadingRecent={!main && !mainFailed}
+                  countries={randomCountries}
+                  almanacSpotlight={almanacSpotlightData}
+                  isLoadingAlmanac={!main && !mainFailed}
+                />
+              </motion.div>
             ) : (
-              <p className="text-sm text-[var(--wikios-text-dim)]">No recent activity found.</p>
+              <motion.div
+                key="sculpted-content"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <SculptedMainPageContent
+                  categories={categories}
+                  recentChanges={recentChanges}
+                  isLoadingRecent={!main && !mainFailed}
+                  countries={randomCountries}
+                  almanacSpotlight={almanacSpotlightData}
+                  isLoadingAlmanac={!main && !mainFailed}
+                />
+              </motion.div>
             )}
-          </section>
-        </div>
-
-        {/* Explore the World — random country cards */}
-        {randomCountries.length > 0 && (
-          <section className="wikios-main-section">
-            <h2 className="wikios-main-section-title">
-              Explore the world
-              <Link href={withBasePath("/countries")} className="wikios-main-section-more">
-                All countries →
-              </Link>
-            </h2>
-            <div className="wikios-main-world">
-              {randomCountries.map((c) => (
-                <Link
-                  key={c.id}
-                  href={withBasePath(
-                    `/wiki/${encodeURIComponent((c.name ?? "").replace(/ /g, "_"))}`
-                  )}
-                  className="wikios-main-world-card glass-hierarchy-child"
-                >
-                  {c.flagUrl && (
-                    <img src={c.flagUrl} alt="" className="wikios-main-world-flag" loading="lazy" />
-                  )}
-                  <div className="wikios-main-world-info">
-                    <span className="wikios-main-world-name">{c.name}</span>
-                    {c.economicTier && (
-                      <span className="wikios-main-world-tier">{c.economicTier}</span>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
+          </AnimatePresence>
+        </main>
       </div>
 
-      {/* Blurb Prompt Modal */}
       {activePrompt && (
         <BlurbPromptModal
           open={blurbModalOpen}
@@ -421,54 +358,4 @@ export function WikiOSMainPage() {
       )}
     </div>
   );
-}
-
-// ---------------------------------------------------------------------------
-// Extract featured article from Main_Page HTML
-// ---------------------------------------------------------------------------
-
-function extractFeaturedArticle(html: string): string | null {
-  // The featured article card has id="featured&#95;article" (HTML-encoded underscore)
-  // Find the start of the card div, then extract it using balanced tag counting
-
-  const startIdx = html.search(/<div[^>]*id="featured(?:_|&#95;)article"/i);
-  if (startIdx === -1) return null;
-
-  // Balanced extraction — count <div> opens and </div> closes
-  let depth = 0;
-  let pos = startIdx;
-  const openTag = "<div";
-  const closeTag = "</div>";
-
-  while (pos < html.length) {
-    const nextOpen = html.indexOf(openTag, pos + (depth === 0 ? 0 : 1));
-    const nextClose = html.indexOf(closeTag, pos);
-
-    if (nextClose === -1) break;
-
-    if (nextOpen !== -1 && nextOpen < nextClose) {
-      depth++;
-      pos = nextOpen + openTag.length;
-    } else {
-      if (depth <= 1) {
-        const endPos = nextClose + closeTag.length;
-        return transformFeaturedContent(html.slice(startIdx, endPos));
-      }
-      depth--;
-      pos = nextClose + closeTag.length;
-    }
-  }
-
-  return null;
-}
-
-function transformFeaturedContent(cardHtml: string): string {
-  // Content is already server-transformed (links, images).
-  // Just restyle the card classes for WikiOS layout.
-  return cardHtml
-    .replace(/class="card[^"]*"/i, 'class="wikios-fa-card"')
-    .replace(/class="card-image[^"]*"/gi, 'class="wikios-fa-image"')
-    .replace(/class="card-text"/gi, 'class="wikios-fa-text"')
-    .replace(/class="byline"/gi, 'class="wikios-fa-byline"')
-    .replace(/href="\/w\/Special:MyLanguage\//g, 'href="/wiki/');
 }

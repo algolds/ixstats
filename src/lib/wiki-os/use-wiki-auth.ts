@@ -1,5 +1,5 @@
-// src/lib/wiki-os/use-wiki-auth.ts
 "use client";
+// src/lib/wiki-os/use-wiki-auth.ts
 // WikiOS CLIENT auth seam (Workstream C2).
 //
 // The ONLY place WikiOS client code touches the auth provider (Clerk today).
@@ -8,13 +8,13 @@
 
 import { useUser } from "@clerk/nextjs";
 
-export interface WikiAuthUser {
+interface WikiAuthUser {
   id: string;
   username: string | null;
   imageUrl: string | null;
 }
 
-export interface WikiAuthState {
+interface WikiAuthState {
   isLoaded: boolean;
   isSignedIn: boolean;
   user: WikiAuthUser | null;

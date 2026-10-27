@@ -2,12 +2,17 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import { OpenNewWindow as ExternalLink } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
-import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
-
-export { parseWikitextToHtml };
+import { parseWikitextToPreviewHtml } from "~/lib/wiki-os/transformers/wikitext-preview";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { Button } from "~/components/ui/button";
+import { WikiArticleActions } from "./WikiArticleActions";
+import { useWikiLeadImage } from "./useWikiLeadImage";
+import { WikiLeadThumb } from "./WikiLeadThumb";
+import { decodeWikiTitle } from "./externalLinks";
+import { Card } from "~/components/ui/card";
 
 export function InlineWikiArticlePreview({
   title,
@@ -16,35 +21,58 @@ export function InlineWikiArticlePreview({
   title: string;
   wiki?: "ixwiki" | "iiwiki";
 }) {
+  const cleanTitle = decodeWikiTitle(title);
+
   const { data: intro } = api.wikios.getIntro.useQuery(
-    { title, wiki },
-    { enabled: !!title, staleTime: 30 * 60_000 }
+    { title: cleanTitle, wiki },
+    { enabled: !!cleanTitle, staleTime: 30 * 60_000 }
   );
 
   const formattedHtml = useMemo(() => {
-    if (!intro?.text) return "";
-    return parseWikitextToHtml(intro.text, wiki);
-  }, [intro?.text, wiki]);
+    const raw = intro?.text || intro?.intro || "";
+    if (!raw) return "";
+    return parseWikitextToPreviewHtml(raw, wiki);
+  }, [intro?.text, intro?.intro, wiki]);
 
-  if (!formattedHtml) return null;
+  const leadImage = useWikiLeadImage(cleanTitle, intro?.text || intro?.intro || "", wiki);
 
-  const wikiHref = titleToWikiOSRoute(title);
+  if (!formattedHtml && !leadImage) return null;
+
+  const wikiHref = titleToWikiOSRoute(cleanTitle);
 
   return (
-    <div className="group/preview mt-2 flex items-start gap-2.5 rounded-xl border border-teal-500/20 bg-teal-500/[0.04] p-2.5 shadow-sm transition-all duration-150 hover:border-teal-500/35 hover:bg-teal-500/[0.08]">
-      <div className="mt-0.5 h-full min-h-[2rem] w-0.5 shrink-0 rounded-full bg-teal-500/60 group-hover/preview:bg-teal-400" />
-      <div className="min-w-0 flex-1">
-        <WikiHtmlContent
-          html={formattedHtml}
-          className="text-foreground/80 group-hover/preview:text-foreground line-clamp-2 text-[11px] leading-relaxed font-normal tracking-tight [&_a]:transition-colors"
-        />
+    <Card variant="well" padding="sm" className="mt-2 sm:p-4">
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1 space-y-1">
+          {formattedHtml && (
+            <WikiHtmlContent
+              html={formattedHtml}
+              className="text-label text-callout line-clamp-3 [&_a]:transition-colors"
+            />
+          )}
+        </div>
+
+        {leadImage && (
+          <WikiLeadThumb
+            image={leadImage}
+            href={wikiHref}
+            title={cleanTitle}
+            className="sm:h-22 sm:w-32"
+          />
+        )}
       </div>
-      <Link
-        href={wikiHref}
-        className="ml-1.5 shrink-0 text-[10px] font-semibold text-teal-400/80 transition-colors hover:text-teal-300 active:scale-95"
-      >
-        Read →
-      </Link>
-    </div>
+
+      <WikiArticleActions
+        title={cleanTitle}
+        trailing={
+          <Button asChild variant="secondary" size="sm" className="rounded-full">
+            <Link href={wikiHref}>
+              <span>Open in Wiki</span>
+              <ExternalLink aria-hidden />
+            </Link>
+          </Button>
+        }
+      />
+    </Card>
   );
 }

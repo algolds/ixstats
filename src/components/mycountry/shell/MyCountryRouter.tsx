@@ -3,61 +3,37 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "~/context/auth-context";
-import { AuthenticationGuard, CountryDataProvider, useCountryData } from "~/components/mycountry/shared/primitives";
-import { AtomicStateProvider } from "~/components/ui/atomic/AtomicStateProvider";
-import { MobileOptimized } from "~/app/mycountry/components/MobileOptimizations";
-import { getSectionFromPathname, type MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
+import {
+  AuthenticationGuard,
+  CountryDataProvider,
+  useCountryData,
+} from "~/components/mycountry/shared/primitives";
+import { MobileOptimized } from "./MobileOptimizations";
+import {
+  getSectionFromPathname,
+  type MyCountrySection,
+} from "~/components/mycountry/shell/mycountry-sections";
 import { useMyCountryCompliance } from "~/hooks/useMyCountryCompliance";
 import { MyCountryComplianceModal } from "~/components/mycountry/shared/modals/MyCountryComplianceModal";
-import { DashboardErrorBoundary } from "~/components/ui/shared/feedback/DashboardErrorBoundary";
+import { DashboardErrorBoundary } from "~/components/dashboard/DashboardErrorBoundary";
 import { withBasePath } from "~/lib/base-path";
+import { complianceReviewHref } from "~/lib/mycountry/routes";
 import { useNationalIssuesToast } from "~/hooks/useNationalIssuesToast";
-import { createUrl } from "~/lib/utils";
 import { CommandSurface } from "./CommandSurface";
-
-function SectionErrorFallback({ sectionName, retry }: { sectionName: string; retry: () => void }) {
-  return (
-    <div className="space-y-4 p-6">
-      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4">
-        <h3 className="mb-2 font-semibold text-red-400">Couldn't Load {sectionName}</h3>
-        <p className="mb-4 text-sm text-red-300">
-          There was an issue loading this section. Try again or refresh the page.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={retry}
-            className="rounded bg-red-600/20 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-600/30"
-          >
-            Retry
-          </button>
-          <button
-            onClick={() => window.location.reload()}
-            className="rounded bg-red-600/20 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-600/30"
-          >
-            Refresh Page
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function createSectionFallback(sectionName: string) {
-  return function SectionFallback({ error: _error, retry }: { error: Error; retry: () => void }) {
-    return <SectionErrorFallback sectionName={sectionName} retry={retry} />;
-  };
-}
 
 const SECTION_TITLES: Record<MyCountrySection, string> = {
   overview: "MyCountry®",
   executive: "Executive Directives",
   economy: "Economy & Budget",
   diplomacy: "Diplomatic Operations",
-  intelligence: "Intelligence Dashboard",
+  // /mycountry/intelligence renders the Defense section.
+  intelligence: "Defense & Security",
   defense: "Defense & Security",
   politics: "Political Landscape",
   "map-editor": "Map Editor",
 };
+
+const isMyCountrySection = (s: string): s is MyCountrySection => s in SECTION_TITLES;
 
 /**
  * MyCountryRouter - Single-page hub for all MyCountry sections.
@@ -99,6 +75,7 @@ function MyCountryRouterInner() {
     )
       return;
     if (isCompliant) {
+      // oxlint-disable-next-line
       setShowComplianceModal(false);
       if (complianceStorageKey) window.localStorage.removeItem(complianceStorageKey);
       return;
@@ -121,13 +98,19 @@ function MyCountryRouterInner() {
       window.localStorage.removeItem(complianceStorageKey);
     }
     setShowComplianceModal(false);
-    router.push(createUrl("/mycountry/editor"));
+    router.push(complianceReviewHref(complianceSections.find((section) => !section.isComplete)));
   };
 
   // Navigate to a section (instant client-side switch)
   const handleNavigate = useCallback(
-    (section: MyCountrySection) => {
-      if (section === activeSection) return;
+    (section: string) => {
+      if (!isMyCountrySection(section) || section === activeSection) return;
+
+      // The map editor is a full-screen route, not a surface of the command shell.
+      if (section === "map-editor") {
+        router.push("/mycountry/map-editor");
+        return;
+      }
 
       setActiveSection(section);
 
@@ -140,12 +123,12 @@ function MyCountryRouterInner() {
       document.title =
         section === "overview"
           ? `${countryName} - MyCountry`
-          : `${countryName} - ${SECTION_TITLES[section]} - IxStats`;
+          : `${countryName} - ${SECTION_TITLES[section]} - IxStates`;
 
       // Scroll to top on section change
       window.scrollTo({ top: 0, behavior: "instant" });
     },
-    [activeSection, country?.name]
+    [activeSection, country?.name, router]
   );
 
   // Handle browser back/forward navigation
@@ -162,6 +145,7 @@ function MyCountryRouterInner() {
   useEffect(() => {
     const routeSection = getSectionFromPathname(pathname);
     if (routeSection !== activeSection) {
+      // oxlint-disable-next-line
       setActiveSection(routeSection);
     }
   }, [pathname, activeSection]);
@@ -172,19 +156,18 @@ function MyCountryRouterInner() {
     document.title =
       activeSection === "overview"
         ? `${country.name} - MyCountry`
-        : `${country.name} - ${SECTION_TITLES[activeSection]} - IxStats`;
+        : `${country.name} - ${SECTION_TITLES[activeSection]} - IxStates`;
   }, [country?.name, activeSection]);
 
   return (
     <DashboardErrorBoundary
-      fallback={createSectionFallback(SECTION_TITLES[activeSection])}
       title={`Unable to load ${SECTION_TITLES[activeSection]}`}
       description="This section could not be loaded. Try again or refresh the page."
       resetKeys={[activeSection]}
     >
       <CommandSurface section={activeSection} onNavigate={handleNavigate} />
 
-      {country?.id && complianceSections.length > 0 && activeSection === "overview" && (
+      {country?.id && Boolean(complianceSections?.length) && activeSection === "overview" && (
         <MyCountryComplianceModal
           isOpen={showComplianceModal}
           sections={complianceSections}
@@ -197,32 +180,16 @@ function MyCountryRouterInner() {
   );
 }
 
-export function MyCountryRouter({ v2: _v2 }: { v2?: boolean } = {}) {
+export function MyCountryRouter() {
   const { user } = useUser();
 
   return (
     <MobileOptimized enableTouchGestures={true} className="min-h-screen">
-      <AuthenticationGuard redirectPath="/mycountry">
+      <AuthenticationGuard>
         <CountryDataProvider userId={user?.id || "placeholder-disabled"}>
-          <AtomicStateProviderWrapper>
-            <MyCountryRouterInner />
-          </AtomicStateProviderWrapper>
+          <MyCountryRouterInner />
         </CountryDataProvider>
       </AuthenticationGuard>
     </MobileOptimized>
-  );
-}
-
-/** Wraps children in AtomicStateProvider when country data is available */
-function AtomicStateProviderWrapper({ children }: { children: React.ReactNode }) {
-  const { user } = useUser();
-  const { country } = useCountryData();
-
-  if (!country?.id) return <>{children}</>;
-
-  return (
-    <AtomicStateProvider countryId={country.id} userId={user?.id}>
-      {children}
-    </AtomicStateProvider>
   );
 }

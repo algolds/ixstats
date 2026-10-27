@@ -1,5 +1,5 @@
-import React from "react";
-import { type PageType } from "../CreatePageModal";
+import React, { useState } from "react";
+import { Input } from "~/components/ui/input";
 import {
   type PersonFields,
   type CompanyFields,
@@ -8,7 +8,99 @@ import {
   type ConflictFields,
   type PoliticsFields,
   type TechFields,
-} from "./WikitextTemplates";
+  type PlaceFields,
+  type OrganisationFields,
+  type Coordinates,
+  coordinatesFrom,
+  type PageType,
+} from "~/lib/wiki-os/create-page/wikitext-templates";
+
+export interface FieldRow<K extends string> {
+  key: K;
+  label: string;
+  placeholder: string;
+}
+
+export const PLACE_ROWS: readonly FieldRow<Exclude<keyof PlaceFields, "coordinates">>[] = [
+  { key: "settlementType", label: "Settlement type", placeholder: "e.g. City" },
+  { key: "subdivision", label: "Subdivision", placeholder: "e.g. Latium" },
+  { key: "population", label: "Population", placeholder: "e.g. 2,400,000" },
+];
+
+export const ORGANISATION_ROWS: readonly FieldRow<keyof OrganisationFields>[] = [
+  { key: "type", label: "Type", placeholder: "e.g. Legislature" },
+  { key: "founded", label: "Founded", placeholder: "e.g. 1012" },
+  { key: "headquarters", label: "Headquarters", placeholder: "e.g. Venceia" },
+  { key: "leader", label: "Leader", placeholder: "e.g. Princeps of the Senate" },
+];
+
+/** One labelled text input per row, editing `value[row.key]`. */
+export function FieldRows<K extends string, V extends Record<K, string>>({
+  rows,
+  value,
+  onChange,
+}: {
+  rows: readonly FieldRow<K>[];
+  value: V;
+  onChange: (next: V) => void;
+}) {
+  return (
+    <>
+      {rows.map((row) => (
+        <label key={row.key} className="block space-y-1">
+          <span className="text-footnote text-label-secondary">{row.label}</span>
+          <Input
+            type="text"
+            placeholder={row.placeholder}
+            value={value[row.key]}
+            onChange={(e) => onChange({ ...value, [row.key]: e.target.value })}
+          />
+        </label>
+      ))}
+    </>
+  );
+}
+
+/** Latitude and longitude as typed; the point is set only while both are numbers on the globe. */
+export function CoordinateInputs({
+  value,
+  onChange,
+}: {
+  value: Coordinates | undefined;
+  onChange: (next: Coordinates | undefined) => void;
+}) {
+  const [lat, setLat] = useState(value ? String(value.lat) : "");
+  const [lng, setLng] = useState(value ? String(value.lng) : "");
+  const update = (nextLat: string, nextLng: string) => {
+    setLat(nextLat);
+    setLng(nextLng);
+    onChange(coordinatesFrom(nextLat, nextLng));
+  };
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <label className="block space-y-1">
+        <span className="text-footnote text-label-secondary">Latitude</span>
+        <Input
+          type="number"
+          inputMode="decimal"
+          placeholder="e.g. 41.9"
+          value={lat}
+          onChange={(e) => update(e.target.value, lng)}
+        />
+      </label>
+      <label className="block space-y-1">
+        <span className="text-footnote text-label-secondary">Longitude</span>
+        <Input
+          type="number"
+          inputMode="decimal"
+          placeholder="e.g. 12.5"
+          value={lng}
+          onChange={(e) => update(lat, e.target.value)}
+        />
+      </label>
+    </div>
+  );
+}
 
 interface MetadataStepProps {
   pageType: PageType;
@@ -26,6 +118,10 @@ interface MetadataStepProps {
   setPoliticsFields: (fields: PoliticsFields) => void;
   techFields: TechFields;
   setTechFields: (fields: TechFields) => void;
+  placeFields: PlaceFields;
+  setPlaceFields: (fields: PlaceFields) => void;
+  organisationFields: OrganisationFields;
+  setOrganisationFields: (fields: OrganisationFields) => void;
 }
 
 export function MetadataStep({
@@ -44,335 +140,320 @@ export function MetadataStep({
   setPoliticsFields,
   techFields,
   setTechFields,
+  placeFields,
+  setPlaceFields,
+  organisationFields,
+  setOrganisationFields,
 }: MetadataStepProps) {
   return (
-    <div className="space-y-3.5">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <label className="block text-xs font-medium tracking-wider text-[var(--wikios-text-muted)] uppercase">
-          Template Metadata
-        </label>
-        <span className="text-[10px] text-[var(--wikios-text-dim)] italic">
-          Optional - Skip to create
-        </span>
+        <label className="text-subhead text-label-secondary block">Template metadata</label>
+        <span className="text-footnote text-label-secondary italic">Optional - Skip to create</span>
       </div>
 
       <div className="max-h-[45vh] space-y-3 overflow-y-auto pr-1">
         {pageType === "person" && (
           <>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Birth Date</span>
-              <input
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Birth date</span>
+              <Input
                 type="text"
                 placeholder="e.g. 15 October 1985"
                 value={personFields.birthDate}
                 onChange={(e) => setPersonFields({ ...personFields, birthDate: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Birth Place</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Birth place</span>
+              <Input
                 type="text"
                 placeholder="e.g. London, United Kingdom"
                 value={personFields.birthPlace}
                 onChange={(e) => setPersonFields({ ...personFields, birthPlace: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Nationality</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Nationality</span>
+              <Input
                 type="text"
                 placeholder="e.g. British"
                 value={personFields.nationality}
                 onChange={(e) => setPersonFields({ ...personFields, nationality: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Occupation</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Occupation</span>
+              <Input
                 type="text"
                 placeholder="e.g. Economist"
                 value={personFields.occupation}
                 onChange={(e) => setPersonFields({ ...personFields, occupation: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
+            </label>
           </>
         )}
 
         {pageType === "company" && (
           <>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Company Type</span>
-              <input
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Company type</span>
+              <Input
                 type="text"
                 placeholder="e.g. Public, Private"
                 value={companyFields.type}
                 onChange={(e) => setCompanyFields({ ...companyFields, type: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Industry</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Industry</span>
+              <Input
                 type="text"
                 placeholder="e.g. Aerospace, Finance"
                 value={companyFields.industry}
                 onChange={(e) => setCompanyFields({ ...companyFields, industry: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Founder</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Founder</span>
+              <Input
                 type="text"
                 placeholder="Founder names..."
                 value={companyFields.founder}
                 onChange={(e) => setCompanyFields({ ...companyFields, founder: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Headquarters</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Headquarters</span>
+              <Input
                 type="text"
                 placeholder="e.g. Geneva, Switzerland"
                 value={companyFields.headquarters}
                 onChange={(e) =>
                   setCompanyFields({ ...companyFields, headquarters: e.target.value })
                 }
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
+            </label>
           </>
         )}
 
         {pageType === "history" && (
           <>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Event Date</span>
-              <input
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Event date</span>
+              <Input
                 type="text"
                 placeholder="e.g. June 19, 2026"
                 value={historyFields.date}
                 onChange={(e) => setHistoryFields({ ...historyFields, date: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Location</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Location</span>
+              <Input
                 type="text"
                 placeholder="e.g. Brussels, Belgium"
                 value={historyFields.location}
                 onChange={(e) => setHistoryFields({ ...historyFields, location: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Key Participants</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Key participants</span>
+              <Input
                 type="text"
                 placeholder="e.g. Allies, Axis"
                 value={historyFields.participants}
                 onChange={(e) =>
                   setHistoryFields({ ...historyFields, participants: e.target.value })
                 }
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Result / Outcome</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Result / Outcome</span>
+              <Input
                 type="text"
                 placeholder="e.g. Treaty signed"
                 value={historyFields.result}
                 onChange={(e) => setHistoryFields({ ...historyFields, result: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
+            </label>
           </>
         )}
 
         {pageType === "country" && (
           <>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Capital</span>
-              <input
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Capital</span>
+              <Input
                 type="text"
                 placeholder="Capital city..."
                 value={countryFields.capital}
                 onChange={(e) => setCountryFields({ ...countryFields, capital: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Government Type</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Government type</span>
+              <Input
                 type="text"
                 placeholder="e.g. Parliamentary Republic"
                 value={countryFields.governmentType}
                 onChange={(e) =>
                   setCountryFields({ ...countryFields, governmentType: e.target.value })
                 }
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Leader Name</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Leader name</span>
+              <Input
                 type="text"
                 placeholder="Current leader..."
                 value={countryFields.leaderName}
                 onChange={(e) => setCountryFields({ ...countryFields, leaderName: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Currency</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Currency</span>
+              <Input
                 type="text"
                 placeholder="e.g. Credits"
                 value={countryFields.currency}
                 onChange={(e) => setCountryFields({ ...countryFields, currency: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
+            </label>
           </>
         )}
 
         {pageType === "conflict" && (
           <>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Date</span>
-              <input
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Date</span>
+              <Input
                 type="text"
                 placeholder="e.g. 1939 - 1945"
                 value={conflictFields.date}
                 onChange={(e) => setConflictFields({ ...conflictFields, date: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Place</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Place</span>
+              <Input
                 type="text"
                 placeholder="e.g. Global"
                 value={conflictFields.place}
                 onChange={(e) => setConflictFields({ ...conflictFields, place: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Combatant 1</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Combatant 1</span>
+              <Input
                 type="text"
                 placeholder="Combatant group 1..."
                 value={conflictFields.combatant1}
                 onChange={(e) =>
                   setConflictFields({ ...conflictFields, combatant1: e.target.value })
                 }
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Combatant 2</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Combatant 2</span>
+              <Input
                 type="text"
                 placeholder="Combatant group 2..."
                 value={conflictFields.combatant2}
                 onChange={(e) =>
                   setConflictFields({ ...conflictFields, combatant2: e.target.value })
                 }
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
+            </label>
           </>
         )}
 
         {pageType === "politics" && (
           <>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Party Leader</span>
-              <input
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Party leader</span>
+              <Input
                 type="text"
                 placeholder="Leader name..."
                 value={politicsFields.leader}
                 onChange={(e) => setPoliticsFields({ ...politicsFields, leader: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Founder</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Founder</span>
+              <Input
                 type="text"
                 placeholder="Founder name..."
                 value={politicsFields.founder}
                 onChange={(e) => setPoliticsFields({ ...politicsFields, founder: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Ideology</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Ideology</span>
+              <Input
                 type="text"
                 placeholder="e.g. Social Democracy"
                 value={politicsFields.ideology}
                 onChange={(e) => setPoliticsFields({ ...politicsFields, ideology: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">Party Colors</span>
-              <input
+            </label>
+            <label className="block space-y-1">
+              <span className="text-footnote text-label-secondary">Party colors</span>
+              <Input
                 type="text"
                 placeholder="e.g. Red and White"
                 value={politicsFields.colors}
                 onChange={(e) => setPoliticsFields({ ...politicsFields, colors: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
-            </div>
+            </label>
           </>
+        )}
+
+        {pageType === "place" && (
+          <>
+            <FieldRows rows={PLACE_ROWS} value={placeFields} onChange={setPlaceFields} />
+            <CoordinateInputs
+              value={placeFields.coordinates}
+              onChange={(coordinates) => setPlaceFields({ ...placeFields, coordinates })}
+            />
+          </>
+        )}
+
+        {pageType === "organisation" && (
+          <FieldRows
+            rows={ORGANISATION_ROWS}
+            value={organisationFields}
+            onChange={setOrganisationFields}
+          />
         )}
 
         {pageType === "tech" && (
           <>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">
-                Inventor / Creator
-              </span>
-              <input
+              <span className="text-footnote text-label-secondary">Inventor / Creator</span>
+              <Input
                 type="text"
                 placeholder="e.g. Alan Turing"
                 value={techFields.inventor}
                 onChange={(e) => setTechFields({ ...techFields, inventor: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">
-                Year / Date of Invention
-              </span>
-              <input
+              <span className="text-footnote text-label-secondary">Year / Date of Invention</span>
+              <Input
                 type="text"
                 placeholder="e.g. 1936"
                 value={techFields.year}
                 onChange={(e) => setTechFields({ ...techFields, year: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[11px] text-[var(--wikios-text-muted)]">
-                Primary Application
-              </span>
-              <input
+              <span className="text-footnote text-label-secondary">Primary application</span>
+              <Input
                 type="text"
                 placeholder="e.g. Computation"
                 value={techFields.application}
                 onChange={(e) => setTechFields({ ...techFields, application: e.target.value })}
-                className="bg-foreground/[0.03] focus:bg-foreground/[0.06] w-full rounded-xl border border-[var(--wikios-border)] px-3 py-2 text-xs text-[var(--wikios-text)] placeholder-[var(--wikios-text-dim)] transition-all outline-none focus:border-[var(--wikios-accent)]/50"
               />
             </div>
           </>

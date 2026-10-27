@@ -1,6 +1,4 @@
 "use client";
-
-// src/hooks/useWikiNarrator.ts
 // Custom hook to manage full-article audio narration using Onoma Voice (Kokoro TTS).
 // Splits the article DOM into clean text segments, manages sequential playback,
 // pre-buffers future blocks, highlights active text, and bridges state/actions
@@ -8,88 +6,57 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { api } from "~/trpc/react";
+import { useEngineReporter, useSpeechConfigLoader } from "~/hooks/narrator-speech";
 import { useNotify } from "~/hooks/useNotify";
-import { useIxMedia } from "~/components/media/MediaContext";
+import { useHasNarratorAccess } from "~/hooks/usePermissions";
+import { useIxMediaActions } from "~/components/media/MediaContext";
 import type { Media } from "~/lib/media/types";
 import { withBasePath } from "~/lib/base-path";
-
-export interface PlaybackBlock {
-  id: string; // DOM element ID or data-index key
-  text: string; // Cleaned plain text to speak
-  type: "heading" | "prose";
-  sectionId?: string; // Nearest parent heading section ID
-  element: HTMLElement;
-}
-
-// Strip citation/edit cruft from raw article text.
-function cleanContentText(text: string): string {
-  return text
-    .replace(/\[\d+\]/g, "") // remove [1], [2] citation brackets
-    .replace(/\[citation needed\]/gi, "")
-    .replace(/\[edit\]/gi, "")
-    .trim();
-}
-
-// Split prose into sentences (abbreviation-naive, but the server re-splits anyway).
-function splitSentences(text: string): string[] {
-  const parts = text.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g);
-  return parts ? parts.map((s) => s.trim()).filter(Boolean) : [text];
-}
-
-// Pack prose into bounded chunks so every TTS request is ~constant size regardless of
-// input: one chunk ≈ TTS_CHUNK_CHARS of audio on the free HF Space (~14s). Short sentences
-// merge up (fewer requests, smoother playback); a giant run-on sentence or list item
-// hard-splits on clause then word boundaries so it can never stall/timeout.
-const TTS_CHUNK_CHARS = 240;
-function chunkText(text: string): string[] {
-  const out: string[] = [];
-  let buf = "";
-  const flush = () => {
-    const t = buf.trim();
-    if (t) out.push(t);
-    buf = "";
-  };
-  const add = (s: string) => {
-    if (buf && buf.length + s.length + 1 > TTS_CHUNK_CHARS) flush();
-    buf = buf ? `${buf} ${s}` : s;
-  };
-  for (const sentence of splitSentences(text)) {
-    if (sentence.length <= TTS_CHUNK_CHARS) {
-      add(sentence);
-      continue;
-    }
-    flush(); // oversize sentence — split on clause, then words
-    for (const clause of sentence.split(/(?<=[,;:—-])\s+/)) {
-      if (clause.length <= TTS_CHUNK_CHARS) {
-        add(clause);
-        continue;
-      }
-      for (const word of clause.split(/\s+/)) add(word);
-    }
-  }
-  flush();
-  return out.length ? out : [text];
-}
+import type { PlaybackBlock } from "./narrator/narrator-types";
+import { extractArticleBlocks } from "./narrator/narrator-dom-parser";
 
 export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | null>) {
   const notify = useNotify();
   const {
     articleTitle,
+    // oxlint-disable-next-line eslint/no-unused-vars
     tocEntries,
     setNarratorState,
     registerNarratorActions,
+    // oxlint-disable-next-line eslint/no-unused-vars
     activeSectionId,
     setActiveSectionId,
   } = useWikiContext() as any;
 
-  const { playTrack, registerPlaybackDelegate, updatePlaybackState } = useIxMedia();
+  const { playTrack, registerPlaybackDelegate, updatePlaybackState } = useIxMediaActions();
+  const hasNarratorAccess = useHasNarratorAccess();
 
   const [blocks, setBlocks] = useState<PlaybackBlock[]>([]);
   const [activeIdx, setActiveIdx] = useState<number>(-1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1.0);
   const [voice, setVoice] = useState("");
+  // oxlint-disable-next-line eslint/no-unused-vars
+  const [volume, setVolume] = useState(0.2);
+
+  // Load persisted audio preferences (default volume ~20%)
+  useEffect(() => {
+    try {
+      const storedVol = localStorage.getItem("onoma-personal-volume");
+      if (storedVol !== null) {
+        const v = parseFloat(storedVol);
+        if (!isNaN(v) && v >= 0 && v <= 1) {
+          setVolume(v);
+          volumeRef.current = v;
+        }
+      } else {
+        setVolume(0.2);
+        volumeRef.current = 0.2;
+      }
+    } catch {
+      // storage unavailable (private mode) — defaults apply
+    }
+  }, []);
 
   // Create mediaTrack representing the article
   const mediaTrack = useMemo<Media>(() => {
@@ -142,10 +109,8 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     []
   );
 
-  // Load public speech config (including Kokoro settings)
-  const { data: config } = api.onoma.getSpeechConfig.useQuery(undefined, {
-    staleTime: 600000,
-  });
+  // The speech config is read on the first play (narrator-speech.ts)
+  const { speechConfigRef, loadSpeechConfig } = useSpeechConfigLoader();
 
   const activeIdxRef = useRef(-1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -157,6 +122,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const transitionTimeoutRef = useRef<any>(null);
   const speedRef = useRef(1.0);
   const voiceRef = useRef("");
+  const volumeRef = useRef(1.0);
 
   const fetchAudioBlob = useCallback(async (requestUrl: string): Promise<Blob> => {
     if (activeFetchesRef.current.has(requestUrl)) {
@@ -202,22 +168,17 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     return fetchPromise;
   }, []);
 
-  // Single source of truth for the TTS request URL so prefetch and playback always
-  // hit the same cache key. Speed is intentionally omitted — it's applied client-side
-  // via audio.playbackRate, so one cached clip is reused across every speed setting.
-  const buildTtsUrl = useCallback(
-    (text: string) => {
-      const params = new URLSearchParams({ text, ipa: "" });
-      const chosenVoice = voiceRef.current || config?.kokoro?.voice;
-      if (chosenVoice) params.set("voice", chosenVoice);
-      return withBasePath(`/api/onoma/tts?${params.toString()}`);
-    },
-    [config]
-  );
+  // One TTS URL for prefetch and playback (one cache key). No speed: audio.playbackRate applies it client-side.
+  const buildTtsUrl = useCallback((text: string) => {
+    const params = new URLSearchParams({ text, ipa: "" });
+    const chosenVoice = voiceRef.current || speechConfigRef.current?.kokoro?.voice;
+    if (chosenVoice) params.set("voice", chosenVoice);
+    return withBasePath(`/api/onoma/tts?${params.toString()}`);
+  }, []);
 
   const preFetchBlocks = useCallback(
     async (index: number) => {
-      if (!config?.kokoro?.enabled) return;
+      if (!speechConfigRef.current?.kokoro?.enabled) return;
 
       for (let i = 1; i <= 2; i++) {
         const nextIdx = index + i;
@@ -227,7 +188,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         }
       }
     },
-    [config, fetchAudioBlob, buildTtsUrl]
+    [fetchAudioBlob, buildTtsUrl]
   );
 
   // Local storage personal preferences loading
@@ -270,88 +231,65 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
 
   // Re-build text blocks when article DOM renders
   const rebuildBlocks = useCallback(() => {
-    if (!articleRef.current) return;
+    if (!hasNarratorAccess || !articleRef.current) return;
     const container = articleRef.current;
 
-    // Find all headings, paragraphs, and list items
-    const elements = Array.from(container.querySelectorAll("h2, h3, h4, p, li")) as HTMLElement[];
+    const validBlocks = extractArticleBlocks(container);
 
-    const validBlocks: PlaybackBlock[] = [];
-    let currentSectionId = "";
-
-    elements.forEach((el, index) => {
-      // Exclude elements inside infoboxes, sidebars, coordinates, nav boxes, math, etc.
-      if (
-        el.closest(".infobox") ||
-        el.closest(".aside") ||
-        el.closest(".sidebar") ||
-        el.closest(".navbox") ||
-        el.closest(".reflist") ||
-        el.closest(".coordinates") ||
-        el.closest(".wikios-ixworld-loading") ||
-        el.closest("table")
-      ) {
-        return;
+    // Restore saved reading progress if available
+    let initialIdx = -1;
+    try {
+      if (articleTitle) {
+        const savedPos = sessionStorage.getItem(`wikios:narrator:pos:${articleTitle}`);
+        if (savedPos !== null) {
+          const parsed = parseInt(savedPos, 10);
+          if (!isNaN(parsed) && parsed >= 0 && parsed < validBlocks.length) {
+            initialIdx = parsed;
+          }
+        }
       }
-
-      // Read cleaned text content
-      const clean = cleanContentText(el.textContent || "");
-      if (!clean) return;
-
-      const isHeading = el.tagName.startsWith("H");
-
-      if (isHeading) {
-        currentSectionId = el.id || `heading-${index}`;
-      }
-
-      // Add a unique identifier class to bind the DOM element
-      const blockId = `wikios-narrator-block-${index}`;
-      el.setAttribute("data-narrator-block", blockId);
-
-      if (isHeading) {
-        validBlocks.push({
-          id: blockId,
-          text: clean,
-          type: "heading",
-          sectionId: currentSectionId || undefined,
-          element: el,
-        });
-      } else {
-        // One block per bounded chunk, all sharing the same DOM element for highlighting.
-        chunkText(clean).forEach((chunk, si) => {
-          validBlocks.push({
-            id: `${blockId}-s${si}`,
-            text: chunk,
-            type: "prose",
-            sectionId: currentSectionId || undefined,
-            element: el,
-          });
-        });
-      }
-    });
+    } catch {
+      // storage unavailable (private mode) — start from the first block
+    }
 
     setBlocks(validBlocks);
-    setActiveIdx(-1);
+    setActiveIdx(initialIdx);
+    activeIdxRef.current = initialIdx;
     setNarratorState({
       isPlaying: false,
-      activeBlockIndex: 0,
+      activeBlockIndex: initialIdx >= 0 ? initialIdx : 0,
       totalBlocks: validBlocks.length,
-      activeText: "",
-      activeSectionTitle: "",
+      activeText: initialIdx >= 0 ? (validBlocks[initialIdx]?.text ?? "") : "",
+      activeSectionTitle: initialIdx >= 0 ? (validBlocks[initialIdx]?.sectionId ?? "") : "",
       speed,
       voice,
+      volume: volumeRef.current,
     });
-  }, [articleRef, setNarratorState, speed, voice]);
+  }, [articleRef, articleTitle, setNarratorState, speed, voice, hasNarratorAccess]);
 
   // Sync blocks on articleTitle load
   useEffect(() => {
+    if (!hasNarratorAccess) {
+      setBlocks([]);
+      setActiveIdx(-1);
+      setNarratorState({
+        isPlaying: false,
+        totalBlocks: 0,
+        activeBlockIndex: 0,
+        activeText: "",
+        activeSectionTitle: "",
+      });
+      return undefined;
+    }
+
     if (articleTitle) {
       // short delay to let article content mount completely
       const timer = setTimeout(rebuildBlocks, 500);
       return () => clearTimeout(timer);
     }
-    return;
-  }, [articleTitle, rebuildBlocks]);
+
+    return undefined;
+  }, [articleTitle, rebuildBlocks, hasNarratorAccess, setNarratorState]);
 
   // Clean highlighting
   const clearHighlight = useCallback(() => {
@@ -359,10 +297,10 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       highlightedElementRef.current.classList.remove(
         "wikios-narrator-active-block",
         "border-l-4",
-        "border-[#0091ff]",
+        "border-onoma-primary",
         "pl-3",
-        "bg-[#0091ff]/5",
-        "transition-all",
+        "bg-onoma-primary/5",
+        "transition-[color,background-color,border-color,box-shadow,opacity,transform]",
         "duration-300"
       );
       highlightedElementRef.current = null;
@@ -376,10 +314,10 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       el.classList.add(
         "wikios-narrator-active-block",
         "border-l-4",
-        "border-[#0091ff]",
+        "border-onoma-primary",
         "pl-3",
-        "bg-[#0091ff]/5",
-        "transition-all",
+        "bg-onoma-primary/5",
+        "transition-[color,background-color,border-color,box-shadow,opacity,transform]",
         "duration-300"
       );
       highlightedElementRef.current = el;
@@ -423,6 +361,8 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       currentTime: 0,
     });
   }, [clearHighlight, setNarratorState, updatePlaybackState]);
+
+  const reportEngine = useEngineReporter(setNarratorState);
 
   // Synthesize and play block
   const playBlock = useCallback(
@@ -485,7 +425,19 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         activeAudioUrlRef.current = null;
       }
 
+      // The natural voice is for users the TTS route lets in (the same ones who see the narrator).
+      const config = hasNarratorAccess ? await loadSpeechConfig() : null;
       const isKokoroEnabled = Boolean(config?.kokoro?.enabled);
+      reportEngine(isKokoroEnabled ? "kokoro" : "browser");
+
+      // Save progress to session storage
+      try {
+        if (articleTitle) {
+          sessionStorage.setItem(`wikios:narrator:pos:${articleTitle}`, String(index));
+        }
+      } catch {
+        // storage unavailable (private mode) — preference is not persisted
+      }
 
       try {
         if (isKokoroEnabled) {
@@ -500,6 +452,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
           activeAudioUrlRef.current = url;
           const audio = new Audio(url);
           audio.playbackRate = speedRef.current; // speed applied client-side, no re-synth
+          audio.volume = volumeRef.current;
           audioRef.current = audio;
 
           audio.ontimeupdate = () => {
@@ -561,6 +514,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
           err?.message || err
         );
         // Fallback to browser speech directly
+        reportEngine("browser");
         const utterance = new SpeechSynthesisUtterance(block.text);
         utterance.rate = speedRef.current * 0.85;
         utterance.onend = () => {
@@ -573,7 +527,10 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       }
     },
     [
-      config,
+      hasNarratorAccess,
+      loadSpeechConfig,
+      reportEngine,
+      articleTitle,
       highlightBlock,
       setNarratorState,
       setActiveSectionId,
@@ -586,12 +543,54 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     ]
   );
 
-  // Narrator Control Actions
+  // Find block closest to current viewport scroll position
+  const findViewportClosestBlock = useCallback((): number => {
+    if (typeof window === "undefined" || blocksRef.current.length === 0) return 0;
+    const viewportTargetY = window.scrollY + 120;
+    let bestIdx = 0;
+    let minDistance = Infinity;
+
+    for (let i = 0; i < blocksRef.current.length; i++) {
+      const el = blocksRef.current[i]?.element;
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        const absoluteTop = rect.top + window.scrollY;
+        const dist = Math.abs(absoluteTop - viewportTargetY);
+        if (dist < minDistance) {
+          minDistance = dist;
+          bestIdx = i;
+        }
+      }
+    }
+    return bestIdx;
+  }, []);
+
+  // Narrator Control Actions with intelligent dynamic recovery
+  // oxlint-disable-next-line
   const play = useCallback(() => {
-    if (isPlaying) return;
+    if (!hasNarratorAccess || isPlaying) return;
     setIsPlaying(true);
-    playTrack(mediaTrack);
-  }, [isPlaying, playTrack, mediaTrack]);
+    let targetIdx = activeIdxRef.current;
+    if (targetIdx < 0 || targetIdx >= blocksRef.current.length) {
+      try {
+        const savedPos = articleTitle
+          ? sessionStorage.getItem(`wikios:narrator:pos:${articleTitle}`)
+          : null;
+        if (savedPos !== null) {
+          const parsed = parseInt(savedPos, 10);
+          if (!isNaN(parsed) && parsed >= 0 && parsed < blocksRef.current.length) {
+            targetIdx = parsed;
+          }
+        }
+      } catch {
+        // storage unavailable (private mode) — start from the first block
+      }
+      if (targetIdx < 0 || targetIdx >= blocksRef.current.length) {
+        targetIdx = findViewportClosestBlock();
+      }
+    }
+    playBlock(targetIdx);
+  }, [isPlaying, articleTitle, findViewportClosestBlock, playBlock]);
 
   const pause = useCallback(() => {
     setIsPlaying(false);
@@ -663,6 +662,24 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     [playBlock, setNarratorState]
   );
 
+  const changeVolume = useCallback(
+    (newVol: number) => {
+      const clamped = Math.max(0, Math.min(1, newVol));
+      setVolume(clamped);
+      volumeRef.current = clamped;
+      try {
+        localStorage.setItem("onoma-personal-volume", String(clamped));
+      } catch {
+        // storage unavailable (private mode) — preference is not persisted
+      }
+      setNarratorState({ volume: clamped });
+      if (audioRef.current) {
+        audioRef.current.volume = clamped;
+      }
+    },
+    [setNarratorState]
+  );
+
   const clearVoiceCache = useCallback(async () => {
     try {
       if (typeof window === "undefined" || typeof caches === "undefined") {
@@ -683,9 +700,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
 
   useEffect(() => {
     playRef.current = () => {
-      setIsPlaying(true);
-      const idx = activeIdxRef.current === -1 ? 0 : activeIdxRef.current;
-      playBlock(idx);
+      play();
     };
     pauseRef.current = () => {
       setIsPlaying(false);
@@ -708,10 +723,14 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     setSpeedRef.current = (s: number) => {
       changeSpeed(s);
     };
-  }, [playBlock, changeSpeed, setNarratorState, updatePlaybackState]);
+  }, [play, playBlock, changeSpeed, setNarratorState, updatePlaybackState]);
 
   // Register action hooks in global WikiContext
   useEffect(() => {
+    if (!hasNarratorAccess) {
+      registerNarratorActions(null);
+      return undefined;
+    }
     registerNarratorActions({
       play,
       pause,
@@ -720,6 +739,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       skipPrev,
       setSpeed: changeSpeed,
       setVoice: changeVoice,
+      setVolume: changeVolume,
       jumpToSection,
       jumpToBlock: (idx: number) => {
         setIsPlaying(true);
@@ -731,6 +751,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     });
     return () => registerNarratorActions(null);
   }, [
+    hasNarratorAccess,
     registerNarratorActions,
     play,
     pause,
@@ -739,6 +760,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     skipPrev,
     changeSpeed,
     changeVoice,
+    changeVolume,
     jumpToSection,
     clearVoiceCache,
     playTrack,

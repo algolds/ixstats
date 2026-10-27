@@ -1,367 +1,206 @@
-// src/server/api/routers/security.ts
-// Comprehensive Security & Defense System Router
-
+/**
+ * The defense model's levers and reads (realm time D2a, design §4). Thin: inputs validated here, logic in
+ * `~/server/modules/defense`. Writes are premium with the canonical country-write check; reads serve the owner the
+ * derived defense and everyone else the public order of battle (D3 adds intelligence estimates).
+ */
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import type { PrismaClient } from "@prisma/client";
 import {
   createTRPCRouter,
-  publicProcedure,
+  premiumMutationProcedure,
   protectedProcedure,
-  premiumProcedure,
+  publicProcedure,
 } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
-
 import {
-  syncDefenseBudgetToGovernment,
-  getDefenseMetricsForIntelligence,
-  getDefenseOverviewMetrics,
-} from "~/lib/military/defense-integration";
-import { notificationAPI } from "~/lib/notifications/api";
+  assertCountryResourceWriteAccess,
+  assertCountryWriteAccess,
+  hasCountryWriteAccess,
+} from "~/server/shared/country-authorization";
+import {
+  ALERT_LEVELS,
+  DOCTRINES,
+  MAX_RESERVE_YEARS,
+  O_M_PRIORITIES,
+  SERVICE_MONTHS_MAX,
+  SERVICE_MONTHS_MIN,
+  SHARE_PRESETS,
+  type SharePreset,
+} from "~/lib/military/model";
+import {
+  MAX_ORDER_QUANTITY,
+  branchDetail,
+  cancelProcurementOrder,
+  defenseOverview,
+  demobiliseReserves,
+  listProcurementOrders,
+  mobiliseReserves,
+  orderProcurement,
+  publicDefenseOverview,
+  setAlertLevel,
+  setDefenseShares,
+  setDoctrine,
+  setManpowerModel,
+  setOmPriority,
+  setSurge,
+  syncDefense,
+} from "~/server/modules/defense";
 
-// ===========================
-// Input Validation Schemas
-// ===========================
+const countryInput = z.object({ countryId: z.string().min(1) });
+const share = z.number().finite().min(0).max(1);
+const PRESETS = Object.keys(SHARE_PRESETS) as [SharePreset, ...SharePreset[]];
 
-// Base schema with all fields
-const militaryBranchBaseSchema = z.object({
-  branchType: z.enum([
-    "army",
-    "navy",
-    "air_force",
-    "space_force",
-    "marines",
-    "coast_guard",
-    "cyber_command",
-    "special_forces",
-  ]),
-  name: z.string().min(1, "Branch name is required"),
-  description: z.string().optional(),
-  motto: z.string().optional(),
-  imageUrl: z.string().optional(),
-  established: z.string().optional(),
-  activeDuty: z.number().int().nonnegative().default(0),
-  reserves: z.number().int().nonnegative().default(0),
-  civilianStaff: z.number().int().nonnegative().default(0),
-  annualBudget: z.number().nonnegative().default(0),
-  budgetPercent: z.number().min(0).max(100).default(0),
-  readinessLevel: z.number().min(0).max(100).default(50),
-  technologyLevel: z.number().min(0).max(100).default(50),
-  trainingLevel: z.number().min(0).max(100).default(50),
-  morale: z.number().min(0).max(100).default(50),
-  deploymentCapacity: z.number().min(0).max(100).default(50),
-  sustainmentCapacity: z.number().min(0).max(100).default(50),
-  isActive: z.boolean().default(true),
-});
+const sharesSchema = z
+  .object({ personnel: share, om: share, procurement: share, rd: share, infrastructure: share })
+  .refine(
+    (s) => Math.abs(s.personnel + s.om + s.procurement + s.rd + s.infrastructure - 1) < 0.001,
+    "Shares must add up to 100%"
+  );
 
-// Create schema - all required fields with defaults
-const militaryBranchCreateSchema = militaryBranchBaseSchema;
+type Ctx = Parameters<typeof assertCountryResourceWriteAccess>[0] & { db: PrismaClient };
 
-// Update schema - all fields optional
-const militaryBranchUpdateSchema = militaryBranchBaseSchema.partial();
-
-const militaryUnitInputSchema = z.object({
-  name: z.string().min(1),
-  unitType: z.string(),
-  designation: z.string().optional(),
-  description: z.string().optional(),
-  personnel: z.number().int().nonnegative().default(0),
-  commanderName: z.string().optional(),
-  commanderRank: z.string().optional(),
-  headquarters: z.string().optional(),
-  readiness: z.number().min(0).max(100).default(50),
-  imageUrl: z.string().optional(),
-});
-
-const militaryAssetInputSchema = z.object({
-  assetType: z.enum(["aircraft", "ship", "vehicle", "weapon_system", "installation"]),
-  category: z.string(),
-  name: z.string().min(1),
-  quantity: z.number().int().positive().default(1),
-  operational: z.number().int().nonnegative().default(1),
-  capability: z.string().optional(),
-  status: z.enum(["operational", "maintenance", "reserve", "retired"]).default("operational"),
-  modernizationLevel: z.number().min(0).max(100).default(50),
-  acquisitionCost: z.number().nonnegative().default(0),
-  maintenanceCost: z.number().nonnegative().default(0),
-  imageUrl: z.string().optional(),
-});
-
-const securityThreatInputSchema = z.object({
-  threatName: z.string().min(1),
-  threatType: z.enum([
-    "military",
-    "terrorism",
-    "insurgency",
-    "cyber",
-    "organized_crime",
-    "espionage",
-    "nuclear",
-    "biological",
-    "natural_disaster",
-  ]),
-  description: z.string().min(10),
-  severity: z.enum(["existential", "critical", "high", "moderate", "low"]),
-  likelihood: z.number().min(0).max(100).default(50),
-  urgency: z.enum(["low", "medium", "high", "immediate"]).default("medium"),
-  actorType: z.enum(["state", "non-state", "terrorist", "criminal", "unknown"]).optional(),
-  actorName: z.string().optional(),
-  actorLocation: z.string().optional(),
-  actorCapability: z.number().min(0).max(100).default(50),
-  potentialCasualties: z.number().int().nonnegative().default(0),
-  economicImpact: z.number().nonnegative().default(0),
-  politicalImpact: z.string().optional(),
-  infrastructureRisk: z.number().min(0).max(100).default(0),
-  responseLevel: z.enum(["minimal", "standard", "elevated", "maximum"]).default("standard"),
-  intelligenceSource: z.string().optional(),
-  confidenceLevel: z.number().min(0).max(100).default(50),
-  estimatedTimeline: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-});
-
-const neighborThreatInputSchema = z.object({
-  neighborName: z.string().min(1),
-  neighborCountryId: z.string().optional(),
-  borderType: z.enum(["land", "maritime", "both"]),
-  borderLength: z.number().nonnegative().optional(),
-  threatLevel: z.enum(["minimal", "low", "moderate", "high", "critical"]).default("low"),
-  threatScore: z.number().min(0).max(100).default(20),
-  militaryThreat: z.number().min(0).max(100).default(10),
-  terrorismRisk: z.number().min(0).max(100).default(15),
-  smugglingRisk: z.number().min(0).max(100).default(25),
-  refugeeFlow: z.number().min(0).max(100).default(20),
-  politicalStability: z.number().min(0).max(100).default(60),
-  diplomaticRelations: z
-    .enum(["hostile", "tense", "neutral", "friendly", "allied"])
-    .default("neutral"),
-  tradeVolume: z.number().nonnegative().default(0),
-  treatyStatus: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-// ===========================
-// Security Router
-// ===========================
+/** The branch's nation, after the canonical write check on it. */
+async function writableBranchCountry(ctx: Ctx, branchId: string): Promise<string> {
+  const branch = await ctx.db.militaryBranch.findUnique({
+    where: { id: branchId },
+    select: { countryId: true, isActive: true },
+  });
+  if (!branch?.isActive) throw new TRPCError({ code: "NOT_FOUND", message: "Military branch not found" });
+  await assertCountryResourceWriteAccess(ctx, branch.countryId, "Military branch");
+  return branch.countryId;
+}
 
 export const securityDefenseRouter = createTRPCRouter({
-  // ===========================
-  // Security Assessment Endpoints
-  // ===========================
+  // The nation's defense now: policy, budget and source, combat power, readiness, every branch's derived state.
+  getDefensePolicy: publicProcedure.input(countryInput).query(async ({ ctx, input }) => {
+    const snapshot = await syncDefense(ctx.db, input.countryId);
+    return (await hasCountryWriteAccess(ctx, input.countryId))
+      ? defenseOverview(snapshot)
+      : publicDefenseOverview(snapshot);
+  }),
 
-  // ===========================
-  // Military Branch Endpoints
-  // ===========================
+  // National combat power and readiness (owner; others get the public view).
+  getNationalDefense: publicProcedure.input(countryInput).query(async ({ ctx, input }) => {
+    const snapshot = await syncDefense(ctx.db, input.countryId);
+    if (!(await hasCountryWriteAccess(ctx, input.countryId))) return publicDefenseOverview(snapshot);
+    const { view } = snapshot;
+    return {
+      countryId: input.countryId,
+      redacted: false as const,
+      combatPower: view.combatPower,
+      readiness: view.readiness,
+      cLevel: view.cLevel,
+      cev: view.cev,
+      alertInEffect: view.alert,
+      burden: view.burden,
+      branches: view.branches,
+    };
+  }),
 
-  // ===========================
-  // Military Unit Endpoints
-  // ===========================
-
-  // ===========================
-  // Military Asset Endpoints
-  // ===========================
-
-  // ===========================
-  // Defense Budget Endpoints
-  // ===========================
-
-  getDefenseBudget: publicProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        fiscalYear: z.number().optional(),
-      })
-    )
+  // One branch's derived state, assets and open orders (owner).
+  getBranchState: protectedProcedure
+    .input(z.object({ branchId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
-      const year = input.fiscalYear ?? new Date().getFullYear();
-
-      return ctx.db.defenseBudget.findFirst({
-        where: {
-          countryId: input.countryId,
-          fiscalYear: year,
-        },
-      });
+      const countryId = await writableBranchCountry(ctx, input.branchId);
+      const detail = branchDetail(await syncDefense(ctx.db, countryId), input.branchId);
+      if (!detail) throw new TRPCError({ code: "NOT_FOUND", message: "Military branch not found" });
+      return detail;
     }),
 
-  updateDefenseBudget: premiumProcedure
+  setDefenseShares: premiumMutationProcedure
     .input(
-      z.object({
-        countryId: z.string(),
-        fiscalYear: z.number(),
-        totalBudget: z.number().nonnegative(),
-        gdpPercent: z.number().min(0).max(100),
-        personnelCosts: z.number().nonnegative().default(0),
-        operationsMaintenance: z.number().nonnegative().default(0),
-        procurement: z.number().nonnegative().default(0),
-        rdteCosts: z.number().nonnegative().default(0),
-        militaryConstruction: z.number().nonnegative().default(0),
+      z.union([
+        countryInput.extend({ preset: z.enum(PRESETS) }),
+        countryInput.extend({ shares: sharesSchema }),
+      ])
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      return setDefenseShares(ctx.db, input);
+    }),
+
+  setManpowerModel: premiumMutationProcedure
+    .input(
+      countryInput.extend({
+        volunteerShare: share,
+        serviceMonths: z.number().int().min(SERVICE_MONTHS_MIN).max(SERVICE_MONTHS_MAX),
+        reserveYears: z.number().int().min(0).max(MAX_RESERVE_YEARS),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify user owns this country
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        select: { countryId: true },
-      });
-
-      if (userProfile?.countryId !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only update your own country's defense budget",
-        });
-      }
-
-      const { countryId, fiscalYear, ...budgetData } = input;
-
-      const existingBudget = await ctx.db.defenseBudget.findFirst({
-        where: {
-          countryId,
-          fiscalYear,
-        },
-      });
-
-      let result;
-      if (existingBudget) {
-        result = await ctx.db.defenseBudget.update({
-          where: {
-            id: existingBudget.id,
-          },
-          data: budgetData,
-        });
-      } else {
-        result = await ctx.db.defenseBudget.create({
-          data: {
-            countryId,
-            fiscalYear,
-            ...budgetData,
-          },
-        });
-      }
-
-      // 🔔 Notify country about defense budget update
-      try {
-        const isSignificant = input.gdpPercent >= 5; // 5% or more of GDP is significant
-        await notificationAPI.create({
-          title: "🛡️ Defense Budget Updated",
-          message: `Defense spending set to ${input.gdpPercent.toFixed(1)}% of GDP ($${(input.totalBudget / 1e9).toFixed(2)}B) for FY${fiscalYear}`,
-          countryId,
-          category: "military",
-          priority: isSignificant ? "high" : "medium",
-          type: "info",
-          href: "/mycountry/security",
-          source: "security-system",
-          actionable: false,
-          metadata: { fiscalYear, totalBudget: input.totalBudget, gdpPercent: input.gdpPercent },
-        });
-      } catch (error) {
-        console.error("[Security] Failed to send defense budget notification:", error);
-      }
-
-      return result;
+      await assertCountryWriteAccess(ctx, input.countryId);
+      return setManpowerModel(ctx.db, input);
     }),
 
-  // ===========================
-  // Internal Stability Endpoints
-  // ===========================
+  setDoctrine: premiumMutationProcedure
+    .input(countryInput.extend({ doctrine: z.enum(DOCTRINES) }))
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      return setDoctrine(ctx.db, input);
+    }),
 
-  // ===========================
-  // Border Security Endpoints
-  // ===========================
+  // A raised alert bites after 7 (Elevated) to 30 (War) in-game days.
+  setAlertLevel: premiumMutationProcedure
+    .input(countryInput.extend({ alertLevel: z.enum(ALERT_LEVELS) }))
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      return setAlertLevel(ctx.db, input);
+    }),
 
-  // ===========================
-  // Security Threats Endpoints
-  // ===========================
+  setOmPriority: premiumMutationProcedure
+    .input(countryInput.extend({ omPriority: z.enum(O_M_PRIORITIES) }))
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      return setOmPriority(ctx.db, input);
+    }),
 
-  // ===========================
-  // Integration Endpoints
-  // ===========================
+  setProductionSurge: premiumMutationProcedure
+    .input(countryInput.extend({ surging: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      return setSurge(ctx.db, input);
+    }),
 
-  getDefenseOverview: protectedProcedure
-    .input(z.object({ countryId: z.string() }))
+  getProcurementOrders: protectedProcedure
+    .input(countryInput.extend({ includeClosed: z.boolean().optional() }))
     .query(async ({ ctx, input }) => {
-      // Validate ownership - users can only view their own defense data unless admin
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        select: { countryId: true, role: true },
-      });
-
-      // Check if user is admin (role level <= 20)
-      const isAdmin = userProfile?.role && (userProfile.role as any).level <= 20;
-
-      if (!isAdmin && userProfile?.countryId !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Cannot view other countries' defense overview",
-        });
-      }
-
-      return getDefenseOverviewMetrics(input.countryId);
+      await assertCountryWriteAccess(ctx, input.countryId);
+      return listProcurementOrders(ctx.db, input);
     }),
 
-  getDefenseIntelligenceMetrics: protectedProcedure
-    .input(z.object({ countryId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      // Validate ownership - users can only view their own defense data unless admin
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        select: { countryId: true, role: true },
-      });
-
-      // Check if user is admin (role level <= 20)
-      const isAdmin = userProfile?.role && (userProfile.role as any).level <= 20;
-
-      if (!isAdmin && userProfile?.countryId !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Cannot view other countries' defense intelligence metrics",
-        });
-      }
-
-      return getDefenseMetricsForIntelligence(input.countryId);
-    }),
-
-  syncDefenseBudget: premiumProcedure
+  // Domestic within industrial capacity, or a catalog import at +15% cost and a longer lead time.
+  orderProcurement: premiumMutationProcedure
     .input(
       z.object({
-        countryId: z.string(),
-        totalBudget: z.number().nonnegative(),
-        personnelCosts: z.number().nonnegative(),
-        operationsMaintenance: z.number().nonnegative(),
-        procurement: z.number().nonnegative(),
-        rdteCosts: z.number().nonnegative(),
-        militaryConstruction: z.number().nonnegative(),
-        fiscalYear: z.number().int(),
+        branchId: z.string().min(1),
+        catalogKey: z.string().min(1).max(200),
+        quantity: z.number().int().min(1).max(MAX_ORDER_QUANTITY),
+        source: z.enum(["domestic", "import"]),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify user owns this country
-      const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        select: { countryId: true },
-      });
-
-      if (userProfile?.countryId !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only sync defense budget for your own country",
-        });
-      }
-
-      return syncDefenseBudgetToGovernment(input);
+      const countryId = await writableBranchCountry(ctx, input.branchId);
+      return orderProcurement(ctx.db, { ...input, countryId });
     }),
 
-  // ============================================================
-  // Military Operations (Phase 4)
-  // ============================================================
+  cancelProcurementOrder: premiumMutationProcedure
+    .input(countryInput.extend({ orderId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      return cancelProcurementOrder(ctx.db, input);
+    }),
 
-  // Get active and past operations
+  mobiliseReserves: premiumMutationProcedure
+    .input(z.object({ branchId: z.string().min(1), reservists: z.number().int().min(1).max(50_000_000) }))
+    .mutation(async ({ ctx, input }) => {
+      const countryId = await writableBranchCountry(ctx, input.branchId);
+      return mobiliseReserves(ctx.db, { ...input, countryId });
+    }),
 
-  // Create a military operation and deploy units/assets
-
-  // Recall a deployment / end an operation
-
-  // Propose a PvP conflict (requires mutual acceptance)
-
-  // Accept or decline a PvP conflict
-
-  // Get conflicts involving a country
-
-  // Resolve a PvNPC conflict automatically
+  demobiliseReserves: premiumMutationProcedure
+    .input(z.object({ branchId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const countryId = await writableBranchCountry(ctx, input.branchId);
+      return demobiliseReserves(ctx.db, { ...input, countryId });
+    }),
 });

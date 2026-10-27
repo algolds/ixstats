@@ -9,16 +9,26 @@ import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
   protectedProcedure,
-  adminProcedure,
   publicProcedure,
+  rateLimitedPublicProcedure,
+  rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
-import { nsImportService } from "~/lib/nationstates/import-service";
-import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
-import { computeCardValue, getValuationConfig } from "~/lib/cards";
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import { CardType } from "~/lib/cards/enums";
+import { nsFactsOf } from "~/lib/cards/ns-facts";
+import { normalizeNationName } from "~/lib/vault/exploit-corrections";
+import { selfServiceTakedown } from "~/server/modules/cards/cards.compliance";
 
-// ─── Background Processing Functions ──────────────────────────────
+export function nationNamesMatch(a: string, b: string): boolean {
+  const left = normalizeNationName(a);
+  return left.length > 0 && left === normalizeNationName(b);
+}
+
+/** The nation an NS card depicts: its facts' name, falling back to the title. */
+function cardNationName(card: { title: string; metadata: Prisma.JsonValue }): string {
+  return nsFactsOf(card.metadata).name ?? card.title;
+}
 
 export const nsImportCardsRouter = createTRPCRouter({
   /**
@@ -35,7 +45,7 @@ export const nsImportCardsRouter = createTRPCRouter({
   /**
    * Public/Protected: Self-service NationStates card takedown by verifying nation ownership via NS API.
    */
-  requestSelfServiceTakedown: publicProcedure
+  requestSelfServiceTakedown: rateLimitedPublicProcedure
     .input(
       z.object({
         cardId: z.string(),
@@ -56,6 +66,14 @@ export const nsImportCardsRouter = createTRPCRouter({
         });
       }
 
+      // Self-service takedowns only cover NationStates flag cards.
+      if (card.cardType !== CardType.NS) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only NationStates-import cards can be taken down by their flag owner.",
+        });
+      }
+
       // 1. Verify nation ownership on NationStates
       const isVerified = await nsApiClient.verifyOwnership(
         input.nationName.trim(),
@@ -70,276 +88,31 @@ export const nsImportCardsRouter = createTRPCRouter({
         });
       }
 
-      // 2. Validate nation match against card title / metadata
-      const cleanNation = input.nationName.toLowerCase().replace(/_/g, " ").trim();
-      const cleanTitle = card.title.toLowerCase().replace(/_/g, " ").trim();
-
-      const isMatch = cleanTitle.includes(cleanNation) || cleanNation.includes(cleanTitle);
-
-      if (!isMatch) {
+      // 2. The verified nation must be exactly the card's nation (not a substring of it).
+      if (!nationNamesMatch(input.nationName, cardNationName(card))) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: `Verified nation "${input.nationName}" does not match card target "${card.title}". Takedowns require ownership of the card's flag nation.`,
         });
       }
 
-      // 3. Retire card and purge artwork
-      const prevMetadata = (card.metadata as Record<string, any>) || {};
-      await ctx.db.card.update({
-        where: { id: card.id },
-        data: {
-          isRetired: true,
-          retiredAt: new Date(),
-          artwork: null,
-          artworkVariants: Prisma.DbNull,
-          metadata: {
-            ...prevMetadata,
-            nsTakedown: {
-              selfService: true,
-              verifiedNation: input.nationName.trim(),
-              hiddenAt: new Date().toISOString(),
-              reason: input.reason || "Self-service flag owner takedown request",
-            },
-          },
-        },
+      // 3. File the takedown and hide the art, through the one takedown queue.
+      const { alreadyHidden } = await selfServiceTakedown(ctx.db, {
+        cardId: card.id,
+        verifiedNation: input.nationName.trim(),
+        reason: input.reason,
+        requestedBy: ctx.user?.id ?? null,
       });
 
       return {
         success: true,
         cardId: card.id,
         title: card.title,
-        message: `Card artwork for "${card.title}" has been retired per verified nation owner request.`,
+        message: alreadyHidden
+          ? `"${card.title}" is already hidden.`
+          : `Card art for "${card.title}" is hidden, as its flag owner asked.`,
       };
     }),
-  /**
-   * Get user's import history
-   */
-  getMyImportHistory: protectedProcedure
-    .input(
-      z.object({
-        limit: z.number().int().min(1).max(50).default(10),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      // Get user's vault transactions for NS imports
-      const vault = await ctx.db.myVault.findUnique({
-        where: { userId: ctx.user.id },
-        include: {
-          transactions: {
-            where: {
-              source: "ns_import_bonus",
-            },
-            orderBy: { createdAt: "desc" },
-            take: input.limit,
-          },
-        },
-      });
-
-      const imports = vault?.transactions || [];
-
-      return imports.map((tx) => ({
-        id: tx.id,
-        nationName: (tx.metadata as any)?.nationName || "Unknown",
-        cardsImported: (tx.metadata as any)?.cardsImported || 0,
-        totalValue: (tx.metadata as any)?.totalValue || 0,
-        bonusCredits: tx.credits,
-        importedAt: tx.createdAt,
-      }));
-    }),
-
-  /**
-   * Get import statistics
-   */
-  getImportStats: protectedProcedure.query(async ({ ctx }) => {
-    // Count NS import transactions
-    const vault = await ctx.db.myVault.findUnique({
-      where: { userId: ctx.user.id },
-      include: {
-        transactions: {
-          where: {
-            source: "ns_import_bonus",
-          },
-        },
-      },
-    });
-
-    const imports = vault?.transactions || [];
-    const totalImports = imports.length;
-    const lastImport = imports[0]?.createdAt || null;
-
-    // Count imported cards
-    const importedCards = await ctx.db.cardOwnership.findMany({
-      where: {
-        userId: ctx.user.id,
-        cards: {
-          cardType: "NS_IMPORT",
-        },
-      },
-      include: {
-        cards: true,
-      },
-    });
-
-    const totalCards = importedCards.reduce((sum, ownership) => sum + ownership.quantity, 0);
-    const totalValue = importedCards.reduce(
-      (sum, ownership) => sum + (ownership.cards.marketValue || 0),
-      0
-    );
-
-    return {
-      totalImports,
-      totalCards,
-      totalValue,
-      lastImport,
-    };
-  }),
-
-  /**
-   * Admin: Hide a NationStates-import card (flag-owner takedown / opt-out).
-   *
-   * Sets the card as retired and clears its artwork so the nation flag stops
-   * being served, per a flag owner's objection. The card definition is kept
-   * (ownership/history intact) but renders with the placeholder artwork.
-   */
-  hideNSCard: adminProcedure
-    .input(
-      z.object({
-        nsCardId: z.number().int().positive(),
-        nsSeason: z.number().int().positive(),
-        reason: z.string().max(500).optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const card = await ctx.db.card.findFirst({
-        where: { nsCardId: input.nsCardId, nsSeason: input.nsSeason },
-      });
-
-      if (!card) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `No NS card found for ${input.nsCardId} S${input.nsSeason}`,
-        });
-      }
-
-      const prevMetadata = (card.metadata as Record<string, any>) || {};
-      await ctx.db.card.update({
-        where: { id: card.id },
-        data: {
-          isRetired: true,
-          retiredAt: new Date(),
-          artwork: null,
-          artworkVariants: Prisma.DbNull,
-          metadata: {
-            ...prevMetadata,
-            nsTakedown: {
-              hiddenAt: new Date().toISOString(),
-              hiddenBy: ctx.user.id,
-              reason: input.reason || null,
-            },
-          },
-        },
-      });
-
-      console.log(
-        `[NS Import] Takedown: hid NS card ${input.nsCardId} S${input.nsSeason} (${card.title}) by ${ctx.user.id}`
-      );
-
-      return {
-        success: true,
-        cardId: card.id,
-        title: card.title,
-        message: `Hidden "${card.title}" (${input.nsCardId} S${input.nsSeason}). Artwork removed; the flag will no longer be served.`,
-      };
-    }),
-
-  /**
-   * Admin: Restore a previously hidden NS-import card (undo takedown).
-   */
-  restoreNSCard: adminProcedure
-    .input(
-      z.object({
-        nsCardId: z.number().int().positive(),
-        nsSeason: z.number().int().positive(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const card = await ctx.db.card.findFirst({
-        where: { nsCardId: input.nsCardId, nsSeason: input.nsSeason },
-      });
-
-      if (!card) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `No NS card found for ${input.nsCardId} S${input.nsSeason}`,
-        });
-      }
-
-      const prevMetadata = (card.metadata as Record<string, any>) || {};
-      await ctx.db.card.update({
-        where: { id: card.id },
-        data: {
-          isRetired: false,
-          retiredAt: null,
-          metadata: {
-            ...prevMetadata,
-            nsTakedown: null,
-          },
-        },
-      });
-
-      return {
-        success: true,
-        cardId: card.id,
-        title: card.title,
-        message: `Restored "${card.title}". A re-sync will re-add the flag artwork.`,
-      };
-    }),
-
-  /**
-   * Admin: List NS cards currently hidden by takedown.
-   */
-  listHiddenNSCards: adminProcedure.query(async ({ ctx }) => {
-    const cards = await ctx.db.card.findMany({
-      where: { isRetired: true, nsCardId: { not: null } },
-      select: {
-        id: true,
-        title: true,
-        nsCardId: true,
-        nsSeason: true,
-        retiredAt: true,
-        metadata: true,
-      },
-      orderBy: { retiredAt: "desc" },
-      take: 100,
-    });
-
-    return cards.map((card) => {
-      const meta = (card.metadata as Record<string, any>) || {};
-      return {
-        cardId: card.id,
-        title: card.title,
-        nsCardId: card.nsCardId,
-        nsSeason: card.nsSeason,
-        retiredAt: card.retiredAt,
-        hiddenBy: meta.nsTakedown?.hiddenBy ?? null,
-        reason: meta.nsTakedown?.reason ?? null,
-        selfService: meta.nsTakedown?.selfService ?? false,
-      };
-    });
-  }),
-
-  /**
-   * Admin: Filter imported NS cards against the daily active nations dump (nations.xml.gz).
-   * Tags all NS_IMPORT cards with metadata.isCTE (true if nation has Ceased To Exist).
-   */
-  filterCTECards: adminProcedure.mutation(async ({ ctx }) => {
-    const result = await processCTENationFilter(ctx.db);
-    return {
-      success: true,
-      ...result,
-      message: `CTE filter complete: ${result.totalProcessed} cards processed (${result.activeCount} active, ${result.cteCount} CTE'd).`,
-    };
-  }),
 
   // ─── Self-serve flag-owner opt-out (user settings) ────────────────
 
@@ -351,10 +124,7 @@ export const nsImportCardsRouter = createTRPCRouter({
   getMyNSCards: protectedProcedure.query(async ({ ctx }) => {
     const [ownerships, verified] = await Promise.all([
       ctx.db.cardOwnership.findMany({
-        where: {
-          ownerId: ctx.user.id,
-          cards: { cardType: "NS_IMPORT", nsCardId: { not: null } },
-        },
+        where: { ownerId: ctx.user.id, cards: { cardType: CardType.NS } },
         select: {
           cardId: true,
           acquiredAt: true,
@@ -362,11 +132,29 @@ export const nsImportCardsRouter = createTRPCRouter({
             select: {
               id: true,
               title: true,
+              description: true,
+              rarity: true,
+              season: true,
+              cardType: true,
+              category: true,
+              subcategory: true,
+              artwork: true,
+              artworkSource: true,
+              artworkCredit: true,
+              slug: true,
+              marketValue: true,
+              totalSupply: true,
               nsCardId: true,
               nsSeason: true,
               isRetired: true,
               retiredAt: true,
               metadata: true,
+              takedowns: {
+                where: { status: "HIDDEN" },
+                orderBy: { resolvedAt: "desc" },
+                take: 1,
+                select: { reason: true, resolvedAt: true },
+              },
             },
           },
         },
@@ -387,18 +175,19 @@ export const nsImportCardsRouter = createTRPCRouter({
         seen.add(key);
         return true;
       })
-      .map((o) => {
-        const meta = (o.cards.metadata as Record<string, any>) || {};
-        const nation = (meta.nsData?.name as string) || o.cards.title;
-        const takedown = meta.nsTakedown as Record<string, any> | null | undefined;
+      .map(({ acquiredAt, cards: { takedowns, ...card } }) => {
+        const facts = nsFactsOf(card.metadata);
+        const flag = facts.flag ?? card.artwork ?? null;
+        const takedown = takedowns.at(0);
         return {
-          cardId: o.cards.id,
-          title: o.cards.title,
-          nsCardId: o.cards.nsCardId,
-          nsSeason: o.cards.nsSeason,
-          nation,
-          isHidden: o.cards.isRetired,
-          hiddenAt: takedown?.hiddenAt ?? o.cards.retiredAt ?? null,
+          ...card,
+          cardId: card.id,
+          acquiredAt,
+          artwork: card.artwork || flag || "",
+          nation: facts.name ?? card.title,
+          imageUrl: flag,
+          isHidden: card.isRetired,
+          hiddenAt: takedown?.resolvedAt ?? card.retiredAt ?? null,
           reason: takedown?.reason ?? null,
         };
       });
@@ -414,7 +203,7 @@ export const nsImportCardsRouter = createTRPCRouter({
    * opt-out). Requires the user to (a) own the card and (b) have a verified
    * NSVerification for the card's nation — proving they hold the flag rights.
    */
-  hideMyCard: protectedProcedure
+  hideMyCard: rateLimitedMutationProcedure
     .input(
       z.object({
         nsCardId: z.number().int().positive(),
@@ -427,7 +216,7 @@ export const nsImportCardsRouter = createTRPCRouter({
         where: {
           nsCardId: input.nsCardId,
           nsSeason: input.nsSeason,
-          cardType: "NS_IMPORT",
+          cardType: CardType.NS,
         },
       });
 
@@ -450,8 +239,7 @@ export const nsImportCardsRouter = createTRPCRouter({
       }
 
       // (b) The user must be NS-verified for the card's nation.
-      const meta = (card.metadata as Record<string, any>) || {};
-      const nation = (meta.nsData?.name as string) || card.title;
+      const nation = cardNationName(card);
       const verified = await ctx.db.nSVerification.findFirst({
         where: {
           userId: ctx.user.id,
@@ -467,238 +255,19 @@ export const nsImportCardsRouter = createTRPCRouter({
         });
       }
 
-      if (card.isRetired) {
-        return {
-          success: true,
-          cardId: card.id,
-          title: card.title,
-          message: `"${card.title}" is already hidden.`,
-        };
-      }
-
-      await ctx.db.card.update({
-        where: { id: card.id },
-        data: {
-          isRetired: true,
-          retiredAt: new Date(),
-          artwork: null,
-          artworkVariants: Prisma.DbNull,
-          metadata: {
-            ...meta,
-            nsTakedown: {
-              hiddenAt: new Date().toISOString(),
-              hiddenBy: ctx.user.id,
-              reason: input.reason || null,
-              selfService: true,
-            },
-          },
-        },
+      const { alreadyHidden } = await selfServiceTakedown(ctx.db, {
+        cardId: card.id,
+        verifiedNation: nation,
+        reason: input.reason,
+        requestedBy: ctx.user.id,
       });
-
-      console.log(
-        `[NS Import] Self-serve takedown: user ${ctx.user.id} hid NS card ${input.nsCardId} S${input.nsSeason} (${card.title})`
-      );
-
       return {
         success: true,
         cardId: card.id,
         title: card.title,
-        message: `Hidden "${card.title}". Your flag will no longer be served on this card.`,
+        message: alreadyHidden
+          ? `"${card.title}" is already hidden.`
+          : `Hidden "${card.title}". Your flag is no longer shown on this card.`,
       };
     }),
-
-  // ─── Bulk Import Endpoints ────────────────────────────────────────
-
-  // ─── Pause / Play / Stop controls ───
-
-  // ─── Region Discovery ────────────────────────────────────────────
-
-  /**
-   * Batch-update gameplay stats (economic/diplomatic/military/social)
-   * for all NS_IMPORT cards that don't have them yet.
-   */
-  batchUpdateCardStats: adminProcedure
-    .input(
-      z
-        .object({
-          forceAll: z.boolean().optional().default(false),
-        })
-        .optional()
-        .default({ forceAll: false })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const BATCH = 100;
-      let updated = 0;
-      let skipped = 0;
-      let errors = 0;
-
-      // Get all NS_IMPORT cards
-      const cards = await ctx.db.card.findMany({
-        where: { cardType: "NS_IMPORT" },
-        select: { id: true, nsCardId: true, stats: true },
-      });
-
-      console.log(
-        `[NS Import] Batch updating stats for ${cards.length} NS cards (forceAll=${input.forceAll})`
-      );
-
-      for (let i = 0; i < cards.length; i += BATCH) {
-        const batch = cards.slice(i, i + BATCH);
-        const updates = [];
-
-        for (const card of batch) {
-          const existingStats = card.stats as Record<string, unknown> | null;
-          if (!existingStats) {
-            skipped++;
-            continue;
-          }
-
-          // Skip if already has gameplay stats (unless forceAll)
-          if (!input.forceAll && typeof existingStats.economic === "number") {
-            skipped++;
-            continue;
-          }
-
-          const gameplayStats = nsImportService.generateCardStats(
-            {
-              govt: existingStats.govt as string | undefined,
-              marketValue: existingStats.marketValue as string | undefined,
-              badge: existingStats.badge as string | undefined,
-              trophies: existingStats.trophies as string | undefined,
-              region: existingStats.region as string | undefined,
-              category: existingStats.category as string | undefined,
-              cardcategory: existingStats.cardcategory as string | undefined,
-            },
-            card.nsCardId ?? undefined
-          );
-
-          updates.push(
-            ctx.db.card.update({
-              where: { id: card.id },
-              data: {
-                stats: { ...existingStats, ...gameplayStats },
-              },
-            })
-          );
-        }
-
-        if (updates.length > 0) {
-          try {
-            await Promise.all(updates);
-            updated += updates.length;
-          } catch (err) {
-            errors += updates.length;
-            console.error(`[NS Import] Batch error at offset ${i}:`, err);
-          }
-        }
-
-        if ((i + BATCH) % 1000 === 0 || i + BATCH >= cards.length) {
-          console.log(
-            `[NS Import] Progress: ${Math.min(i + BATCH, cards.length)}/${cards.length} (updated: ${updated}, skipped: ${skipped})`
-          );
-        }
-      }
-
-      console.log(
-        `[NS Import] Batch stats complete: ${updated} updated, ${skipped} skipped, ${errors} errors`
-      );
-      return { updated, skipped, errors, total: cards.length };
-    }),
-
-  /**
-   * Refresh market values for user's 0-value NS cards by re-fetching from NS API,
-   * then recalculate deckValue from actual card values.
-   */
-  refreshCardValues: protectedProcedure.mutation(async ({ ctx }) => {
-    // Find all NS_IMPORT cards owned by the current user with 0 market value
-    const ownerships = await ctx.db.cardOwnership.findMany({
-      where: { userId: ctx.user.id },
-      select: {
-        cardId: true,
-        cards: {
-          select: {
-            id: true,
-            nsCardId: true,
-            nsSeason: true,
-            marketValue: true,
-            cardType: true,
-            stats: true,
-            rarity: true,
-          },
-        },
-      },
-    });
-
-    const valCfg = await getValuationConfig(ctx.db);
-    let refreshed = 0;
-    let failed = 0;
-
-    // Fix 0-value NS cards by re-fetching from NS API
-    const zeroValueCards = ownerships.filter(
-      (o) =>
-        o.cards.cardType === "NS_IMPORT" &&
-        o.cards.marketValue === 0 &&
-        o.cards.nsCardId &&
-        o.cards.nsSeason
-    );
-
-    for (const ownership of zeroValueCards) {
-      try {
-        const info = await nsApiClient.fetchCardInfo(
-          String(ownership.cards.nsCardId),
-          String(ownership.cards.nsSeason)
-        );
-        if (info?.market_value) {
-          const recomputedValue = computeCardValue(
-            {
-              rarity: ownership.cards.rarity,
-              cardType: ownership.cards.cardType,
-              nsMarketValue: parseFloat(info.market_value || "0"),
-            },
-            valCfg
-          );
-          if (recomputedValue > 0) {
-            await ctx.db.card.update({
-              where: { id: ownership.cards.id },
-              data: {
-                marketValue: recomputedValue,
-                stats: {
-                  ...((ownership.cards.stats as Record<string, unknown>) || {}),
-                  marketValue: info.market_value,
-                },
-              },
-            });
-            refreshed++;
-          }
-        }
-      } catch {
-        failed++;
-      }
-    }
-
-    // Recalculate deck value from actual card values
-    const allOwned = await ctx.db.cardOwnership.findMany({
-      where: { userId: ctx.user.id },
-      select: { cards: { select: { marketValue: true } } },
-    });
-
-    const totalDeckValue = allOwned.reduce((sum, o) => sum + Math.max(1, o.cards.marketValue), 0);
-    const totalCards = allOwned.length;
-
-    await ctx.db.user.update({
-      where: { id: ctx.user.id },
-      data: {
-        deckValue: totalDeckValue,
-        totalCards: totalCards,
-      },
-    });
-
-    return {
-      refreshed,
-      failed,
-      totalCards,
-      deckValue: totalDeckValue,
-      zeroValueChecked: zeroValueCards.length,
-    };
-  }),
 });

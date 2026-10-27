@@ -1,0 +1,29 @@
+# Known gitleaks false positives, ignored one by one by fingerprint (owner decision 2026-10-27). No rule is weakened:
+# anything new that matches a rule still fails the scan. Format: <commit>:<file>:<rule>:<line>.
+
+# WikiOS proof reports: the tree digest (then called "treeKey") is a SHA-256 of the WikiOS files from `git ls-tree`,
+# not a credential. The field is named treeDigest since, so new proofs don't trip the keyword rule.
+8957f256d9678b8ed4d89b6a4481bfa7a0f4c0cd:docs/audits/wikios-proof/latest.json:generic-api-key:5
+8957f256d9678b8ed4d89b6a4481bfa7a0f4c0cd:docs/audits/wikios-proof/2026-10-27-local.md:generic-api-key:6
+0bd06deae8f0d3cc2a380bb1abc8f82d237b6dea:docs/audits/wikios-proof/latest.json:generic-api-key:5
+0bd06deae8f0d3cc2a380bb1abc8f82d237b6dea:docs/audits/wikios-proof/2026-10-26-local-2.md:generic-api-key:6
+c2c400b5f542677ac0abb7cd0e04f0e54a3fe8fa:docs/audits/wikios-proof/latest.json:generic-api-key:5
+c2c400b5f542677ac0abb7cd0e04f0e54a3fe8fa:docs/audits/wikios-proof/2026-10-26-local.md:generic-api-key:6
+
+# Deliberately fake credentials in tests (bot passwords "ABCDEFGHIJKLM...", a fake "sk-live-abcdef..." key in a test
+# proving the key never leaves the server, a web-push subscription fixture, UUID tokens).
+6217cccb940ed6f2913371a194152c9217749284:src/tests/server/api/routers/wikios-edit-access.test.ts:generic-api-key:286
+6217cccb940ed6f2913371a194152c9217749284:src/tests/server/api/routers/wikios-edit-access.test.ts:generic-api-key:294
+15fe15620e20016e1d1d250b2afbbb65cc3bf65d:src/tests/server/api/routers/onoma-router.test.ts:generic-api-key:178
+1258b7c2e92e8e864a749032a3742cf54d64b2f0:src/tests/scenarios/noncore/notification-delivery.test.ts:generic-api-key:473
+11a99060c10eb37e3c2ceac9ccde08215c1339b7:src/tests/lib/notifications/delivery.test.ts:generic-api-key:91
+905891670a81fd05125104a210f305fa4f3c58de:src/tests/components/wiki-os/wiki-reader-source.test.tsx:generic-api-key:180
+905891670a81fd05125104a210f305fa4f3c58de:src/tests/components/wiki-os/article-renderer-read-only.test.tsx:generic-api-key:473
+905891670a81fd05125104a210f305fa4f3c58de:src/tests/lib/wiki-os/article-flight-copies.test.ts:generic-api-key:52
+905891670a81fd05125104a210f305fa4f3c58de:src/tests/lib/wiki-os/lean-article.test.ts:generic-api-key:33
+0856ee8e54f4c017884859d9bf3f70bc6f73cf52:src/tests/app/wiki-os/botpasswords-page.test.tsx:generic-api-key:89
+bb7bf3c9ff1a6fa033c2d931cb5223fff26ced3a:src/tests/server/api/routers/wikios-bot-passwords.test.ts:generic-api-key:98
+bb7bf3c9ff1a6fa033c2d931cb5223fff26ced3a:src/tests/server/api/routers/wikios-bot-passwords.test.ts:generic-api-key:106
+
+# The Discord guild (server) ID in the release guide's env table: a public identifier, also in .env.example.
+db75476932aaa17f0b6e94fd4d0749dd17193f21:docs/operations/release-guide.md:discord-client-id:67

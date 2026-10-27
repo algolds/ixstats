@@ -1,28 +1,33 @@
 # Database Reference Snapshot
 
-**Last updated:** June 2026
+**Last updated:** 2026-10-21
 
-Prisma schema: `prisma/schema/*.prisma` (14 files)
-Models: **272**
+Prisma schema: `prisma/schema/*.prisma` (<!-- BEGIN_DOCS:COUNT:schemaFiles -->24<!-- END_DOCS:COUNT:schemaFiles --> files, incl. `base.prisma` for datasource/generator and `enums.prisma`)
+Models: **<!-- BEGIN_DOCS:COUNT:models -->334<!-- END_DOCS:COUNT:models -->** (plus <!-- BEGIN_DOCS:COUNT:enums -->47<!-- END_DOCS:COUNT:enums --> enums)
 
 ## Domain Groupings
 | Domain | Representative Models |
 | --- | --- |
-| Countries & Identity | `Country`, `CountryAlias`, `CountryStatistic`, `CountryFlag`, `CountryComplianceTask` |
-| Intelligence & Diplomacy | `DiplomaticRelation`, `DiplomaticEvent`, `Embassy`, `EmbassyMission`, `DiplomaticBriefing` |
-| Economy & Labor | `EconomicIndicator`, `EconomicHistory`, `EconomicProjection`, `LaborMetric`, `TradeBalance` |
-| Government & Atomic | `GovernmentComponent`, `EconomicComponent`, `TaxComponent`, `ComponentSynergy`, `CrossBuilderSynergy` |
-| Defense & Security | `DefenseModule`, `DefenseReadiness`, `DefenseIncident`, `SecurityAlert` |
-| Social & Collaboration | `ThinkPage`, `ThinkPost`, `ThinkComment`, `Activity`, `ActivityEngagement` |
-| Achievements & Notifications | `Achievement`, `UserAchievement`, `Notification`, `NotificationRule`, `NotificationLog` |
-| Users & Roles | `User`, `Role`, `Permission`, `UserLogEntry`, `SessionMetric` |
-| Cards & Vault | `Card`, `CardOwnership`, `CardPack`, `UserPack`, `MyVault`, `VaultTransaction`, `CardBackgroundImage`, `LoreCard` |
-| Elections & Politics | `PoliticalParty`, `Legislature`, `Election`, `ElectionResult` |
-| Crafting & Trading | `CraftingRecipe`, `TradeOffer`, `AuctionListing`, `TradeReview` |
-| Autosave | `AutosaveHistory` |
+| Countries & Identity (`core.prisma`, `wiki.prisma`) | `Country`, `NationalIdentity`, `CountryFollow`, `WikiAccountLink` (sister wikis only), `WikiNameClaim`, `WikiRevisionClaimTag` |
+| Intelligence & Diplomacy (`intelligence.prisma`, `diplomacy.prisma`) | `IntelligenceBriefing`, `IntelligenceTemplate`, `DiplomaticRelation`, `DiplomaticEvent`, `Embassy`, `EmbassyMission`, `Alliance`, `ForeignPolicyAction`, `NPCPersonality` |
+| Economy & Tax (`economy.prisma`) | `EconomicProfile`, `LaborMarket`, `FiscalSystem`, `TaxSystem`, `EconomicComponent`, `TaxComponent` |
+| Government, Politics & Issues (`government.prisma`) | `GovernmentComponent`, `ComponentSynergy`, `GovernmentStructure`, `PoliticalParty`, `Legislature`, `Election`, `ElectionResult`, `NationalIssue`, `StorytellerEffect`, `Intent` |
+| Defense & Security (`military.prisma`) | `MilitaryBranch`, `MilitaryUnit`, `MilitaryAsset`, `InternalStabilityMetrics`, `MilitaryEquipmentCatalog` |
+| Social & Collaboration (`social.prisma`, `social-follows.prisma`, `realm-boards.prisma`) | `ThinkpagesAccount`, `ThinkpagesPost`, `ThinktankGroup`, `ThinkshareConversation`, `ActivityFeed`, `Poll`, `ThinkpagesFollow`, `ThinkpagesPersonalAccount`, `RealmBoard` |
+| Achievements & Notifications (`core.prisma`) | `Achievement`, `UserAchievement`, `Notification`, `NotificationEventConfig` |
+| Users, Roles & Logging (`core.prisma`, `identity.prisma`) | `User`, `Role`, `Permission`, `RolePermission`, `UserSession`, `AuditLog`, `AdminAuditLog`, `SystemLog`, `PassportPreference` |
+| Scheduled jobs (`core.prisma`) | `JobLease` (`job_leases`, the cron lease row), `CronRun` (one row per cron run) |
+| Cards & Vault (`cards.prisma`) | `Card`, `CardOwnership`, `CardPack`, `UserPack`, `MyVault`, `VaultTransaction`, `CardAuction`, `TradeOffer`, `NSImportLedger` (`CardBackgroundImage` lives in `core.prisma`) |
+| Exchange (`exchange.prisma`) | `ExchangeWallet`, `Company`, `Shareholding`, `SectorIndex`, `Contract` |
+| Maps, Geo & Realms (`maps.prisma`) | `Subdivision`, `City`, `PointOfInterest`, `CountrySovereignty`, `TransportRoute`, `Realm`, `RealmClaim` |
+| Wiki, Stash & LoreWards (`wiki.prisma`) | `WikiArticle`, `WikiRevision`, `WikiLink`, `Stash`, `StashItem`, `LorewardEntry`, `BlurbPrompt` |
+| Sports (`sports.prisma`) | `SportLeague`, `SportTeam`, `SportSeason`, `SportMatch` |
+| Onoma (`onoma.prisma`) | `NameBank`, `LanguagePack`, `EtymologyRoot`, `WritingSystem` |
+| Heraldry & Uploads (`heraldry.prisma`, `media.prisma`) | `HeraldryRevision`, `UploadedAsset` |
+| Autosave | No dedicated table — autosaves are `AuditLog` rows (`autosave:*` actions); drafts use `BuilderDraft` |
 
 ## Schema Conventions
-- IDs default to `cuid()` for string identifiers; some legacy tables use autoincrement integers
+- IDs default to `cuid()` for string identifiers
 - Timestamp fields use Prisma defaults (`@default(now())`, `@updatedAt`)
 - Enums duplicate casing (uppercase + lowercase) to maintain compatibility with historical datasets
 - Relations are fully typed; include tables specify cascading deletes where data integrity is required
@@ -44,15 +49,14 @@ SELECT * FROM "GovernmentComponent" WHERE countryId = ? AND componentType = ? AN
 ```
 
 ## Migration & Tooling
-- `prisma/migrations/*` – Linear migration history
+- `prisma/migrations/*` – Linear migration history (<!-- BEGIN_DOCS:COUNT:migrations -->67<!-- END_DOCS:COUNT:migrations --> migrations)
 - `bun run db:migrate:force` – Development migrations (protected by default)
 - `bun run db:migrate:deploy` – Production-safe migration execution
-- `bun run db:studio` / `bun run db:studio:prod` – Visual inspection of dev/prod databases
-- `scripts/setup` – Seed, backup, restore helpers
-- `bun run test:builder-perf` – Builder performance benchmark
+- `bun run db:studio` – Visual inspection of the database (there is no `db:studio:prod` script)
+- `scripts/setup` – Seed, backup, restore helpers (`db:seed`, `db:backup`, `db:restore`; for Postgres production backups use `pg_dump` — see the deployment runbook)
 
 ## Data Ownership
-- Country data is authoritative in `countries.ts` router; other routers compose around base country records
+- Country data is authoritative in the `countries` router (`src/server/api/routers/countries/`); other routers compose around base country records
 - Intelligence and diplomatic data maintain history tables for auditability
 - Social content stores author IDs (Clerk) and denormalised metadata for fast feed rendering
 

@@ -1,0 +1,137 @@
+/* ===========================================================================
+   WIKIOS — THIRD-PARTY HTML OVERRIDES (MediaWiki / Parsoid / CodeMirror)
+
+   With mediawiki-editors.css, the only WikiOS files allowed `!important` (exempt in
+   src/tests/architecture/css-layering.test.ts). Every selector targets markup
+   we do not author: MediaWiki article HTML (infobox, navbox, sidebar
+   templates) and Parsoid/VisualEditor contenteditable output, which carry
+   inline `style` attributes, and CodeMirror, which injects its own theme
+   styles at runtime. Only the important declarations live here; the rest of
+   each rule stays in content.css / editors.css. Loaded last by wiki-os.css. The editor-only
+   rules (Parsoid / CodeMirror) are in mediawiki-editors.css, loaded with the editor chunk.
+   =========================================================================== */
+
+@layer components {
+  /* ── from wiki-os/content.css ── */
+
+  .wikios-infobox table {
+    width: 100% !important;
+  }
+
+  .wikios-infobox .infobox-above,
+  .wikios-infobox .infobox-header {
+    background: rgba(59, 130, 246, 0.08) !important;
+    color: var(--wikios-text) !important;
+    font-size: 16px !important;
+    padding: 10px 12px !important;
+  }
+
+  .wikios-infobox > table,
+  .wikios-infobox .infobox {
+    width: 100% !important;
+  }
+
+  .wikios-article-content .navbox:not(.wikios-navbox-expanded) .navbox-list,
+  .wikios-article-content .navbox:not(.wikios-navbox-expanded) .navbox-group,
+  .wikios-article-content .navbox:not(.wikios-navbox-expanded) .navbox-abovebelow,
+  .wikios-article-content .navbox:not(.wikios-navbox-expanded) .navbox-subgroup,
+  .wikios-article-content .navbox:not(.wikios-navbox-expanded) .navbox-list-with-group {
+    display: none !important;
+  }
+
+  .wikios-article-content
+    .navbox:not(.wikios-navbox-expanded)
+    .navbox-inner
+    > tbody
+    > tr:not(:first-child) {
+    display: none !important;
+  }
+
+  .wikios-article-content .navbox-even {
+    background: rgba(255, 255, 255, 0.02) !important;
+  }
+
+  .wikios-article-content .navbox,
+  .wikios-article-content .navbox td,
+  .wikios-article-content .navbox th {
+    background: transparent !important;
+    border-color: var(--wikios-border) !important;
+    color: var(--wikios-text) !important;
+  }
+
+  .wikios-article-content .navbox-title,
+  .wikios-article-content .navbox-group {
+    background: rgba(255, 255, 255, 0.03) !important;
+  }
+
+  .wikios-article-content .navbox a {
+    color: var(--wikios-link) !important;
+  }
+
+  [data-theme="light"] .wikios-article-content .navbox {
+    background: rgba(0, 0, 0, 0.02) !important;
+  }
+
+  [data-theme="light"] .wikios-article-content .navbox.wikios-navbox-expanded {
+    background: rgba(0, 0, 0, 0.03) !important;
+  }
+
+  [data-theme="light"] .wikios-article-content .navbox td,
+  [data-theme="light"] .wikios-article-content .navbox th,
+  :is(html.light, html[data-theme="light"]) .wikios-article-content .navbox td,
+  :is(html.light, html[data-theme="light"]) .wikios-article-content .navbox th {
+    background: transparent !important;
+    color: var(--wikios-text) !important;
+  }
+
+  [data-theme="light"] .wikios-article-content .navbox-title,
+  [data-theme="light"] .wikios-article-content .navbox-group,
+  :is(html.light, html[data-theme="light"]) .wikios-article-content .navbox-title,
+  :is(html.light, html[data-theme="light"]) .wikios-article-content .navbox-group {
+    background: rgba(0, 0, 0, 0.03) !important;
+  }
+
+  .wikios-article-content .sidebar,
+  .wikios-article-content .sidebar td,
+  .wikios-article-content .sidebar th {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: var(--wikios-border) !important;
+    color: var(--wikios-text) !important;
+  }
+
+  .wikios-article-content .sidebar th[style*="background"],
+  .wikios-article-content .sidebar .sidebar-heading[style*="background"],
+  .wikios-article-content .sidebar .sidebar-title-with-pretitle[style*="background"] {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: var(--wikios-border) !important;
+  }
+
+  .wikios-article-content .sidebar span[style*="color"],
+  .wikios-article-content .sidebar b[style*="color"],
+  .wikios-article-content .sidebar td[style*="color"] {
+    color: var(--wikios-text) !important;
+  }
+
+  [data-theme="light"] .wikios-article-content .sidebar,
+  [data-theme="light"] .wikios-article-content .sidebar td,
+  [data-theme="light"] .wikios-article-content .sidebar th,
+  :is(html.light, html[data-theme="light"]) .wikios-article-content .sidebar,
+  :is(html.light, html[data-theme="light"]) .wikios-article-content .sidebar td,
+  :is(html.light, html[data-theme="light"]) .wikios-article-content .sidebar th {
+    background: rgba(0, 0, 0, 0.02) !important;
+    color: var(--wikios-text) !important;
+  }
+
+  [data-theme="light"] .wikios-article-content .sidebar th[style*="background"],
+  [data-theme="light"] .wikios-article-content .sidebar .sidebar-heading[style*="background"],
+  :is(html.light, html[data-theme="light"])
+    .wikios-article-content
+    .sidebar
+    th[style*="background"],
+  :is(html.light, html[data-theme="light"])
+    .wikios-article-content
+    .sidebar
+    .sidebar-heading[style*="background"] {
+    background: rgba(0, 0, 0, 0.05) !important;
+  }
+}

@@ -6,32 +6,28 @@ export const dynamic = "force-dynamic";
  */
 
 import dynamicImport from "next/dynamic";
-import { Loader2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { usePageTitle } from "~/hooks/usePageTitle";
+import { MapRealmProvider } from "~/components/maps/core/MapRealmContext";
+import { EditorLoadingScreen } from "~/components/maps/editor/utils/editor-overlay-helpers";
 
 const MapEditorOverlay = dynamicImport(() => import("~/components/maps/editor/MapEditorOverlay"), {
   ssr: false,
-  loading: () => (
-    <div className="flex h-screen w-screen items-center justify-center bg-[#0a1628]">
-      <div className="text-center">
-        <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-emerald-500" />
-        <p className="text-sm font-medium text-white/60">Loading World Editor...</p>
-      </div>
-    </div>
-  ),
+  loading: () => <EditorLoadingScreen countryName="World Editor" />,
 });
 
 export default function WorldEditorPage() {
   usePageTitle({ title: "Admin - World Editor" });
+  const router = useRouter();
+  const params = useSearchParams();
+  // ?realm=<slug> edits that realm's map; without it, the admin's own realm (ruling E-o)
+  const realm = params.get("realm") ?? undefined;
 
   return (
-    <div className="bg-background text-foreground absolute inset-0 z-40">
-      <MapEditorOverlay
-        isWorldMode={true}
-        onExit={() => {
-          window.location.href = "/admin/maps";
-        }}
-      />
+    <div className="bg-background text-label absolute inset-0 z-40">
+      <MapRealmProvider value={realm}>
+        <MapEditorOverlay isWorldMode={true} onExit={() => router.push("/admin/maps")} />
+      </MapRealmProvider>
     </div>
   );
 }

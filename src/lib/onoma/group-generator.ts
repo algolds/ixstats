@@ -5,12 +5,12 @@ import { COVERT_ORG_DATA, MILITARY_UNIT_DATA, MYSTIC_ORDER_DATA } from "./data/g
 import { MarkovChain } from "./markov-chain";
 import { generateFantasySyllableName } from "./name-generator";
 import { type GenerateOptions } from "./types";
-import { pickRandom, pickAndRemove, resolvePatternTemplate } from "./template-resolver";
+import { pickRandom, resolvePatternTemplate } from "./template-resolver";
 
 /**
  * Generates a name for a mystic or academic/religious order.
  */
-export function generateMysticOrderName(chain?: MarkovChain, options?: GenerateOptions): string {
+export function generateMysticOrderName(_chain?: MarkovChain, _options?: GenerateOptions): string {
   const d10 = Math.floor(Math.random() * 10) + 1;
   let pattern = "";
 
@@ -81,7 +81,7 @@ export function generateMilitaryUnitName(chain?: MarkovChain, options?: Generate
 /**
  * Generates a name for a covert or criminal organization (thieves/assassins).
  */
-export function generateCovertOrgName(chain?: MarkovChain, options?: GenerateOptions): string {
+export function generateCovertOrgName(_chain?: MarkovChain, _options?: GenerateOptions): string {
   const d30 = Math.floor(Math.random() * 30) + 1;
   const data = COVERT_ORG_DATA;
 
@@ -290,10 +290,11 @@ export function generateMercenaryBandName(chain?: MarkovChain, options?: Generat
   }
 }
 
-// --- Civic / modern organizations (geopolitical worldbuilding) ---
-
 /** Political party, front, or movement. */
-export function generatePoliticalPartyName(chain?: MarkovChain, options?: GenerateOptions): string {
+export function generatePoliticalPartyName(
+  _chain?: MarkovChain,
+  _options?: GenerateOptions
+): string {
   const adjectives = [
     "National",
     "People's",
@@ -350,8 +351,8 @@ export function generatePoliticalPartyName(chain?: MarkovChain, options?: Genera
 
 /** Government ministry, department, or agency. */
 export function generateGovernmentAgencyName(
-  chain?: MarkovChain,
-  options?: GenerateOptions
+  _chain?: MarkovChain,
+  _options?: GenerateOptions
 ): string {
   const fields = [
     "Defense",

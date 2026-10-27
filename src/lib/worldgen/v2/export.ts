@@ -2,67 +2,97 @@
  * UPG v2 — GeoJSON Export Engine
  *
  * Converts WorldGraph into a 7-layer GeoJSON collection matching IxWorldMap renderer contract:
- * - background: landmass base polygons (merged by continent, 3-pass Chaikin smoothed)
- * - altitudes: 9-zone cumulative isoline contour polygons (zone N = elevZone >= N, 3-pass Chaikin smoothed)
- * - climate: biome region polygons (grouped by biome, 3-pass Chaikin smoothed)
- * - political: country territory polygons (grouped by state, with _id, _displayName, _fillColor, etc.)
- * - rivers: river network LineString features
+ * - background: landmass base polygons (merged by continent, spline smoothed)
+ * - altitudes: 9-zone cumulative isoline contour polygons (zone N = elevZone >= N, spline smoothed)
+ * - climate: biome region polygons (grouped by biome, spline smoothed)
+ * - political: country territory polygons (grouped by state, with _id, _displayName, _fillColor, slotKey, etc.)
+ *   (omitted when the realm keeps its own borders)
+ * - rivers: river network LineString features (a MultiLineString when a river crosses the antimeridian)
  * - lakes: lake feature polygons
  * - icecaps: ice cap polygons (biome === 10)
+ *
+ * Only countries carry names (the suggested names of their slots): continents, rivers and lakes
+ * are left unnamed.
+ *
+ * Polygons are built to be valid as they stand, without a PostGIS repair: shells run counter-clockwise, holes
+ * clockwise inside their shell, rings do not cross themselves, and the rings of neighbouring countries and
+ * biomes share their borders point for point. A coast is the same curve in every layer that has it. They stop
+ * short of the poles (see RING_LATITUDE).
  */
 
-import type { WorldGraph } from "./types";
-import type { FeatureCollection, Feature, LineString, Polygon, MultiPolygon } from "geojson";
-import { ELEVATION_ZONES, TREWARTHA_BIOMES } from "./config";
-import { mergeCellsToMultiPolygon } from "./helpers/polygon-merge";
-import {
-  chaikinSmooth,
-  chaikinSmoothLine,
-  catmullRomSmooth,
-  catmullRomSmoothLine,
-  simplifyRing,
-  perturbRing,
-} from "./helpers/chaikin";
+import { slotKey, type WorldGraph, type WorldGenParams } from "./types";
+import type { FeatureCollection, Feature, Polygon, MultiPolygon, Position } from "geojson";
+import { fitToSeam } from "~/lib/maps/import/world-seam";
+import { ELEVATION_ZONES, ICE_CAP_BIOME, TREWARTHA_BIOMES } from "./config";
+import { coastCorners, mergeCells, type MergedPolygon } from "./helpers/polygon-merge";
+import { catmullRomSmoothLine } from "./helpers/chaikin";
+import { SmoothingCache, smoothRing } from "./helpers/ring-smooth";
 import { cellLng, cellLat } from "./mesh";
 
-export function exportToGeoJSON(graph: WorldGraph): Record<string, FeatureCollection> {
-  const layers: Record<string, FeatureCollection> = {
-    background: exportBackground(graph),
-    altitudes: exportAltitudes(graph),
-    climate: exportClimate(graph),
-    political: exportPolitical(graph),
-    rivers: exportRivers(graph),
-    lakes: exportLakes(graph),
-    icecaps: exportIcecaps(graph),
-  };
+/** Spline refinement passes of every polygon ring: 4 vertices per cell edge */
+const SMOOTHING_PASSES = 2;
 
-  return layers;
+export function exportToGeoJSON(
+  graph: WorldGraph,
+  params: Pick<WorldGenParams, "hasIcecaps"> = { hasIcecaps: true },
+  options: { political?: boolean } = {}
+): Record<string, FeatureCollection> {
+  // The same corners for every layer, so a coast has the same chains in all of them
+  const { cells } = graph;
+  const corners = coastCorners(graph, (i) =>
+    cells.isLand[i] ? 1 + (cells.state[i]! * 16 + cells.biome[i]!) * 16 + cells.elevZone[i]! : 0
+  );
+  // A border is smoothed once for both rings that share it, a coast once for every layer
+  const shared: SharedSmoothing = { corners, cache: new SmoothingCache() };
+  return {
+    background: exportBackground(graph, shared),
+    altitudes: exportAltitudes(graph, shared),
+    climate: exportClimate(graph, shared),
+    ...((options.political ?? true) ? { political: exportPolitical(graph, shared) } : {}),
+    rivers: exportRivers(graph),
+    lakes: exportLakes(graph, shared),
+    icecaps: params.hasIcecaps
+      ? exportIcecaps(graph, shared)
+      : { type: "FeatureCollection", features: [] },
+  };
 }
 
-// ──────────────────────────────────────────────
-// Layer Exporters
-// ──────────────────────────────────────────────
+/** What every layer's rings share: the coast corners and the chains smoothed so far. */
+interface SharedSmoothing {
+  corners: Uint8Array;
+  cache: SmoothingCache;
+}
 
-function exportBackground(graph: WorldGraph): FeatureCollection {
+/** Cell ids by key, in cell order (key 0 means none). One pass instead of one per feature. */
+function bucketCells(n: number, keyOf: (cell: number) => number): Map<number, number[]> {
+  const buckets = new Map<number, number[]>();
+  for (let i = 0; i < n; i++) {
+    const key = keyOf(i);
+    if (key === 0) continue;
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(i);
+    else buckets.set(key, [i]);
+  }
+  return buckets;
+}
+
+// Layer Exporters
+
+function exportBackground(graph: WorldGraph, shared: SharedSmoothing): FeatureCollection {
   const { cells, features } = graph;
   const geoFeatures: Feature[] = [];
 
   const continents = features.filter((f) => f.type === "continent" || f.type === "island");
+  const landmassIds = new Set(continents.map((f) => f.id));
+  const landmassOf = (i: number) => (landmassIds.has(cells.feature[i]!) ? cells.feature[i]! : 0);
+  const cellsOf = bucketCells(cells.n, landmassOf);
 
   for (const cont of continents) {
-    const contCells: number[] = [];
-    for (let i = 0; i < cells.n; i++) {
-      if (cells.feature[i] === cont.id) {
-        contCells.push(i);
-      }
-    }
+    const contCells = cellsOf.get(cont.id);
+    if (!contCells) continue;
 
-    if (contCells.length === 0) continue;
-
-    const geom = mergeCellsToMultiPolygon(graph, contCells);
-    if (!geom) continue;
-
-    const smoothedGeom = smoothGeometry(geom, 2);
+    const smoothedGeom = mergeAndSmooth(graph, shared, contCells, landmassOf);
+    if (!smoothedGeom) continue;
 
     geoFeatures.push({
       type: "Feature",
@@ -70,7 +100,6 @@ function exportBackground(graph: WorldGraph): FeatureCollection {
       geometry: smoothedGeom,
       properties: {
         id: `landmass_${cont.id}`,
-        name: cont.name,
         type: cont.type,
         fill: "#e8e5da",
         _fillColor: "#e8e5da",
@@ -81,7 +110,7 @@ function exportBackground(graph: WorldGraph): FeatureCollection {
   return { type: "FeatureCollection", features: geoFeatures };
 }
 
-function exportAltitudes(graph: WorldGraph): FeatureCollection {
+function exportAltitudes(graph: WorldGraph, shared: SharedSmoothing): FeatureCollection {
   const { cells } = graph;
   const geoFeatures: Feature[] = [];
 
@@ -99,10 +128,8 @@ function exportAltitudes(graph: WorldGraph): FeatureCollection {
 
     if (zoneLandCells.length === 0) continue;
 
-    const geom = mergeCellsToMultiPolygon(graph, zoneLandCells);
-    if (!geom) continue;
-
-    const smoothedGeom = smoothGeometry(geom, 2);
+    const smoothedGeom = mergeAndSmooth(graph, shared, zoneLandCells);
+    if (!smoothedGeom) continue;
 
     geoFeatures.push({
       type: "Feature",
@@ -122,9 +149,11 @@ function exportAltitudes(graph: WorldGraph): FeatureCollection {
   return { type: "FeatureCollection", features: geoFeatures };
 }
 
-function exportClimate(graph: WorldGraph): FeatureCollection {
+function exportClimate(graph: WorldGraph, shared: SharedSmoothing): FeatureCollection {
   const { cells } = graph;
   const geoFeatures: Feature[] = [];
+  /** Water is its own region, apart from every biome */
+  const biomeOf = (i: number) => (cells.isLand[i] ? cells.biome[i]! + 1 : 0);
 
   for (const biomeConfig of TREWARTHA_BIOMES) {
     const biomeCells: number[] = [];
@@ -136,10 +165,8 @@ function exportClimate(graph: WorldGraph): FeatureCollection {
 
     if (biomeCells.length === 0) continue;
 
-    const geom = mergeCellsToMultiPolygon(graph, biomeCells);
-    if (!geom) continue;
-
-    const smoothedGeom = smoothGeometry(geom, 2);
+    const smoothedGeom = mergeAndSmooth(graph, shared, biomeCells, biomeOf);
+    if (!smoothedGeom) continue;
 
     geoFeatures.push({
       type: "Feature",
@@ -158,32 +185,27 @@ function exportClimate(graph: WorldGraph): FeatureCollection {
   return { type: "FeatureCollection", features: geoFeatures };
 }
 
-function exportPolitical(graph: WorldGraph): FeatureCollection {
+function exportPolitical(graph: WorldGraph, shared: SharedSmoothing): FeatureCollection {
   const { cells, states } = graph;
   const geoFeatures: Feature[] = [];
+  const stateOf = (i: number) => cells.state[i]!;
+  const cellsOf = bucketCells(cells.n, stateOf);
 
   for (const state of states) {
-    const stateCells: number[] = [];
+    const stateCells = cellsOf.get(state.id);
+    if (!stateCells) continue;
     let sumLng = 0,
       sumLat = 0;
-
-    for (let i = 0; i < cells.n; i++) {
-      if (cells.state[i] === state.id) {
-        stateCells.push(i);
-        sumLng += cellLng(graph, i);
-        sumLat += cellLat(graph, i);
-      }
+    for (const i of stateCells) {
+      sumLng += cellLng(graph, i);
+      sumLat += cellLat(graph, i);
     }
-
-    if (stateCells.length === 0) continue;
 
     const centroidLng = sumLng / stateCells.length;
     const centroidLat = sumLat / stateCells.length;
 
-    const geom = mergeCellsToMultiPolygon(graph, stateCells);
-    if (!geom) continue;
-
-    const smoothedGeom = smoothGeometry(geom, 2);
+    const smoothedGeom = mergeAndSmooth(graph, shared, stateCells, stateOf);
+    if (!smoothedGeom) continue;
 
     geoFeatures.push({
       type: "Feature",
@@ -192,6 +214,7 @@ function exportPolitical(graph: WorldGraph): FeatureCollection {
       properties: {
         _id: `state_${state.id}`,
         id: state.id,
+        slotKey: slotKey(state.id),
         _displayName: state.name,
         name: state.name,
         _fillColor: state.color,
@@ -200,7 +223,6 @@ function exportPolitical(graph: WorldGraph): FeatureCollection {
         _centroidLng: centroidLng,
         _centroidLat: centroidLat,
         culture: state.culture,
-        continent: state.continent,
       },
     });
   }
@@ -217,17 +239,28 @@ function exportRivers(graph: WorldGraph): FeatureCollection {
     const landRiverCells = river.cells.filter((c) => cells.isLand[c] === 1);
     if (landRiverCells.length < 2) continue;
 
-    const lineCoords: [number, number][] = landRiverCells.map((c) => [
-      cellLng(graph, c),
-      cellLat(graph, c),
+    // Unwrapped, each centre within 180 degrees of the last, so a river that steps across the antimeridian is
+    // smoothed the short way and not 357 degrees round the world
+    const lineCoords: [number, number][] = [];
+    for (const c of landRiverCells) {
+      const previous = lineCoords[lineCoords.length - 1]?.[0];
+      const lng = cellLng(graph, c);
+      lineCoords.push([
+        previous === undefined ? lng : lng + 360 * Math.round((previous - lng) / 360),
+        cellLat(graph, c),
+      ]);
+    }
+
+    // The spline overshoots at the poles (a river on an Antarctic coast reached latitude -90.74), and no
+    // map projection takes a latitude past 90
+    const smoothedLine = catmullRomSmoothLine(lineCoords, 3).map(([lng, lat]): [number, number] => [
+      lng,
+      Math.max(-90, Math.min(90, lat)),
     ]);
 
-    const smoothedLine = catmullRomSmoothLine(lineCoords, 3);
-
-    const geom: LineString = {
-      type: "LineString",
-      coordinates: smoothedLine,
-    };
+    // Cut where it crosses ±180, each part shifted back into range, the way a world bundle's lines are fitted
+    const geom = fitToSeam({ type: "LineString", coordinates: smoothedLine });
+    if (!geom) continue;
 
     geoFeatures.push({
       type: "Feature",
@@ -235,7 +268,6 @@ function exportRivers(graph: WorldGraph): FeatureCollection {
       geometry: geom,
       properties: {
         id: river.id,
-        name: river.name,
         flux: river.flux,
         lengthKm: river.lengthKm,
         fill: "#0284c7",
@@ -249,26 +281,19 @@ function exportRivers(graph: WorldGraph): FeatureCollection {
   return { type: "FeatureCollection", features: geoFeatures };
 }
 
-function exportLakes(graph: WorldGraph): FeatureCollection {
+function exportLakes(graph: WorldGraph, shared: SharedSmoothing): FeatureCollection {
   const { cells, features } = graph;
   const geoFeatures: Feature[] = [];
 
   const lakeFeatures = features.filter((f) => f.type === "lake");
+  const cellsOf = bucketCells(cells.n, (i) => (cells.isLand[i] === 1 ? cells.lake[i]! : 0));
 
   for (const lake of lakeFeatures) {
-    const lakeCells: number[] = [];
-    for (let i = 0; i < cells.n; i++) {
-      if (cells.isLand[i] === 1 && cells.lake[i] === lake.id) {
-        lakeCells.push(i);
-      }
-    }
+    const lakeCells = cellsOf.get(lake.id);
+    if (!lakeCells) continue;
 
-    if (lakeCells.length === 0) continue;
-
-    const geom = mergeCellsToMultiPolygon(graph, lakeCells);
-    if (!geom) continue;
-
-    const smoothedGeom = smoothGeometry(geom, 2);
+    const smoothedGeom = mergeAndSmooth(graph, shared, lakeCells);
+    if (!smoothedGeom) continue;
 
     geoFeatures.push({
       type: "Feature",
@@ -276,7 +301,6 @@ function exportLakes(graph: WorldGraph): FeatureCollection {
       geometry: smoothedGeom,
       properties: {
         id: lake.id,
-        name: lake.name,
         areaKm2: lake.areaKm2,
         fill: "#0284c7",
         _fillColor: "#0284c7",
@@ -289,22 +313,18 @@ function exportLakes(graph: WorldGraph): FeatureCollection {
   return { type: "FeatureCollection", features: geoFeatures };
 }
 
-function exportIcecaps(graph: WorldGraph): FeatureCollection {
+function exportIcecaps(graph: WorldGraph, shared: SharedSmoothing): FeatureCollection {
   const { cells } = graph;
   const geoFeatures: Feature[] = [];
 
   const iceCells: number[] = [];
   for (let i = 0; i < cells.n; i++) {
-    if (cells.biome[i] === 10) {
-      // 10 = Fi Ice Cap
-      iceCells.push(i);
-    }
+    if (cells.biome[i] === ICE_CAP_BIOME) iceCells.push(i);
   }
 
   if (iceCells.length > 0) {
-    const geom = mergeCellsToMultiPolygon(graph, iceCells);
-    if (geom) {
-      const smoothedGeom = smoothGeometry(geom, 2);
+    const smoothedGeom = mergeAndSmooth(graph, shared, iceCells);
+    if (smoothedGeom) {
       geoFeatures.push({
         type: "Feature",
         id: 1,
@@ -321,65 +341,33 @@ function exportIcecaps(graph: WorldGraph): FeatureCollection {
   return { type: "FeatureCollection", features: geoFeatures };
 }
 
-// ──────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────
-
-function processVectorRing(ring: [number, number][], passes: number): [number, number][] {
-  // 1. Fine decimation of collinear/duplicate points (0.001° ≈ 100m)
-  const simplified = simplifyRing(ring, 0.001);
-  // 2. Interpolate smooth Catmull-Rom spline curves through structural control points
-  const smoothed = catmullRomSmooth(simplified, passes);
-  // 3. Sub-cell harmonic noise perturbation for natural organic cartographic detail
-  return perturbRing(smoothed, 42, 0.08, 0.004);
+/** The cells merged into polygons (see mergeCells) and smoothed. */
+function mergeAndSmooth(
+  graph: WorldGraph,
+  shared: SharedSmoothing,
+  cellIds: number[],
+  labelOf?: (cell: number) => number
+): Polygon | MultiPolygon | null {
+  return smoothGeometry(shared.cache, mergeCells(graph, cellIds, labelOf, shared.corners));
 }
 
-function smoothGeometry(geom: Polygon | MultiPolygon, passes: number): Polygon | MultiPolygon {
-  if (geom.type === "Polygon") {
-    return {
-      type: "Polygon",
-      coordinates: geom.coordinates.map((ring) =>
-        processVectorRing(ring as [number, number][], passes)
-      ),
-    };
+/**
+ * The polygons smoothed ring by ring, as a Polygon or MultiPolygon (null when nothing is left). A ring that
+ * smoothing collapsed to less than a triangle is dropped: a shell takes its polygon with it, a hole just goes.
+ */
+function smoothGeometry(
+  cache: SmoothingCache,
+  polygons: MergedPolygon[]
+): Polygon | MultiPolygon | null {
+  const coordinates: Position[][][] = [];
+  for (const [shell, ...holes] of polygons) {
+    const outer = smoothRing(shell!, SMOOTHING_PASSES, cache);
+    if (outer.length < 4) continue;
+    const inner = holes.map((hole) => smoothRing(hole, SMOOTHING_PASSES, cache));
+    coordinates.push([outer, ...inner.filter((ring) => ring.length >= 4)]);
   }
-
-  return {
-    type: "MultiPolygon",
-    coordinates: geom.coordinates.map((poly) =>
-      poly.map((ring) => processVectorRing(ring as [number, number][], passes))
-    ),
-  };
-}
-
-function filterSmallComponents(graph: WorldGraph, cellList: number[], minSize: number): number[] {
-  const { cells } = graph;
-  const cellSet = new Set(cellList);
-  const visited = new Set<number>();
-  const validCells: number[] = [];
-
-  for (const c of cellList) {
-    if (visited.has(c)) continue;
-
-    const comp: number[] = [];
-    const queue = [c];
-    visited.add(c);
-
-    while (queue.length > 0) {
-      const curr = queue.pop()!;
-      comp.push(curr);
-      for (const nb of cells.neighbors[curr]!) {
-        if (cellSet.has(nb) && !visited.has(nb)) {
-          visited.add(nb);
-          queue.push(nb);
-        }
-      }
-    }
-
-    if (comp.length >= minSize) {
-      validCells.push(...comp);
-    }
-  }
-
-  return validCells;
+  if (coordinates.length === 0) return null;
+  return coordinates.length === 1
+    ? { type: "Polygon", coordinates: coordinates[0]! }
+    : { type: "MultiPolygon", coordinates };
 }

@@ -18,7 +18,7 @@ import type { NameCategory, GenerateOptions } from "~/lib/onoma/types";
 import { QuickGeneratorControls } from "./QuickGeneratorControls";
 import { SynthesisResultsGrid } from "../shared/SynthesisResultsGrid";
 
-export function OverviewSection() {
+function OverviewSection() {
   const bank = useNameBank();
   const utils = api.useUtils();
   const logActivityMutation = api.onoma.logGeneration.useMutation();
@@ -173,9 +173,9 @@ export function OverviewSection() {
 
         // 3. Log generation event with unique run hash to live history
         if (results.length > 0) {
-          const runHash = `onoma-${Math.random().toString(36).substring(2, 7)}${Date.now().toString(36).slice(-4)}`;
+          const runHash = `onoma-${crypto.randomUUID().slice(0, 8)}`;
           const cat = (selectedDict?.category as string) || "sandbox";
-          
+
           logActivityMutation
             .mutateAsync({
               count: results.length,
@@ -238,7 +238,6 @@ export function OverviewSection() {
     }
   };
 
-  // Save batch as dictionary
   const handleSaveBatchAsDictionary = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!dictionaryTitle.trim() || generatedNames.length === 0) return;
@@ -264,7 +263,7 @@ export function OverviewSection() {
   return (
     <div className="space-y-5">
       {/* 30% Controls + 70% Results Layout */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-10 items-start">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-10">
         {/* 30% Control Column */}
         <div className="lg:col-span-3">
           <QuickGeneratorControls
@@ -307,7 +306,6 @@ export function OverviewSection() {
         </div>
       </div>
 
-      {/* Redirect Modal for deployment */}
       {useName && (
         <UseNameDialog
           isOpen={!!useName}

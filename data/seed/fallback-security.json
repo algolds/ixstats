@@ -1,0 +1,175 @@
+{
+  "briefings": [
+    {
+      "title": "Economic Growth Trajectory Analysis",
+      "description": "GDP growth has outpaced regional average by 1.2% this quarter. Key drivers: technology sector expansion and increased foreign investment. Risk: potential overheating in real estate market.",
+      "type": "OPPORTUNITY",
+      "priority": "MEDIUM",
+      "area": "ECONOMIC",
+      "confidence": 82,
+      "urgency": "THIS_MONTH",
+      "impactMagnitude": "moderate",
+      "evidence": "Quarterly economic indicators, trade balance data, foreign investment records",
+      "isActive": true
+    },
+    {
+      "title": "Regional Security Threat Assessment",
+      "description": "Intelligence indicates increased military exercises by neighboring states. No immediate threat, but readiness levels should be reviewed. Cyber probing activity detected on government networks.",
+      "type": "RISK_MITIGATION",
+      "priority": "HIGH",
+      "area": "SECURITY",
+      "confidence": 71,
+      "urgency": "THIS_WEEK",
+      "impactMagnitude": "significant",
+      "evidence": "SIGINT intercepts, satellite imagery, cyber intrusion logs",
+      "isActive": true
+    },
+    {
+      "title": "Public Sentiment Monitoring Report",
+      "description": "Government approval rating has stabilized at 58% following infrastructure spending announcements. Social media sentiment trending positive on healthcare reform. Concern flagged on housing affordability in urban centers.",
+      "type": "STRATEGIC_INITIATIVE",
+      "priority": "LOW",
+      "area": "SOCIAL",
+      "confidence": 88,
+      "urgency": "THIS_QUARTER",
+      "impactMagnitude": "minor",
+      "evidence": "Public polling data, social media analysis, housing market indices",
+      "isActive": true
+    },
+    {
+      "title": "Critical Infrastructure Vulnerability Report",
+      "description": "Annual audit reveals 3 high-priority vulnerabilities in power grid control systems. Water treatment facilities in eastern region require immediate security upgrades.",
+      "type": "HOT_ISSUE",
+      "priority": "CRITICAL",
+      "area": "INFRASTRUCTURE",
+      "confidence": 95,
+      "urgency": "IMMEDIATE",
+      "impactMagnitude": "critical",
+      "evidence": "Infrastructure audit reports, penetration testing results, incident response logs",
+      "isActive": true
+    },
+    {
+      "title": "Diplomatic Opportunity: Trade Bloc Expansion",
+      "description": "Three nations have expressed interest in joining the regional trade agreement. Favorable terms could increase GDP by 0.4% annually. Window of opportunity narrows as competing blocs court same nations.",
+      "type": "OPPORTUNITY",
+      "priority": "HIGH",
+      "area": "DIPLOMATIC",
+      "confidence": 76,
+      "urgency": "THIS_MONTH",
+      "impactMagnitude": "significant",
+      "evidence": "Diplomatic cables, trade analysis, bilateral meeting summaries",
+      "isActive": true
+    }
+  ],
+  "thresholds": [
+    {
+      "alertType": "economic",
+      "metricName": "GDP Growth",
+      "criticalMax": -5,
+      "highMax": -2,
+      "mediumMax": 0,
+      "notifyOnCritical": true,
+      "notifyOnHigh": true,
+      "notifyOnMedium": false,
+      "isActive": true
+    },
+    {
+      "alertType": "security",
+      "metricName": "Security Score",
+      "criticalMax": 40,
+      "highMax": 60,
+      "mediumMax": 70,
+      "notifyOnCritical": true,
+      "notifyOnHigh": true,
+      "notifyOnMedium": true,
+      "isActive": true
+    },
+    {
+      "alertType": "diplomatic",
+      "metricName": "Diplomatic Tension",
+      "criticalMin": 90,
+      "highMin": 70,
+      "mediumMin": 50,
+      "notifyOnCritical": true,
+      "notifyOnHigh": true,
+      "notifyOnMedium": false,
+      "isActive": true
+    }
+  ],
+  "branches": [
+    {
+      "name": "Ground Defense Forces",
+      "branchType": "army",
+      "personnelCount": 120000,
+      "readinessScore": 85,
+      "annualBudget": 8500000000
+    },
+    {
+      "name": "Naval Strategic Command",
+      "branchType": "navy",
+      "personnelCount": 45000,
+      "readinessScore": 82,
+      "annualBudget": 6200000000
+    },
+    {
+      "name": "Air & Aerospace Defense Force",
+      "branchType": "air_force",
+      "personnelCount": 38000,
+      "readinessScore": 88,
+      "annualBudget": 5800000000
+    },
+    {
+      "name": "Cyber & Electronic Warfare Command",
+      "branchType": "cyber",
+      "personnelCount": 8500,
+      "readinessScore": 92,
+      "annualBudget": 1400000000
+    }
+  ],
+  "crises": [
+    {
+      "title": "Coastal Flood Emergency",
+      "description": "Severe storm surge causing localized flooding in low-lying coastal districts.",
+      "severity": "moderate",
+      "category": "environmental"
+    },
+    {
+      "title": "Cross-Border Cyber Incursion",
+      "description": "Coordinated distributed denial of service attack on financial exchanges.",
+      "severity": "high",
+      "category": "security"
+    },
+    {
+      "title": "Supply Chain Interruption",
+      "description": "Regional rail bottleneck delaying critical agricultural shipments.",
+      "severity": "low",
+      "category": "economic"
+    }
+  ],
+  "threats": [
+    {
+      "name": "Foreign Espionage Operation",
+      "threatType": "espionage",
+      "severity": "HIGH",
+      "probability": 0.65,
+      "status": "ACTIVE",
+      "description": "Targeted reconnaissance against defense contractor servers."
+    },
+    {
+      "name": "Border Smuggling Syndicate",
+      "threatType": "smuggling",
+      "severity": "MEDIUM",
+      "probability": 0.8,
+      "status": "MONITORING",
+      "description": "Contraband trafficking active along southern wilderness sector."
+    },
+    {
+      "name": "Critical Grid Cyber Probe",
+      "threatType": "cyber",
+      "severity": "CRITICAL",
+      "probability": 0.45,
+      "status": "ACTIVE",
+      "description": "Advanced persistent threat actor scanning SCADA network nodes."
+    }
+  ]
+}

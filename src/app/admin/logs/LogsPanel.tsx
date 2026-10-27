@@ -1,33 +1,22 @@
 "use client";
 
-import { useState, useEffect, useDeferredValue } from "react";
+import { useState, useDeferredValue } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { api } from "~/trpc/react";
-import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";
-import { Card, CardContent } from "~/components/ui/card";
+import { LogViewerFilterable, type LogEntry } from "~/components/admin/log-viewer";
+import { toLogLevel, useClearSystemLogs } from "../_hooks/useSystemLogs";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
-import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
+import { ValueSelect } from "~/components/ui/value-select";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import {
-  Terminal,
-  Activity,
-  User,
-  AlertOctagon,
-  RefreshCw,
-  Trash2,
+  Refresh as RefreshCw,
+  Trash as Trash2,
   Search,
-  Loader2,
-} from "lucide-react";
-import { toast } from "sonner";
+  SystemRestart as Loader2,
+} from "iconoir-react";
+import { Card } from "~/components/ui/card";
 
 export default function DedicatedLogsPage() {
   usePageTitle({ title: "Admin - System Logs" });
@@ -67,21 +56,10 @@ export default function DedicatedLogsPage() {
     }
   );
 
-  const clearLogsMutation = api.admin.clearSystemLogs.useMutation({
-    onSuccess: () => {
-      toast.success("System logs cleared successfully");
-      void refetch();
-    },
-    onError: (err) => {
-      toast.error(err.message || "Failed to clear logs");
-    },
-  });
-
-  const handleClearLogs = () => {
-    if (confirm("Are you sure you want to purge all system logs? This action cannot be undone.")) {
-      clearLogsMutation.mutate();
-    }
-  };
+  const { clear: handleClearLogs, isClearing } = useClearSystemLogs(
+    refetch,
+    "Are you sure you want to purge all system logs? This action cannot be undone."
+  );
 
   // Categories from the logger configuration
   const LOG_CATEGORIES = [
@@ -101,12 +79,6 @@ export default function DedicatedLogsPage() {
 
   // Convert DB SystemLog entries to LogViewer entries
   const entries: LogEntry[] = (logsData?.logs ?? []).map((log) => {
-    let level: LogLevel = "info";
-    const dbLevel = log.level?.toUpperCase();
-    if (dbLevel === "DEBUG") level = "debug";
-    else if (dbLevel === "WARN" || dbLevel === "WARNING") level = "warn";
-    else if (dbLevel === "ERROR" || dbLevel === "CRITICAL" || dbLevel === "FATAL") level = "error";
-
     let msg = `[${log.category}] ${log.message}`;
     if (log.userId) {
       const uMatch = usersData?.find((u) => u.id === log.userId);
@@ -120,173 +92,164 @@ export default function DedicatedLogsPage() {
     if (log.metadata) msg += `\nMetadata: ${log.metadata}`;
 
     return {
-      level,
+      level: toLogLevel(log.level),
       message: msg,
       timestamp: log.timestamp ? new Date(log.timestamp).toISOString() : undefined,
     };
   });
 
+  const errorCount = entries.filter((e) => e.level === "error" || e.level === "warn").length;
+
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Terminal}
-        title="System Logs Console"
-        description="Search, filter, and audit database-backed logs, runtime exceptions, and Next.js client-side rejections."
+      <PageHeader
+        title="System logs"
+        subtitle="Search and filter database logs, runtime exceptions and client-side rejections."
       />
 
-      {/* Volumetric Frosted Glass Filter Bar */}
-      <Card className="border-border/40 bg-card/20 shadow-lg backdrop-blur-md">
-        <CardContent className="p-4 md:p-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Search Input */}
-            <div className="space-y-1">
-              <Label className="text-muted-foreground text-xs font-semibold">
-                Message / Content Search
-              </Label>
-              <div className="relative">
-                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                <Input
-                  placeholder="Search log messages..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="bg-background/40 border-border/60 pl-9 text-xs"
-                />
-              </div>
-            </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card className="p-4">
+          <p className="text-label-secondary text-stat-label">Fetched logs</p>
+          <p className="text-label text-title-2 mt-1 tabular-nums">{entries.length}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-label-secondary text-stat-label">Errors / warnings</p>
+          <p
+            className={`text-title-2 mt-1 tabular-nums ${errorCount > 0 ? "text-red" : "text-green"}`}
+          >
+            {errorCount}
+          </p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-label-secondary text-stat-label">Auto-Refresh</p>
+          <p className="text-title-2 text-teal mt-1 tabular-nums">
+            {autoRefresh ? "8s Live" : "Paused"}
+          </p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-label-secondary text-stat-label">Level scope</p>
+          <p className="text-title-2 text-purple mt-1 tabular-nums">{selectedLevel}</p>
+        </Card>
+      </div>
 
-            {/* Level Filter */}
-            <div className="space-y-1">
-              <Label className="text-muted-foreground text-xs font-semibold">Log Level</Label>
-              <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                <SelectTrigger className="bg-background/40 border-border/60 text-xs">
-                  <SelectValue placeholder="All Levels" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border/60">
-                  <SelectItem value="ALL">All Levels</SelectItem>
-                  <SelectItem value="DEBUG">DEBUG</SelectItem>
-                  <SelectItem value="INFO">INFO</SelectItem>
-                  <SelectItem value="WARN">WARN</SelectItem>
-                  <SelectItem value="ERROR">ERROR</SelectItem>
-                  <SelectItem value="CRITICAL">CRITICAL</SelectItem>
-                  <SelectItem value="FATAL">FATAL</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Category Filter */}
-            <div className="space-y-1">
-              <Label className="text-muted-foreground text-xs font-semibold">Category</Label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="bg-background/40 border-border/60 text-xs">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border/60">
-                  <SelectItem value="ALL">All Categories</SelectItem>
-                  {LOG_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* User Filter */}
-            <div className="space-y-1">
-              <Label className="text-muted-foreground text-xs font-semibold">Filter by User</Label>
-              <Select value={selectedUser} onValueChange={setSelectedUser}>
-                <SelectTrigger className="bg-background/40 border-border/60 text-xs">
-                  <SelectValue placeholder="All Users" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border/60 max-h-56">
-                  <SelectItem value="ALL">All Users</SelectItem>
-                  {usersData?.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.clerkUserId}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="border-border/20 mt-4 flex flex-wrap items-center justify-between gap-4 border-t pt-4">
-            <div className="flex flex-wrap items-center gap-6">
-              {/* Next.js Errors Toggle */}
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="nextjs-errors"
-                  checked={nextJsErrors}
-                  onCheckedChange={setNextJsErrors}
-                />
-                <Label
-                  htmlFor="nextjs-errors"
-                  className="text-foreground flex cursor-pointer items-center gap-1.5 text-xs font-semibold"
-                >
-                  <AlertOctagon className="h-4 w-4 text-rose-500" />
-                  NextJS & Server Errors Only
-                </Label>
-              </div>
-
-              {/* Auto Refresh Toggle */}
-              <div className="flex items-center space-x-2">
-                <Switch id="auto-refresh" checked={autoRefresh} onCheckedChange={setAutoRefresh} />
-                <Label
-                  htmlFor="auto-refresh"
-                  className="text-muted-foreground cursor-pointer text-xs font-semibold"
-                >
-                  Auto-refresh (8s)
-                </Label>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void refetch()}
-                disabled={isLoading || isFetching}
-                className="border-border/60 h-8 gap-1.5 text-xs font-semibold"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
-                Reload
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleClearLogs}
-                disabled={clearLogsMutation.isPending}
-                className="h-8 gap-1.5 text-xs font-semibold"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Purge Database Logs
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Main Terminal Output card */}
-      <Card className="border-border/40 bg-card/20 shadow-xl backdrop-blur-md">
-        <CardContent className="p-4">
-          {isLoading ? (
-            <div className="flex h-96 items-center justify-center">
-              <div className="space-y-2 text-center">
-                <Loader2 className="mx-auto h-8 w-8 animate-spin text-indigo-500" />
-                <p className="text-muted-foreground text-xs">
-                  Querying database systemLog entries...
-                </p>
-              </div>
-            </div>
-          ) : (
-            <LogViewerFilterable
-              entries={entries}
-              title={`System Event Stream (${entries.length} fetched)`}
-              maxHeight={600}
-              className="border-border/30 text-foreground bg-black/10 dark:bg-black/40"
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 flex-wrap items-center gap-2">
+          <div className="relative max-w-xs min-w-[180px] flex-1">
+            <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
+            <Input
+              placeholder="Search log messages..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
             />
-          )}
-        </CardContent>
+          </div>
+
+          <ValueSelect
+            value={selectedLevel}
+            onValueChange={setSelectedLevel}
+            options={[
+              ["ALL", "All levels"],
+              ["DEBUG", "DEBUG"],
+              ["INFO", "INFO"],
+              ["WARN", "WARN"],
+              ["ERROR", "ERROR"],
+              ["CRITICAL", "CRITICAL"],
+              ["FATAL", "FATAL"],
+            ]}
+            size="sm"
+            className="w-32"
+            placeholder="All levels"
+            itemClassName="text-footnote"
+          />
+
+          <ValueSelect
+            value={selectedCategory}
+            onValueChange={setSelectedCategory}
+            options={[
+              ["ALL", "All categories"],
+              ...LOG_CATEGORIES.map((cat) => [cat, cat] as const),
+            ]}
+            size="sm"
+            className="w-36"
+            placeholder="All categories"
+            itemClassName="text-footnote"
+          />
+
+          <ValueSelect
+            value={selectedUser}
+            onValueChange={setSelectedUser}
+            options={[
+              ["ALL", "All users"],
+              ...(usersData?.map((u) => [u.id, u.clerkUserId] as const) ?? []),
+            ]}
+            size="sm"
+            className="w-36"
+            placeholder="All users"
+            contentClassName="max-h-56"
+            itemClassName="text-footnote"
+          />
+
+          <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
+            <Switch
+              id="nextjs-errors"
+              checked={nextJsErrors}
+              onCheckedChange={setNextJsErrors}
+              className="scale-75"
+            />
+            <span>Errors only</span>
+          </label>
+
+          <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
+            <Switch
+              id="auto-refresh"
+              checked={autoRefresh}
+              onCheckedChange={setAutoRefresh}
+              className="scale-75"
+            />
+            <span>Auto-refresh</span>
+          </label>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void refetch()}
+            disabled={isLoading || isFetching}
+          >
+            <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+            Reload
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleClearLogs}
+            disabled={isClearing}
+          >
+            <Trash2 className="mr-2 h-3.5 w-3.5" />
+            Purge logs
+          </Button>
+        </div>
+      </div>
+
+      <Card className="overflow-hidden p-3">
+        {isLoading ? (
+          <div className="flex h-96 items-center justify-center">
+            <div className="space-y-2 text-center">
+              <Loader2 className="text-tint mx-auto h-8 w-8 animate-spin" />
+              <p className="text-label-secondary text-footnote">
+                Querying database systemLog entries...
+              </p>
+            </div>
+          </div>
+        ) : (
+          <LogViewerFilterable
+            entries={entries}
+            title={`System Event Stream (${entries.length} fetched)`}
+            maxHeight={600}
+            className="border-separator text-label rounded-row bg-fill-4"
+          />
+        )}
       </Card>
     </div>
   );

@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { X, ChevronDown, Check } from "lucide-react";
-import { cn } from "~/lib/utils";
+import { Xmark as X, NavArrowDown as ChevronDown, Check } from "iconoir-react";
+import { cn } from "~/lib/utils/cn";
+import { fieldStyles } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
 import {
   Command,
@@ -14,7 +15,7 @@ import {
 } from "~/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 
-export interface MultiSelectProps {
+interface MultiSelectProps {
   options: readonly string[];
   value: string[];
   onChange: (value: string[]) => void;
@@ -60,10 +61,10 @@ export function MultiSelect({
         role="combobox"
         aria-expanded={open}
         className={cn(
-          "ring-offset-background focus-visible:ring-ring inline-flex items-center justify-between gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
-          "border-input bg-background hover:bg-accent hover:text-accent-foreground border",
-          "h-auto min-h-[2.5rem] w-full px-4 py-2",
-          !value.length && "text-muted-foreground",
+          fieldStyles,
+          "rounded-control text-callout inline-flex items-center justify-between gap-2 whitespace-nowrap disabled:pointer-events-none disabled:opacity-50",
+          "h-auto min-h-(--control-height) w-full px-3 py-2",
+          !value.length && "text-label-tertiary",
           className
         )}
         disabled={disabled}
@@ -75,15 +76,15 @@ export function MultiSelect({
             value.map((item) => (
               <Badge
                 key={item}
-                variant="secondary"
-                className="hover:bg-secondary/80 mr-1 mb-1 cursor-pointer"
+                variant="default"
+                className="mr-1 mb-1 cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleRemove(item);
                 }}
               >
                 {item}
-                <X className="ml-1 h-3 w-3" />
+                <X aria-hidden="true" className="size-3" />
               </Badge>
             ))
           )}
@@ -117,7 +118,7 @@ export function MultiSelect({
                     />
                     {option}
                     {isDisabled && !isSelected && (
-                      <span className="text-muted-foreground ml-auto text-xs">
+                      <span className="text-label-secondary text-caption ml-auto">
                         Max {maxSelections}
                       </span>
                     )}

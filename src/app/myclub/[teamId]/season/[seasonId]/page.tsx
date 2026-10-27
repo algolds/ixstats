@@ -7,7 +7,8 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { MatchCommentary } from "~/components/sports/MatchCommentary";
 import { Badge } from "~/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
+import { Stat } from "~/components/ui/stat";
 import {
   Table,
   TableBody,
@@ -19,7 +20,7 @@ import {
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { motion } from "motion/react";
-import { withBasePath } from "~/lib/base-path";
+import { springSmooth, tweenFast } from "~/lib/design/motion";
 import { cn } from "~/lib/utils";
 import {
   ArrowLeft,
@@ -29,10 +30,11 @@ import {
   Trophy,
   Calendar,
   Clock,
-  CheckCircle2,
-  BarChart3,
-  Users,
-} from "lucide-react";
+  CheckCircle as CheckCircle2,
+  StatsReport as BarChart3,
+  Group as Users,
+} from "iconoir-react";
+import { Card } from "~/components/ui/card";
 
 const SPORT_EMOJIS: Record<string, string> = {
   soccer: "\u26BD",
@@ -45,9 +47,9 @@ const SPORT_EMOJIS: Record<string, string> = {
 };
 
 const MATCH_STATUS_ICON: Record<string, React.ReactNode> = {
-  scheduled: <Clock className="text-muted-foreground h-4 w-4" />,
-  in_progress: <Clock className="h-4 w-4 animate-pulse text-amber-500" />,
-  completed: <CheckCircle2 className="h-4 w-4 text-emerald-500" />,
+  scheduled: <Clock className="text-label-secondary" />,
+  in_progress: <Clock className="text-yellow" />,
+  completed: <CheckCircle2 className="text-green" />,
 };
 
 const MATCH_STATUS_LABEL: Record<string, string> = {
@@ -63,16 +65,16 @@ function SeasonDetailSkeleton() {
       <Skeleton className="mb-1 h-8 w-72" />
       <Skeleton className="mb-6 h-5 w-48" />
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Skeleton className="h-24 rounded-xl" />
-        <Skeleton className="h-24 rounded-xl" />
-        <Skeleton className="h-24 rounded-xl" />
-        <Skeleton className="h-24 rounded-xl" />
+        <Skeleton className="rounded-row h-24" />
+        <Skeleton className="rounded-row h-24" />
+        <Skeleton className="rounded-row h-24" />
+        <Skeleton className="rounded-row h-24" />
       </div>
       <Skeleton className="mb-4 h-6 w-32" />
       <div className="space-y-3">
-        <Skeleton className="h-16 w-full rounded-xl" />
-        <Skeleton className="h-16 w-full rounded-xl" />
-        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="rounded-row h-16 w-full" />
+        <Skeleton className="rounded-row h-16 w-full" />
+        <Skeleton className="rounded-row h-16 w-full" />
       </div>
     </div>
   );
@@ -109,55 +111,49 @@ function MatchCard({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03 }}
+      transition={{ ...springSmooth, delay: Math.min(index, 10) * 0.03 }}
       layout
     >
       <Card
         onClick={onToggleExpand}
-        className={cn(
-          "cursor-pointer overflow-hidden transition-colors select-none",
-          isCompleted && "hover:bg-muted/10 dark:hover:bg-slate-900/10",
-          won && "border-emerald-500/30 bg-emerald-500/5",
-          lost && "border-red-500/20 bg-red-500/5"
-        )}
+        aria-expanded={isExpanded}
+        className={cn("overflow-hidden", won && "border-green/30", lost && "border-red/30")}
+        interactive
       >
-        <CardContent className="flex flex-col gap-0 px-6 py-4">
+        <div className="flex flex-col gap-0 px-5 py-4">
           <div className="flex w-full items-center gap-4">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full">
               {won ? (
-                <ArrowUp className="h-5 w-5 text-emerald-500" />
+                <ArrowUp className="text-green size-5" aria-label="Won" />
               ) : lost ? (
-                <ArrowDown className="h-5 w-5 text-red-500" />
+                <ArrowDown className="text-red size-5" aria-label="Lost" />
               ) : (
-                <Minus className="text-muted-foreground h-5 w-5" />
+                <Minus className="text-label-secondary size-5" aria-hidden />
               )}
             </div>
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <p className={cn("text-sm font-medium", isHome && "font-semibold")}>
+                <p className={cn("text-body font-medium", isHome && "font-semibold")}>
                   {isHome ? homeTeam?.name : awayTeam?.name}
                 </p>
                 {isCompleted && (
-                  <span className="text-lg font-bold tracking-tight tabular-nums">
+                  <span className="text-title-3 tabular-nums">
                     {teamScore} - {opponentScore}
                   </span>
                 )}
-                {!isCompleted && <span className="text-muted-foreground text-xs">vs</span>}
-                <p className="text-muted-foreground text-sm">
+                {!isCompleted && <span className="text-label-secondary text-footnote">vs</span>}
+                <p className="text-label-secondary text-body">
                   {isHome ? awayTeam?.name : homeTeam?.name}
                 </p>
               </div>
-              <p className="text-muted-foreground mt-0.5 text-xs">
+              <p className="text-label-secondary text-footnote mt-0.5">
                 Match Day {match.matchDay as number}
                 {isHome ? " (Home)" : " (Away)"}
               </p>
             </div>
 
-            <Badge
-              variant={isCompleted ? "outline" : "secondary"}
-              className="shrink-0 gap-1 text-xs"
-            >
+            <Badge variant={isCompleted ? "outline" : "default"} className="shrink-0 gap-1">
               {MATCH_STATUS_ICON[status] ?? null}
               {MATCH_STATUS_LABEL[status] ?? status}
             </Badge>
@@ -168,14 +164,14 @@ function MatchCard({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={tweenFast}
               onClick={(e) => e.stopPropagation()}
               className="mt-2 w-full"
             >
               <MatchCommentary matchId={match.id as string} />
             </motion.div>
           )}
-        </CardContent>
+        </div>
       </Card>
     </motion.div>
   );
@@ -203,22 +199,16 @@ export default function MyClubSeasonDetailPage() {
   if (!season) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Button
-          variant="ghost"
-          onClick={() => router.push(withBasePath(`/myclub/${teamId}`))}
-          className="mb-4"
-        >
+        <Button variant="ghost" onClick={() => router.push(`/myclub/${teamId}`)} className="mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Team
+          Back to team
         </Button>
-        <Card className="facet-hierarchy-parent">
-          <CardContent className="flex flex-col items-center py-16 text-center">
-            <Trophy className="text-muted-foreground mb-4 h-12 w-12" />
-            <h3 className="text-lg font-semibold">Season not found</h3>
-            <p className="text-muted-foreground mt-2">
-              This season may not exist or could not be loaded.
-            </p>
-          </CardContent>
+        <Card>
+          <EmptyState
+            icon={<Trophy />}
+            title="Season not found"
+            message="This season may not exist or could not be loaded."
+          />
         </Card>
       </div>
     );
@@ -257,26 +247,24 @@ export default function MyClubSeasonDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Button
-        variant="ghost"
-        onClick={() => router.push(withBasePath(`/myclub/${teamId}`))}
-        className="mb-4"
-      >
+      <Button variant="ghost" onClick={() => router.push(`/myclub/${teamId}`)} className="mb-4">
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Team
+        Back to team
       </Button>
 
-      <div className="facet-hierarchy-parent mb-6">
+      <Card padding="lg" className="mb-6">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-3xl">{emoji}</span>
-          <h1 className="text-3xl font-bold">Season {season.seasonNumber}</h1>
+          <span className="text-large-title" aria-hidden>
+            {emoji}
+          </span>
+          <h1 className="text-large-title">Season {season.seasonNumber}</h1>
           <Badge
             variant={
               season.status === "in_progress"
-                ? "default"
+                ? "secondary"
                 : season.status === "completed"
                   ? "outline"
-                  : "secondary"
+                  : "default"
             }
           >
             {season.status === "in_progress"
@@ -286,104 +274,96 @@ export default function MyClubSeasonDetailPage() {
                 : "Upcoming"}
           </Badge>
         </div>
-        <p className="text-muted-foreground mt-2">{season.league?.name}</p>
+        <p className="text-body text-label-secondary mt-2">{season.league?.name}</p>
         {season.startIxTime && (
-          <p className="text-muted-foreground mt-1 text-sm">
-            <Calendar className="mr-1 inline h-3.5 w-3.5" />
+          <p className="text-label-secondary text-footnote mt-1">
+            <Calendar className="mr-1 inline size-3.5" aria-hidden />
             Started {new Date(season.startIxTime).toLocaleDateString()}
             {season.endIxTime && ` \u2014 Ended ${new Date(season.endIxTime).toLocaleDateString()}`}
           </p>
         )}
-      </div>
+      </Card>
 
       {season.champion?.id === teamId && isCompleted && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-orange-500/10 p-6 text-center"
+          transition={springSmooth}
+          className="bg-surface rounded-card border-yellow/30 mb-6 border p-6 text-center"
         >
-          <Trophy className="mx-auto mb-2 h-10 w-10 text-amber-500" />
-          <h2 className="text-2xl font-bold">{season.champion.name}</h2>
-          <p className="text-muted-foreground mt-1">Season {season.seasonNumber} Champion</p>
+          <Trophy className="text-yellow mx-auto mb-2 size-10" aria-hidden />
+          <h2 className="text-title-1">{season.champion.name}</h2>
+          <p className="text-body text-label-secondary mt-1">
+            Season {season.seasonNumber} Champion
+          </p>
         </motion.div>
       )}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="facet-hierarchy-child">
-          <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              Record
-            </p>
-            <p className="mt-1 text-2xl font-bold tabular-nums">
-              {teamStanding
+        <Card padding="md">
+          <Stat
+            label="Record"
+            value={
+              teamStanding
                 ? `${teamStanding.wins}-${teamStanding.losses}${teamStanding.draws > 0 ? `-${teamStanding.draws}` : ""}`
-                : "-"}
-            </p>
-          </CardContent>
+                : "-"
+            }
+          />
         </Card>
-        <Card className="facet-hierarchy-child">
-          <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              Points
-            </p>
-            <p className="mt-1 text-2xl font-bold tabular-nums">{teamStanding?.points ?? "-"}</p>
-          </CardContent>
+        <Card padding="md">
+          <Stat label="Points" value={teamStanding?.points ?? "-"} />
         </Card>
-        <Card className="facet-hierarchy-child">
-          <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              PF / PA
-            </p>
-            <p className="mt-1 text-2xl font-bold tabular-nums">
-              {teamStanding ? `${teamStanding.pointsFor} / ${teamStanding.pointsAgainst}` : "-"}
-            </p>
-          </CardContent>
+        <Card padding="md">
+          <Stat
+            label="PF / PA"
+            value={teamStanding ? `${teamStanding.pointsFor} / ${teamStanding.pointsAgainst}` : "-"}
+          />
         </Card>
-        <Card className="facet-hierarchy-child">
-          <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              Position
-            </p>
-            <p className="mt-1 flex items-center justify-center gap-1 text-2xl font-bold">
-              {finishPosition ? (
-                <>
+        <Card padding="md">
+          <Stat
+            label="Position"
+            value={
+              finishPosition ? (
+                <span className="flex items-center gap-1">
                   #{finishPosition}
-                  {finishPosition === 1 && <Trophy className="h-5 w-5 text-amber-500" />}
-                </>
+                  {finishPosition === 1 && (
+                    <Trophy className="text-yellow size-5" aria-label="Champion" />
+                  )}
+                </span>
               ) : (
                 "-"
-              )}
-            </p>
-            <p className="text-muted-foreground mt-0.5 text-xs">
-              of {season.standings?.length ?? 0} teams
-            </p>
-          </CardContent>
+              )
+            }
+            hint={`of ${season.standings?.length ?? 0} teams`}
+          />
         </Card>
       </div>
 
       <Tabs defaultValue="matches">
         <TabsList className="mb-6 gap-1">
           <TabsTrigger value="matches">
-            <Calendar className="mr-2 h-4 w-4" />
+            <Calendar className="mr-2 size-4" />
             Matches
           </TabsTrigger>
           {season.standings && season.standings.length > 0 && (
             <TabsTrigger value="standings">
-              <BarChart3 className="mr-2 h-4 w-4" />
+              <BarChart3 className="mr-2 size-4" />
               Standings
             </TabsTrigger>
           )}
           {seasonHistoryEntry && (
             <TabsTrigger value="stats">
-              <Users className="mr-2 h-4 w-4" />
-              Season Stats
+              <Users className="mr-2 size-4" />
+              Season stats
             </TabsTrigger>
           )}
         </TabsList>
 
         <TabsContent value="matches">
           <div>
-            <h2 className="mb-4 text-lg font-semibold">Match Results ({teamMatches.length})</h2>
+            <h2 className="text-title-3 text-label mb-4">
+              Match Results <span className="tabular-nums">({teamMatches.length})</span>
+            </h2>
             {teamMatches.length > 0 ? (
               <div className="space-y-2">
                 {teamMatches.map((match, i) => (
@@ -404,14 +384,12 @@ export default function MyClubSeasonDetailPage() {
                 ))}
               </div>
             ) : (
-              <Card className="facet-hierarchy-child">
-                <CardContent className="flex flex-col items-center py-12 text-center">
-                  <Calendar className="text-muted-foreground mb-4 h-12 w-12" />
-                  <h3 className="text-lg font-semibold">No Matches Yet</h3>
-                  <p className="text-muted-foreground mt-2">
-                    Match results will appear here once games are scheduled and played.
-                  </p>
-                </CardContent>
+              <Card>
+                <EmptyState
+                  icon={<Calendar />}
+                  title="No matches yet"
+                  message="Schedule and play games to see results."
+                />
               </Card>
             )}
           </div>
@@ -419,148 +397,101 @@ export default function MyClubSeasonDetailPage() {
 
         {season.standings && season.standings.length > 0 && (
           <TabsContent value="standings">
-            <Card className="facet-hierarchy-child">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5" />
-                  Full Standings
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">#</TableHead>
-                      <TableHead>Team</TableHead>
-                      <TableHead className="text-center">W</TableHead>
-                      <TableHead className="text-center">L</TableHead>
-                      <TableHead className="text-center">D</TableHead>
-                      <TableHead className="text-center">Pts</TableHead>
-                      <TableHead className="text-center">PF</TableHead>
-                      <TableHead className="text-center">PA</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(season.standings as Record<string, any>[]).map((s, i: number) => (
-                      <TableRow
-                        key={(s.team as Record<string, string>).id}
-                          className={cn(
-                            (s.team as Record<string, string>).id === teamId && "bg-muted/50"
+            <Card padding="md">
+              <h2 className="text-title-3 text-label mb-4 flex items-center gap-2">
+                <Trophy className="text-label-secondary size-5" aria-hidden />
+                Full standings
+              </h2>
+              <Table className="tabular-nums">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">#</TableHead>
+                    <TableHead>Team</TableHead>
+                    <TableHead className="text-center">W</TableHead>
+                    <TableHead className="text-center">L</TableHead>
+                    <TableHead className="text-center">D</TableHead>
+                    <TableHead className="text-center">Pts</TableHead>
+                    <TableHead className="text-center">PF</TableHead>
+                    <TableHead className="text-center">PA</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(season.standings as Record<string, any>[]).map((s, i: number) => (
+                    <TableRow
+                      key={(s.team as Record<string, string>).id}
+                      className={cn(
+                        (s.team as Record<string, string>).id === teamId && "bg-fill-3"
+                      )}
+                    >
+                      <TableCell className="font-medium">{i + 1}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="text-body">
+                            {(s.team as Record<string, string>).name}
+                          </span>
+                          {(s.team as Record<string, string>).id === teamId && (
+                            <Badge variant="secondary">YOU</Badge>
                           )}
-                        >
-                          <TableCell className="font-medium">{i + 1}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm">
-                                {(s.team as Record<string, string>).name}
-                              </span>
-                              {(s.team as Record<string, string>).id === teamId && (
-                                <Badge variant="default" className="text-[10px]">
-                                  YOU
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center">{s.wins as number}</TableCell>
-                          <TableCell className="text-center">{s.losses as number}</TableCell>
-                          <TableCell className="text-center">{s.draws as number}</TableCell>
-                          <TableCell className="text-center font-bold">
-                            {s.points as number}
-                          </TableCell>
-                          <TableCell className="text-center">{s.pointsFor as number}</TableCell>
-                          <TableCell className="text-center">{s.pointsAgainst as number}</TableCell>
-                        </TableRow>
-                      )
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">{s.wins as number}</TableCell>
+                      <TableCell className="text-center">{s.losses as number}</TableCell>
+                      <TableCell className="text-center">{s.draws as number}</TableCell>
+                      <TableCell className="text-center font-semibold">
+                        {s.points as number}
+                      </TableCell>
+                      <TableCell className="text-center">{s.pointsFor as number}</TableCell>
+                      <TableCell className="text-center">{s.pointsAgainst as number}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </Card>
           </TabsContent>
         )}
 
         {seasonHistoryEntry && (
           <TabsContent value="stats">
-            <Card className="facet-hierarchy-child">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Season Stats
-                </CardTitle>
-                <CardDescription>
-                  Final team performance for Season {season.seasonNumber}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <Card className="bg-muted/30 border-0">
-                    <CardContent className="pt-6 text-center">
-                      <p className="text-muted-foreground text-xs font-medium uppercase">Wins</p>
-                      <p className="mt-1 text-3xl font-bold tabular-nums">
-                        {seasonHistoryEntry.wins}
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-muted/30 border-0">
-                    <CardContent className="pt-6 text-center">
-                      <p className="text-muted-foreground text-xs font-medium uppercase">Losses</p>
-                      <p className="mt-1 text-3xl font-bold tabular-nums">
-                        {seasonHistoryEntry.losses}
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-muted/30 border-0">
-                    <CardContent className="pt-6 text-center">
-                      <p className="text-muted-foreground text-xs font-medium uppercase">Draws</p>
-                      <p className="mt-1 text-3xl font-bold tabular-nums">
-                        {seasonHistoryEntry.draws}
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-muted/30 border-0">
-                    <CardContent className="pt-6 text-center">
-                      <p className="text-muted-foreground text-xs font-medium uppercase">Points</p>
-                      <p className="mt-1 text-3xl font-bold tabular-nums">
-                        {seasonHistoryEntry.points}
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-muted/30 border-0">
-                    <CardContent className="pt-6 text-center">
-                      <p className="text-muted-foreground text-xs font-medium uppercase">
-                        Points For
-                      </p>
-                      <p className="mt-1 text-3xl font-bold tabular-nums">
-                        {seasonHistoryEntry.pointsFor}
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-muted/30 border-0">
-                    <CardContent className="pt-6 text-center">
-                      <p className="text-muted-foreground text-xs font-medium uppercase">
-                        Points Against
-                      </p>
-                      <p className="mt-1 text-3xl font-bold tabular-nums">
-                        {seasonHistoryEntry.pointsAgainst}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-                {seasonHistoryEntry.position && (
-                  <div className="mt-4 text-center">
-                    <p className="text-muted-foreground text-sm">
-                      Final Position:{" "}
-                      <span className="font-semibold">#{seasonHistoryEntry.position}</span>
-                      {seasonHistoryEntry.isChampion && (
-                        <Badge variant="default" className="ml-2 bg-amber-500">
-                          <Trophy className="mr-1 h-3 w-3" />
-                          Champion
-                        </Badge>
-                      )}
-                    </p>
+            <Card padding="md">
+              <h2 className="text-title-3 text-label flex items-center gap-2">
+                <Users className="text-label-secondary size-5" aria-hidden />
+                Season stats
+              </h2>
+              <p className="text-callout text-label-secondary mt-1 mb-4">
+                Final team performance for Season {season.seasonNumber}
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {(
+                  [
+                    ["Wins", seasonHistoryEntry.wins],
+                    ["Losses", seasonHistoryEntry.losses],
+                    ["Draws", seasonHistoryEntry.draws],
+                    ["Points", seasonHistoryEntry.points],
+                    ["Points for", seasonHistoryEntry.pointsFor],
+                    ["Points against", seasonHistoryEntry.pointsAgainst],
+                  ] as const
+                ).map(([label, value]) => (
+                  <div key={label} className="bg-surface-secondary rounded-row p-4">
+                    <Stat label={label} value={value} />
                   </div>
-                )}
-              </CardContent>
+                ))}
+              </div>
+              {seasonHistoryEntry.position && (
+                <div className="text-body text-label-secondary mt-4 flex items-center justify-center gap-2">
+                  <span>
+                    Final Position:{" "}
+                    <span className="text-label font-semibold tabular-nums">
+                      #{seasonHistoryEntry.position}
+                    </span>
+                  </span>
+                  {seasonHistoryEntry.isChampion && (
+                    <Badge variant="warning">
+                      <Trophy />
+                      Champion
+                    </Badge>
+                  )}
+                </div>
+              )}
             </Card>
           </TabsContent>
         )}

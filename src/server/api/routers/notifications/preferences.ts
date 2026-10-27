@@ -4,185 +4,15 @@
 import { z } from "zod";
 import {
   createTRPCRouter,
-  publicProcedure,
   protectedProcedure,
   adminProcedure,
   lightMutationProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-
-const NotificationLevel = z.enum(["low", "medium", "high", "critical"]);
-const NotificationType = z.enum([
-  "info",
-  "warning",
-  "success",
-  "error",
-  "alert",
-  "update",
-  "economic",
-  "crisis",
-  "diplomatic",
-  "system",
-]);
-const NotificationCategory = z.enum([
-  "economic",
-  "diplomatic",
-  "governance",
-  "social",
-  "security",
-  "system",
-  "achievement",
-  "crisis",
-  "opportunity",
-  "intelligence",
-  "policy",
-  "global",
-  "military",
-]);
+import { deliveryChannels } from "~/lib/notifications/delivery/config";
+import { isAllowedPushEndpoint } from "~/lib/notifications/delivery/web-push";
 
 export const notificationsPreferencesRouter = createTRPCRouter({
-  // Get notifications for current user (using auth context)
-
-  // Mark notification as read
-  // RATE LIMITED: Light mutation (100 req/min) - simple toggle operation
-
-  // Dismiss notification (hides it from view)
-  // RATE LIMITED: Light mutation (100 req/min) - simple toggle operation
-
-  // Mark all notifications as read
-  // RATE LIMITED: Light mutation (100 req/min) - batch operation but lightweight
-
-  // Create notification (admin only)
-
-  // Get notification preferences for user
-  getUserPreferences: publicProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const { db } = ctx;
-      const userId = input.userId;
-
-      let preferences = await db.userPreferences.findFirst({
-        where: { userId },
-      });
-
-      // If no preferences exist, create default ones
-      if (!preferences) {
-        preferences = await db.userPreferences.create({
-          data: {
-            userId,
-            emailNotifications: true,
-            pushNotifications: true,
-            economicAlerts: true,
-            crisisAlerts: true,
-            diplomaticAlerts: false,
-            systemAlerts: true,
-            notificationLevel: "medium",
-          },
-        });
-      }
-
-      return {
-        emailNotifications: preferences.emailNotifications,
-        pushNotifications: preferences.pushNotifications,
-        economicAlerts: preferences.economicAlerts,
-        crisisAlerts: preferences.crisisAlerts,
-        diplomaticAlerts: preferences.diplomaticAlerts,
-        systemAlerts: preferences.systemAlerts,
-        notificationLevel: preferences.notificationLevel as "low" | "medium" | "high" | "critical",
-      };
-    }),
-
-  // Update notification preferences
-  // RATE LIMITED: Light mutation (100 req/min) - simple preference updates
-  updateUserPreferences: lightMutationProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-        emailNotifications: z.boolean().optional(),
-        pushNotifications: z.boolean().optional(),
-        economicAlerts: z.boolean().optional(),
-        crisisAlerts: z.boolean().optional(),
-        diplomaticAlerts: z.boolean().optional(),
-        systemAlerts: z.boolean().optional(),
-        notificationLevel: NotificationLevel.optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { db } = ctx;
-      const userId = input.userId;
-
-      // Find existing preferences or create new ones
-      let preferences = await db.userPreferences.findFirst({
-        where: { userId },
-      });
-
-      const updateData = {
-        ...(input.emailNotifications !== undefined && {
-          emailNotifications: input.emailNotifications,
-        }),
-        ...(input.pushNotifications !== undefined && {
-          pushNotifications: input.pushNotifications,
-        }),
-        ...(input.economicAlerts !== undefined && { economicAlerts: input.economicAlerts }),
-        ...(input.crisisAlerts !== undefined && { crisisAlerts: input.crisisAlerts }),
-        ...(input.diplomaticAlerts !== undefined && { diplomaticAlerts: input.diplomaticAlerts }),
-        ...(input.systemAlerts !== undefined && { systemAlerts: input.systemAlerts }),
-        ...(input.notificationLevel !== undefined && {
-          notificationLevel: input.notificationLevel,
-        }),
-      };
-
-      if (preferences) {
-        // Update existing preferences
-        preferences = await db.userPreferences.update({
-          where: { id: preferences.id },
-          data: updateData,
-        });
-      } else {
-        // Create new preferences with defaults + updates
-        preferences = await db.userPreferences.create({
-          data: {
-            userId,
-            emailNotifications: input.emailNotifications ?? true,
-            pushNotifications: input.pushNotifications ?? true,
-            economicAlerts: input.economicAlerts ?? true,
-            crisisAlerts: input.crisisAlerts ?? true,
-            diplomaticAlerts: input.diplomaticAlerts ?? false,
-            systemAlerts: input.systemAlerts ?? true,
-            notificationLevel: input.notificationLevel ?? "medium",
-          },
-        });
-      }
-
-      return {
-        success: true,
-        preferences: {
-          emailNotifications: preferences.emailNotifications,
-          pushNotifications: preferences.pushNotifications,
-          economicAlerts: preferences.economicAlerts,
-          crisisAlerts: preferences.crisisAlerts,
-          diplomaticAlerts: preferences.diplomaticAlerts,
-          systemAlerts: preferences.systemAlerts,
-          notificationLevel: preferences.notificationLevel as
-            "low" | "medium" | "high" | "critical",
-        },
-      };
-    }),
-
-  // Delete notification (admin only)
-
-  // Get notification stats (admin only)
-
-  // Real-time subscription for new notifications
-
-  // Get unread count (for badge display)
-  // Changed from readOnlyProcedure to publicProcedure to prevent auth errors
-  // This endpoint is called before auth completes and should gracefully handle unauthenticated users
-
   // Get user notification preferences
   getPreferences: protectedProcedure
     .input(
@@ -212,15 +42,70 @@ export const notificationsPreferencesRouter = createTRPCRouter({
           pushNotifications: true,
           economicAlerts: true,
           crisisAlerts: true,
-          diplomaticAlerts: false,
+          diplomaticAlerts: true,
           systemAlerts: true,
-          notificationLevel: "medium",
+          notificationLevel: "low",
+          emailEnabledAt: null,
+          emailDigest: false,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
       }
 
       return preferences;
+    }),
+
+  /**
+   * Which delivery channels the server has configured (SL-5). Settings shows the email and push
+   * switches only for configured channels; `vapidPublicKey` is what the browser subscribes with.
+   */
+  getDeliveryChannels: protectedProcedure.query(async ({ ctx }) => {
+    const channels = deliveryChannels();
+    const pushSubscriptionCount = channels.push
+      ? await ctx.db.pushSubscription.count({ where: { userId: ctx.auth.userId } })
+      : 0;
+    return { ...channels, pushSubscriptionCount };
+  }),
+
+  /** Saves this browser's push subscription for the caller (known push services only). */
+  savePushSubscription: lightMutationProcedure
+    .input(
+      z.object({
+        endpoint: z.string().url().max(2000),
+        keys: z.object({ p256dh: z.string().min(1).max(200), auth: z.string().min(1).max(100) }),
+        userAgent: z.string().max(300).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!deliveryChannels().push) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Push is not configured" });
+      }
+      if (!isAllowedPushEndpoint(input.endpoint)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Unsupported push service" });
+      }
+      const data = {
+        userId: ctx.auth.userId,
+        p256dh: input.keys.p256dh,
+        auth: input.keys.auth,
+        userAgent: input.userAgent ?? null,
+      };
+      // An endpoint belongs to one browser; whoever is signed in there now owns it.
+      await ctx.db.pushSubscription.upsert({
+        where: { endpoint: input.endpoint },
+        create: { endpoint: input.endpoint, ...data },
+        update: data,
+      });
+      return { success: true };
+    }),
+
+  /** Forgets one of the caller's push subscriptions (turning push off in this browser). */
+  removePushSubscription: lightMutationProcedure
+    .input(z.object({ endpoint: z.string().max(2000) }))
+    .mutation(async ({ ctx, input }) => {
+      const { count } = await ctx.db.pushSubscription.deleteMany({
+        where: { endpoint: input.endpoint, userId: ctx.auth.userId },
+      });
+      return { removed: count };
     }),
 
   // Create or update user notification preferences
@@ -235,10 +120,16 @@ export const notificationsPreferencesRouter = createTRPCRouter({
         diplomaticAlerts: z.boolean().optional(),
         systemAlerts: z.boolean().optional(),
         notificationLevel: z.enum(["low", "medium", "high", "all"]).optional(),
+        emailDigest: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { userId, ...data } = input;
+      const { userId, ...fields } = input;
+      // Email is opt-in: turning it on here is what records consent (`emailEnabledAt`).
+      const data =
+        fields.emailNotifications === undefined
+          ? fields
+          : { ...fields, emailEnabledAt: fields.emailNotifications ? new Date() : null };
 
       // Security Check: Enforce user can only modify their own preferences
       if (userId !== ctx.auth?.userId) {
@@ -261,59 +152,20 @@ export const notificationsPreferencesRouter = createTRPCRouter({
         update: data,
         create: {
           userId,
+          emailEnabledAt: fields.emailNotifications ? new Date() : null,
+          emailDigest: data.emailDigest ?? false,
           emailNotifications: data.emailNotifications ?? true,
           pushNotifications: data.pushNotifications ?? true,
           economicAlerts: data.economicAlerts ?? true,
           crisisAlerts: data.crisisAlerts ?? true,
-          diplomaticAlerts: data.diplomaticAlerts ?? false,
+          diplomaticAlerts: data.diplomaticAlerts ?? true,
           systemAlerts: data.systemAlerts ?? true,
-          notificationLevel: data.notificationLevel ?? "medium",
+          notificationLevel: data.notificationLevel ?? "low",
         },
       });
 
       return preferences;
     }),
-
-  // Delete user notification preferences (reset to defaults)
-  deletePreferences: lightMutationProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      // Check if preferences exist
-      const existing = await ctx.db.userPreferences.findUnique({
-        where: { userId: input.userId },
-      });
-
-      if (!existing) {
-        return { success: true, message: "No preferences to delete" };
-      }
-
-      await ctx.db.userPreferences.delete({
-        where: { userId: input.userId },
-      });
-
-      return { success: true, message: "Preferences reset to defaults" };
-    }),
-  // Delete all notifications (admin only)
-
-  // ---- Notification Event Config (Admin) ----
-
-  // Get all notification event configs
-
-  // Seed default event configs from registry
-
-  // Toggle a single event on/off
-
-  // Batch toggle events by filter
-
-  // Update event config (JSON config)
-
-  // ---- Admin Notification Browser ----
-
-  // Get all notifications with admin-level filters
 
   // ---- Alert Thresholds ----
 
@@ -352,49 +204,10 @@ export const notificationsPreferencesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      if (input.id) {
-        const updated = await db.intelligenceAlertThreshold.update({
-          where: { id: input.id },
-          data: {
-            countryId: input.countryId,
-            userId: input.userId,
-            alertType: input.alertType,
-            metricName: input.metricName,
-            criticalMin: input.criticalMin,
-            criticalMax: input.criticalMax,
-            highMin: input.highMin,
-            highMax: input.highMax,
-            mediumMin: input.mediumMin,
-            mediumMax: input.mediumMax,
-            notifyOnCritical: input.notifyOnCritical,
-            notifyOnHigh: input.notifyOnHigh,
-            notifyOnMedium: input.notifyOnMedium,
-            isActive: input.isActive,
-          },
-        });
-        return updated;
-      }
-
-      const created = await db.intelligenceAlertThreshold.create({
-        data: {
-          countryId: input.countryId,
-          userId: input.userId,
-          alertType: input.alertType,
-          metricName: input.metricName,
-          criticalMin: input.criticalMin,
-          criticalMax: input.criticalMax,
-          highMin: input.highMin,
-          highMax: input.highMax,
-          mediumMin: input.mediumMin,
-          mediumMax: input.mediumMax,
-          notifyOnCritical: input.notifyOnCritical,
-          notifyOnHigh: input.notifyOnHigh,
-          notifyOnMedium: input.notifyOnMedium,
-          isActive: input.isActive,
-        },
-      });
-
-      return created;
+      const { id, ...data } = input;
+      return id
+        ? db.intelligenceAlertThreshold.update({ where: { id }, data })
+        : db.intelligenceAlertThreshold.create({ data });
     }),
 
   // Delete an alert threshold

@@ -1,17 +1,9 @@
 /**
- * Shared types for bridge adapters that sync external messaging systems
- * (MediaWiki talk pages, XenForo conversations) into ThinkShare.
+ * Shared types for ThinkShare bridge adapters (the MediaWiki talk page bridge; the XenForo forum bridge was
+ * retired in ThinkPages forum phase 4b).
  */
 
 import type { PrismaClient } from "@prisma/client";
-
-export interface BridgeMessage {
-  externalId: string;
-  content: string;
-  authorId: string;
-  authorName: string;
-  timestamp: Date;
-}
 
 export interface BridgeSyncResult {
   conversationsCreated: number;

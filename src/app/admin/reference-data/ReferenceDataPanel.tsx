@@ -1,43 +1,51 @@
+"use client";
 // src/app/admin/reference-data/page.tsx
 // Unified reference data hub with grouped categories and live record counts
-"use client";
 export const dynamic = "force-dynamic";
 
+import { cn } from "~/lib/utils";
 import Link from "next/link";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AdminHeader } from "../_components/AdminHeader";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
 import {
-  Database,
-  Flag,
-  Drama,
+  WhiteFlag as Flag,
+  Emoji as Drama,
   Rocket,
-  UserCog,
-  Newspaper,
+  User as UserCog,
+  Journal as Newspaper,
   Building,
-  TrendingUp,
-  CreditCard,
-  BookOpen,
-  Layers,
-  FileText,
-  Swords,
+  StatUp as TrendingUp,
+  Component as Layers,
+  Page as FileText,
+  Tournament as Swords,
   Brain,
-  ExternalLink,
-  RefreshCw,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+  OpenNewWindow as ExternalLink,
+} from "iconoir-react";
 
-// ── Data Type Registry ───────────────────────────────────────────────────────
+/** Category icon colours (static class names so Tailwind generates them). */
+const CATEGORY_ICON_COLOR: Record<string, string> = {
+  cyan: "text-cyan",
+  red: "text-red",
+  purple: "text-purple",
+  green: "text-green",
+  amber: "text-yellow",
+  blue: "text-blue",
+  orange: "text-orange",
+  indigo: "text-indigo",
+  pink: "text-pink",
+  teal: "text-teal",
+};
 
 interface DataTypeConfig {
   key: string;
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   description: string;
-  category: "diplomacy" | "military" | "governance" | "economy" | "content" | "system";
+  category: "diplomacy" | "military" | "governance" | "economy" | "content";
   color: string;
 }
 
@@ -45,7 +53,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   // Diplomacy
   {
     key: "diplomatic-options",
-    label: "Diplomatic Options",
+    label: "Diplomatic options",
     href: "/admin/diplomatic-options",
     icon: Flag,
     description: "Strategic priorities, partnership goals, key achievements",
@@ -54,7 +62,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   },
   {
     key: "diplomatic-scenarios",
-    label: "Diplomatic Scenarios",
+    label: "Diplomatic scenarios",
     href: "/admin/diplomatic-scenarios",
     icon: Drama,
     description: "Event templates with response options and outcomes",
@@ -65,7 +73,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   // Military & Defense
   {
     key: "military-equipment",
-    label: "Military Equipment",
+    label: "Military equipment",
     href: "/admin/military-equipment",
     icon: Rocket,
     description: "Equipment catalog, manufacturers, specifications",
@@ -76,7 +84,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   // Governance & Politics
   {
     key: "government-components",
-    label: "Government Components",
+    label: "Government components",
     href: "/admin/government-components",
     icon: Building,
     description: "9 categories of governance system components",
@@ -94,7 +102,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   },
   {
     key: "national-issues",
-    label: "National Issues",
+    label: "National issues",
     href: "/admin/national-issues",
     icon: Newspaper,
     description: "Issue templates across 7 domains with consequences",
@@ -105,7 +113,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   // Economy
   {
     key: "economic-components",
-    label: "Economic Components",
+    label: "Economic components",
     href: "/admin/economic-components",
     icon: TrendingUp,
     description: "5 categories of economic system components",
@@ -114,7 +122,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   },
   {
     key: "economic-archetypes",
-    label: "Economic Archetypes",
+    label: "Economic archetypes",
     href: "/admin/economic-archetypes",
     icon: Layers,
     description: "Archetype definitions with traits and modifiers",
@@ -125,84 +133,47 @@ const DATA_TYPES: DataTypeConfig[] = [
   // Content & Intelligence
   {
     key: "intelligence-templates",
-    label: "Intelligence Templates",
+    label: "Intelligence templates",
     href: "/admin/intelligence-templates",
     icon: FileText,
     description: "Briefing templates for economic, political, security reports",
     category: "content",
     color: "amber",
   },
-  {
-    key: "card-packs",
-    label: "Card Packs",
-    href: "/admin/cards?tab=packs",
-    icon: CreditCard,
-    description: "Pack configurations and rarity distributions",
-    category: "content",
-    color: "amber",
-  },
-  {
-    key: "lore-cards",
-    label: "Lore Cards",
-    href: "/admin/cards?tab=lore",
-    icon: BookOpen,
-    description: "Wiki-based lore card generation and management",
-    category: "content",
-    color: "amber",
-  },
-
-  // System
-  {
-    key: "ns-sync",
-    label: "NS Sync",
-    href: "/admin/cards?tab=sync",
-    icon: RefreshCw,
-    description: "NationStates data synchronization and imports",
-    category: "system",
-    color: "blue",
-  },
 ];
 
 const CATEGORIES = [
   {
     key: "diplomacy" as const,
-    label: "Diplomacy & Relations",
+    label: "Diplomacy & relations",
     icon: Swords,
     color: "cyan",
   },
   {
     key: "military" as const,
-    label: "Military & Defense",
+    label: "Military & defense",
     icon: Rocket,
     color: "red",
   },
   {
     key: "governance" as const,
-    label: "Governance & Politics",
+    label: "Governance & politics",
     icon: Building,
     color: "purple",
   },
   {
     key: "economy" as const,
-    label: "Economy & Trade",
+    label: "Economy & trade",
     icon: TrendingUp,
     color: "green",
   },
   {
     key: "content" as const,
-    label: "Content & Intelligence",
+    label: "Content & intelligence",
     icon: Brain,
     color: "amber",
   },
-  {
-    key: "system" as const,
-    label: "System & Sync",
-    icon: Database,
-    color: "blue",
-  },
 ];
-
-// ── Component ────────────────────────────────────────────────────────────────
 
 export default function ReferenceDataPage() {
   usePageTitle({ title: "Admin - Reference Data" });
@@ -245,20 +216,20 @@ export default function ReferenceDataPage() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={Database}
-        title="Reference Data"
-        description="Manage all platform reference data types"
-      >
-        {totalRecords > 0 && (
-          <Badge variant="outline" className="text-sm">
-            {totalRecords.toLocaleString()}+ records across{" "}
-            {Object.values(counts).filter((c) => c != null).length} tracked types
-          </Badge>
-        )}
-      </AdminHeader>
+      <PageHeader
+        title="Reference data"
+        actions={
+          <>
+            {totalRecords > 0 && (
+              <Badge variant="outline" className="text-body">
+                {totalRecords.toLocaleString()}+ records across{" "}
+                {Object.values(counts).filter((c) => c != null).length} tracked types
+              </Badge>
+            )}
+          </>
+        }
+      />
 
-      {/* Grouped categories */}
       <div className="space-y-6">
         {CATEGORIES.map((category) => {
           const types = DATA_TYPES.filter((t) => t.category === category.key);
@@ -268,11 +239,14 @@ export default function ReferenceDataPage() {
           return (
             <div key={category.key}>
               <div className="mb-3 flex items-center gap-2">
-                <CategoryIcon className={`h-4 w-4 text-${category.color}-500`} />
-                <h2 className="text-foreground text-sm font-semibold tracking-wider uppercase">
-                  {category.label}
-                </h2>
-                <div className="bg-border/50 h-px flex-1" />
+                <CategoryIcon
+                  className={cn(
+                    "h-4 w-4",
+                    CATEGORY_ICON_COLOR[category.color] ?? "text-label-secondary"
+                  )}
+                />
+                <h2 className="text-label text-headline">{category.label}</h2>
+                <div className="bg-separator h-px flex-1" />
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -284,39 +258,36 @@ export default function ReferenceDataPage() {
                     <Link
                       key={type.key}
                       href={type.href}
-                      className="glass-card-child group border-border/50 hover:border-primary/30 rounded-xl border p-4 transition-all duration-200 hover:scale-[1.01] hover:shadow-md"
+                      className="group border-separator bg-surface hover:border-separator rounded-card shadow-card block border p-4 transition-colors transition-transform active:scale-[0.98]"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          <div
-                            className={`rounded-lg border border-${type.color}-500/20 bg-${type.color}-500/10 p-2`}
-                          >
-                            <Icon className={`h-5 w-5 text-${type.color}-500`} />
+                          <div className="border-separator bg-surface text-label rounded-row border p-2">
+                            <Icon className="text-tint h-4 w-4" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h3 className="text-foreground group-hover:text-primary text-sm font-medium transition-colors">
+                            <h3 className="text-label group-hover:text-tint text-caption transition-colors">
                               {type.label}
                             </h3>
-                            <p className="text-muted-foreground mt-0.5 text-xs">
+                            <p className="text-label-secondary text-footnote mt-0.5 line-clamp-1">
                               {type.description}
                             </p>
                           </div>
                         </div>
-                        <ExternalLink className="text-muted-foreground h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+                        <ExternalLink className="text-label-secondary h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
                       </div>
 
-                      {/* Count badge */}
                       {count != null ? (
-                        <div className="border-border/30 mt-3 flex items-center justify-between border-t pt-2">
-                          <span className="text-muted-foreground text-xs">Records</span>
-                          <span className="text-foreground font-mono text-sm font-medium">
+                        <div className="border-separator text-footnote mt-3 flex items-center justify-between border-t pt-2">
+                          <span className="text-label-secondary">Records</span>
+                          <span className="text-label font-semibold tabular-nums">
                             {count.toLocaleString()}
                           </span>
                         </div>
                       ) : count === undefined &&
                         (govComponents.isLoading || econComponents.isLoading) ? (
-                        <div className="border-border/30 mt-3 border-t pt-2">
-                          <Skeleton className="ml-auto h-4 w-16" />
+                        <div className="border-separator mt-3 border-t pt-2">
+                          <Skeleton className="ml-auto h-3.5 w-12" />
                         </div>
                       ) : null}
                     </Link>

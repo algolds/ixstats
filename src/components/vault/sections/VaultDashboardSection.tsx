@@ -1,226 +1,47 @@
-import { useMemo, useState } from "react";
+import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
 import { useVaultStats } from "~/hooks/vault/useVaultStats";
-import { useRecentActivity } from "~/hooks/vault/useRecentActivity";
-import { api } from "~/trpc/react";
-import { useUser } from "~/context/auth-context";
-import { vaultNotify } from "~/lib/vault";
-import { getRarityGlow, getRarityBorder } from "~/components/vault/vault-theme";
-import { VaultParticleExplosionModal } from "~/components/vault/VaultParticleExplosionModal";
-import type { CardInstance } from "~/types/cards-display";
-import { VaultNetWorthCard } from "./dashboard/VaultNetWorthCard";
-import { VaultYieldProjectionsCard } from "./dashboard/VaultYieldProjectionsCard";
-import { VaultRecentActivityCard, type ActivityEntry } from "./dashboard/VaultRecentActivityCard";
-import { VaultShowcaseGrid } from "./dashboard/VaultShowcaseGrid";
+import type { Figure } from "./dashboard/credits";
+import { VaultBalanceCard } from "./dashboard/VaultBalanceCard";
+import { VaultHoldings } from "./dashboard/VaultHoldings";
+import { VaultUnlocks } from "./dashboard/VaultUnlocks";
+import { VaultShowcase } from "./dashboard/VaultShowcase";
+import { VaultStatement } from "./dashboard/VaultStatement";
+import { VaultMarkTile } from "./dashboard/VaultTitle";
 
-interface VaultDashboardSectionProps {
-  onNavigate?: (section: any) => void;
-}
-
-export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps) {
-  const { user } = useUser();
-  const { stats, loading: statsLoading } = useVaultStats();
-  const { activities, loading: activitiesLoading } = useRecentActivity() as {
-    activities: ActivityEntry[] | undefined;
-    loading: boolean;
-  };
-
-  const [showCoinExplosion, setShowCoinExplosion] = useState(false);
-  const [claimedBonusAmount, setClaimedBonusAmount] = useState(0);
-
-  const { data: hasImported } = api.nsImport.hasImported.useQuery(undefined, {
-    enabled: !!user,
-    refetchOnWindowFocus: false,
-  });
-
-  const [isNoticeDismissed, setIsNoticeDismissed] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("ns-import-notice-dismissed") === "true";
-    }
-    return false;
-  });
-
-  const handleDismissNotice = () => {
-    setIsNoticeDismissed(true);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("ns-import-notice-dismissed", "true");
-    }
-  };
-
-  const { isLoading: earningsLoading } = api.vault.getTodayEarnings.useQuery(undefined, {
-    enabled: !!user,
-  });
-
-  const { data: balanceData, refetch: refetchBalance } = api.vault.getBalance.useQuery(
-    { userId: user?.id ?? "" },
-    { enabled: !!user?.id }
-  );
-
-  const { data: levelData } = api.vault.getVaultLevel.useQuery(
-    { userId: user?.id ?? "" },
-    { enabled: !!user?.id }
-  );
-
-  const { data: topCardsData, isLoading: topCardsLoading } = api.cards.getMyCards.useQuery(
-    { sortBy: "value" },
-    { enabled: !!user }
-  );
-
-  const { data: userData } = api.users.getProfile.useQuery(undefined, {
-    enabled: !!user,
-  });
-
-  const { data: myAchievements } = api.achievements.getAllByCountry.useQuery(
-    { countryId: userData?.countryId || "" },
-    { enabled: !!userData?.countryId }
-  );
-
-  const { data: leaderboard } = api.achievements.getLeaderboard.useQuery(
-    { limit: 100 },
-    { enabled: !!userData?.countryId }
-  );
-
-  const { data: passiveIncomeData } = api.vault.calculatePassiveIncome.useQuery(
-    { countryId: userData?.countryId ?? "" },
-    { enabled: !!userData?.countryId }
-  );
-
-  const { data: budgetMultiplierData } = api.vault.getBudgetMultiplier.useQuery(
-    { countryId: userData?.countryId ?? "" },
-    { enabled: !!userData?.countryId }
-  );
-
-  const { data: activeCapData, isLoading: activeCapLoading } = api.vault.checkDailyCap.useQuery(
-    { earnType: "EARN_ACTIVE" },
-    { enabled: !!user }
-  );
-
-  const { data: socialCapData, isLoading: socialCapLoading } = api.vault.checkDailyCap.useQuery(
-    { earnType: "EARN_SOCIAL" },
-    { enabled: !!user }
-  );
-
-  type TopCardItem = NonNullable<typeof topCardsData>[number];
-
-  const featuredCards: CardInstance[] = useMemo(
-    () =>
-      topCardsData?.slice(0, 3).map((ownership: TopCardItem) => {
-        const cardObj = (ownership.cards || {}) as any;
-        return {
-          id: cardObj.id ?? ownership.id,
-          title: cardObj.title ?? "Unknown",
-          description: cardObj.description || "",
-          artwork: cardObj.artwork || "/images/cards/placeholder-nation.png",
-          artworkVariants: cardObj.artworkVariants || null,
-          cardType: cardObj.cardType ?? "NS_IMPORT",
-          rarity: cardObj.rarity ?? "COMMON",
-          season: cardObj.season ?? 1,
-          nsCardId: cardObj.nsCardId || null,
-          nsSeason: cardObj.nsSeason || null,
-          nsData: cardObj.nsData || null,
-          wikiSource: cardObj.wikiSource || null,
-          wikiArticleTitle: cardObj.wikiArticleTitle || null,
-          wikiUrl: cardObj.wikiUrl || null,
-          countryId: cardObj.countryId ?? null,
-          stats: cardObj.stats || {},
-          marketValue: cardObj.marketValue || 0,
-          totalSupply: cardObj.totalSupply || 0,
-          level: ownership.level || 1,
-          evolutionStage: cardObj.evolutionStage || 0,
-          enhancements: cardObj.enhancements || null,
-          createdAt: cardObj.createdAt ?? new Date(),
-          updatedAt: cardObj.updatedAt ?? new Date(),
-          lastTrade: cardObj.lastTrade || null,
-          country: cardObj.country ?? null,
-          owners: [],
-        };
-      }) || [],
-    [topCardsData]
-  );
-
-  const claimDailyBonus = api.vault.claimDailyBonus.useMutation({
-    onSuccess: (data) => {
-      setClaimedBonusAmount(data.bonus);
-      setShowCoinExplosion(true);
-
-      vaultNotify.dailyBonusClaimed(data.message);
-      void refetchBalance();
-
-      setTimeout(() => {
-        setShowCoinExplosion(false);
-      }, 3200);
-    },
-    onError: (error) => {
-      vaultNotify.error(error.message);
-    },
-  });
-
-  const loading = statsLoading || activitiesLoading || earningsLoading;
-
-  const collectionValuation = stats?.deckValue ?? 0;
-  const liquidCredits = balanceData?.credits ?? 0;
-  const netWorth = collectionValuation + liquidCredits;
+/**
+ * The Wallet page. The DOM order is the phone order (balance, achievements, title and Your Vault column, showcase,
+ * statement). From `lg`, three columns: balance and achievements side by side (equal width and height; the balance
+ * takes both columns when there are none), the showcase under them, the Vault column on the right over both
+ * rows, then the statement across the page. `lg:pt-14` clears Halo's floating band, which the desktop page has no
+ * header toolbar to do.
+ */
+export function VaultDashboardSection() {
+  const { stats, loading, error } = useVaultStats();
+  const figure = (value: number): Figure => (error ? null : loading ? undefined : value);
 
   return (
-    <div className="space-y-6">
-      {/* 2-Column Premium Banking Grid Layout */}
-      <div className="facet-layout-grid-3">
-        {/* Left Column (Financial Center & Ledger) */}
-        <div className="facet-layout-main-span-2 space-y-6">
-          <VaultNetWorthCard
-            vaultLevel={levelData?.vaultLevel ?? 1}
-            netWorth={netWorth}
-            liquidCredits={liquidCredits}
-            collectionValuation={collectionValuation}
-            totalCards={stats?.totalCards ?? 0}
-            capacityBoost={stats?.capacityBoost ?? 0}
-            unopenedPacks={stats?.unopenedPacks ?? 0}
-            activeAuctions={stats?.activeAuctions ?? 0}
-          />
-
-          <VaultYieldProjectionsCard
-            loading={loading}
-            canClaimDailyBonus={balanceData?.canClaimDailyBonus}
-            isClaimPending={claimDailyBonus.isPending}
-            onClaimDailyBonus={() => claimDailyBonus.mutate()}
-            passiveIncomeData={passiveIncomeData}
-            loginStreak={balanceData?.loginStreak ?? 0}
-            budgetMultiplierPercent={budgetMultiplierData?.percentChange ?? 0}
-            vaultLevel={levelData?.vaultLevel ?? 1}
-            activeCapLoading={activeCapLoading}
-            activeCapData={activeCapData}
-            socialCapLoading={socialCapLoading}
-            socialCapData={socialCapData}
-          />
-
-          {/* Activity placed directly under Treasury Revenue & Yields */}
-          <VaultRecentActivityCard loading={loading} activities={activities} />
-        </div>
-
-        {/* Right Sidebar Column (Card Holdings Top Right + Milestones) */}
-        <VaultShowcaseGrid
-          hasImported={hasImported}
-          isNoticeDismissed={isNoticeDismissed}
-          onDismissNotice={handleDismissNotice}
-          onNavigate={onNavigate}
-          featuredCards={featuredCards}
-          topCardsLoading={topCardsLoading}
-          myAchievements={myAchievements}
-          leaderboard={leaderboard}
-          userCountryId={userData?.countryId}
-          totalCards={stats?.totalCards ?? 0}
-          creditsBalance={balanceData?.credits ?? 0}
-          getRarityGlow={getRarityGlow}
-          getRarityBorder={getRarityBorder}
+    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3 lg:gap-6 lg:pt-14">
+      <div className="lg:col-span-3 lg:hidden">
+        <ShellPageHeader title="Vault" leading={<VaultMarkTile />} className="px-0 sm:px-4" />
+      </div>
+      <div className="lg:col-span-2 lg:col-start-1 lg:row-start-1 lg:self-stretch lg:has-[+div:not(:empty)]:col-span-1">
+        <VaultBalanceCard
+          totalCards={figure(stats.totalCards)}
+          deckValue={figure(stats.deckValue)}
         />
       </div>
-
-      <VaultParticleExplosionModal
-        open={showCoinExplosion}
-        title="Daily Bonus Claimed!"
-        subtitle="Added to Vault Balance"
-        amount={claimedBonusAmount}
-        icon={<div className="animate-bounce text-4xl">🎁</div>}
-      />
+      <div className="empty:hidden lg:col-start-2 lg:row-start-1 lg:self-stretch">
+        <VaultUnlocks />
+      </div>
+      <div className="lg:col-start-3 lg:row-span-2 lg:row-start-1">
+        <VaultHoldings />
+      </div>
+      <div className="lg:col-span-2 lg:col-start-1 lg:row-start-2">
+        <VaultShowcase />
+      </div>
+      <div className="lg:col-span-3 lg:row-start-3">
+        <VaultStatement />
+      </div>
     </div>
   );
 }

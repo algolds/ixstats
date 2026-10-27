@@ -1,4 +1,4 @@
-export type EngineEvent = "statechange" | "timeupdate" | "durationchange" | "ended" | "error";
+type EngineEvent = "statechange" | "timeupdate" | "durationchange" | "ended" | "error";
 
 export class IxMediaEngine {
   private audio: HTMLAudioElement;

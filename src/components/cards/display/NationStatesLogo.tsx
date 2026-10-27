@@ -2,11 +2,10 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
+import { NATIONSTATES_LOGO_URL } from "~/lib/cards/realm-logos";
+import { assetUrl } from "~/lib/base-path";
 
-export const NATIONSTATES_LOGO_URL =
-  "https://static.wikia.nocookie.net/logopedia/images/7/70/NationStates_Logo_%282002%2C_Badge%29.png";
-
-export interface NationStatesLogoProps {
+interface NationStatesLogoProps {
   className?: string;
   size?: "xs" | "sm" | "md" | "lg";
 }
@@ -21,7 +20,7 @@ export function NationStatesLogo({ className, size = "sm" }: NationStatesLogoPro
 
   return (
     <img
-      src={NATIONSTATES_LOGO_URL}
+      src={assetUrl(NATIONSTATES_LOGO_URL) ?? undefined}
       alt="NationStates"
       className={cn("inline-block shrink-0 object-contain", sizeClasses[size], className)}
       loading="lazy"
@@ -29,19 +28,5 @@ export function NationStatesLogo({ className, size = "sm" }: NationStatesLogoPro
         (e.target as HTMLImageElement).style.display = "none";
       }}
     />
-  );
-}
-
-export function NationStatesBadge({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center justify-center gap-1 rounded-md border border-blue-400/30 bg-blue-600/20 px-1.5 py-0.5 shadow-xs backdrop-blur-md",
-        className
-      )}
-      title="NationStates Card"
-    >
-      <NationStatesLogo size="xs" />
-    </span>
   );
 }

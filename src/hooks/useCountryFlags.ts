@@ -1,9 +1,21 @@
-// React hook for country flag management
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { countryFlagService, type CountryFlag } from "~/lib/flags/country-flag-service";
+"use client";
+// React hook for country flag management (Plan 164)
+
+import { useCallback, useMemo } from "react";
+import { api } from "~/trpc/react";
+import { withBasePath } from "~/lib/base-path";
+
+export interface CountryFlag {
+  countryName: string;
+  flagUrl: string | null;
+  source:
+    "provided" | "persistent-cache" | "memory-cache" | "commons" | "fictional-wiki" | "placeholder";
+  cached: boolean;
+  isPlaceholder: boolean;
+}
 
 interface UseCountryFlagsOptions {
-  countries: string[];
+  countries: readonly string[];
   preload?: boolean;
   batchSize?: number;
 }
@@ -23,57 +35,44 @@ interface UseCountryFlagsReturn {
   };
 }
 
-export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlagsReturn {
-  const { countries, preload = true, batchSize = 5 } = options;
+function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlagsReturn {
+  const { countries } = options;
+  const placeholderUrl = useMemo(() => withBasePath("/images/flags/placeholder.svg"), []);
 
-  const [flags, setFlags] = useState<Map<string, CountryFlag>>(new Map());
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const memoizedCountryNames = useMemo(() => {
+    return [...countries];
+  }, [countries]);
 
-  // Memoize the country list to prevent unnecessary re-fetches
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const memoizedCountries = useMemo(() => countries, [countries.join(",")]);
-
-  /**
-   * Fetch flags for all countries
-   */
-  const fetchFlags = useCallback(async (countryList: string[]) => {
-    if (countryList.length === 0) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const flagResults = await countryFlagService.batchGetCountryFlags(countryList);
-
-      setFlags(flagResults);
-
-      const stats = countryFlagService.getCacheStats();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to fetch country flags";
-      setError(errorMessage);
-      console.error("[useCountryFlags] Error fetching flags:", err);
-    } finally {
-      setLoading(false);
+  const {
+    data: batchResult,
+    isLoading,
+    error: trpcError,
+    refetch,
+  } = api.countries.flags.resolveBatch.useQuery(
+    { countryNames: memoizedCountryNames },
+    {
+      enabled: memoizedCountryNames.length > 0,
+      staleTime: 1000 * 60 * 60,
+      retry: 1,
     }
-  }, []);
+  );
 
-  /**
-   * Fetch a single flag
-   */
-  const refetchFlag = useCallback(async (countryName: string) => {
-    try {
-      const flag = await countryFlagService.getCountryFlag(countryName);
-
-      setFlags((prev) => new Map(prev).set(countryName, flag));
-    } catch (err) {
-      console.error(`[useCountryFlags] Error refetching flag for ${countryName}:`, err);
+  const flags = useMemo(() => {
+    const map = new Map<string, CountryFlag>();
+    for (const name of memoizedCountryNames) {
+      const rawUrl = batchResult ? batchResult[name] : null;
+      const isPlaceholder = !rawUrl || rawUrl.includes("placeholder");
+      map.set(name, {
+        countryName: name,
+        flagUrl: isPlaceholder ? placeholderUrl : rawUrl,
+        source: isPlaceholder ? "placeholder" : "commons",
+        cached: Boolean(batchResult),
+        isPlaceholder,
+      });
     }
-  }, []);
+    return map;
+  }, [memoizedCountryNames, batchResult, placeholderUrl]);
 
-  /**
-   * Get a flag from the current state
-   */
   const getFlag = useCallback(
     (countryName: string): CountryFlag | null => {
       return flags.get(countryName) || null;
@@ -81,42 +80,35 @@ export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlag
     [flags]
   );
 
-  /**
-   * Clear the flag cache
-   */
+  const refetchFlag = useCallback(
+    async (_countryName: string) => {
+      await refetch();
+    },
+    [refetch]
+  );
+
   const clearCache = useCallback(() => {
-    countryFlagService.clearCache();
-    setFlags(new Map());
-    setError(null);
+    // No-op for tRPC query cache
   }, []);
 
-  /**
-   * Get cache statistics
-   */
   const stats = useMemo(() => {
     const total = flags.size;
-    const successful = Array.from(flags.values()).filter((flag) => flag.flagUrl !== null).length;
+    const successful = Array.from(flags.values()).filter((flag) => !flag.isPlaceholder).length;
     const failed = total - successful;
+    const hitRate = total > 0 ? (successful / total) * 100 : 0;
 
     return {
       total,
       successful,
       failed,
-      hitRate: total > 0 ? (successful / total) * 100 : 0,
+      hitRate,
     };
   }, [flags]);
 
-  // Fetch flags when countries change
-  useEffect(() => {
-    if (preload && memoizedCountries.length > 0) {
-      fetchFlags(memoizedCountries);
-    }
-  }, [memoizedCountries, preload, fetchFlags]);
-
   return {
     flags,
-    loading,
-    error,
+    loading: isLoading,
+    error: trpcError ? trpcError.message : null,
     getFlag,
     refetchFlag,
     clearCache,
@@ -125,39 +117,18 @@ export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlag
 }
 
 /**
- * Hook for a single country flag
+ * Convenience hook for fetching a single country flag.
  */
 export function useCountryFlag(countryName: string) {
-  const [flag, setFlag] = useState<CountryFlag | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchFlag = useCallback(async () => {
-    if (!countryName) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const flagResult = await countryFlagService.getCountryFlag(countryName);
-      setFlag(flagResult);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to fetch country flag";
-      setError(errorMessage);
-      console.error(`[useCountryFlag] Error fetching flag for ${countryName}:`, err);
-    } finally {
-      setLoading(false);
-    }
-  }, [countryName]);
-
-  useEffect(() => {
-    fetchFlag();
-  }, [fetchFlag]);
+  const cleanName = countryName?.trim() || "";
+  const countries = useMemo(() => (cleanName ? [cleanName] : []), [cleanName]);
+  const { flags, loading, error, refetchFlag } = useCountryFlags({ countries });
+  const flag = cleanName ? (flags.get(cleanName) ?? null) : null;
 
   return {
     flag,
-    loading,
+    loading: Boolean(cleanName) && loading,
     error,
-    refetch: fetchFlag,
+    refetch: () => refetchFlag(cleanName),
   };
 }

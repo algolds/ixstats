@@ -1,4 +1,4 @@
-import { AbilityBuilder, createMongoAbility, type MongoAbility } from "@casl/ability";
+import { hasPremiumTier } from "./premium";
 
 export type Actions = "manage" | "create" | "read" | "update" | "delete" | "use" | "access";
 
@@ -9,78 +9,86 @@ export type Subjects =
   | "SystemConfig"
   | "MyCountryFeature"
   | "Tool"
-  | { type: "Tool"; toolId: string; unlocked: boolean };
+  | { type: "Tool"; toolId: string; unlocked?: boolean }
+  | Record<string, any>;
 
-export type AppAbility = MongoAbility<[Actions, Subjects]>;
+const CRUD_ACTIONS: Actions[] = ["manage", "read", "update", "create", "delete"];
+// "intelligence" is not one: /mycountry/intelligence renders Defense, which the "defense" lock covers,
+// and no intelligence procedure is premium. The map editor is free for every owner.
+const PREMIUM_SECTIONS = ["defense"];
+
+/** A tool id given directly or as `{ toolId }`. */
+const toolIdOf = (value: unknown): string | undefined =>
+  typeof value === "string"
+    ? value
+    : value && typeof value === "object" && "toolId" in value
+      ? (value as { toolId: string }).toolId
+      : undefined;
+
+export interface AppAbility {
+  can(action: Actions, subject: Subjects, fieldOrExtra?: any): boolean;
+  cannot(action: Actions, subject: Subjects, fieldOrExtra?: any): boolean;
+}
 
 /**
- * Builds the CASL ability instance for a given user session configuration.
+ * Native, zero-dependency role and capability checker replacing CASL.
  */
 export function defineAbilityFor(
   roleName: string | null | undefined,
-  permissions: string[],
+  permissions: string[] = [],
   membershipTier: string | null | undefined,
   unlockedTools: string[] = []
 ): AppAbility {
-  const { can, build } = new AbilityBuilder<AppAbility>(createMongoAbility);
-
   const normalizedRole = roleName || "user";
   const normalizedTier = membershipTier || "basic";
+  const isOwner = normalizedRole === "owner";
+  const isAdmin = normalizedRole === "admin";
+  const isStaff = normalizedRole === "staff";
+  const isPremium = hasPremiumTier(normalizedTier) || isOwner || isAdmin || isStaff;
 
-  // 1. System Overrides (Owner role has full access to everything)
-  if (normalizedRole === "owner") {
-    can("manage", "all");
-  } else if (normalizedRole === "admin") {
-    can("manage", "User");
-    can("manage", "Role");
-    can("read", "SystemConfig");
-  }
+  const canManageUser = isOwner || isAdmin || permissions.some((p) => p.startsWith("user."));
+  const canManageRole = isOwner || isAdmin || permissions.some((p) => p.startsWith("role."));
+  const canManageSystemConfig = isOwner || permissions.includes("system.config");
+  const canReadSystemConfig =
+    isOwner || isAdmin || canManageSystemConfig || permissions.includes("system.logs");
 
-  // 2. Map Database role permissions to CASL
-  for (const perm of permissions) {
-    if (perm.startsWith("user.")) {
-      can("manage", "User");
+  const unlockedToolSet = new Set(["basic_calculator", ...unlockedTools]);
+
+  const can = (action: Actions, subject: Subjects, fieldOrExtra?: any): boolean => {
+    if (isOwner) return true;
+
+    // Check object subject (e.g. { type: "Tool", toolId: "...", unlocked: true })
+    if (typeof subject === "object" && subject !== null) {
+      if ("type" in subject && subject.type === "Tool") {
+        if (action === "use" || action === "manage") {
+          return unlockedToolSet.has((subject as any).toolId);
+        }
+      }
+      return false;
     }
-    if (perm.startsWith("role.")) {
-      can("manage", "Role");
+
+    if (subject === "User" && CRUD_ACTIONS.includes(action)) return canManageUser;
+    if (subject === "Role" && CRUD_ACTIONS.includes(action)) return canManageRole;
+    if (subject === "SystemConfig") {
+      if (action === "read") return canReadSystemConfig;
+      if (CRUD_ACTIONS.includes(action)) return canManageSystemConfig;
     }
-    if (perm === "system.config") {
-      can("manage", "SystemConfig");
+
+    if (subject === "MyCountryFeature") {
+      const section = typeof fieldOrExtra === "string" ? fieldOrExtra : "";
+      return !PREMIUM_SECTIONS.includes(section) || isPremium;
     }
-    if (perm === "system.logs") {
-      can("read", "SystemConfig");
+
+    if (subject === "Tool") {
+      const toolId = toolIdOf(fieldOrExtra);
+      return toolId === undefined || unlockedToolSet.has(toolId);
     }
-  }
 
-  // 3. MyCountry basic vs premium access rules
-  const isPremium = normalizedTier === "mycountry_premium";
+    return false;
+  };
 
-  // Standard features (open to all)
-  can("access", "MyCountryFeature", "overview");
-  can("access", "MyCountryFeature", "executive");
-  can("access", "MyCountryFeature", "politics");
-  can("access", "MyCountryFeature", "economy");
-  can("access", "MyCountryFeature", "diplomacy");
-
-  // Premium features (open to premium tier, owner, admin, or staff)
-  if (isPremium || ["owner", "admin", "staff"].includes(normalizedRole)) {
-    can("access", "MyCountryFeature", "defense");
-    can("access", "MyCountryFeature", "intelligence");
-    can("access", "MyCountryFeature", "map-editor");
-  }
-
-  // 4. Dynamic tools access (attribute-based condition)
-  can("use", "Tool", { toolId: "basic_calculator", unlocked: true });
-
-  // Map unlocked tools lists to abilities
-  for (const toolId of unlockedTools) {
-    can("use", "Tool", { toolId, unlocked: true });
-  }
-
-  return build({
-    detectSubjectType: (item) => {
-      if (typeof item === "string") return item as any;
-      return item.type;
-    },
-  });
+  return {
+    can,
+    cannot: (action, subject, fieldOrExtra) => !can(action, subject, fieldOrExtra),
+  };
 }

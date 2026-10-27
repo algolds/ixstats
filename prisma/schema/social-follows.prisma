@@ -1,0 +1,24 @@
+// ThinkPages persona follows and personal personas.
+// Plain id columns only (no back-relations on ThinkpagesAccount / User), per the multi-file schema rules.
+
+/// One persona following another. The follower persona's owner is stored so the
+/// per-user "Following" feed can find every persona that user follows in one query.
+model ThinkpagesFollow {
+  id                  String   @id @default(cuid())
+  followerAccountId   String
+  followedAccountId   String
+  followerClerkUserId String
+  createdAt           DateTime @default(now())
+
+  @@unique([followerAccountId, followedAccountId])
+  @@index([followedAccountId])
+  @@index([followerClerkUserId])
+}
+
+/// Guarantees at most one personal persona ("post as yourself") per user. The persona
+/// itself is a ThinkpagesAccount with accountType "personal" and no countryId.
+model ThinkpagesPersonalAccount {
+  clerkUserId String   @id
+  accountId   String   @unique
+  createdAt   DateTime @default(now())
+}

@@ -2,33 +2,35 @@
 
 import { useMemo } from "react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Card, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
 import {
-  Trash2,
+  Trash as Trash2,
   Plus,
   Calendar,
   Globe,
-  Users,
-  BarChart3,
-  CheckCircle2,
+  Group as Users,
+  StatsReport as BarChart3,
   Clock,
   Send,
-  Loader2,
-} from "lucide-react";
-import { toast } from "sonner";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { cn } from "~/lib/utils";
+  SystemRestart as Loader2,
+} from "iconoir-react";
+import { useNotify } from "~/hooks/useNotify";
 
 interface PollManagerProps {
   onCreateNew: () => void;
 }
 
 export function PollManager({ onCreateNew }: PollManagerProps) {
+  const notify = useNotify();
   const { data: polls, refetch } = api.polls.list.useQuery();
-  const { data: countriesData } = api.countries.getSelectList.useQuery({ limit: 250 });
+  const { data: countriesData } = api.countries.getSelectList.useQuery({
+    limit: 250,
+    realm: ALL_REALMS,
+  });
 
   // Create a mapping of countryId to country name
   const countryNameMap = useMemo(() => {
@@ -41,30 +43,30 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
 
   const toggleActiveMutation = api.polls.toggleActive.useMutation({
     onSuccess: () => {
-      toast.success("Poll status updated successfully");
+      notify.success("Poll status updated successfully");
       void refetch();
     },
     onError: (err) => {
-      toast.error(err.message || "Failed to update status");
+      notify.error(err.message || "Failed to update status");
     },
   });
 
   const deleteMutation = api.polls.delete.useMutation({
     onSuccess: () => {
-      toast.success("Poll deleted successfully");
+      notify.success("Poll deleted successfully");
       void refetch();
     },
     onError: (err) => {
-      toast.error(err.message || "Failed to delete poll");
+      notify.error(err.message || "Failed to delete poll");
     },
   });
 
   const publishToDiscordMutation = api.polls.publishToDiscord.useMutation({
     onSuccess: () => {
-      toast.success("Poll announced on Discord channel!");
+      notify.success("Poll announced on Discord channel!");
     },
     onError: (err) => {
-      toast.error(err.message || "Failed to publish to Discord");
+      notify.error(err.message || "Failed to publish Discord");
     },
   });
 
@@ -92,20 +94,17 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
 
   if (!polls || polls.length === 0) {
     return (
-      <Card className="border-border/60 bg-card/20 flex flex-col items-center justify-center border border-dashed p-10 text-center backdrop-blur-md">
-        <div className="mb-4 rounded-full bg-[#ff8a65]/10 p-4">
-          <BarChart3 className="h-8 w-8 text-[#ff8a65]" />
+      <Card className="flex flex-col items-center justify-center gap-6 border-dashed p-10 py-6 text-center">
+        <div className="bg-poll/10 mb-4 rounded-full p-4">
+          <BarChart3 className="text-poll h-8 w-8" />
         </div>
-        <CardTitle className="text-xl font-bold">No polls configured</CardTitle>
-        <CardDescription className="text-muted-foreground mt-2 mb-6 max-w-md text-sm">
+        <CardTitle className="text-title-2">No polls configured</CardTitle>
+        <CardDescription className="text-label-secondary text-body mt-2 mb-6 max-w-md">
           Create a choice poll, feature priority poll, or upvoting dashboard to gather citizen
           feedback.
         </CardDescription>
-        <Button
-          onClick={onCreateNew}
-          className="cursor-pointer gap-1.5 bg-[#ff8a65] font-semibold text-white hover:bg-[#ff8a65]/90"
-        >
-          <Plus className="h-4 w-4" /> Create First Poll
+        <Button onClick={onCreateNew} className="cursor-pointer gap-2">
+          <Plus className="h-4 w-4" /> Create first poll
         </Button>
       </Card>
     );
@@ -113,53 +112,24 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
 
   return (
     <div className="space-y-6">
-      {/* Premium Frosted Glass Stats Overview */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card className="border-border/20 bg-card/10 relative overflow-hidden border shadow-sm backdrop-blur-md">
-          <CardContent className="flex items-center justify-between p-5">
-            <div className="space-y-1">
-              <span className="text-muted-foreground block text-[10px] font-bold tracking-wider uppercase">
-                Ballots Configured
-              </span>
-              <span className="text-foreground text-2xl font-semibold">{polls.length}</span>
-            </div>
-            <div className="border-border/40 rounded-lg border p-2.5">
-              <BarChart3 className="text-muted-foreground h-4 w-4" />
-            </div>
-          </CardContent>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <Card className="p-4">
+          <p className="text-label-secondary text-stat-label">Ballots configured</p>
+          <p className="text-label text-title-2 mt-1 tabular-nums">{polls.length}</p>
         </Card>
 
-        <Card className="border-border/20 bg-card/10 relative overflow-hidden border shadow-sm backdrop-blur-md">
-          <CardContent className="flex items-center justify-between p-5">
-            <div className="space-y-1">
-              <span className="text-muted-foreground block text-[10px] font-bold tracking-wider uppercase">
-                Active Ballots
-              </span>
-              <span className="text-foreground text-2xl font-semibold">{activePollsCount}</span>
-            </div>
-            <div className="border-border/40 rounded-lg border p-2.5">
-              <CheckCircle2 className="text-muted-foreground h-4 w-4" />
-            </div>
-          </CardContent>
+        <Card className="p-4">
+          <p className="text-label-secondary text-stat-label">Active ballots</p>
+          <p className="text-title-2 text-green mt-1 tabular-nums">{activePollsCount}</p>
         </Card>
 
-        <Card className="border-border/20 bg-card/10 relative overflow-hidden border shadow-sm backdrop-blur-md">
-          <CardContent className="flex items-center justify-between p-5">
-            <div className="space-y-1">
-              <span className="text-muted-foreground block text-[10px] font-bold tracking-wider uppercase">
-                Responses Collected
-              </span>
-              <span className="text-foreground text-2xl font-semibold">{totalVotesCast}</span>
-            </div>
-            <div className="border-border/40 rounded-lg border p-2.5">
-              <Users className="text-muted-foreground h-4 w-4" />
-            </div>
-          </CardContent>
+        <Card className="p-4">
+          <p className="text-label-secondary text-stat-label">Responses collected</p>
+          <p className="text-title-2 text-teal mt-1 tabular-nums">{totalVotesCast}</p>
         </Card>
       </div>
 
-      {/* Poll Cards List */}
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-4">
         {polls.map((poll: any) => {
           const isExpired = poll.endDate ? new Date() > new Date(poll.endDate) : false;
           const countryName = poll.countryId
@@ -168,21 +138,13 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
           const votesCount = poll._count?.votes ?? 0;
 
           return (
-            <Card
-              key={poll.id}
-              className="border-border/20 bg-card/10 overflow-hidden border shadow-sm backdrop-blur-md transition-all duration-200"
-            >
-              <CardHeader className="border-border/20 border-b pb-3.5">
+            <Card key={poll.id} className="space-y-3 p-4">
+              <div className="border-separator border-b pb-3">
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <CardTitle className="text-foreground text-sm font-bold sm:text-base">
-                        {poll.question}
-                      </CardTitle>
-                      <Badge
-                        variant="outline"
-                        className="bg-background/40 border-border/60 text-[9px] font-bold tracking-wider uppercase"
-                      >
+                      <h4 className="text-label text-headline">{poll.question}</h4>
+                      <Badge variant="outline" className="bg-fill-3 border-separator text-eyebrow">
                         {poll.pollType === "choice"
                           ? "Choice"
                           : poll.pollType === "feature-poll"
@@ -190,13 +152,14 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                             : "Upvote Board"}
                       </Badge>
                       <Badge
-                        className={`border text-[9px] font-bold tracking-wider uppercase ${
+                        className={`text-eyebrow border ${
                           poll.isActive && !isExpired
-                            ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
+                            ? "border-green/35 bg-green/10 text-green hover:bg-green/20"
                             : isExpired
-                              ? "border-rose-500/35 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20"
-                              : "border-zinc-500/35 bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20"
+                              ? "border-red/35 bg-red/10 text-red hover:bg-red/20"
+                              : "border-separator bg-fill-3 text-label-secondary hover:bg-fill-4"
                         }`}
+                        variant="secondary"
                       >
                         {poll.isActive && !isExpired
                           ? "Active"
@@ -206,18 +169,15 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                       </Badge>
                     </div>
                     {poll.description && (
-                      <CardDescription className="text-muted-foreground/80 text-xs">
+                      <CardDescription className="text-label-secondary text-footnote">
                         {poll.description}
                       </CardDescription>
                     )}
                   </div>
 
-                  {/* Actions Panel */}
-                  <div className="bg-muted/10 border-border/20 flex shrink-0 items-center gap-3.5 self-start rounded-xl border p-2 md:self-auto">
+                  <div className="bg-fill-4 border-separator rounded-row flex shrink-0 items-center gap-4 self-start border p-2 md:self-auto">
                     <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground text-[10px] font-bold tracking-tight uppercase">
-                        Active:
-                      </span>
+                      <span className="text-label-secondary text-eyebrow">Active:</span>
                       <Switch
                         checked={poll.isActive}
                         onCheckedChange={() => handleToggleActive(poll.id, poll.isActive)}
@@ -226,14 +186,14 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                       />
                     </div>
 
-                    <div className="bg-border/30 h-4 w-px" />
+                    <div className="bg-separator h-4 w-px" />
 
                     {/* Announce / Publish to Discord button */}
                     <Button
                       variant="outline"
                       onClick={() => handlePublishToDiscord(poll.id)}
                       disabled={publishToDiscordMutation.isPending}
-                      className="h-7 cursor-pointer gap-1 border-[#ff8a65]/35 text-[10px] font-semibold text-[#ff8a65] transition-all duration-200 hover:bg-[#ff8a65]/10"
+                      className="cursor-pointer gap-1"
                       size="sm"
                     >
                       {publishToDiscordMutation.isPending ? (
@@ -244,85 +204,84 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                       Discord Publish
                     </Button>
 
-                    <div className="bg-border/30 h-4 w-px" />
+                    <div className="bg-separator h-4 w-px" />
 
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDelete(poll.id)}
                       disabled={deleteMutation.isPending}
-                      className="h-7 w-7 cursor-pointer rounded-lg text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
+                      className="text-destructive w-7 cursor-pointer"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
 
-                <div className="text-muted-foreground/60 flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2.5 text-[11px] font-semibold">
+                <div className="text-label-secondary text-caption flex flex-wrap items-center gap-x-4 gap-y-2 pt-2">
                   <div className="flex items-center gap-1">
                     {poll.countryId ? (
                       <>
-                        <Users className="h-3.5 w-3.5 text-[#ff8a65]" />
+                        <Users className="text-poll h-3.5 w-3.5" />
                         <span>
-                          Target: <span className="text-foreground">{countryName}</span>
+                          Target: <span className="text-label">{countryName}</span>
                         </span>
                       </>
                     ) : (
                       <>
-                        <Globe className="h-3.5 w-3.5 text-sky-400" />
+                        <Globe className="text-blue h-3.5 w-3.5" />
                         <span>
-                          Scope: <span className="text-foreground">Global (All Users)</span>
+                          Scope: <span className="text-label">Global (All Users)</span>
                         </span>
                       </>
                     )}
                   </div>
                   {poll.endDate && (
                     <div className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5 text-zinc-400" />
+                      <Clock className="text-label-secondary h-3.5 w-3.5" />
                       <span>
                         {isExpired ? "Expired: " : "Ends: "}
-                        <span className="text-foreground">
+                        <span className="text-label">
                           {new Date(poll.endDate).toLocaleString()}
                         </span>
                       </span>
                     </div>
                   )}
                   <div className="flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5 text-zinc-400" />
+                    <Calendar className="text-label-secondary h-3.5 w-3.5" />
                     <span>
                       Created:{" "}
-                      <span className="text-foreground">
+                      <span className="text-label">
                         {new Date(poll.createdAt).toLocaleDateString()}
                       </span>
                     </span>
                   </div>
                 </div>
-              </CardHeader>
+              </div>
 
-              <CardContent className="p-4 sm:p-5">
-                <h4 className="text-muted-foreground/75 mb-3 text-[10px] font-bold tracking-wider uppercase">
+              <div className="pt-2">
+                <h4 className="text-label-secondary text-subhead mb-3">
                   Option-by-Option Breakdown
                 </h4>
-                <div className="space-y-3.5">
+                <div className="space-y-4">
                   {poll.options.map((opt: any) => {
                     const optVotes = opt._count?.votes ?? 0;
                     const percentage = votesCount > 0 ? (optVotes / votesCount) * 100 : 0;
 
                     return (
-                      <div key={opt.id} className="group/opt space-y-1.5">
-                        <div className="flex justify-between text-xs font-semibold">
-                          <span className="text-foreground transition-colors group-hover/opt:text-[#ff8a65]">
+                      <div key={opt.id} className="group/opt space-y-2">
+                        <div className="text-caption flex justify-between">
+                          <span className="text-label group-hover/opt:text-poll transition-colors">
                             {opt.label}
                           </span>
-                          <span className="text-muted-foreground">
+                          <span className="text-label-secondary">
                             {optVotes} {optVotes === 1 ? "vote" : "votes"} ({percentage.toFixed(1)}
                             %)
                           </span>
                         </div>
-                        {/* Linear Progress Bar */}
-                        <div className="bg-muted/35 relative h-2 w-full overflow-hidden rounded-full">
+                        <div className="bg-fill-3 relative h-2 w-full overflow-hidden rounded-full">
                           <div
-                            className="h-full rounded-full bg-[#ff8a65] transition-all duration-500"
+                            className="bg-poll h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                             style={{ width: `${percentage}%` }}
                           />
                         </div>
@@ -330,13 +289,11 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                     );
                   })}
                 </div>
-                <div className="border-border/20 text-muted-foreground/70 mt-4 flex justify-between border-t pt-3 text-[10px] font-bold tracking-tight uppercase">
+                <div className="border-separator text-label-secondary text-eyebrow mt-4 flex justify-between border-t pt-3">
                   <span>Total Option Votes Cast: {votesCount}</span>
-                  {poll.multiple && (
-                    <span className="text-[#ff8a65]">Multiple selection enabled</span>
-                  )}
+                  {poll.multiple && <span className="text-poll">Multiple selection enabled</span>}
                 </div>
-              </CardContent>
+              </div>
             </Card>
           );
         })}

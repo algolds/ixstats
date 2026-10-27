@@ -2,16 +2,23 @@
 
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { Settings, Upload, Loader2, Trash2, ImageIcon } from "lucide-react";
+import {
+  Settings,
+  Upload,
+  SystemRestart as Loader2,
+  Trash as Trash2,
+  MediaImage as ImageIcon,
+} from "iconoir-react";
 
 const MediaSearchModal = dynamic(
-  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () =>
+    import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
-import { withBasePath } from "~/lib/base-path";
+import { assetUrl, withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -59,6 +66,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
 
   useEffect(() => {
     if (open) {
+      // oxlint-disable-next-line
       setName(team.name);
       setLogoUrl(team.logo ?? "");
       setCoverUrl(team.coverImage ?? "");
@@ -73,7 +81,6 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
     onSuccess: () => {
       notify.success("Settings Saved", "Club settings updated.");
       utils.sports.getTeam.invalidate({ id: team.id });
-      utils.sports.getMyClubOverview.invalidate({ teamId: team.id });
       onSaved?.();
       onOpenChange(false);
     },
@@ -158,14 +165,14 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
-            Club Settings
+            Club settings
           </DialogTitle>
           <DialogDescription>Edit branding and appearance details for your club.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="club-name">Club Name</Label>
+            <Label htmlFor="club-name">Club name</Label>
             <Input
               id="club-name"
               value={name}
@@ -176,7 +183,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="club-color">Primary Color</Label>
+            <Label htmlFor="club-color">Primary color</Label>
             <div className="flex items-center gap-2">
               <Input
                 id="club-color"
@@ -190,13 +197,13 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
                 placeholder="#3b82f6"
-                className="h-9 flex-1 font-mono text-xs"
+                className="text-footnote h-9 flex-1 tabular-nums"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="team-wiki-slug">Wiki Article Slug</Label>
+            <Label htmlFor="team-wiki-slug">Wiki article slug</Label>
             <Input
               id="team-wiki-slug"
               value={wikiSlug}
@@ -204,28 +211,28 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
               placeholder="e.g. Real_Capital"
               maxLength={100}
             />
-            <p className="text-muted-foreground text-[10px]">
-              Links this team to its IxWiki article.
+            <p className="text-label-secondary text-footnote">
+              Links this team to its wiki article.
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label>Club Logo</Label>
+            <Label>Club logo</Label>
             <div className="flex items-start gap-4">
               <div
                 className={cn(
-                  "flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed",
-                  logoPreviewSrc ? "border-border bg-muted/50" : "border-border/50 bg-muted/30"
+                  "rounded-row flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden border-2 border-dashed",
+                  logoPreviewSrc ? "border-separator bg-fill-3" : "border-separator bg-fill-4"
                 )}
               >
                 {logoPreviewSrc ? (
                   <img
-                    src={logoPreviewSrc}
+                    src={assetUrl(logoPreviewSrc) ?? undefined}
                     alt="Logo preview"
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="text-muted-foreground text-[10px] font-medium">No logo</span>
+                  <span className="text-label-secondary text-footnote font-medium">No logo</span>
                 )}
               </div>
 
@@ -239,12 +246,12 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                     fileInputRef.current?.click();
                   }}
                   disabled={isUploading}
-                  className="text-xs"
+                  className="text-footnote"
                 >
                   {isUploading && uploadingType === "logo" ? (
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                   ) : (
-                    <Upload className="mr-1.5 h-3.5 w-3.5" />
+                    <Upload className="mr-2 h-3.5 w-3.5" />
                   )}
                   {isUploading && uploadingType === "logo" ? "Uploading..." : "Upload Image"}
                 </Button>
@@ -253,10 +260,10 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                   variant="outline"
                   size="sm"
                   onClick={() => setMediaSearchFor("logo")}
-                  className="text-xs"
+                  className="text-footnote"
                 >
-                  <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
-                  Browse Media
+                  <ImageIcon className="mr-2 h-3.5 w-3.5" />
+                  Browse media
                 </Button>
                 {logoPreviewSrc && (
                   <Button
@@ -264,9 +271,9 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                     variant="ghost"
                     size="sm"
                     onClick={handleRemoveLogo}
-                    className="text-destructive hover:text-destructive text-xs"
+                    className="text-destructive"
                   >
-                    <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                    <Trash2 className="mr-2 h-3.5 w-3.5" />
                     Remove
                   </Button>
                 )}
@@ -283,25 +290,25 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
 
           {/* Cover Image */}
           <div className="space-y-2">
-            <Label>Cover Image</Label>
-            <p className="text-muted-foreground text-[10px] leading-tight">
+            <Label>Cover image</Label>
+            <p className="text-label-secondary text-footnote leading-tight">
               Shown as the background banner for your club.
             </p>
             <div className="flex items-start gap-4">
               <div
                 className={cn(
-                  "flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed",
-                  coverPreviewSrc ? "border-border bg-muted/50" : "border-border/50 bg-muted/30"
+                  "rounded-control flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden border-2 border-dashed",
+                  coverPreviewSrc ? "border-separator bg-fill-3" : "border-separator bg-fill-4"
                 )}
               >
                 {coverPreviewSrc ? (
                   <img
-                    src={coverPreviewSrc}
+                    src={assetUrl(coverPreviewSrc) ?? undefined}
                     alt="Cover preview"
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="text-muted-foreground text-[10px] font-medium">No cover</span>
+                  <span className="text-label-secondary text-footnote font-medium">No cover</span>
                 )}
               </div>
               <div className="flex flex-col gap-2">
@@ -314,12 +321,12 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                     fileInputRef.current?.click();
                   }}
                   disabled={isUploading}
-                  className="text-xs"
+                  className="text-footnote"
                 >
                   {isUploading && uploadingType === "cover" ? (
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                   ) : (
-                    <Upload className="mr-1.5 h-3.5 w-3.5" />
+                    <Upload className="mr-2 h-3.5 w-3.5" />
                   )}
                   {isUploading && uploadingType === "cover" ? "Uploading..." : "Upload Image"}
                 </Button>
@@ -328,10 +335,10 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                   variant="outline"
                   size="sm"
                   onClick={() => setMediaSearchFor("cover")}
-                  className="text-xs"
+                  className="text-footnote"
                 >
-                  <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
-                  Browse Media
+                  <ImageIcon className="mr-2 h-3.5 w-3.5" />
+                  Browse media
                 </Button>
                 {coverPreviewSrc && (
                   <Button
@@ -339,9 +346,9 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                     variant="ghost"
                     size="sm"
                     onClick={handleRemoveCover}
-                    className="text-destructive hover:text-destructive text-xs"
+                    className="text-destructive"
                   >
-                    <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                    <Trash2 className="mr-2 h-3.5 w-3.5" />
                     Remove
                   </Button>
                 )}
@@ -368,12 +375,12 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="text-xs">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="text-footnote">
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={updateTeam.isPending} className="text-xs">
-            {updateTeam.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
-            Save Changes
+          <Button onClick={handleSave} disabled={updateTeam.isPending}>
+            {updateTeam.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+            Save changes
           </Button>
         </DialogFooter>
       </DialogContent>

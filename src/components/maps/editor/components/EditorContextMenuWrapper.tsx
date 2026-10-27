@@ -2,27 +2,34 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 import { FeatureContextMenu } from "~/components/maps/editor/FeatureContextMenu";
+import type {
+  EditorContextMenuData,
+  MapEditorInstance,
+  EditorFeature,
+} from "../types/editor-state";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 
 interface EditorContextMenuWrapperProps {
-  contextMenu: {
-    x: number;
-    y: number;
-    feature: any;
-  } | null;
-  setContextMenu: (menu: any | null) => void;
-  editor: any;
+  contextMenu: EditorContextMenuData | null;
+  setContextMenu: (menu: EditorContextMenuData | null) => void;
+  editor: MapEditorInstance;
+  /** Confirming delete (falls back to an immediate delete when omitted). */
+  onDeleteFeature?: (feature: EditorFeature) => void;
+  onZoomToFeature?: (feature: EditorFeature) => void;
 }
 
 export function EditorContextMenuWrapper({
   contextMenu,
   setContextMenu,
   editor,
+  onDeleteFeature,
+  onZoomToFeature,
 }: EditorContextMenuWrapperProps) {
   const router = useRouter();
 
   if (!contextMenu) return null;
+  const target = editor.allFeatures.find((f: EditorFeature) => f.id === contextMenu.feature.id);
 
   return (
     <FeatureContextMenu
@@ -30,32 +37,45 @@ export function EditorContextMenuWrapper({
       y={contextMenu.y}
       feature={contextMenu.feature}
       onEdit={() => {
-        const feat = editor.allFeatures.find((f: any) => f.id === contextMenu.feature.id);
+        const feat = editor.allFeatures.find((f: EditorFeature) => f.id === contextMenu.feature.id);
         if (feat) editor.startEditing(feat);
         setContextMenu(null);
       }}
       onDuplicate={() => {
-        const feat = editor.allFeatures.find((f: any) => f.id === contextMenu.feature.id);
+        const feat = editor.allFeatures.find((f: EditorFeature) => f.id === contextMenu.feature.id);
         if (feat && editor.duplicateFeature) {
           void editor.duplicateFeature(feat);
         }
         setContextMenu(null);
       }}
       onDelete={() => {
-        editor.handleDeleteFeature(contextMenu.feature.id, contextMenu.feature.type as any);
-        setContextMenu(null);
-      }}
-      onCopyCoords={() => {
-        const feat = editor.allFeatures.find((f: any) => f.id === contextMenu.feature.id);
-        if (feat && "coordinates" in feat && Array.isArray(feat.coordinates)) {
-          navigator.clipboard.writeText(`${feat.coordinates[1]}, ${feat.coordinates[0]}`);
+        if (target) {
+          if (onDeleteFeature) onDeleteFeature(target);
+          else void editor.handleDeleteFeature(target);
         }
         setContextMenu(null);
       }}
+      onZoomTo={
+        target && onZoomToFeature
+          ? () => {
+              onZoomToFeature(target);
+              setContextMenu(null);
+            }
+          : undefined
+      }
+      onCopyCoords={
+        target?.coordinates
+          ? () => {
+              const c = target.coordinates!;
+              void navigator.clipboard?.writeText(`${c[1].toFixed(5)}, ${c[0].toFixed(5)}`);
+              setContextMenu(null);
+            }
+          : undefined
+      }
       onOpenWiki={
         contextMenu.feature.wikiPageTitle
           ? () => {
-              router.push(titleToWikiOSPath(contextMenu.feature.wikiPageTitle!));
+              router.push(titleToWikiOSRoute(contextMenu.feature.wikiPageTitle!));
               setContextMenu(null);
             }
           : undefined

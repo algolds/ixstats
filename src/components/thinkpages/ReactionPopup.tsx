@@ -1,38 +1,11 @@
 "use client";
 
-import React, { useState, type FC } from "react";
-import { motion } from "motion/react";
-import { Heart, Smile, Angry, ThumbsUp, ThumbsDown, Flame, Plus, Sparkles } from "lucide-react";
+import React, { useState } from "react";
+import { Heart, Plus, Sparks as Sparkles } from "iconoir-react";
+import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
-
-const REACTION_ICONS: { [key: string]: FC<{ className?: string }> } = {
-  like: Heart,
-  laugh: Smile,
-  angry: Angry,
-  fire: Flame,
-  thumbsup: ThumbsUp,
-  thumbsdown: ThumbsDown,
-};
-
-// Common Discord emoji reactions including ixnay
-const DISCORD_EMOJI_REACTIONS = [
-  {
-    name: "ixnay",
-    url: "https://cdn.discordapp.com/emojis/559232409451888640.png",
-    id: "559232409451888640",
-  },
-  {
-    name: "heky_boi",
-    url: "https://cdn.discordapp.com/emojis/580813300733157376.png",
-    id: "580813300733157376",
-  },
-  {
-    name: "pog",
-    url: "https://cdn.discordapp.com/emojis/739969522139209748.png",
-    id: "739969522139209748",
-  },
-];
+import { DISCORD_EMOJI_REACTIONS, REACTION_ICONS } from "./post/ThinkpagesPostUtils";
 
 interface DiscordEmoji {
   id: string;
@@ -46,11 +19,6 @@ interface ReactionPopupProps {
 }
 
 export function ReactionPopup({ onSelectReaction, postReactionCounts }: ReactionPopupProps) {
-  console.log("🎭 ReactionPopup component rendered:", {
-    onSelectReaction: !!onSelectReaction,
-    postReactionCounts,
-  });
-
   const [showMoreEmojis, setShowMoreEmojis] = useState(false);
   const [activeTab, setActiveTab] = useState<"reactions" | "discord">("reactions");
   const [discordError, setDiscordError] = useState<string | null>(null);
@@ -72,6 +40,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
   React.useEffect(() => {
     if (error) {
       console.warn("Discord emojis failed to load:", error);
+      // oxlint-disable-next-line
       setDiscordError("Discord emojis unavailable");
     }
   }, [error]);
@@ -79,71 +48,70 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
   const availableReactions = Object.keys(REACTION_ICONS);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 10, scale: 0.9 }}
-      className="bg-background border-border min-w-[280px] rounded-lg border p-2 shadow-lg"
-    >
+    // Presented inside a Popover (facet-overlay), so this content stays opaque roles only.
+    <div className="min-w-[290px]">
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as "reactions" | "discord")}
         className="w-full"
       >
-        <TabsList className="bg-muted mb-2 grid w-full grid-cols-2">
-          <TabsTrigger value="reactions" className="flex items-center gap-1 text-xs">
-            <Heart className="h-3 w-3" />
+        <TabsList className="mb-2 grid w-full grid-cols-2">
+          <TabsTrigger value="reactions" className="gap-1">
+            <Heart className="size-3.5" aria-hidden="true" />
             <span>Built-in</span>
           </TabsTrigger>
-          <TabsTrigger value="discord" className="flex items-center gap-1 text-xs">
-            <Sparkles className="h-3 w-3" />
+          <TabsTrigger value="discord" className="gap-1">
+            <Sparkles className="size-3.5" aria-hidden="true" />
             <span>Discord</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="reactions" className="mt-2">
-          <div className="flex gap-1">
+        <TabsContent value="reactions" className="mt-1">
+          <div className="flex items-center justify-around gap-1 px-1">
             {availableReactions.map((type) => {
               const Icon = REACTION_ICONS[type];
               if (!Icon) return null;
               return (
                 <button
                   key={type}
+                  type="button"
                   onClick={() => onSelectReaction(type)}
-                  className="hover:bg-accent rounded-full p-2 transition-colors"
+                  className="text-label-secondary hover:text-label hover:bg-fill-3 rounded-full p-2 transition-[color,background-color,scale] duration-150 hover:scale-125"
                   title={type}
+                  aria-label={type}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="size-5" />
                 </button>
               );
             })}
           </div>
         </TabsContent>
 
-        <TabsContent value="discord" className="mt-2">
-          <div className="flex flex-wrap gap-1">
+        <TabsContent value="discord" className="mt-1">
+          <div className="flex flex-wrap gap-1 p-1">
             {/* Featured Discord Emojis (including ixnay) */}
             {DISCORD_EMOJI_REACTIONS.map((emoji) => (
               <button
-                key={emoji.id}
+                key={`featured-${emoji.name}`}
+                type="button"
                 onClick={() => onSelectReaction(`discord:${emoji.name}`)}
-                className="hover:bg-accent rounded p-1 transition-colors"
+                className="hover:bg-fill-3 rounded-control-sm p-2 transition-[background-color,scale] duration-150 hover:scale-125"
                 title={`:${emoji.name}:`}
+                aria-label={emoji.name}
               >
-                <img src={emoji.url} alt={`:${emoji.name}:`} className="h-5 w-5" />
+                <img src={emoji.url} alt={`:${emoji.name}:`} className="size-5" />
               </button>
             ))}
 
-            {/* All Discord Emojis */}
             {isLoading ? (
-              <div className="flex items-center justify-center p-2">
-                <div className="border-primary h-4 w-4 animate-spin rounded-full border-b-2"></div>
-                <span className="text-muted-foreground ml-2 text-xs">Loading...</span>
+              <div className="flex w-full items-center justify-center p-3">
+                <div className="border-tint size-4 animate-spin rounded-full border-b-2" />
+                <span className="text-footnote text-label-secondary ml-2">Loading...</span>
               </div>
             ) : error || discordError ? (
-              <div className="text-muted-foreground p-2 text-center text-xs">
+              <div className="text-label-secondary text-footnote w-full p-2 text-center">
                 <div className="mb-1">{discordError || "Discord emojis unavailable"}</div>
-                <div className="text-xs opacity-75">Using built-in reactions</div>
+                <div className="text-footnote text-label-secondary">Using built-in reactions</div>
               </div>
             ) : discordEmojis?.emojis ? (
               <>
@@ -152,14 +120,16 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                   .map((emoji: DiscordEmoji) => (
                     <button
                       key={emoji.id}
+                      type="button"
                       onClick={() => onSelectReaction(`discord:${emoji.name}`)}
-                      className="hover:bg-accent rounded p-1 transition-colors"
+                      className="hover:bg-fill-3 rounded-control-sm p-2 transition-[background-color,scale] duration-150 hover:scale-125"
                       title={`:${emoji.name}:`}
+                      aria-label={emoji.name}
                     >
                       <img
                         src={emoji.url}
                         alt={`:${emoji.name}:`}
-                        className="h-5 w-5"
+                        className="size-5"
                         onError={(e) => {
                           console.warn("Discord emoji failed to load:", emoji.name);
                           (e.target as HTMLImageElement).style.display = "none";
@@ -168,11 +138,11 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                     </button>
                   ))}
 
-                {/* Show More/Less Button */}
                 {discordEmojis.emojis.length > 16 && (
                   <button
+                    type="button"
                     onClick={() => setShowMoreEmojis(!showMoreEmojis)}
-                    className="hover:bg-accent border-muted-foreground/30 rounded border border-dashed p-1 transition-colors"
+                    className="border-separator-opaque hover:bg-fill-3 rounded-control-sm border border-dashed p-2 transition-colors"
                     title={
                       showMoreEmojis
                         ? "Show less"
@@ -180,23 +150,24 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                     }
                   >
                     <Plus
-                      className={`h-5 w-5 transition-transform ${showMoreEmojis ? "rotate-45" : ""}`}
+                      className={`size-5 transition-transform ${showMoreEmojis ? "rotate-45" : ""}`}
                     />
                   </button>
                 )}
               </>
             ) : (
-              <div className="text-muted-foreground p-2 text-xs">No Discord emojis available</div>
+              <div className="text-label-secondary text-footnote w-full p-2 text-center">
+                No Discord emojis available
+              </div>
             )}
           </div>
         </TabsContent>
       </Tabs>
 
-      {/* Current Reaction Counts */}
       {postReactionCounts && Object.keys(postReactionCounts).length > 0 && (
-        <div className="border-border mt-2 border-t pt-2">
-          <div className="text-muted-foreground mb-1 text-xs">Current reactions:</div>
-          <div className="flex flex-wrap gap-1 text-xs">
+        <div className="border-separator mt-2 border-t pt-2">
+          <div className="text-footnote text-label-secondary mb-1">Current reactions:</div>
+          <div className="flex flex-wrap gap-1">
             {Object.entries(postReactionCounts).map(([type, count]) => {
               if ((count as number) === 0) return null;
 
@@ -204,7 +175,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
               const isDiscordEmoji = type.startsWith("discord:");
 
               return (
-                <div key={type} className="bg-muted flex items-center gap-1 rounded px-2 py-1">
+                <Badge key={type} variant="default">
                   {isDiscordEmoji ? (
                     <img
                       src={
@@ -214,20 +185,20 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                         ""
                       }
                       alt={type}
-                      className="h-3 w-3"
+                      className="size-3.5"
                     />
                   ) : Icon ? (
-                    <Icon className="h-3 w-3" />
+                    <Icon className="size-3.5" />
                   ) : (
                     <span>{type}</span>
                   )}
-                  <span>{count as number}</span>
-                </div>
+                  <span className="tabular-nums">{count as number}</span>
+                </Badge>
               );
             })}
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

@@ -4,22 +4,24 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
-  Undo2,
-  Redo2,
-  RotateCcw,
-  Shapes,
+  Undo as Undo2,
+  Redo as Redo2,
+  Undo as RotateCcw,
+  Component as Shapes,
   Plus,
-  Grid3X3,
+  ViewGrid as Grid3X3,
   Check,
-  PenTool,
-  Sliders,
-  Sparkle,
-} from "lucide-react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { FacetMaterial } from "~/components/ui/facet";
+  EditPencil as PenTool,
+} from "iconoir-react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
 import type { Glyph, CanvasGuideSettings, InkColorPreset } from "./types";
 import { SHAPE_STAMPS, QUICK_IPA_PHONEMES, type ShapeStamp } from "./glyph-primitives";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import { Toggle } from "~/components/ui/toggle";
+import { Card } from "~/components/ui/card";
 
 const CANVAS_DRAFT_KEY = "onoma_glyph_canvas_draft_v2";
 
@@ -35,40 +37,40 @@ const INK_PRESETS: Record<
   { label: string; stroke: string; glow: string; bg: string }
 > = {
   accent: {
-    label: "Onoma Blue",
-    stroke: "#0091ff",
-    glow: "rgba(0, 145, 255, 0.35)",
-    bg: "bg-[#0091ff]",
+    label: "Onoma blue",
+    stroke: "var(--tint)",
+    glow: "color-mix(in srgb, var(--tint) 35%, transparent)",
+    bg: "bg-tint",
   },
   mono: {
-    label: "Ink Black",
+    label: "Ink black",
     stroke: "currentColor",
-    glow: "rgba(128, 128, 128, 0.15)",
-    bg: "bg-foreground",
+    glow: "color-mix(in srgb, currentColor 15%, transparent)",
+    bg: "bg-label",
   },
   indigo: {
     label: "Indigo",
-    stroke: "#6366f1",
-    glow: "rgba(99, 102, 241, 0.3)",
-    bg: "bg-indigo-500",
+    stroke: "var(--color-indigo)",
+    glow: "color-mix(in srgb, var(--color-indigo) 30%, transparent)",
+    bg: "bg-indigo",
   },
   emerald: {
     label: "Emerald",
-    stroke: "#10b981",
-    glow: "rgba(16, 185, 129, 0.3)",
-    bg: "bg-emerald-500",
+    stroke: "var(--color-green)",
+    glow: "color-mix(in srgb, var(--color-green) 30%, transparent)",
+    bg: "bg-green",
   },
   ruby: {
     label: "Ruby",
-    stroke: "#f43f5e",
-    glow: "rgba(244, 63, 94, 0.3)",
-    bg: "bg-rose-500",
+    stroke: "var(--color-red)",
+    glow: "color-mix(in srgb, var(--color-red) 30%, transparent)",
+    bg: "bg-red",
   },
   violet: {
-    label: "Violet",
-    stroke: "#a855f7",
-    glow: "rgba(168, 85, 247, 0.3)",
-    bg: "bg-purple-500",
+    label: "Cyan",
+    stroke: "var(--color-teal)",
+    glow: "color-mix(in srgb, var(--color-teal) 30%, transparent)",
+    bg: "bg-teal",
   },
 };
 
@@ -167,7 +169,10 @@ export function GlyphForgeCanvas({
       setGrapheme(editingGlyph.phoneme);
       setUnicodeSymbol(editingGlyph.unicode || "");
       if (editingGlyph.svgPath) {
-        const parts = editingGlyph.svgPath.trim().split(/(?=M\s*)/i).filter(Boolean);
+        const parts = editingGlyph.svgPath
+          .trim()
+          .split(/(?=M\s*)/i)
+          .filter(Boolean);
         setStrokes(parts.length > 0 ? parts : [editingGlyph.svgPath]);
       } else {
         setStrokes([]);
@@ -337,23 +342,20 @@ export function GlyphForgeCanvas({
   );
 
   return (
-    <FacetMaterial
-      material="satin"
-      className="border-border/30 relative flex flex-col space-y-3 rounded-2xl border p-4 shadow-sm"
-    >
+    <Card variant="well" padding="none" className="relative flex flex-col space-y-3 p-4">
       {/* 1. Apple-Style Header: Studio Badge & History Tools */}
-      <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2.5">
+      <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0091ff]/10 text-[#0091ff]">
+          <div className="bg-tint/10 text-tint rounded-control flex h-6 w-6 items-center justify-center">
             <PenTool className="h-3.5 w-3.5" />
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
-              <h4 className="text-foreground text-xs font-semibold tracking-tight">
+            <div className="flex items-center gap-2">
+              <h4 className="text-label text-footnote font-semibold">
                 {editingGlyph ? `Refining ⟨${editingGlyph.phoneme}⟩` : "Glyph Designer"}
               </h4>
               {strokes.length > 0 && (
-                <span className="text-muted-foreground bg-secondary/50 rounded-full px-1.5 py-0.2 text-[9px] font-mono">
+                <span className="text-label-secondary bg-fill-3 py-0.2 text-caption rounded-full px-2 font-mono">
                   {strokes.length}
                 </span>
               )}
@@ -361,52 +363,57 @@ export function GlyphForgeCanvas({
           </div>
         </div>
 
-        {/* Top Control Cluster */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {editingGlyph && onCancelEdit && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onCancelEdit}
-              className="text-muted-foreground hover:text-foreground text-[10px] font-medium px-2 py-0.5 rounded-md hover:bg-secondary/40 transition-colors cursor-pointer active:scale-95"
+              className="text-label-secondary hover:text-label text-label-secondary hover:text-label"
             >
               Cancel
-            </button>
+            </Button>
           )}
 
-          {/* History Group */}
-          <div className="flex items-center gap-0.5 rounded-lg border border-border/40 bg-secondary/20 p-0.5">
-            <button
-              type="button"
+          <div className="border-separator bg-fill-4 rounded-control flex items-center gap-0.5 border p-0.5">
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={handleUndo}
               disabled={strokes.length === 0}
               title="Undo (Cmd+Z)"
-              className="text-muted-foreground hover:text-foreground hover:bg-background/80 disabled:opacity-25 flex h-5.5 w-5.5 cursor-pointer items-center justify-center rounded-md transition-all active:scale-90"
+              aria-label="Undo (Cmd+Z)"
+              className="text-label-secondary hover:text-label w-5.5 justify-center"
             >
               <Undo2 className="h-3 w-3" />
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={handleRedo}
               disabled={redoStack.length === 0}
               title="Redo (Cmd+Shift+Z)"
-              className="text-muted-foreground hover:text-foreground hover:bg-background/80 disabled:opacity-25 flex h-5.5 w-5.5 cursor-pointer items-center justify-center rounded-md transition-all active:scale-90"
+              aria-label="Redo (Cmd+Shift+Z)"
+              className="text-label-secondary hover:text-label w-5.5 justify-center"
             >
               <Redo2 className="h-3 w-3" />
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={handleClear}
               disabled={strokes.length === 0 && !currentStroke}
-              title="Clear Canvas"
-              className="text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 disabled:opacity-25 flex h-5.5 w-5.5 cursor-pointer items-center justify-center rounded-md transition-all active:scale-90"
+              title="Clear canvas"
+              aria-label="Clear canvas"
+              className="text-label-secondary hover:text-red hover:bg-red/10 w-5.5 justify-center"
             >
               <RotateCcw className="h-3 w-3" />
-            </button>
+            </Button>
           </div>
 
-          {/* Guide Overlay Toggle */}
-          <button
-            type="button"
+          <Button
+            variant={guides.guideLevel !== "none" ? "secondary" : "outline"}
+            size="sm"
             onClick={() =>
               setGuides((g) => ({
                 ...g,
@@ -414,26 +421,23 @@ export function GlyphForgeCanvas({
                   g.guideLevel === "all"
                     ? "baseline"
                     : g.guideLevel === "baseline"
-                    ? "none"
-                    : "all",
+                      ? "none"
+                      : "all",
               }))
             }
             title={`Guide View: ${guides.guideLevel}`}
-            className={cn(
-              "flex h-6.5 items-center gap-1 rounded-lg border px-2 text-[10px] font-medium transition-all cursor-pointer active:scale-95",
-              guides.guideLevel !== "none"
-                ? "border-[#0091ff]/30 bg-[#0091ff]/10 text-[#0091ff]"
-                : "border-border/40 bg-secondary/20 text-muted-foreground hover:text-foreground"
-            )}
+            className="gap-1 px-2"
           >
             <Grid3X3 className="h-3 w-3" />
-            <span className="capitalize">{guides.guideLevel === "all" ? "Guides" : guides.guideLevel}</span>
-          </button>
+            <span className="capitalize">
+              {guides.guideLevel === "all" ? "Guides" : guides.guideLevel}
+            </span>
+          </Button>
         </div>
       </div>
 
       {/* 2. Premium Vector Drawing Canvas (SF Symbols Style Hairlines) */}
-      <div className="border-border/30 bg-background/50 dark:bg-card/30 relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl border shadow-inner select-none">
+      <div className="border-separator bg-surface rounded-card relative flex aspect-square w-full items-center justify-center overflow-hidden border shadow-inner select-none">
         <svg
           ref={canvasRef}
           viewBox="0 0 128 128"
@@ -449,13 +453,12 @@ export function GlyphForgeCanvas({
                 d="M 16 0 L 0 0 0 16"
                 fill="none"
                 stroke="currentColor"
-                className="text-foreground/5 dark:text-foreground/4"
+                className="text-label-quaternary"
                 strokeWidth="0.5"
               />
             </pattern>
           </defs>
 
-          {/* Background Grid Pattern */}
           {guides.showGrid && guides.guideLevel !== "none" && (
             <rect width="128" height="128" fill="url(#forge-grid)" />
           )}
@@ -470,11 +473,17 @@ export function GlyphForgeCanvas({
                 x2="128"
                 y2="20"
                 stroke="currentColor"
-                className="text-foreground/12 dark:text-foreground/15"
+                className="text-label-quaternary"
                 strokeWidth="0.75"
                 strokeDasharray="2 3"
               />
-              <text x="3" y="18" fill="currentColor" className="text-foreground/25 text-[6px] font-mono font-medium select-none">
+              <text
+                x="3"
+                y="18"
+                fill="currentColor"
+                fontSize="6"
+                className="text-label-quaternary font-mono font-medium select-none"
+              >
                 asc
               </text>
 
@@ -485,11 +494,17 @@ export function GlyphForgeCanvas({
                 x2="128"
                 y2="36"
                 stroke="currentColor"
-                className="text-foreground/12 dark:text-foreground/15"
+                className="text-label-quaternary"
                 strokeWidth="0.75"
                 strokeDasharray="2 3"
               />
-              <text x="3" y="34" fill="currentColor" className="text-foreground/25 text-[6px] font-mono font-medium select-none">
+              <text
+                x="3"
+                y="34"
+                fill="currentColor"
+                fontSize="6"
+                className="text-label-quaternary font-mono font-medium select-none"
+              >
                 cap
               </text>
 
@@ -500,11 +515,17 @@ export function GlyphForgeCanvas({
                 x2="128"
                 y2="56"
                 stroke="currentColor"
-                className="text-foreground/12 dark:text-foreground/15"
+                className="text-label-quaternary"
                 strokeWidth="0.75"
                 strokeDasharray="2 3"
               />
-              <text x="3" y="54" fill="currentColor" className="text-foreground/25 text-[6px] font-mono font-medium select-none">
+              <text
+                x="3"
+                y="54"
+                fill="currentColor"
+                fontSize="6"
+                className="text-label-quaternary font-mono font-medium select-none"
+              >
                 x
               </text>
 
@@ -515,11 +536,17 @@ export function GlyphForgeCanvas({
                 x2="128"
                 y2="112"
                 stroke="currentColor"
-                className="text-foreground/12 dark:text-foreground/15"
+                className="text-label-quaternary"
                 strokeWidth="0.75"
                 strokeDasharray="2 3"
               />
-              <text x="3" y="110" fill="currentColor" className="text-foreground/25 text-[6px] font-mono font-medium select-none">
+              <text
+                x="3"
+                y="110"
+                fill="currentColor"
+                fontSize="6"
+                className="text-label-quaternary font-mono font-medium select-none"
+              >
                 desc
               </text>
             </>
@@ -533,12 +560,16 @@ export function GlyphForgeCanvas({
                 y1="92"
                 x2="128"
                 y2="92"
-                stroke="#0091ff"
-                className="opacity-40 dark:opacity-50"
+                className="stroke-tint opacity-40"
                 strokeWidth="1"
                 strokeDasharray="3 3"
               />
-              <text x="3" y="90" fill="#0091ff" className="opacity-60 text-[6.5px] font-mono font-semibold select-none">
+              <text
+                x="3"
+                y="90"
+                fontSize="6.5"
+                className="fill-tint font-mono font-semibold opacity-60 select-none"
+              >
                 base 92
               </text>
             </>
@@ -553,7 +584,7 @@ export function GlyphForgeCanvas({
                 x2="64"
                 y2="128"
                 stroke="currentColor"
-                className="text-foreground/8"
+                className="text-label-quaternary"
                 strokeWidth="0.5"
               />
               <line
@@ -562,7 +593,7 @@ export function GlyphForgeCanvas({
                 x2="128"
                 y2="64"
                 stroke="currentColor"
-                className="text-foreground/8"
+                className="text-label-quaternary"
                 strokeWidth="0.5"
               />
             </>
@@ -575,110 +606,117 @@ export function GlyphForgeCanvas({
               r="44"
               fill="none"
               stroke="currentColor"
-              className="text-foreground/8"
+              className="text-label-quaternary"
               strokeDasharray="3 3"
               strokeWidth="0.5"
             />
           )}
 
-          {/* Committed Strokes */}
           {strokes.map((pathStr, i) => (
             <path
               key={`stroke-${i}`}
               d={pathStr}
               fill="none"
-              stroke={activeInk.stroke}
               strokeWidth={strokeWidth}
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{ filter: `drop-shadow(0 0 2px ${activeInk.glow})` }}
+              style={{
+                stroke: activeInk.stroke,
+                filter: `drop-shadow(0 0 2px ${activeInk.glow})`,
+              }}
             />
           ))}
 
-          {/* Active In-Progress Stroke */}
           {currentStroke && (
             <path
               d={currentStroke}
               fill="none"
-              stroke={activeInk.stroke}
               strokeWidth={strokeWidth}
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{ filter: `drop-shadow(0 0 4px ${activeInk.glow})` }}
+              style={{
+                stroke: activeInk.stroke,
+                filter: `drop-shadow(0 0 4px ${activeInk.glow})`,
+              }}
             />
           )}
         </svg>
       </div>
 
       {/* 3. Docked Apple-Style Unified Tool Inspector */}
-      <div className="flex items-center justify-between gap-1.5 rounded-xl border border-border/40 bg-secondary/15 p-1">
-        {/* Stroke Weight Stepper */}
-        <div className="flex items-center gap-0.5">
+      <div className="border-separator bg-fill-4 rounded-row flex items-center justify-between gap-2 border p-1">
+        <ToggleGroup
+          type="single"
+          size="sm"
+          disallowEmpty
+          aria-label="Stroke weight"
+          value={String(strokeWidth)}
+          onValueChange={(v) => setStrokeWidth(Number(v))}
+          className="gap-0.5"
+        >
           {STROKE_WIDTH_OPTIONS.map((opt) => (
-            <button
+            <ToggleGroupItem
               key={opt.label}
-              type="button"
-              onClick={() => setStrokeWidth(opt.value)}
+              value={String(opt.value)}
               title={`${opt.label} Stroke (${opt.value}px)`}
-              className={cn(
-                "flex h-6 items-center justify-center rounded-lg px-2 transition-all cursor-pointer active:scale-90",
-                strokeWidth === opt.value
-                  ? "bg-background text-foreground shadow-2xs font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/40"
-              )}
+              aria-label={`${opt.label} stroke`}
             >
-              <div
+              <span
+                aria-hidden
                 className="rounded-full bg-current"
                 style={{ width: opt.lineH * 2.2, height: opt.lineH }}
               />
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
 
-        <div className="h-4 w-px bg-border/40" />
+        <div className="bg-separator h-4 w-px" />
 
-        {/* Ink Color Palette */}
-        <div className="flex items-center gap-1 px-1">
+        <ToggleGroup
+          type="single"
+          size="sm"
+          disallowEmpty
+          aria-label="Ink colour"
+          value={inkColor}
+          onValueChange={(v) => setInkColor(v as InkColorPreset)}
+          className="gap-0.5 px-1"
+        >
           {(Object.keys(INK_PRESETS) as InkColorPreset[]).map((key) => {
             const preset = INK_PRESETS[key];
-            const isSelected = inkColor === key;
             return (
-              <button
+              <ToggleGroupItem
                 key={key}
-                type="button"
-                onClick={() => setInkColor(key)}
+                value={key}
                 title={preset.label}
-                className={cn(
-                  "relative flex h-4.5 w-4.5 cursor-pointer items-center justify-center rounded-full transition-all active:scale-85",
-                  preset.bg,
-                  isSelected
-                    ? "ring-2 ring-[#0091ff] ring-offset-2 ring-offset-background scale-110 shadow-2xs"
-                    : "opacity-60 hover:opacity-100 hover:scale-105"
-                )}
-              />
+                aria-label={preset.label}
+                className="group min-w-0 px-2"
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    "size-4 rounded-full transition-[opacity,box-shadow] duration-150",
+                    preset.bg,
+                    "group-data-[state=on]:ring-tint group-data-[state=on]:ring-offset-surface opacity-60 group-hover:opacity-100 group-data-[state=on]:opacity-100 group-data-[state=on]:ring-2 group-data-[state=on]:ring-offset-1"
+                  )}
+                />
+              </ToggleGroupItem>
             );
           })}
-        </div>
+        </ToggleGroup>
 
-        <div className="h-4 w-px bg-border/40" />
+        <div className="bg-separator h-4 w-px" />
 
-        {/* Stamps Drawer Button */}
-        <button
-          type="button"
-          onClick={() => setShowStampDrawer(!showStampDrawer)}
-          className={cn(
-            "flex h-6 items-center gap-1 rounded-lg px-2 text-[10px] font-medium transition-all cursor-pointer active:scale-95 shrink-0",
-            showStampDrawer
-              ? "border border-[#0091ff]/40 bg-[#0091ff]/10 text-[#0091ff]"
-              : "text-muted-foreground hover:text-foreground hover:bg-background/40"
-          )}
+        <Toggle
+          size="sm"
+          pressed={showStampDrawer}
+          onPressedChange={setShowStampDrawer}
+          className="text-caption shrink-0 gap-1"
         >
           <Shapes className="h-3 w-3" />
           <span>Stamps</span>
-        </button>
+        </Toggle>
       </div>
 
-      {/* Stamp Primitives Drawer */}
       <AnimatePresence>
         {showStampDrawer && (
           <motion.div
@@ -686,32 +724,31 @@ export function GlyphForgeCanvas({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-            className="border-border/30 bg-secondary/15 overflow-hidden rounded-xl border p-2.5"
+            className="border-separator bg-fill-4 rounded-row overflow-hidden border p-3"
           >
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-muted-foreground text-[9px] font-semibold uppercase tracking-wider">
-                Geometric Shapes
-              </span>
-              <button
-                type="button"
+              <span className="text-label-secondary text-eyebrow">Geometric shapes</span>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowStampDrawer(false)}
-                className="text-muted-foreground hover:text-foreground text-[9px]"
+                className="text-label-secondary hover:text-label text-label-secondary hover:text-label"
               >
                 Close
-              </button>
+              </Button>
             </div>
-            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
               {SHAPE_STAMPS.map((stamp) => (
-                <button
+                <Button
                   key={stamp.id}
-                  type="button"
+                  variant="outline"
                   onClick={() => handleApplyStamp(stamp)}
                   title={stamp.description}
-                  className="border-border/30 bg-background/60 hover:border-[#0091ff]/50 hover:bg-[#0091ff]/5 group flex flex-col items-center justify-center rounded-lg border p-1.5 text-center transition-all cursor-pointer active:scale-95"
+                  className="group hover:border-tint/50 hover:bg-tint/5 h-auto flex-col gap-0 p-2 font-normal"
                 >
                   <svg
                     viewBox="0 0 128 128"
-                    className="stroke-foreground group-hover:stroke-[#0091ff] h-6 w-6 fill-none transition-colors"
+                    className="stroke-separator group-hover:stroke-tint h-6 w-6 fill-none transition-colors"
                   >
                     <path
                       d={stamp.path}
@@ -720,10 +757,10 @@ export function GlyphForgeCanvas({
                       strokeLinejoin="round"
                     />
                   </svg>
-                  <span className="text-muted-foreground group-hover:text-foreground mt-0.5 line-clamp-1 text-[8px]">
+                  <span className="text-label-secondary group-hover:text-label text-caption mt-0.5 line-clamp-1">
                     {stamp.name}
                   </span>
-                </button>
+                </Button>
               ))}
             </div>
           </motion.div>
@@ -732,52 +769,48 @@ export function GlyphForgeCanvas({
 
       {/* 4. Unified Action Form Bar */}
       <form onSubmit={handleForge} className="space-y-2">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {/* Grapheme Input with IPA button embedded inside right edge */}
           <div className="relative flex-1">
-            <input
+            <Input
               type="text"
               required
               value={grapheme}
               onChange={(e) => setGrapheme(e.target.value)}
               placeholder="Grapheme (e.g. sh, a)"
-              className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/50 focus:border-[#0091ff]/60 focus:ring-2 focus:ring-[#0091ff]/15 h-8.5 w-full rounded-xl border pr-9 pl-3 text-xs font-mono transition-all outline-none"
+              className="text-footnote h-8.5 w-full pr-9 pl-3 font-mono"
             />
-            <button
-              type="button"
-              onClick={() => setShowIpaDrawer(!showIpaDrawer)}
+            <Toggle
+              size="sm"
+              pressed={showIpaDrawer}
+              onPressedChange={setShowIpaDrawer}
               title="Insert IPA symbol"
-              className={cn(
-                "absolute top-1/2 right-1.5 -translate-y-1/2 rounded px-1.5 py-0.5 text-[9px] font-bold transition-all cursor-pointer",
-                showIpaDrawer
-                  ? "bg-[#0091ff]/15 text-[#0091ff]"
-                  : "text-muted-foreground hover:text-[#0091ff]"
-              )}
+              aria-label="IPA symbols"
+              className="text-caption absolute top-1/2 right-1 h-6 min-w-0 -translate-y-1/2 px-2 font-semibold"
             >
               IPA
-            </button>
+            </Toggle>
           </div>
 
           {/* Unicode Point (Optional) */}
           <div className="w-20">
-            <input
+            <Input
               type="text"
               value={unicodeSymbol}
               onChange={(e) => setUnicodeSymbol(e.target.value)}
               placeholder="U+Code"
-              className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/50 focus:border-[#0091ff]/60 h-8.5 w-full rounded-xl border px-2 text-center text-xs font-mono transition-all outline-none"
+              className="text-footnote h-8.5 w-full text-center font-mono"
             />
           </div>
 
           {/* Save / Add Glyph Button */}
-          <button
+          <Button
             type="submit"
+            size="sm"
             disabled={!grapheme.trim() || strokes.length === 0}
             className={cn(
-              "flex h-8.5 cursor-pointer items-center justify-center gap-1 rounded-xl px-3.5 text-xs font-medium text-white transition-all active:scale-[0.97] disabled:opacity-35 disabled:pointer-events-none shrink-0 shadow-xs",
-              isExisting
-                ? "bg-[#0091ff]/90 hover:bg-[#0091ff]"
-                : "bg-[#0091ff] hover:bg-[#0080e6]"
+              "rounded-row h-8.5 shrink-0 gap-1 px-3",
+              isExisting && "bg-tint/90 hover:bg-tint"
             )}
           >
             {editingGlyph ? (
@@ -791,10 +824,9 @@ export function GlyphForgeCanvas({
                 <span>Save</span>
               </>
             )}
-          </button>
+          </Button>
         </div>
 
-        {/* Quick IPA Helper Strip */}
         <AnimatePresence>
           {showIpaDrawer && (
             <motion.div
@@ -802,27 +834,28 @@ export function GlyphForgeCanvas({
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-              className="border-border/30 bg-secondary/15 flex flex-wrap items-center gap-1 overflow-hidden rounded-xl border p-2"
+              className="border-separator bg-fill-4 rounded-row flex flex-wrap items-center gap-1 overflow-hidden border p-2"
             >
-              <span className="text-muted-foreground mr-1 text-[9px] font-medium">IPA:</span>
+              <span className="text-label-secondary text-caption mr-1 font-medium">IPA:</span>
               {QUICK_IPA_PHONEMES.map((item) => (
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   key={item.symbol}
-                  type="button"
                   onClick={() => {
                     setGrapheme(item.symbol);
                     setUnicodeSymbol(item.symbol);
                   }}
                   title={item.name}
-                  className="hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 border-border/30 bg-background/60 rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-bold transition-colors cursor-pointer active:scale-95"
+                  className="font-mono"
                 >
                   {item.symbol}
-                </button>
+                </Button>
               ))}
             </motion.div>
           )}
         </AnimatePresence>
       </form>
-    </FacetMaterial>
+    </Card>
   );
 }

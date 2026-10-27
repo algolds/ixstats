@@ -6,16 +6,10 @@
  *
  * Domains:
  *  - crud:         tax-system persistence (create, update, delete, getByCountryId, autosave)
- *  - calculations: heavy tax computation — live tax, unified effectiveness, tier recommendations
  *  - analysis:     effectiveness scoring, conflict detection, and economic-data parsing
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { taxSystemCrudRouter } from "./crud";
-import { taxSystemCalculationsRouter } from "./calculations";
 import { taxSystemAnalysisRouter } from "./analysis";
 
-export const taxSystemRouter = mergeRouters(
-  taxSystemCrudRouter,
-  taxSystemCalculationsRouter,
-  taxSystemAnalysisRouter
-);
+export const taxSystemRouter = mergeRouters(taxSystemCrudRouter, taxSystemAnalysisRouter);

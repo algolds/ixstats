@@ -1,7 +1,11 @@
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 
 export const onomaLoanwordsRouter = createTRPCRouter({
   /**
@@ -22,7 +26,7 @@ export const onomaLoanwordsRouter = createTRPCRouter({
   /**
    * Save (create or update) a loanword contact relation.
    */
-  saveContact: protectedProcedure
+  saveContact: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string().optional(),
@@ -30,9 +34,7 @@ export const onomaLoanwordsRouter = createTRPCRouter({
         targetPackId: z.string(),
         domain: z.string(), // military | trade | religious | academic | general
         intensity: z.number().min(0).max(1).default(0.3),
-        adaptationRules: z
-          .record(z.string(), z.unknown())
-          .default({}), // e.g. { soundShifts: [{ from: "v", to: "b" }], syllableCap: true }
+        adaptationRules: z.record(z.string(), z.unknown()).default({}), // e.g. { soundShifts: [{ from: "v", to: "b" }], syllableCap: true }
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -87,7 +89,7 @@ export const onomaLoanwordsRouter = createTRPCRouter({
   /**
    * Delete a loanword contact relation.
    */
-  deleteContact: protectedProcedure
+  deleteContact: rateLimitedMutationProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.user.id;
@@ -110,7 +112,7 @@ export const onomaLoanwordsRouter = createTRPCRouter({
   /**
    * Simulates word borrowing with sound changes / syllable structure adaptations.
    */
-  borrowWords: protectedProcedure
+  borrowWords: rateLimitedMutationProcedure
     .input(
       z.object({
         sourceWords: z.array(z.object({ word: z.string(), meaning: z.string() })),
@@ -130,7 +132,7 @@ export const onomaLoanwordsRouter = createTRPCRouter({
         for (const shift of soundShifts) {
           if (shift.from && shift.to) {
             // Escape regex characters
-            const escapedFrom = shift.from.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+            const escapedFrom = shift.from.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
             adapted = adapted.replace(new RegExp(escapedFrom, "g"), shift.to);
           }
         }

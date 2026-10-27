@@ -37,6 +37,7 @@ model VaultTransaction {
   source       String
   metadata     Json?
   createdAt    DateTime @default(now())
+  idempotencyKey String?  @unique // e.g. "passive:<userId>:<YYYY-MM-DD>"; NULL for ordinary rows
   vault        MyVault  @relation(fields: [vaultId], references: [id], onDelete: Cascade, map: "VaultTransaction_vaultId_fkey")
 
   @@index([vaultId, createdAt])
@@ -52,42 +53,68 @@ model Card {
   title            String
   slug             String?
   description      String?
-  category         LoreCategory?   @default(NS_IMPORT)
+  category         LoreCategory?
   subcategory      String?
+  /// Who set the category; null on a card the categories backfill has not reached.
+  categorySource      CardCategorySource?
+  /// The classifier's confidence, 0 to 1; null once a person set or confirmed the category.
+  categoryConfidence  Float?
+  /// Waiting in the admin's category review queue: a low-confidence guess, or no category at all.
+  categoryNeedsReview Boolean             @default(false)
+  categoryReviewedAt  DateTime?
+  /// DB user id of the admin or realm owner who last set or confirmed it.
+  categoryReviewedBy  String?
   artwork          String?
-  artworkUrl       String?
   artworkSource    ArtworkSource?  @default(PROCEDURAL)
   artworkCredit    String?
-  rarity           String
+  rarity           CardRarity
   season           Int             @default(1)
-  cardType         String
-  attributes       Json?
+  cardType         CardType
   marketValue      Float           @default(0.0)
+  /// The first sale of any copy here; until then an NS card's value keeps its NS bank term.
+  firstSoldAt      DateTime?
   totalSupply      Int?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @default(now()) @updatedAt
   nsCardId         Int?
   nsSeason         Int?
-  nsData           Json?
   wikiSource       String?
   wikiArticleTitle String?
-  wikiPageId       Int?
   wikiExcerpt      String?
-  wikiImageUrl     String?
   countryId        String?
-  stats            Json?
-  level            Int?            @default(1)
-  enhancements     Json?
-  artworkVariants  Json?
-  name             String?
   metadata         Json?
   isRetired        Boolean         @default(false)
   retiredAt        DateTime?
+  lorewardEntryId  String?
+  lorewardEdition  String?
+  /// Its number within its home realm (silhouettes show it). Set by the `cards_assign_collector_number` trigger.
+  collectorNumber  Int?
+  reviewState          CardReviewState   @default(APPROVED)
+  reviewedAt           DateTime?
+  /// DB user id of the admin (or realm owner) who reviewed it.
+  reviewedBy           String?
+  specialKind          SpecialCardKind?
+  /// The achievement whose unlock awards this Special card.
+  rewardAchievementKey String?           @unique
+  artLicence           CardArtLicence?
+  takedowns            CardTakedown[]
+  /// The card's home realm, kept forever (cards refresh §2.1). Ixnay is "default".
+  realmId          String
+  realm            Realm           @relation(fields: [realmId], references: [id], onDelete: Restrict)
+  /// Bound cards (trophies, achievement rewards) cannot be traded, listed, dusted or fused.
+  isBound          Boolean         @default(false)
   CardOwnership    CardOwnership[]
   valueHistory     CardValueHistory[]
   watchlist        CardWatchlist[]
+  auctions          CardAuction[]
+  listings          CardListing[]
+  marketPrices      CardMarketPrice[]
+  notificationMutes CardNotificationMute[]
+  categorySuggestions CardCategorySuggestion[]
 
   @@unique([nsCardId, nsSeason])
+  @@unique([lorewardEntryId, lorewardEdition])
+  @@unique([realmId, collectorNumber])
   @@index([cardType, rarity, season])
   @@index([category, rarity, season])
   @@index([marketValue])
@@ -95,6 +122,10 @@ model Card {
   @@index([slug])
   @@index([rarity], map: "Card_rarity_idx")
   @@index([season], map: "Card_season_idx")
+  @@index([realmId])
+  @@index([reviewState, realmId])
+  @@index([cardType, category])
+  @@index([categoryNeedsReview, categoryConfidence])
   @@map("cards")
 }
 
@@ -131,8 +162,13 @@ model AuctionBid {
 }
 
 model CardAuction {
-  id              String        @id
-  cardInstanceId  String
+  id              String            @id
+  /// The auctioned copy; null once it is gone (broken down or fused after the auction), so the auction stays.
+  /// A running auction always has it: the copy is locked. Admin revoke still refuses a copy with any auction.
+  cardInstanceId  String?
+  /// The copy's card and serial, stored so the auction (and the seller's sales) outlive the copy.
+  cardId          String
+  serialNumber    Int
   sellerId        String
   startingPrice   Int
   currentBid      Int
@@ -140,20 +176,24 @@ model CardAuction {
   currentBidderId String?
   winnerId        String?
   finalPrice      Int?
-  bidCount        Int           @default(0)
-  status          String        @default("ACTIVE")
-  isFeatured      Boolean       @default(false)
+  bidCount        Int               @default(0)
+  status          CardAuctionStatus @default(ACTIVE)
+  isFeatured      Boolean           @default(false)
+  /// What the seller paid to list; an unsold end refunds a share of it.
+  listingFee      Int               @default(0)
   endTime         DateTime
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @default(now())
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @default(now())
   AuctionBid      AuctionBid[]
-  CardOwnership   CardOwnership @relation(fields: [cardInstanceId], references: [id], onDelete: Cascade)
-  User            User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  CardOwnership   CardOwnership?    @relation(fields: [cardInstanceId], references: [id], onDelete: SetNull)
+  card            Card              @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  User            User              @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 
   @@index([endTime])
   @@index([sellerId])
   @@index([status])
   @@index([cardInstanceId])
+  @@index([cardId, status])
 }
 
 model CardCollection {
@@ -162,14 +202,15 @@ model CardCollection {
   name        String
   description String?
   isPublic    Boolean              @default(false)
+  /// Set when the owner pins it; the latest pin is the player's showcase (wallet, Passport).
+  pinnedAt    DateTime?
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @default(now())
   User        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   items       CardCollectionItem[]
-  likes       CollectionLike[]
-  comments    CollectionComment[]
 
   @@index([userId])
+  @@index([userId, pinnedAt])
 }
 
 model CardCollectionItem {
@@ -185,60 +226,41 @@ model CardCollectionItem {
   @@index([cardOwnershipId])
 }
 
-model CollectionLike {
-  id           String         @id @default(cuid())
-  collectionId String
-  userId       String
-  createdAt    DateTime       @default(now())
-  collection   CardCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  User         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([collectionId, userId])
-  @@index([collectionId])
-  @@index([userId])
-}
-
-model CollectionComment {
-  id           String         @id @default(cuid())
-  collectionId String
-  userId       String
-  content      String         @db.VarChar(500)
-  createdAt    DateTime       @default(now())
-  collection   CardCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  User         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([collectionId])
-  @@index([userId])
-}
-
 model CardOwnership {
-  id            String        @id
+  id            String        @id @default(cuid())
   cardId        String
-  userId        String
   ownerId       String
   serialNumber  Int
   level         Int           @default(1)
   experience    Int           @default(0)
   isLocked      Boolean       @default(false)
-  lastSalePrice Int?
-  lastSaleDate  DateTime?
+  finish        CardFinish    @default(STANDARD)
   acquiredAt    DateTime      @default(now())
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @default(now())
-  quantity      Int           @default(1)
   inscription   String?       @db.VarChar(60)
   inscribedById String?
   inscribedAt   DateTime?
-  CardAuction      CardAuction[]
-  collectionItems  CardCollectionItem[]
-  cards            Card          @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  User             User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  transferEvents   CardTransferEvent[]
-  experienceEvents CardExperienceEvent[]
+  /// The signer's display name at signing, frozen (shown while their Passport shows Vault cards). Null on the older
+  /// inscriptions, which show the signer's current name.
+  inscribedName    String?
+  /// An imported NS copy (or a copy fused from one): it breaks down for the import share of the dust.
+  importDiscounted Boolean   @default(false)
+  /// The UTC day `xpToday` counts for; the daily XP cap per copy resets when it changes.
+  xpDay            DateTime? @db.Date
+  xpToday          Int       @default(0)
+  CardAuction        CardAuction[]
+  collectionItems    CardCollectionItem[]
+  cards              Card          @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  User               User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  transferEvents     CardTransferEvent[]
+  experienceEvents   CardExperienceEvent[]
+  listings           CardListing[]
+  inscriptionReports CardInscriptionReport[]
 
+  @@unique([cardId, serialNumber])
   @@index([cardId])
   @@index([ownerId])
-  @@index([userId])
 }
 
 model CardPack {
@@ -258,12 +280,11 @@ model CardPack {
   epicOdds         Float      @default(0.9)
   legendaryOdds    Float      @default(0.1)
   season           Int?
-  cardType         String?
+  cardType         CardType?
   themeFilter      Json?
   limitedQuantity  Int?
   purchaseLimit    Int?
   expiresAt        DateTime?
-  pdsConfig        Json?
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @default(now())
   UserPack         UserPack[]
@@ -289,22 +310,6 @@ model UserPack {
   @@map("user_packs")
 }
 
-model NSImport {
-  id           String    @id @default(cuid())
-  userId       String
-  nationName   String
-  cardCount    Int
-  totalValue   Float
-  status       String    @default("PENDING")
-  errorMessage String?
-  createdAt    DateTime  @default(now())
-  completedAt  DateTime?
-
-  @@index([userId])
-  @@index([status])
-  @@map("ns_imports")
-}
-
 model SyncLog {
   id             String    @id @default(cuid())
   syncType       String
@@ -325,27 +330,12 @@ model SyncLog {
   @@map("sync_logs")
 }
 
-model SyncCheckpoint {
-  id          String   @id @default(cuid())
-  syncType    String
-  season      Int?
-  lastCardId  String?
-  lastPage    Int?
-  totalPages  Int?
-  checkpoint  Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([syncType, season])
-  @@index([syncType])
-  @@map("sync_checkpoints")
-}
-
 model LoreCardRequest {
   id              String        @id @default(cuid())
   userId          String
   articleTitle    String
   wikiSource      String
+  realmId         String?
   category        LoreCategory?
   suggestedRarity CardRarity?
   status          String        @default("PENDING")
@@ -362,6 +352,7 @@ model LoreCardRequest {
   @@index([userId])
   @@index([status])
   @@index([wikiSource])
+  @@index([realmId])
   @@map("lore_card_requests")
 }
 
@@ -385,7 +376,7 @@ model CardExperienceEvent {
   amount       Int
   resultLevel  Int
   resultXP     Int
-  source       String   // e.g. "AUCTION_COMPLETE", "BUYOUT", "TRADE", "CRAFT", "PACK_OPEN"
+  source       String   // a CardXpSource (src/lib/cards/xp-utils.ts); older rows may hold "AUCTION_COMPLETE" or "BUYOUT"
   metadata     String?  // JSON string with additional context
   createdAt    DateTime @default(now())
   ownership    CardOwnership @relation(fields: [ownershipId], references: [id], onDelete: Cascade)
@@ -393,69 +384,6 @@ model CardExperienceEvent {
   @@index([ownershipId, createdAt])
   @@index([source])
   @@map("card_experience_events")
-}
-
-model CardTrade {
-  id          String    @id
-  fromUserId  String
-  toUserId    String
-  status      String    @default("PENDING")
-  expiresAt   DateTime?
-  completedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now())
-
-  @@index([fromUserId], map: "CardTrade_fromUserId_idx")
-  @@index([toUserId], map: "CardTrade_toUserId_idx")
-  @@index([status], map: "CardTrade_status_idx")
-  @@index([expiresAt], map: "CardTrade_expiresAt_idx")
-  @@index([fromUserId, status], map: "CardTrade_fromUserId_status_idx")
-  @@index([toUserId, status], map: "CardTrade_toUserId_status_idx")
-}
-
-/// Crafting Recipe Model
-/// Defines card crafting/fusion/evolution recipes
-model CraftingRecipe {
-  id              String            @id @default(cuid())
-  name            String
-  description     String?
-  recipeType      String            // "FUSION" | "EVOLUTION"
-  requiredCardIds Json              // Array of card IDs or criteria
-  requiredCount   Int               @default(1)
-  resultCardId    String?           // Specific result card (null = random by rarity)
-  resultRarity    String?           // If random result, rarity constraint
-  ixCreditsCost   Int               @default(0)
-  successRate     Float             @default(1.0) // 0.0-1.0 (1.0 = 100%)
-  minLevel        Int               @default(1)
-  collectorXPGain Int               @default(0)
-  isActive        Boolean           @default(true)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  craftingHistory CraftingHistory[]
-
-  @@index([recipeType])
-  @@index([resultRarity])
-  @@index([isActive])
-}
-
-/// Crafting History Model
-/// Tracks user crafting attempts and results
-model CraftingHistory {
-  id              String         @id @default(cuid())
-  userId          String
-  recipeId        String
-  materialsUsed   Json           // Array of CardOwnership IDs consumed
-  success         Boolean
-  resultCardId    String?        // CardOwnership ID created (if successful)
-  ixCreditsSpent  Int
-  collectorXPGain Int
-  craftedAt       DateTime       @default(now())
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  recipe          CraftingRecipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-
-  @@index([userId, craftedAt])
-  @@index([recipeId])
-  @@index([success])
 }
 
 /// Trade Offer Model
@@ -468,9 +396,14 @@ model TradeOffer {
   recipientCardIds   Json      // Array of CardOwnership IDs
   initiatorCredits   Int       @default(0)
   recipientCredits   Int       @default(0)
-  status             String    // "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED" | "EXPIRED" | "COUNTERED"
+  status             TradeOfferStatus
   message            String?
-  counterOfferFromId String?   // Previous offer ID if this is a counter
+  /// The party who wrote the current table; their give-side cards are the locked ones. The other party responds.
+  proposerId         String
+  /// Bumped by every counter-offer; accept and counter name the revision they saw.
+  revision           Int              @default(0)
+  /// Stored at accept (spec §2.2 cross-realm rule); Phase 5's dividend and XP bonus read it.
+  isCrossRealm       Boolean          @default(false)
   expiresAt          DateTime
   respondedAt        DateTime?
   createdAt          DateTime  @default(now())
@@ -521,9 +454,8 @@ model CardWatchlist {
   id          String   @id @default(cuid())
   userId      String
   cardId      String
-  targetPrice Int?
   createdAt   DateTime @default(now())
-  
+
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   card        Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
   
@@ -534,17 +466,267 @@ model CardWatchlist {
 }
 
 model CardTransferEvent {
-  id          String   @id @default(cuid())
-  ownershipId String
-  fromUserId  String?
-  toUserId    String
-  action      String   // "PACK_OPEN" | "TRADE" | "GIFT" | "AUCTION_BUYOUT" | "AUCTION_END" | "ADMIN" | "DAILY_CLAIM"
-  price       Int?
-  createdAt   DateTime @default(now())
-  
-  ownership   CardOwnership @relation(fields: [ownershipId], references: [id], onDelete: Cascade)
-  
+  id           String         @id @default(cuid())
+  /// Null once the copy is gone (revoked, voided, broken down or fused); `cardId` and `serialNumber` keep the trail.
+  ownershipId  String?
+  cardId       String?
+  serialNumber Int?
+  /// The copy's finish when the event happened (the market median is per finish).
+  finish       CardFinish?
+  fromUserId   String?
+  /// Null when the copy leaves every player (REVOKE, VOID, BREAKDOWN, a fusion's spent copies).
+  toUserId     String?
+  action       String   // a mint source (src/lib/cards/mint.ts MINT_SOURCES: "PACK_OPEN" | "DAILY_CLAIM" | "NS_DECK_IMPORT" | "ACHIEVEMENT" | "TROPHY" | "SPORTS" | "ADMIN") | "TRADE" | "GIFT" | "AUCTION_BUYOUT" | "AUCTION_END" | "LISTING_SALE" | "REVOKE" | "REASSIGN" | "VOID" | "REISSUE" | "BREAKDOWN" | "FUSE" | "CRAFT"
+  price        Int?
+  createdAt    DateTime @default(now())
+
+  ownership    CardOwnership? @relation(fields: [ownershipId], references: [id], onDelete: SetNull)
+
   @@index([ownershipId])
+  // The sales record reads by card, action and date; the prefix serves the lookups by card
+  @@index([cardId, action, createdAt])
   @@map("card_transfer_events")
 }
 
+/// One NationStates card import ever made (cards refresh §2.2): a nation's card imports once, across all accounts.
+model NSImportLedger {
+  id          String   @id @default(cuid())
+  nsCardId    Int
+  nsSeason    Int
+  /// The importing nation, normalised by `nsNationKey` (src/lib/cards/ns-facts.ts).
+  nation      String
+  /// The importer (User.id); null for a backfilled row whose importer is unknown.
+  userId      String?
+  /// The copy the import minted.
+  ownershipId String?
+  importedAt  DateTime @default(now())
+
+  @@unique([nsCardId, nsSeason, nation])
+  @@index([userId])
+  @@map("ns_import_ledger")
+}
+
+/// The lead image's provenance and licence, recorded at import (licensing drafts §2.5(b)).
+model CardArtLicence {
+  cardId         String            @id
+  card           Card              @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  /// The source wiki (`CardWikiSource`).
+  wiki           String
+  fileTitle      String?
+  fileUrl        String?
+  descriptionUrl String?
+  licence        String?
+  licenceUrl     String?
+  status         CardLicenceStatus @default(UNKNOWN)
+  artist         String?
+  /// The credit line shown with the art.
+  attribution    String?
+  note           String?
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  importedBy     String?
+  importJobId    String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([status])
+  @@map("card_art_licences")
+}
+
+/// A server-side import: one item per page or file, worked through by the card-import-jobs cron.
+model CardImportJob {
+  id           String              @id @default(cuid())
+  /// `CardWikiSource`.
+  source       String
+  kind         CardImportJobKind   @default(MANUAL)
+  status       CardImportJobStatus @default(QUEUED)
+  label        String
+  /// DB user id; null for the daily cron.
+  requestedBy  String?
+  requireImage Boolean             @default(false)
+  total        Int                 @default(0)
+  processed    Int                 @default(0)
+  staged       Int                 @default(0)
+  skipped      Int                 @default(0)
+  blocked      Int                 @default(0)
+  failed       Int                 @default(0)
+  error        String?
+  createdAt    DateTime            @default(now())
+  startedAt    DateTime?
+  heartbeatAt  DateTime?
+  finishedAt   DateTime?
+  items        CardImportItem[]
+
+  @@index([status, createdAt])
+  @@map("card_import_jobs")
+}
+
+model CardImportItem {
+  id        String               @id @default(cuid())
+  jobId     String
+  job       CardImportJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  title     String
+  status    CardImportItemStatus @default(QUEUED)
+  cardId    String?
+  rarity    CardRarity?
+  licence   String?
+  reason    String?
+  updatedAt DateTime             @updatedAt
+
+  @@unique([jobId, title])
+  @@index([jobId, status])
+  @@map("card_import_items")
+}
+
+/// One removal request for a card's art, from any source, answered within 14 days (licensing drafts §2.5(f)).
+model CardTakedown {
+  id                String             @id @default(cuid())
+  cardId            String
+  card              Card               @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  origin            CardTakedownOrigin
+  status            CardTakedownStatus @default(OPEN)
+  reason            String
+  contact           String?
+  /// DB user id of whoever filed it.
+  requestedBy       String?
+  receivedAt        DateTime           @default(now())
+  dueAt             DateTime
+  /// The art the card had when it was hidden; restore puts it back.
+  savedArtwork      String?
+  /// True when hiding retired the card (so restore un-retires it); false when it was retired already.
+  retiredByTakedown Boolean            @default(false)
+  resolvedAt        DateTime?
+  resolvedBy        String?
+  resolutionNote    String?
+  createdAt         DateTime           @default(now())
+
+  @@index([status, dueAt])
+  @@index([cardId])
+  @@map("card_takedowns")
+}
+
+/// A fixed-price listing of one copy. The copy is locked while the listing is ACTIVE.
+model CardListing {
+  id           String            @id @default(cuid())
+  /// The listed copy; null once it is gone (broken down or fused after the sale), so the listing stays.
+  ownershipId  String?
+  cardId       String
+  /// The copy's serial and finish, stored so a finished listing outlives its copy.
+  serialNumber Int
+  finish       CardFinish
+  sellerId     String
+  price        Int
+  isFeatured   Boolean           @default(false)
+  /// What the seller paid to list; cancel and expiry refund a share of it.
+  listingFee   Int
+  status       CardListingStatus @default(ACTIVE)
+  buyerId      String?
+  soldAt       DateTime?
+  expiresAt    DateTime
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  ownership    CardOwnership?    @relation(fields: [ownershipId], references: [id], onDelete: SetNull)
+  card         Card              @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  seller       User              @relation("CardListingSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([status, isFeatured, createdAt])
+  @@index([status, expiresAt])
+  @@index([sellerId, status])
+  @@index([cardId, status])
+  @@index([ownershipId])
+  @@map("card_listings")
+}
+
+/// Dust of one realm, held by one account. Account-bound: it never moves between players.
+model CardDustBalance {
+  userId    String
+  realmId   String
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  realm     Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
+
+  @@id([userId, realmId])
+  @@index([realmId])
+  @@map("card_dust_balances")
+}
+
+/// The dust ledger: one row per copy broken down and per craft.
+model CardDustEvent {
+  id           String   @id @default(cuid())
+  userId       String
+  realmId      String
+  delta        Int
+  balanceAfter Int
+  source       String // "BREAKDOWN" | "CRAFT"
+  cardId       String?
+  ownershipId  String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("card_dust_events")
+}
+
+/// The market median per card and finish (the last sales in the window), rebuilt by the card-values cron.
+model CardMarketPrice {
+  cardId     String
+  finish     CardFinish
+  median     Float
+  sales      Int
+  computedAt DateTime   @default(now())
+  card       Card       @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, finish])
+  @@map("card_market_prices")
+}
+
+/// A player's per-card mute: no card notices about this card.
+model CardNotificationMute {
+  userId    String
+  cardId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@id([userId, cardId])
+  @@map("card_notification_mutes")
+}
+
+/// A report of a copy's inscription, for the admin queue.
+model CardInscriptionReport {
+  id          String        @id @default(cuid())
+  ownershipId String
+  reporterId  String // User.id
+  text        String        @db.VarChar(60)
+  reason      String        @db.VarChar(500)
+  status      String        @default("open") // "open" | "cleared" | "dismissed"
+  handledBy   String?
+  handledAt   DateTime?
+  createdAt   DateTime      @default(now())
+  ownership   CardOwnership @relation(fields: [ownershipId], references: [id], onDelete: Cascade)
+
+  @@unique([ownershipId, reporterId])
+  @@index([status, createdAt])
+  @@map("card_inscription_reports")
+}
+
+/// A player's proposed category for a lore card, for the admin's review queue. One open (PENDING) per card per player,
+/// held by the per-player lock 7340 (cards.category-suggestions.ts).
+model CardCategorySuggestion {
+  id          String                       @id @default(cuid())
+  cardId      String
+  userId      String // User.id
+  category    LoreCategory
+  subcategory String?
+  note        String?                      @db.VarChar(500)
+  status      CardCategorySuggestionStatus @default(PENDING)
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime                     @default(now())
+  card        Card                         @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([cardId, status])
+  @@index([userId, createdAt])
+  @@map("card_category_suggestions")
+}

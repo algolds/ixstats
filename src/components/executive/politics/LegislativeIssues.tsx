@@ -1,15 +1,26 @@
 "use client";
 
-import { useMemo } from "react";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { CheckCircle as CheckCircle2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { IssueCard } from "~/components/executive/issues";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "~/components/ui/sheet";
+import { IssueDetailBrief } from "~/components/mycountry/shared/headers/IssueDetailBrief";
 
 interface LegislativeIssuesProps {
   countryId: string;
+  onSelectIssue?: (issueId: string) => void;
 }
 
-export function LegislativeIssues({ countryId }: LegislativeIssuesProps) {
+export function LegislativeIssues({ countryId, onSelectIssue }: LegislativeIssuesProps) {
+  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+
   const { data: issueData } = api.nationalIssues.getMyIssues.useQuery(
     { countryId, status: "active", limit: 50 },
     { enabled: !!countryId }
@@ -36,13 +47,20 @@ export function LegislativeIssues({ countryId }: LegislativeIssuesProps) {
       .slice(0, 5);
   }, [issueData]);
 
+  const handleView = (id: string) => {
+    if (onSelectIssue) {
+      onSelectIssue(id);
+    } else {
+      setSelectedIssueId(id);
+    }
+  };
+
   return (
-    <div className="glass-hierarchy-child border-border space-y-3 rounded-xl border p-4">
+    <div className="border-separator rounded-row space-y-3 border p-4">
       <div className="flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4 text-amber-600" />
-        <span className="text-sm font-semibold">Governance Issues</span>
+        <span className="text-headline">Governance issues</span>
         {governanceIssues.length > 0 && (
-          <span className="ml-auto text-xs font-medium text-amber-600 dark:text-amber-400">
+          <span className="text-caption text-label-secondary ml-auto">
             {governanceIssues.length} pending
           </span>
         )}
@@ -55,19 +73,28 @@ export function LegislativeIssues({ countryId }: LegislativeIssuesProps) {
               key={issue.id}
               issue={issue}
               variant="compact"
-              onView={() => {
-                /* Respond via the main issues inbox */
-              }}
+              onView={() => handleView(issue.id)}
             />
           ))}
         </div>
       ) : (
-        <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-6 text-center">
-          <CheckCircle2 className="h-8 w-8 text-green-500 opacity-50" />
-          <p className="text-sm">No active governance issues</p>
-          <p className="text-xs">Your legislative agenda is clear.</p>
+        <div className="text-label-secondary flex flex-col items-center justify-center gap-2 py-6 text-center">
+          <CheckCircle2 aria-hidden className="h-8 w-8 opacity-50" />
+          <p className="text-body">No active governance issues</p>
         </div>
       )}
+
+      <Sheet open={!!selectedIssueId} onOpenChange={(open) => !open && setSelectedIssueId(null)}>
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Resolve governance issue</SheetTitle>
+            <SheetDescription>Review and resolve this governance issue</SheetDescription>
+          </SheetHeader>
+          {selectedIssueId && (
+            <IssueDetailBrief issueId={selectedIssueId} onClose={() => setSelectedIssueId(null)} />
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

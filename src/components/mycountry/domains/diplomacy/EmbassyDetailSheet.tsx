@@ -1,32 +1,29 @@
 "use client";
 
-import { api } from "~/trpc/react";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { api, type RouterOutputs } from "~/trpc/react";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Separator } from "~/components/ui/separator";
+import { Progress } from "~/components/ui/progress";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import {
-  Building2,
+  City as Building2,
   User,
-  Users,
+  Group as Users,
   MapPin,
-  DollarSign,
-  TrendingUp,
+  Dollar as DollarSign,
+  StatUp as TrendingUp,
   Star,
-  Zap,
+  Flash as Zap,
   Clock,
   CheckCircle,
-  ArrowUpCircle,
-  XCircle,
-} from "lucide-react";
+  XmarkCircle as XCircle,
+} from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
+
+type IconType = React.ComponentType<{ className?: string }>;
 
 interface EmbassyDetailSheetProps {
   embassyId: string | null;
@@ -42,43 +39,151 @@ function InfoRow({
 }: {
   label: string;
   value: string | React.ReactNode;
-  icon?: typeof Building2;
+  icon?: IconType;
 }) {
   return (
     <div className="flex items-start justify-between gap-2">
-      <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+      <span className="text-label-secondary text-footnote flex items-center gap-2">
         {Icon && <Icon className="h-3 w-3" />}
         {label}
       </span>
-      <span className="text-right text-xs font-medium">{value}</span>
+      <span className="text-label text-caption text-right">{value}</span>
     </div>
   );
 }
 
-function StatBar({
-  label,
-  value,
-  max,
-  color,
-}: {
-  label: string;
-  value: number;
-  max: number;
-  color: string;
-}) {
+function StatBar({ label, value, max }: { label: string; value: number; max: number }) {
   const pct = Math.min(100, (value / max) * 100);
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium">{value}</span>
+      <div className="text-footnote mb-1 flex items-center justify-between">
+        <span className="text-label-secondary">{label}</span>
+        <span className="text-label font-medium tabular-nums">{value}</span>
       </div>
-      <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
-        <div
-          className="h-full rounded-full transition-all duration-300"
-          style={{ width: `${pct}%`, backgroundColor: color }}
+      <Progress value={pct} className="h-1.5" />
+    </div>
+  );
+}
+
+const STATUS_BADGES: Record<
+  string,
+  { variant: "success" | "destructive" | "warning"; icon: IconType; label: string }
+> = {
+  active: { variant: "success", icon: CheckCircle, label: "Active" },
+  closed: { variant: "destructive", icon: XCircle, label: "Closed" },
+  under_construction: { variant: "warning", icon: Clock, label: "Building" },
+};
+
+const LEVEL_LABELS: Record<number, string> = {
+  1: "Consulate",
+  2: "Standard Embassy",
+  3: "Grand Embassy",
+};
+
+function StatusBadge({ status }: { status: string | undefined }) {
+  const s = status?.toLowerCase() ?? "active";
+  const badge = STATUS_BADGES[s];
+  if (!badge) return <Badge variant="outline">{s}</Badge>;
+  return (
+    <Badge variant={badge.variant}>
+      <badge.icon />
+      {badge.label}
+    </Badge>
+  );
+}
+
+function SectionTitle({ icon: Icon, children }: { icon: IconType; children: React.ReactNode }) {
+  return (
+    <Eyebrow className="mb-2 flex items-center gap-2">
+      <Icon className="h-3.5 w-3.5" />
+      {children}
+    </Eyebrow>
+  );
+}
+
+type EmbassyDetails = NonNullable<RouterOutputs["diplomaticEmbassies"]["getEmbassyDetails"]>;
+
+function EmbassyBody({ embassy }: { embassy: EmbassyDetails }) {
+  const activeMissions = (embassy.missions ?? []).filter((m) => m.status === "active");
+  return (
+    <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
+      <div className="space-y-2">
+        <InfoRow
+          label="Host country"
+          value={embassy.hostCountryName ?? embassy.hostCountryId}
+          icon={MapPin}
         />
+        <InfoRow
+          label="Guest country"
+          value={embassy.guestCountryName ?? embassy.guestCountryId}
+          icon={Building2}
+        />
+        {embassy.ambassadorName && (
+          <InfoRow label="Ambassador" value={embassy.ambassadorName} icon={User} />
+        )}
+        {embassy.location && <InfoRow label="Location" value={embassy.location} icon={MapPin} />}
+        <InfoRow label="Staff" value={`${embassy.staffCount ?? 0} personnel`} icon={Users} />
+        {/* Served only to the nation that runs the embassy. */}
+        {embassy.budget != null && (
+          <InfoRow
+            label="Budget"
+            value={`$${embassy.budget.toLocaleString()}/mo`}
+            icon={DollarSign}
+          />
+        )}
       </div>
+
+      <Separator />
+
+      <div>
+        <SectionTitle icon={TrendingUp}>Performance</SectionTitle>
+        <div className="space-y-2">
+          <StatBar label="Effectiveness" value={embassy.effectiveness ?? 0} max={100} />
+          <StatBar label="Influence" value={embassy.influence ?? 0} max={100} />
+          <StatBar label="Reputation" value={embassy.reputation ?? 0} max={100} />
+          <StatBar label="Experience" value={embassy.experience ?? 0} max={1000} />
+        </div>
+      </div>
+
+      {activeMissions.length > 0 && (
+        <>
+          <Separator />
+          <div>
+            <SectionTitle icon={Zap}>Active Missions ({activeMissions.length})</SectionTitle>
+            <div className="space-y-2">
+              {activeMissions.map((m) => (
+                <div
+                  key={m.id}
+                  className="border-separator bg-surface rounded-control text-footnote border p-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-label font-medium">{m.name}</span>
+                    <Badge variant="outline">{m.type}</Badge>
+                  </div>
+                  {m.progress != null && (
+                    <div className="mt-2">
+                      <Progress value={m.progress} className="h-1" />
+                      <span className="text-label-secondary text-footnote mt-0.5 block">
+                        {m.progress}% complete
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {embassy.specialization && (
+        <>
+          <Separator />
+          <div>
+            <SectionTitle icon={Star}>Specialization</SectionTitle>
+            <Badge variant="default">{embassy.specialization}</Badge>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -90,126 +195,84 @@ export function EmbassyDetailSheet({
   onEmbassyChanged,
 }: EmbassyDetailSheetProps) {
   const notify = useNotify();
-  const isOpen = embassyId !== null;
 
   const { data: embassy, isLoading } = api.diplomaticEmbassies.getEmbassyDetails.useQuery(
     { embassyId: embassyId! },
     { enabled: !!embassyId }
   );
 
-  const closeMutation = api.diplomaticEmbassies.closeEmbassy.useMutation({
+  const mutationOptions = (success: string, failure: string) => ({
     onSuccess: () => {
-      notify.success("Embassy closed.");
+      notify.success(success);
       onEmbassyChanged?.();
       onClose();
     },
-    onError: (error) => {
-      notify.error(`Failed to close embassy: ${error.message}`);
-    },
+    onError: (error: { message: string }) => notify.error(`Failed to ${failure}: ${error.message}`),
   });
+  const closeMutation = api.diplomaticEmbassies.closeEmbassy.useMutation(
+    mutationOptions("Embassy closed.", "close embassy")
+  );
+  const reopenMutation = api.diplomaticEmbassies.reopenEmbassy.useMutation(
+    mutationOptions("Embassy reopened.", "reopen embassy")
+  );
+  const severMutation = api.diplomaticEmbassies.deleteEmbassy.useMutation(
+    mutationOptions("Diplomatic relations severed and embassy deleted.", "sever relations")
+  );
 
-  const reopenMutation = api.diplomaticEmbassies.reopenEmbassy.useMutation({
-    onSuccess: () => {
-      notify.success("Embassy reopened.");
-      onEmbassyChanged?.();
-      onClose();
-    },
-    onError: (error) => {
-      notify.error(`Failed to reopen embassy: ${error.message}`);
-    },
-  });
-
-  const severMutation = api.diplomaticEmbassies.deleteEmbassy.useMutation({
-    onSuccess: () => {
-      notify.success("Diplomatic relations severed and embassy deleted.");
-      onEmbassyChanged?.();
-      onClose();
-    },
-    onError: (error) => {
-      notify.error(`Failed to sever relations: ${error.message}`);
-    },
-  });
-
-  const getStatusBadge = (status: string | undefined) => {
-    const s = status?.toLowerCase() ?? "active";
-    if (s === "active")
-      return (
-        <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30">
-          <CheckCircle className="mr-1 h-3 w-3" />
-          Active
-        </Badge>
-      );
-    if (s === "closed")
-      return (
-        <Badge className="bg-red-100 text-red-700 dark:bg-red-950/30">
-          <XCircle className="mr-1 h-3 w-3" />
-          Closed
-        </Badge>
-      );
-    if (s === "under_construction")
-      return (
-        <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30">
-          <Clock className="mr-1 h-3 w-3" />
-          Building
-        </Badge>
-      );
-    return <Badge variant="outline">{s}</Badge>;
-  };
-
-  const getLevelBadge = (level: number | undefined) => {
-    const labels: Record<number, string> = {
-      1: "Consulate",
-      2: "Standard Embassy",
-      3: "Grand Embassy",
-    };
-    const colors: Record<number, string> = {
-      1: "bg-blue-50 text-blue-700 dark:bg-blue-950/20",
-      2: "bg-cyan-50 text-cyan-700 dark:bg-cyan-950/20",
-      3: "bg-purple-50 text-purple-700 dark:bg-purple-950/20",
-    };
-    const l = level ?? 1;
-    return (
-      <Badge variant="secondary" className={`text-xs ${colors[l] ?? ""}`}>
-        {labels[l] ?? `Level ${l}`}
-      </Badge>
-    );
-  };
-
-  const missions = (embassy as any)?.missions ?? [];
-  const activeMissions = missions.filter((m: any) => m.status === "active");
+  /** Footer actions by embassy status. */
+  const actions = {
+    active: [
+      {
+        label: "Close Embassy",
+        pendingLabel: "Closing…",
+        variant: "destructive",
+        icon: XCircle,
+        mutation: closeMutation,
+      },
+    ],
+    closed: [
+      {
+        label: "Reopen Embassy",
+        pendingLabel: "Reopening…",
+        variant: "default",
+        icon: CheckCircle,
+        mutation: reopenMutation,
+      },
+      {
+        label: "Sever Relations",
+        pendingLabel: "Severing…",
+        variant: "destructive",
+        icon: XCircle,
+        mutation: severMutation,
+      },
+    ],
+  } as const;
+  const statusActions = embassy ? (actions[embassy.status as keyof typeof actions] ?? []) : [];
 
   return (
-    <Dialog
-      open={isOpen}
+    <Sheet
+      open={embassyId !== null}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      <DialogContent
-        className="sm:max-w-lg"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 0,
-          padding: 0,
-          maxHeight: "85vh",
-          overflow: "hidden",
-        }}
-      >
-        <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle className="flex items-start gap-2">
-            <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-cyan-500" />
+      <SheetContent className="flex flex-col gap-0 overflow-hidden p-0">
+        <SheetHeader className="px-6 pt-6 pb-0">
+          <SheetTitle className="flex items-start gap-2">
+            <Building2 className="text-label-secondary mt-0.5 h-5 w-5 shrink-0" />
             <span className="line-clamp-2">
-              {isLoading ? "Loading..." : (embassy?.name ?? "Embassy Not Found")}
+              {isLoading ? "Loading…" : (embassy?.name ?? "Embassy not found")}
             </span>
-          </DialogTitle>
+          </SheetTitle>
           {embassy && (
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              {getStatusBadge(embassy.status)}
-              {getLevelBadge(embassy.level)}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <StatusBadge status={embassy.status} />
+              <Badge variant="default">
+                {LEVEL_LABELS[embassy.level ?? 1] ?? `Level ${embassy.level ?? 1}`}
+              </Badge>
             </div>
           )}
-        </DialogHeader>
+        </SheetHeader>
 
         {isLoading ? (
           <div className="space-y-4 px-6 py-4">
@@ -219,184 +282,33 @@ export function EmbassyDetailSheet({
           </div>
         ) : embassy ? (
           <>
-            <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
-              {/* Countries Info */}
-              <div className="space-y-2">
-                <InfoRow
-                  label="Host Country"
-                  value={(embassy as any).hostCountryName ?? embassy.hostCountryId}
-                  icon={MapPin}
-                />
-                <InfoRow
-                  label="Guest Country"
-                  value={(embassy as any).guestCountryName ?? embassy.guestCountryId}
-                  icon={Building2}
-                />
-                {embassy.ambassadorName && (
-                  <InfoRow label="Ambassador" value={embassy.ambassadorName} icon={User} />
-                )}
-                {embassy.location && (
-                  <InfoRow label="Location" value={embassy.location} icon={MapPin} />
-                )}
-                <InfoRow
-                  label="Staff"
-                  value={`${embassy.staffCount ?? 0} personnel`}
-                  icon={Users}
-                />
-                <InfoRow
-                  label="Budget"
-                  value={`$${(embassy.budget ?? 0).toLocaleString()}/mo`}
-                  icon={DollarSign}
-                />
-              </div>
+            <EmbassyBody embassy={embassy} />
 
-              <Separator />
-
-              {/* Performance Stats */}
-              <div>
-                <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold">
-                  <TrendingUp className="h-3.5 w-3.5 text-cyan-500" />
-                  Performance
-                </h4>
-                <div className="space-y-2.5">
-                  <StatBar
-                    label="Effectiveness"
-                    value={embassy.effectiveness ?? 0}
-                    max={100}
-                    color="#06b6d4"
-                  />
-                  <StatBar
-                    label="Influence"
-                    value={embassy.influence ?? 0}
-                    max={100}
-                    color="#3b82f6"
-                  />
-                  <StatBar
-                    label="Reputation"
-                    value={embassy.reputation ?? 0}
-                    max={100}
-                    color="#a855f7"
-                  />
-                  <StatBar
-                    label="Experience"
-                    value={embassy.experience ?? 0}
-                    max={1000}
-                    color="#22c55e"
-                  />
-                </div>
-              </div>
-
-              {/* Active Missions */}
-              {activeMissions.length > 0 && (
-                <>
-                  <Separator />
-                  <div>
-                    <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold">
-                      <Zap className="h-3.5 w-3.5 text-cyan-500" />
-                      Active Missions ({activeMissions.length})
-                    </h4>
-                    <div className="space-y-2">
-                      {activeMissions.map((m: any) => (
-                        <div
-                          key={m.id}
-                          className="border-border/40 bg-muted/30 rounded-md border p-2 text-xs"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{m.name}</span>
-                            <Badge variant="outline" className="text-[10px]">
-                              {m.type}
-                            </Badge>
-                          </div>
-                          {m.progress != null && (
-                            <div className="mt-1.5">
-                              <div className="bg-muted h-1 w-full overflow-hidden rounded-full">
-                                <div
-                                  className="h-full rounded-full bg-cyan-500 transition-all"
-                                  style={{ width: `${m.progress}%` }}
-                                />
-                              </div>
-                              <span className="text-muted-foreground mt-0.5 block text-[10px]">
-                                {m.progress}% complete
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Specialization / Synergies */}
-              {embassy.specialization && (
-                <>
-                  <Separator />
-                  <div>
-                    <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold">
-                      <Star className="h-3.5 w-3.5 text-cyan-500" />
-                      Specialization
-                    </h4>
-                    <Badge variant="secondary">{embassy.specialization}</Badge>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Footer */}
-            <DialogFooter className="border-border/50 border-t px-6 py-4">
+            <SheetFooter className="border-separator border-t px-6 py-4">
               <Button variant="outline" size="sm" onClick={onClose}>
                 Close
               </Button>
-              {embassy.status === "active" && (
-                <>
-                  <Button size="sm" variant="outline" className="gap-1.5" disabled>
-                    <ArrowUpCircle className="h-3 w-3" />
-                    Upgrade (Coming Soon)
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="gap-1.5"
-                    onClick={() => closeMutation.mutate({ embassyId: embassy.id })}
-                    disabled={closeMutation.isPending}
-                  >
-                    <XCircle className="h-3 w-3" />
-                    {closeMutation.isPending ? "Closing..." : "Close Embassy"}
-                  </Button>
-                </>
-              )}
-              {embassy.status === "closed" && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="gap-1.5 bg-green-600 text-white hover:bg-green-700"
-                    onClick={() => reopenMutation.mutate({ embassyId: embassy.id })}
-                    disabled={reopenMutation.isPending}
-                  >
-                    <CheckCircle className="h-3 w-3" />
-                    {reopenMutation.isPending ? "Reopening..." : "Reopen Embassy"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="gap-1.5"
-                    onClick={() => severMutation.mutate({ embassyId: embassy.id })}
-                    disabled={severMutation.isPending}
-                  >
-                    <XCircle className="h-3 w-3" />
-                    {severMutation.isPending ? "Severing..." : "Sever Relations"}
-                  </Button>
-                </>
-              )}
-            </DialogFooter>
+              {statusActions.map(({ label, pendingLabel, variant, icon: Icon, mutation }) => (
+                <Button
+                  key={label}
+                  size="sm"
+                  variant={variant}
+                  className="gap-2"
+                  onClick={() => mutation.mutate({ embassyId: embassy.id })}
+                  disabled={mutation.isPending}
+                >
+                  <Icon className="h-3 w-3" />
+                  {mutation.isPending ? pendingLabel : label}
+                </Button>
+              ))}
+            </SheetFooter>
           </>
         ) : (
-          <div className="text-muted-foreground flex flex-1 items-center justify-center">
+          <div className="text-label-secondary flex flex-1 items-center justify-center">
             Embassy not found.
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

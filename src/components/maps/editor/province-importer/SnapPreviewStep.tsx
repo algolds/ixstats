@@ -1,9 +1,11 @@
 "use client";
-
+import { Button } from "~/components/ui/button";
 import React, { memo, useMemo } from "react";
-import { Magnet, Minimize2 } from "lucide-react";
+import { Magnet, Compress as Minimize2 } from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import type { Polygon, MultiPolygon, Position } from "geojson";
+import { Slider } from "~/components/ui/slider";
+import { Card } from "~/components/ui/card";
 
 interface SnapPreviewStepProps {
   importer: ReturnType<typeof useProvinceImporter>;
@@ -38,87 +40,83 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-foreground text-sm font-medium">Snap & Simplify</h3>
-        <p className="text-muted-foreground mt-1 text-xs">
+        <h3 className="text-label text-body font-medium">Snap & simplify</h3>
+        <p className="text-label-secondary text-footnote mt-1">
           Snap edges to the country border, simplify vertices to the minimum needed, and align
           shared borders between neighboring provinces.
         </p>
       </div>
 
-      {/* Snap Tolerance */}
       <div className="space-y-2">
-        <label className="text-muted-foreground flex items-center gap-2 text-xs">
-          <Magnet className="h-3 w-3" /> Border Snap Tolerance
+        <label className="text-label-secondary text-footnote flex items-center gap-2">
+          <Magnet className="h-3 w-3" /> Border snap tolerance
         </label>
-        <input
-          type="range"
+        <Slider
+          aria-label="Border snap tolerance"
           min={0.01}
           max={2}
           step={0.01}
-          value={importer.snapTolerance}
-          onChange={(e) => importer.setSnapTolerance(parseFloat(e.target.value))}
-          className="w-full"
+          value={[importer.snapTolerance]}
+          onValueChange={([v]) => v !== undefined && importer.setSnapTolerance(v)}
+          className="w-full py-2"
         />
-        <div className="text-muted-foreground flex justify-between text-[10px]">
+        <div className="text-label-secondary text-footnote flex justify-between">
           <span>Tight (1km)</span>
           <span className="font-mono">{importer.snapTolerance.toFixed(2)}°</span>
           <span>Loose (220km)</span>
         </div>
       </div>
 
-      {/* Simplify Tolerance */}
       <div className="space-y-2">
-        <label className="text-muted-foreground flex items-center gap-2 text-xs">
-          <Minimize2 className="h-3 w-3" /> Vertex Reduction
+        <label className="text-label-secondary text-footnote flex items-center gap-2">
+          <Minimize2 className="h-3 w-3" /> Vertex reduction
         </label>
-        <input
-          type="range"
+        <Slider
+          aria-label="Vertex reduction"
           min={0.001}
           max={0.02}
           step={0.001}
-          value={importer.simplifyTolerance}
-          onChange={(e) => importer.setSimplifyTolerance(parseFloat(e.target.value))}
-          className="w-full"
+          value={[importer.simplifyTolerance]}
+          onValueChange={([v]) => v !== undefined && importer.setSimplifyTolerance(v)}
+          className="w-full py-2"
         />
-        <div className="text-muted-foreground flex justify-between text-[10px]">
+        <div className="text-label-secondary text-footnote flex justify-between">
           <span>More detail</span>
           <span className="font-mono">{importer.simplifyTolerance.toFixed(3)}°</span>
           <span>Fewer points</span>
         </div>
       </div>
 
-      {/* Vertex count stats */}
       {vertexStats.before > 0 && (
-        <div className="border-border bg-muted/30 rounded-lg border px-3 py-2 text-xs">
+        <Card className="text-footnote px-3 py-2">
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Original vertices</span>
+            <span className="text-label-secondary">Original vertices</span>
             <span className="font-medium tabular-nums">{vertexStats.before.toLocaleString()}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Current vertices</span>
+            <span className="text-label-secondary">Current vertices</span>
             <span className="font-medium tabular-nums">{vertexStats.after.toLocaleString()}</span>
           </div>
           {vertexStats.reduction > 0 && (
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Reduction</span>
-              <span className="font-medium text-emerald-600 tabular-nums">
-                {vertexStats.reduction}%
-              </span>
+              <span className="text-label-secondary">Reduction</span>
+              <span className="text-green font-medium tabular-nums">{vertexStats.reduction}%</span>
             </div>
           )}
-        </div>
+        </Card>
       )}
 
-      <button
+      <Button
+        size="sm"
+        className="w-full justify-center"
         onClick={importer.applySnapping}
         disabled={!importer.countryBorder}
-        className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:opacity-40"
       >
         <Magnet className="h-3.5 w-3.5" />
-        Apply Snap & Simplify
-      </button>
+        Apply snap & simplify
+      </Button>
 
-      <div className="text-muted-foreground text-[10px]">
+      <div className="text-label-secondary text-footnote">
         Snapping aligns edges to the country border. Simplification reduces vertices while
         preserving shape. Neighbor alignment ensures no gaps between adjacent provinces.
       </div>

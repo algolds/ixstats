@@ -26,7 +26,7 @@ interface IxTimeActions {
 type IxTimeStore = IxTimeState & IxTimeActions;
 
 const initialState: IxTimeState = {
-  ixTimeTimestamp: Date.now(),
+  ixTimeTimestamp: IxTime.getCurrentIxTime(),
   ixTimeFormatted: "",
   multiplier: 2,
   isPaused: false,
@@ -98,6 +98,7 @@ const calculateProgressingTime = (state: IxTimeState): IxTimeState => {
   };
 };
 
+// oxlint-disable-next-line typescript/no-unused-vars
 export const useIxTimeStore = create<IxTimeStore>()((set, get) => ({
   ...initialState,
 
@@ -121,22 +122,3 @@ export const useIxTimeStore = create<IxTimeStore>()((set, get) => ({
     }));
   },
 }));
-
-// Selector hooks for granular subscriptions — components only re-render when their value changes
-export const useIxTimeTimestamp = () => useIxTimeStore((s) => s.ixTimeTimestamp);
-export const useIxTimeFormatted = () => useIxTimeStore((s) => s.ixTimeFormatted);
-export const useIxTimeGameYear = () => useIxTimeStore((s) => s.gameYear);
-export const useIxTimeMultiplier = () => useIxTimeStore((s) => s.multiplier);
-export const useIxTimeIsPaused = () => useIxTimeStore((s) => s.isPaused);
-export const useIxTimeAll = () =>
-  useIxTimeStore((s) => ({
-    ixTimeTimestamp: s.ixTimeTimestamp,
-    ixTimeFormatted: s.ixTimeFormatted,
-    multiplier: s.multiplier,
-    isPaused: s.isPaused,
-    gameYear: s.gameYear,
-    isNaturalProgression: s.isNaturalProgression,
-    isLoading: s.isLoading,
-  }));
-export const useIxTimeActions = () =>
-  useIxTimeStore((s) => ({ tick: s.tick, refreshTime: s.refreshTime }));

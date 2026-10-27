@@ -1,347 +1,205 @@
 /**
- * Geographic Map Router
+ * Storylines (AT-14): ordered chains of a country's story pins. A pin in a storyline gets the
+ * timeline and previous/next navigation in the map's story pin modal (`StorylineTimeline`).
  *
- * tRPC router for the IxEarth world map system.
- * Handles map layer data, country geometry, spatial queries,
- * and country-feature linking.
- *
- * Data source: PostgreSQL + PostGIS (map_layers table),
- * with file-based fallback for initial load.
+ * Writes follow the other geo feature routers: `standardMutationCountryOwnerProcedure` binds the
+ * caller to their own country (`ctx.country`, null only for privileged roles) and
+ * `assertOwnCountry` rejects any other `countryId`; id-keyed rows are loaded with
+ * `findFirst({ id, countryId })`. Storylines and story pins carry no `editableByOwner` lock, so
+ * there is no `assertOwnerMayEdit` step.
  */
-
 import { z } from "zod";
 import {
   createTRPCRouter,
-  cachedPublicProcedure,
+  protectedProcedure,
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
+import { GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS, invalidateCache } from "~/lib/cache";
+import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import type { db as prisma } from "~/server/db";
+import { assertFound, assertOwnCountry } from "../core/shared";
 
-/** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
-const coordinatesSchema = z
-  .tuple([z.number(), z.number()])
-  .refine(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90, {
-    message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
-  });
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Colour must be a #rrggbb hex value");
 
-function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371; // km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+/** Pins in storyline order: explicit order first, then by year (matches getStoryPinFull). */
+const PIN_ORDER = [{ storylineOrder: "asc" as const }, { ixTimeYear: "asc" as const }];
+
+/** Story chains (kind "chain", src/server/modules/action-links) share the table but never appear on the map. */
+const MAP_KIND = { kind: "map" as const };
+
+/** NOT_FOUND unless the storyline exists and belongs to `countryId`. */
+export async function assertStorylineInCountry(
+  db: Pick<typeof prisma, "storyline">,
+  storylineId: string,
+  countryId: string
+) {
+  assertFound(
+    await db.storyline.findFirst({
+      where: { id: storylineId, countryId, ...MAP_KIND },
+      select: { id: true },
+    }),
+    "Storyline not found"
+  );
 }
 
-import { syncGeographicDemographics } from "~/lib/country-geo/sync";
-export { syncGeographicDemographics };
-
-export async function syncResourcePoolModifiers(db: any, countryId: string) {
-  // 1. Get all points of interest for this country with category "resource"
-  const resources = await db.pointOfInterest.findMany({
-    where: { countryId, category: "resource", status: "approved" },
-  });
-
-  // 2. Get all operational transport routes and hubs for this country
-  const routes = await db.transportRoute.findMany({
-    where: { countryId, status: "operational" },
-  });
-  const hubs = await db.transportHub.findMany({
-    where: { countryId },
-  });
-
-  for (const resource of resources) {
-    const resCoords = resource.coordinates as [number, number] | null;
-    if (!resCoords || !Array.isArray(resCoords) || resCoords.length < 2) continue;
-    const [resLng, resLat] = resCoords;
-
-    let isConnected = false;
-
-    // Check distance to hubs
-    for (const hub of hubs) {
-      const hubCoords = hub.coordinates as [number, number] | null;
-      if (hubCoords && Array.isArray(hubCoords) && hubCoords.length >= 2) {
-        const dist = calculateDistanceKm(resLat, resLng, hubCoords[1], hubCoords[0]);
-        if (dist <= 15) {
-          isConnected = true;
-          break;
-        }
-      }
-    }
-
-    // Check distance to routes
-    if (!isConnected) {
-      for (const route of routes) {
-        const geom = route.geometry as any;
-        const coords = geom?.coordinates as [number, number][] | undefined;
-        if (Array.isArray(coords)) {
-          for (const pt of coords) {
-            const dist = calculateDistanceKm(resLat, resLng, pt[1], pt[0]);
-            if (dist <= 15) {
-              isConnected = true;
-              break;
-            }
-          }
-        }
-        if (isConnected) break;
-      }
-    }
-
-    // 3. Update POI metadata with connection status
-    const existingMeta = (resource.metadata as Record<string, any>) || {};
-    const resourceType = existingMeta.resourceType || "minerals";
-    const quality = existingMeta.quality !== undefined ? Number(existingMeta.quality) : 0.5;
-
-    await db.pointOfInterest.update({
-      where: { id: resource.id },
-      data: {
-        metadata: {
-          ...existingMeta,
-          isConnected,
-          resourceType,
-          quality,
-        },
-      },
-    });
-
-    // 4. Create/update StorytellerEffect (DmInput)
-    const inputType = `resource_${resourceType}_output`;
-    const effectValue = isConnected ? quality * 100 : 0;
-    const description = `Resource output for ${resource.name} (${resourceType}, quality: ${quality.toFixed(2)}, connected: ${isConnected})`;
-
-    // Check if a StorytellerEffect already exists for this resource POI
-    const existingEffect = await db.storytellerEffect.findFirst({
-      where: {
-        countryId,
-        inputType,
-        createdBy: `resource_node_${resource.id}`,
-      },
-    });
-
-    if (existingEffect) {
-      await db.storytellerEffect.update({
-        where: { id: existingEffect.id },
-        data: {
-          value: effectValue,
-          description,
-          isActive: isConnected,
-          ixTimeTimestamp: new Date(),
-        },
-      });
-    } else {
-      await db.storytellerEffect.create({
-        data: {
-          countryId,
-          inputType,
-          value: effectValue,
-          description,
-          isActive: isConnected,
-          createdBy: `resource_node_${resource.id}`,
-          ixTimeTimestamp: new Date(),
-        },
-      });
-    }
-  }
-
-  // Deactivate storyteller effects for any deleted resource POIs
-  const activeResourcePoiIds = resources.map((r: any) => r.id);
-  const obsoleteEffects = await db.storytellerEffect.findMany({
-    where: {
-      countryId,
-      createdBy: { startsWith: "resource_node_" },
-      isActive: true,
-    },
-  });
-
-  for (const eff of obsoleteEffects) {
-    const poiId = eff.createdBy.replace("resource_node_", "");
-    if (!activeResourcePoiIds.includes(poiId)) {
-      await db.storytellerEffect.update({
-        where: { id: eff.id },
-        data: {
-          isActive: false,
-          value: 0,
-          description: "Resource POI deleted",
-          ixTimeTimestamp: new Date(),
-        },
-      });
-    }
-  }
+async function afterStorylineWrite(countryId: string) {
+  // The story pin modal's cached read carries the storyline and its pins.
+  await invalidateCache([
+    ...GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS,
+    "geoFeatures.getStoryPinFull",
+  ]);
+  broadcastMapUpdate("storyPin", countryId);
 }
-
-// ──────────────────────────────────────────────
-// Router
-// ──────────────────────────────────────────────
 
 export const geoFeaturesStorylinesRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Border Editor
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // User map editor endpoints (country owners)
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Story Pins — Narrative markers on the map
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Storylines — Narrative chains connecting story pins
-  // ──────────────────────────────────────────────
+  /** The country's storylines with their pins, for the map editor. Owner / privileged only. */
+  getCountryStorylines: protectedProcedure
+    .input(z.object({ countryId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      const [storylines, unassignedPins] = await Promise.all([
+        ctx.db.storyline.findMany({
+          where: { countryId: input.countryId, ...MAP_KIND },
+          orderBy: { createdAt: "asc" },
+          include: {
+            pins: {
+              select: {
+                id: true,
+                title: true,
+                ixTimeYear: true,
+                eraLabel: true,
+                category: true,
+                storylineOrder: true,
+              },
+              orderBy: PIN_ORDER,
+            },
+          },
+        }),
+        ctx.db.storyPin.findMany({
+          where: { countryId: input.countryId, storylineId: null },
+          select: { id: true, title: true, ixTimeYear: true },
+          orderBy: [{ ixTimeYear: "asc" }, { title: "asc" }],
+        }),
+      ]);
+      return { storylines, unassignedPins };
+    }),
 
   createStoryline: standardMutationCountryOwnerProcedure
     .input(
       z.object({
-        countryId: z.string(),
-        title: z.string().min(1).max(200),
-        description: z.string().max(2000).optional(),
-        color: z
-          .string()
-          .regex(/^#[0-9a-fA-F]{6}$/)
-          .optional(),
+        countryId: z.string().min(1),
+        title: z.string().trim().min(1).max(200),
+        description: z.string().max(5000).optional(),
+        color: hexColor.optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
-      return ctx.db.storyline.create({
+      assertOwnCountry(ctx, input.countryId);
+      const storyline = await ctx.db.storyline.create({
         data: {
-          title: input.title,
-          description: input.description,
           countryId: input.countryId,
-          color: input.color ?? "#6366f1",
+          title: input.title,
+          description: input.description || null,
+          color: input.color ?? null,
         },
       });
+      await afterStorylineWrite(input.countryId);
+      return { id: storyline.id, title: storyline.title };
     }),
 
   updateStoryline: standardMutationCountryOwnerProcedure
     .input(
       z.object({
-        countryId: z.string(),
-        storylineId: z.string(),
-        title: z.string().min(1).max(200).optional(),
-        description: z.string().max(2000).nullable().optional(),
-        color: z
-          .string()
-          .regex(/^#[0-9a-fA-F]{6}$/)
-          .optional(),
+        countryId: z.string().min(1),
+        storylineId: z.string().min(1),
+        title: z.string().trim().min(1).max(200).optional(),
+        description: z.string().max(5000).nullable().optional(),
+        color: hexColor.nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
-      const sl = await ctx.db.storyline.findFirst({
-        where: { id: input.storylineId, countryId: input.countryId },
-      });
-      if (!sl) throw new TRPCError({ code: "NOT_FOUND", message: "Storyline not found" });
-      return ctx.db.storyline.update({
+      assertOwnCountry(ctx, input.countryId);
+      await assertStorylineInCountry(ctx.db, input.storylineId, input.countryId);
+      const updated = await ctx.db.storyline.update({
         where: { id: input.storylineId },
         data: {
-          ...(input.title && { title: input.title }),
-          ...(input.description !== undefined && { description: input.description }),
-          ...(input.color && { color: input.color }),
+          ...(input.title !== undefined && { title: input.title }),
+          ...(input.description !== undefined && { description: input.description || null }),
+          ...(input.color !== undefined && { color: input.color }),
         },
       });
+      await afterStorylineWrite(input.countryId);
+      return { id: updated.id, title: updated.title };
     }),
 
+  /** Deletes a storyline. Its pins stay on the map, no longer in any storyline. */
   deleteStoryline: standardMutationCountryOwnerProcedure
-    .input(z.object({ countryId: z.string(), storylineId: z.string() }))
+    .input(z.object({ countryId: z.string().min(1), storylineId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
-      }
-      const sl = await ctx.db.storyline.findFirst({
-        where: { id: input.storylineId, countryId: input.countryId },
-      });
-      if (!sl) throw new TRPCError({ code: "NOT_FOUND", message: "Storyline not found" });
-      // Unlink pins before deleting
-      await ctx.db.storyPin.updateMany({
-        where: { storylineId: input.storylineId },
-        data: { storylineId: null, storylineOrder: null },
-      });
-      await ctx.db.storyline.delete({ where: { id: input.storylineId } });
+      assertOwnCountry(ctx, input.countryId);
+      await assertStorylineInCountry(ctx.db, input.storylineId, input.countryId);
+      await ctx.db.$transaction([
+        ctx.db.storyPin.updateMany({
+          where: { storylineId: input.storylineId },
+          data: { storylineId: null, storylineOrder: null },
+        }),
+        ctx.db.storyline.delete({ where: { id: input.storylineId } }),
+      ]);
+      await afterStorylineWrite(input.countryId);
       return { id: input.storylineId, deleted: true };
     }),
 
-  getStorylinesByCountry: cachedPublicProcedure
-    .input(z.object({ countryId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.db.storyline.findMany({
-        where: { countryId: input.countryId },
-        include: { _count: { select: { pins: true } } },
-        orderBy: { createdAt: "desc" },
+  /**
+   * Puts one of the country's story pins into one of its storylines (moving it out of any other).
+   * Without `order` it goes after the storyline's last pin.
+   */
+  addPinToStoryline: standardMutationCountryOwnerProcedure
+    .input(
+      z.object({
+        countryId: z.string().min(1),
+        storylineId: z.string().min(1),
+        pinId: z.string().min(1),
+        order: z.number().int().min(0).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      assertOwnCountry(ctx, input.countryId);
+      await assertStorylineInCountry(ctx.db, input.storylineId, input.countryId);
+      assertFound(
+        await ctx.db.storyPin.findFirst({ where: { id: input.pinId, countryId: input.countryId } }),
+        "Story pin not found"
+      );
+      let order = input.order;
+      if (order === undefined) {
+        const last = await ctx.db.storyPin.aggregate({
+          where: { storylineId: input.storylineId, id: { not: input.pinId } },
+          _max: { storylineOrder: true },
+        });
+        order = (last._max.storylineOrder ?? -1) + 1;
+      }
+      await ctx.db.storyPin.update({
+        where: { id: input.pinId },
+        data: { storylineId: input.storylineId, storylineOrder: order },
       });
+      await afterStorylineWrite(input.countryId);
+      return { pinId: input.pinId, storylineId: input.storylineId, order };
     }),
 
-  getStorylineWithPins: cachedPublicProcedure
-    .input(z.object({ storylineId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const storyline = await ctx.db.storyline.findUnique({
-        where: { id: input.storylineId },
-        include: {
-          pins: {
-            where: { status: "approved" },
-            orderBy: [{ storylineOrder: "asc" }, { ixTimeYear: "asc" }],
-            select: {
-              id: true,
-              title: true,
-              category: true,
-              ixTimeYear: true,
-              eraLabel: true,
-              coordinates: true,
-              importance: true,
-              thumbnailUrl: true,
-            },
-          },
-          country: { select: { name: true, slug: true } },
-        },
+  /** Takes a story pin out of its storyline. The pin itself stays. */
+  removePinFromStoryline: standardMutationCountryOwnerProcedure
+    .input(z.object({ countryId: z.string().min(1), pinId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      assertOwnCountry(ctx, input.countryId);
+      assertFound(
+        await ctx.db.storyPin.findFirst({ where: { id: input.pinId, countryId: input.countryId } }),
+        "Story pin not found"
+      );
+      await ctx.db.storyPin.update({
+        where: { id: input.pinId },
+        data: { storylineId: null, storylineOrder: null },
       });
-      if (!storyline) throw new TRPCError({ code: "NOT_FOUND", message: "Storyline not found" });
-      return storyline;
+      await afterStorylineWrite(input.countryId);
+      return { pinId: input.pinId, removed: true };
     }),
-
-  // ──────────────────────────────────────────────
-  // Map Labels — Custom styled text on the map
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Sovereignty / dependency management
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Linkage validation & repair
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // SVG Upload & Processing Pipeline
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // World Template / Clone System (Phase 3)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // Procedural World Generation (Phase 4)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Pipeline Endpoints
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Province Import Endpoints
-  // ──────────────────────────────────────────────
-
-  // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────
 });

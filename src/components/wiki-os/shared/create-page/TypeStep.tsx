@@ -1,16 +1,17 @@
-import React from "react";
 import {
-  FileText,
+  Page as FileText,
   User,
   Building,
   Clock,
   Globe,
   ShieldAlert,
-  Landmark,
-  Sparkles,
-} from "lucide-react";
-import { cn } from "~/lib/utils";
-import { type PageType } from "../CreatePageModal";
+  Bank as Landmark,
+  Sparks as Sparkles,
+  MapPin,
+  Community,
+} from "iconoir-react";
+import type { PageType } from "~/lib/wiki-os/create-page/wikitext-templates";
+import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 
 interface TypeStepProps {
   pageType: PageType;
@@ -21,7 +22,7 @@ export function TypeStep({ pageType, setPageType }: TypeStepProps) {
   const items = [
     {
       id: "blank",
-      label: "Blank Page",
+      label: "Blank page",
       icon: FileText,
       desc: "Plain start without preset templates",
     },
@@ -30,6 +31,18 @@ export function TypeStep({ pageType, setPageType }: TypeStepProps) {
       label: "Person",
       icon: User,
       desc: "Biography, career info & infobox",
+    },
+    {
+      id: "place",
+      label: "Place",
+      icon: MapPin,
+      desc: "City or settlement, its region and population",
+    },
+    {
+      id: "organisation",
+      label: "Organisation",
+      icon: Community,
+      desc: "Institution, its founding, seat and leader",
     },
     {
       id: "company",
@@ -51,13 +64,13 @@ export function TypeStep({ pageType, setPageType }: TypeStepProps) {
     },
     {
       id: "conflict",
-      label: "Military Conflict",
+      label: "Military conflict",
       icon: ShieldAlert,
       desc: "Battles, combatants, commanders",
     },
     {
       id: "politics",
-      label: "Political Party",
+      label: "Political party",
       icon: Landmark,
       desc: "Ideology, leaders, voter stats",
     },
@@ -71,42 +84,28 @@ export function TypeStep({ pageType, setPageType }: TypeStepProps) {
 
   return (
     <div className="space-y-3">
-      <label className="block text-xs font-medium tracking-wider text-[var(--wikios-text-muted)] uppercase">
-        Select Page Type
-      </label>
-      <div className="grid max-h-[45vh] scrollbar-thin grid-cols-2 gap-2 overflow-y-auto pr-1">
+      <p className="text-subhead text-label-secondary">Select page type</p>
+      <RadioCardGroup
+        aria-label="Page type"
+        value={pageType}
+        onValueChange={(v) => setPageType(v as PageType)}
+        className="grid max-h-[45vh] scrollbar-thin grid-cols-2 gap-2 overflow-y-auto p-1"
+      >
         {items.map((item) => {
           const Icon = item.icon;
           return (
-            <button
+            <RadioCard
               key={item.id}
-              type="button"
-              onClick={() => setPageType(item.id as PageType)}
-              className={cn(
-                "flex items-start gap-2.5 rounded-xl border p-2.5 text-left transition-all",
-                pageType === item.id
-                  ? "border-[var(--wikios-accent)] bg-[var(--wikios-accent)]/[0.08] text-[var(--wikios-text)]"
-                  : "bg-foreground/[0.03] hover:bg-foreground/[0.06] border-[var(--wikios-border)] text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
-              )}
-            >
-              <Icon
-                className={cn(
-                  "mt-0.5 h-4 w-4",
-                  pageType === item.id
-                    ? "text-[var(--wikios-accent)]"
-                    : "text-[var(--wikios-text-dim)]"
-                )}
-              />
-              <div>
-                <div className="text-xs font-semibold text-[var(--wikios-text)]">{item.label}</div>
-                <div className="mt-0.5 text-[9px] leading-tight text-[var(--wikios-text-dim)]">
-                  {item.desc}
-                </div>
-              </div>
-            </button>
+              value={item.id}
+              indicator={false}
+              icon={<Icon className="size-4" />}
+              title={item.label}
+              description={item.desc}
+              className="gap-2"
+            />
           );
         })}
-      </div>
+      </RadioCardGroup>
     </div>
   );
 }

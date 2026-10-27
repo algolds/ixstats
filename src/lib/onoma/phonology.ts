@@ -1,12 +1,9 @@
 // src/lib/onoma/phonology.ts
 // Onoma Lab — Phonology & Grapheme-to-IPA Translation Engine
 
-import {
-  TEMPLATE_PHONETIC_PROFILES,
-  getTemplateLinguisticProfile,
-} from "./template-phonetics";
+import { TEMPLATE_PHONETIC_PROFILES, getTemplateLinguisticProfile } from "./template-phonetics";
 import { getNameOverride } from "./ipa-overrides";
-import type { IPAString, LinguisticProfile, ResolvedNamePhonetics } from "./types";
+import type { IPAString, ResolvedNamePhonetics } from "./types";
 
 // Standard English-like phonetic rules for fallback
 const DEFAULT_RULES: [string, string][] = [
@@ -29,7 +26,7 @@ const DEFAULT_RULES: [string, string][] = [
   ["j", "dʒ"],
 ];
 
-export const CULTURE_RULES: Record<string, [string, string][]> = {
+const CULTURE_RULES: Record<string, [string, string][]> = {
   latin: [
     ["ph", "f"],
     ["th", "t"],
@@ -298,7 +295,7 @@ export function getCultureRules(cultureOrTemplate: string | null): [string, stri
   return CULTURE_RULES[primaryCulture] || DEFAULT_RULES;
 }
 
-export interface ResolvePhoneticsOptions {
+interface ResolvePhoneticsOptions {
   culture?: string | null;
   category?: string | null;
   subType?: string | null;
@@ -373,7 +370,9 @@ export function resolveNamePhonetics(
   }
 
   // Tier 4: IRL culture family rules
-  const primaryCulture = options.culture ? options.culture.split("+")[0].toLowerCase().trim() : "any";
+  const primaryCulture = options.culture
+    ? options.culture.split("+")[0].toLowerCase().trim()
+    : "any";
   if (CULTURE_RULES[primaryCulture]) {
     const ipa = translateToIPA(name, primaryCulture, options.customRules);
     return {
@@ -396,44 +395,72 @@ export function resolveNamePhonetics(
 /**
  * Returns the default BCP-47 voice tag for a culture family.
  */
-export function getCultureDefaultVoiceTag(culture: string): string {
+function getCultureDefaultVoiceTag(culture: string): string {
   switch (culture) {
-    case "latin": return "it-IT";
-    case "germanic": return "de-DE";
-    case "celtic": return "ga-IE";
-    case "slavic": return "pl-PL";
-    case "arabic": return "ar-SA";
-    case "persian": return "fa-IR";
-    case "turkic": return "tr-TR";
-    case "indic": return "hi-IN";
-    case "east-asian": return "ja-JP";
-    case "austronesian": return "id-ID";
-    case "african": return "sw-KE";
-    case "uralic": return "fi-FI";
-    case "constructed": return "is-IS";
-    default: return "en-US";
+    case "latin":
+      return "it-IT";
+    case "germanic":
+      return "de-DE";
+    case "celtic":
+      return "ga-IE";
+    case "slavic":
+      return "pl-PL";
+    case "arabic":
+      return "ar-SA";
+    case "persian":
+      return "fa-IR";
+    case "turkic":
+      return "tr-TR";
+    case "indic":
+      return "hi-IN";
+    case "east-asian":
+      return "ja-JP";
+    case "austronesian":
+      return "id-ID";
+    case "african":
+      return "sw-KE";
+    case "uralic":
+      return "fi-FI";
+    case "constructed":
+      return "is-IS";
+    default:
+      return "en-US";
   }
 }
 
 /**
  * Returns the default Kokoro neural voice persona for a culture family.
  */
-export function getCultureDefaultKokoroVoice(culture: string): string {
+function getCultureDefaultKokoroVoice(culture: string): string {
   switch (culture) {
-    case "latin": return "bf_emma";
-    case "germanic": return "bm_george";
-    case "celtic": return "bf_isabella";
-    case "slavic": return "bm_george";
-    case "arabic": return "af_nicole";
-    case "persian": return "af_nicole";
-    case "turkic": return "am_fenrir";
-    case "indic": return "af_nicole";
-    case "east-asian": return "af_nicole";
-    case "austronesian": return "bf_emma";
-    case "african": return "am_fenrir";
-    case "uralic": return "bm_george";
-    case "constructed": return "bm_fable";
-    default: return "bf_emma";
+    case "latin":
+      return "bf_emma";
+    case "germanic":
+      return "bm_george";
+    case "celtic":
+      return "bf_isabella";
+    case "slavic":
+      return "bm_george";
+    case "arabic":
+      return "af_nicole";
+    case "persian":
+      return "af_nicole";
+    case "turkic":
+      return "am_fenrir";
+    case "indic":
+      return "af_nicole";
+    case "east-asian":
+      return "af_nicole";
+    case "austronesian":
+      return "bf_emma";
+    case "african":
+      return "am_fenrir";
+    case "uralic":
+      return "bm_george";
+    case "constructed":
+      return "bm_fable";
+    default:
+      return "bf_emma";
   }
 }
 
@@ -465,7 +492,7 @@ export function translateToIPA(
   const words = name.split(/(\s+|-)/);
   const translatedWords = words.map((part) => {
     // If it's punctuation or spacing, leave it
-    if (/^[\s\-'\"]+$/.test(part)) return part;
+    if (/^[\s\-'"]+$/.test(part)) return part;
 
     const lowerWord = part.toLowerCase();
     let ipaWord = "";

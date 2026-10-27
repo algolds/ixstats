@@ -1,70 +1,25 @@
-// src/server/api/routers/admin.ts
-// FIXED: Complete admin router with proper functionality
-
+// src/server/api/routers/admin/worldEvents.ts
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import type { PrismaClient } from "@prisma/client";
 import { AppError } from "~/lib/app-error";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { clockTimeAt } from "~/lib/realms/realm-time-convert";
+import { clocksForRealms, pickClock } from "~/server/shared/realm-time";
+import { createStorytellerEffects, endStorytellerEffects } from "~/lib/economy/storyteller-effects";
+import { worldEventEffectDrafts, worldEventImpact } from "~/lib/economy/world-event-effects";
+
+/** The nations a world event touches: every non-demo nation for a global event, else the listed ones. */
+async function eventCountryIds(
+  db: Pick<PrismaClient, "country">,
+  input: { allCountries: boolean; affectedCountryIds: string[] }
+): Promise<string[]> {
+  if (!input.allCountries) return input.affectedCountryIds;
+  const rows = await db.country.findMany({ where: { isDemo: false }, select: { id: true } });
+  return rows.map((r) => r.id);
+}
 
 export const adminWorldEventsRouter = createTRPCRouter({
-  // Internal calculation formulas management
-  // Get global statistics for SDI interface
-
-  // Get stash statistics (real DB values)
-
-  // Get ThinkPages statistics (real DB values)
-
-  // Get system status
-
-  // Get bot status with health check
-
-  // Get system configuration (includes all economic control parameters)
-
-  // Save system configuration (all economic control parameters)
-
-  // Set custom time via bot or local override
-
-  // Bot control operations
-
-  // Get calculation logs
-
-  // Analyze import file
-
-  // Import roster data
-
-  // Sync epoch time with imported data
-
-  // Force recalculation of all countries
-
-  // Get system health
-
-  // --- Clerk User-Country Mapping Endpoints ---
-  // Note: User procedures are commented out until User model is properly configured
-
-  // Sync with Discord bot
-
-  // === ADMIN USER/COUNTRY MANAGEMENT ENDPOINTS ===
-
-  // List all users and their claimed countries
-
-  // List all countries and their assigned users
-
-  // Assign a user to a country (admin override)
-
-  // Unassign a user from a country (admin override)
-
-  // Get navigation settings (wiki/cards/labs visibility)
-
-  // Update navigation settings (wiki/cards/labs visibility)
-
-  // ============================================================================
-  // GOD MODE - DIRECT COUNTRY DATA MANIPULATION
-  // ============================================================================
-
-  // ============================================================================
-  // DIPLOMATIC OPTIONS MANAGEMENT
-  // ============================================================================
-
   /**
    * Get all diplomatic options (with optional filtering)
    */
@@ -265,61 +220,6 @@ export const adminWorldEventsRouter = createTRPCRouter({
     }),
 
   /**
-   * Bulk toggle active status for diplomatic options
-   */
-  bulkToggleDiplomaticOptions: adminProcedure
-    .input(
-      z.object({
-        ids: z.array(z.string()),
-        isActive: z.boolean(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const result = await ctx.db.diplomaticOption.updateMany({
-          where: {
-            id: { in: input.ids },
-          },
-          data: {
-            isActive: input.isActive,
-          },
-        });
-
-        // Log the bulk operation
-        await ctx.db.adminAuditLog.create({
-          data: {
-            action: "DIPLOMATIC_OPTIONS_BULK_TOGGLE",
-            targetType: "diplomatic_option",
-            targetId: "bulk",
-            targetName: `${input.ids.length} options`,
-            changes: JSON.stringify({ ids: input.ids, isActive: input.isActive }),
-            adminId: ctx.user?.id || "system",
-            adminName: ctx.user?.clerkUserId || "System",
-            timestamp: new Date(),
-            ipAddress:
-              ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown",
-          },
-        });
-
-        return {
-          success: true,
-          message: `Successfully ${input.isActive ? "activated" : "deactivated"} ${result.count} diplomatic options`,
-          count: result.count,
-        };
-      } catch (error) {
-        console.error("Failed to bulk toggle diplomatic options:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to bulk toggle diplomatic options",
-        });
-      }
-    }),
-
-  // ============================================================================
-  // PHASE 2: COUNTRY GRID & UPCOMING EVENTS
-  // ============================================================================
-
-  /**
    * Get upcoming events across all systems for the timeline widget.
    * Aggregates StorytellerEffects (future), Elections (upcoming), Policies (expiring), and CrisisEvents.
    */
@@ -460,10 +360,6 @@ export const adminWorldEventsRouter = createTRPCRouter({
       };
     }),
 
-  // ============================================================================
-  // STORYTELLER / WORLD EVENTS
-  // ============================================================================
-
   getWorldEvents: adminProcedure
     .input(
       z.object({
@@ -498,37 +394,6 @@ export const adminWorldEventsRouter = createTRPCRouter({
       return { events, total };
     }),
 
-  getWorldEventDetail: adminProcedure
-    .input(z.object({ eventId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const event = await ctx.db.worldEvent.findUnique({
-        where: { id: input.eventId },
-        include: {
-          affectedCountries: {
-            include: {
-              country: {
-                select: {
-                  id: true,
-                  name: true,
-                  flag: true,
-                  currentTotalGdp: true,
-                  currentPopulation: true,
-                  economicTier: true,
-                },
-              },
-            },
-          },
-          storytellerEffects: {
-            include: { country: { select: { id: true, name: true } } },
-            orderBy: { createdAt: "desc" },
-          },
-          chain: true,
-        },
-      });
-      if (!event) throw new TRPCError({ code: "NOT_FOUND", message: "World event not found" });
-      return event;
-    }),
-
   createWorldEvent: adminProcedure
     .input(
       z.object({
@@ -543,12 +408,15 @@ export const adminWorldEventsRouter = createTRPCRouter({
         chainOrder: z.number().optional(),
         parameters: z.record(z.string(), z.unknown()).optional(),
         affectedCountryIds: z.array(z.string()),
+        /** "Global (all countries)": every non-demo nation in every realm, ignoring `affectedCountryIds`. */
+        allCountries: z.boolean().optional().default(false),
         generateEffects: z.boolean().optional().default(true),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.user?.id;
       if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+      const affectedCountryIds = await eventCountryIds(ctx.db, input);
 
       // Calculate end date from duration if not provided
       const endsAt =
@@ -572,33 +440,42 @@ export const adminWorldEventsRouter = createTRPCRouter({
           chainOrder: input.chainOrder,
           createdBy: userId,
           affectedCountries: {
-            create: input.affectedCountryIds.map((countryId) => ({
+            create: affectedCountryIds.map((countryId) => ({
               countryId,
             })),
           },
         },
         include: {
           affectedCountries: {
-            include: { country: { select: { id: true, name: true } } },
+            include: { country: { select: { id: true, name: true, realmId: true } } },
           },
         },
       });
 
       // Generate StorytellerEffects for each affected country
-      if (input.generateEffects && input.affectedCountryIds.length > 0) {
-        const effectsData = input.affectedCountryIds.map((countryId) => ({
-          countryId,
-          ixTimeTimestamp: input.startsAt,
-          inputType: input.type,
-          value: input.severity >= 0.5 ? -input.severity : input.severity,
-          description: `[WorldEvent: ${input.name}] ${input.description ?? ""}`.trim(),
-          duration: input.duration ? Math.round(input.duration) : null,
-          isActive: true,
-          createdBy: userId,
-          worldEventId: event.id,
-        }));
-
-        await ctx.db.storytellerEffect.createMany({ data: effectsData });
+      // (startsAt is a real date; each country's effects start then on its realm's clock.)
+      if (input.generateEffects && affectedCountryIds.length > 0) {
+        const realmOf = new Map(
+          event.affectedCountries.map(({ country }) => [country.id, country.realmId])
+        );
+        const clocks = await clocksForRealms(ctx.db, realmOf.values());
+        const startOf = (countryId: string) =>
+          clockTimeAt(pickClock(clocks, realmOf.get(countryId)), input.startsAt.getTime());
+        await createStorytellerEffects(
+          ctx.db,
+          affectedCountryIds.flatMap((countryId) =>
+            worldEventEffectDrafts({
+              countryId,
+              type: input.type,
+              severity: input.severity,
+              label: `[WorldEvent: ${input.name}] ${input.description ?? ""}`.trim(),
+              duration: input.duration ? Math.round(input.duration) : null,
+              startIxTime: startOf(countryId),
+              worldEventId: event.id,
+              createdBy: userId,
+            })
+          )
+        );
       }
 
       // Audit log
@@ -613,10 +490,10 @@ export const adminWorldEventsRouter = createTRPCRouter({
             name: input.name,
             type: input.type,
             severity: input.severity,
-            affectedCountries: input.affectedCountryIds.length,
+            affectedCountries: affectedCountryIds.length,
           }),
           adminId: userId,
-          adminName: ctx.user?.firstName ?? "Admin",
+          adminName: "Admin",
           timestamp: new Date(),
         },
       });
@@ -647,28 +524,12 @@ export const adminWorldEventsRouter = createTRPCRouter({
         },
       });
 
-      // If deactivating, also deactivate linked StorytellerEffects
+      // If deactivating, end its StorytellerEffects (unwound from now; the past is kept)
       if (input.isActive === false) {
-        await ctx.db.storytellerEffect.updateMany({
-          where: { worldEventId: eventId },
-          data: { isActive: false },
-        });
+        await endStorytellerEffects(ctx.db, { worldEventId: eventId });
       }
 
       return event;
-    }),
-
-  deleteWorldEvent: adminProcedure
-    .input(z.object({ eventId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      // Deactivate linked StorytellerEffects (don't delete - keep history)
-      await ctx.db.storytellerEffect.updateMany({
-        where: { worldEventId: input.eventId },
-        data: { isActive: false, worldEventId: null },
-      });
-
-      await ctx.db.worldEvent.delete({ where: { id: input.eventId } });
-      return { success: true };
     }),
 
   simulateWorldEvent: adminProcedure
@@ -678,13 +539,14 @@ export const adminWorldEventsRouter = createTRPCRouter({
         severity: z.number().min(0).max(1),
         duration: z.number().optional(),
         affectedCountryIds: z.array(z.string()),
+        allCountries: z.boolean().optional().default(false),
         parameters: z.record(z.string(), z.unknown()).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       // Fetch current state of affected countries
       const countries = await ctx.db.country.findMany({
-        where: { id: { in: input.affectedCountryIds } },
+        where: input.allCountries ? { isDemo: false } : { id: { in: input.affectedCountryIds } },
         select: {
           id: true,
           name: true,
@@ -703,32 +565,11 @@ export const adminWorldEventsRouter = createTRPCRouter({
 
       // Project impact based on severity and event type
       const projectedImpacts = countries.map((c) => {
-        const severityMultiplier = input.severity;
-        // Negative events reduce GDP; positive events (peace, tech) boost it
-        const isNegative = [
-          "economic_crisis",
-          "trade_war",
-          "natural_disaster",
-          "pandemic",
-          "political_upheaval",
-          "global_recession",
-          "currency_crisis",
-          "cyber_attack",
-          "climate_disaster",
-          "financial_crisis",
-        ].includes(input.type);
-
-        const gdpImpactPct = isNegative
-          ? -(severityMultiplier * 0.2) // up to -20% at max severity
-          : severityMultiplier * 0.15; // up to +15% boost
-
-        const popImpactPct = isNegative
-          ? -(severityMultiplier * 0.02) // up to -2% population impact
-          : severityMultiplier * 0.01;
-
-        const stabilityImpact = isNegative
-          ? -(severityMultiplier * 30) // up to -30 stability points
-          : severityMultiplier * 10;
+        const {
+          gdp: gdpImpactPct,
+          population: popImpactPct,
+          stability: stabilityImpact,
+        } = worldEventImpact(input.type, input.severity);
 
         const currentGdp = c.currentTotalGdp ?? 0;
         const currentPop = c.currentPopulation ?? 0;
@@ -771,43 +612,4 @@ export const adminWorldEventsRouter = createTRPCRouter({
         },
       };
     }),
-
-  // Event Chains
-  getEventChains: adminProcedure.query(async ({ ctx }) => {
-    return ctx.db.eventChain.findMany({
-      include: {
-        events: {
-          orderBy: { chainOrder: "asc" },
-          select: {
-            id: true,
-            name: true,
-            type: true,
-            severity: true,
-            chainOrder: true,
-            isActive: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-  }),
-
-  createEventChain: adminProcedure
-    .input(
-      z.object({
-        name: z.string().min(1),
-        description: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user?.id;
-      if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" });
-      return ctx.db.eventChain.create({
-        data: { name: input.name, description: input.description, createdBy: userId },
-      });
-    }),
-
-  // ─── Wiki Link Management ──────────────────────────────────────────
 });
-
-// getWikiDbPool is now imported from "~/lib/wiki/bridge"

@@ -1,0 +1,154 @@
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+import { namesOfUser } from "~/lib/identity/wiki-names";
+import { createTRPCRouter, lightMutationProcedure, protectedProcedure } from "~/server/api/trpc";
+import { forgetContextUser } from "~/server/api/trpc/context";
+import { db } from "~/server/db";
+import {
+  HandleClaimError,
+  setUserHandle,
+  suggestHandleFor,
+} from "~/server/modules/identity/identity.handle-claim";
+import { loadPassportHandle } from "~/server/modules/identity/identity.passport-handle";
+import { isSiteAdmin, type RealmActor } from "~/server/modules/realms/realms.access";
+
+const COUNTRY_SELECT = { id: true, name: true, slug: true } as const;
+
+/** The user's country: the direct relation, else by id, else via an active ThinkPages persona. */
+async function resolveUserCountry(user: {
+  clerkUserId: string | null;
+  countryId: string | null;
+  country: { id: string; name: string; slug: string | null } | null;
+}) {
+  if (user.country) return user.country;
+  if (user.countryId) {
+    const byId = await db.country.findUnique({
+      where: { id: user.countryId },
+      select: COUNTRY_SELECT,
+    });
+    if (byId) return byId;
+  }
+  if (!user.clerkUserId) return null;
+  const persona = await db.thinkpagesAccount.findFirst({
+    where: { clerkUserId: user.clerkUserId, isActive: true, countryId: { not: null } },
+    select: { countryId: true },
+  });
+  return persona?.countryId
+    ? db.country.findUnique({ where: { id: persona.countryId }, select: COUNTRY_SELECT })
+    : null;
+}
+
+type LinkedUser = {
+  forumUserId: number | null;
+  forumUsername: string | null;
+  lastForumSync: Date | null;
+  discordUserId: string | null;
+  discordUsername: string | null;
+  lastDiscordSync: Date | null;
+} | null;
+
+function linkedAccounts(user: LinkedUser, claimedName: string | null) {
+  return {
+    forum: {
+      linked: !!user?.forumUserId || !!user?.forumUsername,
+      username: user?.forumUsername ?? null,
+      lastSync: user?.lastForumSync ?? null,
+    },
+    wiki: {
+      linked: !!claimedName,
+      username: claimedName,
+      isCustomClaimed: !!claimedName,
+      lastSync: null,
+    },
+    discord: {
+      linked: !!user?.discordUserId,
+      userId: user?.discordUserId ?? null,
+      username: user?.discordUsername ?? null,
+      lastSync: user?.lastDiscordSync ?? null,
+    },
+  };
+}
+
+/** Admin rights (as `adminProcedure` grants them), dropped while playing as another user. */
+function callerIsAdmin(ctx: { user: RealmActor; impersonatorId?: string | null }): boolean {
+  return !ctx.impersonatorId && isSiteAdmin(ctx.user);
+}
+
+const HANDLE_ERROR_CODES = {
+  FORMAT: "BAD_REQUEST",
+  RESERVED: "BAD_REQUEST",
+  TAKEN: "CONFLICT",
+  ALREADY_CHANGED: "FORBIDDEN",
+  NO_USER: "NOT_FOUND",
+} as const;
+
+export const ixnayidCoreRouter = createTRPCRouter({
+  /** All linked accounts at once (the old forum account is read-only: imported names, phase 4b). */
+  getStatus: protectedProcedure.query(async ({ ctx }) => {
+    const user = await db.user.findUnique({
+      where: { id: ctx.user.id },
+      select: {
+        id: true,
+        clerkUserId: true,
+        handle: true,
+        handleChangedAt: true,
+        countryId: true,
+        forumUserId: true,
+        forumUsername: true,
+        lastForumSync: true,
+        discordUserId: true,
+        discordUsername: true,
+        lastDiscordSync: true,
+        country: { select: { id: true, name: true, slug: true } },
+      },
+    });
+
+    const country = user ? await resolveUserCountry(user) : null;
+
+    // Wiki is "linked" only through an APPROVED name claim; owning a country does not count. The
+    // owner's own view shows their first approved name even while they hide it; the passport
+    // handle takes only a shown one.
+    const names = user ? await namesOfUser(db, user.id) : [];
+    const claimedName = names[0]?.name ?? null;
+    const shownName = names.find((n) => n.visible)?.name ?? null;
+
+    return {
+      /**
+       * The passport handle (`loadPassportHandle`): the one every share and invite link carries, so
+       * it skips a hidden claim, though `wiki` below still shows it.
+       */
+      passportHandle: user ? await loadPassportHandle(user, { claimedWikiName: shownName }) : null,
+      /** The stored IxStates Passport handle, null until one is claimed. */
+      handle: user?.handle ?? null,
+      /** The single self-service change is still available (admins may always change it). */
+      canChangeHandle: !user?.handleChangedAt || callerIsAdmin(ctx),
+      countrySlug:
+        country?.slug ?? (country?.name ? country.name.toLowerCase().replace(/ /g, "_") : null),
+      ...linkedAccounts(user, claimedName),
+    };
+  }),
+
+  /** The handle the WikiOS first-save picker prefills (null when no name gives one). */
+  suggestHandle: protectedProcedure.query(async ({ ctx }) => ({
+    handle: await suggestHandleFor(ctx.user.id),
+  })),
+
+  /** Claim or change the signed-in user's IxStates Passport handle. */
+  setHandle: lightMutationProcedure
+    .input(z.object({ handle: z.string().min(1).max(64) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const saved = await setUserHandle({
+          userId: ctx.user.id,
+          handle: input.handle,
+          isAdmin: callerIsAdmin(ctx),
+        });
+        // The save the WikiOS picker retries next must be signed with this handle, not refused by a cached context.
+        forgetContextUser(ctx.user.clerkUserId);
+        return saved;
+      } catch (error) {
+        if (!(error instanceof HandleClaimError)) throw error;
+        throw new TRPCError({ code: HANDLE_ERROR_CODES[error.code], message: error.message });
+      }
+    }),
+});

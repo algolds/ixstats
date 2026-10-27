@@ -10,7 +10,6 @@
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
 import { NationalIssuesEngine } from "~/lib/national-issues";
 import {
   getNationalIssuesConfig,
@@ -71,72 +70,7 @@ const ConfigUpdateSchema = z.object({
   spawnMode: z.enum(["probability", "deterministic", "off"]).optional(),
 });
 
-const ConsequenceDefinitionSchema = z.object({
-  targetModel: z.string(),
-  targetField: z.string(),
-  operation: z.enum(["add", "subtract", "multiply", "set"]),
-  value: z.number(),
-  effectType: z.enum(["immediate", "gradual"]).optional(),
-  durationDays: z.number().optional(),
-});
-
-const ResponseOptionSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  description: z.string(),
-  consequences: z.array(ConsequenceDefinitionSchema),
-  previewEffects: z.object({
-    publicApproval: z.number().optional(),
-    economicImpact: z.string().optional(),
-    stabilityImpact: z.string().optional(),
-    diplomaticImpact: z.string().optional(),
-  }),
-  outcomeText: z.string(),
-  isAutoResolveDefault: z.boolean().optional(),
-  triggersFollowUp: z.array(z.string()).optional(),
-  recommendedDirective: z.string().optional(),
-});
-
-const TemplateCreateSchema = z.object({
-  slug: z.string().min(1).max(100),
-  title: z.string().min(1).max(300),
-  description: z.string().min(1).max(2000),
-  longDescription: z.string().max(5000).optional(),
-  domain: z.enum([
-    "economic",
-    "political",
-    "social",
-    "military",
-    "diplomatic",
-    "infrastructure",
-    "environmental",
-  ]),
-  category: z
-    .enum(["economic", "diplomatic", "social", "governance", "security", "infrastructure"])
-    .default("governance"),
-  tags: z.string().optional(),
-  baseSeverity: z.enum(["critical", "high", "medium", "low"]).default("medium"),
-  baseUrgency: z.number().int().min(0).max(100).default(50),
-  deadlineDaysBase: z.number().int().min(1).nullable().optional(),
-  triggerConditions: z.string(), // JSON expression tree
-  cooldownDays: z.number().int().min(1).default(30),
-  maxActivePerCountry: z.number().int().min(1).default(1),
-  responseOptions: z.string(), // JSON array of ResponseOptionTemplate
-  followUpTemplateIds: z.string().optional(),
-  followUpConditions: z.string().optional(),
-  variableDefinitions: z.string().optional(),
-  personalityModifiers: z.string().optional(),
-  isActive: z.boolean().default(true),
-  isGlobal: z.boolean().default(false),
-});
-
-const TemplateUpdateSchema = TemplateCreateSchema.partial().extend({
-  id: z.string(),
-});
-
 export const nationalIssuesEngineRouter = createTRPCRouter({
-  // ==================== PLAYER ENDPOINTS ====================
-
   // ==================== ADMIN ENDPOINTS ====================
 
   /**
@@ -153,67 +87,6 @@ export const nationalIssuesEngineRouter = createTRPCRouter({
     saveNationalIssuesConfig(completeNationalIssuesConfig(input));
     return { success: true };
   }),
-
-  /**
-   * Force generate an issue from a template for testing.
-   */
-  forceGenerate: adminProcedure
-    .input(
-      z.object({
-        templateId: z.string(),
-        countryId: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const issueId = await NationalIssuesEngine.forceGenerate(
-        input.templateId,
-        input.countryId,
-        ctx.db as any
-      );
-
-      if (!issueId) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to generate issue",
-        });
-      }
-
-      return { issueId };
-    }),
-
-  /**
-   * Batch create templates (for seeding).
-   */
-  batchCreateTemplates: adminProcedure
-    .input(z.object({ templates: z.array(TemplateCreateSchema) }))
-    .mutation(async ({ ctx, input }) => {
-      const results = [];
-      for (const template of input.templates) {
-        // Validate JSON fields
-        try {
-          JSON.parse(template.triggerConditions);
-          JSON.parse(template.responseOptions);
-        } catch {
-          results.push({ slug: template.slug, error: "Invalid JSON" });
-          continue;
-        }
-
-        try {
-          const created = await ctx.db.nationalIssueTemplate.upsert({
-            where: { slug: template.slug },
-            create: { ...template, authorId: ctx.auth!.userId },
-            update: { ...template, version: { increment: 1 } },
-          });
-          results.push({ slug: created.slug, id: created.id });
-        } catch (err) {
-          results.push({
-            slug: template.slug,
-            error: (err as Error).message,
-          });
-        }
-      }
-      return { results, total: results.length };
-    }),
 
   /**
    * Get generation statistics.
@@ -459,74 +332,4 @@ export const nationalIssuesEngineRouter = createTRPCRouter({
 
       return { issues, nextCursor };
     }),
-
-  /**
-   * Seed default templates from the seed file.
-   */
-  seedDefaultTemplates: adminProcedure.mutation(async ({ ctx }) => {
-    const { NATIONAL_ISSUE_TEMPLATES } =
-      await import("../../../../../prisma/seeds/national-issue-templates");
-
-    let created = 0;
-    let updated = 0;
-    let errors = 0;
-
-    for (const template of NATIONAL_ISSUE_TEMPLATES) {
-      try {
-        const result = await ctx.db.nationalIssueTemplate.upsert({
-          where: { slug: template.slug },
-          update: {
-            title: template.title,
-            description: template.description,
-            longDescription: template.longDescription ?? null,
-            domain: template.domain,
-            category: template.category as any,
-            tags: template.tags ?? null,
-            baseSeverity: template.baseSeverity as any,
-            baseUrgency: template.baseUrgency,
-            deadlineDaysBase: template.deadlineDaysBase,
-            triggerConditions: template.triggerConditions,
-            cooldownDays: template.cooldownDays,
-            maxActivePerCountry: template.maxActivePerCountry,
-            responseOptions: template.responseOptions,
-            followUpTemplateIds: template.followUpTemplateIds ?? null,
-            personalityModifiers: template.personalityModifiers ?? null,
-            isActive: true,
-          },
-          create: {
-            slug: template.slug,
-            title: template.title,
-            description: template.description,
-            longDescription: template.longDescription ?? null,
-            domain: template.domain,
-            category: template.category as any,
-            tags: template.tags ?? null,
-            baseSeverity: template.baseSeverity as any,
-            baseUrgency: template.baseUrgency,
-            deadlineDaysBase: template.deadlineDaysBase,
-            triggerConditions: template.triggerConditions,
-            cooldownDays: template.cooldownDays,
-            maxActivePerCountry: template.maxActivePerCountry,
-            responseOptions: template.responseOptions,
-            followUpTemplateIds: template.followUpTemplateIds ?? null,
-            personalityModifiers: template.personalityModifiers ?? null,
-            isActive: true,
-            authorId: ctx.auth?.userId ?? null,
-          },
-        });
-
-        const isNew = result.createdAt.getTime() === result.updatedAt.getTime();
-        if (isNew) {
-          created++;
-        } else {
-          updated++;
-        }
-      } catch (err) {
-        errors++;
-        console.error(`Error seeding default template "${template.slug}":`, err);
-      }
-    }
-
-    return { created, updated, errors };
-  }),
 });

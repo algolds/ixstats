@@ -1,16 +1,18 @@
+// src/lib/cards/enums.ts
 /**
  * Card System Enums
  *
- * Runtime constants that match Prisma schema enums.
- * These can be safely used in both client and server components.
- *
- * IMPORTANT: These values MUST match the Prisma schema exactly.
- * If you modify prisma/schema.prisma enums, update these accordingly.
+ * Client-safe runtime constants that mirror the Prisma enums (prisma/schema/enums.prisma). The `satisfies`
+ * clauses fail the typecheck as soon as the two drift apart.
  */
+import type {
+  CardFinish as PrismaCardFinish,
+  CardRarity as PrismaCardRarity,
+  CardType as PrismaCardType,
+  PackType as PrismaPackType,
+} from "@prisma/client";
 
-/**
- * Card rarity levels
- */
+/** Card rarities, lowest first (cards refresh §2.1). */
 export const CardRarity = {
   COMMON: "COMMON",
   UNCOMMON: "UNCOMMON",
@@ -18,26 +20,27 @@ export const CardRarity = {
   ULTRA_RARE: "ULTRA_RARE",
   EPIC: "EPIC",
   LEGENDARY: "LEGENDARY",
-} as const;
+} as const satisfies { [K in PrismaCardRarity]: K };
 
 export type CardRarity = (typeof CardRarity)[keyof typeof CardRarity];
 
-/**
- * Card types/categories
- */
-export const CardType = {
-  NATION: "NATION",
-  LORE: "LORE",
-  NS_IMPORT: "NS_IMPORT",
-  SPECIAL: "SPECIAL",
-  COMMUNITY: "COMMUNITY",
-} as const;
+const RARITY_VALUES: readonly string[] = Object.values(CardRarity);
 
-export type CardType = (typeof CardType)[keyof typeof CardType];
+/** A rarity string as the enum spells it: trimmed, upper case, hyphens and spaces as underscores ("ultra-rare"). */
+export function rarityKey(value: string | null | undefined): string {
+  return (value ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+}
 
-/**
- * Pack types
- */
+/** A rarity string as the enum: any casing, hyphens and spaces as underscores; null for anything else. */
+export function parseCardRarity(value: string | null | undefined): CardRarity | null {
+  const key = rarityKey(value);
+  return RARITY_VALUES.includes(key) ? (key as CardRarity) : null;
+}
+
+/** Card pack types (Prisma `PackType`). */
 export const PackType = {
   BASIC: "BASIC",
   PREMIUM: "PREMIUM",
@@ -45,74 +48,27 @@ export const PackType = {
   THEMED: "THEMED",
   SEASONAL: "SEASONAL",
   EVENT: "EVENT",
-} as const;
+} as const satisfies { [K in PrismaPackType]: K };
 
 export type PackType = (typeof PackType)[keyof typeof PackType];
 
-/**
- * How a card was acquired
- */
-export const AcquireMethod = {
-  PACK: "PACK",
-  TRADE: "TRADE",
-  AUCTION: "AUCTION",
-  CRAFT: "CRAFT",
-  GIFT: "GIFT",
-  NS_IMPORT: "NS_IMPORT",
-  ACHIEVEMENT: "ACHIEVEMENT",
-  EVENT: "EVENT",
-} as const;
+/** Card types (§2.1): Lore, Nation, NationStates, Special (achievement and event cards), Trophy. */
+export const CardType = {
+  LORE: "LORE",
+  NATION: "NATION",
+  NS: "NS",
+  SPECIAL: "SPECIAL",
+  TROPHY: "TROPHY",
+} as const satisfies { [K in PrismaCardType]: K };
 
-export type AcquireMethod = (typeof AcquireMethod)[keyof typeof AcquireMethod];
+export type CardType = (typeof CardType)[keyof typeof CardType];
 
-/**
- * Auction status
- */
-export const AuctionStatus = {
-  ACTIVE: "ACTIVE",
-  COMPLETED: "COMPLETED",
-  CANCELLED: "CANCELLED",
-} as const;
+/** The finish of one copy (§2.1). Rolled at mint from Phase 4; Phase 1 mints Standard and Serialised only. */
+export const CardFinish = {
+  STANDARD: "STANDARD",
+  FOIL: "FOIL",
+  HOLO: "HOLO",
+  SERIALISED: "SERIALISED",
+} as const satisfies { [K in PrismaCardFinish]: K };
 
-export type AuctionStatus = (typeof AuctionStatus)[keyof typeof AuctionStatus];
-
-/**
- * Trade status
- */
-export const TradeStatus = {
-  PENDING: "PENDING",
-  ACCEPTED: "ACCEPTED",
-  REJECTED: "REJECTED",
-  CANCELLED: "CANCELLED",
-  EXPIRED: "EXPIRED",
-} as const;
-
-export type TradeStatus = (typeof TradeStatus)[keyof typeof TradeStatus];
-
-/**
- * Helper function to get all rarity values as an array
- */
-export function getAllRarities(): CardRarity[] {
-  return Object.values(CardRarity);
-}
-
-/**
- * Helper function to get all card type values as an array
- */
-export function getAllCardTypes(): CardType[] {
-  return Object.values(CardType);
-}
-
-/**
- * Helper function to check if a value is a valid CardRarity
- */
-export function isValidCardRarity(value: string): value is CardRarity {
-  return Object.values(CardRarity).includes(value as CardRarity);
-}
-
-/**
- * Helper function to check if a value is a valid CardType
- */
-export function isValidCardType(value: string): value is CardType {
-  return Object.values(CardType).includes(value as CardType);
-}
+export type CardFinish = (typeof CardFinish)[keyof typeof CardFinish];

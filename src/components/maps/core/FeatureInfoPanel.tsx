@@ -1,28 +1,31 @@
 "use client";
 
-/**
- * FeatureInfoPanel - Slide-out panel for map markers (cities, POIs, capitals).
- *
- * Desktop: Right-side panel. Mobile: Snap bottom sheet.
- * Shows feature data, wiki intro (fetched on demand), and action links.
- */
-
+import { Skeleton } from "~/components/ui/skeleton";
 import { memo } from "react";
 import {
-  X,
+  Xmark as X,
   MapPin,
-  Users,
-  BookOpen,
-  Landmark,
-  ExternalLink,
-  BookMarked,
+  Group as Users,
+  OpenBook as BookOpen,
+  Bank as Landmark,
+  OpenNewWindow as ExternalLink,
+  Bookmark as BookMarked,
   Calendar,
-} from "lucide-react";
+} from "iconoir-react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import type { SelectedFeature } from "./IxWorldMap";
 import { SnapBottomSheet } from "./SnapBottomSheet";
 import { useIsMobile } from "~/hooks/useIsMobile";
+import { formatPopulation } from "~/lib/utils/format-utils";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { FacetMaterial } from "~/components/ui/facet";
+import { Stat } from "~/components/ui/stat";
+import { Card } from "~/components/ui/card";
+import { WikiLinkButton } from "~/components/maps/shared/WikiLinkButton";
+import { useMapRealm } from "./MapRealmContext";
 
 interface FeatureInfoPanelProps {
   feature: SelectedFeature;
@@ -30,37 +33,116 @@ interface FeatureInfoPanelProps {
   onOpenStoryModal?: (pinId: string) => void;
 }
 
-function formatPopulation(n: number | null | undefined): string {
-  if (n == null) return "—";
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return n.toLocaleString();
-}
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function FeaturePeekContent({ feature }: { feature: SelectedFeature }) {
-  const isCity = feature.featureType === "city" || feature.featureType === "capital";
+  const { featureType } = feature;
   const typeLabel =
-    feature.featureType === "capital"
+    featureType === "capital"
       ? "Capital"
-      : feature.featureType === "city"
-        ? feature.cityType || "City"
-        : feature.featureType === "storyPin"
-          ? "Story Pin"
+      : featureType === "storyPin"
+        ? "Story Pin"
+        : featureType === "city"
+          ? feature.cityType || "City"
           : feature.category || "POI";
 
   return (
     <div className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-500 dark:bg-blue-900/30">
-        <MapPin className="h-5 w-5" />
-      </div>
+      <MapPin className="text-blue h-5 w-5 shrink-0" aria-hidden />
       <div className="min-w-0 flex-1">
-        <h3 className="text-foreground truncate text-sm font-semibold">{feature.name}</h3>
-        <div className="text-muted-foreground flex gap-2 text-xs">
+        <h3 className="text-label text-headline truncate">{feature.name}</h3>
+        <div className="text-label-secondary text-footnote flex gap-2">
           <span className="capitalize">{typeLabel}</span>
           <span>•</span>
           <span>{feature.countryName}</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function FeatureHeaderIcon({ feature }: { feature: SelectedFeature }) {
+  if (feature.featureType === "storyPin") {
+    return <BookMarked className="text-wiki h-4 w-4 shrink-0" aria-hidden />;
+  }
+  if (feature.featureType === "city" || feature.featureType === "capital") {
+    return (
+      <MapPin
+        className={`h-4 w-4 shrink-0 ${feature.isCapital ? "text-yellow" : "text-blue"}`}
+        aria-hidden
+      />
+    );
+  }
+  return <Landmark className="text-label-secondary h-4 w-4 shrink-0" aria-hidden />;
+}
+
+/** Desktop-only header (mobile uses the sheet's peek header). */
+function FeatureHeader({ feature, onClose }: { feature: SelectedFeature; onClose: () => void }) {
+  const isCity = feature.featureType === "city" || feature.featureType === "capital";
+  const kind = isCity ? (feature.cityType ?? "city") : (feature.category ?? "landmark");
+  return (
+    <div className="border-separator flex items-center justify-between border-b px-4 py-3">
+      <div className="flex items-center gap-2 overflow-hidden">
+        <FeatureHeaderIcon feature={feature} />
+        <div className="min-w-0">
+          <h3 className="text-label text-title-3 truncate">{feature.name}</h3>
+          <p className="text-label-secondary text-footnote">
+            {capitalize(kind)}
+            {" · "}
+            {feature.countryName}
+          </p>
+        </div>
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={onClose}
+        aria-label="Close"
+        title="Close (Esc)"
+        className="text-label-secondary h-8 w-8 shrink-0 rounded-full"
+      >
+        <X aria-hidden />
+      </Button>
+    </div>
+  );
+}
+
+function StoryPinDetails({
+  feature,
+  onOpenStoryModal,
+}: {
+  feature: SelectedFeature;
+  onOpenStoryModal?: (pinId: string) => void;
+}) {
+  return (
+    <div className="mb-3 space-y-2">
+      {(feature.ixTimeYear || feature.eraLabel) && (
+        <div className="text-label text-caption flex items-center gap-2">
+          <Calendar className="text-wiki h-3.5 w-3.5" aria-hidden />
+          <span>
+            {feature.ixTimeYear && `Year ${feature.ixTimeYear}`}
+            {feature.ixTimeYear && feature.eraLabel && " · "}
+            {feature.eraLabel}
+          </span>
+        </div>
+      )}
+      {feature.category && (
+        <Badge variant="outline" className="capitalize">
+          {feature.category}
+        </Badge>
+      )}
+      {onOpenStoryModal && feature.id && (
+        <Button
+          variant="secondary"
+          size="sm"
+          className="w-full"
+          onClick={() => onOpenStoryModal(feature.id)}
+        >
+          <BookMarked aria-hidden />
+          Read full story
+        </Button>
+      )}
     </div>
   );
 }
@@ -71,10 +153,11 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
   onOpenStoryModal,
 }: FeatureInfoPanelProps) {
   const isMobile = useIsMobile();
+  const realm = useMapRealm();
 
-  // Fetch wiki intro on demand (only if wikiPageTitle is set)
+  // Fetch wiki intro on demand (only if wikiPageTitle is set), from the map's realm's wiki
   const { data: wikiIntro, isLoading: wikiLoading } = api.geoWiki.getFeatureWikiIntro.useQuery(
-    { wikiPageTitle: feature.wikiPageTitle! },
+    { wikiPageTitle: feature.wikiPageTitle!, realm },
     {
       enabled: !!feature.wikiPageTitle,
       staleTime: 5 * 60_000,
@@ -87,154 +170,62 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
 
   const panelContent = (
     <>
-      {/* Header — only needed for desktop since mobile has Peek header */}
-      {!isMobile && (
-        <div className="border-border/50 flex items-center justify-between border-b px-4 py-3">
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div
-              className={`flex h-7 w-7 items-center justify-center rounded-lg ${
-                isStoryPin ? "bg-purple-100" : isCity ? "bg-blue-100" : "bg-amber-100"
-              }`}
-            >
-              {isStoryPin ? (
-                <BookMarked className="h-4 w-4 text-purple-600" />
-              ) : isCity ? (
-                <MapPin
-                  className={`h-4 w-4 ${feature.isCapital ? "text-amber-600" : "text-blue-600"}`}
-                />
-              ) : (
-                <Landmark className="h-4 w-4 text-amber-600" />
-              )}
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-foreground truncate text-base font-semibold">{feature.name}</h3>
-              <p className="text-muted-foreground text-xs">
-                {isCity
-                  ? (feature.cityType ?? "City").charAt(0).toUpperCase() +
-                    (feature.cityType ?? "city").slice(1)
-                  : (feature.category ?? "Landmark").charAt(0).toUpperCase() +
-                    (feature.category ?? "landmark").slice(1)}
-                {" · "}
-                {feature.countryName}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:bg-muted hover:text-foreground shrink-0 rounded-full p-1.5 transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+      {!isMobile && <FeatureHeader feature={feature} onClose={onClose} />}
 
-      {/* Body */}
       <div
         className="overflow-y-auto p-4"
         style={{ maxHeight: isMobile ? "100%" : "calc(100% - 56px)" }}
       >
-        {/* Wiki intro loading skeleton */}
         {wikiLoading && feature.wikiPageTitle && (
-          <div className="mb-3 space-y-1.5">
-            <div className="bg-muted h-3 w-full animate-pulse rounded" />
-            <div className="bg-muted h-3 w-4/5 animate-pulse rounded" />
-            <div className="bg-muted h-3 w-3/5 animate-pulse rounded" />
+          <div className="mb-3 space-y-2">
+            <Skeleton className="h-3 w-full rounded-xs" />
+            <Skeleton className="h-3 w-4/5 rounded-xs" />
+            <Skeleton className="h-3 w-3/5 rounded-xs" />
           </div>
         )}
 
-        {/* Wiki intro text */}
         {wikiIntro?.extract && (
           <div className="mb-3">
-            <p className="text-foreground/80 line-clamp-5 text-xs leading-relaxed">
+            <p className="text-label-secondary text-footnote line-clamp-5 leading-relaxed">
               {wikiIntro.extract}
             </p>
           </div>
         )}
 
-        {/* City population */}
         {isCity && feature.population != null && (
-          <div className="bg-muted mb-3 rounded-lg px-3 py-2">
-            <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium tracking-wider uppercase">
-              <Users className="h-3 w-3" />
-              Population
-            </div>
-            <div className="text-foreground mt-0.5 text-sm font-semibold">
-              {formatPopulation(feature.population)}
-            </div>
-          </div>
+          <Card className="mb-3 px-3 py-2">
+            <Stat
+              size="sm"
+              label="Population"
+              value={formatPopulation(feature.population)}
+              icon={<Users className="size-3.5" />}
+            />
+          </Card>
         )}
 
-        {/* POI description */}
         {!isCity && !isStoryPin && feature.description && (
-          <div className="bg-muted mb-3 rounded-lg px-3 py-2">
-            <div className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
-              Description
-            </div>
-            <p className="text-foreground mt-0.5 text-xs leading-relaxed">{feature.description}</p>
-          </div>
+          <Card className="mb-3 px-3 py-2">
+            <Eyebrow className="block">Description</Eyebrow>
+            <p className="text-label text-footnote mt-0.5 leading-relaxed">{feature.description}</p>
+          </Card>
         )}
 
-        {/* Story Pin details */}
-        {isStoryPin && (
-          <div className="mb-3 space-y-2">
-            {(feature.ixTimeYear || feature.eraLabel) && (
-              <div className="flex items-center gap-2 rounded-lg bg-purple-50 px-3 py-2 dark:bg-purple-900/20">
-                <Calendar className="h-3.5 w-3.5 text-purple-600" />
-                <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
-                  {feature.ixTimeYear && `Year ${feature.ixTimeYear}`}
-                  {feature.ixTimeYear && feature.eraLabel && " · "}
-                  {feature.eraLabel}
-                </span>
-              </div>
-            )}
-            {feature.category && (
-              <span className="inline-block rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700 capitalize dark:bg-purple-900/30 dark:text-purple-300">
-                {feature.category}
-              </span>
-            )}
-            {onOpenStoryModal && feature.id && (
-              <button
-                onClick={() => onOpenStoryModal(feature.id)}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-purple-50 py-2 text-xs font-medium text-purple-700 transition-colors hover:bg-purple-100 dark:bg-purple-900/20 dark:text-purple-300"
-              >
-                <BookMarked className="h-3 w-3" />
-                Read Full Story
-              </button>
-            )}
-          </div>
-        )}
+        {isStoryPin && <StoryPinDetails feature={feature} onOpenStoryModal={onOpenStoryModal} />}
 
-        {/* Action buttons */}
         <div className="mt-4 flex flex-col gap-2">
-          {wikiIntro?.wikiUrl &&
-            (wikiIntro.wikiUrl.startsWith("/") || wikiIntro.wikiUrl.includes("/wiki/") ? (
-              <Link
-                href={wikiIntro.wikiUrl}
-                className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30"
-              >
-                <BookOpen className="h-3 w-3" />
-                Read on {wikiIntro.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
-              </Link>
-            ) : (
-              <a
-                href={wikiIntro.wikiUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30"
-              >
-                <BookOpen className="h-3 w-3" />
-                Read on {wikiIntro.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            ))}
+          {wikiIntro?.wikiUrl && (
+            <WikiLinkButton url={wikiIntro.wikiUrl} externalIcon variant="outline" size="sm">
+              <BookOpen aria-hidden />
+              Read on WikiOS
+            </WikiLinkButton>
+          )}
           {feature.countrySlug && (
-            <Link
-              href={`/countries/${feature.countrySlug}`}
-              className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-50 py-2 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100"
-            >
-              View {feature.countryName}
-              <ExternalLink className="h-3 w-3" />
-            </Link>
+            <Button asChild size="sm" className="bg-tint text-on-tint hover:bg-tint-hover">
+              <Link href={`/countries/${feature.countrySlug}`}>
+                View {feature.countryName}
+                <ExternalLink aria-hidden />
+              </Link>
+            </Button>
           )}
         </div>
       </div>
@@ -243,7 +234,6 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
 
   return (
     <>
-      {/* Desktop: Right-side panel */}
       {!isMobile && (
         <div
           onMouseDown={(e) => e.stopPropagation()}
@@ -252,11 +242,12 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
           className="absolute top-0 right-0 z-20 hidden h-full w-96 sm:block"
           style={{ animation: "slideInRight 0.25s ease-out" }}
         >
-          <div className="bg-card h-full shadow-xl">{panelContent}</div>
+          <FacetMaterial layer="chrome" className="h-full rounded-none">
+            {panelContent}
+          </FacetMaterial>
         </div>
       )}
 
-      {/* Mobile: Snap bottom sheet */}
       {isMobile && (
         <SnapBottomSheet onClose={onClose} peekContent={<FeaturePeekContent feature={feature} />}>
           {panelContent}

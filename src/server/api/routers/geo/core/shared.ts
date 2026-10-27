@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import type { PrismaClient } from "@prisma/client";
 
 /** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
 export const coordinatesSchema = z
@@ -6,6 +8,35 @@ export const coordinatesSchema = z
   .refine(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90, {
     message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
   });
+
+/**
+ * Country owners may only act on their own country; admins (no `ctx.country`) may act on any.
+ * `action` completes "You can only ... your own country".
+ */
+export function assertOwnCountry(
+  ctx: { country?: object | null },
+  countryId: string,
+  action = "edit"
+) {
+  const owned = ctx.country as { id: string } | null | undefined;
+  if (owned && owned.id !== countryId) {
+    throw new TRPCError({ code: "FORBIDDEN", message: `You can only ${action} your own country` });
+  }
+}
+
+/** NOT_FOUND (with `message`) unless the queried entity exists. */
+export function assertFound<T>(entity: T | null | undefined, message: string): T {
+  if (!entity) throw new TRPCError({ code: "NOT_FOUND", message });
+  return entity;
+}
+
+/** The realm's political layer for a feature (featureId is unique only within a realm), or NOT_FOUND. */
+export async function requirePoliticalLayer(db: PrismaClient, featureId: string, realmId: string) {
+  const mapLayer = await db.mapLayer.findFirst({
+    where: { layerType: "political", featureId, realmId },
+  });
+  return assertFound(mapLayer, `Map feature not found: ${featureId}`);
+}
 
 /**
  * Climate color map: maps fill colors to human-readable Trewartha climate names.

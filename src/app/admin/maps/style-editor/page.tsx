@@ -8,7 +8,7 @@ export default function StyleEditorPage() {
   usePageTitle({ title: "Admin - Style Editor" });
 
   return (
-    <div className="bg-background text-foreground absolute inset-0 z-40">
+    <div className="bg-background text-label absolute inset-0 z-40">
       <StyleEditorRouter />
     </div>
   );

@@ -1,26 +1,45 @@
 "use client";
 
-import { useState, useEffect, useRef, type ReactNode } from "react";
-import { DashboardSidebarLayout } from "./sidebar/DashboardSidebarLayout";
-import { NewVersionNotice } from "./NewVersionNotice";
+import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { DashboardColumn } from "./DashboardColumn";
 import { UnifiedDashboardSection } from "./sections/UnifiedDashboardSection";
 import { DashboardHero } from "./hero/DashboardHero";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
+import { Skeleton } from "~/components/ui/skeleton";
+import type { DashboardSection } from "~/lib/dashboard-sections";
+
+// Its modals and forms stay out of the feed's first load; SSR stays on for the
+// /dashboard/accounts deep link.
+const AccountsSection = dynamic(
+  () => import("./accounts/AccountsSection").then((m) => m.AccountsSection),
+  { loading: () => <Skeleton className="rounded-card h-64" /> }
+);
 
 interface DashboardRouterProps {
-  discordBadge?: ReactNode;
+  /** Country id resolved on the server, used until getProfile loads so map status fetches in parallel. */
+  initialCountryId?: string;
+  /** The section on screen (useDashboardSection owns it). */
+  section?: DashboardSection;
+  /** Switches the section in place; without it (on `/`) Accounts opens as its own page. */
+  onNavigate?: (section: DashboardSection) => void;
 }
 
-export function DashboardRouter({ discordBadge }: DashboardRouterProps) {
+export function DashboardRouter({
+  initialCountryId = "",
+  section = "home",
+  onNavigate,
+}: DashboardRouterProps) {
   const { data: globalStats } = api.countries.getGlobalStats.useQuery(undefined, {
+    enabled: section === "home",
     staleTime: 300_000,
   });
   const [heroCollapsed, setHeroCollapsed] = useState(false);
-
-  useEffect(() => {
-    document.title = "Dashboard - IxStats";
-  }, []);
+  const router = useRouter();
+  const openAccounts = () =>
+    onNavigate ? onNavigate("accounts") : router.push("/dashboard/accounts");
 
   // Collapse the hero by default for a valid-but-unmapped country. Applied once
   // when the map status resolves; never fights the user's later expand/collapse.
@@ -29,33 +48,33 @@ export function DashboardRouter({ discordBadge }: DashboardRouterProps) {
     enabled: !!user?.id,
     staleTime: 60_000,
   });
-  const countryId = userProfile?.countryId || "";
+  const countryId: string = (userProfile ? userProfile.countryId : initialCountryId) || "";
   const { data: mapStatus } = api.countries.getMapLinkStatus.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 60_000 }
+    { enabled: !!countryId && countryId.trim() !== "", staleTime: 60_000 }
   );
 
   const appliedDefaultCollapse = useRef(false);
   useEffect(() => {
     if (appliedDefaultCollapse.current || !mapStatus) return;
     appliedDefaultCollapse.current = true;
+    // oxlint-disable-next-line
     if (!mapStatus.isMapped) setHeroCollapsed(true);
   }, [mapStatus]);
 
   return (
-    <DashboardSidebarLayout
-      alerts={<NewVersionNotice />}
+    <DashboardColumn
       heroSection={
-        !heroCollapsed ? (
+        section === "home" && !heroCollapsed ? (
           <DashboardHero collapsed={heroCollapsed} onCollapsedChange={setHeroCollapsed} />
         ) : undefined
       }
-      heroCollapsed={heroCollapsed}
-      onHeroExpand={() => setHeroCollapsed(false)}
-      discordBadge={discordBadge}
-      disableCollapse={true}
     >
-      <UnifiedDashboardSection globalStats={globalStats} />
-    </DashboardSidebarLayout>
+      {section === "accounts" ? (
+        <AccountsSection initialCountryId={initialCountryId} onBack={() => onNavigate?.("home")} />
+      ) : (
+        <UnifiedDashboardSection globalStats={globalStats} onOpenAccounts={openAccounts} />
+      )}
+    </DashboardColumn>
   );
 }

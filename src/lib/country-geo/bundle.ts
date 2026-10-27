@@ -1,44 +1,87 @@
+import type { PrismaClient } from "@prisma/client";
 import { getCountryColor } from "~/lib/maps/map-config";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
+import { DEFAULT_REALM_ID, IXNAY_SLUG } from "~/lib/realms/realm-ids";
+
+/** The outline cached on the Country row (megabytes for a large nation, so read only when needed). */
+async function readCountryOutline(db: Pick<PrismaClient, "country">, countryId: string) {
+  const row = await db.country.findUnique({ where: { id: countryId }, select: { geometry: true } });
+  return row?.geometry ?? null;
+}
 
 /**
  * Builds a unified geographic data bundle for a country, reducing client round-trips
  * and ensuring attribute and spatial data are fetched together.
  */
 export async function getCountryGeoBundle(db: any, countryId: string) {
-  // 1. Fetch Country base information
-  const country = await db.country.findUnique({
-    where: { id: countryId },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      currentPopulation: true,
-      currentTotalGdp: true,
-      geoRollupMode: true,
-      geometry: true,
-      centroid: true,
-      boundingBox: true,
-      landArea: true,
-      areaSqMi: true,
-    },
-  });
+  // 1. Fetch all independent country entities concurrently in a single round-trip
+  const [country, mapLayer, subdivisions, cities, pois, storyPins, mapLabels, geoProfile] =
+    await Promise.all([
+      db.country.findUnique({
+        where: { id: countryId },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          currentPopulation: true,
+          currentTotalGdp: true,
+          geoRollupMode: true,
+          centroid: true,
+          boundingBox: true,
+          landArea: true,
+          areaSqMi: true,
+          realmId: true,
+          realm: { select: { slug: true } },
+        },
+      }),
+      db.mapLayer.findFirst({
+        where: {
+          layerType: "political",
+          countryId,
+          isActive: true,
+        },
+        select: {
+          id: true,
+          featureId: true,
+          displayName: true,
+          geometry: true,
+          centroid: true,
+          boundingBox: true,
+          areaSqKm: true,
+        },
+      }),
+      db.subdivision.findMany({
+        where: { countryId, status: "approved" },
+        orderBy: { name: "asc" },
+      }),
+      db.city.findMany({
+        where: { countryId, status: "approved" },
+        orderBy: [{ isNationalCapital: "desc" }, { population: "desc" }],
+      }),
+      db.pointOfInterest.findMany({
+        where: { countryId, status: "approved" },
+        orderBy: { name: "asc" },
+      }),
+      db.storyPin.findMany({
+        where: { countryId, status: "approved" },
+        orderBy: { ixTimeYear: "asc" },
+      }),
+      db.mapLabel.findMany({
+        where: { countryId, status: "approved" },
+        orderBy: { text: "asc" },
+      }),
+      db.countryGeoProfile.findUnique({
+        where: { countryId },
+      }),
+    ]);
 
   if (!country) {
     throw new Error(`Country not found: ${countryId}`);
   }
 
-  // 2. Fetch the active political MapLayer for this country
-  const mapLayer = await db.mapLayer.findFirst({
-    where: {
-      layerType: "political",
-      countryId,
-      isActive: true,
-    },
-  });
-
-  // Derive geometry details, falling back to cached country columns
-  const geometry = (mapLayer?.geometry || country.geometry) ?? null;
+  // Derive geometry details, falling back to cached country columns. The outline is read once: the country's own
+  // copy only when the map layer has none.
+  const geometry = (mapLayer?.geometry || (await readCountryOutline(db, countryId))) ?? null;
   const centroid = (mapLayer?.centroid || country.centroid) ?? null;
   const boundingBox = (mapLayer?.boundingBox || country.boundingBox) ?? null;
   const areaSqKm = (mapLayer?.areaSqKm || country.landArea) ?? null;
@@ -62,7 +105,7 @@ export async function getCountryGeoBundle(db: any, countryId: string) {
     };
   }
 
-  // 3. Fetch neighboring countries via PostGIS spatial query if possible
+  // 2. Fetch neighboring countries via PostGIS spatial query if map layer has spatial geometry
   let neighbors: Array<{
     featureId: string;
     displayName: string;
@@ -71,7 +114,7 @@ export async function getCountryGeoBundle(db: any, countryId: string) {
     centroidLat: number;
   }> = [];
 
-  if (mapLayer && mapLayer.geom_postgis !== null) {
+  if (mapLayer) {
     try {
       const dbNeighbors = (await db.$queryRawUnsafe(
         `SELECT ml2."featureId", ml2."displayName", ml2."countryId",
@@ -80,10 +123,11 @@ export async function getCountryGeoBundle(db: any, countryId: string) {
          FROM map_layers ml1
          JOIN map_layers ml2 ON ml2."layerType" = 'political'
            AND ml2."isActive" = true
+           AND ml2."worldId" IS NOT DISTINCT FROM ml1."worldId"
            AND ml2.id != ml1.id
            AND ml1.geom_postgis IS NOT NULL
            AND ml2.geom_postgis IS NOT NULL
-           AND ST_Touches(ST_MakeValid(ml1.geom_postgis), ST_MakeValid(ml2.geom_postgis))
+           AND ST_Intersects(ml1.geom_postgis, ml2.geom_postgis)
          WHERE ml1.id = $1`,
         mapLayer.id
       )) as Array<{
@@ -105,35 +149,6 @@ export async function getCountryGeoBundle(db: any, countryId: string) {
       console.warn(`[getCountryGeoBundle] Failed to calculate neighbors via PostGIS:`, err);
     }
   }
-
-  // 4. Fetch subdivisions, cities, points of interest, story pins, and map labels in parallel
-  const [subdivisions, cities, pois, storyPins, mapLabels] = await Promise.all([
-    db.subdivision.findMany({
-      where: { countryId, status: "approved" },
-      orderBy: { name: "asc" },
-    }),
-    db.city.findMany({
-      where: { countryId, status: "approved" },
-      orderBy: [{ isNationalCapital: "desc" }, { population: "desc" }],
-    }),
-    db.pointOfInterest.findMany({
-      where: { countryId, status: "approved" },
-      orderBy: { name: "asc" },
-    }),
-    db.storyPin.findMany({
-      where: { countryId, status: "approved" },
-      orderBy: { ixTimeYear: "asc" },
-    }),
-    db.mapLabel.findMany({
-      where: { countryId, status: "approved" },
-      orderBy: { text: "asc" },
-    }),
-  ]);
-
-  // 5. Fetch country geographic profile
-  const geoProfile = await db.countryGeoProfile.findUnique({
-    where: { countryId },
-  });
 
   // 6. Compute rollups & coverage ratios (Phase P-D preparation)
   const cityPopulationSum = cities.reduce((sum: number, c: any) => sum + (c.population ?? 0), 0);
@@ -211,6 +226,8 @@ export async function getCountryGeoBundle(db: any, countryId: string) {
       geoRollupMode: country.geoRollupMode,
       currentPopulation: country.currentPopulation,
       currentTotalGdp: country.currentTotalGdp,
+      // The realm's slug: a viewer of another realm asks for this realm's layers by it (Ixnay's row may be missing)
+      realmSlug: country.realm?.slug ?? (country.realmId === DEFAULT_REALM_ID ? IXNAY_SLUG : null),
     },
     geometry,
     centroid: parsedCentroid,

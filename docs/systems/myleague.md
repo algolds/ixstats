@@ -1,10 +1,13 @@
-# MyLeague & MyClub — Sports Management System
+# 🧪 MyLeague & MyClub — Sports Simulation Studio (Labs)
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Sports Simulation Platform (MyLeague public league workspace + MyClub franchise ownership).
+**Last updated:** 2026-10-26
 
-MyLeague and MyClub provide full-season sports simulation across soccer, Formula 1, hockey, boxing, basketball, baseball, and football.
+**Parent Layer:** Labs (Experimental & Incubation Studio)  
+**Subsystems:** League Workspace, Franchise Management (MyClub), Match Simulation Engine, Athlete Cards  
+**Primary Action:** `COMPETE` | **Domain Accent:** Uranium glass (`data-app="labs"`, `#5b6c04` / `#c8d84a`)  
+**Routes:** `/myleague`, `/myclub` (Labs product, top-level routes) | **Status:** 🧪 Labs Preview  
+
+MyLeague and MyClub provide full-season sports simulation across seven sport presets — soccer, Formula 1, hockey, boxing, basketball, baseball, and American football — with dynamic match resolvers and athlete roster progression. Soccer, hockey, basketball, baseball, and football have dedicated match resolvers, F1 uses the racing resolver, and boxing bouts currently fall back to the soccer match loop.
 
 ---
 
@@ -12,10 +15,11 @@ MyLeague and MyClub provide full-season sports simulation across soccer, Formula
 
 ```
 /myleague                              League lobby (carousel of active leagues)
-  /myleague/[id]                       League workspace (tabbed SPA: ?tab=overview|standings|schedule|bracket|races|draft|teams|history|sim)
+  /myleague/[id]                       League workspace (tabbed SPA: ?tab=overview|standings|schedule|bracket|races|draft|teams|history)
 
 /myclub                                Club lobby (carousel of owned franchises)
-  /myclub/[teamId]                     Team management dashboard (section router: overview|roster|tactics|transfers|management)
+  /myclub/[teamId]                     Team management dashboard (section router: overview|roster|tactics|transfers|management|history)
+  /myclub/[teamId]/season/[seasonId]   Per-team season detail
 ```
 
 ---
@@ -24,26 +28,34 @@ MyLeague and MyClub provide full-season sports simulation across soccer, Formula
 
 ### Simulation Resolver (`src/lib/sports/resolver.ts`)
 - **Rating Vectors**: Computes team offense, defense, and tactical modifiers.
-- **Match Resolution**: Simulates match events (goals, penalties, yellow/red cards, injuries, tactical adjustments) using seeded Mulberry32 RNG.
-- **Career Progression**: Advances player career stages (Rookie $\to$ Prime $\to$ Veteran $\to$ Retired) via Markov chains at season boundaries.
+- **Match Resolution**: Dispatches to per-sport loops in `src/lib/sports/resolvers/` (soccer, hockey, basketball, baseball, football; `racing-resolver.ts` for F1) that simulate match events (goals, penalties, cards, injuries, tactical adjustments) using seeded Mulberry32 RNG. `simulate-and-persist.ts` stores a replayable simulation snapshot (seed + resolver version) per match.
+- **Rivalries** (`src/lib/sports/rivalry.ts`, SL-16): after each completed league match, the two clubs' last 10 completed meetings decide whether they are rivals. A meeting is close when it is a draw or the margin is at most `max(1, round(5% of the combined score))`; a derby is two clubs of the same nation (`nationId`). A rivalry forms after 3 meetings with at least 2 close ones, or for a derby after 2 meetings. Intensity is 40 + 10 per close meeting (+20 for a derby), capped at 100, and never goes down (seeded rivalries keep theirs). The row (`SportRivalry`, `history` holds the counts) is written in the same transaction as the result. Intensity above 70 raises home advantage from 55 to 65, and any rivalry tags the fixture "Rivalry" in the schedule. Knockout bouts don't count.
+- **Career Progression**: Advances player career stages (`rookie` $\to$ `developing` $\to$ `prime` $\to$ `plateau` $\to$ `declining` $\to$ `retired`) at season boundaries (`aging.ts`, Markov talent generator in `talent.ts`).
 
 ### Backend Routers (`src/server/api/routers/sports/`)
 Split into domain sub-routers:
-- `sports/index.ts` – Router combination
-- `sports/leagues.ts` – League creation, settings, standings, schedule
-- `sports/teams.ts` – Team roster, tactics, lineup builder, claim franchise
-- `sports/simulation.ts` – Match day simulation, full season progression, transition
+- `sports/index.ts` – Router combination (`mergeRouters`)
+- `sports/leagues/` – League CRUD, presets, schedule (incl. commentary generation), admin/LLM-narrator settings
+- `sports/seasons/` – Season lifecycle (start, transition, revenue), match-day and full-season simulation
+- `sports/standings.ts` – Standings, brackets, race results, team history, live matches
+- `sports/teams.ts` – Team detail, claim franchise, player detail
+- `sports/club.ts` – Stadium upgrades, ticket prices, sponsors, tactics, lineups, training, patron saints, MyClub overviews
 - `sports/transfers.ts` – Player market, escrow bidding, transfers
-- `sports/management.ts` – Stadium upgrades, ticket prices, sponsor contracts
+- `sports/almanac.ts` – League archive, athlete career history, all-time records
 
 ---
 
 ## Economic Integration
 
-- **Ticket Revenue**: $\text{capacity} \times \text{ticketPrice} \times 0.6 \times (\text{popularity} / 100)$
-- **Sponsor Income**: Base fee + win bonuses credited to club budget
-- **Franchise Claiming**: Costs 50 IxCredits via `exchangeService` / `vaultService`
-- **Player Training**: Individual drills (25c), team sessions (100c)
+- **Ticket Revenue** (per completed home match): $\text{capacity} \times \text{ticketPrice} \times 0.6 \times (\text{popularity} / 100)$. The ticket price is capped at 100 ₷, and revenue and its preview clamp a stored price to 0–100
+- **Sponsor Income**: the sponsor's base fee per completed home match and its `winBonus` per win, home or away
+- **Collecting**: `collectMatchRevenue` pays each completed match once (`SportMatch.homeRevenueCollectedAt` / `awayRevenueCollectedAt`); `previewMatchRevenue` shows what's waiting (`src/lib/sports/match-revenue.ts`)
+- **Franchise Claiming**: Requires the **MyClub Team License Token** (Vault Store, 5,000 credits); canonical leagues additionally require the **MyLeague Franchise Pass** (2,500 credits)
+- **Player Training**: Individual drills (25c), team sessions (100c) via `exchangeService`
+- **Patron Saint Invocation**: 100c; writes a `sports_saint_blessing` StorytellerEffect
+- **Maintenance mode**: every MyClub move of Sovereigns (charter, club claim, stadium, patron saint, training, predictions, transfer bids and answers) refuses in vault maintenance mode before moving anything. The Exchange's on/off switch does not gate MyClub
+- **Transfers**: asking prices and bids are whole Sovereigns from 1 to 10,000,000, and a club cannot bid on a player its owner already owns. A bid's escrow, its answer and its payout or refund run once under the bid's key, however many requests race
+- **Leagues**: a club moves only into a league its owner runs, of the same sport, with room under the 64-club ceiling, and with no season in progress in either league. `deleteLeague` refuses while another player owns one of its clubs; before a permitted delete it refunds the pending transfer bids and open predictions the delete would take
 
 ---
 
@@ -51,4 +63,4 @@ Split into domain sub-routers:
 
 - [MyLeague Lore Integration & Feature Audit](./myleague-lore-integration.md)
 - [IxCredits Virtual Currency Engine](./ixcredits.md)
-- [API Reference: Sports Router](../reference/api-complete.md#sports-router)
+- [API Reference: Sports Router](../reference/api-complete.md)

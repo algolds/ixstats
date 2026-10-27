@@ -1,29 +1,26 @@
-"use client";
+import type * as React from "react";
+import { cn } from "~/lib/utils/cn";
 
-import React, { useEffect, useState } from "react";
-import { cn } from "~/lib/utils";
-
-function Skeleton({ className, style, ...props }: React.ComponentProps<"div">) {
-  const [blurAmount, setBlurAmount] = useState(4); // Start with rack focus blur
-
-  useEffect(() => {
-    // Smoothly decrease blur to 0 after mounting
-    const timer = setTimeout(() => {
-      setBlurAmount(0);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
+/**
+ * Loading placeholder: a `fill-3` block shaped like the final layout, with a subtle opacity
+ * pulse that stops under Reduce Motion. No blur or filter transitions.
+ */
+function Skeleton({
+  as: Tag = "div",
+  className,
+  ...props
+}: React.ComponentProps<"div"> & {
+  /** `span` where the placeholder sits inside phrasing content (a row subtitle, a stat value). */
+  as?: "div" | "span";
+}) {
   return (
-    <div
+    <Tag
       data-slot="skeleton"
-      className={cn("bg-accent animate-pulse rounded-md", className)}
-      style={{
-        filter: blurAmount > 0 ? `blur(${blurAmount}px)` : "none",
-        transition: "filter 0.7s cubic-bezier(0.16, 1, 0.3, 1)",
-        willChange: "filter",
-        ...style,
-      }}
+      className={cn(
+        "bg-fill-3 rounded-control-sm animate-pulse motion-reduce:animate-none",
+        Tag === "span" && "block",
+        className
+      )}
       {...props}
     />
   );

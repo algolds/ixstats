@@ -17,11 +17,11 @@
 import { ComponentType } from "@prisma/client";
 import type { AtomicGovernmentComponent } from "./atomic-data";
 import { ATOMIC_COMPONENTS } from "./atomic-data";
-import type { EffectivenessMetrics } from "~/components/ui/atomic/shared/types";
+import type { EffectivenessMetrics } from "./tax/atomic-tax-components";
 import { EconomicComponentType } from "~/lib/economy/atomic-data";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
-import { ATOMIC_TAX_COMPONENTS } from "~/components/mycountry/domains/government/tax/atoms/AtomicTaxComponents";
-import { IxTime } from "~/lib/ixtime";
+import { ATOMIC_TAX_COMPONENTS } from "./tax/atomic-tax-components";
+import { CONFLICT_PENALTY, findSynergyPair, synergyScoreDelta } from "./synergy-table";
 
 /**
  * Calculate government effectiveness metrics based on selected components
@@ -58,7 +58,7 @@ export function calculateGovernmentEffectiveness(
       }
 
       if (checkGovernmentConflict(comp1, comp2)) {
-        conflictPenalty += 15;
+        conflictPenalty += CONFLICT_PENALTY;
         conflictCount++;
       }
     }
@@ -80,41 +80,29 @@ export function calculateGovernmentEffectiveness(
 }
 
 /**
- * Check for synergy between two government components
+ * Check for synergy between two government components, from the shared synergy table.
+ * Scores match the server's: +10 for an additive synergy, +10 × multiplier for a
+ * multiplicative one.
  *
  * @param comp1 - First component type
  * @param comp2 - Second component type
- * @returns Synergy score (0-10)
+ * @returns Synergy score (0 when the pair has no synergy)
  */
 export function checkGovernmentSynergy(comp1: string, comp2: string): number {
-  const component1 = ATOMIC_COMPONENTS[comp1 as ComponentType];
-  const component2 = ATOMIC_COMPONENTS[comp2 as ComponentType];
-
-  if (!component1 || !component2) return 0;
-
-  if (component1.synergies.includes(comp2 as ComponentType)) return 10;
-  if (component2.synergies.includes(comp1 as ComponentType)) return 10;
-
-  return 0;
+  const pair = findSynergyPair(comp1, comp2);
+  if (!pair || pair.type === "CONFLICTING") return 0;
+  return synergyScoreDelta(pair.type, pair.multiplier);
 }
 
 /**
- * Check for conflict between two government components
+ * Check for conflict between two government components, from the shared synergy table.
  *
  * @param comp1 - First component type
  * @param comp2 - Second component type
  * @returns True if components conflict
  */
 export function checkGovernmentConflict(comp1: string, comp2: string): boolean {
-  const component1 = ATOMIC_COMPONENTS[comp1 as ComponentType];
-  const component2 = ATOMIC_COMPONENTS[comp2 as ComponentType];
-
-  if (!component1 || !component2) return false;
-
-  return (
-    component1.conflicts.includes(comp2 as ComponentType) ||
-    component2.conflicts.includes(comp1 as ComponentType)
-  );
+  return findSynergyPair(comp1, comp2)?.type === "CONFLICTING";
 }
 
 /**
@@ -260,34 +248,48 @@ export function calculateRequiredCapacity(selectedComponents: ComponentType[]): 
 }
 
 /**
+ * Count the selected components that are defined in the library. Only these count toward
+ * the component cap; an unknown type (for example from old saved data) is ignored.
+ */
+export function countDefinedComponents(selectedComponents: readonly string[]): number {
+  return new Set(selectedComponents.filter((type) => ATOMIC_COMPONENTS[type as ComponentType]))
+    .size;
+}
+
+/**
  * Validate component selection
+ *
+ * Only defined components count toward the cap. Conflicts are warnings, never errors, and an
+ * empty selection is allowed: nothing here blocks a player from moving on.
  *
  * @param selectedComponents - Array of selected component types
  * @param maxComponents - Maximum allowed components
- * @returns Validation result with errors
+ * @returns Validation result with blocking errors and non-blocking warnings
  */
 export function validateSelection(
   selectedComponents: ComponentType[],
   maxComponents: number
-): { isValid: boolean; errors: string[] } {
+): { isValid: boolean; errors: string[]; warnings: string[] } {
   const errors: string[] = [];
+  const warnings: string[] = [];
 
-  if (selectedComponents.length === 0) {
-    errors.push("At least one component must be selected");
-  }
-
-  if (selectedComponents.length > maxComponents) {
+  if (countDefinedComponents(selectedComponents) > maxComponents) {
     errors.push(`Maximum ${maxComponents} components allowed`);
   }
 
   const conflicts = detectConflicts(selectedComponents);
   if (conflicts.length > 0) {
-    errors.push(`${conflicts.length} conflict${conflicts.length > 1 ? "s" : ""} detected`);
+    warnings.push(
+      conflicts.length === 1
+        ? "1 pair of components works against each other"
+        : `${conflicts.length} pairs of components work against each other`
+    );
   }
 
   return {
     isValid: errors.length === 0,
     errors,
+    warnings,
   };
 }
 
@@ -309,27 +311,6 @@ export function getCategories(
   });
 
   return Array.from(categories).sort();
-}
-
-/**
- * Calculate complexity distribution
- *
- * @param selectedComponents - Array of selected component types
- * @returns Count of low/medium/high complexity components
- */
-export function calculateComplexityDistribution(
-  selectedComponents: ComponentType[]
-): Record<"Low" | "Medium" | "High", number> {
-  const distribution = { Low: 0, Medium: 0, High: 0 };
-
-  selectedComponents.forEach((type) => {
-    const component = ATOMIC_COMPONENTS[type];
-    if (component?.metadata.complexity) {
-      distribution[component.metadata.complexity]++;
-    }
-  });
-
-  return distribution;
 }
 
 /**
@@ -406,9 +387,9 @@ export function calculateComponentEconomicModifiers(
         unemploymentModifier += component.employmentImpact.unemploymentModifier || 0;
       }
       if (type === "PLANNED_ECONOMY" || type === "STATE_CAPITALISM") {
-        inflationModifier += 0.01;
+        inflationModifier += 1;
       } else if (type === "KNOWLEDGE_ECONOMY" || type === "FREE_TRADE") {
-        inflationModifier -= 0.005;
+        inflationModifier -= 0.5;
       }
     }
   });
@@ -431,46 +412,6 @@ export function calculateComponentEconomicModifiers(
     maintenanceCost,
     taxRevenueModifier, // percentage points e.g. +0.5 means +0.5%
     unemploymentModifier, // percentage points e.g. -0.5 means -0.5%
-    inflationModifier, // decimal fraction e.g. +0.01 means +1%
+    inflationModifier, // percentage points e.g. +1 means +1%
   };
-}
-
-/**
- * Helper to parse a timeToImplement string (e.g. "12 months", "2-3 years")
- * and return the number of months or years to add.
- */
-export function parseTimeToImplement(timeStr: string): { months?: number; years?: number } {
-  const str = timeStr.toLowerCase().trim();
-  if (str.includes("month")) {
-    const matches = str.match(/\d+/g);
-    if (matches && matches.length > 0) {
-      const val = parseInt(matches[matches.length - 1]!, 10);
-      return { months: val };
-    }
-    return { months: 12 };
-  }
-  if (str.includes("year")) {
-    const matches = str.match(/\d+/g);
-    if (matches && matches.length > 0) {
-      const val = parseInt(matches[matches.length - 1]!, 10);
-      return { years: val };
-    }
-    return { years: 1 };
-  }
-  return { months: 12 };
-}
-
-/**
- * Calculate future implementation date based on timeToImplement string.
- */
-export function calculateImplementationDate(timeToImplementStr: string): Date {
-  const parsed = parseTimeToImplement(timeToImplementStr);
-  const currentIxTime = IxTime.getCurrentIxTime();
-  let futureTime = currentIxTime;
-  if (parsed.years) {
-    futureTime = IxTime.addYears(currentIxTime, parsed.years);
-  } else if (parsed.months) {
-    futureTime = IxTime.addMonths(currentIxTime, parsed.months);
-  }
-  return new Date(futureTime);
 }

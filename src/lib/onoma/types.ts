@@ -5,39 +5,13 @@ import { z } from "zod";
 
 export type Brand<T, B extends string> = T & { readonly __brand: B };
 export type IPAString = Brand<string, "IPAString">;
-export type LanguagePackId = Brand<string, "LanguagePackId">;
-export type SVGPathString = Brand<string, "SVGPathString">;
-export type ConlangWord = Brand<string, "ConlangWord">;
-
-export const toIPAString = (s: string): IPAString => s as IPAString;
-export const toSVGPathString = (s: string): SVGPathString => s as SVGPathString;
-export const toConlangWord = (s: string): ConlangWord => s as ConlangWord;
-
 // Strict Conlang Marketplace & Syntax Schemas
-export const PhonologyRulesSchema = z.object({
-  consonants: z.array(z.string()).default([]),
-  vowels: z.array(z.string()).default([]),
-  syllables: z.array(z.string()).default(["CV", "CVC"]),
-  maxConsonantCluster: z.number().int().min(1).max(6).default(3),
-  stressRule: z.enum(["initial", "penultimate", "ultimate", "none"]).default("penultimate"),
-});
-
-export const MorphologyRulesSchema = z.object({
-  genderSystem: z
-    .enum(["masculine-feminine-neuter", "animate-inanimate", "common-neuter", "none"])
-    .default("none"),
-  declensionPatterns: z.record(z.string(), z.record(z.string(), z.string())).default({}),
-});
-
-export const LexiconDefinitionSchema = z.object({
+const LexiconDefinitionSchema = z.object({
   partOfSpeech: z.string().default("Noun"),
   root: z.string().default(""),
   meaning: z.string().default(""),
   origin: z.string().default(""),
 });
-
-export type LexiconDefinition = z.infer<typeof LexiconDefinitionSchema>;
-
 export const StashNoteMetadataSchema = z.object({
   category: z.string().nullable().optional(),
   role: z.string().nullable().optional(),
@@ -54,30 +28,6 @@ export const StashNoteMetadataSchema = z.object({
     })
     .optional(),
 });
-
-export interface DefaultDictionaryPreset {
-  id: string;
-  title: string;
-  description?: string;
-  category?: string;
-  culturalProfile?: string;
-  values: string[];
-}
-
-export interface GrammarProfileData {
-  id?: string;
-  userId?: string;
-  languagePackId?: string | null;
-  name: string;
-  wordOrder: "SVO" | "SOV" | "VSO" | "VOS" | "OVS" | "OSV" | string;
-  caseSystem: Record<string, string>;
-  verbConjugation: Record<string, string>;
-  articles: Record<string, string>;
-  numberSystem: Record<string, string>;
-  adjectiveOrder: "before" | "after" | string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
 
 export interface LinguisticProfile {
   id: string;
@@ -96,10 +46,6 @@ export interface ResolvedNamePhonetics {
   kokoroVoicePersona?: string;
   source: "override" | "dictionary" | "template" | "culture" | "default";
 }
-
-export type PhonologyRules = z.infer<typeof PhonologyRulesSchema>;
-export type MorphologyRules = z.infer<typeof MorphologyRulesSchema>;
-export type StashNoteMetadata = z.infer<typeof StashNoteMetadataSchema>;
 
 /**
  * All IxStates-specific name categories supported by the generators.
@@ -133,11 +79,6 @@ export type CulturalProfile =
   | "indic"
   | "uralic"
   | "constructed";
-
-/**
- * Training mode for name generation.
- */
-export type TrainingMode = "ixworld" | "preset" | "lexicon";
 
 /**
  * Options for Markov chain name generation.
@@ -187,67 +128,6 @@ export interface GenerateOptions {
  * Gender option for species/character generators.
  */
 export type Gender = "male" | "female" | "neutral";
-
-/**
- * Species preset identifiers (rebranded from original Onoma).
- */
-export type SpeciesPreset =
-  | "fantasy-generic"
-  | "monstrous" // Goblin, Orc, Ogre
-  | "stout-folk" // Dwarf, Halfling, Gnome
-  | "fey-elven" // Elf, Dark Elf, Faery
-  | "mythic" // Dragon, Demon, Angel, Half-Demon
-  | "primitive"; // Caveman, tribal
-
-/**
- * Group/organization preset identifiers.
- */
-export type GroupPreset =
-  "religious-order" | "military-unit" | "covert-organization" | "academic-institution" | "guild";
-
-/**
- * Descriptor for a generator preset shown in the UI.
- */
-export interface GeneratorPreset {
-  id: string;
-  name: string;
-  description: string;
-  category: NameCategory;
-  icon?: string;
-}
-
-/**
- * NameBank entry shape matching the Prisma model for client-side use.
- */
-export interface NameBankEntry {
-  id: string;
-  userId: string;
-  type: "dictionary" | "saved-name";
-  title: string;
-  values: string[];
-  category: NameCategory | null;
-  culturalProfile: CulturalProfile | null;
-  isPublic: boolean;
-  countryId: string | null;
-  clonedFromId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-/**
- * Result of a name generation batch.
- */
-export interface GenerationResult {
-  names: string[];
-  category: NameCategory;
-  culturalProfile: CulturalProfile | null;
-  trainingMode: TrainingMode;
-  generatedAt: Date;
-}
-
-export type DictionaryId = Brand<string, "DictionaryId">;
-export type StashEntryId = Brand<string, "StashEntryId">;
-
 /**
  * The three primary Product Model pillars defined in the Onoma Brand Guide:
  * - CREATE: Make language useful (Places, People, Organizations, Cultures, Names)
@@ -270,39 +150,20 @@ export type OnomaSection =
   | "explore"
   | "bank"
   | "settings";
-
-/**
- * Sections belonging to the CREATE pillar.
- */
-export type CreateSection =
-  | "overview"
-  | "places"
-  | "people"
-  | "organizations"
-  | "culture";
-
 /**
  * Studio workspace sub-tabs (System Construction Layer).
  */
-export type StudioSubTab =
-  | "workshop"
-  | "visualizer"
-  | "namesets"
-  | "shifts";
+export type StudioSubTab = "workshop" | "visualizer" | "namesets" | "shifts";
 
 /**
  * Explore workspace sub-tabs (Language Analysis & Understanding Layer — Pure Reference).
  */
-export type ExploreSubTab =
-  | "phonology"
-  | "grammar"
-  | "writing"
-  | "packs";
+export type ExploreSubTab = "phonology" | "grammar" | "writing" | "packs";
 
 /**
  * Mapping of section IDs to display metadata.
  */
-export interface OnomaNavItem {
+interface OnomaNavItem {
   id: OnomaSection;
   label: string;
   icon: string;
@@ -314,7 +175,7 @@ export interface OnomaNavItem {
 /**
  * All available Onoma nav items for the CREATE pillar and primary utilities.
  */
-export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
+const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
   {
     id: "overview",
     label: "Sandbox",
@@ -437,53 +298,50 @@ export function getSectionFromPathname(pathname: string): OnomaSection {
   return match?.id ?? "overview";
 }
 
+const pick = <T>(table: Record<string, T>, key: string): T | undefined =>
+  Object.hasOwn(table, key) ? table[key] : undefined;
+
+const STUDIO_SUB_TABS: Record<string, StudioSubTab> = {
+  visualizer: "visualizer",
+  namesets: "namesets",
+  shifts: "shifts",
+  "sound-shifts": "shifts",
+};
+
 /**
  * Helper to get studio sub-tab from a pathname.
  */
 export function getStudioSubTabFromPathname(pathname: string): StudioSubTab {
   const segment = pathname.split("/labs/onoma/studio")[1]?.replace(/^\//, "") || "";
-  const subsegment = segment.split("/")[0];
-  if (subsegment === "visualizer") return "visualizer";
-  if (subsegment === "namesets") return "namesets";
-  if (subsegment === "shifts" || subsegment === "sound-shifts") return "shifts";
-
-  return "workshop";
+  return pick(STUDIO_SUB_TABS, segment.split("/")[0]) ?? "workshop";
 }
+
+const EXPLORE_SUB_TABS: Record<string, ExploreSubTab> = {
+  phonology: "phonology",
+  acoustics: "phonology",
+  compare: "phonology",
+  comparator: "phonology",
+  grammar: "grammar",
+  syntax: "grammar",
+  etymology: "grammar",
+  roots: "grammar",
+  writing: "writing",
+  packs: "packs",
+  marketplace: "packs",
+  community: "packs",
+};
 
 /**
  * Helper to get explore sub-tab from a pathname.
  */
 export function getExploreSubTabFromPathname(pathname: string): ExploreSubTab {
   const segment = pathname.split("/labs/onoma/explore")[1]?.replace(/^\//, "") || "";
-  const subsegment = segment.split("/")[0];
-  if (subsegment === "phonology" || subsegment === "acoustics") return "phonology";
-  if (
-    subsegment === "grammar" ||
-    subsegment === "syntax" ||
-    subsegment === "etymology" ||
-    subsegment === "roots"
-  ) {
-    return "grammar";
-  }
-  if (subsegment === "writing") return "writing";
-  if (subsegment === "compare" || subsegment === "comparator") return "phonology";
-  if (subsegment === "packs" || subsegment === "marketplace" || subsegment === "community")
-    return "packs";
+  const nested = pick(EXPLORE_SUB_TABS, segment.split("/")[0]);
+  if (nested) return nested;
 
-  // Backward compatibility for root-level direct URLs
-  const parts = pathname.split("/labs/onoma/")[1]?.split("/") || [];
-  const rootSegment = parts[0] || "";
-  if (rootSegment === "phonology" || rootSegment === "acoustics" || rootSegment === "compare") return "phonology";
-  if (
-    rootSegment === "grammar" ||
-    rootSegment === "syntax" ||
-    rootSegment === "etymology" ||
-    rootSegment === "roots"
-  ) {
-    return "grammar";
-  }
-  if (rootSegment === "writing") return "writing";
-  if (rootSegment === "packs" || rootSegment === "marketplace") return "packs";
-
-  return "phonology";
+  // Backward compatibility for root-level direct URLs (which never had a community alias)
+  const rootSegment = pathname.split("/labs/onoma/")[1]?.split("/")[0] || "";
+  return rootSegment === "community"
+    ? "phonology"
+    : (pick(EXPLORE_SUB_TABS, rootSegment) ?? "phonology");
 }

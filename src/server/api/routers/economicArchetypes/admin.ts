@@ -6,68 +6,11 @@ import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { EconomicArchetype as PrismaArchetype } from "@prisma/client";
+import { parseArchetypeFields } from "./serializer";
 
-// Import hardcoded fallback data
-import { modernArchetypes } from "~/app/builder/data/archetypes/modern";
-import { historicalArchetypes } from "~/app/builder/data/archetypes/historical";
-
-/**
- * Parse JSON string fields back to objects
- * Transforms database representation to TypeScript interface
- */
+/** Row plus its decoded JSON columns. */
 function parseArchetypeJSON(archetype: PrismaArchetype) {
-  try {
-    return {
-      ...archetype,
-      characteristics: JSON.parse(archetype.characteristics) as string[],
-      economicComponents: JSON.parse(archetype.economicComponents) as string[],
-      governmentComponents: JSON.parse(archetype.governmentComponents) as string[],
-      taxProfile: JSON.parse(archetype.taxProfile) as {
-        corporateRate: number;
-        incomeRate: number;
-        consumptionRate: number;
-        revenueEfficiency: number;
-      },
-      sectorFocus: JSON.parse(archetype.sectorFocus) as Record<string, number>,
-      employmentProfile: JSON.parse(archetype.employmentProfile) as {
-        unemploymentRate: number;
-        laborParticipation: number;
-        wageGrowth: number;
-      },
-      growthMetrics: JSON.parse(archetype.growthMetrics) as {
-        gdpGrowth: number;
-        innovationIndex: number;
-        competitiveness: number;
-        stability: number;
-      },
-      strengths: JSON.parse(archetype.strengths) as string[],
-      challenges: JSON.parse(archetype.challenges) as string[],
-      culturalFactors: JSON.parse(archetype.culturalFactors) as string[],
-      modernExamples: JSON.parse(archetype.modernExamples) as string[],
-      recommendations: JSON.parse(archetype.recommendations) as string[],
-    };
-  } catch (error) {
-    console.error("Failed to parse archetype JSON:", error);
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Failed to parse archetype data",
-    });
-  }
-}
-
-/**
- * Get fallback archetypes from hardcoded data
- * Used when database is empty for graceful degradation
- */
-function getFallbackArchetypes(era: "modern" | "historical" | "all") {
-  console.warn("[economicArchetypes.ts] Database empty, using fallback hardcoded archetypes");
-
-  const modern = Array.from(modernArchetypes.values());
-  const historical = Array.from(historicalArchetypes.values());
-
-  if (era === "modern") return modern;
-  if (era === "historical") return historical;
-  return [...modern, ...historical];
+  return { ...archetype, ...parseArchetypeFields(archetype) };
 }
 
 /**
@@ -106,15 +49,14 @@ const archetypeInputSchema = z.object({
   culturalFactors: z.array(z.string()),
   modernExamples: z.array(z.string()),
   recommendations: z.array(z.string()),
-  implementationComplexity: z.enum(["Low", "Medium", "High"]),
+  implementationComplexity: z.preprocess(
+    (value) => (typeof value === "string" ? value.toLowerCase() : value),
+    z.enum(["low", "medium", "high"])
+  ),
   historicalContext: z.string(),
 });
 
 export const economicArchetypesAdminRouter = createTRPCRouter({
-  // ============================================================================
-  // PUBLIC ENDPOINTS
-  // ============================================================================
-
   // ============================================================================
   // ADMIN ENDPOINTS
   // ============================================================================

@@ -1,44 +1,40 @@
-"use client";
-
-import { Command } from "lucide-react";
-import { api } from "~/trpc/react";
-import { IntentComposer } from "~/components/mycountry/shared/primitives/IntentComposer";
-import { FacetCard } from "~/components/ui/facet-container";
-import { cn } from "~/lib/utils";
+import { type IntentCommitResult } from "~/components/mycountry/shared/primitives/IntentComposer";
+import { DirectivesWorkspace } from "~/components/mycountry/directives/DirectivesWorkspace";
+import type { DrillSheetKind } from "./DrillSheets";
 
 /**
- * EXECUTIVE mode — the Console.
- * The player states a goal in plain language; the government returns
- * Measured / Moderate / Extreme packages (see intent router). This is the
- * primary action surface of v2, replacing war-rooms/command-panels.
+ * EXECUTIVE mode — the Directives page (`/mycountry/executive`).
+ * Declare a directive (goal → approach → projected impact → review), track the ones in force,
+ * and review past directives with the effects they recorded. See DirectivesWorkspace.
  */
-export interface ExecutiveConsoleProps {
+interface ExecutiveConsoleProps {
   countryId: string;
   initialGoal?: string;
   onDone?: (msg?: string) => void;
-  onCommitted?: (res: any) => void;
+  onCommitted?: (res: IntentCommitResult) => void;
+  /** Opens a MyCountry drill sheet (a directive record or a resistance issue brief). */
+  onOpenDrill?: (drill: DrillSheetKind) => void;
 }
-
-export type V2ConsoleProps = ExecutiveConsoleProps;
 
 export function ExecutiveConsole({
   countryId,
   initialGoal,
   onDone,
   onCommitted,
+  onOpenDrill,
 }: ExecutiveConsoleProps) {
   return (
-    <FacetCard depth={1} className="bg-card/40 border-border/40 w-full p-5 backdrop-blur-xl">
-      <IntentComposer
-        countryId={countryId}
-        initialGoal={initialGoal}
-        onCommitted={(res: any) => {
-          onCommitted?.(res);
-          onDone?.(res?.summary ?? "Directive committed.");
-        }}
-      />
-    </FacetCard>
+    <DirectivesWorkspace
+      countryId={countryId}
+      initialGoal={initialGoal}
+      onCommitted={(res) => {
+        onCommitted?.(res);
+        onDone?.(res?.summary ?? "Directive committed.");
+      }}
+      onOpenIntent={
+        onOpenDrill ? (intentId) => onOpenDrill({ kind: "intent", intentId }) : undefined
+      }
+      onOpenIssue={onOpenDrill ? (issueId) => onOpenDrill({ kind: "issue", issueId }) : undefined}
+    />
   );
 }
-
-export const V2Console = ExecutiveConsole;

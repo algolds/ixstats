@@ -1,11 +1,13 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
-import { BookOpen, Image as ImageIcon, ExternalLink } from "lucide-react";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import type { Dispatch, SetStateAction } from "react";
+import { OpenBook as BookOpen, MediaImage as ImageIcon } from "iconoir-react";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
+import { Button } from "~/components/ui/button";
+import { WikiAnchor, WikiLinkButton } from "~/components/maps/shared/WikiLinkButton";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface CountryInfoTabProps {
   wikiRichIntro: any;
@@ -13,7 +15,7 @@ interface CountryInfoTabProps {
   wikiImages: any[];
   displayName: string;
   introExpanded: boolean;
-  setIntroExpanded: React.Dispatch<React.SetStateAction<boolean>>;
+  setIntroExpanded: Dispatch<SetStateAction<boolean>>;
   setLightboxSrc: (src: string | null) => void;
 }
 
@@ -28,114 +30,85 @@ export function CountryInfoTab({
 }: CountryInfoTabProps) {
   return (
     <div className="space-y-3">
-      {/* Wiki intro */}
       {wikiRichIntro?.paragraphs && wikiRichIntro.paragraphs.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {wikiRichIntro.paragraphs.slice(0, introExpanded ? 5 : 2).map((p: string, i: number) => (
             <WikiHtmlContent
               key={i}
               as="p"
-              className="text-foreground/80 text-xs leading-relaxed"
+              className="text-label-secondary text-footnote leading-relaxed"
               html={sanitizeWikiContent(p)}
             />
           ))}
           {wikiRichIntro.paragraphs.length > 2 && (
-            <button
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
               onClick={() => setIntroExpanded((v) => !v)}
-              className="text-[10px] font-medium text-blue-600 transition-colors hover:text-blue-500"
+              className="text-blue h-auto px-0"
             >
               {introExpanded ? "Show less" : "Read more..."}
-            </button>
+            </Button>
           )}
         </div>
       )}
 
-      {/* Wiki sections (TOC) */}
-      {wikiSections &&
-        wikiSections.length > 0 &&
-        (() => {
-          const baseWikiUrl = wikiRichIntro?.wikiUrl ?? titleToWikiOSPath(displayName);
-          const isInternal = baseWikiUrl.startsWith("/") || baseWikiUrl.includes("/wiki/");
-          return (
-            <div>
-              <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
-                <BookOpen className="h-3 w-3" />
-                Table of Contents ({wikiSections.filter((s) => s.level === 2).length})
-              </div>
-              <div className="mt-1.5 space-y-1">
-                {wikiSections
-                  .filter((s) => s.level <= 3)
-                  .map((section, i) => {
-                    const sectionUrl = `${baseWikiUrl}#${section.anchor}`;
-                    if (section.level === 2) {
-                      return (
-                        <div
-                          key={`${section.anchor}-${i}`}
-                          className="border-border/30 rounded-md border p-2"
-                        >
-                          {isInternal ? (
-                            <Link
-                              href={sectionUrl}
-                              className="text-foreground/90 block text-xs font-medium transition-colors hover:text-blue-600"
-                            >
-                              {section.line}
-                            </Link>
-                          ) : (
-                            <a
-                              href={sectionUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-foreground/90 block text-xs font-medium transition-colors hover:text-blue-600"
-                            >
-                              {section.line}
-                            </a>
-                          )}
-                          {"preview" in section && section.preview && (
-                            <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[10px] leading-snug">
-                              {section.preview as string}
-                            </p>
-                          )}
-                        </div>
-                      );
-                    }
-                    return isInternal ? (
-                      <Link
-                        key={`${section.anchor}-${i}`}
-                        href={sectionUrl}
-                        className="text-foreground/50 block truncate pl-3 text-[10px] transition-colors hover:text-blue-600"
-                      >
-                        {section.line}
-                      </Link>
-                    ) : (
-                      <a
-                        key={`${section.anchor}-${i}`}
-                        href={sectionUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-foreground/50 block truncate pl-3 text-[10px] transition-colors hover:text-blue-600"
-                      >
-                        {section.line}
-                      </a>
-                    );
-                  })}
-              </div>
-            </div>
-          );
-        })()}
+      {wikiSections.length > 0 && (
+        <div>
+          <Eyebrow className="flex items-center gap-2">
+            <BookOpen className="h-3 w-3" />
+            Table of contents ({wikiSections.filter((s) => s.level === 2).length})
+          </Eyebrow>
+          <div className="mt-2 space-y-1">
+            {wikiSections
+              .filter((s) => s.level <= 3)
+              .map((section, i) => {
+                const key = `${section.anchor}-${i}`;
+                const href = `${wikiRichIntro?.wikiUrl ?? titleToWikiOSRoute(displayName)}#${section.anchor}`;
+                if (section.level !== 2) {
+                  return (
+                    <WikiAnchor
+                      key={key}
+                      href={href}
+                      className="text-label-secondary text-footnote hover:text-blue block truncate pl-3 transition-colors"
+                    >
+                      {section.line}
+                    </WikiAnchor>
+                  );
+                }
+                return (
+                  <div key={key} className="border-separator rounded-control-sm border p-2">
+                    <WikiAnchor
+                      href={href}
+                      className="text-label text-caption hover:text-blue block transition-colors"
+                    >
+                      {section.line}
+                    </WikiAnchor>
+                    {"preview" in section && section.preview && (
+                      <p className="text-label-secondary text-footnote mt-0.5 line-clamp-2 leading-snug">
+                        {section.preview as string}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
 
-      {/* Media Gallery */}
       {wikiImages && wikiImages.length > 0 && (
         <div>
-          <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
+          <Eyebrow className="flex items-center gap-2">
             <ImageIcon className="h-3 w-3" />
             Media ({wikiImages.length})
-          </div>
-          <div className="mt-1.5 flex gap-1.5 overflow-x-auto pb-1">
+          </Eyebrow>
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
             {wikiImages.slice(0, 12).map((img, i) => (
               <button
                 key={`${img.title}-${i}`}
                 onClick={() => setLightboxSrc(img.url)}
-                className="border-border shrink-0 overflow-hidden rounded-md border transition-transform hover:scale-105"
+                className="border-separator rounded-control-sm shrink-0 overflow-hidden border transition-transform hover:scale-105"
               >
                 <img
                   src={img.thumbUrl}
@@ -149,31 +122,21 @@ export function CountryInfoTab({
         </div>
       )}
 
-      {/* Wiki link */}
-      {wikiRichIntro?.wikiUrl &&
-        (wikiRichIntro.wikiUrl.startsWith("/") || wikiRichIntro.wikiUrl.includes("/wiki/") ? (
-          <Link
-            href={wikiRichIntro.wikiUrl}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30"
-          >
-            <BookOpen className="h-3 w-3" />
-            Read full article on IxWiki
-          </Link>
-        ) : (
-          <a
-            href={wikiRichIntro.wikiUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30"
-          >
-            <BookOpen className="h-3 w-3" />
-            Read full article on {wikiRichIntro.wikiUrl.includes("ixwiki") ? "IxWiki" : "IIWiki"}
-            <ExternalLink className="h-3 w-3" />
-          </a>
-        ))}
+      {wikiRichIntro?.wikiUrl && (
+        <WikiLinkButton
+          url={wikiRichIntro.wikiUrl}
+          externalIcon
+          variant="outline"
+          size="sm"
+          className="w-full"
+        >
+          <BookOpen aria-hidden />
+          Read full article on WikiOS
+        </WikiLinkButton>
+      )}
 
       {!wikiRichIntro && !wikiSections && !wikiImages && (
-        <div className="text-muted-foreground py-8 text-center text-xs">
+        <div className="text-label-secondary text-footnote py-8 text-center">
           No wiki article found for this country.
         </div>
       )}

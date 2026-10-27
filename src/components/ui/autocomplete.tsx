@@ -1,8 +1,12 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useMemo } from "react";
-import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
-import { cn } from "~/lib/utils";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import {
+  Check,
+  ArrowSeparateVertical as ChevronsUpDown,
+  SystemRestart as Loader2,
+} from "iconoir-react";
+import { cn } from "~/lib/utils/cn";
 import { Command, CommandGroup, CommandItem, CommandList } from "~/components/ui/command";
 import { Badge } from "~/components/ui/badge";
 
@@ -14,7 +18,6 @@ interface AutocompleteSuggestion {
 }
 
 interface AutocompleteProps {
-  fieldName: string;
   value: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
@@ -22,29 +25,31 @@ interface AutocompleteProps {
   placeholder?: string;
   globalSuggestions?: AutocompleteSuggestion[];
   userSuggestions?: AutocompleteSuggestion[];
+  defaultSuggestions?: (string | AutocompleteSuggestion)[] | readonly string[];
   isLoading?: boolean;
   disabled?: boolean;
   className?: string;
-  allowCustom?: boolean;
+  /** Id for the text input, so a `<label htmlFor>` can name it. */
+  id?: string;
 }
 
 export const Autocomplete = React.memo(function Autocomplete({
-  fieldName,
   value,
   onChange,
   onBlur,
   onOpenChange,
   placeholder = "Select or type...",
+  id,
   globalSuggestions = [],
   userSuggestions = [],
+  defaultSuggestions = [],
   isLoading = false,
   disabled = false,
   className,
-  allowCustom = true,
 }: AutocompleteProps) {
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const preventBlurRef = useRef(false);
 
   // Notify parent when open state changes
   const handleOpenChange = useCallback(
@@ -60,32 +65,60 @@ export const Autocomplete = React.memo(function Autocomplete({
     [onOpenChange, onBlur]
   );
 
-  // Filter suggestions based on current value - memoize to avoid recalculation
+  // Click outside listener for clean dismissal without fragile timeouts
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        handleOpenChange(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open, handleOpenChange]);
+
+  // Normalized default suggestions
+  const normalizedDefaults = useMemo<AutocompleteSuggestion[]>(() => {
+    if (!defaultSuggestions || defaultSuggestions.length === 0) return [];
+    return defaultSuggestions.map((item) =>
+      typeof item === "string" ? { id: `def-${item}`, value: item, isGlobal: true } : item
+    );
+  }, [defaultSuggestions]);
+
+  // Combined global suggestions (database global + default presets)
+  const allGlobal = useMemo(() => {
+    if (globalSuggestions.length === 0) return normalizedDefaults;
+    const existingValues = new Set(globalSuggestions.map((s) => s.value.toLowerCase()));
+    const additional = normalizedDefaults.filter((d) => !existingValues.has(d.value.toLowerCase()));
+    return [...globalSuggestions, ...additional];
+  }, [globalSuggestions, normalizedDefaults]);
+
+  // Filter suggestions based on current value
+  const query = value.trim().toLowerCase();
   const filteredGlobal = useMemo(
-    () => globalSuggestions.filter((s) => s.value.toLowerCase().includes(value.toLowerCase())),
-    [globalSuggestions, value]
+    () => (query ? allGlobal.filter((s) => s.value.toLowerCase().includes(query)) : allGlobal),
+    [allGlobal, query]
   );
 
   const filteredUser = useMemo(
-    () => userSuggestions.filter((s) => s.value.toLowerCase().includes(value.toLowerCase())),
-    [userSuggestions, value]
+    () =>
+      query
+        ? userSuggestions.filter((s) => s.value.toLowerCase().includes(query))
+        : userSuggestions,
+    [userSuggestions, query]
   );
+
+  const totalSuggestions = filteredGlobal.length + filteredUser.length;
 
   const handleSelect = useCallback(
     (selectedValue: string) => {
-      preventBlurRef.current = true;
       onChange(selectedValue);
       handleOpenChange(false);
-      // Restore focus after selection
-      setTimeout(() => {
-        inputRef.current?.focus();
-        preventBlurRef.current = false;
-      }, 0);
+      inputRef.current?.focus();
     },
     [onChange, handleOpenChange]
   );
 
-  // Memoize input event handlers to prevent re-renders
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       onChange(e.target.value);
@@ -98,54 +131,66 @@ export const Autocomplete = React.memo(function Autocomplete({
     handleOpenChange(true);
   }, [handleOpenChange]);
 
-  const handleInputBlur = useCallback(() => {
-    // Don't blur if we're selecting from dropdown
-    if (preventBlurRef.current) {
-      return;
-    }
-    // Delay closing to allow clicking on suggestions
-    setTimeout(() => {
-      handleOpenChange(false);
-    }, 200);
-  }, [handleOpenChange]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Escape") {
+        handleOpenChange(false);
+      } else if (e.key === "ArrowDown" && !open) {
+        handleOpenChange(true);
+      }
+    },
+    [open, handleOpenChange]
+  );
 
   return (
-    <div className="relative">
-      <input
-        ref={inputRef}
-        type="text"
-        value={value}
-        onChange={handleInputChange}
-        onFocus={handleInputFocus}
-        onBlur={handleInputBlur}
-        disabled={disabled}
-        placeholder={placeholder}
-        className={cn(
-          "w-full rounded-lg px-4 py-3 pr-10",
-          "text-foreground border border-neutral-200 bg-white/50 font-normal dark:border-white/[0.08] dark:bg-white/[0.015]",
-          "shadow-[0_1.5px_3px_rgba(0,0,0,0.04)] hover:shadow-xs dark:shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]",
-          "hover:border-neutral-300 hover:bg-white/70 dark:hover:border-white/[0.12] dark:hover:bg-white/[0.03]",
-          "focus:border-amber-500/60 focus:bg-white/95 focus:ring-[2.5px] focus:ring-amber-500/20 focus:outline-none",
-          "transition-all duration-200",
-          disabled && "cursor-not-allowed opacity-50",
-          className
-        )}
-      />
-      <div className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2">
-        {isLoading ? (
-          <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
-        ) : (
-          <ChevronsUpDown className="text-muted-foreground h-4 w-4" />
-        )}
+    <div ref={containerRef} className="relative w-full">
+      <div className="relative flex items-center">
+        <input
+          ref={inputRef}
+          id={id}
+          type="text"
+          value={value}
+          onChange={handleInputChange}
+          onFocus={handleInputFocus}
+          onKeyDown={handleKeyDown}
+          disabled={disabled}
+          placeholder={placeholder}
+          className={cn(
+            "rounded-control bg-fill-3 text-body text-label flex h-(--control-height) w-full min-w-0 px-3 py-1 pr-8",
+            "placeholder:text-label-tertiary selection:bg-tint selection:text-on-tint",
+            "duration-fast ease-out-facet transition-[background-color,box-shadow] outline-none",
+            "focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid",
+            "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+            className
+          )}
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={() => {
+            if (disabled) return;
+            handleOpenChange(!open);
+            inputRef.current?.focus();
+          }}
+          className="rounded-control-sm text-label-tertiary duration-fast hover:text-label absolute right-2 flex size-5 items-center justify-center transition-colors"
+          aria-label="Toggle options"
+        >
+          {isLoading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <ChevronsUpDown className="h-3.5 w-3.5" />
+          )}
+        </button>
       </div>
-      {open && (globalSuggestions.length > 0 || userSuggestions.length > 0) && (
-        <div className="border-border bg-popover absolute z-[100020] mt-2 w-full rounded-lg border shadow-lg">
-          <Command shouldFilter={false}>
-            <CommandList className="max-h-[300px]">
+
+      {open && totalSuggestions > 0 && (
+        <div className="z-popover animate-facet-in rounded-row border-separator bg-surface-elevated text-label shadow-floating absolute mt-1 w-full origin-top border p-1">
+          <Command shouldFilter={false} className="rounded-control-sm bg-transparent">
+            <CommandList className="max-h-[260px]">
               {isLoading ? (
-                <div className="flex items-center justify-center py-6">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-muted-foreground ml-2 text-sm">Loading...</span>
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="text-label-secondary size-4 animate-spin" />
+                  <span className="text-footnote text-label-secondary ml-2">Loading…</span>
                 </div>
               ) : (
                 <>
@@ -153,28 +198,23 @@ export const Autocomplete = React.memo(function Autocomplete({
                   {filteredUser.length > 0 && (
                     <CommandGroup heading="Your Custom Values">
                       {filteredUser.map((suggestion) => {
-                        const handleMouseDown = (e: React.MouseEvent) => {
-                          e.preventDefault();
-                          handleSelect(suggestion.value);
-                        };
-                        const handleSelectItem = () => handleSelect(suggestion.value);
-
+                        const isSelected = value.toLowerCase() === suggestion.value.toLowerCase();
                         return (
                           <CommandItem
                             key={suggestion.id}
                             value={suggestion.value}
-                            onMouseDown={handleMouseDown}
-                            onSelect={handleSelectItem}
+                            onSelect={() => handleSelect(suggestion.value)}
+                            className="text-callout cursor-pointer"
                           >
                             <Check
                               className={cn(
-                                "mr-2 h-4 w-4",
-                                value === suggestion.value ? "opacity-100" : "opacity-0"
+                                "text-tint mr-2 size-3.5",
+                                isSelected ? "opacity-100" : "opacity-0"
                               )}
                             />
-                            <span className="flex-1">{suggestion.value}</span>
+                            <span className="flex-1 font-medium">{suggestion.value}</span>
                             {suggestion.usageCount && suggestion.usageCount > 1 && (
-                              <Badge variant="secondary" className="ml-2 text-xs">
+                              <Badge variant="default" className="ml-2 tabular-nums">
                                 {suggestion.usageCount}x
                               </Badge>
                             )}
@@ -184,32 +224,27 @@ export const Autocomplete = React.memo(function Autocomplete({
                     </CommandGroup>
                   )}
 
-                  {/* Global/Common Values */}
+                  {/* Common / Popular Values */}
                   {filteredGlobal.length > 0 && (
-                    <CommandGroup heading="Common Values">
+                    <CommandGroup heading="Suggestions">
                       {filteredGlobal.map((suggestion) => {
-                        const handleMouseDown = (e: React.MouseEvent) => {
-                          e.preventDefault();
-                          handleSelect(suggestion.value);
-                        };
-                        const handleSelectItem = () => handleSelect(suggestion.value);
-
+                        const isSelected = value.toLowerCase() === suggestion.value.toLowerCase();
                         return (
                           <CommandItem
                             key={suggestion.id}
                             value={suggestion.value}
-                            onMouseDown={handleMouseDown}
-                            onSelect={handleSelectItem}
+                            onSelect={() => handleSelect(suggestion.value)}
+                            className="text-callout cursor-pointer"
                           >
                             <Check
                               className={cn(
-                                "mr-2 h-4 w-4",
-                                value === suggestion.value ? "opacity-100" : "opacity-0"
+                                "text-tint mr-2 size-3.5",
+                                isSelected ? "opacity-100" : "opacity-0"
                               )}
                             />
                             <span className="flex-1">{suggestion.value}</span>
                             {suggestion.usageCount && suggestion.usageCount > 1 && (
-                              <Badge variant="outline" className="ml-2 text-xs">
+                              <Badge variant="outline" className="ml-2 tabular-nums">
                                 {suggestion.usageCount}x
                               </Badge>
                             )}

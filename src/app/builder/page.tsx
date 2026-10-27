@@ -1,11 +1,13 @@
-"use client";
+import { Suspense } from "react";
+import { FoundingFlow } from "./_founding/FoundingFlow";
+
 export const dynamic = "force-dynamic";
 
-import { usePageTitle } from "~/hooks/usePageTitle";
-import { BuilderRouter } from "./components/BuilderRouter";
-
-export default function CreateCountryBuilder() {
-  usePageTitle({ title: "MyCountry Builder" });
-
-  return <BuilderRouter />;
+/** Founding a nation; `?import=1` opens the wiki import sheet. */
+export default function BuilderPage() {
+  return (
+    <Suspense fallback={null}>
+      <FoundingFlow />
+    </Suspense>
+  );
 }

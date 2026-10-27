@@ -7,11 +7,10 @@
  * Domains:
  *  - dashboard:   public read-only queries that populate the executive dashboard
  *                 (country data, national summary, achievements, rankings, milestones)
- *  - intelligence: ongoing monitoring and vitality tracking (intelligence feed + vitality
- *                  snapshot updates with notification hooks)
+ *  - first-steps: the welcome page after founding and the "First steps" checklist
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { myCountryDashboardRouter } from "./dashboard";
-import { myCountryIntelligenceRouter } from "./intelligence";
+import { myCountryFirstStepsRouter } from "./first-steps";
 
-export const myCountryRouter = mergeRouters(myCountryDashboardRouter, myCountryIntelligenceRouter);
+export const myCountryRouter = mergeRouters(myCountryDashboardRouter, myCountryFirstStepsRouter);

@@ -1,0 +1,55 @@
+/** @jest-environment node */
+/**
+ * The realm time runbook is the one ordered deploy procedure: every SQL file in scripts/migrations/2026-10-realm-time/
+ * must be named in it (a file left out would never run), and every job its cron step enables must exist
+ * (`cron-runner.mjs` exits on an unknown name).
+ */
+import fs from "fs";
+import path from "path";
+import { FEEDBACK_KEYS } from "~/lib/military/economy/feedback";
+import { CRON_JOBS, resolveEnabledJobs } from "~/server/cron/jobs";
+
+const ROOT = path.resolve(__dirname, "../../..");
+const SQL_DIR = "scripts/migrations/2026-10-realm-time";
+const runbook = fs.readFileSync(
+  path.join(ROOT, "docs/operations/deploy-realm-time-2026-10.md"),
+  "utf8"
+);
+
+describe("the realm time runbook", () => {
+  const files = fs.readdirSync(path.join(ROOT, SQL_DIR)).filter((f) => f.endsWith(".sql"));
+
+  it.each(files)("runs %s", (file) => {
+    expect(runbook).toContain(`run_sql ${SQL_DIR}/${file}`);
+  });
+
+  it("has SQL files to run", () => {
+    expect(files.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("runs D3 after D2a and both before the starter-force reset (the reset reads D3's policy columns)", () => {
+    const at = (text: string) => runbook.indexOf(text);
+    const d2a = at(`run_sql ${SQL_DIR}/d2a-defense-model.sql`);
+    const d3 = at(`run_sql ${SQL_DIR}/d3-combat.sql`);
+    const reset = at("bun scripts/defense/reset-starter-forces.ts --apply");
+    expect(d2a).toBeGreaterThan(0);
+    expect(d3).toBeGreaterThan(d2a);
+    expect(reset).toBeGreaterThan(d3);
+  });
+
+  it("queries effects in their real table under the keys the code writes", () => {
+    expect(runbook).not.toMatch(/FROM "StorytellerEffect"/);
+    expect(runbook).toContain('FROM "DmInputs"');
+    for (const key of ["conflict:<id>:casualties", "conflict:<id>:war-damage", FEEDBACK_KEYS.crowdOut]) {
+      expect(runbook).toContain(key);
+    }
+  });
+
+  it("enables only jobs that exist", () => {
+    const names = [...runbook.matchAll(/CRON_ENABLED_JOBS="([^"]*)"/g)].flatMap((m) =>
+      m[1]!.split(",").map((n) => n.trim())
+    );
+    expect(names.length).toBeGreaterThan(5);
+    expect(resolveEnabledJobs(names.join(","), CRON_JOBS).unknown).toEqual([]);
+  });
+});

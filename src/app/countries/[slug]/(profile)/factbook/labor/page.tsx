@@ -1,5 +1,12 @@
-import { FactbookSectionContent } from "../../../_components/FactbookSectionContent";
+import { redirect } from "next/navigation";
+import { legacyCountryRedirect } from "~/lib/country/country-routes";
 
-export default function FactbookLaborPage() {
-  return <FactbookSectionContent section="labor" />;
+/** `/countries/[slug]/factbook/labor`: an old address; its content lives on the country document now. */
+export default async function LegacyFactbookLaborPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  redirect(legacyCountryRedirect(slug, ["factbook", "labor"]));
 }

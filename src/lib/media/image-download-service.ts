@@ -1,9 +1,7 @@
-// Service for downloading external images and saving to server filesystem
-// Used when users select images from wiki/Unsplash repositories
-
 import { withBasePath } from "~/lib/base-path";
+import { isWikimediaCommonsUrl, getCommonsProxyUrl } from "~/lib/wiki-os/transformers/image-url";
 
-export interface DownloadedImage {
+interface DownloadedImage {
   url: string;
   originalUrl: string;
   fileName: string;
@@ -12,13 +10,45 @@ export interface DownloadedImage {
   downloadedAt: number;
 }
 
+const isDev = process.env.NODE_ENV === "development";
+
+function debugLog(...args: (string | number | object)[]): void {
+  if (isDev) console.log(...args);
+}
+
+function debugError(...args: (string | number | object)[]): void {
+  if (isDev) console.error(...args);
+}
+
+/** A failed image download, tagged with a machine-readable code. */
+class ImageDownloadError extends Error {
+  code: string;
+  statusCode?: number;
+  originalUrl: string;
+  originalError?: Error;
+
+  constructor(message: string, code: string, originalUrl: string) {
+    super(message);
+    this.name = "ImageDownloadError";
+    this.code = code;
+    this.originalUrl = originalUrl;
+  }
+}
+
+function isAbortError(error: Error): boolean {
+  return error.name === "AbortError";
+}
+
 /**
  * Downloads an external image and saves it to the server filesystem
  * Supports CORS-enabled images from wikis and Unsplash
  * Returns a local URL to the saved image
  */
-export async function downloadAndConvertImage(imageUrl: string): Promise<DownloadedImage> {
-  console.log(`[ImageDownloadService] Starting download: ${imageUrl}`);
+async function downloadAndConvertImage(
+  imageUrl: string,
+  signal?: AbortSignal
+): Promise<DownloadedImage> {
+  debugLog(`[ImageDownloadService] Starting download: ${imageUrl}`);
 
   try {
     // Use our API endpoint to download the image with proper CORS handling
@@ -28,9 +58,10 @@ export async function downloadAndConvertImage(imageUrl: string): Promise<Downloa
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ imageUrl }),
+      signal,
     });
 
-    console.log(
+    debugLog(
       `[ImageDownloadService] API response status: ${response.status}, Content-Type: ${response.headers.get("content-type")}`
     );
 
@@ -44,7 +75,7 @@ export async function downloadAndConvertImage(imageUrl: string): Promise<Downloa
         // Check if response is HTML (Cloudflare or server error page)
         if (contentType?.includes("text/html")) {
           const htmlText = await response.text();
-          console.error(
+          debugError(
             `[ImageDownloadService] Received HTML error page: ${htmlText.substring(0, 500)}`
           );
 
@@ -62,39 +93,37 @@ export async function downloadAndConvertImage(imageUrl: string): Promise<Downloa
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
           errorCode = errorData.code || errorCode;
-          console.error(`[ImageDownloadService] API error response:`, errorData);
+          debugError(`[ImageDownloadService] API error response:`, errorData);
         } else {
           // Unknown content type
           const errorText = await response.text();
-          console.error(
-            `[ImageDownloadService] Unexpected response: ${errorText.substring(0, 500)}`
-          );
+          debugError(`[ImageDownloadService] Unexpected response: ${errorText.substring(0, 500)}`);
           errorMessage = `Unexpected response from download service: ${errorText.substring(0, 100)}`;
         }
       } catch (parseError) {
-        console.error("[ImageDownloadService] Failed to parse error response:", parseError);
+        debugError(
+          "[ImageDownloadService] Failed to parse error response:",
+          parseError instanceof Error ? parseError.message : String(parseError)
+        );
       }
 
-      const error = new Error(errorMessage);
-      (error as any).code = errorCode;
-      (error as any).statusCode = response.status;
-      (error as any).originalUrl = imageUrl;
+      const error = new ImageDownloadError(errorMessage, errorCode, imageUrl);
+      error.statusCode = response.status;
       throw error;
     }
 
     const result = await response.json();
-    console.log(`[ImageDownloadService] API response:`, result);
+    debugLog(`[ImageDownloadService] API response:`, result);
 
     if (!result.success || !result.url) {
-      const error = new Error(
-        "Invalid response from download service - missing success flag or URL"
+      throw new ImageDownloadError(
+        "Invalid response from download service - missing success flag or URL",
+        "INVALID_RESPONSE",
+        imageUrl
       );
-      (error as any).code = "INVALID_RESPONSE";
-      (error as any).originalUrl = imageUrl;
-      throw error;
     }
 
-    console.log(
+    debugLog(
       `[ImageDownloadService] Successfully downloaded: ${result.fileName} (${result.fileSize} bytes) to ${result.url}`
     );
 
@@ -107,27 +136,33 @@ export async function downloadAndConvertImage(imageUrl: string): Promise<Downloa
       downloadedAt: result.downloadedAt,
     };
   } catch (error) {
+    // A cancelled download is not a failure; let the caller see the abort as is.
+    if (error instanceof Error && isAbortError(error)) throw error;
+
     console.error("[ImageDownloadService] Download failed:", error);
 
     // Re-throw errors with codes
-    if (error instanceof Error && (error as any).code) {
+    if (error instanceof ImageDownloadError) {
       throw error;
     }
 
     // Wrap unknown errors
     if (error instanceof Error) {
-      const wrappedError = new Error(`Failed to download image: ${error.message}`);
-      (wrappedError as any).code = "DOWNLOAD_ERROR";
-      (wrappedError as any).originalUrl = imageUrl;
-      (wrappedError as any).originalError = error;
+      const wrappedError = new ImageDownloadError(
+        `Failed to download image: ${error.message}`,
+        "DOWNLOAD_ERROR",
+        imageUrl
+      );
+      wrappedError.originalError = error;
       throw wrappedError;
     }
 
     // Unknown error type
-    const unknownError = new Error("Failed to download image: Unknown error");
-    (unknownError as any).code = "UNKNOWN_ERROR";
-    (unknownError as any).originalUrl = imageUrl;
-    throw unknownError;
+    throw new ImageDownloadError(
+      "Failed to download image: Unknown error",
+      "UNKNOWN_ERROR",
+      imageUrl
+    );
   }
 }
 
@@ -149,50 +184,6 @@ export function isExternalImageUrl(url: string): boolean {
 }
 
 /**
- * Detects if a URL is a Wikimedia Commons / Wikipedia image URL
- */
-export function isWikimediaCommonsUrl(url: string): boolean {
-  if (!url) return false;
-  return url.includes("wikimedia.org") || url.includes("wikipedia.org");
-}
-
-/**
- * Converts a Wikimedia Commons / Wikipedia URL to our local mediawiki commons proxy URL
- */
-export function getCommonsProxyUrl(url: string): string {
-  if (!url) return url;
-
-  if (url.includes("/api/mediawiki/commons/")) {
-    return url;
-  }
-
-  try {
-    const decodedUrl = decodeURIComponent(url);
-
-    // Pattern to match /wikipedia/commons/... or /wikipedia/en/... and extract filename
-    const commonsMatch = decodedUrl.match(
-      /\/wikipedia\/(?:commons|en)\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^\/]+)/i
-    );
-    if (commonsMatch && commonsMatch[1]) {
-      const filename = commonsMatch[1];
-      return `/api/mediawiki/commons/Special:Filepath/${encodeURIComponent(filename.replace(/ /g, "_"))}`;
-    }
-
-    // Fallback: extract last segment
-    const urlObj = new URL(url);
-    const pathname = urlObj.pathname;
-    const lastSegment = pathname.split("/").pop();
-    if (lastSegment && /\.(jpg|jpeg|png|gif|svg|webp)$/i.test(lastSegment)) {
-      return `/api/mediawiki/commons/Special:Filepath/${encodeURIComponent(lastSegment.replace(/ /g, "_"))}`;
-    }
-  } catch (e) {
-    console.error("[ImageDownloadService] Error parsing Wikimedia URL:", e);
-  }
-
-  return url;
-}
-
-/**
  * Smart image handler that downloads external URLs and passes through data URLs
  * Use this wrapper around image selection callbacks
  */
@@ -201,6 +192,7 @@ export async function processImageSelection(
   options?: {
     onProgress?: (message: string) => void;
     onError?: (error: Error) => void;
+    signal?: AbortSignal;
   }
 ): Promise<string> {
   try {
@@ -212,11 +204,17 @@ export async function processImageSelection(
       return proxyUrl;
     }
 
+    // SVGs are never copied to our origin (they can carry script); hotlink them instead.
+    // An SVG rendered through <img> cannot run script.
+    if (isExternalImageUrl(imageUrl) && new URL(imageUrl).pathname.toLowerCase().endsWith(".svg")) {
+      return imageUrl;
+    }
+
     // Check if URL needs downloading
     if (isExternalImageUrl(imageUrl)) {
       options?.onProgress?.("Downloading image...");
 
-      const downloaded = await downloadAndConvertImage(imageUrl);
+      const downloaded = await downloadAndConvertImage(imageUrl, options?.signal);
 
       options?.onProgress?.("Image downloaded successfully");
 
@@ -230,38 +228,4 @@ export async function processImageSelection(
     options?.onError?.(errorMessage as Error);
     throw error;
   }
-}
-
-/**
- * Batch download multiple images
- * Useful for downloading both flag and coat of arms at once
- */
-export async function downloadMultipleImages(urls: string[]): Promise<DownloadedImage[]> {
-  const results: DownloadedImage[] = [];
-
-  for (const url of urls) {
-    if (isExternalImageUrl(url)) {
-      try {
-        if (isWikimediaCommonsUrl(url)) {
-          const proxyUrl = getCommonsProxyUrl(url);
-          results.push({
-            url: proxyUrl,
-            originalUrl: url,
-            fileName: url.split("/").pop() || "image",
-            fileSize: 0,
-            fileType: "image/jpeg",
-            downloadedAt: Date.now(),
-          });
-        } else {
-          const downloaded = await downloadAndConvertImage(url);
-          results.push(downloaded);
-        }
-      } catch (error) {
-        console.error(`[ImageDownloadService] Failed to download ${url}:`, error);
-        // Continue with other downloads even if one fails
-      }
-    }
-  }
-
-  return results;
 }

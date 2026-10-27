@@ -9,7 +9,7 @@ import type { ExploreSubTab } from "~/lib/onoma/types";
 import { StudioPhonology } from "./studio/StudioPhonology";
 import { GrammarRootsSection } from "./GrammarRootsSection";
 import WritingSection from "./WritingSection";
-import LanguagePacksSection from "./LanguagePacksSection";
+import { LanguagePacksSection } from "./LanguagePacksSection";
 
 interface ExploreSectionProps {
   activeSubTab?: ExploreSubTab;
@@ -18,7 +18,7 @@ interface ExploreSectionProps {
   studioWords?: string[];
 }
 
-export function ExploreSection({
+function ExploreSection({
   activeSubTab = "phonology",
   setActiveSubTab: _setActiveSubTab,
   onLoadToStudio,
@@ -33,9 +33,7 @@ export function ExploreSection({
       ) : activeSubTab === "writing" ? (
         <WritingSection studioWords={studioWords} />
       ) : (
-        <LanguagePacksSection
-          onLoadToStudio={(title, words) => onLoadToStudio?.(words, title)}
-        />
+        <LanguagePacksSection onLoadToStudio={(title, words) => onLoadToStudio?.(words, title)} />
       )}
     </div>
   );

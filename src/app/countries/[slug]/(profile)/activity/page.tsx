@@ -1,17 +1,12 @@
-"use client";
+import { redirect } from "next/navigation";
+import { legacyCountryRedirect } from "~/lib/country/country-routes";
 
-import { useCountryData } from "~/components/mycountry/primitives";
-import { CountryActivityPanel } from "../../_components/CountryActivityPanel";
-
-/**
- * ActivityPage — `/countries/[slug]/activity`. Renders the full public
- * activity feed for the country profile. Data flows from the
- * `CountryDataProvider` mounted in the `(profile)` layout.
- */
-export default function ActivityPage() {
-  const { country } = useCountryData();
-
-  if (!country) return null;
-
-  return <CountryActivityPanel countryId={country.id} countryName={country.name} />;
+/** `/countries/[slug]/activity`: an old address; its content lives on another tab now. */
+export default async function LegacyActivityPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  redirect(legacyCountryRedirect(slug, ["activity"]));
 }

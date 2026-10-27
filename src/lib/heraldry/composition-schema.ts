@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 
-export const tinctureSchema = z.enum([
+const tinctureSchema = z.enum([
   "or",
   "argent",
   "gules",
@@ -19,7 +19,7 @@ export const tinctureSchema = z.enum([
   "murrey",
 ]);
 
-export const divisionSchema = z.enum([
+const divisionSchema = z.enum([
   "plain",
   "per-pale",
   "per-fess",
@@ -39,7 +39,7 @@ export const divisionSchema = z.enum([
   "chevronny",
 ]);
 
-export const lineStyleSchema = z.enum([
+const lineStyleSchema = z.enum([
   "straight",
   "engrailed",
   "invected",
@@ -54,7 +54,7 @@ export const lineStyleSchema = z.enum([
   "urdy",
 ]);
 
-export const ordinaryTypeSchema = z.enum([
+const ordinaryTypeSchema = z.enum([
   "chief",
   "fess",
   "pale",
@@ -73,7 +73,7 @@ export const ordinaryTypeSchema = z.enum([
   "lozenge-ordinary",
 ]);
 
-export const shieldShapeSchema = z.enum([
+const shieldShapeSchema = z.enum([
   "heater",
   "kite",
   "round",
@@ -83,7 +83,7 @@ export const shieldShapeSchema = z.enum([
   "pointed",
 ]);
 
-export const attitudeSchema = z.enum([
+const attitudeSchema = z.enum([
   "rampant",
   "passant",
   "sejant",
@@ -100,18 +100,13 @@ export const attitudeSchema = z.enum([
   "hauriant",
 ]);
 
-export const helmTypeSchema = z.enum([
-  "great-helm",
-  "tilting-helm",
-  "barrel-helm",
-  "open-faced-helm",
-]);
+const helmTypeSchema = z.enum(["great-helm", "tilting-helm", "barrel-helm", "open-faced-helm"]);
 
-export const helmFacingSchema = z.enum(["affronte", "dexter", "sinister"]);
+const helmFacingSchema = z.enum(["affronte", "dexter", "sinister"]);
 
-export const mottoPositionSchema = z.enum(["above", "below"]);
+const mottoPositionSchema = z.enum(["above", "below"]);
 
-export const chargeRefSchema = z.object({
+const chargeRefSchema = z.object({
   chargeId: z.string().uuid().or(z.string().min(1)),
   position: z.string().min(1),
   count: z.number().int().min(1).max(50),
@@ -123,52 +118,52 @@ export const chargeRefSchema = z.object({
   mirrored: z.boolean().optional(),
 });
 
-export const ordinaryConfigSchema = z.object({
+const ordinaryConfigSchema = z.object({
   type: ordinaryTypeSchema,
   tincture: tinctureSchema,
   lineStyle: lineStyleSchema,
 });
 
-export const fieldConfigSchema = z.object({
+const fieldConfigSchema = z.object({
   division: divisionSchema,
   tinctures: z.array(tinctureSchema).min(1),
   lineStyle: lineStyleSchema,
 });
 
-export const shieldConfigSchema = z.object({
+const shieldConfigSchema = z.object({
   shape: shieldShapeSchema,
   field: fieldConfigSchema,
   ordinaries: z.array(ordinaryConfigSchema).default([]),
   charges: z.array(chargeRefSchema).default([]),
 });
 
-export const helmConfigSchema = z.object({
+const helmConfigSchema = z.object({
   type: helmTypeSchema,
   facing: helmFacingSchema,
 });
 
-export const crestConfigSchema = z.object({
+const crestConfigSchema = z.object({
   chargeId: z.string().min(1),
   wreathTinctures: z.tuple([tinctureSchema, tinctureSchema]),
 });
 
-export const mantlingConfigSchema = z.object({
+const mantlingConfigSchema = z.object({
   exteriorTincture: tinctureSchema,
   interiorTincture: tinctureSchema,
 });
 
-export const supporterConfigSchema = z.object({
+const supporterConfigSchema = z.object({
   chargeId: z.string().min(1),
   attitude: attitudeSchema.optional(),
   tincture: tinctureSchema.optional(),
 });
 
-export const mottoConfigSchema = z.object({
+const mottoConfigSchema = z.object({
   text: z.string().min(1).max(200),
   position: mottoPositionSchema.default("below"),
 });
 
-export const externalOrnamentsSchema = z.object({
+const externalOrnamentsSchema = z.object({
   helm: helmConfigSchema.optional(),
   crest: crestConfigSchema.optional(),
   mantling: mantlingConfigSchema.optional(),

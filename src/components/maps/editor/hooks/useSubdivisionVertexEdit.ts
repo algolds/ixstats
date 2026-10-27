@@ -1,43 +1,37 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
-import type { Polygon, MultiPolygon, Position } from "geojson";
+import type { Polygon, MultiPolygon } from "geojson";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
 import {
-  getVertices,
   getAllRings,
-  moveVertex,
-  addVertex,
-  removeVertex,
-  clampToGeometry,
+  getVertices,
   simplifyGeometry,
-  snapToBorderEdge,
-  snapPointToGeometries,
-  snapToNeighborBorders,
   sanitizeRegionShape,
 } from "~/lib/maps/border-editor";
-import type { VertexRef } from "~/lib/maps/border-editor";
-import {
-  findNearestBorderRing,
-  snapGeometryToBorder,
-} from "~/lib/maps/province-importer/alignment";
 import { clipGeometryToBorder } from "~/lib/maps/province-importer/topology";
-import {
-  buildTopologyIndex,
-  cascadeMoveVertex,
-  vkey,
-  type TopologyIndex,
-} from "~/lib/maps/topology-engine";
+import { buildTopologyIndex, vkey } from "~/lib/maps/topology-engine";
 import {
   getGeoJSONSource,
-  updateSnapGuide,
   calculateOverlapGeoJson,
   EMPTY_FC,
-  getFeatureCoords,
-  snapToLayerFeatures,
+  collection,
+  pointFeature,
   snapGeometryToBackgroundLayers,
+  whenIdle,
 } from "../utils/map-helpers";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
-import { getSnapEnabled, getSnapTolerance } from "~/lib/maps/editor-prefs";
+import { withoutDisabledSnapLayers } from "~/lib/maps/editor-prefs";
+import {
+  buildMidpointFeatures,
+  snapToCountryBorderRing,
+  snapToNeighbors,
+} from "./vertex-edit-geometry";
+import {
+  cancelOverlapCheck,
+  createVertexEditState,
+  useVertexEditPointer,
+  type VertexEditState,
+} from "./useVertexEditPointer";
 
 interface UseSubdivisionVertexEditProps {
   map: MapLibreMap | null;
@@ -46,762 +40,372 @@ interface UseSubdivisionVertexEditProps {
   selectedFeature: EditorFeature | null;
   features: EditorFeature[];
   countryGeometry: Polygon | MultiPolygon | null;
-  onGeometryUpdate?: (featureId: string, geometry: object) => void;
+  /** Saves the edited region; `cascaded` lists neighbours whose shared vertices moved with it. */
+  onGeometryUpdate?: (
+    featureId: string,
+    geometry: object,
+    cascaded?: Array<{ id: string; geometry: object }>
+  ) => void;
+  /** Reports whether the region has unsaved vertex changes (drives the leave warning). */
+  onDirtyChange?: (dirty: boolean) => void;
   worldMapLayers?: MapLayerData[];
   editorVisibleLayers?: Set<string>;
-  guides?: { id: string; type: "h" | "v"; value: number }[];
   snapEnabled?: boolean;
   snapTolerance?: number;
   snapPoint?: (coords: [number, number]) => [number, number];
 }
 
-export function useSubdivisionVertexEdit({
-  map,
-  isLoaded,
-  mode,
-  selectedFeature,
-  features,
-  countryGeometry,
-  onGeometryUpdate,
-  worldMapLayers,
-  editorVisibleLayers,
-  guides,
-  snapEnabled,
-  snapTolerance,
-  snapPoint,
-}: UseSubdivisionVertexEditProps) {
+type RegionGeometry = Polygon | MultiPolygon;
+
+/** Subdivision layers that are filtered (or reset) while a region is being reshaped. */
+const REGION_LAYERS = [
+  "editor-subdivisions-fill",
+  "editor-subdivisions-stroke",
+  "editor-subdivisions-labels",
+  "editor-subdivisions-hover",
+];
+
+const clipToBorder = (geometry: RegionGeometry, border: RegionGeometry) =>
+  clipGeometryToBorder(geometry, border).geometry;
+
+/**
+ * The regions that share a vertex with the one being edited, at the shapes the cascade left them in.
+ * These are the only regions a reshape can newly overlap, so the overlap check looks at no others.
+ */
+function adjacentRegions(st: VertexEditState, features: EditorFeature[]): EditorFeature[] {
+  const { edit, topology } = st;
+  if (!edit || !topology) return [];
+
+  const ids = new Set<string>();
+  for (const ring of getAllRings(edit.currentGeometry)) {
+    for (const vertex of ring) {
+      for (const ref of topology.get(vkey(vertex)) ?? []) ids.add(ref.featureId);
+    }
+  }
+  return features.flatMap((f) => {
+    const geometry = ids.has(f.id) ? st.neighbors.get(f.id) : undefined;
+    // A plain copy: the cascade's clones keep the `_bbox` the saved shape had cached
+    return geometry
+      ? [{ ...f, geometry: { type: geometry.type, coordinates: geometry.coordinates } }]
+      : [];
+  });
+}
+
+/** Cascade visuals are written to the subdivisions source at most once per frame. */
+function useCascadeVisuals(map: MapLibreMap | null) {
+  const pendingRef = useRef<Map<string, RegionGeometry>>(new Map());
+  const frameRef = useRef<number | null>(null);
+
+  const flush = useCallback(() => {
+    frameRef.current = null;
+    const pending = pendingRef.current;
+    if (pending.size === 0) return;
+    // Region ids are the source's feature ids (promoteId), so each neighbour moves on its own.
+    void getGeoJSONSource(map, "editor-subdivisions")?.updateData({
+      update: [...pending].map(([id, newGeometry]) => ({ id, newGeometry })),
+    });
+    pending.clear();
+  }, [map]);
+
+  const queueCascadeVisual = useCallback(
+    (featureId: string, geometry: RegionGeometry) => {
+      pendingRef.current.set(featureId, geometry);
+      frameRef.current ??= requestAnimationFrame(flush);
+    },
+    [flush]
+  );
+
+  const cancelCascadeFrame = useCallback(() => {
+    if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+  }, []);
+
+  return { queueCascadeVisual, cancelCascadeFrame };
+}
+
+export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
+  const { map, isLoaded, mode, selectedFeature } = props;
   const [isVertexEditing, setIsVertexEditing] = useState(false);
-  const vertexEditRef = useRef<{
-    featureId: string;
-    currentGeometry: Polygon | MultiPolygon;
-  } | null>(null);
+  const st = useRef(createVertexEditState()).current;
 
-  const draggingRef = useRef<VertexRef | null>(null);
-  const hoveredVertexRef = useRef<VertexRef | null>(null);
-  const lastMousePointRef = useRef<{ x: number; y: number } | null>(null);
+  // Latest props for the stable event callbacks.
+  const latest = useRef(props);
+  // oxlint-disable-next-line
+  latest.current = props;
 
-  // Topology engine: spatial-hash index + neighbor geometry cache for cascade editing
-  const topologyIndexRef = useRef<TopologyIndex | null>(null);
-  const neighborGeometriesRef = useRef<Map<string, Polygon | MultiPolygon>>(new Map());
-
-  const throttledUpdateRef = useRef<any>(null);
   const lastUpdateRef = useRef(0);
 
-  // Keep latest refs of parameters to avoid stale closure in event callbacks
-  const featuresRef = useRef(features);
-  featuresRef.current = features;
-  const countryGeometryRef = useRef(countryGeometry);
-  countryGeometryRef.current = countryGeometry;
-  const onGeometryUpdateRef = useRef(onGeometryUpdate);
-  onGeometryUpdateRef.current = onGeometryUpdate;
+  // Unsaved-change tracking: any visual update after entry marks the edit dirty.
+  const dirtyRef = useRef(false);
+  const suppressDirtyRef = useRef(false);
+  const markDirty = useCallback((dirty: boolean) => {
+    if (dirtyRef.current === dirty) return;
+    dirtyRef.current = dirty;
+    latest.current.onDirtyChange?.(dirty);
+  }, []);
+
+  const { queueCascadeVisual, cancelCascadeFrame } = useCascadeVisuals(map);
+
+  const changedNeighborsPayload = useCallback(
+    () =>
+      [...st.changedNeighborIds].flatMap((id) => {
+        const geometry = st.neighbors.get(id);
+        return geometry ? [{ id, geometry }] : [];
+      }),
+    [st]
+  );
+
+  const updateMidpoints = useCallback(() => {
+    if (!map || !st.edit) return;
+    getGeoJSONSource(map, "editor-vedit-midpoints")?.setData(
+      collection(buildMidpointFeatures(st.edit.currentGeometry))
+    );
+  }, [map, st]);
+
+  /**
+   * The overlap highlight, checked when the browser is idle (a check takes 40 to 110 ms on a big region, which the
+   * release frame must not pay). It reads the region as it is then; a new drag, the end of the edit and an unmount
+   * cancel it, so a stale highlight never lands.
+   */
+  const scheduleOverlapCheck = useCallback(() => {
+    cancelOverlapCheck(st);
+    st.overlapCancel = whenIdle(() => {
+      st.overlapCancel = null;
+      if (!map || !st.edit) return;
+      getGeoJSONSource(map, "editor-overlap-highlight")?.setData(
+        calculateOverlapGeoJson(
+          st.edit.currentGeometry,
+          adjacentRegions(st, latest.current.features),
+          st.edit.featureId
+        )
+      );
+    });
+  }, [map, st]);
 
   const updateVertexEditVis = useCallback(
     (fastOnly = false) => {
-      const state = vertexEditRef.current;
-      if (!map || !state) return;
+      if (!map || !st.edit) return;
+      if (!suppressDirtyRef.current) markDirty(true);
 
-      const geo = state.currentGeometry;
+      const { currentGeometry: geo } = st.edit;
+      const setSource = (id: string, features: Parameters<typeof collection>[0]) =>
+        getGeoJSONSource(map, id)?.setData(collection(features));
 
-      // Polygon fill + stroke
-      const polyFc = {
-        type: "FeatureCollection" as const,
-        features: [
-          {
-            type: "Feature" as const,
-            geometry: geo,
-            properties: {},
-          },
-        ],
-      };
-      getGeoJSONSource(map, "editor-vedit-polygon")?.setData(polyFc);
+      setSource("editor-vedit-polygon", [{ type: "Feature", geometry: geo, properties: {} }]);
+      setSource(
+        "editor-vedit-vertices",
+        getVertices(geo).map((v) =>
+          pointFeature(v.coord, { ringIndex: v.ringIndex, vertexIndex: v.vertexIndex })
+        )
+      );
+      if (fastOnly) return;
 
-      // Vertices
-      const verts = getVertices(geo);
-      const vertFc = {
-        type: "FeatureCollection" as const,
-        features: verts.map((v) => ({
-          type: "Feature" as const,
-          geometry: { type: "Point" as const, coordinates: v.coord },
-          properties: { ringIndex: v.ringIndex, vertexIndex: v.vertexIndex },
-        })),
-      };
-      getGeoJSONSource(map, "editor-vedit-vertices")?.setData(vertFc);
+      // Drag frames stop above; their midpoints follow on a throttle, the overlap check on the drop (when idle).
+      updateMidpoints();
+      scheduleOverlapCheck();
+    },
+    [map, st, markDirty, updateMidpoints, scheduleOverlapCheck]
+  );
 
-      if (fastOnly) {
-        return;
+  /** Add-vertex handles follow a drag at most every 100 ms; the overlap check waits for the drop. */
+  const scheduleThrottledUpdate = useCallback(() => {
+    if (st.throttleTimer) clearTimeout(st.throttleTimer);
+    const sinceLast = Date.now() - lastUpdateRef.current;
+    if (sinceLast >= 100) {
+      updateMidpoints();
+      lastUpdateRef.current = Date.now();
+    } else {
+      st.throttleTimer = setTimeout(() => {
+        updateMidpoints();
+        lastUpdateRef.current = Date.now();
+      }, 100 - sinceLast);
+    }
+  }, [st, updateMidpoints]);
+
+  useEffect(() => {
+    return () => {
+      if (st.throttleTimer) clearTimeout(st.throttleTimer);
+      cancelOverlapCheck(st);
+      cancelCascadeFrame();
+    };
+  }, [st, cancelCascadeFrame]);
+
+  const clearVertexEditVis = useCallback(() => {
+    if (!map) return;
+    for (const id of ["polygon", "vertices", "midpoints"]) {
+      getGeoJSONSource(map, `editor-vedit-${id}`)?.setData(EMPTY_FC);
+    }
+    getGeoJSONSource(map, "editor-overlap-highlight")?.setData(EMPTY_FC);
+  }, [map]);
+
+  const setRegionLayerFilter = useCallback(
+    (hiddenFeatureId: string | null) => {
+      if (!map) return;
+      const filter: Parameters<MapLibreMap["setFilter"]>[1] = hiddenFeatureId
+        ? ["!=", ["get", "id"], hiddenFeatureId]
+        : null;
+      for (const layerId of REGION_LAYERS) {
+        if (map.getLayer(layerId)) map.setFilter(layerId, filter);
       }
-
-      // Midpoints (for adding new vertices)
-      const rings = getAllRings(geo);
-      const midFeatures: any[] = [];
-      for (let ri = 0; ri < rings.length; ri++) {
-        const ring = rings[ri]!;
-        const len = ring.length;
-        for (let i = 0; i < len - 1; i++) {
-          const a = ring[i]!;
-          const b = ring[i + 1]!;
-          midFeatures.push({
-            type: "Feature",
-            geometry: {
-              type: "Point",
-              coordinates: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2],
-            },
-            properties: { ringIndex: ri, startIndex: i },
-          });
-        }
-      }
-      getGeoJSONSource(map, "editor-vedit-midpoints")?.setData({
-        type: "FeatureCollection",
-        features: midFeatures,
-      });
-
-      // Update overlap highlights
-      const overlapGeoJson = calculateOverlapGeoJson(geo, featuresRef.current, state.featureId);
-      getGeoJSONSource(map, "editor-overlap-highlight")?.setData(overlapGeoJson);
     },
     [map]
   );
 
-  const scheduleThrottledUpdate = useCallback(() => {
-    if (throttledUpdateRef.current) {
-      clearTimeout(throttledUpdateRef.current);
-    }
-    const now = Date.now();
-    const timeSinceLast = now - lastUpdateRef.current;
-    if (timeSinceLast >= 100) {
-      updateVertexEditVis(false);
-      lastUpdateRef.current = now;
-    } else {
-      throttledUpdateRef.current = setTimeout(() => {
-        updateVertexEditVis(false);
-        lastUpdateRef.current = Date.now();
-      }, 100 - timeSinceLast);
-    }
-  }, [updateVertexEditVis]);
-
-  useEffect(() => {
-    return () => {
-      if (throttledUpdateRef.current) {
-        clearTimeout(throttledUpdateRef.current);
-      }
-    };
-  }, []);
-
-  const clearVertexEditVis = useCallback(() => {
-    if (!map) return;
-    getGeoJSONSource(map, "editor-vedit-polygon")?.setData(EMPTY_FC);
-    getGeoJSONSource(map, "editor-vedit-vertices")?.setData(EMPTY_FC);
-    getGeoJSONSource(map, "editor-vedit-midpoints")?.setData(EMPTY_FC);
-    getGeoJSONSource(map, "editor-overlap-highlight")?.setData(EMPTY_FC);
-  }, [map]);
-
-  const finishVertexEdit = useCallback(() => {
-    const state = vertexEditRef.current;
-    if (state && onGeometryUpdateRef.current) {
-      let finalGeo = state.currentGeometry;
-      const border = countryGeometryRef.current;
-      if (border) {
-        const { geometry } = clipGeometryToBorder(finalGeo, border);
-        finalGeo = geometry as Polygon | MultiPolygon;
-      }
-      onGeometryUpdateRef.current(state.featureId, finalGeo);
-    }
-    vertexEditRef.current = null;
+  /** Leaves vertex editing without saving. */
+  const endSession = useCallback(() => {
+    cancelOverlapCheck(st);
+    st.edit = null;
+    st.topology = null;
+    st.changedNeighborIds = new Set();
+    markDirty(false);
     setIsVertexEditing(false);
     clearVertexEditVis();
+    setRegionLayerFilter(null);
+  }, [st, markDirty, clearVertexEditVis, setRegionLayerFilter]);
 
-    // Reset subdivision filters
-    if (map) {
-      for (const lid of [
-        "editor-subdivisions-fill",
-        "editor-subdivisions-stroke",
-        "editor-subdivisions-labels",
-        "editor-subdivisions-hover",
-      ]) {
-        if (map.getLayer(lid)) map.setFilter(lid, null);
-      }
+  /** Hands the region (plus the neighbours the cascade actually moved) to the saver. */
+  const saveEdit = useCallback(
+    (featureId: string, geometry: RegionGeometry) => {
+      latest.current.onGeometryUpdate?.(featureId, geometry, changedNeighborsPayload());
+      st.changedNeighborIds = new Set();
+      markDirty(false);
+    },
+    [st, changedNeighborsPayload, markDirty]
+  );
+
+  /** "Done": saves only when something changed, then leaves vertex editing. */
+  const finishVertexEdit = useCallback(() => {
+    if (st.edit && dirtyRef.current && latest.current.onGeometryUpdate) {
+      const border = latest.current.countryGeometry;
+      const geometry = border
+        ? clipToBorder(st.edit.currentGeometry, border)
+        : st.edit.currentGeometry;
+      latest.current.onGeometryUpdate(st.edit.featureId, geometry, changedNeighborsPayload());
     }
-  }, [map, clearVertexEditVis]);
+    endSession();
+  }, [st, changedNeighborsPayload, endSession]);
 
   const handleSimplifyAndSave = useCallback(() => {
-    const state = vertexEditRef.current;
-    const border = countryGeometryRef.current;
-    if (!state || !border) return;
+    const {
+      countryGeometry: border,
+      worldMapLayers,
+      editorVisibleLayers,
+      features,
+    } = latest.current;
+    if (!st.edit || !border) return;
 
-    let geo = simplifyGeometry(state.currentGeometry, 0.002);
-    const { geometry: sanitized } = sanitizeRegionShape(geo, border);
-    geo = sanitized;
-
-    // Snap to visible background layers first
+    let geo = sanitizeRegionShape(
+      simplifyGeometry(st.edit.currentGeometry, 0.002),
+      border
+    ).geometry;
     if (worldMapLayers && editorVisibleLayers) {
       geo = snapGeometryToBackgroundLayers(
-        geo as Polygon | MultiPolygon,
+        geo,
         worldMapLayers,
-        editorVisibleLayers,
+        withoutDisabledSnapLayers(editorVisibleLayers),
         0.015
       );
     }
-
-    const { geometry: clipped } = clipGeometryToBorder(geo, border);
-    geo = clipped as Polygon | MultiPolygon;
-
-    const neighborGeometries: Array<{ id: string; geometry: Polygon | MultiPolygon }> = [];
-    for (const feat of featuresRef.current) {
-      if (feat.type === "subdivision" && feat.id !== state.featureId && feat.geometry) {
-        neighborGeometries.push({
-          id: feat.id,
-          geometry: feat.geometry as Polygon | MultiPolygon,
-        });
-      }
-    }
-    if (neighborGeometries.length > 0) {
-      geo = snapToNeighborBorders(geo, neighborGeometries, border, 0.015);
-    }
-
-    const nearestRing = findNearestBorderRing(geo, border);
-    const borderEdges: Array<[Position, Position]> = [];
-    for (let i = 0; i < nearestRing.length - 1; i++) {
-      borderEdges.push([nearestRing[i]!, nearestRing[i + 1]!]);
-    }
-
-    const snapped = snapGeometryToBorder(geo, borderEdges, nearestRing, 0.015);
-    state.currentGeometry = snapped as Polygon | MultiPolygon;
+    geo = snapToNeighbors(clipToBorder(geo, border), features, st.edit.featureId, border);
+    st.edit.currentGeometry = snapToCountryBorderRing(geo, border);
     updateVertexEditVis();
 
-    if (onGeometryUpdateRef.current) {
-      onGeometryUpdateRef.current(state.featureId, state.currentGeometry);
-    }
-  }, [updateVertexEditVis, worldMapLayers, editorVisibleLayers]);
+    if (latest.current.onGeometryUpdate) saveEdit(st.edit.featureId, st.edit.currentGeometry);
+  }, [st, updateVertexEditVis, saveEdit]);
 
+  /** "Save": writes the region plus only the neighbours the cascade actually moved. */
   const handleSave = useCallback(() => {
-    const state = vertexEditRef.current;
-    if (!state || !onGeometryUpdateRef.current) return;
-    let finalGeo = state.currentGeometry;
-    const border = countryGeometryRef.current;
+    if (!st.edit || !latest.current.onGeometryUpdate) return;
+    const { countryGeometry: border, features } = latest.current;
+    let geometry = st.edit.currentGeometry;
     if (border) {
-      const { geometry } = clipGeometryToBorder(finalGeo, border);
-      finalGeo = geometry as Polygon | MultiPolygon;
-
-      const neighborGeometries: Array<{ id: string; geometry: Polygon | MultiPolygon }> = [];
-      for (const feat of featuresRef.current) {
-        if (feat.type === "subdivision" && feat.id !== state.featureId && feat.geometry) {
-          neighborGeometries.push({
-            id: feat.id,
-            geometry: feat.geometry as Polygon | MultiPolygon,
-          });
-        }
-      }
-      if (neighborGeometries.length > 0) {
-        finalGeo = snapToNeighborBorders(finalGeo, neighborGeometries, border, 0.015);
-      }
-
-      state.currentGeometry = finalGeo as Polygon | MultiPolygon;
+      geometry = snapToNeighbors(
+        clipToBorder(geometry, border),
+        features,
+        st.edit.featureId,
+        border
+      );
+      st.edit.currentGeometry = geometry;
+      suppressDirtyRef.current = true;
       updateVertexEditVis();
+      suppressDirtyRef.current = false;
     }
-    onGeometryUpdateRef.current(state.featureId, finalGeo);
-
-    // Save cascaded neighbor geometries
-    for (const [fid, geom] of neighborGeometriesRef.current) {
-      if (onGeometryUpdateRef.current) {
-        onGeometryUpdateRef.current(fid, geom);
-      }
-    }
-  }, [updateVertexEditVis]);
+    saveEdit(st.edit.featureId, geometry);
+  }, [st, updateVertexEditVis, saveEdit]);
 
   const cancelVertexEdit = useCallback(() => {
-    vertexEditRef.current = null;
-    topologyIndexRef.current = null;
-    neighborGeometriesRef.current = new Map();
-    setIsVertexEditing(false);
-    clearVertexEditVis();
-    if (map) {
-      for (const lid of [
-        "editor-subdivisions-fill",
-        "editor-subdivisions-stroke",
-        "editor-subdivisions-labels",
-        "editor-subdivisions-hover",
-      ]) {
-        if (map.getLayer(lid)) map.setFilter(lid, null);
-      }
+    // Put cascaded neighbours back to their saved shapes.
+    for (const id of st.changedNeighborIds) {
+      const original = latest.current.features.find((f) => f.id === id)?.geometry;
+      if (original) queueCascadeVisual(id, original as RegionGeometry);
     }
-  }, [map, clearVertexEditVis]);
+    st.neighbors = new Map();
+    endSession();
+  }, [st, queueCascadeVisual, endSession]);
 
-  // 1. enter/exit vertex editing effect
+  // Enter/exit vertex editing as the tool and selection change.
   useEffect(() => {
     if (!map || !isLoaded) return;
-
-    if (mode === "edit-subdivision" && selectedFeature?.geometry) {
-      let geo = JSON.parse(JSON.stringify(selectedFeature.geometry)) as Polygon | MultiPolygon;
-
-      const border = countryGeometryRef.current;
-      if (border) {
-        const { geometry: clipped, wasClipped } = clipGeometryToBorder(geo, border);
-        if (wasClipped) {
-          geo = clipped as Polygon | MultiPolygon;
-        }
-        const nearestRing = findNearestBorderRing(geo, border);
-        const edges: Array<[Position, Position]> = [];
-        for (let i = 0; i < nearestRing.length - 1; i++) {
-          edges.push([nearestRing[i]!, nearestRing[i + 1]!]);
-        }
-        geo = snapGeometryToBorder(geo, edges, nearestRing, 0.015) as Polygon | MultiPolygon;
-      }
-
-      vertexEditRef.current = {
-        featureId: selectedFeature.id,
-        currentGeometry: geo,
-      };
-
-      // Build topology index from all subdivision features for cascade editing
-      const subdivisionFeatures: { id: string; geometry: Polygon | MultiPolygon }[] = [];
-      for (const feat of featuresRef.current) {
-        if (feat.type === "subdivision" && feat.geometry) {
-          subdivisionFeatures.push({
-            id: feat.id,
-            geometry: (feat.id === selectedFeature.id ? geo : feat.geometry) as
-              | Polygon
-              | MultiPolygon,
-          });
-        }
-      }
-      topologyIndexRef.current = buildTopologyIndex(subdivisionFeatures);
-      neighborGeometriesRef.current = new Map(
-        subdivisionFeatures
-          .filter((f) => f.id !== selectedFeature.id)
-          .map((f) => [f.id, JSON.parse(JSON.stringify(f.geometry))])
-      );
-
-      setIsVertexEditing(true);
-      updateVertexEditVis();
-
-      for (const lid of [
-        "editor-subdivisions-fill",
-        "editor-subdivisions-stroke",
-        "editor-subdivisions-labels",
-        "editor-subdivisions-hover",
-      ]) {
-        if (map.getLayer(lid)) map.setFilter(lid, ["!=", ["get", "id"], selectedFeature.id]);
-      }
-    } else if (vertexEditRef.current) {
-      cancelVertexEdit();
+    if (mode !== "edit-subdivision" || !selectedFeature?.geometry) {
+      if (st.edit) cancelVertexEdit();
+      return;
     }
-  }, [map, isLoaded, mode, selectedFeature, updateVertexEditVis, cancelVertexEdit]);
 
-  // 2. Vertex drag/click event listeners on MapLibre
-  useEffect(() => {
-    if (!map || !isLoaded) return;
+    let geo = structuredClone(selectedFeature.geometry) as RegionGeometry;
+    const border = latest.current.countryGeometry;
+    if (border) {
+      const { geometry: clipped, wasClipped } = clipGeometryToBorder(geo, border);
+      if (wasClipped) geo = clipped;
+      geo = snapToCountryBorderRing(geo, border);
+    }
+    st.edit = { featureId: selectedFeature.id, currentGeometry: geo };
 
-    const canvas = map.getCanvas();
+    // Topology index over every subdivision, for cascade editing of shared vertices.
+    const subdivisions = latest.current.features.flatMap((f) =>
+      f.type === "subdivision" && f.geometry
+        ? [
+            {
+              id: f.id,
+              geometry: (f.id === selectedFeature.id ? geo : f.geometry) as RegionGeometry,
+            },
+          ]
+        : []
+    );
+    st.topology = buildTopologyIndex(subdivisions);
+    st.neighbors = new Map(
+      subdivisions
+        .filter((f) => f.id !== selectedFeature.id)
+        .map((f) => [f.id, structuredClone(f.geometry)] as const)
+    );
+    st.changedNeighborIds = new Set();
 
-    const onVertexMouseDown = (e: any) => {
-      if (!vertexEditRef.current) return;
-      e.preventDefault();
-      const f = e.features?.[0];
-      if (!f) return;
-
-      const ri = f.properties.ringIndex as number;
-      const vi = f.properties.vertexIndex as number;
-      const coord = getFeatureCoords(f.geometry) as Position;
-      draggingRef.current = { ringIndex: ri, vertexIndex: vi, coord };
-      map.dragPan.disable();
-      map.getCanvas().style.cursor = "grabbing";
-    };
-
-    const onMidpointClick = (e: any) => {
-      if (!vertexEditRef.current) return;
-      e.preventDefault();
-      const f = e.features?.[0];
-      if (!f) return;
-
-      const ri = f.properties.ringIndex as number;
-      const si = f.properties.startIndex as number;
-      const midCoord = getFeatureCoords(f.geometry) as Position;
-
-      const rings = getAllRings(vertexEditRef.current.currentGeometry);
-      const ring = rings[ri];
-      if (!ring) return;
-      const ei = (si + 1) % ring.length;
-
-      const newGeo = addVertex(
-        vertexEditRef.current.currentGeometry,
-        { ringIndex: ri, startIndex: si, endIndex: ei, midpoint: midCoord },
-        midCoord
-      );
-      vertexEditRef.current.currentGeometry = newGeo as Polygon | MultiPolygon;
-      updateVertexEditVis();
-    };
-
-    const onMouseMove = (e: any) => {
-      lastMousePointRef.current = { x: e.point.x, y: e.point.y };
-
-      if (!draggingRef.current || !vertexEditRef.current) return;
-      const lngLat = e.lngLat;
-      let target: Position = [lngLat.lng, lngLat.lat];
-
-      // Snap to visible background layers first
-      const snapOn = snapEnabled ?? getSnapEnabled();
-      const snapTol = snapTolerance ?? getSnapTolerance();
-      if (snapOn && worldMapLayers && editorVisibleLayers) {
-        target = snapToLayerFeatures(
-          target as [number, number],
-          worldMapLayers,
-          editorVisibleLayers,
-          snapTol
-        );
-      }
-
-      const border = countryGeometryRef.current;
-      if (border) {
-        target = clampToGeometry(target, border);
-      }
-      if (snapOn) {
-        const snapGeoms: (Polygon | MultiPolygon)[] = [];
-        if (border) {
-          snapGeoms.push(border);
-        }
-        const editingId = vertexEditRef.current.featureId;
-        for (const feat of featuresRef.current) {
-          if (feat.type === "subdivision" && feat.id !== editingId && feat.geometry) {
-            snapGeoms.push(feat.geometry as Polygon | MultiPolygon);
-          }
-        }
-        target = snapPointToGeometries(target, snapGeoms, snapTol);
-      }
-
-      // Snap to guides if enabled and guides are present
-      if (snapOn && snapPoint) {
-        target = snapPoint(target as [number, number]);
-      }
-
-      const origTarget: Position = [lngLat.lng, lngLat.lat];
-      const didSnap = target[0] !== origTarget[0] || target[1] !== origTarget[1];
-      updateSnapGuide(map, didSnap ? origTarget : null, didSnap ? target : null);
-
-      const oldCoord = draggingRef.current.coord;
-      const newGeo = moveVertex(vertexEditRef.current.currentGeometry, draggingRef.current, target);
-      vertexEditRef.current.currentGeometry = newGeo as Polygon | MultiPolygon;
-
-      // Cascade move to neighbors sharing this vertex via topology index
-      if (topologyIndexRef.current && oldCoord) {
-        const oldKey = vkey(oldCoord);
-        const allGeoms = new Map(neighborGeometriesRef.current);
-        allGeoms.set(vertexEditRef.current.featureId, newGeo);
-
-        const cascaded = cascadeMoveVertex(topologyIndexRef.current, allGeoms, oldKey, target);
-
-        // Update neighbor geometries in our tracking map + visual source
-        for (const [fid, updatedGeom] of cascaded) {
-          if (fid !== vertexEditRef.current.featureId) {
-            neighborGeometriesRef.current.set(fid, updatedGeom);
-            // Update the neighbor's visual on the map subdivisions source
-            try {
-              const src = map?.getSource("editor-subdivisions") as any;
-              if (src && typeof src.serialize === "function") {
-                const data = src._data || src._options?.data;
-                if (data?.features) {
-                  const idx = data.features.findIndex((f: any) => f.properties?.id === fid);
-                  if (idx >= 0) {
-                    data.features[idx].geometry = updatedGeom;
-                    src.setData(data);
-                  }
-                }
-              }
-            } catch (_e) {
-              // Non-critical: visual-only feedback, server save is authoritative
-            }
-          }
-        }
-        // Update dragging ref coord to the new position for next frame
-        draggingRef.current = { ...draggingRef.current, coord: target };
-      }
-
-      updateVertexEditVis(true);
-      scheduleThrottledUpdate();
-    };
-
-    const onMouseUp = () => {
-      if (!draggingRef.current) return;
-      draggingRef.current = null;
-      map.dragPan.enable();
-      map.getCanvas().style.cursor = "";
-      updateSnapGuide(map, null, null);
-      if (throttledUpdateRef.current) {
-        clearTimeout(throttledUpdateRef.current);
-      }
-      updateVertexEditVis(false);
-    };
-
-    const onVertexEnter = (e: any) => {
-      if (vertexEditRef.current && !draggingRef.current) {
-        map.getCanvas().style.cursor = "grab";
-        const f = e.features?.[0];
-        if (f) {
-          hoveredVertexRef.current = {
-            ringIndex: f.properties.ringIndex as number,
-            vertexIndex: f.properties.vertexIndex as number,
-            coord: getFeatureCoords(f.geometry) as Position,
-          };
-        }
-      }
-    };
-
-    const onVertexLeave = () => {
-      if (vertexEditRef.current && !draggingRef.current) {
-        map.getCanvas().style.cursor = "";
-        hoveredVertexRef.current = null;
-      }
-    };
-
-    const onMidpointEnter = () => {
-      if (vertexEditRef.current) {
-        map.getCanvas().style.cursor = "copy";
-      }
-    };
-
-    const onMidpointLeave = () => {
-      if (vertexEditRef.current && !draggingRef.current) {
-        map.getCanvas().style.cursor = "";
-      }
-    };
-
-    const onCanvasContextMenu = (ev: MouseEvent) => {
-      if (!vertexEditRef.current) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = ev.clientX - rect.left;
-      const y = ev.clientY - rect.top;
-      const bbox: [[number, number], [number, number]] = [
-        [x - 12, y - 12],
-        [x + 12, y + 12],
-      ];
-      const hits = map.queryRenderedFeatures(bbox, { layers: ["editor-vedit-vertices-layer"] });
-      if (hits.length === 0) return;
-
-      ev.preventDefault();
-      ev.stopPropagation();
-      const f = hits[0]!;
-      const ri = f.properties!.ringIndex as number;
-      const vi = f.properties!.vertexIndex as number;
-      const coord = getFeatureCoords(f.geometry) as Position;
-
-      const result = removeVertex(vertexEditRef.current.currentGeometry, {
-        ringIndex: ri,
-        vertexIndex: vi,
-        coord,
-      });
-      if (result) {
-        vertexEditRef.current.currentGeometry = result as Polygon | MultiPolygon;
-        hoveredVertexRef.current = null;
-        updateVertexEditVis();
-      }
-    };
-
-    // Mobile touches
-    let longPressTimer: ReturnType<typeof setTimeout> | null = null;
-    let touchStartPoint: { x: number; y: number } | null = null;
-
-    const onTouchStart = (e: TouchEvent) => {
-      if (!vertexEditRef.current) return;
-      const touch = e.touches[0];
-      if (!touch) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = touch.clientX - rect.left;
-      const y = touch.clientY - rect.top;
-      touchStartPoint = { x, y };
-
-      const bbox: [[number, number], [number, number]] = [
-        [x - 20, y - 20],
-        [x + 20, y + 20],
-      ];
-      const hits = map.queryRenderedFeatures(bbox, {
-        layers: ["editor-vedit-vertices-layer"],
-      });
-
-      if (hits.length > 0) {
-        const f = hits[0]!;
-        const ri = f.properties!.ringIndex as number;
-        const vi = f.properties!.vertexIndex as number;
-        const coord = getFeatureCoords(f.geometry) as Position;
-        draggingRef.current = { ringIndex: ri, vertexIndex: vi, coord };
-        map.dragPan.disable();
-
-        longPressTimer = setTimeout(() => {
-          if (!vertexEditRef.current) return;
-          draggingRef.current = null;
-          map.dragPan.enable();
-          const result = removeVertex(vertexEditRef.current.currentGeometry, {
-            ringIndex: ri,
-            vertexIndex: vi,
-            coord,
-          });
-          if (result) {
-            vertexEditRef.current.currentGeometry = result as Polygon | MultiPolygon;
-            hoveredVertexRef.current = null;
-            updateVertexEditVis();
-          }
-        }, 500);
-      }
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      if (!draggingRef.current || !vertexEditRef.current) return;
-      const touch = e.touches[0];
-      if (!touch) return;
-
-      if (longPressTimer && touchStartPoint) {
-        const rect = canvas.getBoundingClientRect();
-        const dx = touch.clientX - rect.left - touchStartPoint.x;
-        const dy = touch.clientY - rect.top - touchStartPoint.y;
-        if (Math.sqrt(dx * dx + dy * dy) > 8) {
-          clearTimeout(longPressTimer);
-          longPressTimer = null;
-        }
-      }
-
-      const lngLat = map.unproject([
-        touch.clientX - canvas.getBoundingClientRect().left,
-        touch.clientY - canvas.getBoundingClientRect().top,
-      ]);
-      let target: Position = [lngLat.lng, lngLat.lat];
-
-      // Snap to visible background layers first
-      const snapOn = snapEnabled ?? getSnapEnabled();
-      const snapTol = snapTolerance ?? getSnapTolerance();
-      if (snapOn && worldMapLayers && editorVisibleLayers) {
-        target = snapToLayerFeatures(
-          target as [number, number],
-          worldMapLayers,
-          editorVisibleLayers,
-          snapTol
-        );
-      }
-
-      const border = countryGeometryRef.current;
-      if (border) {
-        target = clampToGeometry(target, border);
-      }
-      if (snapOn) {
-        const snapGeoms: (Polygon | MultiPolygon)[] = [];
-        if (border) {
-          snapGeoms.push(border);
-        }
-        const editingId = vertexEditRef.current.featureId;
-        for (const feat of featuresRef.current) {
-          if (feat.type === "subdivision" && feat.id !== editingId && feat.geometry) {
-            snapGeoms.push(feat.geometry as Polygon | MultiPolygon);
-          }
-        }
-        target = snapPointToGeometries(target, snapGeoms, snapTol);
-      }
-
-      // Snap to guides if enabled and guides are present
-      if (snapOn && snapPoint) {
-        target = snapPoint(target as [number, number]);
-      }
-
-      const newGeo = moveVertex(vertexEditRef.current.currentGeometry, draggingRef.current, target);
-      vertexEditRef.current.currentGeometry = newGeo as Polygon | MultiPolygon;
-      updateVertexEditVis(true);
-      scheduleThrottledUpdate();
-      e.preventDefault();
-    };
-
-    const onTouchEnd = () => {
-      if (longPressTimer) {
-        clearTimeout(longPressTimer);
-        longPressTimer = null;
-      }
-      touchStartPoint = null;
-      if (draggingRef.current) {
-        draggingRef.current = null;
-        map.dragPan.enable();
-        if (throttledUpdateRef.current) {
-          clearTimeout(throttledUpdateRef.current);
-        }
-        updateVertexEditVis(false);
-      }
-    };
-
-    map.on("mousedown", "editor-vedit-vertices-layer", onVertexMouseDown);
-    map.on("click", "editor-vedit-midpoints-layer", onMidpointClick);
-    map.on("mousemove", onMouseMove);
-    map.on("mouseup", onMouseUp);
-    canvas.addEventListener("contextmenu", onCanvasContextMenu);
-    map.on("mouseenter", "editor-vedit-vertices-layer", onVertexEnter);
-    map.on("mouseleave", "editor-vedit-vertices-layer", onVertexLeave);
-    map.on("mouseenter", "editor-vedit-midpoints-layer", onMidpointEnter);
-    map.on("mouseleave", "editor-vedit-midpoints-layer", onMidpointLeave);
-
-    canvas.addEventListener("touchstart", onTouchStart, { passive: false });
-    canvas.addEventListener("touchmove", onTouchMove, { passive: false });
-    canvas.addEventListener("touchend", onTouchEnd);
-
-    return () => {
-      if (longPressTimer) clearTimeout(longPressTimer);
-      map.off("mousedown", "editor-vedit-vertices-layer", onVertexMouseDown);
-      map.off("click", "editor-vedit-midpoints-layer", onMidpointClick);
-      map.off("mousemove", onMouseMove);
-      map.off("mouseup", onMouseUp);
-      canvas.removeEventListener("contextmenu", onCanvasContextMenu);
-      map.off("mouseenter", "editor-vedit-vertices-layer", onVertexEnter);
-      map.off("mouseleave", "editor-vedit-vertices-layer", onVertexLeave);
-      map.off("mouseenter", "editor-vedit-midpoints-layer", onMidpointEnter);
-      map.off("mouseleave", "editor-vedit-midpoints-layer", onMidpointLeave);
-
-      canvas.removeEventListener("touchstart", onTouchStart);
-      canvas.removeEventListener("touchmove", onTouchMove);
-      canvas.removeEventListener("touchend", onTouchEnd);
-    };
+    // oxlint-disable-next-line
+    setIsVertexEditing(true);
+    suppressDirtyRef.current = true;
+    updateVertexEditVis();
+    suppressDirtyRef.current = false;
+    markDirty(false);
+    setRegionLayerFilter(selectedFeature.id);
   }, [
     map,
     isLoaded,
+    mode,
+    selectedFeature,
+    st,
     updateVertexEditVis,
-    worldMapLayers,
-    editorVisibleLayers,
-    snapEnabled,
-    snapTolerance,
-    snapPoint,
+    cancelVertexEdit,
+    markDirty,
+    setRegionLayerFilter,
   ]);
 
-  // 3. Keyboard delete listener
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (!vertexEditRef.current) return;
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-
-      if (e.key === "Delete" || e.key === "Backspace") {
-        e.preventDefault();
-        let target = hoveredVertexRef.current;
-        if (!target && lastMousePointRef.current && map) {
-          const pt = lastMousePointRef.current;
-          const bbox: [[number, number], [number, number]] = [
-            [pt.x - 12, pt.y - 12],
-            [pt.x + 12, pt.y + 12],
-          ];
-          const hits = map.queryRenderedFeatures(bbox, {
-            layers: ["editor-vedit-vertices-layer"],
-          });
-          if (hits.length > 0) {
-            const f = hits[0]!;
-            target = {
-              ringIndex: f.properties!.ringIndex as number,
-              vertexIndex: f.properties!.vertexIndex as number,
-              coord: getFeatureCoords(f.geometry) as Position,
-            };
-          }
-        }
-        if (!target) return;
-        const result = removeVertex(vertexEditRef.current.currentGeometry, target);
-        if (result) {
-          vertexEditRef.current.currentGeometry = result as Polygon | MultiPolygon;
-          hoveredVertexRef.current = null;
-          updateVertexEditVis();
-        }
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [map, updateVertexEditVis]);
+  useVertexEditPointer({
+    map,
+    isLoaded,
+    st,
+    latest,
+    updateVertexEditVis,
+    scheduleThrottledUpdate,
+    queueCascadeVisual,
+  });
 
   return {
     isVertexEditing,

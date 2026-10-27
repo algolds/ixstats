@@ -147,7 +147,7 @@ NEXT_PRIVATE_STANDALONE=true
 NEXT_PRIVATE_SKIP_VALIDATION=true
 
 # Database optimizations
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/ixstats"
+DATABASE_URL="postgresql://postgres:PASSWORD@localhost:5433/ixstats"
 
 # Cache configuration
 CACHE_TTL=300

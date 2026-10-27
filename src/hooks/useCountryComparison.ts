@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { api } from "~/trpc/react";
-import type { ComparisonCountry } from "~/app/countries/_components/CountryComparisonModal";
+import type { ComparisonCountry } from "~/types/country-comparison";
 import { useAllCountriesData } from "~/hooks/useAllCountriesData";
 
 const CHART_COLORS = [

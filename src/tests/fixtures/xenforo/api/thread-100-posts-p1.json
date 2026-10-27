@@ -1,0 +1,45 @@
+{
+  "thread": { "thread_id": 100, "node_id": 12, "title": "Welcome" },
+  "posts": [
+    {
+      "post_id": 1000,
+      "thread_id": 100,
+      "user_id": 7,
+      "username": "Admin",
+      "post_date": 1700000000,
+      "last_edit_date": 1700000500,
+      "message": "Hello [b]world[/b] [ATTACH type=\"full\"]55[/ATTACH]",
+      "message_state": "visible",
+      "position": 0,
+      "attach_count": 1,
+      "is_first_post": true,
+      "reaction_score": 4,
+      "User": { "user_id": 7, "username": "Admin" },
+      "Attachments": [
+        {
+          "attachment_id": 55,
+          "filename": "map.png",
+          "file_size": 4,
+          "content_type": "image/png",
+          "width": 1,
+          "height": 1,
+          "thumbnail_url": "https://forum.example.test/data/attachments/0/55.jpg",
+          "direct_url": "https://forum.example.test/attachments/map-png.55/"
+        }
+      ]
+    },
+    {
+      "post_id": 1001,
+      "thread_id": 100,
+      "user_id": 8,
+      "username": "Member",
+      "post_date": 1700001500,
+      "message": "Thanks!",
+      "message_state": "visible",
+      "position": 1,
+      "attach_count": 0,
+      "is_first_post": false
+    }
+  ],
+  "pagination": { "current_page": 1, "last_page": 2, "per_page": 2, "shown": 2, "total": 3 }
+}

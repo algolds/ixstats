@@ -10,35 +10,6 @@ export const intelTemplatesRouter = createTRPCRouter({
     });
   }),
 
-  getTemplateById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const template = await ctx.db.intelligenceTemplate.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!template) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Intelligence template not found",
-        });
-      }
-
-      return template;
-    }),
-
-  getTemplatesByType: publicProcedure
-    .input(z.object({ reportType: z.enum(["economic", "political", "security"]) }))
-    .query(async ({ ctx, input }) => {
-      return ctx.db.intelligenceTemplate.findMany({
-        where: {
-          reportType: input.reportType,
-          isActive: true,
-        },
-        orderBy: { minimumLevel: "asc" },
-      });
-    }),
-
   createTemplate: adminProcedure
     .input(
       z.object({

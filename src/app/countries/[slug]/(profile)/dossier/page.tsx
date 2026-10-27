@@ -1,30 +1,8 @@
-"use client";
+import { redirect } from "next/navigation";
+import { legacyCountryRedirect } from "~/lib/country/country-routes";
 
-import { useCountryData } from "~/components/mycountry/primitives";
-import { DossierTab } from "~/components/mycountry/dossier/DossierTab";
-
-/**
- * DossierPage — `/countries/[slug]/dossier`. Renders the wiki-synced dossier +
- * native-lore canvas for the public country profile. Data flows from the
- * `CountryDataProvider` mounted in the `(profile)` layout.
- */
-export default function DossierPage() {
-  const { country } = useCountryData();
-
-  if (!country) return null;
-
-  return (
-    <DossierTab
-      countryName={country.name}
-      countryData={{
-        currentPopulation: country.currentPopulation,
-        currentGdpPerCapita: country.currentGdpPerCapita,
-        currentTotalGdp: country.currentTotalGdp,
-        economicTier: country.economicTier,
-        continent: country.continent ?? undefined,
-        governmentType: country.governmentType ?? undefined,
-      }}
-      viewerClearanceLevel="PUBLIC"
-    />
-  );
+/** `/countries/[slug]/dossier`: an old address; its content lives on another tab now. */
+export default async function LegacyDossierPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  redirect(legacyCountryRedirect(slug, ["dossier"]));
 }

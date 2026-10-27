@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useMemo } from "react";
 
-export type EditLockReason = "premium" | "viewing" | null;
+type EditLockReason = "premium" | "viewing" | null;
 
 interface EditModeValue {
   /** Whether the current user may perform mutations in this section. */

@@ -1,16 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
-import { Badge } from "~/components/ui/badge";
-import { FileText, Folder } from "lucide-react";
-
-interface CategoryMember {
-  title: string;
-  ns: number;
-}
+import { Page as FileText, Folder } from "iconoir-react";
+import {
+  CategoryMasthead,
+  CategoryPageCard,
+  SubcategorySection,
+  type CategoryMember,
+} from "./CategoryParts";
 
 interface DomainPortalProps {
   domain: string;
@@ -18,21 +17,6 @@ interface DomainPortalProps {
   subcategories: CategoryMember[];
   pages: CategoryMember[];
 }
-
-// Maps domain names to wiki article title patterns for dynamic linking
-// e.g., "Government" + "Urcea" → "Government of Urcea"
-const DOMAIN_ARTICLE_PATTERNS: Record<string, string[]> = {
-  Government: ["Government of", "Politics of"],
-  Economy: ["Economy of"],
-  Military: ["Military of", "Armed Forces of"],
-  Politics: ["Politics of", "Elections in"],
-  History: ["History of"],
-  Geography: ["Geography of"],
-  Culture: ["Culture of", "Culture in"],
-  Technology: ["Technology in"],
-  People: ["Demographics of"],
-  Nature: ["Wildlife of", "Environment of"],
-};
 
 export function DomainPortal({ domain, domainMeta, subcategories, pages }: DomainPortalProps) {
   const { data: countriesData } = api.countries.getSelectList.useQuery(
@@ -47,161 +31,63 @@ export function DomainPortal({ domain, domainMeta, subcategories, pages }: Domai
     return [...list].sort((a: any, b: any) => (a.name ?? "").localeCompare(b.name ?? ""));
   }, [countriesData]);
 
-  // Build a set of page titles for quick lookup
-  const pageTitleSet = useMemo(() => new Set(pages.map((p) => p.title.toLowerCase())), [pages]);
-
-  // For each country, find the best domain-specific article link
-  const getCountryDomainLink = (countryName: string): string => {
-    const patterns = DOMAIN_ARTICLE_PATTERNS[domain] ?? [];
-    for (const pattern of patterns) {
-      const candidate = `${pattern} ${countryName}`;
-      // Check if this article exists in the category's page members
-      if (pageTitleSet.has(candidate.toLowerCase())) {
-        return `/wiki/${encodeURIComponent(candidate.replace(/ /g, "_"))}`;
-      }
-    }
-    // Fallback: try "Domain of Country" even if not in member list (likely exists on wiki)
-    if (patterns.length > 0) {
-      return `/wiki/${encodeURIComponent(`${patterns[0]} ${countryName}`.replace(/ /g, "_"))}`;
-    }
-    // Last resort: link to country article
-    return `/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}`;
-  };
-
   return (
-    <div className="wikios-portal">
-      {/* Domain header */}
-      <div className="wikios-domain-header" style={{ borderColor: domainMeta.color }}>
-        <h1 className="wikios-domain-title">{domain}</h1>
-        <p className="wikios-domain-desc">{domainMeta.description}</p>
-        <div className="mt-2 flex gap-2">
-          <Badge variant="outline" className="text-[10px]">
-            {pages.length} articles
-          </Badge>
-          <Badge variant="outline" className="text-[10px]">
-            {subcategories.length} subcategories
-          </Badge>
-        </div>
-      </div>
+    <div className="mx-auto w-full max-w-6xl space-y-8 pb-16 select-none">
+      <CategoryMasthead
+        title={domain}
+        description={domainMeta.description}
+        articleCount={pages.length}
+        subcategoryCount={subcategories.length}
+        articleAccentColor={domainMeta.color}
+      />
 
-      {/* Subcategories as pills */}
-      {subcategories.length > 0 && (
-        <div className="wikios-portal-section">
-          <h2 className="wikios-portal-section-title">Subcategories</h2>
-          <div className="wikios-portal-subcats">
-            {subcategories.map((m) => {
-              const name = m.title.replace(/^Category:/, "");
-              return (
-                <Link
-                  key={m.title}
-                  href={withBasePath(
-                    `/wiki/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
-                  )}
-                  className="wikios-portal-pill"
-                >
-                  <Folder className="h-3 w-3 opacity-50" />
-                  {name}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <SubcategorySection subcategories={subcategories} />
 
-      {/* All wiki articles in this category */}
       {pages.length > 0 && (
-        <div className="wikios-portal-section">
-          <h2 className="wikios-portal-section-title">Articles ({pages.length})</h2>
-          <div className="wikios-portal-articles">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 px-1">
+            <FileText aria-hidden="true" className="text-green h-4 w-4" />
+            <h2 className="text-label text-headline text-eyebrow">
+              Articles in {domain} ({pages.length})
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {pages.map((m) => {
-              const countryMatch = countries.find((c: any) =>
-                m.title.toLowerCase().includes((c.name ?? "").toLowerCase())
+              const countryMatch = countries.find(
+                (c: any) =>
+                  c.name &&
+                  c.name.trim().length >= 3 &&
+                  m.title.toLowerCase().includes(c.name.toLowerCase())
               ) as any;
               return (
-                <Link
+                <CategoryPageCard
                   key={m.title}
-                  href={withBasePath(`/wiki/${encodeURIComponent(m.title.replace(/ /g, "_"))}`)}
-                  className="wikios-portal-card"
-                >
-                  {countryMatch?.flagUrl ? (
-                    <img
-                      src={countryMatch.flagUrl}
-                      alt=""
-                      className="wikios-portal-card-flag"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <FileText className="h-3.5 w-3.5 shrink-0 opacity-40" />
-                  )}
-                  <span className="wikios-portal-card-title">{m.title}</span>
-                </Link>
+                  title={m.title}
+                  imageUrl={m.imageUrl}
+                  flagUrl={countryMatch?.flag || countryMatch?.flagUrl}
+                />
               );
             })}
           </div>
         </div>
       )}
 
-      {/* Nations — compact grid with domain-specific links */}
-      {countries.length > 0 && (
-        <CollapsibleNationGrid
-          countries={countries}
-          domain={domain}
-          getCountryDomainLink={getCountryDomainLink}
-        />
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Collapsible nation grid — shows ~12 initially, expand to see all
-// ---------------------------------------------------------------------------
-
-const INITIAL_COUNT = 12;
-
-function CollapsibleNationGrid({
-  countries,
-  domain,
-  getCountryDomainLink,
-}: {
-  countries: any[];
-  domain: string;
-  getCountryDomainLink: (name: string) => string;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const visible = expanded ? countries : countries.slice(0, INITIAL_COUNT);
-  const hasMore = countries.length > INITIAL_COUNT;
-
-  return (
-    <div className="wikios-portal-section">
-      <h2 className="wikios-portal-section-title">
-        Browse by nation
-        <span className="wikios-portal-section-count">{countries.length}</span>
-      </h2>
-      <div className="wikios-domain-countries">
-        {visible.map((c: any) => (
+      {subcategories.length === 0 && pages.length === 0 && (
+        <div className="border-separator bg-surface rounded-card flex flex-col items-center justify-center space-y-3 border border-dashed p-12 text-center">
+          <Folder className="text-label-secondary h-10 w-10" />
+          <h3 className="text-label text-title-3">No articles or subcategories found</h3>
+          <p className="text-label-secondary text-footnote max-w-sm">
+            This domain is currently empty or indexing. Browse all indexed categories from the main
+            directory.
+          </p>
           <Link
-            key={c.id}
-            href={withBasePath(getCountryDomainLink(c.name ?? ""))}
-            className="wikios-domain-country-card glass-hierarchy-child"
-            title={`${domain} of ${c.name}`}
+            href="/util/categories"
+            className="bg-tint text-on-tint hover:bg-tint/90 rounded-row text-caption mt-2 inline-flex items-center gap-2 px-4 py-2 font-semibold transition-colors"
           >
-            {c.flagUrl && (
-              <img src={c.flagUrl} alt="" className="wikios-domain-country-flag" loading="lazy" />
-            )}
-            <div className="wikios-domain-country-info">
-              <span className="wikios-domain-country-name">{c.name}</span>
-              {c.economicTier && (
-                <span className="wikios-domain-country-tier">{c.economicTier}</span>
-              )}
-            </div>
+            <Folder className="h-3.5 w-3.5" />
+            <span>Browse category directory</span>
           </Link>
-        ))}
-      </div>
-      {hasMore && (
-        <button onClick={() => setExpanded(!expanded)} className="wikios-portal-expand">
-          {expanded ? "Show less" : `See all ${countries.length} nations`}
-        </button>
+        </div>
       )}
     </div>
   );

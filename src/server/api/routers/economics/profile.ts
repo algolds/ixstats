@@ -3,8 +3,8 @@
 // SECURITY: All mutation endpoints validate country ownership
 
 import { z } from "zod";
-import { assertCountryAccess } from "./_ownership";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { notificationHooks } from "~/lib/notifications/hooks";
 
 const economicsProfileRouter = createTRPCRouter({
@@ -12,19 +12,7 @@ const economicsProfileRouter = createTRPCRouter({
   // Schema fields: gdpGrowthVolatility, economicComplexity, innovationIndex, competitivenessRank,
   // easeOfDoingBusiness, corruptionIndex, sectorBreakdown, exportsGDPPercent, importsGDPPercent, tradeBalance
 
-  getEconomicProfile: publicProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.economicProfile.findUnique({
-        where: { countryId: input.countryId },
-      });
-    }),
-
-  updateEconomicProfile: protectedProcedure
+  updateEconomicProfile: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -43,7 +31,7 @@ const economicsProfileRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      await assertCountryAccess(ctx, countryId);
+      await assertCountryWriteAccess(ctx, countryId);
 
       // Get previous values for comparison
       const previous = await ctx.db.economicProfile.findUnique({
@@ -81,121 +69,6 @@ const economicsProfileRouter = createTRPCRouter({
 
       return result;
     }),
-
-  // ==================== LABOR MARKET ====================
-  // Schema fields: employmentBySector, youthUnemploymentRate, femaleParticipationRate,
-  // informalEmploymentRate, medianWage, wageGrowthRate, wageBySector
-
-  getLaborMarket: publicProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.laborMarket.findUnique({
-        where: { countryId: input.countryId },
-      });
-    }),
-
-  updateLaborMarket: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        employmentBySector: z.string().optional(),
-        youthUnemploymentRate: z.number().optional(),
-        femaleParticipationRate: z.number().optional(),
-        informalEmploymentRate: z.number().optional(),
-        medianWage: z.number().optional(),
-        wageGrowthRate: z.number().optional(),
-        wageBySector: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { countryId, ...data } = input;
-
-      await assertCountryAccess(ctx, countryId);
-
-      return await ctx.db.laborMarket.upsert({
-        where: { countryId },
-        update: data,
-        create: { countryId, ...data },
-      });
-    }),
-
-  // ==================== FISCAL SYSTEM ====================
-  // Schema fields: personalIncomeTaxRates, corporateTaxRates, salesTaxRate, propertyTaxRate,
-  // payrollTaxRate, exciseTaxRates, wealthTaxRate, spendingByCategory,
-  // fiscalBalanceGDPPercent, primaryBalanceGDPPercent, taxEfficiency
-
-  // ==================== INCOME DISTRIBUTION ====================
-  // Schema fields: economicClasses, top10PercentWealth, bottom50PercentWealth,
-  // middleClassPercent, intergenerationalMobility, educationMobility
-
-  // ==================== ECONOMY BUILDER CONFIGURATION ====================
-  // Comprehensive save endpoint for the entire economy builder state
-
-  // Get complete economy configuration
-
-  // ==================== GOVERNMENT BUDGET ====================
-  // Schema fields: spendingCategories, spendingEfficiency, publicInvestmentRate, socialSpendingPercent
-
-  // ==================== DEMOGRAPHICS ====================
-  // Schema fields: ageDistribution, regions, educationLevels, citizenshipStatuses,
-  // birthRate, deathRate, migrationRate, dependencyRatio, medianAge, populationGrowthProjection
-
-  getDemographics: publicProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.demographics.findUnique({
-        where: { countryId: input.countryId },
-      });
-    }),
-
-  updateDemographics: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        ageDistribution: z.string().optional(),
-        regions: z.string().optional(),
-        educationLevels: z.string().optional(),
-        citizenshipStatuses: z.string().optional(),
-        birthRate: z.number().optional(),
-        deathRate: z.number().optional(),
-        migrationRate: z.number().optional(),
-        dependencyRatio: z.number().optional(),
-        medianAge: z.number().optional(),
-        populationGrowthProjection: z.number().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { countryId, ...data } = input;
-
-      await assertCountryAccess(ctx, countryId);
-
-      return await ctx.db.demographics.upsert({
-        where: { countryId },
-        update: data,
-        create: { countryId, ...data },
-      });
-    }),
-
-  // ==================== ECONOMY BUILDER LIVE WIRING ====================
-  // Real-time economy builder configuration management
-
-  // Save economy builder state with atomic components
-
-  // Get economy builder state with all related data
-
-  // Auto-save economy builder changes
-
-  // Sync economy with government components
-
-  // Sync economy with tax system
 });
 
 export { economicsProfileRouter };

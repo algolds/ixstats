@@ -25,7 +25,7 @@
 
 import type { Map as MapLibreMap } from "maplibre-gl";
 
-// ─── Category colors (aligned with wiki lore analysis) ───────────────────────
+// Category colors (aligned with wiki lore analysis)
 
 export const STORY_PIN_COLORS: Record<string, string> = {
   battle: "#dc2626", // red — military conflicts
@@ -44,7 +44,7 @@ export const STORY_PIN_COLORS: Record<string, string> = {
   exploration: "#0891b2", // cyan — discovery, expeditions
 };
 
-export const STORY_PIN_CATEGORIES = Object.keys(STORY_PIN_COLORS);
+const STORY_PIN_CATEGORIES = Object.keys(STORY_PIN_COLORS);
 
 // Importance level → base icon size (px)
 const IMPORTANCE_SIZES: Record<number, number> = {
@@ -52,8 +52,6 @@ const IMPORTANCE_SIZES: Record<number, number> = {
   1: 36, // major
   2: 44, // legendary
 };
-
-// ─── Category shape drawing functions ────────────────────────────────────────
 
 type ShapeDrawer = (ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) => void;
 
@@ -256,37 +254,6 @@ const drawExploration: ShapeDrawer = (ctx, cx, cy, r) => {
   ctx.arc(cx, cy, s * 0.1, 0, Math.PI * 2);
   ctx.fill();
 };
-
-/** Flame */
-const drawDisaster: ShapeDrawer = (ctx, cx, cy, r) => {
-  const s = r * 0.65;
-  ctx.beginPath();
-  // Main flame body
-  ctx.moveTo(cx, cy - s);
-  ctx.bezierCurveTo(
-    cx + s * 0.5,
-    cy - s * 0.3,
-    cx + s * 0.6,
-    cy + s * 0.2,
-    cx + s * 0.3,
-    cy + s * 0.7
-  );
-  ctx.quadraticCurveTo(cx + s * 0.1, cy + s * 0.9, cx, cy + s * 0.7);
-  ctx.quadraticCurveTo(cx - s * 0.1, cy + s * 0.9, cx - s * 0.3, cy + s * 0.7);
-  ctx.bezierCurveTo(cx - s * 0.6, cy + s * 0.2, cx - s * 0.5, cy - s * 0.3, cx, cy - s);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  // Inner flame
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - s * 0.3);
-  ctx.bezierCurveTo(cx + s * 0.2, cy, cx + s * 0.2, cy + s * 0.3, cx, cy + s * 0.5);
-  ctx.bezierCurveTo(cx - s * 0.2, cy + s * 0.3, cx - s * 0.2, cy, cx, cy - s * 0.3);
-  ctx.closePath();
-  ctx.fillStyle = "rgba(255,255,255,0.4)";
-  ctx.fill();
-};
-
 /** Anchor — naval/maritime */
 const drawNaval: ShapeDrawer = (ctx, cx, cy, r) => {
   const s = r * 0.55;
@@ -423,7 +390,7 @@ const drawUpheaval: ShapeDrawer = (ctx, cx, cy, r) => {
   ctx.lineTo(cx + s * 0.05, cy - s * 0.05);
   ctx.lineTo(cx - s * 0.15, cy + s);
   ctx.lineTo(cx + s * 0.35, cy + s * 0.05);
-  ctx.lineTo(cx + s * 0.0, cy + s * 0.05);
+  ctx.lineTo(cx, cy + s * 0.05);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
@@ -445,8 +412,6 @@ const SHAPE_DRAWERS: Record<string, ShapeDrawer> = {
   linguistic: drawLinguistic,
   upheaval: drawUpheaval,
 };
-
-// ─── Icon generation ─────────────────────────────────────────────────────────
 
 /**
  * Generate a single story pin icon as ImageData.
@@ -498,8 +463,6 @@ function createStoryPinIcon(size: number, category: string, importance: number):
   return ctx.getImageData(0, 0, size, size);
 }
 
-// ─── Registration ────────────────────────────────────────────────────────────
-
 // Module-level cache: avoids re-creating 42 canvas icons when map remounts
 const iconCache = new Map<string, ImageData>();
 
@@ -526,14 +489,4 @@ export function registerStoryPinIcons(map: MapLibreMap): void {
       map.addImage(name, imageData, { sdf: false });
     }
   }
-}
-
-/**
- * Get the icon name for a given category and importance.
- * Falls back to "cultural-0" if category is unknown.
- */
-export function getStoryPinIconName(category: string, importance: number = 0): string {
-  const validCat = STORY_PIN_CATEGORIES.includes(category) ? category : "cultural";
-  const validImp = Math.min(Math.max(Math.round(importance), 0), 2);
-  return `story-pin-${validCat}-${validImp}`;
 }

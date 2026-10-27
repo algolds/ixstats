@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { AlertCircle, Loader2, X } from "lucide-react";
+import { WarningCircle as AlertCircle, SystemRestart as Loader2, Xmark as X } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { vaultNotify } from "~/lib/vault";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
+import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { Card, CardContent } from "~/components/ui/card";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { proxyNSImage } from "~/lib/cards";
+import { proxyNSImage } from "~/lib/cards/ns-image-proxy";
 import { ImportStepIndicator, type WizardStep } from "./import/ImportStepIndicator";
 import { ImportNationStep } from "./import/ImportNationStep";
 import { ImportVerifyStep } from "./import/ImportVerifyStep";
@@ -17,6 +18,7 @@ import {
   ImportCompleteStep,
   type ImportResult,
 } from "./import/ImportConfirmStep";
+import { Button } from "~/components/ui/button";
 
 interface VaultImportSectionProps {
   initialTab?: string | null;
@@ -24,6 +26,8 @@ interface VaultImportSectionProps {
 
 function ImportDeckTab() {
   const notify = useNotify();
+  const utils = api.useUtils();
+  const refreshCards = useCardsRefresh();
   const [currentStep, setCurrentStep] = useState<WizardStep>("intro");
   const [nationName, setNationName] = useState("");
   const [showNameInput, setShowNameInput] = useState(false);
@@ -68,17 +72,13 @@ function ImportDeckTab() {
         cardsImported: data.cardsImported,
         bonusCredits: data.bonusCredits,
         nation: data.nation,
-        cards: (data.cards ?? []).map((c: any) => ({
-          id: c.id,
-          title: c.title ?? "Unknown Card",
-          artwork: c.artwork ?? "/images/cards/placeholder-nation.png",
-          rarity: c.rarity ?? "COMMON",
-          season: c.season ?? 1,
-          marketValue: c.marketValue ?? 0,
-        })),
+        faces: data.faces,
       });
       setCurrentStep("complete");
       vaultNotify.cardsImported(data.cardsImported, data.nation);
+      // So Mine, the display, Explore and the Settings NS panel list the new copies
+      refreshCards();
+      void utils.nsImport.getMyNSCards.invalidate();
     },
     onError: (error) => {
       setErrorMessage(error.message);
@@ -94,7 +94,7 @@ function ImportDeckTab() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <Card className="glass-hierarchy-parent relative overflow-hidden border border-white/10">
+        <Card className="relative flex flex-col gap-6 overflow-hidden py-6">
           {/* NS Header Banner */}
           <div
             style={{
@@ -117,11 +117,11 @@ function ImportDeckTab() {
               backgroundRepeat: "no-repeat",
               paddingLeft: "15px",
             }}
-            className="border-b border-white/10"
+            className="border-separator border-b"
           >
             <img
               src={proxyNSImage("https://www.nationstates.net/images/bannertitle.png")}
-              alt="NationStates Logo"
+              alt="NationStates logo"
               className="h-9 w-auto object-contain"
             />
           </div>
@@ -138,15 +138,18 @@ function ImportDeckTab() {
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                 >
-                  <Alert variant="destructive" className="border-red-500/30 bg-red-500/5">
+                  <Alert variant="destructive" className="border-red/30 bg-red/5">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>{errorMessage}</AlertDescription>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Dismiss error"
                       onClick={() => setErrorMessage("")}
-                      className="text-muted-foreground hover:text-foreground absolute top-3 right-3"
+                      className="text-label-secondary absolute top-2 right-2"
                     >
                       <X className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   </Alert>
                 </motion.div>
               )}
@@ -205,16 +208,11 @@ function ImportDeckTab() {
                 {currentStep === "importing" && (
                   <div className="flex flex-col items-center justify-center space-y-6 py-14">
                     <div className="relative">
-                      <motion.div
-                        className="absolute inset-0 rounded-2xl bg-gradient-to-br from-rose-500/15 to-orange-500/15 blur-3xl"
-                        animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.6, 0.3] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                      />
                       <div className="relative flex h-28 w-28 items-center justify-center">
                         {[0, 1, 2].map((i) => (
                           <motion.div
                             key={i}
-                            className="absolute h-14 w-10 rounded-lg border border-white/10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm"
+                            className="rounded-control border-separator bg-fill-4 absolute h-14 w-10 border"
                             animate={{
                               rotate: [0 + i * 120, 360 + i * 120],
                               x: [0, 20, 0, -20, 0],
@@ -238,24 +236,22 @@ function ImportDeckTab() {
                             style={{ originX: 0.5, originY: 0.5 }}
                           />
                         ))}
-                        <Loader2 className="relative h-10 w-10 animate-spin text-rose-400" />
+                        <Loader2 className="text-tint relative size-10 animate-spin" />
                       </div>
                     </div>
 
                     <div className="space-y-2 text-center">
-                      <p className="text-foreground text-xl font-bold tracking-tight">
-                        Importing Cards...
-                      </p>
-                      <p className="text-muted-foreground max-w-xs text-sm">
-                        Fetching your deck from NationStates and creating IxCards. This may take a
-                        moment.
+                      <p className="text-label text-title-2">Importing Cards...</p>
+                      <p className="text-label-secondary text-body max-w-xs">
+                        Fetching your deck from NationStates and making a card for each one. This
+                        may take a moment.
                       </p>
                     </div>
 
                     <div className="w-full max-w-xs">
-                      <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                      <div className="bg-fill-3 h-1.5 overflow-hidden rounded-full">
                         <motion.div
-                          className="h-full rounded-full bg-gradient-to-r from-rose-500 to-orange-500"
+                          className="bg-tint h-full rounded-full"
                           animate={{ x: ["-100%", "100%"] }}
                           transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                           style={{ width: "50%" }}

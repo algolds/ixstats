@@ -1,19 +1,177 @@
 import { getTerrainAtPoint } from "./base-layer-query";
 import { geometryAreaSqKm } from "~/lib/maps/geo-math";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import {
   findSubdivisionAtPoint,
   updateCitySpatialProfile,
   updateSubdivisionSpatialProfile,
   alignSubdivisionBorders,
+  type CityPointLookup,
 } from "./spatial";
 import { triggerGeographyPolicy } from "./policy";
 import { recalculateLargestCity, syncGeographicDemographics } from "./sync";
 
+/** [lng, lat] from a stored coordinate: either a tuple or `{ lng, lat }`. */
+const lngLatOf = (coords: any): [number, number] =>
+  Array.isArray(coords)
+    ? [Number(coords[0]), Number(coords[1])]
+    : [Number(coords.lng), Number(coords.lat)];
+
+/** Snaps `data.coordinates` to the country border and validates containment (mutates `data`). */
+async function snapAndValidateCoordinates(
+  db: any,
+  countryId: string,
+  data: any,
+  label: "City" | "POI"
+) {
+  if (!data.coordinates) return;
+  const { snapPointToCountryBorder, validatePointContainment } =
+    await import("~/lib/maps/geo-validation");
+  const [rawLng, rawLat] = lngLatOf(data.coordinates);
+  const [lng, lat] = await snapPointToCountryBorder(db, countryId, rawLng, rawLat);
+  data.coordinates = [lng, lat];
+  await validatePointContainment(db, countryId, Number(lng), Number(lat), label);
+}
+
+/**
+ * Resolves `data.subdivisionId`: "auto"/unset detects it from the coordinates (or takes `covering`, the answer an
+ * import batch already found: a subdivision id, null for none, undefined when not looked up), "none" clears it.
+ */
+async function resolveSubdivisionId(
+  db: any,
+  countryId: string,
+  data: any,
+  covering?: string | null
+) {
+  if (data.coordinates && (data.subdivisionId === "auto" || data.subdivisionId == null)) {
+    if (covering !== undefined) {
+      data.subdivisionId = covering;
+      return;
+    }
+    const [lng, lat] = lngLatOf(data.coordinates);
+    const autoSub = await findSubdivisionAtPoint(db, countryId, lng, lat);
+    data.subdivisionId = autoSub ? autoSub.id : null;
+  } else if (data.subdivisionId === "none") {
+    data.subdivisionId = null;
+  }
+}
+
+/** Forces the PostGIS triggers to run by rewriting geom_postgis from the stored point. */
+async function syncPointGeometry(db: any, table: string, row: any, label: string) {
+  if (!row?.coordinates) return;
+  try {
+    const [lng, lat] = lngLatOf(row.coordinates);
+    await db.$executeRawUnsafe(
+      `UPDATE ${table} SET geom_postgis = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE id = $3`,
+      lng,
+      lat,
+      row.id
+    );
+  } catch (err) {
+    console.warn(`[${label}] Failed to manually sync PostGIS coordinate:`, err);
+  }
+}
+
+const pickFields = (data: any, keys: readonly string[]) =>
+  Object.fromEntries(keys.map((key) => [key, data[key]]));
+
+/** City columns copied as given on both create and update. */
+const CITY_FIELDS = [
+  "name",
+  "coordinates",
+  "population",
+  "subdivisionId",
+  "wikiPageTitle",
+  "gdpContribution",
+  "economyOutput",
+  "specialization",
+  "infrastructureLevel",
+  "mayorName",
+  "foundedYear",
+] as const;
+
+const setNationalCapital = (db: any, countryId: string, city: { id: string; name: string }) =>
+  db.nationalIdentity.upsert({
+    where: { countryId },
+    update: { capitalCityId: city.id, capitalCity: city.name },
+    create: { countryId, capitalCityId: city.id, capitalCity: city.name },
+  });
+
+/** Updates an owned city; moving the national-capital flag also repoints the NationalIdentity. */
+async function updateExistingCity(db: any, countryId: string, data: any) {
+  const existing = await db.city.findFirst({ where: { id: data.id, countryId } });
+  if (!existing) {
+    throw new Error(`City not found or does not belong to this country.`);
+  }
+
+  const wasCapital = existing.isNationalCapital;
+  const isCapital = data.isNationalCapital !== undefined ? data.isNationalCapital : wasCapital;
+
+  const city = await db.city.update({
+    where: { id: data.id },
+    data: {
+      ...pickFields(data, CITY_FIELDS),
+      type: data.type,
+      isNationalCapital: isCapital,
+      isSubdivisionCapital: data.isSubdivisionCapital,
+      isPort: data.isPort,
+      ...(data.elevation !== undefined && { elevation: data.elevation }),
+      status: "approved",
+    },
+  });
+
+  if (isCapital && !wasCapital) {
+    await db.city.updateMany({
+      where: { countryId, id: { not: city.id }, isNationalCapital: true },
+      data: { isNationalCapital: false },
+    });
+    await setNationalCapital(db, countryId, city);
+  } else if (!isCapital && wasCapital) {
+    await db.nationalIdentity.update({
+      where: { countryId },
+      data: { capitalCityId: null, capitalCity: null },
+    });
+  }
+  return { city, oldSubdivisionId: existing.subdivisionId as string | null };
+}
+
+async function createCity(db: any, countryId: string, data: any, autoElevation?: number) {
+  if (data.isNationalCapital) {
+    await db.city.updateMany({
+      where: { countryId, isNationalCapital: true },
+      data: { isNationalCapital: false },
+    });
+  }
+
+  const city = await db.city.create({
+    data: {
+      countryId,
+      ...pickFields(data, CITY_FIELDS),
+      type: data.type || "city",
+      isNationalCapital: !!data.isNationalCapital,
+      isSubdivisionCapital: !!data.isSubdivisionCapital,
+      isPort: !!data.isPort,
+      elevation: data.elevation ?? autoElevation,
+      status: "approved",
+      submittedBy: data.submittedBy || "owner",
+    },
+  });
+
+  if (data.isNationalCapital) await setNationalCapital(db, countryId, city);
+  return city;
+}
+
 /**
  * Upsert a City and handle all cascading changes (NationalIdentity, largestCity, subdivisions, etc.)
+ * `lookup` is what an import batch already found out about the city's point (lookupCityPoints): a point it found
+ * inside the border skips the per-city border, subdivision and water queries.
  */
-export async function upsertCity(db: any, countryId: string, data: any): Promise<any> {
-  const input = data;
+export async function upsertCity(
+  db: any,
+  countryId: string,
+  data: any,
+  lookup?: CityPointLookup
+): Promise<any> {
   if (!data.id && data.name) {
     const matchedCity = await db.city.findFirst({
       where: {
@@ -30,47 +188,22 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
     }
   }
   const isNew = !data.id;
-  const { validatePointContainment } = await import("~/lib/maps/geo-validation");
-
-  if (data.coordinates) {
-    const coords = data.coordinates as any;
-    let lng = Array.isArray(coords) ? coords[0] : coords.lng;
-    let lat = Array.isArray(coords) ? coords[1] : coords.lat;
-
-    const { snapPointToCountryBorder } = await import("~/lib/maps/geo-validation");
-    const snapped = await snapPointToCountryBorder(db, countryId, Number(lng), Number(lat));
-    lng = snapped[0];
-    lat = snapped[1];
-    data.coordinates = [lng, lat];
-
-    await validatePointContainment(db, countryId, Number(lng), Number(lat), "City");
-  }
-
-  // Auto-detect subdivision containment if requested
-  if (
-    data.coordinates &&
-    (data.subdivisionId === "auto" ||
-      data.subdivisionId === undefined ||
-      data.subdivisionId === null)
-  ) {
-    const coords = data.coordinates as any;
-    const lng = Array.isArray(coords) ? coords[0] : coords.lng;
-    const lat = Array.isArray(coords) ? coords[1] : coords.lat;
-    const autoSub = await findSubdivisionAtPoint(db, countryId, Number(lng), Number(lat));
-    data.subdivisionId = autoSub ? autoSub.id : null;
-  } else if (data.subdivisionId === "none") {
-    data.subdivisionId = null;
-  }
+  const batch = lookup?.inside === true ? lookup : undefined;
+  if (!batch) await snapAndValidateCoordinates(db, countryId, data, "City");
+  await resolveSubdivisionId(db, countryId, data, batch?.subdivisionId);
 
   // Auto-derive elevation from the terrain zone at the city's coordinates when
   // the caller did not supply an explicit value. The explicit value is kept as
   // an override.
   let autoElevation: number | undefined;
   if (data.elevation === undefined && data.coordinates) {
-    const coords = data.coordinates as any;
-    const lng = Array.isArray(coords) ? coords[0] : coords.lng;
-    const lat = Array.isArray(coords) ? coords[1] : coords.lat;
-    const terrain = await getTerrainAtPoint(db, Number(lng), Number(lat));
+    const [lng, lat] = lngLatOf(data.coordinates);
+    // Scope to the country's realm so another realm's altitude band can't answer
+    const realmRow = await db.country.findUnique({
+      where: { id: countryId },
+      select: { realmId: true },
+    });
+    const terrain = await getTerrainAtPoint(db, lng, lat, realmRow?.realmId ?? DEFAULT_REALM_ID);
     if (terrain.elevationZone) {
       autoElevation = Math.round(
         (terrain.elevationZone.elevationMin + terrain.elevationZone.elevationMax) / 2
@@ -78,120 +211,14 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
     }
   }
 
-  let city;
-  let oldSubdivisionId: string | null = null;
+  const { city, oldSubdivisionId } = data.id
+    ? await updateExistingCity(db, countryId, data)
+    : { city: await createCity(db, countryId, data, autoElevation), oldSubdivisionId: null };
 
-  if (data.id) {
-    const existing = await db.city.findFirst({
-      where: { id: data.id, countryId },
-    });
-    if (!existing) {
-      throw new Error(`City not found or does not belong to this country.`);
-    }
-
-    oldSubdivisionId = existing.subdivisionId;
-    const wasCapital = existing.isNationalCapital;
-    const isCapital = data.isNationalCapital !== undefined ? data.isNationalCapital : wasCapital;
-
-    city = await db.city.update({
-      where: { id: data.id },
-      data: {
-        name: data.name,
-        type: data.type,
-        coordinates: data.coordinates,
-        population: data.population,
-        isNationalCapital: isCapital,
-        isSubdivisionCapital: data.isSubdivisionCapital,
-        subdivisionId: data.subdivisionId,
-        wikiPageTitle: data.wikiPageTitle,
-        gdpContribution: data.gdpContribution,
-        economyOutput: data.economyOutput,
-        specialization: data.specialization,
-        infrastructureLevel: data.infrastructureLevel,
-        mayorName: data.mayorName,
-        isPort: data.isPort,
-        foundedYear: data.foundedYear,
-        ...(data.elevation !== undefined && { elevation: data.elevation }),
-        status: "approved",
-      },
-    });
-
-    if (isCapital && !wasCapital) {
-      await db.city.updateMany({
-        where: { countryId, id: { not: city.id }, isNationalCapital: true },
-        data: { isNationalCapital: false },
-      });
-      await db.nationalIdentity.upsert({
-        where: { countryId },
-        update: { capitalCityId: city.id, capitalCity: city.name },
-        create: { countryId, capitalCityId: city.id, capitalCity: city.name },
-      });
-    } else if (!isCapital && wasCapital) {
-      await db.nationalIdentity.update({
-        where: { countryId },
-        data: { capitalCityId: null, capitalCity: null },
-      });
-    }
-  } else {
-    if (data.isNationalCapital) {
-      await db.city.updateMany({
-        where: { countryId, isNationalCapital: true },
-        data: { isNationalCapital: false },
-      });
-    }
-
-    city = await db.city.create({
-      data: {
-        countryId,
-        name: data.name,
-        type: data.type || "city",
-        coordinates: data.coordinates,
-        population: data.population,
-        isNationalCapital: !!data.isNationalCapital,
-        isSubdivisionCapital: !!data.isSubdivisionCapital,
-        subdivisionId: data.subdivisionId,
-        wikiPageTitle: data.wikiPageTitle,
-        gdpContribution: data.gdpContribution,
-        economyOutput: data.economyOutput,
-        specialization: data.specialization,
-        infrastructureLevel: data.infrastructureLevel,
-        mayorName: data.mayorName,
-        isPort: !!data.isPort,
-        foundedYear: data.foundedYear,
-        elevation: input.elevation ?? autoElevation,
-        status: "approved",
-        submittedBy: data.submittedBy || "owner",
-      },
-    });
-
-    if (data.isNationalCapital) {
-      await db.nationalIdentity.upsert({
-        where: { countryId },
-        update: { capitalCityId: city.id, capitalCity: city.name },
-        create: { countryId, capitalCityId: city.id, capitalCity: city.name },
-      });
-    }
-  }
-
-  // Force PostGIS triggers to run by updating geom_postgis from coordinates
-  if (city && city.coordinates) {
-    try {
-      const coords = city.coordinates as any;
-      const lng = Array.isArray(coords) ? coords[0] : coords.lng;
-      const lat = Array.isArray(coords) ? coords[1] : coords.lat;
-      await db.$executeRawUnsafe(
-        `UPDATE cities SET geom_postgis = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE id = $3`,
-        Number(lng),
-        Number(lat),
-        city.id
-      );
-    } catch (err) {
-      console.warn(`[upsertCity] Failed to manually sync PostGIS coordinate:`, err);
-    }
-  }
+  await syncPointGeometry(db, "cities", city, "upsertCity");
 
   // Update spatial profiles
-  await updateCitySpatialProfile(db, city.id);
+  await updateCitySpatialProfile(db, city.id, batch?.water ?? undefined);
 
   if (isNew) {
     await triggerGeographyPolicy(db, countryId, "city", city.name, data.submittedBy || "owner");
@@ -207,101 +234,96 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
   return await db.city.findUnique({ where: { id: city.id } });
 }
 
+/** Clips an edited polygon to the country and aligns it to neighbouring borders, warning on large reshapes. */
+async function clipAndAlignGeometry(db: any, countryId: string, id: string | null, geometry: any) {
+  const { clipAndValidatePolygon } = await import("~/lib/maps/geo-validation");
+  const clipped = await clipAndValidatePolygon(db, countryId, geometry, "Subdivision");
+  const aligned = await alignSubdivisionBorders(db, countryId, id, clipped);
+  // Diagnostic: surface when server-side clip/snap materially reshapes the edit
+  // (a likely cause of "my geometry edit didn't stick"). Logs to ixworld-out.log.
+  try {
+    const beforeArea = geometryAreaSqKm(geometry);
+    const afterArea = geometryAreaSqKm(aligned);
+    if (beforeArea > 0 && Math.abs(beforeArea - afterArea) / beforeArea > 0.01) {
+      console.warn(
+        `[upsertSubdivision] clip/align reshaped geometry (id=${id ?? "new"}): ` +
+          `${beforeArea.toFixed(1)} -> ${afterArea.toFixed(1)} km² ` +
+          `(${(((afterArea - beforeArea) / beforeArea) * 100).toFixed(1)}%)`
+      );
+    }
+  } catch {
+    /* diagnostic only — never block a save */
+  }
+  return aligned;
+}
+
+const SUBDIVISION_FIELDS = [
+  "name",
+  "level",
+  "governorName",
+  "budgetShare",
+  "governmentType",
+  "color",
+  "population",
+  "capital",
+  "gdpContribution",
+] as const;
+
+/** Attributes-only update (geometry only when supplied); area is recomputed from a new geometry. */
+async function updateSubdivision(db: any, countryId: string, data: any, geometry: any) {
+  const existing = await db.subdivision.findFirst({ where: { id: data.id, countryId } });
+  if (!existing) {
+    throw new Error(`Subdivision not found or does not belong to this country.`);
+  }
+
+  const areaSqKm =
+    data.areaSqKm !== undefined ? data.areaSqKm : geometry ? geometryAreaSqKm(geometry) : undefined;
+  return db.subdivision.update({
+    where: { id: data.id },
+    data: {
+      ...pickFields(data, SUBDIVISION_FIELDS),
+      type: data.type,
+      status: "approved",
+      ...(geometry && { geometry }),
+      ...(areaSqKm !== undefined && { areaSqKm }),
+    },
+  });
+}
+
+function createSubdivision(db: any, countryId: string, data: any, geometry: any) {
+  const defaultGeometry = geometry || { type: "Polygon", coordinates: [] };
+  return db.subdivision.create({
+    data: {
+      ...pickFields(data, SUBDIVISION_FIELDS),
+      countryId,
+      type: data.type || "province",
+      level: data.level || 1,
+      geometry: defaultGeometry,
+      population: data.population || 0,
+      areaSqKm: data.areaSqKm ?? geometryAreaSqKm(defaultGeometry),
+      gdpContribution: data.gdpContribution || 0,
+      status: "approved",
+      submittedBy: data.submittedBy || "owner",
+    },
+  });
+}
+
 /**
  * Upsert a Subdivision (attributes only, geometry updates remain deferred)
  */
 export async function upsertSubdivision(db: any, countryId: string, data: any): Promise<any> {
   const isNew = !data.id;
-  const { clipAndValidatePolygon } = await import("~/lib/maps/geo-validation");
   let geometry = data.geometry;
-
-  if (
+  const hasPolygon =
     geometry &&
     Object.keys(geometry).length > 0 &&
     geometry.type !== "Point" &&
-    geometry.coordinates &&
-    geometry.coordinates.length > 0
-  ) {
-    const rawGeometry = data.geometry;
-    geometry = await clipAndValidatePolygon(db, countryId, geometry, "Subdivision");
-    geometry = await alignSubdivisionBorders(db, countryId, data.id || null, geometry);
-    // Diagnostic: surface when server-side clip/snap materially reshapes the edit
-    // (a likely cause of "my geometry edit didn't stick"). Logs to ixworld-out.log.
-    try {
-      const beforeArea = geometryAreaSqKm(rawGeometry);
-      const afterArea = geometryAreaSqKm(geometry);
-      if (beforeArea > 0 && Math.abs(beforeArea - afterArea) / beforeArea > 0.01) {
-        console.warn(
-          `[upsertSubdivision] clip/align reshaped geometry (id=${data.id ?? "new"}): ` +
-            `${beforeArea.toFixed(1)} -> ${afterArea.toFixed(1)} km² ` +
-            `(${(((afterArea - beforeArea) / beforeArea) * 100).toFixed(1)}%)`
-        );
-      }
-    } catch {
-      /* diagnostic only — never block a save */
-    }
-  }
+    geometry.coordinates?.length > 0;
+  if (hasPolygon) geometry = await clipAndAlignGeometry(db, countryId, data.id || null, geometry);
 
-  let subdivision;
-  if (data.id) {
-    const existing = await db.subdivision.findFirst({
-      where: { id: data.id, countryId },
-    });
-    if (!existing) {
-      throw new Error(`Subdivision not found or does not belong to this country.`);
-    }
-
-    const updateData: any = {
-      name: data.name,
-      type: data.type,
-      level: data.level,
-      governorName: data.governorName,
-      budgetShare: data.budgetShare,
-      governmentType: data.governmentType,
-      color: data.color,
-      population: data.population,
-      capital: data.capital,
-      gdpContribution: data.gdpContribution,
-      status: "approved",
-    };
-
-    if (geometry) {
-      updateData.geometry = geometry;
-    }
-
-    if (data.areaSqKm !== undefined) {
-      updateData.areaSqKm = data.areaSqKm;
-    } else if (geometry) {
-      updateData.areaSqKm = geometryAreaSqKm(geometry);
-    }
-
-    subdivision = await db.subdivision.update({
-      where: { id: data.id },
-      data: updateData,
-    });
-  } else {
-    const defaultGeometry = geometry || { type: "Polygon", coordinates: [] };
-    const areaSqKm = data.areaSqKm ?? geometryAreaSqKm(defaultGeometry);
-    subdivision = await db.subdivision.create({
-      data: {
-        countryId,
-        name: data.name,
-        type: data.type || "province",
-        level: data.level || 1,
-        geometry: defaultGeometry,
-        governorName: data.governorName,
-        budgetShare: data.budgetShare,
-        governmentType: data.governmentType,
-        color: data.color,
-        population: data.population || 0,
-        capital: data.capital,
-        areaSqKm,
-        gdpContribution: data.gdpContribution || 0,
-        status: "approved",
-        submittedBy: data.submittedBy || "owner",
-      },
-    });
-  }
+  const subdivision = data.id
+    ? await updateSubdivision(db, countryId, data, geometry)
+    : await createSubdivision(db, countryId, data, geometry);
 
   // Force PostGIS triggers to run by updating geom_postgis from geometry
   if (
@@ -343,37 +365,8 @@ export async function upsertSubdivision(db: any, countryId: string, data: any): 
  * Upsert a Point of Interest (POI)
  */
 export async function upsertPoi(db: any, countryId: string, data: any): Promise<any> {
-  const { validatePointContainment } = await import("~/lib/maps/geo-validation");
-
-  if (data.coordinates) {
-    const coords = data.coordinates as any;
-    let lng = Array.isArray(coords) ? coords[0] : coords.lng;
-    let lat = Array.isArray(coords) ? coords[1] : coords.lat;
-
-    const { snapPointToCountryBorder } = await import("~/lib/maps/geo-validation");
-    const snapped = await snapPointToCountryBorder(db, countryId, Number(lng), Number(lat));
-    lng = snapped[0];
-    lat = snapped[1];
-    data.coordinates = [lng, lat];
-
-    await validatePointContainment(db, countryId, Number(lng), Number(lat), "POI");
-  }
-
-  // Auto-detect subdivision containment if requested
-  if (
-    data.coordinates &&
-    (data.subdivisionId === "auto" ||
-      data.subdivisionId === undefined ||
-      data.subdivisionId === null)
-  ) {
-    const coords = data.coordinates as any;
-    const lng = Array.isArray(coords) ? coords[0] : coords.lng;
-    const lat = Array.isArray(coords) ? coords[1] : coords.lat;
-    const autoSub = await findSubdivisionAtPoint(db, countryId, Number(lng), Number(lat));
-    data.subdivisionId = autoSub ? autoSub.id : null;
-  } else if (data.subdivisionId === "none") {
-    data.subdivisionId = null;
-  }
+  await snapAndValidateCoordinates(db, countryId, data, "POI");
+  await resolveSubdivisionId(db, countryId, data);
 
   let poi;
   if (data.id) {
@@ -414,184 +407,7 @@ export async function upsertPoi(db: any, countryId: string, data: any): Promise<
     });
   }
 
-  // Force PostGIS triggers to run
-  if (poi && poi.coordinates) {
-    try {
-      const coords = poi.coordinates as any;
-      const lng = Array.isArray(coords) ? coords[0] : coords.lng;
-      const lat = Array.isArray(coords) ? coords[1] : coords.lat;
-      await db.$executeRawUnsafe(
-        `UPDATE points_of_interest SET geom_postgis = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE id = $3`,
-        Number(lng),
-        Number(lat),
-        poi.id
-      );
-    } catch (err) {
-      console.warn(`[upsertPoi] Failed to manually sync PostGIS coordinate:`, err);
-    }
-  }
+  await syncPointGeometry(db, "points_of_interest", poi, "upsertPoi");
 
   return poi;
-}
-
-/**
- * Upsert a Story Pin
- */
-export async function upsertStoryPin(db: any, countryId: string, data: any): Promise<any> {
-  const { validatePointContainment } = await import("~/lib/maps/geo-validation");
-
-  if (data.coordinates) {
-    const coords = data.coordinates as any;
-    let lng = Array.isArray(coords) ? coords[0] : coords.lng;
-    let lat = Array.isArray(coords) ? coords[1] : coords.lat;
-
-    const { snapPointToCountryBorder } = await import("~/lib/maps/geo-validation");
-    const snapped = await snapPointToCountryBorder(db, countryId, Number(lng), Number(lat));
-    lng = snapped[0];
-    lat = snapped[1];
-    data.coordinates = [lng, lat];
-
-    await validatePointContainment(db, countryId, Number(lng), Number(lat), "Story Pin");
-  }
-
-  let storyPin;
-  if (data.id) {
-    const existing = await db.storyPin.findFirst({
-      where: { id: data.id, countryId },
-    });
-    if (!existing) {
-      throw new Error(`Story Pin not found or does not belong to this country.`);
-    }
-
-    storyPin = await db.storyPin.update({
-      where: { id: data.id },
-      data: {
-        title: data.title,
-        content: data.content,
-        category: data.category,
-        coordinates: data.coordinates,
-        ixTimeYear: data.ixTimeYear,
-        status: "approved",
-      },
-    });
-  } else {
-    storyPin = await db.storyPin.create({
-      data: {
-        countryId,
-        title: data.title,
-        content: data.content,
-        category: data.category,
-        coordinates: data.coordinates,
-        ixTimeYear: data.ixTimeYear,
-        status: "approved",
-        submittedBy: data.submittedBy || "owner",
-      },
-    });
-  }
-
-  // Force PostGIS triggers to run
-  if (storyPin && storyPin.coordinates) {
-    try {
-      const coords = storyPin.coordinates as any;
-      const lng = Array.isArray(coords) ? coords[0] : coords.lng;
-      const lat = Array.isArray(coords) ? coords[1] : coords.lat;
-      await db.$executeRawUnsafe(
-        `UPDATE story_pins SET geom_postgis = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE id = $3`,
-        Number(lng),
-        Number(lat),
-        storyPin.id
-      );
-    } catch (err) {
-      console.warn(`[upsertStoryPin] Failed to manually sync PostGIS coordinate:`, err);
-    }
-  }
-
-  return storyPin;
-}
-
-/**
- * Upsert a Map Label
- */
-export async function upsertMapLabel(db: any, countryId: string, data: any): Promise<any> {
-  const { validatePointContainment } = await import("~/lib/maps/geo-validation");
-
-  if (data.coordinates) {
-    const coords = data.coordinates as any;
-    let lng = Array.isArray(coords) ? coords[0] : coords.lng;
-    let lat = Array.isArray(coords) ? coords[1] : coords.lat;
-
-    const { snapPointToCountryBorder } = await import("~/lib/maps/geo-validation");
-    const snapped = await snapPointToCountryBorder(db, countryId, Number(lng), Number(lat));
-    lng = snapped[0];
-    lat = snapped[1];
-    data.coordinates = [lng, lat];
-
-    await validatePointContainment(db, countryId, Number(lng), Number(lat), "Map Label");
-  }
-
-  let mapLabel;
-  if (data.id) {
-    const existing = await db.mapLabel.findFirst({
-      where: { id: data.id, countryId },
-    });
-    if (!existing) {
-      throw new Error(`Map Label not found or does not belong to this country.`);
-    }
-
-    mapLabel = await db.mapLabel.update({
-      where: { id: data.id },
-      data: {
-        text: data.text,
-        labelType: data.labelType,
-        coordinates: data.coordinates,
-        fontSize: data.fontSize,
-        color: data.color,
-        rotation: data.rotation,
-        opacity: data.opacity,
-        letterSpacing: data.letterSpacing,
-        fontWeight: data.fontWeight,
-        minZoom: data.minZoom,
-        maxZoom: data.maxZoom,
-        status: "approved",
-      },
-    });
-  } else {
-    mapLabel = await db.mapLabel.create({
-      data: {
-        countryId,
-        text: data.text,
-        labelType: data.labelType,
-        coordinates: data.coordinates,
-        fontSize: data.fontSize || 14,
-        color: data.color || "#374151",
-        rotation: data.rotation !== undefined ? data.rotation : 0,
-        opacity: data.opacity !== undefined ? data.opacity : 1.0,
-        letterSpacing: data.letterSpacing !== undefined ? data.letterSpacing : 0,
-        fontWeight: data.fontWeight || "normal",
-        minZoom: data.minZoom !== undefined ? data.minZoom : 4,
-        maxZoom: data.maxZoom !== undefined ? data.maxZoom : 18,
-        status: "approved",
-        submittedBy: data.submittedBy || "owner",
-      },
-    });
-  }
-
-  // Force PostGIS triggers to run
-  if (mapLabel && mapLabel.coordinates) {
-    try {
-      const coords = mapLabel.coordinates as any;
-      const lng = Array.isArray(coords) ? coords[0] : coords.lng;
-      const lat = Array.isArray(coords) ? coords[1] : coords.lat;
-      await db.$executeRawUnsafe(
-        `UPDATE map_labels SET geom_postgis = ST_SetSRID(ST_MakePoint($1, $2), 4326) WHERE id = $3`,
-        Number(lng),
-        Number(lat),
-        mapLabel.id
-      );
-    } catch (err) {
-      console.warn(`[upsertMapLabel] Failed to manually sync PostGIS coordinate:`, err);
-    }
-  }
-
-  return mapLabel;
 }

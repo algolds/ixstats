@@ -7,9 +7,8 @@
  */
 
 import { IxTime } from "./core";
-import { IxTimeAccuracyVerifier } from "./accuracy";
 
-export interface SyncTarget {
+interface SyncTarget {
   id: string;
   name: string;
   endpoint: string;
@@ -61,8 +60,6 @@ export class IxTimeSyncManager {
   // Drift tolerance settings
   private static readonly DRIFT_WARNING_THRESHOLD = 1000; // 1 second
   private static readonly DRIFT_CRITICAL_THRESHOLD = 5000; // 5 seconds
-  private static readonly ACCURACY_THRESHOLD = 99.99; // 99.99%
-
   // Default sync targets
   private static readonly DEFAULT_TARGETS: Omit<
     SyncTarget,
@@ -100,71 +97,6 @@ export class IxTimeSyncManager {
         lastError: null,
       });
     }
-  }
-
-  public addSyncTarget(target: Omit<SyncTarget, "lastSync" | "isHealthy" | "lastError">): void {
-    this.syncTargets.set(target.id, {
-      ...target,
-      lastSync: null,
-      isHealthy: true,
-      lastError: null,
-    });
-  }
-
-  public async checkTargetHealth(targetId: string): Promise<{
-    available: boolean;
-    error?: string;
-    responseTime?: number;
-  }> {
-    const target = this.syncTargets.get(targetId);
-    if (!target) {
-      return { available: false, error: "Target not found" };
-    }
-
-    const startTime = Date.now();
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-      const endpoint =
-        target.type === "discord-bot" ? `${target.endpoint}/health` : `${target.endpoint}/status`;
-
-      const response = await fetch(endpoint, {
-        method: "GET",
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-      const responseTime = Date.now() - startTime;
-
-      if (!response.ok && response.status !== 404) {
-        return {
-          available: false,
-          error: `HTTP ${response.status}`,
-          responseTime,
-        };
-      }
-
-      return { available: true, responseTime };
-    } catch (error) {
-      const responseTime = Date.now() - startTime;
-      if (error instanceof Error) {
-        if (error.name === "AbortError") {
-          return { available: false, error: "Timeout", responseTime };
-        }
-        if (error.message.includes("fetch")) {
-          return { available: false, error: "Network unreachable", responseTime };
-        }
-        return { available: false, error: error.message, responseTime };
-      }
-      return { available: false, error: "Unknown error", responseTime };
-    }
-  }
-
-  public removeSyncTarget(targetId: string): void {
-    this.syncTargets.delete(targetId);
-    this.syncStatuses.delete(targetId);
   }
 
   private get isBrowser(): boolean {
@@ -348,10 +280,12 @@ export class IxTimeSyncManager {
           clearTimeout(timeoutId);
           if (fetchError instanceof Error) {
             if (fetchError.name === "AbortError") {
-              throw new Error("Request timeout - Discord bot may be unresponsive");
+              throw new Error("Request timeout - Discord bot may be unresponsive", {
+                cause: fetchError,
+              });
             }
             if (fetchError.message.includes("fetch")) {
-              throw new Error("Network error - Discord bot may be offline");
+              throw new Error("Network error - Discord bot may be offline", { cause: fetchError });
             }
           }
           throw fetchError;
@@ -387,10 +321,14 @@ export class IxTimeSyncManager {
           clearTimeout(timeoutId);
           if (fetchError instanceof Error) {
             if (fetchError.name === "AbortError") {
-              throw new Error("Request timeout - external service unresponsive");
+              throw new Error("Request timeout - external service unresponsive", {
+                cause: fetchError,
+              });
             }
             if (fetchError.message.includes("fetch")) {
-              throw new Error("Network error - external service unavailable");
+              throw new Error("Network error - external service unavailable", {
+                cause: fetchError,
+              });
             }
           }
           throw fetchError;
@@ -420,7 +358,7 @@ export class IxTimeSyncManager {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      throw new Error(`Failed to sync with ${target.name}: ${errorMessage}`);
+      throw new Error(`Failed to sync with ${target.name}: ${errorMessage}`, { cause: error });
     }
   }
 
@@ -431,23 +369,10 @@ export class IxTimeSyncManager {
 
     try {
       if (target.type === "discord-bot") {
-        // Send time override to Discord bot
-        const response = await fetch(`${target.endpoint}/ixtime/override`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ixTimeMs: this.masterState!.currentIxTime,
-            multiplier: this.masterState!.multiplier,
-          }),
-          signal: AbortSignal.timeout(10000),
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log(`[IxTime Sync] Drift corrected for ${target.name}:`, result.message);
+        // The Discord bot is the source of truth for IxTime: on drift, adopt the bot's clock
+        // locally instead of overwriting the bot with ours.
+        const result = await IxTime.syncWithBot();
+        console.log(`[IxTime Sync] Adopted ${target.name} clock after drift:`, result);
 
         // Proactive alert notification in production
         if (
@@ -474,10 +399,6 @@ export class IxTimeSyncManager {
     return this.masterState;
   }
 
-  public getSyncTargets(): SyncTarget[] {
-    return Array.from(this.syncTargets.values());
-  }
-
   public getSyncStatuses(): SyncStatus[] {
     return Array.from(this.syncStatuses.values());
   }
@@ -486,51 +407,9 @@ export class IxTimeSyncManager {
     return this.syncStatuses.get(targetId) || null;
   }
 
-  public async forceSyncTarget(targetId: string): Promise<SyncStatus | null> {
-    const target = this.syncTargets.get(targetId);
-    if (!target) return null;
-
-    await this.syncTarget(targetId);
-    return this.getSyncStatus(targetId);
-  }
-
   public async forceSyncAll(): Promise<void> {
     await this.updateMasterState();
     await this.syncAllTargets();
-  }
-
-  public getHealthSummary(): {
-    healthy: number;
-    unhealthy: number;
-    total: number;
-    criticalIssues: string[];
-  } {
-    const targets = Array.from(this.syncTargets.values());
-    const healthy = targets.filter((t) => t.isHealthy).length;
-    const unhealthy = targets.filter((t) => !t.isHealthy).length;
-    const criticalIssues: string[] = [];
-
-    // Check for critical issues
-    for (const status of this.syncStatuses.values()) {
-      if (
-        status.status === "error" ||
-        Math.abs(status.drift) > IxTimeSyncManager.DRIFT_CRITICAL_THRESHOLD
-      ) {
-        const target = this.syncTargets.get(status.target);
-        if (target && target.priority === "critical") {
-          criticalIssues.push(
-            `${target.name}: ${status.status === "error" ? "Connection failed" : `Critical drift: ${status.drift}ms`}`
-          );
-        }
-      }
-    }
-
-    return {
-      healthy,
-      unhealthy,
-      total: targets.length,
-      criticalIssues,
-    };
   }
 
   public async runComprehensiveSync(): Promise<{

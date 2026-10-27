@@ -1,0 +1,88 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { db } from "~/server/db";
+import { LAYER_FORMAT_VERSION } from "~/lib/maps/layer-format";
+import { MAP_LAYER_TYPES } from "~/lib/maps/map-config";
+import { parseMapVersion } from "~/lib/maps/map-version";
+import type { ZoomBucket } from "~/server/modules/maps/layer-lod";
+import { packedLayerAt } from "~/server/modules/maps/layer-delivery";
+import { PRIVATE_TILE_CACHE, resolveTileRealm } from "~/server/modules/maps/realm-tile-access";
+import { getRealmMapVersion } from "~/server/shared/map-invalidation";
+
+const IMMUTABLE_CACHE = "public, max-age=31536000, immutable";
+// A slug can be renamed or given to another realm, so a slug-addressed URL names no fixed content
+const SLUG_CACHE = "public, max-age=300";
+/** A URL whose map version or loader format is not the current one: current data, which must not be kept as that
+ * URL's forever. */
+const REVALIDATE_CACHE = "public, no-cache";
+
+/** Immutable only when the URL names the realm by id, the current version and the current format; by slug it is cached
+ * briefly (the tile route's rule); any other URL gets the current data to revalidate. */
+function cacheControl(named: boolean, byId: boolean): string {
+  if (!named) return REVALIDATE_CACHE;
+  return byId ? IMMUTABLE_CACHE : SLUG_CACHE;
+}
+
+/** A realm the viewer may not see is indistinguishable from one that does not exist, and never stored. */
+const notFound = () =>
+  new NextResponse(null, { status: 404, headers: { "Cache-Control": PRIVATE_TILE_CACHE } });
+
+const isLayer = (layer: string) => (MAP_LAYER_TYPES as readonly string[]).includes(layer);
+
+/** The `?bucket=` query (the layer's zoom level of detail): 0 globe, 1 mid (the default), 2 detail. */
+function zoomBucket(raw: string | null): ZoomBucket | null {
+  if (raw === null) return 1;
+  return raw === "0" || raw === "1" || raw === "2" ? (Number(raw) as ZoomBucket) : null;
+}
+
+/** Whether `If-None-Match` lists `etag` (a weak tag matches too: the body is the same bytes). */
+function matchesEtag(header: string | null, etag: string): boolean {
+  if (!header) return false;
+  return header.split(",").some((tag) => tag.trim().replace(/^W\//, "") === etag);
+}
+
+/**
+ * One layer of a realm's map in the packed wire format, by map version and loader format (`?format=`, see
+ * layer-format.ts). Both are in the URL so a changed map or a changed build is a new URL; the body is always the
+ * current data, and the tag names the current version and format. Ixnay and published realms are cacheable by
+ * anyone for a year when the URL names both and the realm by id (by slug, which can be renamed, for five minutes);
+ * an unpublished realm's layers go only to those who may see the realm, and are never stored.
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ realm: string; version: string; layer: string }> }
+) {
+  const { realm, version: urlVersion, layer } = await params;
+  const namedVersion = parseMapVersion(urlVersion);
+  if (!isLayer(layer) || namedVersion === null) return notFound();
+  const bucket = zoomBucket(request.nextUrl.searchParams.get("bucket"));
+  if (bucket === null)
+    return new NextResponse(null, { status: 400, headers: { "Cache-Control": "no-store" } });
+
+  try {
+    const target = await resolveTileRealm(realm);
+    if (!target) return notFound();
+
+    const { id: realmId } = target;
+    const version = await getRealmMapVersion(db, realmId);
+    if (target.access === "private") {
+      const body = await packedLayerAt(db, realmId, version, layer, bucket);
+      return new NextResponse(body, {
+        headers: { "Content-Type": "application/json", "Cache-Control": PRIVATE_TILE_CACHE },
+      });
+    }
+
+    const etag = `"${realmId}-${version}-f${LAYER_FORMAT_VERSION}-${layer}-${bucket}"`;
+    const named =
+      namedVersion === version &&
+      request.nextUrl.searchParams.get("format") === String(LAYER_FORMAT_VERSION);
+    const headers = { ETag: etag, "Cache-Control": cacheControl(named, realm === realmId) };
+    if (matchesEtag(request.headers.get("if-none-match"), etag)) {
+      return new NextResponse(null, { status: 304, headers });
+    }
+    const body = await packedLayerAt(db, realmId, version, layer, bucket);
+    return new NextResponse(body, { headers: { ...headers, "Content-Type": "application/json" } });
+  } catch (err) {
+    console.error(`[map-layers] ${realm}/${urlVersion}/${layer} failed`, err);
+    return new NextResponse(null, { status: 500, headers: { "Cache-Control": "no-store" } });
+  }
+}
