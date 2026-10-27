@@ -83,7 +83,6 @@ const USER_FACING_MODELS = [
   "QuickActionTemplate",
   "IntelligenceItem",
   "TrendingTopic",
-  "Archetype",
   "Role",
 ];
 
@@ -91,8 +90,6 @@ const USER_FACING_MODELS = [
 const SYSTEM_MODELS = [
   "DmInputs",
   "EconomicModel",
-  "SectoralOutput",
-  "PolicyEffect",
   "CrisisEvent",
   "ActivityFeed",
   "TaxSystem",
@@ -100,8 +97,6 @@ const SYSTEM_MODELS = [
   "TaxBracket",
   "TaxExemption",
   "TaxDeduction",
-  "TaxPolicy",
-  "TaxCalculation",
   "ComponentSynergy",
   "BudgetScenario",
   "EconomicEffect",
@@ -112,8 +107,6 @@ const SYSTEM_MODELS = [
   "PostReaction",
   "PostMention",
   "PostHashtag",
-  "CountryMoodMetric",
-  "ScheduledChange",
   "Achievement",
   "UserAchievement",
   "WikiCache",

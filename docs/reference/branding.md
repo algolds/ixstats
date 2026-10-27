@@ -49,7 +49,6 @@ IxStates (platform/ecosystem)         ← versioned: 1.4.0 "Lobster Crosby" (Maj
 └── Infrastructure
     ├── Notifications
     ├── Help System
-    ├── Consent Manager (c15t)
     ├── Flag Service
     ├── WebSocket / Real-Time
     ├── Cron Jobs
@@ -473,7 +472,7 @@ In-app help center (`/help/`). Routes for economy, defense, diplomacy, intellige
 
 ### 6.4 Consent Manager (c15t)
 
-GDPR-style consent management. Package: `@c15t/nextjs`, `@c15t/backend`. Prisma: `c15t.prisma`. Route: `/api/c15t/`.
+Removed. The `@c15t/*` packages and the `/api/c15t/` route were deleted earlier, and the D9 schema drop (2026-10-27) removed the `c15t.prisma` tables.
 
 ### 6.5 Flag Service
 
@@ -625,7 +624,6 @@ Activity, AlertTriangle, ArrowTrendingUp, ArrowTrendingDown, Bell, BookOpen, Bra
 | **Giphy**              | GIF picker                            | ThinkPages composer                           |
 | **Wikimedia Commons**  | Image repository                      | `wikiCommonsImageService.ts`                  |
 | **FlagCDN**            | Flag images                           | Referenced in external API cache              |
-| **c15t**               | Consent management                    | `@c15t/nextjs`, `prisma/schema/c15t.prisma`   |
 | **MapLibre GL**        | Map rendering                         | `src/components/maps/core/`                   |
 | **Redis (ioredis)**    | Rate limiting, caching                | `rate-limiter.ts`                             |
 | **Socket.IO**          | WebSocket transport                   | `server.mjs`                                  |

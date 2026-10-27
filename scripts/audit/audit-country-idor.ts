@@ -38,7 +38,6 @@ export const COUNTRY_OWNED_MODELS = [
   "policy",
   "activitySchedule",
   "storytellerEffect",
-  "crossBuilderSynergy",
   "country",
 ] as const;
 

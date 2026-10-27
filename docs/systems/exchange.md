@@ -78,7 +78,7 @@ minimum urgency apply. They are sent after the transaction commits and never blo
 
 - `RND`, `ACQUIRE`, `LOBBY` and `PRICE` decisions, admin- or sim-issued tenders (a ₷ faucet), a nation ₷ treasury and an
   order book are not built (spec §8, "Still not built").
-- Sector indices follow Exchange activity, not `SectoralOutput`; nothing sets `SectorIndex.dmModifier` yet.
+- Sector indices follow Exchange activity, not a nation's economic model; nothing sets `SectorIndex.dmModifier` yet.
 - Two colluding accounts can drain a company's capital through a contract to an accomplice; fees bound it. ₷ can no longer be turned into IxC.
 - MyClub's ₷ moves ignore the Exchange flag on purpose (they predate the Exchange), but they refuse in vault
   maintenance mode like every other write ([myleague.md](myleague.md#economic-integration)).

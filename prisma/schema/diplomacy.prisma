@@ -46,21 +46,6 @@ model Treaty {
   @@index([signedDate])
 }
 
-model DiplomaticRelationshipHistory {
-  id               String   @id @default(cuid())
-  country1Id       String
-  country2Id       String
-  strength         Float
-  relationship     String
-  treaties         String?
-  tradeVolume      Float    @default(0)
-  culturalExchange String   @default("Medium")
-  timestamp        DateTime @default(now())
-
-  @@index([timestamp])
-  @@index([country1Id, country2Id, timestamp], map: "DiplomaticRelationshipHistory_country1Id_country2Id_idx")
-}
-
 model DiplomaticEvent {
   id                 String   @id @default(cuid())
   country1Id         String
@@ -86,20 +71,6 @@ model DiplomaticEvent {
   @@index([eventType])
   @@index([embassyId])
   @@index([createdAt])
-}
-
-model DiplomaticAction {
-  id            String   @id @default(cuid())
-  fromCountryId String
-  toCountryId   String
-  actionType    String
-  description   String?
-  status        String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([fromCountryId])
-  @@index([toCountryId])
 }
 
 model Embassy {
@@ -162,7 +133,6 @@ model DiplomaticChannel {
   createdAt      DateTime                       @default(now())
   updatedAt      DateTime                       @updatedAt
   participants   DiplomaticChannelParticipant[]
-  messages       DiplomaticMessage[]
 
   @@index([type])
   @@index([classification])
@@ -182,40 +152,6 @@ model DiplomaticChannelParticipant {
   @@unique([channelId, countryId])
   @@index([channelId])
   @@index([countryId])
-}
-
-model DiplomaticMessage {
-  id                String            @id @default(cuid())
-  channelId         String
-  fromCountryId     String
-  fromCountryName   String
-  toCountryId       String?
-  toCountryName     String?
-  subject           String?
-  content           String
-  classification    String            @default("PUBLIC")
-  priority          String            @default("NORMAL")
-  status            String            @default("SENT")
-  encrypted         Boolean           @default(false)
-  ixTimeTimestamp   Float
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  encryptedContent  String?
-  signature         String?
-  encryptionVersion String?
-  iv                String?
-  encryptedKey      String?
-  senderKeyId       String?
-  signatureVerified Boolean           @default(false)
-  channel           DiplomaticChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
-
-  @@index([channelId])
-  @@index([fromCountryId])
-  @@index([toCountryId])
-  @@index([classification])
-  @@index([priority])
-  @@index([status])
-  @@index([ixTimeTimestamp])
 }
 
 model CulturalExchange {
@@ -445,21 +381,6 @@ model EmbassyUpgrade {
   @@index([status])
 }
 
-model EmbassyRequirement {
-  id                     String   @id @default(cuid())
-  hostCountryId          String   @unique
-  requiredRelationship   String   @default("neutral")
-  minRelationStrength    Int      @default(25)
-  establishmentCost      Float    @default(100000)
-  approvalTime           Int      @default(30)
-  specialRequirements    String?
-  economicTierMultiplier Float    @default(1.0)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-
-  @@index([hostCountryId])
-}
-
 model DiplomaticOption {
   id          String                  @id @default(cuid())
   type        String
@@ -522,7 +443,6 @@ model DiplomaticScenario {
   createdAt               DateTime             @default(now())
   updatedAt               DateTime             @updatedAt
   choices                 ScenarioChoice[]
-  generations             ScenarioGeneration[]
 
   @@index([scenarioType, relationshipLevel])
   @@index([difficulty, timeFrame])
@@ -554,64 +474,6 @@ model ScenarioChoice {
   @@index([scenarioId, displayOrder])
   @@index([skillRequired, skillLevel])
   @@index([riskLevel])
-}
-
-model ScenarioGeneration {
-  id              String             @id @default(cuid())
-  scenarioId      String
-  countryId       String
-  targetCountryId String
-  worldContext    String
-  relevanceScore  Int
-  choiceId        String?
-  responseTime    DateTime?
-  appliedEffects  String?
-  outcomeNotes    String?
-  generatedAt     DateTime           @default(now())
-  expiresAt       DateTime?
-  completedAt     DateTime?
-  scenario        DiplomaticScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
-
-  @@index([countryId, generatedAt])
-  @@index([scenarioId, targetCountryId])
-  @@index([expiresAt])
-}
-
-model ScenarioTemplate {
-  id                   String   @id @default(cuid())
-  templateKey          String   @unique
-  scenarioType         String
-  titleTemplate        String
-  introductionTemplate String
-  contextTemplate      String
-  situationTemplate    String
-  implicationsTemplate String
-  requiredVariables    String
-  isActive             Boolean  @default(true)
-  usageCount           Int      @default(0)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  @@index([scenarioType, isActive])
-}
-
-model ScenarioUsageAnalytics {
-  id                        String   @id @default(cuid())
-  scenarioId                String   @unique
-  choiceId                  String?
-  totalGenerations          Int      @default(0)
-  totalCompletions          Int      @default(0)
-  completionRate            Float    @default(0.0)
-  choiceDistribution        String
-  averageRelationshipChange Float    @default(0.0)
-  averageEconomicImpact     Float    @default(0.0)
-  averageReputationChange   Float    @default(0.0)
-  averageSecurityImpact     Float    @default(0.0)
-  averageResponseTime       Float    @default(0.0)
-  lastUpdated               DateTime @default(now())
-
-  @@index([totalGenerations])
-  @@index([completionRate])
 }
 
 model NPCPersonality {

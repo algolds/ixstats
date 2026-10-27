@@ -32,7 +32,7 @@ function assertScenarioOpenFor(scenario: CulturalScenario, countryId: string) {
 export const diplomaticScenariosChoicesRouter = createTRPCRouter({
   /**
    * Record player choice and update scenario status
-   * Creates ScenarioGeneration record for historical tracking
+   * Creates a CulturalExchange record for historical tracking
    */
   recordChoice: rateLimitedMutationProcedure
     .input(

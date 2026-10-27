@@ -37,11 +37,10 @@ The Economy system models macroeconomic output, fiscal policy built from 42 atom
 
 Defined across `prisma/schema/economy.prisma` (selection):
 - `EconomicProfile`, `LaborMarket`, `FiscalSystem`, `IncomeDistribution`, `GovernmentBudget`, `Demographics`: Per-country economy configuration
-- `EconomicIndicator`: Snapshot of GDP, GDP per capita, growth rate, inflation, unemployment
-- `HistoricalDataPoint` / `VitalityHistory`: Time-series records for trend charts
-- `EconomicModel`, `SectoralOutput`, `PolicyEffect`: Modeling scenarios and projections
-- `TaxSystem`, `TaxCategory`, `TaxBracket`, `TaxExemption`, `TaxDeduction`, `TaxPolicy`, `TaxCalculation`: Tax structure
-- `EconomicComponent`, `TaxComponent`, `CrossBuilderSynergy`, `EconomicArchetype`: Atomic components and presets
+- `HistoricalDataPoint`: Time-series records for trend charts
+- `EconomicModel`: Modeling scenarios and projections
+- `TaxSystem`, `TaxCategory`, `TaxBracket`, `TaxExemption`, `TaxDeduction`: Tax structure
+- `EconomicComponent`, `TaxComponent`, `EconomicArchetype`: Atomic components and presets
 - Trade: `BilateralTrade` (in `prisma/schema/diplomacy.prisma`)
 
 ---

@@ -4,7 +4,7 @@
 
 **Database Engine**: PostgreSQL with PostGIS Extension  
 **ORM**: Prisma 6.19.3 (Multi-file Schema Architecture, `prisma.config.ts` → `prisma/schema`)  
-**Location**: `prisma/schema/*.prisma` (<!-- BEGIN_DOCS:COUNT:schemaFiles -->25<!-- END_DOCS:COUNT:schemaFiles --> schema files, <!-- BEGIN_DOCS:COUNT:models -->383<!-- END_DOCS:COUNT:models --> models, <!-- BEGIN_DOCS:COUNT:enums -->48<!-- END_DOCS:COUNT:enums --> enums) · `src/server/db.ts`
+**Location**: `prisma/schema/*.prisma` (<!-- BEGIN_DOCS:COUNT:schemaFiles -->24<!-- END_DOCS:COUNT:schemaFiles --> schema files, <!-- BEGIN_DOCS:COUNT:models -->334<!-- END_DOCS:COUNT:models --> models, <!-- BEGIN_DOCS:COUNT:enums -->47<!-- END_DOCS:COUNT:enums --> enums) · `src/server/db.ts`
 
 ---
 
@@ -39,8 +39,8 @@ prisma/schema/
 ├── economy.prisma        # EconomicProfile, TaxSystem, FiscalSystem, EconomicComponent, EconomicArchetype
 ├── diplomacy.prisma      # DiplomaticRelation, Embassy, Treaty, DiplomaticEvent, Alliance, CrisisEvent
 ├── intelligence.prisma   # IntelligenceItem, IntelligenceBriefing, IntelligenceAlert, VitalitySnapshot
-├── maps.prisma           # Territory, Subdivision, City, PointOfInterest, Transport*, Realm, RealmClaim, RealmPage (PostGIS)
-├── cards.prisma          # Card, CardOwnership, CardPack, MyVault, VaultTransaction, TradeOffer, CraftingRecipe
+├── maps.prisma           # Subdivision, City, PointOfInterest, Transport*, Realm, RealmClaim, RealmPage (PostGIS)
+├── cards.prisma          # Card, CardOwnership, CardPack, MyVault, VaultTransaction, TradeOffer, CardListing
 ├── exchange.prisma       # ExchangeWallet, Company, Shareholding, SectorIndex, Contract
 ├── military.prisma       # MilitaryBranch, MilitaryUnit, MilitaryEquipmentCatalog, Deployment, MilitaryConflict
 ├── social.prisma         # ThinkpagesAccount, ThinkpagesPost, ThinktankGroup, ThinkshareConversation, ActivityFeed, Poll
@@ -50,8 +50,7 @@ prisma/schema/
 ├── sports.prisma         # SportLeague, SportTeam, SportPlayer, SportSeason, SportMatch, SportStanding
 ├── onoma.prisma          # NameBank, LanguagePack, EtymologyRoot, GrammarProfile, WritingSystem
 ├── heraldry.prisma       # HeraldryAchievement, HeraldryCharge, HeraldryRevision
-├── media.prisma          # MediaTrack, MediaPlaylist, PlaybackHistory
-└── c15t.prisma           # Consent-management tables (c15t)
+└── media.prisma          # UploadedAsset
 ```
 
 ---
@@ -69,7 +68,7 @@ prisma/schema/
 - **`CountryChangeLog`**: Ledger written by the `CountryEventSpine` service (`src/lib/activity/event-spine.ts` — code, not a model) for statecraft actions and metric shifts; feed entries go to `ActivityFeed`.
 
 ### 3.3 Spatial & GIS Geometry (PostGIS)
-- **`Territory` / `Subdivision`**: Country and administrative-division shapes (JSON `geometry` plus a PostGIS `geom_postgis` column with a GiST index).
+- **`Subdivision`**: Administrative-division shapes (JSON `geometry` plus a PostGIS `geom_postgis` column with a GiST index).
 - **`City`**: Settlements with PostGIS geometry, population, and elevation.
 - **`PointOfInterest`**: Landmarks, naval bases, radar stations, and natural marvels.
 - **`Realm` / `RealmClaim` / `RealmPage`**: Realms Phase 1 — world registry, nation claims, and realm pages (`Country.realmId` scopes nations to a realm).

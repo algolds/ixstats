@@ -61,13 +61,13 @@ partly done item.
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| MC-19 | DEAD | Area models read but never written outside the seed (`Treaty`, `DiplomaticChannel`, `TaxPolicy`, `QuickActionTemplate`, `VitalityHistory`, …) | `prisma/schema/*` | S |
+| MC-19 | DEAD | Area models read but never written outside the seed (`Treaty`, `DiplomaticChannel`, `QuickActionTemplate`, …; `TaxPolicy` and `VitalityHistory` dropped with D9) | `prisma/schema/*` | S |
 
 ### Atlas, Realms & identity (AT)
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| AT-15 | DEAD | Unused map models (`Transport*` segments, `ElevationZone`, `Territory`); `SharedVertex` written, never read. `WorldTemplate`, `ProceduralWorld` (38 rows on the local clone) and `Realm.templateId` were dropped by the Atlas and World Studio overhaul (`prisma/migrations/20261023120000_atlas_studio/migration.sql`, run before `db push`) | `maps.prisma` | S |
+| AT-15 | DEAD | `SharedVertex` written, never read. The unused `Transport*` segment models, `ElevationZone` and `Territory` were dropped with D9 (2026-10-27); `WorldTemplate`, `ProceduralWorld` (38 rows on the local clone) and `Realm.templateId` were dropped by the Atlas and World Studio overhaul (`prisma/migrations/20261023120000_atlas_studio/migration.sql`, run before `db push`) | `maps.prisma` | S |
 
 ### WikiOS, forum, help & admin (WK)
 
@@ -271,8 +271,10 @@ models are off the drop list (D5 decided "build", 2026-10-06):** 9 are in use si
 list while crafting is deprecated (2026-10-05); drop them only after that backup decision. The full list is in the
 [history copy](../history/roadmap/code-audit-2026-09-30.md#8-dead-schema).
 
-**Drop prepared (2026-10-06, D9):** the reviewed drop (56 models with no accessor left once the retired crafting router goes, plus the
-`CardPack.pdsConfig` column) is on branch `chore/drop-unused-models`, with its runbook in
-`docs/operations/drop-unused-models.md` on that branch. It is not applied here: it waits on a successful production
-restore test. It keeps the Exchange models (D5), the military and defense models (D2) and every model still read
-through a relation (for example `Permission`, `GovernmentBranch`, `EconomicModel`, `ThinktankMessage`).
+**Drop applied in the schema (2026-10-27, D9):** the 49 models of the 2026-10-06 list still unused on the merged
+tree are gone from `prisma/schema/` (with `c15t.prisma` and the `MediaType` enum); the cards refresh and Atlas had
+already removed the other seven and `CardPack.pdsConfig`. Production drops the tables during the deploy's
+`db:push:force`; the read-only row counts to run first are in
+[drop-unused-models.md](../operations/drop-unused-models.md). It keeps the Exchange models (D5), the military and
+defense models (D2) and every model still read through a relation (for example `Permission`, `GovernmentBranch`,
+`EconomicModel`, `ThinktankMessage`).
