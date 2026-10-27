@@ -24,6 +24,7 @@ import {
   parsoidHtmlToSlate,
   toggleMark,
   wikiLinkElement,
+  insertVoidBlock,
 } from "./SlateSerializer";
 import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
 import { userMentionItems, type MentionSource } from "./mention-source";
@@ -471,17 +472,14 @@ export function useGlassPlateEditor({
     if (wikiInsertMode === "embed") {
       // The preview's summary and image are this title's only once typing has settled on it.
       const previewed = settledWikiTitle === wikiTarget.trim();
-      Transforms.insertNodes(
-        editor as any,
-        {
-          type: "wikiembed",
-          title: wikiTarget.trim(),
-          summary: (previewed && wikiIntroQuery.data?.intro) || "",
-          imageUrl: (previewed && selectedWikiImageUrl) || "",
-          source: selectedWikiSource,
-          children: [{ text: "" }],
-        } as any
-      );
+      insertVoidBlock(editor, {
+        type: "wikiembed",
+        title: wikiTarget.trim(),
+        summary: (previewed && wikiIntroQuery.data?.intro) || "",
+        imageUrl: (previewed && selectedWikiImageUrl) || "",
+        source: selectedWikiSource,
+        children: [{ text: "" }],
+      } as any);
     } else {
       Transforms.insertNodes(
         editor as never,
@@ -506,15 +504,8 @@ export function useGlassPlateEditor({
 
   const insertImageUrl = useCallback(
     (url: string, alt = "") => {
-      Transforms.insertNodes(
-        editor as any,
-        {
-          type: "img",
-          src: url,
-          alt,
-          children: [{ text: "" }],
-        } as any
-      );
+      // The caret lands after the image, so typing continues straight away.
+      insertVoidBlock(editor, { type: "img", src: url, alt, children: [{ text: "" }] } as any);
       ReactEditor.focus(editor as any);
     },
     [editor]
