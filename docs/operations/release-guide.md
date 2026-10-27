@@ -507,7 +507,10 @@ Then do A3 (the checkout does not touch the running servers), load the productio
 9. **MyCountry and realm-time SQL:** the deploy runs them in the runbooks' order, after the steps above. Running the
    runbooks' `run_sql` steps by hand first also works once steps 4 and 8 are done (the deploy re-runs each as a
    no-op); see the [realm-time runbook](deploy-realm-time-2026-10.md#4-the-deploy-window-old-build-stopped).
-10. **Deploy** (A4): `./scripts/deploy-production.sh`. The two data steps below need the release's whole schema and
+10. **Deploy** (A4): `WIKIOS_PROOF_OVERRIDE=1 ./scripts/deploy-production.sh`. The override is for this release
+    only: the WikiOS proof check's round trip needs at least 11,435 pages and production holds 3 (`wiki_articles`
+    is filled at the WikiOS launch, B4 step 10), so no commit can pass it before then. Read its lines anyway:
+    `roundTrip.nonIdentical`, `incomplete` and `errors` must be `ok`. The two data steps below need the release's whole schema and
     must finish before the new server serves, so run them once the schema is in place: in the stop the push makes
     (below, the case on production), or, if the deploy prints **"Database sync completed successfully"**, in a second
     tmux window (`Ctrl+B C`) during the build:
