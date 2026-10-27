@@ -459,9 +459,9 @@ Then do A3 (the checkout does not touch the running servers), load the productio
    production lacks the tables it reads). **Lorewards:** its step 1 counts
    ([Lorewards runbook](../systems/ixnayid-passport.md#lorewards-deploy-runbook-owner)).
 6. **Unused models (D9):** the row counts and dependents check in
-   [drop-unused-models.md](drop-unused-models.md#3-pre-window-check-b2-read-only). Every count must be 0 or NULL, or the
-   owner rules that table's rows disposable; any other row means stop and ask the owner. The deploy's push drops the 49
-   tables, and stops on one that still has rows.
+   [drop-unused-models.md](drop-unused-models.md#3-pre-window-check-b2-read-only). Note every table whose count is
+   not 0: B3 step 2 exports its rows, then drops it. A row in the dependents check means stop and ask the owner. The
+   deploy's push drops the empty tables, and stops on one that still has rows.
 
 ### B3. The window (the app stopped)
 
@@ -473,9 +473,10 @@ Then do A3 (the checkout does not touch the running servers), load the productio
    The cards SQL rewrites and drops columns the old code reads, and the realm-time SQL converts timestamps the old
    jobs would fire on, so no old code may run between the SQL and the new build. The deploy starts them all again.
    Remove the server crontab's call to `/api/lorewards/sync` (Lorewards step 2).
-2. **`bun run db:backup`.** Keep the path: it is the rollback point for everything below. Then drop the D9 tables the
-   owner ruled disposable at B2 step 6 ([drop-unused-models.md](drop-unused-models.md#3-pre-window-check-b2-read-only)
-   has the statement); a table left with rows stops the deploy's push.
+2. **`bun run db:backup`.** Keep the path: it is the rollback point for everything below. Then the D9 tables that B2
+   step 6 found with rows: export them to their own dump, check it, then drop them (owner ruling 2026-10-27: keep the
+   rows as an export; [drop-unused-models.md](drop-unused-models.md#3-pre-window-check-b2-read-only) has the commands).
+   A table left with rows stops the deploy's push.
 3. **Data the guards need:**
    `UPDATE "TradeOffer" SET status = 'REJECTED' WHERE status = 'COUNTERED';`, the `quantity > 1` rows settled, the
    WikiRevision dedupe (sections 2 and 3, if B2.3 applied) and, if the diff adds the `Alliance (realmId, name)` key,

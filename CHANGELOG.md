@@ -29,8 +29,9 @@ known Next.js RCE was reachable. This block fixes what the audit found.
   - `package.json` reads 1.5.0.
 - **Schema:** the 49 Prisma models nothing read or wrote are dropped (D9: c15t consent, ScheduledChange, Post, the old
   archetype, diplomacy, scenario and economy-modelling tables, Territory, the transport segment and media player
-  tables, activity reactions), with the MediaType enum. The deploy's db push drops the tables; read-only row counts
-  first in [drop-unused-models.md](docs/operations/drop-unused-models.md).
+  tables, activity reactions), with the MediaType enum. The deploy's db push drops the empty tables; tables with rows
+  (the old c15t consent records, the elevation legend) are exported to their own dump in the window, then dropped
+  ([drop-unused-models.md](docs/operations/drop-unused-models.md)).
 - **Deploy** (`scripts/deploy-production.sh`; the [release guide](docs/operations/release-guide.md) has the new order).
   - Every step that can fail runs before the live build is touched. The build moves `.next` to `.next.prev` and puts
     it back if the build, IxWorld or the reload fails. No more `bun run clean`.

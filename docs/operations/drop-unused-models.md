@@ -146,9 +146,24 @@ section 2. Other tables that could hold rows on an old database: `ScheduledChang
 2026-10-06), `DiplomaticMessage` (the source the ThinkShare migration copied from), the `transport_*` tables (filled
 by an archived map script) and `Archetype`.
 
-**If the owner rules the rows disposable,** drop those tables in the window after the backup (B3 step 2) and before
-the deploy, the way the deploy drops `world_configs`. For the six above (the eight c15t tables go together, because
-they reference each other):
+**Owner ruling (2026-10-27): keep the rows as an export, then drop the tables.** In the window, after the backup (B3
+step 2) and before the deploy, export every dropped table that has rows into a dump of its own, check it, and only then
+drop those tables, the way the deploy drops `world_configs`. The export is named so that `db:backup`'s retention
+(which prunes only `ixstats-<timestamp>.dump`) never removes it. For the six above (the eight c15t tables go together,
+because they reference each other); add any other table whose count was not 0 to both lists:
+
+```bash
+EXPORT="$IX/backups/d9-unused-models-$(date -u +%Y%m%dT%H%M%SZ).dump"
+docker exec ixstats-postgres pg_dump -U postgres -d ixstats -Fc \
+  -t '"subject"' -t '"domain"' -t '"consentPolicy"' -t '"runtimePolicyDecision"' -t '"consentPurpose"' \
+  -t '"consent"' -t '"auditLog"' -t '"private_c15t_settings"' -t '"elevation_zones"' > "$EXPORT"
+ls -lh "$EXPORT"                                                     # not tiny
+docker exec -i ixstats-postgres pg_restore -l < "$EXPORT" | grep -c 'TABLE DATA'   # 9: one per table
+sudo chmod 600 "$EXPORT"                                              # consent records: keep it private
+```
+
+Then copy the export off the server with the rest of the release's backups (it holds consent records: keep it where
+the database dumps are kept, never in a shared folder). Only after the checks pass:
 
 ```bash
 docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 <<'SQL'
@@ -157,8 +172,8 @@ DROP TABLE IF EXISTS "subject", "domain", "consentPolicy", "runtimePolicyDecisio
 SQL
 ```
 
-Add another table to that statement only when the owner has seen its count and said so. The deploy's push then drops
-the remaining empty tables on its own.
+The deploy's push then drops the remaining empty tables on its own. To read the export later, restore it into a
+scratch database (section 4) with `pg_restore -d <scratch> "$EXPORT"`.
 
 **Dependents Prisma would not drop.** Expected: no rows.
 
@@ -221,3 +236,6 @@ so the owner's next `bun run dev` drops these tables from the local dev database
 silently. In a terminal, Prisma asks before dropping a table that has rows; answer no if you want to keep them (the
 stamp is not written, so the next start asks again). `scripts/refresh-local-db.sh` also ends with
 `bun run db:push:force`.
+
+To keep the local rows the same way before that run, export them first (read-only), with the `pg_dump` line of
+section 3 against the local database and a file under `backups/` (git-ignored); then answer yes when Prisma asks.
