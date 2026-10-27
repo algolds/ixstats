@@ -14,6 +14,16 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the pre-pro
 first, then the WikiOS launch hardening (2026-10-24 → 10-26), then the Cards mark and trophy art (2026-10-24), then the ThinkPages forum refresh (2026-10-17), then realm nations (2026-10-15), then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
 work. The version registry (`src/lib/buildVersion.ts`) reads 1.5.0 (the Vault collectathon hub below); the next release candidate is not cut yet.
 
+### 🎉 Public 1.0 reveal (2026-10-27)
+
+The public release restarts every user-facing version at 1.0: the platform shows **1.0.0 "Lobster Crosby" (Stable)**
+and every app, system and the design system show v1 (`VERSIONS` in `src/lib/buildVersion.ts`). The internal registry
+keeps the versions reached (`INTERNAL_VERSIONS`: platform 1.5.0 RC, IxWorld 3, IxVault 3, Halo 6 and the rest), and
+the reference docs read it. The engines keep their internal numbers in public too: stored world recipes are validated
+against `ATLAS_ENGINE_VERSION`. The `/changelog` page starts at one 1.0 launch entry; this file keeps the history.
+The "What's new" row and the IxWorld and Repository welcome modals show once more for everyone (their seen keys
+follow the public version).
+
 ### 🧪 Production-copy rehearsal fixes (2026-10-26)
 
 No version or capability integer moves. The release's schema steps, run on the server against a clone of production's
