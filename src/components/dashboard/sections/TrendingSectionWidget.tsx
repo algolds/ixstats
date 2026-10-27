@@ -23,6 +23,8 @@ import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { WIKI_SOURCES } from "~/lib/wiki-os/config";
 import { useWikiLeadImage } from "./feed/useWikiLeadImage";
 import { wikiTitleFromUrl } from "./feed/externalLinks";
+import { trendingContext } from "./feed/trendingContext";
+import { timeAgo } from "~/lib/format/compact";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
 const TRENDING_DEFAULT_LIMIT = 4;
@@ -155,13 +157,19 @@ function RowLink({
 function TrendingRow({ item }: { item: any }) {
   const src = TRENDING_SOURCE[item.source as string] ?? DEFAULT_SOURCE;
   const SrcIcon = src.icon;
-  const wikiTitle = wikiTitleFromUrl(item.url);
+  // Wiki rows carry a relative /wiki/ link, which the host-anchored parser does not read, so fall back to the title.
+  const wikiTitle = wikiTitleFromUrl(item.url) ?? (item.source === "wiki" ? item.title : null);
   const excerpt = trendingExcerpt(item);
+  const context = wikiTitle ? null : trendingContext(item);
+  const href = wikiTitle ? titleToWikiOSRoute(wikiTitle) : (context?.href ?? undefined);
 
   const row = (
     <RowLink
-      href={wikiTitle ? titleToWikiOSRoute(wikiTitle) : item.url}
-      className="group/item bg-surface-secondary border-separator hover:border-tint/40 hover:bg-fill-3 rounded-row facet-press facet-press-subtle focus-visible:outline-tint flex cursor-pointer items-start gap-3 border p-3 focus-visible:outline-2 focus-visible:outline-offset-2"
+      href={href}
+      className={cn(
+        "group/item bg-surface-secondary border-separator rounded-row focus-visible:outline-tint flex items-start gap-3 border p-3 focus-visible:outline-2 focus-visible:outline-offset-2",
+        href && "hover:border-tint/40 hover:bg-fill-3 facet-press facet-press-subtle cursor-pointer"
+      )}
     >
       <span
         aria-hidden
@@ -201,15 +209,56 @@ function TrendingRow({ item }: { item: any }) {
     </RowLink>
   );
 
-  return wikiTitle ? (
+  return (
     <Tooltip
-      content={<WikiPreviewContent title={wikiTitle} wiki="ixwiki" />}
+      content={
+        wikiTitle ? (
+          <WikiPreviewContent title={wikiTitle} wiki="ixwiki" />
+        ) : (
+          <TrendingContextContent item={item} source={src} excerpt={excerpt} />
+        )
+      }
       containerClassName="block"
+      showOnFocus
     >
       {row}
     </Tooltip>
-  ) : (
-    row
+  );
+}
+
+/** The hover/focus card of a non-wiki row: what it is, where it trends from, why it ranks and where it goes. */
+function TrendingContextContent({
+  item,
+  source,
+  excerpt,
+}: {
+  item: any;
+  source: TrendingSource;
+  excerpt: string;
+}) {
+  const SrcIcon = source.icon;
+  const { origin, signals, action } = trendingContext(item);
+  const when = timeAgo(item.timestamp);
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <span aria-hidden data-app={source.app} className="flex shrink-0">
+          <SrcIcon className={cn("size-3.5", source.color)} />
+        </span>
+        <span className="text-label text-headline line-clamp-2">{trendingTitle(item)}</span>
+        <Badge variant="default" className="ml-auto shrink-0">
+          {source.label}
+        </Badge>
+      </div>
+      {excerpt && <p className="text-label-secondary text-footnote line-clamp-3">{excerpt}</p>}
+      <p className="text-label-secondary text-footnote">{origin}.</p>
+      <div className="text-label-tertiary text-caption flex flex-wrap gap-x-2 tabular-nums">
+        {item.author && <span>by {item.author}</span>}
+        {when && <span>active {when}</span>}
+        {signals.length > 0 && <span>{signals.join(" · ")}</span>}
+      </div>
+      {action && <p className="text-tint text-footnote font-semibold">{action} →</p>}
+    </div>
   );
 }
 

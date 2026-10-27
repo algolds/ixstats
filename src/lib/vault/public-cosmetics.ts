@@ -115,6 +115,16 @@ export function resolvePublicCosmetics(
   return out;
 }
 
+/**
+ * What one store item looks like when worn: the same resolution the equipped view uses, applied to
+ * that item alone, so a store card can preview the real glow / frame / badge before purchase.
+ * Returns null when the item has no renderable effect.
+ */
+export function previewCosmetic(itemId: string, dbEffects: unknown): PublicCosmetics | null {
+  const preview = resolvePublicCosmetics([itemId], new Map([[itemId, dbEffects]]));
+  return preview.equipped.length > 0 ? preview : null;
+}
+
 interface PublicCosmeticsDb {
   user: {
     findMany(args: {
