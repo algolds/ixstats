@@ -20,17 +20,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { formatCurrency, formatNumber } from "~/lib/utils/format-utils";
 import { CollectiveActionsPanel } from "./CollectiveActionsPanel";
+import { CountrySearchSelect } from "../CountrySearchSelect";
 import { Card } from "~/components/ui/card";
 
 interface AllianceDashboardProps {
@@ -62,11 +56,6 @@ export function AllianceDashboard({
     { enabled: !!allianceId }
   );
 
-  const { data: relationships } = api.diplomaticCore.getRelationships.useQuery(
-    { countryId },
-    { enabled: inviteOpen }
-  );
-
   const utils = api.useUtils();
   const notify = useNotify();
   const inviteMutation = api.diplomaticPolicies.inviteMember.useMutation({
@@ -94,21 +83,8 @@ export function AllianceDashboard({
   if (!alliance) return null;
 
   const canInvite = myRole === "founder" || myRole === "leader";
-  const targetCountries = relationships
-    ? [
-        ...new Map(
-          relationships
-            .filter(
-              (r) =>
-                r.sameRealm && !alliance.members.some((m) => m.countryId === r.targetCountryId)
-            )
-            .map((r) => [
-              r.targetCountryId,
-              { id: r.targetCountryId, name: r.targetCountry ?? r.targetCountryId },
-            ])
-        ).values(),
-      ]
-    : [];
+  // Any nation of the realm can be invited (the server's rule); not only those with a relation record.
+  const memberIds = [countryId, ...alliance.members.map((m) => m.countryId)];
 
   return (
     <Card className="rounded-card space-y-4 p-4">
@@ -146,18 +122,12 @@ export function AllianceDashboard({
                   <DialogDescription>Invite a country to join {alliance.name}.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <Select value={inviteTarget} onValueChange={setInviteTarget}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a country..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {targetCountries.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <CountrySearchSelect
+                    value={inviteTarget}
+                    onSelect={(id) => setInviteTarget(id)}
+                    excludeIds={memberIds}
+                    label="Nation to invite"
+                  />
                   <Button
                     onClick={() =>
                       inviteMutation.mutate({ allianceId, targetCountryId: inviteTarget })

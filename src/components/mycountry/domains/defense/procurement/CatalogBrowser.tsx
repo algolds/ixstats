@@ -9,7 +9,7 @@ import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { formatCompactCurrency } from "~/lib/utils/format-utils";
 import { DOMAIN_LABELS, leadMonths, type BranchDomain } from "~/lib/military/model";
-import { designYearOf, fitsDomain } from "~/lib/military/defense-console";
+import { catalogMatches, designYearOf } from "~/lib/military/defense-console";
 import type { EquipmentPreset } from "~/lib/military/player-catalog";
 
 /** Items rendered at once; a search narrows the rest. */
@@ -29,15 +29,7 @@ interface CatalogBrowserProps {
 export function CatalogBrowser({ equipment, domains, accessibleYear, canEdit, isLoading, onOrder }: CatalogBrowserProps) {
   const [domain, setDomain] = useState<BranchDomain | "all">("all");
   const [query, setQuery] = useState("");
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const wanted = domain === "all" ? domains : [domain];
-    return equipment.filter(
-      (item) =>
-        wanted.some((d) => fitsDomain(item.catalogCategory, d)) &&
-        (!q || item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q))
-    );
-  }, [equipment, domains, domain, query]);
+  const matches = useMemo(() => catalogMatches(equipment, domains, domain, query), [equipment, domains, domain, query]);
 
   return (
     <Card content="data">

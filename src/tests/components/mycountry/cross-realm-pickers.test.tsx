@@ -4,7 +4,7 @@
  * the dossier, whose embassy, meeting and proposal rows are off for a nation of another realm.
  */
 import React from "react";
-import { fireEvent, render, renderHook, screen } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
 
 const COUNTRIES = [
   { id: "frost-1", name: "Frostmark", realmId: "realm-frost" },
@@ -77,6 +77,18 @@ it("the exchange wizard offers participants of the host's realm only", () => {
     wrapper: inFrost,
   });
   expect(result.current.availableCountries.map((c) => c.id)).toEqual(["frost-2"]);
+});
+
+it("the exchange wizard takes several participant nations, each picked or unpicked", () => {
+  const { result } = renderHook(() => useExchangeWizardForm({ id: "frost-1", name: "Frostmark" }), {
+    wrapper: inFrost,
+  });
+  act(() => result.current.toggleParticipant("frost-2"));
+  act(() => result.current.toggleParticipant("ixnay-1"));
+  expect(result.current.data.participantCountryIds).toEqual(["frost-2", "ixnay-1"]);
+  expect(result.current.selectedCountries.map((c) => c.name)).toEqual(["Icereach", "Caphiria"]);
+  act(() => result.current.toggleParticipant("frost-2"));
+  expect(result.current.data.participantCountryIds).toEqual(["ixnay-1"]);
 });
 
 describe("the dossier", () => {

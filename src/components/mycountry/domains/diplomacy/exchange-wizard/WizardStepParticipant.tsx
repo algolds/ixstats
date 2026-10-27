@@ -13,15 +13,16 @@ interface WizardStepParticipantProps {
   onCountrySearchChange: (value: string) => void;
   isLoading: boolean;
   countries: WizardCountry[];
-  participantCountryId: string;
-  onSelect: (countryId: string) => void;
+  participantCountryIds: string[];
+  /** Picks or unpicks a nation: several can take part. */
+  onToggle: (countryId: string) => void;
 }
 
 function CountryList({
   isLoading,
   countries,
-  participantCountryId,
-  onSelect,
+  participantCountryIds,
+  onToggle,
 }: Omit<WizardStepParticipantProps, "countrySearch" | "onCountrySearchChange">) {
   if (isLoading) {
     return (
@@ -45,11 +46,11 @@ function CountryList({
     <FacetList>
       <FacetListSection aria-label="Countries">
         {countries.map((country) => {
-          const isSelected = participantCountryId === country.id;
+          const isSelected = participantCountryIds.includes(country.id);
           return (
             <FacetRow
               key={country.id}
-              onClick={() => onSelect(country.id)}
+              onClick={() => onToggle(country.id)}
               selected={isSelected}
               accessory="check"
               leading={
@@ -70,7 +71,7 @@ function CountryList({
   );
 }
 
-/** Step 2 — pick the participant country. */
+/** Step 2 — pick the participant countries. */
 export const WizardStepParticipant = React.memo(function WizardStepParticipant({
   countrySearch,
   onCountrySearchChange,
@@ -79,10 +80,15 @@ export const WizardStepParticipant = React.memo(function WizardStepParticipant({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-label text-title-3 mb-2">Select participant country</h3>
+        <h3 className="text-label text-title-3 mb-2">Select participant countries</h3>
         <p className="text-label-secondary text-body">
-          Choose the country that will participate in this exchange.
+          Choose the countries that will participate in this exchange. Select as many as you like.
         </p>
+        {listProps.participantCountryIds.length > 0 && (
+          <p className="text-label text-footnote mt-1" aria-live="polite">
+            {listProps.participantCountryIds.length} selected
+          </p>
+        )}
       </div>
 
       <div className="relative">
