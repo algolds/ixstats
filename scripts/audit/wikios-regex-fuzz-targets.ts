@@ -635,18 +635,30 @@ export const TARGETS: readonly Target[] = [
     },
     bound(10, "several records per construct, converted to editor nodes and back")
   ),
-  wikitext("transformers/wikitext-diff#diffWikitext", async () => {
-    const m = await import("~/lib/wiki-os/transformers/wikitext-diff");
-    return (s) => m.diffWikitext(s, `${s}\nx`);
-  }),
-  wikitext("transformers/wikitext-diff#diffWikitext@against-empty", async () => {
-    const m = await import("~/lib/wiki-os/transformers/wikitext-diff");
-    return (s) => m.diffWikitext("", s);
-  }),
-  wikitext("transformers/wikitext-diff#diffWikitext@shifted", async () => {
-    const m = await import("~/lib/wiki-os/transformers/wikitext-diff");
-    return (s) => m.diffWikitext(s, s.replaceAll("\n", "\ny\n"));
-  }),
+  wikitext(
+    "transformers/wikitext-diff#diffWikitext",
+    async () => {
+      const m = await import("~/lib/wiki-os/transformers/wikitext-diff");
+      return (s) => m.diffWikitext(s, `${s}\nx`);
+    },
+    bound(2, "a diff row per line of both texts, aligned line by line")
+  ),
+  wikitext(
+    "transformers/wikitext-diff#diffWikitext@against-empty",
+    async () => {
+      const m = await import("~/lib/wiki-os/transformers/wikitext-diff");
+      return (s) => m.diffWikitext("", s);
+    },
+    bound(2, "a diff row per line of both texts, aligned line by line")
+  ),
+  wikitext(
+    "transformers/wikitext-diff#diffWikitext@shifted",
+    async () => {
+      const m = await import("~/lib/wiki-os/transformers/wikitext-diff");
+      return (s) => m.diffWikitext(s, s.replaceAll("\n", "\ny\n"));
+    },
+    bound(2, "a diff row per line of both texts, aligned line by line")
+  ),
   wikitext("transformers/wikitext-parser#imageDimensionAttributes", async () => {
     const m = await import("~/lib/wiki-os/transformers/wikitext-parser");
     return (s) => m.imageDimensionAttributes([s, "thumb", s]);
@@ -842,7 +854,11 @@ export const TARGETS: readonly Target[] = [
   ),
   wikitext("sister-media#sisterMediaPath", async () => {
     const m = await import("~/lib/wiki-os/sister-media");
-    return (s) => m.sisterMediaPath(`https://static.wikia.nocookie.net/althistory/images/a/ab/${s}`, "althistory");
+    return (s) =>
+      m.sisterMediaPath(
+        `https://static.wikia.nocookie.net/althistory/images/a/ab/${s}`,
+        "althistory"
+      );
   }),
 
   // ---- templates/ ------------------------------------------------------------------------------
