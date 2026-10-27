@@ -18,7 +18,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { spawnSync } from "child_process";
 import { Project, SyntaxKind, type Node, type SourceFile } from "ts-morph";
-import { VERSIONS, type ReleaseChannel } from "../../src/lib/buildVersion";
+import { INTERNAL_VERSIONS as VERSIONS, type ReleaseChannel } from "../../src/lib/buildVersion";
 
 export const DEFAULT_ROOT = process.cwd();
 

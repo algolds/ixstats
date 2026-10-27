@@ -22,7 +22,10 @@ export { BUILD_VERSION };
 
 export type ReleaseChannel = "Developer" | "Alpha" | "Beta" | "Release Candidate" | "Stable";
 
-export const VERSIONS = {
+// The internal registry: the versions the platform has actually reached. The docs (sync-reference-docs.ts),
+// the Developer panel and anything stored (the engines stamp recipes and imports) read these. The public
+// reveal shows VERSIONS below instead, which restarts every user-facing number at 1.0.
+export const INTERNAL_VERSIONS = {
   platform: {
     major: 1,
     minor: 5,
@@ -70,9 +73,41 @@ export const VERSIONS = {
   build: BUILD_VERSION,
 } as const;
 
+// The public registry (the 1.0 reveal, 2026-10): what every user-facing surface shows. Each public number
+// restarts at 1; bump these from here on. The engines are internal-only and functional (stored world
+// recipes are validated against ATLAS_ENGINE_VERSION), so they keep their internal numbers.
+export const VERSIONS = {
+  platform: {
+    major: 1,
+    minor: 0,
+    patch: 0,
+    release: "Lobster Crosby",
+    channel: "Stable" as ReleaseChannel,
+  },
+  apps: { ixworld: 1, wikios: 1, ixvault: 1 },
+  engines: INTERNAL_VERSIONS.engines,
+  systems: {
+    mycountry: 1,
+    builder: 1,
+    thinkpages: 1,
+    achievements: 1,
+    stash: 1,
+    repository: 1,
+    halo: 1,
+    onoma: 1,
+  },
+  design: { facet: 1 },
+  subSystems: { canvas: 1 },
+  build: BUILD_VERSION,
+} as const;
+
 // Derived display strings — the only thing UI components should import.
 
 const p = VERSIONS.platform;
+const ip = INTERNAL_VERSIONS.platform;
+
+/** Internal platform version, e.g. "1.5.0" (diagnostics and docs; never shown to players). */
+export const INTERNAL_PLATFORM_VERSION = `${ip.major}.${ip.minor}.${ip.patch}`;
 
 /** Public platform version, e.g. "1.4 Lobster Crosby". */
 export const APP_VERSION = `${p.major}.${p.minor} ${p.release}`;
