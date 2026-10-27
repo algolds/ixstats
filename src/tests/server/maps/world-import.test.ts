@@ -330,6 +330,22 @@ describe("the check with PostGIS", () => {
     expect(stateOf(db)).toBe(before);
   });
 
+  it("blames the server, not the world, when PostGIS lacks SRID 3857", async () => {
+    const db = seedRealm();
+    db.$queryRawUnsafe.mockImplementation(async (sql: string) => {
+      if (!sql.includes("ST_IsValid")) return [];
+      throw new Error(
+        "Raw query failed. Message: `ERROR: Cannot find SRID (3857) in spatial_ref_sys`"
+      );
+    });
+    const before = stateOf(db);
+    const error = await runWorldDryRun(db, jobFor(await stored())).catch((e: Error) => e);
+    expect(error).toMatchObject({ name: "MapImportError", code: "BAD_GATEWAY" });
+    expect((error as Error).message).toMatch(/missing SRID 3857 in PostGIS's spatial_ref_sys/);
+    expect((error as Error).message).not.toMatch(/cannot project or measure it/);
+    expect(stateOf(db)).toBe(before);
+  });
+
   it.each([
     [
       "a self-crossing border the writer can repair",

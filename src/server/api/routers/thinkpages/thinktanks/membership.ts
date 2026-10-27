@@ -254,6 +254,20 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
         select: { name: true, type: true, conversationId: true },
       });
 
+      // A group nobody belongs to is disbanded: archived (isActive false) like every other
+      // inactive group, so it drops out of the directory but its history is kept. Realm boards
+      // belong to the realm, not their members, and stay up.
+      const remainingMembers = await db.thinktankMember.count({
+        where: { groupId: input.groupId, isActive: true },
+      });
+      const disbanded = remainingMembers === 0 && !isRealmBoard(updatedGroup);
+      if (disbanded) {
+        await db.thinktankGroup.update({
+          where: { id: input.groupId },
+          data: { isActive: false, memberCount: 0 },
+        });
+      }
+
       // Deactivate ConversationParticipant if linked conversation exists
       if (updatedGroup.conversationId) {
         await db.conversationParticipant
@@ -305,6 +319,12 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
         console.warn("[ThinkTanks] Failed to send leave notifications:", e);
       }
 
-      return { success: true, message: "Successfully left group" };
+      return {
+        success: true,
+        disbanded,
+        message: disbanded
+          ? "You were the last member, so the group was disbanded"
+          : "Successfully left group",
+      };
     }),
 });

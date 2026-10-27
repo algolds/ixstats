@@ -152,10 +152,11 @@ export function AccountCreationModal({
     isUsernameAvailable,
     isCheckingUsername,
     isValidUsernameFormat,
+    isClaimable: isUsernameClaimable,
     availability: usernameAvailability,
     isLoading: isLoadingUsernameAvailability,
     reset: resetUsernameAvailability,
-  } = useUsernameAvailability(formData.username);
+  } = useUsernameAvailability(formData.username, countryId);
 
   useEffect(() => {
     if (!isOpen) {
@@ -281,6 +282,7 @@ export function AccountCreationModal({
                   errors={errors}
                   isCheckingUsername={isCheckingUsername}
                   isUsernameAvailable={isUsernameAvailable}
+                  isUsernameClaimable={isUsernameClaimable}
                   isValidUsernameFormat={isValidUsernameFormat}
                   handleUsernameChange={handleUsernameChange}
                   onBack={() => setStep("type")}

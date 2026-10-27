@@ -9,6 +9,9 @@ import { TRPCError } from "@trpc/server";
 import { isSystemOwner } from "~/lib/auth";
 import { assertCountryWriteAccess, getRoleName } from "~/server/shared/country-authorization";
 import { maxThinkpagesAccountsPerUser } from "~/server/shared/thinkpages-config";
+import { canClaimImportedAccount } from "~/server/shared/thinkpages-imported-accounts";
+import { imageUrlSchema } from "~/server/shared/image-url-schema";
+import { PERSONA_TYPES } from "~/lib/thinkpages-forum/persona-type";
 import {
   ensurePersonalAccount,
   findPersonalAccount,
@@ -37,7 +40,7 @@ function isAdminCaller(ctx: {
 // Base schema for ThinkPages accounts
 const thinkpagesAccountBaseSchema = z.object({
   countryId: z.string(),
-  accountType: z.enum(["government", "media", "citizen"]),
+  accountType: z.enum(PERSONA_TYPES),
   username: z
     .string()
     .min(3)
@@ -65,12 +68,12 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
         accountId: z.string(),
         // Admin-only: ignored/forbidden for regular users (see handler).
         verified: z.boolean().optional(),
-        profileImageUrl: z.string().url().or(z.literal("")).optional().nullable(),
+        profileImageUrl: imageUrlSchema.or(z.literal("")).optional().nullable(),
         postingFrequency: z.enum(["active", "moderate", "low"]).optional(),
         politicalLean: z.enum(["left", "center", "right"]).optional(),
         personality: z.enum(["serious", "casual", "satirical"]).optional(),
         isActive: z.boolean().optional(),
-        accountType: z.enum(["government", "media", "citizen"]).optional(),
+        accountType: z.enum(PERSONA_TYPES).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -142,6 +145,8 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
           .min(3)
           .max(20)
           .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
+        // The nation the persona is for, so a nation-bound IxTwitter import reads as claimable.
+        countryId: z.string().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -150,9 +155,13 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
       // Check if username is already taken in ThinkpagesAccount table
       const existingAccount = await db.thinkpagesAccount.findUnique({
         where: { username: input.username },
+        select: { clerkUserId: true, countryId: true, verified: true },
       });
 
-      return { isAvailable: !existingAccount };
+      if (!existingAccount) return { isAvailable: true, claimable: false };
+      // A name an unclaimed IxTwitter import holds can be taken over by creating the persona.
+      const claimable = canClaimImportedAccount(existingAccount, input.countryId);
+      return { isAvailable: claimable, claimable };
     }),
 
   // Create ThinkPages Feed Account - For Feed only (not ThinkTanks/ThinkShare)
@@ -187,15 +196,21 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
         where: { username: input.username },
       });
 
-      if (existingUsername) {
+      // The caller must own (or be an admin for) the country the persona is attached to
+      await assertCountryWriteAccess(ctx, input.countryId);
+
+      // A name held by an unclaimed IxTwitter import is claimed (see thinkpages-imported-accounts)
+      const claimTarget =
+        existingUsername && canClaimImportedAccount(existingUsername, input.countryId)
+          ? existingUsername
+          : null;
+
+      if (existingUsername && !claimTarget) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Username is already taken",
         });
       }
-
-      // The caller must own (or be an admin for) the country the persona is attached to
-      await assertCountryWriteAccess(ctx, input.countryId);
 
       // Verify country exists
       const country = await db.country.findUnique({
@@ -218,12 +233,14 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
         citizen: existingCountryAccounts.filter((a) => a.accountType === "citizen").length,
         government: existingCountryAccounts.filter((a) => a.accountType === "government").length,
         media: existingCountryAccounts.filter((a) => a.accountType === "media").length,
+        corporate: existingCountryAccounts.filter((a) => a.accountType === "corporate").length,
       };
 
       const maxLimits = {
         citizen: 17,
         government: 5,
         media: 10,
+        corporate: 10,
       };
 
       const requestedType = input.accountType as keyof typeof maxLimits;
@@ -237,20 +254,41 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
       // Create the account
       const lastNameVal = input.lastName || "";
       const displayName = lastNameVal ? `${input.firstName} ${lastNameVal}` : input.firstName;
+      const personaData = {
+        clerkUserId,
+        countryId: input.countryId,
+        accountType: input.accountType,
+        displayName,
+        firstName: input.firstName,
+        lastName: lastNameVal,
+        bio: input.bio || "",
+        verified: false,
+        postingFrequency: input.postingFrequency,
+        politicalLean: input.politicalLean,
+        personality: input.personality,
+      };
+
+      if (claimTarget) {
+        // Take the imported row over in place so its IxTwitter post history comes along. The
+        // owner guard makes the claim atomic: a concurrent claimer gets the "taken" error.
+        const claimed = await db.thinkpagesAccount.updateMany({
+          where: { id: claimTarget.id, clerkUserId: claimTarget.clerkUserId },
+          data: {
+            ...personaData,
+            isActive: true,
+            profileImageUrl: input.profileImageUrl || claimTarget.profileImageUrl,
+          },
+        });
+        if (claimed.count === 0) {
+          throw new TRPCError({ code: "CONFLICT", message: "Username is already taken" });
+        }
+        return db.thinkpagesAccount.findUniqueOrThrow({ where: { id: claimTarget.id } });
+      }
+
       const account = await db.thinkpagesAccount.create({
         data: {
-          clerkUserId,
-          countryId: input.countryId,
-          accountType: input.accountType,
+          ...personaData,
           username: input.username,
-          displayName,
-          firstName: input.firstName,
-          lastName: lastNameVal,
-          bio: input.bio || "",
-          verified: false,
-          postingFrequency: input.postingFrequency,
-          politicalLean: input.politicalLean,
-          personality: input.personality,
           profileImageUrl: input.profileImageUrl || null,
         },
       });
@@ -413,6 +451,7 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
           citizen: 0,
           government: 0,
           media: 0,
+          corporate: 0,
           organization: 0,
         };
       }
@@ -430,6 +469,7 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
         citizen: accounts.filter((a) => a.accountType === "citizen").length,
         government: accounts.filter((a) => a.accountType === "government").length,
         media: accounts.filter((a) => a.accountType === "media").length,
+        corporate: accounts.filter((a) => a.accountType === "corporate").length,
         organization: 0, // Not used currently
       };
 

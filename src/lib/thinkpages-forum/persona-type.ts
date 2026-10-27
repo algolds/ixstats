@@ -1,5 +1,5 @@
 /** The voices a persona speaks with on the forum. A personal account is the member themself, so it has none. */
-export const PERSONA_TYPES = ["government", "media", "citizen"] as const;
+export const PERSONA_TYPES = ["government", "media", "citizen", "corporate"] as const;
 
 export type PersonaType = (typeof PERSONA_TYPES)[number];
 

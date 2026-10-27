@@ -22,6 +22,7 @@ import { htmlToDiscordMarkdown } from "./markdown";
 import { appUrl } from "~/lib/app-url";
 import { withBasePath } from "~/lib/base-path";
 import { APP_TINTS } from "~/lib/design/tokens";
+import * as imported from "~/server/shared/thinkpages-imported-accounts";
 
 // Callers and tests import the converter from here.
 export { htmlToDiscordMarkdown };
@@ -232,16 +233,13 @@ async function getOrCreateDiscordAccount(
   const mappedCountry = DISCORD_COUNTRY_MAP[discordUsername];
   const isFormerNation = !mappedCountry;
 
-  // Try to find existing account by discord username
-  const existingAccount = await db.thinkpagesAccount.findFirst({
-    where: {
-      OR: [{ username: discordUsername }, { bio: { contains: `discord:${discordUsername}` } }],
-    },
-  });
+  const existingAccount = await imported.findSyncPosterAccount(db, discordUsername);
 
   if (existingAccount) {
     return { accountId: existingAccount.id, isFormerNation };
   }
+
+  const username = await imported.posterMirrorUsername(db, discordUsername);
 
   const countryId = mappedCountry ? COUNTRY_ID_CACHE[mappedCountry] : null;
   const defaultCountryId = DEFAULT_COUNTRY_ID || (await getDefaultCountryId(db));
@@ -250,7 +248,7 @@ async function getOrCreateDiscordAccount(
 
   const account = await db.thinkpagesAccount.create({
     data: {
-      username: discordUsername,
+      username,
       displayName: displayName,
       firstName: displayName.split(" ")[0] || message.author.username,
       lastName: displayName.split(" ").slice(1).join(" ") || "",
@@ -310,16 +308,12 @@ async function getOrCreateHandleAccount(
     where: { username: handle },
   });
   if (existingAccount) {
-    return existingAccount.id;
+    // A handle a member owns (claimed or created) is not this poster's: post as the main account.
+    return imported.isUnclaimedImportedAccount(existingAccount) ? existingAccount.id : null;
   }
 
   // Get the main Discord user account to inherit country/verified status
-  const mainAccount = await db.thinkpagesAccount.findFirst({
-    where: {
-      OR: [{ username: discordUsername }, { bio: { contains: `discord:${discordUsername}` } }],
-    },
-    select: { id: true, verified: true, countryId: true },
-  });
+  const mainAccount = await imported.findSyncPosterAccount(db, discordUsername);
 
   if (!mainAccount) {
     return null;

@@ -28,6 +28,8 @@ interface AccountDetailsFormProps {
   errors: Record<string, string>;
   isCheckingUsername: boolean;
   isUsernameAvailable: boolean | null;
+  /** The name is an unclaimed IxTwitter account: creating the persona claims it and its posts. */
+  isUsernameClaimable?: boolean;
   isValidUsernameFormat: boolean;
   handleUsernameChange: (username: string) => void;
   onBack: () => void;
@@ -41,6 +43,7 @@ export function AccountDetailsForm({
   errors,
   isCheckingUsername,
   isUsernameAvailable,
+  isUsernameClaimable = false,
   isValidUsernameFormat,
   handleUsernameChange,
   onBack,
@@ -119,6 +122,11 @@ export function AccountDetailsForm({
         </div>
         {errors.username ? (
           <p className="text-footnote text-destructive mt-1">{errors.username}</p>
+        ) : isUsernameClaimable ? (
+          <p className="text-footnote text-success mt-1">
+            Previously used on IxTwitter: creating this account claims the handle and its post
+            history
+          </p>
         ) : isUsernameAvailable === true ? (
           <p className="text-footnote text-success mt-1">Username handle is available</p>
         ) : isUsernameAvailable === false && formData.username.length >= 3 ? (

@@ -26,7 +26,12 @@ interface ThinktankWorkspaceProps {
   initialGroupId?: string;
 }
 
-function useThinktankMembership(groupId: string | null, currentUserId: string) {
+function useThinktankMembership(
+  groupId: string | null,
+  currentUserId: string,
+  /** Active members including the caller; 1 means leaving disbands the group. */
+  memberCount?: number
+) {
   const notify = useNotify();
   const utils = api.useUtils();
 
@@ -48,9 +53,11 @@ function useThinktankMembership(groupId: string | null, currentUserId: string) {
   });
 
   const leaveMutation = api.thinkpages.leaveThinktank.useMutation({
-    onSuccess: () => {
+    onSuccess: (result) => {
       soundEffects.release();
-      notify.success("Left group.");
+      notify.success(
+        result.disbanded ? "Left group. It had no other members and was disbanded." : "Left group."
+      );
       refresh();
     },
     onError: (err) => {
@@ -67,7 +74,11 @@ function useThinktankMembership(groupId: string | null, currentUserId: string) {
 
   const leave = () => {
     if (!groupId || !currentUserId) return;
-    if (confirm("Are you sure you want to leave this group?")) {
+    const prompt =
+      memberCount === 1
+        ? "You are the last member. Leaving will disband this group. Continue?"
+        : "Are you sure you want to leave this group?";
+    if (confirm(prompt)) {
       soundEffects.press();
       leaveMutation.mutate({ groupId });
     }
@@ -173,7 +184,12 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
     }
   }, [activeGroup, activeTab]);
 
-  const membership = useThinktankMembership(selectedGroupId, currentUserId);
+  const membership = useThinktankMembership(
+    selectedGroupId,
+    currentUserId,
+    // Realm boards are never disbanded; elsewhere count live member rows, not the cached counter.
+    activeGroup && activeGroup.type !== "realm_board" ? activeGroup._count.members : undefined
+  );
 
   const openGroup = (id: string) => {
     soundEffects.press();
