@@ -219,6 +219,45 @@ describe("cultural exchanges", () => {
     await expect(create(NEIGHBOUR)).resolves.toMatchObject({ id: "ex2" });
   });
 
+  it("take several specific participants, each of the host's realm, within the cap", async () => {
+    const participantCreate = jest.fn().mockResolvedValue({ id: "p" });
+    const update = jest.fn().mockResolvedValue({});
+    const caller = callerFor(exchange(CALLER_COUNTRY), {
+      culturalExchange: {
+        findUnique: jest.fn(),
+        create: jest.fn().mockResolvedValue({ id: "ex2" }),
+        update,
+      },
+      culturalExchangeParticipant: { create: participantCreate },
+    });
+    const create = (participantCountryIds: string[], maxParticipants?: number) =>
+      caller.createCulturalExchange({
+        title: "Festival",
+        type: "festival",
+        description: "D",
+        hostCountryId: CALLER_COUNTRY,
+        hostCountryName: "Testland",
+        participantCountryIds,
+        maxParticipants,
+        startDate: "2041-01-01",
+        endDate: "2041-02-01",
+      });
+
+    await expect(create([NEIGHBOUR, FOREIGN_COUNTRY])).rejects.toMatchObject(refused);
+    await expect(create([NEIGHBOUR, SCENARIO_NATION], 1)).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    expect(participantCreate).not.toHaveBeenCalled();
+
+    // Duplicates and the host itself are dropped; each remaining nation gets one row.
+    await create([NEIGHBOUR, SCENARIO_NATION, NEIGHBOUR, CALLER_COUNTRY]);
+    expect(participantCreate.mock.calls.map(([arg]) => arg.data.countryId)).toEqual([
+      NEIGHBOUR,
+      SCENARIO_NATION,
+    ]);
+    expect(update).toHaveBeenCalledWith({ where: { id: "ex2" }, data: { participants: 2 } });
+  });
+
   it("are joined, voted on and given artifacts only by nations of the host's realm", async () => {
     const far = callerFor(exchange(FOREIGN_COUNTRY));
     await expect(

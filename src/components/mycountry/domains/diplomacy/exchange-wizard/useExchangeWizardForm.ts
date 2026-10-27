@@ -11,6 +11,7 @@ import {
   WIZARD_EXCHANGE_TYPES,
   WIZARD_STEP_COUNT,
   type ExchangeWizardData,
+  type WizardCountry,
   type WizardExchangeType,
   type WizardHostCountry,
 } from "./exchange-wizard-config";
@@ -24,7 +25,9 @@ export function useExchangeWizardForm(hostCountry: WizardHostCountry) {
   const [title, setTitle] = useState("");
   const [type, setType] = useState<WizardExchangeType>("festival");
   const [description, setDescription] = useState("");
-  const [participantCountryId, setParticipantCountryId] = useState("");
+  // Kept as rows so a nation picked under one search stays picked (and named) under another.
+  const [participants, setParticipants] = useState<WizardCountry[]>([]);
+  const participantCountryIds = useMemo(() => participants.map((c) => c.id), [participants]);
   const [narrative, setNarrative] = useState("");
   const [objectives, setObjectives] = useState<string[]>([]);
   const [startDate, setStartDate] = useState("");
@@ -59,15 +62,26 @@ export function useExchangeWizardForm(hostCountry: WizardHostCountry) {
 
   // Auto-generate placeholder narrative
   const narrativePlaceholder = useMemo(() => {
-    const selectedCountry = countriesData?.countries?.find((c) => c.id === participantCountryId);
-    const selectedCountryName = selectedCountry?.name ?? "the participating country";
+    const names = participants.map((c) => c.name);
+    const selectedCountryName =
+      names.length === 0
+        ? "the participating country"
+        : names.length === 1
+          ? names[0]
+          : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
     const typeConfig = WIZARD_EXCHANGE_TYPES[type];
 
     return `This ${typeConfig.label.toLowerCase()} brings together ${hostCountry.name} and ${selectedCountryName} in a celebration of shared cultural heritage. Through ${typeConfig.description.toLowerCase()}, our nations will strengthen bonds and create lasting memories...`;
-  }, [type, participantCountryId, countriesData, hostCountry.name]);
+  }, [type, participants, hostCountry.name]);
 
-  // Get selected country data
-  const selectedCountry = countriesData?.countries?.find((c) => c.id === participantCountryId);
+  // Pick or unpick a participant nation
+  const toggleParticipant = (countryId: string) => {
+    setParticipants((prev) => {
+      if (prev.some((c) => c.id === countryId)) return prev.filter((c) => c.id !== countryId);
+      const country = countriesData?.countries?.find((c) => c.id === countryId);
+      return country ? [...prev, country] : prev;
+    });
+  };
 
   // Nations of the host's realm, excluding the host
   const realmId = useActingRealmId();
@@ -87,9 +101,9 @@ export function useExchangeWizardForm(hostCountry: WizardHostCountry) {
   // Validation
   const canProceed: Record<number, boolean> = {
     1: !!(title.trim() && description.trim()),
-    2: !!participantCountryId,
+    2: participants.length > 0,
     3: !!(narrative.trim() && objectives.length > 0),
-    4: !!(startDate && endDate && maxParticipants > 0),
+    4: !!(startDate && endDate && maxParticipants >= Math.max(1, participants.length)),
   };
   const isNextDisabled = canProceed[currentStep] === false;
 
@@ -109,7 +123,7 @@ export function useExchangeWizardForm(hostCountry: WizardHostCountry) {
     title,
     type,
     description,
-    participantCountryId,
+    participantCountryIds,
     narrative,
     objectives,
     startDate,
@@ -130,7 +144,7 @@ export function useExchangeWizardForm(hostCountry: WizardHostCountry) {
     type,
     setType,
     setDescription,
-    setParticipantCountryId,
+    toggleParticipant,
     setNarrative,
     toggleObjective,
     setStartDate,
@@ -143,7 +157,7 @@ export function useExchangeWizardForm(hostCountry: WizardHostCountry) {
     calendar: clock?.calendar ?? null,
     isLoadingCountries,
     narrativePlaceholder,
-    selectedCountry,
+    selectedCountries: participants,
     availableCountries,
   };
 }

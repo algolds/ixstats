@@ -122,7 +122,7 @@ export function useExchangeActions(
     title: string;
     type: string;
     description: string;
-    participantCountryId: string;
+    participantCountryIds: string[];
     narrative: string;
     objectives: string[];
     startDate: string;
@@ -153,7 +153,7 @@ export function useExchangeActions(
       objectives: wizardData.objectives,
       isPublic: wizardData.isPublic,
       maxParticipants: wizardData.maxParticipants,
-      participantCountryId: wizardData.participantCountryId,
+      participantCountryIds: wizardData.participantCountryIds,
     });
   };
 
