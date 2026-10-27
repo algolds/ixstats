@@ -401,8 +401,10 @@ This part gives the order. The detail stays in each runbook:
       `MAP_TILE_DIR` and `MAP_RASTER_DIR` ([September step 2](deploy-rose-garden-2026-09.md#2-environment) and
       [5c](deploy-rose-garden-2026-09.md#5c-relief-for-ixnay-and-eurth-after-the-deploy-script)),
       `WIKIOS_MEDIAWIKI_INTERNAL_URL` with its loopback server
-      ([cutover step 2](wikios-v1-cutover.md#2-deploy-ixstates-as-usual)), and optionally `COMBAT_SEED_SECRET`, email
-      and push. Check `CRON_SECRET` is at least 32 characters.
+      ([cutover step 2](wikios-v1-cutover.md#2-deploy-ixstates-as-usual)), `WIKIOS_API_SESSION_SECRET`
+      ([cutover step 1c](wikios-v1-cutover.md#1c-the-apiphp-session-secret-plan-410-before-bots-use-wapiphp): generated
+      on the server, never typed or printed), and optionally `COMBAT_SEED_SECRET`, email and push. Check `CRON_SECRET`
+      is at least 32 characters.
 - [ ] **`ecosystem.config.cjs`:** `NODE_ENV: "production"` for every app, `CRON_ENABLED_JOBS: ""` for `ixstats-cron`
       (the new runner exits on old names such as `passive-income`, `scheduled-changes` and `lorewards-state-sync`),
       and the `ixstats-web` block if the web app should run under PM2 (A2).

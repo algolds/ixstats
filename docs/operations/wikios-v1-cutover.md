@@ -335,6 +335,7 @@ running it: from here to step 2 the checkout holds code that is not running.
 B=$(git -C "$IX" branch --show-current); echo "$B"            # master: the deploy refuses any other branch
 git -C "$IX" status --short                                  # only " M src/lib/buildVersion.generated.ts" (every build rewrites it), or ask the owner: reset --hard drops a changed tracked file, the deploy's clean -fd an untracked one
 git -C "$IX" rev-parse HEAD | tee "$BK/previous-release.sha"  # the commit running now, for the rollback
+bk "$IX/next.config.js" next.config.js.0b; bk "$IX/postcss.config.js" postcss.config.js.0b  # the release tracks both, so the reset replaces production's copies: diff them with the release's (release guide B2) and ask the owner about any production-only line
 git -C "$IX" fetch master "$B"                               # the deploy's own fetch
 git -C "$IX" log -1 --oneline FETCH_HEAD                     # the release: the owner confirms it before the reset
 git -C "$IX" rev-parse FETCH_HEAD | tee "$BK/release.sha"
