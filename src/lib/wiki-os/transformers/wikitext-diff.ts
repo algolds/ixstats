@@ -188,6 +188,12 @@ function deletionsFirst(ops: readonly EditOp[]): EditOp[] {
   return sorted;
 }
 
+/** Whether `a` and `b` have a symbol in common. Linear. */
+function sharesSymbol(a: readonly number[], b: readonly number[]): boolean {
+  const inA = new Set(a);
+  return b.some((symbol) => inA.has(symbol));
+}
+
 /**
  * The edit script between two symbol arrays: the common head and tail are peeled off first (almost
  * every revision is a small change to a large text), Myers runs on the middle, and a middle too far
@@ -211,7 +217,11 @@ function editScript(
   }
   const midA = a.slice(head, a.length - tail);
   const midB = b.slice(head, b.length - tail);
-  const middle = shortestEdit(midA, midB, maxDistance, budget) ?? [
+  // Nothing in the middle can be kept when one side is empty (a page created or blanked) or the sides
+  // share no symbol, so the shortest script is the replacement below: skip Myers, whose cost there
+  // grows with the square of the distance up to maxDistance.
+  const shared = midA.length > 0 && midB.length > 0 && sharesSymbol(midA, midB);
+  const middle = (shared ? shortestEdit(midA, midB, maxDistance, budget) : null) ?? [
     ...midA.map((): EditOp => DELETE),
     ...midB.map((): EditOp => INSERT),
   ];
