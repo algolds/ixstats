@@ -22,6 +22,10 @@ import { htmlToDiscordMarkdown } from "./markdown";
 import { appUrl } from "~/lib/app-url";
 import { withBasePath } from "~/lib/base-path";
 import { APP_TINTS } from "~/lib/design/tokens";
+import {
+  IXTWITTER_IMPORT_OWNER_PREFIX,
+  isUnclaimedImportedAccount,
+} from "~/server/shared/thinkpages-imported-accounts";
 
 // Callers and tests import the converter from here.
 export { htmlToDiscordMarkdown };
@@ -232,9 +236,11 @@ async function getOrCreateDiscordAccount(
   const mappedCountry = DISCORD_COUNTRY_MAP[discordUsername];
   const isFormerNation = !mappedCountry;
 
-  // Try to find existing account by discord username
+  // Try to find existing account by discord username. Only sync-owned rows count: once a member
+  // claims an imported account (thinkpages-imported-accounts) it is theirs, not this poster's.
   const existingAccount = await db.thinkpagesAccount.findFirst({
     where: {
+      clerkUserId: { startsWith: IXTWITTER_IMPORT_OWNER_PREFIX },
       OR: [{ username: discordUsername }, { bio: { contains: `discord:${discordUsername}` } }],
     },
   });
@@ -243,6 +249,13 @@ async function getOrCreateDiscordAccount(
     return { accountId: existingAccount.id, isFormerNation };
   }
 
+  // The poster's own name was claimed by a member: mirror into a suffixed account instead.
+  const nameTaken = await db.thinkpagesAccount.findUnique({
+    where: { username: discordUsername },
+    select: { id: true },
+  });
+  const username = nameTaken ? `${discordUsername}_ixtwitter` : discordUsername;
+
   const countryId = mappedCountry ? COUNTRY_ID_CACHE[mappedCountry] : null;
   const defaultCountryId = DEFAULT_COUNTRY_ID || (await getDefaultCountryId(db));
 
@@ -250,7 +263,7 @@ async function getOrCreateDiscordAccount(
 
   const account = await db.thinkpagesAccount.create({
     data: {
-      username: discordUsername,
+      username,
       displayName: displayName,
       firstName: displayName.split(" ")[0] || message.author.username,
       lastName: displayName.split(" ").slice(1).join(" ") || "",
@@ -310,12 +323,14 @@ async function getOrCreateHandleAccount(
     where: { username: handle },
   });
   if (existingAccount) {
-    return existingAccount.id;
+    // A handle a member owns (claimed or created) is not this poster's: post as the main account.
+    return isUnclaimedImportedAccount(existingAccount) ? existingAccount.id : null;
   }
 
   // Get the main Discord user account to inherit country/verified status
   const mainAccount = await db.thinkpagesAccount.findFirst({
     where: {
+      clerkUserId: { startsWith: IXTWITTER_IMPORT_OWNER_PREFIX },
       OR: [{ username: discordUsername }, { bio: { contains: `discord:${discordUsername}` } }],
     },
     select: { id: true, verified: true, countryId: true },

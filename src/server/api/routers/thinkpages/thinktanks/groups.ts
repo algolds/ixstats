@@ -8,6 +8,7 @@
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { imageUrlSchema } from "~/server/shared/image-url-schema";
 import {
   createTRPCRouter,
   publicProcedure,
@@ -135,7 +136,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       z.object({
         name: z.string().min(1).max(100),
         description: z.string().max(500).optional(),
-        avatar: z.string().url().optional(),
+        avatar: imageUrlSchema.optional(),
         type: z.enum(["public", "private", "invite_only"]).default("public"),
         category: z.string().optional(),
         tags: z.array(z.string()).optional(),

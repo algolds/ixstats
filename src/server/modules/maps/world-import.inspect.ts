@@ -10,6 +10,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type { Geometry } from "geojson";
 import { isPostGISAvailable } from "~/lib/maps/geo-validation";
+import { MapImportError } from "./map-import.realm";
 
 export interface GeometryReport {
   /** ST_IsValid: false for a self-crossing ring. */
@@ -88,6 +89,23 @@ const run = (db: PrismaClient, items: readonly InspectItem[]) =>
     JSON.stringify(items.map((item) => ({ id: item.id, g: item.geometry })))
   );
 
+/**
+ * PostGIS without a spatial reference system it needs (spatial_ref_sys lost SRID 3857, as happened in production)
+ * fails on every feature. That is the server's fault, not the world's, so the check stops with one clear message
+ * instead of blaming each feature of the upload.
+ */
+const MISSING_SRID = /Cannot find SRID \((\d+)\)/i;
+
+function throwIfMissingSrid(message: string): void {
+  const srid = MISSING_SRID.exec(message)?.[1];
+  if (!srid) return;
+  throw new MapImportError(
+    "BAD_GATEWAY",
+    `The map database is missing SRID ${srid} in PostGIS's spatial_ref_sys, so no shape can be projected. ` +
+      "This is a server problem, not the world file: restore spatial_ref_sys and run the check again."
+  );
+}
+
 const reportOf = (row: InspectRow): GeometryReport => ({
   valid: row.valid === true,
   repairable: row.repairable === true,
@@ -113,7 +131,9 @@ export async function inspectGeometries(
           const [row] = await run(db, [item]);
           if (row) reports.set(item.id, reportOf(row));
         } catch (error) {
-          const reason = (error instanceof Error ? error.message : String(error)).slice(0, 160);
+          const message = error instanceof Error ? error.message : String(error);
+          throwIfMissingSrid(message);
+          const reason = message.slice(0, 160);
           reports.set(item.id, {
             valid: false,
             repairable: false,

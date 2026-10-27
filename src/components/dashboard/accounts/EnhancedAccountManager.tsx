@@ -16,6 +16,7 @@ import {
   StatUp as TrendingUp,
   ChatBubble as MessageSquare,
   CheckCircle,
+  Building,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -53,9 +54,10 @@ const TYPE_STYLES = {
   government: { color: "border-yellow/30 bg-yellow/10 text-yellow", Icon: Crown, limit: 5 },
   media: { color: "border-blue/30 bg-blue/10 text-blue", Icon: Newspaper, limit: 10 },
   citizen: { color: "border-green/30 bg-green/10 text-green", Icon: Users, limit: 15 },
+  corporate: { color: "border-purple/30 bg-purple/10 text-purple", Icon: Building, limit: 10 },
 };
 
-const FILTER_TYPES = ["all", "government", "media", "citizen"] as const;
+const FILTER_TYPES = ["all", "government", "media", "citizen", "corporate"] as const;
 type FilterType = (typeof FILTER_TYPES)[number];
 
 const typeStyle = (type: string) =>

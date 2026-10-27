@@ -1,18 +1,18 @@
 "use client";
 
-import { Crown, Journal as Newspaper, Group as Users } from "iconoir-react";
+import { Building, Crown, Journal as Newspaper, Group as Users } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 
-type AccountType = "government" | "media" | "citizen";
+type AccountType = "government" | "media" | "citizen" | "corporate";
 
 interface AccountTypeOption {
   icon: typeof Crown;
   label: string;
   description: string;
   maxAccounts: number;
-  color: "amber" | "blue" | "green";
+  color: "amber" | "blue" | "green" | "purple";
   examples: string[];
 }
 
@@ -40,6 +40,14 @@ const ACCOUNT_TYPES: Record<AccountType, AccountTypeOption> = {
     maxAccounts: 17,
     color: "green",
     examples: ["Student Activist", "Business Owner", "Cultural Influencer"],
+  },
+  corporate: {
+    icon: Building,
+    label: "Corporate",
+    description: "Companies, brands, and business organizations",
+    maxAccounts: 10,
+    color: "purple",
+    examples: ["National Airline", "Tech Conglomerate", "State Energy Company"],
   },
 };
 
@@ -89,7 +97,8 @@ export function AccountTypeSelector({
                   "rounded-row flex size-10 shrink-0 items-center justify-center",
                   type.color === "amber" && "bg-yellow/15 text-yellow",
                   type.color === "blue" && "bg-blue/15 text-blue",
-                  type.color === "green" && "bg-green/15 text-green"
+                  type.color === "green" && "bg-green/15 text-green",
+                  type.color === "purple" && "bg-purple/15 text-purple"
                 )}
               >
                 <Icon className="size-5" aria-hidden="true" />

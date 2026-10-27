@@ -4,8 +4,11 @@ import { api } from "~/trpc/react";
 // Must match the backend username rule
 const USERNAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9_]*$/;
 
-/** Live availability of a candidate ThinkPages username. */
-export function useUsernameAvailability(username: string) {
+/**
+ * Live availability of a candidate ThinkPages username. `countryId` is the persona's nation, so a
+ * name held by an unclaimed IxTwitter import for that nation reads as available (claimable).
+ */
+export function useUsernameAvailability(username: string, countryId?: string) {
   const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
 
@@ -17,7 +20,7 @@ export function useUsernameAvailability(username: string) {
     isLoading,
     error,
   } = api.thinkpages.checkUsernameAvailability.useQuery(
-    { username },
+    { username, countryId },
     {
       enabled: isValidUsernameFormat,
       staleTime: 500,
@@ -53,6 +56,8 @@ export function useUsernameAvailability(username: string) {
     isUsernameAvailable,
     isCheckingUsername,
     isValidUsernameFormat,
+    /** The name belongs to an unclaimed IxTwitter account that creating the persona will claim. */
+    isClaimable: isUsernameAvailable === true && availability?.claimable === true,
     availability,
     isLoading,
     reset: () => setIsUsernameAvailable(null),
