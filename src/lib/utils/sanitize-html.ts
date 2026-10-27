@@ -677,8 +677,9 @@ export function validateNoXSS(content: string): { valid: boolean; reason?: strin
     return { valid: false, reason: "JavaScript protocols are not allowed" };
   }
 
-  // Check for event handlers, as attributes inside a tag ("bonus=50" or "condition = met" in prose is fine)
-  if (/<[^>]*\son\w+\s*=/i.test(content)) {
+  // Check for event handlers, as attributes inside a tag, after a space or a slash (`<img/src=x/onerror=…>`);
+  // "bonus=50" or "condition = met" in prose is fine
+  if (/<[^>]*[\s/]on\w+\s*=/i.test(content)) {
     return { valid: false, reason: "Event handlers are not allowed" };
   }
 

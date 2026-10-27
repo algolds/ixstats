@@ -187,6 +187,13 @@ describe("XSS Sanitization Test Suite", () => {
       expect(result.reason).toContain("Event handlers");
     });
 
+    it("detects an event handler after a slash, with no space in the tag", () => {
+      const result = validateNoXSS("<img/src=x/onerror=alert(1)>");
+
+      expect(result.valid).toBe(false);
+      expect(result.reason).toContain("Event handlers");
+    });
+
     it("detects data URLs with HTML", () => {
       const result = validateNoXSS('<img src="data:text/html,<script>alert(1)</script>">');
 
