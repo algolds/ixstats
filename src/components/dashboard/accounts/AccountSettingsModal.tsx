@@ -90,6 +90,7 @@ export function AccountSettingsModal({
                 { value: "government", label: "Government" },
                 { value: "media", label: "Media" },
                 { value: "citizen", label: "Citizen" },
+                { value: "corporate", label: "Corporate" },
               ]}
             />
           </div>

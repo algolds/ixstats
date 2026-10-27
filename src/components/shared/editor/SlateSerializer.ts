@@ -1,7 +1,7 @@
 // src/components/shared/editor/SlateSerializer.ts
 // Serializer for Slate AST to HTML, and Parsoid HTML to Slate.
 
-import { Editor, Transforms, type Descendant } from "slate";
+import { Editor, Node as SlateNode, Path, Transforms, type Descendant } from "slate";
 import { getBasePath } from "~/lib/base-path";
 import { parseWikiSource, publicArticleUrl, type WikiSource } from "~/lib/wiki-os/config";
 import {
@@ -349,6 +349,27 @@ export function toggleBlock(editor: any, type: string) {
     const wrapper = { type, children: [] };
     Transforms.wrapNodes(editor, wrapper as any, {
       match: (n: any) => n.type === "li",
+    });
+  }
+}
+
+/**
+ * Inserts a void block (image, wiki embed) and leaves the caret in a text block after it. Slate
+ * otherwise puts the selection inside the void, where typing does nothing until the user clicks
+ * elsewhere. An existing non-void block after it takes the caret at its start; otherwise a new
+ * empty paragraph is added.
+ */
+export function insertVoidBlock(editor: any, node: Descendant) {
+  Transforms.insertNodes(editor, node as any);
+  const entry = editor.selection ? Editor.void(editor, { at: editor.selection }) : undefined;
+  if (!entry) return;
+  const next = Path.next(entry[1]);
+  if (SlateNode.has(editor, next) && !Editor.isVoid(editor, SlateNode.get(editor, next) as any)) {
+    Transforms.select(editor, Editor.start(editor, next));
+  } else {
+    Transforms.insertNodes(editor, { type: "p", children: [{ text: "" }] } as any, {
+      at: next,
+      select: true,
     });
   }
 }

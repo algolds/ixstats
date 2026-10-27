@@ -38,11 +38,13 @@ jest.mock("~/lib/cache", () => ({
     deleteByPattern: jest.fn().mockResolvedValue(undefined),
   },
 }));
+const mockMirrorFeed = jest.fn().mockResolvedValue(undefined);
+const mockPostToIxTwitter = jest.fn().mockResolvedValue(undefined);
 jest.mock("~/lib/discord/thinkpages-feed", () => ({
-  mirrorThinkPagesPostToDiscordFeed: jest.fn().mockResolvedValue(undefined),
+  mirrorThinkPagesPostToDiscordFeed: (...args: unknown[]) => mockMirrorFeed(...args),
 }));
 jest.mock("~/lib/discord/ixtwitter-sync", () => ({
-  postThinkPagesToDiscord: jest.fn().mockResolvedValue(undefined),
+  postThinkPagesToDiscord: (...args: unknown[]) => mockPostToIxTwitter(...args),
   editDiscordMessage: jest.fn().mockResolvedValue(true),
   addDiscordReaction: jest.fn().mockResolvedValue(undefined),
 }));
@@ -193,6 +195,20 @@ describe("thinkpages.createPost", () => {
     const db = setup();
     await create(db, { content: "hi [DiscordMsg:123456] there [discordmsg:9]" });
     expect(db.thinkpagesPost.create.mock.calls[0]![0].data.content).toBe("hi there");
+  });
+
+  it("sends nothing to Discord when Share to Discord is off, emotes included", async () => {
+    mockMirrorFeed.mockClear();
+    mockPostToIxTwitter.mockClear();
+    await create(setup(), { content: "hello <:ixwiki:123456789012345678>", postToDiscord: false });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(mockMirrorFeed).not.toHaveBeenCalled();
+    expect(mockPostToIxTwitter).not.toHaveBeenCalled();
+
+    await create(setup(), { content: "hello <:ixwiki:123456789012345678>", postToDiscord: true });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(mockMirrorFeed).toHaveBeenCalledTimes(1);
+    expect(mockPostToIxTwitter).toHaveBeenCalledTimes(1);
   });
 
   it("looks up only mentions written in the content, at most MENTION_MAX_PER_POST", async () => {

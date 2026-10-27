@@ -217,6 +217,34 @@ export function fitsDomain(catalogCategory: string | null | undefined, domain: B
 }
 
 /**
+ * The catalog the Procurement tab lists for a domain filter and a search. Under one domain, equipment native to it
+ * comes first (vehicles for land, ships for sea), then category-less items, then items that merely can serve there:
+ * the catalog arrives sorted by category, and listing it as-is put the 57 aircraft (which fit every domain) ahead of
+ * everything, so with no search the first page looked the same whichever domain was picked.
+ */
+export function catalogMatches<T extends { name: string; category: string; catalogCategory?: string | null }>(
+  equipment: readonly T[],
+  domains: readonly BranchDomain[],
+  domain: BranchDomain | "all",
+  query: string
+): T[] {
+  const q = query.trim().toLowerCase();
+  const wanted = domain === "all" ? domains : [domain];
+  const matches = equipment.filter(
+    (item) =>
+      wanted.some((d) => fitsDomain(item.catalogCategory, d)) &&
+      (!q || item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q))
+  );
+  if (domain === "all") return matches;
+  const rank = (item: T) => {
+    const allowed = CATALOG_CATEGORY_DOMAINS[item.catalogCategory ?? ""];
+    return allowed ? allowed.indexOf(domain) : 1;
+  };
+  // Array.prototype.sort is stable: within a rank the catalog's own order stays.
+  return matches.sort((a, b) => rank(a) - rank(b));
+}
+
+/**
  * The branch an order sheet starts on: the first one in the item's natural domain (the first its category lists:
  * aircraft → air, naval → sea, vehicle → land), else the first that can hold it.
  */

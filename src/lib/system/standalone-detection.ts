@@ -27,6 +27,7 @@ export function isStandaloneClient(): boolean {
 /** Whether the request came in on maps.ixwiki.com (or the standalone build), which IxWiki embeds. */
 export function isMapsHostRequest(headers: Headers): boolean {
   if (standaloneBuild()) return true;
-  const host = headers.get("x-forwarded-host") || headers.get("host") || "";
-  return host.startsWith(MAPS_HOSTNAME);
+  const host = (headers.get("x-forwarded-host") || headers.get("host") || "").split(",")[0]!.trim();
+  // the exact host name, its port dropped: a prefix match would also take maps.ixwiki.com.example.org
+  return host.toLowerCase().replace(/:\d+$/, "") === MAPS_HOSTNAME;
 }

@@ -9,10 +9,13 @@ export const Tooltip = ({
   content,
   children,
   containerClassName,
+  showOnFocus = false,
 }: {
   content: string | React.ReactNode;
   children: React.ReactNode;
   containerClassName?: string;
+  /** Also open when a child takes keyboard focus, anchored under it (for tooltips on links and buttons). */
+  showOnFocus?: boolean;
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [mouse, setMouse] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -103,6 +106,17 @@ export const Tooltip = ({
     }
   };
 
+  const handleFocus = (e: React.FocusEvent<HTMLDivElement>) => {
+    if (!showOnFocus) return;
+    const rect = e.target.getBoundingClientRect();
+    updateMousePosition(rect.left, rect.bottom);
+    setIsVisible(true);
+  };
+
+  const handleBlur = () => {
+    if (showOnFocus) setIsVisible(false);
+  };
+
   // Update position when tooltip becomes visible or content changes
   useEffect(() => {
     if (isVisible && contentRef.current) {
@@ -122,6 +136,8 @@ export const Tooltip = ({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onClick={handleClick}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
     >
       {children}
       {typeof document !== "undefined" &&

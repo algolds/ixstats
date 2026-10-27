@@ -211,7 +211,8 @@ export interface ExchangeWizardData {
   title: string;
   type: string;
   description: string;
-  participantCountryId: string;
+  /** The specific nations invited to take part (none: the exchange is open to joiners). */
+  participantCountryIds: string[];
   narrative: string;
   objectives: string[];
   startDate: string;

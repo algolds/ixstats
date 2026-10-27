@@ -48,6 +48,7 @@ import {
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { storePrerequisiteMet } from "~/lib/vault/store-purchases";
+import { previewCosmetic } from "~/lib/vault/public-cosmetics";
 import { cardSheetHref } from "~/lib/cards/face/sheet-link";
 import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 import { Button } from "~/components/ui/button";
@@ -185,6 +186,7 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
       quality: item.quality || "standard",
       badgeText: item.badgeText || "Cosmetic",
       category: item.category,
+      cosmetics: previewCosmetic(item.id, item.effects),
     }));
 
   const upgradeItems: StoreItem[] = (storeItemsData ?? [])

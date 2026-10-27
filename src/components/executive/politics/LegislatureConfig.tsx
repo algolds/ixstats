@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button, buttonVariants } from "~/components/ui/button";
 import {
@@ -303,8 +303,6 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
   });
   const [chambers, setChambers] = useState<ChamberItem[]>([]);
   const [saved, setSaved] = useState(false);
-  // Set by per-chamber edits so the unicameral sync effect doesn't overwrite them.
-  const chamberEditInProgress = useRef(false);
 
   const { data: legislature, refetch } = api.elections.getLegislature.useQuery(
     { countryId },
@@ -335,24 +333,6 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     }
   }, [legislature]);
 
-  // In unicameral mode the single chamber mirrors the main inputs (skipped after a chamber edit).
-  useEffect(() => {
-    if (chamberEditInProgress.current) {
-      chamberEditInProgress.current = false;
-      return;
-    }
-    if (formData.chamberType === "unicameral") {
-      // oxlint-disable-next-line
-      setChambers([
-        {
-          name: formData.name,
-          seats: Number(formData.totalSeats) || 100,
-          electoralSystem: formData.electoralSystem,
-        },
-      ]);
-    }
-  }, [formData.chamberType, formData.name, formData.totalSeats, formData.electoralSystem]);
-
   const utils = api.useUtils();
   const notify = useNotify();
   const configureLegislature = api.elections.configureLegislature.useMutation({
@@ -367,8 +347,25 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     onError: (error) => notify.error("Could not save the legislature", error.message),
   });
 
-  const patchForm = (patch: Partial<typeof formData>) =>
-    setFormData((prev) => ({ ...prev, ...patch }));
+  /**
+   * Edits to the main inputs. In unicameral mode the single chamber mirrors them here, in the
+   * handler: a sync effect used to run on remount with the initial "unicameral" form and replace
+   * a saved multi-chamber layout with one default chamber.
+   */
+  const patchForm = (patch: Partial<typeof formData>) => {
+    const next = { ...formData, ...patch };
+    setFormData(next);
+    if (next.chamberType === "unicameral") {
+      setChambers((prev) => [
+        {
+          ...prev[0],
+          name: next.name,
+          seats: Number(next.totalSeats) || 100,
+          electoralSystem: next.electoralSystem,
+        },
+      ]);
+    }
+  };
 
   function handleChamberTypeChange(type: string) {
     const newChambers = presetChambers(
@@ -385,10 +382,9 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     setChambers(newChambers);
   }
 
-  /** Stores per-chamber edits and totals them, flagged so the unicameral sync leaves them alone. */
+  /** Stores per-chamber edits and totals them. */
   function commitChambers(updated: ChamberItem[]) {
     setChambers(updated);
-    chamberEditInProgress.current = true;
     setFormData((prev) => ({ ...prev, totalSeats: sumSeats(updated) }));
   }
 

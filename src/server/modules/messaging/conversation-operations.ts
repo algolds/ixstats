@@ -30,6 +30,8 @@ import { recipientAccepts } from "~/lib/notifications/recipient-preferences";
 import { deliverNotification } from "~/lib/notifications/delivery/deliver";
 
 const DM_REFUSED_MESSAGE = "This user is not accepting direct messages from you";
+/** The name a "Message myself" conversation shows, as it has no other participant to name it. */
+const NOTE_TO_SELF_NAME = "Notes to self";
 const GROUP_FULL_MESSAGE = `A group conversation holds at most ${MAX_GROUP_PARTICIPANTS} people`;
 
 export class MessagingConversationOperations {
@@ -43,6 +45,7 @@ export class MessagingConversationOperations {
 
   public async createConversation(actorId: string, input: CreateConversationInput) {
     const allParticipants = [...new Set([actorId, ...input.participantIds])];
+    if (allParticipants.length === 1) return await this.noteToSelf(actorId, input);
     if (allParticipants.length < 2) {
       throw new MessagingValidationError("A conversation requires at least 2 participants");
     }
@@ -101,6 +104,32 @@ export class MessagingConversationOperations {
       }
 
       return conversation;
+    });
+  }
+
+  /**
+   * "Message myself": the actor's one active direct conversation with nobody else, created on first
+   * use and reopened after that. No block, privacy or request checks apply (there is no recipient),
+   * and sendMessage notifies nobody since it has no other participant.
+   */
+  private async noteToSelf(actorId: string, input: CreateConversationInput) {
+    const existing = await this.db.thinkshareConversation.findFirst({
+      where: {
+        type: "direct",
+        source: "thinkshare",
+        participants: { some: { userId: actorId, isActive: true }, every: { userId: actorId } },
+      },
+      include: { participants: true },
+    });
+    if (existing) return existing;
+    return await this.db.thinkshareConversation.create({
+      data: {
+        name: input.subject || NOTE_TO_SELF_NAME,
+        type: "direct",
+        source: "thinkshare",
+        participants: { create: [{ userId: actorId, role: "participant" }] },
+      },
+      include: { participants: true },
     });
   }
 

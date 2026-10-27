@@ -243,9 +243,10 @@ async function mirrorToDiscord(
     }
   }
 
-  // Mirror to the admin-configured #thinkpages Discord feed (filtered, deduped).
-  // Independent of the IxTwitter autopost above; the filter/enable lives in admin config.
-  if (post.visibility === "public") {
+  // Mirror to the admin-configured #thinkpages Discord feed (filtered, deduped). The author's
+  // "Share to Discord" toggle is authoritative here too: with it off, nothing reaches Discord
+  // (the feed used to mirror regardless, so e.g. emote posts showed up despite the toggle).
+  if (input.postToDiscord && post.visibility === "public") {
     try {
       const { mirrorThinkPagesPostToDiscordFeed } = await import("~/lib/discord/thinkpages-feed");
       mirrorThinkPagesPostToDiscordFeed(db as any, post.id, input.mediaUrls).catch((err: unknown) =>

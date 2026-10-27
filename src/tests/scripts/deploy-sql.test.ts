@@ -322,12 +322,15 @@ describe("rollback-deployment.sh", () => {
   });
 });
 
-describe("deploy-ixworld.sh, which the deploy runs", () => {
+describe("deploy-ixworld.sh, a manual standalone build", () => {
   const ixworld = readFileSync("scripts/deploy-ixworld.sh", "utf8");
 
-  it("builds the commit deploy-production.sh built, without syncing git again", () => {
+  it("is not run by the deploy: maps.ixwiki.com is the main app's /maps page", () => {
+    expect(script).not.toContain("./scripts/deploy-ixworld.sh");
+  });
+
+  it("builds the commit deploy-production.sh built, without syncing git again, when given one", () => {
     expect(script).toMatch(/IXSTATS_DEPLOY_COMMIT="\$\(git rev-parse HEAD/);
-    expect(script.indexOf("export IXSTATS_DEPLOY_COMMIT")).toBeLessThan(script.indexOf("./scripts/deploy-ixworld.sh"));
     const pinned = ixworld.indexOf('if [ -n "${IXSTATS_DEPLOY_COMMIT:-}" ]; then');
     expect(pinned).toBeGreaterThan(0);
     // the git reset lives only in the elif branch taken when the variable is unset
@@ -339,7 +342,6 @@ describe("deploy-ixworld.sh, which the deploy runs", () => {
   });
 
   it("excludes the default tile folder from the data/ rsync, which has no --delete", () => {
-    expect(script).toContain("./scripts/deploy-ixworld.sh");
     const line = readFileSync("scripts/deploy-ixworld.sh", "utf8")
       .split("\n")
       .find((l) => /rsync .* data\/ "\$IXWORLD_DIR\/data\/"/.test(l));

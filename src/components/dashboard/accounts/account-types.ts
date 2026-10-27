@@ -5,7 +5,7 @@ export type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"]
 
 /** The persona creation form's state. */
 export interface ThinkpagesAccountInput {
-  accountType: "government" | "media" | "citizen";
+  accountType: "government" | "media" | "citizen" | "corporate";
   firstName: string;
   lastName: string;
   username: string;
@@ -29,7 +29,7 @@ export interface AccountSettings {
 const FREQUENCIES = ["active", "moderate", "low"] as const;
 const LEANS = ["left", "center", "right"] as const;
 const PERSONALITIES = ["serious", "casual", "satirical"] as const;
-const ACCOUNT_TYPES = ["government", "media", "citizen"] as const;
+const ACCOUNT_TYPES = ["government", "media", "citizen", "corporate"] as const;
 
 /** `value` when it is one of `options`, else `fallback`. */
 function oneOf<T extends string, F extends T | undefined>(
@@ -56,4 +56,3 @@ export function accountSettingsOf(
 export function trpcErrorCode(error: Error): string | undefined {
   return (error as Error & { data?: { code?: string } | null }).data?.code;
 }
-

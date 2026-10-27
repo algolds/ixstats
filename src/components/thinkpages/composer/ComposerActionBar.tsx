@@ -85,7 +85,17 @@ export function ComposerActionBar({
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          {/* The bar is shown only while the editor has focus (or the post has content). A mousedown
+              here would blur the editor and collapse the bar (pointer-events-none) before the
+              click lands, so every tool button did nothing on an empty post. Keep editor focus,
+              as the editor's own toolbar does; portaled popovers (GIF search) are not DOM children
+              and keep normal focus. */}
+          <div
+            className="flex items-center gap-2"
+            onMouseDown={(e) => {
+              if (e.currentTarget.contains(e.target as Node)) e.preventDefault();
+            }}
+          >
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -200,7 +210,8 @@ export function ComposerActionBar({
               remainingChars < 0 ||
               (plainText.trim().length === 0 &&
                 selectedVisualizations.length === 0 &&
-                selectedImages.length === 0)
+                selectedImages.length === 0 &&
+                !pollDraft)
             }
           >
             {isPending ? <Loader2 className="animate-spin" /> : <Send />}
