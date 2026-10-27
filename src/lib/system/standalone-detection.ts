@@ -1,23 +1,32 @@
 /**
- * Runtime hostname-based detection for IxWorld standalone mode.
+ * IxWorld standalone mode and the maps host.
  *
- * Replaces the build-time NEXT_PUBLIC_IXWORLD_STANDALONE env var so that
- * a single Next.js build can serve both ixstates.ixwiki.com (full app)
- * and maps.ixwiki.com (maps-only standalone).
+ * Standalone mode (the maps-only build: `/` goes to `/maps`, no setup redirect or mini player, the
+ * standalone CSP) is the build's own choice: NEXT_PUBLIC_IXWORLD_STANDALONE, set by
+ * scripts/deploy-ixworld.sh. It no longer follows the hostname, because maps.ixwiki.com serves the full
+ * IxStates app (2026-10-27).
+ *
+ * The maps host still matters for one thing: IxWiki embeds its map, country and wiki pages, so the proxy
+ * lets ixwiki.com frame them there (isMapsHostRequest).
  */
 
-const STANDALONE_HOSTNAME = "maps.ixwiki.com";
+const MAPS_HOSTNAME = "maps.ixwiki.com";
 
-/** Server-side: check the incoming request hostname. */
-export function isStandaloneRequest(headers: Headers): boolean {
-  if (process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true") return true;
-  const host = headers.get("x-forwarded-host") || headers.get("host") || "";
-  return host.startsWith(STANDALONE_HOSTNAME);
+const standaloneBuild = (): boolean => process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true";
+
+/** Server-side: whether this is the maps-only standalone build. */
+export function isStandaloneRequest(_headers: Headers): boolean {
+  return standaloneBuild();
 }
 
-/** Client-side: check window.location.hostname. */
+/** Client-side: whether this is the maps-only standalone build. */
 export function isStandaloneClient(): boolean {
-  if (process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true") return true;
-  if (typeof window === "undefined") return false;
-  return window.location.hostname === STANDALONE_HOSTNAME;
+  return standaloneBuild();
+}
+
+/** Whether the request came in on maps.ixwiki.com (or the standalone build), which IxWiki embeds. */
+export function isMapsHostRequest(headers: Headers): boolean {
+  if (standaloneBuild()) return true;
+  const host = headers.get("x-forwarded-host") || headers.get("host") || "";
+  return host.startsWith(MAPS_HOSTNAME);
 }

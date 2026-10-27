@@ -225,6 +225,11 @@ describe("framing (clickjacking)", () => {
     }
   );
 
+  it("serves the full app on the maps host: / is not sent to /maps", async () => {
+    const res = await run("/", MAPS_HOST);
+    expect(res.headers.get("location")).toBeNull();
+  });
+
   it("does not take ?embed=true on another path as a reason to allow framing", async () => {
     const res = await run("/mycountry?embed=true", MAPS_HOST);
     expect(frameAncestors(res)).toBe("'none'");
