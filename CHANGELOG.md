@@ -14,6 +14,26 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the pre-pro
 first, then the WikiOS launch hardening (2026-10-24 → 10-26), then the Cards mark and trophy art (2026-10-24), then the ThinkPages forum refresh (2026-10-17), then realm nations (2026-10-15), then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
 work. The version registry (`src/lib/buildVersion.ts`) reads 1.5.0 (the Vault collectathon hub below); the next release candidate is not cut yet.
 
+### 🧪 Production-copy rehearsal fixes (2026-10-26)
+
+No version or capability integer moves. The release's schema steps, run on the server against a clone of production's
+database, stopped twice; with these fixes the clone goes through every step, and a second run (the next deploy) is a
+no-op with a clean push.
+
+- **Cards:** `20261027120000_cards_foundations` gives a database older than the September schema the pre-refresh
+  columns the backfill reads and the constraints convert or drop (`cards.category`, `artworkUrl`, `nsData`,
+  `lore_card_requests.category`, the `LoreCategory` type), only while `cards.cardType` is not yet the enum.
+  Production keeps its NS facts in `metadata.nsData` already; categories stay NULL for the category backfill.
+- **WikiOS search:** `wiki_articles."searchVector"` is a plain column a trigger keeps current, no longer GENERATED:
+  Prisma read the generation expression as a default, so every `db push` tried to drop it and stopped. An existing
+  generated column is converted in place.
+- **Diff:** `diffWikitext` skips the edit search when nothing in the middle can be kept (a page created or blanked,
+  texts sharing no line), whose cost grew with the square of the distance; the regex-DoS gate's CRLF case fell from
+  about 40 ms to 2 ms.
+- **Release guide:** the Lorewards weekly merge runs once the schema is in place (B3 step 10), not before the deploy;
+  the push's expected unique constraints are listed, and it is applied with `--accept-data-loss` after the duplicate
+  check (it never prompts).
+
 ### 🛡️ Pre-production audit fixes (2026-10-26)
 
 No version or capability integer moves. A full audit of `rose-garden` @ `d913a1e` found the branch could not ship:

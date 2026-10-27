@@ -485,8 +485,9 @@ Then do A3 (the checkout does not touch the running servers), load the productio
 4. **The additive step, by hand:** `bun scripts/deployment/apply-additive-schema.ts --apply`. The steps below read
    columns only it creates (`Country.ownerUserId`, `wiki_account_links."verifiedById"`, …). The deploy runs it again
    and finds nothing to do. It never adds `wiki_revisions.origin`.
-5. **The Lorewards weekly merge:** `bun scripts/lorewards/merge-weekly-keys.ts`, then `--apply`, then the dry run again
-   (Lorewards step 3).
+5. **The Lorewards weekly merge is not here any more: it runs at step 10.** Its Prisma client reads columns only the
+   deploy's cards SQL creates (`loreward_entries."overriddenAt"`, `cards."lorewardEntryId"`), so before the deploy it
+   stops on the first of them (the 2026-10-26 rehearsal on a production copy).
 6. **The WikiOS SQL,** [cutover step 1](wikios-v1-cutover.md#1-apply-the-wikios-sql-migrations): the canonical titles
    procedure, then the `prisma/manual-migrations/*wikios*.sql` loop (without the lead-image file).
    **`2026-09-30-wikios-api.sql` must run before the deploy**: the deploy's `20261105120000_wikios_conflicts` labels
@@ -506,20 +507,33 @@ Then do A3 (the checkout does not touch the running servers), load the productio
 9. **MyCountry and realm-time SQL:** the deploy runs them in the runbooks' order, after the steps above. Running the
    runbooks' `run_sql` steps by hand first also works once steps 4 and 8 are done (the deploy re-runs each as a
    no-op); see the [realm-time runbook](deploy-realm-time-2026-10.md#4-the-deploy-window-old-build-stopped).
-10. **Deploy** (A4): `./scripts/deploy-production.sh`. As soon as it prints **"Database sync completed
-    successfully"**, open a second tmux window (`Ctrl+B C`) and run, during the build:
+10. **Deploy** (A4): `./scripts/deploy-production.sh`. The two data steps below need the release's whole schema and
+    must finish before the new server serves, so run them once the schema is in place: in the stop the push makes
+    (below, the case on production), or, if the deploy prints **"Database sync completed successfully"**, in a second
+    tmux window (`Ctrl+B C`) during the build:
     ```bash
+    bun scripts/lorewards/merge-weekly-keys.ts           # dry run (Lorewards step 3): merges, folds, skipped
+    bun scripts/lorewards/merge-weekly-keys.ts --apply
+    bun scripts/lorewards/merge-weekly-keys.ts           # again: 0 merges
     bun run db:mark-match-revenue-collected             # dry run: how many completed matches
     bun run db:mark-match-revenue-collected -- --apply
     ```
-    This marks every match that finished before this release as paid. Skip it and each club's first "Collect
-    Revenue" pays its whole match history (SL-14). Run it once; never add it to routine deploys.
+    The merge folds the date-keyed weeklies into ISO weeks (the production copy: 215 merges, 27 folds) and skips, for
+    an admin, the weeks whose rows disagree on the first day or the holder (the copy: 2024-W20, 2026-W01, W13, W14, W18,
+    W43); keep its JSON. The second marks every match that finished before this release as paid. Skip it and each
+    club's first "Collect Revenue" pays its whole match history (SL-14). Run both once; never add them to routine
+    deploys.
 
-    **If the push stops on a warning,** the live build is untouched and every SQL file before it has run (the WikiOS
-    labelling included). Read every line. If they are only the expected unique constraints on new columns (the two
-    Realms ones, or a WikiOS one whose cutover step 1 file has not run), run
-    `bun run db:push:force` by hand, answer yes, and run the deploy again: each file is then a no-op and the push has
-    nothing left. Anything that drops a column or table with data means a step was skipped: stop.
+    **If the push stops on a warning** (on production it does), the live build is untouched and every SQL file before
+    it has run (the WikiOS labelling included). Read every line. If they are only unique constraints, the push can only
+    fail on duplicates, never drop data; the production copy listed eight: `Country (realmId, name)`, `User (handle)`,
+    `idempotencyKey` on `exchange_contracts`, `exchange_conversion_logs`, `exchange_transactions` and
+    `vault_transactions`, `map_layers (worldId, layerType, featureId)` and `wiki_revisions (source, mwRevId)`, all
+    without duplicates. Check each one the push names (`SELECT <columns>, count(*) FROM <table> WHERE <columns> IS NOT
+    NULL GROUP BY <columns> HAVING count(*) > 1;` must be empty), then apply it by hand with
+    `bunx prisma db push --accept-data-loss --skip-generate` (`db:push:force` never prompts: it stops), run the data
+    steps above, and run the deploy again: each file is then a no-op and the push has nothing left. Anything that
+    drops a column or table with data means a step was skipped: stop.
 
 ### B4. Right after the deploy, in order
 
