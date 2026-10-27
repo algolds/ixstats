@@ -13,6 +13,27 @@ BEGIN
   END IF;
 END $$;
 
+-- The pre-refresh columns the backfill reads and the constraints convert or drop. A database older than the September
+-- schema (production's: NS facts in metadata.nsData, its own taxonomy in metadata.category) never had them, and the
+-- backfill and the constraints stop on the first one missing. Nullable and empty, so the backfill finds nothing to copy;
+-- category stays NULL for the category backfill. Only while the conversion is to come (the constraints' gate:
+-- cards.cardType not yet the CardType enum), so a later deploy never brings back what the constraints dropped.
+DO $$
+BEGIN
+  IF (SELECT udt_name FROM information_schema.columns
+      WHERE table_schema = current_schema() AND table_name = 'cards' AND column_name = 'cardType') = 'CardType' THEN
+    RETURN;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'LoreCategory') THEN
+    CREATE TYPE "LoreCategory" AS ENUM ('MILITARY', 'DIPLOMACY', 'GEOGRAPHY', 'RELIGION', 'CULTURE', 'GOVERNMENT',
+      'PEOPLE', 'ECONOMY', 'SCIENCE', 'HISTORY', 'NATION', 'SPECIAL');
+  END IF;
+  ALTER TABLE "cards" ADD COLUMN IF NOT EXISTS "category" "LoreCategory";
+  ALTER TABLE "cards" ADD COLUMN IF NOT EXISTS "artworkUrl" TEXT;
+  ALTER TABLE "cards" ADD COLUMN IF NOT EXISTS "nsData" JSONB;
+  ALTER TABLE "lore_card_requests" ADD COLUMN IF NOT EXISTS "category" "LoreCategory";
+END $$;
+
 -- System realms (nationstates, iiwiki, althistory) are card shelves: the backfill seeds and flags them.
 ALTER TABLE "realms" ADD COLUMN IF NOT EXISTS "isSystem" BOOLEAN NOT NULL DEFAULT false;
 

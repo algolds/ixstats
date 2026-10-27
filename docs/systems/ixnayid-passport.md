@@ -266,8 +266,9 @@ only read.
 
 Plan B (Lorewards) goes out in the same deploy as plan A and has no SQL. Nothing here runs from a development machine;
 every command runs in the production app directory, and the read-only checks run with
-`docker exec ixstats-postgres psql -U postgres -d ixstats -c "<query>"`. Steps 1 to 3 run before the deploy, once the
-release is checked out on the server (plan A's step 1; the running app is not touched).
+`docker exec ixstats-postgres psql -U postgres -d ixstats -c "<query>"`. Steps 1 and 2 run before the deploy, once the
+release is checked out on the server (plan A's step 1; the running app is not touched); step 3 needs the release's
+schema, so it runs inside the deploy, once the schema is in place and before the new server serves.
 
 1. **Before: counts and duplicate spellings.** Keep these counts for step 9:
 
@@ -323,8 +324,9 @@ release is checked out on the server (plan A's step 1; the running app is not to
    new code: in `ecosystem.config.cjs`, replace `lorewards-state-sync` with `lorewards-ool-backfill` in
    `CRON_ENABLED_JOBS` and keep `lorewards-full-sync`. The deploy starts it again (step 5).
 
-3. **The weekly merge, before the new code goes live.** The new syncs key every weekly by its UTC ISO week, so merge
-   the date-keyed rows first:
+3. **The weekly merge, after the schema and before the new code goes live** (release guide B3 step 10: its client reads
+   `loreward_entries."overriddenAt"` and `cards."lorewardEntryId"`, which the deploy's cards SQL creates). The new
+   syncs key every weekly by its UTC ISO week, so merge the date-keyed rows first:
 
    ```bash
    bun scripts/lorewards/merge-weekly-keys.ts           # dry run: prints counts, skipped and folds as JSON, writes nothing

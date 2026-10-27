@@ -535,6 +535,28 @@ describe("the diff engine", () => {
       expect(diff.added).toBe(1);
     });
 
+    it("answers a page created or blanked, and two texts sharing no line, as one replacement", () => {
+      const page = lines(2500).join("\r\n");
+      const created = diffWikitext("", page, { context: Infinity });
+      expect(created.added).toBe(2500);
+      expect(created.removed).toBe(0);
+      expect(rowsOf(created).every((r) => r.type === "added")).toBe(true);
+
+      const blanked = diffWikitext(page, "", { context: Infinity });
+      expect(blanked.removed).toBe(2500);
+      expect(rowsOf(blanked).every((r) => r.type === "removed")).toBe(true);
+
+      // the removed lines first, then the added ones, as Myers' script reads once deletions go first
+      const swapped = diffWikitext("x\na\nb\ny", "x\nc\nd\ny", { context: Infinity });
+      expect(rowsOf(swapped).map((r) => `${r.type[0]}${r.content}`)).toEqual([
+        "cx", "ra", "rb", "ac", "ad", "cy",
+      ]);
+      // one shared line in the middle still goes through the shortest-script search
+      const shared = diffWikitext("x\na\nk\nb\ny", "x\nc\nk\nd\ny");
+      expect(shared.removed).toBe(2);
+      expect(shared.added).toBe(2);
+    });
+
     it("replaces the middle of two completely different large texts instead of hanging", () => {
       const a = lines(8000, "old").join("\n");
       const b = lines(8000, "new").join("\n");
