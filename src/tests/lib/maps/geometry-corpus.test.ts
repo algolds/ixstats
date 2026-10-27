@@ -28,13 +28,11 @@ import {
 import { calculateApproxArea } from "~/lib/flags/svg/topology-flattener";
 import { calculateArea } from "~/lib/maps/border-editor";
 import { polygonMetrics } from "~/lib/maps/feature-metrics";
-import {
-  repairGeometryGeoJSON,
-  resetPostGISCache,
-} from "~/lib/maps/geo-validation";
+import { repairGeometryGeoJSON, resetPostGISCache } from "~/lib/maps/geo-validation";
 import { compressFeatureCollection } from "~/lib/maps/geojson-compress";
 import { packFeatureCollection, unpackLayers } from "~/lib/maps/geojson-pack";
 import { fitToSeam, passesSeam } from "~/lib/maps/import/world-seam";
+import { splitCollectionAtAntimeridian } from "~/lib/maps/map-utils";
 import { EARTH_RADIUS_KM, polygonalAreaSqKm, sphericalRingAreaSqKm } from "~/lib/maps/planet";
 import { parseProvinceSvg } from "~/lib/maps/province-importer/parse-provinces";
 import {
@@ -337,6 +335,65 @@ describe("the poles", () => {
     const band = [...north, ...north.map(([lng]): Coord => [lng, -40]).reverse()];
     const bandSqKm = (350 / 360) * SPHERE * Math.sin(rad(40));
     expect(Math.abs(sphericalRingAreaSqKm(band) / (SPHERE - bandSqKm) - 1)).toBeLessThan(0.01);
+  });
+
+  it("delivers an ice cap stored as a band across ±180 as pieces inside ±180 filled through the pole", () => {
+    // As the stored ice caps are: one ring circling the pole along `lat`, crossing ±180 once, and closed through a
+    // zero-width slit up to the pole at -150° (westward round the north pole, eastward round the south)
+    const band = (lat: number, westward: boolean): Position[] => {
+      const pole = Math.sign(lat) * 90;
+      const dir = westward ? -1 : 1;
+      const wrap = (lng: number) => ((((lng + 180) % 360) + 360) % 360) - 180;
+      return [
+        [-150, lat],
+        [-150, pole],
+        [-150 + dir * 0.001, pole],
+        [-150 + dir * 0.001, lat],
+        ...Array.from({ length: 359 }, (_, i): Position => [wrap(-150 + dir * (i + 1)), lat]),
+        [-150, lat],
+      ];
+    };
+    for (const [lat, westward] of [
+      [70, true],
+      [-75, false],
+    ] as const) {
+      const split = splitCollectionAtAntimeridian({
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {},
+            geometry: { type: "Polygon", coordinates: [band(lat, westward)] },
+          },
+        ],
+      });
+      const rings = split.features.flatMap((f) => {
+        const g = f.geometry as Polygon | MultiPolygon;
+        return g.type === "Polygon" ? [g.coordinates] : g.coordinates;
+      });
+      expect(rings.map((r) => r.length)).toEqual([1, 1]); // one piece either side of the seam, no holes
+      const pole = Math.sign(lat) * 90;
+      let sqKm = 0;
+      for (const [ring] of rings) {
+        expect(ring![0]).toEqual(ring![ring!.length - 1]);
+        expect(signedRingArea(ring as Coord[])).toBeGreaterThan(0); // RFC 7946: exterior counter-clockwise
+        for (let i = 0; i < ring!.length - 1; i++) {
+          const [a, b] = [ring![i]!, ring![i + 1]!];
+          expect(Math.abs(a[0]!)).toBeLessThanOrEqual(180);
+          // densified: the cut along ±180 and the pole edge follow the meridian / pole on the globe
+          expect(Math.max(Math.abs(b[0]! - a[0]!), Math.abs(b[1]! - a[1]!))).toBeLessThanOrEqual(
+            1 + 1e-9
+          );
+          // never closed along a parallel through the ice, as the band was before
+          if (a[1] === b[1]) expect([lat, pole]).toContain(a[1]);
+        }
+        sqKm += sphericalRingAreaSqKm(ring as Coord[]);
+      }
+      // the pieces' pole edges cover every longitude, and together they are the whole cap
+      const onPole = rings.flatMap(([r]) => r!.filter((p) => p[1] === pole).map((p) => p[0]!));
+      expect([Math.min(...onPole), Math.max(...onPole)]).toEqual([-180, 180]);
+      expect(Math.abs(sqKm / capSqKm(lat) - 1)).toBeLessThan(0.01);
+    }
   });
 
   it("fills Antarctica through the pole it encloses, labelled with the realm-scaled area and its perimeter", () => {

@@ -5,4 +5,4 @@
  * same commit as any change to what `layer-loader.ts` or `geojson-pack.ts` produce; the next deploy then asks for new
  * URLs instead of reusing a year-old copy.
  */
-export const LAYER_FORMAT_VERSION = 1;
+export const LAYER_FORMAT_VERSION = 2;
