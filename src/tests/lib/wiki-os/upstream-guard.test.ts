@@ -12,8 +12,10 @@ import {
   HOST_GUARD_OVERRIDES,
   HostGuard,
   type HostGuardOptions,
+  MAX_SISTER_RESPONSE_BYTES,
   PROXY_LANE_LIMITS,
   SISTER_GUARD_OPTIONS,
+  SisterResponseTooLargeError,
   WikiUnavailableError,
   unlessUnavailable,
   upstreamGuard,
@@ -532,6 +534,49 @@ describe("the proxy lane", () => {
       "circuit-open"
     );
     expect(fetchSpy).toHaveBeenCalledTimes(5);
+  });
+});
+
+describe("an answer over MAX_SISTER_RESPONSE_BYTES", () => {
+  const CHUNK = 1024 * 1024;
+
+  /** A JSON answer that never ends (1 MB chunks for as long as anyone reads); `cancelled` turns true when it is cancelled. */
+  function endless(): { response: Response; cancelled: () => boolean } {
+    let cancelled = false;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        controller.enqueue(new Uint8Array(CHUNK).fill(0x20));
+      },
+      cancel() {
+        cancelled = true;
+      },
+    });
+    const response = new Response(body, { headers: { "content-type": "application/json" } });
+    return { response, cancelled: () => cancelled };
+  }
+
+  it("is cancelled and throws the too-large error", async () => {
+    const answer = endless();
+    fetchSpy.mockImplementation(async () => answer.response);
+
+    const error = await failureOf(guard().fetch(IIWIKI, { timeoutMs: 1000 }));
+
+    expect(error).toBeInstanceOf(SisterResponseTooLargeError);
+    expect(error?.reason).toBe("unreachable");
+    expect(answer.cancelled()).toBe(true);
+    expect(MAX_SISTER_RESPONSE_BYTES).toBe(16 * CHUNK);
+  });
+
+  it("is no failure of the breaker and frees its limiter slot: the next call goes out", async () => {
+    const g = guard({ failureThreshold: 1, maxConcurrent: 1 });
+    fetchSpy.mockImplementationOnce(async () => endless().response);
+    expect(await failureOf(g.fetch(IIWIKI, { timeoutMs: 1000 }))).toBeInstanceOf(
+      SisterResponseTooLargeError
+    );
+
+    fetchSpy.mockImplementation(async () => json());
+    expect((await g.fetch(IIWIKI, { timeoutMs: 1000 })).status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 });
 
