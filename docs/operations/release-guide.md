@@ -383,6 +383,7 @@ This part gives the order. The detail stays in each runbook:
 | Realm time | [deploy-realm-time-2026-10.md](deploy-realm-time-2026-10.md) |
 | Native lore | [explore-and-country-profiles.md](../systems/explore-and-country-profiles.md#native-lore-deploy-runbook-owner) |
 | WikiOS v1 and data safety | [wikios-v1-cutover.md](wikios-v1-cutover.md) |
+| Unused models (D9) | [drop-unused-models.md](drop-unused-models.md) |
 
 ### B1. Before deploy day
 
@@ -457,6 +458,10 @@ Then do A3 (the checkout does not touch the running servers), load the productio
    [IxnayID step 1](../systems/ixnayid-passport.md#ixnayid-identity-deploy-runbook-owner) (on the rehearsal copy if
    production lacks the tables it reads). **Lorewards:** its step 1 counts
    ([Lorewards runbook](../systems/ixnayid-passport.md#lorewards-deploy-runbook-owner)).
+6. **Unused models (D9):** the row counts and dependents check in
+   [drop-unused-models.md](drop-unused-models.md#3-pre-window-check-b2-read-only). Every count must be 0 or NULL, or the
+   owner rules that table's rows disposable; any other row means stop and ask the owner. The deploy's push drops the 49
+   tables, and stops on one that still has rows.
 
 ### B3. The window (the app stopped)
 
@@ -468,7 +473,9 @@ Then do A3 (the checkout does not touch the running servers), load the productio
    The cards SQL rewrites and drops columns the old code reads, and the realm-time SQL converts timestamps the old
    jobs would fire on, so no old code may run between the SQL and the new build. The deploy starts them all again.
    Remove the server crontab's call to `/api/lorewards/sync` (Lorewards step 2).
-2. **`bun run db:backup`.** Keep the path: it is the rollback point for everything below.
+2. **`bun run db:backup`.** Keep the path: it is the rollback point for everything below. Then drop the D9 tables the
+   owner ruled disposable at B2 step 6 ([drop-unused-models.md](drop-unused-models.md#3-pre-window-check-b2-read-only)
+   has the statement); a table left with rows stops the deploy's push.
 3. **Data the guards need:**
    `UPDATE "TradeOffer" SET status = 'REJECTED' WHERE status = 'COUNTERED';`, the `quantity > 1` rows settled, the
    WikiRevision dedupe (sections 2 and 3, if B2.3 applied) and, if the diff adds the `Alliance (realmId, name)` key,

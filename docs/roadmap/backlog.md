@@ -97,7 +97,7 @@ stay until the schema-drop decision ([§5](#5-dead-schema)).
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| PL-12 | DEBT | The web process isn't under PM2 (ops, see §1). `next.config.js` is per-environment by design; `next.config.example.js` is its template | — | S |
+| PL-12 | DEBT | The web process isn't under PM2 (ops, see §1). `next.config.js` is tracked (since 2026-10-06); `next.config.example.js` points at it | — | S |
 
 **Router test gaps:** all 69 routers have a router-level test (2026-10-05). 63 sub-router files are still imported by
 no test; the largest are `wikios/templates`, `wikios/page-content`, `admin/worldEvents`, `admin/wiki` and
@@ -221,7 +221,7 @@ See §1 above (password rotation, CSP).
 
 ### PF§6 Code health & tech debt
 
-- **Git-ignored fixtures:** three checks read files CI doesn't have (`next.config.js`, `public/icons/game-icons-manifest.json`, `public/data/vector-seeds/`); they only run where the file exists.
+- **Git-ignored fixtures:** two checks read files CI doesn't have (`public/icons/game-icons-manifest.json`, `public/data/vector-seeds/`); they only run where the file exists.
 - **Size ratchet:** `audit:arch` is blocking (2026-10-05); keep shrinking the 39 baselined files. The 800+-line files are tracked in [src-monolith-candidates.md](../audits/src-monolith-candidates.md).
 - **Service layer:** about 200 router files query `ctx.db` directly.
 - **Arch guard coverage:** no pre-commit hook for `audit:arch`; the router-split parity check covers 5 routers.
