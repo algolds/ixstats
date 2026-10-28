@@ -109,8 +109,8 @@ export async function createGovernmentStructure(db: Db, countryId: string) {
             totalBudget,
           },
         });
-    const departments = departmentsForForm(formId);
-    for (const dept of departments) {
+    const formDepartments = departmentsForForm(formId);
+    for (const dept of formDepartments) {
       const created = await tx.governmentDepartment.create({
         data: {
           governmentStructureId: structure.id,
@@ -134,7 +134,7 @@ export async function createGovernmentStructure(db: Db, countryId: string) {
         },
       });
     }
-    return { structureId: structure.id, departments: departments.length };
+    return { structureId: structure.id, departments: formDepartments.length };
   });
 }
 
