@@ -313,6 +313,14 @@ Run anything the release lists, **dry run first**, then `--apply` after reading 
 Redis client may hang on exit with `REDIS_ENABLED=true` (1.5's `backfill-foundation.ts` and `merge-weekly-keys.ts`
 did): run such one-offs with `REDIS_ENABLED=false` in front.
 
+**Next release (IIWiki gate, PR #126 and its follow-up): stored IIWiki flag URLs.**
+
+- **What it does:** country flags and arms stored as raw `https://iiwiki.com/...` URLs load straight from iiwiki.com, past the IIWiki switch. This script rewrites them to media-proxy paths. It is idempotent.
+- **Dry run:** `REDIS_ENABLED=false bun scripts/realms/backfill-iiwiki-image-paths.ts`. It prints the database it targets and the rows it would change.
+- **Write:** run it again with `--apply`.
+- **SKIP lines:** a `SKIP` line is an IIWiki page link, not a file. Fix those by hand or leave them.
+- **Local clones:** none of them held such rows on 2026-10-28.
+
 ### A7. Cron jobs
 
 `cron-runner.mjs` (PM2 `ixstats-cron`) runs only the jobs named in `CRON_ENABLED_JOBS` (comma-separated, or `*`), and
