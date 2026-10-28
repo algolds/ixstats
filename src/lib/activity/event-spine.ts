@@ -4,7 +4,7 @@ import type { NewsEventType } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "./hooks";
 import { ensureInternalStabilityMetrics } from "~/lib/statecraft/stability-store";
 import type { PrismaClient } from "@prisma/client";
-import { isEstimatedField } from "~/lib/economy/figure-estimates";
+import { isBlankFigure, isEstimatedField } from "~/lib/economy/figure-estimates";
 import { loadEffectiveEconomicFigures } from "~/server/shared/economic-figures";
 
 const FIELD_BOUNDS: Record<string, [number, number]> = {
@@ -61,8 +61,10 @@ async function baseValueOf(
   consequence: ConsequenceInput,
   stored: unknown
 ): Promise<number | null> {
-  if (typeof stored === "number" && Number.isFinite(stored)) return stored;
   const field = consequence.targetField;
+  if (typeof stored === "number" && Number.isFinite(stored) && !isBlankFigure(field, stored)) {
+    return stored;
+  }
   if (consequence.targetModel !== "Country" || !isEstimatedField(field)) return null;
   const figures = await loadEffectiveEconomicFigures(db, countryId);
   return figures ? figures[field].value : null;

@@ -41,6 +41,25 @@ export function isEstimatedField(field: string): field is EstimatedField {
   return (ESTIMATED_FIELDS as readonly string[]).includes(field);
 }
 
+/**
+ * Figures whose exact 0 reads as blank (owner ruling 2026-10-28): no economy runs at 0% inflation or 0%
+ * unemployment, and imports wrote 0 as a default. A 0% debt is a real (if rare) figure and stays.
+ */
+export const ZERO_IS_BLANK_FIELDS: readonly EstimatedField[] = [
+  "inflationRate",
+  "unemploymentRate",
+];
+
+/**
+ * Whether a stored inflation, unemployment or debt value counts as never recorded, so the estimate stands in.
+ * False for any other field.
+ */
+export function isBlankFigure(field: string, value: number | null | undefined): boolean {
+  if (!isEstimatedField(field)) return false;
+  if (!isFiniteNumber(value)) return true;
+  return value === 0 && ZERO_IS_BLANK_FIELDS.includes(field);
+}
+
 const REFERENCE_GDP_PER_CAPITA = 30_000;
 const TREND_GROWTH_PCT = 2;
 
@@ -144,7 +163,7 @@ export const ECONOMIC_FIGURE_SELECT = {
 } as const;
 
 /**
- * Each figure as the nation recorded it (any non-null number, 0 included), otherwise the estimate
+ * Each figure as the nation recorded it (any number; an exact 0 inflation or unemployment is blank), otherwise the estimate
  * flagged `estimated`. `realGrowthPct` is the realised growth in percent, as the caller reads it.
  */
 export function effectiveFiguresOfCountry(
@@ -162,7 +181,7 @@ export function effectiveFiguresOfCountry(
   });
   const pick = (field: EstimatedField): EffectiveFigure => {
     const stored = row[field];
-    return isFiniteNumber(stored)
+    return isFiniteNumber(stored) && !isBlankFigure(field, stored)
       ? { value: stored, estimated: false }
       : { value: estimate[field], estimated: true };
   };

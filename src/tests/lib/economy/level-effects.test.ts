@@ -229,6 +229,19 @@ describe("the country event spine", () => {
       data: { [field]: expect.closeTo(expected, 9) },
     });
   });
+  it("moves a stored 0% inflation from the estimate: an exact 0 counts as blank", async () => {
+    const db = spineDb({ ...economy, inflationRate: 0 });
+    const results = await CountryEventSpine.recordCountryEvent({
+      db: db as never,
+      countryId,
+      sourceType: "issue",
+      description: "Issue",
+      consequences: [
+        { targetModel: "Country", targetField: "inflationRate", operation: "add", value: 0.5 },
+      ],
+    });
+    expect(results).toEqual([expect.objectContaining({ previousValue: estimate.inflationRate })]);
+  });
 });
 
 describe("a Fiscal Policy rate save keeps the other excise rates", () => {

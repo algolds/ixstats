@@ -8,6 +8,7 @@ import fc from "fast-check";
 import {
   effectiveFiguresOfCountry,
   estimateEconomicFigures,
+  isBlankFigure,
   type EconomicFigureInputs,
   type EconomicFigures,
 } from "~/lib/economy/figure-estimates";
@@ -119,14 +120,29 @@ describe("estimateEconomicFigures", () => {
 describe("effectiveFiguresOfCountry", () => {
   const economy = { economicTier: "Developing", currentGdpPerCapita: 12_000 };
 
-  it("keeps a recorded figure, 0 included, and flags nothing", () => {
+  it("keeps a recorded figure and flags nothing", () => {
     const figures = effectiveFiguresOfCountry(
-      { ...economy, inflationRate: 0, unemploymentRate: 12.5, totalDebtGDPRatio: 140 },
+      { ...economy, inflationRate: -0.4, unemploymentRate: 12.5, totalDebtGDPRatio: 140 },
       0.1
     );
-    expect(figures.inflationRate).toEqual({ value: 0, estimated: false });
+    expect(figures.inflationRate).toEqual({ value: -0.4, estimated: false });
     expect(figures.unemploymentRate).toEqual({ value: 12.5, estimated: false });
     expect(figures.totalDebtGDPRatio).toEqual({ value: 140, estimated: false });
+  });
+
+  it("reads an exact 0 inflation or unemployment as blank, but keeps a 0 debt (owner ruling)", () => {
+    const figures = effectiveFiguresOfCountry(
+      { ...economy, inflationRate: 0, unemploymentRate: 0, totalDebtGDPRatio: 0 },
+      0.1
+    );
+    expect(figures.inflationRate.estimated).toBe(true);
+    expect(figures.inflationRate.value).toBeGreaterThan(0);
+    expect(figures.unemploymentRate.estimated).toBe(true);
+    expect(figures.totalDebtGDPRatio).toEqual({ value: 0, estimated: false });
+    expect(isBlankFigure("inflationRate", 0)).toBe(true);
+    expect(isBlankFigure("totalDebtGDPRatio", 0)).toBe(false);
+    expect(isBlankFigure("unemploymentRate", null)).toBe(true);
+    expect(isBlankFigure("publicApproval", 0)).toBe(false);
   });
 
   it("estimates a blank figure and flags it", () => {
