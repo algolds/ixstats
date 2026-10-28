@@ -19,7 +19,7 @@ export function NarratorProgress({ value, color }: NarratorProgressProps) {
       className="bg-fill-2 mt-0.5 h-0.5 w-full overflow-hidden rounded-full"
     >
       <div
-        className="duration-fast h-full rounded-full transition-[width]"
+        className="duration-fast ease-out-facet h-full rounded-full transition-[width]"
         style={{ width: `${value}%`, backgroundColor: color }}
       />
     </div>

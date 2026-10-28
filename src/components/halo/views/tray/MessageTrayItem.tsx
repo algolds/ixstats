@@ -132,6 +132,7 @@ export function MessageTrayItem({
           }}
           className={cn(
             focusRing,
+            "focus-visible:-outline-offset-2",
             "group rounded-row duration-fast active:bg-fill-3 relative flex w-full cursor-pointer flex-col overflow-hidden border p-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
             isUnread
               ? "border-yellow/30 bg-yellow/6 hover:border-yellow/50"

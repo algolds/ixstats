@@ -20,6 +20,21 @@ describe("Halo keyboard paths", () => {
     expect(onClick).toHaveBeenCalledWith(conversation);
   });
 
+  it("draws the focus ring inside the row so the clipping parent cannot hide it", () => {
+    render(
+      <MessageTrayItem conversation={conversation} relativeTime={() => "now"} onClick={jest.fn()} />
+    );
+    expect(screen.getByRole("button", { name: /Caphiria/ }).className).toContain(
+      "focus-visible:-outline-offset-2"
+    );
+  });
+
+  it("eases the progress fill with the Facet token", () => {
+    render(<NarratorProgress value={10} color="var(--tint)" />);
+    const fill = screen.getByRole("progressbar").firstElementChild;
+    expect(fill?.className).toContain("ease-out-facet");
+  });
+
   it("shows narration as read-only progress", () => {
     render(<NarratorProgress value={42.4} color="var(--tint)" />);
     expect(screen.getByRole("progressbar", { name: "Narration progress" })).toHaveAttribute(
