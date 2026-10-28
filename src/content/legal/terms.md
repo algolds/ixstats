@@ -2,8 +2,8 @@
 title: Terms of Service
 description: These Terms of Service constitute a legally binding agreement governing your access to and use of the IxStates platform and all services operated by Alpaia Holdings.
 badge: Legal Terms
-lastUpdated: October 11, 2026
-version: 1.4.0 "Lobster Crosby"
+lastUpdated: October 28, 2026
+version: 1.5.0 "Lobster Crosby"
 contact: admin@ixwiki.com
 ---
 
@@ -27,7 +27,9 @@ The Services are operated by **Alpaia Holdings**, a New York general partnership
 
 The Services are intended strictly for individuals **sixteen (16) years of age or older**. By accessing or using the Services, you represent and warrant that: (a) you are at least 16 years of age; and (b) you possess the legal capacity to enter into these Terms under applicable law. We reserve the right to immediately restrict or terminate accounts operated by individuals who do not satisfy this requirement.
 
-The Services are not directed to children under 13. We do not knowingly collect personal information from children under 13. If we discover that personal information has been collected from a child under 13, we will take immediate steps to delete such data and terminate the account.
+The Services are not directed to children. We do not knowingly collect personal information from anyone under 16. If we learn that an account belongs to someone under 16, we will close it and delete its personal information.
+
+If you are under eighteen (18), or under the age of majority where you live, you may make purchases under Section 5.5 only with the permission of a parent or legal guardian.
 
 ### 1.3 Account Security & Credentials
 
@@ -39,7 +41,7 @@ IxStates permits a user to operate multiple in-game fictional personas, cabinet 
 
 ## 2. Intellectual Property & Computational Outputs {#intellectual-property}
 
-> **Plain English Summary:** You retain copyright in your original stories, characters, and custom flag art. However, to prevent the shared world from breaking when players depart, you grant Alpaia Holdings a permanent license to keep generated simulation state, procedural maps, and economic ledgers running in the shared world. Public wiki lore is governed by CC BY-SA 4.0 only where explicitly designated. Content brought in from other wikis stays its author's. Claiming a nation lets us use its material in the realm while you hold it, and we remove it when you leave or stop playing.
+> **Plain English Summary:** You retain copyright in your original stories, characters, and custom flag art. However, to prevent the shared world from breaking when players depart, you grant Alpaia Holdings a permanent license to keep generated simulation state, procedural maps, and economic ledgers running in the shared world. Text you write on IxWiki is CC BY-SA 4.0 and stays on the wiki. Content brought in from other wikis stays its author's. Claiming a nation lets us use its material in the realm while you hold it, and we remove it when you leave or stop playing. Lore written together stays when one author leaves.
 
 ### 2.1 Creator-Owned Original Content
 
@@ -51,7 +53,7 @@ When you submit User Content, you grant Alpaia Holdings a non-exclusive, worldwi
 
 ### 2.3 Simulation, Generative & Computational Outputs (Continuity License)
 
-The Services utilize algorithmic generators, procedural models, and econometric simulations—including the **Onoma** linguistic generator, **Vexel** heraldry engine, **UPG** procedural vector map mesh, and **Statecraft** macroeconomic calculations. To the extent your use of the Services generates computational outputs or persistent simulation states incorporated into the shared environment:
+The Services utilize algorithmic generators, procedural models, and econometric simulations, including the **Onoma** linguistic generator, **Vexel** heraldry engine, **UPG** procedural vector map mesh, and **Statecraft** macroeconomic calculations. To the extent your use of the Services generates computational outputs or persistent simulation states incorporated into the shared environment:
 
 - You grant Alpaia Holdings a perpetual, worldwide, royalty-free, non-exclusive license to host, calculate, reproduce, index, display, and maintain such computational outputs, phonetic lexicons, heraldic layouts, trade ledgers, and simulation states.
 - This license survives account closure or nation archiving to ensure that shared historical timelines, topological grids, and multilateral simulation records remain unbroken for the community.
@@ -59,7 +61,9 @@ The Services utilize algorithmic generators, procedural models, and econometric 
 
 ### 2.4 Community-Licensed Content (CC BY-SA 4.0)
 
-Content within IxWiki, WikiOS, or community knowledge repositories that is **expressly designated** under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) is governed by the terms of that license. The mere existence of a public page does not automatically place every element under CC BY-SA 4.0 unless expressly designated.
+All text you contribute to IxWiki, whether on `ixwiki.com` or through WikiOS, is licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0). You keep copyright in it, but the licence is irrevocable: other people may copy, adapt, and share the text under CC BY-SA 4.0, and it stays on IxWiki, credited in the page history, after you leave. Files uploaded to IxWiki, such as flags, maps, and illustrations, carry the licence stated on their file page.
+
+Content elsewhere in the Services, such as ThinkPages posts, Onoma lexicons, or nation profiles, is not under CC BY-SA 4.0 unless it is expressly designated.
 
 ### 2.5 Imported Content
 
@@ -108,7 +112,7 @@ realm a non-exclusive, worldwide, royalty-free licence to:
 
 Alpaia Holdings does not acquire ownership of anything adapted from Nation Material. Adaptations are used only
 within the realm and are removed with the Nation Material. We do not sell Nation Material, license it to anyone
-else, or use it to train machine learning or artificial intelligence models.
+else, or use it to train machine learning or artificial intelligence models. Section 2.10 covers AI features.
 
 ### 2.7 Leaving a Realm
 
@@ -119,6 +123,12 @@ thirty (30) days, apart from routine backups, which expire on their normal sched
 We keep the "**Shared Record**": the nation's name, its simulation figures and history, and the events, treaties,
 and posts by other users that involve it, so that other users' stories remain coherent. The Shared Record does
 not include Nation Material other than the nation's name. This is the continuity described in Section 2.3.
+
+The realm's rules decide whether the nation's territory on the realm map stays as unclaimed land or is cleared.
+Either way, its flag, coat of arms, and other Nation Material come off the map.
+
+Removal under this Section does not reach text you contributed to IxWiki, which stays under Section 2.4. We stop
+presenting it as the nation's material in the realm.
 
 ### 2.8 Inactive Nations
 
@@ -143,6 +153,24 @@ under Section 2.7. A removal request under Section 2.5(f) ends the window at any
 
 (e) **Inactivity is not consent.** We do not treat inactivity as permission to keep, reuse, or reassign Nation
 Material.
+
+### 2.9 Collaborative Works
+
+Lore that several users write together, such as alliance pages, shared wars, treaties, joint histories, and
+multi-author events ("**Collaborative Works**"), stays in the Services when one of its authors leaves, releases a
+nation, or closes their account. Each author grants the others, and Alpaia Holdings, a perpetual, non-exclusive,
+royalty-free licence to keep using, displaying, and building on their part of a Collaborative Work.
+
+A departing author may ask that their name be replaced with "a former member" wherever they are credited. No
+single author may require a Collaborative Work to be removed, unless removal is required by law or these Terms.
+
+### 2.10 AI Features
+
+Some features send content to third-party artificial intelligence services to generate output, such as sports
+commentary, summaries, or names. We send only what the feature needs, and we use only providers whose terms bar
+them from training models on data sent through their services. Neither we nor those providers use your User
+Content or Nation Material to train machine learning or artificial intelligence models. AI output is treated as a
+computational output under Section 2.3.
 
 ## 3. Third-Party Integrations & API Standards {#third-party-services}
 
@@ -173,6 +201,12 @@ Connecting third-party accounts (such as Discord OAuth) is subject to those thir
 
 IxStates is a geopolitical simulation and creative worldbuilding platform. Users regularly depict fictional governments, ideologies, political rivalries, economic tensions, revolutions, and dystopian societies within established storytelling canons. Content clearly framed within fictional roleplay is not prohibited merely because it portrays controversial or adversarial fictional concepts.
 
+In-character content still has limits:
+
+- **No sexual content.** Explicit sexual content is not allowed anywhere in the Services. Sexual content involving minors, including fictional or drawn minors, is never allowed and will be reported to the authorities where the law requires.
+- **Content warnings.** Graphic depictions of violence, torture, abuse, or atrocities must carry a content warning or sit behind a spoiler tag. Moderators may add a warning, hide the content, or remove it.
+- **Fiction is not cover.** In-character content that targets real people or real groups, or that recruits for or glorifies real-world extremist movements, falls under Section 4.2.
+
 ### 4.2 Out-of-Character (OOC) Strict Prohibitions
 
 Fictional roleplay framing does not protect real-world malice. The following conduct is strictly prohibited across all Services:
@@ -197,7 +231,7 @@ You agree not to:
 
 ### 5.1 Non-Monetary Virtual Assets
 
-All in-game currencies, IxVault credits, cards, market shares, deck valuations, and virtual commodities are purely fictional simulation assets. They possess **zero real-world monetary value** and cannot be redeemed for fiat currency, goods, or real-world services. They do not constitute securities, deposits, financial instruments, or property claims against Alpaia Holdings. We reserve the right to rebalance, modify, or reset virtual asset values as part of ordinary simulation maintenance.
+All in-game currencies, IxVault credits, cards, market shares, deck valuations, and virtual commodities are purely fictional simulation assets. They possess **zero real-world monetary value** and cannot be redeemed for fiat currency, goods, or real-world services. They do not constitute securities, deposits, financial instruments, or property claims against Alpaia Holdings. This is so even where you bought them with real money under Section 5.5: you buy a limited licence to use them in the Services, not property. We reserve the right to rebalance, modify, or reset virtual asset values as part of ordinary simulation maintenance.
 
 ### 5.2 Proprietary Platform Intellectual Property & Trademarks
 
@@ -211,6 +245,22 @@ The Services simulate fictional economies, governments, demographics, and spatia
 
 By submitting User Content, you represent and warrant that: (a) you hold all necessary rights and licenses to submit such material; (b) your submission does not infringe or misappropriate any third party’s copyright, trademark, privacy, or intellectual property rights; and (c) your content complies with all applicable laws and these Terms.
 
+### 5.5 Purchases, Subscriptions & Refunds
+
+Some features, such as paid realms or supporter plans, may cost money. This Section applies whenever you pay us.
+
+(a) **Prices and payment.** Prices are shown before you pay, including or adding any taxes as stated at checkout. Payments are processed by the payment provider named at checkout, and we do not receive or store your full card number.
+
+(b) **Subscriptions.** A subscription renews automatically at the end of each billing period until you cancel. Before you subscribe, we show the price, the billing period, and how to cancel. You can cancel at any time online in your account settings, and cancellation takes effect at the end of the current period. We will tell you at least thirty (30) days before a price change takes effect, and you can cancel before it applies.
+
+(c) **Refunds.** Except where this Section or the law says otherwise, payments are non-refundable, and we do not refund partly used billing periods. If we close the Services or end a paid feature, or close your account without cause, we refund the unused part of any prepaid period.
+
+(d) **Right of withdrawal (EU, EEA, and UK).** If you live in the European Union, the European Economic Area, or the United Kingdom, you may withdraw from a purchase within fourteen (14) days. For digital content or services that start right away, we ask at checkout whether you want them to start now. If you agree and confirm that you understand this ends your right of withdrawal, you lose it once supply begins. For a subscription that you withdraw from after it has started, we may keep a proportionate amount for the time it ran.
+
+(e) **Account closure for violations.** If we close your account because you broke these Terms, you are not entitled to a refund, except where the law requires one.
+
+(f) **Chargebacks.** If you dispute a valid charge with your bank instead of contacting us first, we may suspend paid features while the dispute is open.
+
 ## 6. Enforcement, DMCA Safe Harbor & Governing Law {#termination-governing-law}
 
 ### 6.1 Moderation & Administrative Authority
@@ -218,6 +268,8 @@ By submitting User Content, you represent and warrant that: (a) you hold all nec
 We reserve the right to investigate suspected violations of these Terms and apply remedies, including: issuing warnings, muting communications, restricting account features, archiving or relinquishing fictional nations, resetting exploited stats, reversing fraudulent transactions, or permanently banning accounts.
 
 Users may submit appeals regarding significant moderation actions to [admin@ixwiki.com](mailto:admin@ixwiki.com). Account suspension or termination does not require destruction of public, anonymized historical simulation records necessary for shared world continuity.
+
+When you close your account, your public posts and personas stay so that conversations and stories still make sense, but they are unlinked from your account and credited to "a former member". Nation Material is handled under Section 2.7 and personal data under our [Privacy Policy](/privacy).
 
 ### 6.2 Copyright Complaints, DMCA Notices & Counter-Notices
 
@@ -250,8 +302,18 @@ Except for disputes resolved through informal negotiation under Section 6.6 or w
 
 **Class Action & Jury Waiver:** TO THE FULLEST EXTENT PERMITTED BY LAW, ALL CLAIMS MUST BE BROUGHT IN AN INDIVIDUAL CAPACITY AND NOT AS A CLASS MEMBER OR PLAINTIFF IN ANY PURPORTED CLASS OR REPRESENTATIVE PROCEEDING. EACH PARTY WAIVES ANY RIGHT TO A JURY TRIAL.
 
+**Consumer rights:** If you live outside the United States, nothing in these Terms takes away rights you have under the mandatory consumer laws of the country where you live, including the right to bring a claim in its courts.
+
 ### 6.6 Informal Dispute Resolution & Contact
 
 Prior to filing any formal legal claim, you agree to contact us at [admin@ixwiki.com](mailto:admin@ixwiki.com) with a concise written explanation of the dispute and your requested resolution. Both parties agree to negotiate in good faith for at least thirty (30) days before initiating court proceedings.
+
+### 6.7 Changes to These Terms
+
+We may update these Terms. The date at the top shows when they last changed. For a material change, we notify you in the Services or by email at least fourteen (14) days before it takes effect, unless the change is required sooner by law or to address abuse or security. If you keep using the Services after a change takes effect, you accept it. If you do not, you may stop using the Services and close your account, and Section 5.5(c) applies to any prepaid period.
+
+### 6.8 General
+
+These Terms and our Privacy Policy are the whole agreement between you and Alpaia Holdings about the Services. If a court finds any part unenforceable, the rest stays in effect. Our failure to enforce a provision is not a waiver of it. You may not transfer your rights under these Terms without our consent; we may transfer ours to a successor that takes over the Services and agrees to be bound by them. Sections 2, 5.1, 5.2, 6.3, 6.4, and 6.5 survive the end of your use of the Services.
 
 > **Legal Notices & Inquiries:** Alpaia Holdings / IxStates • [admin@ixwiki.com](mailto:admin@ixwiki.com)
