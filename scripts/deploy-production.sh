@@ -288,6 +288,11 @@ else
     bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/d3-combat.sql || exit 1
     bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/d1-drop-legacy-security.sql || exit 1
     bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/r3-catalog-duplicates.sql || exit 1
+    # MyCountry stress test (plans: findings A/B/C): placeholder zeros to null, party drift clock, alliance founders, budget balance in currency. Idempotent.
+    bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/a-null-placeholder-zero-economics.sql || exit 1
+    bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/b-political-party-drifted-at.sql || exit 1
+    bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/c-alliance-founders.sql || exit 1
+    bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/c-budget-balance-currency.sql || exit 1
 
     # Sync production database with schema. Without --accept-data-loss it stops (non-zero) on any data-loss warning
     # rather than prompting; the live build is still untouched at this point.
