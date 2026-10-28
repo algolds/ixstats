@@ -5,6 +5,7 @@ import { HaloContainer } from "../HaloPrimitives";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
 import { Search, Bell, Settings } from "iconoir-react";
 import { HaloIconButton } from "./compact/HaloIconButton";
+import { NarratorProgress } from "./compact/NarratorProgress";
 import { useUser } from "~/context/auth-context";
 import { useContextHour } from "~/hooks/useContextHour";
 import { greetingForHour } from "~/lib/time/greeting";
@@ -36,8 +37,7 @@ function CompactViewComponent({
   const pluginViewKey = activePlugin?.expandedViews
     ? Object.keys(activePlugin.expandedViews)[0]
     : null;
-  const { activeSectionId, tocEntries, narratorState, narratorActions, themeColors } =
-    useWikiContext();
+  const { activeSectionId, tocEntries, narratorState, themeColors } = useWikiContext();
 
   const isNarratorActive = !!(
     narratorState &&
@@ -348,32 +348,8 @@ function CompactViewComponent({
               )}
             </div>
 
-            {/* Sleek Hairline Narrator Progress Track Underneath the Icons Group */}
-            {isNarratorActive && narratorActions && (
-              <div
-                className="group/narrator-progress bg-fill-2 relative mt-0.5 flex h-[2.5px] w-full cursor-pointer items-center overflow-hidden rounded-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] hover:h-[3.5px]"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const clickX = e.clientX - rect.left;
-                  const pct = Math.max(0, Math.min(1, clickX / rect.width));
-                  const targetBlock = Math.min(
-                    narratorState.totalBlocks - 1,
-                    Math.max(0, Math.round(pct * (narratorState.totalBlocks - 1)))
-                  );
-                  narratorActions.jumpToBlock(targetBlock);
-                }}
-                onPointerDown={(e) => e.stopPropagation()}
-                title={`Narrator Progress: ${Math.round(narratorProgressPercent)}% · Click to scrub`}
-              >
-                <div
-                  className="duration-fast h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
-                  style={{
-                    width: `${narratorProgressPercent}%`,
-                    backgroundColor: narratorAccent,
-                  }}
-                />
-              </div>
+            {isNarratorActive && (
+              <NarratorProgress value={narratorProgressPercent} color={narratorAccent} />
             )}
           </div>
         </HaloContainer>
