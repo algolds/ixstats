@@ -23,7 +23,7 @@ import { Card } from "~/components/ui/card";
 
 interface ActivityData {
   id: string;
-  type: "achievement" | "diplomatic" | "economic" | "social" | "meta";
+  type: string;
   category: "game" | "platform" | "social";
   user: {
     id: string;
@@ -49,11 +49,18 @@ interface ActivityData {
   poll?: any;
 }
 
+interface ActivityTypeConfig {
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  color: string;
+  bgColor: string;
+  label: string;
+}
+
 interface ActivityFeedItemProps {
   activity: ActivityData;
 }
 
-const activityTypeConfig = {
+const activityTypeConfig: Record<string, ActivityTypeConfig> = {
   achievement: {
     icon: Trophy,
     color: "text-yellow",
@@ -86,9 +93,15 @@ const activityTypeConfig = {
   },
 };
 
+/** Stored types outside the config (military, crisis, settings_changed…) render as generic activity. */
+export function getActivityTypeConfig(type: string): ActivityTypeConfig {
+  if (Object.hasOwn(activityTypeConfig, type)) return activityTypeConfig[type]!;
+  return { ...activityTypeConfig.meta!, label: "Activity" };
+}
+
 export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
   const [expanded, setExpanded] = React.useState(false);
-  const config = activityTypeConfig[activity.type];
+  const config = getActivityTypeConfig(activity.type);
   const IconComponent = config.icon;
 
   return (
