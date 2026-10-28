@@ -93,6 +93,7 @@ type VariableResolver = (snapshot: CountrySnapshot) => string;
 
 const BUILT_IN_VARIABLES: Record<string, VariableResolver> = {
   countryName: (s) => s.name,
+  incomeInequalityGini: (s) => s.incomeInequalityGini.toFixed(0),
   leaderName: (s) => s.leader || "the Head of State",
   governmentType: (s) => s.governmentType || "the government",
   economicTier: (s) => s.economicTier,

@@ -68,9 +68,9 @@ function fetchCountryCore(countryId: string, db: PrismaClient) {
           socialCohesion: true,
           ethnicTension: true,
           trustInGovernment: true,
+          policingEffectiveness: true,
         },
       },
-      activeAlliances: true,
       activeTreaties: true,
       // The realised growth rate stat progression stores each IxTime month (effectiveGdpGrowth)
       historicalData: {
@@ -82,10 +82,24 @@ function fetchCountryCore(countryId: string, db: PrismaClient) {
   });
 }
 
+function giniPoints(gini: number | null): number {
+  if (gini == null) return 0;
+  return gini <= 1 ? Math.round(gini * 1000) / 10 : gini;
+}
+
 type CountryCoreRow = NonNullable<Awaited<ReturnType<typeof fetchCountryCore>>>;
 
 function fetchSnapshotRelations(countryId: string, db: PrismaClient) {
   return Promise.all([
+    // Alliances: active alliance memberships and military-alliance pacts (Country.activeAlliances is never written).
+    db.allianceMember.count({ where: { countryId, status: "active" } }),
+    db.foreignPolicyAction.count({
+      where: {
+        status: "active",
+        actionType: "military_alliance",
+        OR: [{ initiatorId: countryId }, { targetId: countryId }],
+      },
+    }),
     db.embassy.count({
       where: {
         hostCountryId: countryId,
@@ -242,7 +256,8 @@ function coreFields(country: CountryCoreRow) {
     debtPerCapita: country.debtPerCapita ?? 0,
     publicApproval: country.publicApproval ?? 50,
     povertyRate: country.povertyRate ?? 0,
-    incomeInequalityGini: country.incomeInequalityGini ?? 0,
+    // The column holds the coefficient (0-1); trigger thresholds and the text read Gini points (0-100).
+    incomeInequalityGini: giniPoints(country.incomeInequalityGini),
     lifeExpectancy: country.lifeExpectancy ?? 70,
     literacyRate: country.literacyRate ?? 90,
     urbanPopulationPercent: country.urbanPopulationPercent ?? 50,
@@ -270,6 +285,7 @@ function stabilityFields(sm: CountryCoreRow["stabilityMetrics"]) {
     socialCohesion: sm?.socialCohesion ?? 70,
     ethnicTension: sm?.ethnicTension ?? 20,
     trustInGovernment: sm?.trustInGovernment ?? 50,
+    policingEffectiveness: sm?.policingEffectiveness ?? 50,
   };
 }
 
@@ -308,6 +324,8 @@ export async function buildCountrySnapshot(
   if (!country) return null;
 
   const [
+    allianceMemberships,
+    militaryPacts,
     embassyCount,
     policyCount,
     pendingIssueCount,
@@ -335,7 +353,7 @@ export async function buildCountrySnapshot(
     ...governmentFields(country.governmentStructure),
     ...stabilityFields(country.stabilityMetrics),
     activeEmbassyCount: embassyCount,
-    activeAllianceCount: country.activeAlliances ?? 0,
+    activeAllianceCount: allianceMemberships + militaryPacts,
     activePolicyCount: policyCount,
     pendingIssueCount: pendingIssueCount,
     recentCrisisCount: crisisCount,

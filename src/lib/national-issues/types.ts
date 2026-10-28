@@ -54,6 +54,7 @@ export interface CountrySnapshot {
   socialCohesion: number;
   ethnicTension: number;
   trustInGovernment: number;
+  policingEffectiveness: number;
 
   // Aggregate counts
   activeEmbassyCount: number;

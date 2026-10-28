@@ -222,6 +222,8 @@ function richDb(calls: Call[], opts: { targetIntent: boolean; failCreateFor?: st
         ],
       },
       embassy: { count: () => 3 },
+      allianceMember: { count: () => 2 },
+      foreignPolicyAction: { count: () => 1 },
       policy: {
         count: () => 3,
         findMany: () => [
@@ -406,6 +408,8 @@ const EXPECTED: Record<
       },
       callNames: [
         "country.findUnique",
+        "allianceMember.count",
+        "foreignPolicyAction.count",
         "embassy.count",
         "policy.count",
         "nationalIssue.count",
@@ -431,7 +435,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "0998cff6267651b0c00796947978b9aceae7f69cf0c6af847d2462f39afb5797",
+    digest: "060f40fdc90656feae4fa8797b2d0664383a7f4672b9adfb2035d9282c4adde6",
   },
   evaluateNeighborFallbackForcedDomain: {
     summary: {
@@ -449,6 +453,8 @@ const EXPECTED: Record<
       },
       callNames: [
         "country.findUnique",
+        "allianceMember.count",
+        "foreignPolicyAction.count",
         "embassy.count",
         "policy.count",
         "nationalIssue.count",
@@ -472,7 +478,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "e423e45c354f8ac0938796a75af95df6031e0b086ca79fd6c74978b4b703c74a",
+    digest: "6050e96dd0cfe8797304b437fa8e5fc5a008ede4f9f049d22a7bddd6b9de583d",
   },
   evaluatePendingCap: {
     summary: {
@@ -487,6 +493,8 @@ const EXPECTED: Record<
       },
       callNames: [
         "country.findUnique",
+        "allianceMember.count",
+        "foreignPolicyAction.count",
         "embassy.count",
         "policy.count",
         "nationalIssue.count",
@@ -500,7 +508,7 @@ const EXPECTED: Record<
         "nationalIssue.count",
       ],
     },
-    digest: "13ce442e941204a6f1cc0cef87e362e404e8e6ac7cc6e55d12e6cb676ba3fff3",
+    digest: "ac1254624dd4ee9c8fbd83ed987f480ff3d2df66b5cedc909ff501b4eeea1e08",
   },
   evaluateWeeklyCapReached: {
     summary: {
@@ -515,6 +523,8 @@ const EXPECTED: Record<
       },
       callNames: [
         "country.findUnique",
+        "allianceMember.count",
+        "foreignPolicyAction.count",
         "embassy.count",
         "policy.count",
         "nationalIssue.count",
@@ -537,7 +547,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "4d75836db37fe20423b5743376b8caf8aef57b6751ef73d1d364f349740bbb48",
+    digest: "ee5b290cca8bfb2861f5a481cfe28e7cf0ce39672eb6c855c3d77da280ead87f",
   },
   evaluateTargetLookupThrows: {
     summary: {
@@ -552,6 +562,8 @@ const EXPECTED: Record<
       },
       callNames: [
         "country.findUnique",
+        "allianceMember.count",
+        "foreignPolicyAction.count",
         "embassy.count",
         "policy.count",
         "nationalIssue.count",
@@ -575,7 +587,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "e68a68bfa26ac67286eb625e4c3fb4ea7661fca71774f7e459927a33e53f346f",
+    digest: "1e7b8469be201f42366c8ca63282e90f9bef0a970764cfb7d8112d2a89a5d6fe",
   },
   forceGenerateFollowUp: {
     summary: {
@@ -583,6 +595,8 @@ const EXPECTED: Record<
       callNames: [
         "nationalIssueTemplate.findUnique",
         "country.findUnique",
+        "allianceMember.count",
+        "foreignPolicyAction.count",
         "embassy.count",
         "policy.count",
         "nationalIssue.count",
@@ -595,7 +609,7 @@ const EXPECTED: Record<
         "nationalIssue.create",
       ],
     },
-    digest: "3f8fdb12f5632b76e8027dd79cc779afb16c5500d11c01b8957536b24f18df27",
+    digest: "0fb047d8293d0e2e97beb80346f6bcbe694148b36b7c503214d9849678416b8d",
   },
   forceGenerateInvalidOptions: {
     summary: {
@@ -603,6 +617,8 @@ const EXPECTED: Record<
       callNames: [
         "nationalIssueTemplate.findUnique",
         "country.findUnique",
+        "allianceMember.count",
+        "foreignPolicyAction.count",
         "embassy.count",
         "policy.count",
         "nationalIssue.count",
@@ -614,7 +630,7 @@ const EXPECTED: Record<
         "intent.findMany",
       ],
     },
-    digest: "9244c8c52fc6215215e1cde6a86a26acc62f616a642b9280a3892630d8ebcdf6",
+    digest: "d1ffacea20a5699595baf282955b76be906012a43c453062c02402f16ac75318",
   },
 };
 
@@ -694,6 +710,7 @@ const SNAPSHOT: CountrySnapshot = {
   socialCohesion: 72.0,
   ethnicTension: 15.0,
   trustInGovernment: 64.0,
+  policingEffectiveness: 60.0,
   activeEmbassyCount: 12,
   activeAllianceCount: 3,
   activePolicyCount: 15,
