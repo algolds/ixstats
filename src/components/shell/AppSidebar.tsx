@@ -36,13 +36,7 @@ import {
   type NavBadges,
   type SearchParamsLike,
 } from "~/lib/navigation/app-sections";
-import {
-  MyCountryLinks,
-  SourceList,
-  isListed,
-  isPending,
-  sourceRowClassName,
-} from "./SourceList";
+import { SourceList, isListed, isPending, sourceRowClassName } from "./SourceList";
 import { SidebarFooterLinks } from "./SidebarFooterLinks";
 
 interface AppSidebarProps {
@@ -268,22 +262,17 @@ function RailApp({
           data-app={app.tint}
           className="w-64 p-2"
         >
-          <div className="flex items-center gap-0.5">
-            <Link
-              href={app.href}
-              onClick={close}
-              className={cn(
-                sourceRowClassName,
-                focusRing,
-                "text-headline text-label hover:bg-fill-4 flex-1"
-              )}
-            >
-              {app.label}
-            </Link>
-            {app.id === "mycountry" && list.countryHref && (
-              <MyCountryLinks countryHref={list.countryHref} onNavigate={close} />
+          <Link
+            href={app.href}
+            onClick={close}
+            className={cn(
+              sourceRowClassName,
+              focusRing,
+              "text-headline text-label hover:bg-fill-4"
             )}
-          </div>
+          >
+            {app.label}
+          </Link>
           <SourceList {...list} variant="popover" app={app} onNavigate={close} />
         </PopoverContent>
       </Popover>
@@ -326,8 +315,7 @@ export function AppSidebar({
         className
       )}
     >
-      {/* min-w-0: the panel keeps to its column, so a row wider than it (the claimable daily reward with its
-          streak) truncates instead of widening the panel over the page's left edge. */}
+      {/* min-w-0: the panel keeps to its column, so a row wider than it truncates instead of widening the panel over the page's left edge. */}
       <FacetMaterial data-slot="app-sidebar-panel" className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="sidebar-collapsed:hidden min-h-0 flex-1 overflow-y-auto px-2 pt-2 pb-2">
           <SourceList {...list} variant="sidebar" />
