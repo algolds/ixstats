@@ -7,7 +7,7 @@ globalThis.ResizeObserver ??= class {
   disconnect() {}
 } as never;
 
-function startTour() {
+function startTour(step = 1) {
   render(
     <>
       <div id="command-palette" data-testid="halo" />
@@ -15,9 +15,7 @@ function startTour() {
     </>
   );
   act(() => {
-    window.dispatchEvent(
-      new CustomEvent("ix:halo-tour-step", { detail: { step: 1, active: true } })
-    );
+    window.dispatchEvent(new CustomEvent("ix:halo-tour-step", { detail: { step, active: true } }));
   });
 }
 
@@ -45,5 +43,15 @@ describe("Halo walkthrough", () => {
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     expect(skip).toHaveBeenCalledTimes(1);
     window.removeEventListener("ix:tour-skip", skip);
+  });
+
+  // Halo is 371px wide on expanded steps, so on a phone there is no room beside it and the card would
+  // flip off-screen; below it always fits.
+  it.each([1, 2, 3, 4, 5])("places the card below Halo on step %i", (step) => {
+    startTour(step);
+    expect(screen.getByRole("dialog", { name: "Halo walkthrough" })).toHaveAttribute(
+      "data-side",
+      "bottom"
+    );
   });
 });

@@ -77,7 +77,6 @@ export function HaloTourTooltip() {
 
   if (!mounted || !isActive) return null;
 
-  const isExpandedStep = currentStep === 2 || currentStep === 4 || currentStep === 5;
   const step = TOUR_STEPS[currentStep - 1];
   if (!step) return null;
 
@@ -115,7 +114,8 @@ export function HaloTourTooltip() {
         }}
         // The user works in Halo during the tour, so a press outside must not end it.
         onInteractOutside={(e) => e.preventDefault()}
-        side={isExpandedStep ? "right" : "bottom"}
+        // Always below: expanded Halo fills a phone's width, so a side placement flips off-screen and traps the user.
+        side="bottom"
         align="center"
         sideOffset={12}
         collisionPadding={16}
