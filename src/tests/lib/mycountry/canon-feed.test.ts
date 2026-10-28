@@ -35,6 +35,32 @@ const sources = {
 };
 
 describe("buildCanonFeed", () => {
+  it("shows an effect's coded source as words (stress C-26)", () => {
+    const [item] = buildCanonFeed(
+      {
+        effects: [
+          {
+            id: "e2",
+            description: "Foreign policy: free_trade (moderate) with Kandara",
+            inputType: "TRADE_AGREEMENT",
+            createdAt: new Date(now),
+          },
+          {
+            id: "e3",
+            description: null,
+            inputType: "gdp_level_adjustment",
+            createdAt: new Date(now - HOUR),
+          },
+        ],
+        events: [],
+        decisions: [],
+        logs: [],
+      },
+      10
+    );
+    expect(item?.title).toBe("Foreign policy: free trade (moderate) with Kandara");
+  });
+
   it("sorts effects on the real-time clock", () => {
     const items = buildCanonFeed(sources, 10);
     expect(items.map((i) => i.id)).toEqual(["log_l1", "dip_d1", "eff_e1"]);
