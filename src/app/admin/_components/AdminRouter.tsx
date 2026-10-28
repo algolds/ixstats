@@ -118,6 +118,11 @@ const WikiOSSettingsPanel = dynamic(
   { loading: Loader, ssr: false }
 );
 
+const IiwikiAdminPanel = dynamic(
+  () => import("../iiwiki/IiwikiAdminPanel").then((m) => m.IiwikiAdminPanel),
+  { loading: Loader, ssr: false }
+);
+
 const LoreScannerPanel = dynamic(
   () => import("../lorescanner/LoreScannerPanel").then((m) => m.LoreScannerPanel),
   { loading: Loader, ssr: false }
@@ -278,6 +283,8 @@ export function AdminRouter() {
       // WikiOS
       case "wikios-settings":
         return <WikiOSSettingsPanel />;
+      case "iiwiki":
+        return <IiwikiAdminPanel />;
       case "lorescanner":
         return <LoreScannerPanel />;
       case "image-repo":

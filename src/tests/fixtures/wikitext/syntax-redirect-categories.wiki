@@ -1,0 +1,7 @@
+#REDIRECT [[Republic of Vesperia#History|History]]
+
+{{Redirect category shell|
+{{R from alternative name}}
+{{R to section}}
+}}
+[[Category:Redirects from short names|Vesperia]]

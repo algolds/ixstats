@@ -84,10 +84,27 @@ the file, read back the list.
 | Bot defense, fail2ban | `/usr/local/bin/ixwiki-bot-defense.sh status`, `tail -f /var/log/ixwiki-bot-defense.log`, `fail2ban-client status ixwiki-bots` (they read classic's `access.log` only; see below) |
 | PHP-FPM watchdog | `tail -f /ixwiki/private/logs/php-fpm-watchdog.log` (it probes classic's `/wiki/Main_Page`, which stays MediaWiki) |
 | Sister wikis | `pm2 logs ixstats-web` and `pm2 logs ixstats-cron`, through `grep -iE 'circuit (open\|closed)\|could not be reached'`. A breaker that opens and never closes means that wiki, or the server's route to it, is down |
+| IIWiki | `/admin/iiwiki`. The live test sends one request per kind of call and reads each answer (OK, Cloudflare block, challenge, rate limit, timeout). The panel also shows the breaker (with a reset) and every place the app reaches IIWiki. Its switches, one master and one per feature, stop IIWiki requests without a deploy; see [IIWiki switch](#iiwiki-switch) |
 | Deploys | a refused deploy prints the WikiOS proof check's `FAIL <check>: ...` lines and stops before its backup; an overridden one prints `WIKIOS PROOF OVERRIDDEN:` lines. `FAIL proof.lease` means the weekly proof is running |
 | Disk | `df -h /` (PM2 logs under `/var/log/pm2/`, rotated at 50M x 5) |
 
 The broader server checks are in [monitoring.md](../../operations/monitoring.md).
+
+## IIWiki switch
+
+Every request to IIWiki passes one gate (`src/lib/wiki-os/iiwiki-switch.ts`). That gate is either `upstreamGuard.fetch`, or an explicit check in the paths that cannot use the guard: file bytes, `action=raw`, the media proxy, account proof, discovery clients and lore-card queries.
+
+- **Features:** each tRPC procedure that reaches IIWiki names its feature once (`iiwikiFeatureMiddleware`). The bridge reads under it inherit that feature.
+- **Switching off:** an off switch sends nothing. Readers see the usual "IIWiki is switched off for now." outage. Content already cached keeps serving until it expires: embeds 1 h, renders 10 min, intros 30 min, images on the CDN up to 7 days.
+- **Storage and audit:** the switch is stored in `SystemConfig` (`iiwiki_switch`). Every process reads it within 15 s. Each change is written to `AdminAuditLog` and DMed to the admin.
+- **The list:** every place the app reaches IIWiki is listed in `src/lib/wiki-os/iiwiki-touchpoints.ts`. `iiwiki-touchpoints.test.ts` fails when a path that bypasses the guard loses its check.
+
+As of 2026-10-28 iiwiki.com's Cloudflare blocks us:
+
+- the `IxStats-Builder` user agent is refused from any address;
+- the production server's address is refused for every user agent.
+
+Only IIWiki's admins can lift this. The live test shows when they have.
 
 ## Bot defense and fail2ban
 

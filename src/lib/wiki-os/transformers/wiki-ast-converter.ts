@@ -32,6 +32,8 @@ import type {
   WikiRawNode,
   WikiParserFunctionBlock,
   WikiTableBlock,
+  TableCellNode,
+  TableRowNode,
   ListBlock,
   QuoteBlock,
   CodeBlock,
@@ -168,6 +170,40 @@ function mediaToPlate(node: WikiBlockNode): PlateNode {
   } as PlateNode;
 }
 
+/** A table cell, with where it came from: its source, its place in the row and the markup around its content. */
+function cellToPlate(cell: TableCellNode): PlateNode {
+  const el = keepSource(
+    {
+      type: cell.isHeader ? "th" : "td",
+      attributes: cell.attributes,
+      children: ensureSlateInlineSurroundings(
+        astInlinesToPlateLeaves(cell.children as WikiInlineNode[])
+      ),
+    },
+    cell.source?.raw
+  );
+  if (cell.source) {
+    el.wikiSrc = cell.source.start;
+    el.wikiSep = cell.source.sepBefore;
+    el.wikiCellHead = cell.source.head;
+    el.wikiCellTail = cell.source.tail;
+    el.wikiCellHeadFp = plateFingerprint({ type: el.type, attributes: el.attributes });
+  }
+  return el;
+}
+
+function rowToPlate(row: TableRowNode): PlateNode {
+  const el = keepSource(
+    { type: "tr", attributes: row.attributes, children: row.children?.map(cellToPlate) },
+    row.raw
+  );
+  if (row.headRaw !== undefined) {
+    el.wikiRowHead = row.headRaw;
+    el.wikiRowHeadFp = plateFingerprint({ attributes: row.attributes });
+  }
+  return el;
+}
+
 function tableToPlate(node: WikiBlockNode): PlateNode {
   const tb = node as WikiTableBlock;
   const table = {
@@ -175,22 +211,9 @@ function tableToPlate(node: WikiBlockNode): PlateNode {
     caption: tb.caption,
     attributes: tb.attributes,
     rawWikitext: tb.rawWikitext,
-    children: tb.children?.map((row) =>
-      keepSource(
-        {
-          type: "tr",
-          attributes: row.attributes,
-          children: row.children?.map((cell) => ({
-            type: cell.isHeader ? "th" : "td",
-            attributes: cell.attributes,
-            children: ensureSlateInlineSurroundings(
-              astInlinesToPlateLeaves(cell.children as WikiInlineNode[])
-            ),
-          })),
-        } as PlateNode,
-        row.raw
-      )
-    ) || [{ type: "tr", children: [{ type: "td", children: [{ text: "" }] }] }],
+    children: tb.children?.map(rowToPlate) || [
+      { type: "tr", children: [{ type: "td", children: [{ text: "" }] }] },
+    ],
   } as PlateNode;
   if (tb.headRaw !== undefined && tb.tailRaw !== undefined) {
     // The table's own markup: valid while its attributes and caption are unchanged; the rows carry their own.

@@ -355,7 +355,7 @@ describe("structure edits", () => {
       ].join("\n");
       const nodes = load(table);
       expect(save(nodes)).toBe(table);
-      expect(save(edit(nodes, "4", "four"))).toBe(table.replace("|3 || 4", "|-\n| 3\n| four").replace('|- style="color:red"\n|-\n', '|- style="color:red"\n'));
+      expect(save(edit(nodes, "4", "four"))).toBe(table.replace("|3 || 4", "|3 || four"));
     });
     it("keeps the spacing of a heading when only its text changes, and through a level change", () => {
       expect(save(edit(load("==Foo=="), "Foo", "Bar"))).toBe("==Bar==");
@@ -784,8 +784,9 @@ describe("the AST converter", () => {
       expect(roundtrip).toContain("continued on second line.");
     });
     it("handles lists containing links, bold, and typed text leaves without dropping content", () => {
+      // No indent before the second item: MediaWiki reads an indented `*` line as preformatted text, not a list item.
       const wikitext = `* Item with [[Urcea]] and '''bold item'''
-  * Second item with [https://example.com Link]`;
+* Second item with [https://example.com Link]`;
 
       const ast = wikitextToAst(wikitext, "ListWithLinksTest");
       expect(ast.nodes).toHaveLength(1);

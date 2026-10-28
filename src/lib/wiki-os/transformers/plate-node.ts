@@ -84,4 +84,14 @@ export interface PlateNode {
   wikiTableHeadFp?: string;
   /** On a table: what follows its last row (empty rows, the `|}` line), exactly as written. */
   wikiTableTail?: string;
+  /** On a table row: its start up to its first cell (the `|-` line, or nothing for a first row written without one). */
+  wikiRowHead?: string;
+  /** Fingerprint of the row's attributes when it was loaded; `wikiRowHead` is valid while it matches. */
+  wikiRowHeadFp?: string;
+  /** On a table cell: its delimiter, attributes and the blanks before its content, exactly as written. */
+  wikiCellHead?: string;
+  /** On a table cell: the blanks after its content, exactly as written. */
+  wikiCellTail?: string;
+  /** Fingerprint of the cell's kind and attributes when it was loaded; `wikiCellHead` is valid while it matches. */
+  wikiCellHeadFp?: string;
 }

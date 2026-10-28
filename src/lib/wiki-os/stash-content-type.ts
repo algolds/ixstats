@@ -8,6 +8,7 @@
  */
 
 import { isMediaWikiUrl } from "~/lib/wiki-os/config";
+import { isIiwikiUrl } from "~/lib/wiki-os/wiki-hosts";
 
 export type StashContentType = "wiki" | "image" | "forum_thread";
 
@@ -46,7 +47,7 @@ const ROOT_RELATIVE = /^\/(?![/\\])/u;
  */
 export function imageStashTitle(fileUrl: string, fileName: string): string {
   if (ROOT_RELATIVE.test(fileUrl) || isMediaWikiUrl(fileUrl)) return `File:${fileName}`;
-  if (fileUrl.includes("iiwiki.com")) return `iiwiki:File:${fileName}`;
+  if (isIiwikiUrl(fileUrl)) return `iiwiki:File:${fileName}`;
   return `commons:File:${fileName}`;
 }
 

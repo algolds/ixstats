@@ -1,5 +1,8 @@
 // API endpoint for downloading external images and saving to server filesystem
 // Handles CORS issues, validates downloaded images, and caches them locally
+import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { IIWIKI_DISABLED_MESSAGE, iiwikiAllows } from "~/lib/wiki-os/iiwiki-switch";
+import { isIiwikiUrl } from "~/lib/wiki-os/wiki-hosts";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { writeFile, mkdir, access, rename, unlink } from "fs/promises";
@@ -7,6 +10,7 @@ import path from "path";
 import crypto from "crypto";
 import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { rateLimiter } from "~/lib/cache";
+import { SISTER_WIKI_HOSTS } from "~/lib/wiki-os/wiki-hosts";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_REDIRECTS = 3;
@@ -31,7 +35,7 @@ const TRUSTED_DOMAINS = [
   "commons.wikimedia.org",
   "images.unsplash.com",
   new URL(mediaWikiOrigin()).hostname,
-  "iiwiki.com",
+  new URL(SISTER_WIKI_HOSTS.iiwiki.origin).hostname,
   "cdn.discordapp.com",
 ];
 
@@ -56,9 +60,12 @@ async function fetchFromTrustedHosts(url: string): Promise<TrustedFetchResult> {
   const signal = AbortSignal.timeout(10000);
   let currentUrl = url;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    // CRITICAL: Must use "IxStats-Builder" user agent for IIWiki compatibility
+    if (isIiwikiUrl(currentUrl) && !iiwikiAllows("media")) {
+      return { ok: false, error: IIWIKI_DISABLED_MESSAGE };
+    }
+    // The allow-listed wiki user agent (IIWiki refuses others).
     const response = await fetch(currentUrl, {
-      headers: { "User-Agent": "IxStats-Builder", Accept: "image/*" },
+      headers: { "User-Agent": DEFAULT_USER_AGENT, Accept: "image/*" },
       redirect: "manual",
       signal,
     });

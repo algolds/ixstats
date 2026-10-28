@@ -102,3 +102,8 @@ export function isSisterMediaPath(url: string, wiki: SisterReaderId): boolean {
   const base = proxyBase(wiki);
   return url.startsWith(`${base}/`) && underProxy(base, url.slice(base.length)) !== null;
 }
+
+/** An image URL as an <img> loads it: an IIWiki file through IIWiki's media proxy, anything else unchanged. */
+export function iiwikiImageSrc(url: string): string {
+  return sisterMediaPath(url, "iiwiki") ?? url;
+}

@@ -10,7 +10,12 @@
 import type { Descendant } from "slate";
 import type { PlateNode } from "~/lib/wiki-os/transformers/plate-node";
 import { isUnmodified, serializeInline } from "./wiki-inline-wikitext";
-import { headingWikitext, listWikitext, tableWikitext, templateWikitext } from "./wiki-structure-wikitext";
+import {
+  headingWikitext,
+  listWikitext,
+  tableWikitext,
+  templateWikitext,
+} from "./wiki-structure-wikitext";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -47,6 +52,25 @@ const paragraphWikitext: BlockSerializer = (el) => {
   return inner.trim() ? inner : "";
 };
 
+const BLOCKQUOTE_CLOSE = "</blockquote>";
+
+/**
+ * A blockquote with its text as edited, inside the tags it was written with: the opening tag keeps its attributes,
+ * and the blanks and line breaks just inside the tags stay (`<blockquote>\n:* item` must keep its line break, or the
+ * item stops being a list).
+ */
+const blockquoteWikitext: BlockSerializer = (el) => {
+  const inner = serializeInline(el.children).trim();
+  const raw = el.wikiRaw ?? "";
+  const tagEnd = /^<blockquote\b/i.test(raw) ? raw.indexOf(">") : -1;
+  const closeAt = tagEnd === -1 ? -1 : raw.toLowerCase().indexOf(BLOCKQUOTE_CLOSE, tagEnd);
+  if (closeAt === -1) return `<blockquote>${inner}</blockquote>`;
+  const body = raw.slice(tagEnd + 1, closeAt);
+  const lead = body.slice(0, body.length - body.trimStart().length);
+  const trail = body.trim() === "" ? "" : body.slice(body.trimEnd().length);
+  return `${raw.slice(0, tagEnd + 1)}${lead}${inner}${trail}${raw.slice(closeAt)}`;
+};
+
 const rawHtmlWikitext: BlockSerializer = (el, state) => {
   const wt = el.rawWikitext || el.wikitext;
   if (!wt) state.complete = false;
@@ -62,8 +86,11 @@ const BLOCK_SERIALIZERS: ReadonlyMap<string, BlockSerializer> = new Map<string, 
   ["h6", headingSerializer(6)],
   ["p", paragraphWikitext],
   ["lic", paragraphWikitext],
-  ["blockquote", (el) => `<blockquote>${serializeInline(el.children)}</blockquote>`],
-  ["code-block", (el) => `<pre>${esc((el.children ?? []).map((c) => c.text ?? "").join(""))}</pre>`],
+  ["blockquote", blockquoteWikitext],
+  [
+    "code-block",
+    (el) => `<pre>${esc((el.children ?? []).map((c) => c.text ?? "").join(""))}</pre>`,
+  ],
   ["ul", listWikitext],
   ["ol", listWikitext],
   ["table", tableWikitext],
@@ -88,31 +115,26 @@ const newlineCount = (text: string): number => text.split("\n").length - 1;
 
 /** What the previous block written to the output tells the next one about its separator. */
 interface Written {
-  type: string | undefined;
   /** End offset of the previous block in the loaded page, when it is an original block. */
   srcEnd: number | null;
-  /** The previous block was written back exactly as it was loaded. */
-  verbatim: boolean;
 }
 
 /**
- * The separator to write before `el`. Between two blocks that are both written back unchanged and
- * were neighbours, it is the one they had, and a block that shared its line with the one before it
- * (an infobox followed by text) stays on that line. Otherwise an original block keeps its
- * separator when it is safe (any blank-line separator, or a single line break when the block
- * before it is still its original neighbour), everything else gets a blank line, and two
- * paragraphs are always a blank line apart (a single line break would merge them).
+ * The separator to write before `el`. Between two blocks that were neighbours and still are, it is
+ * the one they had, edited or not: a block that shared its line with the one before it (an infobox
+ * followed by text) stays on that line, and blocks one line break apart stay one line break apart.
+ * Otherwise an original block keeps a blank-line separator, and everything else gets a blank line
+ * (a single line break could merge a paragraph into the block before it).
  */
-function separatorBefore(el: PlateNode, isOriginal: boolean, verbatim: boolean, prev: Written): string {
+function separatorBefore(el: PlateNode, isOriginal: boolean, prev: Written): string {
   const recorded = isOriginal ? el.wikiSep : undefined;
-  let sep = "\n\n";
-  if (recorded !== undefined) {
-    const adjacent = prev.srcEnd !== null && prev.srcEnd === (el.wikiSrc ?? 0) - recorded.length;
-    if (adjacent && (!recorded.includes("\n") || (verbatim && prev.verbatim))) return recorded;
-    if (recorded.includes("\n") && (newlineCount(recorded) >= 2 || adjacent)) sep = recorded;
-  }
-  if (prev.type === "p" && el.type === "p" && newlineCount(sep) < 2) sep = "\n\n";
-  return sep;
+  if (recorded === undefined) return "\n\n";
+  const adjacent = prev.srcEnd !== null && prev.srcEnd === (el.wikiSrc ?? 0) - recorded.length;
+  // Neighbours that still are neighbours keep what was between them: two paragraphs one line break apart were
+  // written that way (MediaWiki reads them as one), and an edit to either must not split them.
+  if (adjacent) return recorded;
+  if (newlineCount(recorded) >= 2) return recorded;
+  return "\n\n";
 }
 
 /**
@@ -137,12 +159,11 @@ function originalOwners(nodes: readonly PlateNode[]): Map<number, number> {
 interface Planned {
   el: PlateNode;
   isOriginal: boolean;
-  /** The block exactly as loaded, when it is unchanged. */
-  verbatimRaw: string | undefined;
   body: string;
 }
 
-const isRedirect = (el: PlateNode): boolean => el.type === "raw-wikitext" && el.construct === "redirect";
+const isRedirect = (el: PlateNode): boolean =>
+  el.type === "raw-wikitext" && el.construct === "redirect";
 
 /**
  * MediaWiki honours `#REDIRECT` only on the first line of a page. A redirect block that is not first
@@ -172,19 +193,16 @@ export function serializePlateToWikitext(value: readonly Descendant[]): Wikitext
     const isOriginal = el.wikiSrc !== undefined && owners.get(el.wikiSrc) === index;
     const verbatimRaw = isOriginal && isUnmodified(el) ? el.wikiRaw : undefined;
     const body = verbatimRaw ?? blockWikitext(el, state);
-    if (body !== "") planned.push({ el, isOriginal, verbatimRaw, body });
+    if (body !== "") planned.push({ el, isOriginal, body });
   }
 
   let out = "";
   let prev: Written | null = null;
-  for (const { el, isOriginal, verbatimRaw, body } of redirectFirst(planned, state)) {
+  for (const { el, isOriginal, body } of redirectFirst(planned, state)) {
     const lead = isOriginal ? (el.wikiLead ?? "") : "";
-    const verbatim = verbatimRaw !== undefined;
-    out += (prev === null ? lead : separatorBefore(el, isOriginal, verbatim, prev)) + body;
+    out += (prev === null ? lead : separatorBefore(el, isOriginal, prev)) + body;
     prev = {
-      type: el.type,
       srcEnd: isOriginal && el.wikiRaw !== undefined ? (el.wikiSrc ?? 0) + el.wikiRaw.length : null,
-      verbatim,
     };
   }
 

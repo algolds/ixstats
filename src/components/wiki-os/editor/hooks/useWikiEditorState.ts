@@ -23,16 +23,18 @@ interface UseWikiEditorStateProps {
     minor: boolean,
     keepEditing?: boolean
   ) => Promise<void> | void;
+  /** The editor opens on text the page does not have (edits carried over a mode switch). */
+  startDirty?: boolean;
 }
 
-export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
+export function useWikiEditorState({ title, onSave, startDirty = false }: UseWikiEditorStateProps) {
   const notify = useNotify();
   // Drafts are kept per account (draft-store): a signed-out editor has none.
   const { user } = useWikiAuth();
   const userId = user?.id ?? null;
 
   // Dirty and word count state
-  const [isDirty, setIsDirty] = useState(false);
+  const [isDirty, setIsDirty] = useState(startDirty);
   const [wordCount, setWordCount] = useState(0);
 
   // Save workflow state
@@ -145,13 +147,15 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
     return map;
   }, [resolvedImages]);
 
-  // Consolidated Save Workflow
+  // Consolidated Save Workflow. A save that does not go through keeps the work as a draft (in `mode`'s editor).
   const executeSave = useCallback(
-    async (getContent: () => string): Promise<boolean> => {
+    async (getContent: () => string, mode: "visual" | "source"): Promise<boolean> => {
       if (!onSave) return false;
       const content = getContent();
       setSaving(true);
       const isSession = saveActionType === "session";
+      const keepAsDraft = () =>
+        saveDraft(userId, { title, source: "ixwiki", mode, wikitext: content });
       try {
         await onSave(content, summary, minor, isSession);
         clearDraft(userId, title, "ixwiki");
@@ -165,6 +169,7 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
         );
         return true;
       } catch (err) {
+        keepAsDraft();
         // Cancelled, or refused with a reason the host already shows: no notice here.
         if (err instanceof SaveCancelled || err instanceof SaveRefusalShown) return false;
         console.error("Save failed:", err);
@@ -197,6 +202,16 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
       }
     },
     [title, notify, userId]
+  );
+
+  // Cancel with unsaved changes runs only once the author confirmed the discard (CancelEditButton asks), so their
+  // draft goes too: the next open must not bring back what they threw away. A clean cancel keeps a saved draft.
+  const cancelEditing = useCallback(
+    (onCancel: () => void) => {
+      if (isDirty) clearDraft(userId, title, "ixwiki");
+      onCancel();
+    },
+    [isDirty, userId, title]
   );
 
   const modalContextValue: EditorModalState = useMemo(
@@ -289,6 +304,7 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
     setSaveActionType,
     executeSave,
     executeSaveDraft,
+    cancelEditing,
     showImageSearch,
     setShowImageSearch,
     showInfoboxModal,

@@ -5,6 +5,7 @@
 
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
+import { withBasePath } from "~/lib/base-path";
 import { Card } from "~/components/ui/card";
 
 export interface MissingPageProps {
@@ -30,8 +31,10 @@ export function MissingPage({ title, createHref, searchHref }: MissingPageProps)
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           {createHref && (
+            // A document load, not next/link: the edit URL keeps this pathname, and Next's not-found boundary
+            // resets only when the pathname changes, so a client-side navigation would leave this page showing.
             <Button asChild size="sm">
-              <Link href={createHref}>Create this page</Link>
+              <a href={withBasePath(createHref)}>Create this page</a>
             </Button>
           )}
           <Button asChild size="sm" variant="outline">

@@ -25,6 +25,17 @@ interface ScannedTemplate {
 }
 
 /** The `{{` of the next template that MediaWiki would expand at or after `from`, or -1; `nextTag` finds a `<` for calls whose position only grows. */
+/**
+ * Whether `j` starts its line, past spaces and tabs. `{|` and `|}` are table markup only there: mid-line `|}` is a
+ * pipe and a brace (`{{Further|a|}}`, an empty last parameter), and skipping it as a table close left the template
+ * open to the end of the page.
+ */
+function atLineStart(wikitext: string, j: number): boolean {
+  let k = j - 1;
+  while (k >= 0 && (wikitext[k] === " " || wikitext[k] === "\t")) k--;
+  return k < 0 || wikitext[k] === "\n" || wikitext[k] === "\r";
+}
+
 function nextTemplateOpen(
   wikitext: string,
   from: number,
@@ -85,7 +96,7 @@ export function scanTemplateAt(
       j += 2;
       continue;
     }
-    if (wikitext.startsWith("{|", j) || wikitext.startsWith("|}", j)) {
+    if ((wikitext.startsWith("{|", j) || wikitext.startsWith("|}", j)) && atLineStart(wikitext, j)) {
       j += 2;
       continue;
     }

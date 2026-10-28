@@ -448,7 +448,7 @@ async function auditExternalIntegrations() {
   console.log("\n🌐 EXTERNAL INTEGRATION VALIDATION\n");
 
   // IxWiki API
-  const ixwikiApiUrl = process.env.IXWIKI_API_URL || "https://iiwiki.com/mediawiki/api.php";
+  const ixwikiApiUrl = process.env.IXWIKI_API_URL || "https://ixwiki.com/api.php";
   log({
     category: "External Integrations",
     test: "IxWiki API Configuration",

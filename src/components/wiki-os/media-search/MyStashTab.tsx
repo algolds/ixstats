@@ -16,6 +16,7 @@ import { publicArticleUrl } from "~/lib/wiki-os/config";
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
 import type { CommonsImage } from "./types";
 import { Button } from "~/components/ui/button";
+import { iiwikiImageSrc } from "~/lib/wiki-os/sister-media";
 
 interface MyStashTabProps {
   selectedImageObj: CommonsImage | null;
@@ -132,8 +133,8 @@ export function MyStashTab({
     if (!match) continue;
     addImage({
       title: match.title,
-      thumbUrl: match.thumbUrl || match.url,
-      url: match.url,
+      thumbUrl: iiwikiImageSrc(match.thumbUrl || match.url),
+      url: iiwikiImageSrc(match.url),
       descriptionUrl: publicArticleUrl(match.title, "iiwiki"),
       width: match.width || 0,
       height: match.height || 0,

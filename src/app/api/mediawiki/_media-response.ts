@@ -6,7 +6,9 @@
  * Any new caller that needs non-image content must get its own narrowly scoped route.
  */
 import { NextResponse } from "next/server";
+import { iiwikiAllows, type IiwikiFeature } from "~/lib/wiki-os/iiwiki-switch";
 import { isAllowedMediaUrl } from "~/lib/wiki-os/media-hosts";
+import { sisterIdForUrl } from "~/lib/wiki-os/upstream-guard";
 import { MEDIA_CORS_HEADERS } from "./_config";
 
 /** Largest image body the proxies will relay (Content-Length checked first, then while streaming). */
@@ -40,11 +42,14 @@ export async function fetchFromAllowedHost(
   url: string,
   headers: HeadersInit,
   timeoutMs: number,
-  narrower?: (url: URL) => boolean
+  narrower?: (url: URL) => boolean,
+  feature: IiwikiFeature = "media"
 ): Promise<Response | null> {
   let target = url;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     if (!isAllowedMediaUrl(target) || (narrower && !narrower(new URL(target)))) return null;
+    // A hop onto IIWiki with its switch off is refused like a hop off the allowlist.
+    if (sisterIdForUrl(target) === "iiwiki" && !iiwikiAllows(feature)) return null;
     const res = await fetch(target, {
       method: "GET",
       headers,

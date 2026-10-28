@@ -10,8 +10,9 @@ export function parseWikiList(lines: string[]): ListBlock {
   const isOrdered = firstLine.startsWith("#");
   const items = lines.map((line) => {
     const trimmed = line.trim();
-    // `[\s\S]` so an item whose template or reference spans several lines keeps its whole text
-    const match = trimmed.match(/^([*#:\;]+)\s*([\s\S]*)$/);
+    // `[\s\S]` so an item whose template or reference spans several lines keeps its whole text; only blanks are
+    // spacing after the marker (a non-breaking space there is text MediaWiki shows)
+    const match = trimmed.match(/^([*#:\;]+)[ \t]*([\s\S]*)$/);
     const prefix = match ? match[1]! : (isOrdered ? "#" : "*");
     const content = match ? match[2]! : trimmed;
     const level = prefix.length;

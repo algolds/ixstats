@@ -9,6 +9,7 @@
  *
  * The local ixwiki media route lives at `../ixwiki/[...path]` and is matched first.
  */
+import { iiwikiSourceAllowed } from "~/lib/wiki-os/iiwiki-switch";
 import { NextRequest, NextResponse } from "next/server";
 import { externalApiCache } from "~/lib/cache";
 import { getWiki, MEDIA_CORS_HEADERS, WIKI_USER_AGENT, type WikiConfig } from "../../_config";
@@ -125,6 +126,13 @@ export async function GET(
   const { wiki: wikiKey, path } = await params;
   const wiki = getWiki(wikiKey);
   if (!wiki) return new NextResponse(null, { status: 404, headers: corsHeaders });
+  // The IIWiki switch: off sends nothing to IIWiki, not even the wsrv.nl relay's fetch.
+  if (!iiwikiSourceAllowed(wikiKey, "media")) {
+    return new NextResponse(null, {
+      status: 503,
+      headers: { ...corsHeaders, "Cache-Control": "no-store" },
+    });
+  }
 
   const limited = await wikiMediaRateLimitResponse(request, `${wikiKey} media`);
   if (limited) return limited;
@@ -132,7 +140,8 @@ export async function GET(
     return new NextResponse(null, { status: 400, headers: corsHeaders });
   }
 
-  if (path.some(isUnsafeSegment)) return new NextResponse(null, { status: 404, headers: corsHeaders });
+  if (path.some(isUnsafeSegment))
+    return new NextResponse(null, { status: 404, headers: corsHeaders });
 
   try {
     const subpath = path.join("/");
@@ -145,7 +154,8 @@ export async function GET(
     if (filePathMatch?.[1]) {
       const filename = cleanFilename(filePathMatch[1]);
       // `Special:Filepath/<url>` is never resolved: only file names go through imageinfo.
-      if (ABSOLUTE_URL.test(filename)) return new NextResponse(null, { status: 404, headers: corsHeaders });
+      if (ABSOLUTE_URL.test(filename))
+        return new NextResponse(null, { status: 404, headers: corsHeaders });
       const directUrl = await resolveFilePath(wiki, wikiKey, filename);
       if (directUrl) return fetchImage(directUrl, wiki.label, image);
       // Fall through to a direct origin fetch of the Special:FilePath URL.
@@ -155,7 +165,11 @@ export async function GET(
       return fetchImage(`${wiki.siteUrl}/${originPath}${queryString}`, wiki.label, image);
     }
 
-    const response = await fetchFromAllowedHost(`${wiki.siteUrl}/${originPath}${queryString}`, UA_HEADERS, 15000);
+    const response = await fetchFromAllowedHost(
+      `${wiki.siteUrl}/${originPath}${queryString}`,
+      UA_HEADERS,
+      15000
+    );
     if (!response) return new NextResponse(null, { status: 502, headers: corsHeaders });
 
     if (!response.ok) {

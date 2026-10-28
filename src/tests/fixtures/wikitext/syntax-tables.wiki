@@ -1,0 +1,35 @@
+{| class="wikitable sortable" style="width:100%"
+|+ ''Caption'' with [[a link]]
+! scope="col" | Name !! scope="col" style="width:30%" | Value !! Notes
+|- style="background:#eee"
+| Alpha || 1 || {{Flag|Alpha}}
+|-
+|style="text-align:right"|2
+|align=center| two
+| colspan="2" | merged <br /> cell
+|-
+! Row head
+| [[File:Example.png|20px|link=]] || {{#if:x|yes|no}} || '''bold''' ''it''
+|-
+|
+| empty first cell above
+|-
+| multi
+line cell
+* with a list
+|}
+
+{| class="wikitable"
+| outer cell
+{| class="wikitable"
+| inner || table
+|}
+| after inner
+|}
+
+{|
+|-
+| A || B
+|-
+| C | D
+|}

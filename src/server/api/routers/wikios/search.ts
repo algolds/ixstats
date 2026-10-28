@@ -5,6 +5,7 @@
  * business search, recent changes, random page, and site stats.
  */
 
+import { iiwikiFeatureMiddleware } from "~/server/api/trpc/middleware";
 import { z } from "zod/v4";
 import {
   createTRPCRouter,
@@ -34,9 +35,9 @@ import { unlessUnavailable } from "~/lib/wiki-os/upstream-guard";
 import { wikiSourceSchema } from "./_shared";
 
 /** File search reads a sister wiki's API on a miss: one bucket shared with the sister-wiki category reads. */
-export const sisterWikiProcedure = publicProcedure.use(
-  createRateLimitMiddleware({ max: 120, windowMs: 60_000, namespace: "sisterwiki" })
-);
+export const sisterWikiProcedure = publicProcedure
+  .use(iiwikiFeatureMiddleware("search"))
+  .use(createRateLimitMiddleware({ max: 120, windowMs: 60_000, namespace: "sisterwiki" }));
 
 /**
  * Per-caller limits, each its own bucket, on the reads an anonymous client can point at a sister wiki, so no one
@@ -125,6 +126,7 @@ export const wikiosSearchRouter = createTRPCRouter({
    * `SISTER_CALLER_LIMITS.search` (TOO_MANY_REQUESTS past it).
    */
   search: publicProcedure
+    .use(iiwikiFeatureMiddleware("search"))
     .input(
       z.object({
         query: z.string().min(1).max(200),

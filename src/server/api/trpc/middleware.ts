@@ -3,6 +3,7 @@
  * Authentication, authorization, rate limiting, logging, caching, and validation.
  */
 
+import { withIiwikiFeature, type IiwikiFeature } from "~/lib/wiki-os/iiwiki-switch";
 import { t } from "./init";
 import { rateLimiter } from "~/lib/cache";
 import { isDatabaseReadOnly } from "~/server/db";
@@ -30,6 +31,10 @@ const VERBOSE = process.env.TRPC_VERBOSE === "true";
 /**
  * Timing middleware for procedure execution diagnostics.
  */
+/** Tags a procedure's IIWiki calls with their IIWiki switch feature (iiwiki-switch.ts), so the switch can refuse them. */
+export const iiwikiFeatureMiddleware = (feature: IiwikiFeature) =>
+  t.middleware(({ next }) => withIiwikiFeature(feature, () => next()));
+
 export const timingMiddleware = t.middleware(async ({ next, path }) => {
   const start = Date.now();
   const result = await next();

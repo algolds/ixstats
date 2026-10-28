@@ -1,0 +1,31 @@
+<noinclude>{{Documentation}}
+This text only shows on the template page.</noinclude><includeonly>{{#if:{{{1|}}}|{{{1}}}|none}}</includeonly>
+<onlyinclude>Shown when transcluded.</onlyinclude>
+
+Paragraph with <!-- an inline comment --> in the middle, and <!-- a
+multi-line comment --> too.
+
+{{Infobox thing
+| name = Thing <!-- the name -->
+<!-- | removed = yes -->
+| area = 12
+}}
+
+* first item <!-- note on item -->
+<!-- comment between items -->
+* second item
+** nested <!-- deep comment -->
+
+ Leading space makes this preformatted.
+ A second preformatted line with [[a link]].
+
+Normal text again.
+ pre right after text
+
+{|
+|+ Table with comments
+<!-- a comment row -->
+|-
+| cell <!-- in cell --> || other
+|}
+<!-- trailing comment -->

@@ -12,9 +12,10 @@
 // (`curl -s https://<host>/wiki/<a missing page>`: look for `__next_error__` and for the heading) before
 // relying on the heading for crawlers or for the first paint.
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { DeletedPageLinks } from "~/components/wiki-os/reader/DeletedPageLinks";
 import { MissingPage } from "~/components/wiki-os/reader/MissingPage";
+import { useLeaveNotFoundOnQueryChange } from "~/components/wiki-os/reader/useLeaveNotFoundOnQueryChange";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { stripBasePath } from "~/lib/base-path";
 import { canonicalizeTitle, decodeTitleParam } from "~/lib/wiki-os/core/title";
@@ -34,6 +35,8 @@ function titleOfPath(pathname: string): string {
 export default function WikiNotFound() {
   const { isSignedIn } = useWikiAuth();
   const typed = titleOfPath(usePathname());
+  // The Edit and History tabs keep the pathname: the 404 would otherwise stay over the view they open.
+  useLeaveNotFoundOnQueryChange(useSearchParams().toString());
   const canon = canonicalizeTitle(typed);
   const title = canon?.title ?? typed;
   // Special: and Media: pages cannot be created, and neither can a title MediaWiki refuses.

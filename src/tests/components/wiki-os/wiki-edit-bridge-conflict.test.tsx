@@ -1,6 +1,7 @@
 import React from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
+import { SaveRefusalShown } from "~/lib/wiki-os/editor/save-failure";
 import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
 
 type SaveProps = {
@@ -302,6 +303,14 @@ describe("WikiEditBridge edit conflicts and drafts (WK-2)", () => {
     // the editor was not remounted: the author's text is still in it
     expect(mockSourceMounted).toHaveBeenCalledTimes(1);
   });
+  it("a conflict fails the save as one the bridge explains: the editor adds no 'Save Failed' notice of its own", async () => {
+    mockSave.mockResolvedValueOnce(conflictResult("rev-2"));
+    await openEditor();
+    const outcome = await save("My text");
+    expect(outcome).toBeInstanceOf(SaveRefusalShown);
+    expect(await screen.findByText(/Edit Conflict Detected/)).toBeTruthy();
+  });
+
   it("builds the next save of a session on the revision the last one created", async () => {
     await openEditor();
     await save("First", true);

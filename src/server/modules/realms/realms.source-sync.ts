@@ -7,6 +7,7 @@
  * job lease `realm-source-sync:<realmId>`, whether it was started by a moderator, the script or the scheduled job.
  * An archived realm keeps its settings and run history readable, but takes no changes and no runs.
  */
+import { withIiwikiFeature } from "~/lib/wiki-os/iiwiki-switch";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { sourceAdapter, type SourceSnapshot } from "~/lib/realms/sources/adapters";
@@ -484,7 +485,10 @@ export interface RunDeps extends ReadDeps, ApplyDeps {}
 
 /** A new nation's infobox facts, read the way an approved claim reads them (8 s timeout, never throws). */
 export async function prefillInfobox(wikiSource: string, title: string): Promise<InfoboxFacts> {
-  const prefill = await fetchNationPagePrefill(wikiSource, title);
+  // The cron and admin runs reach here outside any tRPC procedure, so the IIWiki feature is named here.
+  const prefill = await withIiwikiFeature("realms", () =>
+    fetchNationPagePrefill(wikiSource, title)
+  );
   return { country: prefill.country, identity: { ...prefill.identity } };
 }
 
@@ -493,7 +497,10 @@ export const LIVE_RUN_DEPS: RunDeps = {
   fetchInfobox: prefillInfobox,
   resolveRedirects: (wikiSource, titles) =>
     isProofSource(wikiSource)
-      ? resolveWikiRedirects((params, schema) => wikiQuery(wikiSource, params, schema), titles)
+      ? resolveWikiRedirects(
+          (params, schema) => wikiQuery(wikiSource, params, schema, "realms"),
+          titles
+        )
       : Promise.resolve({}),
 };
 
