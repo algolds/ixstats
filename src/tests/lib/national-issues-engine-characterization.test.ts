@@ -56,6 +56,14 @@ jest.mock("~/lib/national-issues/snapshot", () => ({
   }),
 }));
 
+// The derived soft scores and computed stability have their own suites; here the snapshot falls
+// back to the fixture's stored rows, so the pinned queries are the engine's own.
+jest.mock("~/lib/government/soft-scores-store", () => ({ loadSoftScores: async () => null }));
+jest.mock("~/lib/statecraft/stability-store", () => ({
+  ...jest.requireActual("~/lib/statecraft/stability-store"),
+  computeInternalStability: async () => null,
+}));
+
 // Every fixture nation is over executive bandwidth, so each evaluation raises the staffing shortage
 jest.mock("~/lib/government/exec-bandwidth", () => ({
   loadExecBandwidthState: async () => ({ used: 2195, capacity: 1168, overCapacity: true }),

@@ -79,11 +79,17 @@ function makeDb(
         currentGdpPerCapita: 30_000,
       })),
       update: jest.fn(async () => ({})),
-      // The refresh job's list: countries with a row, plus owned ones (`owned`).
-      findMany: jest.fn(async (_args: { where: object; select: object }) =>
-        state.row || state.owned ? [{ id: COUNTRY }] : []
-      ),
+      // The soft-score loader reads the country by id; the refresh job's list is countries with
+      // a row, plus owned ones (`owned`).
+      findMany: jest.fn(async (args: { where: { id?: object }; select: object }) => {
+        if (args.where.id) {
+          return [{ id: COUNTRY, currentPopulation: 10_000_000, currentGdpPerCapita: 30_000 }];
+        }
+        return state.row || state.owned ? [{ id: COUNTRY }] : [];
+      }),
     },
+    governmentComponent: { findMany: jest.fn(async () => []) },
+    budgetAllocation: { findMany: jest.fn(async () => []) },
     economicProfile: { findUnique: jest.fn(async () => null) },
     demographics: { findUnique: jest.fn(async () => null) },
     governmentStructure: { findUnique: jest.fn(async () => null) },

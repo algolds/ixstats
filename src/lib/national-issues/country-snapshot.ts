@@ -12,6 +12,9 @@ import {
 import type { EconomicComponentType } from "~/lib/economy/atomic-data";
 import { mapTaxComponentTypeToId } from "~/lib/enums";
 import { effectiveFiguresOfCountry } from "~/lib/economy/figure-estimates";
+import { loadSoftScores } from "~/lib/government/soft-scores-store";
+import type { GovernanceField } from "~/lib/government/soft-scores";
+import { computeInternalStability } from "~/lib/statecraft/stability-store";
 import { buildGroundedContext, type GroundedSnapshot } from "./snapshot";
 import { resolveNeighbors } from "./neighbors";
 import type { CountrySnapshot } from "./types";
@@ -285,7 +288,7 @@ function coreFields(country: CountryCoreRow) {
   };
 }
 
-function governmentFields(gs: CountryCoreRow["governmentStructure"]) {
+function governmentFields(gs: Partial<Record<GovernanceField, number | null>> | null | undefined) {
   return {
     politicalStability: gs?.politicalStability ?? 50,
     democracyIndex: gs?.democracyIndex ?? 50,
@@ -362,17 +365,27 @@ export async function buildCountrySnapshot(
   const currentIxTime = nowMs ?? (await clockForCountry(db, country)).now();
   const ixDate = new Date(currentIxTime);
   const components = classifyComponents(govComps, econComps, taxComps, ixDate);
+  // Soft scores are derived from the sim plus the stored offsets (governance, infrastructure) or
+  // the stability formula plus its carried event deltas.
+  const [soft, stability] = await Promise.all([
+    loadSoftScores(db, countryId, currentIxTime),
+    computeInternalStability(db, countryId),
+  ]);
   const civilServiceCapacity = calculateCivilServiceCapacity(
     country.currentPopulation ?? 0,
-    country.governmentStructure?.governmentEffectiveness ?? 50,
+    soft?.effective.governmentEffectiveness ??
+      country.governmentStructure?.governmentEffectiveness ??
+      50,
     country.governmentStructure?.civilServiceExpansion ?? 0
   );
   const { activePoliciesList, policySettings } = parseActivePolicies(activePolicies);
 
   return {
     ...coreFields(country),
-    ...governmentFields(country.governmentStructure),
-    ...stabilityFields(country.stabilityMetrics),
+    ...governmentFields(soft?.effective ?? country.governmentStructure),
+    infrastructureRating:
+      soft?.effective.infrastructureRating ?? country.infrastructureRating ?? 50,
+    ...stabilityFields(stability ?? country.stabilityMetrics),
     activeEmbassyCount: embassyCount,
     activeAllianceCount: allianceMemberships + militaryPacts,
     activePolicyCount: policyCount,
