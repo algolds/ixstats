@@ -254,24 +254,6 @@ export class IxStatsCalculator {
 
     const yearsFromBaseline = IxTime.getYearsElapsed(baselineTimeMs, targetTimeMs);
 
-    if (Math.abs(yearsFromBaseline) < 0.001) {
-      return {
-        country: baselineStats.country,
-        oldStats: baselineStats,
-        newStats: {
-          ...baselineStats,
-          effectiveGdpGrowth: this.currentGdpGrowthRate(
-            baselineStats,
-            baselineStats.gdpPerCapita,
-            this.getActiveEffects(effects, baselineTimeMs, targetTimeMs)
-          ),
-          lastCalculated: new Date(targetTimeMs),
-        },
-        timeElapsed: 0,
-        calculationDate: targetTimeMs,
-      };
-    }
-
     const oldStats = { ...baselineStats };
     const activeEffects = this.getActiveEffects(effects, baselineTimeMs, targetTimeMs);
 
