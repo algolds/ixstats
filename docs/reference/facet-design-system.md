@@ -246,9 +246,9 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
 - The sidebar is a macOS source list (`SourceList`, in `AppSidebar` at 1024px and up: 256px, collapsible to 64px icons, where rows become icons with popovers). It has two levels: every app is a top-level row and the current app discloses its sections. Admin and Settings use area mode: their sections are grouped under sub-headings and replace the app list while you are inside them. Rows carry badges (active country flag, diplomacy inbox count, Vault balance) and a Daily reward action row opens the reward dialog. Below 1024px the `TabBar` holds the primary apps and its More sheet reuses the same `SourceList`.
 - The sidebar and the More sheet are the only navigation. A page renders no navigation of its own (no tab rail, pill bar or hidden sub-nav); in-page `Tabs` switch views of one thing, not destinations.
 - Both read the one section map in `src/lib/navigation/app-sections.ts`. Add a destination there, not in a page.
-- Halo is the floating island at the top, in Chrome glass. `PageHeader` keeps `--shell-halo-reserve` clear for it. Do not build a second top bar.
+- Halo is the floating island at the top, in Chrome glass. `PageHeader` keeps `--shell-halo-reserve` clear for it. Halo centres on the content column on every page, Inspector or not; PageHeader actions wrap within their half beside it. Do not build a second top bar.
 - `AccountMenu` is the account: `layout="sidebar"` is a popover from the sidebar footer, `layout="sheet"` is inline in the More sheet.
-- Layout variables (read, never redefine): `--shell-sidebar-width`, `--shell-tabbar-height`, `--shell-top-offset`, `--shell-header-top`, `--shell-halo-reserve`. Sticky rails use `top-(--shell-top-offset)`.
+- Layout variables (read, never redefine): `--shell-sidebar-width`, `--shell-tabbar-height`, `--shell-top-offset`, `--shell-page-top`, `--shell-header-top`, `--shell-halo-reserve`. Sticky rails use `top-(--shell-top-offset)`.
 - Chromeless routes (Maps, full-screen editors) set `data-chromeless` on the app shell.
 - Inspector: at most one trailing column per page. It replaces hand-rolled side rails.
 - Headers: `PageHeader` for pages, `EntityHeader` for entity pages. No hero card as a header.

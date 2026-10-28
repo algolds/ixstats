@@ -4,12 +4,15 @@
  * PageHeader: the page's large title (`text-large-title`, the one `<h1>`), which collapses into a
  * compact toolbar title on scroll.
  *
- * The toolbar is sticky at `--shell-header-top` and turns into a `facet-chrome` bar with the compact title once the large title has
- * scrolled under it. It holds the optional back button and trailing actions, and keeps the middle
- * `--shell-halo-reserve` clear so Halo can float over it. Without a back button or actions the
- * toolbar is an empty band of the same height until it collapses: with no top bar the page starts
- * at the top of the window, and the band keeps the large title clear of Halo. Only opacity animates
- * (`duration-fast`); Reduce Motion makes it instant.
+ * The toolbar is sticky at `--shell-header-top` and turns into a `facet-chrome` bar with the
+ * compact title once the large title has scrolled under it. It holds the optional back button and
+ * trailing actions, and keeps the middle `--shell-halo-reserve` clear so Halo can float over it.
+ * Page columns start at `pt-(--shell-page-top)`, so the toolbar shares Halo's band. Actions wrap
+ * inside their half beside Halo; one wider than the half overflows to the right edge, never into
+ * the reserve. Without a back button or actions the toolbar is an empty band of the same height
+ * until it collapses: with no top bar the page starts at the top of the window, and the band keeps
+ * the large title clear of Halo. Only opacity animates (`duration-fast`); Reduce Motion makes it
+ * instant.
  *
  * ```tsx
  * <PageHeader
@@ -152,14 +155,15 @@ export function PageHeader({
         className={cn("z-sticky sticky top-(--shell-header-top)", !hasToolbarContent && "h-14")}
       >
         <div
+          data-slot="page-header-row"
           className={cn(
-            "flex h-14 items-center gap-2",
+            "flex min-h-14 items-center gap-2",
             backdrop != null ? "px-4" : "px-2",
             hasToolbarContent ? "relative" : "absolute inset-x-0 top-0",
             !hasToolbarContent && !collapsed && "pointer-events-none",
             // Below lg the band beside Halo is too narrow for actions (half of what the reserve
             // leaves), so they take a second toolbar line instead of sliding under the pill.
-            actions && "max-lg:h-auto max-lg:flex-wrap max-lg:pb-2"
+            actions && "max-lg:flex-wrap max-lg:pb-2"
           )}
         >
           <span
@@ -200,7 +204,10 @@ export function PageHeader({
                 data-slot="page-header-halo-spacer"
                 className="hidden flex-1 max-lg:block"
               />
-              <div className="relative flex min-w-0 flex-1 items-center justify-end gap-2 max-lg:basis-full max-lg:flex-wrap">
+              <div
+                data-slot="page-header-actions"
+                className="relative flex min-w-0 flex-1 flex-wrap items-center justify-end-safe gap-2 max-lg:basis-full"
+              >
                 {typeof actions === "function" ? actions({ collapsed }) : actions}
               </div>
             </>
