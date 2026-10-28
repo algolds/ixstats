@@ -114,12 +114,14 @@ export function EmbassyCreatorSheet({
           <Separator />
 
           <div>
-            <Label className="text-caption mb-2 block">
+            <Label htmlFor="embassy-name" className="text-caption mb-2 block">
               Embassy name <span className="text-destructive">*</span>
             </Label>
             <div className="relative">
               <Building2 className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
+                id="embassy-name"
+                maxLength={120}
                 value={embassyName}
                 onChange={(e) => setEmbassyName(e.target.value)}
                 placeholder="e.g., Embassy of [Country] in [Host]"
@@ -129,10 +131,14 @@ export function EmbassyCreatorSheet({
           </div>
 
           <div>
-            <Label className="text-caption mb-2 block">Location (optional)</Label>
+            <Label htmlFor="embassy-location" className="text-caption mb-2 block">
+              Location (optional)
+            </Label>
             <div className="relative">
               <MapPin className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
+                id="embassy-location"
+                maxLength={120}
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="e.g., Capital City, Downtown District"
@@ -142,10 +148,14 @@ export function EmbassyCreatorSheet({
           </div>
 
           <div>
-            <Label className="text-caption mb-2 block">Ambassador (optional)</Label>
+            <Label htmlFor="embassy-ambassador" className="text-caption mb-2 block">
+              Ambassador (optional)
+            </Label>
             <div className="relative">
               <User className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
+                id="embassy-ambassador"
+                maxLength={120}
                 value={ambassadorName}
                 onChange={(e) => setAmbassadorName(e.target.value)}
                 placeholder="e.g., Ambassador John Smith"
