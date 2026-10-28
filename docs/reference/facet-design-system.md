@@ -238,6 +238,7 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
 - `Dialog` and `AlertDialog` for short confirmations. Popovers, menus and tooltips use the `ui` wrappers.
 - Tooltips share the root `TooltipProvider`: the first opens after 500ms, and a neighbour within 300ms opens at once with no animation. Rich previews (formatted content, links) are a `HoverCard`, not a tooltip.
 - All of them paint `facet-overlay`. Do not restyle their surface.
+- Toasts sit bottom-right (bottom-centre on phones), above the TabBar and clear of the Inspector; Halo shows the title in the island.
 - `ContextMenu` (right-click, long-press, Shift+F10) is a shortcut, never the only way in. Put it on things with an identity (a post, a message, a map feature) and render the same items fragment as the thing's visible "More actions" dropdown: the `DropdownMenuItem` family works inside both. Never put it on prose, links, inputs, editors or empty canvas; the trigger already leaves the browser's menu to Shift+right-click, text fields, links, selections and dialogs the thing opens. A menu opened from a canvas point (the map editor) is a `DropdownMenu` on a 1px anchor at that point.
 
 ## 7. Layout
