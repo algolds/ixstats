@@ -128,9 +128,10 @@ failed settings read hides it too.
 | Appear in invite search | `searchDiscoverable`. When off, ThinkTank owners can't find you in the invite search (`invite-privacy.ts`) |
 | Search engine indexing | `searchEngineIndexing`. Off: your passport (`/@handle`, `/id/[username]`) is served with `robots: noindex, nofollow` (`src/app/id/[username]/layout.tsx`, `passportIndexable`) |
 | Show Discord tag | `showDiscordTag`. Off: other viewers see no Discord affiliation on your passport, your Discord name is not used as your name in the global activity feed, and trading partner search neither shows nor matches it. You still see it on your own passport |
-| Export your data | `users.exportUserData`: a JSON download of account fields, Vault, card count, preferences and up to 50 recent ThinkPages posts |
+| Export your data | `users.exportUserData` (`buildAccountExport`, `src/server/orchestration/account-export.ts`), 10 an hour: `ixstates-data-<date>.json` with what Privacy 5.1 "Export" promises. The account (with the Clerk email and username), linked accounts (Discord, sister wiki names without tokens, NationStates nations without codes, forum name, old wiki name claims), nations, personas and all their ThinkPages posts, forum threads and posts, the ThinkShare and ThinkTank messages you sent, Onoma work, cards, trades (your side; the other party's message and id left out), realm claims (no reviewer or inviter), achievements, Vault and preferences |
 | Clear history | `users.clearHistory({ confirm: true })` after a confirmation dialog, at most 3 times an hour. Deletes your personal notifications (rows addressed to your Clerk or user id; country-wide and global notices stay), your message read receipts and your online-status heartbeat, and the browser forgets its recently viewed wiki articles and forum threads (session storage). It does not touch messages (yours or anyone's), conversation read positions, posts, activity entries, audit logs or settings |
 | Sessions and two-step verification | Opens the auth provider's user profile (Clerk) |
+| Delete account | `DeleteAccountRow`: a dialog that says what is erased and what stays (Privacy 5.2) and asks you to type your handle (or Clerk username or email local part without one), then `users.requestAccountDeletion`. The account-erasure cron erases it 14 days later. While a request is pending the row reads "Your account will be deleted on <date>." with "Keep my account" (`users.cancelAccountDeletion`). Settings only: the app shell has no site-wide banner slot |
 | NationStates card deck | Links to the Cards tab and opens the takedown modal |
 
 **Removed** (2026-10-06): "Anonymous diagnostics" (`diagnosticTelemetry`) and "Personalized recommendations"
@@ -170,7 +171,8 @@ verification checksum; `nsImport.getVerificationUrl` gives the verification link
 | `notifications.getDeliveryChannels` | protected |
 | `notifications.savePushSubscription`, `removePushSubscription` | protected, light rate limit; saving needs push configured and a known push service endpoint |
 | `users.getPreferences`, `users.updateWikiPreferences` | protected |
-| `users.getPrivacySettings`, `updatePrivacyConfig`, `blockAccount`, `unblockAccount`, `muteAccount`, `unmuteAccount`, `addMutedKeyword`, `removeMutedKeyword`, `exportUserData` | protected (mutations rate limited) |
+| `users.getPrivacySettings`, `updatePrivacyConfig`, `blockAccount`, `unblockAccount`, `muteAccount`, `unmuteAccount`, `addMutedKeyword`, `removeMutedKeyword` | protected (mutations rate limited) |
+| `users.exportUserData` | protected; 10 an hour |
 | `users.clearHistory` | protected; per-procedure limit plus 3 an hour; input `{ confirm: true }` |
 | `users.heartbeat` | protected, rate limited (sent by every signed-in tab, not from this page) |
 | `messages.respondToRequest`, `messages.getSeenState` | protected (Messages, not this page) |

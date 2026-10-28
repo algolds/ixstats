@@ -8,10 +8,19 @@ import { holdPurgeAfter, type HoldReason } from "~/lib/realms/realm-content";
 
 type MaterialTx = Pick<Prisma.TransactionClient, "country" | "nationMaterialHold">;
 
-/** Inside the releasing transaction, before or after the release itself: hide the nation's flag and arms. */
+/**
+ * Inside the releasing transaction, before or after the release itself: hide the nation's flag and arms. `purgeAfter`
+ * overrides the reason's window (account erasure purges at once: no reclaim, Privacy 5.2(3)).
+ */
 export async function holdNationMaterial(
   tx: MaterialTx,
-  input: { countryId: string; formerOwnerUserId: string; reason: HoldReason; now?: Date }
+  input: {
+    countryId: string;
+    formerOwnerUserId: string;
+    reason: HoldReason;
+    now?: Date;
+    purgeAfter?: Date;
+  }
 ): Promise<void> {
   const country = await tx.country.findUnique({
     where: { id: input.countryId },
@@ -25,7 +34,7 @@ export async function holdNationMaterial(
     flag: country.flag,
     coatOfArms: country.coatOfArms,
     heldAt: now,
-    purgeAfter: holdPurgeAfter(input.reason, now),
+    purgeAfter: input.purgeAfter ?? holdPurgeAfter(input.reason, now),
   };
   // ponytail: a hold still waiting for its purge is replaced; local images are named per nation, so they are the
   // same files, and only an image under another name would be left behind.

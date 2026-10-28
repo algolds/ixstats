@@ -6,6 +6,7 @@
 import { db } from "~/server/db";
 import { ErrorLogger } from "./error-logger";
 import { appendFileSync, existsSync, mkdirSync } from "fs";
+import { readdir, unlink } from "fs/promises";
 import { join } from "path";
 
 export interface UserLogContext {
@@ -48,6 +49,21 @@ export interface UserAction {
   errorMessage?: string;
   duration?: number;
   metadata?: Record<string, any>;
+}
+
+/** The per-user log file's name; the id is sanitised so it cannot name another path. */
+export function userLogFileName(clerkUserId: string): string {
+  return `user-${clerkUserId.replace(/[<>:"/\\|?*]/g, "_")}.log`;
+}
+
+/** Of `fileNames`, the user's log file and its rotated (`.log.<time>`) and compressed (`.gz`) copies. */
+export function ownLogFiles(fileNames: readonly string[], clerkUserId: string): string[] {
+  const base = userLogFileName(clerkUserId);
+  return fileNames.filter((name) => name === base || name.startsWith(`${base}.`));
+}
+
+function ignoreMissing(error: Error): void {
+  if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
 }
 
 export class UserLogger {
@@ -137,9 +153,21 @@ export class UserLogger {
    * Get user log file path
    */
   private static getUserLogFilePath(clerkUserId: string): string {
-    // Sanitize the user ID to prevent illegal path characters
-    const sanitizedUserId = clerkUserId.replace(/[<>:"/\\|?*]/g, "_");
-    return join(this.LOG_DIR, `user-${sanitizedUserId}.log`);
+    return join(this.LOG_DIR, userLogFileName(clerkUserId));
+  }
+
+  /**
+   * Account erasure: delete the user's log file with its rotated and compressed copies; returns how many. A file
+   * already gone (rotated or compressed meanwhile) counts as deleted; any other failure throws, so the erasure retries.
+   */
+  static async deleteUserLogFiles(clerkUserId: string): Promise<number> {
+    const files = await readdir(this.LOG_DIR).catch((error: Error) => {
+      ignoreMissing(error);
+      return [] as string[];
+    });
+    const own = ownLogFiles(files, clerkUserId);
+    await Promise.all(own.map((file) => unlink(join(this.LOG_DIR, file)).catch(ignoreMissing)));
+    return own.length;
   }
 
   /**
