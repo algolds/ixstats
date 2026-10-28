@@ -335,6 +335,7 @@ describe("summary parity with the stored stability formula", () => {
       effectivenessScore: c.effectivenessScore ?? 50,
     }));
     const governmentStructure = {
+      id: "gs1",
       governmentType,
       totalBudget: numbers.totalGovernmentSpending,
       electionCycle: 4,
@@ -350,7 +351,7 @@ describe("summary parity with the stored stability formula", () => {
         budgetYear: BUDGET_YEAR,
         allocatedPercent,
         department: { category },
-        governmentStructure: { countryId: "c1" },
+        governmentStructureId: "gs1",
       })
     );
     const db = {

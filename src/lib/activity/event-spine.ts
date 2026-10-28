@@ -5,6 +5,7 @@ import { ActivityHooks } from "./hooks";
 import { ensureInternalStabilityMetrics } from "~/lib/statecraft/stability-store";
 import type { PrismaClient } from "@prisma/client";
 import { isBlankFigure, isEstimatedField } from "~/lib/economy/figure-estimates";
+import { isSoftScoreField, SOFT_SCORE_SEEDED_DEFAULTS } from "~/lib/government/soft-scores";
 import { loadEffectiveEconomicFigures } from "~/server/shared/economic-figures";
 
 const FIELD_BOUNDS: Record<string, [number, number]> = {
@@ -51,9 +52,9 @@ const FIELD_BOUNDS: Record<string, [number, number]> = {
 };
 
 /**
- * The value a consequence moves from: the stored number; for an unset inflation, unemployment or debt figure, the
- * estimate from the economy (what issues and MyCountry read, so "Inflation -0.6" moves the figure the player saw);
- * else null, and the consequence is skipped.
+ * The value a consequence moves from: the stored number; for an unset soft score, its seeded default; for an unset
+ * inflation, unemployment or debt figure, the estimate from the economy (what issues and MyCountry read, so
+ * "Inflation -0.6" moves the figure the player saw); else null, and the consequence is skipped.
  */
 async function baseValueOf(
   db: PrismaClient,
@@ -65,6 +66,8 @@ async function baseValueOf(
   if (typeof stored === "number" && Number.isFinite(stored) && !isBlankFigure(field, stored)) {
     return stored;
   }
+  // An unset soft score moves from its seeded default, so the delta becomes its lasting offset.
+  if (isSoftScoreField(field)) return SOFT_SCORE_SEEDED_DEFAULTS[field];
   if (consequence.targetModel !== "Country" || !isEstimatedField(field)) return null;
   const figures = await loadEffectiveEconomicFigures(db, countryId);
   return figures ? figures[field].value : null;

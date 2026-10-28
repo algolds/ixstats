@@ -22,6 +22,7 @@ import {
 } from "~/lib/government/atomic-utils";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
+import { loadSoftScores } from "~/lib/government/soft-scores-store";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -92,6 +93,7 @@ export async function loadExecBandwidthState(
     activePoliciesSum,
     executingDirectivesSum,
     dismissedIssuesCount,
+    soft,
   ] = await Promise.all([
     db.country.findUnique({
       where: { id: countryId },
@@ -134,6 +136,7 @@ export async function loadExecBandwidthState(
         respondedIxTime: { gte: now - DELEGATION_WINDOW_MS },
       },
     }),
+    loadSoftScores(db, countryId, now),
   ]);
 
   const spendByCategory: Record<string, number> = {};
@@ -146,7 +149,12 @@ export async function loadExecBandwidthState(
   const activeBrokers = deriveBrokers(activeComponentTypes, spendByCategory);
   const isTechnocratsSatisfied = activeBrokers.some((b) => b.id === "technocrats" && b.satisfied);
 
-  const effectiveness = structure?.governmentEffectiveness ?? country?.governmentalEfficiency ?? 50;
+  // Effective (derived from the sim plus the stored offset), as the issue snapshot reads it
+  const effectiveness =
+    soft?.effective.governmentEffectiveness ??
+    structure?.governmentEffectiveness ??
+    country?.governmentalEfficiency ??
+    50;
   const population = options.population ?? country?.currentPopulation ?? 0;
   const capacity = calculateCivilServiceCapacity(
     population,

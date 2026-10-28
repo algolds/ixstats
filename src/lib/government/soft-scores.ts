@@ -281,3 +281,8 @@ export function stabilityBudget(input: {
     totalBudget: total,
   };
 }
+
+/** True for the stored columns whose value is a lasting offset over the derived score. */
+export function isSoftScoreField(field: string): field is SoftScoreField {
+  return Object.hasOwn(SOFT_SCORE_SEEDED_DEFAULTS, field);
+}

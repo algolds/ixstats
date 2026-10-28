@@ -17,6 +17,7 @@ import { LATEST_GROWTH_SELECT, effectiveGrowthOf } from "~/lib/economy/effective
 import {
   GOVERNANCE_FIELDS,
   effectiveSoftScores,
+  type GovernanceField,
   type SoftScoreInputs,
   type SoftScores,
   type StoredSoftScores,
@@ -43,6 +44,7 @@ const COUNTRY_SELECT = {
   ...LATEST_GROWTH_SELECT,
   governmentStructure: {
     select: {
+      id: true,
       governmentType: true,
       totalBudget: true,
       electionCycle: true,
@@ -72,25 +74,28 @@ export interface SoftScoreState {
   growthDecimal: number | null;
 }
 
-/** Percent of the budget per department category, from the latest budget year at or before `year`. */
-async function loadBudgetShares(db: SoftScoreDb, ids: string[], year: number) {
+/**
+ * Percent of the budget per department category for each structure id, from the latest budget
+ * year at or before `year`.
+ */
+async function loadBudgetShares(db: SoftScoreDb, structureIds: string[], year: number) {
   const rows = await db.budgetAllocation.findMany({
-    where: { governmentStructure: { countryId: { in: ids } }, budgetYear: { lte: year } },
+    where: { governmentStructureId: { in: structureIds }, budgetYear: { lte: year } },
     select: {
+      governmentStructureId: true,
       budgetYear: true,
       allocatedPercent: true,
       department: { select: { category: true } },
-      governmentStructure: { select: { countryId: true } },
     },
   });
   const latest = new Map<string, number>();
   for (const r of rows) {
-    const id = r.governmentStructure.countryId;
+    const id = r.governmentStructureId;
     latest.set(id, Math.max(latest.get(id) ?? -Infinity, r.budgetYear));
   }
   const shares = new Map<string, Record<string, number>>();
   for (const r of rows) {
-    const id = r.governmentStructure.countryId;
+    const id = r.governmentStructureId;
     if (r.budgetYear !== latest.get(id)) continue;
     const own = shares.get(id) ?? {};
     own[r.department.category] = (own[r.department.category] ?? 0) + r.allocatedPercent;
@@ -162,13 +167,21 @@ export async function loadSoftScoresMany(
   budgetYear: number
 ): Promise<Map<string, SoftScoreState>> {
   if (ids.length === 0) return new Map();
-  const [countries, components, shares] = await Promise.all([
-    findCountries(db, ids),
+  const countries = await findCountries(db, ids);
+  const structureIds = countries.flatMap((c) =>
+    c.governmentStructure ? [c.governmentStructure.id] : []
+  );
+  const [components, shares] = await Promise.all([
     loadComponents(db, ids),
-    loadBudgetShares(db, ids, budgetYear),
+    structureIds.length > 0
+      ? loadBudgetShares(db, structureIds, budgetYear)
+      : new Map<string, Record<string, number>>(),
   ]);
   return new Map(
-    countries.map((c) => [c.id, stateOf(c, components.get(c.id) ?? [], shares.get(c.id) ?? null)])
+    countries.map((c) => {
+      const budget = c.governmentStructure ? shares.get(c.governmentStructure.id) : undefined;
+      return [c.id, stateOf(c, components.get(c.id) ?? [], budget ?? null)];
+    })
   );
 }
 
@@ -181,4 +194,20 @@ export async function loadSoftScores(
   const now = nowMs ?? (await clockForCountry(db, countryId)).now();
   const states = await loadSoftScoresMany(db, [countryId], currentBudgetYear(now));
   return states.get(countryId) ?? null;
+}
+
+/**
+ * A government structure row with its six governance scores replaced by the effective ones, for
+ * readers that display them. The stored values stay what writers move.
+ */
+export async function withEffectiveGovernance<T extends object>(
+  db: SoftScoreDb,
+  countryId: string,
+  structure: T
+): Promise<T> {
+  const state = await loadSoftScores(db, countryId);
+  if (!state) return structure;
+  const scores = {} as Record<GovernanceField, number>;
+  for (const field of GOVERNANCE_FIELDS) scores[field] = state.effective[field];
+  return { ...structure, ...scores };
 }
