@@ -64,7 +64,7 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
       if (claimed.count !== 1) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Embassy is already closed." });
       }
-      const closedEmbassy = await ctx.db.embassy.findUniqueOrThrow({
+      const closedEmbassy = await ctx.db.embassy.findUnique({
         where: { id: input.embassyId },
       });
 

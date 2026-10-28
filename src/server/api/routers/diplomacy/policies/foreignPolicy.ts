@@ -210,6 +210,9 @@ async function enactForeignPolicyEffects(
 }
 
 // Helper functions for cultural exchange <-> embassy mission integration
+/** Advisory-lock namespace serialising one (initiator, target, type) foreign-policy open. */
+const FP_OPEN_LOCK_NAMESPACE = 51002;
+
 /** Relationship-strength gates: no free trade with a hostile nation, no embargo or blockade on a close ally. */
 function assertRelationAllowsAction(actionType: string, strength: number) {
   if (actionType === "free_trade" && strength < 20) {
@@ -272,23 +275,6 @@ export async function openForeignPolicyAction(db: PrismaClient, input: OpenForei
   // Stale pending proposals must not block a fresh one.
   await expireStaleDiplomaticProposals(db, { countryId: initiatorId });
 
-  // Check for existing active action of same type
-  const existingAction = await db.foreignPolicyAction.findFirst({
-    where: {
-      initiatorId,
-      targetId: input.targetId,
-      actionType: input.actionType,
-      status: { in: ["proposed", "active"] },
-    },
-  });
-
-  if (existingAction) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `An active ${input.actionType} already exists against this country.`,
-    });
-  }
-
   // Get both countries for GDP calculations
   const [initiator, target] = await Promise.all(
     [initiatorId, input.targetId].map((id) =>
@@ -321,24 +307,44 @@ export async function openForeignPolicyAction(db: PrismaClient, input: OpenForei
   // Cooperative actions await the target's consent; hostile ones are unilateral.
   const cooperative = COOPERATIVE_FP.has(input.actionType);
 
-  const created = await db.foreignPolicyAction.create({
-    data: {
-      initiatorId,
-      targetId: input.targetId,
-      actionType: input.actionType,
-      category: impact.category,
-      severity: input.severity,
-      status: cooperative ? "proposed" : "active",
-      initiatorGdpImpact: impact.initiatorGdpImpact,
-      targetGdpImpact: impact.targetGdpImpact,
-      relationshipDelta: impact.relationshipDelta,
-      reason: input.reason,
-      description: input.description,
-    },
-    include: {
-      initiator: { select: { id: true, name: true } },
-      target: { select: { id: true, name: true } },
-    },
+  // The duplicate check and the row it guards are one step under a per (initiator, target, type) lock, so two
+  // concurrent proposals cannot both pass it (two enacted embargoes doubled the effects).
+  const created = await db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${FP_OPEN_LOCK_NAMESPACE}::int, hashtext(${`${initiatorId}:${input.targetId}:${input.actionType}`}))`;
+    const existingAction = await tx.foreignPolicyAction.findFirst({
+      where: {
+        initiatorId,
+        targetId: input.targetId,
+        actionType: input.actionType,
+        status: { in: ["proposed", "active"] },
+      },
+      select: { id: true },
+    });
+    if (existingAction) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `An active ${input.actionType} already exists against this country.`,
+      });
+    }
+    return tx.foreignPolicyAction.create({
+      data: {
+        initiatorId,
+        targetId: input.targetId,
+        actionType: input.actionType,
+        category: impact.category,
+        severity: input.severity,
+        status: cooperative ? "proposed" : "active",
+        initiatorGdpImpact: impact.initiatorGdpImpact,
+        targetGdpImpact: impact.targetGdpImpact,
+        relationshipDelta: impact.relationshipDelta,
+        reason: input.reason,
+        description: input.description,
+      },
+      include: {
+        initiator: { select: { id: true, name: true } },
+        target: { select: { id: true, name: true } },
+      },
+    });
   });
 
   // Cooperative → no effects yet; surfaces to the target via getForeignPolicyProposals.

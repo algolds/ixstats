@@ -65,11 +65,13 @@ export function foreignPolicyEffectWhere(
 ): Prisma.StorytellerEffectWhereInput {
   const own = initiatorEffectDescription(action);
   const theirs = targetEffectDescription(action);
+  const legacy = { OR: [{ createdBy: null }, { NOT: [{ createdBy: { startsWith: "fp:" } }] }] };
   return {
     OR: [
       { createdBy: foreignPolicyEffectKey(action.id) },
-      { countryId: action.initiatorId, description: { in: [own, `Ended: ${own}`] } },
-      { countryId: action.targetId, description: { in: [theirs, `Ended: ${theirs}`] } },
+      // Legacy rows only: a row keyed by another action is that action's, however alike its description.
+      { ...legacy, countryId: action.initiatorId, description: { in: [own, `Ended: ${own}`] } },
+      { ...legacy, countryId: action.targetId, description: { in: [theirs, `Ended: ${theirs}`] } },
     ],
   };
 }
