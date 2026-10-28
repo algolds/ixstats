@@ -164,7 +164,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                     key={name}
                     onClick={() => setSelectedTerm(name)}
                     className={cn(
-                      "group rounded-row flex w-full cursor-pointer items-center justify-between border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none",
+                      "group rounded-row flex w-full cursor-pointer items-center justify-between border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 select-none",
                       isSelected
                         ? "text-label border-tint/30 bg-tint/10"
                         : "bg-background hover:bg-fill-4 border-separator text-label"

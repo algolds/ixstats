@@ -279,7 +279,7 @@ export default function HistorySection({
                       variant="well"
                       padding="none"
                       key={event.id}
-                      className="transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                      className="transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
                     >
                       <Button
                         variant="ghost"

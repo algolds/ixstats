@@ -200,7 +200,7 @@ export function StandingsTable({
                     <tr
                       key={team.id || team.teamId}
                       className={cn(
-                        "group cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
+                        "group cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150",
                         isLeader && "bg-yellow/5 hover:bg-yellow/10",
                         isPromotion && !isLeader && "bg-green/5 hover:bg-green/10",
                         isRelegation && "bg-red/5 hover:bg-red/10",

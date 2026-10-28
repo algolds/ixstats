@@ -41,7 +41,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
         return (
           <div
             key={q.id}
-            className="group rounded-card border-separator bg-surface hover:border-separator hover:bg-surface hover:shadow-card relative flex flex-col gap-2 overflow-hidden border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
+            className="group rounded-card border-separator bg-surface hover:border-separator hover:bg-surface hover:shadow-card relative flex flex-col gap-2 overflow-hidden border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200"
           >
             {/* Left Highlighter Ink Bar */}
             <div
@@ -85,7 +85,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
 
                 <Link
                   href={`/wiki/${q.pageSlug}`}
-                  className="rounded-row border-separator bg-fill-4 text-label-secondary hover:bg-fill-4 hover:text-label flex h-7 w-7 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                  className="rounded-row border-separator bg-fill-4 text-label-secondary hover:bg-fill-4 hover:text-label flex h-7 w-7 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
                   title="Open article"
                 >
                   <ArrowUpRight className="h-3.5 w-3.5" />

@@ -211,7 +211,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                       value={scratchpad}
                       onChange={handleScratchpadChange}
                       placeholder="Jot down quick worldbuilding notes, drafts, task lists, or article revisions here... (auto-saves)"
-                      className="border-separator bg-fill-4 text-label placeholder:text-label-tertiary focus:border-separator focus:bg-fill-3 rounded-row text-footnote min-h-[140px] w-full resize-none border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
+                      className="border-separator bg-fill-4 text-label placeholder:text-label-tertiary focus:border-separator focus:bg-fill-3 rounded-row text-footnote min-h-[140px] w-full resize-none border p-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus:outline-none"
                       style={{ scrollbarWidth: "thin" }}
                     />
                   </div>

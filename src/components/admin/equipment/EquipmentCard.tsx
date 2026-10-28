@@ -41,7 +41,7 @@ export function EquipmentCard({
     <Card
       className={cn(
         "flex flex-col gap-6 py-6",
-        `hover:border-red/50 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${isSelected ? "ring-red ring-2" : ""}`
+        `hover:border-red/50 p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ${isSelected ? "ring-red ring-2" : ""}`
       )}
     >
       <div className="mb-3 flex items-start justify-between">

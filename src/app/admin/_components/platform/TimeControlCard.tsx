@@ -204,7 +204,7 @@ export function TimeControlCard({
                 onClick={() => onTimeMultiplierChange(preset.value)}
                 aria-pressed={isSelected}
                 className={cn(
-                  "text-caption duration-fast flex h-9 items-center justify-center gap-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "text-caption duration-fast flex h-9 items-center justify-center gap-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
                   isSelected ? "bg-tint-fill border-tint/30 text-tint" : preset.color
                 )}
               >

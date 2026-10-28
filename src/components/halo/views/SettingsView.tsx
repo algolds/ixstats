@@ -131,7 +131,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
   }
 
   return (
-    <div className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
+    <div className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300">
       <SettingsHeader
         onClose={onClose}
         isOnWikiPage={isOnWikiPage}
@@ -141,7 +141,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
       <div
         className={cn(
-          "grid gap-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+          "grid gap-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300",
           morePrefsExpanded ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
         )}
       >
@@ -151,7 +151,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
           <SectionLabel>Appearance</SectionLabel>
 
           {/* Theme */}
-          <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none">
+          <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150 select-none">
             <div className="bg-tint/15 rounded-control-sm shrink-0 p-2">
               {effectiveTheme === "dark" ? (
                 <Moon className="text-tint h-3.5 w-3.5" />
@@ -505,7 +505,7 @@ function SettingsRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none">
+    <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150 select-none">
       {onIconClick ? (
         <button
           type="button"

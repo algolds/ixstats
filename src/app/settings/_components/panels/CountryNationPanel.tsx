@@ -163,7 +163,7 @@ export function CountryNationPanel({
             <div className="flex flex-col items-center gap-4 sm:flex-row">
               <label
                 htmlFor="flag-upload-input"
-                className="border-border/60 hover:border-border hover:bg-muted/20 flex w-full flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                className="border-border/60 hover:border-border hover:bg-muted/20 flex w-full flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 text-center transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
               >
                 {isUploadingFlag ? (
                   <div className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">

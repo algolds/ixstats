@@ -73,7 +73,7 @@ export default function HelpPage() {
               data-cuelume-hover="tick"
               className="group focus-visible:ring-ring rounded-xl focus-visible:ring-2 focus-visible:outline-none"
             >
-              <Card className="group-hover:border-foreground/20 flex min-h-11 items-center gap-3 rounded-xl p-4 transition-[border-color,transform] duration-150 group-active:scale-[0.99]">
+              <Card className="group-hover:border-foreground/20 flex min-h-11 items-center gap-3 rounded-xl p-4 transition-[border-color,scale,translate] duration-150 group-active:scale-[0.99]">
                 <Icon aria-hidden="true" className="text-muted-foreground h-6 w-6 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="text-foreground text-sm font-semibold">{title}</div>

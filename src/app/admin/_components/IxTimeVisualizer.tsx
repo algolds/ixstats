@@ -307,7 +307,7 @@ export function IxTimeVisualizer() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-control border-blue/10 bg-blue/5 hover:border-blue/20 duration-fast border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+          <div className="rounded-control border-blue/10 bg-blue/5 hover:border-blue/20 duration-fast border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]">
             <div className="text-caption text-blue mb-1 flex items-center gap-2">
               <Clock className="h-3.5 w-3.5" /> Current IxTime
             </div>
@@ -320,7 +320,7 @@ export function IxTimeVisualizer() {
           </div>
 
           {/* Multiplier + Rate */}
-          <div className="rounded-control border-green/10 bg-green/5 hover:border-green/20 duration-fast border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+          <div className="rounded-control border-green/10 bg-green/5 hover:border-green/20 duration-fast border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]">
             <div className="text-caption text-green mb-1 flex items-center gap-2">
               <Activity className="h-3.5 w-3.5" /> Speed & rate
             </div>
@@ -337,7 +337,7 @@ export function IxTimeVisualizer() {
             </div>
           </div>
 
-          <div className="rounded-control border-purple/10 bg-purple/5 hover:border-purple/20 duration-fast border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+          <div className="rounded-control border-purple/10 bg-purple/5 hover:border-purple/20 duration-fast border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]">
             <div className="text-caption text-purple mb-1 flex items-center gap-2">
               <Target className="h-3.5 w-3.5" /> System health
             </div>
@@ -481,16 +481,16 @@ export function IxTimeVisualizer() {
 
             <div className="space-y-3">
               <div className="text-footnote grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="rounded-control-sm border-blue/10 bg-blue/5 hover:border-blue/20 border px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+                <div className="rounded-control-sm border-blue/10 bg-blue/5 hover:border-blue/20 border px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]">
                   <div className="text-blue font-semibold">Real world epoch</div>
                   <div className="text-label-secondary mt-0.5 tabular-nums">Oct 4, 2020</div>
                 </div>
-                <div className="rounded-control-sm border-green/10 bg-green/5 hover:border-green/20 border px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+                <div className="rounded-control-sm border-green/10 bg-green/5 hover:border-green/20 border px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]">
                   <div className="text-green font-semibold">4x → 2x Transition</div>
                   <div className="text-label-secondary mt-0.5 tabular-nums">Jul 27, 2025 IRL</div>
                   <div className="text-label-secondary tabular-nums">Jan 1, 2040 IX</div>
                 </div>
-                <div className="rounded-control-sm border-purple/10 bg-purple/5 hover:border-purple/20 border px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+                <div className="rounded-control-sm border-purple/10 bg-purple/5 hover:border-purple/20 border px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]">
                   <div className="text-purple font-semibold">Now</div>
                   <div className="text-label-secondary mt-0.5 font-semibold">
                     Year {timeData.currentGameYear}

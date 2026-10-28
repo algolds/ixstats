@@ -138,7 +138,7 @@ export function MyCountryTabsList({
               aria-current={isActive ? "page" : undefined}
               onClick={() => handleChange(tab.value)}
               className={cn(
-                "focus-visible:ring-tint rounded-control text-caption sm:text-body relative flex min-h-9 items-center gap-2 px-3 py-2 transition-[color,background-color,transform] duration-150 outline-none focus-visible:ring-2",
+                "focus-visible:ring-tint rounded-control text-caption sm:text-body relative flex min-h-9 items-center gap-2 px-3 py-2 transition-[color,background-color,scale,translate] duration-150 outline-none focus-visible:ring-2",
                 isActive
                   ? "text-label font-semibold"
                   : "text-label-secondary hover:text-label hover:bg-fill-3"

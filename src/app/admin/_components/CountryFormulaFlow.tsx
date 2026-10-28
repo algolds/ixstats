@@ -81,7 +81,7 @@ function CalcNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "bg-surface rounded-row duration-fast relative min-w-[210px] border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+        "bg-surface rounded-row duration-fast relative min-w-[210px] border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
         borderColors[category] || "border-separator",
         glowColors[category],
         selected ? "border-tint ring-tint/30 scale-105 ring-1" : ""
@@ -102,7 +102,7 @@ function CalcNode({ data, selected }: NodeProps) {
             type="target"
             id={pos}
             position={position}
-            className="border-background !bg-tint duration-fast !h-2.5 !w-2.5 border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+            className="border-background !bg-tint duration-fast !h-2.5 !w-2.5 border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
           />
         );
       })}
@@ -135,7 +135,7 @@ function CalcNode({ data, selected }: NodeProps) {
             type="source"
             id={pos}
             position={position}
-            className="border-background !bg-tint duration-fast !h-2.5 !w-2.5 border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+            className="border-background !bg-tint duration-fast !h-2.5 !w-2.5 border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
           />
         );
       })}

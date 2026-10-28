@@ -90,7 +90,7 @@ export function StashSidebar({
             <div
               key={s.id}
               className={cn(
-                "group rounded-card relative overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
+                "group rounded-card relative overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150",
                 isActive ? "bg-tint-fill border-transparent" : "hover:bg-fill-4 border-transparent"
               )}
             >

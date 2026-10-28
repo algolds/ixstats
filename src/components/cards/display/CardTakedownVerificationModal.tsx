@@ -147,7 +147,7 @@ export function CardTakedownVerificationModal({
                 value={nationName}
                 onChange={(e) => setNationName(e.target.value)}
                 placeholder="e.g. The Grendels"
-                className="border-separator bg-background text-label placeholder:text-label-secondary rounded-row text-footnote focus:border-red focus:ring-red h-9 w-full border px-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:ring-1"
+                className="border-separator bg-background text-label placeholder:text-label-secondary rounded-row text-footnote focus:border-red focus:ring-red h-9 w-full border px-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus:ring-1"
               />
             </div>
 
@@ -215,7 +215,7 @@ export function CardTakedownVerificationModal({
                   value={checksum}
                   onChange={(e) => setChecksum(e.target.value)}
                   placeholder="Paste one-time token"
-                  className="border-separator bg-background text-label placeholder:text-label-secondary rounded-row text-footnote focus:border-red focus:ring-red h-9 w-full border px-3 font-mono transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:ring-1"
+                  className="border-separator bg-background text-label placeholder:text-label-secondary rounded-row text-footnote focus:border-red focus:ring-red h-9 w-full border px-3 font-mono transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus:ring-1"
                 />
               </div>
 
@@ -254,7 +254,7 @@ export function CardTakedownVerificationModal({
                     onChange={(e) => setCustomReason(e.target.value)}
                     placeholder="Describe your basis for removal"
                     autoFocus
-                    className="border-separator bg-background text-label placeholder:text-label-secondary rounded-row text-footnote focus:border-red focus:ring-red h-9 w-full border px-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:ring-1"
+                    className="border-separator bg-background text-label placeholder:text-label-secondary rounded-row text-footnote focus:border-red focus:ring-red h-9 w-full border px-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus:ring-1"
                   />
                 )}
               </div>

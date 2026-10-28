@@ -34,7 +34,7 @@ function formatWords(n: number, prefix = "", smallestUnit = 1e6): string {
 }
 
 const TILE_TRIGGER =
-  "border-separator bg-surface hover:bg-fill-3 focus-visible:ring-tint rounded-row w-full cursor-pointer border p-4 text-left transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]";
+  "border-separator bg-surface hover:bg-fill-3 focus-visible:ring-tint rounded-row w-full cursor-pointer border p-4 text-left transition-[background-color,scale,translate] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]";
 
 function StatTile({
   icon: Icon,

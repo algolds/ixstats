@@ -125,7 +125,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
   return (
     <div
       onClick={() => onView(issue.id)}
-      className={`group rounded-control border-separator hover:border-separator hover:bg-fill-4 w-full cursor-pointer border border-l-4 p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] ${severityStyle}`}
+      className={`group rounded-control border-separator hover:border-separator hover:bg-fill-4 w-full cursor-pointer border border-l-4 p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ${severityStyle}`}
     >
       <div className="flex items-start gap-3">
         <div className={`bg-fill-4 mt-0.5 rounded-full p-2 ${domainConfig.color}`}>

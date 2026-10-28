@@ -199,7 +199,7 @@ export function SelectionCapsule({
       <button
         type="button"
         onClick={handleComment}
-        className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,transform]"
+        className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,scale,translate]"
         title="Discuss"
       >
         <MessageSquare className="text-margin-accent h-3.5 w-3.5" />
@@ -211,7 +211,7 @@ export function SelectionCapsule({
         <button
           type="button"
           onClick={handleSuggest}
-          className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,transform]"
+          className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,scale,translate]"
           title="Suggest edit"
         >
           <Edit3 className="text-teal h-3.5 w-3.5" />
@@ -224,7 +224,7 @@ export function SelectionCapsule({
         <button
           type="button"
           onClick={handleStash}
-          className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,transform]"
+          className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,scale,translate]"
           title="Save quote"
         >
           <Bookmark className="text-red h-3.5 w-3.5" />
@@ -236,7 +236,7 @@ export function SelectionCapsule({
       <button
         type="button"
         onClick={handleShare}
-        className="text-label-secondary duration-fast hover:bg-fill-3 hover:text-label flex size-7 cursor-pointer items-center justify-center rounded-full transition-[background-color,color,transform]"
+        className="text-label-secondary duration-fast hover:bg-fill-3 hover:text-label flex size-7 cursor-pointer items-center justify-center rounded-full transition-[background-color,color,scale,translate]"
         title="Share quote"
         aria-label="Share quote"
       >
@@ -247,7 +247,7 @@ export function SelectionCapsule({
       <button
         type="button"
         onClick={handleCopy}
-        className="text-label-secondary duration-fast hover:bg-fill-3 hover:text-label flex size-7 cursor-pointer items-center justify-center rounded-full transition-[background-color,color,transform]"
+        className="text-label-secondary duration-fast hover:bg-fill-3 hover:text-label flex size-7 cursor-pointer items-center justify-center rounded-full transition-[background-color,color,scale,translate]"
         title="Copy text"
         aria-label="Copy text"
       >

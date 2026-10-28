@@ -177,12 +177,12 @@ export function GlyphMapRegistry({
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                   className={cn(
-                    "border-separator bg-fill-4 hover:bg-fill-3 hover:border-tint/40 group rounded-row relative flex flex-col items-center justify-between border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
+                    "border-separator bg-fill-4 hover:bg-fill-3 hover:border-tint/40 group rounded-row relative flex flex-col items-center justify-between border p-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] select-none",
                     isSelected && "border-tint/60 bg-tint/10 shadow-card"
                   )}
                 >
                   {/* Action Bar (Top Right Hover) */}
-                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 group-hover:opacity-100">
+                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150 group-hover:opacity-100">
                     <Button
                       variant="ghost"
                       size="icon-sm"

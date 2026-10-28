@@ -109,7 +109,7 @@ function SportsLiveView({ context }: DIViewProps) {
         {/* Broadcast progress */}
         <div className="bg-fill-4 h-1 overflow-hidden rounded-full">
           <div
-            className="bg-red h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-1000 ease-linear"
+            className="bg-red h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-1000 ease-linear"
             style={{ width: `${Math.round(state.progress * 100)}%` }}
           />
         </div>

@@ -300,7 +300,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         "border-onoma-primary",
         "pl-3",
         "bg-onoma-primary/5",
-        "transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+        "transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
         "duration-300"
       );
       highlightedElementRef.current = null;
@@ -317,7 +317,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         "border-onoma-primary",
         "pl-3",
         "bg-onoma-primary/5",
-        "transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+        "transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
         "duration-300"
       );
       highlightedElementRef.current = el;

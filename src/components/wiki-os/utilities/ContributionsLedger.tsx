@@ -68,7 +68,7 @@ export function ContributionsLedger({
             {contribs.map((c) => (
               <div
                 key={c.revid}
-                className="group rounded-card border-separator bg-surface shadow-card hover:border-green/40 hover:bg-surface relative flex flex-col justify-between gap-3 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 sm:flex-row sm:items-center"
+                className="group rounded-card border-separator bg-surface shadow-card hover:border-green/40 hover:bg-surface relative flex flex-col justify-between gap-3 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150 sm:flex-row sm:items-center"
               >
                 <div className="flex min-w-0 items-start gap-3 sm:items-center">
                   <div className="flex shrink-0 items-center gap-1">

@@ -202,7 +202,7 @@ export default function CommonsBrowserPanel({
                       <img
                         src={img.thumbUrl}
                         alt={img.title}
-                        className="max-h-full max-w-full object-contain brightness-95 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:brightness-100"
+                        className="max-h-full max-w-full object-contain brightness-95 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] group-hover:brightness-100"
                         loading="lazy"
                       />
                       <Badge variant="success" className="absolute right-1 bottom-1">

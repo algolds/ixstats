@@ -382,7 +382,7 @@ export function BotControlCard({
                 return (
                   <div
                     key={proc.name}
-                    className="border-separator bg-surface hover:border-separator rounded-control flex flex-col justify-between space-y-3 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                    className="border-separator bg-surface hover:border-separator rounded-control flex flex-col justify-between space-y-3 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
                   >
                     <div>
                       <div className="flex items-center justify-between">

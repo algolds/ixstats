@@ -93,7 +93,7 @@ export function NotificationRow({
       <SwipeableRow.Content>
         <div
           className={cn(
-            "rounded-row relative flex w-full flex-col overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
+            "rounded-row relative flex w-full flex-col overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200",
             !isRead
               ? "border-yellow/30 bg-yellow/6 hover:border-yellow/50"
               : "border-separator bg-fill-4 hover:border-separator-opaque hover:bg-fill-3 opacity-90 hover:opacity-100"
@@ -102,7 +102,7 @@ export function NotificationRow({
           {/* Left Accent Border Strip */}
           <div
             className={cn(
-              "rounded-l-row absolute top-0 bottom-0 left-0 w-[3px] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+              "rounded-l-row absolute top-0 bottom-0 left-0 w-[3px] transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300",
               colors.text.replace("text-", "bg-"),
               isRead ? "opacity-30" : "opacity-100"
             )}

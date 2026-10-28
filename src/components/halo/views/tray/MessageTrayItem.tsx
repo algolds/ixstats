@@ -120,7 +120,7 @@ export function MessageTrayItem({
         <div
           onClick={() => onClick(conversation)}
           className={cn(
-            "group rounded-row relative flex w-full cursor-pointer flex-col overflow-hidden border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.985]",
+            "group rounded-row relative flex w-full cursor-pointer flex-col overflow-hidden border p-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 active:scale-[0.985]",
             isUnread
               ? "border-yellow/30 bg-yellow/6 hover:border-yellow/50"
               : "border-separator bg-fill-4 hover:border-separator-opaque hover:bg-fill-3"

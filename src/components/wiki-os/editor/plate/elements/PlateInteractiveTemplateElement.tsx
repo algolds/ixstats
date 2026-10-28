@@ -147,7 +147,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
       <div
         contentEditable={false}
         onDoubleClick={() => !readOnly && setIsModalOpen(true)}
-        className="group rounded-row border-separator bg-surface text-footnote hover:border-tint/50 hover:bg-surface relative flex items-center justify-between gap-3 border px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+        className="group rounded-row border-separator bg-surface text-footnote hover:border-tint/50 hover:bg-surface relative flex items-center justify-between gap-3 border px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
       >
         {/* Left: Icon, Template Name & Summary */}
         <div className="flex min-w-0 items-center gap-2">

@@ -83,7 +83,7 @@ export function SculptedMainPageContent({
                       data-cuelume-hover="tick"
                       className={cn(
                         "rounded-row flex items-center gap-2 p-2 sm:p-3",
-                        "hover:bg-fill-4 group transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150"
+                        "hover:bg-fill-4 group transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150"
                       )}
                     >
                       <div
@@ -116,7 +116,7 @@ export function SculptedMainPageContent({
                   href="/wiki/Category:Bureau_of_International_Statistics"
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
-                  className="text-label-secondary hover:text-label rounded-control-sm text-caption inline-flex shrink-0 items-center gap-1 px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/5"
+                  className="text-label-secondary hover:text-label rounded-control-sm text-caption inline-flex shrink-0 items-center gap-1 px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] hover:bg-black/5"
                   title="Browse full statistical category index"
                 >
                   <Database className="h-3 w-3" />

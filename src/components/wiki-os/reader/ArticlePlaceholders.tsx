@@ -68,7 +68,7 @@ export function CoordsPill({
   return (
     <Popover>
       <PopoverTrigger>
-        <span className="wikios-coords-pill border-separator bg-fill-4 text-caption text-tint hover:border-separator hover:bg-fill-4 inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none">
+        <span className="wikios-coords-pill border-separator bg-fill-4 text-caption text-tint hover:border-separator hover:bg-fill-4 inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] select-none">
           <MapPin className="text-tint h-3 w-3" />
           <span>{label}</span>
           <span className="text-footnote tabular-nums opacity-65">
@@ -137,7 +137,7 @@ export function DynamicStatSpan({
   return (
     <Popover>
       <PopoverTrigger>
-        <span className="wikios-stat-span border-separator text-label hover:border-separator hover:text-tint cursor-pointer border-b border-dotted font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none">
+        <span className="wikios-stat-span border-separator text-label hover:border-separator hover:text-tint cursor-pointer border-b border-dotted font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] select-none">
           {data.value}
         </span>
       </PopoverTrigger>

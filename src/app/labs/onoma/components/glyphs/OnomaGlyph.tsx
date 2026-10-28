@@ -97,7 +97,7 @@ export function OnomaGlyph({
     return (
       <span
         className={cn(
-          "inline-flex items-center font-mono transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
+          "inline-flex items-center font-mono transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] select-none",
           COMPOSED_SIZE_CLASS[size],
           textTone,
           className

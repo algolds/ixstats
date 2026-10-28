@@ -248,7 +248,7 @@ export function WikiNarratorPlayer({
           <span
             key={idx}
             className={cn(
-              "block max-w-[4px] min-w-[2px] flex-1 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 ease-out",
+              "block max-w-[4px] min-w-[2px] flex-1 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150 ease-out",
               isPlaying ? "animate-pulse" : "opacity-30"
             )}
             style={{
@@ -325,7 +325,7 @@ export function WikiNarratorPlayer({
                 >
                   <div
                     className={cn(
-                      "h-1.5 w-1.5 rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
+                      "h-1.5 w-1.5 rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150",
                       isActive
                         ? "border-separator shadow-floating scale-125"
                         : "border-separator bg-fill-3 group-hover/tick:border-label group-hover/tick:scale-125"

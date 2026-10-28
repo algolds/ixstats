@@ -162,7 +162,7 @@ export function HeroSpotlightSearch({
           setIsOpen(true);
         }}
         className={cn(
-          "rounded-row flex w-full cursor-text items-center justify-between gap-2 px-4 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 sm:px-4",
+          "rounded-row flex w-full cursor-text items-center justify-between gap-2 px-4 py-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 sm:px-4",
           "border-separator border",
           "bg-surface",
           "",
@@ -245,7 +245,7 @@ export function HeroSpotlightSearch({
                 onClick={() => handleCreatePage(query.trim())}
                 onMouseEnter={() => setSelectedIndex(results.length)}
                 className={cn(
-                  "group rounded-row mb-1 flex w-full cursor-pointer items-center justify-between gap-2 border px-3 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "group rounded-row mb-1 flex w-full cursor-pointer items-center justify-between gap-2 border px-3 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
                   selectedIndex === results.length
                     ? "border-tint/35 bg-tint/15 text-tint font-semibold"
                     : "border-tint/20 bg-tint/5 text-tint hover:bg-tint/10"
@@ -265,7 +265,7 @@ export function HeroSpotlightSearch({
                     </span>
                   </div>
                 </div>
-                <ArrowRight className="h-3.5 w-3.5 shrink-0 opacity-60 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:translate-x-0.5 group-hover:opacity-100" />
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 opacity-60 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] group-hover:translate-x-0.5 group-hover:opacity-100" />
               </button>
             )}
 

@@ -129,7 +129,7 @@ const renderChildren = (element: HTMLElement, missing: ReadonlySet<string>) =>
   Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx, missing));
 
 const EMBED_CARD_CLASS =
-  "rounded-card border-separator bg-fill-4 hover:border-separator flex items-center gap-4 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200";
+  "rounded-card border-separator bg-fill-4 hover:border-separator flex items-center gap-4 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200";
 
 /**
  * Card for a `data-wikiembed` placeholder: the article on its wiki (`data-source`), in the reader. The title is user
@@ -179,7 +179,7 @@ function renderWikiEmbed(element: HTMLElement, index: number): React.ReactNode {
 }
 
 const BADGE_BASE =
-  "inline-flex items-center gap-2 px-3 py-0.5 rounded-full text-caption font-semibold select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:-translate-y-0.5 border";
+  "inline-flex items-center gap-2 px-3 py-0.5 rounded-full text-caption font-semibold select-none transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 hover:-translate-y-0.5 border";
 
 // Minimalist glass pills, joined to BADGE_BASE with cn().
 const BADGE_TONES = {

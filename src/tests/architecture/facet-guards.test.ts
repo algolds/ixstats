@@ -687,4 +687,10 @@ describe("Facet kit guards", () => {
   it("uses no tw-animate classes (not installed)", () => {
     expect(hits(TW_ANIMATE)).toEqual([]);
   });
+
+  // Tailwind v4 scale-*/translate-* write the `scale`/`translate` properties, which a
+  // `transform` entry never animates.
+  it("arbitrary transition lists name scale/translate, not transform", () => {
+    expect(hits(/transition-\[[^\]]*\btransform\b[^\]]*\]/g)).toEqual([]);
+  });
 });

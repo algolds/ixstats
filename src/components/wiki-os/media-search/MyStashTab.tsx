@@ -257,7 +257,7 @@ export function MyStashTab({
                       setStashViewMode("images");
                       setStashSearchQuery("");
                     }}
-                    className="group border-separator rounded-row bg-surface hover:bg-fill-3 hover:border-separator flex cursor-pointer items-center justify-between border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98]"
+                    className="group border-separator rounded-row bg-surface hover:bg-fill-3 hover:border-separator flex cursor-pointer items-center justify-between border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150 select-none active:scale-[0.98]"
                   >
                     <span className="flex min-w-0 items-center gap-2">
                       <Folder className="h-5 w-5 shrink-0" style={{ color: stash.color }} />
@@ -301,7 +301,7 @@ export function MyStashTab({
                       onClick={() => onSelectImage(img)}
                       onDoubleClick={onDoubleClickConfirm}
                       className={cn(
-                        "group rounded-control bg-surface relative flex cursor-pointer flex-col overflow-hidden border text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-[0.98]",
+                        "group rounded-control bg-surface relative flex cursor-pointer flex-col overflow-hidden border text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 select-none active:scale-[0.98]",
                         isSelected
                           ? "border-tint ring-tint/30 shadow-card ring-2"
                           : "border-separator hover:border-separator"

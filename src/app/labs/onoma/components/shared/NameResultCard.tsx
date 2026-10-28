@@ -233,7 +233,7 @@ export function NameResultCard({
       padding="none"
       onClick={expandOnCardClick ? () => setShowDetailsModal(!showDetailsModal) : undefined}
       className={cn(
-        "group rounded-card relative flex flex-col justify-start gap-4 overflow-hidden border px-4 py-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out",
+        "group rounded-card relative flex flex-col justify-start gap-4 overflow-hidden border px-4 py-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 ease-out",
         expandOnCardClick && "cursor-pointer select-none",
         // Default border/background colors matching the fit score
         fitColor === "emerald" && "border-green/20 bg-emerald-500/[0.015]",
@@ -302,7 +302,7 @@ export function NameResultCard({
 
         <div
           className={cn(
-            "border-separator bg-surface rounded-control shadow-card flex flex-shrink-0 items-center gap-0.5 border px-1 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out select-none",
+            "border-separator bg-surface rounded-control shadow-card flex flex-shrink-0 items-center gap-0.5 border px-1 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 ease-out select-none",
             showDetailsModal
               ? "pointer-events-auto opacity-100"
               : "pointer-events-none opacity-0 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"

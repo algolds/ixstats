@@ -33,7 +33,7 @@ function AttendeeChip({
   return (
     <div
       className={cn(
-        "text-footnote flex items-center gap-2 rounded-full border px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+        "text-footnote flex items-center gap-2 rounded-full border px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
         recommended
           ? "border-separator bg-fill-3 text-label"
           : "border-separator bg-fill-4 text-label-tertiary"
@@ -235,7 +235,7 @@ function AgendaSection({
           return (
             <div
               key={index}
-              className="rounded-control border-separator bg-fill-4 overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+              className="rounded-control border-separator bg-fill-4 overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
             >
               <div
                 onClick={() => setExpandedIndex(isExpanded ? null : index)}
