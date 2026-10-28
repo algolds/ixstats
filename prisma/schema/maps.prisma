@@ -326,7 +326,7 @@ model MapEditorSession {
   @@map("map_editor_sessions")
 }
 
-/// World Studio preset (docs/specs/2026-10-12-atlas-studio-design.md): a named recipe without a seed that founders
+/// World Studio preset (docs/history/specs/2026-10-12-atlas-studio-design.md): a named recipe without a seed that founders
 /// pick on the World tab. `params` of a version is `Partial<WorldGenParams>` minus `seed`. The three built-ins are
 /// seeded from `WORLD_PRESETS` on first read; a draft is an unpublished version, a publish stamps `publishedAt`.
 model WorldPreset {
@@ -509,7 +509,7 @@ model Realm {
   countries       Country[]        @relation("RealmCountries")
   claims          RealmClaim[]
   pages           RealmPage[]
-  /// Region page (docs/specs/2026-10-05-realm-regions-design.md): banner, factbook, directory tags.
+  /// Region page (docs/history/specs/2026-10-05-realm-regions-design.md): banner, factbook, directory tags.
   bannerUrl         String?
   factbookWikitext  String?   // source, edited with the WikiOS canvas editor
   factbookHtml      String?   // rendered and sanitized on save
@@ -525,7 +525,7 @@ model Realm {
   rulesHtml         String?   // rendered and sanitized on save; claimants must accept it
   rulesUpdatedAt    DateTime?
   rulesUpdatedBy    String?   // Clerk userId
-  /// Realm board (docs/superpowers/specs/2026-10-10-thinkpages-realm-board-design.md): emblem, then the board's settings.
+  /// Realm board (docs/history/specs/2026-10-10-thinkpages-realm-board-design.md): emblem, then the board's settings.
   emblemUrl            String?
   boardVisitorsAllowed Boolean @default(true) // visitors (members of other realms) may post on the board
   boardSlowModeSeconds Int     @default(0)    // members post at most once per this many seconds; 0 = off
@@ -533,7 +533,7 @@ model Realm {
   embassiesProposed RealmEmbassy[]   @relation("EmbassyFrom")
   embassiesReceived RealmEmbassy[]   @relation("EmbassyTo")
   boardBans         RealmBoardBan[]
-  /// The realm's one Find a Realm advert thread (docs/superpowers/specs/2026-10-10-thinkpages-forum-realm-adverts-design.md).
+  /// The realm's one Find a Realm advert thread (docs/history/specs/2026-10-10-thinkpages-forum-realm-adverts-design.md).
   advertThread      ForumThread?    @relation("RealmAdvert")
   polls             Poll[]           @relation("RealmPolls")
   cardDustBalances  CardDustBalance[]

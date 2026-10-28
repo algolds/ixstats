@@ -32,9 +32,9 @@ masked in the admin config; sports season and simulation procedures require the 
 
 | Item | Where | Detail |
 |---|---|---|
-| **Economy, account and authorization exploits found by the code audit** | Vault, ThinkTanks, forum, Lorewards, audit log | See [code audit §1](code-audit-2026-09-30.md#1-security--economy-exploits) (VT-1 store price trusted from the client, VT-2 import-bonus farming, SL-1 ThinkTank authorization, WK-1 forum impersonation, PL-1 audit log persists nothing, …) and [ROADMAP M0](../../roadmap/ROADMAP.md#m0--integrity-security--economy-exploits) |
+| **Economy, account and authorization exploits found by the code audit** | Vault, ThinkTanks, forum, Lorewards, audit log | See [code audit §1](code-audit-2026-09-30.md#1-security--economy-exploits) (VT-1 store price trusted from the client, VT-2 import-bonus farming, SL-1 ThinkTank authorization, WK-1 forum impersonation, PL-1 audit log persists nothing, …) and [ROADMAP M0](../../roadmap/ROADMAP.md#shipped) |
 | Rotate the read-only DB password | `ixstats_readonly` role (plan 325) | The old password is in git history since 2026-05-31; the script no longer contains it, but the credential itself must be changed on the server |
-| CSP nonce not enforced | `src/lib/security/csp.ts`, [deploy runbook](../../operations/deploy-rose-garden-2026-09.md) | The nonce now reaches the page ([#46](https://github.com/algolds/ixstats/pull/46), PL-2). Left: remove the nginx/Cloudflare override on the server and check for CSP violations, then drop `'unsafe-inline'` from `script-src` |
+| CSP nonce not enforced | `src/lib/security/csp.ts`, [deploy runbook](../operations/deploy-rose-garden-2026-09.md) | The nonce now reaches the page ([#46](https://github.com/algolds/ixstats/pull/46), PL-2). Left: remove the nginx/Cloudflare override on the server and check for CSP violations, then drop `'unsafe-inline'` from `script-src` |
 
 ## 2. Broken or regressed features
 
@@ -64,7 +64,7 @@ masked in the admin config; sports season and simulation procedures require the 
 - **NPC AI:** apply trait drift (no callers); NPC responses for embassies, alliances and treaties; event-fatigue dampening ([npc-ai.md](../../systems/npc-ai.md) :41, :54).
 - **Relative-development asymmetry:** display-only; feed it into trade maths (vision audit :80).
 - **Embassy missions:** not playable.
-- **Builder companion guide:** diagnostics tab and subheader deep links ([spec](../../specs/2026-09-08-builder-unified-companion-guide-design.md) :79).
+- **Builder companion guide:** diagnostics tab and subheader deep links ([spec](../specs/2026-09-08-builder-unified-companion-guide-design.md) :79).
 - **Autosave rollout:** mount the government/tax hooks, add National Identity and Map Editor, a navigation flush (`syncAllNow`) and a shared sync badge (autosave.md).
 - **Reference formulas → live engine:** ERI, embassy synergy, GDP projection; PII is design-only ([calculations.md](../../systems/calculations.md)).
 - ~~**Delete dead code:** `src/lib/intelligence/calculator.ts` and `live-data-transformers.ts`~~ ✅ deleted. The `VitalitySnapshot`, `IntelligenceBriefing` and `IntelligenceRecommendation` models they alone wrote are still in the schema.
@@ -136,12 +136,12 @@ masked in the admin config; sports season and simulation procedures require the 
 - Mandate as a gate/multiplier; weekly lever regeneration (game loops :51, :72)
 - Atom-biased issue deck; atom-parameterized fog and regeneration (game loops :136–146)
 - Cross-arena ripple beyond intent resistance (game loops :101)
-- Statecraft directives that change transport network speeds ([route travel-time spec](../../specs/2026-09-12-route-travel-time-design.md) §5)
+- Statecraft directives that change transport network speeds ([route travel-time spec](../specs/2026-09-12-route-travel-time-design.md) §5)
 - Edge cases never built: tier-transition smoothing, "IMF intervention" recession event, optimistic locking via a `version` column ([edge-cases.md](../../reference/edge-cases.md))
 
 ### Vault & cards
 - Ribbons: Ribbons tab and tab sync (#49 derives ribbons from real unlocks and adds a pinned shelf on the passport) ([ribbons spec](../../specs/2026-08-10-achievements-ribbons-design.md) §2, §3.2)
-- Lore-first schema cleanup: unique slug, `@@unique([wikiArticleTitle, wikiSource])`, drop stats/cardType, `CardRarity` enum ([ixcards spec](../../specs/2026-08-13-ixcards-lore-first-rebuild.md) Part III)
+- Lore-first schema cleanup: unique slug, `@@unique([wikiArticleTitle, wikiSource])`, drop stats/cardType, `CardRarity` enum ([ixcards spec](../specs/2026-08-13-ixcards-lore-first-rebuild.md) Part III)
 - 40/25/20/10/4/1 rarity distribution (Part IV)
 - Vault reorder with the Lore Gallery as the primary view and category filters (Phase 6); category-themed packs (Phase 7); seasons and pack composition (open questions)
 - Crafting extensions: catalysts, recipe discovery, guilds, bulk crafting, crafting achievements, history/stats/admin endpoints
@@ -159,7 +159,7 @@ masked in the admin config; sports season and simulation procedures require the 
   - AI Linguist etymology composer and guardrails (:127–128), free-text translator (:147), dialect branch merging (:153);
   - Phase 10 AI agents (:158);
   - platform integration: NPC dynasties, map toponyms, MyCountry demonyms (:175–180).
-- **MyLeague / MySports** ([PRD](../../specs/2026-06-12-myleague-v1-prd.md), [MySports v0](../../specs/2026-09-22-mysports-v0.md)):
+- **MyLeague / MySports** ([PRD](../specs/2026-06-12-myleague-v1-prd.md), [MySports v0](../../specs/2026-09-22-mysports-v0.md)):
   - AegisCore engine and custom sport DSL; `SportDefinition` adapter;
   - dynasty detection, significance scoring, national leaderboards; market-currency club valuations;
   - promotion/relegation news bulletin;
@@ -169,10 +169,10 @@ masked in the admin config; sports season and simulation procedures require the 
 - **Strata & Dynas** labs (tectonic relief, dynastic genealogy) — roadmap only.
 
 ### Platform & integrations
-- Hugging Face Space offload for Whisper and an LLM ([huggingface-spaces-guide.md](../../operations/huggingface-spaces-guide.md))
+- Hugging Face Space offload for Whisper and an LLM ([huggingface-spaces-guide.md](../operations/huggingface-spaces-guide.md))
 - Browser end-to-end tests (Playwright isn't installed)
 - Telemetry opt-out / global discoverability settings: the toggles are back in the Privacy panel and nothing enforces them — part of the wider unenforced Privacy & Safety panel (SL-4)
-- WikiOS Stage 3 MediaWiki isolation: nginx lockdown, 301s, `LocalSettings`, internal `WIKIOS_MEDIAWIKI_API` endpoint; namespace-redirect decisions undecided ([stage3 plan](../../systems/wikios/wikios-stage3-config-plan.md))
+- WikiOS Stage 3 MediaWiki isolation: nginx lockdown, 301s, `LocalSettings`, internal `WIKIOS_MEDIAWIKI_API` endpoint; namespace-redirect decisions undecided ([stage3 plan](../systems/wikios/wikios-stage3-config-plan.md))
 - WikiOS Workstream C packaging: decouple Clerk, the IxStats DB and templates ([longevity workflow](../systems/wikios/wikios-longevity-workflow.md))
 - Lore-card portfolio boosts ([lore-lifecycle.md](../../systems/lore-lifecycle.md))
 
@@ -209,7 +209,7 @@ From the status blocks in [`docs/audits/`](../../audits/):
   - 27 random-string id helpers;
   - 29 JSON deep copies.
 - **Size:** `lib/notifications/hooks.ts` is 1,288 lines; `wikios/templates.ts` holds static data.
-- **Design cleanup (plan 346 remainder):** 966 hex colours, 3,972 `dark:` variants, 1,376 blurs, 174 pulses, 180 Sparkles icons; hex inventory classes in [HEX_COLOUR_INVENTORY](../../audits/HEX_COLOUR_INVENTORY_2026-09-27.md).
+- **Design cleanup (plan 346 remainder):** 966 hex colours, 3,972 `dark:` variants, 1,376 blurs, 174 pulses, 180 Sparkles icons; hex inventory classes in [HEX_COLOUR_INVENTORY](../audits/HEX_COLOUR_INVENTORY_2026-09-27.md).
 - **Product calls:**
   - deck.gl used in 4 places and tsparticles in 2;
   - `DATABASE_READONLY` replacement;
@@ -240,16 +240,16 @@ From the status blocks in [`docs/audits/`](../../audits/):
 
   | Doc | When |
   |---|---|
-  | [realms-foundation](../../specs/2026-09-27-realms-foundation-design.md), [realms-eurth](../../specs/2026-09-28-realms-eurth-design.md), [route-travel-time](../../specs/2026-09-12-route-travel-time-design.md) specs | implemented |
+  | [realms-foundation](../specs/2026-09-27-realms-foundation-design.md), [realms-eurth](../specs/2026-09-28-realms-eurth-design.md), [route-travel-time](../specs/2026-09-12-route-travel-time-design.md) specs | implemented |
   | [map-editor-improvements-overview](../systems/map-editor-improvements-overview.md) | historical |
-  | [myleague-v1-prd](../../specs/2026-06-12-myleague-v1-prd.md), [myleague-top5-features](../../systems/myleague-top5-features.md), [sports-llm-commentary](../../research/sports-llm-commentary.md) | implemented |
-  | [myleague-lore-integration](../../systems/myleague-lore-integration.md) | mostly obsolete |
+  | [myleague-v1-prd](../specs/2026-06-12-myleague-v1-prd.md), [myleague-top5-features](../systems/myleague-top5-features.md), [sports-llm-commentary](../research/sports-llm-commentary.md) | implemented |
+  | [myleague-lore-integration](../../systems/myleague.md#lore-fidelity) | mostly obsolete |
   | [mycountry-vision-audit](../systems/statecraft/mycountry-vision-audit.md) | dated snapshot |
   | [wikios-longevity-workflow](../systems/wikios/wikios-longevity-workflow.md) | round complete |
   | [wikios-independence-2b-3](../systems/wikios/wikios-independence-2b-3.md) | after the Stage 3 cutover |
   | [user-profile-utils](../reference/user-profile-utils.md) | module deleted |
   | [REFACTOR_PLAN_2026-06](../audits/REFACTOR_PLAN_2026-06.md), [test-suite-audit](../audits/test-suite-audit-and-justification.md) | all items resolved |
-  | [deploy-rose-garden-2026-09](../../operations/deploy-rose-garden-2026-09.md) | after the release ships |
+  | [deploy-rose-garden-2026-09](../operations/deploy-rose-garden-2026-09.md) | after the release ships |
 
   `docs/archive/` is git-ignored, so archiving there removes a file from the repository. Use a tracked archive folder
   or keep the file with its status line.

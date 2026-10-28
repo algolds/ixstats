@@ -1,5 +1,5 @@
 /**
- * Realm region pages (docs/specs/2026-10-05-realm-regions-design.md): what /r/[realm] shows — banner, key
+ * Realm region pages (docs/history/specs/2026-10-05-realm-regions-design.md): what /r/[realm] shows — banner, key
  * stats and in-world date, factbook, rules, community links, officers, embassies, the realm poll, the latest
  * forum threads and happenings — and the staff checks every Manage action goes through.
  */

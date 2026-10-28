@@ -1,4 +1,4 @@
--- Realm time, WP-T1 (docs/superpowers/specs/2026-10-25-realm-time-design.md §1): every realm has a clock.
+-- Realm time, WP-T1 (docs/specs/2026-10-25-realm-time-design.md §1): every realm has a clock.
 -- Gives every realm but Ixnay ('default', whose clock is the bot-synced IxTime) that lacks `settings.clock` one,
 -- continuous with Ixnay's IxTime now (so no stored timestamp moves), at ×2, Gregorian. The retired in-world date
 -- (`settings.inWorldDate`) sets the calendar so the realm keeps reading the same year and era:

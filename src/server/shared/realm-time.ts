@@ -1,5 +1,5 @@
 /**
- * Every realm's time (docs/superpowers/specs/2026-10-25-realm-time-design.md §1): one server API that answers "what
+ * Every realm's time (docs/specs/2026-10-25-realm-time-design.md §1): one server API that answers "what
  * time is it for this realm / this nation". A realm's clock lives in `Realm.settings.clock`; Ixnay's clock is the
  * bot-synced IxTime (`~/lib/ixtime/shared-clock`). A realm without a clock is an error: it is logged and reads
  * Ixnay's clock (`fallback: true`) so pages and crons keep running.

@@ -1,4 +1,4 @@
-/// ThinkPages forum (docs/superpowers/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md). Phase 1: the sitewide
+/// ThinkPages forum (docs/history/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md). Phase 1: the sitewide
 /// section. Phase 2 adds realm sections (scope "realm", three categories per realm) and the archive source refs;
 /// phase 3 adds the moderation models (category moderators, reports, warnings, bans, the append-only mod log, appeals);
 /// phase 4 adds the XenForo import columns (nullable authors, imported author names, XenForo user ids); the follow-ups

@@ -1,12 +1,12 @@
 # Deployment Guide
 
-**Last updated:** 2026-10-26
+**Last updated:** 2026-10-27
 
 IxStats ships as a Next.js app. On the production VPS the web app runs as plain `next start` (via `start-production.sh`), either as the PM2 app `ixstats-web` or, without it, in the foreground, with WebSockets and scheduled jobs in separate PM2 processes: `ixstats-ws` (`ws-backend.mjs`) and `ixstats-cron` (`cron-runner.mjs`). A custom Node server (`server.mjs`) that serves Next plus the WebSockets in one process remains available through `bun run start`. Production builds wrap `next build` with base-path tooling.
 
 Vercel is not a deployment target. The repository is connected to a Vercel project, but `vercel.json` sets `git.deploymentEnabled: false` so pushes and pull requests no longer trigger Vercel builds (they had all failed). Remove that setting, or disconnect the project in Vercel, to change this.
 
-To release, follow the [release guide](release-guide.md) (it also covers [rollback](release-guide.md#rollback)); its Part B gives the 1.5 order and links each runbook. There is no staging environment.
+To release, follow the [release guide](release-guide.md) (it also covers [rollback](release-guide.md#rollback)); 1.5's one-off steps are in [release-1.5-lobster-crosby.md](../history/operations/release-1.5-lobster-crosby.md). There is no staging environment.
 
 ## Build Pipeline
 1. Install dependencies: `bun install`
@@ -17,7 +17,7 @@ To release, follow the [release guide](release-guide.md) (it also covers [rollba
 ### Alternative Commands
 - `bun run preview` – Build + start Next.js server on `${PORT:-3550}`
 - `bun run start:next` – Direct Next.js start without the custom server (no WebSocket support)
-- `bun run deploy:prod` – Runs `scripts/deploy-production.sh`: on the VPS it refuses any branch but `master` (unless `ALLOW_NON_MASTER_DEPLOY=1`), hard-resets the checkout to that branch from the `master` remote, then runs `bun install --frozen-lockfile`, `db:generate`, `db:backup` (the deploy aborts if the dump fails; on success it appends the time, commit and dump to `backups/deploy-history.log`), the additive schema step, the WikiOS proof check, the hand-written SQL, `db:push:force` and the post-push SQL, the build (the live `.next` moves to `.next.prev` and comes back if anything fails before the new server answers), `deploy-ixworld.sh` (same commit), `pm2 startOrReload ecosystem.config.cjs --update-env` (a failed reload aborts the deploy), and the web server: under PM2 it waits for `ixstats-web` to answer, otherwise it runs `start-production.sh` in the foreground. Once the new server answers it deletes `.next.prev` and runs the post-deploy data SQL. `SKIP_SCHEMA_SYNC=1` skips every schema step. Step by step: [release guide A4](release-guide.md#a4-build-and-deploy)
+- `bun run deploy:prod` – Runs `scripts/deploy-production.sh`: on the VPS it refuses any branch but `master` (unless `ALLOW_NON_MASTER_DEPLOY=1`), hard-resets the checkout to that branch from the `master` remote, then runs `bun install --frozen-lockfile`, `db:generate`, `db:backup` (the deploy aborts if the dump fails; on success it appends the time, commit and dump to `backups/deploy-history.log`), the additive schema step, the WikiOS proof check, the hand-written SQL, `db:push:force` and the post-push SQL, the build (the live `.next` moves to `.next.prev` and comes back if anything fails before the new server answers), no IxWorld build (see [Hosting](#hosting)), `pm2 startOrReload ecosystem.config.cjs --update-env` (a failed reload aborts the deploy), and the web server: under PM2 it waits for `ixstats-web` to answer, otherwise it runs `start-production.sh` in the foreground. Once the new server answers it deletes `.next.prev` and runs the post-deploy data SQL. `SKIP_SCHEMA_SYNC=1` skips every schema step. Step by step: [release guide A4](release-guide.md#a4-build-and-deploy)
 - `bun run deploy:rollback -- <remote-branch> [--restore <dump>] [--yes]` – `scripts/deployment/rollback-deployment.sh`: copies the current deploy script, checks out a rollback branch from the `master` remote, optionally restores a pre-deploy dump, then runs the copied script with `ALLOW_NON_MASTER_DEPLOY=1 SKIP_SCHEMA_SYNC=1`, so it never pushes an older schema (see the [release guide](release-guide.md#rollback))
 - `bun run deploy:local` – Local checks + push + remote `deploy-production.sh` (see [`local-dev-setup.md`](local-dev-setup.md))
 
@@ -36,7 +36,7 @@ To release, follow the [release guide](release-guide.md) (it also covers [rollba
 
 | App | Script | Notes |
 | --- | --- | --- |
-| `ixstats-web` | `start-production.sh` (interpreter `bash`) | The web app: `start-production.sh` loads `.env.production(.local)` and execs `next start` on `PORT` (3550). PM2 restarts it if it dies (`max_restarts` 10, `restart_delay` 5 s); a reload sends `SIGINT` and waits `kill_timeout` (15 s) before `SIGKILL`. Optional: leave it out and the deploy runs `start-production.sh` in the foreground |
+| `ixstats-web` | `start-production.sh` (interpreter `bash`) | The web app: `start-production.sh` loads `.env.production(.local)` and execs `next start` on `PORT` (3550). PM2 restarts it if it dies (`max_restarts` 10, `restart_delay` 5 s); a reload sends `SIGINT` and waits `kill_timeout` (15 s) before `SIGKILL`. Production defines it (2026-10-27). Leave it out and the deploy runs `start-production.sh` in the foreground |
 | `ixstats-cron` | `cron-runner.mjs` | The only scheduler. `CRON_ENABLED_JOBS` lives in this app's `env` block. `cron-runner.mjs` exits unless it runs under Bun, so the app's `interpreter` must be `bun` (check this when copying the template) |
 | `ixstats-ws` | `ws-backend.mjs` | ThinkPages and market WebSockets on `WS_BACKEND_PORT` (3551), proxied by nginx at `/ws/thinkpages` and `/api/market-ws` |
 | `ixstats-ixtwitter` | `scripts/run-ixtwitter-sync.ts` | Discord IxTwitter → ThinkPages sync (Bun) |
@@ -55,10 +55,26 @@ listens on the port and runs `start-production.sh` in the foreground, as before;
 then sends `SIGKILL` (no more `fuser -k` or `kill -9`). `ws-backend.mjs` stops its sockets on `SIGTERM`/`SIGINT` and
 exits, forced after 5 seconds.
 
-## Base Path & Hosting
-- Script `scripts/with-base-path.sh` handles deployments under `/projects/ixstates`
-- Update `NEXT_PUBLIC_BASE_PATH` and reverse-proxy settings if hosting path changes
-- Ensure static assets under `public/` are served with the same base path
+## Hosting
+
+Since 2026-10-27 production serves IxStates at the root of its own host. The nginx sites are in
+`/etc/nginx/sites-enabled/`.
+
+| Host | What it serves |
+| --- | --- |
+| `https://beta.ixwiki.com` | The whole app, no base path: nginx proxies to `ixstats-web` on `127.0.0.1:3550`, and `/ws/thinkpages`, `/socket.io` and `/api/market-ws` to `ixstats-ws` on `127.0.0.1:3551`. Static `/maplibre/`, `/textures/` and `/images/{uploads,discord,downloaded}/` come straight from `public/` |
+| `https://maps.ixwiki.com` | The same app's `/maps`: `/` redirects to `/maps`; `/maps`, `/api`, `/trpc`, `/_next`, the map assets (`/maplibre`, `/textures`, `/fonts`, `/flags`, `/images`, `/data`, `/sounds`, root files) and the websockets are proxied to `ixstats-web` / `ixstats-ws`; every other path 301s to `https://beta.ixwiki.com` |
+| `https://ixwiki.com/projects/ixstates/*`, `/projects/ixstats/*` | 301 to `https://beta.ixwiki.com/*` |
+
+There is no separate IxWorld build or process: the PM2 app `ixworld` is stopped, and `deploy-production.sh` no longer
+runs `scripts/deploy-ixworld.sh`. That script (and `NEXT_PUBLIC_IXWORLD_STANDALONE`) stays for a **manual** standalone
+build only.
+
+**Base path.** `.env.production` sets `BASE_PATH=""` and `NEXT_PUBLIC_BASE_PATH=""`. Keep both set: unset,
+`deploy-production.sh` and `scripts/with-base-path.sh` fall back to `/projects/ixstates`. `NEXT_PUBLIC_APP_URL` is
+`https://beta.ixwiki.com` and `WS_ALLOWED_ORIGINS` is `https://beta.ixwiki.com,https://maps.ixwiki.com,https://ixwiki.com`.
+If the hosting path changes, change the base path, `NEXT_PUBLIC_APP_URL` (written into the build) and the nginx sites
+together, and serve the static assets under `public/` with the same base path.
 
 ## Database Management
 - Production database: PostgreSQL with PostGIS extension for geographic features
@@ -142,7 +158,7 @@ RATE_LIMIT_ENABLED=false
 
 | Variable | Purpose |
 | --- | --- |
-| `BASE_PATH` | Manually override Next.js basePath (production scripts default to `/projects/ixstates`) |
+| `BASE_PATH` | Next.js basePath. Production sets it to `""` in `.env.production` (beta.ixwiki.com, root); the production scripts fall back to `/projects/ixstates` only when it is unset |
 | `ENABLE_COMPRESSION` | Read by `src/proxy.ts` |
 | `CLERK_SECRET_KEY` | Clerk backend secret (**required in production**) |
 | `CRON_SECRET` | Bearer token for the `/api/cron/*` HTTP triggers (**required in production**, ≥32 chars) |
@@ -177,7 +193,7 @@ RATE_LIMIT_ENABLED=false
 | `NEXT_PUBLIC_IXTIME_BOT_URL` | Browser-accessible IxTime endpoint |
 | `NEXT_PUBLIC_MEDIAWIKI_URL` | The wiki's public origin (default `https://ixwiki.com`); every link, image URL and sitemap entry WikiOS builds for it comes from `src/lib/wiki-os/config.ts` |
 | `NEXT_PUBLIC_ENABLE_WEBSOCKET`, `NEXT_PUBLIC_WS_PORT` | ThinkPages WebSocket client configuration |
-| `NEXT_PUBLIC_IXWORLD_STANDALONE` | `"true"` for the IxWorld standalone build (empty base path) |
+| `NEXT_PUBLIC_IXWORLD_STANDALONE` | `"true"` only for a manual IxWorld standalone build (`scripts/deploy-ixworld.sh`); the normal deploy never sets it |
 
 ### Environment Files
 

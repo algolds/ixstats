@@ -1,5 +1,5 @@
 /**
- * The realm board's live wire (docs/superpowers/specs/2026-10-10-thinkpages-realm-board-design.md, section 2): the
+ * The realm board's live wire (docs/history/specs/2026-10-10-thinkpages-realm-board-design.md, section 2): the
  * room, the events the Socket.IO server sends to a board's readers, and the pure list merge the client applies to
  * its cached messages. Pure, so the server, the bridge and the client read one definition.
  *

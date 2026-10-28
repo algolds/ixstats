@@ -11,7 +11,7 @@
 ## Brand Architecture
 
 ```
-IxStates (platform/ecosystem)         ← versioned: 1.4.0 "Lobster Crosby" (Major.Minor.Patch + epoch + channel)
+IxStates (platform/ecosystem)         ← versioned: public 1.0.0 "Lobster Crosby" Stable (internal 1.5.0; Major.Minor.Patch + epoch + channel)
 ├── dev codename: IxStats
 
 ├── Apps (own brand, ship/break independently — single integer)
@@ -64,8 +64,8 @@ IxStates (platform/ecosystem)         ← versioned: 1.4.0 "Lobster Crosby" (Maj
 | **Name**             | IxStates™ (platform/ecosystem)                                           |
 | **Dev codename**     | IxStats (repo, package, database)                                        |
 | **Project name**     | `ixstates` (`package.json`, Prisma schema headers)                       |
-| **Version**          | `APP_VERSION` (from registry) — platform **1.4.0 "Lobster Crosby"**, channel Release Candidate |
-| **Homepage**         | `https://ixwiki.com/projects/ixstats`                                    |
+| **Version**          | `APP_VERSION` (from the public registry `VERSIONS`) — platform **1.0.0 "Lobster Crosby"**, channel Stable (internal 1.5.0; see [revision.md](revision.md)) |
+| **Homepage**         | `https://beta.ixwiki.com` (the old `ixwiki.com/projects/ixstat(e)s` URLs redirect there) |
 | **Meta title**       | `IxStats — Nations, economy, lore`                                       |
 | **Meta description** | `Build your country from the ground up...`                               |
 
@@ -112,7 +112,7 @@ Integrated apps with their own distinct brand identity that ship and break indep
 | **Version**      | `IXWORLD_VERSION` (from registry — single capability integer)                                                                                  |
 | **Nav icon**     | Compass (Lucide)                                                                                                                               |
 | **Accent hex**   | `#06b6d4` (cyan-500)                                                                                                                           |
-| **Standalone**   | IxWorld — `maps.ixwiki.com` (port 3002/3003, `NEXT_PUBLIC_IXWORLD_STANDALONE`)                                                                 |
+| **Standalone**   | `maps.ixwiki.com` — nginx serves the main app's `/maps` there (port 3550); no separate build. `NEXT_PUBLIC_IXWORLD_STANDALONE` is only for a manual standalone build |
 | **Prisma**       | `maps.prisma` (WorldPreset, WorldPresetVersion, Realm, CountrySovereignty, TransportRoute, TransportHub, StoryPin, ElevationZone, City, PointOfInterest, etc.) |
 | **Key files**    | `src/app/maps/`, `src/components/maps/{core,editor,overlays,pipeline,shared,widgets}/`, `src/lib/maps/`                                                     |
 | **Map overlays** | Choropleth, Geopolitical, RiskHeatmap, TradeRoute, Transport                                                                                   |

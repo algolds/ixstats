@@ -1,6 +1,6 @@
 /** @jest-environment node */
 /**
- * The WikiOS takeover kit (docs/operations/wikios-v1-cutover.md): the verifier's verdict rules, which must never pass a
+ * The WikiOS takeover kit (docs/history/operations/wikios-v1-cutover.md): the verifier's verdict rules, which must never pass a
  * broken takeover, its checklist of takeover paths, and the nginx file, which routes every /images prefix the app
  * allows and leaves MediaWiki's own /images/ alone.
  *

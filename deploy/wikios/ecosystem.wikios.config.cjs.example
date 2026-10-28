@@ -10,7 +10,11 @@
  * Runtime secrets (DATABASE_URL, Clerk keys, WIKI_SYNC_WEBHOOK_SECRET, WIKIOS_MEDIAWIKI_BOT_*,
  * ...) are NOT listed here. Next.js loads /ixwiki/public/wikios/.env.production.local at startup:
  * copy or symlink the IxStats production env file there, then add the WikiOS-specific values
- * documented in docs/operations/wikios-v1-cutover.md.
+ * documented in docs/history/operations/wikios-v1-cutover.md.
+ *
+ * DEFERRED: this belongs to the ixwiki.com takeover, which the owner deferred (2026-10-24); WikiOS v1 runs inside
+ * IxStates instead (docs/systems/wikios/operations.md). IxStates' base path is now "" (https://beta.ixwiki.com, since
+ * 2026-10-27), not /projects/ixstates, so NEXT_PUBLIC_IXSTATES_URL would be https://beta.ixwiki.com.
  *
  * The start command is the one `scripts/deploy-ixworld.sh` relies on: the `output: "standalone"`
  * bundle that deploy-wikios.sh rsyncs into `cwd` ships its own `server.js`.

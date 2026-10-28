@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-10-21
 
-**Route:** `/thinkpages/*` (forum home `/thinkpages`) | **Legacy:** none (`/forum/*` is a 404) | **Status:** Release Candidate
+**Route:** `/thinkpages/*` (forum home `/thinkpages`) | **Legacy:** none (`/forum/*` is a 404) | **Status:** Live, shipped in platform 1.5.0 (internal; public 1.0 Stable)
 
 The community forum is native to IxStates: sitewide boards plus a section for every realm, with reports, moderation and the posts imported from the old XenForo forum (forum.ixwiki.com). The XenForo bridge ("IxForum", the `/forum` app with its own tint, which proxied XenForo's REST API) was retired in ThinkPages forum phase 4b.
 

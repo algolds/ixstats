@@ -22,7 +22,7 @@ The in-app help center at `/help` holds plain, task-oriented player guides. Arti
 
 ## Sections
 
-**Coverage (5 October 2026):** 68 articles in 13 folders, all registered, in 11 hub sections. An article's folder does not have to match its section (for example `gameplay/national-issues` is listed under MyCountry).
+**Coverage (27 October 2026):** 69 articles in 13 folders, all registered, in 11 hub sections. An article's folder does not have to match its section (for example `gameplay/national-issues` is listed under MyCountry).
 
 | Hub section | Articles | Key system guide |
 | :--- | :--- | :--- |
@@ -30,10 +30,10 @@ The in-app help center at `/help` holds plain, task-oriented player guides. Arti
 | **MyCountry** | mycountry/overview, mycountry/executive, gameplay/national-issues, mycountry/economy, mycountry/politics, mycountry/intelligence, mycountry/editor, mycountry/map-editor, mycountry/canvas-editor | [mycountry.md](./mycountry.md), [elections.md](./elections.md), [WIKIOS.md](./wikios/WIKIOS.md) (Canvas editor) |
 | **Economy & Government** | economy/{tiers, calculations, tax-system, trade, modeling}, government/{atomic, components, synergy, traditional} | [economy.md](./economy.md), [calculations.md](./calculations.md) |
 | **Diplomacy** | mycountry/diplomacy, diplomacy/{embassies, cultural, scenarios, npc-personalities} | [diplomacy.md](./diplomacy.md), [npc-ai.md](./npc-ai.md) |
-| **Defense** | mycountry/defense, defense/{equipment, stability} | [defense.md](./defense.md) |
+| **Defense** | mycountry/defense, defense/{equipment, forces, stability} | [defense.md](./defense.md) |
 | **The World** | world/{maps, realms, countries, explore}, gameplay/{simulation, world-events} | [maps.md](./maps.md), [realms.md](./realms.md), [explore-and-country-profiles.md](./explore-and-country-profiles.md), [crisis-events.md](./crisis-events.md) |
 | **Wiki & Lore** | wiki/{wikios, lorewards, stash} | [WIKIOS.md](./wikios/WIKIOS.md), [stash.md](./stash.md), [ixnayid-passport.md](./ixnayid-passport.md) (Lorewards on the passport) |
-| **Vault, Cards & Rewards** | vault/{overview, ixcredits, card-packs, shop-items, trading, lore-cards, ns-import}, gameplay/{achievements, ribbons, leaderboards} | [ixcredits.md](./ixcredits.md), [cards.md](./cards.md), [myvault.md](./myvault.md), [achievements.md](./achievements.md), [ixnayid-passport.md](./ixnayid-passport.md) (showcase) |
+| **Vault, Cards & Rewards** | vault/{overview, ixcredits, card-packs, crafting, shop-items, trading, lore-cards, ns-import}, gameplay/{achievements, ribbons, leaderboards} | [ixcredits.md](./ixcredits.md), [cards.md](./cards.md), [myvault.md](./myvault.md), [achievements.md](./achievements.md), [ixnayid-passport.md](./ixnayid-passport.md) (showcase) |
 | **Community** | social/{thinkpages, activity-feed, thinkshare, thinktanks, forum, blurbs} | [social.md](./social.md), [thinktanks.md](./thinktanks.md), [forum.md](./forum.md) |
 | **Labs** | labs/{overview, myleague-myclub, onoma, vexel} | [myleague.md](./myleague.md), [onoma-roadmap.md](./onoma-roadmap.md), [vexel.md](./vexel.md) |
 | **For Admins** | admin/{cms-overview, reference-data} | [admin-cms.md](./admin-cms.md) |
@@ -62,7 +62,8 @@ To retire an article, delete the file, remove its registry entry, and fix any li
 ## Known gaps
 
 - Articles are not versioned against the code; the tests catch broken links and missing files, not stale facts.
-- A few articles document known product gaps so players aren't misled (trade tab settings not saved, crisis counts empty). The crafting article was removed when crafting was retired (2026-10-05). Remove those notes when the gaps close.
+- A few articles document known product gaps so players aren't misled (crisis counts empty). Remove those notes when the gaps close. The trade tab's tariffs now save (a recorded sector's tariff is saved when its slider is released, `TradeCommerceConsole.tsx`).
+- `vault/crafting` ("Dust, fusion and crafting") covers the live card workshop: break down for dust, fuse duplicates, craft missing cards. The older junking flow is retired.
 - `/util/lorewards` is a real page now (today's race, standings, recent winners); the player's own trophies are the Lorewards tab of `/vault/achievements`, and the Lorewards article describes both.
 
 ---

@@ -5,7 +5,7 @@
  * POST: the file is the raw request body (not multipart: no overhead, one pass), counted as it streams in and refused
  * past 10,000,000 bytes whatever Content-Length says. That is below `experimental.proxyClientMaxBodySize` (10 MiB by
  * default): Next clones the body of a request that passes through src/proxy.ts and silently truncates the clone at that
- * size, so a limit above it could not be told from a cut-off file. Raise both together (docs/operations/wikios-v1-cutover.md, step 5c;
+ * size, so a limit above it could not be told from a cut-off file. Raise both together (docs/history/operations/wikios-v1-cutover.md, step 5c;
  * the upload directory is step 4d).
  * The name and the description page's fields are in the query string (`filename`, `description`, `license`, repeated
  * `category`, `comment`, `ignorewarnings`; see lib/wiki-os/upload-api.ts for their lengths).

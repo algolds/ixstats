@@ -1,5 +1,5 @@
 /**
- * Forum reactions (docs/superpowers/specs/2026-10-10-thinkpages-forum-reactions-design.md), merged into
+ * Forum reactions (docs/history/specs/2026-10-10-thinkpages-forum-reactions-design.md), merged into
  * `thinkpagesForum`. Thin: validates, maps the signed-in user to the module's viewer, calls
  * ~/server/modules/thinkpages-forum and maps ForumError to TRPCError. A new reaction runs the owner's notice hook, and a
  * reaction on a realm board message publishes its new counts to the board's room; neither is awaited and neither can

@@ -79,7 +79,7 @@ bunx prisma db execute --schema prisma/schema --file prisma/migrations/202611041
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261105120000_wikios_conflicts/migration.sql
 # The inbound sync's dead letters (a step failing five cycles is quarantined)
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261105120001_wikios_sync_dead_letters/migration.sql
-# MyCountry fixes and realm time (docs/operations/deploy-mycountry-2026-10.md, deploy-realm-time-2026-10.md): the data
+# MyCountry fixes and realm time (docs/history/operations/deploy-mycountry-2026-10.md, deploy-realm-time-2026-10.md): the data
 # SQL in the runbooks' order. Realm time drops the legacy security tables and retypes military columns, which db push
 # refuses to do. Idempotent; the runbooks' manual run_sql steps and the starter-force reset stay as written.
 bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/h-meeting-intent-columns.sql

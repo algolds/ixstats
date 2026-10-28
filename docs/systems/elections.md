@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-09-30
 
-**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
+**Parent App Suite:** MyCountry Suite (`INTERNAL_VERSIONS.systems.mycountry` = 6, public v1)  
 **Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
 **Primary Action:** `ELECT` | **Domain Accent:** Imperial Purple / Amber Gold  
 **Route:** `/mycountry/politics` (Politics Domain) | **Status:** 🟡 Partial: the full loop works (setup → first election → seated parties → bills), but elections resolve only when the `elections` cron is enabled or the owner counts a due election (see [SYSTEM_STATUS.md](SYSTEM_STATUS.md))  

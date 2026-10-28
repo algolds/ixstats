@@ -1,5 +1,5 @@
 /**
- * The engagement procedures (docs/superpowers/specs/2026-10-10-thinkpages-forum-unread-notifications-design.md),
+ * The engagement procedures (docs/history/specs/2026-10-10-thinkpages-forum-unread-notifications-design.md),
  * merged into `thinkpagesForum`: read marks here, watch, nav counts and mention suggestions as later tasks add
  * them. Thin, as the rest of the forum router: validates, maps the signed-in user to the module's viewer and calls
  * ~/server/modules/thinkpages-forum.

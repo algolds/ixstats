@@ -23,6 +23,8 @@ IxStates (dev codename: IxStats) is an alternate-history and nation-simulation p
 
 IxStates follows an OS-inspired model (`Major.Minor.Patch` + permanent epoch **release name** + **channel**). Apps / Engines / Systems each carry a single capability integer. Full spec: [`revision.md`](../reference/revision.md); single source of truth is the **Version Registry** at [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts).
 
+The matrix below is generated from the **internal** registry (`INTERNAL_VERSIONS`). Players see the public registry (`VERSIONS`): **1.0.0 "Lobster Crosby" (Stable)**, every app and system at v1; the engines are the same in both ([revision.md](../reference/revision.md#5-public-and-internal-versions)).
+
 <!-- BEGIN_DOCS:VERSION_MATRIX -->
 | Capability Domain | Component / Layer | Version / Release | Channel / Granularity |
 | :--- | :--- | :---: | :--- |
@@ -66,7 +68,7 @@ Documentation updates must accompany feature work; use this overview and [`docs/
 ## Platform Hierarchy
 
 ```
-IxStates (platform — release: Lobster Crosby, channel: Release Candidate)
+IxStates (platform — release: Lobster Crosby, public 1.0.0 Stable; internal 1.5.0)
 ├── Apps (capability version): IxWorld, WikiOS (incl Canvas editor + Image Repository), IxVault (Cards/Credits/Packs/Lore)
 ├── Engines (sim cores): MyCountry Engine, Concord (living-world/crises/NPCs), Atlas (spatial/worldgen)
 ├── Core Systems: MyCountry (command UI), Builder (statecraft/tax), ThinkPages (knowledge/feed), Achievements, Stash, Repository, Halo, Onoma
@@ -109,7 +111,7 @@ This section inventories the primary code areas for auditing coverage, mapping d
 
 **Other routes:** `/(wiki-os)/wiki` (WikiOS), `/blurbs`, `/messages`, `/myclub` + `/myleague` (sports), `/labs/onoma`, `/labs/vexel`, `/admin/realms` (Realms admin).
 
-**IxWorld (Integrated Product):** `/maps` — world map viewer (standalone at maps.ixwiki.com).
+**IxWorld (Integrated Product):** `/maps` — world map viewer (also at maps.ixwiki.com, where nginx serves this same page from the main app).
 
 **Infrastructure:** `/help` — in-app documentation hub (`/help/[category]/[slug]`, content in `src/content/help`).
 
@@ -154,7 +156,7 @@ Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 ### Realtime Infrastructure
 
 - `server.mjs` is a custom Node `http` server that boots Next.js and attaches the ThinkPages Socket.IO server in production (disabled in development)
-- WebSocket logic: `src/server/websocket-server.ts`; `ws-backend.mjs` runs the WebSocket servers standalone (PM2 app `ixstats-ws`: `/ws/thinkpages`, `/api/market-ws`) for the IxWorld standalone build; scheduled jobs run in `cron-runner.mjs`
+- WebSocket logic: `src/server/websocket-server.ts`; `ws-backend.mjs` runs the WebSocket servers standalone (PM2 app `ixstats-ws`: `/ws/thinkpages`, `/api/market-ws`), because production serves the web app with plain `next start` (`ixstats-web`), which attaches none; scheduled jobs run in `cron-runner.mjs`
 - Client integration: intelligence dashboards, diplomatic feeds, and live notifications
 
 Keep this map aligned with real files. When adding new directories or routers, update the tables above so downstream docs and automation stay accurate.

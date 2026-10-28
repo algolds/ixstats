@@ -1,6 +1,6 @@
 # Founding and editing a nation
 
-**Last updated:** 2026-10-15 · **Spec:** [`docs/specs/2026-10-15-country-builder-editor-redesign-design.md`](../../../docs/specs/2026-10-15-country-builder-editor-redesign-design.md)
+**Last updated:** 2026-10-15 · **Spec:** [`docs/history/specs/2026-10-15-country-builder-editor-redesign-design.md`](../../../docs/history/specs/2026-10-15-country-builder-editor-redesign-design.md)
 
 `/builder` founds a nation in a few plain choices. Changing a nation afterwards happens in the country editor at
 `/mycountry/editor`, one section at a time. Budget, departments, taxes, sectors and jobs are never asked for: founding

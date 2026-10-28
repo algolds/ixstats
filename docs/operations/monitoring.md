@@ -1,11 +1,11 @@
 # Monitoring & Observability
 
-**Last updated:** 2026-10-21
+**Last updated:** 2026-10-27
 
 Monitoring combines server logs, Discord webhooks, audit scripts, and compliance tooling to keep IxStats healthy.
 
 ## Runtime Monitoring
-- **Health endpoints** – `GET /api/health` (under the base path) checks the database and heap usage and returns 200 `ok` or 503 `degraded`. It also reports `cron` (per job: `lastRunAt`, `lastStatus`, `lastSuccessAt`, from `CronRun` rows) and `redis` (`ok`, `not ready`, or `disabled`, flagged as required in production); neither marks the app degraded; `ws-backend.mjs` (PM2 `ixstats-ws`) answers `GET /healthz` on port 3551. `bun run diagnostics:health` / `bun run diagnostics:prod` run the shell diagnostics in `scripts/diagnostics/`.
+- **Health endpoints** – `GET /api/health` (under the base path, empty in production: `curl -s http://127.0.0.1:3550/api/health`) checks the database and heap usage and returns 200 `ok` or 503 `degraded`. It also reports `cron` (per job: `lastRunAt`, `lastStatus`, `lastSuccessAt`, from `CronRun` rows) and `redis` (`ok`, `not ready`, or `disabled`, flagged as required in production); neither marks the app degraded; `ws-backend.mjs` (PM2 `ixstats-ws`) answers `GET /healthz` on port 3551. `bun run diagnostics:health` / `bun run diagnostics:prod` run the shell diagnostics in `scripts/diagnostics/`.
 - **Error Logger** – `ErrorLogger` (`~/lib/logging/error-logger`) logs tRPC errors in production and posts `ERROR`-level entries to Discord when `DISCORD_WEBHOOK_ENABLED=true` and `DISCORD_WEBHOOK_URL` is set (production only).
 - **User Activity Logging** – `userLoggingMiddleware` (`~/lib/logging/user-middleware`) records API usage on the base tRPC procedures. There is no user-facing telemetry opt-out: the `hideStratcommIntel` and `hideDiplomaticOps` country flags still exist in the schema and in the admin country panel, but their Settings toggles were removed in the August 2026 settings refactor and no logging, directory or search code reads them.
 - **Audit log** – `auditLogMiddleware` writes `[SECURITY_AUDIT]` entries (and `AuditLog` rows) for failed or high-sensitivity admin calls.
@@ -30,6 +30,21 @@ Monitoring combines server logs, Discord webhooks, audit scripts, and compliance
 - **Logs:** each run logs a `[Cron]` line with its duration and summary (`pm2 logs ixstats-cron`); `bun run cron:check`
   import-checks every job.
 
+## WikiOS
+
+WikiOS v1 runs inside the web app; its live topology, levers and rollback lines are in
+[WikiOS operations](../systems/wikios/operations.md#monitoring). The checks to know:
+
+- **Render engine** – MediaWiki on `127.0.0.1:8081` (`/etc/nginx/conf.d/wikios-render-internal.conf`):
+  `ss -ltnp | grep ':8081'` shows the loopback address only, and an `action=parse` call to `api.php` renders.
+- **Save webhook** – `pm2 logs ixstats-web --lines 500 --nostream | grep 'wiki/sync-webhook'`: 401 means MediaWiki's
+  `WIKIOS_WEBHOOK_SECRET` and IxStates' `WIKI_SYNC_WEBHOOK_SECRET` differ, 503 means IxStates has none.
+- **Mirror outbox, conflicts, quarantine** – `/admin/wikios-settings` (MediaWiki Mirror Outbox, Inbound sync quarantine,
+  Conflict log).
+- **Wiki cron jobs** – `wiki-recentchanges`, `wiki-mirror`, `wiki-render-stale` and `forum-render-stale`: their
+  `cron.<job>.lastStatus` in `/api/health`, and
+  `pm2 logs ixstats-cron --lines 500 --nostream | grep -iE 'wiki-(mirror|render-stale|recentchanges)'`.
+
 ## Alerts & Notifications
 - **Discord Webhooks** – Configure `DISCORD_WEBHOOK_URL` (and `DISCORD_WEBHOOK_ENABLED=true`) for production alerts: logged errors and failed cron runs
 - **In-App Notifications** – the `notifications` router (`src/server/api/routers/notifications/`) delivers in-app notifications to users
@@ -46,7 +61,7 @@ None of these run on a schedule. Mostly in `scripts/audit/`:
 - `MyCountryComplianceModal.tsx` is a player-facing MyCountry modal, not an operations tool
 
 ## Logging Strategy
-- In production the web app runs as `next start` (from `start-production.sh`, outside PM2), so its output goes to that session; `ixstats-ws` (`[WS]`), `ixstats-cron` (`[Cron]`) and `ixstats-ixtwitter` log through PM2 (`pm2 logs <name>`)
+- In production the web app runs under PM2 as `ixstats-web` (`start-production.sh` → `next start` on port 3550), so its output is in `pm2 logs ixstats-web`; `ixstats-ws` (`[WS]`), `ixstats-cron` (`[Cron]`) and `ixstats-ixtwitter` log through PM2 (`pm2 logs <name>`)
 - `server.mjs` (used by `bun run start`) writes logs prefixed with `[Server]`
 - tRPC middleware logs use `[AUTH_MIDDLEWARE]`, `[ADMIN_ACCESS_DENIED]`, `[RATE_LIMIT]`, `[SECURITY_AUDIT]` and `[TRPC]` (slow calls over 500 ms) prefixes; `TRPC_VERBOSE=true` adds more
 - Consider piping logs into a centralised system for long-term retention when moving to dedicated hosting

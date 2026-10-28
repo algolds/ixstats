@@ -59,8 +59,26 @@ Split into domain sub-routers:
 
 ---
 
+## Lore fidelity
+
+The sports lore on IxWiki, checked against the engine (from the former lore integration audit, now in
+[history](../history/systems/myleague-lore-integration.md)):
+
+- **Shipped:** the soccer loop (intervals, goals, cards, injuries, tactic shifts), Formula 1 (pace, weather, DNF, driver
+  points), the dedicated three-period hockey resolver (`resolvers/hockey.ts`: line shifts, power plays, fight majors,
+  goalie pull, 3-on-3 overtime, shootout), promotion and relegation at the season boundary (`SportLeague.tier`,
+  `parentLeagueId`, `promotionCount` / `relegationCount`, swapped in `transition.ts`), and the quadrennial WAFF World
+  Cup (`simulateWorldCup`, every fourth season: national squads drafted by nation and a SportsNews ThinkPages bulletin).
+- **Partial:** multi-stage formats. `transitionToNextStage` moves `SportSeason.activeStage` (group crossing or top-K
+  qualifiers) when `season.settings.stages` is set, but no UI or API writes `settings.stages`, and there is no
+  double-elimination format (the Caphirian League's "Golden Box").
+- **Backend only:** patron saint invocations (a StorytellerEffect modifier and derby volatility); `invokePatronSaint` is
+  wired to the admin Sports Labs panel, not to MyClub.
+
+---
+
 ## Related Documentation
 
-- [MyLeague Lore Integration & Feature Audit](./myleague-lore-integration.md)
+- [MyLeague lore integration audit (history)](../history/systems/myleague-lore-integration.md)
 - [IxCredits Virtual Currency Engine](./ixcredits.md)
 - [API Reference: Sports Router](../reference/api-complete.md)

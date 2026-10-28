@@ -1,5 +1,5 @@
 /**
- * Native lore of a country (docs/superpowers/specs/2026-10-24-native-lore-design.md): who may write it, its Lore tab
+ * Native lore of a country (docs/specs/2026-10-24-native-lore-design.md): who may write it, its Lore tab
  * pieces, the owner's curation and the lore team. Thin: validates, injects identity (lore modules do not read it) and
  * calls ~/server/modules/lore, which checks access on every write.
  */

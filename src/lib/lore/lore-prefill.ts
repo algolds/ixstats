@@ -1,5 +1,5 @@
 /**
- * The lore writer's starting text (docs/superpowers/specs/2026-10-24-native-lore-design.md, "Writing flow"): the
+ * The lore writer's starting text (docs/specs/2026-10-24-native-lore-design.md, "Writing flow"): the
  * create flow's template for the piece's type, filled from the writer's form, then the country's lore category and
  * its own category. Field values go in raw: `generateWikitext` escapes them. Pure.
  */

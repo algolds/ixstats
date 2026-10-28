@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-10-04
 
-**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
+**Parent App Suite:** MyCountry Suite (`INTERNAL_VERSIONS.systems.mycountry` = 6, public v1)  
 **Engine:** Concord Living-World Simulation Engine (`CONCORD_ENGINE_VERSION = 2`)  
 **Primary Action:** `ALLIED` | **Domain Accent:** Cyan Blue (`#06B6D4` / `--color-cyan-500`)  
 **Route:** `/mycountry/diplomacy` (Diplomacy Domain) | **Status:** 🟡 Partial: see [SYSTEM_STATUS.md](SYSTEM_STATUS.md); embassies, stances, cultural exchange and consent-based proposals / alliance invites (Diplomacy Inbox) work  
@@ -38,7 +38,7 @@ Defined in `prisma/schema/diplomacy.prisma`:
 - `DiplomaticRelation`: Bilateral relationship (`relationship` label, `strength` 0–100, `status`, per-side goals/stances)
 - `Embassy`: Diplomatic mission with level, budget, influence, and reputation
 - `EmbassyMission`: Mission records (cost, influence/reputation rewards) — no player-facing mission procedure is currently exposed
-- `CulturalExchange` (+ participants, artifacts, scenarios, outcomes, votes): Bilateral cultural programs
+- `CulturalExchange` (+ participants, artifacts, scenarios, outcomes, votes): Cultural programs between a host and one or several invited nations (`participantCountryIds`, up to 50, all in the host's realm and within `maxParticipants`; `diplomaticCultural` exchange creation in `cultural/exchanges/core/mutations.ts`)
 - `ForeignPolicyAction`, `BilateralTrade`, `Alliance` (+ members, actions, votes, documents)
 - `DiplomaticEvent`: Timestamped historical record of treaties, expulsions, summits, and sanctions
 
@@ -56,7 +56,7 @@ graph TD
 ```
 
 ### 1. Relation Drift & Stances (`src/lib/diplomacy/drift-cron.ts`)
-Each side can set a diplomatic goal ("stance") via `diplomaticCore.setDiplomaticGoal`; the scheduled `runDiplomaticDrift` job nudges relationship strength toward those goals. `src/lib/diplomacy/relation-bands.ts` maps raw strength to qualitative standing bands (shown on embassy cards), and `relative-development.ts` labels economic asymmetry between partners.
+Each side can set a diplomatic goal ("stance") via `diplomaticCore.setDiplomaticGoal`, also toward a partner it has only an embassy with: given `targetCountryId` and no relation yet, the first stance creates the `DiplomaticRelation` at the opening strength (`core/relations.ts`; same realm only, and an embassy is required); the scheduled `runDiplomaticDrift` job nudges relationship strength toward those goals. `src/lib/diplomacy/relation-bands.ts` maps raw strength to qualitative standing bands (shown on embassy cards), and `relative-development.ts` labels economic asymmetry between partners.
 
 ### 2. NPC Personality-Driven Auto-Response (`src/lib/diplomacy/npc-personality.ts`)
 Computes 8 core traits (Assertiveness, Cooperativeness, Economic Focus, Cultural Openness, Risk Tolerance, Ideological Rigidity, Militarism, Isolationism) mapping to 6 behavioral archetypes. Today it predicts NPC participation in cultural exchanges (`diplomaticCultural.getNPCCulturalResponses`, `src/lib/diplomacy/npc-cultural-participation.ts`). See [NPC AI](./npc-ai.md).

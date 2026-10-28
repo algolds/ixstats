@@ -5,10 +5,16 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.5 "Lobster Crosby"**, channel Release Candidate), while Apps / Engines / Systems each carry a single
+**IxStates 1.0.0 "Lobster Crosby"**, channel Stable, to players; internally 1.5.0, see
+[public and internal versions](./docs/reference/revision.md#5-public-and-internal-versions)), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
-## [Unreleased] — `rose-garden` (1.5)
+## [Unreleased]
+
+## [1.5.0] — 2026-10-27 "Lobster Crosby" (public 1.0)
+
+Shipped to production on 2026-10-26/27 (beta.ixwiki.com); players see it as **1.0.0 "Lobster Crosby" (Stable)**, the
+public numbering that restarts at 1.0 (`VERSIONS` in `src/lib/buildVersion.ts`), while the internal registry stays at 1.5.0.
 
 Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the pre-production audit fixes, 2026-10-26) is listed
 first, then the WikiOS launch hardening (2026-10-24 → 10-26), then the Cards mark and trophy art (2026-10-24), then the ThinkPages forum refresh (2026-10-17), then realm nations (2026-10-15), then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
@@ -61,7 +67,7 @@ known Next.js RCE was reachable. This block fixes what the audit found.
   archetype, diplomacy, scenario and economy-modelling tables, Territory, the transport segment and media player
   tables, activity reactions), with the MediaType enum. The deploy's db push drops the empty tables; tables with rows
   (the old c15t consent records, the elevation legend) are exported to their own dump in the window, then dropped
-  ([drop-unused-models.md](docs/operations/drop-unused-models.md)).
+  ([drop-unused-models.md](docs/history/operations/drop-unused-models.md)).
 - **Deploy** (`scripts/deploy-production.sh`; the [release guide](docs/operations/release-guide.md) has the new order).
   - Every step that can fail runs before the live build is touched. The build moves `.next` to `.next.prev` and puts
     it back if the build, IxWorld or the reload fails. No more `bun run clean`.
@@ -142,7 +148,7 @@ known Next.js RCE was reachable. This block fixes what the audit found.
 No version or capability integer moves (owner to confirm).
 
 WikiOS launches as the wiki inside IxStates, and ixwiki.com stays classic MediaWiki, public and editable
-([spec](docs/superpowers/specs/2026-10-24-wikios-launch-hardening-design.md)). The ixwiki.com takeover is deferred:
+([spec](docs/history/specs/2026-10-24-wikios-launch-hardening-design.md)). The ixwiki.com takeover is deferred:
 its MediaWiki parts apply only with `define( 'WIKIOS_TAKEOVER', true )`, which nothing in the launch sets. None of this
 is deployed; WikiOS editing launches with WikiOS v1.
 
@@ -341,7 +347,7 @@ No version or capability integer moves.
 The Vault becomes the platform's collectathon hub: achievements, cards and the IxCredits store under one app, in the
 sidebar for every signed-in player, with Lorewards shared between the Vault and WikiOS. IxCredits are now **pure
 metagame**: they reward platform activity, and a player's country plays no part in them. Design:
-[the Vault hub spec](docs/specs/2026-10-14-vault-collectathon-hub-design.md).
+[the Vault hub spec](docs/history/specs/2026-10-14-vault-collectathon-hub-design.md).
 
 - **Versions:** platform **1.4.1 → 1.5.0** (`VERSIONS.platform.minor`; the release name stays "Lobster Crosby", the channel
   Release Candidate). **IxVault 2 → 3** (`VERSIONS.apps.ixvault`) and **Achievements 2 → 3**
@@ -420,7 +426,7 @@ metagame**: they reward platform activity, and a player's country plays no part 
   `bun scripts/backfill-country-owned-since.ts --apply` (after any `audit-leader-ownership.ts` run, which sets owners
   without `ownedSince`); run `bun scripts/backfill-loreward-trophy-cards.ts --apply`; restart (the boot sync retires the
   Legacy achievements). An admin cron override saved under `cronSchedule_passiveIncome` is orphaned; re-save it under
-  `cronSchedule_vaultDividend`. The full steps are in `docs/operations/deploy-rose-garden-2026-09.md` (5a, 5d and 7).
+  `cronSchedule_vaultDividend`. The full steps are in `docs/history/operations/deploy-rose-garden-2026-09.md` (5a, 5d and 7).
 
 ### 💬 ThinkPages Becomes the IxStates Forum (2026-10-07 → 10-11)
 
@@ -516,7 +522,7 @@ No version moves in this block.
   - The infobox reader (`fetchNationPagePrefill`, also used by approved claims) follows a redirect once, so a
     nation whose link names a redirect ("Mito" → `Mitō`, "Pentium" → `Republic of Pentium`) gets its flag, leader
     and identity.
-  - Runbook (`docs/systems/realms-eurth-onboarding.md`) renumbered and corrected.
+  - Runbook (`docs/operations/realms-eurth-onboarding.md`) renumbered and corrected.
 - **Local data:** Eurth synced on the dev database (135 unclaimed nations, 115 borders, 8 alliances), founded
   9 January 2004 (Portal:Eurth), with links to eurth.org, Portal:Eurth, the NationStates region and the map.
   `Ymutz Mizlan` carries the roster page `Ymutztlaclan-Mizlanuzco`.
@@ -527,7 +533,7 @@ The Eurth community map (`a-seth-harrison/eurth-map`; art © Stijn Vogels & Colu
 Society, used with permission) now lives in the IxWorld map system and looks and behaves like IxWorld's own map.
 Everything is realm-generic: a realm's map is built from its **map pipeline config** (`Realm.settings.map.pipeline`),
 filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spec:
-`docs/specs/2026-10-07-eurth-map-port.md`; runbook for any realm: `docs/systems/realm-maps.md`.
+`docs/history/specs/2026-10-07-eurth-map-port.md`; runbook for any realm: `docs/systems/realm-maps.md`.
 
 - **IxWorld style by default:** a realm map opens on the standard vector style, centred on its land; bottom-left is
   the scale only, and the realm's credit line sits in the standard attribution block. Countries use the map's own
@@ -718,7 +724,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 - **Fresh databases get the geometry triggers:** `prisma/migrations/20261007_map_geometry_sync_triggers.sql`
   (re)creates the triggers that fill `geom_postgis` on `map_layers`, `subdivisions`, `cities` and
   `points_of_interest`, with a backfill; `db:bootstrap` applies it and the
-  [deploy runbook](./docs/operations/deploy-rose-garden-2026-09.md) runs it after the deploy script (step 5b).
+  [deploy runbook](docs/history/operations/deploy-rose-garden-2026-09.md) runs it after the deploy script (step 5b).
 - **Realm-scoped spatial SQL:** subdivision and city spatial profiles, terrain lookups (`countryGeo.sampleTerrainAt`
   takes `?realm=`) and country border lookups match the realm of what they measure, so IxWorld's climate,
   altitudes, rivers and lakes are no longer attributed to other realms.
@@ -761,9 +767,9 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   Manage tab's Claims section and approve or reject claims in that realm only (`reviewClaim`, `listClaims`); they
   can't approve their own claim. The Officers section now describes each power. No schema change (`powers` is a
   string list).
-- **Docs:** [Eurth onboarding](./docs/systems/realms-eurth-onboarding.md) §4.1–4.2 (hand Eurth to its leaders, give
+- **Docs:** [Eurth onboarding](docs/operations/realms-eurth-onboarding.md) §4.1–4.2 (hand Eurth to its leaders, give
   reviewers the Claims power), [realms.md](./docs/systems/realms.md) Governance and the
-  [region design](./docs/specs/2026-10-05-realm-regions-design.md) amendments.
+  [region design](docs/history/specs/2026-10-05-realm-regions-design.md) amendments.
 
 ### 🧭 Navigation (2026-10-06)
 
@@ -843,7 +849,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 - **Realtime:** market WebSocket events go through a Redis bridge (`src/server/market-broadcast-bridge.ts`), so bids,
   buyouts and cron completions reach every socket. `db.ts` logs when an unbounded `findMany` hits the 1,000-row cap.
 - **Docs:** a docs audit against the code and an ordered action plan
-  ([ACTION_PLAN_2026-10-05.md](docs/roadmap/ACTION_PLAN_2026-10-05.md)); the planning, status, onboarding and ops
+  ([ACTION_PLAN_2026-10-05.md](docs/history/roadmap/ACTION_PLAN_2026-10-05.md)); the planning, status, onboarding and ops
   docs follow the code.
 
 ### 🧭 Facet 4 & the Sidebar (2026-10-04 → 10-05)
@@ -859,7 +865,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   domain peeks, and the executive console is URL-driven (`?mode=executive`).
 - Docs: [Facet 4 reference](docs/reference/facet-design-system.md) ·
   [spec](docs/specs/2026-10-04-facet-4-design.md) ·
-  [sidebar spec](docs/specs/2026-10-04-facet-4-sidebar-design.md). The per-app sweep is in progress.
+  [sidebar spec](docs/history/specs/2026-10-04-facet-4-sidebar-design.md). The per-app sweep is in progress.
 
 ### 🔁 Seven Audit Loops Closed (PR #49, 2026-09-30)
 
@@ -914,7 +920,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   menus, a responsive Sheet (bottom sheet with detents on phones); full ARIA for tabs, switches and toggles.
 - **Sound:** Cuelume plays only for meaningful moments and is muted by Reduce Motion or the sound setting.
 - Docs: [Facet 3 reference](docs/reference/facet-design-system.md) · [spec](docs/history/specs/2026-09-30-facet-3-design-system.md)
-  · [audit](docs/audits/FACET_STYLE_AUDIT_2026-09-30.md). Facet version 2 → 3.
+  · [audit](docs/history/audits/FACET_STYLE_AUDIT_2026-09-30.md). Facet version 2 → 3.
 
 ### 📚 Admin Reference Catalogs Reach Players (2026-09-30)
 
@@ -945,7 +951,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 - **Realm maps**: PNG realm maps run through the Full Pipeline with colour → nation mapping; claimed nations take their
   map region; the map's IndexedDB cache is keyed by the realm the server resolved.
 - **Operations**: throttled `lastSeenAt`, the Phase 1 ownership backfill script (refuses `--apply` while owner
-  collisions remain), an admin-set nation cap, and the [Eurth onboarding runbook](docs/systems/realms-eurth-onboarding.md).
+  collisions remain), an admin-set nation cap, and the [Eurth onboarding runbook](docs/operations/realms-eurth-onboarding.md).
   Spec: [realms-framework-spec.md](docs/architecture/realms-framework-spec.md).
 
 ### 🪪 Identity: Verified Wiki Accounts & Passport (Plan 188)
@@ -3048,7 +3054,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   **Root router files in 500–700L range (Phase 6, 16 preventive targets)**
   - `governmentComponents` (694L) · `meetings` (638L, 27 procs) · `blurbs` (533L) · `studio` (513L) · `lore-cards` (675L) · `smallArmsEquipment` (658L) · `historical` (646L) · `crafting` (640L) · `achievements` (636L) · `npcPersonalities` (593L) · `polls` (578L) · `diplomatic-intelligence` (551L) · `card-analytics` (526L) · `archetypes` (520L) · `economicArchetypes` (510L) · `card-packs` (500L)
 
-  Each split is AST-generated (ts-morph) and AST-parity-verified — `orig=N new=N missing=[] extra=[] dups=[]`. After this work, **zero flat tRPC router files over 700 lines remain anywhere in `src/server/api/routers/`**. The platform now has **87 tRPC routers / 1,376 procedures**, with 52 of 87 routers organized as subdirectories (up from ~30 pre-1.0.6). See `docs/audits/AUDIT_2026-06-13.md` for the full per-wave breakdown.
+  Each split is AST-generated (ts-morph) and AST-parity-verified — `orig=N new=N missing=[] extra=[] dups=[]`. After this work, **zero flat tRPC router files over 700 lines remain anywhere in `src/server/api/routers/`**. The platform now has **87 tRPC routers / 1,376 procedures**, with 52 of 87 routers organized as subdirectories (up from ~30 pre-1.0.6). See `docs/history/audits/AUDIT_2026-06-13.md` for the full per-wave breakdown.
 
 - **Previously listed splits** (5 routers from the prior session, kept for context): `thinkpages` (55 procs), `admin` (79 procs), `sports` (44 procs), `activities` (20 procs), `security` (41 procs).
 

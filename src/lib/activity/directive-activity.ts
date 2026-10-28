@@ -1,5 +1,5 @@
 /**
- * The ActivityFeed row of a committed directive (docs/superpowers/specs/2026-10-10-thinkpages-forum-action-integration-design.md,
+ * The ActivityFeed row of a committed directive (docs/history/specs/2026-10-10-thinkpages-forum-action-integration-design.md,
  * section 1). Directives wrote no row, so they could not be attached to a forum post; this one public row is the
  * directive's identity for the forum (a completion adds nothing). It says only what the public record already says:
  * the goal, the tier and the category. Best effort: a failure logs and returns null, so a commit is never failed by its

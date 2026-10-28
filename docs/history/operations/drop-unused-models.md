@@ -1,7 +1,7 @@
 # Dropping the unused Prisma models (D9)
 
 **Last updated:** 2026-10-27
-**Status:** Applied in the schema (decision D9 in [ROADMAP.md](../roadmap/ROADMAP.md#decisions-needed), owner
+**Status:** Applied in the schema (decision D9 in [ROADMAP.md](../../roadmap/ROADMAP.md#decisions-needed), owner
 2026-10-27: "apply drop unused models"). Production drops the tables during the 1.5 deploy, in the deploy's own
 `db push`. Run the read-only check in [section 3](#3-pre-window-check-b2-read-only) first.
 
@@ -65,7 +65,7 @@ fields, so no kept table holds a foreign key into a dropped one.
 
 | Item                                                                                                                                     | Removed by                           | Production drop                                                                                                                                                               |
 | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CardTrade`, `CraftingRecipe`, `CraftingHistory`, `NSImport` (`ns_imports`), `SyncCheckpoint` (`sync_checkpoints`), `CardPack.pdsConfig` | Cards refresh Phase 1 (`25c40cb5c`)  | `prisma/migrations/20261027120001_cards_foundations_constraints/migration.sql`, run by the deploy before the push ([cards runbook](../systems/cards.md#deploy-runbook-notes)) |
+| `CardTrade`, `CraftingRecipe`, `CraftingHistory`, `NSImport` (`ns_imports`), `SyncCheckpoint` (`sync_checkpoints`), `CardPack.pdsConfig` | Cards refresh Phase 1 (`25c40cb5c`)  | `prisma/migrations/20261027120001_cards_foundations_constraints/migration.sql`, run by the deploy before the push ([cards runbook](../../systems/cards.md#deploy-runbook-notes)) |
 | `WorldTemplate` (`world_templates`), `ProceduralWorld` (`procedural_worlds`)                                                             | Atlas and World Studio (`180bb9c57`) | `prisma/migrations/20261023120000_atlas_studio/migration.sql`, run by the deploy before the push                                                                              |
 
 The `crafting` tRPC router is **not** dropped: the card workshop (dust, break down, fuse, craft) reuses that name
@@ -79,7 +79,7 @@ and is live.
 - **Read through a relation or written by nested writes:** `Permission`, `RolePermission`, `GovernmentBranch`,
   `SubBudgetCategory`, `MeetingActionItem`, `EventChain`, `EmbassyUpgrade`, `AllianceDocument`, `EconomicModel`,
   `ThinktankMessage`, `ScenarioChoice`, `PollOption`, `WorldEventCountry`. **PostGIS:** `spatial_ref_sys`.
-- **Other models that look idle** (MC-19 in the [backlog](../roadmap/backlog.md)) were not on the approved list and
+- **Other models that look idle** (MC-19 in the [backlog](../../roadmap/backlog.md)) were not on the approved list and
   stay until someone checks them the same way.
 
 ---
@@ -104,7 +104,7 @@ fail; the second query in section 3 finds those.
 
 ## 3. Pre-window check (B2, read-only)
 
-Run on production during B2 of the [release guide](release-guide.md#b2-pre-window-checks-read-only-the-old-build-still-serving),
+Run on production during B2 of the [release guide](../../operations/release-guide.md#b2-pre-window-checks-read-only-the-old-build-still-serving),
 with the old build still serving. Both queries only read.
 
 **Row counts.** `NULL` means the table does not exist on production (nothing to drop).
@@ -212,7 +212,7 @@ it fails. It writes `backups/ixstats-<UTC timestamp>.dump` and appends a line to
 commit going live, dump). That dump still holds every table above.
 
 - **Roll the whole release back:** `./scripts/deployment/rollback-deployment.sh <remote-branch> --restore
-backups/ixstats-<stamp>.dump` ([release guide, Rollback](release-guide.md#rollback)). 1.5 drops and converts data
+backups/ixstats-<stamp>.dump` ([release guide, Rollback](../../operations/release-guide.md#rollback)). 1.5 drops and converts data
   elsewhere too, so a rollback to pre-1.5 code is always a restore.
 - **Recover one dropped table without rolling back:** restore the dump into a scratch database, not production, and
   copy what you need from there:

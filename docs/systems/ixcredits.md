@@ -1,10 +1,10 @@
 # IxCredits (IxC) Virtual Currency Engine
 
 **Last updated:** 2026-10-20  
-**Status:** Release Candidate (platform 1.5.0 "Lobster Crosby")  
-**Hierarchy:** Currency & Earning Engine of **IxVault** (`IXVAULT_VERSION = 3`).
+**Status:** Live, platform 1.5.0 "Lobster Crosby" (internal; public 1.0 Stable)  
+**Hierarchy:** Currency & Earning Engine of **IxVault** (`INTERNAL_VERSIONS.apps.ixvault` = 3, public v1).
 
-IxCredits (IxC) are the universal virtual currency powering the IxStates platform economy. IxCredits are **pure metagame**: players earn IxC through platform activity (wiki edits, ThinkPages and forum posts, card activity, Lorewards, achievement unlocks and the daily reward) and spend them on card packs, marketplace trading and platform customizations. Nothing in the Vault economy reads a country, and no country action writes a ledger row; the one exception is the nation card royalty described under [Card sales](#card-sales-and-trades). Design: [the Vault hub spec](../specs/2026-10-14-vault-collectathon-hub-design.md).
+IxCredits (IxC) are the universal virtual currency powering the IxStates platform economy. IxCredits are **pure metagame**: players earn IxC through platform activity (wiki edits, ThinkPages and forum posts, card activity, Lorewards, achievement unlocks and the daily reward) and spend them on card packs, marketplace trading and platform customizations. Nothing in the Vault economy reads a country, and no country action writes a ledger row; the one exception is the nation card royalty described under [Card sales](#card-sales-and-trades). Design: [the Vault hub spec](../history/specs/2026-10-14-vault-collectathon-hub-design.md).
 
 ---
 
