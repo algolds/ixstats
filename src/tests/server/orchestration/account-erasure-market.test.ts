@@ -41,22 +41,26 @@ describe("closeMarketItems", () => {
     expect(ended).toBe(5);
     const actor = { dbId: "alice", clerkId: "system:account-erasure" };
     expect(adminCancelListing).toHaveBeenCalledWith(
-      db,
+      db as never,
       actor,
       expect.objectContaining({ listingId: "l1" })
     );
     expect(adminCancelListing).toHaveBeenCalledWith(
-      db,
+      db as never,
       actor,
       expect.objectContaining({ listingId: "l2" })
     );
     expect(adminCancelAuction).toHaveBeenCalledWith(
-      db,
+      db as never,
       actor,
       expect.objectContaining({ auctionId: "a1" })
     );
-    expect(cancelTradeOffer).toHaveBeenCalledWith(db, { user: USER, tradeId: "t-mine", now: NOW });
-    expect(rejectTradeOffer).toHaveBeenCalledWith(db, {
+    expect(cancelTradeOffer).toHaveBeenCalledWith(db as never, {
+      user: USER,
+      tradeId: "t-mine",
+      now: NOW,
+    });
+    expect(rejectTradeOffer).toHaveBeenCalledWith(db as never, {
       user: USER,
       tradeId: "t-theirs",
       now: NOW,
