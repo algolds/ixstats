@@ -65,8 +65,11 @@
     }
   }
 
-  /* Chromeless routes (Maps, the full-screen map editors): no sidebar, tab bar or Inspector gutter. */
-  [data-app-shell][data-chromeless] {
+  /* Chromeless routes (Maps, the full-screen map editors): no sidebar, tab bar or Inspector gutter.
+     The Toaster renders beside the shell, not inside it, so the :root:has() twin lets it see the
+     same zeros instead of reserving a phantom tab bar gap. */
+  [data-app-shell][data-chromeless],
+  :root:has([data-app-shell][data-chromeless]) {
     --shell-sidebar-width: 0px;
     --shell-tabbar-height: 0px;
     --shell-inspector-width: 0px;
@@ -74,8 +77,11 @@
 
   /* Only a page with an Inspector keeps the gutter; every other page runs the full content width.
      The Inspector's aside is plain server markup, so :has() reads it on first paint (no layout
-     shift), and <main>, Halo and the fixed bars all follow because they read this variable. */
-  [data-app-shell]:not(:has([data-slot="inspector"])) {
+     shift), and <main>, Halo and the fixed bars all follow because they read this variable. The
+     :root twin is for the Toaster, which renders outside the shell and would otherwise stay
+     inset from the right edge on pages with no Inspector. */
+  [data-app-shell]:not(:has([data-slot="inspector"])),
+  :root:not(:has([data-slot="inspector"])) {
     --shell-inspector-width: 0px;
   }
 }
