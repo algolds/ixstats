@@ -6,3 +6,9 @@ UPDATE "Country" SET "incomeInequalityGini" = NULL WHERE "incomeInequalityGini" 
 UPDATE "Country"
 SET "taxRevenueGDPPercent" = NULL, "governmentRevenueTotal" = NULL
 WHERE "taxRevenueGDPPercent" = 0 AND COALESCE("governmentRevenueTotal", 0) = 0;
+-- The same seed rows hold 0 for social mobility, poverty, life expectancy and literacy (MyCountry showed
+-- "Social mobility 0/100"); none can be 0 for a real nation.
+UPDATE "Country" SET "socialMobilityIndex" = NULL WHERE "socialMobilityIndex" = 0;
+UPDATE "Country" SET "povertyRate" = NULL WHERE "povertyRate" = 0;
+UPDATE "Country" SET "lifeExpectancy" = NULL WHERE "lifeExpectancy" = 0;
+UPDATE "Country" SET "literacyRate" = NULL WHERE "literacyRate" = 0;

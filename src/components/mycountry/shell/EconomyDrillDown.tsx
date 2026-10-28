@@ -1,5 +1,6 @@
 "use client";
 
+import { formatCompactCurrency } from "~/lib/utils/format-utils";
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
@@ -126,9 +127,9 @@ const TABS: Array<{ id: EconomyTab; label: string; icon: typeof TrendingUp }> = 
   { id: "trade", label: "Trade", icon: Globe2 },
 ];
 
-/** Whole dollars as billions, e.g. "$1.25B"; "—" when missing or zero. */
+/** Whole dollars in compact notation, e.g. "$1.3B", "$44.5T"; "—" when missing or zero. */
 const billions = (amount: number | null | undefined, suffix = "") =>
-  amount ? `$${(amount / 1e9).toFixed(2)}B${suffix}` : "—";
+  amount ? `${formatCompactCurrency(amount)}${suffix}` : "—";
 
 const outOf100 = (score: number | null | undefined) => (score != null ? `${score}/100` : "—");
 
