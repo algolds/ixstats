@@ -5,23 +5,25 @@
  * including foundation templates, archetypes, and initial sub-system setup.
  */
 
-import type { Country, PrismaClient } from "@prisma/client";
+import { ComponentType, type Country, type PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { rateLimitedMutationProcedure, readOnlyProcedure } from "~/server/api/trpc";
+import { forgetContextUser } from "~/server/api/trpc/context";
 import { invalidateCache, globalCache } from "~/lib/cache";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ActivityHooks } from "~/lib/activity/hooks";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 import { clockForRealm, ixnayClock } from "~/server/shared/realm-time";
 import { generateSlug } from "~/lib/utils/slug-utils";
+import { countryGovernmentComponentSchema } from "~/server/shared/country-payload-builder";
+import { isRealmImageUrl } from "~/lib/realms/realm-region";
 import {
-  countryEconomicInputsSchema,
-  countryGovernmentComponentSchema,
-  countryTaxSystemInputSchema,
-  countryGovernmentStructureInputSchema,
-  countryEconomyBuilderStateSchema,
-} from "~/server/shared/country-payload-builder";
+  GDP_PER_CAPITA_LIMITS,
+  MAX_DEFINED_COMPONENTS,
+  POPULATION_LIMITS,
+} from "~/lib/mycountry/editor-fields";
+import { MAX_COUNTRY_NAME_LENGTH, normalizeCountryName } from "~/server/shared/country-rename";
 import {
   syncNationalIdentity,
   syncDemographics,
@@ -150,13 +152,58 @@ async function ensureDefaultRole(
   }
 }
 
+/** An exact figure from the Economy step: 0 leaves it to the band, anything else stays within the editor's limits. */
+const exactFigure = (limits: { min: number; max: number }) =>
+  z.number().refine((value) => value === 0 || (value >= limits.min && value <= limits.max), {
+    message: `Use a figure between ${limits.min} and ${limits.max}.`,
+  });
+
+const imageAddress = z
+  .string()
+  .max(2000)
+  .refine(isRealmImageUrl, { message: "Use an https:// image address." })
+  .optional();
+
+/**
+ * What the founding flow sends in `economicInputs`, and nothing else: the flag, the identity text and the exact size
+ * and wealth. Total GDP is always population times GDP per capita; the old builder's explicit fiscal, labor and other
+ * figures are not taken, so a direct call cannot found a nation with figures the flow could never produce.
+ */
+const foundingEconomicInputs = z
+  .object({
+    flagUrl: imageAddress,
+    coatOfArmsUrl: imageAddress,
+    nationalIdentity: z.record(z.string(), z.string().max(400)).optional(),
+    coreIndicators: z
+      .object({
+        totalPopulation: exactFigure(POPULATION_LIMITS),
+        gdpPerCapita: exactFigure(GDP_PER_CAPITA_LIMITS),
+      })
+      .transform((core) => ({ ...core, nominalGDP: 0 }))
+      .optional(),
+  })
+  .optional();
+
+/** A founding name: the rename rules (trimmed, inner spaces collapsed, 1-100 characters, a letter or digit). */
+const foundingName = z
+  .string()
+  .max(400)
+  .transform(normalizeCountryName)
+  .pipe(
+    z
+      .string()
+      .min(1, "Enter a name.")
+      .max(MAX_COUNTRY_NAME_LENGTH)
+      .refine((name) => !!generateSlug(name), "Use at least one letter or number.")
+  );
+
 /** The founding fields createCountry and previewFounding share (nothing here needs a write). */
 const foundingFields = {
-  economicInputs: countryEconomicInputsSchema,
-  governmentComponents: z.array(countryGovernmentComponentSchema).optional(),
-  taxSystemData: countryTaxSystemInputSchema.nullish(),
-  governmentStructure: countryGovernmentStructureInputSchema.nullish(),
-  economyBuilderState: countryEconomyBuilderStateSchema.nullish(),
+  economicInputs: foundingEconomicInputs,
+  governmentComponents: z
+    .array(countryGovernmentComponentSchema.extend({ componentType: z.nativeEnum(ComponentType) }))
+    .max(MAX_DEFINED_COMPONENTS)
+    .optional(),
   archetypeId: z.string().optional(),
   /** A government form id (`src/lib/government/form-departments.ts`); sets type and departments. */
   governmentFormId: z.string().max(64).optional(),
@@ -176,7 +223,7 @@ const foundingFields = {
 };
 
 const createCountryInput = z.object({
-  name: z.string(),
+  name: foundingName,
   foundationCountry: z.string().nullable(),
   ...foundingFields,
   /** Realm to found the nation in; defaults to the realm of the nation the player acts as, else Ixnay. */
@@ -215,9 +262,6 @@ async function prepareFounding(db: PrismaClient, input: FoundingInput, budgetYea
     governmentFormId: input.governmentFormId,
     institutionNames: input.institutionNames,
     governmentComponents: input.governmentComponents,
-    taxSystemData: input.taxSystemData,
-    governmentStructure: input.governmentStructure,
-    economyBuilderState: input.economyBuilderState,
     budgetYear,
   });
   return { foundation, econ, snapshot };
@@ -249,7 +293,7 @@ export const managementCreateProcedures = {
         input.realmId
       ).catch(builderRealmError);
       const nameTaken = await ctx.db.country.findFirst({
-        where: { realmId, name: input.name },
+        where: { realmId, name: { equals: input.name, mode: "insensitive" } },
         select: { id: true },
       });
       if (nameTaken) {
@@ -285,7 +329,8 @@ export const managementCreateProcedures = {
 
       const slug = await uniqueCountrySlug(ctx.db, input.name);
       const { nationalIdentity, demographics, incomeWealth, governmentSpending, fiscalSystem } = {
-        nationalIdentity: econ.nationalIdentity ?? {},
+        // The identity's country name is the nation's name, whatever the payload says.
+        nationalIdentity: { ...econ.nationalIdentity, countryName: input.name },
         demographics: econ.demographics ?? {},
         incomeWealth: econ.incomeWealth ?? {},
         governmentSpending: econ.governmentSpending ?? {},
@@ -334,6 +379,8 @@ export const managementCreateProcedures = {
 
         await invalidateCache(["countries.getAll"]);
         await globalCache.delete(`user_profile:${userId}`);
+        // The founder's next request (the welcome page) must see the nation they now act as.
+        forgetContextUser(userId);
 
         queueAchievementCheck(userId, result.id);
         void ActivityHooks.User.onCountryLink(userId, result.id, true);
