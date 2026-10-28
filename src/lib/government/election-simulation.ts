@@ -36,18 +36,28 @@ function dHondtAllocation(
   return seats;
 }
 
-/** FPTP allocation: winner takes all (single-district). */
-function fptpAllocation(
+/**
+ * FPTP allocation over single-member districts, by the cube law: seats in proportion to votes cubed (largest
+ * remainder), so the plurality party gets FPTP's winner's bonus without a national winner-take-all.
+ */
+export function fptpAllocation(
   partyVotes: { partyId: string; votes: number }[],
   totalSeats: number
 ): Map<string, number> {
   const seats = new Map<string, number>();
-  if (partyVotes.length === 0) return seats;
-  const sorted = [...partyVotes].sort((a, b) => b.votes - a.votes);
-  const winner = sorted[0]!;
-  seats.set(winner.partyId, totalSeats);
-  for (const p of partyVotes) {
-    if (p.partyId !== winner.partyId) seats.set(p.partyId, 0);
+  const weights = partyVotes.map((p) => Math.max(0, p.votes) ** 3);
+  const weightTotal = weights.reduce((sum, w) => sum + w, 0);
+  if (partyVotes.length === 0 || weightTotal <= 0) return seats;
+  const quotas = weights.map((w) => (w / weightTotal) * totalSeats);
+  partyVotes.forEach((p, i) => seats.set(p.partyId, Math.floor(quotas[i]!)));
+  let left = totalSeats - [...seats.values()].reduce((sum, n) => sum + n, 0);
+  const byRemainder = partyVotes
+    .map((p, i) => ({ id: p.partyId, rest: quotas[i]! - Math.floor(quotas[i]!) }))
+    .sort((a, b) => b.rest - a.rest);
+  for (const { id } of byRemainder) {
+    if (left <= 0) break;
+    seats.set(id, seats.get(id)! + 1);
+    left--;
   }
   return seats;
 }
