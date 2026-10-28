@@ -81,7 +81,8 @@ async function enactForeignPolicyEffects(
       target: { select: { id: true, name: true } },
     },
   });
-  if (!action || (claimFrom && action.status !== claimFrom)) return action;
+  // Null when this call did not enact it (gone, or another accept claimed it first): only the enacting call notifies.
+  if (!action || (claimFrom && action.status !== claimFrom)) return null;
 
   const relation = await db.diplomaticRelation.findFirst({
     where: {
@@ -177,7 +178,7 @@ async function enactForeignPolicyEffects(
     }
     return true;
   });
-  if (!enacted) return db.foreignPolicyAction.findUnique({ where: { id: action.id } });
+  if (!enacted) return null;
 
   const newsType =
     action.actionType === "embargo"
