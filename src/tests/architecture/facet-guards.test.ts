@@ -177,10 +177,7 @@ const RAW_BACKDROP_ALLOWED = new Set([
   // The drill sheet's own blur (pinned to exactly one by the drill-sheet test above).
   `${path.join("components", "mycountry", "shell", "DrillSheets.tsx")}: backdrop-blur-xl`,
 ]);
-const INLINE_BACKDROP_FILES = [
-  // The progressive blur primitive is a material itself (stepped backdrop blur).
-  "components/ui/magicui/progressive-blur.tsx",
-].map((dir) => dir.split("/").join(path.sep));
+const INLINE_BACKDROP_FILES: string[] = [];
 
 /**
  * Textures in converted feature code are the sanctioned ones
