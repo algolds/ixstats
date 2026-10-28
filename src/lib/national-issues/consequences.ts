@@ -46,6 +46,9 @@ interface ResolveResult {
   error?: string;
 }
 
+/** Statuses an issue can still be answered in (dismissed, expired and resolved issues are closed). */
+const OPEN_STATUSES = ["pending", "viewed"];
+
 // CONSEQUENCE APPLICATOR
 
 export class NationalIssuesConsequences {
@@ -78,7 +81,7 @@ export class NationalIssuesConsequences {
         return result;
       }
 
-      if (issue.status === "responded" || issue.status === "auto_resolved") {
+      if (!OPEN_STATUSES.includes(issue.status)) {
         result.error = "Issue already resolved";
         return result;
       }
@@ -100,6 +103,17 @@ export class NationalIssuesConsequences {
       }
 
       result.recommendedDirective = chosenOption.recommendedDirective;
+
+      // Claim the issue before anything applies: of concurrent responses (or a response racing a delegation)
+      // exactly one moves it out of the open statuses, and only that one applies consequences.
+      const claimed = await db.nationalIssue.updateMany({
+        where: { id: issueId, status: { in: OPEN_STATUSES } },
+        data: { status: isAutoResolve ? "auto_resolved" : "responded" },
+      });
+      if (claimed.count !== 1) {
+        result.error = "Issue already resolved";
+        return result;
+      }
 
       const currentIxTime = (await clockForCountry(db, issue.countryId)).now();
 

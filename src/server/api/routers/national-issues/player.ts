@@ -452,14 +452,18 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
 
       const currentIxTime = (await clockForCountry(ctx.db, issue.countryId)).now();
 
-      await ctx.db.nationalIssue.update({
-        where: { id: input.id },
+      // Conditional, so a delegation racing a response never reopens or double-closes the issue.
+      const delegated = await ctx.db.nationalIssue.updateMany({
+        where: { id: input.id, status: { in: ["pending", "viewed"] } },
         data: {
           status: "dismissed",
           respondedAt: new Date(),
           respondedIxTime: currentIxTime,
         },
       });
+      if (delegated.count !== 1) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Issue is not active" });
+      }
 
       if (issue.intentId) {
         try {
