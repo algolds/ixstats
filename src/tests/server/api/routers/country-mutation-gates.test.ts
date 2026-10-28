@@ -519,6 +519,24 @@ describe("taxSystem and economics", () => {
           competitivenessRank: 1.5,
         }),
     ],
+    ...(
+      [
+        ["a negative export share", { exportsGDPPercent: -50 }],
+        ["a 1e308% import share", { importsGDPPercent: 1e308 }],
+        ["a complexity score below zero", { economicComplexity: -1e9 }],
+        ["a 200 KB sector breakdown", { sectorBreakdown: "x".repeat(200_000) }],
+      ] as const
+    ).map(
+      ([label, fields]) =>
+        [
+          label,
+          () =>
+            economics(createIdorContext(createMockPrisma())).updateEconomicProfile({
+              countryId: CALLER_COUNTRY,
+              ...fields,
+            }),
+        ] as const
+    ),
     // WP-B2: fiscal rates are bounded by the Fiscal policy channel ranges.
     [
       "a 50% VAT (the channel allows 30%)",
