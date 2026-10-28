@@ -13,7 +13,7 @@ import {
   Activity,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { Tooltip } from "~/components/ui/tooltip-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "~/components/ui/hover-card";
 import { Card } from "~/components/ui/card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -40,7 +40,11 @@ type TrendingSource = {
   app?: string;
 };
 
-const DEFAULT_SOURCE: TrendingSource = { icon: Activity, color: "text-yellow", label: "Live activity" };
+const DEFAULT_SOURCE: TrendingSource = {
+  icon: Activity,
+  color: "text-yellow",
+  label: "Live activity",
+};
 
 const TRENDING_SOURCE: Record<string, TrendingSource> = {
   thinkpages: { icon: Newspaper, color: "text-tint", label: "ThinkPages", app: "thinkpages" },
@@ -210,19 +214,18 @@ function TrendingRow({ item }: { item: any }) {
   );
 
   return (
-    <Tooltip
-      content={
-        wikiTitle ? (
+    <HoverCard openDelay={300}>
+      <HoverCardTrigger asChild>
+        <div className="block">{row}</div>
+      </HoverCardTrigger>
+      <HoverCardContent className="w-80">
+        {wikiTitle ? (
           <WikiPreviewContent title={wikiTitle} wiki="ixwiki" />
         ) : (
           <TrendingContextContent item={item} source={src} excerpt={excerpt} />
-        )
-      }
-      containerClassName="block"
-      showOnFocus
-    >
-      {row}
-    </Tooltip>
+        )}
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 

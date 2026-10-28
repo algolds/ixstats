@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import { AnimatePresence } from "motion/react";
 import {
@@ -12,7 +19,7 @@ import {
   Compass,
   Navigator as Navigation,
 } from "iconoir-react";
-import { Tooltip } from "~/components/ui/tooltip-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "~/components/ui/hover-card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -123,6 +130,16 @@ function ShortcutsPage() {
 
 const TERM_CLASS = "text-label-secondary cursor-help underline decoration-dotted";
 
+/** A glossary term with its explanation in a hover card. */
+function Term({ content, children }: { content: ReactNode; children: ReactElement }) {
+  return (
+    <HoverCard openDelay={300}>
+      <HoverCardTrigger asChild>{children}</HoverCardTrigger>
+      <HoverCardContent className="w-72">{content}</HoverCardContent>
+    </HoverCard>
+  );
+}
+
 const CLIMATE_SWATCHES = [
   ["bg-red", "Tropical Wet (Ar)"],
   ["bg-yellow", "Steppe (Bs)"],
@@ -149,7 +166,7 @@ function WorldNotes() {
     <div className="text-label-secondary text-footnote space-y-2 leading-relaxed">
       <div>
         The map runs on{" "}
-        <Tooltip
+        <Term
           content={
             <div className="text-footnote space-y-2">
               <p className="font-semibold">Today in Ixnay</p>
@@ -161,13 +178,15 @@ function WorldNotes() {
             </div>
           }
         >
-          <strong className={TERM_CLASS}>IxTime</strong>
-        </Tooltip>
+          <strong tabIndex={0} className={TERM_CLASS}>
+            IxTime
+          </strong>
+        </Term>
         , Ixnay&apos;s in-world clock, which {pace}.
       </div>
       <div>
         The world uses a{" "}
-        <Tooltip
+        <Term
           content={
             <div className="text-footnote space-y-2">
               <p className="font-semibold">Trewartha climate system</p>
@@ -186,13 +205,15 @@ function WorldNotes() {
             </div>
           }
         >
-          <strong className={TERM_CLASS}>Trewartha climate system</strong>
-        </Tooltip>{" "}
+          <strong tabIndex={0} className={TERM_CLASS}>
+            Trewartha climate system
+          </strong>
+        </Term>{" "}
         with 12 zones and 9 elevation bands.
       </div>
       <div>
         All lore originates from{" "}
-        <Tooltip
+        <Term
           content={
             <div className="text-footnote space-y-2">
               <p className="font-semibold">The wiki</p>
@@ -207,7 +228,7 @@ function WorldNotes() {
           <Link href={wikiReaderPath("Main Page")} className={`hover:text-label ${TERM_CLASS}`}>
             the wiki
           </Link>
-        </Tooltip>
+        </Term>
         , the canonical source of truth.
       </div>
     </div>
