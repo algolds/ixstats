@@ -159,7 +159,7 @@ function CompactViewComponent({
       >
         <div className="h-full w-full">
           <HaloContainer
-            className={`flex w-full items-center justify-center gap-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
+            className={`flex w-full items-center justify-center gap-1 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 ${
               isSticky ? "px-3 py-2" : "px-4 py-2"
             } ${isFlashing ? "animate-flash-notification" : ""}`}
           >
@@ -207,7 +207,7 @@ function CompactViewComponent({
                       }
                     }
                   }}
-                  className={`rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint flex min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 ${
+                  className={`rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint flex min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 ${
                     activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
                   }`}
                   title={`Open ${activePlugin.id} mode`}
@@ -216,7 +216,7 @@ function CompactViewComponent({
                 </div>
               ) : (
                 <div
-                  className={`flex min-w-0 flex-1 items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
+                  className={`flex min-w-0 flex-1 items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 ${
                     activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
                   }`}
                 >
@@ -273,13 +273,13 @@ function CompactViewComponent({
                               }
                             }
                           }}
-                          className="rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint flex max-w-[160px] min-w-0 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 sm:max-w-[200px]"
+                          className="rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint flex max-w-[160px] min-w-0 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 sm:max-w-[200px]"
                           title={`Open ${activePlugin.id} mode`}
                         >
                           {pluginCenter}
                         </div>
                       ) : (
-                        <div className="flex max-w-[160px] min-w-0 items-center gap-2 overflow-hidden px-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:max-w-[200px]">
+                        <div className="flex max-w-[160px] min-w-0 items-center gap-2 overflow-hidden px-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 sm:max-w-[200px]">
                           {pluginCenter}
                         </div>
                       )
@@ -326,7 +326,7 @@ function CompactViewComponent({
                         soundEffects.scan();
                         onSwitchMode("search");
                       }}
-                      className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-visible:-outline-offset-2 ${
+                      className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus-visible:-outline-offset-2 ${
                         isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                       }`}
                     >
@@ -348,7 +348,7 @@ function CompactViewComponent({
                           soundEffects.bloom();
                           onSwitchMode("notifications");
                         }}
-                        className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control relative flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-visible:-outline-offset-2 ${
+                        className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control relative flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus-visible:-outline-offset-2 ${
                           isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                         }`}
                       >
@@ -398,7 +398,7 @@ function CompactViewComponent({
                         soundEffects.bloom();
                         onSwitchMode("settings");
                       }}
-                      className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-visible:-outline-offset-2 ${
+                      className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus-visible:-outline-offset-2 ${
                         isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                       }`}
                     >
@@ -420,7 +420,7 @@ function CompactViewComponent({
                           size="sm"
                           variant="ghost"
                           onClick={action.onClick}
-                          className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control relative flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-visible:-outline-offset-2 ${
+                          className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control relative flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus-visible:-outline-offset-2 ${
                             isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                           }`}
                         >
@@ -457,7 +457,7 @@ function CompactViewComponent({
               {/* Sleek Hairline Narrator Progress Track Underneath the Icons Group */}
               {isNarratorActive && narratorActions && (
                 <div
-                  className="group/narrator-progress bg-fill-2 relative mt-0.5 flex h-[2.5px] w-full cursor-pointer items-center overflow-hidden rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:h-[3.5px]"
+                  className="group/narrator-progress bg-fill-2 relative mt-0.5 flex h-[2.5px] w-full cursor-pointer items-center overflow-hidden rounded-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] hover:h-[3.5px]"
                   onClick={(e) => {
                     e.stopPropagation();
                     const rect = e.currentTarget.getBoundingClientRect();
@@ -473,7 +473,7 @@ function CompactViewComponent({
                   title={`Narrator Progress: ${Math.round(narratorProgressPercent)}% · Click to scrub`}
                 >
                   <div
-                    className="h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150"
+                    className="h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150"
                     style={{
                       width: `${narratorProgressPercent}%`,
                       backgroundColor: narratorAccent,

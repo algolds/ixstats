@@ -93,7 +93,7 @@ function NationDefaultsEditor({ view }: { view: NationDefaultsView }) {
     onSuccess: ({ custom }) =>
       notify.success(
         "Nation defaults saved",
-        custom ? `${view.realm.name} has its own growth table.` : "Back to IxStats defaults."
+        custom ? `${view.realm.name} has its own growth table.` : "Back to IxStates defaults."
       ),
     onError: (e) => notify.error("Could not save the nation defaults", e.message),
     onSettled: () => void utils.realms.nationDefaults.get.invalidate({ realmId }),
@@ -110,9 +110,9 @@ function NationDefaultsEditor({ view }: { view: NationDefaultsView }) {
             <p className="text-label-secondary text-footnote">
               {view.custom
                 ? `${view.realm.name} uses its own table.`
-                : `${view.realm.name} follows the IxStats defaults (Ixnay's medians).`}{" "}
+                : `${view.realm.name} follows the IxStates defaults (Ixnay's medians).`}{" "}
               Nations its source sync or claims create start with the rates for their tier. GDP
-              growth is capped by the IxStats tier rule. Rates are percent a year.
+              growth is capped by the IxStates tier rule. Rates are percent a year.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -122,7 +122,7 @@ function NationDefaultsEditor({ view }: { view: NationDefaultsView }) {
               disabled={save.isPending || !view.custom}
               onClick={() => save.mutate({ realmId, table: null })}
             >
-              Reset to IxStats defaults
+              Reset to IxStates defaults
             </Button>
             <Button
               size="sm"
@@ -143,7 +143,7 @@ function NationDefaultsEditor({ view }: { view: NationDefaultsView }) {
                 </TableHead>
               ))}
               <TableHead numeric>Max GDP growth (%)</TableHead>
-              <TableHead numeric>IxStats default (%)</TableHead>
+              <TableHead numeric>IxStates default (%)</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

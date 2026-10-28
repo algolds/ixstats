@@ -281,7 +281,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                         </div>
                         <div className="bg-fill-3 relative h-2 w-full overflow-hidden rounded-full">
                           <div
-                            className="bg-poll h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
+                            className="bg-poll h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-500"
                             style={{ width: `${percentage}%` }}
                           />
                         </div>

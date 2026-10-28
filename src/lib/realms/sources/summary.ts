@@ -95,7 +95,7 @@ export function summaryLines(summary: SyncSummary): string[] {
     lines.push(
       `  alliance ${a.isNew ? "new" : "update"}: ${a.name}${a.shortName ? ` (${a.shortName})` : ""}` +
         `${a.type ? ` ${a.type}` : ""}${a.addMembers.length ? `, adds ${a.addMembers.join(", ")}` : ""}` +
-        `${a.notInSource.length ? `; in IxStats only: ${a.notInSource.join(", ")}` : ""}`
+        `${a.notInSource.length ? `; in IxStates only: ${a.notInSource.join(", ")}` : ""}`
     );
   for (const m of summary.unknownMembers)
     lines.push(`  alliance member skipped: ${m.organization} / ${m.member}: ${m.reason}`);

@@ -134,7 +134,7 @@ export function IxStatsLogo({
     </motion.div>
   );
 
-  const logoText = <h1 className={cn("text-yellow font-bold", config.text)}>IxStats™</h1>;
+  const logoText = <h1 className={cn("text-yellow font-bold", config.text)}>IxStats™</h1>; // product-name: wordmark, removed with the setup page
 
   if (variant === "with-text") {
     return (

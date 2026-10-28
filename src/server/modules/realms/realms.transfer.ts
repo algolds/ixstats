@@ -172,7 +172,7 @@ export async function adminTransferRealmOwner(
   requireTypedSlug(realm, input.confirmSlug);
   if (input.newOwnerId) {
     if (realm.id === DEFAULT_REALM_ID)
-      throw new RealmRegionError("BAD_REQUEST", "Ixnay is administered by IxStats staff");
+      throw new RealmRegionError("BAD_REQUEST", "Ixnay is administered by IxStates staff");
     await requireActiveUser(db, input.newOwnerId);
   }
   return applyTransfer(db, actor, realm, input, { via: "admin", guardBoard });

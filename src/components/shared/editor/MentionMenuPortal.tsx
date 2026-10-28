@@ -42,7 +42,7 @@ export function MentionMenuPortal({
         left: coords.left,
         zIndex: 200000,
       }}
-      className="animate-in fade-in-50 slide-in-from-top-1 dark:border-border dark:bg-popover/98 dark:text-foreground w-64 rounded-xl border border-neutral-200/80 bg-white/95 p-1.5 text-neutral-800 shadow-2xl backdrop-blur-xl duration-150 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+      className="dark:border-border dark:bg-popover/98 dark:text-foreground w-64 rounded-xl border border-neutral-200/80 bg-white/95 p-1.5 text-neutral-800 shadow-2xl backdrop-blur-xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
     >
       <div className="thin-scrollbar max-h-56 overflow-y-auto">
         {isLoading && results.length === 0 ? (
@@ -63,7 +63,7 @@ export function MentionMenuPortal({
                   }}
                   onClick={() => onSelect(idx)}
                   className={cn(
-                    "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none",
+                    "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150 select-none",
                     active
                       ? "border-l-[3px] border-blue-500 bg-blue-500/10 font-semibold text-blue-600 dark:bg-blue-500/20 dark:text-blue-300"
                       : "text-neutral-700 hover:bg-neutral-500/5 dark:text-slate-300 dark:hover:bg-white/5"

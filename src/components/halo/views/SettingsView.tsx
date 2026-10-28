@@ -1,10 +1,9 @@
 import React, { useCallback, useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { createAbsoluteUrl } from "~/lib/utils";
-import { useTheme } from "~/context/theme-context";
+import { nextTheme, useTheme } from "~/context/theme-context";
 import { SignOutButton, useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { AnimatedThemeToggler } from "~/components/ui/magicui/animated-theme-toggler";
 import { useRouter } from "next/navigation";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { cn } from "~/lib/utils";
@@ -42,10 +41,12 @@ import {
 } from "./settings/SettingsControls";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
+const NEXT_THEME_NAME = { light: "light", dark: "dark", system: "automatic" } as const;
+
 function SettingsViewComponent({ onClose }: SettingsViewProps) {
   const router = useRouter();
   const { user, isLoaded, isSignedIn } = useUser();
-  const { theme, effectiveTheme, compactMode, toggleCompactMode } = useTheme();
+  const { theme, effectiveTheme, toggleTheme, compactMode, toggleCompactMode } = useTheme();
   const { enabled: soundEnabled, setEnabled: setSoundEnabled, previewSound } = useSoundSettings();
   const { mediaThemeMode, setMediaThemeMode } = useWikiMediaTheme();
   const activePlugin = useActiveDIPlugin();
@@ -131,7 +132,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
   }
 
   return (
-    <div className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
+    <div className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300">
       <SettingsHeader
         onClose={onClose}
         isOnWikiPage={isOnWikiPage}
@@ -141,7 +142,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
       <div
         className={cn(
-          "grid gap-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+          "grid gap-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300",
           morePrefsExpanded ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
         )}
       >
@@ -151,7 +152,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
           <SectionLabel>Appearance</SectionLabel>
 
           {/* Theme */}
-          <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none">
+          <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150 select-none">
             <div className="bg-tint/15 rounded-control-sm shrink-0 p-2">
               {effectiveTheme === "dark" ? (
                 <Moon className="text-tint h-3.5 w-3.5" />
@@ -167,7 +168,14 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                 {theme === "system" ? "Auto" : theme === "dark" ? "Dark" : "Light"}
               </PreText>
             </div>
-            <AnimatedThemeToggler className="h-8 w-8" />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={toggleTheme}
+              aria-label={`Switch to ${NEXT_THEME_NAME[nextTheme(theme)]} theme`}
+            >
+              {effectiveTheme === "dark" ? <Sun /> : <Moon />}
+            </Button>
           </div>
 
           {/* Compact Mode */}
@@ -338,7 +346,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
         {/* Additive 2nd Column (Smoothly reveals alongside on More Preferences) */}
         {morePrefsExpanded && (
-          <div className="animate-in fade-in slide-in-from-right-4 border-separator min-w-0 space-y-1 border-t pt-2 duration-200 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
+          <div className="border-separator min-w-0 space-y-1 border-t pt-2 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
             <SectionLabel>Reader preferences</SectionLabel>
 
             {/* Citations */}
@@ -505,7 +513,7 @@ function SettingsRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none">
+    <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150 select-none">
       {onIconClick ? (
         <button
           type="button"

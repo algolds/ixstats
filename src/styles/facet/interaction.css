@@ -22,7 +22,7 @@
   --facet-press-scale: 0.95;
 }
 
-/* Full-width rows and large tiles. */
+/* Large pressable tiles. */
 @utility facet-press-subtle {
   --facet-press-scale: 0.99;
 }

@@ -25,7 +25,7 @@ import { Button } from "~/components/ui/button";
 // Custom node components for React Flow
 function CenterNode({ data }: { data: { label: string } }) {
   return (
-    <div className="text-label animate-in scale-in border-tint bg-tint/15 rounded-card shadow-floating flex min-w-[125px] flex-col items-center gap-0.5 border-2 px-5 py-3 text-center font-semibold duration-200 select-none">
+    <div className="text-label border-tint bg-tint/15 rounded-card shadow-floating flex min-w-[125px] flex-col items-center gap-0.5 border-2 px-5 py-3 text-center font-semibold select-none">
       <span className="text-tint text-eyebrow">Active state</span>
       <span className="text-body font-mono leading-tight">{data.label || "[Start]"}</span>
       <Handle

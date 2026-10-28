@@ -36,7 +36,7 @@ function PipelineNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "rounded-row duration-fast relative min-w-[210px] border px-4 py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+        "rounded-row duration-fast relative min-w-[210px] border px-4 py-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
         selected
           ? "border-yellow bg-yellow/10 scale-105"
           : "bg-surface border-separator hover:border-separator-opaque"

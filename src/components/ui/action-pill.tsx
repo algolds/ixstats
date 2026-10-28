@@ -68,13 +68,15 @@ export const ActionPill = React.forwardRef<HTMLButtonElement, ActionPillProps>(
         aria-pressed={pressed === undefined ? props["aria-pressed"] : isPressed}
         className={cn(
           "relative inline-flex shrink-0 cursor-pointer items-center rounded-full whitespace-nowrap select-none",
-          "facet-press facet-press-sm",
+          "duration-fast ease-out-facet transition-colors",
           focusRing,
           hitSlop,
           "disabled:cursor-not-allowed disabled:opacity-50",
           "[&_svg]:pointer-events-none [&_svg]:shrink-0",
           SIZE[size],
-          isPressed ? badgeTones[tone] : "text-label-secondary hover:bg-fill-4 hover:text-label",
+          isPressed
+            ? badgeTones[tone]
+            : "text-label-secondary hover:bg-fill-4 hover:text-label active:bg-fill-3",
           className
         )}
       >

@@ -80,7 +80,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
             return (
               <Card
                 key={broker.id}
-                className={`hover:border-separator flex flex-col justify-between border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                className={`hover:border-separator flex flex-col justify-between border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ${
                   broker.satisfied ? "border-green/25 bg-green/5" : "border-separator"
                 }`}
               >
@@ -112,7 +112,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
                     </div>
                     <div className="bg-fill-3 h-1.5 w-full overflow-hidden rounded-full">
                       <div
-                        className={`h-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
+                        className={`h-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 ${
                           broker.satisfied ? "bg-green" : "bg-yellow"
                         }`}
                         style={{ width: `${percent}%` }}

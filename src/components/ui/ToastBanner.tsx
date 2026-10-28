@@ -58,7 +58,7 @@ export function ToastBanner({ toast, onDismiss }: ToastBannerProps) {
       className={cn(
         // Floating chrome: thick material, floating shadow, one hairline tinted by status.
         "group facet-overlay text-label shadow-floating rounded-card pointer-events-auto relative flex w-full max-w-sm items-start gap-3 border p-3 text-left select-none sm:max-w-md sm:p-4",
-        "duration-fast ease-out-facet transition-[border-color,box-shadow,opacity,transform]",
+        "duration-fast ease-out-facet transition-[border-color,box-shadow,opacity,scale,translate]",
         styleConfig.edge
       )}
     >

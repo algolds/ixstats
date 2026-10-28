@@ -52,7 +52,7 @@ export function NotificationsAdmin() {
 
         <TabsContent value="rules" className="space-y-6 outline-none">
           {activeTab === "rules" && (
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-fast space-y-6">
+            <div className="space-y-6">
               <AlertRulesPanel />
               <EventsRegistryPanel />
             </div>
@@ -61,7 +61,7 @@ export function NotificationsAdmin() {
 
         <TabsContent value="log" className="outline-none">
           {activeTab === "log" && (
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-fast">
+            <div>
               <NotificationBrowser />
             </div>
           )}
@@ -69,7 +69,7 @@ export function NotificationsAdmin() {
 
         <TabsContent value="testing" className="outline-none">
           {activeTab === "testing" && (
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-fast space-y-6">
+            <div className="space-y-6">
               <NotificationComposer />
               <TestSuitePanel />
             </div>

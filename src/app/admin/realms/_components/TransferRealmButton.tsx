@@ -117,10 +117,10 @@ export function TransferRealmButton({
                   <li>
                     <button
                       type="button"
-                      onClick={() => setPicked({ clerkUserId: null, label: "IxStats staff" })}
+                      onClick={() => setPicked({ clerkUserId: null, label: "IxStates staff" })}
                       className="hover:bg-fill-3 rounded-row text-label text-body w-full p-2 text-left"
                     >
-                      IxStats staff
+                      IxStates staff
                     </button>
                   </li>
                 )}

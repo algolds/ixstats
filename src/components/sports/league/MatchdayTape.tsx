@@ -85,7 +85,7 @@ export function MatchdayTape({ matches, matchDay, onMatchClick, className }: Mat
               key={match.id}
               onClick={() => handleCardClick(match.id)}
               className={cn(
-                "group rounded-row border-separator bg-surface text-footnote shadow-card hover:border-tint/50 hover:bg-fill-4 flex min-w-[200px] shrink-0 cursor-pointer items-center justify-between border px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
+                "group rounded-row border-separator bg-surface text-footnote shadow-card hover:border-tint/50 hover:bg-fill-4 flex min-w-[200px] shrink-0 cursor-pointer items-center justify-between border px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 active:scale-[0.98]",
                 "snap-start"
               )}
             >

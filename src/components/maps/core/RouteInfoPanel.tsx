@@ -605,7 +605,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
-      className="animate-in slide-in-from-right-4 absolute top-16 right-4 z-30 w-72 duration-200"
+      className="absolute top-16 right-4 z-30 w-72"
     >
       <FacetMaterial
         layer="chrome"

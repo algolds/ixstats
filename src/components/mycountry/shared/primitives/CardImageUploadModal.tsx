@@ -283,7 +283,7 @@ export function CardImageUploadModal({
                   <div
                     key={idx}
                     className={cn(
-                      "rounded-control relative aspect-video cursor-pointer overflow-hidden border-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                      "rounded-control relative aspect-video cursor-pointer overflow-hidden border-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
                       selectedImage === imageUrl
                         ? "border-tint ring-tint/50 ring-2"
                         : "hover:border-tint/50 border-transparent"

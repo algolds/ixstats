@@ -196,7 +196,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                       key={item.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="group bg-surface border-separator hover:border-separator rounded-card shadow-card hover:shadow-card flex flex-col justify-between border p-5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
+                      className="group bg-surface border-separator hover:border-separator rounded-card shadow-card hover:shadow-card flex flex-col justify-between border p-5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200"
                     >
                       <div className="space-y-3">
                         {/* Item Category Header */}

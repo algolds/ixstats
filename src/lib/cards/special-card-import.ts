@@ -26,7 +26,7 @@ export const LEGACY_SPECIAL_CARDS: readonly LegacySpecialCard[] = [
   {
     id: "card-achievement-veteran",
     title: "Veteran",
-    description: "Commemorates one year of activity on IxStats.",
+    description: "Commemorates one year of activity on IxStates.",
     rarity: "EPIC",
     achievementKey: "gen-one-year",
   },

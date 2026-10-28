@@ -276,7 +276,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
             </div>
 
             {previewText.trim().length > 0 && (
-              <div className="border-separator animate-in fade-in mt-3 space-y-2 border-t pt-4 duration-200">
+              <div className="border-separator mt-3 space-y-2 border-t pt-4">
                 <h4 className="text-label-secondary text-subhead">
                   Interactive Grapheme Mapper (click segment to customize sound)
                 </h4>
@@ -399,7 +399,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
 
                           {/* Popover Footer (Preview & Confirm) */}
                           {selectedSound && (
-                            <div className="animate-in fade-in border-separator mt-4 flex items-center justify-between gap-2 border-t pt-2 duration-200">
+                            <div className="border-separator mt-4 flex items-center justify-between gap-2 border-t pt-2">
                               <Button
                                 variant="ghost"
                                 size="sm"

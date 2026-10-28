@@ -331,7 +331,7 @@ export function QuickGeneratorControls({
         </div>
 
         {isRenaming && (
-          <div className="border-tint/30 bg-tint/5 animate-in fade-in rounded-row flex items-center gap-2 border p-2 duration-150">
+          <div className="border-tint/30 bg-tint/5 rounded-row flex items-center gap-2 border p-2">
             <Input
               type="text"
               value={renameTitle}
@@ -366,7 +366,7 @@ export function QuickGeneratorControls({
 
         {/* Inline Create New Lexicon Form */}
         {isCreatingNew && (
-          <div className="border-tint/30 bg-tint/5 animate-in fade-in rounded-row flex items-center gap-2 border p-2 duration-150">
+          <div className="border-tint/30 bg-tint/5 rounded-row flex items-center gap-2 border p-2">
             <Input
               type="text"
               value={newDictTitle}
@@ -502,7 +502,7 @@ export function QuickGeneratorControls({
       />
 
       {showAdvanced && (
-        <div className="animate-in fade-in slide-in-from-top-1 border-separator space-y-3 border-t pt-4 duration-200">
+        <div className="border-separator space-y-3 border-t pt-4">
           <div className="space-y-2">
             <LengthFields ctx={ctx} className="grid grid-cols-2 gap-2" />
             <OptionText

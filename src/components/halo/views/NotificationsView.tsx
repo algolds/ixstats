@@ -340,7 +340,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       {/* Main Content Area */}
       <div
         className={cn(
-          "space-y-2 overflow-y-auto pr-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+          "space-y-2 overflow-y-auto pr-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300",
           isUltra ? "max-h-[540px]" : "max-h-80"
         )}
         style={{ scrollbarWidth: "thin" }}

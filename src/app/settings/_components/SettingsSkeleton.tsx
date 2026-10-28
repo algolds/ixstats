@@ -1,17 +1,9 @@
 import { Skeleton } from "~/components/ui/skeleton";
-import { Backlight } from "~/components/ui/backlight";
 
 export function SettingsSkeleton() {
   return (
     <div className="relative flex min-h-full w-full flex-1 flex-col">
-      <Backlight blur={60} className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-        <div className="relative h-full w-full">
-          <div className="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-indigo-500/5 dark:bg-indigo-500/10" />
-          <div className="absolute top-[20%] -right-[5%] h-[30%] w-[30%] rounded-full bg-blue-500/5 dark:bg-blue-500/10" />
-        </div>
-      </Backlight>
-
-      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="space-y-2">
             <Skeleton className="h-10 w-64 rounded-xl" />

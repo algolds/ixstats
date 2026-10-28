@@ -112,7 +112,7 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
         {(Object.keys(AXES) as Axis[]).map((axis) => (
           <Card
             key={axis}
-            className="focus-within:border-tint focus-within:ring-tint flex flex-1 items-center px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-within:ring-1"
+            className="focus-within:border-tint focus-within:ring-tint flex flex-1 items-center px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus-within:ring-1"
           >
             <span
               onPointerDown={(e) => handlePointerDown(axis, e)}

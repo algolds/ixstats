@@ -1,7 +1,6 @@
 import { type Metadata } from "next";
 import { PLATFORM_VERSION, RELEASE_NAME, CHANNEL, CHANNEL_CONFIG } from "~/lib/buildVersion";
-import { StatusIndicator } from "~/components/ui/status-indicator";
-import { cn } from "~/lib/utils";
+import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { ChangelogFeed, type Release } from "./_components/ChangelogFeed";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { MarkVersionSeen } from "./_components/MarkVersionSeen";
@@ -84,27 +83,32 @@ const RELEASES: Release[] = [
   },
 ];
 
+/** Release channel to badge tone: stable is settled, pre-release channels warn. */
+const CHANNEL_BADGE: Record<string, BadgeVariant> = {
+  stable: "success",
+  rc: "info",
+  beta: "info",
+  alpha: "warning",
+  developer: "secondary",
+};
+
 export default function ChangelogPage() {
   const channelTheme = CHANNEL_CONFIG[CHANNEL] ?? CHANNEL_CONFIG.Stable;
 
   return (
-    <div className="bg-background text-label relative min-h-screen">
+    <div className="text-label">
       <MarkVersionSeen />
-      <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <PageHeader
           title="What's new in IxStates"
           back={{ href: "/dashboard", label: "Dashboard" }}
           actions={
-            <StatusIndicator
-              status={channelTheme.status}
-              label={`v${PLATFORM_VERSION} · ${RELEASE_NAME} (${channelTheme.shortName})`}
-              size="sm"
-              className={cn(
-                "text-caption shadow-card border px-3 py-1 tabular-nums",
-                channelTheme.borderColor,
-                channelTheme.bgColor
-              )}
-            />
+            <Badge
+              variant={CHANNEL_BADGE[channelTheme.status] ?? "secondary"}
+              className="tabular-nums"
+            >
+              v{PLATFORM_VERSION} · {RELEASE_NAME} ({channelTheme.shortName})
+            </Badge>
           }
         />
 

@@ -318,7 +318,7 @@ function ThreadCard({
 
       {/* Expanded Details & Discussion Timeline */}
       {isExpanded && (
-        <div className="animate-in fade-in-50 border-separator space-y-3 border-t px-3 pt-1 pb-3 duration-150">
+        <div className="border-separator space-y-3 border-t px-3 pt-1 pb-3">
           {/* Discussion Comments List */}
           <div className="border-separator space-y-2 border-t pt-1">
             {paged.comments.map((comment) => {
@@ -693,7 +693,7 @@ export function MarginThreadsTab({
       {showNewThread && (
         <form
           onSubmit={handleCreateSubmit}
-          className="animate-in fade-in zoom-in-95 rounded-card border-separator bg-surface shadow-floating space-y-3 border p-4"
+          className="rounded-card border-separator bg-surface shadow-floating space-y-3 border p-4"
         >
           {/* Composer Header */}
           <div className="border-separator text-caption text-label flex items-center gap-2 border-b pb-2 font-semibold">

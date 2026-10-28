@@ -18,6 +18,7 @@ import {
   ChunkLoadErrorHandler,
 } from "~/components/ui/ChunkLoadErrorBoundary";
 import { Toaster } from "~/components/ui/toast";
+import { TooltipProvider } from "~/components/ui/tooltip";
 import { withBasePath } from "~/lib/base-path";
 import { siteMetadataBase } from "~/lib/site-metadata";
 import { headers } from "next/headers";
@@ -75,26 +76,29 @@ function AppContent({
           {/* One switch honours Reduce Motion (the OS or the in-app setting) for every `motion`
               element in the tree. */}
           <FacetMotionConfig>
-            <AbilityProvider>
-              <IxTimeProvider>
-                <ExecutiveNotificationProvider>
-                  <WikiContextProvider>
-                    <LazyGameProviders>
-                      <WebGLErrorHandler />
-                      <MapPrefetcher />
-                      <GlobalLinkTooltips />
-                      <NavigationTransitionHandler />
-                      <CuelumeSoundProvider />
-                      <AppShell beforeMain={!isStandalone && <SetupRedirect />}>
-                        {/* Media providers + MiniPlayer live in the (wiki-os) layout (narrator only). */}
-                        {children}
-                      </AppShell>
-                    </LazyGameProviders>
-                    <Toaster />
-                  </WikiContextProvider>
-                </ExecutiveNotificationProvider>
-              </IxTimeProvider>
-            </AbilityProvider>
+            {/* One tooltip provider, so neighbouring tooltips share the skip delay. */}
+            <TooltipProvider>
+              <AbilityProvider>
+                <IxTimeProvider>
+                  <ExecutiveNotificationProvider>
+                    <WikiContextProvider>
+                      <LazyGameProviders>
+                        <WebGLErrorHandler />
+                        <MapPrefetcher />
+                        <GlobalLinkTooltips />
+                        <NavigationTransitionHandler />
+                        <CuelumeSoundProvider />
+                        <AppShell beforeMain={!isStandalone && <SetupRedirect />}>
+                          {/* Media providers + MiniPlayer live in the (wiki-os) layout (narrator only). */}
+                          {children}
+                        </AppShell>
+                      </LazyGameProviders>
+                      <Toaster />
+                    </WikiContextProvider>
+                  </ExecutiveNotificationProvider>
+                </IxTimeProvider>
+              </AbilityProvider>
+            </TooltipProvider>
           </FacetMotionConfig>
         </IconoirProvider>
       </ThemeProvider>
@@ -113,7 +117,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   if (!isClerkConfigured) {
     throw new Error(
-      "Clerk keys are not configured. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (pk_*) and CLERK_SECRET_KEY (sk_*) to run IxStats."
+      "Clerk keys are not configured. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (pk_*) and CLERK_SECRET_KEY (sk_*) to run IxStates."
     );
   }
 

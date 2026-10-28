@@ -150,7 +150,7 @@ export function StickyToc({ entries, contentRef, onNavigate }: StickyTocProps) {
 
   return (
     <nav
-      className="wikios-sticky-toc transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out select-none"
+      className="wikios-sticky-toc transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 ease-out select-none"
       aria-label="Table of contents"
     >
       <div className="wikios-sticky-toc-header">

@@ -2,13 +2,16 @@
 // src/context/theme-context.tsx
 
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
-import {
-  APPEARANCE_STORAGE_KEYS,
-  applyAppearance,
-  clampTextScale,
-} from "~/lib/design/appearance";
+import { APPEARANCE_STORAGE_KEYS, applyAppearance, clampTextScale } from "~/lib/design/appearance";
 
 export type Theme = "light" | "dark" | "system";
+
+const THEME_CYCLE: Record<Theme, Theme> = { light: "dark", dark: "system", system: "light" };
+
+/** The theme `toggleTheme` moves to next. */
+export function nextTheme(theme: Theme): Theme {
+  return THEME_CYCLE[theme];
+}
 
 interface ThemeContextType {
   theme: Theme;
@@ -170,13 +173,7 @@ export function ThemeProvider({
   );
 
   const toggleTheme = useCallback(() => {
-    if (theme === "light") {
-      setTheme("dark");
-    } else if (theme === "dark") {
-      setTheme("system");
-    } else {
-      setTheme("light");
-    }
+    setTheme(nextTheme(theme));
   }, [theme, setTheme]);
 
   // Compact mode functions

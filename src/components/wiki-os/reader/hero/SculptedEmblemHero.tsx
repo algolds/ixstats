@@ -309,7 +309,7 @@ export function SculptedEmblemHero({
               <div className="flex items-center gap-1">
                 {activePrompt._count?.responses !== undefined &&
                 activePrompt._count.responses > 0 ? (
-                  <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+                  <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200">
                     <span className="tabular-nums">{activePrompt._count.responses}</span>
                     <span className="opacity-75">
                       {activePrompt._count.responses === 1 ? "response" : "responses"}
@@ -320,7 +320,7 @@ export function SculptedEmblemHero({
                     />
                   </span>
                 ) : (
-                  <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+                  <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200">
                     <span>Respond now</span>
                     <ArrowUpRight
                       aria-hidden="true"
@@ -356,7 +356,7 @@ export function SculptedEmblemHero({
                 <MessageSquare aria-hidden="true" className="text-tint h-3.5 w-3.5" /> Blurb of the
                 Week
               </span>
-              <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+              <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200">
                 <span>View prompts</span>
                 <ArrowUpRight
                   aria-hidden="true"

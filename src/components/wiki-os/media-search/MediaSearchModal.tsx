@@ -142,13 +142,13 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
           <TabsList className="border-separator grid w-full grid-cols-2 rounded-none border-b bg-transparent p-0">
             <TabsTrigger
               value="wiki-repository"
-              className="data-[state=active]:text-label text-footnote data-[state=active]:bg-fill-3 cursor-pointer rounded-none py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none data-[state=active]:shadow-none"
+              className="data-[state=active]:text-label text-footnote data-[state=active]:bg-fill-3 cursor-pointer rounded-none py-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] select-none data-[state=active]:shadow-none"
             >
               Repository
             </TabsTrigger>
             <TabsTrigger
               value="upload"
-              className="data-[state=active]:text-label text-footnote data-[state=active]:bg-fill-3 cursor-pointer rounded-none py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none data-[state=active]:shadow-none"
+              className="data-[state=active]:text-label text-footnote data-[state=active]:bg-fill-3 cursor-pointer rounded-none py-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] select-none data-[state=active]:shadow-none"
             >
               Upload
             </TabsTrigger>
@@ -195,7 +195,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
               onClick={handleSelectConfirm}
               disabled={!selectedImage || isDownloading}
               size="sm"
-              className="text-caption h-8 cursor-pointer px-4 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+              className="text-caption h-8 cursor-pointer px-4 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
             >
               {isDownloading ? (
                 <>

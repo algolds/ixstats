@@ -7,16 +7,16 @@ import { PageHeader } from "~/components/shell/PageHeader";
 import { Card } from "~/components/ui/card";
 
 export const metadata: Metadata = {
-  title: "Help Center - IxStates",
+  title: "Help · IxStates",
   description:
-    "Guides to every part of IxStats: building a nation, MyCountry, the Vault, maps, the wiki and the community.",
+    "Guides to every part of IxStates: building a nation, MyCountry, the Vault, maps, the wiki and the community.",
 };
 
 const QUICK_LINKS = [
   {
     href: "/help/getting-started/welcome",
     icon: Target,
-    title: "New to IxStats?",
+    title: "New to IxStates?",
     caption: "Start here",
   },
   {
@@ -41,12 +41,12 @@ const QUICK_LINKS = [
 
 const INTRO = (
   <>
-    Plain guides to every part of IxStats. Search below or pick a topic. New here? Start with{" "}
+    Plain guides to every part of IxStates. Search below or pick a topic. New here? Start with{" "}
     <Link
       href="/help/getting-started/welcome"
       className="text-primary font-medium underline-offset-4 hover:underline"
     >
-      Welcome to IxStats
+      Welcome to IxStates
     </Link>
     .
   </>
@@ -73,7 +73,7 @@ export default function HelpPage() {
               data-cuelume-hover="tick"
               className="group focus-visible:ring-ring rounded-xl focus-visible:ring-2 focus-visible:outline-none"
             >
-              <Card className="group-hover:border-foreground/20 flex min-h-11 items-center gap-3 rounded-xl p-4 transition-[border-color,transform] duration-150 group-active:scale-[0.99]">
+              <Card className="group-hover:border-foreground/20 flex min-h-11 items-center gap-3 rounded-xl p-4 transition-[border-color,scale,translate] duration-150 group-active:scale-[0.99]">
                 <Icon aria-hidden="true" className="text-muted-foreground h-6 w-6 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="text-foreground text-sm font-semibold">{title}</div>

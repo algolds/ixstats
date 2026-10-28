@@ -42,7 +42,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
 
   if (!hasNarratorAccess) {
     return (
-      <div className="animate-in fade-in zoom-in-95 flex w-full flex-col gap-3 p-4 duration-150 select-none">
+      <div className="flex w-full flex-col gap-3 p-4 select-none">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ShieldAlert className="text-yellow h-4 w-4" />
@@ -81,7 +81,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
       : 0;
 
   return (
-    <div className="animate-in fade-in zoom-in-95 flex w-full flex-col gap-2 p-3 duration-150 select-none">
+    <div className="flex w-full flex-col gap-2 p-3 select-none">
       {/* Top Header with Quick Action to Switch to Wiki Workspace */}
       <div className="flex items-center justify-between gap-2 px-1 pb-1">
         <div className="flex min-w-0 items-center gap-2">

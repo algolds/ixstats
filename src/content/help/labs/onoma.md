@@ -55,5 +55,5 @@ The **Help** button in Onoma's header opens guided walkthroughs of each workspac
 
 ## Good to know
 
-- Onoma is a Labs tool: it changes more often than the rest of IxStats.
+- Onoma is a Labs tool: it changes more often than the rest of IxStates.
 - Names you make aren't attached to your nation automatically. Copy them into your [Country Editor](/help/mycountry/editor), the [wiki](/help/wiki/wikios) or wherever you need them.

@@ -165,7 +165,7 @@ export default function SaveControls() {
           </div>
 
           {subjectType === "COUNTRY" && (
-            <div className="animate-in fade-in slide-in-from-left-2 flex min-w-[150px] flex-col gap-1 duration-150">
+            <div className="flex min-w-[150px] flex-col gap-1">
               <Eyebrow id="vexel-subject-country">Select country</Eyebrow>
               <OptionSelect
                 aria-labelledby="vexel-subject-country"

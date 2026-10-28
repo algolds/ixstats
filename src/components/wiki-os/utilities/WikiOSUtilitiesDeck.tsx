@@ -103,7 +103,7 @@ export function WikiOSUtilitiesDeck({
             data-cuelume-hover="tick"
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search tools or type Special:..."
-            className="border-separator bg-surface text-label placeholder:text-label-tertiary focus:border-tint/60 focus:ring-tint/30 rounded-row text-footnote w-full border py-2 pr-8 pl-9 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-2 focus:outline-none"
+            className="border-separator bg-surface text-label placeholder:text-label-tertiary focus:border-tint/60 focus:ring-tint/30 rounded-row text-footnote w-full border py-2 pr-8 pl-9 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus:ring-2 focus:outline-none"
           />
           {searchQuery ? (
             <Button

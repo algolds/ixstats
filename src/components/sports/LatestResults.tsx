@@ -257,7 +257,7 @@ export function LatestResults({
               <div
                 key={idx}
                 className={cn(
-                  "h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+                  "h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300",
                   activeIndex === idx ? "bg-tint w-4" : "bg-fill w-1.5"
                 )}
               />

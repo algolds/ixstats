@@ -169,7 +169,7 @@ export function SegmentedControl<T extends string = string>({
           : option["aria-label"],
       className: cn(
         "relative inline-flex min-w-0 cursor-pointer items-center justify-center whitespace-nowrap",
-        "facet-press facet-press-sm",
+        "transition-colors duration-fast ease-out-facet",
         "focus-visible:outline-tint outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid",
         "disabled:cursor-not-allowed disabled:opacity-50",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0",
@@ -180,7 +180,7 @@ export function SegmentedControl<T extends string = string>({
         scrollable && "shrink-0 focus-visible:-outline-offset-2",
         metrics.thumb,
         metrics.item,
-        selected ? "text-label" : "text-label-secondary hover:text-label",
+        selected ? "text-label" : "text-label-secondary hover:text-label active:text-label",
         itemClassName
       ),
     };

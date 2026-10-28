@@ -291,7 +291,7 @@ export function WikiOSHeader({
                 width={hero?.width ?? undefined}
                 height={hero?.height ?? undefined}
                 alt=""
-                className="h-full max-h-[85%] w-full max-w-[92%] object-contain object-center p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:p-5 md:p-6"
+                className="h-full max-h-[85%] w-full max-w-[92%] object-contain object-center p-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 sm:p-5 md:p-6"
                 {...heroMedia}
                 loading="eager"
                 fetchPriority="high"
@@ -305,7 +305,7 @@ export function WikiOSHeader({
               width={hero?.width ?? undefined}
               height={hero?.height ?? undefined}
               alt=""
-              className="absolute inset-0 h-full w-full object-cover object-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
+              className="absolute inset-0 h-full w-full object-cover object-center transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300"
               loading="eager"
               fetchPriority="high"
               referrerPolicy="no-referrer"

@@ -10,7 +10,7 @@ nextLabel: Onoma
 
 ## What they are
 
-[MyLeague](/myleague) and [MyClub](/myclub) are IxStats' sports simulation, part of [Labs](/help/labs/overview). **MyLeague** is the league side: competitions, schedules, standings and champions. **MyClub** is the owner side: the teams you run. Both need you to be signed in, and both are in the sidebar under **Labs** when Labs is switched on for you.
+[MyLeague](/myleague) and [MyClub](/myclub) are IxStates' sports simulation, part of [Labs](/help/labs/overview). **MyLeague** is the league side: competitions, schedules, standings and champions. **MyClub** is the owner side: the teams you run. Both need you to be signed in, and both are in the sidebar under **Labs** when Labs is switched on for you.
 
 Seven sports are available: soccer, American football, ice hockey, basketball, baseball, Formula 1 and boxing. Matches are simulated, not played live, and each result can be replayed from its stored simulation.
 

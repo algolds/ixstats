@@ -69,7 +69,7 @@ export function OnomaBrandLogo({
         onMouseEnter={() => setIsSelfHovered(true)}
         onMouseLeave={() => setIsSelfHovered(false)}
         className={cn(
-          "group/logo transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] select-none",
+          "group/logo transition-[color,background-color,border-color,box-shadow,opacity,scale,translate,rotate] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] select-none",
           SIZE_MAP.symbol[size],
           tone === "monochrome" ? "text-label fill-current" : "fill-onoma-primary", // brand artwork keeps the Onoma blue outside /labs
           isWinking && "scale-105 -rotate-2",
@@ -156,7 +156,7 @@ export function OnomaBrandLogo({
         onMouseEnter={() => setIsSelfHovered(true)}
         onMouseLeave={() => setIsSelfHovered(false)}
         className={cn(
-          "group/logo transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] select-none",
+          "group/logo transition-[color,background-color,border-color,box-shadow,opacity,scale,translate,rotate] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] select-none",
           SIZE_MAP.lockup[size],
           className
         )}
@@ -189,7 +189,7 @@ export function OnomaBrandLogo({
         <g
           id="Logo"
           className={cn(
-            "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+            "transition-[color,background-color,border-color,box-shadow,opacity,scale,translate,rotate] duration-300",
             tone === "monochrome" ? "text-label fill-current" : "fill-onoma-primary"
           )}
         >
@@ -216,7 +216,7 @@ export function OnomaBrandLogo({
   return (
     <div
       className={cn(
-        "border-separator bg-surface hover:border-tint/30 shadow-card hover:shadow-card relative flex items-center justify-center overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-105",
+        "border-separator bg-surface hover:border-tint/30 shadow-card hover:shadow-card relative flex items-center justify-center overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate,rotate] duration-300 hover:scale-105",
         SIZE_MAP["app-icon"][size],
         className
       )}

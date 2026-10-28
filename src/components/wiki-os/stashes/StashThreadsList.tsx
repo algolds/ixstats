@@ -40,11 +40,11 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
           <div
             key={item.id}
             data-app="thinkpages"
-            className="group rounded-card border-separator bg-surface hover:border-separator hover:bg-surface hover:shadow-card relative flex flex-col gap-2 overflow-hidden border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
+            className="group rounded-card border-separator bg-surface hover:border-separator hover:bg-surface hover:shadow-card relative flex flex-col gap-2 overflow-hidden border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200"
           >
             <div className="flex items-start justify-between gap-3">
               <Link href={forumUrl} className="group/title flex min-w-0 flex-1 items-center gap-2">
-                <div className="rounded-row border-tint/30 bg-tint-fill text-tint flex h-9 w-9 shrink-0 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/title:scale-105">
+                <div className="rounded-row border-tint/30 bg-tint-fill text-tint flex h-9 w-9 shrink-0 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] group-hover/title:scale-105">
                   <MessageSquare className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -70,7 +70,7 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
               <div className="flex shrink-0 items-center gap-1">
                 <Link
                   href={forumUrl}
-                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
                   title="Open forum thread"
                 >
                   <span>Open</span>

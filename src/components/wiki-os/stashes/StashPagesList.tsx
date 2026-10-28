@@ -38,14 +38,14 @@ function StashArticleThumbnail({ thumbUrl, title }: { thumbUrl?: string | null; 
 
   if (!thumbUrl || hasError) {
     return (
-      <div className="rounded-row border-separator bg-surface text-tint group-hover/title:border-tint relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden border opacity-85 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/title:opacity-100 sm:h-14 sm:w-14">
+      <div className="rounded-row border-separator bg-surface text-tint group-hover/title:border-tint relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden border opacity-85 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] group-hover/title:opacity-100 sm:h-14 sm:w-14">
         <WikiOSLogomark className="h-6 w-6" />
       </div>
     );
   }
 
   return (
-    <div className="rounded-row border-separator bg-surface group-hover/title:border-tint relative h-12 w-12 shrink-0 overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] sm:h-14 sm:w-14">
+    <div className="rounded-row border-separator bg-surface group-hover/title:border-tint relative h-12 w-12 shrink-0 overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] sm:h-14 sm:w-14">
       <img
         src={thumbUrl}
         alt={title}
@@ -71,7 +71,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
         return (
           <div
             key={item.id}
-            className="group rounded-card border-separator bg-surface hover:border-separator hover:bg-surface hover:shadow-card relative flex flex-col gap-3 overflow-hidden border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
+            className="group rounded-card border-separator bg-surface hover:border-separator hover:bg-surface hover:shadow-card relative flex flex-col gap-3 overflow-hidden border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200"
           >
             {/* Header Lockup & Title Link */}
             <div className="flex items-start justify-between gap-3">
@@ -115,7 +115,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
               <div className="flex shrink-0 items-center gap-1">
                 <Link
                   href={`/wiki/${item.pageSlug}`}
-                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
                   title="Read article"
                 >
                   <span>Read</span>

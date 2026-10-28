@@ -109,7 +109,7 @@ export function OfficersPanel({ overview }: { overview: Overview }) {
           <span className="text-label-secondary text-footnote">Founder</span>
           <span className="text-label text-body truncate">
             {founderTitle ??
-              (founder ? <StaffName person={founder} /> : "Administered by IxStats staff")}
+              (founder ? <StaffName person={founder} /> : "Administered by IxStates staff")}
           </span>
         </li>
         {officers.map((officer) => (

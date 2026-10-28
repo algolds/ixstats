@@ -10,13 +10,13 @@ nextLabel: Stash
 
 ## What Lorewards are
 
-Lorewards are the community's awards for writing on the wiki. Every day the community's Lorewards bot picks a **winner** and a **runner-up** from that day's wiki edits, and there are also weekly, monthly and yearly winners. Weekly and monthly results record a winner; runner-up places are recorded for the daily contest. Results are published on the wiki's `IxWiki:OOL` pages. IxStats records the approved results so your laurels, score and streak show across the platform. Edits you make in WikiOS count for your account straight away. Wins on the classic wiki count for you once you've claimed the old IxWiki name they were won under (see [What a place pays](#what-a-place-pays)).
+Lorewards are the community's awards for writing on the wiki. Every day the community's Lorewards bot picks a **winner** and a **runner-up** from that day's wiki edits, and there are also weekly, monthly and yearly winners. Weekly and monthly results record a winner; runner-up places are recorded for the daily contest. Results are published on the wiki's `IxWiki:OOL` pages. IxStates records the approved results so your laurels, score and streak show across the platform. Edits you make in WikiOS count for your account straight away. Wins on the classic wiki count for you once you've claimed the old IxWiki name they were won under (see [What a place pays](#what-a-place-pays)).
 
 ## Winning a Loreward
 
 1. Write on the wiki, in [WikiOS](/help/wiki/wikios) or on the classic wiki.
 2. The Lorewards bot reviews the day's edits and announces the winner and runner-up. Only approved results count.
-3. The bot sends each approved result to IxStats, so a new win usually shows as soon as it's approved. IxStats also reads the `IxWiki:OOL` pages every hour and fills in any result the bot's message missed.
+3. The bot sends each approved result to IxStates, so a new win usually shows as soon as it's approved. IxStates also reads the `IxWiki:OOL` pages every hour and fills in any result the bot's message missed.
 
 A weekly contest is filed under its week, Monday to Sunday (UTC).
 

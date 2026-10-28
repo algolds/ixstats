@@ -424,10 +424,10 @@ describe("issueWarning", () => {
     const base = { userId: "u_m", reason: "Spam", points: 1 };
     await expect(
       issueWarning(db as never, realmMod, { ...base, target: { type: "post", id: "p_imported" } })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "This post has no IxStats author." });
+    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "This post has no IxStates author." });
     await expect(
       issueWarning(db as never, admin, { ...base, target: { type: "thread", id: "t_imported" } })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "This thread has no IxStats author." });
+    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "This thread has no IxStates author." });
     expect(tx.forumWarning.create).not.toHaveBeenCalled();
   });
   it("never warns site admins or the scope's own moderators (M5), nor unknown members", async () => {
