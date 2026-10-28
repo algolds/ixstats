@@ -1,5 +1,5 @@
 /**
- * The Lore tab's chapter groups (docs/superpowers/specs/2026-10-24-native-lore-design.md, "Lore tab"): a country's
+ * The Lore tab's chapter groups (docs/specs/2026-10-24-native-lore-design.md, "Lore tab"): a country's
  * pieces by type, People, Places, Events, Organisations, then Other, with each piece's chapter anchor. Pure.
  */
 import { LORE_TYPES, type LoreType } from "./lore-types";

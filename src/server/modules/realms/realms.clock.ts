@@ -1,5 +1,5 @@
 /**
- * Realm clock actions (docs/superpowers/specs/2026-10-25-realm-time-design.md §1): the founder (or site staff)
+ * Realm clock actions (docs/specs/2026-10-25-realm-time-design.md §1): the founder (or site staff)
  * changes the speed (at most weekly, staff exempt), the era and the calendar, and jumps the date forward (at most 5
  * of the realm's years, at most weekly, staff exempt). Every realm gets its clock at founding; `startRealmClock`
  * only repairs a realm that lost it. Ixnay's clock is the bot-synced IxTime: only site staff jump it here, and its

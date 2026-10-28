@@ -44,4 +44,8 @@ main()
     console.error(e);
     process.exitCode = 1;
   })
-  .finally(() => void db.$disconnect());
+  .finally(async () => {
+    await db.$disconnect();
+    // The rate limiter's Redis connection (opened on import) keeps the event loop alive: exit explicitly.
+    process.exit(process.exitCode ?? 0);
+  });

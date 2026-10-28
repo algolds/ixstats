@@ -5,7 +5,7 @@
 **Parent Platform Layer:** Platform Runtime & Shared Substrate  
 **Subsystems:** Dynamic Reference CMS, Role-Based Access Control (RBAC), Audit Trails, System Oversight  
 **Primary Action:** `ADMINISTER` | **Domain Accent:** Crimson Slate (`#E11D48` / `--color-rose-600`)  
-**Route:** `/admin/*` | **Status:** Release Candidate (platform 1.4.0)  
+**Route:** `/admin/*` | **Status:** Live, platform 1.5.0 (internal; public 1.0 Stable)  
 
 The Admin CMS provides administrative oversight across 39 sections (plus the live dashboard) rendered by the single-page `AdminRouter` (`src/app/admin/_components/AdminRouter.tsx`), for managing dynamic game catalogs, atomic government/tax parameters, users and roles, logs, and platform health. See [`src/app/admin/README.md`](../../src/app/admin/README.md) for the full route list.
 

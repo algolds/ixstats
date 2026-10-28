@@ -9,7 +9,7 @@ The repository consolidates production deployment tooling behind a single canoni
 - **Canonical Deployment Script**: [`scripts/deploy-production.sh`](../deploy-production.sh)
 - **Local Trigger / Remote Deploy**: [`scripts/deploy-local.sh`](../deploy-local.sh)
 - **Production Start Command**: `bun run start:prod` (invokes the root `start-production.sh` → `next start` on `${PORT:-3550}`)
-- **Current release runbook**: the [release guide](../../docs/operations/release-guide.md), Part B (1.5), which links the per-area runbooks
+- **Release procedure**: the [release guide](../../docs/operations/release-guide.md), Part A; 1.5's one-off steps are history in [release-1.5-lobster-crosby.md](../../docs/history/operations/release-1.5-lobster-crosby.md)
 - **Schema step before the SQL**: [`apply-additive-schema.ts`](apply-additive-schema.ts) (`bun scripts/deployment/apply-additive-schema.ts`, dry run; `--apply` in the deploy) applies only the purely additive part of the difference between the database and `prisma/schema`; the classifier is [`additive-schema.ts`](additive-schema.ts)
 
 ## Operator Decisions & Decisions Record (2026-08-20)
@@ -19,14 +19,14 @@ The repository consolidates production deployment tooling behind a single canoni
    - Stale/duplicate entrypoints are removed: the `deploy:production` alias and the legacy `scripts/deployment/deploy-to-production.sh` (2026-10-05). There is no staging environment, so `deploy-to-staging.sh` (which pointed at the production checkout) is removed too.
 
 2. **Process Ownership Strategy**:
-   - Production service lifecycle is managed on the VPS via PM2 (`pm2 startOrReload ecosystem.config.cjs`, called from `deploy-production.sh`).
-   - Maps standalone instance is managed via `ecosystem.ixworld.config.cjs`; the standalone WebSocket backend (`ws-backend.mjs`, PM2 `ixstats-ws`) and cron runner (`cron-runner.mjs`, PM2 `ixstats-cron`) run as separate processes.
+   - Production service lifecycle is managed on the VPS via PM2 (`pm2 startOrReload ecosystem.config.cjs`, called from `deploy-production.sh`). The script `git reset --hard`s the checkout, itself included, while it runs, so a change to `deploy-production.sh` takes effect on the next deploy.
+   - There is no maps standalone instance in the normal deploy: maps.ixwiki.com is nginx in front of the main app's `/maps`, the PM2 app `ixworld` is stopped, and `ecosystem.ixworld.config.cjs` / `scripts/deploy-ixworld.sh` are for a manual standalone build only. The standalone WebSocket backend (`ws-backend.mjs`, PM2 `ixstats-ws`) and cron runner (`cron-runner.mjs`, PM2 `ixstats-cron`) run as separate processes.
    - The `ecosystem*.config.cjs` files are server-local (git-ignored). [`ecosystem.config.example.cjs`](../../ecosystem.config.example.cjs) is the tracked template (`ixstats-web`, `ixstats-cron`, `ixstats-ws`, `ixstats-ixtwitter`). With `ixstats-web` defined, PM2 supervises the web app (`start-production.sh`) and the deploy reloads it; without it, the deploy runs `start-production.sh` in the foreground. `deploy-production.sh` fails if the PM2 reload fails, and warns if the file is missing.
-   - Node process runs standalone on port 3550 with basePath `/projects/ixstates`. `next.config.js` is tracked, so the deploy's `reset --hard` puts the release's copy in place: change it in a commit, never on the server.
+   - The web app (`ixstats-web`) runs on port 3550 with an empty basePath (`BASE_PATH=""` in `.env.production`, served at https://beta.ixwiki.com); unset, the scripts fall back to `/projects/ixstates`. `next.config.js` is tracked, so the deploy's `reset --hard` puts the release's copy in place: change it in a commit, never on the server.
    - Env files: `server.mjs`, `ws-backend.mjs` and `cron-runner.mjs` load them through `load-env.mjs` in the order `.env.production.local`, `.env.local`, `.env.production`, `.env` (first file to set a key wins; real env vars always win). `start-production.sh` sources `.env.production` and then `.env.production.local`, so the secrets file wins there too.
 
 3. **Schema Migration Strategy**:
-   - Schema deployment runs through explicit, guarded operations: the additive step, the hand-written idempotent SQL files `deploy-production.sh` names, then `prisma db push` without `--accept-data-loss`. `SKIP_SCHEMA_SYNC=1` skips all three (rollbacks).
+   - Schema deployment runs through explicit, guarded operations: the additive step, the hand-written idempotent SQL files `deploy-production.sh` names, then `prisma db push` without `--accept-data-loss`. `SKIP_SCHEMA_SYNC=1` skips all three (rollbacks). When the push stops only on unique constraints, check each for duplicates, then apply it by hand with `bunx prisma db push --accept-data-loss --skip-generate` and run the deploy again ([release guide A4](../../docs/operations/release-guide.md#a4-build-and-deploy)).
    - Destructive database writes (`db:reset`, unconfirmed schema drops) are permanently blocked in scripts.
 
 4. **Prod-Clone / E2E Verification Workflow**:

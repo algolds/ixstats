@@ -1,6 +1,6 @@
 # MyCountry Design Philosophy & Community Feedback
 
-This document outlines the core structural and gameplay philosophies governing the **MyCountry** module, based on design principles and community feedback. It was written against MyCountry v3/v4; the current system is `MYCOUNTRY_VERSION = 6` / `MYCOUNTRY_ENGINE_VERSION = 4`.
+This document outlines the core structural and gameplay philosophies governing the **MyCountry** module, based on design principles and community feedback. It was written against MyCountry v3/v4; the current system is `INTERNAL_VERSIONS.systems.mycountry` = 6 (public v1) / `MYCOUNTRY_ENGINE_VERSION = 4`.
 
 > **Implementation status of the PRDs below (verified 2026-09-29):**
 >

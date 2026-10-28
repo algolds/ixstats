@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-09-29
 
-**Parent Layer:** Labs (Experimental & Incubation Studio) (`ONOMA_VERSION = 4`)  
+**Parent Layer:** Labs (Experimental & Incubation Studio) (`INTERNAL_VERSIONS.systems.onoma` = 4, public v1)  
 **Primary Action:** `SYNTHESIZE` | **Domain Accent:** Electric Azure & Deep Indigo (`#0091FF` / `#6366F1`)  
 **Route:** `/labs/onoma` | **Status:** 🧪 Labs Preview  
 

@@ -75,5 +75,5 @@ Players would select from 4 response postures:
 
 - [Economic Calculations Guide](./calculations.md)
 - [Diplomacy System Guide](./diplomacy.md)
-- [Intelligence System Guide](./intelligence.md)
+- [Intelligence (in the Defense guide)](./defense.md#intelligence)
 - [API Reference: Crisis Events](../reference/api-complete.md#defense--security)

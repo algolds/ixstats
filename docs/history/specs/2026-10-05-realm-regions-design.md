@@ -2,11 +2,11 @@
 
 **Last updated:** 2026-10-07 · **Status:** built on `rose-garden` (2026-10-05; links, rules and the in-world date
 2026-10-07); ownership transfer and the `claims` officer power added 2026-10-07 (see
-[Amendments](#amendments-2026-10-07)); see [realms.md §4](../systems/realms.md#4-realm-page-rrealm)
+[Amendments](#amendments-2026-10-07)); see [realms.md §4](../../systems/realms.md#4-realm-page-rrealm)
 
 Turns `/r/[realm]` into a NationStates-style region page. Decisions below were made by the owner on 2026-10-05; the
-current-state audit is summarised at the end. Related: [realms.md](../systems/realms.md),
-[realms-framework-spec.md](../architecture/realms-framework-spec.md).
+current-state audit is summarised at the end. Related: [realms.md](../../systems/realms.md),
+[realms-framework-spec.md](../../architecture/realms-framework-spec.md).
 
 ## Decisions
 
@@ -74,7 +74,7 @@ On phones (below 1024px) the sidebar panels stack under the main column in the o
   it in the claim's realm); an officer can't approve their own claim.
 - Procedures (rate-limited mutations): factbook and appearance update, rules, community links and in-world date
   (`updateRules`, `updateLinks`, `updateInWorldDate`; `appearance` power; `updateInWorldDate` superseded on
-  2026-10-14 by the realm clock, see [realm clocks](../superpowers/specs/2026-10-14-realm-clocks-design.md)), officer
+  2026-10-14 by the realm clock, see [realm clocks](2026-10-14-realm-clocks-design.md)), officer
   appoint/update/remove, embassy
   propose/accept/close, poll create/close/vote, board mute/ban/lift, `leaveRealm` (release own nation, confirmed),
   admin `adminTransferOwner` and founder `handOver` (both confirmed by the slug, audited), directory with

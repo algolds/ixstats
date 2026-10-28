@@ -1,5 +1,5 @@
 /**
- * Read-state primitives (docs/superpowers/specs/2026-10-10-thinkpages-forum-unread-notifications-design.md, section 2).
+ * Read-state primitives (docs/history/specs/2026-10-10-thinkpages-forum-unread-notifications-design.md, section 2).
  * The floor is thirty days back; a thread is unread when its last
  * post is newer than the later of that floor and what they read of it (`~/lib/thinkpages-forum/unread`). Lists ask for
  * a page of threads' read marks in one query, never one per thread.

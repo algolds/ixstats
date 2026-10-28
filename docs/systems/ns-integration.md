@@ -1,8 +1,8 @@
 # NationStates Integration
 
 **Last updated:** 2026-10-17  
-**Status:** Release Candidate (platform 1.4.0)  
-**Hierarchy:** Sub-system of IxCards / IxVault (`IXVAULT_VERSION = 3`).
+**Status:** Live, platform 1.5.0 (internal; public 1.0 Stable)  
+**Hierarchy:** Sub-system of IxCards / IxVault (`INTERNAL_VERSIONS.apps.ixvault` = 3, public v1).
 
 The NationStates (NS) integration allows users to import their existing NationStates card collections and synchronize NS cards into the IxStates card ecosystem. It operates in strict compliance with NationStates API rate limits, daily dump guidelines, and copyright policies.
 

@@ -2,12 +2,13 @@
 
 **Last updated:** 2026-09-30
 
-**Parent App Suite:** WikiOS (`WIKIOS_VERSION = 1`)  
-**Subsystem:** Stash (`STASH_VERSION = 1`)  
+**Parent App Suite:** WikiOS (`INTERNAL_VERSIONS.apps.wikios` = 1, public v1)  
+**Subsystem:** Stash (`INTERNAL_VERSIONS.systems.stash` = 1, public v1)  
 **Primary Action:** `STASH` | **Domain Accent:** Crimson Rose (`#f43f5e` / rose-500, see [stash-style-guide.md](stash-style-guide.md))  
-**Route:** `/stashes` | **Status:** Release Candidate (platform 1.4.0)  
+**Route:** `/stashes` | **Status:** Live, platform 1.5.0 (internal; public 1.0 Stable)  
 *(Stash is WikiOS's storage, but not WikiOS-only: forum threads (`forum/stash.ts`, `contentType: "forum_thread"`), the Onoma Name Bank (`onoma/namebank.ts`, `contentType` `name` and `dictionary`), lore cards (`lore-cards/wiki.ts`) and the media editor (`commons:`-prefixed titles) also write `StashItem` rows. The `StashItem.contentType` comment in `wiki.prisma` names the `StashContentType` values `wiki | image | forum_thread`, or a caller's own such as `name`.)*  
 *(Note: Prisma models are `Stash` / `StashItem` / `StashAnnotation`; the tables keep the legacy `lore_stash*` names)*  
+**Navigation:** Stash is a main row of the Wiki section's navigation for signed-in members (`src/lib/navigation/app-sections.ts`) and is also in the account menu; the Utilities hub (`/util`, `WikiOSUtilitiesDeck.tsx`) no longer has a Stash card.  
 
 ---
 

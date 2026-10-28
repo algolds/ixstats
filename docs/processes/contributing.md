@@ -75,7 +75,7 @@ Work flows up through three long-lived branches, always by merge pull request (n
 
 ## Release Guidance
 - Record releases in the root `CHANGELOG.md`; version numbers come from `src/lib/buildVersion.ts`
-- Run deployment checklist from `docs/operations/deployment.md`
+- Release by [Part A of the release guide](../operations/release-guide.md#part-a--every-release)
 - Retire docs for removed features to `docs/history/` (see [Archiving Documentation](#archiving-documentation))
 
 Maintainers should revise this guide when workflow expectations change or new tooling is adopted.

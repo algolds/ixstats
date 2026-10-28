@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-09-30
 
-**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
+**Parent App Suite:** MyCountry Suite (`INTERNAL_VERSIONS.systems.mycountry` = 6, public v1)  
 **Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
 **Primary Action:** `SIMULATE` | **Domain Accent:** Amber Gold (MyCountry; status colours only otherwise)  
 **Route:** `/mycountry/economy` (Economy Domain) | **Status:** 🟡 Partial: see [SYSTEM_STATUS.md](SYSTEM_STATUS.md); economy decisions largely do not reach the headline stats  

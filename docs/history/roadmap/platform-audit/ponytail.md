@@ -9,7 +9,7 @@ Read-only pass. Nothing in the repo was modified. All helper scripts and raw out
 and the outputs `symgraph-tests.tsv`, `symgraph-prod.tsv`, `uncalled2.tsv`, `procs2.tsv`, `arch.txt`, `components.json`.
 
 **Builds on, doesn't redo:** `docs/roadmap/code-audit-2026-09-30.md` (MC-18, PL-18, WK-18, SL-6, SL-7, SL-25, AT-16, §8) and
-`docs/audits/AUDIT_2026-09-23_bloat-slop.md` (plans 341–346, executed 2026-09-25). Where this audit disagrees with either, it says so.
+`docs/history/audits/AUDIT_2026-09-23_bloat-slop.md` (plans 341–346, executed 2026-09-25). Where this audit disagrees with either, it says so.
 
 ## Contents
 

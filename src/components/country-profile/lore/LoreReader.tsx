@@ -138,7 +138,7 @@ function LoreActions({
 /**
  * LoreReader — the Lore tab: the country's wiki article as WikiOS renders it (`wikios.getArticleHtml`, IxWiki's from
  * Postgres), in WikiOS's article styles, then its native lore pieces as chapters grouped by type
- * (docs/superpowers/specs/2026-10-24-native-lore-design.md). WikiOS's contents follow the section being read on wide
+ * (docs/specs/2026-10-24-native-lore-design.md). WikiOS's contents follow the section being read on wide
  * screens, with the pieces after the article's chapters. The infobox is left out (the Factbook holds the facts), and
  * so are the notices, the margin and the reader's header. Owner and co-authors write and edit pieces in the one lore
  * writer this tab mounts. Neither the article nor the pieces failing blanks the other.

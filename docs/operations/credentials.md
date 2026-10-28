@@ -1,6 +1,6 @@
 # Credential Management & Security Guide
 
-**Last updated:** 2026-09-29
+**Last updated:** 2026-10-27
 
 ## Table of Contents
 1. [Security Overview](#security-overview)
@@ -8,7 +8,7 @@
 3. [Environment Setup](#environment-setup)
 4. [Credential Rotation](#credential-rotation)
 5. [Security Best Practices](#security-best-practices)
-6. [Emergency Response](#emergency-response)
+6. [Emergency Response](#emergency-response) (including [after a host compromise](#after-a-host-compromise))
 
 ---
 
@@ -434,6 +434,43 @@ export CLERK_SECRET_KEY="sk_test_your_secret"
    - Create incident report
    - Update runbooks
    - Share lessons learned
+
+### After a host compromise
+
+If anyone else may have had a shell on the production server (root or the app user), treat **every secret on the
+box** as leaked, not only the one you know was read: env files, PM2's stored environments, PHP-FPM pools, MediaWiki
+and XenForo config, the Discord bot's `.env`, shell history and `~/.ssh` are all readable to that user. First find and
+close the way in (a clean rebuild of the host is the safe choice), and take a fresh backup while you still trust it
+enough to read. Then rotate, generating each new value on the server (`openssl rand -hex 32`) or in the provider's
+dashboard, never pasting it into chat or tickets:
+
+- [ ] **SSH:** replace every `authorized_keys` entry for root and service users with freshly generated keys; remove
+      keys nobody can vouch for; rotate any deploy or SSH keys stored on the host (and the host keys on a rebuild).
+- [ ] **Database passwords:** the Postgres superuser and app role in `DATABASE_URL`, the `ixstats_readonly` role, and
+      the MariaDB users MediaWiki and XenForo use. Update every consumer (`.env.production.local`, MediaWiki/XenForo
+      config, any tunnel users).
+- [ ] **Clerk:** roll `CLERK_SECRET_KEY` (and webhook signing secrets) in the Clerk dashboard; review its sessions and
+      admin users.
+- [ ] **Discord:** reset the bot token (`DISCORD_BOT_TOKEN`, also used by the server's DM notifier), regenerate
+      `DISCORD_WEBHOOK_URL` webhooks, and change `BOT_API_KEY` and `IXTIME_BOT_SECRET` on both the app and the bot.
+- [ ] **Cloudflare:** revoke and reissue every API token on the host (the bot-defense daemon's, DNS/ACME tokens),
+      and review the account's members and audit log.
+- [ ] **App secrets:** `CRON_SECRET`, `WIKI_SYNC_WEBHOOK_SECRET` (and the matching `WIKIOS_WEBHOOK_SECRET` in the
+      PHP-FPM pool), `WIKIOS_API_SESSION_SECRET` and any other session, signing or encryption secret in
+      `.env.production.local`. Changing a session secret signs everyone out; that is expected.
+- [ ] **WikiOS mirror:** revoke the `WikiOSMirror` bot password on classic's `Special:BotPasswords`, create a new one,
+      and update `WIKIOS_MEDIAWIKI_BOT_USER`/`WIKIOS_MEDIAWIKI_BOT_TOKEN`; same for any other bot passwords the
+      Discord bot or scripts use.
+- [ ] **MediaWiki and XenForo:** `$wgSecretKey`, `$wgUpgradeKey` and other keys in `LocalSettings.php`; XenForo's
+      config secrets and API keys; reset admin accounts' passwords and sessions on both.
+- [ ] **GitHub:** revoke personal access tokens, deploy keys and app credentials the host held; review the repository's
+      deploy keys, webhooks and recent pushes.
+- [ ] **Third-party keys** in the env files (email, push, AI or map providers, Redis password if set).
+- [ ] **Restart everything** that read the old values (`pm2 restart ecosystem.config.cjs --update-env` in the
+      checkout, `systemctl reload php8.4-fpm nginx`, the Discord bot), then check logins, the wiki webhook, the mirror,
+      cron runs (`/api/health`) and the Discord alerts.
+- [ ] **Review** crontabs (`/var/log/crontab-monitor.log`), systemd units, PM2's process list, `authorized_keys` and
+      the admin audit log for anything the intruder left, and record what was rotated and when.
 
 ### If Credentials Were Committed to Git
 

@@ -1,6 +1,6 @@
 /** @jest-environment node */
 /**
- * Realm region pages (docs/specs/2026-10-05-realm-regions-design.md): officer powers, the Manage actions'
+ * Realm region pages (docs/history/specs/2026-10-05-realm-regions-design.md): officer powers, the Manage actions'
  * permission checks, embassies, the realm poll, the retired board restrictions and leaving a realm (handing a realm over:
  * realm-ownership-transfer.test.ts).
  */
@@ -453,7 +453,7 @@ describe("deleting a realm (AT-8)", () => {
   });
 });
 /**
- * Realm community links, rules and the in-world date (docs/specs/2026-10-05-realm-regions-design.md): link
+ * Realm community links, rules and the in-world date (docs/history/specs/2026-10-05-realm-regions-design.md): link
  * validation, the in-world date's formatting and storage in `Realm.settings`, the Manage actions' `appearance`
  * gate (archived realms read-only), and what the region overview hands the page.
  */

@@ -8,7 +8,7 @@ MediaWiki usage minimized; WikiOS isolated and independent.
 
 > **Status (September 29, 2026).** Agent A / Stage 2b **shipped** (PostgreSQL-first store, `WikiRevision`,
 > recent-changes sync in `src/lib/wiki-os/services/auto-sync-service.ts`). Agent B / Stage 3 planning is
-> **done** ([`wikios-stage3-config-plan.md`](../../../systems/wikios/wikios-stage3-config-plan.md), which lives in `docs/systems/wikios/`,
+> **done** ([`wikios-stage3-config-plan.md`](wikios-stage3-config-plan.md), which lives in `docs/systems/wikios/`,
 > not `plans/`), but the cutover has **not** happened. **Workstream C (packaging) has not started**: there is
 > no `plans/wikios-workstream-c-packaging.md` in the repo, and WikiOS still depends on Clerk, IxStats Postgres,
 > and IxStats routers. The integration branch is now `rose-garden` (the `v2` references below are historical).
@@ -52,7 +52,7 @@ Two independent workstreams, dispatched as background subagents. They don't touc
 
 ### Agent B — Stage 3: render-service isolation (planning only)
 - Enumerate every MediaWiki URL/endpoint the app calls; classify headless-required vs UI-only.
-- Produce `plans/wikios-stage3-config-plan.md` (now `docs/systems/wikios/wikios-stage3-config-plan.md`): nginx allow/deny/redirect ruleset + `LocalSettings.php`
+- Produce `plans/wikios-stage3-config-plan.md` (now `docs/history/systems/wikios/wikios-stage3-config-plan.md`): nginx allow/deny/redirect ruleset + `LocalSettings.php`
   changes + rollback. **Read-only on all source/config; writes only to `plans/`. No production changes.**
 
 ## Review gates (non-negotiable)

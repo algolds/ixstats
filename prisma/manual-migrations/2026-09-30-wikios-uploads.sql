@@ -18,7 +18,7 @@
 --     the runbook uses /ixwiki/shared/wikios-uploads). It must be writable by WikiOS and is part of the backups
 --     until every upload has been mirrored (the admin panel's pending `upload` jobs say which are still waiting);
 --   * the mirror account needs the `upload` and `reupload` rights (group `wikios-mirror`) and its bot password the
---     grants `uploadfile` and `uploadeditmovefile` (docs/operations/wikios-v1-cutover.md, section 3).
+--     grants `uploadfile` and `uploadeditmovefile` (docs/history/operations/wikios-v1-cutover.md, section 3).
 --
 -- Idempotent: every statement is IF NOT EXISTS, so a second run changes nothing. The names are the ones
 -- `prisma generate` expects for prisma/schema/wiki.prisma (model WikiAsset).

@@ -1,5 +1,5 @@
 /**
- * Read-only dry run of a `stat-progression` run (docs/operations/deploy-mycountry-2026-10.md). Projects every country
+ * Read-only dry run of a `stat-progression` run (docs/history/operations/deploy-mycountry-2026-10.md). Projects every country
  * the way the job does (projectCountryStats at its realm's time now; paused realms skipped) and prints what the first run would change, without
  * writing anything, naming every nation whose economic or population tier would change. Point DATABASE_URL at a
  * copy of production:

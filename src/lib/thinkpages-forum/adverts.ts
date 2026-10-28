@@ -1,5 +1,5 @@
 /**
- * Find a Realm adverts (docs/superpowers/specs/2026-10-10-thinkpages-forum-realm-adverts-design.md). Pure: no Prisma,
+ * Find a Realm adverts (docs/history/specs/2026-10-10-thinkpages-forum-realm-adverts-design.md). Pure: no Prisma,
  * no DOM. An advert is a thread in the sitewide Find a Realm category whose `advertRealmId` names the realm it advertises.
  */
 

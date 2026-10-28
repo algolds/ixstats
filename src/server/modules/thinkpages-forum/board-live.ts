@@ -1,5 +1,5 @@
 /**
- * Live delivery of a realm board (docs/superpowers/specs/2026-10-10-thinkpages-realm-board-design.md, section 2).
+ * Live delivery of a realm board (docs/history/specs/2026-10-10-thinkpages-realm-board-design.md, section 2).
  * Every board write publishes what the room's readers need through the ThinkPages broadcaster: in-process, or over
  * Redis to `ixstats-ws`. A payload is the public shape of the message: viewer-independent (no `byViewer`, `canEdit`,
  * `hidden`, `myReaction`) and persona-safe (no player id on a persona's message, none of the player's own flag, name

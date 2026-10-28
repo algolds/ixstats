@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * A realm's calendar (docs/superpowers/specs/2026-10-25-realm-time-design.md §1): Gregorian, or month names and
+ * A realm's calendar (docs/specs/2026-10-25-realm-time-design.md §1): Gregorian, or month names and
  * lengths the founder defines (no custom weekdays or leap rules). A year is the sum of its months. Calendar time is
  * the clock's time plus the calendar offset; a custom calendar counts from the first day of year 1 at 0 ms.
  * Client-safe and pure.

@@ -17,7 +17,7 @@ export interface LorePiecesProps {
 }
 
 /**
- * LorePieces: the country's native lore on the Lore tab (docs/superpowers/specs/2026-10-24-native-lore-design.md,
+ * LorePieces: the country's native lore on the Lore tab (docs/specs/2026-10-24-native-lore-design.md,
  * "Lore tab"), after the wiki article. Pieces are chapters grouped People, Places, Events, Organisations, Other
  * (pinned first in each group), each read inline once it nears the viewport.
  */

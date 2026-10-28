@@ -1,7 +1,7 @@
 # Atlas Release A — world creation for realm founders — design
 
 **Last updated:** 2026-10-11 · **Status:** design approved by the owner, not built · **Depends on:**
-[Release 0](2026-10-11-atlas-release-0-performance-design.md) · **Plan:** [Atlas ship plan](2026-10-11-atlas-ship-plan.md)
+[Release 0](2026-10-11-atlas-release-0-performance-design.md) · **Plan:** [Atlas ship plan](../plans/2026-10-11-atlas-ship-plan.md)
 
 A founder generates their realm's world from a preset, or imports their own map and lets the generator fill the
 rest, previews and rerolls it in the world editor, and applies it: physical layers, claimable nation slots with a

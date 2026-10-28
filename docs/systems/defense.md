@@ -1,6 +1,6 @@
 # 🏛️ MyCountry Defense & Security Domain (Premium)
 
-**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
+**Parent App Suite:** MyCountry Suite (`INTERNAL_VERSIONS.systems.mycountry` = 6, public v1)  
 **Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
 **Primary Action:** `SECURE` | **Domain Accent:** Crimson Red (`text-red-500`, `DOMAIN_META.defense`)  
 **Route:** `/mycountry/defense` (also serves `/mycountry/intelligence`) | **Status:** 💎 Premium-gated  
@@ -91,9 +91,32 @@ PvNPC strikes and `security.concludePvPConflict` feed both sides' strength to `c
 
 ---
 
+## Intelligence
+
+Intelligence is the recon and fog-of-information layer: what a government can see depends on its capacity, its
+departments and its reach abroad, and the engine may withhold or caveat but never fabricates. There is no standalone
+Intelligence dashboard: `getSectionFromPathname()` maps `/mycountry/intelligence` to this Defense section, and the old
+intelligence stack was deleted (plans 312/341). What remains:
+
+| Capability | Code | Status |
+| :--- | :--- | :--- |
+| Domestic recon on National Issues | `nationalIssues.commissionRecon` / `getReconReveal` (`src/lib/statecraft/recon.ts`, 20 executive bandwidth reserved per recon) | Built, behind `STATECRAFT_SPINE` (default off) |
+| Foreign standing | Relationship bands from `src/lib/diplomacy/relation-bands.ts`, shown in `RelationsRail`, `DiplomaticRelationsList` and the embassy cards | Live |
+| Policy fog warnings | `policies.getPolicyReconContext` → `PolicyReconBanner` (over capacity, effectiveness under 45%) | Live (warnings only, numbers are not masked) |
+| Fogged whip count | `legislation.previewBillVote` (`src/lib/statecraft/whip.ts`) | Live |
+| Threat and border assessment | `security.getSecurityAssessment`, `security.getBorderSecurity` → `BorderThreatPanel` | Live, premium |
+| Threshold alerts | Bands set in notification preferences (`IntelligenceAlertThreshold`); `evaluateThresholds` (`src/server/shared/intelligence-alert-thresholds.ts`) runs after a country update, after each `stat-progression` run and after an event-spine consequence moves a stat, and writes an `IntelligenceAlert` plus a notification per breached band (no duplicate while one is open). The **Intelligence alerts** card on the MyCountry overview rail (`shell/IntelligenceAlertsCard.tsx`) reads `intelligence.getMyAlerts`; `markAlertRead`, `markAllAlertsRead` and `dismissAlert` are owner or privileged only. Notifications link to `/mycountry?focus=alerts` | Live |
+| Intelligence templates | `intelligence.getAllTemplates` / `createTemplate` / `updateTemplate` / `deleteTemplate` (admin, `/admin/intelligence-templates`); nothing reads them in the game | Live (admin) |
+
+Models are in `prisma/schema/intelligence.prisma`. `IntelligenceItem`, `IntelligenceBriefing`,
+`IntelligenceRecommendation` and `VitalitySnapshot` are legacy: no live code reads or writes them. The former
+standalone guide is in [history](../history/systems/intelligence.md).
+
+---
+
 ## Related Documentation
 
 - [MyCountry Command Suite](./mycountry.md)
-- [Intelligence System](./intelligence.md)
+- [Intelligence (section above)](#intelligence)
 - [Crisis Events Guide](./crisis-events.md)
 - [API Reference: Security & Military Routers](../reference/api-complete.md#defense--security)

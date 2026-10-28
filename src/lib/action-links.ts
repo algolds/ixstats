@@ -1,5 +1,5 @@
 /**
- * Action-linked posts (spec docs/superpowers/specs/2026-10-07-action-linked-posts-design.md): a post
+ * Action-linked posts (spec docs/history/specs/2026-10-07-action-linked-posts-design.md): a post
  * embeds one of its country's ActivityFeed entries as `[ixaction=<id>]`. Pure helpers only; the
  * ownership check and persistence live in `~/server/modules/action-links`.
  */

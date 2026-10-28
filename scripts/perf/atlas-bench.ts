@@ -2,14 +2,14 @@
  * scripts/perf/atlas-bench.ts - Atlas acceptance benchmark (`bun run perf:atlas`): the Release 0 targets and the
  * Release A world generator's.
  *
- * Measures the acceptance targets of docs/specs/2026-10-11-atlas-release-0-performance-design.md against the local
+ * Measures the acceptance targets of docs/history/specs/2026-10-11-atlas-release-0-performance-design.md against the local
  * database and prints one PASS or FAIL line per target with the measured value (INFO lines print numbers that have
  * no target); the exit code is 1 if any target fails. It runs the server code in process (the route handlers, the
  * loaders, the tRPC procedure) on a Prisma client of its own, so it needs no dev server, and the editor measurements
  * on the pure functions the editor uses plus the real region-reshape hook in jsdom. Nothing is written to the
  * database. Vector tiles render into a temporary folder that is removed at the end, never the app's `MAP_TILE_DIR`.
  * The generator lines (first generation, slider change, reroll, gated on the targets of
- * docs/specs/2026-10-11-atlas-release-a-world-creation-design.md; the worker runner's end-to-end time per message,
+ * docs/history/specs/2026-10-11-atlas-release-a-world-creation-design.md; the worker runner's end-to-end time per message,
  * informational) run in fresh child processes and need no database (atlas-bench-worldgen.ts).
  *
  * What it cannot see: a browser. The second `/maps` load's "no layer download" is checked as what the layer route

@@ -1,7 +1,7 @@
 # Atlas Release 0 — performance pass — design
 
 **Last updated:** 2026-10-11 · **Status:** design approved by the owner, not built · **Plan:**
-[Atlas ship plan](2026-10-11-atlas-ship-plan.md)
+[Atlas ship plan](../plans/2026-10-11-atlas-ship-plan.md)
 
 Makes the map fast before Release A builds on it: cached tiles and layers, real `Country` geometry in PostGIS, a
 world editor that does not re-render on every drag frame, and three editor correctness bugs found by the audits.

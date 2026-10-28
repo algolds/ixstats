@@ -1,5 +1,5 @@
 /**
- * The lore writer's word count (docs/superpowers/specs/2026-10-24-native-lore-design.md, "Aids"): the words the
+ * The lore writer's word count (docs/specs/2026-10-24-native-lore-design.md, "Aids"): the words the
  * author wrote in a piece's wikitext. Templates (the infobox), headings, references, comments, tags, category and
  * file links are left out; a link counts by its label. Pure.
  */

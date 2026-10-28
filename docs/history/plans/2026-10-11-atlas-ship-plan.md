@@ -1,13 +1,13 @@
 # Atlas ship plan — finishing the geography engine for realm founders
 
 **Last updated:** 2026-10-11 · **Status:** decided, not built · **Specs:**
-[Release 0 — performance](2026-10-11-atlas-release-0-performance-design.md) ·
-[Release A — world creation](2026-10-11-atlas-release-a-world-creation-design.md)
+[Release 0 — performance](../specs/2026-10-11-atlas-release-0-performance-design.md) ·
+[Release A — world creation](../specs/2026-10-11-atlas-release-a-world-creation-design.md)
 
 Atlas is the spatial engine (`VERSIONS.engines.atlas`): world generation, the map viewer, the world editor, map
 import, terrain/climate/hydrology data and the geography the simulation reads. This plan records what "shipping
 Atlas" means and every scope decision the owner made on 2026-10-11, so each release can be specced and built on
-its own. Background: the [Atlas audit](../history/roadmap/platform-audit/atlas.md) (2026-09-30) and the 2026-10-11
+its own. Background: the [Atlas audit](../roadmap/platform-audit/atlas.md) (2026-09-30) and the 2026-10-11
 worldgen audit and performance audits (summarised in the Release 0 spec).
 
 ## Who it is finished for

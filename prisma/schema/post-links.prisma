@@ -1,4 +1,4 @@
-/// Action-linked posts (docs/superpowers/specs/2026-10-07-action-linked-posts-design.md): a post that embeds one of
+/// Action-linked posts (docs/history/specs/2026-10-07-action-linked-posts-design.md): a post that embeds one of
 /// its country's ActivityFeed entries as `[ixaction=<id>]`. Rows are replaced on each post save; chain fields survive.
 model PostActionLink {
   id          String       @id @default(cuid())

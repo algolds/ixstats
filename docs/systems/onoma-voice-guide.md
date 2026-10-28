@@ -2,7 +2,7 @@
 
 **Last updated:** August 2026  
 **Status:** Beta, restricted to owners, admins and beta testers — Onoma Voice v2  
-**Hierarchy:** Sub-system of Onoma (`ONOMA_VERSION = 4`), powering WikiOS article narration and name pronunciation.
+**Hierarchy:** Sub-system of Onoma (`INTERNAL_VERSIONS.systems.onoma` = 4, public v1), powering WikiOS article narration and name pronunciation.
 
 This document covers the architecture, configuration, testing, and operation of the Onoma natural voice system, powered by `kokoro-fastapi` and `kokoro-web`.
 

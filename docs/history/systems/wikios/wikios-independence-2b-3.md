@@ -2,7 +2,7 @@
 
 > **Retired 2026-10-05** to [docs/history/](../../README.md). Stage 2b shipped; the old Stage 3 draft is superseded by the WikiOS v1 takeover (plan 417).
 
-**Status:** Stage 2b shipped (Plan 170 & Plan 191). Stage 3 (render-service isolation) is **not cut over**. The old Stage 3 draft ([`wikios-stage3-config-plan.md`](../../../systems/wikios/wikios-stage3-config-plan.md), and its `stage3-nginx-cutover.conf` vhost, now deleted) is superseded by the WikiOS takeover kit of plan 417 (September 30, 2026); the ordered operator steps are in [`docs/operations/wikios-v1-cutover.md`](../../../operations/wikios-v1-cutover.md).
+**Status:** Stage 2b shipped (Plan 170 & Plan 191). Stage 3 (render-service isolation) is **not cut over**. The old Stage 3 draft ([`wikios-stage3-config-plan.md`](wikios-stage3-config-plan.md), and its `stage3-nginx-cutover.conf` vhost, now deleted) is superseded by the WikiOS takeover kit of plan 417 (September 30, 2026); the ordered operator steps are in [`docs/history/operations/wikios-v1-cutover.md`](../../operations/wikios-v1-cutover.md).
 **Package:** `src/lib/wiki-os/`  
 **Authority Model:** PostgreSQL Primary Store (`wiki_articles`, `wiki_revisions`, `wiki_links`, `wiki_assets`) with Headless MediaWiki Federation.
 

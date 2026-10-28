@@ -1,7 +1,7 @@
 # Eurth map in IxWorld — port spec
 
 **Date:** 2026-10-07 · **Branch:** `rose-garden` · **Status:** Phases 1–3 built and applied to the local dev DB
-(2026-10-07); prod steps are in `docs/systems/realms-eurth-onboarding.md` §4.7. Phase 5's backend (config, presets,
+(2026-10-07); prod steps are in `docs/operations/realms-eurth-onboarding.md` §4.7. Phase 5's backend (config, presets,
 job, `realms.mapPipeline` API, CLI) and the admin panel (`/admin/realms` → Map, `/r/<realm>/manage` → Map pipeline) are
 built: runbook `docs/systems/realm-maps.md`. "Later" is still open.
 **Owner decisions (2026-10-07):** permission to use the Eurth map art is assumed; port everything needed so the

@@ -1,9 +1,9 @@
 # 💎 Achievements & Progression Showcase
 
-**Parent App Suite:** Vault (`IXVAULT_VERSION = 3`, dev codename `IxVault`)  
-**Subsystem:** Achievements, Lorewards & Leaderboards (`ACHIEVEMENTS_VERSION = 3`)  
+**Parent App Suite:** Vault (`INTERNAL_VERSIONS.apps.ixvault` = 3, public v1; dev codename `IxVault`)  
+**Subsystem:** Achievements, Lorewards & Leaderboards (`INTERNAL_VERSIONS.systems.achievements` = 3, public v1)  
 **Primary Action:** `PROGRESS` | **Domain Accent:** Raspberry (the Vault tint, `APP_TINTS.vault`)  
-**Routes:** `/vault/achievements`, `/leaderboards` | **Status:** Release Candidate (platform 1.5.0) — ribbons are derived from unlocks, see [Ribbons](#ribbons)  
+**Routes:** `/vault/achievements`, `/leaderboards` | **Status:** Live, platform 1.5.0 (internal; public 1.0 Stable) — ribbons are derived from unlocks, see [Ribbons](#ribbons)  
 
 Achievements live inside the Vault ([myvault.md](./myvault.md)). The registry holds **161 definitions** (`src/lib/achievements/sets/`): **114 active** and **47 Legacy**. The active ones are Executive 16, Politics 8, Diplomacy 10, Defense 2, Nation 12 (the nation categories, 48 in all) and Social 20, Wiki 7, Cards 15, Lorewards 8, General 16 (the platform categories, 66 in all). 62 of the active ones are account-level and unlock without a country; the other 52 need one. Unlocks grant IxCredits by rarity, an optional reward card (the Special card that names the achievement), packs and titles (per `rewardsJson`), and a showcase shelf entry. Wiki authoring is recognised by **Wiki Awards** (Lorewards), whose trophies are the Lorewards tab of the same page and whose achievements are the Lorewards category.
 
@@ -30,7 +30,7 @@ Retired definitions carry `retired: true`; the sync writes `Achievement.isActive
 
 ## Architecture & Versioning
 
-In accordance with [reference/revision.md](../reference/revision.md), the system operates on **Achievements v3** (v2 added the automatic collector resync on page load; v3 is the Vault hub rebuild above). Ribbons are derived from real unlocks (see [Ribbons](#ribbons)); the separate OOC community ribbons in [the ribbons design spec](../specs/2026-08-10-achievements-ribbons-design.md) are not built.
+In accordance with [reference/revision.md](../reference/revision.md), the system operates on **Achievements v3** internally (`INTERNAL_VERSIONS.systems.achievements` = 3; the public registry shows v1) (v2 added the automatic collector resync on page load; v3 is the Vault hub rebuild above). Ribbons are derived from real unlocks (see [Ribbons](#ribbons)); the separate OOC community ribbons in [the ribbons design spec](../specs/2026-08-10-achievements-ribbons-design.md) are not built.
 
 ### Frontend Modules
 - `src/app/vault/achievements/page.tsx` – Standing card (unlocked of the active total, points, rank) above four tabs: **All**, **Lorewards** (the Vault wrapper of the shared `LorewardsView`), **Showcase** and **Leaderboard** (achievement points only, `api.achievements.getPlayerLeaderboard`). `?tab=` picks a tab and `?a=<key>` opens that achievement in All. `src/app/achievements/page.tsx` is now a redirect.

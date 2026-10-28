@@ -1,7 +1,7 @@
 # ThinkTanks — Collaborative Groups & Research Engine
 
 **Last updated:** 2026-10-05  
-**Status:** 🟡 Partial — ThinkTanks v2 (Feed, Members, Docs and Chat tabs live; invite inbox and join-by-code since 2026-10-05); see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
+**Status:** 🟡 Partial — ThinkTanks v2, versioned with ThinkPages (`INTERNAL_VERSIONS.systems.thinkpages` = 3, public v1) (Feed, Members, Docs and Chat tabs live; invite inbox and join-by-code since 2026-10-05); see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
 **Route:** `/thinktanks` · `/thinktanks/[groupId]` (a realm's board at `/thinkpages/r/[realm]` is the forum's, not a ThinkTank: §4a)  
 **Design System:** Facet Glass Physics (see [Facet Design System](../reference/facet-design-system.md); there is no `/apple-design` route)  
 
@@ -216,7 +216,7 @@ All ThinkTank operations are exposed via the `thinkpages` tRPC router (`src/serv
 | `api.thinkpages.getThinktankById` | Query | `{ groupId: string, userId?: string }` | Returns complete group details, member relations, and settings |
 | `api.thinkpages.createThinktank` | Mutation | `{ name, description?, category?, type?, avatar?, tags? }` (creator = `ctx.auth.userId`) | Creates group, sets initial avatar, and assigns owner |
 | `api.thinkpages.joinThinktank` | Mutation | `{ groupId: string }` | Joins a group as the caller and adds user to linked conversation participants |
-| `api.thinkpages.leaveThinktank` | Mutation | `{ groupId: string }` | Leaves a group as the caller and updates membership counts |
+| `api.thinkpages.leaveThinktank` | Mutation | `{ groupId: string }` | Leaves a group as the caller and updates membership counts. An owner cannot leave while other members remain (transfer ownership first). When the last member leaves, the group is archived (`isActive: false`): it drops out of the directory and its history is kept. Realm boards (`type: "realm_board"`) belong to the realm and stay up (`thinktanks/membership.ts`) |
 | `api.thinkpages.updateGroupSettings` | Mutation | `{ groupId, allowPersonaPosting?, bannerUrl?, rules?, themeAccent?, pinnedDocIds? }` | Updates group configurations and banner art |
 | `api.thinkpages.inviteToThinktank` | Mutation | `{ groupId, userIds }` | Dispatches group invitations to specified users |
 | `api.thinkpages.getMyThinktankInvites` | Query | none | The caller's open invites to active groups they haven't joined |
