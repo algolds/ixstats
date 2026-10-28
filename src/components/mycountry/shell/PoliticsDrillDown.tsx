@@ -54,6 +54,14 @@ const BillsPanel = dynamic(
   { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
+const ExecutivePoliciesPanel = dynamic(
+  () =>
+    import("~/components/executive/politics/ExecutivePoliciesPanel").then((m) => ({
+      default: m.ExecutivePoliciesPanel,
+    })),
+  { loading: () => <Skeleton className="rounded-card h-32" /> }
+);
+
 const ElectionStatusCard = dynamic(
   () =>
     import("~/components/executive/politics/ElectionStatusCard").then((m) => ({
@@ -128,7 +136,12 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
       )}
       {activeTab === "parties" && <PartyManager countryId={countryId} />}
       {activeTab === "legislature" && <LegislaturePanel countryId={countryId} />}
-      {activeTab === "bills" && <BillsPanel countryId={countryId} />}
+      {activeTab === "bills" && (
+        <div className="space-y-4">
+          <BillsPanel countryId={countryId} />
+          <ExecutivePoliciesPanel countryId={countryId} />
+        </div>
+      )}
       {activeTab === "power" && <PowerBrokersPanel countryId={countryId} />}
     </div>
   );

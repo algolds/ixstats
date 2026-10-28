@@ -221,6 +221,8 @@ const policiesDb = () => ({
     findFirst: jest.fn().mockResolvedValue(null),
     findMany: jest.fn().mockResolvedValue([]),
   },
+  // A policy is enacted on creation: its growth effect is synced (none for a custom policy).
+  storytellerEffect: { findMany: jest.fn().mockResolvedValue([]) },
 });
 const policyInput = {
   userId: "someone_else",

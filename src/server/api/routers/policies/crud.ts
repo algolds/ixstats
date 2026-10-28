@@ -9,11 +9,13 @@ import {
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { getPolicyDecretals } from "~/lib/policies/registry";
+import { decretalSettingsProblem, getPolicyDecretals } from "~/lib/policies/registry";
 import type { PrismaClient } from "@prisma/client";
 import { loadExecBandwidthState } from "~/lib/government/exec-bandwidth";
 import { hasPolicyDepartment, policyDepartmentKey } from "~/lib/policies/department-match";
 import { loadProjectedPopulation } from "~/server/shared/projected-population";
+import { clockForCountry } from "~/server/shared/realm-time";
+import { applyPolicyEffect } from "~/lib/policies";
 import {
   assertCountryWriteAccess,
   hasCountryWriteAccess,
@@ -110,36 +112,38 @@ export const policiesCrudRouter = createTRPCRouter({
       if (decretalKey) {
         const decretals = await getPolicyDecretals(ctx.db);
         const decretal = decretals[decretalKey];
-        if (decretal) {
-          const country = await ctx.db.country.findUnique({
-            where: { id: input.countryId },
-            select: { currentPopulation: true },
-          });
-          const metrics = {
-            currentPopulation: country?.currentPopulation ?? 1000000,
-          };
-          const calcSettings = settings ?? {};
-          const results = decretal.calculate(calcSettings, metrics);
-
-          implementationCost = results.implementationCost;
-          maintenanceCost = results.maintenanceCost;
-          gdpEffect = results.gdpEffect;
-          employmentEffect = results.employmentEffect;
-          inflationEffect = results.inflationEffect;
-          taxRevenueEffect = results.taxRevenueEffect;
-
-          policyRiskRating = (decretal.riskRating ?? "stable") as
-            "stable" | "volatile" | "high-risk";
-          policyOrigin = (origin ?? decretal.origin ?? "personal") as
-            "personal" | "crisis_response" | "broker_request";
-          policyExecBandwidthCost = decretal.execBandwidthCost ?? 0;
-
-          calculatedEffectsJson = JSON.stringify({
-            decretalKey,
-            settings: calcSettings,
-            stabilityEffect: results.stabilityEffect,
-          });
+        if (!decretal) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown policy template" });
         }
+        const problem = decretalSettingsProblem(decretal, settings ?? {});
+        if (problem) throw new TRPCError({ code: "BAD_REQUEST", message: problem });
+        const country = await ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          select: { currentPopulation: true },
+        });
+        const metrics = {
+          currentPopulation: country?.currentPopulation ?? 1000000,
+        };
+        const calcSettings = settings ?? {};
+        const results = decretal.calculate(calcSettings, metrics);
+
+        implementationCost = results.implementationCost;
+        maintenanceCost = results.maintenanceCost;
+        gdpEffect = results.gdpEffect;
+        employmentEffect = results.employmentEffect;
+        inflationEffect = results.inflationEffect;
+        taxRevenueEffect = results.taxRevenueEffect;
+
+        policyRiskRating = (decretal.riskRating ?? "stable") as "stable" | "volatile" | "high-risk";
+        policyOrigin = (origin ?? decretal.origin ?? "personal") as
+          "personal" | "crisis_response" | "broker_request";
+        policyExecBandwidthCost = decretal.execBandwidthCost ?? 0;
+
+        calculatedEffectsJson = JSON.stringify({
+          decretalKey,
+          settings: calcSettings,
+          stabilityEffect: results.stabilityEffect,
+        });
       }
 
       // Apply discounts if reactively-born (crisis response or broker request)
@@ -151,9 +155,12 @@ export const policiesCrudRouter = createTRPCRouter({
         maintenanceCost = Math.round(maintenanceCost * 0.85);
       }
 
-      return await ctx.db.policy.create({
+      // Enacted on creation (executive policy): in force on the nation's clock, its growth effect phased in.
+      const policy = await ctx.db.policy.create({
         data: {
           ...baseInput,
+          effectiveDate: baseInput.effectiveDate ?? new Date(),
+          effectiveIxTime: (await clockForCountry(ctx.db, input.countryId)).now(),
           userId: ctx.auth.userId,
           implementationCost,
           maintenanceCost,
@@ -165,9 +172,11 @@ export const policiesCrudRouter = createTRPCRouter({
           origin: policyOrigin,
           execBandwidthCost: policyExecBandwidthCost,
           calculatedEffects: calculatedEffectsJson,
-          status: "draft",
+          status: "active",
         },
       });
+      await applyPolicyEffect(ctx.db, policy);
+      return policy;
     }),
 
   /**
