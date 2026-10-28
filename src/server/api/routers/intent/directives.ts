@@ -24,6 +24,7 @@ import {
 } from "~/lib/activity/directive-activity";
 import {
   assemblePackages,
+  ForeignGoalError,
   weightAcceptance,
   CATEGORY_TO_BROKER,
   TIER_RISK,
@@ -92,6 +93,49 @@ function alignedBroker(brokers: ActiveBroker[], category: Category): ActiveBroke
 
 type IntentPackage = ReturnType<typeof assemblePackages>["packages"][number];
 
+/** A goal as typed: trimmed, 2-200 characters, no NUL (Postgres text cannot store it). */
+const goalInput = z
+  .string()
+  .trim()
+  .min(2)
+  .max(200)
+  .refine((goal) => !goal.includes("\u0000"), "The goal contains an invalid character.");
+
+/** The goal's packages; a foreign-policy goal is the player's mistake (BAD_REQUEST), not a server fault. */
+function packagesFor(goal: string) {
+  try {
+    return assemblePackages(goal);
+  } catch (e) {
+    if (e instanceof ForeignGoalError)
+      throw new TRPCError({ code: "BAD_REQUEST", message: e.message });
+    throw e;
+  }
+}
+
+/**
+ * The unlocked tiers are earned: the broker option needs the goal's broker unlocked, and the structural option has no
+ * unlock check yet, so it is never committable (the composer offers neither unless earned).
+ */
+async function assertTierAvailable(
+  db: PrismaClient,
+  args: { countryId: string; tier: string; category: Category; now: number }
+) {
+  if (args.tier === "structural_unlocked") {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "The structural option is not available.",
+    });
+  }
+  if (args.tier !== "broker_unlocked") return;
+  const broker = alignedBroker(await loadBrokers(db, args.countryId, args.now), args.category);
+  if (!broker?.unlocked) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: "The broker option needs that power broker's backing first.",
+    });
+  }
+}
+
 /** The draft being upgraded must be this country's and still a draft. */
 async function assertCommittableDraft(db: PrismaClient, intentId: string, countryId: string) {
   // Re-committing an already-active row would re-apply the package without a new row counting
@@ -151,9 +195,10 @@ async function saveActiveIntent(
       },
     });
   }
+  // The draft takes the committed goal, so its row describes the package that was applied.
   const upgraded = await db.intent.updateMany({
     where: { id: intentId, countryId, status: "proposed" },
-    data: active,
+    data: { ...active, goal, category },
   });
   if (upgraded.count !== 1) {
     throw new TRPCError({
@@ -193,10 +238,10 @@ export const intentDirectivesRouter = createTRPCRouter({
    * the budget).
    */
   suggest: protectedProcedure
-    .input(z.object({ countryId: z.string(), goal: z.string().min(2).max(200) }))
+    .input(z.object({ countryId: z.string(), goal: goalInput }))
     .query(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
-      const { category, packages } = assemblePackages(input.goal);
+      const { category, packages } = packagesFor(input.goal);
       const now = (await clockForCountry(ctx.db, input.countryId)).now();
       const status = await cooldownStatus(ctx.db, input.countryId, now);
 
@@ -347,7 +392,7 @@ export const intentDirectivesRouter = createTRPCRouter({
     .input(
       z.object({
         countryId: z.string(),
-        goal: z.string().min(2).max(200),
+        goal: goalInput,
         tier: z.enum([
           "proposed",
           "measured",
@@ -363,7 +408,7 @@ export const intentDirectivesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
 
-      const { category, packages } = assemblePackages(input.goal);
+      const { category, packages } = packagesFor(input.goal);
       const clock = await clockForCountry(ctx.db, input.countryId);
       const now = clock.now();
 
@@ -394,6 +439,12 @@ export const intentDirectivesRouter = createTRPCRouter({
       if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown tier." });
 
       if (input.intentId) await assertCommittableDraft(ctx.db, input.intentId, input.countryId);
+      await assertTierAvailable(ctx.db, {
+        countryId: input.countryId,
+        tier: input.tier,
+        category,
+        now,
+      });
 
       // Auto-summation prose — ThinkPages draft-ready (push deferred to phase 6).
       const country = await ctx.db.country.findUnique({
