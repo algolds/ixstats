@@ -179,13 +179,13 @@ export function sanitizeUserContent(html: string): string {
       "data-wiki-embed",
       "data-wiki-title",
       "data-width",
+      "data-spoiler", // lib/thinkpages/spoilers.ts; SAFE_FOR_TEMPLATES disables ALLOW_DATA_ATTR, so list each
     ],
     ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
     FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form", "input", "button"],
     FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur"],
     // A wiki title is not a URL: "File:X.jpg" must not be read as an unknown protocol and dropped.
     ADD_URI_SAFE_ATTR: ["data-wiki-title"],
-    ALLOW_DATA_ATTR: true,
     ALLOW_UNKNOWN_PROTOCOLS: false,
     SAFE_FOR_TEMPLATES: true,
     KEEP_CONTENT: true,

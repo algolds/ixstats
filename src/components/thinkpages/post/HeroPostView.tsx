@@ -23,6 +23,7 @@ import {
   DropdownMenuSeparator,
 } from "~/components/ui/dropdown-menu";
 import { PostBody } from "./PostBody";
+import { ContentWarningGate } from "./ContentWarningGate";
 import { PostMediaGrid } from "./PostMediaGrid";
 import { PostEmbeds } from "./PostEmbeds";
 import { PostComposers } from "./PostComposers";
@@ -193,22 +194,24 @@ export function HeroPostView({ post, ctx, state }: HeroPostViewProps) {
             </div>
           </div>
 
-          <PostBody
-            content={post.content}
-            cleanContent={state.cleanPostContent}
-            blurbMeta={state.blurbMeta}
-            sportsBulletin={state.sportsBulletin}
-            account={account}
-            isHero={true}
-          />
+          <ContentWarningGate reason={post.contentWarning}>
+            <PostBody
+              content={post.content}
+              cleanContent={state.cleanPostContent}
+              blurbMeta={state.blurbMeta}
+              sportsBulletin={state.sportsBulletin}
+              account={account}
+              isHero={true}
+            />
 
-          <PostMediaGrid
-            mediaAttachments={state.mediaAttachments}
-            postId={post.id}
-            onOpenLightbox={state.setLightboxMedia}
-          />
+            <PostMediaGrid
+              mediaAttachments={state.mediaAttachments}
+              postId={post.id}
+              onOpenLightbox={state.setLightboxMedia}
+            />
 
-          <PostEmbeds post={post} state={state} vizSpacing="mt-3 space-y-3" />
+            <PostEmbeds post={post} state={state} vizSpacing="mt-3 space-y-3" />
+          </ContentWarningGate>
 
           {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-1">

@@ -8,6 +8,7 @@ import {
   SystemRestart as Loader2,
   Send,
   CheckSquare as Vote,
+  WarningTriangle,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { springSmooth } from "~/lib/design/motion";
@@ -29,6 +30,8 @@ interface ComposerActionBarProps {
   pollDraft: any;
   setPollDraft: (val: any) => void;
   setShowPollModal: (val: boolean) => void;
+  showContentWarning: boolean;
+  setShowContentWarning: (val: boolean) => void;
   postToDiscord: boolean;
   setPostToDiscord: (val: boolean) => void;
   handleSubmit: () => void;
@@ -49,6 +52,8 @@ export function ComposerActionBar({
   pollDraft,
   setPollDraft,
   setShowPollModal,
+  showContentWarning,
+  setShowContentWarning,
   postToDiscord,
   setPostToDiscord,
   handleSubmit,
@@ -175,6 +180,25 @@ export function ComposerActionBar({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top">Add poll</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowContentWarning(!showContentWarning)}
+                  aria-pressed={showContentWarning}
+                  className={cn(
+                    "text-tint hover:bg-tint-fill hover:text-tint size-8 p-0",
+                    showContentWarning && "bg-tint-fill"
+                  )}
+                  aria-label="Content warning"
+                >
+                  <WarningTriangle />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">Content warning</TooltipContent>
             </Tooltip>
 
             <div className="border-separator flex h-5 items-center gap-2 border-l px-3">

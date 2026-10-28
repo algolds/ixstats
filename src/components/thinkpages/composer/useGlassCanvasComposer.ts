@@ -76,6 +76,8 @@ export function useGlassCanvasComposer({
   const [isEditorFocused, setIsEditorFocused] = useState(false);
   const [pollDraft, setPollDraft] = useState<PollDraft | null>(null);
   const [showPollModal, setShowPollModal] = useState(false);
+  const [showContentWarning, setShowContentWarning] = useState(false);
+  const [contentWarning, setContentWarning] = useState("");
 
   useEffect(() => {
     // Surface the Discord channel topic as the placeholder in dev and for ~10% of sessions
@@ -96,7 +98,8 @@ export function useGlassCanvasComposer({
     selectedImages.length > 0 ||
     selectedVisualizations.length > 0 ||
     !!pollDraft;
-  const showActionBar = isEditorFocused || hasContent || showVisualizationPanel;
+  const showActionBar =
+    isEditorFocused || hasContent || showVisualizationPanel || showContentWarning;
 
   const liveQuery = { enabled: !!countryId, refetchOnWindowFocus: false };
   const { data: economicData, isLoading: isLoadingEconomic } =
@@ -136,6 +139,8 @@ export function useGlassCanvasComposer({
       setSelectedVisualizations([]);
       setSelectedImages([]);
       setPollDraft(null);
+      setShowContentWarning(false);
+      setContentWarning("");
       setPostToDiscord(true);
       void utils.thinkpages.getFeed.invalidate();
       void utils.activities.getGlobalFeed.invalidate();
@@ -168,6 +173,8 @@ export function useGlassCanvasComposer({
     createPostMutation.mutate({
       accountId: account.id,
       content: [content.trim(), wikiRepostContent].filter(Boolean).join("\n\n"),
+      // The server trims it and stores an empty one as none.
+      contentWarning: showContentWarning ? contentWarning : undefined,
       hashtags: extractHashtags(plainText),
       mentions: extractMentions(plainText),
       visibility: "public" as const,
@@ -250,6 +257,10 @@ export function useGlassCanvasComposer({
     setPollDraft,
     showPollModal,
     setShowPollModal,
+    showContentWarning,
+    setShowContentWarning,
+    contentWarning,
+    setContentWarning,
     resolvedPlaceholder,
     accountAvatarUrl,
     getAccountAvatar,

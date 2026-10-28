@@ -2,6 +2,7 @@
 // No external dependencies that use 'self' or browser globals
 
 import { sanitizeUserContent, escapeHtml } from "./sanitize-html";
+import { decorateSpoilers, wrapSpoilers, wrapSpoilersInHtml } from "~/lib/thinkpages/spoilers";
 
 /** Convert Discord custom emoji markup <:name:id> and <a:name:id> to <img> tags. */
 function renderDiscordEmojis(html: string): string {
@@ -34,6 +35,9 @@ function formatContentEnhanced(content: string): string {
 
   // SECURITY: Escape HTML to prevent XSS, then apply formatting
   let formattedContent = escapeHtml(withPlaceholders);
+
+  // Spoilers first, on the escaped text: the formatting below may then run inside one
+  formattedContent = wrapSpoilers(formattedContent);
 
   // Discord Formatting Parser
 
@@ -137,7 +141,7 @@ function looksLikeStoredHtml(content: string): boolean {
 
 /**
  * ThinkPages body: sanitize HTML from the rich editor, or run plain text through formatContentEnhanced.
- * Also converts Discord custom emoji markup <:name:id> and <a:name:id> to <img> tags.
+ * Also converts Discord custom emoji markup <:name:id> and <a:name:id> to <img> tags, and `||text||` to spoilers.
  */
 export function formatThinkpagesContentForDisplay(content: string): string {
   if (!content) return "";
@@ -148,9 +152,9 @@ export function formatThinkpagesContentForDisplay(content: string): string {
   if (looksLikeStoredHtml(t)) {
     // Convert Discord emoji markup in HTML content before sanitizing
     const withEmojis = renderDiscordEmojis(t);
-    return sanitizeUserContent(withEmojis);
+    return decorateSpoilers(sanitizeUserContent(wrapSpoilersInHtml(withEmojis)));
   }
-  return formatContentEnhanced(t);
+  return decorateSpoilers(formatContentEnhanced(t));
 }
 
 // Extract hashtags from text

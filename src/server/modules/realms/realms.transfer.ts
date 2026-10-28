@@ -54,7 +54,7 @@ async function requireActiveUser(db: TransferDb, clerkUserId: string) {
 
 /** How a handover was made, and the forum's check on the new founder's board power (M9), run under their lock. */
 interface TransferVia {
-  via: "admin" | "founder";
+  via: "admin" | "founder" | "erasure";
   guardBoard: BoardGrantGuard;
 }
 
@@ -176,6 +176,39 @@ export async function adminTransferRealmOwner(
     await requireActiveUser(db, input.newOwnerId);
   }
   return applyTransfer(db, actor, realm, input, { via: "admin", guardBoard });
+}
+
+/** Realms going back to staff need no board-power check (applyTransfer skips it for staff). */
+const noBoardGuard: BoardGrantGuard = async () => undefined;
+
+/**
+ * Account erasure (Privacy 5.2): every realm `user` founds goes back to staff, recorded like an admin handover with
+ * `via: "erasure"`. The user acts for themselves, so no "new founder" notice goes to the account being erased.
+ */
+export async function returnFoundedRealmsToStaff(
+  db: TransferDb,
+  user: RealmActor
+): Promise<number> {
+  const realms = await db.realm.findMany({
+    where: { ownerId: user.clerkUserId },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      ownerId: true,
+      officers: { select: { userId: true } },
+    },
+  });
+  for (const realm of realms) {
+    await applyTransfer(
+      db,
+      user,
+      realm,
+      { newOwnerId: null, confirmSlug: realm.slug, keepPreviousAsOfficer: false },
+      { via: "erasure", guardBoard: noBoardGuard }
+    );
+  }
+  return realms.length;
 }
 
 /** The realm, if `actor` is its founder (site admins transfer from /admin/realms instead). */

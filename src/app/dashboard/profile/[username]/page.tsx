@@ -11,6 +11,7 @@ import { PersonaFollowButton } from "~/components/thinkpages/PersonaFollowButton
 import { RelativeTimestamp } from "~/components/thinkpages/post/ThinkpagesPostUtils";
 import { api } from "~/trpc/react";
 import { Card } from "~/components/ui/card";
+import { maskSpoilers } from "~/lib/thinkpages/spoilers";
 
 interface ProfilePageProps {
   params: Promise<{ username: string }>;
@@ -139,8 +140,11 @@ export default function PersonaProfilePage({ params }: ProfilePageProps) {
               className="rounded-card focus-visible:outline-tint block focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               <Card padding="md" className="space-y-2">
+                {/* A warned post shows only its warning here; the post itself has "Show post". */}
                 <p className="text-body text-label line-clamp-4 whitespace-pre-line">
-                  {post.content.replace(/\s*\[DiscordMsg:\d+\]\s*$/, "")}
+                  {post.contentWarning
+                    ? `CW: ${post.contentWarning}`
+                    : maskSpoilers(post.content.replace(/\s*\[DiscordMsg:\d+\]\s*$/, ""))}
                 </p>
                 <div className="text-footnote text-label-secondary flex items-center gap-3 tabular-nums">
                   <RelativeTimestamp timestamp={post.timestamp} />

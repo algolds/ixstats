@@ -10,6 +10,7 @@ import { entityKinds, mentionQueries } from "~/lib/wiki-os/mention-target";
 import { WIKI_SOURCES, parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
 import { embedImageSrc } from "~/lib/wiki-os/embed-image";
 import { readerLinkPath } from "~/lib/wiki-os/wiki-link-target";
+import { SPOILER_PROPS } from "~/lib/thinkpages/spoilers";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -257,6 +258,8 @@ function elementProps(
   }
   const style = element.getAttribute("style");
   if (style) props.style = parseStyleString(style);
+  // A ThinkPages spoiler keeps its button semantics; the post's delegated handler reveals it in the DOM.
+  if (element.hasAttribute("data-spoiler")) Object.assign(props, SPOILER_PROPS);
   return props;
 }
 

@@ -149,6 +149,7 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
   const [replyText, setReplyText] = useState("");
   const [showEditComposer, setShowEditComposer] = useState(false);
   const [editText, setEditText] = useState("");
+  const [editContentWarning, setEditContentWarning] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showFlagDialog, setShowFlagDialog] = useState(false);
   const [flagReason, setFlagReason] = useState("");
@@ -271,16 +272,26 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
   const handleEdit = () => {
     if (!canModify) return;
     setEditText(post.content);
+    setEditContentWarning(post.contentWarning ?? "");
     closeMenuAnd(() => setShowEditComposer(true));
   };
 
+  const editChanged =
+    editText !== post.content || editContentWarning !== (post.contentWarning ?? "");
+
   const handleSubmitEdit = async () => {
-    if (!editText.trim() || editText === post.content) {
+    if (!editText.trim() || !editChanged) {
       setShowEditComposer(false);
       return;
     }
     const updated = await attempt(
-      () => updatePostMutation.mutateAsync({ postId: post.id, content: editText }),
+      () =>
+        updatePostMutation.mutateAsync({
+          postId: post.id,
+          content: editText,
+          // Empty clears the warning.
+          contentWarning: editContentWarning,
+        }),
       "Post updated",
       "Failed to update post"
     );
@@ -355,6 +366,9 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
     setShowEditComposer,
     editText,
     setEditText,
+    editContentWarning,
+    setEditContentWarning,
+    editChanged,
     showDeleteConfirm,
     setShowDeleteConfirm,
     showFlagDialog,
