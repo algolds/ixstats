@@ -163,6 +163,26 @@ export async function syncElectionCandidates(db: Db, electionId: string): Promis
   return parties.length;
 }
 
+/**
+ * A count claimed this long ago (wall clock) and still "voting" died mid-way (the process stopped): it goes back
+ * to "upcoming" so the sweep or the owner can count it. Three times the elections job's 10-minute timeout, so a
+ * live count is never released.
+ */
+export const STALE_COUNT_MS = 30 * 60 * 1000;
+
+/** Release counts that died mid-way (of one country, or all); the usual claim then counts each once. */
+export async function releaseStaleCounts(
+  db: Db,
+  where: { countryId?: string } = {},
+  nowMs: number = Date.now()
+): Promise<number> {
+  const { count } = await db.election.updateMany({
+    where: { ...where, status: "voting", updatedAt: { lte: new Date(nowMs - STALE_COUNT_MS) } },
+    data: { status: "upcoming" },
+  });
+  return count;
+}
+
 type ResolveElectionOutcome = "resolved" | "insufficient_candidates" | "not_claimed";
 
 /**
@@ -178,7 +198,8 @@ export async function resolveElection(
 ): Promise<{ outcome: ResolveElectionOutcome; nextElectionId?: string }> {
   const claim = await db.election.updateMany({
     where: { id: electionId, status: "upcoming" },
-    data: { status: "voting" },
+    // The claim's time: a count still "voting" past STALE_COUNT_MS died mid-way.
+    data: { status: "voting", updatedAt: new Date() },
   });
   if (claim.count === 0) return { outcome: "not_claimed" };
 

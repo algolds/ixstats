@@ -6,6 +6,7 @@ import { parseChambers } from "~/lib/government/election-simulation";
 import {
   MIN_ELECTION_PARTIES,
   ensureUpcomingElection,
+  releaseStaleCounts,
   resolveElection,
 } from "~/lib/government/election-lifecycle";
 import { clockForCountry } from "~/server/shared/realm-time";
@@ -133,6 +134,7 @@ export const electionsElectionsRouter = createTRPCRouter({
       await assertCountryWriteAccess(ctx, input.countryId);
       const db = ctx.db as PrismaClient;
       const now = (await clockForCountry(db, input.countryId)).now();
+      await releaseStaleCounts(db, { countryId: input.countryId });
 
       const due = await db.election.findFirst({
         where: {

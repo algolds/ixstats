@@ -206,7 +206,7 @@ import { IxTime } from "~/lib/ixtime";
 import { electionsRouter } from "~/server/api/routers/elections";
 import { legislationRouter } from "~/server/api/routers/legislation";
 import { processDueElections } from "~/lib/government/election-cron";
-import { FIRST_ELECTION_DELAY_IX_DAYS } from "~/lib/government/election-lifecycle";
+import { FIRST_ELECTION_DELAY_IX_DAYS, STALE_COUNT_MS } from "~/lib/government/election-lifecycle";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const COUNTRY = "test_country_1";
@@ -445,7 +445,7 @@ describe("MC-2 politics lifecycle", () => {
     const held = new Promise<void>((resolve) => (releaseOwner = resolve));
     let waiting = true;
     fakeDb.election.updateMany = jest.fn(async (args: { where: Record<string, unknown> }) => {
-      if (waiting) {
+      if (waiting && args.where.status === "upcoming") {
         waiting = false;
         ownerAtClaim();
         await held;
@@ -498,6 +498,29 @@ describe("MC-2 politics lifecycle", () => {
       electionCycle: "fixed",
     });
     expect(tables.legislativeSeat).toHaveLength(1);
+  });
+
+  it("releases a count that died mid-way after the staleness window, and counts it once", async () => {
+    await setUpNation();
+    const first = tables.election![0]!;
+    IxTime.setTimeOverride(first.scheduledIxTime + DAY);
+    first.status = "voting"; // claimed by a count that never finished
+    first.updatedAt = new Date(Date.now() - STALE_COUNT_MS - 60_000);
+
+    expect(await processDueElections()).toMatchObject({ resolved: 1 });
+    expect(first.status).toBe("completed");
+    expect(tables.electionResult!.filter((r) => r.electionId === first.id)).toHaveLength(2);
+  });
+
+  it("leaves a count in progress alone", async () => {
+    await setUpNation();
+    const first = tables.election![0]!;
+    IxTime.setTimeOverride(first.scheduledIxTime + DAY);
+    first.status = "voting";
+    first.updatedAt = new Date();
+
+    expect(await processDueElections()).toMatchObject({ resolved: 0 });
+    expect(first.status).toBe("voting");
   });
 
   it("a party formed while the votes are counted does not queue an early election", async () => {
