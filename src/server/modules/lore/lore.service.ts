@@ -1,5 +1,5 @@
 /**
- * Native lore (docs/superpowers/specs/2026-10-24-native-lore-design.md): who may write a country's lore, which pieces
+ * Native lore (docs/specs/2026-10-24-native-lore-design.md): who may write a country's lore, which pieces
  * its Lore tab lists, and the owner's lore team and curation. Pieces are ordinary wiki pages; this keeps only the team
  * (`CountryLoreAuthor`) and the curation (`CountryLorePage`: a piece's type, pin and hide, and pages the owner added).
  *

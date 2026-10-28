@@ -12,7 +12,7 @@ import { CRON_JOBS, resolveEnabledJobs } from "~/server/cron/jobs";
 const ROOT = path.resolve(__dirname, "../../..");
 const SQL_DIR = "scripts/migrations/2026-10-realm-time";
 const runbook = fs.readFileSync(
-  path.join(ROOT, "docs/operations/deploy-realm-time-2026-10.md"),
+  path.join(ROOT, "docs/history/operations/deploy-realm-time-2026-10.md"),
   "utf8"
 );
 

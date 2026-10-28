@@ -62,7 +62,7 @@ Missing data renders an empty state or drops the section; the profile shows no s
 
 ### Native lore
 
-Spec: [`2026-10-24-native-lore-design.md`](../superpowers/specs/2026-10-24-native-lore-design.md). A lore piece is an
+Spec: [`2026-10-24-native-lore-design.md`](../specs/2026-10-24-native-lore-design.md). A lore piece is an
 ordinary wiki page about the country: a person, place, event or organisation. It has wikitext, history and a talk page
 like any page, and it is mirrored to classic MediaWiki like any page. IxStates keeps only who may write lore and how the
 owner arranges the pieces.
@@ -183,7 +183,7 @@ Production and the `ixstats` database are touched only here, by the owner, in th
    `docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 < prisma/migrations/20261104120000_country_lore/migration.sql`.
 3. **Check.** `SELECT to_regclass('country_lore_authors'), to_regclass('country_lore_pages');` names both tables.
 4. **Editing.** Native lore follows WikiOS editing and needs no switch of its own. It appears for owners once WikiOS v1
-   launches in production ([cutover steps](../operations/wikios-v1-cutover.md)).
+   launches in production ([cutover steps](../history/operations/wikios-v1-cutover.md)).
 5. **Tell owners.** A lore page needs `[[Category:<Country> lore]]` to be listed and recorded (the writer adds it), and a
    co-author who is removed loses access on their next page load.
 

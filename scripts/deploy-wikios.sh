@@ -6,7 +6,7 @@
 # Structure copied from scripts/deploy-ixworld.sh (plan 417); the differences are the target
 # (WIKIOS_DIR, PM2 app `wikios`, port 3560) and the build flags (NEXT_PUBLIC_WIKIOS_STANDALONE).
 #
-# Deferred takeover only (deferred step T5 of docs/operations/wikios-v1-cutover.md); the launch does not run it.
+# Deferred takeover only (deferred step T5 of docs/history/operations/wikios-v1-cutover.md); the launch does not run it.
 #
 # Prerequisites (one-time, see deferred step T5):
 # - resolveBasePath() in scripts/setup/base-path.cjs (next.config.js and the stylesheets' PostCSS

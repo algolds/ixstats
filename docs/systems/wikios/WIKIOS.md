@@ -3,7 +3,7 @@
 **Last updated:** 2026-10-26 (launch hardening: conflicts, classic authority, sister wikis, proof)
 **Launch shape:** WikiOS is the wiki inside IxStates (ixwiki.com/projects/ixstates); ixwiki.com stays classic MediaWiki,
 public and editable, and canonical and share URLs stay on classic. WikiOS v1 (PR #52, D20) is merged and ships switched
-off; the launch turns `WIKIOS_V1_ENABLED` on (step 6b of the [launch runbook](../../operations/wikios-v1-cutover.md)). The
+off; the launch turns `WIKIOS_V1_ENABLED` on (step 6b of the [launch runbook](../../history/operations/wikios-v1-cutover.md)). The
 ixwiki.com takeover is deferred. See [Launch shape and modes](#launch-shape-and-modes).  
 **Status:** Release candidate, platform 1.5.0  
 **Package:** `src/lib/wiki-os/` (in-repo module, imported as `~/lib/wiki-os`; not a published package)  
@@ -14,8 +14,8 @@ versioned with Achievements. The launch hardening moves none of them (owner ques
 **Routes:** `/wiki/*` (one catch-all route: the reader, `?action=edit`, `?action=history`, `Talk:` pages, `?source=` foreign-wiki pages), `/util/*` (utility pages, including
 `/util/repository` and `/util/lorewards`), `/stashes`  
 **Related:** [style guide](style-guide.md) · [Margin spec](wikios-margin-spec.md) ·
-[Stage 3 config plan](wikios-stage3-config-plan.md) (superseded) · [Stash](../stash.md) · [Lore lifecycle](../lore-lifecycle.md) ·
-[gold proof reports](../../audits/wikios-proof/README.md) · [launch hardening spec](../../superpowers/specs/2026-10-24-wikios-launch-hardening-design.md)
+[Stage 3 config plan](../../history/systems/wikios/wikios-stage3-config-plan.md) (superseded) · [Stash](../stash.md) · [Lore lifecycle](../lore-lifecycle.md) ·
+[gold proof reports](../../audits/wikios-proof/README.md) · [launch hardening spec](../../history/specs/2026-10-24-wikios-launch-hardening-design.md)
 
 WikiOS is the knowledge engine and structured worldbuilding platform for IxStates. PostgreSQL is the primary database for article content (4,685+ articles), append-only revisions, directed link graphs (48,200+ edges), taxonomies, and 7,555+ media assets (`wiki_assets`). Saves commit to PostgreSQL first (target under 10ms); rendering still goes through MediaWiki (see below).
 
@@ -23,14 +23,14 @@ WikiOS is the knowledge engine and structured worldbuilding platform for IxState
 
 ## Launch shape and modes
 
-The owner chose the launch shape on 2026-10-24 ([launch hardening spec](../../superpowers/specs/2026-10-24-wikios-launch-hardening-design.md)).
+The owner chose the launch shape on 2026-10-24 ([launch hardening spec](../../history/specs/2026-10-24-wikios-launch-hardening-design.md)).
 IxStates stays at ixwiki.com/projects/ixstates (`BASE_PATH=/projects/ixstates`) and WikiOS is its wiki. ixwiki.com stays
 classic MediaWiki, public and editable. Canonical and share URLs point at classic, and IxStates' robots rules cover only
 its own paths and keep `?source=` pages out of the index. Bots move to WikiOS's `/w/api.php` with signed bot passwords
 (runbook step 6c), and their edits mirror out to classic. The takeover kit (the standalone `wikios` process,
 `wikios-takeover.conf`, the `/classic/` article path) is deferred: its MediaWiki parts apply only with
 `define( 'WIKIOS_TAKEOVER', true )`, which nothing in the launch sets, and its steps are the deferred section of the
-[launch runbook](../../operations/wikios-v1-cutover.md).
+[launch runbook](../../history/operations/wikios-v1-cutover.md).
 
 Two switches decide what WikiOS does: `WIKIOS_V1_ENABLED` (`src/lib/wiki-os/v1-switch.ts`) and the admin editing switch
 (`src/lib/wiki-os/editing-switch.ts`, in `/admin/wikios-settings`). The inbound sync from classic and the conflict rule
@@ -134,7 +134,7 @@ ratchet rule:
 - **Inbound recent-changes sync.** `services/auto-sync-service.ts` (`runAutoSyncCycle`) pulls edits made directly on classic MediaWiki into PostgreSQL, from the `wiki-recentchanges` cron job and the `/api/wikios/inbound-sync` webhook.
 - **Outbound mirror (`services/mirror-worker.ts`, plan 407).** A durable outbox (`wiki_mirror_jobs`, written in the same transaction as the edit, move, delete, undelete or protection) applied per title in order by the dedicated `WikiOSMirror` bot: revisions go through `action=import` with `assignknownusers=1`, so MediaWiki credits the author's first shown claimed old IxWiki name, and anyone else's edit goes out as `wikios>handle`; failures back off and end `dead` after 8 attempts for an administrator to requeue.
 - **Multi-wiki reader.** `?source=iiwiki|althistory` opens another wiki's page read-only (Sept 2026); see [Sister wikis](#sister-wikis).
-- **Article sanitizer (`src/lib/utils/sanitize-html.ts`, plan 415).** `sanitizeWikiArticleHtml` keeps the tags and attributes MediaWiki's own Sanitizer allows (legacy `{| border=1 bgcolor=… |}` tables, `<font>`, `<center>`, `<del>`/`<ins>`, ruby, `<bdo>`, `<data>`, list `type`/`start`/`reversed`) and blocks scripts, frames, forms, event handlers and `javascript:`/`data:` URLs. A `<style>` stays only when it is TemplateStyles' own (`data-mw-deduplicate`), and then as CSS confined to `.mw-parser-output` by `scope-template-styles.ts`: the reader gives that class, MediaWiki's own, to each element whose innerHTML is a part of the article (body, infobox, notices, the editors' previews), so a template's CSS never reaches the header, toolbar or margin around it; a selector that asks for the root's siblings is dropped, only `@media` at-rules survive, and `@import`, a `url()` to any host but the wiki's own origin (relative URLs stay), `attr()`, `expression()`, `behavior` and `-moz-binding` are stripped; anything the splitter cannot read with certainty is dropped. `WIKIOS_TEMPLATESTYLES=0` is the emergency lever: it removes every `<style>` again (on when unset, empty, `1`, `true`, `on` or `yes`, off for any other value; part of the sanitizer fingerprint; runbook step 10c in [wikios-v1-cutover.md](../../operations/wikios-v1-cutover.md)). The scoper is tested against an exact oracle (lightningcss): `bun run audit:template-styles` for a deep run.
+- **Article sanitizer (`src/lib/utils/sanitize-html.ts`, plan 415).** `sanitizeWikiArticleHtml` keeps the tags and attributes MediaWiki's own Sanitizer allows (legacy `{| border=1 bgcolor=… |}` tables, `<font>`, `<center>`, `<del>`/`<ins>`, ruby, `<bdo>`, `<data>`, list `type`/`start`/`reversed`) and blocks scripts, frames, forms, event handlers and `javascript:`/`data:` URLs. A `<style>` stays only when it is TemplateStyles' own (`data-mw-deduplicate`), and then as CSS confined to `.mw-parser-output` by `scope-template-styles.ts`: the reader gives that class, MediaWiki's own, to each element whose innerHTML is a part of the article (body, infobox, notices, the editors' previews), so a template's CSS never reaches the header, toolbar or margin around it; a selector that asks for the root's siblings is dropped, only `@media` at-rules survive, and `@import`, a `url()` to any host but the wiki's own origin (relative URLs stay), `attr()`, `expression()`, `behavior` and `-moz-binding` are stripped; anything the splitter cannot read with certainty is dropped. `WIKIOS_TEMPLATESTYLES=0` is the emergency lever: it removes every `<style>` again (on when unset, empty, `1`, `true`, `on` or `yes`, off for any other value; part of the sanitizer fingerprint; runbook step 10c in [wikios-v1-cutover.md](../../history/operations/wikios-v1-cutover.md)). The scoper is tested against an exact oracle (lightningcss): `bun run audit:template-styles` for a deep run.
 - **Cloudflare edge defense (`src/lib/wiki-os/guardian/`).** Non-blocking Cloudflare Zone edge cache purges on save
   (not on revert or rollback). There is no CAPTCHA step (plan 416 removed the unused Turnstile check): editing needs a
   signed-in account and is rate-limited and rights-checked. There is no mass-blanking or homoglyph abuse filter; the

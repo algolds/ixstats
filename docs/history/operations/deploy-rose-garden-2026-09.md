@@ -1,11 +1,11 @@
 # Deploying `rose-garden` to production (September 2026 plan wave)
 
-> **Superseded as an order: follow the [release guide](release-guide.md), Part B.** 1.4 never completed on production,
+> **Superseded as an order: follow the [release guide](../../operations/release-guide.md), Part B.** 1.4 never completed on production,
 > so its steps ship with 1.5, and the release guide now gives their order around the new deploy script (the additive
 > schema step, the SQL it runs before `db push`, the post-deploy SQL). This runbook keeps the detail the release guide
 > links to: the environment, the WikiRevision dedupe, the Realms collisions, relief, the Vault hub
 > backfills, Eurth, the cron order and the data fixes. Where a step below runs SQL or `db push` by hand that the deploy
-> script now runs, the step says so. It retires to [docs/history/](../history/README.md) once 1.5 is released.
+> script now runs, the step says so. It retires to [docs/history/](../README.md) once 1.5 is released.
 
 **For:** whoever deploys IxStats on the prod host (`ssh ixwiki`, root). **Written:** 2026-09-27.
 Read it end to end once before starting. Every command here is meant to be run by hand.
@@ -125,7 +125,7 @@ Read it end to end once before starting. Every command here is meant to be run b
   remote named `master` and hard-resets to it, runs `bun install --frozen-lockfile` and `db:generate`, takes a backup,
   applies the additive schema step, checks the WikiOS proof, runs the hand-written SQL (the Realms drop, the forum, Atlas
   Studio, Vault hub, cards, IxnayID, WikiOS and 2026-10 files), then **`prisma db push` against the prod database**,
-  builds, deploys IxWorld, reloads PM2 and starts the web app ([release guide A4](release-guide.md#a4-build-and-deploy)).
+  builds, deploys IxWorld, reloads PM2 and starts the web app ([release guide A4](../../operations/release-guide.md#a4-build-and-deploy)).
   The push aborts the deploy, with the live build untouched, if a change would lose data; the dedupe step below
   prevents one such stop.
 
@@ -180,7 +180,7 @@ echo 'REDIS_URL=redis://localhost:6379' >> .env.production.local   # ixstats-red
   `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (`mailto:` address); generate the pair once with
   `node -e "const c=require('crypto').createECDH('prime256v1');c.generateKeys();console.log(c.getPublicKey('base64url'),c.getPrivateKey('base64url'))"`
   and keep it: changing it invalidates every saved browser subscription. Set them for the web app and for
-  `ixstats-cron` (the digest job sends email). Details: [notifications.md](../systems/notifications.md#email-and-web-push-sl-5).
+  `ixstats-cron` (the digest job sends email). Details: [notifications.md](../../systems/notifications.md#email-and-web-push-sl-5).
 
 ## 3. `next.config.js` (canonical `/@user` URLs)
 
@@ -245,7 +245,7 @@ create everything in them.
 ## 5. Deploy
 
 First promote the release on GitHub: merge `rose-garden` into `development`, then `development` into `master`
-(merge PRs, CI green; see [contributing.md](../processes/contributing.md#branches)). Production deploys `master`.
+(merge PRs, CI green; see [contributing.md](../../processes/contributing.md#branches)). Production deploys `master`.
 
 ```bash
 cd /ixwiki/public/projects/ixstats
@@ -272,7 +272,7 @@ or re-add what the deploy's SQL still converts. The deploy script now does what 
 What stays by hand is the ownership backfill, and it has to run **before** the deploy script: the deploy's MyCountry
 `f-defense.sql` ends every proposed PvP challenge whose defender has no owner, and the realm-time starter-force reset
 gives a nation with no owner an NPC's policy. The column it fills only exists after the additive step, so run the
-additive step by hand first, as in the [release guide](release-guide.md#b3-the-window-the-app-stopped) (steps 4 and 8),
+additive step by hand first, as in the [release guide](../../operations/release-guide.md#b3-the-window-the-app-stopped) (steps 4 and 8),
 which also says what to do when `--apply` meets a column only the deploy's SQL adds:
 
 ```bash
@@ -332,7 +332,7 @@ Then run the deploy script:
 
 It installs dependencies, generates the Prisma client, backs up, runs the additive step, the WikiOS proof check, its SQL
 and `db push`, builds (plus `scripts/deploy-ixworld.sh`), reloads PM2 with `--update-env`, and starts the app
-([release guide A4](release-guide.md#a4-build-and-deploy)). If `db push` reports possible data loss, **stop and read the
+([release guide A4](../../operations/release-guide.md#a4-build-and-deploy)). If `db push` reports possible data loss, **stop and read the
 message**: it means a schema change would drop data, and you should not add `--accept-data-loss` blindly. The expected
 unique-constraint warnings, and how to get past them once the deploy's SQL has run, are in the release guide (B3 step
 10). WikiOS v1's five unique constraints are `wiki_articles (source, pageId)`, `wiki_revisions (source, revId)`,
@@ -383,7 +383,7 @@ founder's world relief in its apply job, at any time after the deploy), `ixstats
 below, and the IxWorld standalone (maps.ixwiki.com serves them). Unset, `MAP_RASTER_DIR` is `data/map-rasters` under
 each process's own working directory, so every one of them reads and writes a different folder. A redeploy of IxWorld
 copies the web app's `data/` once: that would cover Ixnay and Eurth as built today, and never a world a founder applies
-later, whose relief tiles maps.ixwiki.com would then answer with 404 ([realm-maps.md](../systems/realm-maps.md#7-production-notes)).
+later, whose relief tiles maps.ixwiki.com would then answer with 404 ([realm-maps.md](../../systems/realm-maps.md#7-production-notes)).
 Do this before the commands:
 
 1. Create one folder outside the repository and outside `data/` (the IxWorld deploy copies `data/`), for example
@@ -467,7 +467,7 @@ docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
 The file does not touch the bridge's XenForo links (`/forum/thread/<id>[#post-<id>]`, `/forum/post/<id>`,
 `/forum/<nodeId>`, `/forum/members/<id>`): those need the imported threads, and the forum import's `--apply`
 (step 6 of the go-live runbook, now
-[docs/history/operations/forum-xenforo-import-runbook.md](../history/operations/forum-xenforo-import-runbook.md))
+[docs/history/operations/forum-xenforo-import-runbook.md](forum-xenforo-import-runbook.md))
 points them at the native post or thread, or at `/thinkpages`, and moves the bridge's stashed threads
 (`forum:thread:<id>` items) to native items. **The import tooling was retired on 2026-10-21 (owner ruling).** If
 production has not run step 6, those notification links stay 404s and those stash items stay out of `/stashes` until
@@ -503,7 +503,7 @@ the tooling is restored from git and run (the runbook's Retired note says how).
 
 ## 6b. Serve Eurth (the first outside realm)
 
-Full detail and player instructions: [`docs/systems/realms-eurth-onboarding.md`](../systems/realms-eurth-onboarding.md). On prod:
+Full detail and player instructions: [`docs/operations/realms-eurth-onboarding.md`](../../operations/realms-eurth-onboarding.md). On prod:
 
 1. Re-run `bun scripts/realms/backfill-foundation.ts` (dry run): expect `0 to assign, 0 collisions` — anything else
    means someone linked a nation between the backfill and the deploy; resolve as in 5a.
@@ -620,7 +620,7 @@ CRON_ENABLED_JOBS=...,map-tiles
 ```
 
 That makes 26 jobs here, including `notification-email-digest`, `realm-source-sync`, `map-import` and `map-tiles` (plus the two
-WikiOS ones below): the full table of 27 in `src/server/cron/jobs.ts` ([events.md](../reference/events.md#scheduled--batch-jobs) lists them with
+WikiOS ones below): the full table of 27 in `src/server/cron/jobs.ts` ([events.md](../../reference/events.md#scheduled--batch-jobs) lists them with
 schedules). Each run is recorded as a `CronRun` row; `/api/health` shows the last run per job.
 
 `wiki-recentchanges` is now the **only** recent-changes sync; the in-process daemon was removed. Wiki edits stop
@@ -682,14 +682,14 @@ bun run wiki:backfill:blurhash -- --apply         # every PNG/JPEG/GIF/WebP asse
 - **CSP (plan 335 Step 6, PL-2):** nginx or a Cloudflare transform rule replaces the app's `Content-Security-Policy`
   header. The app's nonce now reaches the page, so once this release is live: remove that override, then load the
   pages in section 6 with the browser console open and check for "Refused to execute inline script" (see
-  [the release guide](release-guide.md#b6-csp-remove-the-nginx-override)).
+  [the release guide](../../operations/release-guide.md#b6-csp-remove-the-nginx-override)).
 - **Unused tables:** see plan 347 and branch `chore/drop-unused-prisma-models` (commit `d262df35`). It is kept off `rose-garden` on
   purpose, because `db push` would drop empty tables on the next deploy without review.
 - **Rotate** the PostgreSQL credential (plan 325).
 
 ## Rollback
 
-Follow the [release guide's rollback](release-guide.md#rollback): `scripts/deployment/rollback-deployment.sh` runs
+Follow the [release guide's rollback](../../operations/release-guide.md#rollback): `scripts/deployment/rollback-deployment.sh` runs
 this release's deploy script against the old commit with `SKIP_SCHEMA_SYNC=1`, so the older schema is never pushed.
 Rolling back past this release needs the pre-deploy dump (`--restore`): the deploy drops `world_configs`,
 `territory_claims`, `procedural_worlds`, `world_templates` and `forum_readers`, the `WikiRevision` dedupe removed

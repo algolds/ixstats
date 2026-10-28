@@ -1,5 +1,5 @@
 /**
- * The unread rule (docs/superpowers/specs/2026-10-10-thinkpages-forum-unread-notifications-design.md, sections 1 and
+ * The unread rule (docs/history/specs/2026-10-10-thinkpages-forum-unread-notifications-design.md, sections 1 and
  * 2), pure so the server and the tests share it. A thread is unread for a member when its last post is newer than the
  * later of what they read of it and thirty days ago. A thread older than the window never
  * counts, which keeps the read table bounded and stops a new member seeing the whole archive as unread.

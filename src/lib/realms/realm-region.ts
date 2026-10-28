@@ -1,5 +1,5 @@
 /**
- * Realm region pages (docs/specs/2026-10-05-realm-regions-design.md): directory tags and officer powers.
+ * Realm region pages (docs/history/specs/2026-10-05-realm-regions-design.md): directory tags and officer powers.
  * Client-safe.
  */
 

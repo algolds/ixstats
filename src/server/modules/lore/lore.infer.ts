@@ -1,5 +1,5 @@
 /**
- * A native lore piece's type, read from its wikitext (docs/superpowers/specs/2026-10-24-native-lore-design.md).
+ * A native lore piece's type, read from its wikitext (docs/specs/2026-10-24-native-lore-design.md).
  * The type groups pieces on the Lore tab: the owner's curation names it, or it is read from the page's first infobox.
  * Pure: no database, no wiki reads. The types and the category are in ~/lib/lore (client-safe).
  */

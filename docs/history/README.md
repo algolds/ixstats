@@ -31,7 +31,7 @@ folders (git-ignored); never link them from tracked docs.
 | [systems/map-editor-improvements-overview.md](systems/map-editor-improvements-overview.md) | June–August map editor plans, all shipped or superseded |
 | [systems/statecraft/mycountry-vision-audit.md](systems/statecraft/mycountry-vision-audit.md) | June 2026 snapshot of the MyCountry vision against the build |
 | [systems/wikios/wikios-longevity-workflow.md](systems/wikios/wikios-longevity-workflow.md) | WikiOS longevity round complete; Workstream C is in the backlog |
-| [systems/wikios/wikios-independence-2b-3.md](systems/wikios/wikios-independence-2b-3.md) | Stage 2b shipped; Stage 3 lives in [wikios-stage3-config-plan.md](../systems/wikios/wikios-stage3-config-plan.md) |
+| [systems/wikios/wikios-independence-2b-3.md](systems/wikios/wikios-independence-2b-3.md) | Stage 2b shipped; Stage 3 lives in [wikios-stage3-config-plan.md](systems/wikios/wikios-stage3-config-plan.md) |
 | [systems/scheduled-changes.md](systems/scheduled-changes.md) | Its pipeline was deleted on 2026-10-06 (D11) |
 | [operations/forum-xenforo-import-runbook.md](operations/forum-xenforo-import-runbook.md) | XenForo forum go-live runbook; its export and import tooling was deleted on 2026-10-21 (owner ruling) |
 
@@ -44,11 +44,11 @@ folders (git-ignored); never link them from tracked docs.
 
 Also merged on 2026-10-05, without a history copy: `systems/wikios.md` is now a pointer to
 [systems/wikios/WIKIOS.md](../systems/wikios/WIKIOS.md), which took its unique facts, and `realms/eurth-onboarding.md`
-moved to [systems/realms-eurth-onboarding.md](../systems/realms-eurth-onboarding.md).
+moved to [systems/realms-eurth-onboarding.md](../operations/realms-eurth-onboarding.md).
 
 ## Due to retire
 
-- [operations/deploy-rose-garden-2026-09.md](../operations/deploy-rose-garden-2026-09.md): after the 1.4 release.
-- [roadmap/ACTION_PLAN_2026-10-05.md](../roadmap/ACTION_PLAN_2026-10-05.md): once its remaining owner and ops actions
+- [operations/deploy-rose-garden-2026-09.md](operations/deploy-rose-garden-2026-09.md): after the 1.4 release.
+- [roadmap/ACTION_PLAN_2026-10-05.md](roadmap/ACTION_PLAN_2026-10-05.md): once its remaining owner and ops actions
   are done.
 - Implemented specs listed under PF§7 in the [backlog](../roadmap/backlog.md#pf7-documentation-gaps).

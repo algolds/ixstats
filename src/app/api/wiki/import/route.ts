@@ -19,7 +19,7 @@
  * The limit sits below Next.js's own `experimental.proxyClientMaxBodySize` (10 MiB by default):
  * Next clones request bodies for its proxy and silently truncates the clone at that size, so a
  * limit above it could never be told apart from a cut-off dump. Raise both together
- * (docs/operations/wikios-v1-cutover.md, step 5c) through WIKIOS_IMPORT_MAX_BYTES.
+ * (docs/history/operations/wikios-v1-cutover.md, step 5c) through WIKIOS_IMPORT_MAX_BYTES.
  */
 
 import { auth } from "@clerk/nextjs/server";

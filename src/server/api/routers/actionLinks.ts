@@ -1,5 +1,5 @@
 /**
- * Action-linked posts and story chains (docs/superpowers/specs/2026-10-07-action-linked-posts-design.md).
+ * Action-linked posts and story chains (docs/history/specs/2026-10-07-action-linked-posts-design.md).
  * Thin: validates, binds the caller's country, calls ~/server/modules/action-links, maps ActionLinkError.
  * Post link sync is not exposed here: the forum's post writer calls syncPostActionLinks on save.
  * Backlinks (`discussions`, `discussionCounts`) read through the forum module's visibility rules.

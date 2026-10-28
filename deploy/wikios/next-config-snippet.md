@@ -1,7 +1,7 @@
 # next.config.js and base-path changes for the WikiOS standalone build
 
 `next.config.js` is tracked in git, and it does not carry these edits yet. They belong to the deferred
-ixwiki.com takeover build (deferred step T5 of `docs/operations/wikios-v1-cutover.md`), which the IxStates-only launch
+ixwiki.com takeover build (deferred step T5 of `docs/history/operations/wikios-v1-cutover.md`), which the IxStates-only launch
 does not run. Make them in a commit before that build, not by hand on the server: `scripts/deploy-production.sh`
 runs `git reset --hard` and `git clean -fd` in the production checkout, so a hand edit there is undone by the next
 IxStates deploy. Edit 1 goes beside the IxWorld branch at the top of `resolveBasePath()`, which lives in

@@ -1,4 +1,4 @@
-/** Atlas (spec docs/specs/2026-10-12-atlas-studio-design.md): the admin home for every realm's map and World Studio. */
+/** Atlas (spec docs/history/specs/2026-10-12-atlas-studio-design.md): the admin home for every realm's map and World Studio. */
 import { createTRPCRouter } from "~/server/api/trpc";
 import { atlasHealthRouter } from "./health";
 import { atlasJobsRouter } from "./jobs";

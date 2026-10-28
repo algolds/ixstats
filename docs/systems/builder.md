@@ -3,7 +3,7 @@
 **Last updated:** 2026-10-15
 
 **Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
-**Subsystem:** Country Builder (v5, the [redesign spec](../specs/2026-10-15-country-builder-editor-redesign-design.md))  
+**Subsystem:** Country Builder (v5, the [redesign spec](../history/specs/2026-10-15-country-builder-editor-redesign-design.md))  
 **Routes:** `/builder` (found) · `/mycountry/welcome` (after founding) · `/mycountry/editor` (edit) | **Status:** ✅ Live (see [SYSTEM_STATUS.md](SYSTEM_STATUS.md))
 
 Founding a nation takes a few plain choices and works one-handed on a phone. Editing a nation is a settings page where

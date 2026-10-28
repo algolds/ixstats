@@ -1,6 +1,6 @@
 /** @jest-environment node */
 /**
- * Native lore's server rules (docs/superpowers/specs/2026-10-24-native-lore-design.md): who may write a country's
+ * Native lore's server rules (docs/specs/2026-10-24-native-lore-design.md): who may write a country's
  * lore (its owner and the lore team, only in the default realm and while WikiOS editing is on), which pieces its
  * Lore tab lists (the lore category's pages and the owner's added titles, without hidden or missing pages, pinned
  * first), and the owner's lore team and curation, every write re-checked on the server.

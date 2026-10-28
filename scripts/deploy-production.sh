@@ -226,7 +226,7 @@ else
     bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261017120000_action_link_rewards/migration.sql || exit 1
     bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261018120000_thinkpages_realm_adverts/migration.sql || exit 1
 
-    # Atlas and World Studio (docs/specs/2026-10-12-atlas-studio-design.md): creates the preset tables and drops the dead
+    # Atlas and World Studio (docs/history/specs/2026-10-12-atlas-studio-design.md): creates the preset tables and drops the dead
     # procedural_worlds, world_templates and realms.templateId. Idempotent, and it must run BEFORE the push: with the models
     # gone from the schema, db push refuses to drop the non-empty procedural_worlds table and would abort the deploy.
     echo "🔄 Applying the Atlas Studio SQL..."
@@ -249,7 +249,7 @@ else
     # Cards refresh Phase 4 (docs/specs/2026-10-15-cards-refresh-design.md §2.2): listings, dust, market prices, mutes,
     # inscription reports, and the trade and auction status enums converted in place (BEFORE the push). Idempotent.
     bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261101120000_cards_economy/migration.sql || exit 1
-    # Card categories (docs/superpowers/specs/2026-10-23-card-categories-design.md): the category source, confidence and
+    # Card categories (docs/history/specs/2026-10-23-card-categories-design.md): the category source, confidence and
     # review columns and the suggestions table. Additive and idempotent.
     bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261102120000_cards_categories/migration.sql || exit 1
     # IxnayID identity (design 2026-10-23): the name claims and revision tag tables. Additive and idempotent.
@@ -259,7 +259,7 @@ else
     # The IxWiki link rows go (the legacy User columns stay one release, @ignore, for the old app during the build).
     # Refuses if the conversion never ran; idempotent.
     bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261103120001_ixnayid_drop_legacy/migration.sql || exit 1
-    # Native lore (docs/superpowers/specs/2026-10-24-native-lore-design.md): the lore team and lore page curation tables.
+    # Native lore (docs/specs/2026-10-24-native-lore-design.md): the lore team and lore page curation tables.
     # Additive and idempotent.
     bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261104120000_country_lore/migration.sql || exit 1
     # WikiOS data safety (docs/superpowers/plans/2026-10-24-wikios-data-safety.md): the conflict log, the old parks turned into
@@ -269,7 +269,7 @@ else
     # past it). Additive and idempotent.
     bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261105120001_wikios_sync_dead_letters/migration.sql || exit 1
 
-    # MyCountry fixes and realm time (docs/operations/deploy-mycountry-2026-10.md, deploy-realm-time-2026-10.md): the data
+    # MyCountry fixes and realm time (docs/history/operations/deploy-mycountry-2026-10.md, deploy-realm-time-2026-10.md): the data
     # SQL in the runbooks' order. Realm time drops the legacy security tables and retypes military columns, which db push
     # refuses to do. Idempotent; the runbooks' manual run_sql steps and the starter-force reset stay as written.
     bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-mycountry/h-meeting-intent-columns.sql || exit 1
@@ -294,10 +294,10 @@ else
         # db push never runs migration SQL; this data rename is idempotent (IxWorld realm → Ixnay).
         # ponytail: one-off line; drop it once prod's realm row reads Ixnay.
         bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261019120000_rename_ixworld_realm_ixnay/migration.sql || exit 1
-        # Atlas Release 0 (docs/specs/2026-10-11-atlas-release-0-performance-design.md): the Country geom_postgis trigger and
+        # Atlas Release 0 (docs/history/specs/2026-10-11-atlas-release-0-performance-design.md): the Country geom_postgis trigger and
         # backfill and the atlas_country_union function the code calls. Idempotent; must be in place before the new code runs.
         bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261021120000_atlas_r0/migration.sql || exit 1
-        # Atlas Release A (docs/specs/2026-10-11-atlas-release-a-world-creation-design.md): Country.worldgen and
+        # Atlas Release A (docs/history/specs/2026-10-11-atlas-release-a-world-creation-design.md): Country.worldgen and
         # Country.claimable, which db push also adds; idempotent, and must be in place before the new code runs.
         bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261022120000_atlas_ra/migration.sql || exit 1
     else

@@ -7,7 +7,7 @@
 **Primary Action:** `COLLECT` | **Domain Accent:** Raspberry (`APP_TINTS.vault`)  
 **Routes:** `/vault/cards/{mine,sets,market,explore}` (`/vault/cards` opens Mine), `/vault/store` (packs), `/vault/import`, `/admin/cards` | **Status:** Release Candidate (platform 1.5.0)
 
-Design: [the cards refresh spec](../specs/2026-10-15-cards-refresh-design.md). Phase 1 laid the foundations, Phase 2 built the admin and the importers, Phase 3 built the face and the hub, Phase 4 built the [card economy](#card-economy) described here, and the card categories phase gave every lore card a category ([Categories](#categories); its design is `docs/superpowers/specs/2026-10-23-card-categories-design.md`).
+Design: [the cards refresh spec](../specs/2026-10-15-cards-refresh-design.md). Phase 1 laid the foundations, Phase 2 built the admin and the importers, Phase 3 built the face and the hub, Phase 4 built the [card economy](#card-economy) described here, and the card categories phase gave every lore card a category ([Categories](#categories); its design is `docs/history/specs/2026-10-23-card-categories-design.md`).
 
 ---
 

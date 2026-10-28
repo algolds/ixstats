@@ -1,5 +1,5 @@
 /**
- * The IxStates integration reads (docs/superpowers/specs/2026-10-10-thinkpages-forum-integrations-design.md), merged
+ * The IxStates integration reads (docs/history/specs/2026-10-10-thinkpages-forum-integrations-design.md), merged
  * into `thinkpagesForum`: the newest board messages for Home's "Your realm" panel and for a realm's overview. Thin:
  * validates and calls ~/server/modules/thinkpages-forum. Both are queries and write nothing.
  */

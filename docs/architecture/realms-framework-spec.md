@@ -3,7 +3,7 @@
 **Status:** Decided 2026-09-27 (design Q&A with the owner). Supersedes the earlier multi-tenant PRD
 (`docs/archive/superpowers/specs/2026-07-21-realms-platform-prd.md` — `docs/archive/` is gitignored, so it exists only in local archives), which is historical only.
 **Build phases:** 1 Foundation → 2 Founding → 3 Playing → 4 Social & governance.
-Phase 1 spec: [`docs/specs/2026-09-27-realms-foundation-design.md`](../specs/2026-09-27-realms-foundation-design.md).
+Phase 1 spec: [`docs/history/specs/2026-09-27-realms-foundation-design.md`](../history/specs/2026-09-27-realms-foundation-design.md).
 
 ## What a realm is
 
@@ -68,7 +68,7 @@ Clerk Organizations as realms.
 Both plans are complete and were merged into `rose-garden` on 2026-09-29 (`91a84f50f`), followed by the F-6
 verification fix; the local, gitignored ledgers (`.superpowers/sdd/2026-09-27-realms-foundation`,
 `.superpowers/sdd/2026-09-28-realms-eurth`) record every task and ruling. Runbook:
-[`docs/systems/realms-eurth-onboarding.md`](../systems/realms-eurth-onboarding.md).
+[`docs/operations/realms-eurth-onboarding.md`](../operations/realms-eurth-onboarding.md).
 
 - **All tasks complete and reviewed clean:** Phase 1 tasks 1–8; Eurth tasks E1–E8.
 - **Gates green at `1d376b33`:** typecheck server/trpc/db/ui 0/0/0/0; full Jest 322 suites / 2,921 tests
@@ -121,7 +121,7 @@ accounts, Sister wikis. See [Wiki identity](../systems/ixnayid-passport.md#wiki-
   the Atlas overhaul). The world
   editor's realm follows the map it's drawn over; the country editor always works in the realm of the
   viewer's own nation, even when opened from another realm's map (E4, E-t).
-- This runbook, [`docs/systems/realms-eurth-onboarding.md`](../systems/realms-eurth-onboarding.md) (E7).
+- This runbook, [`docs/operations/realms-eurth-onboarding.md`](../operations/realms-eurth-onboarding.md) (E7).
 
 - Image maps (decisions 10–11): the **realm map import wizard** (Atlas, Import a map; the Full Pipeline of the
   removed `PipelineWizard` did this before it) takes a flat-colour PNG/JPEG (≤ 40 MB), detects its
@@ -150,7 +150,7 @@ pulled forward only the pieces listed above (lore index import, nation-page clai
 maps, PNG realm maps, the realm hub, Play as).
 
 **Rulings (E-a..E-w, F-1..F-6):** E-a–E-j are the Eurth design spec's binding decisions
-([`docs/specs/2026-09-28-realms-eurth-design.md`](../specs/2026-09-28-realms-eurth-design.md)) — index lore rather than copy it (E-a), a
+([`docs/history/specs/2026-09-28-realms-eurth-design.md`](../history/specs/2026-09-28-realms-eurth-design.md)) — index lore rather than copy it (E-a), a
 5,000-page crawl cap for this slice (E-b), follow only keyword subcategories (E-c), infobox-based nation
 detection (E-d), a script-based one-time import (E-e), claiming creates the `Country` (E-f), a
 realm-suffixed slug on a name collision (E-g), realm-scoped cross-country queries (E-h), a per-realm

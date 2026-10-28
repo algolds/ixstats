@@ -1,7 +1,7 @@
 # Realm maps: bring any realm's map into IxWorld
 
-**Last updated:** 2026-10-12 · Spec: `docs/specs/2026-10-07-eurth-map-port.md` (Phase 5) · Worked example: Eurth
-([realms-eurth-onboarding.md](realms-eurth-onboarding.md) §4.7–4.9)
+**Last updated:** 2026-10-12 · Spec: `docs/history/specs/2026-10-07-eurth-map-port.md` (Phase 5) · Worked example: Eurth
+([realms-eurth-onboarding.md](../operations/realms-eurth-onboarding.md) §4.7–4.9)
 
 A realm's map in IxWorld is built from its **map pipeline**: one config per realm, kept with the realm
 (`Realm.settings.map.pipeline`), filled from a **source preset** or typed in the realm's admin panel, and run as a

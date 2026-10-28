@@ -1,5 +1,5 @@
 /**
- * Forum reactions (docs/superpowers/specs/2026-10-10-thinkpages-forum-reactions-design.md): which reaction types
+ * Forum reactions (docs/history/specs/2026-10-10-thinkpages-forum-reactions-design.md): which reaction types
  * exist, the stored `{type: count}` map, and the count arithmetic the browser's optimistic update shares with the
  * server's recount. Pure, so the server, the board wire and the browser read one definition.
  *

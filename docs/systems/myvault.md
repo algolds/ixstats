@@ -7,7 +7,7 @@
 **Primary Action:** `COLLECT` | **Domain Accent:** Raspberry (`APP_TINTS.vault`, `[data-app="vault"]` in `src/styles/facet/tokens.css`)  
 **Routes:** `/vault`, `/vault/achievements`, `/vault/cards/{mine,sets,market,explore}`, `/vault/store`, `/vault/import` (plus the redirects below) | **Status:** Release Candidate (platform 1.5.0 "Lobster Crosby") — see [Known Gaps](#known-gaps)
 
-The Vault is the platform's collectathon hub: achievements, cards and the IxCredits store under one app, in the sidebar for every signed-in player (the `showCardsTab` setting is gone), with Lorewards shared between the Vault and WikiOS. IxCredits are **pure metagame**: they reward platform activity (wiki edits, ThinkPages and forum posts, card activity, Lorewards, achievements, the daily reward). A player's country and MyCountry play no part in the Vault economy; the one exception is the 2% nation-card royalty a sale or a trade's IxC pays the nation's owner, out of the market fee. Design: [the 2026-10-14 spec](../specs/2026-10-14-vault-collectathon-hub-design.md).
+The Vault is the platform's collectathon hub: achievements, cards and the IxCredits store under one app, in the sidebar for every signed-in player (the `showCardsTab` setting is gone), with Lorewards shared between the Vault and WikiOS. IxCredits are **pure metagame**: they reward platform activity (wiki edits, ThinkPages and forum posts, card activity, Lorewards, achievements, the daily reward). A player's country and MyCountry play no part in the Vault economy; the one exception is the 2% nation-card royalty a sale or a trade's IxC pays the nation's owner, out of the market fee. Design: [the 2026-10-14 spec](../history/specs/2026-10-14-vault-collectathon-hub-design.md).
 
 ---
 

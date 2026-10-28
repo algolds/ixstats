@@ -43,7 +43,7 @@ This is destructive. It will:
 
 There is no undo short of a DB restore — take a backup first. `bun run db:backup` dumps the Docker
 container (`pg_dump -Fc`) to `backups/ixstats-<UTC timestamp>.dump`; `bun run db:restore` restores one
-(see [deployment.md](../operations/deployment.md#backups-and-restore)):
+(see [deployment.md](deployment.md#backups-and-restore)):
 
 ```bash
 bun run db:backup
@@ -101,7 +101,7 @@ Re-run the dry run afterward (omit `--apply`) as a sanity check — it should re
 `owners: 0 to assign, 0 collisions`, `Ixnay slug: ixnay → ixnay`, `private realms → unlisted: 0` and
 `map layers with no realm → Ixnay: 0 (0 clash with an Ixnay feature, 0 keys held by more than one of
 them)`. (The script's former IxWiki link step is gone: since the IxnayID identity work, old IxWiki names reach an
-account only through name claims, see [Wiki identity](./ixnayid-passport.md#wiki-identity).)
+account only through name claims, see [Wiki identity](../systems/ixnayid-passport.md#wiki-identity).)
 
 ### 1.5 Deploy the code
 
@@ -416,7 +416,7 @@ Then the founder or the Map officer opens `/r/eurth/manage` → **Map**:
 
 ### 4.7 Eurth's map pipeline (art, physical layers, labels, flags)
 
-Eurth's map is built by the generic realm map pipeline: **[realm-maps.md](realm-maps.md)** is the runbook (config
+Eurth's map is built by the generic realm map pipeline: **[realm-maps.md](../systems/realm-maps.md)** is the runbook (config
 fields, art sources, steps, idempotency, panel, CLI, production notes). Everything Eurth-specific is data in the
 `eurth-map` source preset (`src/lib/realms/sources/presets/eurth-map.json`, key `mapPipeline`), loaded into
 `Realm.settings.map.pipeline`. The art is read from `a-seth-harrison/eurth-map` at the source sync's ref (CC BY-NC-ND,
@@ -455,7 +455,7 @@ bun scripts/realms/build-realm-map.ts --realm eurth --steps flags --apply       
 
 Re-run `flags` after every source sync apply and after claim approvals (new nations get media proxy paths from their
 infobox); on production copy the new `public/flags/eurth--*` files and `metadata.json` to
-`.next/standalone/public/flags/` and restart ([realm-maps.md §7](realm-maps.md#7-production-notes)). Borders a source
+`.next/standalone/public/flags/` and restart ([realm-maps.md §7](../systems/realm-maps.md#7-production-notes)). Borders a source
 sync writes are smoothed by the sync itself (Eurth's pipeline has `coverage`).
 
 **Local result (2026-10-07):** a dry run of every step against the stored map reports `unchanged` for physical
@@ -669,5 +669,5 @@ Eurth's map is fully isolated from Ixnay's — features are keyed per-realm
 | Let a player review claims | `/r/eurth/manage` → Officers → tick **Claims** (5.2) |
 | Let a player edit Eurth's map | `/r/eurth/manage` → Officers → tick **Map** (4.6) |
 | Set Eurth's credit line, base image or planet radius; recompute areas | `/r/eurth/manage` → **Map** (4.6) |
-| Build Eurth's map (art tiles, physical layers, labels, flags, view, smoothing) | `/r/eurth/manage` → Map → dry run, then apply; or `bun scripts/realms/build-realm-map.ts --realm eurth [--steps …] [--apply]` (4.7, [realm-maps.md](realm-maps.md)) |
+| Build Eurth's map (art tiles, physical layers, labels, flags, view, smoothing) | `/r/eurth/manage` → Map → dry run, then apply; or `bun scripts/realms/build-realm-map.ts --realm eurth [--steps …] [--apply]` (4.7, [realm-maps.md](../systems/realm-maps.md)) |
 | See who owns what in Eurth | `/admin/realms` → User Access tab, or `/countries?realm=eurth` |

@@ -7,7 +7,7 @@ source audits are kept in [docs/history/roadmap/](../history/roadmap/) ·
 [System Status](../systems/SYSTEM_STATUS.md) (what is live)
 
 > **2026-10-05:** statuses below include PRs #48–#49 and the 2026-10-05 security, CI, ops and cron commits. Items done
-> in code are marked ✅; [ACTION_PLAN_2026-10-05.md](ACTION_PLAN_2026-10-05.md) has the evidence and the ordered next
+> in code are marked ✅; [ACTION_PLAN_2026-10-05.md](../history/roadmap/ACTION_PLAN_2026-10-05.md) has the evidence and the ordered next
 > steps.
 
 This is the plan: what to do, in what order, and why. Items refer to the backlog above, which keeps the evidence
@@ -113,7 +113,7 @@ code-health track runs throughout.
 **Deploy & runtime**
 | Item | Refs | Size | Status |
 |---|---|---|---|
-| Deploy rose-garden via [the runbook](../operations/deploy-rose-garden-2026-09.md) (Realms schema, backfill, Eurth) | runbook | M | Open (ops) |
+| Deploy rose-garden via [the runbook](../history/operations/deploy-rose-garden-2026-09.md) (Realms schema, backfill, Eurth) | runbook | M | Open (ops) |
 | Redis in production (required for realtime across processes and for shared rate limits) | PF§5 | S | Partial: `/api/health` reports Redis state and `verify:environment` recommends `REDIS_ENABLED` in production (2026-10-05); enabling it on the server is ops |
 | Market WebSocket Redis bridge | PL-4 | M | ✅ Done (2026-10-05, `src/server/market-broadcast-bridge.ts`) |
 | Commit `ecosystem.config.example.cjs`; run the web process under PM2 | PL-12 | S | Partial: the template (cron, ws, ixtwitter) is committed and a failed PM2 reload fails the deploy (2026-10-05); `next.config.js` and `postcss.config.js` are tracked since 2026-10-06 (`next.config.example.js` points at the tracked file); production's copies are diffed before the 1.5 window (release guide B2). Left (ops): the web app still runs from `start-production.sh` |
@@ -126,7 +126,7 @@ code-health track runs throughout.
 | Cron monitoring: a `CronRun` row per run, a Discord alert on failure, last success in `/api/health` | PL-10 | M | ✅ Done (2026-10-05) |
 | Page through cron reads (the 1,000-row cap); log when the cap is hit | PL-7 | S | ✅ Done (2026-10-05): `db.ts` logs when the cap is hit; `findAllById` pages diplomatic-drift, politics-drift, thinkpages-trending, passive-income, national-issues and policy-maintenance |
 | Make `policy-maintenance` idempotent with a per-period key (confirm the `totalBudget` debit design) | PL-8 | S | ✅ Done (2026-10-05): one upkeep debit per policy per IxTime budget year (marker row in `PolicyEffectLog`); the annual period needs owner sign-off |
-| Enable the 23 jobs one per cycle, in the [runbook's order](../operations/deploy-rose-garden-2026-09.md#7-turn-cron-jobs-on-one-per-cycle) (now including `db-backup`, `log-retention`, `stat-progression`, `thinkpages-trending`, `achievements-evaluate`, the two Exchange jobs and the optional `notification-email-digest`) | VT-15, §9 | S | Open (ops) |
+| Enable the 23 jobs one per cycle, in the [runbook's order](../history/operations/deploy-rose-garden-2026-09.md#7-turn-cron-jobs-on-one-per-cycle) (now including `db-backup`, `log-retention`, `stat-progression`, `thinkpages-trending`, `achievements-evaluate`, the two Exchange jobs and the optional `notification-email-digest`) | VT-15, §9 | S | Open (ops) |
 | New jobs: log retention; nightly backup | PL-6, PL-11 | S | ✅ Done: `db-backup` (#37) and `log-retention` (2026-10-05) |
 | Replace the cron job lock's long transaction with a lease row | PL-9 | M | ✅ Done (2026-10-05, `job_leases`) |
 
@@ -224,11 +224,11 @@ shipped system.
 | 9 | Public founding application (decisions 6–7) | PF§4 | M |
 | 10 | Per-realm ThinkPages feed plus a global-feed setting. **Partial (#49):** a realm filter on the ThinkPages feed and realm boards; the dashboard feed and trending are not realm-scoped | PF§4 | M |
 | 11 | WikiOS portal to every realm's lore; realm-tagged forum | PF§4 | M |
-| 12 | ✅ **Done (2026-10-07):** per-realm in-world date label (`Realm.settings.inWorldDate`), plus community links and realm rules accepted before claiming ([design](../specs/2026-10-05-realm-regions-design.md)) | PF§4 | S–M |
-| 13 | ✅ **Done (2026-10-12, Atlas Release A, [design](../specs/2026-10-11-atlas-release-a-world-creation-design.md)):** realm world generation. A founder or `map` officer generates a world in the editor's World tab (a preset, or their own map with the missing layers generated to fit), previews and rerolls it in a Web Worker, and applies it through a `world` map import job: physical layers, claimable nation slots with a derived baseline, hillshade relief, and `Realm.seed` / `generationParams` written. Regeneration is blocked while a claim is pending or approved. `/labs/map-pipeline` and the procedural import source are removed. `WorldTemplate`, `ProceduralWorld` and `Realm.templateId` were dropped later by the Atlas and World Studio overhaul (AT-15) | AT-9, AT-15, PF§4 | M |
+| 12 | ✅ **Done (2026-10-07):** per-realm in-world date label (`Realm.settings.inWorldDate`), plus community links and realm rules accepted before claiming ([design](../history/specs/2026-10-05-realm-regions-design.md)) | PF§4 | S–M |
+| 13 | ✅ **Done (2026-10-12, Atlas Release A, [design](../history/specs/2026-10-11-atlas-release-a-world-creation-design.md)):** realm world generation. A founder or `map` officer generates a world in the editor's World tab (a preset, or their own map with the missing layers generated to fit), previews and rerolls it in a Web Worker, and applies it through a `world` map import job: physical layers, claimable nation slots with a derived baseline, hillshade relief, and `Realm.seed` / `generationParams` written. Regeneration is blocked while a claim is pending or approved. `/labs/map-pipeline` and the procedural import source are removed. `WorldTemplate`, `ProceduralWorld` and `Realm.templateId` were dropped later by the Atlas and World Studio overhaul (AT-15) | AT-9, AT-15, PF§4 | M |
 | 14 | ✅ **Done (2026-10-05):** PNG realms get adjacency (`rebuildAdjacency` after import) | AT-16 | S |
 | 15 | ✅ **Done (2026-10-05):** Admin Realm Users tab supports several realms per user | AT-19 | S |
-| 16 | ✅ **Done (2026-10-05):** NationStates-style realm pages: banner and stats strip, factbook, founder and officers with powers, embassies with cross-posting, realm poll, census, happenings, board mutes and bans, Manage tab, leaving a realm, directory tags, search and sort ([design](../specs/2026-10-05-realm-regions-design.md)) | — | L |
+| 16 | ✅ **Done (2026-10-05):** NationStates-style realm pages: banner and stats strip, factbook, founder and officers with powers, embassies with cross-posting, realm poll, census, happenings, board mutes and bans, Manage tab, leaving a realm, directory tags, search and sort ([design](../history/specs/2026-10-05-realm-regions-design.md)) | — | L |
 
 **Exit:** a test founder creates a realm (by application), approves claims, moderates, archives it, and nothing leaks into
 Ixnay.
@@ -315,7 +315,7 @@ the spine.
   `/util` (the duplicate routes are gone), move, delete and protect (WK-7, WK-3), native uploads (WK-5), edit conflicts
   (WK-2), reverts, watchlist notifications (WK-19), the rights engine, a durable mirror outbox with per-user attribution,
   and a MediaWiki-compatible `/w/api.php`. It ships switched off (`WIKIOS_V1_ENABLED`): WikiOS reads but takes no edits
-  until the [cutover runbook](../operations/wikios-v1-cutover.md), whose step 6b turns it on. The cutover itself is an
+  until the [cutover runbook](../history/operations/wikios-v1-cutover.md), whose step 6b turns it on. The cutover itself is an
   owner action.
 - **Restorations (each with its UI):** Margin reactions, delete, Stash tab and Inspect tab; Stash notes and ordering (the
   welcome guide no longer promises notes, WK-13).
@@ -374,14 +374,14 @@ Owner calls that block or reshape roadmap items. For each, the recommendation fr
 | D6 | Card rarity model | `CardRarity` enum without MYTHIC (lore-first spec) vs the current strings | Enum per the spec | Moot: crafting deprecated 2026-10-05 (the MYTHIC recipe and "failed rolls consume materials" no longer apply) |
 | D7 | ThinkShare encryption | Build real end-to-end encryption, or drop the schema fields and the flag | Drop | Schema drop |
 | D8 | ThinkPages follows | Build following, or remove the follower counters | **Closed (2026-10-06):** moot; persona follows with real counts and a Following feed shipped in #49 (SL-9) | SL-9 |
-| D9 | Unused Prisma models | Approve the drop list in [backlog §5](backlog.md#5-dead-schema) (57 models) | **Decided (2026-10-06):** approved. **Applied in the schema (2026-10-27):** 49 models dropped (the other seven and `CardPack.pdsConfig` went with the cards refresh and Atlas); production drops the tables in the deploy's push after the read-only counts in the [runbook](../operations/drop-unused-models.md) | Code health |
+| D9 | Unused Prisma models | Approve the drop list in [backlog §5](backlog.md#5-dead-schema) (57 models) | **Decided (2026-10-06):** approved. **Applied in the schema (2026-10-27):** 49 models dropped (the other seven and `CardPack.pdsConfig` went with the cards refresh and Atlas); production drops the tables in the deploy's push after the read-only counts in the [runbook](../history/operations/drop-unused-models.md) | Code health |
 | D10 | Narrator/LLM | Wire it into issues and decisions, or retire it | **Decided (2026-10-06):** retire. **Done (2026-10-06):** the narrator router, library, admin panel and `NARRATOR_LLM_*` env keys are removed; sports commentary keeps the shared LLM client, now in `src/lib/llm/` | WK-12 (closed) |
 | D11 | ScheduledChange pipeline | Use it for impact-delayed edits, or delete it | **Decided (2026-10-06):** delete. **Done (2026-10-06):** service, cron job and route, router, `usePendingLocks` and the budget/revenue form locks removed; the model went with the D9 drop (2026-10-27) | MC-6 (closed) |
 | D12 | Forum moderation | **Decided:** XenForo only; the forum help article says so (WK-20 done, 2026-10-05) | — | WK-20 |
 | D13 | Branch model | **Decided (2026-09-30):** `rose-garden` is the maintainer's nightly branch, `development` the junior devs' stable-but-experimental branch, `master` production; work is promoted up by merge PRs ([contributing.md](../processes/contributing.md#branches)) | — | PL-14 |
 | D14 | Vercel | Keep the `vercel.json` disable, or disconnect the integration | Disconnect | — |
 | D15 | Gemini workflows | Add `GEMINI_API_KEY`, or delete the workflows | Delete (Codex review already runs) | PL-14 |
-| D20 | PR #52 (WikiOS v1) | Merge now, or hold it until the cutover | **Decided and done (2026-10-06):** merged into `rose-garden`, switched off until the [cutover runbook](../operations/wikios-v1-cutover.md) | WK-2, WK-3, WK-5, WK-7, WK-16, WK-19 |
+| D20 | PR #52 (WikiOS v1) | Merge now, or hold it until the cutover | **Decided and done (2026-10-06):** merged into `rose-garden`, switched off until the [cutover runbook](../history/operations/wikios-v1-cutover.md) | WK-2, WK-3, WK-5, WK-7, WK-16, WK-19 |
 
 ---
 

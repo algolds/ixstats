@@ -18,7 +18,7 @@ Public, read-only nation profiles. Anyone (signed in or not) can open a country'
 
 ## Country profile
 
-The country page is **one document, like the passport** (spec: `docs/superpowers/specs/2026-10-24-country-page-passport-design.md`): a face, a ribbon attached to it and one panel, in one card (`_components/CountryDocument.tsx`). Every tab page renders the same `CountryDocument` with its `initialTab`; switching tabs is instant (`history.pushState`, no route transition), each tab keeps its own URL and back/forward follow through `popstate`. Every subject lives in exactly one tab.
+The country page is **one document, like the passport** (spec: `docs/history/specs/2026-10-24-country-page-passport-design.md`): a face, a ribbon attached to it and one panel, in one card (`_components/CountryDocument.tsx`). Every tab page renders the same `CountryDocument` with its `initialTab`; switching tabs is instant (`history.pushState`, no route transition), each tab keeps its own URL and back/forward follow through `popstate`. Every subject lives in exactly one tab.
 
 The profile shell (`(profile)/layout.tsx`) loads the country (`CountryDataProvider`), shows the breadcrumb (Countries › name) and shares the country, flag, ownership and cover with the document through `ProfileShellProvider` (`_components/ProfileShellContext.tsx`). Every state sits in the full-width page column (`PAGE_COLUMN`).
 

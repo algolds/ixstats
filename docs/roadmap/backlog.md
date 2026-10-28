@@ -43,10 +43,10 @@ but off · `DEAD` unused code or schema · `DEBT` maintainability · `OPS` an ac
 | Run `db:mark-match-revenue-collected` at the next deploy | ROADMAP M0 #13, SL-14 | — |
 | Run `db:refund-retired-store-items -- --apply` after the exploit audit | Archetype Proposal Token retired 2026-10-05 | Refunds each purchase once at what was paid ([myvault.md](../systems/myvault.md#retired-store-items)) |
 | CSP: remove the nginx/Cloudflare override, check for violations, then drop `'unsafe-inline'` from `script-src` | PL-2, PF§1 | The nonce reaches the page (#46); `src/lib/security/csp.ts` |
-| Deploy rose-garden via the [runbook](../operations/deploy-rose-garden-2026-09.md) | ROADMAP M1 | Realms schema, backfill, Eurth |
-| WikiOS v1 cutover via its [runbook](../operations/wikios-v1-cutover.md) | D20 | Merged switched off: `WIKIOS_V1_ENABLED` stays unset (WikiOS read-only) until the runbook's step 6b |
+| Deploy rose-garden via the [runbook](../history/operations/deploy-rose-garden-2026-09.md) | ROADMAP M1 | Realms schema, backfill, Eurth |
+| WikiOS v1 cutover via its [runbook](../history/operations/wikios-v1-cutover.md) | D20 | Merged switched off: `WIKIOS_V1_ENABLED` stays unset (WikiOS read-only) until the runbook's step 6b |
 | Enable the 23 cron jobs one per cycle, in the runbook's order | VT-15, PF§5 | None run until named in `CRON_ENABLED_JOBS`. Auctions and trades settle only through these jobs |
-| Optional: configure notification email (`EMAIL_*`) and Web Push (`VAPID_*`), then enable `notification-email-digest` | SL-5 | Built and off until configured ([runbook step 2](../operations/deploy-rose-garden-2026-09.md#2-environment)); Settings shows the switches only then |
+| Optional: configure notification email (`EMAIL_*`) and Web Push (`VAPID_*`), then enable `notification-email-digest` | SL-5 | Built and off until configured ([runbook step 2](../history/operations/deploy-rose-garden-2026-09.md#2-environment)); Settings shows the switches only then |
 | Redis in production | PF§5 | Required for realtime across processes and shared rate limits; `/api/health` reports it |
 | Run the web process under PM2 | PL-12 | The template (cron, ws, ixtwitter) is committed; the web app still runs from `start-production.sh` |
 | Promote rose-garden → development → master | PL-14, PL-15 | Dependabot and scheduled workflows read config from `master` only |
@@ -185,12 +185,12 @@ See §1 above (password rotation, CSP).
 - Mandate as a gate/multiplier; weekly lever regeneration (game loops :51, :72)
 - Atom-biased issue deck; atom-parameterized fog and regeneration (game loops :136–146)
 - Cross-arena ripple beyond intent resistance (game loops :101)
-- Directives that change transport network speeds ([route travel-time spec](../specs/2026-09-12-route-travel-time-design.md) §5)
+- Directives that change transport network speeds ([route travel-time spec](../history/specs/2026-09-12-route-travel-time-design.md) §5)
 - Edge cases: tier-transition smoothing, "IMF intervention" recession event, optimistic locking via a `version` column ([edge-cases.md](../reference/edge-cases.md))
 
 **Vault & cards**
 - Ribbons: Ribbons tab and community ribbons ([ribbons spec](../specs/2026-08-10-achievements-ribbons-design.md) §2, §3.2)
-- Lore-first schema cleanup: unique slug, `@@unique([wikiArticleTitle, wikiSource])`, drop stats/cardType, `CardRarity` enum ([ixcards spec](../specs/2026-08-13-ixcards-lore-first-rebuild.md) Part III); 40/25/20/10/4/1 rarity distribution (Part IV)
+- Lore-first schema cleanup: unique slug, `@@unique([wikiArticleTitle, wikiSource])`, drop stats/cardType, `CardRarity` enum ([ixcards spec](../history/specs/2026-08-13-ixcards-lore-first-rebuild.md) Part III); 40/25/20/10/4/1 rarity distribution (Part IV)
 - Category-themed and realm packs; seasons (cards refresh Phases 4 and 5; the Vault reorder shipped as the cards hub, whose Explore tab has the category filters)
 - Real-time card updates over WebSocket
 - Premium: payments/checkout (D4), tiered rate limits, export quotas, history limits, ThinkPages Pro tiers ([premium-features.md](../reference/premium-features.md))
@@ -200,14 +200,14 @@ See §1 above (password rotation, CSP).
 
 **Labs**
 - **Onoma** ([roadmap](../systems/onoma-roadmap.md)): vocabulary timeline slider (:114), language family trees (:115); semantic embeddings / TF-IDF (:121), corpus gap recommender (:122); AI Linguist (:127–128), free-text translator (:147), dialect branch merging (:153); Phase 10 AI agents (:158); platform integration: NPC dynasties, map toponyms, MyCountry demonyms (:175–180).
-- **MyLeague / MySports** ([PRD](../specs/2026-06-12-myleague-v1-prd.md), [MySports v0](../specs/2026-09-22-mysports-v0.md)): AegisCore engine and sport DSL; dynasty detection, significance scoring, national leaderboards; market-currency club valuations; promotion/relegation bulletin; broadcast mode, live speed, momentum graph, `<AthleteCard>`; bid-distribution transfer UI, institutional management, scouting, medical, academy.
+- **MyLeague / MySports** ([PRD](../history/specs/2026-06-12-myleague-v1-prd.md), [MySports v0](../specs/2026-09-22-mysports-v0.md)): AegisCore engine and sport DSL; dynasty detection, significance scoring, national leaderboards; market-currency club valuations; promotion/relegation bulletin; broadcast mode, live speed, momentum graph, `<AthleteCard>`; bid-distribution transfer UI, institutional management, scouting, medical, academy.
 - **Vexel:** P1 templates, conflict detection, personal arms, keyboard shortcuts; P2 items 1–10.
 - **Strata & Dynas** labs: roadmap only.
 
 **Platform & integrations**
-- Hugging Face Space offload for Whisper and an LLM ([huggingface-spaces-guide.md](../operations/huggingface-spaces-guide.md))
+- Hugging Face Space offload for Whisper and an LLM ([huggingface-spaces-guide.md](../history/operations/huggingface-spaces-guide.md))
 - Browser end-to-end tests (Playwright isn't installed)
-- WikiOS Stage 3 MediaWiki isolation: nginx lockdown, 301s, `LocalSettings`, internal `WIKIOS_MEDIAWIKI_API` endpoint ([stage3 plan](../systems/wikios/wikios-stage3-config-plan.md))
+- WikiOS Stage 3 MediaWiki isolation: nginx lockdown, 301s, `LocalSettings`, internal `WIKIOS_MEDIAWIKI_API` endpoint ([stage3 plan](../history/systems/wikios/wikios-stage3-config-plan.md))
 - WikiOS Workstream C packaging: decouple Clerk, the IxStats DB and templates ([longevity workflow, historical](../history/systems/wikios/wikios-longevity-workflow.md))
 - Lore-card portfolio boosts ([lore-lifecycle.md](../systems/lore-lifecycle.md))
 
@@ -228,7 +228,7 @@ See §1 above (password rotation, CSP).
 - **Logging:** a handful of `logger.*` calls against ~1,700 `console.*`; decide the framework's fate.
 - **Duplication:** atomic government/economy/tax triplicates; rarity palettes; sports simulate/persist and `season-cron.ts`; random-string id helpers; JSON deep copies.
 - **Size:** `lib/notifications/hooks.ts` (~1,300 lines); `wikios/templates.ts` holds static data.
-- **Design cleanup (plan 346 remainder):** hex colours, `dark:` variants, blurs, pulses, Sparkles icons ([HEX_COLOUR_INVENTORY](../audits/HEX_COLOUR_INVENTORY_2026-09-27.md), [Facet style audit](../audits/FACET_STYLE_AUDIT_2026-09-30.md)).
+- **Design cleanup (plan 346 remainder):** hex colours, `dark:` variants, blurs, pulses, Sparkles icons ([HEX_COLOUR_INVENTORY](../history/audits/HEX_COLOUR_INVENTORY_2026-09-27.md), [Facet style audit](../history/audits/FACET_STYLE_AUDIT_2026-09-30.md)).
 - **Product calls:** deck.gl and tsparticles usage; `DATABASE_READONLY` replacement; IxTimeSyncManager / AccuracyVerifier; root provider nesting.
 - **Stale code comments** (as of 2026-09-29): `AdminRouter.tsx:3`, `routers/wikios/index.ts`, `cloudflare-guardian.ts`.
 - **Pack seed:** the `LIMITED` pack type isn't in the `PackType` constant (`prisma/seeds/data/card-packs.json`).
@@ -236,9 +236,9 @@ See §1 above (password rotation, CSP).
 ### PF§7 Documentation gaps
 
 - **Help center:** remove the "Not available yet" notes as features land ([help.md](../systems/help.md#known-gaps)). Every shipped system now has an article (Lorewards, ribbons and showcase, shop items and the activity feed added 2026-10-05); the crafting article was removed when crafting was deprecated.
-- **Specs to retire once implemented and confirmed:** the realms foundation, realms Eurth and route travel-time specs; [myleague-top5-features](../systems/myleague-top5-features.md), [sports-llm-commentary](../research/sports-llm-commentary.md), [myleague-lore-integration](../systems/myleague-lore-integration.md) (mostly obsolete); [deploy-rose-garden-2026-09](../operations/deploy-rose-garden-2026-09.md) after the 1.4 release. Move them to [docs/history/](../history/README.md).
+- **Specs to retire once implemented and confirmed:** the realms foundation, realms Eurth and route travel-time specs; [myleague-top5-features](../history/systems/myleague-top5-features.md), [sports-llm-commentary](../history/research/sports-llm-commentary.md), [myleague-lore-integration](../systems/myleague-lore-integration.md) (mostly obsolete); [deploy-rose-garden-2026-09](../history/operations/deploy-rose-garden-2026-09.md) after the 1.4 release. Move them to [docs/history/](../history/README.md).
 - **Trim:** [rate-limiting.md](../operations/rate-limiting.md) (~1,350 lines, mostly sketches); [refactoring.md](../processes/refactoring.md) (~1,000 lines of generic guidance).
-- **Phase 4 follow-ups** ([action plan](ACTION_PLAN_2026-10-05.md#phase-4--consolidate-the-documentation-set)): one MyLeague system doc; Onoma and Stash subfolders; add doc updates to the PR checklist.
+- **Phase 4 follow-ups** ([action plan](../history/roadmap/ACTION_PLAN_2026-10-05.md#phase-4--consolidate-the-documentation-set)): one MyLeague system doc; Onoma and Stash subfolders; add doc updates to the PR checklist.
 
 ## 4. Platform audit leftovers (PA)
 
@@ -275,6 +275,6 @@ list while crafting is deprecated (2026-10-05); drop them only after that backup
 tree are gone from `prisma/schema/` (with `c15t.prisma` and the `MediaType` enum); the cards refresh and Atlas had
 already removed the other seven and `CardPack.pdsConfig`. Production drops the tables during the deploy's
 `db:push:force`; the read-only row counts to run first are in
-[drop-unused-models.md](../operations/drop-unused-models.md). It keeps the Exchange models (D5), the military and
+[drop-unused-models.md](../history/operations/drop-unused-models.md). It keeps the Exchange models (D5), the military and
 defense models (D2) and every model still read through a relation (for example `Permission`, `GovernmentBranch`,
 `EconomicModel`, `ThinktankMessage`).

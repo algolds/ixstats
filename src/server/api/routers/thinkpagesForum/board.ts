@@ -1,5 +1,5 @@
 /**
- * The realm board's procedures (docs/superpowers/specs/2026-10-10-thinkpages-realm-board-design.md), merged into
+ * The realm board's procedures (docs/history/specs/2026-10-10-thinkpages-realm-board-design.md), merged into
  * `thinkpagesForum`. Thin, as the rest of the forum router: validates, maps the signed-in user to the module's
  * viewer, calls ~/server/modules/thinkpages-forum and maps ForumError (a slow-mode wait rides along as
  * `data.context.retryAfterSeconds`, see `mapError`). Access, slow mode and the character cap are the module's. Each

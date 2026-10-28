@@ -76,7 +76,7 @@ The back face also saves:
 
 ## Wiki identity
 
-The passport account is the only IxWiki and WikiOS identity ([design](../superpowers/specs/2026-10-23-ixnayid-identity-and-lorewards-design.md), plan A). An old IxWiki (classic MediaWiki) user name reaches an account only through a **name claim** an administrator approved. The old IxWiki link is gone: the user-page token for IxWiki, IxWiki `WikiAccountLink` rows, `User.wikiUsername`, `wikiUserId` and `lastWikiSync`, the `showWikiAttribution` privacy switch, the static MediaWiki reconciliation matrix and `wiki-mappings.ts`. IIWiki and AltHistory linking stays, as [sister wikis](#sister-wikis).
+The passport account is the only IxWiki and WikiOS identity ([design](../history/specs/2026-10-23-ixnayid-identity-and-lorewards-design.md), plan A). An old IxWiki (classic MediaWiki) user name reaches an account only through a **name claim** an administrator approved. The old IxWiki link is gone: the user-page token for IxWiki, IxWiki `WikiAccountLink` rows, `User.wikiUsername`, `wikiUserId` and `lastWikiSync`, the `showWikiAttribution` privacy switch, the static MediaWiki reconciliation matrix and `wiki-mappings.ts`. IIWiki and AltHistory linking stays, as [sister wikis](#sister-wikis).
 
 ### Name claims
 
@@ -199,7 +199,7 @@ only read.
    keeps who verified it; its imported MediaWiki groups pass only when the account proved the link with its own token or
    a system owner confirmed it (an administrator's confirmation converts with `rightsPass` off). A link confirmed by hand
    before `wiki_account_links."verifiedById"` existed reads as self-proved, so record its confirming admin first
-   ([wikios-v1-cutover.md](../operations/wikios-v1-cutover.md) step 1b). An unverified link or a legacy `wikiUsername`
+   ([wikios-v1-cutover.md](../history/operations/wikios-v1-cutover.md) step 1b). An unverified link or a legacy `wikiUsername`
    becomes `PENDING`. Settle anything surprising after the deploy in Admin, Users, Name claims:
    approve the right claim of a contested name and reject the others.
 

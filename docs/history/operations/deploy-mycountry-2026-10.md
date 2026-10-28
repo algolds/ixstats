@@ -1,7 +1,7 @@
 # Deploy runbook: MyCountry fixes (2026-10)
 
 The single ordered runbook for the MyCountry fix plan (`plans/mycountry-audit/fix-plan.md`). It runs inside the 1.5
-release, whose order is the [release guide](release-guide.md#part-b--this-release-15-lobster-crosby-the-rose-garden-rc)'s
+release, whose order is the [release guide](../../operations/release-guide.md#part-b--this-release-15-lobster-crosby-the-rose-garden-rc)'s
 Part B; the environment, realms, Vault, cards and WikiOS steps belong to their own runbooks, which Part B links. Where
 they meet, this one names the step to run.
 
@@ -72,7 +72,7 @@ the hand SQL of step 3 needs on a database that lacks the columns those files re
 
 The deploy script runs every file below, in this order, right before its `db push` (step 4), so running them by hand
 first is optional; each is a no-op once applied. Run them by hand only after the additive step (step 2) and the Realms
-ownership backfill ([release guide B3](release-guide.md#b3-the-window-the-app-stopped), step 8): `f-defense.sql` ends every
+ownership backfill ([release guide B3](../../operations/release-guide.md#b3-the-window-the-app-stopped), step 8): `f-defense.sql` ends every
 proposed PvP challenge whose defender has no owner, and before the backfill no nation has one.
 
 1. **a1, engine effects** (`a1-storyteller-effects.sql`). Before the new code starts: it adds
@@ -124,7 +124,7 @@ proposed PvP challenge whose defender has no owner, and before the backfill no n
 
 ## 4. Code deploy and the IxWorld rebuild
 
-Run the deploy script, `./scripts/deploy-production.sh` ([release guide A4](release-guide.md#a4-build-and-deploy)). It
+Run the deploy script, `./scripts/deploy-production.sh` ([release guide A4](../../operations/release-guide.md#a4-build-and-deploy)). It
 runs this runbook's data SQL (and the realm-time runbook's) right before its `db push`; each file is a no-op once
 applied, so steps run by hand above change nothing there. In order it runs `db:generate`, the backup, the additive schema
 step, the WikiOS proof check, the migration SQL files, `db push` (stop and read the message if it reports data loss), the
@@ -261,7 +261,7 @@ If every row is already 2041 or later, skip the remap.
 
 Restore the step 1 backup if a data step went wrong (the a1/a2 conversions are not reversible in place). The schema
 step is additive and can stay. Going back to the old code takes `scripts/deployment/rollback-deployment.sh` with
-`--restore` ([release guide](release-guide.md#rollback)), never the old commit's own deploy script, which would push the
+`--restore` ([release guide](../../operations/release-guide.md#rollback)), never the old commit's own deploy script, which would push the
 older schema. To stop a job, remove its name from `CRON_ENABLED_JOBS`, run
 `( cd /ixwiki/public/projects/ixstats && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save` (not a restart by name, which
 keeps the old list) and read the list back with `pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`.

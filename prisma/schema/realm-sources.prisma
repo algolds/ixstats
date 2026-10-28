@@ -1,6 +1,6 @@
 // IxStates — Realm source sync (a realm's nations, borders and alliances kept in step with an outside source)
 
-/// Where a realm's nation list comes from, and how often it is re-read (docs/systems/realms-eurth-onboarding.md).
+/// Where a realm's nation list comes from, and how often it is re-read (docs/operations/realms-eurth-onboarding.md).
 /// One per realm. Plain id columns, no relations, so the shared Realm model needs no back-relation fields
 /// (as for RealmBoard). Every value is the realm's own: a preset (src/lib/realms/sources/presets) only fills it.
 model RealmSourceSync {

@@ -72,7 +72,7 @@ The raster layer `relief` (kind `overlay`: over elevation and climate, under the
 
 ## Atlas and World Studio
 
-Two admin surfaces, built on one `atlas` tRPC router (`src/server/api/routers/atlas/`: `studio`, `presets`, `jobs`, `realms`, `health`). Spec: [`docs/specs/2026-10-12-atlas-studio-design.md`](../specs/2026-10-12-atlas-studio-design.md). **Atlas** (`/admin/maps`) is the admin home for every realm's map. **World Studio** (`/admin/maps/studio`) is the full-screen tool for designing worlds. Both are for site admins only: the admin layout guard, the edge check in `src/proxy.ts` and `adminProcedure` on every `atlas.*` procedure. Founders reach presets only through `realms.map.worldPresets`.
+Two admin surfaces, built on one `atlas` tRPC router (`src/server/api/routers/atlas/`: `studio`, `presets`, `jobs`, `realms`, `health`). Spec: [`docs/history/specs/2026-10-12-atlas-studio-design.md`](../history/specs/2026-10-12-atlas-studio-design.md). **Atlas** (`/admin/maps`) is the admin home for every realm's map. **World Studio** (`/admin/maps/studio`) is the full-screen tool for designing worlds. Both are for site admins only: the admin layout guard, the edge check in `src/proxy.ts` and `adminProcedure` on every `atlas.*` procedure. Founders reach presets only through `realms.map.worldPresets`.
 
 ### Routes and access
 
@@ -447,7 +447,7 @@ The public viewer (`/maps`, `MapContainer` → `IxWorldMap`, hooks in `src/compo
 ## Map Delivery (Atlas Release 0)
 
 Layers and tiles reach the browser through versioned routes, not tRPC, so the browser's HTTP cache and the server's byte
-caches do the work. Design: [Atlas Release 0 spec](../specs/2026-10-11-atlas-release-0-performance-design.md).
+caches do the work. Design: [Atlas Release 0 spec](../history/specs/2026-10-11-atlas-release-0-performance-design.md).
 
 - **Map version.** `Realm.mapVersion` (Ixnay is realm `default`) is moved by `invalidateRealmMap(db, realmId)`
   (`src/server/shared/map-invalidation.ts`) to `GREATEST(version + 1, epoch seconds)`: up by one, but never below the
@@ -636,6 +636,6 @@ Geography serves as the foundational data source across the platform:
 
 ## Related Documentation
 
-- [Oceanography Report](../reference/oceanography-report.md)
+- [Oceanography Report](../research/oceanography-report.md)
 - [Framework Specification (Realms)](../architecture/realms-framework-spec.md)
 - [API Reference: Maps & Geography](../reference/api-complete.md#maps--geography)

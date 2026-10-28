@@ -7,7 +7,7 @@
 (`realms.region.ts`, `realms.region-actions.ts`, `realms.transfer.ts`, `realms.source-sync.ts`, `realms.source-apply.ts`, `realms.wiki.ts`, `realms.map.ts`, `realms.map-access.ts`), `src/lib/realms/sources/`, `src/lib/realms/realm-wiki-settings.ts`, `src/app/realms/`, `src/app/r/[realm]/(region)/`, `src/lib/realms/realm-region.ts`,
 `src/server/api/routers/thinkpages/thinktanks/realm-board.ts`, `src/server/api/routers/thinkpages/realm-feed.ts`
 **Product model and decisions:** [Realms framework spec](../architecture/realms-framework-spec.md) ·
-[region page design](../specs/2026-10-05-realm-regions-design.md)
+[region page design](../history/specs/2026-10-05-realm-regions-design.md)
 
 A realm is a world that nations live in (`Country.realmId`; Ixnay is `id: "default"`, slug `ixnay`; `ixworld` and `default` resolve to it as legacy aliases via `isIxnaySlug`). The ownership,
 claims, lore index and admin parts are described in the framework spec. This page covers realms as
@@ -149,7 +149,7 @@ the realm's forum categories (Hub, Character Threads, Current Events) beside it.
 messages are the posts of the realm's one board thread, read newest first through `thinkpagesForum.getBoard` and
 pushed live to the realm's socket room. Code: `src/server/modules/thinkpages-forum/` (`board.ts`, `board-access.ts`,
 `board-writes.ts`) and `src/server/api/routers/thinkpagesForum/board.ts`. Design:
-`docs/superpowers/specs/2026-10-10-thinkpages-realm-board-design.md`. The rest of the forum: [forum.md](./forum.md).
+`docs/history/specs/2026-10-10-thinkpages-realm-board-design.md`. The rest of the forum: [forum.md](./forum.md).
 
 | Who                                                         | Can                                                                                                                |
 | :---------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------- |
@@ -234,7 +234,7 @@ it: `realms.claimNationPage` and `realms.claimCountry` take `acceptedRules` and 
 
 **Realm clock and in-world date:** the founder (or site staff) switches on the realm's own clock in Manage → Time
 (`Realm.settings.clock`; math in `src/lib/realms/realm-clock.ts`, actions in `realms.clock.ts`; design:
-[2026-10-14-realm-clocks-design.md](../superpowers/specs/2026-10-14-realm-clocks-design.md)). It starts equal to
+[2026-10-14-realm-clocks-design.md](../history/specs/2026-10-14-realm-clocks-design.md)). It starts equal to
 global IxTime, runs at the realm's speed (0 pauses, up to ×12, the founder changes it at most weekly) and reads in the
 realm's calendar (start date + era); the stats strip shows that date and the speed. Until a clock is switched on, the
 old display label (`Realm.settings.inWorldDate`, `formatInWorldDate`) still shows; switching on drops it. Ixnay runs on
@@ -333,7 +333,7 @@ field, alliance type), apply it and see the run history (`RealmSyncRun`); the `r
 realms whose schedule is due. New nations are created **unclaimed** (`ownerUserId` empty, shown as **Unclaimed**
 with **Claim** on the realm's Nations tab, the map panel and the country page); a claim hands the existing nation
 over. A sync never deletes a nation, never removes an alliance member and never changes a claimed nation's owner.
-Borders go through `src/lib/maps/realm-map-writer.ts`. Runbook: [realms-eurth-onboarding.md](realms-eurth-onboarding.md) step 4.
+Borders go through `src/lib/maps/realm-map-writer.ts`. Runbook: [realms-eurth-onboarding.md](../operations/realms-eurth-onboarding.md) step 4.
 
 Alliances are realm-scoped (`Alliance.realmId`): names are unique per realm, and only nations of the alliance's
 realm can be invited to or join it.
@@ -365,7 +365,7 @@ infobox figures from the lore index. Its reader (`wiki-discovery-client.ts`) is 
 (60 requests a step), honours Retry-After (up to 20 s, twice) and stops on a 403 or a challenge page without marking the
 host offline for the app. The chosen map (`settings.map.source = { wiki, fileTitle, sha1 }`, `attribution`, `file`) is
 what the map import will start from: `fetchChosenWikiMapOriginal(db, realmId)` returns its original bytes, type,
-dimensions and file name, checked the same way, and refuses (`CONFLICT`) a file whose SHA-1 changed since it was chosen. Runbook: [realms-eurth-onboarding.md](realms-eurth-onboarding.md) §3.0 and §6.0.
+dimensions and file name, checked the same way, and refuses (`CONFLICT`) a file whose SHA-1 changed since it was chosen. Runbook: [realms-eurth-onboarding.md](../operations/realms-eurth-onboarding.md) §3.0 and §6.0.
 
 ## 5. Known gaps
 

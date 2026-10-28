@@ -1,5 +1,5 @@
 /**
- * Realm community links (docs/specs/2026-10-05-realm-regions-design.md): what founders and officers with the
+ * Realm community links (docs/history/specs/2026-10-05-realm-regions-design.md): what founders and officers with the
  * `appearance` power set and how it is validated. Client-safe. (The realm's date is its clock: realm-clock.ts.)
  */
 import { z } from "zod";

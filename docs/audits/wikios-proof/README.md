@@ -8,7 +8,7 @@ The CLI is [`scripts/audit/wikios-proof.ts`](../../../scripts/audit/wikios-proof
 [`scripts/lib/wikios-proof-gate.ts`](../../../scripts/lib/wikios-proof-gate.ts) (pure, unit-tested) and its thresholds in
 [`scripts/audit/wikios-proof-thresholds.json`](../../../scripts/audit/wikios-proof-thresholds.json). Background:
 [WIKIOS.md, Proof and gates](../../systems/wikios/WIKIOS.md#proof-and-gates) and the
-[launch hardening spec](../../superpowers/specs/2026-10-24-wikios-launch-hardening-design.md) (Workstream D).
+[launch hardening spec](../../history/specs/2026-10-24-wikios-launch-hardening-design.md) (Workstream D).
 
 **Reports so far:**
 

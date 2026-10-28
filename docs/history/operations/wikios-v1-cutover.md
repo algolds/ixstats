@@ -29,7 +29,7 @@ IxWorld (port 3002) is untouched.
 - Before step 2's deploy: step 4's loopback server and its env line, step 6a's app URL check and the `ixstats-cron`
   job list (step 2 says why).
 - 2, then step 1b's rights import (its dry run and `--yes` run), then 2a. The import runs after the deploy, as in the
-  [release guide](release-guide.md#b4-right-after-the-deploy-in-order) (B4 step 10). That is safe: WikiOS editing stays
+  [release guide](../../operations/release-guide.md#b4-right-after-the-deploy-in-order) (B4 step 10). That is safe: WikiOS editing stays
   off until step 6b (`WIKIOS_V1_ENABLED`), and WikiOS takes no write before the import's protections marker anyway.
 - 3 (3a to 3e), then step 4's bot-login check, which needs 3c.
 - 4b, 4c (its proxy check waits for 6b), 4d.
@@ -51,7 +51,7 @@ Every step has a rollback line that names the backup it restores.
 ## Before the launch
 
 The WikiOS v1 code reaches production in an ordinary IxStates release (`scripts/deploy-production.sh`: the additive
-schema step, its SQL files, `prisma db push`, build, PM2 reload; [release guide A4](release-guide.md#a4-build-and-deploy)).
+schema step, its SQL files, `prisma db push`, build, PM2 reload; [release guide A4](../../operations/release-guide.md#a4-build-and-deploy)).
 That deploy runs none of the steps below: no manual SQL from `prisma/manual-migrations/`, no environment variables, no
 MediaWiki configuration, no nginx takeover. The code is safe without them because of one switch,
 **`WIKIOS_V1_ENABLED`, off unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on. One of them is
@@ -148,7 +148,7 @@ push, in that order. The additive step never adds `wiki_revisions.origin` (it is
 adds it and labels), but it does add `revId` when the database lacks it: nullable and empty, which is exactly the case
 where every row would stay `wikios`. The deploy runs nothing from `prisma/manual-migrations/`, so **file 1 is yours to run
 before the deploy** (step 1; it fills `revId` whether or not the column already exists), and no hand push may run before
-the deploy has run file 2. The [release guide](release-guide.md#b3-the-window-the-app-stopped) puts these in order for
+the deploy has run file 2. The [release guide](../../operations/release-guide.md#b3-the-window-the-app-stopped) puts these in order for
 1.5. If file 1 stops on a column it reads that the database does not have yet, run the additive step by hand first
 (`bun scripts/deployment/apply-additive-schema.ts --apply`; the deploy runs it again and finds nothing), then file 1.
 
@@ -391,12 +391,12 @@ restore the dump taken above (`pg_restore` into a scratch database first; never 
 **When.** Two parts, at two times (the order list at the top). The `verifiedById` fix-up comes before step 2's deploy
 while the IxnayID identity deploy has not run: that deploy's conversion reads it. The import itself (the dry run and
 the `--yes` run, "Then dry-run the import" below) comes after step 2's deploy, as in the
-[release guide](release-guide.md#b4-right-after-the-deploy-in-order) (B4 step 10). Running it then is safe: WikiOS
+[release guide](../../operations/release-guide.md#b4-right-after-the-deploy-in-order) (B4 step 10). Running it then is safe: WikiOS
 editing stays off until step 6b, and no WikiOS write is taken before the marker exists.
 
 `scripts/wikios-import-rights.ts` copies MediaWiki group memberships, protections and blocks into WikiOS. Its group and
 block rows are keyed by wiki username alone; they reach an IxStates account through its **approved old IxWiki name
-claims** (IxnayID identity, [Wiki identity](../systems/ixnayid-passport.md#wiki-identity)). A name's groups pass only
+claims** (IxnayID identity, [Wiki identity](../../systems/ixnayid-passport.md#wiki-identity)). A name's groups pass only
 through a claim with `rightsPass` (a system owner approved or linked it); its blocks follow every approved claim. So
 what matters is which claims carry `rightsPass`.
 
@@ -494,7 +494,7 @@ stored that cannot be recreated): rotate it if it may have leaked, then restart 
 `Special:BotPasswords` in WikiOS, and each is stored as a salted scrypt hash.
 
 **Rate limits.** api.php counts requests per client in the buckets `wiki_api`, `wiki_api_write`, `wiki_api_login` and
-`wiki_api_render` (limits and keys in [rate-limiting.md](rate-limiting.md#wikios-buckets)); there is nothing to
+`wiki_api_render` (limits and keys in [rate-limiting.md](../../operations/rate-limiting.md#wikios-buckets)); there is nothing to
 configure, but a bot that is throttled sees MediaWiki's `ratelimited` error, and a client that logs in over and over sees
 `Throttled`. The same file lists the other WikiOS buckets (`wiki_upload`, `wiki_media`, `wiki_export`, `wiki_raw`,
 `wiki_read`, `wiki_proxy` and the two webhook ones).
@@ -535,7 +535,7 @@ and step 1b's `verifiedById` fix-up if the IxnayID identity deploy has not run (
 
 **The WikiOS proof check (launch time).** The deploy runs `bun scripts/audit/wikios-proof.ts predeploy` after its
 database backup and its additive schema step, before its SQL files and `db push`
-([the proof's README](../audits/wikios-proof/README.md)). It takes the `wikios-proof` job lease (the additive step
+([the proof's README](../../audits/wikios-proof/README.md)). It takes the `wikios-proof` job lease (the additive step
 creates `job_leases` on a database that lacks it, and a check that still finds no such table takes no lease, since no
 weekly proof can hold one), checks that `docs/audits/wikios-proof/latest.json` is a clean, passing proof of this
 release's WikiOS files (its tree key), and runs the editor round trip over every page of the production database (about
@@ -648,7 +648,7 @@ well, and every later IxStates release carries its WikiOS code the same way.
 `bun run deploy:rollback` runs), with the branch at `$BK/previous-release.sha` pushed as in "If the deploy refuses"
 above. Once the deploy's SQL has run, add `--restore` with the dump the deploy took (the last line of
 `backups/deploy-history.log`): this release's SQL converts data the old code reads
-([release guide, Rollback](release-guide.md#rollback)). The proof check has none of its own: it reads only, and its lease is given back on a refusal and released after
+([release guide, Rollback](../../operations/release-guide.md#rollback)). The proof check has none of its own: it reads only, and its lease is given back on a refusal and released after
 the PM2 reload.
 
 ## 2a. Fonts under the base path, uploads at the site root (read-only, after step 2)
@@ -1581,7 +1581,7 @@ Then restart the bot (`pm2 restart <its app> --update-env`) and verify:
   two queries of step 6, with `r.origin, r."revId"` added to the select).
 - Its reads (its wiki feeds) still answer: `pm2 logs <its app> --lines 50 --nostream` shows no API errors.
 
-A throttled bot sees MediaWiki's `ratelimited` error (buckets in [rate-limiting.md](rate-limiting.md#wikios-buckets)).
+A throttled bot sees MediaWiki's `ratelimited` error (buckets in [rate-limiting.md](../../operations/rate-limiting.md#wikios-buckets)).
 
 **Other bot owners** (Pywikibot, AWB): send them the outside URL above and point them to `Special:BotPasswords`.
 Classic's `api.php` keeps working, and edits made there arrive through the inbound sync under the conflict rule (step
@@ -1864,7 +1864,7 @@ classic), the classic one on classic (the webhook brings the revert over).
 
 ## 7e. The gold proof at launch (after step 7b, off-peak)
 
-The proof's launch profile ([the proof's README](../audits/wikios-proof/README.md)) measures the live site from the
+The proof's launch profile ([the proof's README](../../audits/wikios-proof/README.md)) measures the live site from the
 server: the editor round trip over every page of the production database, render parity over the whole corpus (IxStates
 on loopback against the private MediaWiki of step 4), and the bench, 200 pages × 2 runs through the public URLs. It
 takes about 2 hours: about 1 hour of parity, then about 1 hour of bench. Everything here is launch-time.
