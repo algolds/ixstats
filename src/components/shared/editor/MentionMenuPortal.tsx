@@ -2,9 +2,9 @@
 // src/components/shared/editor/MentionMenuPortal.tsx
 // Floating portal menu for account and entity @mentions in PlateJS editors.
 
-import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { SystemRestart as Loader2 } from "iconoir-react";
+import { useHydrated } from "~/hooks/useHydrated";
 import { cn } from "~/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 
@@ -25,12 +25,7 @@ export function MentionMenuPortal({
   query,
   isLoading,
 }: MentionMenuPortalProps) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
+  const mounted = useHydrated();
 
   if (!mounted) return null;
 

@@ -2,7 +2,7 @@
 // Popover for creating new Lore Stash collections.
 // Anchored directly to the trigger button with spring physics, 8-color swatch picker, live preview, and keyboard shortcuts.
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import {
   Plus,
   Check,
@@ -44,15 +44,7 @@ export function CreateStashPopover({
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Focus input on open
-  useEffect(() => {
-    if (!isOpen) {
-      // oxlint-disable-next-line
-      setName("");
-      setError(null);
-    }
-  }, [isOpen]);
-
+  // Every close goes through here, so the form is clear the next time it opens
   const handleClose = () => {
     setIsOpen(false);
     setName("");

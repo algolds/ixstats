@@ -104,7 +104,7 @@ const ColorPicker = ({
           return;
         }
 
-        // oxlint-disable-next-line
+        // oxlint-disable-next-line react/set-state-in-effect -- reconciles against the last emitted color, which the notify effect keeps in a ref
         setHue(next.h);
         setSaturation(next.s);
         setLightness(next.l);
@@ -162,20 +162,13 @@ type ColorPickerSelectionProps = HTMLAttributes<HTMLDivElement>;
 const ColorPickerSelection = memo(({ className, ...props }: ColorPickerSelectionProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [positionX, setPositionX] = useState(0);
-  const [positionY, setPositionY] = useState(0);
   const { hue, saturation, lightness, setSaturation, setLightness } = useColorPicker();
 
-  useEffect(() => {
-    if (!isDragging) {
-      const x = saturation / 100;
-      const topLightness = x < 0.01 ? 100 : 50 + 50 * (1 - x);
-      const y = topLightness > 0 ? 1 - lightness / topLightness : 1;
-      // oxlint-disable-next-line
-      setPositionX(x);
-      setPositionY(Math.max(0, Math.min(1, y)));
-    }
-  }, [saturation, lightness, isDragging]);
+  // The handle sits where saturation and lightness put it; a drag writes both from the pointer, so
+  // this is the pointer position while dragging too.
+  const positionX = saturation / 100;
+  const topLightness = positionX < 0.01 ? 100 : 50 + 50 * (1 - positionX);
+  const positionY = Math.max(0, Math.min(1, topLightness > 0 ? 1 - lightness / topLightness : 1));
 
   const backgroundGradient = useMemo(() => {
     return `linear-gradient(0deg, rgba(0,0,0,1), rgba(0,0,0,0)),
@@ -191,8 +184,6 @@ const ColorPickerSelection = memo(({ className, ...props }: ColorPickerSelection
       const rect = containerRef.current.getBoundingClientRect();
       const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
       const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
-      setPositionX(x);
-      setPositionY(y);
       setSaturation(x * 100);
       const topLightness = x < 0.01 ? 100 : 50 + 50 * (1 - x);
       const calculatedLightness = topLightness * (1 - y);

@@ -21,6 +21,7 @@ import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { api } from "~/trpc/react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
+import { useHydrated } from "~/hooks/useHydrated";
 
 import { MarginThreadsTab } from "./tabs/MarginThreadsTab";
 import { MarginMarkupTab } from "./tabs/MarginMarkupTab";
@@ -74,20 +75,16 @@ export function WikiMarginDrawer({
   const [activeTab, setActiveTab] = useState<MarginTab>(initialTab);
   const [isExpandedFull, setIsExpandedFull] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const dragStartX = useRef(0);
   const dragStartTime = useRef(0);
 
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setMounted(true);
-  }, []);
-
   // Sync initial tab if passed from caller
-  useEffect(() => {
-    // oxlint-disable-next-line
+  const [prevInitialTab, setPrevInitialTab] = useState(initialTab);
+  if (initialTab !== prevInitialTab) {
+    setPrevInitialTab(initialTab);
     if (initialTab) setActiveTab(initialTab);
-  }, [initialTab]);
+  }
 
   // Query discussion threads and counts
   const {

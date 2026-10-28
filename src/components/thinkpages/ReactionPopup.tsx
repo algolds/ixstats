@@ -21,7 +21,6 @@ interface ReactionPopupProps {
 export function ReactionPopup({ onSelectReaction, postReactionCounts }: ReactionPopupProps) {
   const [showMoreEmojis, setShowMoreEmojis] = useState(false);
   const [activeTab, setActiveTab] = useState<"reactions" | "discord">("reactions");
-  const [discordError, setDiscordError] = useState<string | null>(null);
 
   // Always load Discord emojis since they're prominently featured
   const {
@@ -36,13 +35,8 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
     }
   );
 
-  // Handle error state
   React.useEffect(() => {
-    if (error) {
-      console.warn("Discord emojis failed to load:", error);
-      // oxlint-disable-next-line
-      setDiscordError("Discord emojis unavailable");
-    }
+    if (error) console.warn("Discord emojis failed to load:", error);
   }, [error]);
 
   const availableReactions = Object.keys(REACTION_ICONS);
@@ -108,9 +102,9 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                 <div className="border-tint size-4 animate-spin rounded-full border-b-2" />
                 <span className="text-footnote text-label-secondary ml-2">Loading...</span>
               </div>
-            ) : error || discordError ? (
+            ) : error ? (
               <div className="text-label-secondary text-footnote w-full p-2 text-center">
-                <div className="mb-1">{discordError || "Discord emojis unavailable"}</div>
+                <div className="mb-1">Discord emojis unavailable</div>
                 <div className="text-footnote text-label-secondary">Using built-in reactions</div>
               </div>
             ) : discordEmojis?.emojis ? (

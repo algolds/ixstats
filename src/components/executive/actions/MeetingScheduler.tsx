@@ -99,11 +99,20 @@ export function MeetingScheduler({
   // The meeting is the viewer's nation's: its time and date are on that nation's realm clock.
   const clock = useViewerNationClock();
 
+  // A custom time is picked (or prefilled) by hand, so only the relative presets follow the clock.
   React.useEffect(() => {
-    if (!open || !clock) return;
-    // oxlint-disable-next-line
+    if (!open || !clock || timePreset === "custom") return;
+    // oxlint-disable-next-line react/set-state-in-effect -- reads the live realm clock (impure) on open, preset change or clock load
     setScheduledIxTime(presetScheduledTime(timePreset, clock.now(), clock.calendar));
   }, [timePreset, open, clock]);
+
+  // Switching to Custom starts the date picker at 09:00 tomorrow.
+  const handlePresetChange = (preset: TimePreset) => {
+    setTimePreset(preset);
+    if (preset === "custom" && clock) {
+      setScheduledIxTime(presetScheduledTime(preset, clock.now(), clock.calendar));
+    }
+  };
 
   const handleSelectTemplate = React.useCallback(
     (tpl: (typeof INTENT_TEMPLATES)[0]) => {
@@ -127,7 +136,7 @@ export function MeetingScheduler({
       return;
     }
 
-    // oxlint-disable-next-line
+    // oxlint-disable-next-line react/set-state-in-effect -- seeds the form when the parent opens the dialog, again once officials load
     setTitle(defaultMeeting.title ?? "");
     setDescription(defaultMeeting.description ?? "");
     if (defaultMeeting.ixTime) {
@@ -285,7 +294,7 @@ export function MeetingScheduler({
                 {clock ? (
                   <ScheduleFields
                     preset={timePreset}
-                    onPresetChange={setTimePreset}
+                    onPresetChange={handlePresetChange}
                     scheduledIxTime={scheduledIxTime}
                     onTimeChange={setScheduledIxTime}
                     calendar={clock.calendar}

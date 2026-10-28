@@ -68,5 +68,8 @@ export function useImageLightbox(containerRef: React.RefObject<HTMLElement | nul
     return null;
   }
 
-  return <ImageLightboxModal image={activeImage} onClose={handleClose} />;
+  // keyed by the picture, so another image opens with fresh zoom, pan and inspector state
+  return (
+    <ImageLightboxModal key={activeImage.highResSrc} image={activeImage} onClose={handleClose} />
+  );
 }

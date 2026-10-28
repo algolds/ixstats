@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { extractHashtags, extractMentions } from "~/lib/utils";
@@ -61,7 +61,11 @@ export function useGlassCanvasComposer({
     staleTime: 5 * 60 * 1000,
   });
 
-  const [showDiscordTopic, setShowDiscordTopic] = useState(false);
+  // Surface the Discord channel topic as the placeholder in dev and for ~10% of sessions, drawn once
+  const [drewDiscordTopic] = useState(
+    () => process.env.NODE_ENV === "development" || Math.random() < 0.1
+  );
+  const showDiscordTopic = drewDiscordTopic && !!channelTopic;
   const editorRef = useRef<any>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const [content, setContent] = useState("");
@@ -78,14 +82,6 @@ export function useGlassCanvasComposer({
   const [showPollModal, setShowPollModal] = useState(false);
   const [showContentWarning, setShowContentWarning] = useState(false);
   const [contentWarning, setContentWarning] = useState("");
-
-  useEffect(() => {
-    // Surface the Discord channel topic as the placeholder in dev and for ~10% of sessions
-    if (channelTopic && (process.env.NODE_ENV === "development" || Math.random() < 0.1)) {
-      // oxlint-disable-next-line
-      setShowDiscordTopic(true);
-    }
-  }, [channelTopic]);
 
   const resolvedPlaceholder = showDiscordTopic && !isEditorFocused ? channelTopic : placeholder;
   const accountAvatarUrl = account

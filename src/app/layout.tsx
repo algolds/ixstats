@@ -28,7 +28,6 @@ import { GlobalLinkTooltips } from "~/components/wiki-os/shared/GlobalLinkToolti
 
 import { AbilityProvider } from "~/components/providers/AbilityProvider";
 import { IxTimeProvider } from "~/context/IxTimeContext";
-import { ExecutiveNotificationProvider } from "~/context/ExecutiveNotificationContext";
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
 import { CuelumeSoundProvider } from "~/components/providers/CuelumeSoundProvider";
@@ -80,22 +79,20 @@ function AppContent({
             <TooltipProvider>
               <AbilityProvider>
                 <IxTimeProvider>
-                  <ExecutiveNotificationProvider>
-                    <WikiContextProvider>
-                      <LazyGameProviders>
-                        <WebGLErrorHandler />
-                        <MapPrefetcher />
-                        <GlobalLinkTooltips />
-                        <NavigationTransitionHandler />
-                        <CuelumeSoundProvider />
-                        <AppShell beforeMain={!isStandalone && <SetupRedirect />}>
-                          {/* Media providers + MiniPlayer live in the (wiki-os) layout (narrator only). */}
-                          {children}
-                        </AppShell>
-                      </LazyGameProviders>
-                      <Toaster />
-                    </WikiContextProvider>
-                  </ExecutiveNotificationProvider>
+                  <WikiContextProvider>
+                    <LazyGameProviders>
+                      <WebGLErrorHandler />
+                      <MapPrefetcher />
+                      <GlobalLinkTooltips />
+                      <NavigationTransitionHandler />
+                      <CuelumeSoundProvider />
+                      <AppShell beforeMain={!isStandalone && <SetupRedirect />}>
+                        {/* Media providers + MiniPlayer live in the (wiki-os) layout (narrator only). */}
+                        {children}
+                      </AppShell>
+                    </LazyGameProviders>
+                    <Toaster />
+                  </WikiContextProvider>
                 </IxTimeProvider>
               </AbilityProvider>
             </TooltipProvider>

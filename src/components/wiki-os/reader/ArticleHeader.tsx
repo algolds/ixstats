@@ -180,7 +180,7 @@ export function WikiOSHeader({
     const picture = backdropRef.current?.querySelector("img");
     if (picture?.complete && picture.naturalWidth === 0 && hero && failedSrc !== hero.src) {
       // reads the DOM's state (an external system) after hydration, which no render can know
-      // oxlint-disable-next-line
+      // oxlint-disable-next-line react/set-state-in-effect -- img.complete is only known after mount
       if (hero.src !== hero.original) setFailedSrc(hero.src);
     }
   }, [hero, failedSrc]);
@@ -192,7 +192,7 @@ export function WikiOSHeader({
   // Fires gold particle explosion on page mount for award winning articles
   useEffect(() => {
     if (awardsData?.hasLoreward) {
-      // oxlint-disable-next-line
+      // oxlint-disable-next-line react/set-state-in-effect -- starts a timed burst, cleared by the timer below
       setShowCelebration(true);
       const timer = setTimeout(() => setShowCelebration(false), 1800);
       return () => clearTimeout(timer);

@@ -176,13 +176,8 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
 
   const activeGroup = activeGroupData ?? null;
 
-  // Only members see the other tabs
-  useEffect(() => {
-    if (activeGroup && !activeGroup.isMember && activeTab !== "feed") {
-      // oxlint-disable-next-line
-      setActiveTab("feed");
-    }
-  }, [activeGroup, activeTab]);
+  // Only members see the other tabs: a non-member is moved to the feed during render
+  if (activeGroup && !activeGroup.isMember && activeTab !== "feed") setActiveTab("feed");
 
   const membership = useThinktankMembership(
     selectedGroupId,

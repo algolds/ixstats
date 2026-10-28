@@ -278,7 +278,7 @@ export function MediaContextProvider({ children }: { children: React.ReactNode }
     if (savedSettings) {
       try {
         const { v, s } = JSON.parse(savedSettings);
-        // oxlint-disable-next-line
+        // oxlint-disable-next-line react/set-state-in-effect -- restores saved settings into the audio engine this effect creates
         setVolume(v ?? 0.8);
         setSpeed(s ?? 1.0);
         loadedSpeed = s ?? 1.0;

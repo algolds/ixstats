@@ -16,6 +16,7 @@ import { HaloTourProvider, useHaloTour } from "./HaloTourContext";
 import { HaloTourTooltip } from "./HaloTourTooltip";
 import { springSnappy } from "~/lib/design/motion";
 import { cn } from "~/lib/utils";
+import { useHydrated } from "~/hooks/useHydrated";
 
 interface CommandPaletteProps {
   className?: string;
@@ -35,7 +36,7 @@ function CommandPaletteContent({
   isTourActive?: boolean;
 }) {
   const { size: haloSize, setSize } = useHaloSize();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [diPulseClass, setDiPulseClass] = useState("");
   const [navTrayOpen, setNavTrayOpen] = useState(false);
@@ -110,8 +111,7 @@ function CommandPaletteContent({
       } else if (expandedMode === "notifications") {
         newSize = haloSize === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.TALL;
       } else if (expandedMode === "settings") {
-        newSize =
-          haloSize === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM;
+        newSize = haloSize === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM;
       } else if (expandedMode === "mycountry") {
         newSize = SIZE_PRESETS.MEDIUM; // 371px wide — profile/country dropdown
       } else if (expandedMode.startsWith("plugin:")) {
@@ -191,7 +191,6 @@ function CommandPaletteContent({
   const initialize = useNotificationStore((state) => state.initialize);
 
   useEffect(() => {
-    setMounted(true);
     initialize().catch(console.error);
   }, [initialize]);
 
@@ -379,19 +378,9 @@ function CommandPaletteWrapper({
   scrollY?: number;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const isInitialized = useHydrated();
   const diState = useDynamicIslandState();
   const { isExpanded, switchMode } = diState;
-
-  // Initialize once on mount
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setIsInitialized(true);
-
-    return () => {
-      setIsInitialized(false);
-    };
-  }, []);
 
   // Close dropdown when clicking outside - use shared state
   useEffect(() => {

@@ -2,7 +2,7 @@
 // Custom WikiOS main page
 
 import { cn } from "~/lib/utils";
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { OpenBook as BookOpen, OpenNewWindow as ExternalLink } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -11,11 +11,11 @@ import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { WikiHeroMaster, type WikiHeroVariant } from "./hero";
+import { WikiHeroMaster } from "./hero";
+import { useHeroVariant } from "./hero/useHeroVariant";
 import { EditorialMainPageContent, SculptedMainPageContent } from "./main";
 import { assetUrl } from "~/lib/base-path";
 
-const STORAGE_KEY = "wikios:heroVariant";
 /** The page's data is built once a minute on the server. */
 const MAIN_PAGE_STALE_MS = 60_000;
 
@@ -146,31 +146,8 @@ function BlurbPromptModal({
 }
 
 export function WikiOSMainPage() {
-  const [variant, setVariant] = useState<WikiHeroVariant>("sculpted-emblem");
+  const [variant, handleSelectVariant] = useHeroVariant();
   const [blurbModalOpen, setBlurbModalOpen] = useState(false);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY) as string | null;
-      if (saved === "editorial-masthead") {
-        // oxlint-disable-next-line
-        setVariant("editorial-masthead");
-      } else {
-        setVariant("sculpted-emblem");
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const handleSelectVariant = useCallback((newVariant: WikiHeroVariant) => {
-    setVariant(newVariant);
-    try {
-      localStorage.setItem(STORAGE_KEY, newVariant);
-    } catch {
-      // ignore
-    }
-  }, []);
 
   // One answer for the whole page (featured article, almanac, recent changes, counts, topic tiles,
   // prompt): the route reads it on the server, so it is in the first HTML and not fetched again.

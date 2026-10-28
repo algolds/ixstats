@@ -6,7 +6,7 @@
  */
 
 import { FacetMaterial } from "~/components/ui/facet";
-import React, { useState, useRef, useCallback, memo, useEffect } from "react";
+import React, { useState, useRef, useCallback, memo } from "react";
 import { Menu as GripVertical } from "iconoir-react";
 
 interface FloatingImportPanelProps {
@@ -19,13 +19,29 @@ const DEFAULT_HEIGHT = 600;
 const MIN_WIDTH = 320;
 const MIN_HEIGHT = 400;
 
+/** The map container's size, or the window's when there is none. */
+function mapContainerRect(): { width: number; height: number } {
+  return (
+    document.querySelector("[data-map-container]")?.getBoundingClientRect() ?? {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    }
+  );
+}
+
 export const FloatingImportPanel = memo(function FloatingImportPanel({
   children,
 }: FloatingImportPanelProps) {
-  // Position and size state
-  const [pos, setPos] = useState({ x: 0, y: 16 });
-  const [size, setSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
-  const [initialized, setInitialized] = useState(false);
+  // Position and size, placed against the map container. The panel is client-only (loaded with
+  // ssr: false), so the first render can measure it.
+  const [pos, setPos] = useState(() => ({
+    x: Math.max(16, mapContainerRect().width - DEFAULT_WIDTH - 16),
+    y: 16,
+  }));
+  const [size, setSize] = useState(() => ({
+    width: DEFAULT_WIDTH,
+    height: Math.min(DEFAULT_HEIGHT, mapContainerRect().height - 32),
+  }));
 
   // Drag state
   const [dragging, setDragging] = useState(false);
@@ -34,26 +50,6 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
   // Resize state
   const [resizing, setResizing] = useState(false);
   const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 });
-
-  // Initialize position based on container size
-  useEffect(() => {
-    if (initialized) return;
-    const parentEl = document.querySelector("[data-map-container]");
-    const rect = parentEl?.getBoundingClientRect() ?? {
-      width: window.innerWidth,
-      height: window.innerHeight,
-    };
-    // oxlint-disable-next-line
-    setPos({
-      x: Math.max(16, rect.width - DEFAULT_WIDTH - 16),
-      y: 16,
-    });
-    setSize({
-      width: DEFAULT_WIDTH,
-      height: Math.min(DEFAULT_HEIGHT, rect.height - 32),
-    });
-    setInitialized(true);
-  }, [initialized]);
 
   // ── Drag handlers ──
 
@@ -127,8 +123,6 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
     setResizing(false);
   }, []);
 
-  if (!initialized) return null;
-
   return (
     <div
       className="absolute z-20"
@@ -140,10 +134,7 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
         height: size.height,
       }}
     >
-      <FacetMaterial
-        layer="chrome"
-        className="rounded-row flex h-full flex-col overflow-hidden"
-      >
+      <FacetMaterial layer="chrome" className="rounded-row flex h-full flex-col overflow-hidden">
         <div
           onPointerDown={onDragStart}
           onPointerMove={onDragMove}

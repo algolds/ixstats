@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { useHydrated } from "~/hooks/useHydrated";
 
 type TourStepId = 1 | 2 | 3 | 4 | 5;
 
@@ -78,12 +79,10 @@ export function HaloTourProvider({
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState<TourStepId>(1);
   const [completed, setCompleted] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
+  const isMounted = useHydrated();
 
   // Load status from localStorage and handle invitation banner
   useEffect(() => {
-    // oxlint-disable-next-line
-    setIsMounted(true);
     if (typeof window === "undefined") return;
 
     const pathname = window.location.pathname;
@@ -94,6 +93,7 @@ export function HaloTourProvider({
     let timer: NodeJS.Timeout | undefined;
     try {
       const hasCompleted = localStorage.getItem("ixstats:halo-tour-completed") === "true";
+      // oxlint-disable-next-line react/set-state-in-effect -- read beside the session-storage invitation check, which writes storage
       setCompleted(hasCompleted);
 
       // Pop-up friendly invitation banner for brand new users on production dashboard/mycountry pages

@@ -535,12 +535,11 @@ function JsonViewer({
     });
   }, []);
 
-  React.useEffect(() => {
-    if (searchQuery) {
-      // oxlint-disable-next-line
-      setCollapsedPaths(new Set());
-    }
-  }, [searchQuery]);
+  // Typing a filter expands everything so matches inside collapsed nodes show.
+  const changeSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query) setCollapsedPaths(new Set());
+  };
 
   const isExpandable = data !== null && typeof data === "object";
   const type = typeOf(data);
@@ -616,7 +615,7 @@ function JsonViewer({
               ref={searchRef}
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => changeSearch(e.target.value)}
               placeholder="Filter keys and values…"
               className="text-foreground placeholder:text-muted-foreground/50 min-w-0 flex-1 bg-transparent font-mono text-xs focus:outline-none"
             />

@@ -22,6 +22,8 @@ const config = {
 
   trailingSlash: false,
   reactStrictMode: true,
+  // Auto-memoizes components and hooks; existing useMemo/useCallback stay until files are touched.
+  reactCompiler: true,
 
   // Performance optimizations
   // Prevent webpack from bundling heavy server-only packages (loaded via require at runtime)
