@@ -416,7 +416,7 @@ describe("a country save moves the map only when the political layer reads what 
   }
 
   it.each([
-    ["a column the political layer does not read (a flag)", { flag: "f.svg" }, false],
+    ["a column the political layer does not read (a flag)", { flag: "https://example.com/f.svg" }, false],
     ["a column it reads set to the same value (the name)", { name: "Old" }, false],
     ["a new name", { name: "New" }, true],
   ])("%s: moves it %s", async (_what, updates, moves) => {
