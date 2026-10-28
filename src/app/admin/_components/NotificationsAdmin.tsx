@@ -61,7 +61,7 @@ export function NotificationsAdmin() {
 
         <TabsContent value="log" className="outline-none">
           {activeTab === "log" && (
-            <div className="">
+            <div>
               <NotificationBrowser />
             </div>
           )}

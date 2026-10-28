@@ -177,7 +177,6 @@ const RAW_BACKDROP_ALLOWED = new Set([
   // The drill sheet's own blur (pinned to exactly one by the drill-sheet test above).
   `${path.join("components", "mycountry", "shell", "DrillSheets.tsx")}: backdrop-blur-xl`,
 ]);
-const INLINE_BACKDROP_FILES: string[] = [];
 
 /**
  * Textures in converted feature code are the sanctioned ones
@@ -310,10 +309,7 @@ describe("Facet anti-slop guards", () => {
         (hit) => !hit.endsWith(": backdrop-blur-none")
       );
       expect(raw).toEqual([]);
-      const inline = convertedHits(INLINE_BACKDROP).filter(
-        (hit) => !INLINE_BACKDROP_FILES.some((file) => hit.startsWith(file))
-      );
-      expect(inline).toEqual([]);
+      expect(convertedHits(INLINE_BACKDROP)).toEqual([]);
     });
 
     it("keep the navigation shell on the z-* tokens (no arbitrary z-[…] at all)", () => {
@@ -681,6 +677,10 @@ export const TW_ANIMATE =
   /(?<![\w-])(?:data-\[[^\]]+\]:)*(?:animate-in|animate-out|fade-(?:in|out)(?:-\d+)?|zoom-(?:in|out)(?:-\d+)?|slide-(?:in-from|out-to)-(?:top|bottom|left|right)(?:-\d+)?|spin-(?:in|out)(?:-\d+)?)(?![\w-])/g;
 
 describe("Facet kit guards", () => {
+  it("has no empty className attributes", () => {
+    expect(hits(/className=""/g)).toEqual([]);
+  });
+
   it("uses no tw-animate classes (not installed)", () => {
     expect(hits(TW_ANIMATE)).toEqual([]);
   });
