@@ -713,4 +713,22 @@ describe("Facet kit guards", () => {
       .map(({ file }) => file);
     expect(offenders).toEqual([]);
   });
+
+  // Decorative or duplicate kit pieces replaced by Facet primitives; they must not come back.
+  it.each([
+    "components/ui/backlight",
+    "components/ui/tooltip-card",
+    "components/ui/magicui/interactive-grid-pattern",
+    "components/ui/magicui/progressive-blur",
+    "components/ui/magicui/animated-theme-toggler",
+    "components/ui/text-reveal",
+    "components/ui/bg-image-texture",
+    "components/ui/status-indicator",
+    "components/shared/charts",
+  ])("%s stays removed", (mod) => {
+    expect(
+      fs.existsSync(path.join(srcDir, `${mod}.tsx`)) || fs.existsSync(path.join(srcDir, mod))
+    ).toBe(false);
+    expect(hits(new RegExp(`~/${mod}["/]`, "g"))).toEqual([]);
+  });
 });
