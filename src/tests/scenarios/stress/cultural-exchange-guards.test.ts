@@ -16,14 +16,13 @@ jest.mock("~/lib/diplomacy/news-generator", () => ({
 }));
 
 import { IxTime } from "~/lib/ixtime";
-import { createCallerFactory } from "~/server/api/trpc";
 import { diplomaticCulturalRouter } from "~/server/api/routers/diplomacy/cultural";
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
 import { addIxnay, addNation, addOwner, asOwner } from "~/tests/helpers/nation-world";
 
 const NOW = Date.UTC(2043, 0, 15);
 let db: MemoryPrisma;
-let caller: ReturnType<ReturnType<typeof createCallerFactory<typeof diplomaticCulturalRouter>>>;
+let caller: ReturnType<typeof diplomaticCulturalRouter.createCaller>;
 
 beforeEach(async () => {
   jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -37,7 +36,7 @@ beforeEach(async () => {
     name: "Home",
     baselineDate: new Date(NOW - 365 * 86_400_000),
   });
-  caller = createCallerFactory(diplomaticCulturalRouter)(
+  caller = diplomaticCulturalRouter.createCaller(
     asOwner(db as never, await addOwner(db as never, "lena", "home"))
   );
 });

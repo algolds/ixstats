@@ -58,7 +58,7 @@ function nation(overrides: Partial<Nation> = {}): Nation {
   };
 }
 
-const project = (n: Nation, at: number, components = NO_COMPONENTS) =>
+const project = (n: Nation, at: number, components: Parameters<typeof projectCountryStats>[1] = NO_COMPONENTS) =>
   projectCountryStats(n, components, config, at);
 
 const TIERS: Array<[number, string]> = [
