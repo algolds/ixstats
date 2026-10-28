@@ -33,6 +33,7 @@ import {
   type Category,
 } from "~/lib/intent/assemble";
 import { spawnIntentResistance } from "~/lib/intent/resistance";
+import { stopDirectiveEffectsAt } from "~/lib/intent/abandon-effects";
 import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft/power-brokers";
 import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
 import { nudgeDepartmentShare } from "~/server/modules/government/government.budget";
@@ -334,11 +335,14 @@ export const intentDirectivesRouter = createTRPCRouter({
       // Abandoning and withdrawing the directive's public row are one write: the directive can never be
       // abandoned while its row stays public. No row (an older directive, a failed declare) is not an error.
       const data = { status: input.status };
+      // Abandoning also stops the directive's effects at the share phased in so far (the rest never lands).
       const updated =
         input.status === "abandoned"
           ? await ctx.db.$transaction(async (tx) => {
               const row = await tx.intent.update({ where: { id: input.id }, data });
               await withdrawDirectiveActivity(tx, input.id);
+              const now = (await clockForCountry(tx as PrismaClient, intent.countryId)).now();
+              await stopDirectiveEffectsAt(tx, intent, now);
               return row;
             })
           : await ctx.db.intent.update({ where: { id: input.id }, data });

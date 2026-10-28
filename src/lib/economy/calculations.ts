@@ -75,14 +75,18 @@ export function effectTakesHoldAt(
  * duration applies in full once it takes hold.
  */
 export function levelPhaseIn(
-  effect: Pick<StorytellerEffectRecord, "ixTimeTimestamp" | "duration">,
+  effect: Pick<StorytellerEffectRecord, "ixTimeTimestamp" | "duration"> & {
+    phaseYears?: number | null;
+  },
   targetTimeMs: number,
   baselineMs = -Infinity
 ): number {
   if (targetTimeMs < effectTakesHoldAt(effect, baselineMs)) return 0;
-  if (!effect.duration || effect.duration <= 0) return 1;
+  // A fractional phase-in (a counter row stopping a ramp early) overrides the whole-year duration.
+  const years = effect.phaseYears ?? effect.duration;
+  if (!years || years <= 0) return 1;
   const rampStart = nextIxDayStart(effectStartMs(effect));
-  return Math.min(1, IxTime.getYearsElapsed(rampStart, targetTimeMs) / effect.duration);
+  return Math.min(1, IxTime.getYearsElapsed(rampStart, targetTimeMs) / years);
 }
 
 /** Growth rate a relative growth modifier is sized against when it becomes a level effect. */

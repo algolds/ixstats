@@ -33,7 +33,7 @@ Each directive in **In force** shows **Executing** (still holding bandwidth) or 
 - **Follow up** with a related directive.
 - **Respond** to a linked resistance issue (opens the issue brief).
 - **Complete** it. This stays disabled until its resistance issues are resolved.
-- **Abandon** it. You're asked to confirm; abandoning releases its bandwidth but not its weekly slot.
+- **Abandon** it. You're asked to confirm; abandoning releases its bandwidth but not its weekly slot. Stat changes already made stay, and a GDP effect still phasing in stops at the share it has reached: the rest never lands (abandoned the day you declared it, it leaves nothing).
 
 Directives are completed or abandoned here, not from the agenda.
 
