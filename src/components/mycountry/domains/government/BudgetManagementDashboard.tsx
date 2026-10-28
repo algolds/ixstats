@@ -64,24 +64,33 @@ interface BudgetManagementDashboardProps {
 /** A stored budget year as the nation's calendar labels it. */
 type YearLabel = (year: number) => string;
 
+/** The last five budget years, plus every earlier year the nation has a budget for (one carried forward). */
 function YearSelect({
   value,
   currentYear,
+  budgetYears,
   onChange,
   yearLabel,
 }: {
   value: number;
   currentYear: number;
+  budgetYears: readonly number[];
   onChange: (year: number) => void;
   yearLabel: YearLabel;
 }) {
+  const years = [
+    ...new Set([
+      ...Array.from({ length: 5 }, (_, i) => currentYear - i),
+      ...budgetYears.filter((y) => y <= currentYear),
+    ]),
+  ].sort((a, b) => b - a);
   return (
     <Select value={String(value)} onValueChange={(v) => onChange(parseInt(v, 10))}>
       <SelectTrigger className="text-footnote h-9 w-28 tabular-nums" aria-label="Budget year">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {Array.from({ length: 5 }, (_, i) => currentYear - i).map((year) => (
+        {years.map((year) => (
           <SelectItem key={year} value={String(year)} className="tabular-nums">
             {yearLabel(year)}
           </SelectItem>
@@ -330,6 +339,7 @@ function BudgetManagementBody({
           <YearSelect
             value={selectedYear}
             currentYear={currentYear}
+            budgetYears={budgetAllocations.map((a) => a.budgetYear)}
             onChange={setSelectedYear}
             yearLabel={yearLabel}
           />

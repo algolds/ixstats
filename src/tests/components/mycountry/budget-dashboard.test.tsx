@@ -230,3 +230,23 @@ describe("budget years on the nation's calendar", () => {
     expect(document.body.textContent).not.toContain(String(year));
   });
 });
+
+describe("a budget carried forward more than four years", () => {
+  it("shows its year in the year picker (it was blank, its year not among the offered ones)", () => {
+    const reader = ixnayReader();
+    const year = currentBudgetYear(reader.now());
+    const gov = government(10e9);
+    mockData.gov = {
+      ...gov,
+      budgetAllocations: gov.budgetAllocations.map((a) => ({ ...a, budgetYear: year - 8 })),
+    };
+    render(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(10e9)} />, {
+      wrapper: ({ children }) => (
+        <NationClockProvider value={reader}>{children}</NationClockProvider>
+      ),
+    });
+    expect(screen.getByRole("combobox", { name: "Budget year" })).toHaveTextContent(
+      String(year - 8)
+    );
+  });
+});
