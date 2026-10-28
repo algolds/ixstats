@@ -20,6 +20,36 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the pre-pro
 first, then the WikiOS launch hardening (2026-10-24 → 10-26), then the Cards mark and trophy art (2026-10-24), then the ThinkPages forum refresh (2026-10-17), then realm nations (2026-10-15), then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
 work. The version registry (`src/lib/buildVersion.ts`) reads 1.5.0 (the Vault collectathon hub below); the next release candidate is not cut yet.
 
+### ⚖️ Legal compliance (2026-10-28)
+
+No version or capability integer moves. The Terms of Service and Privacy Policy now describe what the platform does,
+and the features they promise exist ([runbook](docs/history/operations/legal-compliance-2026-10.md)).
+
+- **Privacy Policy, rewritten.**
+  - Alpaia Holdings is named as controller.
+  - Every service provider is listed.
+  - Adds legal bases, retention, international transfers, user rights and California's no-sale wording.
+  - All contact goes to admin@ixwiki.com.
+- **Terms of Service:**
+  - IxWiki text is CC BY-SA 4.0 site-wide.
+  - Shared lore stays when one author leaves.
+  - AI features never train on user content.
+  - In-character content limits.
+  - Purchases, subscriptions and refunds.
+  - Minimum age 16.
+  - How the Terms change.
+- **Account deletion** (Settings → Privacy & Security): you request it by typing your handle, then a 14-day grace
+  period follows with "Keep my account", then the daily `account-erasure` job runs.
+  - The account becomes a tombstone: the Clerk user is deleted, nations are released, private rows are erased, and
+    public posts are credited to "a former member".
+  - Other players' data is never deleted.
+- **Data export:** one JSON file with the account, linked accounts, nations, personas, posts, sent messages, Onoma
+  work, cards, trades and claims. It never includes tokens or other users' data.
+- **ThinkPages:** inline `||spoiler||` text and per-post content warnings ("CW: reason", then "Show post").
+- **AI:** OpenRouter requests route only to providers that neither store nor train on prompts.
+- **Schema:** `User.deletionRequestedAt` and `ThinkpagesPost.contentWarning`
+  (`scripts/migrations/2026-10-legal/`, before the deploy).
+
 ### 🎉 Public 1.0 reveal (2026-10-27)
 
 The public release restarts every user-facing version at 1.0: the platform shows **1.0.0 "Lobster Crosby" (Stable)**
