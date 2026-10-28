@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  type ReactElement,
-  type ReactNode,
-} from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { AnimatePresence } from "motion/react";
 import {
@@ -19,7 +12,7 @@ import {
   Compass,
   Navigator as Navigation,
 } from "iconoir-react";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "~/components/ui/hover-card";
+import { GlossaryTerm } from "~/components/maps/core/GlossaryTerm";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -128,18 +121,6 @@ function ShortcutsPage() {
   );
 }
 
-const TERM_CLASS = "text-label-secondary cursor-help underline decoration-dotted";
-
-/** A glossary term with its explanation in a hover card. */
-function Term({ content, children }: { content: ReactNode; children: ReactElement }) {
-  return (
-    <HoverCard openDelay={300}>
-      <HoverCardTrigger asChild>{children}</HoverCardTrigger>
-      <HoverCardContent className="w-72">{content}</HoverCardContent>
-    </HoverCard>
-  );
-}
-
 const CLIMATE_SWATCHES = [
   ["bg-red", "Tropical Wet (Ar)"],
   ["bg-yellow", "Steppe (Bs)"],
@@ -166,69 +147,44 @@ function WorldNotes() {
     <div className="text-label-secondary text-footnote space-y-2 leading-relaxed">
       <div>
         The map runs on{" "}
-        <Term
-          content={
-            <div className="text-footnote space-y-2">
-              <p className="font-semibold">Today in Ixnay</p>
-              <p className="text-blue tabular-nums">{today}</p>
-              <p className="text-label-secondary">
-                Ixnay&apos;s in-world clock {pace}. Its economies, elections and events follow this
-                clock; every other realm runs its own.
-              </p>
-            </div>
-          }
-        >
-          <strong tabIndex={0} className={TERM_CLASS}>
-            IxTime
-          </strong>
-        </Term>
+        <GlossaryTerm label="IxTime">
+          <div className="text-footnote space-y-2">
+            <p className="font-semibold">Today in Ixnay</p>
+            <p className="text-blue tabular-nums">{today}</p>
+            <p className="text-label-secondary">
+              Ixnay&apos;s in-world clock {pace}. Its economies, elections and events follow this
+              clock; every other realm runs its own.
+            </p>
+          </div>
+        </GlossaryTerm>
         , Ixnay&apos;s in-world clock, which {pace}.
       </div>
       <div>
         The world uses a{" "}
-        <Term
-          content={
-            <div className="text-footnote space-y-2">
-              <p className="font-semibold">Trewartha climate system</p>
-              <div className="text-footnote grid grid-cols-2 gap-x-3 gap-y-0.5">
-                {CLIMATE_SWATCHES.map(([color, label]) => (
-                  <span key={label}>
-                    <span className={`${color} mr-1 inline-block h-2 w-2 rounded-full`} />
-                    {label}
-                  </span>
-                ))}
-              </div>
-              <p className="text-label-secondary">
-                12 climate zones and 9 elevation bands. Climate affects agriculture, GDP modifiers,
-                crisis risk, and NPC behavior.
-              </p>
+        <GlossaryTerm label="Trewartha climate system">
+          <div className="text-footnote space-y-2">
+            <p className="font-semibold">Trewartha climate system</p>
+            <div className="text-footnote grid grid-cols-2 gap-x-3 gap-y-0.5">
+              {CLIMATE_SWATCHES.map(([color, label]) => (
+                <span key={label}>
+                  <span className={`${color} mr-1 inline-block h-2 w-2 rounded-full`} />
+                  {label}
+                </span>
+              ))}
             </div>
-          }
-        >
-          <strong tabIndex={0} className={TERM_CLASS}>
-            Trewartha climate system
-          </strong>
-        </Term>{" "}
+            <p className="text-label-secondary">
+              12 climate zones and 9 elevation bands. Climate affects agriculture, GDP modifiers,
+              crisis risk, and NPC behavior.
+            </p>
+          </div>
+        </GlossaryTerm>{" "}
         with 12 zones and 9 elevation bands.
       </div>
       <div>
         All lore originates from{" "}
-        <Term
-          content={
-            <div className="text-footnote space-y-2">
-              <p className="font-semibold">The wiki</p>
-              <p className="text-label-secondary">
-                The collaborative wiki is the canonical source of truth. Country articles,
-                infoboxes, and coordinates feed directly into the map and stats engine. Edits on the
-                wiki are reflected here automatically.
-              </p>
-            </div>
-          }
-        >
-          <Link href={wikiReaderPath("Main Page")} className={`hover:text-label ${TERM_CLASS}`}>
-            the wiki
-          </Link>
-        </Term>
+        <Link href={wikiReaderPath("Main Page")} className="hover:text-label underline">
+          the wiki
+        </Link>
         , the canonical source of truth.
       </div>
     </div>
