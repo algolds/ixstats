@@ -149,6 +149,29 @@ const METRIC_VALUES: Record<string, (m: MetricSources) => number | null> = {
 
 type Severity = "critical" | "high" | "medium";
 
+/** How each metric reads in an alert (the card and notification show the title as written). */
+const METRIC_LABELS: Record<string, string> = {
+  gdpGrowthRate: "GDP growth",
+  gdpPerCapita: "GDP per capita",
+  totalGDP: "Total GDP",
+  populationGrowthRate: "Population growth",
+  totalPopulation: "Population",
+  populationWellbeing: "Population wellbeing",
+  securityScore: "Security",
+  militaryStrength: "Military strength",
+  threatLevel: "Active threats",
+  diplomaticStanding: "Diplomatic standing",
+  activeRelationships: "Active relationships",
+  embassyCount: "Embassies",
+  economicVitality: "Economic vitality",
+  tradeBalance: "Trade balance",
+  unemploymentRate: "Unemployment",
+  governmentalEfficiency: "Government efficiency",
+  activePolicies: "Active policies",
+  publicApproval: "Public approval",
+};
+const metricLabel = (metricName: string) => METRIC_LABELS[metricName] ?? metricName;
+
 /** The most severe band whose min/max the value breaches, checked critical -> high -> medium. */
 function breachedSeverity(t: any, val: number): Severity | null {
   for (const severity of ["critical", "high", "medium"] as const) {
@@ -174,15 +197,16 @@ async function raiseBreachAlert(
   severityBreached: Severity,
   val: number
 ) {
-  const alertTitle = `${t.metricName} breached ${severityBreached} threshold`;
-  const alertDescription = `Current value: ${val.toFixed(2)}. Threshold ranges breached: ${severityBreached.toUpperCase()}`;
+  const alertTitle = `${metricLabel(t.metricName)} breached its ${severityBreached} threshold`;
+  const alertDescription = `Current value: ${val.toFixed(2)}, past the ${severityBreached} range.`;
+  // Titles written before 2026-10-28 named the raw metric (and before 2026-10-05 led with a siren emoji).
+  const legacyTitle = `${t.metricName} breached ${severityBreached} threshold`;
 
   const existingAlert = await db.intelligenceAlert.findFirst({
     where: {
       countryId,
       alertType: "threshold_breach",
-      // Alerts raised before 2026-10-05 carried a leading siren emoji in the title.
-      title: { in: [alertTitle, `\u{1F6A8} ${alertTitle}`] },
+      title: { in: [alertTitle, legacyTitle, `\u{1F6A8} ${legacyTitle}`] },
       isActive: true,
       isResolved: false,
     },

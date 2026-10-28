@@ -173,7 +173,7 @@ const RESOLVED_ISSUES = [
 const ALERT = {
   id: "a_medium",
   countryId: COUNTRY,
-  title: "gdpGrowthRate breached medium threshold",
+  title: "GDP growth breached its medium threshold",
   description: "Current value: 1.00",
   category: "ECONOMIC",
   alertType: "threshold_breach",
@@ -226,6 +226,7 @@ function makeDb({ ownerUserId = "owner_db" }: { ownerUserId?: string } = {}) {
       findFirst: jest.fn(async () => null),
       count: jest.fn(async () => 1),
       update: jest.fn(async (_args: object) => ISSUE),
+      updateMany: jest.fn(async (_args: object) => ({ count: 1 })),
     },
     intent: {
       findUnique: jest.fn(
@@ -341,7 +342,7 @@ const OWNER_ONLY: Array<[string, Call, (db: Db) => jest.Mock]> = [
   [
     "nationalIssues.dismiss",
     (ctx) => issues(ctx).dismiss({ id: ISSUE.id }),
-    (db) => db.nationalIssue.update,
+    (db) => db.nationalIssue.updateMany,
   ],
   [
     "nationalIssues.commissionRecon",
