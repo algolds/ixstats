@@ -27,12 +27,12 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { api } from "~/trpc/react";
 import {
-  NARRATOR_ACCENT,
   NARRATOR_SPEEDS,
   NARRATOR_VOICE_LABELS,
   narratorEngineLabel,
   type NarratorEngine,
 } from "../types";
+import { wikiAccent } from "../accent";
 
 interface TOCEntry {
   id: string;
@@ -56,20 +56,6 @@ type ActiveInlineTray = "none" | "voice" | "speed" | "volume";
 const BG_WAVEFORM_BARS = [
   15, 28, 38, 22, 45, 32, 50, 38, 26, 48, 42, 28, 36, 44, 24, 46, 38, 30, 44, 32, 22, 40, 28, 16,
 ];
-
-function getRgbaColor(colorStr: string, opacity: number): string {
-  if (colorStr.startsWith("#")) {
-    const cleanHex = colorStr.replace("#", "");
-    const r = parseInt(cleanHex.substring(0, 2), 16);
-    const g = parseInt(cleanHex.substring(2, 4), 16);
-    const b = parseInt(cleanHex.substring(4, 6), 16);
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-  }
-  if (colorStr.startsWith("hsl")) {
-    return colorStr.replace("hsl(", "hsla(").replace(")", `, ${opacity})`);
-  }
-  return `rgba(59, 130, 246, ${opacity})`;
-}
 
 export function WikiNarratorPlayer({
   visibleToc = [],
@@ -124,7 +110,7 @@ export function WikiNarratorPlayer({
 
   const activeEntry = visibleToc.find((e) => e.id === activeSectionId);
   const activeSectionTitle = activeEntry?.text ?? narratorState?.activeSectionTitle ?? "Overview";
-  const accentColor = themeColors?.primary || NARRATOR_ACCENT;
+  const accentColor = wikiAccent(themeColors);
 
   const narratorTracks = useMemo(
     () => [
@@ -262,9 +248,8 @@ export function WikiNarratorPlayer({
 
       <AudioPlayer
         tracks={narratorTracks}
-        variant="ghost"
         size="sm"
-        className="relative z-10 w-full space-y-2 border-0 bg-transparent p-0 shadow-none before:hidden hover:bg-transparent"
+        className="relative z-10 w-full space-y-2 border-0 bg-transparent p-0 shadow-none"
         data-slot="wiki-narrator-player"
       >
         {/* 1. Top HUD Bar (Section Title + Reading Progress) */}
@@ -325,18 +310,10 @@ export function WikiNarratorPlayer({
                     className={cn(
                       "duration-fast h-1.5 w-1.5 rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
                       isActive
-                        ? "border-separator shadow-floating scale-125"
+                        ? "border-separator scale-125"
                         : "border-separator bg-fill-3 group-hover/tick:border-label group-hover/tick:scale-125"
                     )}
-                    style={
-                      isActive
-                        ? {
-                            borderColor: "var(--color-white)",
-                            backgroundColor: accentColor,
-                            boxShadow: `0 0 6px ${accentColor}`,
-                          }
-                        : undefined
-                    }
+                    style={isActive ? { backgroundColor: accentColor } : undefined}
                   />
                   {/* Tooltip */}
                   <span className="border-separator bg-surface-elevated text-label rounded-control-sm text-caption shadow-floating duration-fast pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 border px-2 py-1 whitespace-nowrap opacity-0 transition-opacity group-hover/tick:opacity-100">
@@ -365,15 +342,11 @@ export function WikiNarratorPlayer({
                   narratorActions?.play?.();
                 }
               }}
-              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-white"
-              style={{
-                backgroundColor: accentColor,
-                boxShadow: `0 2px 8px ${getRgbaColor(accentColor, 0.35)}`,
-              }}
+              className="bg-tint text-on-tint flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full"
               title={isPlaying ? "Pause narration" : "Play narration"}
               aria-label={isPlaying ? "Pause narration" : "Play narration"}
             >
-              <PlayPauseMorph isPlaying={isPlaying} size={16} className="fill-current text-white" />
+              <PlayPauseMorph isPlaying={isPlaying} size={16} className="fill-current" />
             </button>
 
             <AudioPlayerButton
@@ -535,9 +508,7 @@ export function WikiNarratorPlayer({
           <div className="border-separator bg-surface-elevated text-label rounded-row shadow-card mt-2 space-y-2 border p-3">
             <div className="text-label-secondary text-subhead flex items-center justify-between">
               <span>Playback speed</span>
-              <span className="font-semibold tabular-nums" style={{ color: accentColor }}>
-                {currentSpeed}×
-              </span>
+              <span className="text-label font-semibold tabular-nums">{currentSpeed}×</span>
             </div>
 
             <SegmentedControl
@@ -561,7 +532,7 @@ export function WikiNarratorPlayer({
           <div className="border-separator bg-surface-elevated text-label rounded-row shadow-card mt-2 space-y-2 border p-3">
             <div className="text-label-secondary text-subhead flex items-center justify-between">
               <span>Volume gain</span>
-              <span className="font-semibold tabular-nums" style={{ color: accentColor }}>
+              <span className="text-label font-semibold tabular-nums">
                 {Math.round(currentVolume * 100)}%
               </span>
             </div>

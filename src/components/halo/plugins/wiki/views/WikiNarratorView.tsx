@@ -15,29 +15,16 @@ import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";
 import { WikiNarratorPlayer } from "../components";
 import type { DIViewProps } from "~/components/halo/types";
+import { accentMix, wikiAccent } from "../accent";
 
 interface WikiNarratorViewProps extends DIViewProps {}
-
-function getRgbaColor(colorStr: string, opacity: number): string {
-  if (colorStr.startsWith("#")) {
-    const cleanHex = colorStr.replace("#", "");
-    const r = parseInt(cleanHex.substring(0, 2), 16);
-    const g = parseInt(cleanHex.substring(2, 4), 16);
-    const b = parseInt(cleanHex.substring(4, 6), 16);
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-  }
-  if (colorStr.startsWith("hsl")) {
-    return colorStr.replace("hsl(", "hsla(").replace(")", `, ${opacity})`);
-  }
-  return `rgba(59, 130, 246, ${opacity})`;
-}
 
 export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProps) {
   const hasNarratorAccess = useHasNarratorAccess();
   const { articleTitle, tocEntries, themeColors, activeSectionId, narratorState, narratorActions } =
     useWikiContext();
 
-  const accentColor = themeColors?.primary || "#3b82f6";
+  const accentColor = wikiAccent(themeColors);
   const visibleToc = React.useMemo(() => tocEntries.filter((e) => e.level <= 3), [tocEntries]);
 
   if (!hasNarratorAccess) {
@@ -88,8 +75,8 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
           <div
             className="rounded-control flex h-7 w-7 shrink-0 items-center justify-center border"
             style={{
-              backgroundColor: getRgbaColor(accentColor, 0.12),
-              borderColor: getRgbaColor(accentColor, 0.25),
+              backgroundColor: accentMix(accentColor, 12),
+              borderColor: accentMix(accentColor, 25),
               color: accentColor,
             }}
           >
@@ -97,7 +84,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
           </div>
           <div className="flex min-w-0 flex-col">
             <span className="text-label-secondary text-eyebrow">Now playing · Narrator</span>
-            <span className="text-headline truncate" style={{ color: accentColor }}>
+            <span className="text-label text-headline truncate">
               {articleTitle || "Wiki article"}
             </span>
           </div>

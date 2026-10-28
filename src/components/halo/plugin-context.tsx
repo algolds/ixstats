@@ -78,7 +78,7 @@ const DUMMY_SNAPSHOT = () => EMPTY_PLUGINS_MAP;
  *   id: "wiki",
  *   priority: 10,
  *   center: <WikiBreadcrumb />,
- *   accentColor: "#3b82f6",
+ *   accentColor: "var(--tint)",
  * });
  */
 export function useDIPlugin<F = unknown, C = unknown>(plugin: DIPlugin<F, C>) {

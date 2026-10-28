@@ -20,6 +20,7 @@ import { PreText } from "~/components/ui/pretext";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { springSnappy } from "~/lib/design/motion";
 import { assetUrl } from "~/lib/base-path";
+import { wikiAccent } from "~/components/halo/plugins/wiki/accent";
 
 function CompactViewComponent({
   mode,
@@ -49,7 +50,7 @@ function CompactViewComponent({
     ? ((narratorState.activeBlockIndex + 1) / narratorState.totalBlocks) * 100
     : 0;
 
-  const narratorAccent = themeColors?.primary || activePlugin?.accentColor || "var(--color-blue)";
+  const narratorAccent = wikiAccent(themeColors);
 
   const hour = useContextHour();
   const activeSectionName = activeSectionId

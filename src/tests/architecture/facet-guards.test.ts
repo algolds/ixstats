@@ -62,6 +62,7 @@ const FACET_CONVERTED = [
   "app/help/",
   // Facet 3 navigation shell (spec §7.4, Phase 3).
   "components/shell/",
+  "components/audio/",
   "lib/navigation/",
   // Country profile: the Command profile, its deep-dive chrome and shared pieces.
   "app/countries/[slug]/",
