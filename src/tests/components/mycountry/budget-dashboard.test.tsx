@@ -196,17 +196,15 @@ describe("the National budget tab", () => {
     expect(document.body.textContent).not.toMatch(/Country Editor/);
   });
 
-  it("sends the nation's revenue with the create action, so the new budget starts balanced", () => {
+  it("sends only the nation with the create action; the server reads its revenue", () => {
     mockData.gov = null;
     mockData.country = { currentTotalGdp: 1.5e11, governmentRevenueTotal: 6e9 };
     renderInNation(
       <BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(6e9)} />
     );
     fireEvent.click(screen.getByRole("button", { name: "Create government structure" }));
-    expect(mockMutate.createStructure).toHaveBeenLastCalledWith({
-      countryId: "testland",
-      revenue: 6e9,
-    });
+    // The server reads the nation's revenue itself; the client sends none.
+    expect(mockMutate.createStructure).toHaveBeenLastCalledWith({ countryId: "testland" });
     mockData.country = undefined;
   });
 });

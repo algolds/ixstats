@@ -19,6 +19,8 @@ import {
 } from "~/lib/government/budget-math";
 import { MAINTENANCE_DEBIT_EFFECT } from "~/lib/policies/lifecycle";
 import { inferFormId } from "~/server/shared/founding-snapshot";
+// Pure, client-safe: the one revenue figure every Economy tab shows (saved rates x live GDP, else founding).
+import { nationalRevenue } from "~/components/mycountry/shell/fiscal/nationalRevenue";
 import type { DepartmentCategory } from "~/types/government";
 
 type Db = PrismaClient;
@@ -39,15 +41,11 @@ async function editableBudgetYear(db: Db, countryId: string): Promise<number> {
  * Give a nation the default departments of its government form, each with its share of a yearly
  * budget. Creates the structure when there is none; a structure with no departments gets the
  * departments. A structure that already has departments is left alone (CONFLICT), unless it never
- * had a budget (no total, no allocations): its departments get one, split by the form's shares. `revenue` is
- * the nation's yearly revenue as the Economy tabs show it; a new budget starts at it (capped, see
- * `initialTotalBudget`), so it does not open in deficit.
+ * had a budget (no total, no allocations): its departments get one, split by the form's shares. A new budget
+ * starts at the nation's yearly revenue as the Economy tabs show it (`nationalRevenue`, read here, never sent by
+ * the client; capped, see `initialTotalBudget`), so it does not open in deficit.
  */
-export async function createGovernmentStructure(
-  db: Db,
-  countryId: string,
-  revenue?: number | null
-) {
+export async function createGovernmentStructure(db: Db, countryId: string) {
   const [country, departments, allocationCount] = await Promise.all([
     db.country.findUnique({
       where: { id: countryId },
@@ -56,6 +54,9 @@ export async function createGovernmentStructure(
         createdAt: true,
         totalGovernmentSpending: true,
         currentTotalGdp: true,
+        governmentRevenueTotal: true,
+        economicProfile: true,
+        fiscalSystem: true,
         governmentComponents: { where: { isActive: true }, select: { componentType: true } },
         governmentStructure: { select: { id: true, totalBudget: true } },
       },
@@ -82,7 +83,7 @@ export async function createGovernmentStructure(
   const totalBudget =
     existing && existing.totalBudget > 0
       ? existing.totalBudget
-      : initialTotalBudget(country, revenue);
+      : initialTotalBudget(country, nationalRevenue(country).total);
   const budgetYear = await countryBudgetYear(db, countryId);
   if (existing && departments.length > 0) {
     return budgetExistingDepartments(db, {

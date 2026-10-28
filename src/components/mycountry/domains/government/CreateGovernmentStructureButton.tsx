@@ -5,13 +5,12 @@ import { Plus } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
-import { nationalRevenue } from "~/components/mycountry/shell/fiscal/nationalRevenue";
 
 /**
  * Gives a nation with no government departments its form's default departments and budget, so
  * the budget and cabinet first steps can be done. Shown in the National budget tab and the
- * Cabinet's empty state. Sends the nation's revenue (the figure the Economy tabs show), so the
- * new budget starts balanced against it.
+ * Cabinet's empty state. The server starts the budget at the nation's revenue (the figure the Economy
+ * tabs show), so it opens balanced against it.
  */
 export function CreateGovernmentStructureButton({
   countryId,
@@ -22,9 +21,6 @@ export function CreateGovernmentStructureButton({
 }) {
   const notify = useNotify();
   const utils = api.useUtils();
-  const { data: country } = api.countries.getByIdWithEconomicData.useQuery({ id: countryId });
-  const total = country ? nationalRevenue(country).total : null;
-  const revenue = total != null && total > 0 ? total : undefined;
   const create = api.government.createStructure.useMutation({
     onSuccess: async (result) => {
       notify.success(`Budget set for ${result.departments} departments`);
@@ -38,11 +34,7 @@ export function CreateGovernmentStructureButton({
   });
 
   return (
-    <Button
-      size="sm"
-      onClick={() => create.mutate({ countryId, revenue })}
-      disabled={create.isPending}
-    >
+    <Button size="sm" onClick={() => create.mutate({ countryId })} disabled={create.isPending}>
       <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
       {create.isPending ? "Creating…" : label}
     </Button>

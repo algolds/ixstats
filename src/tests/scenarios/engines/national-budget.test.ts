@@ -196,14 +196,16 @@ it("moves a directive's allocation amount with its share", async () => {
   }
 });
 
-it("starts a new government's budget at the nation's revenue", async () => {
+it("starts a new government's budget at the nation's own revenue, not a revenue the client sends", async () => {
   await addNation(db as never, { id: "bareland", baselineDate: new Date(NOW - YEAR) });
   await db.governmentStructure.delete({ where: { countryId: "bareland" } });
+  // No tax rate saved: the founding revenue is the nation's one revenue figure (nationalRevenue)
+  await db.country.update({ where: { id: "bareland" }, data: { governmentRevenueTotal: 6e9 } });
   const lena = await addOwner(db as never, "lena", "bareland");
   await government(asOwner(db as never, lena)).createStructure({
     countryId: "bareland",
-    revenue: 6e9,
-  });
+    revenue: 1,
+  } as never);
   expect((await structureOf("bareland")).totalBudget).toBe(6e9);
   const created = await allocations("bareland", 2043);
   expect(created.reduce((sum, a) => sum + a.allocatedAmount, 0)).toBeCloseTo(6e9, 0);
