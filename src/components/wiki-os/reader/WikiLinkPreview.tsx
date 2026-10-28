@@ -4,6 +4,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { useHydrated } from "~/hooks/useHydrated";
 import { cn } from "~/lib/utils";
 import { currentProfileHref } from "~/lib/wiki-os/legacy-profile-links";
 import { entityKinds, mentionQueries } from "~/lib/wiki-os/mention-target";
@@ -578,14 +579,9 @@ function MentionPopover({
 }
 
 export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiHtmlContentProps) {
-  const [isMounted, setIsMounted] = useState(false);
+  const isMounted = useHydrated();
   // the server's and the first client render's HTML: one object per string, or React 19 writes it again
   const rawMarkup = useHtmlMarkup(html);
-
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setIsMounted(true);
-  }, []);
 
   const root = useMemo(() => {
     if (!isMounted || typeof window === "undefined" || !html) return null;

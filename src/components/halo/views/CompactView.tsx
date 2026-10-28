@@ -13,7 +13,7 @@ import { greetingForHour } from "~/lib/time/greeting";
 import { api } from "~/trpc/react";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
-import { useExecutiveNotifications } from "~/context/ExecutiveNotificationContext";
+import { useHydrated } from "~/hooks/useHydrated";
 import type { CompactViewProps } from "../types";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 
@@ -58,7 +58,7 @@ function CompactViewComponent({
     ? (tocEntries.find((e) => e.id === activeSectionId)?.text ?? null)
     : null;
 
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const [isFlashing, setIsFlashing] = useState(false);
   const previousNotificationCountRef = useRef(0);
 
@@ -88,7 +88,6 @@ function CompactViewComponent({
 
   const enhancedStats = useNotificationStore((s) => s.stats);
   const notifications = useNotificationStore((s) => s.notifications);
-  const { unreadCount: executiveUnreadCount, isExecutiveMode } = useExecutiveNotifications();
 
   const { data: notificationsData } = api.notifications.getUserNotifications.useQuery(
     { limit: 5, unreadOnly: false },
@@ -106,11 +105,7 @@ function CompactViewComponent({
     (n) => n.status !== "read" && n.status !== "dismissed"
   ).length;
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
-  const notificationUnreadCount =
-    unreadNotifications +
-    (isExecutiveMode ? executiveUnreadCount : 0) +
-    enhancedUnreadCount +
-    liveNotificationCount;
+  const notificationUnreadCount = unreadNotifications + enhancedUnreadCount + liveNotificationCount;
   const totalUnreadCount = notificationUnreadCount + messageUnreadCount;
 
   // Time
@@ -122,7 +117,6 @@ function CompactViewComponent({
   }, [hour]);
 
   useEffect(() => {
-    setMounted(true);
     previousNotificationCountRef.current = totalUnreadCount;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

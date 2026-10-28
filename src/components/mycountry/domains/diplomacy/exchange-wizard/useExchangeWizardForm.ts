@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { api } from "~/trpc/react";
 import { useNationClock } from "~/hooks/useNationClock";
 import { useActingRealmId } from "~/hooks/useActingRealmId";
@@ -30,7 +30,7 @@ export function useExchangeWizardForm(hostCountry: WizardHostCountry) {
   const participantCountryIds = useMemo(() => participants.map((c) => c.id), [participants]);
   const [narrative, setNarrative] = useState("");
   const [objectives, setObjectives] = useState<string[]>([]);
-  const [startDate, setStartDate] = useState("");
+  const [pickedStartDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [maxParticipants, setMaxParticipants] = useState(100);
@@ -45,13 +45,8 @@ export function useExchangeWizardForm(hostCountry: WizardHostCountry) {
     [clock]
   );
 
-  // Initialize start date to today if empty
-  React.useEffect(() => {
-    if (!startDate && todayDate) {
-      // oxlint-disable-next-line
-      setStartDate(todayDate);
-    }
-  }, [todayDate, startDate]);
+  // The start date defaults to today while none is picked
+  const startDate = pickedStartDate || todayDate;
 
   // Fetch countries for selection
   const { data: countriesData, isLoading: isLoadingCountries } = api.countries.getAll.useQuery({

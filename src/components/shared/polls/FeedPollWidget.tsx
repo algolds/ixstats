@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { PollWidget } from "~/components/shared/polls/poll-widget";
@@ -77,18 +77,18 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
     }
   );
 
-  React.useEffect(() => {
-    if (updatedData) {
-      // oxlint-disable-next-line
-      setPollState({
-        votes: (updatedData.votes || {}) as Record<string, number>,
-        totalVotes: updatedData.totalVotes || 0,
-        hasVoted: updatedData.hasVoted || false,
-        userVotedOptionIds: updatedData.userVotedOptionIds || [],
-      });
-      setSelectedOptionIds(updatedData.userVotedOptionIds || []);
-    }
-  }, [updatedData]);
+  // Each fresh server result replaces the optimistic state (adjusted during render, not in an effect)
+  const [syncedData, setSyncedData] = useState<typeof updatedData>(undefined);
+  if (updatedData && updatedData !== syncedData) {
+    setSyncedData(updatedData);
+    setPollState({
+      votes: (updatedData.votes || {}) as Record<string, number>,
+      totalVotes: updatedData.totalVotes || 0,
+      hasVoted: updatedData.hasVoted || false,
+      userVotedOptionIds: updatedData.userVotedOptionIds || [],
+    });
+    setSelectedOptionIds(updatedData.userVotedOptionIds || []);
+  }
 
   const isExpired = poll.endDate ? new Date() > new Date(poll.endDate) : false;
   const isDisabled = !poll.isActive || isExpired || voteMutation.isPending || isPending;

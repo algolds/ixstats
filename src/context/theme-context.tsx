@@ -1,7 +1,7 @@
 "use client";
 // src/context/theme-context.tsx
 
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useReducer } from "react";
 import { APPEARANCE_STORAGE_KEYS, applyAppearance, clampTextScale } from "~/lib/design/appearance";
 
 export type Theme = "light" | "dark" | "system";
@@ -13,103 +13,142 @@ export function nextTheme(theme: Theme): Theme {
   return THEME_CYCLE[theme];
 }
 
-interface ThemeContextType {
+/** Every stored appearance preference, in one object. */
+export interface AppearancePrefs {
   theme: Theme;
+  compactMode: boolean;
+  reduceAnimations: boolean;
+  enableTextures: boolean;
+  /** Increase Contrast (`data-contrast="more"`); the OS setting applies regardless. */
+  increaseContrast: boolean;
+  /** Reduce Transparency (`data-transparency="reduced"`); the OS setting applies regardless. */
+  reduceTransparency: boolean;
+  /** Text size multiplier (`--text-scale`, 0.9–1.3). */
+  textScale: number;
+  /** Mirrors the Cuelume mute toggle (Cuelume owns its storage key). */
+  soundOff: boolean;
+}
+
+// Initial values match the server render; the pre-paint script in layout.tsx has already
+// written the stored preferences onto <html>, and the load effect brings them into state.
+export const DEFAULT_PREFS: AppearancePrefs = {
+  theme: "system",
+  compactMode: false,
+  reduceAnimations: false,
+  enableTextures: true,
+  increaseContrast: false,
+  reduceTransparency: false,
+  textScale: 1,
+  soundOff: false,
+};
+
+type StoredPref = Exclude<keyof AppearancePrefs, "soundOff">;
+const STORED_PREFS: StoredPref[] = [
+  "theme",
+  "compactMode",
+  "reduceAnimations",
+  "enableTextures",
+  "increaseContrast",
+  "reduceTransparency",
+  "textScale",
+];
+
+export interface ThemeState {
+  prefs: AppearancePrefs;
+  systemTheme: "light" | "dark";
+  /** False until stored prefs are read, so the defaults never overwrite the pre-paint script. */
+  loaded: boolean;
+}
+
+export type ThemeAction =
+  | { type: "loaded"; prefs: Partial<AppearancePrefs> }
+  | { type: "set"; prefs: Partial<AppearancePrefs> }
+  | { type: "system"; theme: "light" | "dark" };
+
+export function themeReducer(state: ThemeState, action: ThemeAction): ThemeState {
+  switch (action.type) {
+    case "loaded":
+      return { ...state, prefs: { ...state.prefs, ...action.prefs }, loaded: true };
+    case "set":
+      return { ...state, prefs: { ...state.prefs, ...action.prefs } };
+    case "system":
+      return { ...state, systemTheme: action.theme };
+  }
+}
+
+/** Parses the stored values; unset or malformed keys are left out. */
+export function parseStoredPrefs(read: (key: string) => string | null): Partial<AppearancePrefs> {
+  const prefs: Partial<AppearancePrefs> = {};
+  const k = APPEARANCE_STORAGE_KEYS;
+  const theme = read(k.theme);
+  if (theme === "light" || theme === "dark" || theme === "system") prefs.theme = theme;
+  const bools = [
+    "compactMode",
+    "reduceAnimations",
+    "enableTextures",
+    "increaseContrast",
+    "reduceTransparency",
+  ] as const;
+  for (const key of bools) {
+    const value = read(k[key]);
+    if (value !== null) prefs[key] = value === "true";
+  }
+  const scale = parseFloat(read(k.textScale) ?? "");
+  if (!Number.isNaN(scale)) prefs.textScale = clampTextScale(scale);
+  prefs.soundOff = read(k.soundEnabled) === "false";
+  return prefs;
+}
+
+function persist(prefs: Partial<AppearancePrefs>): void {
+  try {
+    for (const key of STORED_PREFS) {
+      const value = prefs[key];
+      if (value !== undefined) localStorage.setItem(APPEARANCE_STORAGE_KEYS[key], String(value));
+    }
+  } catch (error) {
+    console.warn("Failed to save appearance settings to localStorage:", error);
+  }
+}
+
+interface ThemeContextType extends Omit<AppearancePrefs, "soundOff"> {
   effectiveTheme: "light" | "dark";
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
-  compactMode: boolean;
   setCompactMode: (compact: boolean) => void;
   toggleCompactMode: () => void;
-  reduceAnimations: boolean;
   setReduceAnimations: (reduce: boolean) => void;
-  toggleReduceAnimations: () => void;
-  enableTextures: boolean;
   setEnableTextures: (enable: boolean) => void;
-  toggleEnableTextures: () => void;
-  showNsImporter: boolean;
-  setShowNsImporter: (show: boolean) => void;
-  toggleShowNsImporter: () => void;
-  /** Increase Contrast (`data-contrast="more"`); the OS setting applies regardless. */
-  increaseContrast: boolean;
   setIncreaseContrast: (more: boolean) => void;
-  /** Reduce Transparency (`data-transparency="reduced"`); the OS setting applies regardless. */
-  reduceTransparency: boolean;
   setReduceTransparency: (reduce: boolean) => void;
-  /** Text size multiplier (`--text-scale`, 0.9–1.3). */
-  textScale: number;
   setTextScale: (scale: number) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-interface ThemeProviderProps {
-  children: React.ReactNode;
-  defaultTheme?: Theme;
-  storageKey?: string;
-}
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [{ prefs, systemTheme, loaded }, dispatch] = useReducer(themeReducer, {
+    prefs: DEFAULT_PREFS,
+    systemTheme: "dark",
+    loaded: false,
+  });
 
-export function ThemeProvider({
-  children,
-  defaultTheme = "system",
-  storageKey = APPEARANCE_STORAGE_KEYS.theme,
-}: ThemeProviderProps) {
-  // Initial values match the server render; the pre-paint script in layout.tsx has already
-  // written the stored preferences onto <html>, and the effect below loads them into state.
-  const [theme, setThemeState] = useState<Theme>(defaultTheme);
-  const [systemTheme, setSystemTheme] = useState<"light" | "dark">("dark");
-  const [compactMode, setCompactModeState] = useState<boolean>(false);
-  const [reduceAnimations, setReduceAnimationsState] = useState<boolean>(false);
-  const [enableTextures, setEnableTexturesState] = useState<boolean>(true);
-  const [showNsImporter, setShowNsImporterState] = useState<boolean>(false);
-  const [increaseContrast, setIncreaseContrastState] = useState<boolean>(false);
-  const [reduceTransparency, setReduceTransparencyState] = useState<boolean>(false);
-  const [textScale, setTextScaleState] = useState<number>(1);
-  const [soundOff, setSoundOff] = useState<boolean>(false);
-  // Don't write to <html> until stored settings are loaded, so the defaults above never
-  // overwrite what the pre-paint script applied.
-  const [loaded, setLoaded] = useState(false);
-
-  // Initialize settings from localStorage
+  // Load stored settings
   useEffect(() => {
-    const readBool = (key: string): boolean | null => {
-      const value = localStorage.getItem(key);
-      return value === null ? null : value === "true";
-    };
+    let stored: Partial<AppearancePrefs> = {};
     try {
-      const storedTheme = localStorage.getItem(storageKey) as Theme | null;
-      if (storedTheme && ["light", "dark", "system"].includes(storedTheme)) {
-        setThemeState(storedTheme);
-      }
-
-      const k = APPEARANCE_STORAGE_KEYS;
-      const compact = readBool(k.compactMode);
-      if (compact !== null) setCompactModeState(compact);
-      const reduce = readBool(k.reduceAnimations);
-      if (reduce !== null) setReduceAnimationsState(reduce);
-      const textures = readBool(k.enableTextures);
-      if (textures !== null) setEnableTexturesState(textures);
-      const nsImporter = readBool("ixstats-show-ns-importer");
-      if (nsImporter !== null) setShowNsImporterState(nsImporter);
-      const contrast = readBool(k.increaseContrast);
-      if (contrast !== null) setIncreaseContrastState(contrast);
-      const transparency = readBool(k.reduceTransparency);
-      if (transparency !== null) setReduceTransparencyState(transparency);
-      const scale = parseFloat(localStorage.getItem(k.textScale) ?? "");
-      if (!Number.isNaN(scale)) setTextScaleState(clampTextScale(scale));
-      setSoundOff(localStorage.getItem(k.soundEnabled) === "false");
+      stored = parseStoredPrefs((key) => localStorage.getItem(key));
     } catch (error) {
       console.warn("Failed to load theme settings from localStorage:", error);
     }
-    setLoaded(true);
-  }, [storageKey]);
+    dispatch({ type: "loaded", prefs: stored });
+  }, []);
 
   // Follow the OS appearance (used when theme === "system")
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
-    setSystemTheme(mediaQuery.matches ? "light" : "dark");
+    dispatch({ type: "system", theme: mediaQuery.matches ? "light" : "dark" });
     const handleChange = (e: MediaQueryListEvent) => {
-      setSystemTheme(e.matches ? "light" : "dark");
+      dispatch({ type: "system", theme: e.matches ? "light" : "dark" });
     };
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
@@ -119,26 +158,26 @@ export function ThemeProvider({
   useEffect(() => {
     const handleSound = (event: Event) => {
       const enabled = (event as CustomEvent<{ enabled?: boolean }>).detail?.enabled;
-      if (typeof enabled === "boolean") setSoundOff(!enabled);
+      if (typeof enabled === "boolean") dispatch({ type: "set", prefs: { soundOff: !enabled } });
     };
     window.addEventListener("ixstates-sound-settings-changed", handleSound);
     return () => window.removeEventListener("ixstates-sound-settings-changed", handleSound);
   }, []);
 
-  const effectiveTheme: "light" | "dark" = theme === "system" ? systemTheme : theme;
+  const effectiveTheme: "light" | "dark" = prefs.theme === "system" ? systemTheme : prefs.theme;
 
   // Apply preferences to <html> (same writer as the pre-paint script)
   useEffect(() => {
     if (!loaded) return;
     applyAppearance(document.documentElement, {
       theme: effectiveTheme,
-      compact: compactMode,
-      reduceMotion: reduceAnimations,
-      enableTextures,
-      increaseContrast,
-      reduceTransparency,
-      soundOff,
-      textScale,
+      compact: prefs.compactMode,
+      reduceMotion: prefs.reduceAnimations,
+      enableTextures: prefs.enableTextures,
+      increaseContrast: prefs.increaseContrast,
+      reduceTransparency: prefs.reduceTransparency,
+      soundOff: prefs.soundOff,
+      textScale: prefs.textScale,
     });
 
     // Update meta theme-color for mobile browsers
@@ -146,172 +185,28 @@ export function ThemeProvider({
     if (metaThemeColor) {
       metaThemeColor.setAttribute("content", effectiveTheme === "dark" ? "#0f1114" : "#f2f3f6");
     }
-  }, [
-    loaded,
+  }, [loaded, effectiveTheme, prefs]);
+
+  // One writer: save, then update state (state updates even when storage is unavailable).
+  const set = (patch: Partial<AppearancePrefs>) => {
+    persist(patch);
+    dispatch({ type: "set", prefs: patch });
+  };
+
+  const { soundOff: _soundOff, ...publicPrefs } = prefs;
+  const value: ThemeContextType = {
+    ...publicPrefs,
     effectiveTheme,
-    compactMode,
-    reduceAnimations,
-    enableTextures,
-    increaseContrast,
-    reduceTransparency,
-    soundOff,
-    textScale,
-  ]);
-
-  // Memoize theme functions to prevent re-renders
-  const setTheme = useCallback(
-    (newTheme: Theme) => {
-      try {
-        localStorage.setItem(storageKey, newTheme);
-        setThemeState(newTheme);
-      } catch (error) {
-        console.warn("Failed to save theme to localStorage:", error);
-        setThemeState(newTheme);
-      }
-    },
-    [storageKey]
-  );
-
-  const toggleTheme = useCallback(() => {
-    setTheme(nextTheme(theme));
-  }, [theme, setTheme]);
-
-  // Compact mode functions
-  const setCompactMode = useCallback((compact: boolean) => {
-    try {
-      localStorage.setItem(APPEARANCE_STORAGE_KEYS.compactMode, compact.toString());
-      setCompactModeState(compact);
-    } catch (error) {
-      console.warn("Failed to save compact mode to localStorage:", error);
-      setCompactModeState(compact);
-    }
-  }, []);
-
-  const toggleCompactMode = useCallback(() => {
-    setCompactMode(!compactMode);
-  }, [compactMode, setCompactMode]);
-
-  const setReduceAnimations = useCallback((reduce: boolean) => {
-    try {
-      localStorage.setItem(APPEARANCE_STORAGE_KEYS.reduceAnimations, reduce.toString());
-      setReduceAnimationsState(reduce);
-    } catch (error) {
-      console.warn("Failed to save reduce animations to localStorage:", error);
-      setReduceAnimationsState(reduce);
-    }
-  }, []);
-
-  const toggleReduceAnimations = useCallback(() => {
-    setReduceAnimations(!reduceAnimations);
-  }, [reduceAnimations, setReduceAnimations]);
-
-  const setEnableTextures = useCallback((enable: boolean) => {
-    try {
-      localStorage.setItem(APPEARANCE_STORAGE_KEYS.enableTextures, enable.toString());
-      setEnableTexturesState(enable);
-    } catch (error) {
-      console.warn("Failed to save enable textures to localStorage:", error);
-      setEnableTexturesState(enable);
-    }
-  }, []);
-
-  const toggleEnableTextures = useCallback(() => {
-    setEnableTextures(!enableTextures);
-  }, [enableTextures, setEnableTextures]);
-
-  const setShowNsImporter = useCallback((show: boolean) => {
-    try {
-      localStorage.setItem("ixstats-show-ns-importer", show.toString());
-      setShowNsImporterState(show);
-    } catch (error) {
-      console.warn("Failed to save show NS importer to localStorage:", error);
-      setShowNsImporterState(show);
-    }
-  }, []);
-
-  const toggleShowNsImporter = useCallback(() => {
-    setShowNsImporter(!showNsImporter);
-  }, [showNsImporter, setShowNsImporter]);
-
-  const setIncreaseContrast = useCallback((more: boolean) => {
-    try {
-      localStorage.setItem(APPEARANCE_STORAGE_KEYS.increaseContrast, more.toString());
-    } catch (error) {
-      console.warn("Failed to save increase contrast to localStorage:", error);
-    }
-    setIncreaseContrastState(more);
-  }, []);
-
-  const setReduceTransparency = useCallback((reduce: boolean) => {
-    try {
-      localStorage.setItem(APPEARANCE_STORAGE_KEYS.reduceTransparency, reduce.toString());
-    } catch (error) {
-      console.warn("Failed to save reduce transparency to localStorage:", error);
-    }
-    setReduceTransparencyState(reduce);
-  }, []);
-
-  const setTextScale = useCallback((scale: number) => {
-    const next = clampTextScale(scale);
-    try {
-      localStorage.setItem(APPEARANCE_STORAGE_KEYS.textScale, next.toString());
-    } catch (error) {
-      console.warn("Failed to save text scale to localStorage:", error);
-    }
-    setTextScaleState(next);
-  }, []);
-
-  // Memoize context value to prevent unnecessary re-renders
-  const value: ThemeContextType = useMemo(
-    () => ({
-      theme,
-      effectiveTheme,
-      setTheme,
-      toggleTheme,
-      compactMode,
-      setCompactMode,
-      toggleCompactMode,
-      reduceAnimations,
-      setReduceAnimations,
-      toggleReduceAnimations,
-      enableTextures,
-      setEnableTextures,
-      toggleEnableTextures,
-      showNsImporter,
-      setShowNsImporter,
-      toggleShowNsImporter,
-      increaseContrast,
-      setIncreaseContrast,
-      reduceTransparency,
-      setReduceTransparency,
-      textScale,
-      setTextScale,
-    }),
-    [
-      theme,
-      effectiveTheme,
-      setTheme,
-      toggleTheme,
-      compactMode,
-      setCompactMode,
-      toggleCompactMode,
-      reduceAnimations,
-      setReduceAnimations,
-      toggleReduceAnimations,
-      enableTextures,
-      setEnableTextures,
-      toggleEnableTextures,
-      showNsImporter,
-      setShowNsImporter,
-      toggleShowNsImporter,
-      increaseContrast,
-      setIncreaseContrast,
-      reduceTransparency,
-      setReduceTransparency,
-      textScale,
-      setTextScale,
-    ]
-  );
+    setTheme: (theme) => set({ theme }),
+    toggleTheme: () => set({ theme: nextTheme(prefs.theme) }),
+    setCompactMode: (compactMode) => set({ compactMode }),
+    toggleCompactMode: () => set({ compactMode: !prefs.compactMode }),
+    setReduceAnimations: (reduceAnimations) => set({ reduceAnimations }),
+    setEnableTextures: (enableTextures) => set({ enableTextures }),
+    setIncreaseContrast: (increaseContrast) => set({ increaseContrast }),
+    setReduceTransparency: (reduceTransparency) => set({ reduceTransparency }),
+    setTextScale: (scale) => set({ textScale: clampTextScale(scale) }),
+  };
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

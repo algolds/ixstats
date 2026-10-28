@@ -108,18 +108,6 @@ export function ImageLightboxModal({
     [getImageAttributes, currentSrc, mediaType]
   );
 
-  // Synchronize state when image prop changes
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setCurrentSrc(image.highResSrc);
-    setScale(1);
-    setPan({ x: 0, y: 0 });
-    setIsClosing(false);
-    setShowInspector(false);
-    setCopiedFormat(null);
-    setImgNaturalSize(null);
-  }, [image]);
-
   // Smooth Close Handler
   const triggerClose = useCallback(() => {
     setIsClosing(true);

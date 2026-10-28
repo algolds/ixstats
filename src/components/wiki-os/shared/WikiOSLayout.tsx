@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState, useEffect } from "react";
+import { type ReactNode, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useWikiOSShortcuts } from "~/components/wiki-os/shared/useWikiOSShortcuts";
@@ -32,6 +32,13 @@ const CreatePageModal = dynamic(() => import("./CreatePageModal").then((m) => m.
   ssr: false,
 });
 
+const subscribeNever = () => () => {};
+/** `?create=true` or `?action=create-page` opens page creation. */
+const addressAsksToCreate = () => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("create") === "true" || params.get("action") === "create-page";
+};
+
 export function WikiOSLayout({
   title,
   hideTitleHeading = false,
@@ -51,19 +58,12 @@ export function WikiOSLayout({
   useWikiPrefetch();
   const { articleTitle } = useWikiContext();
   const pathname = usePathname();
-  const [createPageOpen, setCreatePageOpen] = useState(false);
+  // The address can open page creation; once the reader opens or closes it, their choice holds.
+  // Read after hydration, never on the server.
+  const addressOpensCreate = useSyncExternalStore(subscribeNever, addressAsksToCreate, () => false);
+  const [createPageChoice, setCreatePageOpen] = useState<boolean | null>(null);
+  const createPageOpen = createPageChoice ?? addressOpensCreate;
   const createPageMounted = useMountOnFirstOpen(createPageOpen);
-
-  // Check URL params to auto-open page creation modal
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("create") === "true" || params.get("action") === "create-page") {
-        // oxlint-disable-next-line
-        setCreatePageOpen(true);
-      }
-    }
-  }, []);
 
   const activeTitle = title || articleTitle || "";
 

@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
+import { useHydrated } from "~/hooks/useHydrated";
 import { useNotify } from "~/hooks/useNotify";
 import {
   VoicePreferencesPanel,
@@ -31,7 +32,7 @@ function SettingsSection() {
   // Local storage states
   const [personalVoice, setPersonalVoice] = useState("");
   const [personalSpeed, setPersonalSpeed] = useState(1.0);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
 
   // Advanced Options
   const [forceNative, setForceNative] = useState(false);
@@ -54,7 +55,6 @@ function SettingsSection() {
 
   // Load local state on mount
   useEffect(() => {
-    setMounted(true);
     if (typeof window !== "undefined") {
       setPersonalVoice(localStorage.getItem("onoma-personal-voice") || "");
       const speedRaw = localStorage.getItem("onoma-personal-speed");

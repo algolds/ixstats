@@ -37,7 +37,7 @@ export function MatchTickerSim({ homeTeam, awayTeam, trace, onFinished }: MatchT
     if (!isPlaying) return;
 
     if (traceIndex >= trace.length) {
-      // oxlint-disable-next-line
+      // oxlint-disable-next-line react/set-state-in-effect -- the playback timer loop stops itself when the trace runs out
       setIsPlaying(false);
       if (onFinished) onFinished();
       return;

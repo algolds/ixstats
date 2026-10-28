@@ -61,11 +61,13 @@ export function TimelineScrubber({
   const currentValue = isAtNow ? maxTime : (value as number);
 
   const [draft, setDraft] = useState<number>(currentValue);
-  // Keep draft in sync if the parent value changes externally (e.g. "Return to present").
-  useEffect(() => {
-    // oxlint-disable-next-line
+  // Keep draft in sync if the parent value changes externally (e.g. "Return to present"),
+  // during render.
+  const [syncedValue, setSyncedValue] = useState(currentValue);
+  if (currentValue !== syncedValue) {
+    setSyncedValue(currentValue);
     setDraft(currentValue);
-  }, [currentValue]);
+  }
 
   // Commit `draft` to the parent ~200ms after the user stops dragging.
   const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

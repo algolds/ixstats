@@ -158,10 +158,9 @@ stay in-app only, by design. Each channel is off until its environment variables
 
 - **Two tabs:** Notifications and Messages. Messages lists the 8 newest inbox conversations
   (`messages.getConversationsByFolder`).
-- **Notifications** merges three sources:
+- **Notifications** merges two sources:
   1. server rows: `notifications.getUserNotifications({ limit: 8 })`, cached for 5 minutes and not refetched on focus;
-  2. "enhanced" entries from `useNotificationStore` (browser memory; added by `notifyFromStore({ persistent: true })`);
-  3. "executive" entries from `ExecutiveNotificationContext` (nothing sets these today).
+  2. "enhanced" entries from `useNotificationStore` (browser memory; added by `notifyFromStore({ persistent: true })`).
 - Entries are grouped into Recent (< 1 h), Earlier today, This week and Earlier.
 - Clicking an entry marks it read and opens its `href`. Dismiss calls `dismissNotification`, which marks it
   dismissed and read (the row's columns for a personal notification, the caller's receipt for a shared one).

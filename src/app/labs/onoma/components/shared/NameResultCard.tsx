@@ -25,6 +25,7 @@ import {
 } from "~/lib/onoma/ipa-overrides";
 import { getMorphologyDetails } from "~/lib/onoma/morphology";
 import { api } from "~/trpc/react";
+import { useHydrated } from "~/hooks/useHydrated";
 import { useNotify } from "~/hooks/useNotify";
 import { speakName } from "~/lib/onoma/browser-speech";
 import { classifyCulture } from "~/lib/onoma/lexicon/culture-classifier";
@@ -73,7 +74,7 @@ export function NameResultCard({
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   // Per-name pronunciation editor (IPA + voice overrides, stored in localStorage)
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const [overridesVersion, setOverridesVersion] = useState(0);
   const [editingPron, setEditingPron] = useState(false);
   const [ipaDraft, setIpaDraft] = useState("");
@@ -84,9 +85,8 @@ export function NameResultCard({
     staleTime: 600000,
   });
 
-  // Apply localStorage overrides only after mount to avoid SSR hydration mismatch,
+  // Apply localStorage overrides only after hydration to avoid an SSR hydration mismatch,
   // and re-resolve when any override changes (event from ipa-overrides helpers).
-  useEffect(() => setMounted(true), []);
   useEffect(() => {
     const bump = () => setOverridesVersion((v) => v + 1);
     window.addEventListener(OVERRIDES_UPDATED_EVENT, bump);

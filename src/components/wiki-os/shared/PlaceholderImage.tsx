@@ -26,7 +26,6 @@ export function PlaceholderImage({
     const image = ref.current;
     if (image?.complete && image.naturalWidth > 0) {
       // reads the DOM's state (an external system) after hydration, which no render can know
-      // oxlint-disable-next-line
       setLoaded(true);
     }
   }, []);

@@ -1,5 +1,5 @@
 import { MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -36,6 +36,24 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Button } from "~/components/ui/button";
 import { tweenFast } from "~/lib/design/motion";
 
+// This view is loaded with `ssr: false` (WikiHalo), so its first render is already in the browser.
+function readScratchpad(): string {
+  try {
+    return localStorage.getItem("wikios:scratchpad") || "";
+  } catch {
+    return ""; // restricted storage
+  }
+}
+
+function readPausedSessions(): PausedSession[] {
+  try {
+    const savedSessions = localStorage.getItem("wikios:pausedSessions");
+    return savedSessions ? (JSON.parse(savedSessions) as PausedSession[]) : [];
+  } catch {
+    return []; // restricted storage or invalid JSON
+  }
+}
+
 interface WikiProfileViewProps {
   onClose: () => void;
 }
@@ -47,8 +65,8 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
   const [activeTab, setActiveTab] = useState<"workspace" | "profile">("profile");
   const [view, setView] = useState<"tabs" | "country-actions">("tabs");
-  const [scratchpad, setScratchpad] = useState("");
-  const [pausedSessions, setPausedSessions] = useState<PausedSession[]>([]);
+  const [scratchpad, setScratchpad] = useState(readScratchpad);
+  const [pausedSessions] = useState(readPausedSessions);
 
   // Active cosmetics
   const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
@@ -72,22 +90,6 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
     (user?.username
       ? user.username.charAt(0).toUpperCase() + user.username.slice(1)
       : (user?.firstName ?? ""));
-
-  // Load localStorage data
-  useEffect(() => {
-    try {
-      const savedNotes = localStorage.getItem("wikios:scratchpad") || "";
-      // oxlint-disable-next-line
-      setScratchpad(savedNotes);
-
-      const savedSessions = localStorage.getItem("wikios:pausedSessions");
-      if (savedSessions) {
-        setPausedSessions(JSON.parse(savedSessions));
-      }
-    } catch {
-      // ignore SSR or restricted storage
-    }
-  }, []);
 
   // Handle Scratchpad Change & Auto-Save
   const handleScratchpadChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {

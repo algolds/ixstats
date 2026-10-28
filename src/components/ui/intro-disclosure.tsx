@@ -5,6 +5,7 @@ import Image from "next/image";
 import { AnimatePresence, motion, useAnimation, type PanInfo } from "motion/react";
 import { Check as CheckIcon, OpenNewWindow as ExternalLinkIcon } from "iconoir-react";
 
+import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { cn } from "~/lib/utils/cn";
 // AspectRatio removed - using CSS aspect-video class instead
 import { Button } from "~/components/ui/button";
@@ -13,37 +14,32 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/u
 // Using existing dialog component instead of creating new wrappers
 import { Progress } from "~/components/ui/progress";
 
-function useMediaQuery(query: string) {
-  const [matches, setMatches] = React.useState<boolean | null>(null);
+const featureVisibilityListeners = new Set<() => void>();
 
-  React.useEffect(() => {
-    const media = window.matchMedia(query);
-    // oxlint-disable-next-line
-    setMatches(media.matches);
-
-    const listener = (e: MediaQueryListEvent) => setMatches(e.matches);
-    media.addEventListener("change", listener);
-    return () => media.removeEventListener("change", listener);
-  }, [query]);
-
-  return matches ?? false;
+function subscribeFeatureVisibility(onChange: () => void) {
+  featureVisibilityListeners.add(onChange);
+  return () => {
+    featureVisibilityListeners.delete(onChange);
+  };
 }
 
+// Unknown (null) on the server and while hydrating, then read from localStorage: a feature shows
+// unless "skip next time" stored `false` for it.
 function useFeatureVisibility(featureId: string) {
-  const [isVisible, setIsVisible] = React.useState<boolean | null>(null);
-
-  React.useEffect(() => {
-    const storedValue = localStorage.getItem(`feature_${featureId}`);
-    // oxlint-disable-next-line
-    setIsVisible(storedValue ? JSON.parse(storedValue) : true);
-  }, [featureId]);
+  const storageKey = `feature_${featureId}`;
+  const stored = React.useSyncExternalStore<boolean | null>(
+    subscribeFeatureVisibility,
+    () => localStorage.getItem(storageKey) !== "false",
+    () => null
+  );
 
   const hideFeature = () => {
-    localStorage.setItem(`feature_${featureId}`, JSON.stringify(false));
-    setIsVisible(false);
+    localStorage.setItem(storageKey, JSON.stringify(false));
+    featureVisibilityListeners.forEach((notify) => notify());
   };
 
-  return { isVisible: isVisible === null ? false : isVisible, hideFeature };
+  // `isHidden` is only true once storage says so; the hydrating pass must not close the dialog.
+  return { isVisible: stored === true, isHidden: stored === false, hideFeature };
 }
 
 function useSwipe(onSwipe: (direction: "left" | "right") => void) {
@@ -378,7 +374,7 @@ export function IntroDisclosure({
   const [direction, setDirection] = React.useState<1 | -1>(1);
   const isDesktopQuery = useMediaQuery("(min-width: 768px)");
   const isDesktop = forceVariant ? forceVariant === "desktop" : isDesktopQuery;
-  const { isVisible, hideFeature } = useFeatureVisibility(featureId);
+  const { isVisible, isHidden, hideFeature } = useFeatureVisibility(featureId);
   const stepRef = React.useRef<HTMLButtonElement>(null!);
 
   // Define handlers with useCallback before useSwipe hook (Rules of Hooks)
@@ -416,10 +412,10 @@ export function IntroDisclosure({
 
   // Close the dialog if feature is hidden
   React.useEffect(() => {
-    if (!isVisible) {
+    if (isHidden) {
       setOpen(false);
     }
-  }, [isVisible, setOpen]);
+  }, [isHidden, setOpen]);
 
   // Focus management
   React.useEffect(() => {

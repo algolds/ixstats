@@ -33,15 +33,17 @@ export function WikiOSUtilitiesDeck({
   const deferredQuery = useDeferredValue(searchQuery);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  // A new ?domain= in the address selects that domain
+  const [prevDomainParam, setPrevDomainParam] = useState(domainParam);
+  if (domainParam !== prevDomainParam) {
+    setPrevDomainParam(domainParam);
     if (
       domainParam &&
       ["all", "discovery", "editorial", "diagnostics", "governance"].includes(domainParam)
     ) {
-      // oxlint-disable-next-line
       setSelectedDomain(domainParam);
     }
-  }, [domainParam]);
+  }
 
   // Global shortcut to focus search on '/'
   useEffect(() => {

@@ -3,7 +3,7 @@
 // DiffViewer suggested edits, diplomatic communiqués, quote-in-reply, and child page creation.
 // Signature Highlighter Yellow / Warm Amber branding for Margin.
 
-import React, { useState, useRef, useMemo, useEffect } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import {
   ChatBubble as MessageSquare,
@@ -151,7 +151,8 @@ function ThreadCard({
 
   const replyInputRef = useRef<HTMLInputElement>(null);
   const notify = useNotify();
-  const liveAvatarFor = (author: CommentAuthor) => (author.isAuthor ? currentUserAvatar : undefined);
+  const liveAvatarFor = (author: CommentAuthor) =>
+    author.isAuthor ? currentUserAvatar : undefined;
   // The server enforces this too: the thread's creator or a sysop.
   const canManageThread = isAuthenticated && (thread.createdBy.isAuthor || canModerate);
   const isResolved = thread.status === "RESOLVED";
@@ -552,6 +553,11 @@ function ThreadCard({
   );
 }
 
+/** The title a new thread about a quoted passage starts with. */
+function regardingTitle(quote: string): string {
+  return `Regarding: "${quote.slice(0, 35)}${quote.length > 35 ? "..." : ""}"`;
+}
+
 export function MarginThreadsTab({
   articleTitle,
   threads,
@@ -579,32 +585,32 @@ export function MarginThreadsTab({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDimension, setSelectedDimension] = useState<string>("WHY");
   const [showCategoryHelp, setShowCategoryHelp] = useState(false);
-  const [showNewThread, setShowNewThread] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
+  // `quote` is the reader's quote the form was last prefilled from
+  const [newThread, setNewThread] = useState<{ open: boolean; quote?: string | null }>({
+    open: !!draftQuote,
+    quote: draftQuote,
+  });
+  const showNewThread = newThread.open;
+  const [newTitle, setNewTitle] = useState(() => (draftQuote ? regardingTitle(draftQuote) : ""));
   const [newContent, setNewContent] = useState("");
-  const [newSuggestedEdit, setNewSuggestedEdit] = useState("");
+  const [newSuggestedEdit, setNewSuggestedEdit] = useState(draftQuote ?? "");
   const [showNewSuggestEdit, setShowNewSuggestEdit] = useState(false);
   const notify = useNotify();
 
-  useEffect(() => {
+  // A new quote from the reader opens the form, prefilled with it
+  if (draftQuote !== newThread.quote) {
+    setNewThread({ open: draftQuote ? true : newThread.open, quote: draftQuote });
     if (draftQuote) {
-      // oxlint-disable-next-line
-      setShowNewThread(true);
-      // oxlint-disable-next-line
-      if (!newTitle) {
-        setNewTitle(
-          `Regarding: "${draftQuote.slice(0, 35)}${draftQuote.length > 35 ? "..." : ""}"`
-        );
-      }
+      if (!newTitle) setNewTitle(regardingTitle(draftQuote));
       setNewSuggestedEdit(draftQuote);
     }
-  }, [draftQuote]);
+  }
 
   const createThreadMutation = api.wikios.createThread.useMutation({
     onSuccess: () => {
       soundCues?.success?.();
       notify.success("Discussion created");
-      setShowNewThread(false);
+      setNewThread((prev) => ({ ...prev, open: false }));
       setNewTitle("");
       setNewContent("");
       setNewSuggestedEdit("");
@@ -670,7 +676,7 @@ export function MarginThreadsTab({
             <Button
               size="sm"
               aria-expanded={showNewThread}
-              onClick={() => setShowNewThread((prev) => !prev)}
+              onClick={() => setNewThread((prev) => ({ ...prev, open: !prev.open }))}
               className={cn("shrink-0", MARGIN_FILLED)}
             >
               <Plus className="size-3.5" />
@@ -825,7 +831,7 @@ export function MarginThreadsTab({
               variant="ghost"
               size="sm"
               onClick={() => {
-                setShowNewThread(false);
+                setNewThread((prev) => ({ ...prev, open: false }));
                 onClearDraftQuote?.();
               }}
               className="text-label-secondary"

@@ -1,24 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Globe } from "iconoir-react";
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
+import { useHydrated } from "~/hooks/useHydrated";
 import { useNotify } from "~/hooks/useNotify";
 
 export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId: string }) {
-  const [seed, setSeed] = useState(0);
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setSeed(Date.now());
-  }, []);
+  // A random pick is fetched in the browser only, never during the server render
+  const hydrated = useHydrated();
 
   const { data: randomCountries } = api.countries.getRandomCountries.useQuery(
     { limit: 3 },
-    { enabled: seed > 0, staleTime: 0 }
+    { enabled: hydrated, staleTime: 0 }
   );
   const followerCountryId = currentUserCountryId;
   const utils = api.useUtils();

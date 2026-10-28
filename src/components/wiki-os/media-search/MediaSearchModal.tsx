@@ -21,7 +21,12 @@ interface MediaSearchModalProps {
 
 type MainTab = "wiki-repository" | "upload";
 
-export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearchModalProps) {
+/** Mounted only while open, so every opening starts from a fresh selection. */
+export function MediaSearchModal(props: MediaSearchModalProps) {
+  return props.isOpen ? <MediaSearchModalContent {...props} /> : null;
+}
+
+function MediaSearchModalContent({ isOpen, onClose, onImageSelect }: MediaSearchModalProps) {
   const notify = useNotify();
 
   // Active Main Tab
@@ -41,22 +46,8 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
     confirmRef.current = null;
   };
 
+  // Closing unmounts this, which aborts a request in flight
   useEffect(() => cancelConfirm, []);
-
-  // Reset selections when modal opens or active tab changes
-  useEffect(() => {
-    if (isOpen) {
-      // oxlint-disable-next-line
-      setSelectedImage(null);
-      setSelectedImageObj(null);
-      setActiveTab("wiki-repository");
-    } else {
-      cancelConfirm();
-    }
-    if (!isOpen || activeTab !== "wiki-repository") {
-      setIsCategoryExpanded(false);
-    }
-  }, [isOpen, activeTab]);
 
   const handleWikiSelectImage = (img: CommonsImage | null) => {
     if (!img) {
@@ -136,7 +127,10 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
 
         <Tabs
           value={activeTab}
-          onValueChange={(val) => setActiveTab(val as MainTab)}
+          onValueChange={(val) => {
+            setActiveTab(val as MainTab);
+            if (val !== "wiki-repository") setIsCategoryExpanded(false);
+          }}
           className="flex min-h-0 flex-1 flex-col"
         >
           <TabsList className="border-separator grid w-full grid-cols-2 rounded-none border-b bg-transparent p-0">

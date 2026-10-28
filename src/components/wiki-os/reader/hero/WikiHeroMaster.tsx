@@ -1,48 +1,20 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { WikiHeroProps, WikiHeroVariant } from "./types";
 import { SculptedEmblemHero } from "./SculptedEmblemHero";
-
-const STORAGE_KEY = "wikios:heroVariant";
+import { useHeroVariant } from "./useHeroVariant";
 
 export function WikiHeroMaster(props: WikiHeroProps) {
-  const [internalVariant, setInternalVariant] = useState<WikiHeroVariant>("sculpted-emblem");
+  const [storedVariant, saveVariant] = useHeroVariant();
   const reduceMotion = useReducedMotion();
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY) as string | null;
-      if (saved === "editorial-masthead") {
-        // oxlint-disable-next-line
-        setInternalVariant("editorial-masthead");
-      } else {
-        setInternalVariant("sculpted-emblem");
-      }
-    } catch {
-      // ignore storage failures
-    }
-  }, []);
+  const activeVariant = props.variant ?? storedVariant;
 
-  const activeVariant = props.variant ?? internalVariant;
-
-  const handleSelectVariant = useCallback(
-    (newVariant: WikiHeroVariant) => {
-      if (props.onSelectVariant) {
-        // oxlint-disable-next-line
-        props.onSelectVariant(newVariant);
-      } else {
-        setInternalVariant(newVariant);
-      }
-      try {
-        localStorage.setItem(STORAGE_KEY, newVariant);
-      } catch {
-        // ignore
-      }
-    },
-    [props.onSelectVariant]
-  );
+  const handleSelectVariant = (newVariant: WikiHeroVariant) => {
+    props.onSelectVariant?.(newVariant);
+    saveVariant(newVariant);
+  };
 
   const heroProps: WikiHeroProps = {
     ...props,

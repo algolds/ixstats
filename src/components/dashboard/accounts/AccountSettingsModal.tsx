@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import {
 } from "~/components/ui/dialog";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { useHydrated } from "~/hooks/useHydrated";
 import { useNotify } from "~/hooks/useNotify";
 import { PersonaTraitControls, type PersonaTraitKey } from "./form/PersonaTraitControls";
 import { accountSettingsOf, type ThinkpagesAccountItem } from "./account-types";
@@ -31,21 +32,16 @@ export function AccountSettingsModal({
 }: AccountSettingsModalProps) {
   const notify = useNotify();
   const [settings, setSettings] = useState(() => accountSettingsOf(account));
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setMounted(true);
-  }, []);
+  const mounted = useHydrated();
 
   const updateAccountMutation = api.thinkpages.updateAccount.useMutation();
 
-  useEffect(() => {
-    if (account) {
-      // oxlint-disable-next-line
-      setSettings(accountSettingsOf(account));
-    }
-  }, [account]);
+  // A different account resets the form to its saved settings
+  const [settingsAccount, setSettingsAccount] = useState(account);
+  if (account !== settingsAccount) {
+    setSettingsAccount(account);
+    if (account) setSettings(accountSettingsOf(account));
+  }
 
   const handleSave = async () => {
     try {

@@ -6,6 +6,7 @@ import {
   layoutWithLines,
   type PreparedTextWithSegments,
 } from "@chenglou/pretext";
+import { useHydrated } from "~/hooks/useHydrated";
 import { cn } from "~/lib/utils/cn";
 
 interface PreTextProps {
@@ -29,13 +30,7 @@ export function PreText({
 }: PreTextProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState<number>(0);
-  const [isMounted, setIsMounted] = useState<boolean>(false);
-
-  // Set mounted flag on client
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setIsMounted(true);
-  }, []);
+  const isMounted = useHydrated();
 
   // Measure container width on mount and resize (client-only)
   useEffect(() => {

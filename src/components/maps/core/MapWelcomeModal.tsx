@@ -200,13 +200,12 @@ export function MapWelcomeModal({
   const [show, setShow] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
 
-  // Sync parent isOpen control
-  useEffect(() => {
-    if (isOpen !== undefined) {
-      // oxlint-disable-next-line
-      setShow(isOpen);
-    }
-  }, [isOpen]);
+  // The parent's isOpen, when it controls the modal, wins whenever it changes, during render.
+  const [syncedIsOpen, setSyncedIsOpen] = useState<boolean | undefined>(undefined);
+  if (isOpen !== syncedIsOpen) {
+    setSyncedIsOpen(isOpen);
+    if (isOpen !== undefined) setShow(isOpen);
+  }
 
   useEffect(() => {
     if (!isMapReady) return;

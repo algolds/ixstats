@@ -76,6 +76,15 @@ const RARITY_CONFIG: Record<
 
 const ROMAN_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
 
+/** The tier a rarity filter aims at: its first match when unlocked, else the series' current tier. */
+function rarityTierIndex(item: GroupedAchievementItem, selectedRarity: string): number {
+  if (selectedRarity !== "all") {
+    const matchIdx = item.levels.findIndex((l) => l.rarity === selectedRarity);
+    if (matchIdx !== -1 && item.levels[matchIdx].isUnlocked) return matchIdx;
+  }
+  return item.currentTierIndex;
+}
+
 /**
  * Grouped Achievement Series Card with an icon and an aurora-watermark backdrop
  */
@@ -94,31 +103,42 @@ function GroupedSeriesCard({
   focusKey?: string;
 }) {
   const focusIndex = focusKey ? item.levels.findIndex((l) => l.key === focusKey) : -1;
-  const [inspectedIndex, setInspectedIndex] = useState(
-    focusIndex === -1 ? item.currentTierIndex : focusIndex
-  );
+  // The inspected tier, with the inputs it was last aimed from (adjusted during render, not in an
+  // effect): a rarity or series change re-aims it at the rarity's tier, a new deep link at that
+  // achievement. The deep link wins on mount and when both change; a later rarity change still re-aims it.
+  const [inspection, setInspection] = useState(() => ({
+    index: focusIndex === -1 ? rarityTierIndex(item, selectedRarity) : focusIndex,
+    selectedRarity,
+    currentTierIndex: item.currentTierIndex,
+    levels: item.levels,
+    focusIndex,
+  }));
+  const rarityChanged =
+    inspection.selectedRarity !== selectedRarity ||
+    inspection.currentTierIndex !== item.currentTierIndex ||
+    inspection.levels !== item.levels;
+  const focusChanged = inspection.focusIndex !== focusIndex;
+  if (rarityChanged || focusChanged) {
+    let index = inspection.index;
+    if (focusChanged && focusIndex !== -1) index = focusIndex;
+    else if (rarityChanged) index = rarityTierIndex(item, selectedRarity);
+    setInspection({
+      index,
+      selectedRarity,
+      currentTierIndex: item.currentTierIndex,
+      levels: item.levels,
+      focusIndex,
+    });
+  }
+  const inspectedIndex = inspection.index;
+  const setInspectedIndex = (index: number) => setInspection((prev) => ({ ...prev, index }));
   const cardRef = useRef<HTMLDivElement>(null);
   const [shakingTierKey, setShakingTierKey] = useState<string | null>(null);
   const [isPedestalShaking, setIsPedestalShaking] = useState(false);
 
-  // When selectedRarity changes, auto-focus matching unlocked tier if available
-  useEffect(() => {
-    if (selectedRarity !== "all") {
-      const matchIdx = item.levels.findIndex((l) => l.rarity === selectedRarity);
-      if (matchIdx !== -1 && item.levels[matchIdx].isUnlocked) {
-        // oxlint-disable-next-line
-        setInspectedIndex(matchIdx);
-        return;
-      }
-    }
-    setInspectedIndex(item.currentTierIndex);
-  }, [selectedRarity, item.currentTierIndex, item.levels]);
-
-  // Declared after the effect above so a deep link wins on mount; a later rarity change still re-aims it.
+  // A deep link scrolls its card into view
   useEffect(() => {
     if (focusIndex === -1) return;
-    // oxlint-disable-next-line
-    setInspectedIndex(focusIndex);
     cardRef.current?.scrollIntoView?.({ block: "center" });
   }, [focusIndex]);
 

@@ -75,11 +75,11 @@ export function HeroSpotlightSearch({
   const results = searchData?.results ?? [];
 
   // Reset selected index when results change
-  useEffect(() => {
-    // oxlint-disable-next-line
+  const [prevResultCount, setPrevResultCount] = useState(results.length);
+  if (results.length !== prevResultCount) {
+    setPrevResultCount(results.length);
     setSelectedIndex(0);
-    // oxlint-disable-next-line
-  }, [results.length]);
+  }
 
   // Handle click outside to close dropdown
   useEffect(() => {

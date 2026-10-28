@@ -13,32 +13,33 @@ import {
 import { cn } from "~/lib/utils";
 import { overlayScrimClassName } from "~/components/ui/dialog";
 import { springSmooth, tweenExit, tweenFast } from "~/lib/design/motion";
+import { useHydrated } from "~/hooks/useHydrated";
+
+/** Initial completed status from localStorage; false on the server. */
+function readTourCompleted(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem("ixstats:halo-tour-completed") === "true";
+  } catch {
+    return false; // storage unavailable (private mode): tour treated as not completed
+  }
+}
 
 export function HaloTourTooltip() {
+  // Nothing renders before hydration (`mounted`), so reading storage here cannot mismatch.
   const [tourState, setTourState] = useState<{
     isActive: boolean;
     currentStep: number;
     completed: boolean;
-  }>({
+  }>(() => ({
     isActive: false,
     currentStep: 1,
-    completed: false,
-  });
+    completed: readTourCompleted(),
+  }));
 
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
 
   useEffect(() => {
-    // oxlint-disable-next-line
-    setMounted(true);
-
-    // Check initial completed status from localStorage
-    try {
-      const hasCompleted = localStorage.getItem("ixstats:halo-tour-completed") === "true";
-      setTourState((prev) => ({ ...prev, completed: hasCompleted }));
-    } catch {
-      // storage unavailable (private mode) — tour treated as not completed
-    }
-
     const handleStepChange = (e: Event) => {
       const customEvent = e as CustomEvent<{ step: number; active: boolean }>;
       if (customEvent.detail) {
