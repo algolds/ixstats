@@ -26,7 +26,7 @@ import {
   finiteOrNull,
 } from "~/lib/economy/country-relations";
 import { incomeSharesOf } from "~/lib/economy/income-classes";
-import { nationalRevenue, REVENUE_BASIS_NOTE } from "./fiscal/nationalRevenue";
+import { nationalRevenue, REVENUE_BASIS_NOTE } from "~/lib/economy/national-revenue";
 import { Card } from "~/components/ui/card";
 import { SheetSection } from "./SheetSection";
 import { economyTabFromParam, type EconomyTab } from "~/lib/mycountry/routes";

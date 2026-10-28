@@ -13,7 +13,7 @@ import { getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
 import { nextIxDayStart, roundToIxDay } from "~/lib/ixtime/day";
 import { computeFoundingSnapshot, REVENUE_TARGET_RANGE } from "~/server/shared/founding-snapshot";
-import { computeTaxYields, TAX_CHANNELS } from "~/components/mycountry/shell/fiscal/taxChannels";
+import { computeTaxYields, TAX_CHANNELS } from "~/lib/economy/tax-channels";
 import { POPULATION_BAND_IDS, WEALTH_BAND_IDS } from "~/lib/builder/founding-bands";
 import type { EconomicArchetype } from "@prisma/client";
 

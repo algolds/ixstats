@@ -7,8 +7,8 @@ import type {
   RevenueSummary,
 } from "~/types/government";
 import type { BudgetTrendItem, DepartmentChartItem } from "./budgetTypes";
-import { TAX_CHANNELS } from "~/components/mycountry/shell/fiscal/taxChannels";
-import type { NationalRevenue } from "~/components/mycountry/shell/fiscal/nationalRevenue";
+import { TAX_CHANNELS } from "~/lib/economy/tax-channels";
+import type { NationalRevenue } from "~/lib/economy/national-revenue";
 import { latestBudgetYearUpTo } from "~/lib/government/budget-year";
 
 const sumOf = <T>(items: T[], pick: (item: T) => number | null | undefined) =>

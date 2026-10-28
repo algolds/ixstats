@@ -6,7 +6,7 @@
  * - the typed figures reader takes GDP growth from `calculatedStats.gdpGrowth`.
  */
 import { describe, it, expect } from "@jest/globals";
-import { nationalRevenue } from "~/components/mycountry/shell/fiscal/nationalRevenue";
+import { nationalRevenue } from "~/lib/economy/national-revenue";
 import { incomeSharesOf } from "~/lib/economy/income-classes";
 import { infrastructureBudgetBillions } from "~/lib/economy/national-mobility";
 import { economyFiguresOf } from "~/lib/economy/country-relations";

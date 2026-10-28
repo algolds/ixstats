@@ -17,8 +17,8 @@ import { allocatedInEffect } from "~/components/mycountry/domains/government/bud
 import { useNationClock } from "~/hooks/useNationClock";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 import { fiscalBalancePercent } from "~/components/mycountry/domains/government/budget/budgetTypes";
-import { TAX_CHANNELS, ACCENT_BG } from "./taxChannels";
-import { nationalRevenue } from "./nationalRevenue";
+import { TAX_CHANNELS, ACCENT_BG } from "~/lib/economy/tax-channels";
+import { nationalRevenue } from "~/lib/economy/national-revenue";
 import { RailCard, RailRow, STATUS_FILL, STATUS_TEXT } from "../rails/shared";
 
 type LafferPosition = "below-optimal" | "optimal" | "above-optimal";

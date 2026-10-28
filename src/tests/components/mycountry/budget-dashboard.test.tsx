@@ -54,7 +54,7 @@ import { NationClockProvider } from "~/hooks/useNationClock";
 import { ixnayReader, sixTimesReader } from "~/tests/fixtures/realm-readers";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 import { BudgetManagementDashboard } from "~/components/mycountry/domains/government/BudgetManagementDashboard";
-import { nationalRevenue } from "~/components/mycountry/shell/fiscal/nationalRevenue";
+import { nationalRevenue } from "~/lib/economy/national-revenue";
 
 /** A nation with no tax rate saved: its founding revenue stands in. */
 const foundingRevenue = (total: number) => nationalRevenue({ governmentRevenueTotal: total });

@@ -17,7 +17,7 @@ jest.mock("~/lib/activity/hooks", () => ({
 
 import { nextIxDayStart } from "~/lib/ixtime/day";
 import { CountryEventSpine } from "~/lib/activity";
-import { fiscalUpdateForRate } from "~/components/mycountry/shell/fiscal/taxChannels";
+import { fiscalUpdateForRate } from "~/lib/economy/tax-channels";
 import { growthModifierToLevelShift, IxStatsCalculator } from "~/lib/economy/calculations";
 import { IxTime } from "~/lib/ixtime";
 import type { BaseCountryData, EconomicConfig, StorytellerEffect } from "~/types/ixstats";

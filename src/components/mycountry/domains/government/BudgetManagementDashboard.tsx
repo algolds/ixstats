@@ -39,7 +39,7 @@ import {
 } from "./budget";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { CreateGovernmentStructureButton } from "./CreateGovernmentStructureButton";
-import type { NationalRevenue } from "~/components/mycountry/shell/fiscal/nationalRevenue";
+import type { NationalRevenue } from "~/lib/economy/national-revenue";
 
 const VIEW_OPTIONS = [
   { value: "overview", label: "Overview" },

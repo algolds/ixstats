@@ -21,7 +21,7 @@ import {
 import { MAINTENANCE_DEBIT_EFFECT } from "~/lib/policies/lifecycle";
 import { inferFormId } from "~/server/shared/founding-snapshot";
 // Pure, client-safe: the one revenue figure every Economy tab shows (saved rates x live GDP, else founding).
-import { nationalRevenue } from "~/components/mycountry/shell/fiscal/nationalRevenue";
+import { nationalRevenue } from "~/lib/economy/national-revenue";
 import type { DepartmentCategory } from "~/types/government";
 
 type Db = PrismaClient;

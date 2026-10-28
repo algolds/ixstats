@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
-import { type TaxChannel, ACCENT_BG } from "./taxChannels";
+import { type TaxChannel, ACCENT_BG } from "~/lib/economy/tax-channels";
 import { Card } from "~/components/ui/card";
 import { RateInput } from "../RateInput";
 
