@@ -11,6 +11,7 @@
  */
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { globalCache } from "~/lib/cache";
@@ -74,7 +75,7 @@ export const myCountryDashboardRouter = createTRPCRouter({
         });
 
         if (!country) {
-          throw new Error("Country not found");
+          throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
         }
 
         // Calculate vitality scores (diplomacy + government read from their own tables)
@@ -91,6 +92,7 @@ export const myCountryDashboardRouter = createTRPCRouter({
         await globalCache.set(cacheKey, result, { ttl: 15 });
         return await forViewer(result);
       } catch (error) {
+        if (error instanceof TRPCError) throw error;
         console.error("[MyCountry Dashboard] Error:", error);
         throw new Error("Failed to get country dashboard data", { cause: error });
       }
@@ -129,7 +131,7 @@ export const myCountryDashboardRouter = createTRPCRouter({
         });
 
         if (!country) {
-          throw new Error("Country not found");
+          throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
         }
 
         const extras = await loadVitalityExtras(country.id);
@@ -157,6 +159,7 @@ export const myCountryDashboardRouter = createTRPCRouter({
         await setMyCountryCache(cacheKey, summary, 180000); // Cache for 3 minutes
         return summary;
       } catch (error) {
+        if (error instanceof TRPCError) throw error;
         console.error("[MyCountry Summary] Error:", error);
         throw new Error("Failed to get national summary", { cause: error });
       }
