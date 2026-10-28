@@ -431,7 +431,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "74eafa6df862a1487f0fd4c828eaa42a24c57d29a532431eab5a65a3fd92148d",
+    digest: "0998cff6267651b0c00796947978b9aceae7f69cf0c6af847d2462f39afb5797",
   },
   evaluateNeighborFallbackForcedDomain: {
     summary: {
@@ -472,7 +472,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "e5afd8151fe54b19f6e714d7042eaff04f1ac0ea276aebb3ea526715da3d318e",
+    digest: "e423e45c354f8ac0938796a75af95df6031e0b086ca79fd6c74978b4b703c74a",
   },
   evaluatePendingCap: {
     summary: {
@@ -500,7 +500,7 @@ const EXPECTED: Record<
         "nationalIssue.count",
       ],
     },
-    digest: "e1ed18e37fd98df4b1bdca46ddd119c992cb95ab805803d97c193cc0c5b96362",
+    digest: "13ce442e941204a6f1cc0cef87e362e404e8e6ac7cc6e55d12e6cb676ba3fff3",
   },
   evaluateWeeklyCapReached: {
     summary: {
@@ -537,7 +537,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "264eb4ed685fd83f67621794a18576ae93989f5946c899d807f5780077e3d3b6",
+    digest: "4d75836db37fe20423b5743376b8caf8aef57b6751ef73d1d364f349740bbb48",
   },
   evaluateTargetLookupThrows: {
     summary: {
@@ -575,7 +575,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "9d6c8bba07883789a648872e8f3fdae5924c05eb2b8a33685bfbd7fee05a91fa",
+    digest: "e68a68bfa26ac67286eb625e4c3fb4ea7661fca71774f7e459927a33e53f346f",
   },
   forceGenerateFollowUp: {
     summary: {

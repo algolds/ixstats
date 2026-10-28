@@ -9,7 +9,7 @@ import { INTENT_CATEGORY_TO_TEMPLATE } from "~/lib/intent/resistance";
 import { getNationalIssuesConfig } from "../config";
 import type { CountrySnapshot, EvaluationResult } from "../types";
 import { evaluateTriggerCondition, type TriggerCondition } from "./condition-evaluator";
-import type { TemplateCandidate } from "./issue-generator";
+import { STAFFING_SHORTAGE_SLUG, type TemplateCandidate } from "./issue-generator";
 
 type CandidateTemplate = TemplateCandidate["template"];
 type RecentIssue = { templateId: string; createdIxTime: number; status: string };
@@ -55,6 +55,8 @@ export function buildTemplateWhere(forceDomain?: string): Prisma.NationalIssueTe
     NOT: [
       { domain: { in: ["diplomatic", "foreign"] } },
       { category: { in: ["DIPLOMATIC", "diplomatic"] } },
+      // Its stored trigger ("consumedStaff > 0") cannot compare against capacity: raised only when overstaffed.
+      { slug: STAFFING_SHORTAGE_SLUG },
     ],
   };
   if (forceDomain) {

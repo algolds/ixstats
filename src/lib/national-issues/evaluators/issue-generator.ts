@@ -175,6 +175,10 @@ export function substituteVariables(
   });
 }
 
+/** The staffing-shortage template: raised only by maybeTriggerStaffingShortage, never by the template evaluator. */
+export const STAFFING_SHORTAGE_SLUG = "government_staffing_shortage";
+const STAFFING_SHORTAGE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
+
 /**
  * Auto-trigger a "Government Staffing Shortage" issue when active + implementing
  * component staff requirements exceed the country's civil service capacity.
@@ -189,7 +193,7 @@ export async function maybeTriggerStaffingShortage(
 
   try {
     const overstaff = Math.round(snapshot.consumedStaff - snapshot.civilServiceCapacity);
-    const slug = "government_staffing_shortage";
+    const slug = STAFFING_SHORTAGE_SLUG;
 
     const responseOptions = JSON.stringify([
       {
@@ -242,8 +246,17 @@ export async function maybeTriggerStaffingShortage(
       },
     });
 
+    // One open at a time, and not again within the template's cooldown: answering it does not change capacity, so
+    // without the cooldown it came back on every evaluation.
     const existing = await db.nationalIssue.count({
-      where: { countryId, templateId: template.id, status: { in: ["pending", "viewed"] } },
+      where: {
+        countryId,
+        templateId: template.id,
+        OR: [
+          { status: { in: ["pending", "viewed"] } },
+          { createdIxTime: { gt: snapshot.currentIxTime - STAFFING_SHORTAGE_COOLDOWN_MS } },
+        ],
+      },
     });
     if (existing > 0) return;
 
