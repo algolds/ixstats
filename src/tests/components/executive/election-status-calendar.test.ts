@@ -9,6 +9,7 @@ import { CLOCK_NOW, DAY, ixnayReader, sixTimesReader } from "~/tests/fixtures/re
 const status = (scheduledIxTime: number, isFirst = false) =>
   ({
     hasLegislature: true,
+    hasElectedChamber: true,
     activeParties: 3,
     minParties: 2,
     counting: false,
@@ -45,5 +46,16 @@ describe("describeElection", () => {
 
   it("shows a placeholder while the clock loads", () => {
     expect(describeElection(status(CLOCK_NOW), null).headline).toBe("Next election: –");
+  });
+
+  it("promises no election when no chamber is elected (owner ruling B-12c)", () => {
+    const appointed = {
+      ...status(CLOCK_NOW),
+      hasElectedChamber: false,
+      upcoming: null,
+    } as unknown as Parameters<typeof describeElection>[0];
+    const { headline, detail } = describeElection(appointed, ixnayReader());
+    expect(headline).toBe("No elections");
+    expect(`${headline} ${detail}`).not.toMatch(/schedule|job/i);
   });
 });

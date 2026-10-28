@@ -6,6 +6,7 @@ import { parseChambers } from "~/lib/government/election-simulation";
 import {
   MIN_ELECTION_PARTIES,
   ensureUpcomingElection,
+  hasElectedChamber,
   releaseStaleCounts,
   resolveElection,
 } from "~/lib/government/election-lifecycle";
@@ -46,7 +47,14 @@ export const electionsElectionsRouter = createTRPCRouter({
         await Promise.all([
           ctx.db.legislature.findUnique({
             where: { countryId: input.countryId },
-            select: { id: true, totalSeats: true, termLength: true },
+            select: {
+              id: true,
+              totalSeats: true,
+              termLength: true,
+              chamberType: true,
+              name: true,
+              electoralSystem: true,
+            },
           }),
           ctx.db.politicalParty.count({
             where: { countryId: input.countryId, isActive: true },
@@ -91,6 +99,7 @@ export const electionsElectionsRouter = createTRPCRouter({
         nowIxTime,
         minParties: MIN_ELECTION_PARTIES,
         hasLegislature: !!legislature,
+        hasElectedChamber: !!legislature && hasElectedChamber(legislature),
         totalSeats: legislature?.totalSeats ?? 0,
         seatedSeats,
         activeParties,

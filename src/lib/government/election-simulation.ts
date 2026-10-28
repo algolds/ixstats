@@ -128,6 +128,14 @@ export function parseChambers(
   ];
 }
 
+/**
+ * Chambers put to the vote (owner ruling B-12c): only elected ones. Appointed, hereditary and other chambers are never
+ * elected; their seats keep their parties until the owner changes the legislature.
+ */
+export function electedChambers(chambers: readonly ChamberConfig[]): ChamberConfig[] {
+  return chambers.filter((c) => c.selectionMethod === "elected");
+}
+
 /** Seat bounds the legislature editor offers: 1 to 5,000 per chamber, up to 10,000 in all. */
 export const MAX_CHAMBER_SEATS = 5000;
 export const MAX_LEGISLATURE_SEATS = 10000;
@@ -146,7 +154,8 @@ export function chamberSeatProblem(chambers: readonly ChamberConfig[]): string |
 }
 
 type SimulateElectionResult =
-  { ok: true; election: any } | { ok: false; reason: "not_found" | "insufficient_candidates" };
+  | { ok: true; election: any }
+  | { ok: false; reason: "not_found" | "insufficient_candidates" | "no_elected_chamber" };
 
 type PartyVote = { partyId: string; votes: number; candidateId: string };
 type ChamberAllocation = { chamberName: string; allocation: Map<string, number> };
@@ -274,7 +283,11 @@ async function reassignSeats(
     }
   }
 
-  for (const seat of allSeats.filter((s) => !updatedSeatIds.has(s.id))) {
+  // Seats outside the elected chambers' seats go vacant, except a non-elected chamber's, which keep their parties.
+  const kept = new Set(chambers.filter((c) => c.selectionMethod !== "elected").map((c) => c.name));
+  for (const seat of allSeats.filter(
+    (s) => !updatedSeatIds.has(s.id) && !kept.has(s.region ?? "")
+  )) {
     await db.legislativeSeat.update({ where: { id: seat.id }, data: { partyId: null } });
   }
 }
@@ -389,7 +402,9 @@ export async function simulateElectionCore(
     legislature.totalSeats,
     legislature.electoralSystem
   );
-  const allocations: ChamberAllocation[] = chambers.map((chamber) => ({
+  const elected = electedChambers(chambers);
+  if (elected.length === 0) return { ok: false, reason: "no_elected_chamber" };
+  const allocations: ChamberAllocation[] = elected.map((chamber) => ({
     chamberName: chamber.name,
     allocation: allocateChamber(chamber, partyVotes),
   }));

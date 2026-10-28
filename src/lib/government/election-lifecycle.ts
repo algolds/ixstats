@@ -16,7 +16,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { IxTime } from "~/lib/ixtime";
 import { clockForCountry } from "~/server/shared/realm-time";
-import { simulateElectionCore } from "./election-simulation";
+import { electedChambers, parseChambers, simulateElectionCore } from "./election-simulation";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const GAME_YEAR_MS = 365.25 * DAY_MS;
@@ -39,7 +39,23 @@ export type EnsureElectionResult =
       electionId: string;
       scheduledIxTime: number;
     }
-  | { status: "no_legislature" | "insufficient_parties" };
+  | { status: "no_legislature" | "insufficient_parties" | "no_elected_chamber" };
+
+/** True when at least one of the legislature's chambers is elected (owner ruling B-12c). */
+export function hasElectedChamber(legislature: {
+  chamberType: string;
+  name: string;
+  totalSeats: number;
+  electoralSystem: string;
+}): boolean {
+  const chambers = parseChambers(
+    legislature.chamberType,
+    legislature.name,
+    legislature.totalSeats,
+    legislature.electoralSystem
+  );
+  return electedChambers(chambers).length > 0;
+}
 
 function electionName(kind: "first" | "snap" | "general", ixTime: number): string {
   const year = IxTime.getCurrentGameYear(ixTime);
@@ -65,9 +81,24 @@ export async function ensureUpcomingElection(
 ): Promise<EnsureElectionResult> {
   const legislature = await db.legislature.findUnique({
     where: { countryId },
-    select: { id: true, termLength: true },
+    select: {
+      id: true,
+      termLength: true,
+      chamberType: true,
+      name: true,
+      totalSeats: true,
+      electoralSystem: true,
+    },
   });
   if (!legislature) return { status: "no_legislature" };
+  if (!hasElectedChamber(legislature)) {
+    // No chamber is put to the vote: an election queued before the change is called off.
+    await db.election.updateMany({
+      where: { countryId, status: "upcoming" },
+      data: { status: "cancelled" },
+    });
+    return { status: "no_elected_chamber" };
+  }
 
   const activeParties = await db.politicalParty.count({ where: { countryId, isActive: true } });
   if (activeParties < MIN_ELECTION_PARTIES) return { status: "insufficient_parties" };
@@ -213,6 +244,13 @@ export async function resolveElection(
   try {
     await syncElectionCandidates(db, electionId);
     const sim = await simulateElectionCore(db, electionId);
+    if (!sim.ok && sim.reason === "no_elected_chamber") {
+      await db.election.updateMany({
+        where: { id: electionId, status: "voting" },
+        data: { status: "cancelled" },
+      });
+      return { outcome: "not_claimed" };
+    }
     if (!sim.ok) {
       await release();
       return { outcome: "insufficient_candidates" };

@@ -28,6 +28,13 @@ export function describeElection(
       detail: `Configure the legislature and register at least ${minParties} parties to schedule the first election.`,
     };
   }
+  if (!status.hasElectedChamber) {
+    return {
+      headline: "No elections",
+      detail:
+        "No chamber of this legislature is elected. Its seats keep their parties until you change the legislature.",
+    };
+  }
   if (status.activeParties < minParties) {
     return {
       headline: "Awaiting parties",
@@ -80,7 +87,7 @@ export function ElectionStatusCard({ countryId, canManage = true }: ElectionStat
   if (!status) return null;
 
   const { upcoming, lastElection } = status;
-  const needsParties = status.activeParties < status.minParties;
+  const needsParties = status.hasElectedChamber && status.activeParties < status.minParties;
   const { headline, detail } = describeElection(status, clock);
   const vacant = status.totalSeats - status.seatedSeats;
 

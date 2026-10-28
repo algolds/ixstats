@@ -523,6 +523,57 @@ describe("MC-2 politics lifecycle", () => {
     expect(first.status).toBe("voting");
   });
 
+  it("elects only the elected chambers: a hereditary chamber keeps its seats (owner ruling B-12c)", async () => {
+    await setUpNation();
+    await callers().elections.configureLegislature({
+      countryId: COUNTRY,
+      name: "Diet",
+      chamberType: "bicameral|House:60:proportional:elected;Lords:40:proportional:hereditary",
+      totalSeats: 100,
+      electoralSystem: "proportional",
+      termLength: 4,
+      electionCycle: "fixed",
+    });
+    const peers = tables.politicalParty![1]!.id;
+    for (const seat of tables.legislativeSeat!.filter((s) => s.region === "Lords"))
+      seat.partyId = peers;
+    const election = tables.election!.find((e) => e.status === "upcoming")!;
+    IxTime.setTimeOverride(election.scheduledIxTime + DAY);
+
+    expect(await processDueElections()).toMatchObject({ resolved: 1 });
+    const lords = tables.legislativeSeat!.filter((s) => s.region === "Lords");
+    expect(lords.every((s) => s.partyId === peers)).toBe(true);
+    const won = tables.electionResult!.filter((r) => r.electionId === election.id);
+    expect(won.reduce((sum, r) => sum + r.seatsWon, 0)).toBe(60);
+  });
+
+  it("schedules no election for a legislature with no elected chamber, and says so", async () => {
+    const { elections } = callers();
+    await elections.configureLegislature({
+      countryId: COUNTRY,
+      name: "Council",
+      chamberType: "unicameral|Council:30:proportional:appointed",
+      totalSeats: 30,
+      electoralSystem: "proportional",
+      termLength: 4,
+      electionCycle: "fixed",
+    });
+    for (const name of ["A", "B"]) {
+      await elections.createParty({
+        countryId: COUNTRY,
+        name,
+        ideology: "center",
+        color: "#16a34a",
+      });
+    }
+    expect(tables.election).toHaveLength(0);
+    expect(await processDueElections()).toMatchObject({ scheduled: 0 });
+    expect(await elections.getElectionStatus({ countryId: COUNTRY })).toMatchObject({
+      hasElectedChamber: false,
+      upcoming: null,
+    });
+  });
+
   it("a party formed while the votes are counted does not queue an early election", async () => {
     await setUpNation();
     const first = tables.election![0]!;
