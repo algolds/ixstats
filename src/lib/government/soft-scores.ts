@@ -206,13 +206,13 @@ function deriveInfrastructure(inputs: SoftScoreInputs, s: Strains) {
 export function deriveSoftScores(inputs: SoftScoreInputs): SoftScores {
   const s = strains(inputs);
   const democracyIndex = deriveDemocracy(inputs, s);
-  const governmentEffectiveness = deriveEffectiveness(inputs, s);
-  const corruptionIndex = deriveCorruption(s, democracyIndex, governmentEffectiveness, inputs);
+  const effectiveness = deriveEffectiveness(inputs, s);
+  const corruptionIndex = deriveCorruption(s, democracyIndex, effectiveness, inputs);
   const politicalPolarization = derivePolarization(inputs, s, democracyIndex);
   return {
     politicalStability: deriveStability(s, politicalPolarization),
     democracyIndex,
-    governmentEffectiveness,
+    governmentEffectiveness: effectiveness,
     ruleOfLaw: deriveRuleOfLaw(democracyIndex, corruptionIndex, inputs),
     corruptionIndex,
     politicalPolarization,
