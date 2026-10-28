@@ -15,6 +15,7 @@
  */
 import { db } from "~/server/db";
 import { applyGovernmentComponentEffects } from "./component-effects";
+import { syncElectionGdpLevel } from "./election-simulation";
 import { isNewsworthySwing } from "./approval";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
@@ -190,6 +191,9 @@ export async function runPoliticsDrift(
           if (await driftParty(p, perStep, now)) result.partiesUpdated++;
         }
       }
+
+      // The election GDP bonus is the latest result's alone (collapses levels stacked before the ruling)
+      await syncElectionGdpLevel(db, countryId, now);
 
       // Stability / political metrics recompute
       await applyGovernmentComponentEffects(db, countryId, {

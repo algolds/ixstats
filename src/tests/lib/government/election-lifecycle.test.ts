@@ -574,6 +574,26 @@ describe("MC-2 politics lifecycle", () => {
     });
   });
 
+  it("keeps only the latest election's GDP bonus: a new result replaces the last, never stacks (owner ruling B-12d)", async () => {
+    await setUpNation();
+    for (let i = 0; i < 3; i++) {
+      const next = tables.election!.find((e) => e.status === "upcoming")!;
+      IxTime.setTimeOverride(next.scheduledIxTime + DAY);
+      await processDueElections();
+    }
+    const latest = sortRows(
+      tables.election!.filter((e) => e.status === "completed"),
+      { scheduledIxTime: "desc" }
+    )[0]!;
+    const expected =
+      latest.marginOfVictory > 10 ? 0.003 : latest.marginOfVictory > 5 ? 0.001 : -0.003;
+    const level =
+      tables
+        .storytellerEffect!.filter((r) => r.createdBy === "ELECTION_SYSTEM")
+        .reduce((product, r) => product * (1 + r.value), 1) - 1;
+    expect(level).toBeCloseTo(expected, 5);
+  });
+
   it("a party formed while the votes are counted does not queue an early election", async () => {
     await setUpNation();
     const first = tables.election![0]!;

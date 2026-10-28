@@ -8,7 +8,7 @@ import type { PrismaClient } from "@prisma/client";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { notificationAPI } from "~/lib/notifications";
 import { StorytellerEffectType } from "~/lib/economy/calculations";
-import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
+import { syncLevelEffects } from "~/lib/economy/storyteller-effects";
 
 // Seat-allocation helpers (single source of truth)
 
@@ -365,6 +365,45 @@ async function announceResults(
   }
 }
 
+/** The economy's response to an election result: +0.3% GDP level (decisive), +0.1% (clear), -0.3% (close). */
+export function electionGdpLevel(marginOfVictory: number): number {
+  return marginOfVictory > 10 ? 0.003 : marginOfVictory > 5 ? 0.001 : -0.003;
+}
+
+const ELECTION_EFFECT_KEY = "ELECTION_SYSTEM";
+
+/**
+ * Hold the nation's GDP level from elections at its latest result's (owner ruling B-12d: latest win only, never
+ * stacked), phased in over the term. Idempotent: an unchanged level writes nothing, so politics drift runs it every
+ * tick and so collapses levels stacked before the ruling. `now`: the nation's clock time (its realm's when omitted).
+ */
+export async function syncElectionGdpLevel(
+  db: PrismaClient,
+  countryId: string,
+  now?: number
+): Promise<number> {
+  const last = await db.election.findFirst({
+    where: { countryId, status: "completed" },
+    orderBy: { scheduledIxTime: "desc" },
+    select: { marginOfVictory: true, legislature: { select: { termLength: true } } },
+  });
+  const margin = last?.marginOfVictory;
+  const targets =
+    margin == null
+      ? []
+      : [
+          {
+            countryId,
+            inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
+            value: electionGdpLevel(margin),
+            duration: last?.legislature.termLength ?? 4,
+            description: `Election result: ${margin > 10 ? "Decisive victory" : margin > 5 ? "Clear win" : "Close election"} (margin ${margin.toFixed(1)} points)`,
+            createdBy: ELECTION_EFFECT_KEY,
+          },
+        ];
+  return syncLevelEffects(db, { countryId, createdBy: ELECTION_EFFECT_KEY }, targets, now);
+}
+
 /**
  * Run a full election simulation: vote shares → seat allocation → results, seat
  * reassignment, political-metric updates, storyteller effect, party support,
@@ -445,17 +484,7 @@ export async function simulateElectionCore(
 
   await updatePoliticalMetrics(db, election.countryId, marginOfVictory);
 
-  // Economic impact: a GDP level shift (+0.3% decisive, +0.1% clear, -0.3% close), phased in
-  // over the new term and kept.
-  const gdpLevelShift = marginOfVictory > 10 ? 0.003 : marginOfVictory > 5 ? 0.001 : -0.003;
-  await createStorytellerEffect(db, {
-    countryId: election.countryId,
-    inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
-    value: gdpLevelShift,
-    duration: legislature.termLength,
-    description: `Election result: ${marginOfVictory > 10 ? "Decisive victory" : marginOfVictory > 5 ? "Clear win" : "Close election"} - ${sortedResults[0]?.votePercentage.toFixed(1)}% to ${sortedResults[1]?.votePercentage.toFixed(1)}%`,
-    createdBy: "ELECTION_SYSTEM",
-  });
+  await syncElectionGdpLevel(db, election.countryId);
 
   // Party support reflects results
   for (const r of results) {
