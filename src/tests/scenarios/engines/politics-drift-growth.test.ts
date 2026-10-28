@@ -32,7 +32,7 @@ beforeEach(async () => {
     baselineDate: new Date(NOW - 365.25 * 86_400_000),
   });
   await addOwner(db as never, "lena", "testland");
-  // Ids starting with "e" have no jitter ((101 % 7) - 3 = 0), so only growth moves support.
+  // Growth moves support; each party also carries its jitter (driftJitter), added in the expectations.
   for (const id of ["e-gov", "e-opp"]) {
     await db.politicalParty.create({
       data: {

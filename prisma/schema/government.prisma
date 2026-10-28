@@ -517,6 +517,8 @@ model PoliticalParty {
   platform       String?             // JSON: { economy: "liberal", social: "progressive", foreign: "internationalist" }
   baseSupport    Float               @default(25) // 0-100 starting support percentage
   currentSupport Float               @default(25) // 0-100 current polling
+  /// The nation's clock time (ms) of the party's last politics drift: drift moves support by the realm time since.
+  driftedAtClockMs Float?
   isActive       Boolean             @default(true)
   foundedDate    DateTime            @default(now())
   createdAt      DateTime            @default(now())

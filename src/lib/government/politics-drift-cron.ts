@@ -54,6 +54,70 @@ export function driftJitter(partyId: string, now: number): number {
   return ((hash % 7) - 3) * 0.1;
 }
 
+/** Realm time one drift step stands for: the 6-hourly job's step on Ixnay's 2x clock, before drift ran on realm time. */
+export const DRIFT_STEP_CLOCK_MS = 12 * 60 * 60 * 1000;
+/** Share of the gap to its base support a party closes per step. */
+const MEAN_REVERSION = 0.1;
+
+/**
+ * Support after `steps` drift steps (fractional): each step closes MEAN_REVERSION of the gap to `base` and adds
+ * `perStep`, so it heads to base + perStep / MEAN_REVERSION and a long gap never overshoots. Clamped to 1 to 99.
+ */
+export function driftedSupport(input: {
+  current: number;
+  base: number;
+  perStep: number;
+  steps: number;
+}): number {
+  if (!(input.steps > 0)) return input.current;
+  const target = input.base + input.perStep / MEAN_REVERSION;
+  const next = target + (input.current - target) * (1 - MEAN_REVERSION) ** input.steps;
+  return clamp(next, 1, 99);
+}
+
+/**
+ * Drift one party to `now` (its nation's clock) by the realm time since its last drift (one step the first time);
+ * nothing at the same instant. Compare-and-set on the stamp, so two runs never apply the same time twice. True when
+ * the support moved.
+ */
+async function driftParty(
+  p: {
+    id: string;
+    name: string;
+    countryId: string;
+    baseSupport: number;
+    currentSupport: number;
+    driftedAtClockMs: number | null;
+  },
+  perStep: number,
+  now: number
+): Promise<boolean> {
+  const since = p.driftedAtClockMs ?? now - DRIFT_STEP_CLOCK_MS;
+  const steps = (now - since) / DRIFT_STEP_CLOCK_MS;
+  if (!(steps > 0)) return false;
+  const next =
+    Math.round(
+      driftedSupport({ current: p.currentSupport, base: p.baseSupport, perStep, steps }) * 100
+    ) / 100;
+  const { count } = await db.politicalParty.updateMany({
+    where: { id: p.id, driftedAtClockMs: p.driftedAtClockMs },
+    data: { currentSupport: next, driftedAtClockMs: now },
+  });
+  if (count === 0 || Math.abs(next - p.currentSupport) <= 0.01) return false;
+  // Headline only when support *crosses* a meaningful gap from its baseline this run (once, not every tick).
+  if (
+    !isNewsworthySwing(p.baseSupport, p.currentSupport) &&
+    isNewsworthySwing(p.baseSupport, next)
+  ) {
+    void generateDiplomaticNews(db, p.countryId, "party_support_shift", {
+      partyName: p.name,
+      actionType: next > p.baseSupport ? "surged" : "slumped",
+      percentage: `${Math.round(next)}%`,
+    });
+  }
+  return true;
+}
+
 /** `clocks`: each realm's clock (a test seam); read once from the database when omitted. */
 export async function runPoliticsDrift(
   options: { clocks?: ReadonlyMap<string, RealmClockReader> } = {}
@@ -116,39 +180,14 @@ export async function runPoliticsDrift(
         const oppositionSplit = parties.length - 1;
 
         for (const p of parties) {
-          const meanRevert = (p.baseSupport - p.currentSupport) * 0.1;
-
           // The Party satisfied gives +5% base support drift toward governing party
           let partyBrokerEffect = 0;
           if (isPartyBrokerSatisfied) {
             partyBrokerEffect = p.id === governing.id ? 0.5 : -0.5 / oppositionSplit;
           }
-
           const econEffect = (p.id === governing.id ? econMod : -econMod / oppositionSplit) * 0.3;
-          const jitter = driftJitter(p.id, now);
-          const next = clamp(
-            p.currentSupport + meanRevert + econEffect + partyBrokerEffect + jitter,
-            1,
-            99
-          );
-          if (Math.abs(next - p.currentSupport) > 0.01) {
-            await db.politicalParty.update({
-              where: { id: p.id },
-              data: { currentSupport: Math.round(next * 100) / 100 },
-            });
-            result.partiesUpdated++;
-
-            // Headline only when support *crosses* a meaningful gap from its baseline
-            // this run (so it fires once, not every drift tick).
-            const wasNormal = !isNewsworthySwing(p.baseSupport, p.currentSupport);
-            if (wasNormal && isNewsworthySwing(p.baseSupport, next)) {
-              void generateDiplomaticNews(db, countryId, "party_support_shift", {
-                partyName: p.name,
-                actionType: next > p.baseSupport ? "surged" : "slumped",
-                percentage: `${Math.round(next)}%`,
-              });
-            }
-          }
+          const perStep = econEffect + partyBrokerEffect + driftJitter(p.id, now);
+          if (await driftParty(p, perStep, now)) result.partiesUpdated++;
         }
       }
 
