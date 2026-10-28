@@ -4,7 +4,6 @@ import { createAbsoluteUrl } from "~/lib/utils";
 import { useTheme } from "~/context/theme-context";
 import { SignOutButton, useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { AnimatedThemeToggler } from "~/components/ui/magicui/animated-theme-toggler";
 import { useRouter } from "next/navigation";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { cn } from "~/lib/utils";
@@ -45,7 +44,7 @@ import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-lis
 function SettingsViewComponent({ onClose }: SettingsViewProps) {
   const router = useRouter();
   const { user, isLoaded, isSignedIn } = useUser();
-  const { theme, effectiveTheme, compactMode, toggleCompactMode } = useTheme();
+  const { theme, effectiveTheme, toggleTheme, compactMode, toggleCompactMode } = useTheme();
   const { enabled: soundEnabled, setEnabled: setSoundEnabled, previewSound } = useSoundSettings();
   const { mediaThemeMode, setMediaThemeMode } = useWikiMediaTheme();
   const activePlugin = useActiveDIPlugin();
@@ -167,7 +166,16 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                 {theme === "system" ? "Auto" : theme === "dark" ? "Dark" : "Light"}
               </PreText>
             </div>
-            <AnimatedThemeToggler className="h-8 w-8" />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={toggleTheme}
+              aria-label={
+                effectiveTheme === "dark" ? "Switch to light theme" : "Switch to dark theme"
+              }
+            >
+              {effectiveTheme === "dark" ? <Sun /> : <Moon />}
+            </Button>
           </div>
 
           {/* Compact Mode */}
