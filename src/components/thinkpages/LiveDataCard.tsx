@@ -1,6 +1,7 @@
 "use client";
 
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode } from "react";
+import { Area, AreaChart, Bar, BarChart, Cell, Pie, PieChart, XAxis } from "recharts";
 import {
   StatUp as TrendingUp,
   Globe,
@@ -13,7 +14,7 @@ import {
 import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { api } from "~/trpc/react";
-import { GlassLineChart, GlassBarChart, GlassPieChart } from "~/components/shared/charts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
 
 interface LiveDataCardProps {
   type:
@@ -53,35 +54,73 @@ const Strong = ({ children }: { children: ReactNode }) => (
   <span className="text-label font-semibold tabular-nums">{children}</span>
 );
 
-type ChartTheme = ComponentProps<typeof GlassBarChart>["theme"];
+/** Each card keeps one chart colour; pies cycle through the palette. */
+const CHART_COLOR = {
+  blue: "var(--color-chart-1)",
+  cyan: "var(--color-chart-2)",
+  emerald: "var(--color-chart-3)",
+  gold: "var(--color-chart-4)",
+  red: "var(--color-chart-5)",
+} as const;
+type ChartTheme = keyof typeof CHART_COLOR;
 type ChartRows = Record<string, unknown>[];
 
+const CHART_HEIGHT = 125;
+const PALETTE = Array.from({ length: 8 }, (_, i) => `var(--color-chart-${i + 1})`);
+
+const chartFrame = (key: string, theme: ChartTheme, chart: ReactNode) => (
+  <ChartContainer
+    config={{ [key]: { label: key, color: CHART_COLOR[theme] } }}
+    className="w-full"
+    style={{ height: CHART_HEIGHT }}
+  >
+    {chart}
+  </ChartContainer>
+);
+
+const areaChart = (data: ChartRows, xKey: string, yKey: string, theme: ChartTheme) =>
+  data.length > 0 &&
+  chartFrame(
+    yKey,
+    theme,
+    <AreaChart data={data}>
+      <XAxis dataKey={xKey} tickLine={false} axisLine={false} />
+      <ChartTooltip content={<ChartTooltipContent />} />
+      <Area
+        dataKey={yKey}
+        type="monotone"
+        stroke={CHART_COLOR[theme]}
+        fill={CHART_COLOR[theme]}
+        fillOpacity={0.2}
+      />
+    </AreaChart>
+  );
+
 const barChart = (data: ChartRows, yKey: string, theme: ChartTheme) =>
-  data.length > 0 && (
-    <GlassBarChart
-      data={data}
-      xKey="name"
-      yKey={yKey}
-      height={125}
-      theme={theme}
-      hideLegend={true}
-      hideGrid={true}
-      hideYAxis={true}
-    />
+  data.length > 0 &&
+  chartFrame(
+    yKey,
+    theme,
+    <BarChart data={data}>
+      <XAxis dataKey="name" tickLine={false} axisLine={false} />
+      <ChartTooltip content={<ChartTooltipContent />} />
+      <Bar dataKey={yKey} fill={CHART_COLOR[theme]} radius={4} />
+    </BarChart>
   );
 
 const pieChart = (data: ChartRows, theme: ChartTheme) =>
-  data.length > 0 && (
-    <GlassPieChart
-      data={data}
-      dataKey="value"
-      nameKey="name"
-      innerRadius={15}
-      outerRadius={38}
-      height={125}
-      theme={theme}
-      hideLegend={true}
-    />
+  data.length > 0 &&
+  chartFrame(
+    "value",
+    theme,
+    <PieChart>
+      <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+      <Pie data={data} dataKey="value" nameKey="name" innerRadius={15} outerRadius={38}>
+        {data.map((_, i) => (
+          <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+        ))}
+      </Pie>
+    </PieChart>
   );
 
 /** What a card type shows: header icon + meta caption, the chart (falsy when nothing is recorded) and a footer row. */
@@ -122,19 +161,7 @@ const CARD_BUILDERS: Record<LiveDataCardProps["type"], (d: CardData) => CardSpec
     return {
       icon: <TrendingUp className="text-blue" />,
       meta: "GDP Growth",
-      chart: points.length > 0 && (
-        <GlassLineChart
-          data={points}
-          xKey="year"
-          yKey="gdp"
-          area={true}
-          height={125}
-          theme="blue"
-          hideLegend={true}
-          hideGrid={true}
-          hideYAxis={true}
-        />
-      ),
+      chart: areaChart(points, "year", "gdp", "blue"),
       footerLabel: "Recent trajectory",
       footer: <Strong>Current: {money(rows.at(-1)?.totalGdp)}</Strong>,
     };
