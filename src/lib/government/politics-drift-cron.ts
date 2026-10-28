@@ -39,6 +39,21 @@ interface PoliticsDriftResult {
 import { clamp } from "~/lib/utils";
 import { findAllById } from "~/lib/system/find-all-by-id";
 
+const DAY_MS = 86_400_000;
+
+/**
+ * A party's support jitter for a run at `now` (its nation's clock): -0.3 to +0.3 points, deterministic per party
+ * and clock day (no Math.random, so a resumed run repeats it), and averaging out over days. Reading only the id's
+ * first character gave every cuid ("c...") -0.2 every run.
+ */
+export function driftJitter(partyId: string, now: number): number {
+  let hash = Math.floor(now / DAY_MS);
+  for (let i = 0; i < partyId.length; i++) hash = (Math.imul(hash, 31) + partyId.charCodeAt(i)) | 0;
+  hash = Math.imul(hash ^ (hash >>> 16), 0x45d9f3b);
+  hash = (hash ^ (hash >>> 16)) >>> 0;
+  return ((hash % 7) - 3) * 0.1;
+}
+
 /** `clocks`: each realm's clock (a test seam); read once from the database when omitted. */
 export async function runPoliticsDrift(
   options: { clocks?: ReadonlyMap<string, RealmClockReader> } = {}
@@ -110,8 +125,7 @@ export async function runPoliticsDrift(
           }
 
           const econEffect = (p.id === governing.id ? econMod : -econMod / oppositionSplit) * 0.3;
-          // Deterministic-ish jitter per party (no Math.random — keep cron resumable-safe).
-          const jitter = ((p.id.charCodeAt(0) % 7) - 3) * 0.1;
+          const jitter = driftJitter(p.id, now);
           const next = clamp(
             p.currentSupport + meanRevert + econEffect + partyBrokerEffect + jitter,
             1,
