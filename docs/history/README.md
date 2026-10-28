@@ -128,7 +128,7 @@ Former path is relative to `docs/`.
 | Document | Former path | Retired because |
 |---|---|---|
 | [research/chatgpt-logs.md](research/chatgpt-logs.md) | `research/chatgpt-logs.md` | Raw transcript |
-| [research/community-logs.md](research/community-logs.md) | `research/community-logs.md` | Raw Discord log (names community members) |
+| research/community-logs.md (removed) | `research/community-logs.md` | Raw Discord log naming community members: removed from the repository on 2026-10-27 for privacy (the owner keeps a private copy; git history still has it) |
 | [research/sports-llm-commentary.md](research/sports-llm-commentary.md) | `research/sports-llm-commentary.md` | Implemented (sports commentary; flag off) |
 
 ### Roadmap
