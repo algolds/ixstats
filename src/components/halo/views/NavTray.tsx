@@ -113,14 +113,14 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                       data-app={item.app}
                       onClick={onClose}
                       aria-current={active ? "page" : undefined}
-                      className={`group rounded-row flex items-center gap-2 px-3 py-2 transition-[color,background-color,box-shadow] duration-200 ${focusRing} ${
+                      className={`group rounded-row duration-fast flex items-center gap-2 px-3 py-2 transition-[color,background-color,box-shadow] ${focusRing} ${
                         active
                           ? "bg-fill-3 text-label shadow-card"
                           : "text-label-secondary hover:bg-fill-4 hover:text-label"
                       }`}
                     >
                       <div
-                        className={`rounded-control-sm flex size-8 shrink-0 items-center justify-center transition-colors duration-150 ${
+                        className={`rounded-control-sm duration-fast flex size-8 shrink-0 items-center justify-center transition-colors ${
                           active ? "shadow-card" : "bg-fill-4 group-hover:bg-fill-3"
                         }`}
                         style={
@@ -135,7 +135,7 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                           className="flex items-center justify-center"
                           style={active ? { color: "var(--tint)" } : undefined}
                         >
-                          <Icon className="size-4 transition-[scale] duration-200 motion-safe:group-hover:scale-110 motion-safe:group-focus-visible:scale-110" />
+                          <Icon className="size-4" />
                         </div>
                       </div>
                       <PreText className="text-caption font-medium" whiteSpace="nowrap">

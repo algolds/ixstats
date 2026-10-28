@@ -52,7 +52,7 @@ export function PlayPauseMorph({
         viewBox="0 0 24 24"
         width={size}
         height={size}
-        className="overflow-visible transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
+        className="duration-fast ease-out-facet overflow-visible transition-transform"
         style={{
           // Optical centering compensation: Play triangle center of mass is slightly left,
           // so we nudge right by 1px in play mode to look perfectly centered in circular buttons.
@@ -63,7 +63,7 @@ export function PlayPauseMorph({
         <path
           d={leftPath}
           fill={fill}
-          className="transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-260 ease-[cubic-bezier(0.23,1,0.32,1)]"
+          className="duration-fast ease-out-facet transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
           style={{
             transformOrigin: "center",
           }}
@@ -73,7 +73,7 @@ export function PlayPauseMorph({
         <path
           d={rightPath}
           fill={fill}
-          className="transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-260 ease-[cubic-bezier(0.23,1,0.32,1)]"
+          className="duration-fast ease-out-facet transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
           style={{
             transformOrigin: "center",
           }}

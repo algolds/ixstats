@@ -238,16 +238,17 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
 - `Dialog` and `AlertDialog` for short confirmations. Popovers, menus and tooltips use the `ui` wrappers.
 - Tooltips share the root `TooltipProvider`: the first opens after 500ms, and a neighbour within 300ms opens at once with no animation. Rich previews (formatted content, links) are a `HoverCard`, not a tooltip.
 - All of them paint `facet-overlay`. Do not restyle their surface.
+- Toasts sit bottom-right (bottom-centre on phones), above the TabBar and clear of the Inspector; Halo shows the title in the island.
 - `ContextMenu` (right-click, long-press, Shift+F10) is a shortcut, never the only way in. Put it on things with an identity (a post, a message, a map feature) and render the same items fragment as the thing's visible "More actions" dropdown: the `DropdownMenuItem` family works inside both. Never put it on prose, links, inputs, editors or empty canvas; the trigger already leaves the browser's menu to Shift+right-click, text fields, links, selections and dialogs the thing opens. A menu opened from a canvas point (the map editor) is a `DropdownMenu` on a 1px anchor at that point.
 
 ## 7. Layout
 
-- The sidebar is a macOS source list (`SourceList`, in `AppSidebar` at 1024px and up: 256px, collapsible to 64px icons, where rows become icons with popovers). It has two levels: every app is a top-level row and the current app discloses its sections. Admin and Settings use area mode: their sections are grouped under sub-headings and replace the app list while you are inside them. Rows carry badges (active country flag, diplomacy inbox count, Vault balance) and a Daily reward action row opens the reward dialog. Below 1024px the `TabBar` holds the primary apps and its More sheet reuses the same `SourceList`.
+- The sidebar is a macOS source list (`SourceList`, in `AppSidebar` at 1024px and up: 256px, 224px at its narrowest, collapsible to 64px icons, where rows become icons with popovers). It has two levels: every app is a top-level row and the current app discloses its sections. Admin and Settings use area mode: their sections are grouped under sub-headings and replace the app list while you are inside them. Rows carry badges (active country flag, diplomacy inbox count, Vault balance) and a Daily reward action row opens the reward dialog. App names never truncate at 224px: no icon buttons or streak pill sit beside a name (only its trailing badge or expand chevron), so MyCountry lists Public profile and Editor rows once your country is known, and the login streak shows in the Vault, not the sidebar. Below 1024px the `TabBar` holds the primary apps and its More sheet reuses the same `SourceList`.
 - The sidebar and the More sheet are the only navigation. A page renders no navigation of its own (no tab rail, pill bar or hidden sub-nav); in-page `Tabs` switch views of one thing, not destinations.
 - Both read the one section map in `src/lib/navigation/app-sections.ts`. Add a destination there, not in a page.
-- Halo is the floating island at the top, in Chrome glass. `PageHeader` keeps `--shell-halo-reserve` clear for it. Do not build a second top bar.
+- Halo is the floating island at the top, in Chrome glass. `PageHeader` keeps `--shell-halo-reserve` clear for it. Halo centres on the content column on every page, Inspector or not; PageHeader actions wrap within their half beside it. Do not build a second top bar.
 - `AccountMenu` is the account: `layout="sidebar"` is a popover from the sidebar footer, `layout="sheet"` is inline in the More sheet.
-- Layout variables (read, never redefine): `--shell-sidebar-width`, `--shell-tabbar-height`, `--shell-top-offset`, `--shell-header-top`, `--shell-halo-reserve`. Sticky rails use `top-(--shell-top-offset)`.
+- Layout variables (read, never redefine): `--shell-sidebar-width`, `--shell-tabbar-height`, `--shell-top-offset`, `--shell-page-top`, `--shell-header-top`, `--shell-halo-reserve`. Sticky rails use `top-(--shell-top-offset)`.
 - Chromeless routes (Maps, full-screen editors) set `data-chromeless` on the app shell.
 - Inspector: at most one trailing column per page. It replaces hand-rolled side rails.
 - Headers: `PageHeader` for pages, `EntityHeader` for entity pages. No hero card as a header.
@@ -334,6 +335,7 @@ The tests under `src/tests/architecture/` enforce parts of this file. Run the re
 - `css-layering.test.ts`: every Facet sheet is layered (no top-level rules, no `!important`), and utilities set no position, z-index, radius, margin or letter-spacing.
 - `facet-guards.test.ts` (kit guards): no tw-animate classes (not installed), no `transform` in arbitrary transition lists, no `facet-press` on controls, and the removed decorative kit pieces stay deleted.
 - `motion-tokens.test.ts`: default springs critically damped, CSS mirrors match `motion.ts`, swipe presets are named springs. The ratchet's `adhocSpring` tell counts literal `stiffness:` values in feature code.
+- `halo-motion.test.ts` keeps Halo still. `facet-zero-dirs.test.ts` pins converted directories at zero for every ratchet tell; each app phase adds its directories.
 - `facet-touch-targets.test.ts`: 44px menu rows and sheet grabber on coarse pointers.
 - `product-name.test.ts`: page and component copy says IxStates.
 - `facet-guards.test.ts`: no `transition-all`, sub-12px text, arbitrary z-index, `dark:` or hex classes in converted apps, `@radix-ui` outside `src/components/ui`, `lucide-react`, removed decoration, or raw `backdrop-blur-*`; gradients and textures stay on sanctioned classes.

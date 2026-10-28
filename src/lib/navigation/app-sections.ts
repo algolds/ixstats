@@ -42,6 +42,7 @@ import {
   Cpu,
   Crown,
   Database,
+  EditPencil,
   Folder,
   Gamepad,
   Gift,
@@ -62,6 +63,7 @@ import {
   OpenBook,
   Package,
   Palette,
+  ProfileCircle,
   Search,
   Server,
   Settings,
@@ -81,9 +83,8 @@ export type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
 export type NavBadgeKey =
   "diplomacy-inbox" | "daily-reward" | "messages-unread" | "issues-pending" | "whats-new";
 export type NavAction = "daily-reward";
-/** `streak`: the action's row shows the login streak as a pill instead of `label` (the daily reward). */
-export type NavBadge =
-  { kind: "count"; value: number } | { kind: "action"; label: string; streak?: number };
+/** An `action` badge is a short text on its row (the reward's "New"); the streak lives in the Vault, not the sidebar. */
+export type NavBadge = { kind: "count"; value: number } | { kind: "action"; label: string };
 export type NavBadges = Partial<Record<NavBadgeKey, NavBadge>>;
 
 /** `data-app` tint keys (tokens.css). Omitted = the default tint (iron-gall ink). */
@@ -659,6 +660,35 @@ export function getApp(id: AppId): AppDefinition {
   const app = APPS.find((candidate) => candidate.id === id);
   if (!app) throw new Error(`Unknown app: ${id}`);
   return app;
+}
+
+/**
+ * MyCountry's rows for the user's own country, which exist once the country is known: its public profile
+ * and the editor. They are destinations, so they are rows like any section and the app name keeps the
+ * whole row. Other apps, and every app while no country is known, come back as they were.
+ */
+export function withCountryRows(
+  apps: readonly AppDefinition[],
+  countryHref: string | undefined
+): readonly AppDefinition[] {
+  if (!countryHref) return apps;
+  return apps.map((app) =>
+    app.id === "mycountry"
+      ? {
+          ...app,
+          sections: [
+            ...app.sections,
+            {
+              id: "public-profile",
+              label: "Public profile",
+              href: countryHref,
+              icon: ProfileCircle,
+            },
+            { id: "editor", label: "Editor", href: "/mycountry/editor", icon: EditPencil },
+          ],
+        }
+      : app
+  );
 }
 
 /**

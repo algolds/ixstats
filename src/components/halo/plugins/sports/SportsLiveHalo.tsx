@@ -56,7 +56,7 @@ function LivePill({ match }: { match: LiveActivityMatch }) {
   if (!state) return null;
   return (
     <span className="flex items-center gap-2">
-      <Radio className={`text-red h-3 w-3 shrink-0 ${state.isFinal ? "" : "animate-pulse"}`} />
+      <Radio className="text-red h-3 w-3 shrink-0" />
       <PreText className="text-label text-caption font-semibold tabular-nums" whiteSpace="nowrap">
         {shortFor(match.homeTeam)} {state.homeScore}–{state.awayScore} {shortFor(match.awayTeam)}
       </PreText>
@@ -85,8 +85,8 @@ function SportsLiveView({ context }: DIViewProps) {
       <div className="relative z-10 space-y-4">
         <div className="flex items-center justify-between">
           <span className="bg-red text-caption text-on-red flex items-center gap-2 rounded-full px-2 py-0.5 font-semibold">
-            <Radio className={`h-2.5 w-2.5 ${state.isFinal ? "" : "animate-pulse"}`} />
-            {state.isFinal ? "FULL TIME" : "LIVE"}
+            <Radio className="h-2.5 w-2.5" />
+            {state.isFinal ? "Full time" : "Live"}
           </span>
           <span className="text-label-secondary text-footnote truncate">{match.leagueName}</span>
         </div>
@@ -109,13 +109,13 @@ function SportsLiveView({ context }: DIViewProps) {
         {/* Broadcast progress */}
         <div className="bg-fill-4 h-1 overflow-hidden rounded-full">
           <div
-            className="bg-red h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-1000 ease-linear"
+            className="bg-red h-full rounded-full"
             style={{ width: `${Math.round(state.progress * 100)}%` }}
           />
         </div>
 
         <p className="text-label-secondary text-footnote min-h-[2rem] leading-relaxed italic">
-          {state.lastEvent?.description ?? "Kickoff — the match is underway."}
+          {state.lastEvent?.description ?? "Kickoff. The match is underway."}
         </p>
       </div>
     </div>
@@ -146,7 +146,7 @@ function ActiveSportsLiveHalo({ match }: { match: LiveActivityMatch }) {
       expandedViews: { "sports-live": SportsLiveView },
       accentColor: ACCENT,
       stickyLabel: "Live",
-      badge: { color: ACCENT, pulse: true },
+      badge: { color: ACCENT },
       context: { match },
     }),
     [match]

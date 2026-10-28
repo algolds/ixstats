@@ -23,6 +23,7 @@ import {
   Map,
   Wallet,
   ScaleFrameEnlarge as Scale,
+  ProfileCircle,
 } from "iconoir-react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
@@ -149,7 +150,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {/* Left Column: Paused/Saved Sessions */}
                 <div className="space-y-3">
-                  <div className="text-label-secondary text-eyebrow flex items-center gap-2">
+                  <div className="text-label-secondary text-footnote flex items-center gap-2">
                     <History className="h-3 w-3" />
                     <span>Saved and paused sessions</span>
                   </div>
@@ -204,7 +205,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
                 {/* Right Column: Quick Notes / Scratchpad */}
                 <div className="flex flex-col space-y-2">
-                  <div className="text-label-secondary text-eyebrow flex items-center gap-2">
+                  <div className="text-label-secondary text-footnote flex items-center gap-2">
                     <FileText className="h-3 w-3" />
                     <span>Wiki scratchpad</span>
                   </div>
@@ -241,8 +242,8 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                           className="h-full w-full rounded-full object-cover"
                         />
                       ) : (
-                        <div className="bg-fill-4 text-body flex h-full w-full items-center justify-center rounded-full">
-                          👤
+                        <div className="bg-fill-4 flex h-full w-full items-center justify-center rounded-full">
+                          <ProfileCircle aria-hidden className="text-label-secondary size-6" />
                         </div>
                       )}
                     </AvatarGlow>
@@ -269,7 +270,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                             {lorewardStats.stats?.totalScore ?? 0}
                           </span>
                         </div>
-                        <span className="text-label-secondary text-eyebrow">Score</span>
+                        <span className="text-label-secondary text-footnote">Score</span>
                       </div>
                       <div className="flex flex-col items-center">
                         <div className="flex items-center gap-2">
@@ -278,7 +279,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                             {lorewardStats.stats?.currentStreak ?? 0}
                           </span>
                         </div>
-                        <span className="text-label-secondary text-eyebrow">Streak</span>
+                        <span className="text-label-secondary text-footnote">Streak</span>
                       </div>
                     </div>
                   )}

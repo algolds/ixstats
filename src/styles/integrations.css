@@ -14,7 +14,7 @@
 
 @layer base {
   .maplibregl-popup-content {
-    @apply bg-transparent! shadow-none! p-0! rounded-none!;
+    @apply rounded-none! bg-transparent! p-0! shadow-none!;
   }
   .maplibregl-popup-tip {
     @apply hidden!;
@@ -123,23 +123,9 @@ body:has([data-maps-page]) {
 
 /* ─── 2. Sonner Toaster Overrides ───────────────────────────────────────── */
 
-/* Position Sonner list containers below the Dynamic Island / Halo */
+/* Toasts sit at the bottom (placement is set on the Toaster), so they never cover a page header or Halo. */
 [data-sonner-toaster].dynamic-island-toaster {
   z-index: var(--z-index-toast) !important;
-}
-
-@media (min-width: 1024px) {
-  [data-sonner-toaster].dynamic-island-toaster {
-    top: 76px !important;
-    --offset-top: 76px !important;
-  }
-}
-
-@media (max-width: 1023px) {
-  [data-sonner-toaster].dynamic-island-toaster {
-    top: 16px !important;
-    --offset-top: 16px !important;
-  }
 }
 
 /* Toast container styling: allows ToastBanner to control inner glass physics while providing smooth motion */
@@ -152,13 +138,19 @@ body:has([data-maps-page]) {
   display: flex !important;
   justify-content: center !important;
   transition:
-    transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 300ms cubic-bezier(0.16, 1, 0.3, 1),
-    height 300ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transform var(--duration-slow) var(--ease-out-facet),
+    opacity var(--duration-slow) var(--ease-out-facet),
+    height var(--duration-slow) var(--ease-out-facet) !important;
 }
 
-/* Custom entrance state: emerges directly from behind the Dynamic Island / Halo */
-[data-sonner-toaster].dynamic-island-toaster [data-sonner-toast][data-mounted="false"] {
-  transform: translateY(-24px) scale(0.85) !important;
-  opacity: 0 !important;
+/* The transition above is !important and more specific than Sonner's own reduced-motion reset, so
+   Reduce Motion (OS or the in-app setting on <html>) needs its own override or toasts still slide. */
+@media (prefers-reduced-motion: reduce) {
+  [data-sonner-toaster].dynamic-island-toaster [data-sonner-toast] {
+    transition: none !important;
+  }
+}
+
+:root[data-motion="reduced"] [data-sonner-toaster].dynamic-island-toaster [data-sonner-toast] {
+  transition: none !important;
 }

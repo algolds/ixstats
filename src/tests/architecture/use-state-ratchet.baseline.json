@@ -75,7 +75,6 @@
   "src/components/executive/PolicyCreatorSheet.tsx": 12,
   "src/components/executive/politics/BillsPanel.tsx": 7,
   "src/components/halo/hooks.ts": 8,
-  "src/components/halo/index.tsx": 7,
   "src/components/halo/plugins/wiki/views/WikiView.tsx": 6,
   "src/components/maps/core/hooks/useMapState.ts": 16,
   "src/components/maps/editor/hooks/state/useEditorBorderOperations.ts": 6,

@@ -315,10 +315,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
 
       {/* Main Content Area */}
       <div
-        className={cn(
-          "space-y-2 overflow-y-auto pr-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300",
-          isUltra ? "max-h-[540px]" : "max-h-80"
-        )}
+        className={cn("space-y-2 overflow-y-auto pr-0.5", isUltra ? "max-h-[540px]" : "max-h-80")}
         style={{ scrollbarWidth: "thin" }}
       >
         {activeTab === "messages" ? (
@@ -374,7 +371,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                         >
                           <ChevronRight className="text-label-tertiary h-3 w-3" />
                         </motion.div>
-                        <PreText className="text-label-secondary text-eyebrow" whiteSpace="nowrap">
+                        <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
                           {group.label}
                         </PreText>
                       </div>
@@ -390,7 +387,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
+                          transition={tweenFast}
                           className="space-y-1 overflow-hidden"
                         >
                           <SwipeableGroup>

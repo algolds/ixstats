@@ -10,6 +10,7 @@ import {
 import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable/SwipeableRow";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { focusRing } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
 
@@ -118,9 +119,21 @@ export function MessageTrayItem({
       {/* Front Card Content */}
       <SwipeableRow.Content>
         <div
+          role="button"
+          tabIndex={0}
           onClick={() => onClick(conversation)}
+          onKeyDown={(event) => {
+            // Only the row itself: keys pressed inside nested controls keep their own meaning.
+            if (event.target !== event.currentTarget) return;
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              onClick(conversation);
+            }
+          }}
           className={cn(
-            "group rounded-row relative flex w-full cursor-pointer flex-col overflow-hidden border p-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 active:scale-[0.985]",
+            focusRing,
+            "focus-visible:-outline-offset-2",
+            "group rounded-row duration-fast active:bg-fill-3 relative flex w-full cursor-pointer flex-col overflow-hidden border p-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
             isUnread
               ? "border-yellow/30 bg-yellow/6 hover:border-yellow/50"
               : "border-separator bg-fill-4 hover:border-separator-opaque hover:bg-fill-3"
@@ -184,7 +197,7 @@ export function MessageTrayItem({
             </div>
 
             {/* Right Action Hint */}
-            <div className="text-label-tertiary group-hover:text-tint mt-1 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5">
+            <div className="text-label-tertiary group-hover:text-tint mt-1 shrink-0">
               <ChevronRight className="h-3.5 w-3.5" />
             </div>
           </div>

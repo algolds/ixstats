@@ -42,7 +42,6 @@ interface DIAction {
 /** A badge indicator (colored dot) on the pill */
 interface DIBadge {
   color: string;
-  pulse?: boolean;
 }
 
 /** A plugin registration object — pages call useDIPlugin() with this */

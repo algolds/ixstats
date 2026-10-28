@@ -18,7 +18,7 @@ function MyCountryLabel() {
     <span className="flex items-center gap-2">
       <Crown className="text-yellow h-3 w-3 shrink-0 opacity-70" />
       <PreText className="text-label text-caption" whiteSpace="nowrap">
-        MyCountry®
+        MyCountry
       </PreText>
     </span>
   );
