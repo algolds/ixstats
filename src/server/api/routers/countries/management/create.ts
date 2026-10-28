@@ -98,7 +98,8 @@ interface CountryDataArgs {
 function buildCountryText(
   econ: EconInputs,
   foundation: Country | null,
-  structureType: string | undefined
+  structureType: string | undefined,
+  headOfState: string | undefined
 ) {
   const identity = econ.nationalIdentity;
   return {
@@ -106,7 +107,8 @@ function buildCountryText(
     region: econ.geography?.region || foundation?.region || "Custom",
     governmentType: identity?.governmentType || structureType || "Federal Republic",
     religion: identity?.nationalReligion || "Secular",
-    leader: identity?.leader || "President",
+    // The form's head of state ("Monarch", "Supreme Leader"), not a republic's title for every nation.
+    leader: identity?.leader || headOfState || "President",
     flag: econ.flagUrl || foundation?.flag || undefined,
     coatOfArms: econ.coatOfArmsUrl || foundation?.coatOfArms || undefined,
   };
@@ -122,7 +124,12 @@ function buildCountryData(args: CountryDataArgs) {
     name: args.name,
     slug: args.slug,
     realmId: args.realmId,
-    ...buildCountryText(econ, foundation, snapshot.governmentStructure.governmentType),
+    ...buildCountryText(
+      econ,
+      foundation,
+      snapshot.governmentStructure.governmentType,
+      snapshot.governmentStructure.headOfState
+    ),
     landArea,
     areaSqMi: foundation?.areaSqMi,
     baselinePopulation: population,

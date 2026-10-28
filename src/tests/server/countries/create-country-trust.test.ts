@@ -148,3 +148,8 @@ it("forgets the founder's cached request context, so the welcome page sees the n
   await found({});
   expect(forgetContextUser).toHaveBeenCalledWith("ines-clerk");
 });
+
+it("names the form's head of state as the leader", async () => {
+  const created = await found({ governmentFormId: "absolute-monarchy" });
+  expect(created.leader).toBe("Monarch");
+});
