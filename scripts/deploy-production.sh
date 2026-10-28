@@ -139,7 +139,10 @@ fi
 
 # Validate database URL (PostgreSQL required for production)
 if [[ "$DATABASE_URL" == postgres* ]] || [[ "$DATABASE_URL" == postgresql* ]]; then
-    echo "✅ Using PostgreSQL database: ${DATABASE_URL%%\?*}"
+    # Host and database only: the URL's user:password part never reaches the deploy log.
+    DB_DISPLAY="${DATABASE_URL%%\?*}"
+    DB_DISPLAY="${DB_DISPLAY#*://}"
+    echo "✅ Using PostgreSQL database: ${DB_DISPLAY#*@}"
 else
     echo "❌ Error: Production requires PostgreSQL database."
     echo "   Current DATABASE_URL does not appear to be PostgreSQL."
