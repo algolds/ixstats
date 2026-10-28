@@ -308,10 +308,10 @@ export function WikiNarratorPlayer({
                 >
                   <div
                     className={cn(
-                      "duration-fast h-1.5 w-1.5 rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
+                      "duration-fast rounded-full border transition-[color,background-color,border-color,width,height]",
                       isActive
-                        ? "border-separator scale-125"
-                        : "border-separator bg-fill-3 group-hover/tick:border-label group-hover/tick:scale-125"
+                        ? "border-separator h-2 w-2"
+                        : "border-separator bg-fill-3 group-hover/tick:border-label h-1.5 w-1.5"
                     )}
                     style={isActive ? { backgroundColor: accentColor } : undefined}
                   />

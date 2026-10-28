@@ -18,7 +18,8 @@ const STILL: Record<string, RegExp> = {
   ping: /\banimate-ping\b/,
   pulse: /\banimate-pulse\b/,
   loop: /repeat:\s*Infinity/,
-  hoverMotion: /hover:(?:scale|rotate|translate)-/,
+  // Also the named-group forms (`group-hover/tick:scale-125`), which a bare `hover:` match misses.
+  hoverMotion: /hover(?:\/[\w-]+)?:(?:scale|rotate|translate)-/,
   pressScale: /active:scale-/,
   numericDuration: /\bduration-\d+\b/,
   arbitraryEase: /\bease-\[/,
