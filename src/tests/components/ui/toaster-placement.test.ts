@@ -61,3 +61,13 @@ describe("toast motion", () => {
     );
   });
 });
+
+describe("Halo reserve on phones", () => {
+  // The signed-in pill grows to 204px with 44px touch targets, wider than the 11rem fine-pointer reserve.
+  it("is wider under a coarse pointer below lg", () => {
+    const at = shell.indexOf("@media (pointer: coarse) and (max-width: 1023px)");
+    expect(at).toBeGreaterThan(-1);
+    const body = declarationsFor(shell.slice(at), ":root");
+    expect(body).toMatch(/--shell-halo-reserve:\s*13rem/);
+  });
+});

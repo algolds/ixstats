@@ -46,6 +46,13 @@
     --shell-inspector-width: 0px;
   }
 
+  /* Touch targets grow Halo's pill past the fine-pointer reserve; without this it meets the back button. */
+  @media (pointer: coarse) and (max-width: 1023px) {
+    :root {
+      --shell-halo-reserve: 13rem;
+    }
+  }
+
   @media (min-width: 1024px) {
     :root {
       --shell-sidebar-width: 16rem;

@@ -1,6 +1,6 @@
 /** @jest-environment node */
 /**
- * App names in the sidebar never truncate: at the narrowest expanded width (224px, from 1280px) a row's
+ * App names in the sidebar never truncate: at the narrowest expanded width (224px) a row's
  * label gets nearly the whole row, because no icon buttons or streak pill sit beside it (only a trailing
  * badge or the expand chevron), and it does not ellipsize.
  */
