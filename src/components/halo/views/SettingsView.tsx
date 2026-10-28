@@ -24,6 +24,8 @@ import {
   Search,
   HalfMoon as SunMoon,
   Square,
+  SoundHigh,
+  SoundOff,
 } from "iconoir-react";
 import type { SettingsViewProps } from "../types";
 import { useActiveDIPlugin } from "../plugin-context";
@@ -33,12 +35,7 @@ import { useSoundSettings } from "~/hooks/useSoundSettings";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Switch } from "~/components/ui/switch";
 import { useHaloSize, SIZE_PRESETS } from "../HaloPrimitives";
-import {
-  useLocalPref,
-  ToggleSwitch,
-  SectionLabel,
-  AnimatedVolumeIcon,
-} from "./settings/SettingsControls";
+import { useLocalPref, ToggleSwitch, SectionLabel } from "./settings/SettingsControls";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 const NEXT_THEME_NAME = { light: "light", dark: "dark", system: "automatic" } as const;
@@ -52,8 +49,6 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
   const activePlugin = useActiveDIPlugin();
   const isOnWikiPage = activePlugin?.id === "wiki";
   const isAdmin = useIsAdmin();
-
-  const [soundIconHovered, setSoundIconHovered] = useState(false);
 
   // Dynamic Island Popover Width Sizing via Apple HIG physics
   const { setSize } = useHaloSize();
@@ -132,7 +127,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
   }
 
   return (
-    <div className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300">
+    <div className="p-4">
       <SettingsHeader
         onClose={onClose}
         isOnWikiPage={isOnWikiPage}
@@ -142,7 +137,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
       <div
         className={cn(
-          "grid gap-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300",
+          "grid gap-4",
           morePrefsExpanded ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
         )}
       >
@@ -152,7 +147,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
           <SectionLabel>Appearance</SectionLabel>
 
           {/* Theme */}
-          <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150 select-none">
+          <div className="rounded-control hover:bg-fill-3 duration-fast flex items-center gap-3 px-3 py-3 transition-colors select-none">
             <div className="bg-tint/15 rounded-control-sm shrink-0 p-2">
               {effectiveTheme === "dark" ? (
                 <Moon className="text-tint h-3.5 w-3.5" />
@@ -195,12 +190,17 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
           {/* Sound */}
           <SettingsRow
-            icon={<AnimatedVolumeIcon enabled={soundEnabled} isHovered={soundIconHovered} />}
+            icon={
+              soundEnabled ? (
+                <SoundHigh className="text-green h-3.5 w-3.5" />
+              ) : (
+                <SoundOff className="text-label-secondary h-3.5 w-3.5" />
+              )
+            }
             iconBg={soundEnabled ? "bg-green/15" : "bg-fill-4"}
             label="Sound"
             description={soundEnabled ? "Enabled" : "Muted"}
             onIconClick={soundEnabled ? () => previewSound("chime") : undefined}
-            onIconHover={soundEnabled ? setSoundIconHovered : undefined}
             iconTitle={soundEnabled ? "Tap to test sound chime" : undefined}
           >
             <ToggleSwitch
@@ -499,7 +499,6 @@ function SettingsRow({
   label,
   description,
   onIconClick,
-  onIconHover,
   iconTitle,
   children,
 }: {
@@ -508,12 +507,11 @@ function SettingsRow({
   label: string;
   description?: string;
   onIconClick?: () => void;
-  onIconHover?: (hovered: boolean) => void;
   iconTitle?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150 select-none">
+    <div className="rounded-control hover:bg-fill-3 duration-fast flex items-center gap-3 px-3 py-3 transition-colors select-none">
       {onIconClick ? (
         <button
           type="button"
@@ -521,8 +519,6 @@ function SettingsRow({
             e.stopPropagation();
             onIconClick();
           }}
-          onMouseEnter={() => onIconHover?.(true)}
-          onMouseLeave={() => onIconHover?.(false)}
           title={iconTitle}
           aria-label={iconTitle}
           className={cn(

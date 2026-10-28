@@ -51,10 +51,7 @@ function ExpandedViewComponent({
       {isImpersonating && (
         <div className="border-red/20 bg-red/10 text-footnote text-red flex items-center justify-between border-b px-4 py-3">
           <div className="flex items-center gap-2 font-medium">
-            <span className="relative flex h-2 w-2">
-              <span className="bg-red absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
-              <span className="bg-red relative inline-flex h-2 w-2 rounded-full"></span>
-            </span>
+            <span className="bg-red size-2 rounded-full" />
             <span>
               Playing as: <span className="font-mono">{targetUser}</span>
             </span>

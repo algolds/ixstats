@@ -11,7 +11,7 @@ import React, {
 } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
-import { springSnappy } from "~/lib/design/motion";
+import { springSnappy, tweenExit } from "~/lib/design/motion";
 
 // The island morphs with the snappy spring: it answers a press directly, at the same settle
 // speed as the controls inside it.
@@ -308,7 +308,7 @@ export const HaloContainer = ({ className, children }: DynamicContainerProps) =>
         y: 0,
         transition: springSnappy,
       }}
-      exit={{ opacity: 0, scale: 0.98, y: 10, transition: { duration: 0.15, ease: "easeOut" } }}
+      exit={{ opacity: 0, scale: 0.98, y: 10, transition: tweenExit }}
       className={className}
     >
       {children}

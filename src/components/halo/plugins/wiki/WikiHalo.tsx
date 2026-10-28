@@ -103,7 +103,7 @@ function WikiBreadcrumb() {
             }
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[scale] duration-150 hover:scale-105"
+          className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-white"
           style={{
             backgroundColor: accentColor,
             boxShadow: `0 1px 6px ${getRgbaColor(accentColor, 0.35)}`,
@@ -172,7 +172,7 @@ function WikiBreadcrumb() {
           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
             <PopoverTrigger asChild>
               <span
-                className="hover:text-label text-label-secondary hover:bg-fill-3 text-caption rounded-control-sm relative z-10 inline-block max-w-[70px] cursor-pointer truncate overflow-hidden px-1 py-0.5 text-left transition-colors duration-150"
+                className="hover:text-label text-label-secondary hover:bg-fill-3 text-caption rounded-control-sm duration-fast relative z-10 inline-block max-w-[70px] cursor-pointer truncate overflow-hidden px-1 py-0.5 text-left transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   setPopoverOpen((prev) => !prev);
@@ -198,7 +198,7 @@ function WikiBreadcrumb() {
                           setPopoverOpen(false);
                         }}
                         className={cn(
-                          "text-caption rounded-control-sm flex w-full cursor-pointer items-center px-3 py-2 text-left transition-colors duration-150 select-none",
+                          "text-caption rounded-control-sm duration-fast flex w-full cursor-pointer items-center px-3 py-2 text-left transition-colors select-none",
                           isActive && !themeColors
                             ? "bg-fill-3 text-label"
                             : isActive

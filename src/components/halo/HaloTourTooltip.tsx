@@ -150,7 +150,7 @@ export function HaloTourTooltip() {
                     <div
                       key={s.id}
                       aria-hidden="true"
-                      className={`h-1.5 rounded-full transition-[width,background-color] duration-150 ${
+                      className={`duration-fast h-1.5 rounded-full transition-[width,background-color] ${
                         s.id === currentStep
                           ? "bg-tint w-4"
                           : s.id < currentStep

@@ -57,8 +57,6 @@ function CompactViewComponent({
     : null;
 
   const [mounted, setMounted] = useState(false);
-  const [isFlashing, setIsFlashing] = useState(false);
-  const previousNotificationCountRef = useRef(0);
 
   const [currentTime, setCurrentTime] = useState({ greeting: "Good morning" });
 
@@ -121,22 +119,7 @@ function CompactViewComponent({
 
   useEffect(() => {
     setMounted(true);
-    previousNotificationCountRef.current = totalUnreadCount;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Flash on new notifications
-  useEffect(() => {
-    if (!mounted) return;
-    if (totalUnreadCount > previousNotificationCountRef.current) {
-      setIsFlashing(true);
-      const t = setTimeout(() => setIsFlashing(false), 1000);
-      previousNotificationCountRef.current = totalUnreadCount;
-      return () => clearTimeout(t);
-    }
-    previousNotificationCountRef.current = totalUnreadCount;
-    return;
-  }, [totalUnreadCount, mounted]);
 
   if (!mounted) return null;
 
@@ -156,9 +139,9 @@ function CompactViewComponent({
     >
       <div className="h-full w-full">
         <HaloContainer
-          className={`flex w-full items-center justify-center gap-1 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 ${
+          className={`duration-fast flex w-full items-center justify-center gap-1 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ${
             isSticky ? "px-3 py-2" : "px-4 py-2"
-          } ${isFlashing ? "animate-flash-notification" : ""}`}
+          }`}
         >
           {/* Sticky: peek text or wiki breadcrumb */}
           {isSticky && peekText && (
@@ -204,7 +187,7 @@ function CompactViewComponent({
                     }
                   }
                 }}
-                className={`rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint flex min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 ${
+                className={`rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint duration-fast flex min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 ${
                   activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
                 }`}
                 title={`Open ${activePlugin.id} mode`}
@@ -213,7 +196,7 @@ function CompactViewComponent({
               </div>
             ) : (
               <div
-                className={`flex min-w-0 flex-1 items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 ${
+                className={`duration-fast flex min-w-0 flex-1 items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ${
                   activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
                 }`}
               >
@@ -270,13 +253,13 @@ function CompactViewComponent({
                             }
                           }
                         }}
-                        className="rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint flex max-w-[160px] min-w-0 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 sm:max-w-[200px]"
+                        className="rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint duration-fast flex max-w-[160px] min-w-0 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 sm:max-w-[200px]"
                         title={`Open ${activePlugin.id} mode`}
                       >
                         {pluginCenter}
                       </div>
                     ) : (
-                      <div className="flex max-w-[160px] min-w-0 items-center gap-2 overflow-hidden px-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 sm:max-w-[200px]">
+                      <div className="duration-fast flex max-w-[160px] min-w-0 items-center gap-2 overflow-hidden px-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] sm:max-w-[200px]">
                         {pluginCenter}
                       </div>
                     )
@@ -359,7 +342,7 @@ function CompactViewComponent({
               {/* Plugin badge dot */}
               {pluginBadge && (
                 <div
-                  className={`h-1.5 w-1.5 rounded-full ${pluginBadge.pulse ? "animate-pulse" : ""}`}
+                  className="h-1.5 w-1.5 rounded-full"
                   style={{ backgroundColor: pluginBadge.color }}
                 />
               )}
@@ -384,7 +367,7 @@ function CompactViewComponent({
                 title={`Narrator Progress: ${Math.round(narratorProgressPercent)}% · Click to scrub`}
               >
                 <div
-                  className="h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150"
+                  className="duration-fast h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
                   style={{
                     width: `${narratorProgressPercent}%`,
                     backgroundColor: narratorAccent,

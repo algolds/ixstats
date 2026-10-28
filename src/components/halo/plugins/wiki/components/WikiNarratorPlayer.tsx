@@ -248,15 +248,13 @@ export function WikiNarratorPlayer({
           <span
             key={idx}
             className={cn(
-              "block max-w-[4px] min-w-[2px] flex-1 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150 ease-out",
-              isPlaying ? "animate-pulse" : "opacity-30"
+              "duration-fast block max-w-[4px] min-w-[2px] flex-1 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ease-out",
+              !isPlaying && "opacity-30"
             )}
             style={{
               height: isPlaying ? `${heightPct}%` : `${Math.max(8, heightPct * 0.25)}%`,
               backgroundColor: accentColor,
               opacity: isPlaying ? 0.14 : 0.03,
-              animationDuration: `${1.1 + (idx % 5) * 0.2}s`,
-              animationDelay: `${(idx * 60) % 400}ms`,
             }}
           />
         ))}
@@ -325,7 +323,7 @@ export function WikiNarratorPlayer({
                 >
                   <div
                     className={cn(
-                      "h-1.5 w-1.5 rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150",
+                      "duration-fast h-1.5 w-1.5 rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
                       isActive
                         ? "border-separator shadow-floating scale-125"
                         : "border-separator bg-fill-3 group-hover/tick:border-label group-hover/tick:scale-125"
@@ -341,7 +339,7 @@ export function WikiNarratorPlayer({
                     }
                   />
                   {/* Tooltip */}
-                  <span className="border-separator bg-surface-elevated text-label rounded-control-sm text-caption shadow-floating pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 border px-2 py-1 whitespace-nowrap opacity-0 transition-opacity duration-150 group-hover/tick:opacity-100">
+                  <span className="border-separator bg-surface-elevated text-label rounded-control-sm text-caption shadow-floating duration-fast pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 border px-2 py-1 whitespace-nowrap opacity-0 transition-opacity group-hover/tick:opacity-100">
                     {entry.text}
                   </span>
                 </button>
@@ -367,7 +365,7 @@ export function WikiNarratorPlayer({
                   narratorActions?.play?.();
                 }
               }}
-              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[scale] duration-150 hover:scale-105"
+              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-white"
               style={{
                 backgroundColor: accentColor,
                 boxShadow: `0 2px 8px ${getRgbaColor(accentColor, 0.35)}`,
@@ -423,7 +421,7 @@ export function WikiNarratorPlayer({
                 <ChevronDown
                   aria-hidden
                   className={cn(
-                    "size-3 opacity-70 transition-transform duration-150",
+                    "duration-fast size-3 opacity-70 transition-transform",
                     activeTray === "voice" && "rotate-180 opacity-100"
                   )}
                 />

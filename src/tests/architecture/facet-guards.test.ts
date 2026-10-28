@@ -53,7 +53,7 @@ const MICRO_TYPE_ALLOWED = new Set([
 
 // Plan 346 gate, lowered after the 2026-09-30 Facet conversion (was 173). Keep only skeletons
 // (prefer <Skeleton>) and genuine live/unread indicators.
-const ANIMATE_PULSE_CEILING = 84;
+const ANIMATE_PULSE_CEILING = 15;
 
 /** Surfaces converted to Facet primitives (2026-09-30); their stricter gates live below. */
 const FACET_CONVERTED = [
