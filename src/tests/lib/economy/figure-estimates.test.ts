@@ -143,11 +143,21 @@ describe("effectiveFiguresOfCountry", () => {
 
   it("reads spending from the budget share, else the spending share", () => {
     const withBudget = effectiveFiguresOfCountry(
-      { ...economy, taxRevenueGDPPercent: 20, governmentBudgetGDPPercent: 30, spendingGDPPercent: 0 },
+      {
+        ...economy,
+        taxRevenueGDPPercent: 20,
+        governmentBudgetGDPPercent: 30,
+        spendingGDPPercent: 0,
+      },
       2
     );
     const withSpending = effectiveFiguresOfCountry(
-      { ...economy, taxRevenueGDPPercent: 20, governmentBudgetGDPPercent: 0, spendingGDPPercent: 30 },
+      {
+        ...economy,
+        taxRevenueGDPPercent: 20,
+        governmentBudgetGDPPercent: 0,
+        spendingGDPPercent: 30,
+      },
       2
     );
     expect(withBudget).toEqual(withSpending);

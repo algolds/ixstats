@@ -126,6 +126,18 @@ describe("country economy reads show the engine's figures", () => {
     expect(recorded.unemploymentRate).toBe(7.5);
   });
 
+  it("getByIdWithEconomicData: a blank inflation, unemployment or debt figure comes with its flagged estimate", async () => {
+    const db = makeDb();
+    db.country.findUnique.mockResolvedValue({ ...COUNTRY, totalDebtGDPRatio: 40 });
+    const read = (await caller(db).getByIdWithEconomicData({ id: "aurum" })) as {
+      effectiveFigures: Record<string, { value: number; estimated: boolean }>;
+    };
+    expect(read.effectiveFigures.totalDebtGDPRatio).toEqual({ value: 40, estimated: false });
+    expect(read.effectiveFigures.unemploymentRate.estimated).toBe(true);
+    expect(read.effectiveFigures.inflationRate.estimated).toBe(true);
+    expect(Number.isFinite(read.effectiveFigures.inflationRate.value)).toBe(true);
+  });
+
   it("getByIdWithEconomicData writes nothing: a due component counts as active without a write-back", async () => {
     const db = makeDb();
     db.governmentComponent.findMany.mockResolvedValue([
