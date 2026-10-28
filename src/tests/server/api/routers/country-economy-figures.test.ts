@@ -82,6 +82,25 @@ describe("country economy reads show the engine's figures", () => {
     jest.restoreAllMocks();
   });
 
+  it("refuses a projection time no date can hold, and answers NOT_FOUND for a nation that does not exist", async () => {
+    await expect(
+      caller(makeDb()).getByIdWithEconomicData({ id: "aurum", timestamp: 1e20 })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      caller(makeDb()).getByIdAtTime({ id: "c1", timestamp: -1e15 })
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    const db = makeDb();
+    db.country.findUnique.mockResolvedValue(null);
+    await expect(caller(db).getActivityRingsData({ countryId: "nope" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    await expect(caller(db).getTradeData({ countryId: "nope" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+
   it("getByIdWithEconomicData: GDP growth is the capped, diminished rate", async () => {
     const read = (await caller(makeDb()).getByIdWithEconomicData({ id: "aurum" })) as EconomicRead;
 
@@ -110,7 +129,11 @@ describe("country economy reads show the engine's figures", () => {
   it("getByIdWithEconomicData writes nothing: a due component counts as active without a write-back", async () => {
     const db = makeDb();
     db.governmentComponent.findMany.mockResolvedValue([
-      { componentType: "TECHNOCRATIC_AGENCIES", implementationDate: new Date(Date.UTC(2041, 0, 1)), isActive: false },
+      {
+        componentType: "TECHNOCRATIC_AGENCIES",
+        implementationDate: new Date(Date.UTC(2041, 0, 1)),
+        isActive: false,
+      },
     ]);
     await caller(db).getByIdWithEconomicData({ id: "aurum" });
     expect(db.governmentComponent.updateMany).not.toHaveBeenCalled();

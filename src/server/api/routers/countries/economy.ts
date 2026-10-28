@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import type { Prisma, PrismaClient, StorytellerEffect } from "@prisma/client";
 import {
   publicProcedure,
@@ -25,6 +26,16 @@ import { withoutStandIns } from "~/server/shared/country-helpers";
 import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
 import { redactEconomicBudget } from "~/lib/country/public-record";
 import { clerkPublicProfile } from "~/server/shared/clerk-public-profile";
+
+/** A projection target: a millisecond time a Date (and Postgres) can hold, from 1970 to year 9999. */
+const targetTimeInput = z
+  .number()
+  .int()
+  .min(0)
+  .max(Date.UTC(9999, 11, 31))
+  .optional();
+
+const countryNotFound = () => new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
 
 const HEAVY_COUNTRY_GEO_OMIT = { geometry: true, centroid: true, boundingBox: true } as const;
 
@@ -204,7 +215,7 @@ export const economyProcedures = {
     .input(
       z.object({
         id: z.string(),
-        timestamp: z.number().optional(),
+        timestamp: targetTimeInput,
         ...realmScopeInput.shape,
       })
     )
@@ -343,7 +354,7 @@ export const economyProcedures = {
     }),
 
   getByIdAtTime: publicProcedure
-    .input(z.object({ id: z.string(), timestamp: z.number().optional() }))
+    .input(z.object({ id: z.string(), timestamp: targetTimeInput }))
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findUnique({
         where: { id: input.id },
@@ -425,9 +436,7 @@ export const economyProcedures = {
         },
       });
 
-      if (!country) {
-        throw new Error("Country not found");
-      }
+      if (!country) throw countryNotFound();
 
       const { exports, imports, balance } = tradeFigures({
         nominalGDP: country.currentTotalGdp,
@@ -461,9 +470,7 @@ export const economyProcedures = {
           },
         });
 
-        if (!country) {
-          throw new Error(`Country with ID ${input.countryId} not found`);
-        }
+        if (!country) throw countryNotFound();
 
         const econCfg = await getEconomicConfigFromDB(ctx.db);
         const { calc, baselineStats, effects, now } = await startProgression(
@@ -547,6 +554,7 @@ export const economyProcedures = {
           generatedAt: now,
         };
       } catch (error) {
+        if (error instanceof TRPCError) throw error;
         console.error("Failed to generate activity rings data:", error);
         throw new Error("Failed to generate activity rings data", { cause: error });
       }
