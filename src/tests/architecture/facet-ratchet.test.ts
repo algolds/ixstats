@@ -22,6 +22,8 @@ const TELLS: Record<string, RegExp> = {
   rawPalette:
     /\b(?:bg|text|border|from|via|to|ring|fill|stroke)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/g,
   animatePing: /\banimate-ping\b/g,
+  // Springs come from src/lib/design/motion.ts; a literal stiffness is an ad hoc spring.
+  adhocSpring: /\bstiffness\s*:\s*\d+/g,
 };
 
 function walk(dir: string): string[] {
