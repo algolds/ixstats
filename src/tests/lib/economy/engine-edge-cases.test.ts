@@ -5,12 +5,13 @@
  *
  * Whatever a nation's figures (no one, one person, no output, the editor's maxima, missing optional columns, growth
  * inputs in the wrong unit), the projection stays finite and non-negative, total GDP is population times GDP per
- * capita, the tier matches the GDP per capita, and the figures move continuously from the baseline on (no jump a few
- * hours after a founding or a size save). Founding stays inside its revenue band for every band and tax profile.
+ * capita, and the tier matches the GDP per capita. A baseline (founding, size save) shows its own figures for the rest
+ * of its IxTime day; growth and effects take hold from the next IxTime day, once. Founding stays inside its revenue band for every band and tax profile.
  */
 import { projectCountryStats } from "~/server/shared/country-helpers";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
+import { nextIxDayStart, roundToIxDay } from "~/lib/ixtime/day";
 import { computeFoundingSnapshot, REVENUE_TARGET_RANGE } from "~/server/shared/founding-snapshot";
 import { computeTaxYields, TAX_CHANNELS } from "~/components/mycountry/shell/fiscal/taxChannels";
 import { POPULATION_BAND_IDS, WEALTH_BAND_IDS } from "~/lib/builder/founding-bands";
@@ -133,23 +134,71 @@ describe("projection edge cases", () => {
     }
   });
 
-  it("is continuous from the baseline on: level effects and component modifiers apply from the first hour", () => {
-    const n = nation({
-      storytellerEffects: [
-        {
-          inputType: "gdp_level_adjustment",
-          value: 0.1,
-          duration: 0,
-          isActive: true,
-          ixTimeTimestamp: new Date(IxTime.addYears(T0, -1)),
-        },
-      ],
+  describe("effects and baselines take hold the next IxTime day (owner ruling 2026-10-28)", () => {
+    const BASE = roundToIxDay(T0) + 6 * HOUR; // 06:00 on the baseline's IxTime day
+    const NEXT_DAY = nextIxDayStart(BASE);
+    const levelEffect = (
+      value: number,
+      startMs: number,
+      duration = 0,
+      inputType = "gdp_level_adjustment"
+    ) => ({
+      inputType,
+      value,
+      duration,
+      isActive: true,
+      ixTimeTimestamp: new Date(startMs),
     });
-    const first = project(n, T0 + HOUR, COMPONENTS);
-    const later = project(n, T0 + 12 * HOUR, COMPONENTS);
-    expect(later.currentGdpPerCapita / first.currentGdpPerCapita).toBeLessThan(1.001);
-    expect(first.totalGovernmentSpending).toBe(later.totalGovernmentSpending);
-    expect(first.unemploymentRate).toBe(later.unemploymentRate);
+    const at = (effects: object[], when: number, components = COMPONENTS) =>
+      project(
+        nation({ baselineDate: new Date(BASE), storytellerEffects: effects }),
+        when,
+        components
+      );
+
+    it("shows a baseline's own figures exactly for the rest of its day, then running level effects on top, once", () => {
+      const running = [levelEffect(0.1, IxTime.addYears(BASE, -1))];
+      for (const when of [BASE, BASE + HOUR, NEXT_DAY - 1]) {
+        const stats = at(running, when);
+        expect(stats.currentGdpPerCapita).toBe(30_000);
+        expect(stats.currentPopulation).toBe(10_000_000);
+      }
+      expect(at(running, NEXT_DAY).currentGdpPerCapita).toBeCloseTo(33_000, 6);
+      const yearOn = IxTime.addYears(NEXT_DAY, 1);
+      expect(
+        at(running, yearOn).currentGdpPerCapita / at([], yearOn).currentGdpPerCapita
+      ).toBeCloseTo(1.1, 9);
+    });
+
+    it("an effect begun mid-day waits for the next day and ramps its phase-in from there", () => {
+      const begins = NEXT_DAY + 5 * HOUR;
+      const effect = [levelEffect(0.1, begins, 1)];
+      const sameDay = begins + 10 * HOUR;
+      expect(at(effect, sameDay).currentGdpPerCapita).toBe(at([], sameDay).currentGdpPerCapita);
+      const halfYear = IxTime.addYears(nextIxDayStart(begins), 0.5);
+      expect(
+        at(effect, halfYear).currentGdpPerCapita / at([], halfYear).currentGdpPerCapita
+      ).toBeCloseTo(1.05, 6);
+    });
+
+    it("a disaster lands the next day too", () => {
+      const begins = NEXT_DAY + 5 * HOUR;
+      const disaster = [levelEffect(-0.1, begins, 0, "natural_disaster")];
+      expect(at(disaster, begins + HOUR).currentPopulation).toBe(
+        at([], begins + HOUR).currentPopulation
+      );
+      expect(at(disaster, nextIxDayStart(begins)).currentPopulation).toBeCloseTo(
+        at([], nextIxDayStart(begins)).currentPopulation * 0.9,
+        3
+      );
+    });
+
+    it("keeps the component modifiers continuous through the baseline day", () => {
+      expect(at([], BASE + HOUR).unemploymentRate).toBe(at([], NEXT_DAY + HOUR).unemploymentRate);
+      expect(at([], BASE + HOUR).totalGovernmentSpending).toBe(
+        at([], NEXT_DAY + HOUR).totalGovernmentSpending
+      );
+    });
   });
 
   it("holds GDP = population x GDP per capita and tier consistency over a seeded random sweep", () => {
