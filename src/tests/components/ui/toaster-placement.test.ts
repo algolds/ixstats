@@ -40,3 +40,24 @@ describe("shell variables reach the toaster", () => {
     expect(body).toContain("--shell-inspector-width: 0px");
   });
 });
+
+describe("toast motion", () => {
+  const selector = "[data-sonner-toaster].dynamic-island-toaster [data-sonner-toast]";
+  const rules = [
+    ...sonner.matchAll(/@media \(prefers-reduced-motion: reduce\)\s*\{([\s\S]*?\n\})/g),
+  ];
+
+  // The slide-in transition above is !important and more specific than Sonner's own reduced-motion reset.
+  it("drops the slide-in under the OS Reduce Motion setting", () => {
+    expect(
+      rules.some((m) => m[1].includes(selector) && /transition:\s*none\s*!important/.test(m[1]))
+    ).toBe(true);
+  });
+  it("drops the slide-in under the in-app Reduce Motion setting", () => {
+    const at = sonner.indexOf(`:root[data-motion="reduced"] ${selector}`);
+    expect(at).toBeGreaterThan(-1);
+    expect(declarationsFor(sonner, `:root[data-motion="reduced"] ${selector}`)).toMatch(
+      /transition:\s*none\s*!important/
+    );
+  });
+});

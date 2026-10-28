@@ -142,3 +142,15 @@ body:has([data-maps-page]) {
     opacity var(--duration-slow) var(--ease-out-facet),
     height var(--duration-slow) var(--ease-out-facet) !important;
 }
+
+/* The transition above is !important and more specific than Sonner's own reduced-motion reset, so
+   Reduce Motion (OS or the in-app setting on <html>) needs its own override or toasts still slide. */
+@media (prefers-reduced-motion: reduce) {
+  [data-sonner-toaster].dynamic-island-toaster [data-sonner-toast] {
+    transition: none !important;
+  }
+}
+
+:root[data-motion="reduced"] [data-sonner-toaster].dynamic-island-toaster [data-sonner-toast] {
+  transition: none !important;
+}
