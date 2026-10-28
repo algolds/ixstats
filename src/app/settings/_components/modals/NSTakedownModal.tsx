@@ -130,7 +130,7 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                 NationStates card takedown
               </DialogTitle>
               <DialogDescription className="text-muted-foreground text-xs">
-                Remove your nation&apos;s flag from cards shown on IxStats.
+                Remove your nation&apos;s flag from cards shown on IxStates.
               </DialogDescription>
             </div>
           </div>

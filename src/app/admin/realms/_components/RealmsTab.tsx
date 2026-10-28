@@ -227,7 +227,7 @@ function FounderCell({ current }: { current: string }) {
   return (
     <TableCell className="text-label-secondary text-footnote px-4">
       {current === STAFF_FOUNDER_ID ? (
-        "IxStats staff"
+        "IxStates staff"
       ) : (
         <span className="font-mono">{current.slice(0, 12)}...</span>
       )}

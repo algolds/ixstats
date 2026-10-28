@@ -7,16 +7,16 @@ import { PageHeader } from "~/components/shell/PageHeader";
 import { Card } from "~/components/ui/card";
 
 export const metadata: Metadata = {
-  title: "Help Center - IxStates",
+  title: "Help · IxStates",
   description:
-    "Guides to every part of IxStats: building a nation, MyCountry, the Vault, maps, the wiki and the community.",
+    "Guides to every part of IxStates: building a nation, MyCountry, the Vault, maps, the wiki and the community.",
 };
 
 const QUICK_LINKS = [
   {
     href: "/help/getting-started/welcome",
     icon: Target,
-    title: "New to IxStats?",
+    title: "New to IxStates?",
     caption: "Start here",
   },
   {
@@ -41,12 +41,12 @@ const QUICK_LINKS = [
 
 const INTRO = (
   <>
-    Plain guides to every part of IxStats. Search below or pick a topic. New here? Start with{" "}
+    Plain guides to every part of IxStates. Search below or pick a topic. New here? Start with{" "}
     <Link
       href="/help/getting-started/welcome"
       className="text-primary font-medium underline-offset-4 hover:underline"
     >
-      Welcome to IxStats
+      Welcome to IxStates
     </Link>
     .
   </>

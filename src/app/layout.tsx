@@ -117,7 +117,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   if (!isClerkConfigured) {
     throw new Error(
-      "Clerk keys are not configured. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (pk_*) and CLERK_SECRET_KEY (sk_*) to run IxStats."
+      "Clerk keys are not configured. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (pk_*) and CLERK_SECRET_KEY (sk_*) to run IxStates."
     );
   }
 

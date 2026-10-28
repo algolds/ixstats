@@ -78,7 +78,7 @@ export function ImportConfirmStep({
           className="mt-0.5"
         />
         <span className="text-body text-label">
-          I own or run <strong>{nationName}</strong> on NationStates, and I allow IxStats to show
+          I own or run <strong>{nationName}</strong> on NationStates, and I allow IxStates to show
           its flag and cards.
         </span>
       </label>

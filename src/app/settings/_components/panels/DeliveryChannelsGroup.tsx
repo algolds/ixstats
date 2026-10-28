@@ -81,7 +81,7 @@ export function DeliveryChannelsGroup({
   return (
     <SettingsGroup
       title="Delivery"
-      description="Also receive notifications outside IxStats. Country-wide and global announcements stay in-app."
+      description="Also receive notifications outside IxStates. Country-wide and global announcements stay in-app."
     >
       {channels.email && (
         <SettingsSwitchRow
@@ -113,7 +113,7 @@ export function DeliveryChannelsGroup({
           label="Push notifications"
           description={
             pushSupported()
-              ? "Show notifications from this browser, even when IxStats is closed"
+              ? "Show notifications from this browser, even when IxStates is closed"
               : "This browser does not support push notifications"
           }
           icon={BellNotification}

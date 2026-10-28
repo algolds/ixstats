@@ -128,7 +128,7 @@ export function CountryNationPanel({
       />
 
       {/* Flag */}
-      <SettingsGroup title="National symbols" description="The flag shown across IxStats.">
+      <SettingsGroup title="National symbols" description="The flag shown across IxStates.">
         <SettingsRow
           label="National flag"
           description="Shown on your country page, the map and leaderboards"

@@ -293,7 +293,7 @@ export function SyncDiffView({
               )}
               {a.notInSource.length > 0 && (
                 <span className="text-label-secondary text-footnote basis-full">
-                  Members in IxStats only (kept): {a.notInSource.join(", ")}
+                  Members in IxStates only (kept): {a.notInSource.join(", ")}
                 </span>
               )}
             </li>
