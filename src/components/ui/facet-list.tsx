@@ -206,9 +206,9 @@ interface FacetRowButtonProps extends FacetRowBaseProps {
 
 type FacetRowProps = FacetRowLinkProps | FacetRowButtonProps;
 
-/** Pressable rows: fill washes, the focus ring and a subtle press. */
+/** Pressable rows: fill washes and the focus ring; a press is a colour change. */
 const ROW_INTERACTIVE =
-  "hover:bg-fill-4 active:bg-fill-3 focus-visible:outline-tint cursor-pointer facet-press facet-press-subtle focus-visible:outline-2 focus-visible:-outline-offset-2";
+  "hover:bg-fill-4 active:bg-fill-3 focus-visible:outline-tint cursor-pointer transition-colors duration-fast ease-out-facet focus-visible:outline-2 focus-visible:-outline-offset-2";
 
 function RowAccessory({
   accessory,

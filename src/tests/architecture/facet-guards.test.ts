@@ -693,4 +693,24 @@ describe("Facet kit guards", () => {
   it("arbitrary transition lists name scale/translate, not transform", () => {
     expect(hits(/transition-\[[^\]]*\btransform\b[^\]]*\]/g)).toEqual([]);
   });
+
+  // Controls change colour on press; facet-press (scale) is for pressable cards and tiles.
+  it("controls do not scale on press", () => {
+    const controls = [
+      "button",
+      "switch",
+      "segmented-control",
+      "toggle",
+      "toggle-group",
+      "action-pill",
+      "facet-list",
+      "tabs",
+      "select",
+      "dropdown-menu",
+    ].map((name) => path.join("components", "ui", `${name}.tsx`));
+    const offenders = sources
+      .filter(({ file, content }) => controls.includes(file) && /\bfacet-press/.test(content))
+      .map(({ file }) => file);
+    expect(offenders).toEqual([]);
+  });
 });
