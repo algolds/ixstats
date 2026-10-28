@@ -23,6 +23,7 @@ import {
 import type { PrismaClient } from "@prisma/client";
 import { CountryEventSpine } from "~/lib/activity";
 import { isProjectionConsequence, issueConsequenceToEffect } from "./projection-effects";
+import { pauseComponentsForStaff, SCALE_BACK_TARGET } from "./staffing";
 
 // FIELD BOUNDS
 // MODEL FIELD MAPPING
@@ -325,6 +326,9 @@ export class NationalIssuesConsequences {
     issueTitle: string,
     currentIxTime: number
   ): Promise<AppliedConsequence | null> {
+    if (consequence.targetModel === SCALE_BACK_TARGET) {
+      return this.applyScaleBack(consequence, countryId, db, issueId, currentIxTime);
+    }
     if (isProjectionConsequence(consequence)) {
       return this.applyProjectionConsequence(
         consequence,
@@ -374,6 +378,43 @@ export class NationalIssuesConsequences {
     });
 
     return applied;
+  }
+
+  /** "Scale back programs" (staffing shortage): pause the newest government components until the staff is freed. */
+  private static async applyScaleBack(
+    consequence: ConsequenceDefinition,
+    countryId: string,
+    db: PrismaClient,
+    issueId: string,
+    currentIxTime: number
+  ): Promise<AppliedConsequence> {
+    const { paused, freed } = await pauseComponentsForStaff(db, countryId, consequence.value);
+    const description = paused.length
+      ? `Paused ${paused.length} government program${paused.length === 1 ? "" : "s"}, freeing ${freed} executive bandwidth`
+      : "No government program left to pause";
+    await db.nationalIssueConsequence.create({
+      data: {
+        issueId,
+        targetModel: consequence.targetModel,
+        targetField: consequence.targetField,
+        previousValue: null,
+        newValue: JSON.stringify(paused),
+        deltaValue: -freed,
+        description,
+        effectType: "immediate",
+        effectDuration: null,
+        appliedIxTime: currentIxTime,
+      },
+    });
+    return {
+      targetModel: consequence.targetModel,
+      targetField: consequence.targetField,
+      previousValue: 0,
+      newValue: -freed,
+      delta: -freed,
+      description,
+      effectType: "immediate",
+    };
   }
 
   /**

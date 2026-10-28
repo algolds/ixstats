@@ -57,6 +57,7 @@ function fetchCountryCore(countryId: string, db: PrismaClient) {
           ruleOfLaw: true,
           corruptionIndex: true,
           politicalPolarization: true,
+          civilServiceExpansion: true,
         },
       },
       stabilityMetrics: {
@@ -147,11 +148,17 @@ function fetchSnapshotRelations(countryId: string, db: PrismaClient) {
 }
 
 /**
- * A component counts as active once isActive is set OR its implementationDate has
- * elapsed (implementationDate is stored in IxTime, so `now` is IxTime too).
+ * A component is active while isActive is set; one not yet active is implementing until its implementationDate
+ * (stored in IxTime, so `now` is IxTime too). The staffing shortage's "Scale back programs" pauses components
+ * (isActive false), so a paused one is neither.
  */
-function isComponentActive(c: ComponentRow, now: Date): boolean {
-  return c.isActive === true || (!!c.implementationDate && new Date(c.implementationDate) <= now);
+function isComponentActive(c: ComponentRow): boolean {
+  return c.isActive === true;
+}
+
+/** Scheduled but not yet live; an inactive component whose date has passed is paused and counts as neither. */
+function isComponentImplementing(c: ComponentRow, now: Date): boolean {
+  return c.isActive !== true && !!c.implementationDate && new Date(c.implementationDate) > now;
 }
 
 function splitByActivity(
@@ -162,7 +169,8 @@ function splitByActivity(
   const split: ComponentSplit = { active: [], implementing: [] };
   for (const c of rows) {
     const id = toId(String(c.componentType));
-    (isComponentActive(c, now) ? split.active : split.implementing).push(id);
+    if (isComponentActive(c)) split.active.push(id);
+    else if (isComponentImplementing(c, now)) split.implementing.push(id);
   }
   return split;
 }
@@ -344,7 +352,8 @@ export async function buildCountrySnapshot(
   const components = classifyComponents(govComps, econComps, taxComps, ixDate);
   const civilServiceCapacity = calculateCivilServiceCapacity(
     country.currentPopulation ?? 0,
-    country.governmentStructure?.governmentEffectiveness ?? 50
+    country.governmentStructure?.governmentEffectiveness ?? 50,
+    country.governmentStructure?.civilServiceExpansion ?? 0
   );
   const { activePoliciesList, policySettings } = parseActivePolicies(activePolicies);
 

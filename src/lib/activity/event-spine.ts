@@ -93,6 +93,7 @@ const OPERATIONS: Record<
 };
 
 const FIELD_LABELS: Record<string, string> = {
+  civilServiceExpansion: "Civil Service Hiring",
   publicApproval: "Public Approval",
   unemploymentRate: "Unemployment Rate",
   inflationRate: "Inflation Rate",

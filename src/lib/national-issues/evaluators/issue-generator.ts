@@ -1,5 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { formatCurrency, formatPopulation } from "~/lib/utils";
+import { loadExecBandwidthState } from "~/lib/government/exec-bandwidth";
+import { staffingShortageOptions } from "../staffing";
 import type { CountrySnapshot, EvaluationResult, ConsequenceDefinition } from "../engine";
 
 export interface ResponseOptionTemplate {
@@ -181,8 +183,8 @@ export const STAFFING_SHORTAGE_SLUG = "government_staffing_shortage";
 const STAFFING_SHORTAGE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 
 /**
- * Auto-trigger a "Government Staffing Shortage" issue when active + implementing
- * component staff requirements exceed the country's civil service capacity.
+ * Auto-trigger a "Government Staffing Shortage" issue when executive bandwidth is over capacity (the figure the
+ * MyCountry bandwidth bar shows). Its answers fix that cause (./staffing.ts).
  */
 export async function maybeTriggerStaffingShortage(
   countryId: string,
@@ -190,38 +192,15 @@ export async function maybeTriggerStaffingShortage(
   snapshot: CountrySnapshot,
   result: EvaluationResult
 ): Promise<void> {
-  if (snapshot.consumedStaff <= snapshot.civilServiceCapacity) return;
-
   try {
-    const overstaff = Math.round(snapshot.consumedStaff - snapshot.civilServiceCapacity);
+    const bandwidth = await loadExecBandwidthState(db, countryId, {
+      population: snapshot.currentPopulation,
+      now: snapshot.currentIxTime,
+    });
+    if (!bandwidth.overCapacity) return;
+    const shortfall = Math.ceil(bandwidth.used - bandwidth.capacity);
     const slug = STAFFING_SHORTAGE_SLUG;
-
-    const responseOptions = JSON.stringify([
-      {
-        id: "expand_civil_service",
-        label: "Expand the civil service",
-        description: "Fund additional administrative staff to meet the demands of active programs.",
-        consequences: [],
-        previewEffects: {
-          economicImpact: "Higher payroll costs",
-          stabilityImpact: "Stability recovers",
-        },
-        outcomeText: "New civil servants are recruited and the administrative backlog eases.",
-        isAutoResolveDefault: true,
-      },
-      {
-        id: "scale_back_programs",
-        label: "Scale back programs",
-        description:
-          "Pause or decommission the least essential components to relieve the staffing burden.",
-        consequences: [],
-        previewEffects: {
-          economicImpact: "Reduced program coverage",
-          stabilityImpact: "Stability recovers",
-        },
-        outcomeText: "Lower-priority programs are wound down until capacity is restored.",
-      },
-    ]);
+    const responseOptions = JSON.stringify(staffingShortageOptions(shortfall));
 
     const template = await db.nationalIssueTemplate.upsert({
       where: { slug },
@@ -278,19 +257,15 @@ export async function maybeTriggerStaffingShortage(
         status: "pending",
         autoResolveOptionId: "expand_civil_service",
         autoResolveLabel: "Expand the civil service",
-        responseOptions: template.responseOptions,
+        responseOptions,
         contextSnapshot: JSON.stringify({
-          consumedStaff: Math.round(snapshot.consumedStaff),
-          civilServiceCapacity: Math.round(snapshot.civilServiceCapacity),
-          overstaff,
+          bandwidthUsed: Math.round(bandwidth.used),
+          bandwidthCapacity: bandwidth.capacity,
+          shortfall,
           activeComponents: snapshot.activeComponents.length,
           implementingComponents: snapshot.implementingComponents.length,
         }),
-        triggerReason: `Executive bandwidth exceeded (${Math.round(
-          snapshot.consumedStaff
-        )} staff required vs. ${Math.round(
-          snapshot.civilServiceCapacity
-        )} capacity, shortfall ${overstaff}).`,
+        triggerReason: `Executive bandwidth exceeded (${Math.round(bandwidth.used)} in use vs. ${bandwidth.capacity} capacity, shortfall ${shortfall}).`,
         aiConfidence: 100,
         createdIxTime: snapshot.currentIxTime,
       },

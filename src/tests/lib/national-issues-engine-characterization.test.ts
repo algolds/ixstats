@@ -56,6 +56,10 @@ jest.mock("~/lib/national-issues/snapshot", () => ({
   }),
 }));
 
+// Every fixture nation is over executive bandwidth, so each evaluation raises the staffing shortage
+jest.mock("~/lib/government/exec-bandwidth", () => ({
+  loadExecBandwidthState: async () => ({ used: 2195, capacity: 1168, overCapacity: true }),
+}));
 jest.mock("~/lib/national-issues/neighbors", () => ({
   resolveNeighbors: async () => [{ name: "Valeria", countryId: "c-valeria" }],
 }));
@@ -435,7 +439,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "ff2b15376617448c66d6f2a9e36cccac25065b232258e40f53b7389392af60d7",
+    digest: "a87f894bc47f262f980c0055d2e6096c1c4b9691c780cd0d40d18dd7a9172236",
   },
   evaluateNeighborFallbackForcedDomain: {
     summary: {
@@ -478,7 +482,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "3379e85dd0cfc6179b047aac0fbb8d2959c824e3948463b2b0a09a6332394ef9",
+    digest: "ab02a7b77a6ad8f1a99525bdded977256dd4e925af07af1b5786ce6414ce504f",
   },
   evaluatePendingCap: {
     summary: {
@@ -508,7 +512,7 @@ const EXPECTED: Record<
         "nationalIssue.count",
       ],
     },
-    digest: "ac1254624dd4ee9c8fbd83ed987f480ff3d2df66b5cedc909ff501b4eeea1e08",
+    digest: "f7d6086d443ece7b307404eea7bfec334bcaee0039e0ee9fda6af16d917292ed",
   },
   evaluateWeeklyCapReached: {
     summary: {
@@ -547,7 +551,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "91691377f3390c309f4e036be54143ecba20117eda2ee11a9b5cfd55e963d46c",
+    digest: "670556216ed1ce573f719800701c759514376a0ee3de8c53867d0deaa6216595",
   },
   evaluateTargetLookupThrows: {
     summary: {
@@ -587,7 +591,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "a7a25a61529625a4f5cfdd6d0a972a82d8d529c30bcd37a351e7e2861ec514b7",
+    digest: "7b37e0557de56dc64ddb2f83d28c249d769c8d092316480b6eb163e7d87f1096",
   },
   forceGenerateFollowUp: {
     summary: {
@@ -609,7 +613,7 @@ const EXPECTED: Record<
         "nationalIssue.create",
       ],
     },
-    digest: "0fb047d8293d0e2e97beb80346f6bcbe694148b36b7c503214d9849678416b8d",
+    digest: "8eab710400eb337494a56af49b231eb1229eb204c83b640dca24d6033f92e240",
   },
   forceGenerateInvalidOptions: {
     summary: {
@@ -630,7 +634,7 @@ const EXPECTED: Record<
         "intent.findMany",
       ],
     },
-    digest: "d1ffacea20a5699595baf282955b76be906012a43c453062c02402f16ac75318",
+    digest: "5a190458187a2ea7846a47e693b358681961a8b558890fc6ae2131ffa60a998b",
   },
 };
 
