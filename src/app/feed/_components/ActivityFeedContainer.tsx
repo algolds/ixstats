@@ -55,7 +55,7 @@ export function ActivityFeedContainer() {
   const activities = feedData?.activities ?? [];
 
   return (
-    <div className="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <PageHeader
         title="Activity feed"
         bleed
