@@ -3,7 +3,8 @@
  * Stress finding C-11 (template sweep over all 150 Ixnay snapshots): alliances read Country.activeAlliances, which
  * nothing writes, so every nation had 0 and the alliance templates (trade agreement, arms deal, peacekeeping,
  * intelligence sharing, base controversy) never fired; crime_wave read policingEffectiveness, which the snapshot lacked;
- * income_inequality_protests compared the 0-1 coefficient with 45 and printed "{{incomeInequalityGini}}".
+ * income_inequality_protests compared the 0-1 coefficient with 45 and printed "{{incomeInequalityGini}}". C-12: the budget
+ * balance is stored in currency, and templates read it as % of GDP (-3 / -5).
  */
 import { buildCountrySnapshot } from "~/lib/national-issues/country-snapshot";
 import { substituteVariables } from "~/lib/national-issues/evaluators/issue-generator";
@@ -23,7 +24,10 @@ beforeEach(async () => {
 afterEach(() => jest.restoreAllMocks());
 
 it("counts alliances from memberships and military pacts, and reads policing and Gini in points", async () => {
-  await db.country.update({ where: { id: "testland" }, data: { incomeInequalityGini: 0.42 } });
+  await db.country.update({
+    where: { id: "testland" },
+    data: { incomeInequalityGini: 0.42, budgetDeficitSurplus: -12e9 },
+  });
   await db.internalStabilityMetrics.update({
     where: { countryId: "testland" },
     data: { policingEffectiveness: 35 },
@@ -45,6 +49,7 @@ it("counts alliances from memberships and military pacts, and reads policing and
   expect(snapshot.activeAllianceCount).toBe(2);
   expect(snapshot.policingEffectiveness).toBe(35);
   expect(snapshot.incomeInequalityGini).toBe(42);
+  expect(snapshot.budgetDeficitSurplus).toBe(-4); // -$12B of a $300B economy
   expect(substituteVariables("A Gini coefficient of {{incomeInequalityGini}}", snapshot)).toBe(
     "A Gini coefficient of 42"
   );

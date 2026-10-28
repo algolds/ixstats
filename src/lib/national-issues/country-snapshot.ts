@@ -83,6 +83,11 @@ function fetchCountryCore(countryId: string, db: PrismaClient) {
   });
 }
 
+function percentOfGdp(amount: number | null, gdp: number | null): number {
+  if (!amount || !gdp || gdp <= 0) return 0;
+  return Math.round((amount / gdp) * 1000) / 10;
+}
+
 function giniPoints(gini: number | null): number {
   if (gini == null) return 0;
   return gini <= 1 ? Math.round(gini * 1000) / 10 : gini;
@@ -259,7 +264,8 @@ function coreFields(country: CountryCoreRow) {
     inflationRate: country.inflationRate ?? 0,
     tradeBalance: country.tradeBalance ?? 0,
     taxRevenueGDPPercent: country.taxRevenueGDPPercent ?? 0,
-    budgetDeficitSurplus: country.budgetDeficitSurplus ?? 0,
+    // Stored in currency (what the builder writes and the economy tiles show); templates compare % of GDP.
+    budgetDeficitSurplus: percentOfGdp(country.budgetDeficitSurplus, country.currentTotalGdp),
     totalDebtGDPRatio: country.totalDebtGDPRatio ?? 0,
     debtPerCapita: country.debtPerCapita ?? 0,
     publicApproval: country.publicApproval ?? 50,
