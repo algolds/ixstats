@@ -472,6 +472,7 @@ export const APPS: readonly AppDefinition[] = [
         ["maps", "Atlas", "/admin/maps", MapIcon],
         ["style-editor", "Map style editor", "/admin/maps/style-editor", Palette],
         ["wikios", "WikiOS", "/admin/wikios-settings", OpenBook],
+        ["iiwiki", "IIWiki", "/admin/iiwiki", Globe],
         ["lorescanner", "LoreScanner", "/admin/lorescanner", Search],
         ["image-repo", "Image repository", "/admin/image-repo", MediaImage],
         ["stash", "Stash", "/admin/stash", Folder],

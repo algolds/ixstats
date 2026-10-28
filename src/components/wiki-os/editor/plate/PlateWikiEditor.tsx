@@ -382,7 +382,6 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
           spellCheck
           renderElement={((props: any) => <ElementRenderer {...props} />) as never}
           renderLeaf={((props: any) => <LeafRenderer {...props} />) as never}
-          onSelect={onSelectionChange as never}
           onKeyDown={handleKeyDown as never}
         />
         <WikiSlashMenu

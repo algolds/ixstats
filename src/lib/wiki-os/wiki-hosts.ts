@@ -99,6 +99,27 @@ export const READER_HOST_ALIASES: Partial<Record<SisterReaderId, readonly string
   iiwiki: ["iiwiki.us"],
 };
 
+/** The listed wiki a hostname belongs to (its origin, `www.`, a reader alias or one of its file hosts), or null. */
+export function sisterIdForHostname(hostname: string): SisterWikiId | null {
+  const bare = hostname.toLowerCase().replace(/^www\./, "");
+  const aliases: Partial<Record<string, readonly string[]>> = READER_HOST_ALIASES;
+  return (
+    SISTER_WIKI_IDS.find((id) => {
+      const host = SISTER_WIKI_HOSTS[id];
+      return (
+        new URL(host.origin).hostname === bare ||
+        (host.mediaHosts as readonly string[]).includes(bare) ||
+        (aliases[id] ?? []).includes(bare)
+      );
+    }) ?? null
+  );
+}
+
+/** Whether `url` (absolute) is on one of IIWiki's hosts. Client-safe: no relay or config lookups. */
+export function isIiwikiUrl(url: string): boolean {
+  return URL.canParse(url) && sisterIdForHostname(new URL(url).hostname) === "iiwiki";
+}
+
 /** The sister wiki's own api.php (no development proxy). */
 export function sisterWikiApiUrl(host: SisterWikiHost): string {
   return `${host.origin}${host.apiPath}`;

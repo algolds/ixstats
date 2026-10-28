@@ -9,6 +9,7 @@
  * for a visitor and 60 signed in. A visitor, or a script, asking for random titles would
  * otherwise leave every other reader's sister content "busy". Cache hits are free.
  */
+import { iiwikiFeatureMiddleware } from "~/server/api/trpc/middleware";
 import { z } from "zod/v4";
 import { createTRPCRouter, enforceRateLimit, publicProcedure } from "~/server/api/trpc";
 import { embedPart, isSisterEmbedTitle, SISTER_EMBED_MODES } from "~/lib/wiki-os/sister-embed";
@@ -34,6 +35,7 @@ function embedReadLimit(ctx: { auth?: { userId?: string | null } | null }) {
 
 export const wikiosSisterRouter = createTRPCRouter({
   sisterEmbed: publicProcedure
+    .use(iiwikiFeatureMiddleware("embeds"))
     .input(
       z.object({
         wiki: z.enum(["iiwiki", "althistory"]),

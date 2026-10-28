@@ -5,7 +5,7 @@
 import "~/styles/wiki-os/editors.css";
 import "~/styles/wiki-os/mediawiki-editors.css";
 import React, { useEffect, useRef, useCallback } from "react";
-import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
+import { getDraft } from "~/lib/wiki-os/editor/draft-store";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { parseTemplateWikitext } from "~/lib/wiki-os/editor/parse-template-wikitext";
 import { Editor, Transforms, type Descendant } from "slate";
@@ -55,6 +55,8 @@ interface WikiVisualEditorProps {
   compactToolbar?: boolean;
   /** Hands the host the Plate editor once it is ready (to insert text or blocks from outside). */
   onEditorReady?: (editor: TSlateEditor) => void;
+  /** Opens on text the page does not have (edits carried over a mode switch): unsaved from the start. */
+  startDirty?: boolean;
 }
 
 type PlateEditorLike = TSlateEditor;
@@ -72,6 +74,7 @@ export function WikiVisualEditor({
   bare = false,
   compactToolbar = false,
   onEditorReady,
+  startDirty,
 }: WikiVisualEditorProps) {
   const editorRef = useRef<PlateEditorLike | null>(null);
   const wtRef = useRef<WikitextSerializeResult>({
@@ -82,7 +85,7 @@ export function WikiVisualEditor({
   const { user } = useWikiAuth();
   const userId = user?.id ?? null;
 
-  const state = useWikiEditorState({ title, onSave });
+  const state = useWikiEditorState({ title, onSave, startDirty });
   const fmt = useWikiVisualFormatting({
     title,
     editorRef: editorRef as unknown as React.MutableRefObject<PlateEditorLike | null>,
@@ -141,11 +144,9 @@ export function WikiVisualEditor({
     // Edits that could not be applied as typed, or a block that had to move: the author is told.
     for (const notice of wtRef.current.notices)
       state.notify.warning("Check the saved page", notice);
-    const saved = await state.executeSave(() => wikitextToSave);
-    // A published page needs no draft (executeSave cleared it); a failed save keeps the work as one.
-    if (!saved)
-      saveDraft(userId, { title, source: "ixwiki", mode: "visual", wikitext: wikitextToSave });
-  }, [state, title, userId]);
+    // A published page needs no draft (executeSave clears it); a failed save keeps the work as one.
+    await state.executeSave(() => wikitextToSave, "visual");
+  }, [state]);
 
   const handleSaveDraft = useCallback(() => {
     state.executeSaveDraft(() => wtRef.current.wikitext, "visual");
@@ -301,7 +302,7 @@ export function WikiVisualEditor({
           wordCount={state.wordCount}
           isDirty={state.isDirty}
           onSwitchToSource={handleSwitchToSource}
-          onCancel={onCancel}
+          onCancel={() => state.cancelEditing(onCancel)}
           handleSaveDraft={handleSaveDraft}
           activeFormats={fmt.activeFormats}
           exec={fmt.exec}

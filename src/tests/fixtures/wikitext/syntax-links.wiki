@@ -1,0 +1,14 @@
+See [[iiwiki:Caphiria]], [[iiwiki:Caphiria|Caphiria on IIWiki]], [[:Category:Countries]], [[:File:Map.png|the map]] and [[w:en:Rome|Rome]].
+
+Link trails: [[Apple]]s and [[Foo bar|''styled'' label]]; a [[Page#Section|section link]] and [[#Local|local]].
+
+[[File:Flag.svg|thumb|upright=1.2|left|alt=A flag|link=Vesperia|class=noborder|frameless|border|baseline|200x150px|The ''flag'' of [[Vesperia]]]]
+
+Bare https://example.com/path?q=1&r=2 and [https://example.com/a?b=c bracketed &amp; entity] and <nowiki>[[not a link]]</nowiki>.
+
+Entities: &nbsp;&mdash;&#91;&#x5D;&lt;tag&gt; and odd spaces: a b c d	tab and a zero​width space.
+
+[[Category:Countries|Vesperia]]
+[[Category:Arcadia| ]]
+[[Category:Sorted|*]]
+[[fr:Vespérie]]

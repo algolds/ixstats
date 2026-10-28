@@ -9,6 +9,11 @@
  * five failures in a row, `upstream-guard.ts`): a refused discovery says nothing about whether readers can see the
  * wiki's pages.
  */
+import {
+  IIWIKI_DISABLED_MESSAGE,
+  iiwikiSourceAllowed,
+  type IiwikiFeature,
+} from "~/lib/wiki-os/iiwiki-switch";
 import type { z } from "zod";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl, type WikiSource } from "~/lib/wiki-os/config";
 import { SISTER_WIKI_HOSTS, sisterWikiApiUrl, type SisterWikiId } from "~/lib/wiki-os/wiki-hosts";
@@ -50,6 +55,8 @@ export interface DiscoveryClientOptions {
   pauseFirst?: boolean;
   /** The most requests one client makes. */
   maxRequests?: number;
+  /** The IIWiki switch feature its requests answer to; defaults to `realms`. */
+  feature?: IiwikiFeature;
   /** The longest Retry-After the client waits out; a longer one stops it as rate-limited. */
   maxRetryAfterMs?: number;
   /** How many times one request is retried after a 429 or 503. */
@@ -110,6 +117,7 @@ export function createDiscoveryClient<S extends DiscoveryWiki>(
   const pauseFirst = options.pauseFirst ?? false;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const apiUrl = options.apiUrl ?? defaultApiUrl(source);
+  const feature = options.feature ?? "realms";
   let count = 0;
   let stop: DiscoveryStop | null = null;
 
@@ -132,6 +140,9 @@ export function createDiscoveryClient<S extends DiscoveryWiki>(
   }
 
   async function send(url: URL): Promise<Response> {
+    if (!iiwikiSourceAllowed(source, feature)) {
+      halt({ kind: "unreachable", status: null, message: IIWIKI_DISABLED_MESSAGE });
+    }
     await takeTurn();
     try {
       return await fetchImpl(url.toString(), {

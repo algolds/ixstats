@@ -11,6 +11,7 @@
  */
 
 import { z } from "zod/v4";
+import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { isBlank, skipBlanks } from "../wikitext/blank";
 import { createExportWriter, type ExportSink, type ExportWriter } from "./export-writer";
 import { chunksOfStream, readExport } from "./import-reader";
@@ -35,7 +36,6 @@ export interface FetchDumpOptions {
   onProgress?: (message: string) => void;
 }
 
-const USER_AGENT = "IxStats-Builder";
 const TITLE_BATCH = 50;
 const REQUEST_TIMEOUT_MS = 60_000;
 const MAX_ATTEMPTS = 4;
@@ -244,7 +244,10 @@ function createClient(options: FetchDumpOptions) {
       try {
         const res = await fetchImpl(url, {
           method: "GET",
-          headers: { "User-Agent": USER_AGENT, Accept: "application/json, application/xml" },
+          headers: {
+            "User-Agent": DEFAULT_USER_AGENT,
+            Accept: "application/json, application/xml",
+          },
           signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         });
         if (res.ok) return res;

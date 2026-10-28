@@ -181,7 +181,7 @@ describe("the api.php proxy", () => {
     await apiPhp("iiwiki", "action=query&titles=Bashan");
     expect(guarded).toHaveBeenCalledWith(
       "https://iiwiki.com/api.php?action=query&titles=Bashan&format=json",
-      { timeoutMs: 15_000, lane: "proxy" }
+      { timeoutMs: 15_000, lane: "proxy", feature: "proxy" }
     );
   });
 

@@ -21,6 +21,7 @@
  *  - bot-passwords:         Special:BotPasswords (api.php credentials)
  *  - repository-files:      image repository file browser (paged wiki, forum and own-upload files)
  *  - sister:                live Template:Sister embeds of IIWiki and AltHistory pages (sisterEmbed)
+ *  - iiwiki:                the IIWiki admin panel (switch, breaker reset, live test)
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "./page-content";
@@ -39,6 +40,7 @@ import { wikiosPageAdminRouter } from "./page-admin";
 import { wikiosBotPasswordsRouter } from "./bot-passwords";
 import { wikiosRepositoryFilesRouter } from "./repository-files";
 import { wikiosSisterRouter } from "./sister";
+import { wikiosIiwikiRouter } from "./iiwiki";
 
 export const wikiosRouter = mergeRouters(
   wikiosPageContentRouter,
@@ -56,5 +58,6 @@ export const wikiosRouter = mergeRouters(
   wikiosPageAdminRouter,
   wikiosBotPasswordsRouter,
   wikiosRepositoryFilesRouter,
-  wikiosSisterRouter
+  wikiosSisterRouter,
+  wikiosIiwikiRouter
 );

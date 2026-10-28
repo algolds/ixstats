@@ -310,7 +310,10 @@ export function WikiEditBridge({
             currentWikitext: result.currentWikitext,
             currentRevisionRef: result.currentRevisionRef,
           });
-          throw new Error("Edit conflict detected: this page was modified by another user.");
+          // The banner explains it: the editor adds no "Save Failed" notice (and keeps the work as a draft).
+          throw new SaveRefusalShown(
+            "Edit conflict detected: this page was modified by another user."
+          );
         }
 
         pendingSave.current = null;
@@ -334,7 +337,8 @@ export function WikiEditBridge({
           onClose();
         }
       } catch (err) {
-        console.error("Failed to save article:", err);
+        if (!(err instanceof SaveRefusalShown || err instanceof SaveCancelled))
+          console.error("Failed to save article:", err);
         throw err;
       } finally {
         setSaving(false);
@@ -456,6 +460,9 @@ export function WikiEditBridge({
   }
 
   const initialWikitextValue = openingText;
+  // Text the page does not have (edits carried over a switch, a restored draft): the editor starts dirty, so its
+  // Cancel asks and the leave-page warning is on.
+  const startDirty = activeWikitext !== null && activeWikitext !== loaded?.wikitext;
 
   return (
     <div className="wikios-edit-bridge relative min-h-[600px] w-full">
@@ -523,6 +530,7 @@ export function WikiEditBridge({
           onSerializedWikitext={setLastSerialized}
           registerContentReader={registerContentReader}
           restoreLocalDraft={false}
+          startDirty={startDirty}
         />
       ) : (
         <WikiSourceEditor
@@ -534,6 +542,7 @@ export function WikiEditBridge({
           onCancel={onClose}
           onSwitchToVisual={(dirty, wt) => handleModeSwitch("visual", dirty, wt)}
           registerContentReader={registerContentReader}
+          startDirty={startDirty}
         />
       )}
       <HandlePickerDialog {...dialog} />

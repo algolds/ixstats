@@ -4,7 +4,7 @@
 
 **Framework**: tRPC 11.18.0 · Prisma 6.19.3 · Next.js 16 route handlers · TypeScript 7.0.2  
 **Server model**: production runs plain `next start` through `start-production.sh` (PM2 `ixstats-web`, port 3550), with the WebSockets in `ixstats-ws` (`ws-backend.mjs`, port 3551) and the jobs in `ixstats-cron`; the custom Node server `server.mjs` (Next plus the sockets in one process, `bun run start`) is not used in production  
-**Location**: `src/server/api/` (<!-- BEGIN_DOCS:COUNT:routers -->79<!-- END_DOCS:COUNT:routers --> routers registered in `root.ts`, <!-- BEGIN_DOCS:COUNT:procedures -->1,084<!-- END_DOCS:COUNT:procedures --> procedures — the generated count is in [`api-complete.md`](../reference/api-complete.md)) · `src/server/db.ts` · `src/server/shared/`
+**Location**: `src/server/api/` (<!-- BEGIN_DOCS:COUNT:routers -->79<!-- END_DOCS:COUNT:routers --> routers registered in `root.ts`, <!-- BEGIN_DOCS:COUNT:procedures -->1,088<!-- END_DOCS:COUNT:procedures --> procedures — the generated count is in [`api-complete.md`](../reference/api-complete.md)) · `src/server/db.ts` · `src/server/shared/`
 
 ---
 

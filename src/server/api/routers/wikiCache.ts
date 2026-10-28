@@ -5,6 +5,7 @@
  * Uses WikiCacheService for 3-layer caching (Redis → Database → API).
  */
 
+import { iiwikiFeatureMiddleware } from "~/server/api/trpc/middleware";
 import { z } from "zod";
 import { adminProcedure, createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { wikiCacheService } from "~/lib/wiki-os/adapters/ixstates/cache-service";
@@ -16,6 +17,7 @@ export const wikiCacheRouter = createTRPCRouter({
    * name the wiki has no page for reaches WikiBridge (then is remembered missing for a while).
    */
   getCountryProfile: rateLimitedPublicProcedure
+    .use(iiwikiFeatureMiddleware("country"))
     .input(
       z.object({
         countryName: z.string().min(1).max(255),
@@ -36,6 +38,7 @@ export const wikiCacheRouter = createTRPCRouter({
    * Refresh country cache (administrators only: nothing in the app offers it, and it drops what every reader shares)
    */
   refreshCountryCache: adminProcedure
+    .use(iiwikiFeatureMiddleware("country"))
     .input(
       z.object({
         countryName: z.string().min(1),

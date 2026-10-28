@@ -1,3 +1,4 @@
+import { iiwikiFeatureMiddleware } from "~/server/api/trpc/middleware";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { cachedStaticProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
@@ -29,31 +30,44 @@ import {
 const countryWikiInput = z.object({ countryName: z.string(), countryId: z.string().optional() });
 
 export const wikiProcedures = {
-  getWikiIntro: cachedStaticProcedure.input(countryWikiInput).query(async ({ ctx, input }) => {
-    const name = input.countryName.trim();
-    if (!name) return null;
-    return fetchWikiIntro(name, await countryWikiPage(ctx.db, input.countryId));
-  }),
+  getWikiIntro: cachedStaticProcedure
+    .use(iiwikiFeatureMiddleware("country"))
+    .input(countryWikiInput)
+    .query(async ({ ctx, input }) => {
+      const name = input.countryName.trim();
+      if (!name) return null;
+      return fetchWikiIntro(name, await countryWikiPage(ctx.db, input.countryId));
+    }),
 
-  getWikiSections: cachedStaticProcedure.input(countryWikiInput).query(async ({ ctx, input }) => {
-    const name = input.countryName.trim();
-    if (!name) return null;
-    return fetchWikiSections(name, await countryWikiPage(ctx.db, input.countryId));
-  }),
+  getWikiSections: cachedStaticProcedure
+    .use(iiwikiFeatureMiddleware("country"))
+    .input(countryWikiInput)
+    .query(async ({ ctx, input }) => {
+      const name = input.countryName.trim();
+      if (!name) return null;
+      return fetchWikiSections(name, await countryWikiPage(ctx.db, input.countryId));
+    }),
 
-  getWikiPageImages: cachedStaticProcedure.input(countryWikiInput).query(async ({ ctx, input }) => {
-    const name = input.countryName.trim();
-    if (!name) return null;
-    return fetchWikiPageImages(name, await countryWikiPage(ctx.db, input.countryId));
-  }),
+  getWikiPageImages: cachedStaticProcedure
+    .use(iiwikiFeatureMiddleware("country"))
+    .input(countryWikiInput)
+    .query(async ({ ctx, input }) => {
+      const name = input.countryName.trim();
+      if (!name) return null;
+      return fetchWikiPageImages(name, await countryWikiPage(ctx.db, input.countryId));
+    }),
 
-  getWikiRichIntro: cachedStaticProcedure.input(countryWikiInput).query(async ({ ctx, input }) => {
-    const name = input.countryName.trim();
-    if (!name) return null;
-    return fetchWikiRichIntro(name, await countryWikiPage(ctx.db, input.countryId));
-  }),
+  getWikiRichIntro: cachedStaticProcedure
+    .use(iiwikiFeatureMiddleware("country"))
+    .input(countryWikiInput)
+    .query(async ({ ctx, input }) => {
+      const name = input.countryName.trim();
+      if (!name) return null;
+      return fetchWikiRichIntro(name, await countryWikiPage(ctx.db, input.countryId));
+    }),
 
   getBulkWikiRichIntros: cachedStaticProcedure
+    .use(iiwikiFeatureMiddleware("country"))
     .input(
       z.object({
         countries: z
@@ -78,6 +92,7 @@ export const wikiProcedures = {
     }),
 
   getWikiSectionPreviews: cachedStaticProcedure
+    .use(iiwikiFeatureMiddleware("country"))
     .input(countryWikiInput)
     .query(async ({ ctx, input }) => {
       const name = input.countryName.trim();
@@ -108,6 +123,7 @@ export const wikiProcedures = {
     }),
 
   parseInfobox: rateLimitedPublicProcedure
+    .use(iiwikiFeatureMiddleware("country"))
     .input(
       z.object({
         pageName: z.string().min(1, "Page name is required"),

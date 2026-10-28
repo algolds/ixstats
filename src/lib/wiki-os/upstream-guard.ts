@@ -41,31 +41,43 @@
 // (`wiki-hosts.ts`, `config.ts`), so the map holds a handful of entries.
 
 import { AppError } from "~/lib/app-error";
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
+import {
+  currentIiwikiFeature,
+  iiwikiAllows,
+  type IiwikiFeature,
+} from "~/lib/wiki-os/iiwiki-switch";
 import { OutboundLimiter, ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 import {
   SISTER_WIKI_HOSTS,
-  SISTER_WIKI_IDS,
+  sisterIdForHostname,
   sisterWikiHost,
   type SisterWikiId,
 } from "~/lib/wiki-os/wiki-hosts";
 
 const isSisterWikiId = (id: string): id is SisterWikiId => sisterWikiHost(id) !== null;
 
-/** Why a wiki gave no answer: it failed (`unreachable`), it is resting after failures (`circuit-open`), or it or we said busy. */
-export type UnavailableReason = "unreachable" | "circuit-open" | "busy";
+/**
+ * Why a wiki gave no answer: it failed (`unreachable`), it is resting after failures (`circuit-open`), it or we said
+ * busy, or an administrator switched it off (`disabled`, the IIWiki switch in iiwiki-switch.ts).
+ */
+export type UnavailableReason = "unreachable" | "circuit-open" | "busy" | "disabled";
+
+function unavailableMessage(wiki: string, reason: UnavailableReason): string {
+  if (reason === "busy") return `${wiki} is busy; try again shortly.`;
+  if (reason === "disabled") return `${wiki} is switched off for now.`;
+  return `${wiki} could not be reached just now.`;
+}
 
 export class WikiUnavailableError extends AppError {
   constructor(
     readonly wiki: string,
     readonly reason: UnavailableReason
   ) {
-    const busy = reason === "busy";
-    super(
-      busy ? "RATE_LIMITED" : "UNAVAILABLE",
-      busy ? `${wiki} is busy; try again shortly.` : `${wiki} could not be reached just now.`,
-      { wiki, reason }
-    );
+    super(reason === "busy" ? "RATE_LIMITED" : "UNAVAILABLE", unavailableMessage(wiki, reason), {
+      wiki,
+      reason,
+    });
   }
 }
 
@@ -159,6 +171,8 @@ export interface GuardedRequest {
   userAgent?: string;
   /** Defaults to `wikios`. */
   lane?: GuardLane;
+  /** What an IIWiki call is for, checked against the IIWiki switch; untagged calls answer to its master switch. */
+  feature?: IiwikiFeature;
 }
 
 /** The timeout of a request whose `timeoutMs` is not a positive finite number. */
@@ -171,6 +185,16 @@ function timeoutOf(timeoutMs: number): number {
     ? Math.min(timeoutMs, MAX_TIMEOUT_MS)
     : DEFAULT_TIMEOUT_MS;
 }
+
+export interface CircuitStatus {
+  state: "closed" | "open" | "probing";
+  /** Failures in a row. */
+  failures: number;
+  /** How long until the next probe may go out; 0 when closed. */
+  retryInMs: number;
+}
+
+const CLOSED_CIRCUIT: CircuitStatus = { state: "closed", failures: 0, retryInMs: 0 };
 
 /** How a call was let through: an ordinary call, or the one probe of a circuit past its cooldown. */
 type Ticket = "call" | "probe";
@@ -189,6 +213,22 @@ class Circuit {
 
   get failureCount(): number {
     return this.failures;
+  }
+
+  status(now: number): CircuitStatus {
+    if (this.openUntil === null) return { state: "closed", failures: this.failures, retryInMs: 0 };
+    return {
+      state: this.probing ? "probing" : "open",
+      failures: this.failures,
+      retryInMs: Math.max(0, this.openUntil - now),
+    };
+  }
+
+  reset(): void {
+    this.failures = 0;
+    this.reopenings = 0;
+    this.openUntil = null;
+    this.probing = false;
   }
 
   /** null refuses the call (open, or a probe already out). */
@@ -313,6 +353,7 @@ export class HostGuard {
    * the breaker.
    */
   async fetch(url: string, request: GuardedRequest): Promise<Response> {
+    assertIiwikiAllowed(url, request.feature);
     const wiki = wikiNameForUrl(url);
     const host = new URL(url).host;
     const entry = this.entryFor(host);
@@ -351,6 +392,17 @@ export class HostGuard {
       );
     }
     throw new WikiUnavailableError(wiki, outcome);
+  }
+
+  /** The breaker of `host` as the panel shows it; a host never called is closed. */
+  circuitStatus(host: string): CircuitStatus {
+    const entry = this.hosts.get(host);
+    return entry ? entry.circuit.status(this.now()) : CLOSED_CIRCUIT;
+  }
+
+  /** Close the breaker of `host` (an administrator, after the wiki is back); the next call goes out at once. */
+  resetCircuit(host: string): void {
+    this.hosts.get(host)?.circuit.reset();
   }
 
   private entryFor(host: string): HostEntry {
@@ -396,18 +448,39 @@ const outageName = (id: SisterWikiId): string => OUTAGE_NAMES[id] ?? SISTER_WIKI
 
 /** The name people know a wiki by, for the wiki `url` points at; "The wiki" when it is not a listed wiki. */
 export function wikiNameForUrl(url: string): string {
+  const id = sisterIdForUrl(url);
+  return id ? outageName(id) : UNLISTED_WIKI;
+}
+
+/** An image relay that fetches the URL in its `url` parameter for us (the media proxy's wsrv.nl fallback). */
+const IMAGE_RELAY_HOSTS = new Set(["wsrv.nl", "images.weserv.nl"]);
+
+/** The configured IIWiki api.php when it is not IIWiki's own (`IIWIKI_DEV_PROXY_URL`, the development relay). */
+function isConfiguredIiwikiRelay(parsed: URL): boolean {
+  const relay = new URL(getMediaWikiApiUrl("iiwiki"));
+  return parsed.host === relay.host && parsed.pathname === relay.pathname;
+}
+
+/** The listed wiki `url` points at (through the development relay or an image relay too), or null. */
+export function sisterIdForUrl(url: string): SisterWikiId | null {
   const parsed = new URL(url);
+  const inner = IMAGE_RELAY_HOSTS.has(parsed.hostname) ? parsed.searchParams.get("url") : null;
+  if (inner) return URL.canParse(inner) ? sisterIdForUrl(inner) : null;
   const relayed = RELAY_PATH.exec(parsed.pathname)?.[1];
-  if (relayed !== undefined && isSisterWikiId(relayed)) return outageName(relayed);
-  const hostname = parsed.hostname.replace(/^www\./, "");
-  const listed = SISTER_WIKI_IDS.find((id) => {
-    const host = SISTER_WIKI_HOSTS[id];
-    return (
-      new URL(host.origin).hostname === hostname ||
-      (host.mediaHosts as readonly string[]).includes(hostname)
-    );
-  });
-  return listed ? outageName(listed) : UNLISTED_WIKI;
+  if (relayed !== undefined && isSisterWikiId(relayed)) return relayed;
+  if (isConfiguredIiwikiRelay(parsed)) return "iiwiki";
+  return sisterIdForHostname(parsed.hostname);
+}
+
+/**
+ * Throws `WikiUnavailableError` (`disabled`) when `url` is IIWiki's and the IIWiki switch refuses `feature`. Every
+ * IIWiki request checks this: `upstreamGuard.fetch` does it itself; calls that cannot use the guard (file bytes,
+ * `action=raw`, the media proxy) call it before they fetch.
+ */
+export function assertIiwikiAllowed(url: string, feature?: IiwikiFeature): void {
+  if (sisterIdForUrl(url) === "iiwiki" && !iiwikiAllows(feature ?? currentIiwikiFeature())) {
+    throw new WikiUnavailableError(outageName("iiwiki"), "disabled");
+  }
 }
 
 /** `work`'s result, or null when its wiki was unavailable; any other error is rethrown. */

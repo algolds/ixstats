@@ -7,7 +7,6 @@ import {
   Page as FileText,
   FloppyDisk as Save,
   Bookmark,
-  Xmark as X,
   SystemRestart as Loader2,
 } from "iconoir-react";
 import { CANVAS_VERSION } from "~/lib/buildVersion";
@@ -16,6 +15,7 @@ import { springSmooth } from "~/lib/design/motion";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Switch } from "~/components/ui/switch";
 import { Button } from "~/components/ui/button";
+import { CancelEditButton } from "./CancelEditButton";
 
 interface WikiEditorHeaderProps {
   title: string;
@@ -128,16 +128,7 @@ export function WikiEditorHeader({
       <div className={isVisual ? "wikios-ve-titlebar-actions" : "wikios-editor-titlebar-actions"}>
         {extraActions}
 
-        <Button
-          variant="outline"
-          size="icon-sm"
-          onClick={onCancel}
-          title="Cancel"
-          aria-label="Cancel"
-          className="border-red/25 text-red hover:border-red hover:bg-red/10 rounded-full"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <CancelEditButton isDirty={isDirty} onCancel={onCancel} />
 
         <Popover open={saveDropdownOpen} onOpenChange={setSaveDropdownOpen}>
           <PopoverTrigger asChild>

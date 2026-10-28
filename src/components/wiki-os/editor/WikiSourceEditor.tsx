@@ -62,6 +62,8 @@ interface WikiSourceEditorProps {
    * Local drafts are the host's business: it decides whether to restore one and passes the text as `initialWikitext`.
    */
   registerContentReader?: (read: (() => string | null) | null) => void;
+  /** Opens on text the page does not have (edits carried over a mode switch): unsaved from the start. */
+  startDirty?: boolean;
 }
 
 export function WikiSourceEditor({
@@ -72,6 +74,7 @@ export function WikiSourceEditor({
   onCancel,
   onSwitchToVisual,
   registerContentReader,
+  startDirty,
 }: WikiSourceEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -87,7 +90,7 @@ export function WikiSourceEditor({
 
   const { repulsionProgress } = useNavigationScroll();
 
-  const state = useWikiEditorState({ title, onSave });
+  const state = useWikiEditorState({ title, onSave, startDirty });
 
   // CodeMirror 6 Compartments for dynamic configuration
   const lineNumbersComp = useRef(new Compartment());
@@ -182,7 +185,8 @@ export function WikiSourceEditor({
               key: "Mod-s",
               run: () => {
                 void state.executeSave(
-                  () => viewRef.current?.state.doc.toString() ?? initialWikitext
+                  () => viewRef.current?.state.doc.toString() ?? initialWikitext,
+                  "source"
                 );
                 return true;
               },
@@ -328,7 +332,10 @@ export function WikiSourceEditor({
 
   // Save actions
   const handleSave = useCallback(async () => {
-    await state.executeSave(() => viewRef.current?.state.doc.toString() ?? initialWikitext);
+    await state.executeSave(
+      () => viewRef.current?.state.doc.toString() ?? initialWikitext,
+      "source"
+    );
   }, [state, initialWikitext]);
 
   const handleSaveDraft = useCallback(() => {
@@ -406,7 +413,7 @@ export function WikiSourceEditor({
             const currentWikitext = viewRef.current?.state.doc.toString() ?? "";
             onSwitchToVisual?.(state.isDirty, currentWikitext);
           }}
-          onCancel={onCancel}
+          onCancel={() => state.cancelEditing(onCancel)}
           handleSaveDraft={handleSaveDraft}
           handleUndo={handleUndo}
           handleRedo={handleRedo}

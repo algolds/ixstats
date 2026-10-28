@@ -54,6 +54,11 @@ function describeConstruct(el: PlateNode): ConstructInfo {
       };
     case "nested-table":
       return { label: "Nested table", description: `A table inside a table cell. ${READ_ONLY}` };
+    case "preformatted":
+      return {
+        label: "Preformatted text",
+        description: `Lines that start with a space, which MediaWiki shows as preformatted text. ${READ_ONLY}`,
+      };
     case "table-template":
     case "table-orphan-line":
       return {

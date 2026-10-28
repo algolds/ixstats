@@ -88,7 +88,7 @@ function decidingHint(hints: string[]): string | null {
 
 /** A throttled query for one-off captures; the import runner passes one client per run instead. */
 export function wikiQueryFor(source: CardWikiSource, maxRequests = 20): WikiQuery {
-  return createDiscoveryClient(source, { maxRequests }).query;
+  return createDiscoveryClient(source, { maxRequests, feature: "cards" }).query;
 }
 
 /** The file's provenance and licence, or null when the wiki has no such file. */
