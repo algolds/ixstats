@@ -385,7 +385,7 @@ const DetentSheetBody = React.forwardRef<HTMLDivElement, DetentSheetBodyProps>(
                 ? "Expand sheet"
                 : "Collapse sheet"
             }
-            className="rounded-t-sheet focus-visible:outline-tint flex h-6 w-full shrink-0 cursor-grab touch-none items-center justify-center outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid active:cursor-grabbing"
+            className="rounded-t-sheet focus-visible:outline-tint flex h-6 w-full shrink-0 cursor-grab touch-none items-center justify-center outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid active:cursor-grabbing pointer-coarse:h-11"
             onPointerDown={(event) => {
               draggedRef.current = false;
               if (!reducedMotion) dragControls.start(event);
@@ -404,7 +404,7 @@ const DetentSheetBody = React.forwardRef<HTMLDivElement, DetentSheetBodyProps>(
           <div
             data-slot="sheet-grabber"
             aria-hidden="true"
-            className="flex h-6 w-full shrink-0 cursor-grab touch-none items-center justify-center"
+            className="flex h-6 w-full shrink-0 cursor-grab touch-none items-center justify-center pointer-coarse:h-11"
             onPointerDown={(event) => {
               if (!reducedMotion) dragControls.start(event);
             }}
