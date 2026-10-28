@@ -16,7 +16,10 @@ export const diplomaticEmbassiesBudgetRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       if (!ctx.user?.countryId) {
-        throw new Error("You must be associated with a country to update embassy profiles.");
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You must be associated with a country to update embassy profiles.",
+        });
       }
 
       // Verify user owns the embassy (guestCountryId)
@@ -34,7 +37,10 @@ export const diplomaticEmbassiesBudgetRouter = createTRPCRouter({
       }
 
       if (embassy.guestCountryId !== ctx.user.countryId) {
-        throw new Error("You can only update your own embassy profiles.");
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only update your own embassy profiles.",
+        });
       }
 
       // Build update data object with only provided fields

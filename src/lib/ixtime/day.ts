@@ -8,3 +8,8 @@ const IX_DAY_MS = 86_400_000;
 export function roundToIxDay(ixTime: number): number {
   return Math.floor(ixTime / IX_DAY_MS) * IX_DAY_MS;
 }
+
+/** The start of the IxTime day after the one `ixTime` falls in: when an effect or a new baseline takes hold. */
+export function nextIxDayStart(ixTime: number): number {
+  return roundToIxDay(ixTime) + IX_DAY_MS;
+}

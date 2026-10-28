@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { leaveAllianceMembership } from "~/lib/diplomacy/alliance-succession";
 import { notificationAPI } from "~/lib/notifications/api";
 
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
@@ -412,22 +413,12 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Not an active member." });
       }
 
-      await ctx.db.allianceMember.update({
-        where: { id: membership.id },
-        data: { isActive: false, status: "left" },
-      });
-
-      // Update count
-      const count = await ctx.db.allianceMember.count({
-        where: { allianceId: input.allianceId, isActive: true },
-      });
-
-      await ctx.db.alliance.update({
-        where: { id: input.allianceId },
-        data: { memberCount: count },
-      });
-
-      return { success: true };
+      // The founder role passes to the longest-standing member; the last member out dissolves it.
+      const result = await leaveAllianceMembership(ctx.db as PrismaClient, membership);
+      if (!result.left) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Not an active member." });
+      }
+      return { success: true, dissolved: result.dissolved };
     }),
 
   // Propose an alliance action (collective sanction, shared defense, etc.)

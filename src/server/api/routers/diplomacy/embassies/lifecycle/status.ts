@@ -5,6 +5,7 @@ import { clockForCountry } from "~/server/shared/realm-time";
 import { assertSameRealm } from "~/server/shared/same-realm-guard";
 import { notificationAPI } from "~/lib/notifications/api";
 import { applyRelationshipImpact } from "~/lib/diplomacy/relationship-impact";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 /** Closing an active embassy costs relation strength; reopening one wins a little back. */
 const CLOSE_RELATIONSHIP_IMPACT = -15;
@@ -23,13 +24,6 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.countryId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be associated with a country to close embassies.",
-        });
-      }
-
       // Verify embassy exists and user owns it
       const embassy = await ctx.db.embassy.findUnique({
         where: { id: input.embassyId },
@@ -43,11 +37,10 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Embassy not found" });
       }
 
-      if (embassy.guestCountryId !== ctx.user.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only close your own embassies.",
-        });
+      // The guest nation's owner (any nation they own, as when establishing), not only the nation they act as.
+      await assertCountryWriteAccess(ctx, embassy.guestCountryId);
+      if (embassy.status === "closed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Embassy is already closed." });
       }
 
       // Closing an active embassy costs relation strength, reputation and half its influence
@@ -59,13 +52,20 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
         influenceLoss: wasActive ? embassy.influence * 0.5 : 0,
       };
 
-      const closedEmbassy = await ctx.db.embassy.update({
-        where: { id: input.embassyId },
+      // Conditional on the status read above, so of two concurrent closes only one applies the penalties.
+      const claimed = await ctx.db.embassy.updateMany({
+        where: { id: input.embassyId, status: embassy.status },
         data: {
           status: "closed",
           influence: { decrement: penalties.influenceLoss },
           reputation: { decrement: penalties.reputationLoss },
         },
+      });
+      if (claimed.count !== 1) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Embassy is already closed." });
+      }
+      const closedEmbassy = await ctx.db.embassy.findUnique({
+        where: { id: input.embassyId },
       });
 
       if (wasActive) {
@@ -127,13 +127,6 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.countryId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be associated with a country to reopen embassies.",
-        });
-      }
-
       const embassy = await ctx.db.embassy.findUnique({
         where: { id: input.embassyId },
         include: {
@@ -146,12 +139,7 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Embassy not found" });
       }
 
-      if (embassy.guestCountryId !== ctx.user.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only reopen your own embassies.",
-        });
-      }
+      await assertCountryWriteAccess(ctx, embassy.guestCountryId);
 
       if (embassy.status !== "closed") {
         throw new TRPCError({

@@ -133,7 +133,7 @@ export function revealConsequences(
         state: "questioned",
         reason: input.overCapacity
           ? "Executive bandwidth over capacity. Estimate may be inaccurate"
-          : "Low government efficiency — estimate may be inaccurate",
+          : "Low government efficiency. Estimate may be inaccurate",
       };
     }
     return { targetField: c.targetField, domain, state: "revealed" };

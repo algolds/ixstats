@@ -165,8 +165,9 @@ function DissolveConfirm({
         <AlertDialogHeader>
           <AlertDialogTitle>Dissolve the legislature?</AlertDialogTitle>
           <AlertDialogDescription>
-            Every seat becomes vacant and a snap election is called. Bills cannot go to a vote until
-            the election seats the parties again.
+            Every seat becomes vacant and a snap election is called for the elected chambers. Bills
+            cannot go to a vote until seats are held again. Appointed and other unelected chambers
+            are never put to a vote.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

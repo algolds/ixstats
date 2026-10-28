@@ -57,6 +57,7 @@ function fetchCountryCore(countryId: string, db: PrismaClient) {
           ruleOfLaw: true,
           corruptionIndex: true,
           politicalPolarization: true,
+          civilServiceExpansion: true,
         },
       },
       stabilityMetrics: {
@@ -68,9 +69,9 @@ function fetchCountryCore(countryId: string, db: PrismaClient) {
           socialCohesion: true,
           ethnicTension: true,
           trustInGovernment: true,
+          policingEffectiveness: true,
         },
       },
-      activeAlliances: true,
       activeTreaties: true,
       // The realised growth rate stat progression stores each IxTime month (effectiveGdpGrowth)
       historicalData: {
@@ -82,10 +83,29 @@ function fetchCountryCore(countryId: string, db: PrismaClient) {
   });
 }
 
+function percentOfGdp(amount: number | null, gdp: number | null): number {
+  if (!amount || !gdp || gdp <= 0) return 0;
+  return Math.round((amount / gdp) * 1000) / 10;
+}
+
+function giniPoints(gini: number | null): number {
+  if (gini == null) return 0;
+  return gini <= 1 ? Math.round(gini * 1000) / 10 : gini;
+}
+
 type CountryCoreRow = NonNullable<Awaited<ReturnType<typeof fetchCountryCore>>>;
 
 function fetchSnapshotRelations(countryId: string, db: PrismaClient) {
   return Promise.all([
+    // Alliances: active alliance memberships and military-alliance pacts (Country.activeAlliances is never written).
+    db.allianceMember.count({ where: { countryId, status: "active" } }),
+    db.foreignPolicyAction.count({
+      where: {
+        status: "active",
+        actionType: "military_alliance",
+        OR: [{ initiatorId: countryId }, { targetId: countryId }],
+      },
+    }),
     db.embassy.count({
       where: {
         hostCountryId: countryId,
@@ -133,11 +153,17 @@ function fetchSnapshotRelations(countryId: string, db: PrismaClient) {
 }
 
 /**
- * A component counts as active once isActive is set OR its implementationDate has
- * elapsed (implementationDate is stored in IxTime, so `now` is IxTime too).
+ * A component is active while isActive is set; one not yet active is implementing until its implementationDate
+ * (stored in IxTime, so `now` is IxTime too). The staffing shortage's "Scale back programs" pauses components
+ * (isActive false), so a paused one is neither.
  */
-function isComponentActive(c: ComponentRow, now: Date): boolean {
-  return c.isActive === true || (!!c.implementationDate && new Date(c.implementationDate) <= now);
+function isComponentActive(c: ComponentRow): boolean {
+  return c.isActive === true;
+}
+
+/** Scheduled but not yet live; an inactive component whose date has passed is paused and counts as neither. */
+function isComponentImplementing(c: ComponentRow, now: Date): boolean {
+  return c.isActive !== true && !!c.implementationDate && new Date(c.implementationDate) > now;
 }
 
 function splitByActivity(
@@ -148,7 +174,8 @@ function splitByActivity(
   const split: ComponentSplit = { active: [], implementing: [] };
   for (const c of rows) {
     const id = toId(String(c.componentType));
-    (isComponentActive(c, now) ? split.active : split.implementing).push(id);
+    if (isComponentActive(c)) split.active.push(id);
+    else if (isComponentImplementing(c, now)) split.implementing.push(id);
   }
   return split;
 }
@@ -237,12 +264,14 @@ function coreFields(country: CountryCoreRow) {
     inflationRate: country.inflationRate ?? 0,
     tradeBalance: country.tradeBalance ?? 0,
     taxRevenueGDPPercent: country.taxRevenueGDPPercent ?? 0,
-    budgetDeficitSurplus: country.budgetDeficitSurplus ?? 0,
+    // Stored in currency (what the builder writes and the economy tiles show); templates compare % of GDP.
+    budgetDeficitSurplus: percentOfGdp(country.budgetDeficitSurplus, country.currentTotalGdp),
     totalDebtGDPRatio: country.totalDebtGDPRatio ?? 0,
     debtPerCapita: country.debtPerCapita ?? 0,
     publicApproval: country.publicApproval ?? 50,
     povertyRate: country.povertyRate ?? 0,
-    incomeInequalityGini: country.incomeInequalityGini ?? 0,
+    // The column holds the coefficient (0-1); trigger thresholds and the text read Gini points (0-100).
+    incomeInequalityGini: giniPoints(country.incomeInequalityGini),
     lifeExpectancy: country.lifeExpectancy ?? 70,
     literacyRate: country.literacyRate ?? 90,
     urbanPopulationPercent: country.urbanPopulationPercent ?? 50,
@@ -270,6 +299,7 @@ function stabilityFields(sm: CountryCoreRow["stabilityMetrics"]) {
     socialCohesion: sm?.socialCohesion ?? 70,
     ethnicTension: sm?.ethnicTension ?? 20,
     trustInGovernment: sm?.trustInGovernment ?? 50,
+    policingEffectiveness: sm?.policingEffectiveness ?? 50,
   };
 }
 
@@ -308,6 +338,8 @@ export async function buildCountrySnapshot(
   if (!country) return null;
 
   const [
+    allianceMemberships,
+    militaryPacts,
     embassyCount,
     policyCount,
     pendingIssueCount,
@@ -326,7 +358,8 @@ export async function buildCountrySnapshot(
   const components = classifyComponents(govComps, econComps, taxComps, ixDate);
   const civilServiceCapacity = calculateCivilServiceCapacity(
     country.currentPopulation ?? 0,
-    country.governmentStructure?.governmentEffectiveness ?? 50
+    country.governmentStructure?.governmentEffectiveness ?? 50,
+    country.governmentStructure?.civilServiceExpansion ?? 0
   );
   const { activePoliciesList, policySettings } = parseActivePolicies(activePolicies);
 
@@ -335,7 +368,7 @@ export async function buildCountrySnapshot(
     ...governmentFields(country.governmentStructure),
     ...stabilityFields(country.stabilityMetrics),
     activeEmbassyCount: embassyCount,
-    activeAllianceCount: country.activeAlliances ?? 0,
+    activeAllianceCount: allianceMemberships + militaryPacts,
     activePolicyCount: policyCount,
     pendingIssueCount: pendingIssueCount,
     recentCrisisCount: crisisCount,

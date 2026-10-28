@@ -4,7 +4,7 @@ import React from "react";
 import { Bank as Landmark } from "iconoir-react";
 import { CurrencyFlow, PercentageFlow } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
-import { TAX_CHANNELS, ACCENT_BG, type TaxYields } from "./taxChannels";
+import { TAX_CHANNELS, ACCENT_BG, type TaxYields } from "~/lib/economy/tax-channels";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface TaxRevenueProjectionsProps {

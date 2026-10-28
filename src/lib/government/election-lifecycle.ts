@@ -16,7 +16,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { IxTime } from "~/lib/ixtime";
 import { clockForCountry } from "~/server/shared/realm-time";
-import { simulateElectionCore } from "./election-simulation";
+import { electedChambers, parseChambers, simulateElectionCore } from "./election-simulation";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const GAME_YEAR_MS = 365.25 * DAY_MS;
@@ -39,7 +39,23 @@ export type EnsureElectionResult =
       electionId: string;
       scheduledIxTime: number;
     }
-  | { status: "no_legislature" | "insufficient_parties" };
+  | { status: "no_legislature" | "insufficient_parties" | "no_elected_chamber" };
+
+/** True when at least one of the legislature's chambers is elected (owner ruling B-12c). */
+export function hasElectedChamber(legislature: {
+  chamberType: string;
+  name: string;
+  totalSeats: number;
+  electoralSystem: string;
+}): boolean {
+  const chambers = parseChambers(
+    legislature.chamberType,
+    legislature.name,
+    legislature.totalSeats,
+    legislature.electoralSystem
+  );
+  return electedChambers(chambers).length > 0;
+}
 
 function electionName(kind: "first" | "snap" | "general", ixTime: number): string {
   const year = IxTime.getCurrentGameYear(ixTime);
@@ -65,9 +81,24 @@ export async function ensureUpcomingElection(
 ): Promise<EnsureElectionResult> {
   const legislature = await db.legislature.findUnique({
     where: { countryId },
-    select: { id: true, termLength: true },
+    select: {
+      id: true,
+      termLength: true,
+      chamberType: true,
+      name: true,
+      totalSeats: true,
+      electoralSystem: true,
+    },
   });
   if (!legislature) return { status: "no_legislature" };
+  if (!hasElectedChamber(legislature)) {
+    // No chamber is put to the vote: an election queued before the change is called off.
+    await db.election.updateMany({
+      where: { countryId, status: "upcoming" },
+      data: { status: "cancelled" },
+    });
+    return { status: "no_elected_chamber" };
+  }
 
   const activeParties = await db.politicalParty.count({ where: { countryId, isActive: true } });
   if (activeParties < MIN_ELECTION_PARTIES) return { status: "insufficient_parties" };
@@ -75,13 +106,14 @@ export async function ensureUpcomingElection(
   const now = opts.now ?? (await clockForCountry(db, countryId)).now();
   const soon = now + FIRST_ELECTION_DELAY_IX_DAYS * DAY_MS;
 
+  // An election being counted ("voting") counts as queued: its count queues the next one a term later.
   const upcoming = await db.election.findFirst({
-    where: { countryId, status: "upcoming" },
+    where: { countryId, status: { in: ["upcoming", "voting"] } },
     orderBy: { scheduledIxTime: "asc" },
-    select: { id: true, scheduledIxTime: true },
+    select: { id: true, scheduledIxTime: true, status: true },
   });
   if (upcoming) {
-    if (opts.snap && upcoming.scheduledIxTime > soon) {
+    if (opts.snap && upcoming.status === "upcoming" && upcoming.scheduledIxTime > soon) {
       await db.election.update({
         where: { id: upcoming.id },
         data: { scheduledIxTime: soon, name: electionName("snap", soon) },
@@ -162,6 +194,26 @@ export async function syncElectionCandidates(db: Db, electionId: string): Promis
   return parties.length;
 }
 
+/**
+ * A count claimed this long ago (wall clock) and still "voting" died mid-way (the process stopped): it goes back
+ * to "upcoming" so the sweep or the owner can count it. Three times the elections job's 10-minute timeout, so a
+ * live count is never released.
+ */
+export const STALE_COUNT_MS = 30 * 60 * 1000;
+
+/** Release counts that died mid-way (of one country, or all); the usual claim then counts each once. */
+export async function releaseStaleCounts(
+  db: Db,
+  where: { countryId?: string } = {},
+  nowMs: number = Date.now()
+): Promise<number> {
+  const { count } = await db.election.updateMany({
+    where: { ...where, status: "voting", updatedAt: { lte: new Date(nowMs - STALE_COUNT_MS) } },
+    data: { status: "upcoming" },
+  });
+  return count;
+}
+
 type ResolveElectionOutcome = "resolved" | "insufficient_candidates" | "not_claimed";
 
 /**
@@ -177,7 +229,8 @@ export async function resolveElection(
 ): Promise<{ outcome: ResolveElectionOutcome; nextElectionId?: string }> {
   const claim = await db.election.updateMany({
     where: { id: electionId, status: "upcoming" },
-    data: { status: "voting" },
+    // The claim's time: a count still "voting" past STALE_COUNT_MS died mid-way.
+    data: { status: "voting", updatedAt: new Date() },
   });
   if (claim.count === 0) return { outcome: "not_claimed" };
 
@@ -191,6 +244,13 @@ export async function resolveElection(
   try {
     await syncElectionCandidates(db, electionId);
     const sim = await simulateElectionCore(db, electionId);
+    if (!sim.ok && sim.reason === "no_elected_chamber") {
+      await db.election.updateMany({
+        where: { id: electionId, status: "voting" },
+        data: { status: "cancelled" },
+      });
+      return { outcome: "not_claimed" };
+    }
     if (!sim.ok) {
       await release();
       return { outcome: "insufficient_candidates" };

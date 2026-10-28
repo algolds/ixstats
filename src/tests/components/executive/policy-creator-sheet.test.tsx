@@ -60,7 +60,7 @@ it("enables submit when the nation has the managing department", () => {
   };
   render(<PolicyCreatorSheet countryId="c-1" open onOpenChange={jest.fn()} />);
   fillCustomPolicy();
-  expect(screen.getByRole("button", { name: "Save draft" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Enact policy" })).toBeEnabled();
   expect(screen.getByText("Ministry of Finance")).toBeInTheDocument();
 });
 
@@ -68,6 +68,6 @@ it("says why submit is off when the department is missing", () => {
   mockData["government.getByCountryId"] = { departments: [] };
   render(<PolicyCreatorSheet countryId="c-1" open onOpenChange={jest.fn()} />);
   fillCustomPolicy();
-  expect(screen.getByRole("button", { name: "Save draft" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Enact policy" })).toBeDisabled();
   expect(screen.getByText(/need a finance department/)).toBeInTheDocument();
 });

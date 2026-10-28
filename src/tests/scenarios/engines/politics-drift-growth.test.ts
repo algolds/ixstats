@@ -13,7 +13,7 @@ jest.mock("~/server/db", () => ({
 jest.mock("~/lib/diplomacy/news-generator", () => ({ generateDiplomaticNews: jest.fn() }));
 
 import { IxTime } from "~/lib/ixtime";
-import { runPoliticsDrift } from "~/lib/government/politics-drift-cron";
+import { driftJitter, runPoliticsDrift } from "~/lib/government/politics-drift-cron";
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
 import { addIxnay, addNation, addOwner, ixnayRunningAt } from "~/tests/helpers/nation-world";
 
@@ -32,7 +32,7 @@ beforeEach(async () => {
     baselineDate: new Date(NOW - 365.25 * 86_400_000),
   });
   await addOwner(db as never, "lena", "testland");
-  // Ids starting with "e" have no jitter ((101 % 7) - 3 = 0), so only growth moves support.
+  // Growth moves support; each party also carries its jitter (driftJitter), added in the expectations.
   for (const id of ["e-gov", "e-opp"]) {
     await db.politicalParty.create({
       data: {
@@ -71,13 +71,15 @@ it("moves party support with the realised growth, not the static input", async (
   });
 
   await runPoliticsDrift({ clocks: ixnayRunningAt(NOW) });
-  // 5% growth: +5 points x 0.3 for the governing party, the opposition loses the same
-  expect(await support("e-gov")).toBeCloseTo(41.5, 9);
-  expect(await support("e-opp")).toBeCloseTo(38.5, 9);
+  // 5% growth: +5 points x 0.3 for the governing party, the opposition loses the same (plus each party's jitter)
+  const now = ixnayRunningAt(NOW).get("default")!.now();
+  expect(await support("e-gov")).toBeCloseTo(41.5 + driftJitter("e-gov", now), 9);
+  expect(await support("e-opp")).toBeCloseTo(38.5 + driftJitter("e-opp", now), 9);
 });
 
 it("reads the static input before the nation's first history point", async () => {
   await db.country.update({ where: { id: "testland" }, data: { adjustedGdpGrowth: -0.02 } });
   await runPoliticsDrift({ clocks: ixnayRunningAt(NOW) });
-  expect(await support("e-gov")).toBeCloseTo(39.4, 9);
+  const now = ixnayRunningAt(NOW).get("default")!.now();
+  expect(await support("e-gov")).toBeCloseTo(39.4 + driftJitter("e-gov", now), 9);
 });

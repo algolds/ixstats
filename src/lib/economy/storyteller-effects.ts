@@ -51,6 +51,8 @@ export interface StorytellerEffectDraft {
   description?: string | null;
   /** IxTime years: the phase-in of a level effect, or how long a sports effect lasts. */
   duration?: number | null;
+  /** A phase-in that is not a whole number of IxTime years (it overrides `duration` for the ramp). */
+  phaseYears?: number | null;
   createdBy?: string | null;
   worldEventId?: string | null;
   /** When the effect starts (ms on its country's realm clock); the country's now when omitted. */
@@ -83,6 +85,7 @@ export function storytellerEffectData(
     value: draft.value,
     description: draft.description ?? null,
     duration: draft.duration ?? null,
+    phaseYears: draft.phaseYears ?? null,
     isActive: true,
     createdBy: draft.createdBy ?? null,
     worldEventId: draft.worldEventId ?? null,

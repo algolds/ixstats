@@ -12,12 +12,16 @@ import { departmentsForForm, governmentTypeForForm } from "~/lib/government/form
 import { countryBudgetYear, findEffectiveBudgetYear } from "~/lib/government/budget-allocations";
 import {
   allocationAt,
+  allocationOverCap,
   initialTotalBudget,
   maintenanceByYear,
   nudgeShare,
+  sharesForDepartments,
 } from "~/lib/government/budget-math";
 import { MAINTENANCE_DEBIT_EFFECT } from "~/lib/policies/lifecycle";
 import { inferFormId } from "~/server/shared/founding-snapshot";
+// Pure, client-safe: the one revenue figure every Economy tab shows (saved rates x live GDP, else founding).
+import { nationalRevenue } from "~/lib/economy/national-revenue";
 import type { DepartmentCategory } from "~/types/government";
 
 type Db = PrismaClient;
@@ -37,16 +41,13 @@ async function editableBudgetYear(db: Db, countryId: string): Promise<number> {
 /**
  * Give a nation the default departments of its government form, each with its share of a yearly
  * budget. Creates the structure when there is none; a structure with no departments gets the
- * departments. A structure that already has departments is left alone (CONFLICT). `revenue` is
- * the nation's yearly revenue as the Economy tabs show it; a new budget starts at it (capped, see
- * `initialTotalBudget`), so it does not open in deficit.
+ * departments. A structure that already has departments is left alone (CONFLICT), unless it never
+ * had a budget (no total, no allocations): its departments get one, split by the form's shares. A new budget
+ * starts at the nation's yearly revenue as the Economy tabs show it (`nationalRevenue`, read here, never sent by
+ * the client; capped, see `initialTotalBudget`), so it does not open in deficit.
  */
-export async function createGovernmentStructure(
-  db: Db,
-  countryId: string,
-  revenue?: number | null
-) {
-  const [country, departmentCount] = await Promise.all([
+export async function createGovernmentStructure(db: Db, countryId: string) {
+  const [country, departments, allocationCount] = await Promise.all([
     db.country.findUnique({
       where: { id: countryId },
       select: {
@@ -54,14 +55,25 @@ export async function createGovernmentStructure(
         createdAt: true,
         totalGovernmentSpending: true,
         currentTotalGdp: true,
+        governmentRevenueTotal: true,
+        economicProfile: true,
+        fiscalSystem: true,
         governmentComponents: { where: { isActive: true }, select: { componentType: true } },
         governmentStructure: { select: { id: true, totalBudget: true } },
       },
     }),
-    db.governmentDepartment.count({ where: { governmentStructure: { countryId } } }),
+    db.governmentDepartment.findMany({
+      where: { governmentStructure: { countryId } },
+      select: { id: true, category: true },
+      orderBy: { priority: "desc" },
+    }),
+    db.budgetAllocation.count({ where: { governmentStructure: { countryId } } }),
   ]);
   if (!country) notFound("Country not found");
-  if (departmentCount > 0) {
+  const existing = country.governmentStructure;
+  // Departments with no budget at all (older builders wrote departments without one) get one below.
+  const budgetless = !existing || (existing.totalBudget <= 0 && allocationCount === 0);
+  if (departments.length > 0 && !budgetless) {
     throw new TRPCError({
       code: "CONFLICT",
       message: "This nation already has a government structure",
@@ -69,12 +81,22 @@ export async function createGovernmentStructure(
   }
 
   const formId = inferFormId(country.governmentComponents.map((c) => c.componentType));
-  const existing = country.governmentStructure;
   const totalBudget =
     existing && existing.totalBudget > 0
       ? existing.totalBudget
-      : initialTotalBudget(country, revenue);
+      : initialTotalBudget(country, nationalRevenue(country).total);
   const budgetYear = await countryBudgetYear(db, countryId);
+  if (existing && departments.length > 0) {
+    return budgetExistingDepartments(db, {
+      structureId: existing.id,
+      countryId,
+      departments,
+      totalBudget,
+      budgetYear,
+      formId,
+      reviewedAt: country.createdAt,
+    });
+  }
 
   return db.$transaction(async (tx) => {
     const structure = existing
@@ -87,8 +109,8 @@ export async function createGovernmentStructure(
             totalBudget,
           },
         });
-    const departments = departmentsForForm(formId);
-    for (const dept of departments) {
+    const formDepartments = departmentsForForm(formId);
+    for (const dept of formDepartments) {
       const created = await tx.governmentDepartment.create({
         data: {
           governmentStructureId: structure.id,
@@ -112,8 +134,50 @@ export async function createGovernmentStructure(
         },
       });
     }
-    return { structureId: structure.id, departments: departments.length };
+    return { structureId: structure.id, departments: formDepartments.length };
   });
+}
+
+/** A budget for a government's existing departments: `totalBudget`, split by its form's default shares. */
+async function budgetExistingDepartments(
+  db: Db,
+  input: {
+    structureId: string;
+    countryId: string;
+    departments: { id: string; category: string }[];
+    totalBudget: number;
+    budgetYear: number;
+    formId: string;
+    reviewedAt: Date;
+  }
+) {
+  const defaults = new Map(
+    departmentsForForm(input.formId).map((d) => [d.category, d.spendingShare])
+  );
+  const shares = sharesForDepartments(
+    input.departments.map((d) => d.category),
+    defaults
+  );
+  await db.$transaction(async (tx) => {
+    await tx.governmentStructure.update({
+      where: { countryId: input.countryId },
+      data: { totalBudget: input.totalBudget },
+    });
+    for (const [i, dept] of input.departments.entries()) {
+      const figures = allocationAt(input.totalBudget, round2(shares[i]!));
+      await tx.budgetAllocation.create({
+        data: {
+          governmentStructureId: input.structureId,
+          departmentId: dept.id,
+          budgetYear: input.budgetYear,
+          ...figures,
+          availableAmount: figures.allocatedAmount,
+          lastReviewed: input.reviewedAt,
+        },
+      });
+    }
+  });
+  return { structureId: input.structureId, departments: input.departments.length };
 }
 
 /** The department, when it belongs to the country's government. */
@@ -137,6 +201,18 @@ export async function setDepartmentAllocation(
   const department = await ownDepartment(db, input.countryId, input.departmentId);
   const budgetYear = await editableBudgetYear(db, input.countryId);
   const figures = allocationAt(department.governmentStructure.totalBudget, input.allocatedPercent);
+  const lines = await db.budgetAllocation.findMany({
+    where: { governmentStructureId: department.governmentStructureId, budgetYear },
+    select: { departmentId: true, allocatedPercent: true },
+  });
+  const problem = allocationOverCap({
+    current: lines.find((l) => l.departmentId === department.id)?.allocatedPercent ?? 0,
+    next: figures.allocatedPercent,
+    othersTotal: lines
+      .filter((l) => l.departmentId !== department.id)
+      .reduce((sum, l) => sum + l.allocatedPercent, 0),
+  });
+  if (problem) throw new TRPCError({ code: "BAD_REQUEST", message: problem });
   const values = { ...figures, availableAmount: figures.allocatedAmount, lastReviewed: new Date() };
   return db.budgetAllocation.upsert({
     where: { departmentId_budgetYear: { departmentId: department.id, budgetYear } },

@@ -7,6 +7,10 @@ import { assertCountryWriteAccess } from "~/server/shared/country-authorization"
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { notificationHooks } from "~/lib/notifications/hooks";
 
+const score = z.number().min(0).max(100);
+const rank = z.number().int().min(1).max(1000);
+const tradeShare = z.number().min(0).max(500);
+
 const economicsProfileRouter = createTRPCRouter({
   // ==================== ECONOMIC PROFILE ====================
   // Schema fields: gdpGrowthVolatility, economicComplexity, innovationIndex, competitivenessRank,
@@ -16,16 +20,17 @@ const economicsProfileRouter = createTRPCRouter({
     .input(
       z.object({
         countryId: z.string(),
-        gdpGrowthVolatility: z.number().optional(),
-        economicComplexity: z.number().optional(),
-        innovationIndex: z.number().optional(),
-        competitivenessRank: z.number().int().optional(),
-        easeOfDoingBusiness: z.number().int().optional(),
-        corruptionIndex: z.number().optional(),
-        sectorBreakdown: z.string().optional(),
-        exportsGDPPercent: z.number().optional(),
-        importsGDPPercent: z.number().optional(),
-        tradeBalance: z.number().optional(),
+        // Scores are 0-100 and ranks 1-1000; trade shares may pass 100% of GDP (entrepots) but not 500%.
+        gdpGrowthVolatility: score.optional(),
+        economicComplexity: score.optional(),
+        innovationIndex: score.optional(),
+        competitivenessRank: rank.optional(),
+        easeOfDoingBusiness: rank.optional(),
+        corruptionIndex: score.optional(),
+        sectorBreakdown: z.string().max(10_000).optional(),
+        exportsGDPPercent: tradeShare.optional(),
+        importsGDPPercent: tradeShare.optional(),
+        tradeBalance: z.number().min(-1e17).max(1e17).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

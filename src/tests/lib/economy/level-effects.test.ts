@@ -15,8 +15,9 @@ jest.mock("~/lib/activity/hooks", () => ({
   ActivityHooks: { Economic: { onTaxPolicyChange: jest.fn().mockResolvedValue(true) } },
 }));
 
+import { nextIxDayStart } from "~/lib/ixtime/day";
 import { CountryEventSpine } from "~/lib/activity";
-import { fiscalUpdateForRate } from "~/components/mycountry/shell/fiscal/taxChannels";
+import { fiscalUpdateForRate } from "~/lib/economy/tax-channels";
 import { growthModifierToLevelShift, IxStatsCalculator } from "~/lib/economy/calculations";
 import { IxTime } from "~/lib/ixtime";
 import type { BaseCountryData, EconomicConfig, StorytellerEffect } from "~/types/ixstats";
@@ -69,7 +70,8 @@ const effectStart = IxTime.addYears(baseline, 2);
 function statsAt(years: number, effects: StorytellerEffect[] = []) {
   return calc.calculateTimeProgression(
     calc.initializeCountryStats(base),
-    IxTime.addYears(baseline, years),
+    // Effects take hold from the IxTime day after they begin: read every point that much later.
+    IxTime.addYears(baseline, years) + (nextIxDayStart(effectStart) - effectStart),
     effects
   ).newStats;
 }

@@ -49,7 +49,8 @@ export function buildCanonFeed(sources: CanonFeedSources, limit: number): CanonF
     ...sources.effects.map((e) => ({
       id: `eff_${e.id}`,
       kind: "effect" as const,
-      title: e.description ?? e.inputType,
+      // Effect rows name their source by code ("free_trade", "gdp_level_adjustment"): shown as words.
+      title: (e.description ?? e.inputType).replace(/_/g, " "),
       category: e.inputType.toLowerCase().includes("popula") ? "social" : "economic",
       timestamp: e.createdAt.getTime(),
     })),

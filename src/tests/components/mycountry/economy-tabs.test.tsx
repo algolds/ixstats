@@ -123,12 +123,19 @@ describe("Economy tabs", () => {
     else expect(screen.getByRole("tab", { name: "Taxes", selected: true })).toBeInTheDocument();
   });
 
+  it("shows a trillion-dollar GDP compactly, not as thousands of billions", () => {
+    mockState.tab = "report";
+    mockState.country = { ...mockState.country, currentTotalGdp: 44_484.45e9 };
+    render(<EconomyDrillDown countryId="c1" />);
+    expect(within(tile("Total GDP")).getByText("$44.5T")).toBeInTheDocument();
+  });
+
   it("gives the budget the saved rates on today's GDP as revenue, not the founding total", () => {
     mockState.tab = "budget";
     render(<EconomyDrillDown countryId="c1" />);
     // 100B x 20% x 0.18 (fallback income weight)
     expect(screen.getByTestId("budget-dashboard").dataset.revenue).toBe(String(3.6e9));
-    expect(within(tile("Tax revenue yield")).getByText("$3.60B / yr")).toBeInTheDocument();
+    expect(within(tile("Tax revenue yield")).getByText("$3.6B / yr")).toBeInTheDocument();
   });
 });
 

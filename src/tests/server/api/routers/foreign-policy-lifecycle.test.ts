@@ -68,6 +68,11 @@ function effectStore(seed: Effect[] = []) {
       if (cond && typeof cond === "object" && "in" in cond) {
         return (cond as { in: unknown[] }).in.includes(value);
       }
+      if (cond && typeof cond === "object" && "startsWith" in cond) {
+        return (
+          typeof value === "string" && value.startsWith((cond as { startsWith: string }).startsWith)
+        );
+      }
       if (cond && typeof cond === "object" && "equals" in cond) {
         return String(value).toLowerCase() === String((cond as { equals: string }).equals);
       }
@@ -99,6 +104,7 @@ function world(effects: Effect[] = []) {
   const store = effectStore(effects);
   fake.db.storytellerEffect = store.delegate;
   fake.db.$transaction = jest.fn(async (work: (tx: unknown) => unknown) => work(fake.db));
+  fake.db.$executeRaw = jest.fn(async () => 0); // the open lock
   return { ...fake, effects: store.rows };
 }
 

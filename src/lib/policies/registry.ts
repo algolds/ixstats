@@ -260,6 +260,24 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
   },
 };
 
+/**
+ * Why `settings` are not a choice the decretal's sliders offer (an unknown slider, or a value that is not one of its
+ * options), or null. `calculate` trusts its settings: an off-menu stipend of 1000 read as a 1000% GDP effect.
+ */
+export function decretalSettingsProblem(
+  decretal: Pick<PolicyDecretal, "sliders">,
+  settings: Record<string, number>
+): string | null {
+  for (const [key, value] of Object.entries(settings)) {
+    const slider = decretal.sliders.find((s) => s.key === key);
+    if (!slider) return `Unknown setting "${key}"`;
+    if (!slider.options.some((o) => o.value === value)) {
+      return `${slider.label} must be one of its options`;
+    }
+  }
+  return null;
+}
+
 export async function getPolicyDecretals(db: any): Promise<Record<string, PolicyDecretal>> {
   const decretals: Record<string, PolicyDecretal> = { ...PREDEFINED_DECRETALS };
 

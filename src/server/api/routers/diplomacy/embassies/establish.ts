@@ -9,15 +9,18 @@ import { assertCountryWriteAccess } from "~/server/shared/country-authorization"
 import { assertSameRealm } from "~/server/shared/same-realm-guard";
 import { OPENING_RELATION_STRENGTH, getStandingBand } from "~/lib/diplomacy/relation-bands";
 
+const duplicateEmbassy = () =>
+  new TRPCError({ code: "CONFLICT", message: "You already have an embassy in this country." });
+
 export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
   establishEmbassy: rateLimitedMutationProcedure
     .input(
       z.object({
         hostCountryId: z.string(),
         guestCountryId: z.string(),
-        name: z.string(),
-        location: z.string().optional(),
-        ambassadorName: z.string().optional(),
+        name: z.string().trim().min(1).max(120),
+        location: z.string().trim().max(120).optional(),
+        ambassadorName: z.string().trim().max(120).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -42,23 +45,24 @@ export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
         },
         select: { id: true },
       });
-      if (existing) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "You already have an embassy in this country.",
-        });
-      }
+      if (existing) throw duplicateEmbassy();
 
-      const embassy = await ctx.db.embassy.create({
-        data: {
-          hostCountryId: input.hostCountryId,
-          guestCountryId: input.guestCountryId,
-          name: input.name,
-          location: input.location,
-          ambassadorName: input.ambassadorName,
-          status: "active",
-        },
-      });
+      const embassy = await ctx.db.embassy
+        .create({
+          data: {
+            hostCountryId: input.hostCountryId,
+            guestCountryId: input.guestCountryId,
+            name: input.name,
+            location: input.location,
+            ambassadorName: input.ambassadorName,
+            status: "active",
+          },
+        })
+        .catch((e: { code?: string }) => {
+          // A concurrent double submit lost the race to the composite unique.
+          if (e.code === "P2002") throw duplicateEmbassy();
+          throw e;
+        });
 
       let hostCountryName: string | null = null;
       let guestCountryName: string | null = null;

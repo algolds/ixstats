@@ -9,7 +9,7 @@ import {
   readSavedRates,
   sectorWeightsForProfile,
   type TaxYields,
-} from "./taxChannels";
+} from "~/lib/economy/tax-channels";
 
 /** Where the revenue figure comes from: the saved tax rates, or the founding estimate. */
 export type RevenueBasis = "rates" | "founding";

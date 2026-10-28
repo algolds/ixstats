@@ -6,7 +6,8 @@ import {
   type EnsureElectionResult,
 } from "~/lib/government/election-lifecycle";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
-import { parseChambers } from "~/lib/government/election-simulation";
+import { TRPCError } from "@trpc/server";
+import { chamberSeatProblem, parseChambers } from "~/lib/government/election-simulation";
 
 // ============================================================
 // Election System Router - Extension of Government Sub-System
@@ -35,7 +36,7 @@ export const electionsLegislatureRouter = createTRPCRouter({
         countryId: z.string(),
         name: z.string().min(1).max(200),
         chamberType: z.string(),
-        totalSeats: z.number().min(10).max(10000),
+        totalSeats: z.number().int().min(1).max(10000),
         electoralSystem: z.enum(["proportional", "fptp", "mixed"]),
         termLength: z.number().min(1).max(10),
         electionCycle: z.enum(["fixed", "variable"]).default("fixed"),
@@ -50,6 +51,8 @@ export const electionsLegislatureRouter = createTRPCRouter({
         input.totalSeats,
         input.electoralSystem
       );
+      const problem = chamberSeatProblem(chambers);
+      if (problem) throw new TRPCError({ code: "BAD_REQUEST", message: problem });
       const computedTotalSeats = chambers.reduce((acc, c) => acc + c.seats, 0);
 
       const settings = {

@@ -71,7 +71,7 @@ describe("evaluateThresholds", () => {
     expect(db.intelligenceAlert.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          title: "publicApproval breached critical threshold",
+          title: "Public approval breached its critical threshold",
           severity: "CRITICAL",
           category: "GOVERNANCE",
         }),
@@ -91,6 +91,7 @@ describe("evaluateThresholds", () => {
       where: expect.objectContaining({
         title: {
           in: [
+            "Public approval breached its critical threshold",
             "publicApproval breached critical threshold",
             "\u{1F6A8} publicApproval breached critical threshold",
           ],
@@ -111,7 +112,7 @@ describe("evaluateThresholds", () => {
     expect(db.intelligenceAlert.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          title: "militaryStrength breached critical threshold",
+          title: "Military strength breached its critical threshold",
           currentValue: 12,
         }),
       })

@@ -10,6 +10,9 @@ import {
   NEW_COMPONENT_EFFECTIVENESS,
 } from "~/lib/government/effectiveness";
 import { countryBudgetYear } from "~/lib/government/budget-allocations";
+import { TRPCError } from "@trpc/server";
+import { countDefinedComponents } from "~/lib/government/atomic-utils";
+import { MAX_DEFINED_COMPONENTS } from "~/lib/mycountry/editor-fields";
 
 type TxClient = Prisma.TransactionClient;
 
@@ -462,6 +465,15 @@ export async function syncGovernmentComponents(
   componentsInput?: any[]
 ): Promise<void> {
   if (!componentsInput) return;
+  // The builder and editor offer at most 15; more (every component) scored 100% effective.
+  if (
+    countDefinedComponents(componentsInput.map((c) => c.componentType)) > MAX_DEFINED_COMPONENTS
+  ) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `A government has at most ${MAX_DEFINED_COMPONENTS} components`,
+    });
+  }
 
   const existing = await tx.governmentComponent.findMany({ where: { countryId } });
   const kept = new Map<string, GovernmentComponent>();

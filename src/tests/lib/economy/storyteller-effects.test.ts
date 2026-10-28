@@ -6,6 +6,7 @@
  * read, every written type has a reader, the natural-disaster GDP hit sticks, and the tier cap
  * follows the tier GDP per capita is in.
  */
+import { nextIxDayStart } from "~/lib/ixtime/day";
 import fs from "node:fs";
 import path from "node:path";
 import { IxStatsCalculator, StorytellerEffectType } from "~/lib/economy/calculations";
@@ -120,7 +121,8 @@ describe("P0-14: one helper stamps IxTime", () => {
         duration: 4,
       },
     ]);
-    const at = NOW + 4 * YEAR;
+    // Effects take hold the IxTime day after they begin, so the 4-year phase-in ends a day later.
+    const at = nextIxDayStart(NOW) + 4 * YEAR;
     expect(gdppc(at, sanction) / gdppc(at)).toBeCloseTo(0.9925, 6);
 
     // Five years of full-intensity war on c1's soil: the GDP level gap reaches −30% (realm time D3).
@@ -134,7 +136,7 @@ describe("P0-14: one helper stamps IxTime", () => {
         result: { days: 5 * 365.25, attacker: side(400_000), defender: side(400_000) },
       }).filter((d) => d.countryId === "c1")
     );
-    const end = NOW + 5 * YEAR;
+    const end = nextIxDayStart(NOW) + 5 * YEAR;
     expect(gdppc(end, war) / gdppc(end)).toBeCloseTo(0.7, 6);
   });
 });
@@ -333,7 +335,8 @@ describe("P2-10: projection fixes", () => {
     const t1 = Math.log(25000 / 24000) / Math.log(1 + rate);
     const t2 = Math.log(35000 / 25000) / Math.log(1.05);
     const expected = 35000 * Math.pow(1.035, years - t1 - t2);
-    const at = IxTime.addYears(BASELINE, years);
+    // Growth runs from the IxTime day after the baseline.
+    const at = IxTime.addYears(nextIxDayStart(BASELINE), years);
     const actual = project(at, [], {
       gdpPerCapita: 24000,
       adjustedGdpGrowth: 0.07,

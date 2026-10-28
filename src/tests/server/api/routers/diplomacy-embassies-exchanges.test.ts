@@ -109,19 +109,22 @@ describe("embassies", () => {
       embassy.status = String(data.status);
       return embassy;
     });
+    // Closing and reopening claim the embassy by its status
+    const embassyUpdateMany = jest.fn(
+      async ({ where, data }: { where: { status: string }; data: { status: string } }) => {
+        if (embassy.status !== where.status) return { count: 0 };
+        embassy.status = data.status;
+        return { count: 1 };
+      }
+    );
     const ctx = createIdorContext({
       embassy: {
         findUnique: jest.fn(async () => ({ ...embassy })),
         findUniqueOrThrow: jest.fn(async () => ({ ...embassy })),
         update: embassyUpdate,
-        updateMany: jest.fn(
-          async ({ where, data }: { where: { status: string }; data: { status: string } }) => {
-            if (embassy.status !== where.status) return { count: 0 };
-            embassy.status = data.status;
-            return { count: 1 };
-          }
-        ),
+        updateMany: embassyUpdateMany,
         delete: jest.fn().mockResolvedValue(embassy),
+        deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       diplomaticRelation: relation,
       diplomaticEvent: { create: jest.fn().mockResolvedValue({}) },
@@ -129,7 +132,7 @@ describe("embassies", () => {
     const caller = embassies(ctx as never);
 
     await caller.closeEmbassy({ embassyId: "e1" });
-    expect(embassyUpdate.mock.calls[0]![0].data).toMatchObject({
+    expect(embassyUpdateMany.mock.calls[0]![0].data).toMatchObject({
       reputation: { decrement: 10 },
       influence: { decrement: 20 },
     });

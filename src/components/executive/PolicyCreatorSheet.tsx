@@ -310,7 +310,7 @@ export function PolicyCreatorSheet({
   const utils = api.useUtils();
   const createPolicyMutation = api.policies.createPolicy.useMutation({
     onSuccess: () => {
-      notify.success("Policy draft created");
+      notify.success("Policy enacted");
       utils.policies.invalidate();
       onOpenChange(false);
       onCreated?.();
@@ -478,17 +478,8 @@ export function PolicyCreatorSheet({
             <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="outline" size="sm" disabled={cannotSubmit}>
-              {isPending ? "Creating" : "Save draft"}
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              size="sm"
-              disabled={cannotSubmit}
-              onClick={createPolicy}
-            >
-              {isPending ? "Launching" : "Create and launch"}
+            <Button type="submit" variant="default" size="sm" disabled={cannotSubmit}>
+              {isPending ? "Enacting" : "Enact policy"}
             </Button>
           </SheetFooter>
         </form>

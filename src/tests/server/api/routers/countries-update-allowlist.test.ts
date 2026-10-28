@@ -59,17 +59,28 @@ describe("countries.update allow-list (P0-01)", () => {
   ])("refuses %s from an owner and writes nothing", async (_what, extra) => {
     const { caller, update } = setup();
     await expect(
-      caller.update({ id: CALLER_COUNTRY, flag: "f.svg", ...extra } as never)
+      caller.update({ id: CALLER_COUNTRY, flag: "https://example.org/f.svg", ...extra } as never)
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(update).not.toHaveBeenCalled();
   });
 
+  it.each(["javascript:alert(1)", "http://example.org/f.svg", "f.svg"])(
+    "refuses the flag %p, which the editor would refuse too",
+    async (flag) => {
+      const { caller, update } = setup();
+      await expect(caller.update({ id: CALLER_COUNTRY, flag })).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+      });
+      expect(update).not.toHaveBeenCalled();
+    }
+  );
+
   it("lets an owner save the flag", async () => {
     const { caller, update } = setup();
-    await caller.update({ id: CALLER_COUNTRY, flag: "f.svg" });
+    await caller.update({ id: CALLER_COUNTRY, flag: "https://example.org/f.svg" });
     expect(update).toHaveBeenCalledWith({
       where: { id: CALLER_COUNTRY },
-      data: expect.objectContaining({ flag: "f.svg" }),
+      data: expect.objectContaining({ flag: "https://example.org/f.svg" }),
     });
   });
 

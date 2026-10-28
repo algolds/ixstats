@@ -206,7 +206,7 @@ import { IxTime } from "~/lib/ixtime";
 import { electionsRouter } from "~/server/api/routers/elections";
 import { legislationRouter } from "~/server/api/routers/legislation";
 import { processDueElections } from "~/lib/government/election-cron";
-import { FIRST_ELECTION_DELAY_IX_DAYS } from "~/lib/government/election-lifecycle";
+import { FIRST_ELECTION_DELAY_IX_DAYS, STALE_COUNT_MS } from "~/lib/government/election-lifecycle";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const COUNTRY = "test_country_1";
@@ -445,7 +445,7 @@ describe("MC-2 politics lifecycle", () => {
     const held = new Promise<void>((resolve) => (releaseOwner = resolve));
     let waiting = true;
     fakeDb.election.updateMany = jest.fn(async (args: { where: Record<string, unknown> }) => {
-      if (waiting) {
+      if (waiting && args.where.status === "upcoming") {
         waiting = false;
         ownerAtClaim();
         await held;
@@ -463,6 +463,151 @@ describe("MC-2 politics lifecycle", () => {
     expect(first.status).toBe("completed");
     expect(tables.electionResult!.filter((r) => r.electionId === first.id)).toHaveLength(2);
     expect(tables.legislativeSeat!.filter((seat) => seat.partyId != null)).toHaveLength(100);
+  });
+
+  it.each([
+    [
+      "four 5,000-seat chambers (20,000 seats)",
+      "tetracameral|A:5000:proportional;B:5000:proportional;C:5000:fptp;D:5000:mixed",
+      10000,
+    ],
+    ["a chamber of 0 seats", "unicameral|Assembly:0:proportional", 10],
+  ])("refuses a legislature of %s", async (_label, chamberType, totalSeats) => {
+    await expect(
+      callers().elections.configureLegislature({
+        countryId: COUNTRY,
+        name: "Assembly",
+        chamberType,
+        totalSeats,
+        electoralSystem: "proportional",
+        termLength: 4,
+        electionCycle: "fixed",
+      })
+    ).rejects.toThrow(/seats/);
+    expect(tables.legislativeSeat).toHaveLength(0);
+  });
+
+  it("seats a one-seat legislature, as the editor offers", async () => {
+    await callers().elections.configureLegislature({
+      countryId: COUNTRY,
+      name: "Council",
+      chamberType: "unicameral|Council:1:fptp:elected",
+      totalSeats: 1,
+      electoralSystem: "fptp",
+      termLength: 4,
+      electionCycle: "fixed",
+    });
+    expect(tables.legislativeSeat).toHaveLength(1);
+  });
+
+  it("releases a count that died mid-way after the staleness window, and counts it once", async () => {
+    await setUpNation();
+    const first = tables.election![0]!;
+    IxTime.setTimeOverride(first.scheduledIxTime + DAY);
+    first.status = "voting"; // claimed by a count that never finished
+    first.updatedAt = new Date(Date.now() - STALE_COUNT_MS - 60_000);
+
+    expect(await processDueElections()).toMatchObject({ resolved: 1 });
+    expect(first.status).toBe("completed");
+    expect(tables.electionResult!.filter((r) => r.electionId === first.id)).toHaveLength(2);
+  });
+
+  it("leaves a count in progress alone", async () => {
+    await setUpNation();
+    const first = tables.election![0]!;
+    IxTime.setTimeOverride(first.scheduledIxTime + DAY);
+    first.status = "voting";
+    first.updatedAt = new Date();
+
+    expect(await processDueElections()).toMatchObject({ resolved: 0 });
+    expect(first.status).toBe("voting");
+  });
+
+  it("elects only the elected chambers: a hereditary chamber keeps its seats (owner ruling B-12c)", async () => {
+    await setUpNation();
+    await callers().elections.configureLegislature({
+      countryId: COUNTRY,
+      name: "Diet",
+      chamberType: "bicameral|House:60:proportional:elected;Lords:40:proportional:hereditary",
+      totalSeats: 100,
+      electoralSystem: "proportional",
+      termLength: 4,
+      electionCycle: "fixed",
+    });
+    const peers = tables.politicalParty![1]!.id;
+    for (const seat of tables.legislativeSeat!.filter((s) => s.region === "Lords"))
+      seat.partyId = peers;
+    const election = tables.election!.find((e) => e.status === "upcoming")!;
+    IxTime.setTimeOverride(election.scheduledIxTime + DAY);
+
+    expect(await processDueElections()).toMatchObject({ resolved: 1 });
+    const lords = tables.legislativeSeat!.filter((s) => s.region === "Lords");
+    expect(lords.every((s) => s.partyId === peers)).toBe(true);
+    const won = tables.electionResult!.filter((r) => r.electionId === election.id);
+    expect(won.reduce((sum, r) => sum + r.seatsWon, 0)).toBe(60);
+  });
+
+  it("schedules no election for a legislature with no elected chamber, and says so", async () => {
+    const { elections } = callers();
+    await elections.configureLegislature({
+      countryId: COUNTRY,
+      name: "Council",
+      chamberType: "unicameral|Council:30:proportional:appointed",
+      totalSeats: 30,
+      electoralSystem: "proportional",
+      termLength: 4,
+      electionCycle: "fixed",
+    });
+    for (const name of ["A", "B"]) {
+      await elections.createParty({
+        countryId: COUNTRY,
+        name,
+        ideology: "center",
+        color: "#16a34a",
+      });
+    }
+    expect(tables.election).toHaveLength(0);
+    expect(await processDueElections()).toMatchObject({ scheduled: 0 });
+    expect(await elections.getElectionStatus({ countryId: COUNTRY })).toMatchObject({
+      hasElectedChamber: false,
+      upcoming: null,
+    });
+  });
+
+  it("keeps only the latest election's GDP bonus: a new result replaces the last, never stacks (owner ruling B-12d)", async () => {
+    await setUpNation();
+    for (let i = 0; i < 3; i++) {
+      const next = tables.election!.find((e) => e.status === "upcoming")!;
+      IxTime.setTimeOverride(next.scheduledIxTime + DAY);
+      await processDueElections();
+    }
+    const latest = sortRows(
+      tables.election!.filter((e) => e.status === "completed"),
+      { scheduledIxTime: "desc" }
+    )[0]!;
+    const expected =
+      latest.marginOfVictory > 10 ? 0.003 : latest.marginOfVictory > 5 ? 0.001 : -0.003;
+    const level =
+      tables
+        .storytellerEffect!.filter((r) => r.createdBy === "ELECTION_SYSTEM")
+        .reduce((product, r) => product * (1 + r.value), 1) - 1;
+    expect(level).toBeCloseTo(expected, 5);
+  });
+
+  it("a party formed while the votes are counted does not queue an early election", async () => {
+    await setUpNation();
+    const first = tables.election![0]!;
+    IxTime.setTimeOverride(first.scheduledIxTime + DAY);
+    first.status = "voting"; // claimed by a count in progress
+
+    await callers().elections.createParty({
+      countryId: COUNTRY,
+      name: "Late Party",
+      ideology: "center",
+      color: "#16a34a",
+    });
+
+    expect(tables.election).toHaveLength(1);
   });
 
   it.each([
