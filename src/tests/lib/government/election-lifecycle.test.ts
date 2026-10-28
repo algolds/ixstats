@@ -465,6 +465,22 @@ describe("MC-2 politics lifecycle", () => {
     expect(tables.legislativeSeat!.filter((seat) => seat.partyId != null)).toHaveLength(100);
   });
 
+  it("a party formed while the votes are counted does not queue an early election", async () => {
+    await setUpNation();
+    const first = tables.election![0]!;
+    IxTime.setTimeOverride(first.scheduledIxTime + DAY);
+    first.status = "voting"; // claimed by a count in progress
+
+    await callers().elections.createParty({
+      countryId: COUNTRY,
+      name: "Late Party",
+      ideology: "center",
+      color: "#16a34a",
+    });
+
+    expect(tables.election).toHaveLength(1);
+  });
+
   it.each([
     [
       "a party dissolved before the vote",

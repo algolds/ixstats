@@ -75,13 +75,14 @@ export async function ensureUpcomingElection(
   const now = opts.now ?? (await clockForCountry(db, countryId)).now();
   const soon = now + FIRST_ELECTION_DELAY_IX_DAYS * DAY_MS;
 
+  // An election being counted ("voting") counts as queued: its count queues the next one a term later.
   const upcoming = await db.election.findFirst({
-    where: { countryId, status: "upcoming" },
+    where: { countryId, status: { in: ["upcoming", "voting"] } },
     orderBy: { scheduledIxTime: "asc" },
-    select: { id: true, scheduledIxTime: true },
+    select: { id: true, scheduledIxTime: true, status: true },
   });
   if (upcoming) {
-    if (opts.snap && upcoming.scheduledIxTime > soon) {
+    if (opts.snap && upcoming.status === "upcoming" && upcoming.scheduledIxTime > soon) {
       await db.election.update({
         where: { id: upcoming.id },
         data: { scheduledIxTime: soon, name: electionName("snap", soon) },
