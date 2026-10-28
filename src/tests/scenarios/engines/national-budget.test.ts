@@ -112,16 +112,16 @@ it("creates a government from the budget tab once, and an owner edit sets shares
     code: "CONFLICT",
   });
 
-  // Setting a share sets its amount, and ticks the budget step
+  // Setting a share sets its amount, and ticks the budget step (a cut: the form's shares fill 100%)
   const first = created[0]!;
   await owner.setAllocation({
     countryId: "bareland",
     departmentId: first.departmentId,
-    allocatedPercent: 15,
+    allocatedPercent: 5,
   });
   expect(await db.budgetAllocation.findUniqueOrThrow({ where: { id: first.id } })).toMatchObject({
-    allocatedPercent: 15,
-    allocatedAmount: totalBudget * 0.15,
+    allocatedPercent: 5,
+    allocatedAmount: totalBudget * 0.05,
   });
   expect(await steps(lena)).toMatchObject({ budget: true, cabinet: false });
 
@@ -164,7 +164,7 @@ it("creates a government from the budget tab once, and an owner edit sets shares
     omar.removeDepartment({ countryId: "rivalland", departmentId: first.departmentId })
   ).rejects.toMatchObject({ code: "NOT_FOUND" });
   expect(await db.budgetAllocation.findUniqueOrThrow({ where: { id: first.id } })).toMatchObject({
-    allocatedPercent: 15,
+    allocatedPercent: 5,
   });
 });
 
@@ -280,4 +280,45 @@ it("budgets departments an older builder left without a budget", async () => {
   expect(created).toHaveLength(2);
   expect(created.reduce((sum, a) => sum + a.allocatedPercent, 0)).toBeCloseTo(100, 1);
   expect(created.reduce((sum, a) => sum + a.allocatedAmount, 0)).toBeCloseTo(totalBudget, -2);
+});
+
+it("refuses a share that would allocate more than 100%, saying what is left, but lets an over-allocated budget come down", async () => {
+  await addNation(db as never, { id: "bareland", baselineDate: new Date(NOW - YEAR) });
+  await db.governmentStructure.delete({ where: { countryId: "bareland" } });
+  const lena = await addOwner(db as never, "lena", "bareland");
+  const owner = government(asOwner(db as never, lena));
+  await owner.createStructure({ countryId: "bareland" });
+  const [first, second] = await allocations("bareland", 2043);
+
+  // The form's shares fill 100%: raising one is refused with what is left
+  await expect(
+    owner.setAllocation({
+      countryId: "bareland",
+      departmentId: first!.departmentId,
+      allocatedPercent: first!.allocatedPercent + 5,
+    })
+  ).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringMatching(/left/) });
+
+  // Free some room, then use exactly it
+  await owner.setAllocation({
+    countryId: "bareland",
+    departmentId: second!.departmentId,
+    allocatedPercent: second!.allocatedPercent - 5,
+  });
+  await owner.setAllocation({
+    countryId: "bareland",
+    departmentId: first!.departmentId,
+    allocatedPercent: first!.allocatedPercent + 5,
+  });
+
+  // A budget already over 100% (allowed before the ruling) can still be cut
+  await db.budgetAllocation.update({ where: { id: second!.id }, data: { allocatedPercent: 90 } });
+  await owner.setAllocation({
+    countryId: "bareland",
+    departmentId: second!.departmentId,
+    allocatedPercent: 80,
+  });
+  expect(
+    (await db.budgetAllocation.findUniqueOrThrow({ where: { id: second!.id } })).allocatedPercent
+  ).toBe(80);
 });

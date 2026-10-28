@@ -169,6 +169,7 @@ const governmentDb = (departments = 0) => ({
   },
   budgetAllocation: {
     findFirst: jest.fn().mockResolvedValue({ budgetYear: 2040 }),
+    findMany: jest.fn().mockResolvedValue([]),
     count: jest.fn().mockResolvedValue(departments),
     upsert: jest.fn(writeReached),
   },

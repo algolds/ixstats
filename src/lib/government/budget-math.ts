@@ -45,6 +45,24 @@ export function allocationAt(
 
 /** Most a budget may allocate in total, in percent of `totalBudget`. */
 const BUDGET_TOTAL_PERCENT = 100;
+/** Rounding slack on the 100% cap (generated shares can add up to 99.98% or 100.02%). */
+const BUDGET_TOTAL_TOLERANCE = 0.05;
+
+/**
+ * Why an owner may not set a line from `current` to `next` percent when the other lines hold `othersTotal`, or null.
+ * The budget may not allocate past 100% (owner ruling); a cut is always allowed, so an over-allocated budget can
+ * come down.
+ */
+export function allocationOverCap(input: {
+  current: number;
+  next: number;
+  othersTotal: number;
+}): string | null {
+  if (input.next <= input.current) return null;
+  if (input.othersTotal + input.next <= BUDGET_TOTAL_PERCENT + BUDGET_TOTAL_TOLERANCE) return null;
+  const left = Math.max(0, BUDGET_TOTAL_PERCENT - input.othersTotal);
+  return `The budget would allocate more than 100%. ${left.toFixed(1)}% is left for this department.`;
+}
 
 export interface ShareLine {
   id: string;

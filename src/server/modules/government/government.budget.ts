@@ -12,6 +12,7 @@ import { departmentsForForm, governmentTypeForForm } from "~/lib/government/form
 import { countryBudgetYear, findEffectiveBudgetYear } from "~/lib/government/budget-allocations";
 import {
   allocationAt,
+  allocationOverCap,
   initialTotalBudget,
   maintenanceByYear,
   nudgeShare,
@@ -200,6 +201,18 @@ export async function setDepartmentAllocation(
   const department = await ownDepartment(db, input.countryId, input.departmentId);
   const budgetYear = await editableBudgetYear(db, input.countryId);
   const figures = allocationAt(department.governmentStructure.totalBudget, input.allocatedPercent);
+  const lines = await db.budgetAllocation.findMany({
+    where: { governmentStructureId: department.governmentStructureId, budgetYear },
+    select: { departmentId: true, allocatedPercent: true },
+  });
+  const problem = allocationOverCap({
+    current: lines.find((l) => l.departmentId === department.id)?.allocatedPercent ?? 0,
+    next: figures.allocatedPercent,
+    othersTotal: lines
+      .filter((l) => l.departmentId !== department.id)
+      .reduce((sum, l) => sum + l.allocatedPercent, 0),
+  });
+  if (problem) throw new TRPCError({ code: "BAD_REQUEST", message: problem });
   const values = { ...figures, availableAmount: figures.allocatedAmount, lastReviewed: new Date() };
   return db.budgetAllocation.upsert({
     where: { departmentId_budgetYear: { departmentId: department.id, budgetYear } },
