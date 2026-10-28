@@ -67,6 +67,17 @@ async function writtenEffectiveness(
   return update.mock.calls[0]![0].data.governmentEffectiveness as number;
 }
 
+describe("the server's component cap", () => {
+  it("refuses a save of more than 15 defined components (every component scored 100% effective)", async () => {
+    await expect(
+      writtenEffectiveness(DEFINED.slice(0, 16).map((componentType) => ({ componentType })))
+    ).rejects.toThrow(/15/);
+    await expect(
+      writtenEffectiveness(DEFINED.slice(0, 15).map((componentType) => ({ componentType })))
+    ).resolves.toEqual(expect.any(Number));
+  });
+});
+
 describe("government forms", () => {
   it.each(GOVERNMENT_FORMS.map((form) => [form.id, form] as const))(
     "%s starts with no conflicting pair, and founding it shows what the save writes",
