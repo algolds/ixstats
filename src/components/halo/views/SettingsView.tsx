@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { createAbsoluteUrl } from "~/lib/utils";
-import { useTheme } from "~/context/theme-context";
+import { nextTheme, useTheme } from "~/context/theme-context";
 import { SignOutButton, useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
@@ -40,6 +40,8 @@ import {
   AnimatedVolumeIcon,
 } from "./settings/SettingsControls";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+
+const NEXT_THEME_NAME = { light: "light", dark: "dark", system: "automatic" } as const;
 
 function SettingsViewComponent({ onClose }: SettingsViewProps) {
   const router = useRouter();
@@ -170,9 +172,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               variant="ghost"
               size="icon-sm"
               onClick={toggleTheme}
-              aria-label={
-                effectiveTheme === "dark" ? "Switch to light theme" : "Switch to dark theme"
-              }
+              aria-label={`Switch to ${NEXT_THEME_NAME[nextTheme(theme)]} theme`}
             >
               {effectiveTheme === "dark" ? <Sun /> : <Moon />}
             </Button>
