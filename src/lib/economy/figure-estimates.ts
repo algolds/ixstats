@@ -37,6 +37,10 @@ export const ESTIMATED_FIELDS: readonly EstimatedField[] = [
   "totalDebtGDPRatio",
 ];
 
+export function isEstimatedField(field: string): field is EstimatedField {
+  return (ESTIMATED_FIELDS as readonly string[]).includes(field);
+}
+
 const REFERENCE_GDP_PER_CAPITA = 30_000;
 const TREND_GROWTH_PCT = 2;
 
