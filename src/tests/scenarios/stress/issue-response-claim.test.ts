@@ -79,3 +79,20 @@ it("refuses to answer a delegated issue", async () => {
   });
   expect((await db.country.findUnique({ where: { id: "testland" } }))?.publicApproval).toBe(50);
 });
+
+it("writes the consequence log the brief shows in plain words (no emoji, no shouting)", async () => {
+  await db.nationalIssueTemplate.update({
+    where: { id: "strike" },
+    data: {
+      responseOptions: JSON.stringify([
+        { id: "gamble", label: "Gamble", description: "Gamble", isRisky: true, consequences: [] },
+      ]),
+    },
+  });
+  jest.spyOn(Math, "random").mockReturnValue(0.1); // the gamble backfires
+  const owner = issues(asOwner(db as never, await addOwner(db as never, "lena", "testland")));
+  const issueId = (await NationalIssuesEngine.forceGenerate("strike", "testland", db as never))!;
+  const { consequenceLog } = await owner.respond({ issueId, optionId: "gamble" });
+  expect(consequenceLog).toContain("The gamble backfired");
+  expect(consequenceLog).not.toMatch(/[☀-➿]|[A-Z]{4,}/u);
+});

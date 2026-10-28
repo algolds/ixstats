@@ -443,19 +443,15 @@ export class NationalIssuesConsequences {
     const lines: string[] = [];
 
     if (isAutoResolve) {
-      lines.push(
-        "⚠ This issue was auto-resolved due to inaction. The default outcome was applied."
-      );
+      lines.push("The deadline passed without a decision, so the default outcome applied.");
       lines.push("");
     }
 
     if (failedGamble) {
-      lines.push("❌ THE RISKY CHOICE BACKFIRED!");
-      lines.push("Your gamble went wrong, causing instability and public backlash.");
+      lines.push("The gamble backfired, causing instability and public backlash.");
       lines.push("");
     } else if (option.isRisky && !isAutoResolve) {
-      lines.push("✅ THE RISKY CHOICE PAID OFF!");
-      lines.push("Your gamble succeeded, establishing order and avoiding backlash.");
+      lines.push("The gamble paid off, establishing order and avoiding backlash.");
       lines.push("");
     }
 

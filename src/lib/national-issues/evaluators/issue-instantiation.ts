@@ -147,11 +147,14 @@ export function renderIssueTemplate(
     return null;
   }
 
+  // Admin-authored options may omit a text field: render what is there, never throw on what is not.
+  const render = <T extends string | undefined>(text: T): T =>
+    (text == null ? text : substituteVariables(text, snapshot, vars)) as T;
   const options = responseOptions.map((opt) => ({
     ...opt,
-    label: substituteVariables(opt.label, snapshot, vars),
-    description: substituteVariables(opt.description, snapshot, vars),
-    outcomeText: substituteVariables(opt.outcomeText, snapshot, vars),
+    label: render(opt.label),
+    description: render(opt.description),
+    outcomeText: render(opt.outcomeText),
   }));
 
   const deadlineIxTime =
