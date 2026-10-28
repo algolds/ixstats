@@ -8,7 +8,7 @@ prevLabel: IxnayID & Your Passport
 
 ## What Premium is
 
-MyCountry Premium is a membership tier on your account. Most of IxStats is free: building and running a nation, directives, issues, economy, politics, diplomacy, maps, the wiki, the feed, messages and the Vault. Premium unlocks the Defense section and a higher nation limit. The map editor is free for every nation owner.
+MyCountry Premium is a membership tier on your account. Most of IxStates is free: building and running a nation, directives, issues, economy, politics, diplomacy, maps, the wiki, the feed, messages and the Vault. Premium unlocks the Defense section and a higher nation limit. The map editor is free for every nation owner.
 
 > [!WARNING]
 > **There is no way to buy Premium in the app yet.** Membership is set by platform admins at `/admin/membership`. If you think you should have it, ask an admin.

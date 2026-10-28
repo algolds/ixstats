@@ -3,7 +3,7 @@ title: Create Your First Nation
 description: Found a nation in a few plain choices, import one from a wiki, or claim one that already exists.
 badge: Start Here
 prevHref: /help/getting-started/welcome
-prevLabel: Welcome to IxStats
+prevLabel: Welcome to IxStates
 nextHref: /help/gameplay/country-building
 nextLabel: The Country Builder in Depth
 ---

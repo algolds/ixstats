@@ -1,14 +1,14 @@
 ---
-title: Welcome to IxStats
-description: What IxStats is, what you do here, and where to go first.
+title: Welcome to IxStates
+description: What IxStates is, what you do here, and where to go first.
 badge: Start Here
 nextHref: /help/getting-started/first-country
 nextLabel: Create Your First Nation
 ---
 
-## What IxStats is
+## What IxStates is
 
-IxStats is a nation-building and worldbuilding platform. You create a country, run it from [MyCountry](/mycountry), and share a world with other players: a live world map, a shared clock ([IxTime](/help/getting-started/ixtime)), a wiki, a social feed and a forum. Your nation has a modelled economy, a government built from components, politics, diplomacy and (with Premium) a military, and the decisions you make change its numbers and its public record.
+IxStates is a nation-building and worldbuilding platform. You create a country, run it from [MyCountry](/mycountry), and share a world with other players: a live world map, a shared clock ([IxTime](/help/getting-started/ixtime)), a wiki, a social feed and a forum. Your nation has a modelled economy, a government built from components, politics, diplomacy and (with Premium) a military, and the decisions you make change its numbers and its public record.
 
 ## Your first ten minutes
 

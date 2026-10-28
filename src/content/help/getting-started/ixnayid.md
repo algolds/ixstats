@@ -10,7 +10,7 @@ nextLabel: MyCountry Premium
 
 ## What IxnayID is
 
-IxnayID is your IxStats account. One sign-in covers IxStats, the wiki reader and editor, the forum pages, IxMaps and the Vault. It also gives you a public **passport**: a profile page that gathers your nations, achievements, cards, wiki work and activity in one place. You manage IxnayID in [Settings → IxnayID & Passport](/settings), or from **IxnayID Connections** in the user menu.
+IxnayID is your IxStates account. One sign-in covers IxStates, the wiki reader and editor, the forum pages, IxMaps and the Vault. It also gives you a public **passport**: a profile page that gathers your nations, achievements, cards, wiki work and activity in one place. You manage IxnayID in [Settings → IxnayID & Passport](/settings), or from **IxnayID Connections** in the user menu.
 
 ## Your passport
 

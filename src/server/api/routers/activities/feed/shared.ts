@@ -85,7 +85,7 @@ export function countryFeedUser(country: any) {
         countryId: country.id,
         countryFlag: country.flag ?? null,
       }
-    : { id: "system", name: "IxStats System", countryFlag: null };
+    : { id: "system", name: "IxStates System", countryFlag: null };
 }
 
 /** Feed item for an ActivityFeed row; the caller supplies the resolved user, metadata and related countries. */

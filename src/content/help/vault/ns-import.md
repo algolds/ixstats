@@ -10,14 +10,14 @@ nextLabel: Achievements & Ribbons
 
 ## What importing does
 
-If you collect NationStates trading cards, you can copy your deck into your IxStats Vault. You prove you own the NationStates nation, and the cards in its deck are added to your collection as NationStates cards. Nothing on NationStates changes, and IxStats never asks for your NationStates password. Start at [Vault → Import](/vault/import).
+If you collect NationStates trading cards, you can copy your deck into your IxStates Vault. You prove you own the NationStates nation, and the cards in its deck are added to your collection as NationStates cards. Nothing on NationStates changes, and IxStates never asks for your NationStates password. Start at [Vault → Import](/vault/import).
 
 ## How to import
 
 1. **Enter nation.** Type your NationStates nation name.
 2. **Visit NS link.** Open the NationStates verification page we link to, while logged in to that nation on NationStates.
 3. **Paste code.** Copy the code NationStates shows you and paste it back here, then choose **Verify ownership**.
-4. **Import.** Tick the box to confirm you own or run the nation and allow IxStats to show its flag and cards, then choose **Import deck**. Your deck's cards are added to your Vault in one go: if anything fails, nothing is added and you can try again.
+4. **Import.** Tick the box to confirm you own or run the nation and allow IxStates to show its flag and cards, then choose **Import deck**. Your deck's cards are added to your Vault in one go: if anything fails, nothing is added and you can try again.
 
 ## The import bonus
 
@@ -32,4 +32,4 @@ You earn 50 IxCredits for each newly imported card, up to 5,000 IxCredits. The b
 
 ## For NationStates nation owners
 
-If a card of your NationStates nation appears in IxStats and you'd like it removed, open the card, choose the **(i)** (About NationStates data) at the end of its **About** section, then **Verify & request takedown** (see [Takedowns](/help/vault/lore-cards#takedowns)). You verify you own the nation the same way as above, and the card's art is hidden at once. You can also ask us at [admin@ixwiki.com](mailto:admin@ixwiki.com) to take down any card's art; we answer within 14 days.
+If a card of your NationStates nation appears in IxStates and you'd like it removed, open the card, choose the **(i)** (About NationStates data) at the end of its **About** section, then **Verify & request takedown** (see [Takedowns](/help/vault/lore-cards#takedowns)). You verify you own the nation the same way as above, and the card's art is hidden at once. You can also ask us at [admin@ixwiki.com](mailto:admin@ixwiki.com) to take down any card's art; we answer within 14 days.

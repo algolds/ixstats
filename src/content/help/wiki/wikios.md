@@ -8,7 +8,7 @@ nextLabel: Lorewards
 
 ## What the wiki is
 
-**Wiki** in the top menu opens WikiOS at [/wiki](/wiki), IxStats' reader and editor for the community wiki: nation articles, history, people, organisations and everything else written about the world. Anyone can read it. Signed-in players can edit articles, discuss them and keep a watchlist. Edits made here are copied to the classic wiki in the background, and edits made on the classic wiki are pulled in.
+**Wiki** in the top menu opens WikiOS at [/wiki](/wiki), IxStates' reader and editor for the community wiki: nation articles, history, people, organisations and everything else written about the world. Anyone can read it. Signed-in players can edit articles, discuss them and keep a watchlist. Edits made here are copied to the classic wiki in the background, and edits made on the classic wiki are pulled in.
 
 ## Reading and finding articles
 

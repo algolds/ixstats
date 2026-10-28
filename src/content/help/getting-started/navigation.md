@@ -10,7 +10,7 @@ nextLabel: Halo & the Sidebar
 
 ## The sidebar
 
-The sidebar on the left of every page (except the full-screen maps) lists the main areas of IxStats. Select one to open it and see its sections underneath. Some areas only show once you're signed in.
+The sidebar on the left of every page (except the full-screen maps) lists the main areas of IxStates. Select one to open it and see its sections underneath. Some areas only show once you're signed in.
 
 - **Home**: your [Dashboard](/dashboard) with the activity feed, plus Messages, ThinkTanks and ThinkPages.
 - **MyCountry** ([/mycountry](/mycountry)): run your nation. Its sections (Overview, Directives, Economy, Diplomacy, Politics and, with Premium, Defense) are listed right in the sidebar.

@@ -1,21 +1,27 @@
 /** @jest-environment node */
-/** UI copy names the product "IxStates" (Facet §9); code identifiers and the wiki user agent keep IxStats. */
+/** Copy names the product "IxStates"; code identifiers and outbound user agents keep IxStats. */
 import fs from "fs";
 import path from "path";
 
 const ROOT = path.resolve(__dirname, "../..");
-const DIRS = ["app", "components"];
+const DIRS = ["app", "components", "lib", "server", "hooks", "content"];
 
 function walk(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
     const p = path.join(dir, e.name);
-    return e.isDirectory() ? walk(p) : e.name.endsWith(".tsx") ? [p] : [];
+    return e.isDirectory()
+      ? walk(p)
+      : (/\.tsx?$/.test(e.name) ||
+            (dir.includes(`${path.sep}content`) && e.name.endsWith(".md"))) &&
+          !/\.test\.tsx?$/.test(e.name)
+        ? [p]
+        : [];
   });
 }
 
 const isComment = (line: string) => /^\s*(\/\/|\*|\/\*|\{\s*\/\*)/.test(line);
 const NAME = /(?<![\w-])IxStats(?![\w-])/;
-const EXEMPT = /^\s*import\b|IxStats-Builder|https?:\/\/|process\.env|product-name:/;
+const EXEMPT = /^\s*import\b|IxStats-Builder|IxStats\/\d|https?:\/\/|process\.env|product-name:/;
 
 describe("product name in UI copy", () => {
   it("says IxStates", () => {

@@ -175,7 +175,7 @@ export class ErrorLogger {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: "IxStats Error Logger",
+          username: "IxStates Error Logger",
           embeds: [embed],
         }),
       });

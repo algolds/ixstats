@@ -330,7 +330,7 @@ export const activitiesTrendingRouter = createTRPCRouter({
         collect("ThinkPages", () => thinkpagesItems(ctx.db)),
         collect("Forum", () => forumItems(ctx.db, now)),
         collect("Wiki", () => wikiItems(now)),
-        collect("IxStats activities", () => activityItems(ctx.db, now)),
+        collect("IxStates activities", () => activityItems(ctx.db, now)),
         collect("Crisis events", () => crisisItems(ctx.db, now)),
       ]);
       const items = sources.flat().sort((a, b) => b.score - a.score);
