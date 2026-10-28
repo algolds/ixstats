@@ -55,7 +55,7 @@ Directives are completed or abandoned here, not from the agenda.
 
 ## Executive bandwidth
 
-Executive bandwidth is how much work your government can carry at once: the time and attention of its civil service. It grows with your population and government effectiveness. The status strip shows how much is free, and its bar is split by what is using it. Select the help button beside it for your live breakdown.
+Executive bandwidth is how much work your government can carry at once: the time and attention of its civil service. It grows with government effectiveness and, more slowly, with population: each tenfold rise in population adds the same amount, so a large nation has more than a small one but not hundreds of times more. Answering a Government Staffing Shortage by expanding the civil service adds to it permanently. The status strip shows how much is free, and its bar is split by what is using it. Select the help button beside it for your live breakdown.
 
 These use bandwidth:
 

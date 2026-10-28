@@ -435,7 +435,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "060f40fdc90656feae4fa8797b2d0664383a7f4672b9adfb2035d9282c4adde6",
+    digest: "ff2b15376617448c66d6f2a9e36cccac25065b232258e40f53b7389392af60d7",
   },
   evaluateNeighborFallbackForcedDomain: {
     summary: {
@@ -478,7 +478,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "6050e96dd0cfe8797304b437fa8e5fc5a008ede4f9f049d22a7bddd6b9de583d",
+    digest: "3379e85dd0cfc6179b047aac0fbb8d2959c824e3948463b2b0a09a6332394ef9",
   },
   evaluatePendingCap: {
     summary: {
@@ -547,7 +547,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "ee5b290cca8bfb2861f5a481cfe28e7cf0ce39672eb6c855c3d77da280ead87f",
+    digest: "91691377f3390c309f4e036be54143ecba20117eda2ee11a9b5cfd55e963d46c",
   },
   evaluateTargetLookupThrows: {
     summary: {
@@ -587,7 +587,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "1e7b8469be201f42366c8ca63282e90f9bef0a970764cfb7d8112d2a89a5d6fe",
+    digest: "a7a25a61529625a4f5cfdd6d0a972a82d8d529c30bcd37a351e7e2861ec514b7",
   },
   forceGenerateFollowUp: {
     summary: {
