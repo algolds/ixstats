@@ -110,7 +110,7 @@ function CommandPaletteContent({
       } else if (expandedMode === "settings") {
         newSize = haloSize === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM;
       } else if (expandedMode === "mycountry") {
-        newSize = SIZE_PRESETS.MEDIUM; // 371px wide — profile/country dropdown
+        newSize = SIZE_PRESETS.MEDIUM; // 371px wide, the profile and country dropdown
       } else if (expandedMode.startsWith("plugin:")) {
         newSize = SIZE_PRESETS.ULTRA; // 630px wide
       } else {
@@ -127,9 +127,9 @@ function CommandPaletteContent({
         }
       } else if (isForumActive) {
         if (isCollapsed) {
-          newSize = SIZE_PRESETS.WIKI_COMPACT; // 180x32 — compact forum text mode
+          newSize = SIZE_PRESETS.WIKI_COMPACT; // 180x32, compact forum text mode
         } else {
-          newSize = SIZE_PRESETS.COMPACT_LONG; // 300x40 — hover state/expanded full text
+          newSize = SIZE_PRESETS.COMPACT_LONG; // 300x40, hover state and expanded full text
         }
       } else {
         if (activeIsSticky && isCollapsed) {

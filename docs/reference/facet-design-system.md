@@ -335,6 +335,7 @@ The tests under `src/tests/architecture/` enforce parts of this file. Run the re
 - `css-layering.test.ts`: every Facet sheet is layered (no top-level rules, no `!important`), and utilities set no position, z-index, radius, margin or letter-spacing.
 - `facet-guards.test.ts` (kit guards): no tw-animate classes (not installed), no `transform` in arbitrary transition lists, no `facet-press` on controls, and the removed decorative kit pieces stay deleted.
 - `motion-tokens.test.ts`: default springs critically damped, CSS mirrors match `motion.ts`, swipe presets are named springs. The ratchet's `adhocSpring` tell counts literal `stiffness:` values in feature code.
+- `halo-motion.test.ts` keeps Halo still. `facet-zero-dirs.test.ts` pins converted directories at zero for every ratchet tell; each app phase adds its directories.
 - `facet-touch-targets.test.ts`: 44px menu rows and sheet grabber on coarse pointers.
 - `product-name.test.ts`: page and component copy says IxStates.
 - `facet-guards.test.ts`: no `transition-all`, sub-12px text, arbitrary z-index, `dark:` or hex classes in converted apps, `@radix-ui` outside `src/components/ui`, `lucide-react`, removed decoration, or raw `backdrop-blur-*`; gradients and textures stay on sanctioned classes.

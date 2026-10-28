@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { HaloContainer } from "../HaloPrimitives";
 
 import { useToastQueueStore } from "~/stores/toastQueueStore";
-import { Search, Bell, Settings } from "iconoir-react";
+import { Search, Bell, Settings, ProfileCircle } from "iconoir-react";
 import { HaloIconButton } from "./compact/HaloIconButton";
 import { NarratorProgress } from "./compact/NarratorProgress";
 import { useUser } from "~/context/auth-context";
@@ -277,12 +277,7 @@ function CompactViewComponent({
                           className="ring-separator h-4 w-4 rounded-full object-cover ring-1"
                         />
                       ) : (
-                        <span
-                          aria-hidden="true"
-                          className="text-label-secondary text-footnote h-3 w-3"
-                        >
-                          👤
-                        </span>
+                        <ProfileCircle aria-hidden className="text-label-secondary size-4" />
                       )}
                       <span className="sr-only sm:hidden">Open MyCountry</span>
                       <PreText className="hidden text-inherit sm:inline" whiteSpace="nowrap">

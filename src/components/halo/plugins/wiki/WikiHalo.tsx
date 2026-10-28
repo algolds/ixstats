@@ -9,6 +9,7 @@
 
 import React, { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import { ProfileCircle } from "iconoir-react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useUser } from "~/context/auth-context";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";
@@ -129,7 +130,7 @@ function WikiBreadcrumb() {
               className="ring-separator h-4 w-4 shrink-0 rounded-full object-cover ring-1"
             />
           ) : (
-            <span className="text-label-secondary text-footnote h-3.5 w-3.5 shrink-0">👤</span>
+            <ProfileCircle aria-hidden className="text-label-secondary size-4 shrink-0" />
           )}
           <PreText
             className="text-label text-caption max-w-[100px] truncate sm:max-w-[130px]"

@@ -395,7 +395,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                         >
                           <ChevronRight className="text-label-tertiary h-3 w-3" />
                         </motion.div>
-                        <PreText className="text-label-secondary text-eyebrow" whiteSpace="nowrap">
+                        <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
                           {group.label}
                         </PreText>
                       </div>

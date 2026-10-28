@@ -83,7 +83,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
             <Headphones className="h-3.5 w-3.5" />
           </div>
           <div className="flex min-w-0 flex-col">
-            <span className="text-label-secondary text-eyebrow">Now playing · Narrator</span>
+            <span className="text-label-secondary text-footnote">Now playing</span>
             <span className="text-label text-headline truncate">
               {articleTitle || "Wiki article"}
             </span>

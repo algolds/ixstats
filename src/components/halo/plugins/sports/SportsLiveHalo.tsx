@@ -115,7 +115,7 @@ function SportsLiveView({ context }: DIViewProps) {
         </div>
 
         <p className="text-label-secondary text-footnote min-h-[2rem] leading-relaxed italic">
-          {state.lastEvent?.description ?? "Kickoff — the match is underway."}
+          {state.lastEvent?.description ?? "Kickoff. The match is underway."}
         </p>
       </div>
     </div>
