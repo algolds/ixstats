@@ -1,5 +1,5 @@
 /**
- * Who reads and posts on a realm's live board (docs/superpowers/specs/2026-10-10-thinkpages-realm-board-design.md,
+ * Who reads and posts on a realm's live board (docs/history/specs/2026-10-10-thinkpages-realm-board-design.md,
  * section 1). Everyone who can see the realm reads. Members (a nation in the realm) and realm moderators post
  * under `realmPostingAccess`, bans and archived realms included; a visitor (signed in, no nation here) posts on the
  * board only, while the realm allows visitors. Nothing here is the client's say: every write asks again.

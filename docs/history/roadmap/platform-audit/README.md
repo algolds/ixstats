@@ -75,7 +75,7 @@ or left as found. The area reports are unchanged snapshots; this page tracks sta
 
 **Still open:** the owner actions above; PR #49's known gaps (no region filter on rankings, DMs can't be sent as a
 persona or country, appointed chambers are still seated by the vote simulation); the GDP-growth trigger unit bug in
-national issues. [ROADMAP.md](../../../roadmap/ROADMAP.md) and [ACTION_PLAN_2026-10-05.md](../../../roadmap/ACTION_PLAN_2026-10-05.md) track the
+national issues. [ROADMAP.md](../../../roadmap/ROADMAP.md) and [ACTION_PLAN_2026-10-05.md](../ACTION_PLAN_2026-10-05.md) track the
 rest.
 
 The decisions the owner still owes (crafting pacing, FP expiry, passport privacy model, WikiOS Template/Category

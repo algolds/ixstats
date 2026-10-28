@@ -39,7 +39,7 @@ import {
 /** Flag of the child-process mode (`atlas-bench.ts --worldgen-run direct|runner`). */
 export const WORLDGEN_RUN_FLAG = "--worldgen-run";
 
-/** Spec targets at 66,626 cells (docs/specs/2026-10-11-atlas-release-a-world-creation-design.md). */
+/** Spec targets at 66,626 cells (docs/history/specs/2026-10-11-atlas-release-a-world-creation-design.md). */
 const FIRST_LIMIT_MS = 1000;
 const REROLL_LIMIT_MS = 900;
 /** The restart targets by the stage a change reaches (the spec's, with the output raised from 150 ms by ruling). */

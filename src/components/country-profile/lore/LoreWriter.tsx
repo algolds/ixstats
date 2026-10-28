@@ -97,7 +97,7 @@ function OpenLoreWriter({ countryId, countryName, onClose, seed, editTitle }: Lo
 
 /**
  * LoreWriter: writing a native lore piece without leaving the country page
- * (docs/superpowers/specs/2026-10-24-native-lore-design.md, "Writing flow"). A full-screen overlay: the piece's type,
+ * (docs/specs/2026-10-24-native-lore-design.md, "Writing flow"). A full-screen overlay: the piece's type,
  * its title (checked against the wiki) and infobox fields, then WikiOS's editor on the generated starting text, then
  * the Lore tab record. With `editTitle` it opens the editor on that piece. Each opening starts afresh.
  */

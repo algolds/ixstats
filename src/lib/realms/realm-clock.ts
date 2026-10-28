@@ -20,7 +20,7 @@ export {
 } from "./realm-calendar";
 
 /**
- * A realm's own clock (docs/superpowers/specs/2026-10-25-realm-time-design.md §1, revising the 2026-10-14 realm
+ * A realm's own clock (docs/specs/2026-10-25-realm-time-design.md §1, revising the 2026-10-14 realm
  * clocks spec), stored in `Realm.settings.clock`. Every realm but Ixnay has one from founding (Ixnay's clock is the
  * bot-synced IxTime). It runs from an anchor at a speed on the shared timeline every stored IxTime column uses; the
  * calendar offset and months only change the date it reads as. Client-safe and pure.

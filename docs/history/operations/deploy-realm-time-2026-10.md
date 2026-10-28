@@ -1,6 +1,6 @@
 # Deploy runbook: realm time (2026-10)
 
-The single ordered procedure for the realm time plan (`docs/superpowers/specs/2026-10-25-realm-time-design.md`):
+The single ordered procedure for the realm time plan (`docs/specs/2026-10-25-realm-time-design.md`):
 every realm owns its clock, the platform runs on real time, the defense model runs on the nation's clock, and nations
 of two realms no longer interact as countries. Every SQL file lives in `scripts/migrations/2026-10-realm-time/` and is
 idempotent (a re-run changes nothing); `src/tests/architecture/realm-time-runbook.test.ts` checks that each one is
@@ -82,7 +82,7 @@ announce the window. `ixstats-cron` is already stopped (step 2).
 
 The deploy script runs every SQL file of this step itself, in this order, right before its `db push` (step 5), after its
 additive schema step; running them by hand first, as below, changes nothing there (each is idempotent). By hand, they
-need two things first, as in the [release guide](release-guide.md#b3-the-window-the-app-stopped) (steps 4 and 8):
+need two things first, as in the [release guide](../../operations/release-guide.md#b3-the-window-the-app-stopped) (steps 4 and 8):
 
 - **The additive step** (`bun scripts/deployment/apply-additive-schema.ts --apply`), when production lacks columns these
   files read: T3 converts `exchange_contracts."closedIxTime"`, and MyCountry's `f-defense.sql` reads
@@ -163,7 +163,7 @@ guarded: it clamps `MilitaryUnit.readiness` only while the column exists, and D2
 
 ## 5. The code deploy
 
-Run the deploy script: `./scripts/deploy-production.sh` ([release guide A4](release-guide.md#a4-build-and-deploy)). It
+Run the deploy script: `./scripts/deploy-production.sh` ([release guide A4](../../operations/release-guide.md#a4-build-and-deploy)). It
 runs this runbook's SQL (and the MyCountry runbook's) right before its `db push`; each file is a no-op once applied, so
 the steps run by hand above change nothing there. In order it runs `db:generate`, the backup, the additive schema step,
 the WikiOS proof check, the rose-garden, cards, IxnayID and WikiOS SQL, the 2026-10 SQL, `db push` (stop and read the
@@ -264,10 +264,10 @@ cooldowns. To read the clocks: `SELECT id, slug, settings->'clock' FROM realms;`
 - **From step 4 on:** T3 converts timestamps in place, D2a drops columns and deletes free assets, and D1 drops
   tables, so the way back is the step 2 dump plus the previous build: stop `ixworld`, `ixstats-cron` and `ixstats-ws`,
   then `./scripts/deployment/rollback-deployment.sh <rollback-branch> --restore <the step 2 dump>`
-  ([release guide](release-guide.md#rollback)). It restores the dump, then deploys the old commit with this release's
+  ([release guide](../../operations/release-guide.md#rollback)). It restores the dump, then deploys the old commit with this release's
   deploy script and `SKIP_SCHEMA_SYNC=1`; never run the old commit's own deploy script, which would push its schema. A
   partial window (some of step 4 applied, no code deploy) is restored with `bun run db:restore` alone
-  ([deployment.md](deployment.md#backups-and-restore)).
+  ([deployment.md](../../operations/deployment.md#backups-and-restore)).
 - **After the code, a job misbehaves:** remove its name from `CRON_ENABLED_JOBS`, run
   `( cd /ixwiki/public/projects/ixstats && pm2 restart ecosystem.config.cjs --only ixstats-cron --update-env ) && pm2 save` (not a restart by name,
   which keeps the old list) and read the list back with `pm2 jlist | jq -r '.[] | select(.name == "ixstats-cron") | .pm2_env.CRON_ENABLED_JOBS'`. A realm clock set wrong is fixed in Manage → Time (its speed, or a jump),

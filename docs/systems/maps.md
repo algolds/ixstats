@@ -2,11 +2,11 @@
 
 **Last updated:** 2026-10-12
 
-**Parent App Suite:** Atlas (app version 3 — `VERSIONS.apps.ixworld`, exported as `IXWORLD_VERSION`; `IxWorld` is the in-code app name)  
+**Parent App Suite:** Atlas (`INTERNAL_VERSIONS.apps.ixworld` = 3, public v1; `IXWORLD_VERSION` reads the public registry; `IxWorld` is the in-code app name)  
 **Engine:** Atlas Spatial Engine (`ATLAS_ENGINE_VERSION = 5`)  
 **Subsystems:** Interactive World Map, Vector Map Editor Studio, Spatial Geographic Analyzer, Atlas admin and World Studio  
 **Primary Action:** `MAP` | **Domain Accent:** Chart shallows (`data-app="maps"`, `#05667a` / `#69cee6`)  
-**Routes:** `/maps` (players edit their own nation in place; `?realm=<slug>&editor=world` opens the World tab), `/mycountry/map-editor` (the same country editor, full-screen), `/admin/maps/editor` (world editor), `/admin/maps` (Atlas, the admin home for every realm's map), `/admin/maps/realms/<slug>` (a realm's page), `/admin/maps/studio` (World Studio), standalone `maps.ixwiki.com` | **Status:** see [SYSTEM_STATUS.md](SYSTEM_STATUS.md) (interactive map and worldgen ✅ Live; map editor 🟡 Partial)  
+**Routes:** `/maps` (players edit their own nation in place; `?realm=<slug>&editor=world` opens the World tab), `/mycountry/map-editor` (the same country editor, full-screen), `/admin/maps/editor` (world editor), `/admin/maps` (Atlas, the admin home for every realm's map), `/admin/maps/realms/<slug>` (a realm's page), `/admin/maps/studio` (World Studio), `maps.ixwiki.com` (the main app's `/maps` page: nginx sends it and its requests to `ixstats-web` on :3550, every other path 301s to beta.ixwiki.com) | **Status:** see [SYSTEM_STATUS.md](SYSTEM_STATUS.md) (interactive map and worldgen ✅ Live; map editor 🟡 Partial)  
 
 Atlas is the spatial, cartographic, and worldbuilding studio for IxStates. Built on **MapLibre GL JS**, it powers interactive vector globe maps, procedural realm generation, grounded manual IxEarth cartography, admin GIS suites, and precision player territory editors.
 
@@ -72,7 +72,7 @@ The raster layer `relief` (kind `overlay`: over elevation and climate, under the
 
 ## Atlas and World Studio
 
-Two admin surfaces, built on one `atlas` tRPC router (`src/server/api/routers/atlas/`: `studio`, `presets`, `jobs`, `realms`, `health`). Spec: [`docs/specs/2026-10-12-atlas-studio-design.md`](../specs/2026-10-12-atlas-studio-design.md). **Atlas** (`/admin/maps`) is the admin home for every realm's map. **World Studio** (`/admin/maps/studio`) is the full-screen tool for designing worlds. Both are for site admins only: the admin layout guard, the edge check in `src/proxy.ts` and `adminProcedure` on every `atlas.*` procedure. Founders reach presets only through `realms.map.worldPresets`.
+Two admin surfaces, built on one `atlas` tRPC router (`src/server/api/routers/atlas/`: `studio`, `presets`, `jobs`, `realms`, `health`). Spec: [`docs/history/specs/2026-10-12-atlas-studio-design.md`](../history/specs/2026-10-12-atlas-studio-design.md). **Atlas** (`/admin/maps`) is the admin home for every realm's map. **World Studio** (`/admin/maps/studio`) is the full-screen tool for designing worlds. Both are for site admins only: the admin layout guard, the edge check in `src/proxy.ts` and `adminProcedure` on every `atlas.*` procedure. Founders reach presets only through `realms.map.worldPresets`.
 
 ### Routes and access
 
@@ -184,10 +184,10 @@ The Ship tab's **Apply to a realm** section.
   to drop the non-empty `procedural_worlds`. `scripts/deploy-production.sh`, `start-development.sh`,
   `scripts/refresh-local-db.sh` and `scripts/setup/bootstrap-dev-db.ts` run it before their push.
 - **`MAP_TILE_DIR`.** The vector tile cache lives under it (`<MAP_TILE_DIR>/<realmId>/f<format>/<version>/<layer>/<z>/<x>/<y>.pbf`);
-  unset, it is `data/cache/map-tiles` under the process's working directory (gitignored). Three processes serve or
-  render tiles: the web app, the IxWorld standalone (maps.ixwiki.com) and the cron worker (`ixstats-cron`). Their
-  working directories differ, so production sets `MAP_TILE_DIR` to one folder outside the repository and `data/` for
-  all three; otherwise each fills a folder of its own, and the cron job pre-renders into one that nobody reads.
+  unset, it is `data/cache/map-tiles` under the process's working directory (gitignored). Two processes serve or
+  render tiles: the web app (which also serves maps.ixwiki.com, its `/maps` page) and the cron worker (`ixstats-cron`).
+  Their working directories differ, so production sets `MAP_TILE_DIR` to one folder outside the repository and `data/`
+  for both; otherwise each fills a folder of its own, and the cron job pre-renders into one that nobody reads.
   See [Map delivery](#map-delivery-atlas-release-0).
 - **Realm-scoped spatial SQL.** Realms share one coordinate space. Every raw join on `map_layers` matches the realm of
   what it measures (`ml."worldId" = <country>."realmId"`); `getTerrainAtPoint` / `getTerrainForArea` take a required
@@ -208,126 +208,13 @@ The Ship tab's **Apply to a realm** section.
 
 ## Realm Maps
 
-Every realm has its own map (`MapLayer.realmId`). What follows is what a realm's own staff can do with it and how the
-viewer shows it.
-
-### Who edits a realm's map
-
-- **The Map power.** A realm officer can hold `map` ("Edit the realm's map, borders and labels, and import maps").
-  `canEditRealmMap` / `canImportRealmMap` (`src/server/modules/realms/realms.access.ts`) allow site admins, the
-  founder and map officers; Ixnay stays with site admins, and an archived realm is read-only (`realmMapAccess`).
-- **World editor procedures are realm-scoped.** Border edit, split and merge (`geo/editor/borders.ts`), region links
-  (`linkage/assignment.ts`), linkage validation and Auto-Match (`linkage/validation.ts`) and realm labels
-  (`geo/features/realm-labels.ts`) call `editableMapRealmId` (`src/server/api/trpc/realm-scope.ts`): the edited
-  realm (`?realm=`, else the caller's) once the caller may edit it, else `FORBIDDEN`. A map officer renames a region
-  but not the nation linked to it, except a generated slot nobody holds, whose nation is renamed with its region
-  (see Nation slots). The realm's map editors also create a nation from an unlinked shape in their own realm
-  (`createNationFromShape`, `realms.shape-nation.ts`: the realm's nation defaults and a free slug, recorded in
-  `AdminAuditLog` as `REALM_NATION_FROM_SHAPE` for site admins) and edit the map features (cities, labels, POIs,
-  peaks, rivers, lakes, subdivisions and their imports, and transport routes) of the realm's unclaimed nations,
-  acting as their owner (`mapFeatureOwnerProcedure`, `src/server/api/trpc/middleware.ts`); story pins stay with the
-  nation's owner. Rebuilding adjacency stays admin-only. A draft session is saved only by its own editor. Border edits filed for review record their realm
-  (`MapEditRequest.realmId`).
-- **Entry points.** Founders and map officers get **World editor** on `/maps?realm=<slug>`; site admins also have
-  `/admin/maps/editor?realm=<slug>`. The map import wizard is in `/admin/maps` → **Import a map** for
-  site admins, and in the realm's Manage tab (**Map import**) for the founder and map officers.
-
-### Map settings (`Realm.settings.map`)
-
-`src/lib/maps/realm-map-settings.ts` is the zod schema; every key is optional and read on its own (a malformed value
-is dropped, not the rest). Edited in the realm's Manage tab (**Map**, holders of `map`) through
-`realms.map.updateSettings`, and read by the viewer through `realms.map.display`.
-
-| Key | Meaning |
-| :-- | :------ |
-| `radiusKm` | The planet radius, 500 to 50,000 km (default 6371). Scales areas and distances measured on the realm's map |
-| `defaultView` | `{ center: [lng, lat], zoom }` where the map opens, saved from the world editor's realm menu (**Save current view as default**); also the R home view |
-| `baseImage` | A base raster image: an `https://` address or an image uploaded through `/api/upload/image` (`isMapBaseImageUrl`) |
-| `attribution` | The credit line (at most 300 characters). Empty: the realm's source sync attribution, if any |
-| `projection` | `equirectangular` (default) or `mercator`: how an imported image's vertical axis maps to latitude |
-| `bounds` | `{ west, south, east, north }`: the lon/lat box a cropped image covers (west < east, south < north) |
-| `controlPoints` | At least three `{ x, y, lon, lat }` pairs (pixel from the top-left ↔ lon/lat), fitted instead of bounds |
-
-Other keys under `map` (the wiki map's `source` and `file`, written by `withRealmWikiMap`, and `pipeline`, the realm's
-map pipeline) are never dropped when the settings are saved.
-
-### Map pipeline (`Realm.settings.map.pipeline`)
-
-A realm's whole map (raster art, physical layers, labels, local flags, default view, border repair and smoothing) is
-built from one config kept with the realm, filled from a source preset or typed in the realm's admin panel (Map), and
-run as a background job (`MapImportJob` kind `map-pipeline`) or by `scripts/realms/build-realm-map.ts`. Runbook:
-[realm-maps.md](realm-maps.md).
-
-### Planet radius
-
-- `src/lib/maps/planet.ts` scales Earth's figures: `scaleAreaToRadius` (`area × (r / 6371)²`), `scaleDistanceToRadius`
-  and `haversineKm(a, b, r)`. Stored `MapLayer.areaSqKm` values are areas on the realm's planet.
-- Applied to: areas the border editor stores on edit, split and merge; the editor's live area readout
-  (`useRealmPlanetRadius`); the geo profile's perimeter, coastline, shared borders and spans (`geo-profile.ts`); the
-  measure tool; the viewer's scale bar.
-- **Recompute areas** (`realms.map.recomputeAreas`, Manage → Map) measures every active polygon feature of the realm
-  again: PostGIS `ST_Area(geom_postgis::geography) × (r / 6371)²`, or the flat helpers at radius r without PostGIS.
-  Run it after changing the radius (the map import already measures on the realm's radius). Nations' stated land area
-  is untouched unless the founder (or a site admin) ticks **Also set nations' land area from the map**, which sets
-  each linked nation's land area to the sum of its regions.
-- Not scaled yet: river `lengthKm` properties written by imports, and the economy's own figures.
-
-### Viewer
-
-`MapContainer` reads `realms.map.display` (`useRealmMapDisplay`) for the realm it shows. A realm's map is IxWorld's
-viewer with the realm's data: the same vector style, colouring, panels and chrome; nothing realm-only is added.
-
-- **Default view:** opened once per realm (`useRealmDefaultView`) unless the URL asks for a place (`?lat=&lng=`,
-  `?zoom=`, a country).
-- **Base image:** a MapLibre `image` source pinned at `[-180, 85]`, `[180, 85]`, `[180, -85]`, `[-180, -85]` and a
-  raster layer under the first data layer (`src/components/maps/core/utils/realm-map-layers.ts`). **Limits:** a full-globe equirectangular image, 2:1, cropped to 85°N to 85°S (the Web Mercator
-  limit). MapLibre stretches it linearly between the corners in the map's projection, so features drift toward the
-  mid-latitudes on Mercator; a Web Mercator image registers exactly. The whole image is one GPU texture: keep it at
-  most 8192 × 4096 (many GPUs cap textures at 8192 or 16384 px). Uploads are at most 5MB; an `https://` host must
-  send CORS headers or WebGL refuses the image.
-- **Raster art** (`display.rasterLayers`): none is shown when the map opens. The layer panel offers the base maps
-  (one at a time, or **None**) and the overlays as switches; a layer's key image shows in the panel while that layer
-  is on, as the climate key does for **Climate Zones**. Art mode (political fills clear except under the pointer,
-  borders and country names off) lasts only while a base map is shown.
-- **Political colours:** the same path as Ixnay (`getColorForFeature`: the feature's `properties.fill`, else a
-  colour hashed from its id). A realm's source sync stores each nation's source colour as `fill`. Unclaimed nations
-  look like any other; the country panel says **Unclaimed**.
-- **Credit line:** the realm's own (`settings.map.attribution`), else its source sync's, shown in the bottom-right
-  credit block above "© 2026 Ixnay" (`MapKeyboardControls`), always (the art's licence asks for it).
-- **Scale bar and coordinates** (`RealmMapScale`): the scale bar measures the middle of the view with `haversineKm` at
-  the realm's radius (MapLibre's own assumes Earth), and the cursor's coordinates show beside it. Both are written to
-  the DOM once per animation frame, never through React state.
-
-### Realm labels
-
-`MapLabel.countryId` is optional and `MapLabel.realmId` names the realm of a **realm label**: an ocean, sea, region or
-continent (`src/lib/maps/realm-labels.ts`) that the realm's map editors place anywhere, with size, weight, colour,
-letter spacing and zoom range (`geoFeatures.listRealmLabels` / `createRealmLabel` / `updateRealmLabel` /
-`deleteRealmLabel`). The world editor's realm menu (**Realm labels…**) manages them; `geoFeatures.getAllMapLabels`
-returns them with the nations' labels (`realmLabel: true`), and the viewer shows them at their own zoom range, globe
-view included (nations' labels start at zoom 4). `fontStyle` (`italic` for oceans and seas) is stored, but the
-self-hosted glyphs have no oblique face, so labels are drawn upright.
-
-### Auto-Match and nations with several regions
-
-- **Auto-Match** (world editor → Links → the wand) reads the edited realm's unlinked regions and nations in id-ordered
-  pages (`findAllById`, never the 1,000-row guard) and matches names after normalising case, accents, hyphens,
-  underscores, punctuation, a leading "The" and state forms ("Republic of", "Kingdom of"…), against each nation's
-  name, wiki page title, `externalSourceKey` and the roster's nation page titles (`src/lib/maps/nation-name-matching.ts`,
-  `linkage/matching.ts`). Confidence: same name 100%, same normalised name 95%, same without the state form 85%,
-  similar spelling (edit similarity ≥ 0.8) scaled below 80%. `geoEditor.suggestLinkageMatches` is the review list;
-  `repairLinkage` `apply_matches` links the picked pairs and `auto_match` alone links matches of at least 85%.
-- **Several regions per nation:** Auto-Match and a claimed nation page (`takeMapRegion`) link every region that names
-  the nation (feature id, display name or source key), and `syncCountryGeometryFromMapLayer` reads all the nation's
-  active regions in its own realm and stores their union (`@turf/union`), summed area, joint bounding box and
-  area-weighted centre.
-
-### Not done yet
-
-- Per-realm overrides of the fixed elevation and climate colour keys (`getZoneByColor`, `resolveClimateFromColor`):
-  every realm still reads Ixnay's keys.
-- A few country-id lookups of `MapLayer` (`getCountryGeometry`, the edit queue, province imports) do not filter by
-  realm; country ids are unique and cross-realm links are refused (`assertCountryInFeatureRealm`).
+Every realm has its own map (`MapLayer.realmId`), shown in IxWorld's viewer with the realm's data. Site admins, the
+founder and realm officers with the `map` power edit it (`canEditRealmMap`, `realmMapAccess`; Ixnay stays with site
+admins); `Realm.settings.map` holds its planet radius, default view, base image, attribution and georeferencing; the
+realm's map pipeline builds its art, physical layers, labels and flags; and realm labels, Auto-Match and multi-region
+nations work per realm. The detailed doc is [realm-maps.md](realm-maps.md): the pipeline runbook (§1 to §7) and
+[editing and viewing a realm's map](realm-maps.md#8-editing-and-viewing-a-realms-map) (§8: who edits, map settings,
+planet radius, viewer, realm labels, Auto-Match, what is not done yet).
 
 ## Realm Map Import Engine
 
@@ -447,7 +334,7 @@ The public viewer (`/maps`, `MapContainer` → `IxWorldMap`, hooks in `src/compo
 ## Map Delivery (Atlas Release 0)
 
 Layers and tiles reach the browser through versioned routes, not tRPC, so the browser's HTTP cache and the server's byte
-caches do the work. Design: [Atlas Release 0 spec](../specs/2026-10-11-atlas-release-0-performance-design.md).
+caches do the work. Design: [Atlas Release 0 spec](../history/specs/2026-10-11-atlas-release-0-performance-design.md).
 
 - **Map version.** `Realm.mapVersion` (Ixnay is realm `default`) is moved by `invalidateRealmMap(db, realmId)`
   (`src/server/shared/map-invalidation.ts`) to `GREATEST(version + 1, epoch seconds)`: up by one, but never below the
@@ -490,7 +377,7 @@ caches do the work. Design: [Atlas Release 0 spec](../specs/2026-10-11-atlas-rel
   - `map-tiles` renders z0 to z3 of the three layers for Ixnay and every published realm whose current version has no
     `.done` marker, then removes the folders of versions a newer one has outlived for more than a day. A run stops
     starting tiles after 15 minutes and the next one continues. Deeper zooms render on first request. It needs the
-    same `MAP_TILE_DIR` as the web app and the IxWorld standalone. Without the job the web process still cleans up
+    same `MAP_TILE_DIR` as the web app. Without the job the web process still cleans up
     after itself: after it renders a tile it removes the realm's outlived version folders (at most once an hour per
     realm, never the current version), so the disk cannot fill; pre-rendering is what the job adds.
   - `geo-profiles` recomputes, one country at a time (20 minute run budget), the geo profiles that
@@ -636,6 +523,6 @@ Geography serves as the foundational data source across the platform:
 
 ## Related Documentation
 
-- [Oceanography Report](../reference/oceanography-report.md)
+- [Oceanography Report](../research/oceanography-report.md)
 - [Framework Specification (Realms)](../architecture/realms-framework-spec.md)
 - [API Reference: Maps & Geography](../reference/api-complete.md#maps--geography)

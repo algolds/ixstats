@@ -19,7 +19,7 @@
 /** Columns that must not exist before their data SQL runs, whatever the deploy's file list says. */
 export const NEVER_EARLY: readonly string[] = [
   // 20261105120000_wikios_conflicts labels each existing revision classic or wikios only when it adds the column; a
-  // column added first defaults every classic revision to 'wikios' (docs/operations/wikios-v1-cutover.md).
+  // column added first defaults every classic revision to 'wikios' (docs/history/operations/wikios-v1-cutover.md).
   "wiki_revisions.origin",
 ];
 

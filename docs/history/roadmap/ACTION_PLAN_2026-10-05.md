@@ -7,12 +7,12 @@ were re-checked by hand. Where the docs and the code disagree, the code wins.
 This page does two things:
 
 1. It records what is wrong with the documentation today.
-2. It turns that, plus the parts of [ROADMAP.md](ROADMAP.md) that are still open, into an ordered list of actionable
+2. It turns that, plus the parts of [ROADMAP.md](../../roadmap/ROADMAP.md) that are still open, into an ordered list of actionable
    work.
 
-It does not replace ROADMAP.md (the milestone plan) or [SYSTEM_STATUS.md](../systems/SYSTEM_STATUS.md) (what is live).
+It does not replace ROADMAP.md (the milestone plan) or [SYSTEM_STATUS.md](../../systems/SYSTEM_STATUS.md) (what is live).
 It is the to-do list that gets both of them back in step with the code. Item IDs (`MC-`, `AT-`, `WK-`, `VT-`, `SL-`,
-`PL-`) refer to [code-audit-2026-09-30.md](../history/roadmap/code-audit-2026-09-30.md).
+`PL-`) refer to [code-audit-2026-09-30.md](code-audit-2026-09-30.md).
 
 **Size:** S under a day · M 1–3 days · L more than 3 days. **Priority:** P0 now · P1 this cycle · P2 when capacity allows.
 
@@ -24,7 +24,7 @@ All five phases were worked the same day on `rose-garden`; the commits and merge
   `audit:vault-exploits:apply` and a production restore test, run the deploy-time backfills
   (`db:mark-match-revenue-collected`, `db:backfill-transport-realm`, `bun scripts/cards/import-special-cards.ts --apply`).
   The transport realm backfill was retired on 2026-10-21; if production has not run it, restore it from git first
-  ([realms.md](../systems/realms.md#6-map-and-transport-isolation)).
+  ([realms.md](../../systems/realms.md#6-map-and-transport-isolation)).
 - **Decisions:** D18 (get `.github/` onto `master` so Dependabot and scheduled workflows use the fixes). Decided on
   2026-10-06: D2 (a) restore unit authoring, D3 (b) via D20, D5 (a) build the Exchange, D9 approved after the restore
   test, D10 retire the narrator, D11 delete scheduled changes, D20 merge PR #52 (cutover later).
@@ -34,7 +34,7 @@ All five phases were worked the same day on `rose-garden`; the commits and merge
   crafting rolls consume materials" are moot.
 - **Engineering still open:** Vexel PNG rendering;
   crisis-event producer and meeting decisions on the event spine (M4); M3–M7 as planned. The live backlog is
-  [backlog.md](backlog.md).
+  [backlog.md](../../roadmap/backlog.md).
 - **Ops still open:** deploy 1.4 (runbook), Redis on in production, remove the nginx CSP override, run the web process
   under PM2 if wanted, enable cron jobs one per cycle.
 
@@ -90,7 +90,7 @@ All five phases were worked the same day on `rose-garden`; the commits and merge
 |---|---|---|---|---|
 | 1 | **SSRF and key leak in match commentary.** `generateMatchCommentary` is a `publicProcedure` mutation that accepts `config.apiUrl` / `config.apiKey` and passes them to `generateAudioBroadcast`. That function POSTs to the caller's URL with `Authorization: Bearer ${SPORTS_TTS_API_KEY}` when no key is supplied. `force: true` also lets anyone re-run paid LLM calls with no limit. **Fix:** drop the client `config` from the public input (or admin-gate it), allowlist TTS hosts the way the LLM path does, and make `force` owner-only and rate-limited | `src/server/api/routers/sports/leagues/schedule.ts:193`, `src/lib/sports/commentary/narrator.ts:303-330` | S | P0 |
 | 2 | **Admin-named endpoints without an admin gate.** Gate these with `adminProcedure` or rename them | `lorewards/admin.ts:124` `getCrossValidationHistory` (public), `:157` `getBlacklist` (protected), `sports/leagues/admin.ts:15` `getAdminGlobalStats` (protected) | S | P0 |
-| 3 | Security map for the ~190 admin-sensitive procedures **outside** the `admin.*` router. Today they are only spot-checked: for example, `realms.reviewClaim` relies on the service layer, and sports `resetSeason` / `overrideMatchResult` rely on ownership checks | [admin-endpoint-security-map.md](../reference/admin-endpoint-security-map.md) covers `admin.*` only | M | P1 |
+| 3 | Security map for the ~190 admin-sensitive procedures **outside** the `admin.*` router. Today they are only spot-checked: for example, `realms.reviewClaim` relies on the service layer, and sports `resetSeason` / `overrideMatchResult` rely on ownership checks | [admin-endpoint-security-map.md](../../reference/admin-endpoint-security-map.md) covers `admin.*` only | M | P1 |
 | 4 | M0 #19 is larger than recorded: **243** unlimited mutations (234 `protectedProcedure` + 9 `premiumProcedure`), not 228. The biggest groups are sports 29, diplomacy 26, thinkpages 23, onoma 20, wikios 20 and messages 11. Migrate them, then add a test that fails on any new unlimited mutation | `src/server/api/trpc/procedures.ts:58` | M | P1 |
 | 5 | Review the CSP before calling it "enforced": it allows `frame-ancestors *` on one host path, `connect-src https: wss: ws:` and `img-src http:` | `src/proxy.ts:88`, `src/lib/security/csp.ts:20` | S | P1 |
 
@@ -122,7 +122,7 @@ All S unless noted. One PR, preferably straight after Phase 0. The line-level li
 1. **Update the planning docs for #48, #49 and Facet 4.**
    - Mark every row in [Appendix A](#appendix-a--done-in-code-still-open-in-the-roadmap) done in ROADMAP.md, and
      narrow the partial rows.
-   - Update [pending-features.md](../history/roadmap/pending-features.md): about 12 rows now contradict the code.
+   - Update [pending-features.md](pending-features.md): about 12 rows now contradict the code.
    - Update the platform audit §0 "still open" list.
    - Add CHANGELOG entries for #48, #49 and Facet 4 / the sidebar. The newest entry is Facet 3.
 2. **Fix the counts.**
@@ -133,7 +133,7 @@ All S unless noted. One PR, preferably straight after Phase 0. The line-level li
      generated block instead of repeating a number.
 3. **Cron jobs.**
    - Add `stat-progression`, `thinkpages-trending` and `achievements-evaluate` (`src/server/cron/jobs.ts:205,220,231`)
-     to [events.md](../reference/events.md), the release guide and the rollout order. Without them, stored stats never
+     to [events.md](../../reference/events.md), the release guide and the rollout order. Without them, stored stats never
      move.
    - Document `cronSchedule_statProgression` and `cronSchedule_thinkpagesTrending`.
    - SYSTEM_STATUS says "17 jobs"; there are 20.
@@ -253,7 +253,7 @@ Only the items still open or partial in code are listed. Everything else in M2 i
 |---|---|---|---|---|
 | Cabinet meetings conclude | pending §2 | Open | Complete and decision mutations, with UI; `meetingDecision` is read but never written | M |
 | Policy repeal, expiry, executive bandwidth release | MC-5 | Open | Repeal mutation and UI; an expiry sweep. The `policies/index.ts:8` comment claims repeal exists, but it doesn't | S–M |
-| Defense force structure | MC-3 | Done (2026-10-06) | D2 (a): branch and unit authoring, a starter force from builder data, and strength computed from the authored structure ([defense.md](../systems/defense.md#force-structure-and-combat-strength)) | L |
+| Defense force structure | MC-3 | Done (2026-10-06) | D2 (a): branch and unit authoring, a starter force from builder data, and strength computed from the authored structure ([defense.md](../../systems/defense.md#force-structure-and-combat-strength)) | L |
 | PvP conflict resolution | MC-4 | Open | `security/conflicts.ts:188` sets conflicts `active`, and nothing resolves them | M |
 | Alliance invite NPC auto-response | MC-10 | Partial | Accept, decline and withdraw are done; NPC targets never answer | S |
 | Cultural exchange missions | MC-11 | Open | `exchanges/core/mutations.ts:185` creates `EmbassyMission` rows that nothing completes | S |
@@ -359,7 +359,7 @@ Do this once Phase 1 has made the content true. Each step is S–M.
 
 ## Later milestones (M3–M7)
 
-These are unchanged from [ROADMAP.md](ROADMAP.md) and were not re-verified line by line, except where #49 already
+These are unchanged from [ROADMAP.md](../../roadmap/ROADMAP.md) and were not re-verified line by line, except where #49 already
 delivered part of them:
 
 - **M3 Realms Phase 2.** #49 shipped:
@@ -387,7 +387,7 @@ delivered part of them:
 
 ## Decisions needed
 
-These are new or changed since [ROADMAP.md § Decisions needed](ROADMAP.md#decisions-needed); D2–D15 are otherwise
+These are new or changed since [ROADMAP.md § Decisions needed](../../roadmap/ROADMAP.md#decisions-needed); D2–D15 are otherwise
 unchanged.
 
 | # | Decision | Recommendation | Blocks |

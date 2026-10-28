@@ -8,7 +8,7 @@ import fs from "fs";
 import path from "path";
 import { CRON_JOBS, resolveEnabledJobs } from "~/server/cron/jobs";
 
-const OPS = path.resolve(__dirname, "../../../docs/operations");
+const OPS = path.resolve(__dirname, "../../../docs/history/operations");
 const read = (file: string) => fs.readFileSync(path.join(OPS, file), "utf8");
 
 const backticked = (text: string) =>

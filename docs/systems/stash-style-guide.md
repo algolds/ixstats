@@ -2,7 +2,7 @@
 
 **Specification:** Apple Human Interface Guidelines & Emil Kowalski Design Engineering  
 **Version:** Stash 1.0.0 / Facet Standard  
-**Capability Level:** `STASH_VERSION: 1`  
+**Capability Level:** `INTERNAL_VERSIONS.systems.stash` = 1 (public v1)  
 **Last Updated:** August 2026  
 
 ---

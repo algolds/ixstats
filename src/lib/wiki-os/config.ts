@@ -335,7 +335,7 @@ export function getMediaWikiApiUrl(source: WikiSource = "ixwiki"): string {
 /**
  * The largest upload WikiOS takes, in bytes. A decimal 10 MB, not 10 MiB: the request body (the file itself, see
  * app/api/wiki/upload) must stay under Next's `experimental.proxyClientMaxBodySize` (10 MiB by default), which clones
- * a proxied body and silently truncates it past that size. Raise the two together (docs/operations/wikios-v1-cutover.md,
+ * a proxied body and silently truncates it past that size. Raise the two together (docs/history/operations/wikios-v1-cutover.md,
  * step 5c).
  */
 export const MAX_UPLOAD_BYTES = 10_000_000;

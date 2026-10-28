@@ -3,7 +3,7 @@
 #
 # Usage: ./scripts/deploy-ixworld.sh
 #
-# Behaviour (see docs/audits/AUDIT_2026-06.md, findings D1-D8):
+# Behaviour (see docs/history/audits/AUDIT_2026-06.md, findings D1-D8):
 # - Builds the IxWorld-flavoured Next.js standalone bundle WITHOUT clobbering the
 #   IxStats production `.next` (the IxStats prod server runs `next start` from it).
 #   The existing `.next` is saved aside before the build and restored afterwards. (D1)

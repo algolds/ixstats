@@ -1,6 +1,6 @@
 # Rate Limiting Configuration Guide
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-27
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -11,7 +11,6 @@
 6. [Monitoring & Testing](#monitoring--testing)
 7. [Troubleshooting](#troubleshooting)
 8. [Best Practices](#best-practices)
-9. [Advanced Configuration](#advanced-configuration)
 
 ---
 
@@ -964,360 +963,32 @@ Redis ensures all server instances share the same rate limit state.
 
 ## Best Practices
 
-### 1. Choose Appropriate Limits
-
-**Guidelines:**
-
-- **Custom (e.g. 10/min)**: Operations taking >500ms or affecting >100 records — no built-in tier; use `createRateLimitMiddleware`
-- **Standard Mutations (60/min)**: Country-owned CRUD operations taking 50-500ms
-- **Light Mutations (100/min)**: Simple updates taking <50ms
-- **Read-Only (120/min)**: Query operations with minimal processing
-- **Public (100/min)**: Unauthenticated endpoints
-
-**Example Decision Process:**
-
-```typescript
-// ❓ Creating a new blog post
-// - Single database insert
-// - Some validation
-// - Maybe 100-200ms
-// ✅ Use: standardMutationCountryOwnerProcedure (country data) or lightMutationProcedure
-
-// ❓ Bulk importing 1000 records
-// - Multiple database operations
-// - Complex validation
-// - Likely >2 seconds
-// ✅ Use: a custom createRateLimitMiddleware({ max: 10, ... }) procedure (no built-in heavy tier)
-
-// ❓ Toggling a favorite
-// - Single field update
-// - Minimal validation
-// - <50ms
-// ✅ Use: lightMutationProcedure
-```
-
-### 2. Provide Clear Error Messages
-
-```typescript
-// ❌ Bad error message
-throw new Error('Rate limited');
-
-// ✅ Good error message (automatically provided by createRateLimitMiddleware)
-throw new RateLimitError(
-  `Too many requests. Maximum ${max} requests per ${windowMs / 1000} seconds. Try again at ${resetAt.toISOString()}`,
-  resetAt
-);
-// Reaches the client as tRPC code TOO_MANY_REQUESTS (HTTP 429) with data.context.resetAt
-```
-
-### 3. Implement Client-Side Backoff
-
-```typescript
-// In your tRPC client
-const mutation = api.posts.create.useMutation({
-  onError: (error) => {
-    if (error.data?.code === 'TOO_MANY_REQUESTS') {
-      // Reset time is in the error context
-      const resetAt = (error.data as any)?.context?.resetAt;
-      if (resetAt) {
-        const resetTime = new Date(resetAt);
-        const waitSeconds = Math.ceil((resetTime.getTime() - Date.now()) / 1000);
-
-        toast.error(`Rate limit exceeded. Please wait ${waitSeconds} seconds.`);
-
-        // Optionally: auto-retry after wait period
-        setTimeout(() => mutation.mutate(input), waitSeconds * 1000);
-      }
-    }
-  }
-});
-```
-
-### 4. Monitor and Adjust
-
-```typescript
-// Add logging to track rate limit effectiveness
-const rateLimitMiddleware = t.middleware(async ({ ctx, next, path }) => {
-  const result = await rateLimiter.check(identifier, namespace);
-
-  // Log rate limit metrics
-  if (result.remaining < 10) {
-    console.warn(`[RATE_LIMIT] User ${identifier} has ${result.remaining} requests remaining for ${namespace}`);
-  }
-
-  if (!result.success) {
-    // Track rate limit violations
-    await logRateLimitViolation({
-      identifier,
-      namespace,
-      path,
-      timestamp: new Date(),
-    });
-  }
-
-  return next();
-});
-```
-
-### 5. Document Limits for API Consumers (not implemented — sketch)
-
-No such endpoint exists. A public endpoint that shows rate limits could look like:
-
-```typescript
-// src/app/api/rate-limits/route.ts
-export async function GET() {
-  return NextResponse.json({
-    limits: {
-      public: { requests: 100, window: '1 minute' },
-      queries: { requests: 120, window: '1 minute' },
-      light_mutations: { requests: 100, window: '1 minute' },
-      mutations: { requests: 60, window: '1 minute' },
-      default: { requests: 100, window: '1 minute' }, // adminProcedure
-    },
-  });
-}
-```
-
-### 6. Handle Edge Cases (not implemented — sketch)
-
-System owners and admins do **not** bypass rate limits today. A bypass could look like:
-
-```typescript
-// System administrators bypass rate limits
-const createRateLimitMiddleware = (options: RateLimitOptions) => {
-  return t.middleware(async ({ ctx, next }) => {
-    // Allow system owners to bypass rate limits
-    if (isSystemOwner(ctx.auth?.userId)) {
-      return next();
-    }
-
-    // Regular rate limiting
-    // ...
-  });
-};
-```
-
-### 7. Test Rate Limiting in CI/CD
-
-Unit tests already cover the limiter and middleware (`src/tests/lib/cache/rate-limiter.test.ts`, `src/tests/scenarios/security/security-mutation-burst.test.ts`). An end-to-end sketch against a running server:
-
-```typescript
-// sketch
-describe('Rate Limiting', () => {
-  it('should enforce rate limits on public endpoints', async () => {
-    const requests = [];
-
-    // Make 105 requests (public tier limit is 100)
-    for (let i = 0; i < 105; i++) {
-      requests.push(
-        fetch('/api/trpc/users.getProfile')
-          .then(r => r.status)
-      );
-    }
-
-    const results = await Promise.all(requests);
-    const successCount = results.filter(s => s === 200).length;
-    const rateLimitedCount = results.filter(s => s === 429).length;
-
-    expect(successCount).toBeLessThanOrEqual(100);
-    expect(rateLimitedCount).toBeGreaterThan(0);
-  });
-});
-```
-
----
-
-## Advanced Configuration
-
-### Custom Rate Limit Strategies
-
-The strategies below other than IP-based identity are **not implemented**; they are sketches.
-
-#### 1. IP-Based Rate Limiting (implemented)
-
-`src/server/api/trpc/rate-limit-identity.ts`:
-
-```typescript
-export function resolveRateLimitIdentifier(headers: Headers, realUserId: string | null): string {
-  if (realUserId) return `user:${realUserId}`;
-  const ip = headers.get("cf-connecting-ip")?.trim() || headers.get("x-real-ip")?.trim();
-  return ip ? `ip:${ip}` : "anonymous";
-}
-```
-
-`X-Forwarded-For` is deliberately ignored because clients can set it. This assumes the origin only accepts traffic from Cloudflare; if it is directly reachable, `CF-Connecting-IP` can be forged.
-
-#### 2. Endpoint-Specific Limits
-
-```typescript
-// Create middleware for specific high-value endpoints
-const criticalEndpointRateLimit = createRateLimitMiddleware({
-  max: 5,
-  windowMs: 60000,
-  namespace: 'critical'
-});
-
-export const criticalMutationProcedure = protectedProcedure
-  .use(criticalEndpointRateLimit)
-  .use(auditLogMiddleware);
-```
-
-#### 3. Burst Allowance
-
-```typescript
-// Allow short bursts but maintain longer-term limits
-const burstRateLimit = t.middleware(async ({ ctx, next }) => {
-  // Check short-term burst limit (10 req/sec)
-  const burstResult = await rateLimiter.check(identifier, 'burst_1s');
-
-  // Check long-term limit (100 req/min)
-  const sustainedResult = await rateLimiter.check(identifier, 'sustained_1m');
-
-  if (!burstResult.success || !sustainedResult.success) {
-    throw new Error('Rate limit exceeded');
-  }
-
-  return next();
-});
-```
-
-#### 4. Dynamic Limits Based on User Tier
-
-```typescript
-const createTieredRateLimit = (baseMax: number) => {
-  return t.middleware(async ({ ctx, next }) => {
-    const userTier = ctx.user?.membershipTier || 'basic';
-
-    const tierMultipliers = {
-      basic: 1,
-      mycountry_premium: 2,
-      admin: 10,
-    };
-
-    const maxRequests = baseMax * (tierMultipliers[userTier] || 1);
-
-    // Apply custom limit
-    const result = await rateLimiter.check(
-      ctx.rateLimitIdentifier,
-      'tiered',
-      { maxRequests, windowMs: 60000 }
-    );
-
-    if (!result.success) {
-      throw new Error(`Rate limit exceeded for ${userTier} tier`);
-    }
-
-    return next();
-  });
-};
-```
-
-#### 5. Geographic Rate Limiting
-
-```typescript
-// Different limits for different regions
-const geoRateLimit = t.middleware(async ({ ctx, next }) => {
-  const country = req.headers.get('cf-ipcountry') || 'unknown';
-
-  const regionalLimits = {
-    US: 100,
-    EU: 100,
-    CN: 50,  // Lower limit for high-traffic regions
-    default: 75,
-  };
-
-  const maxRequests = regionalLimits[country] || regionalLimits.default;
-
-  // Apply regional limit
-  // ...
-});
-```
-
-### Redis Cluster Configuration
-
-For high-scale deployments, use Redis Cluster:
-
-Not implemented (`REDIS_CLUSTER_ENABLED`/`REDIS_PASSWORD` are not read anywhere). Sketch:
-
-```typescript
-// In src/lib/cache/rate-limiter.ts
-import Redis from 'ioredis';
-
-private async initRedis() {
-  if (process.env.REDIS_CLUSTER_ENABLED === 'true') {
-    // Redis Cluster configuration
-    this.redisClient = new Redis.Cluster([
-      { host: 'redis-node1', port: 6379 },
-      { host: 'redis-node2', port: 6379 },
-      { host: 'redis-node3', port: 6379 },
-    ], {
-      redisOptions: {
-        password: process.env.REDIS_PASSWORD,
-      },
-    });
-  } else {
-    // Single Redis instance
-    this.redisClient = new Redis(env.REDIS_URL!);
-  }
-}
-```
-
-### Rate Limit Exemptions (not implemented — sketch)
-
-```typescript
-// Exempt specific users or services
-const exemptedUsers = new Set([
-  'user_system_monitor',
-  'user_health_check',
-]);
-
-const rateLimitMiddleware = t.middleware(async ({ ctx, next }) => {
-  // Skip rate limiting for exempted users
-  if (exemptedUsers.has(ctx.auth?.userId || '')) {
-    return next();
-  }
-
-  // Regular rate limiting
-  // ...
-});
-```
-
----
-
-## Conclusion
-
-Rate limiting is a critical component of the IxStats platform's security and performance infrastructure. This guide has covered:
-
-- **Why rate limiting matters**: Security, performance, and business benefits
-- **How it works**: Redis backend, tiered limits, namespace isolation
-- **How to configure it**: Production setup, environment variables, Redis installation
-- **How to use it**: Choosing procedure types, migrating endpoints
-- **How to monitor it**: Testing, metrics, troubleshooting
-- **Best practices**: Limit selection, error handling, client-side backoff
-- **Advanced features**: Custom strategies, clustering, exemptions
-
-### Key Takeaways
-
-1. **Always use Redis in production** for consistent rate limiting across instances
-2. **Choose the right tier** for each endpoint based on resource intensity
-3. **Monitor rate limit metrics** to optimize limits over time
-4. **Provide clear feedback** to users when they hit limits
-5. **Test thoroughly** in development before deploying
-
-### Next Steps
-
-1. ⏳ Set `REDIS_ENABLED=true` in production (the 2026-09 rose-garden runbook adds it; prod had no `REDIS_ENABLED` on 2026-09-27)
-2. ⏳ Most procedures still use unlimited builders (`publicProcedure`, `protectedProcedure`, `cached*Procedure`); fewer than 100 of roughly 960 procedures use a rate-limited builder besides `adminProcedure`
-3. ⏳ Monitoring and alerting: only `[RATE_LIMIT]` console lines exist
-4. ⏳ No public rate-limit documentation endpoint or `X-RateLimit-*` headers
-5. ⏳ No load test of the limiter
-
-### Related Documentation
-
-- **API Reference**: [`api-complete.md`](../reference/api-complete.md) — Full tRPC API catalog
-
----
-
-**Version**: 1.0.0
-**Last Updated**: September 29, 2026
-**Maintained By**: IxStats Development Team
+**Pick the tier by cost.** Reads with little processing: the query tier (120/min). Simple updates under ~50 ms:
+`lightMutationProcedure` (100/min). Country-owned CRUD of 50–500 ms: `standardMutationCountryOwnerProcedure` (60/min).
+Unauthenticated endpoints: the public tier (100/min). Anything slower or touching many rows has no built-in heavy tier:
+give it its own `createRateLimitMiddleware({ max, windowMs, namespace })`.
+
+**What a caller sees.** A breach throws `RateLimitError`, which reaches the client as tRPC code `TOO_MANY_REQUESTS`
+(HTTP 429) with the reset time in `data.context.resetAt`; show the wait instead of retrying blindly. No `X-RateLimit-*`
+headers are sent.
+
+**Identity.** `resolveRateLimitIdentifier` (`src/server/api/trpc/rate-limit-identity.ts`) keys a signed-in caller as
+`user:<id>` and anyone else by `CF-Connecting-IP`, then `X-Real-IP`, else `anonymous`. `X-Forwarded-For` is ignored
+because clients can set it. This assumes the origin only takes traffic through Cloudflare and nginx; if it is directly
+reachable, `CF-Connecting-IP` can be forged.
+
+**No bypass.** System owners and admins are rate-limited like everyone else; there are no exemptions, no tiered or
+regional limits, and no Redis Cluster support (`REDIS_CLUSTER_ENABLED` and `REDIS_PASSWORD` are read nowhere).
+
+**Tests.** `src/tests/lib/cache/rate-limiter.test.ts` and
+`src/tests/scenarios/security/security-mutation-burst.test.ts` cover the limiter and the middleware.
+
+**Open items.**
+
+- Most procedures still use unlimited builders (`publicProcedure`, `protectedProcedure`, `cached*Procedure`); fewer
+  than 100 of roughly 960 procedures use a rate-limited builder besides `adminProcedure`.
+- Monitoring is the `[RATE_LIMIT]` console lines only (`pm2 logs ixstats-web`).
+- No public rate-limit documentation endpoint, and no load test of the limiter.
+
+Production runs with `REDIS_ENABLED=true` (in `.env.production.local`), so the limiter counts in Redis rather than
+its in-memory fallback. Related: [`api-complete.md`](../reference/api-complete.md), the full tRPC API catalog.

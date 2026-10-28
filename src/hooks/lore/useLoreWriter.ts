@@ -78,7 +78,7 @@ function useLoreCalls(countryId: string) {
 }
 
 /**
- * The lore writer's state (docs/superpowers/specs/2026-10-24-native-lore-design.md, "Writing flow"): type, details,
+ * The lore writer's state (docs/specs/2026-10-24-native-lore-design.md, "Writing flow"): type, details,
  * the editor, then the Lore tab record. The author's text is never dropped: going back carries it (and keeps it as
  * their draft), closing keeps it as their draft, and "Open in WikiOS" hands it over as their draft, never in a URL.
  */

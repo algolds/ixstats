@@ -1,5 +1,5 @@
 /**
- * Native lore's piece types and a country's lore category (docs/superpowers/specs/2026-10-24-native-lore-design.md).
+ * Native lore's piece types and a country's lore category (docs/specs/2026-10-24-native-lore-design.md).
  * Client-safe: the lore writer and the Lore tab use these, and so does the server's lore module.
  */
 

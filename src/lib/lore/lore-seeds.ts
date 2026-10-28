@@ -1,6 +1,6 @@
 /**
  * What the country page's entry points already know when they open the lore writer
- * (docs/superpowers/specs/2026-10-24-native-lore-design.md, "Writing flow"): "Write about this place" on a region,
+ * (docs/specs/2026-10-24-native-lore-design.md, "Writing flow"): "Write about this place" on a region,
  * city or story pin seeds a Place with its title and, when the map has it, its location; "Write about this event" on
  * a History entry seeds an Event with its title and date. Pure.
  */

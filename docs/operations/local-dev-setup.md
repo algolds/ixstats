@@ -1,13 +1,14 @@
 # Comprehensive WSL2 Local Development Setup Guide
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-27
 
 Welcome to the IxStates local development guide. This document details how to set up, configure, and run the entire development stack on your local Windows machine using Windows Subsystem for Linux (WSL2), Docker, and SSH port forwarding.
 
 > **Two paths.** Contributors start from an **empty local database** built from the repository alone
-> ([Part 4](#part-4--create-the-local-database)); no production access is needed. The SSH tunnels, the
-> configuration copied from the VPS and the production dump (Parts 2, 3 Step 2b and 6) are for maintainers with
-> access to the production server. On macOS or Linux, skip the WSL steps of Part 1 and install Docker, Node and Bun
+> ([Part 4](#part-4--create-the-local-database)); no production access is needed. The SSH tunnels and the
+> production dump (Parts 2 and 6) are for maintainers with access to the production server, and the production
+> database tunnel needs the owner's approval. Nobody copies the server's env files or Docker configuration to a
+> laptop (Part 3 Step 2b). On macOS or Linux, skip the WSL steps of Part 1 and install Docker, Node and Bun
 > directly.
 
 ---
@@ -103,6 +104,8 @@ source ~/.bashrc
 # Verify installation
 node --version && bun --version
 ```
+Both installers pipe a remote script into `bash`. If you prefer to check first, download the script (`curl -fsSL -o
+install.sh <url>`), read it, then run `bash install.sh`; the nvm URL above is pinned to a release tag.
 
 ---
 
@@ -125,13 +128,17 @@ Host ixwiki
     User root
     # IxTime Discord-bot API (live time sync during local dev)
     LocalForward 13001 localhost:3001
-    # Production Postgres, read-only inspection (psql -h localhost -p 15433)
+    # Production Postgres, read-only inspection (psql -h localhost -p 15433): only with the owner's approval
     LocalForward 15433 localhost:5433
     # Production MediaWiki MySQL (direct wiki-bridge queries on port 13306)
     LocalForward 13306 localhost:3306
     ServerAliveInterval 30
 ```
 This config allows you to run `ssh ixwiki` to open a shell and automatically spin up the entire suite of tunnels.
+
+> **The production database tunnel (15433) needs the owner's approval.** It exposes player data to your machine, even
+> read-only. Ask first, use your own read-only credentials (never a shared or server password), and drop the
+> `LocalForward 15433` line when you no longer need it. The local database of Part 4 covers ordinary development.
 
 ---
 
@@ -156,26 +163,17 @@ cp .env.example .env.local
 `.env.example` lists every variable `src/env.ts` declares (a test keeps it complete), and its `DATABASE_URL` and
 `REDIS_URL` already match `docker-compose.dev.yml`.
 
-### Step 2b — Fetch Gitignored Configuration Files (maintainers)
-Environment files, editor settings, Docker specs and several tooling configs are gitignored (see `.gitignore`), so copy them over SSH from the VPS. The `tsconfig*.json` files, `prisma.config.ts`, `.oxlintrc.json` and `bun.lock` are tracked in git, so do not overwrite them from the server:
-```bash
-cd ~/projects/ixstats
+### Step 2b — Configuration that is not in git
+Do not copy the server's `.env*` files, `docker-compose.yml` or `docker/` directory to your machine: they hold
+production secrets and production-only settings. Everything a developer needs is tracked or templated:
 
-# Copy environment configuration templates
-scp ixwiki:"/ixwiki/public/projects/ixstats/.env" .
-scp ixwiki:"/ixwiki/public/projects/ixstats/.env.local" .
-scp ixwiki:"/ixwiki/public/projects/ixstats/.env.local.dev" .
-
-# Copy docker compose specifications
-scp ixwiki:"/ixwiki/public/projects/ixstats/docker-compose.yml" .
-scp -r ixwiki:"/ixwiki/public/projects/ixstats/docker" .
-
-# Copy gitignored JS/TS toolchain configs (skip any the server does not have)
-scp ixwiki:"/ixwiki/public/projects/ixstats/{eslint.config.js,prettier.config.js,components.json,bunfig.toml}" .
-
-# Copy editor workspace settings
-scp -r ixwiki:"/ixwiki/public/projects/ixstats/.vscode" .
-```
+- **Env:** `.env.example` → `.env.local` (Step 2), filled with **your own** credentials: a Clerk development
+  instance, your own Discord test bot or webhook if you need one, and random local secrets (`openssl rand -hex 32`).
+  Ask the maintainer for anything shared only when there is no per-developer alternative, and never put production
+  keys (`sk_live_…`, the production database or Redis URLs, webhook secrets) in a local file.
+- **Database and Redis:** `docker-compose.dev.yml` (Part 4), not the server's compose files.
+- **Toolchain:** `tsconfig*.json`, `prisma.config.ts`, `.oxlintrc.json` and `bun.lock` are tracked. Editor settings
+  (`.vscode/`) are yours to set up.
 
 ---
 

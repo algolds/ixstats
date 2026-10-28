@@ -2,7 +2,7 @@
 
 This document outlines the **10-phase roadmap** for Onoma—the Language & Naming Engine of IxStates—matching the v2.0 Product Requirements Document against the current codebase.
 
-> **Status as of September 2026 (Onoma v4, platform 1.4.0 RC):** Phases 1–3 and 7 are complete; Phases 4, 5, 8 and 9 are partially shipped (see the table); Phases 6 and 10 have no implementation. The Gantt chart below reflects the original June 2026 plan and is kept for history.
+> **Status as of September 2026 (Onoma internal `INTERNAL_VERSIONS.systems.onoma` = 4, public v1; platform then 1.4.0 RC, now 1.5.0 internal / public 1.0):** Phases 1–3 and 7 are complete; Phases 4, 5, 8 and 9 are partially shipped (see the table); Phases 6 and 10 have no implementation. The Gantt chart below reflects the original June 2026 plan and is kept for history.
 
 ---
 
@@ -77,7 +77,7 @@ gantt
   - **Phonetic IPA spelling translation**: Built `ipaToSpeechSpelling` in [branding-utils.ts](../../src/lib/onoma/branding-utils.ts) translating raw IPA text to readable phonetic English syllables with stressed capitalization (e.g. `/ʃəˈnoʊmə/` $\rightarrow$ `shuh-NOH-muh`).
   - **Fallback Playback**: Refactored [NameResultCard.tsx](../../src/app/labs/onoma/components/shared/NameResultCard.tsx) to execute natural voice priorities: Kokoro TTS $\rightarrow$ Browser Native fallback. (The original third tier, client-side meSpeak, was removed on 2026-06-26.)
   - **Production Docker Configuration**: Configured the self-hosted `kokoro` service container in a host-local `docker-compose.yml` (untracked since March 2026 — see [Onoma Voice Guide](./onoma-voice-guide.md#3-local-development--docker-configuration) for the `docker run` equivalents) mapped to localhost port 3004, enforcing API key authentication via environment variable `KW_SECRET_API_KEY`, mounting persistent model volume cache, and configuring CPU/memory quotas and logging limits.
-  - **Environment Verification Integration**: Added Kokoro connectivity checks to [verify-environment.ts](../../scripts/deployment/verify-environment.ts) and wired the validation runner before builds start in the IxWorld maps standalone deployment script [deploy-ixworld.sh](../../scripts/deploy-ixworld.sh).
+  - **Environment Verification Integration**: Added Kokoro connectivity checks to [verify-environment.ts](../../scripts/deployment/verify-environment.ts) and wired the validation runner before builds start in the IxWorld maps standalone deployment script [deploy-ixworld.sh](../../scripts/deploy-ixworld.sh). (Historical: the production deploy no longer runs that script, since maps.ixwiki.com became the main app's `/maps` page on 2026-10-27; it stays only for a manual standalone build.)
 
 ---
 
@@ -139,7 +139,7 @@ gantt
   - **Custom Weight Voice Blending**: Supported blended voices (e.g. `af_heart*0.6+am_adam*0.4`) directly configurable per-culture.
   - **JSON Cache Layer**: Upgraded the standard cache serialization to save WAV/MP3 formats under engine-hashed keys.
   - **IPA to English Syllable Translator**: Created rules converting raw IPA sounds into stressed hyphenated spelling chunks (e.g. `/ʃəˈnoʊmə/` $\rightarrow$ `shuh-NOH-muh`) to guide browser synthesis voice pacing.
-  - **Pre-Deployment Health Checks**: Added database-gated port-pings in `verify-environment.ts` and automated validation inside `deploy-ixworld.sh`.
+  - **Pre-Deployment Health Checks**: Added database-gated port-pings in `verify-environment.ts` and automated validation inside `deploy-ixworld.sh` (no longer part of the production deploy; maps.ixwiki.com is the main app's `/maps` page).
 
 ### Phase 8: Translation Engine
 - **Objective**: Context-aware conlang translators.

@@ -1,5 +1,7 @@
 # 🏛️ MyCountry Intelligence & Recon (Folded into Defense)
 
+> **History.** Retired 2026-10-27: its live facts were folded into [defense.md](../../systems/defense.md#intelligence).
+
 **Last updated:** 2026-10-05
 
 **Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
@@ -46,7 +48,7 @@ Defined in `prisma/schema/intelligence.prisma`:
 
 ## Related Documentation
 
-- [Diplomacy System](./diplomacy.md)
-- [Defense & Security System](./defense.md)
-- [MyCountry Command Suite](./mycountry.md)
-- [API Reference: Intelligence Routers](../reference/api-complete.md#intelligence--diplomacy)
+- [Diplomacy System](../../systems/diplomacy.md)
+- [Defense & Security System](../../systems/defense.md)
+- [MyCountry Command Suite](../../systems/mycountry.md)
+- [API Reference: Intelligence Routers](../../reference/api-complete.md#intelligence--diplomacy)

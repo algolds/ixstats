@@ -1,5 +1,7 @@
 # MyLeague Lore Integration & Feature Audit
 
+> **History.** Retired 2026-10-27: its live facts were folded into [myleague.md](../../systems/myleague.md#lore-fidelity).
+
 **Last updated:** September 2026  
 **Status:** Consolidated Architecture Guide  
 **Target Architecture:** `MyLeague` Simulation Engine (`prisma/schema/sports.prisma`, `src/lib/sports/resolver.ts`)
@@ -49,6 +51,6 @@ This document analyzes sports lore documented across the MediaWiki database and 
 
 ## Related Documentation
 
-- [MyLeague & MyClub Sports Guide](./myleague.md)
-- [Social & Collaboration System](./social.md)
-- [API Reference: Sports Router](../reference/api-complete.md)
+- [MyLeague & MyClub Sports Guide](../../systems/myleague.md)
+- [Social & Collaboration System](../../systems/social.md)
+- [API Reference: Sports Router](../../reference/api-complete.md)

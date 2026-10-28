@@ -1021,4 +1021,4 @@ The guard is wired to `bun run audit:arch` and has a partner `bun run audit:arch
 - **`scripts/audit/audit-arch.ts`** — the architecture guard
 - **`scripts/split-router-template.ts`** — the canonical splitter (read its 100-line header comment)
 - **[`docs/architecture/ts-graph-isolation.md`](../architecture/ts-graph-isolation.md)** — the broader TypeScript graph isolation context
-- **[`docs/audits/AUDIT_2026-06-13.md`](../audits/AUDIT_2026-06-13.md)** — the audit that produced this work
+- **[`docs/history/audits/AUDIT_2026-06-13.md`](../history/audits/AUDIT_2026-06-13.md)** — the audit that produced this work

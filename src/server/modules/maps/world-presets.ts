@@ -1,5 +1,5 @@
 /**
- * World presets in the database (docs/specs/2026-10-12-atlas-studio-design.md, "Presets"). A preset is a named
+ * World presets in the database (docs/history/specs/2026-10-12-atlas-studio-design.md, "Presets"). A preset is a named
  * recipe without a seed. Its draft is an unpublished version; publishing stamps that version and makes it the one
  * founders get, and a published version is never changed (the next save starts a new draft). The three built-ins are
  * seeded from `WORLD_PRESETS` on first read, with fixed ids and `skipDuplicates`, so concurrent first reads and a

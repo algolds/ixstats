@@ -8,7 +8,7 @@
 
 **Status:** 📐 Specification, decided 2026-09-30; Phases 1–2 shipped; **amended by Facet 3.1 — identity (2026-10-01, §16)** ·
 **Replaces:** [Facet v2](../../reference/facet-design-system.md) once Phase 2 lands · **Evidence:**
-[Facet style audit](../../audits/FACET_STYLE_AUDIT_2026-09-30.md)
+[Facet style audit](../audits/FACET_STYLE_AUDIT_2026-09-30.md)
 
 > **Facet 3.1 (§16) overrides parts of this spec.** The standardisation stays; the pre-refactor (v2, `c5c6b382`)
 > identity comes back on top of it: glass hero cards, a monochrome primary (gold in MyCountry/Builder), mono data

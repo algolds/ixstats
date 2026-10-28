@@ -1,8 +1,8 @@
 # IxStates Versioning & Release Architecture
 
 **Status:** Canonical Standard v2  
-**Platform Release:** IxStates 1.5.0 "Lobster Crosby" (Release Candidate)  
-**Last Updated:** October 2026  
+**Platform Release:** IxStates 1.0.0 "Lobster Crosby" (Stable) to players; internal 1.5.0, on production since 2026-10-27 (see [§5](#5-public-and-internal-versions))  
+**Last Updated:** 2026-10-27  
 
 ---
 
@@ -23,7 +23,7 @@ Versioning communicates:
 
 ```text
 ====================================================================================================
-                            IXSTATES 1.5.0 "LOBSTER CROSBY" — OPERATING TAXONOMY
+                            IXSTATES "LOBSTER CROSBY" (INTERNAL 1.5.0) — OPERATING TAXONOMY
 ====================================================================================================
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -136,6 +136,8 @@ Versioning communicates:
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
+> **Numbers in the chart** are the internal registry's (`INTERNAL_VERSIONS`); players see v1 for every app and system ([§5](#5-public-and-internal-versions)).
+>
 > **Registry mapping:** `VERSIONS.engines` in `src/lib/buildVersion.ts` has exactly three entries: `mycountry` (the "Statecraft Engine" above; Statecraft has no separate integer), `concord` and `atlas`. Other systems named under Concord (IxTime, crisis events, NPC AI) are a documentation grouping and are not versioned separately. The `MYCOUNTRY_ENGINE_VERSION` and `CONCORD_ENGINE_VERSION` constants are not read anywhere else in `src/`.
 
 ---
@@ -145,14 +147,33 @@ Versioning communicates:
 The platform maintains strict separation between the **Platform SemVer Level** and the **Component Capability Integers**:
 
 1. **Platform**: `Major.Minor.Patch` + Permanent Epoch **Release Name** + **Channel**  
-   *Current:* **`IxStates 1.5.0 "Lobster Crosby"`** (Channel: *Release Candidate*).
-2. **First-Party Apps**: A single monotonic capability integer (`IXWORLD_VERSION = 3`, `WIKIOS_VERSION = 1`, `IXVAULT_VERSION = 3`).
-3. **Simulation Engines**: Internal capability integers surfaced only in the Developer Panel (`MYCOUNTRY_ENGINE_VERSION = 4`, `CONCORD_ENGINE_VERSION = 2`, `ATLAS_ENGINE_VERSION = 5`).
-4. **UI / Feature Systems & Design**: Independent capability integers (`MYCOUNTRY_VERSION = 6`, `BUILDER_VERSION = 4`, `THINKPAGES_VERSION = 3`, `ACHIEVEMENTS_VERSION = 3` (incl. LoreWards / Wiki Awards), `STASH_VERSION = 1`, `REPOSITORY_VERSION = 2`, `HALO_VERSION = 6`, `ONOMA_VERSION = 4`), the design system (`FACET_VERSION = 4`) and the WikiOS sub-system `CANVAS_VERSION = 1`.
-5. **Inherited Components**: Components that do not version independently inherit the platform version: **IxForum** (`1.5`), **IxTime / IxnayID**, **Labs**, and **Navigation Hubs**.
+   *Current:* **`IxStates 1.0.0 "Lobster Crosby"`** (Channel: *Stable*) publicly; internally **1.5.0** (channel *Release Candidate* in `INTERNAL_VERSIONS`).
+2. **First-Party Apps**: A single monotonic capability integer (`IXWORLD_VERSION`, `WIKIOS_VERSION`, `IXVAULT_VERSION`; public 1 each, internal 3, 1 and 3).
+3. **Simulation Engines**: Internal capability integers surfaced only in the Developer Panel (`MYCOUNTRY_ENGINE_VERSION = 4`, `CONCORD_ENGINE_VERSION = 2`, `ATLAS_ENGINE_VERSION = 5`), identical in both registries.
+4. **UI / Feature Systems & Design**: Independent capability integers (`MYCOUNTRY_VERSION`, `BUILDER_VERSION`, `THINKPAGES_VERSION`, `ACHIEVEMENTS_VERSION` (incl. LoreWards / Wiki Awards), `STASH_VERSION`, `REPOSITORY_VERSION`, `HALO_VERSION`, `ONOMA_VERSION`), the design system (`FACET_VERSION`) and the WikiOS sub-system `CANVAS_VERSION`: public 1 each; internal 6, 4, 3, 3, 1, 2, 6, 4, Facet 4 and Canvas 1.
+5. **Inherited Components**: Components that do not version independently inherit the platform version: **IxForum** (`IXFORUM_VERSION`, the public `major.minor`: `1.0`), **IxTime / IxnayID**, **Labs**, and **Navigation Hubs**.
 
 ---
 
 # 4. Source of Truth
 
 The single source of truth for all runtime version constants is [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts). No version strings or numbers may be hardcoded in UI components or routers.
+
+---
+
+# 5. Public and Internal Versions
+
+Since the 1.0 reveal (October 2026), `src/lib/buildVersion.ts` holds two registries with the same shape:
+
+| Registry | Holds | Read by |
+|----------|-------|---------|
+| `VERSIONS` (public) | Platform **1.0.0 "Lobster Crosby"**, channel **Stable**; every app, system, design and sub-system number restarted at **1** | Every exported display constant (`APP_VERSION`, `PLATFORM_VERSION`, `RELEASE_NAME`, `CHANNEL`, `CHANNEL_SHORT`, `IXWORLD_VERSION` … `CANVAS_VERSION`, `IXFORUM_VERSION`), so every user-facing surface: the UI and the `/changelog` page |
+| `INTERNAL_VERSIONS` (internal) | The numbers the platform actually reached: platform **1.5.0** (channel Release Candidate), IxWorld 3, IxVault 3, MyCountry UI 6 and so on | `INTERNAL_PLATFORM_VERSION` (diagnostics, never shown to players), `scripts/docs/sync-reference-docs.ts`, which writes the generated version matrix in the docs (for example [platform.md](../overview/platform.md)), and `start-production.sh`'s start banner, which takes the first `major`/`minor`/`patch` in the file (the internal registry's, `v1.5.0 "Lobster Crosby"`) |
+
+**The engines are identical** in both (`VERSIONS.engines` *is* `INTERNAL_VERSIONS.engines`) because they are
+functional, not cosmetic: stored data carries them. `ATLAS_ENGINE_VERSION` is stamped into world recipes and imports, and
+a stored recipe is validated against it, so restarting it at 1 would invalidate every stored recipe.
+
+**Bumping.** A user-facing change bumps the public number in `VERSIONS` (from 1 onwards) and the internal number in
+`INTERNAL_VERSIONS` alike; never bump an engine for display. `CHANGELOG.md` names a release by its internal number and
+notes the public one (1.5.0 shipped as public 1.0).

@@ -19,7 +19,7 @@ Trade shows up in three places: the **Trade & Commerce** tab of [Economy & Budge
 - **Bilateral Trade Agreements & Partners.** The nations you have relations with. A **Trade treaty** badge means a trade treaty is recorded with that nation; otherwise **Propose FTA** opens their country page so you can propose one (see below).
 
 > [!WARNING]
-> **The Sector Tariff Planner isn't saved.** It's marked **Not saved** in the tab: use it to try out a tariff schedule. It resets when you leave the page and doesn't change your economy. The tariff that is saved for your nation is the **Import tariff** in [Taxes](/help/economy/tax-system).
+> **What the Sector Tariff Planner saves.** A recorded sector's tariff is saved for your nation when you let go of its slider (or type a rate). Sectors you add to try ideas out are not saved and are marked as such. Sector tariffs don't change your tariff revenue yet: the tariff that feeds your economy is still the **Import tariff** in [Taxes](/help/economy/tax-system).
 
 ## Trade agreements
 

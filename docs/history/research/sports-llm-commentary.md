@@ -39,7 +39,7 @@ To satisfy the **Hard Invariant (Outcome Determinism)**:
 
 ## Implementation Status (audited 2026-09-29)
 
-**Implemented.** `narrateEvents()` in [`src/lib/sports/commentary/narrator.ts`](../../src/lib/sports/commentary/narrator.ts) rewrites the resolved event trace post-resolution and falls back silently to the templated descriptions on any failure, length mismatch, or when disabled.
+**Implemented.** `narrateEvents()` in [`src/lib/sports/commentary/narrator.ts`](../../../src/lib/sports/commentary/narrator.ts) rewrites the resolved event trace post-resolution and falls back silently to the templated descriptions on any failure, length mismatch, or when disabled.
 - **Providers:** `nvidia` (default; `meta/llama-3.1-70b-instruct` via build.nvidia.com), `openrouter` (`meta-llama/llama-3.1-70b-instruct`), or OpenAI-compatible (`gpt-4o-mini`). The shipped default differs from the GO recommendation above.
 - **Gating:** env `SPORTS_LLM_COMMENTARY` / `SPORTS_LLM_*`, or admin-managed `sports:llm:*` SystemConfig keys (`applyGlobally`, provider, model, temperature, opt-in reasoning) set from the admin Sports panel (`getGlobalAINarratorSettings`, `saveGlobalAINarratorSettings`, `testLLMNarrator`).
 - **Async enrichment:** match-day simulation fires narration in the background (`narrateInBackground` in `seasons/matches/matchDay.ts`) after the result is persisted, so the LLM never touches the outcome.

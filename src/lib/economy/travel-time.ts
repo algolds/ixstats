@@ -8,7 +8,7 @@
  *  4. Intermediate node dwell overhead (rail acceleration/stops, flight clearance, docking)
  *  5. Instantaneous network transmission exceptions (fiber optic, electric grid)
  *  6. Sea routes only, when a path is given: ocean currents and prevailing winds
- *     along each segment's bearing (docs/reference/oceanography-report.md)
+ *     along each segment's bearing (docs/research/oceanography-report.md)
  */
 
 import { bearing, distanceKm } from "~/lib/maps/geo-math";
@@ -298,7 +298,7 @@ export function formatTravelDuration(totalMinutes: number): string {
 }
 
 // Sea current & wind model
-// Numbers come from docs/reference/oceanography-report.md and stay in knots as
+// Numbers come from docs/research/oceanography-report.md and stay in knots as
 // the report gives them; they become km/h only through KMH_PER_KNOT.
 
 /** §2.2: 1 nautical mile = 1.852 km, so 1 knot = 1.852 km/h. */

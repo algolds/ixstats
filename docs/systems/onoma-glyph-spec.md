@@ -1,8 +1,8 @@
 # ⟨ONOMA⟩ Glyph System Specification
 
 **Last updated:** August 2026  
-**Status:** Production Ready (Beta) — Onoma v4  
-**Hierarchy:** Sub-system of Onoma (`ONOMA_VERSION = 4`).
+**Status:** Production Ready (Beta) — Onoma (internal v4, public v1)  
+**Hierarchy:** Sub-system of Onoma (`INTERNAL_VERSIONS.systems.onoma` = 4, public v1).
 
 ---
 

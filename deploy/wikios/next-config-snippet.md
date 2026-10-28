@@ -1,12 +1,17 @@
 # next.config.js and base-path changes for the WikiOS standalone build
 
 `next.config.js` is tracked in git, and it does not carry these edits yet. They belong to the deferred
-ixwiki.com takeover build (deferred step T5 of `docs/operations/wikios-v1-cutover.md`), which the IxStates-only launch
+ixwiki.com takeover build (deferred step T5 of `docs/history/operations/wikios-v1-cutover.md`), which the IxStates-only launch
 does not run. Make them in a commit before that build, not by hand on the server: `scripts/deploy-production.sh`
 runs `git reset --hard` and `git clean -fd` in the production checkout, so a hand edit there is undone by the next
 IxStates deploy. Edit 1 goes beside the IxWorld branch at the top of `resolveBasePath()`, which lives in
 `scripts/setup/base-path.cjs` (next.config.js imports it). The PostCSS pass that puts the base path in front of the
 stylesheets' font URLs (`scripts/setup/postcss-base-path-urls.cjs`) calls the same function, so the edit covers it too.
+
+**Since 2026-10-27 IxStates itself runs with an empty base path** (`BASE_PATH=""` in `.env.production`, served at
+`https://beta.ixwiki.com`), and WikiOS lives inside it at `beta.ixwiki.com/wiki/…`. Where this page says IxStates is at
+`/projects/ixstates`, that is the fallback `resolveBasePath()` uses when `BASE_PATH` is unset, not production's value.
+The takeover framing below is unchanged and still deferred.
 
 `scripts/deploy-wikios.sh` builds with `NEXT_PUBLIC_WIKIOS_STANDALONE=true`, `BASE_PATH=` and
 `NEXT_PUBLIC_BASE_PATH=` (all empty base path). Without edit 1 the production build would fall through to
@@ -63,5 +68,6 @@ NODE_ENV=production NEXT_PUBLIC_WIKIOS_STANDALONE=true node --input-type=module 
 
 NODE_ENV=production node --input-type=module -e \
   'const { default: c } = await import("./next.config.js"); console.log(JSON.stringify(c.basePath), c.assetPrefix)'
-# IxStates build is unchanged, expect:  "/projects/ixstates" /projects/ixstates
+# IxStates build is unchanged. With BASE_PATH unset, expect:  "/projects/ixstates" /projects/ixstates
+# (production's .env.production sets BASE_PATH="", so the real IxStates build has "" there too)
 ```
