@@ -32,7 +32,7 @@ masked in the admin config; sports season and simulation procedures require the 
 
 | Item | Where | Detail |
 |---|---|---|
-| **Economy, account and authorization exploits found by the code audit** | Vault, ThinkTanks, forum, Lorewards, audit log | See [code audit §1](code-audit-2026-09-30.md#1-security--economy-exploits) (VT-1 store price trusted from the client, VT-2 import-bonus farming, SL-1 ThinkTank authorization, WK-1 forum impersonation, PL-1 audit log persists nothing, …) and [ROADMAP M0](../../roadmap/ROADMAP.md#m0--integrity-security--economy-exploits) |
+| **Economy, account and authorization exploits found by the code audit** | Vault, ThinkTanks, forum, Lorewards, audit log | See [code audit §1](code-audit-2026-09-30.md#1-security--economy-exploits) (VT-1 store price trusted from the client, VT-2 import-bonus farming, SL-1 ThinkTank authorization, WK-1 forum impersonation, PL-1 audit log persists nothing, …) and [ROADMAP M0](../../roadmap/ROADMAP.md#shipped) |
 | Rotate the read-only DB password | `ixstats_readonly` role (plan 325) | The old password is in git history since 2026-05-31; the script no longer contains it, but the credential itself must be changed on the server |
 | CSP nonce not enforced | `src/lib/security/csp.ts`, [deploy runbook](../operations/deploy-rose-garden-2026-09.md) | The nonce now reaches the page ([#46](https://github.com/algolds/ixstats/pull/46), PL-2). Left: remove the nginx/Cloudflare override on the server and check for CSP violations, then drop `'unsafe-inline'` from `script-src` |
 
@@ -243,7 +243,7 @@ From the status blocks in [`docs/audits/`](../../audits/):
   | [realms-foundation](../specs/2026-09-27-realms-foundation-design.md), [realms-eurth](../specs/2026-09-28-realms-eurth-design.md), [route-travel-time](../specs/2026-09-12-route-travel-time-design.md) specs | implemented |
   | [map-editor-improvements-overview](../systems/map-editor-improvements-overview.md) | historical |
   | [myleague-v1-prd](../specs/2026-06-12-myleague-v1-prd.md), [myleague-top5-features](../systems/myleague-top5-features.md), [sports-llm-commentary](../research/sports-llm-commentary.md) | implemented |
-  | [myleague-lore-integration](../../systems/myleague-lore-integration.md) | mostly obsolete |
+  | [myleague-lore-integration](../../systems/myleague.md#lore-fidelity) | mostly obsolete |
   | [mycountry-vision-audit](../systems/statecraft/mycountry-vision-audit.md) | dated snapshot |
   | [wikios-longevity-workflow](../systems/wikios/wikios-longevity-workflow.md) | round complete |
   | [wikios-independence-2b-3](../systems/wikios/wikios-independence-2b-3.md) | after the Stage 3 cutover |

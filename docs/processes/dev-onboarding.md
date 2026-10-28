@@ -24,7 +24,7 @@ program — the wider server (`ixwiki`) hosts several connected systems. You'll 
 | **IxStats** (`/ixwiki/public/projects/ixstats`) | The Next.js app — the thing we build. | Yes, daily |
 | **MediaWiki** (`/ixwiki/mediawiki`) | The community wiki (ixwiki.com). | Rarely |
 | **Discord bot** (`/ixwiki/shared/bots/discord`) | Keeps "IxTime" (game time) in sync. | Rarely |
-| **IxWorld maps** | The interactive map (maps.ixwiki.com), built from IxStats. | Sometimes |
+| **IxWorld maps** | The interactive map: IxStats' `/maps` page, also served at maps.ixwiki.com (no separate build). | Sometimes |
 
 **The stack** (you don't need to know all of it yet — just recognize the words):
 Next.js 16 + React 19 (frontend), tRPC (API), Prisma + PostgreSQL (database), Tailwind CSS v4

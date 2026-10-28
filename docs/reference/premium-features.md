@@ -1,6 +1,6 @@
 # IxStats Premium Features Matrix
 
-**Last Updated:** September 2026 (platform: IxStates 1.4.0 "Lobster Crosby", Release Candidate — see [revision.md](./revision.md))
+**Last Updated:** September 2026 (platform: IxStates 1.0.0 "Lobster Crosby", Stable; internal 1.5.0 — see [revision.md](./revision.md))
 
 This document provides a comprehensive breakdown of features available in the Basic (Free) tier versus the MyCountry Premium tier.
 
@@ -446,7 +446,7 @@ IxStats follows a **generous freemium model**:
 
 ## Related Documentation
 
-- [Intelligence System Documentation](../systems/intelligence.md)
+- [Intelligence System Documentation](../systems/defense.md#intelligence)
 - [API Catalog](./api-complete.md)
 - [Rate Limiting Guide](../operations/rate-limiting.md)
 - [User Profile Utils](../history/reference/user-profile-utils.md)
@@ -459,4 +459,4 @@ IxStats follows a **generous freemium model**:
 - Discord: [IxStats Community Server]
 
 **Last Review:** September 2026
-**Platform:** IxStates 1.4.0 "Lobster Crosby" (Release Candidate)
+**Platform:** IxStates 1.0.0 "Lobster Crosby" (Stable; internal 1.5.0)

@@ -1,6 +1,6 @@
 # Backlog — open items
 
-**Last updated:** 2026-10-12
+**Last updated:** 2026-10-27
 **Status:** The single backlog. [ROADMAP.md](ROADMAP.md) is the plan that orders these items;
 [SYSTEM_STATUS.md](../systems/SYSTEM_STATUS.md) says what is live.
 
@@ -14,7 +14,8 @@ This page holds only the items that are still open. It replaces three overlappin
 - the [platform audit](../history/roadmap/platform-audit/README.md) (2026-09-30) and its six area reports, cited as
   **PA**.
 
-Each item was checked against the code and ROADMAP.md on 2026-10-05; everything done is left out. The full evidence
+Each item was checked against the code and ROADMAP.md on 2026-10-05 and again on 2026-10-27, after release 1.5
+(public 1.0.0); items done in 1.5 are listed in [Done in 1.5](#done-in-15-2026-10-27). The full evidence
 (file paths, callers, sizes) for an ID stays in the history copy. When an item closes, delete its row here, mark it
 done in ROADMAP.md, and update the system doc and SYSTEM_STATUS.
 
@@ -24,33 +25,47 @@ but off · `DEAD` unused code or schema · `DEBT` maintainability · `OPS` an ac
 
 ## Contents
 
-1. [Owner and ops actions](#1-owner-and-ops-actions)
+1. [Owner and ops actions](#1-owner-and-ops-actions) (including Ops post-1.5)
 2. [Code audit items](#2-code-audit-items)
 3. [Doc-audit items (PF§1–PF§7)](#3-doc-audit-items-pf1pf7)
 4. [Platform audit leftovers (PA)](#4-platform-audit-leftovers-pa)
 5. [Dead schema](#5-dead-schema)
+6. [Done in 1.5 (2026-10-27)](#done-in-15-2026-10-27)
 
 ---
 
 ## 1. Owner and ops actions
 
+### Ops (post-1.5)
+
+Opened after the 1.5 deploy (2026-10-26/27). ROADMAP orders them under
+[Next: server rebuild and ops](ROADMAP.md#next-server-rebuild-and-ops-10x).
+
+| ID | Type | Item | Detail | Size |
+|---|---|---|---|---|
+| OPS-1 | SEC | **Rebuild production on a clean server with full secret rotation** | The server was found compromised (since 2026-09-26) and contained. Rotate every secret (Clerk, Discord bot token, database and Redis passwords, cron and webhook secrets, API keys, SSH keys) and redeploy from `master`; nothing carried over from the old host unchecked | L |
+| OPS-2 | SEC | Rotate the `ixstats_readonly` / MariaDB password | The old password is in git history (PF§1, PA §2 #8); the scripts no longer contain it. Fold into OPS-1 | S |
+| OPS-3 | OPS | Restore a production `db:backup` dump into a scratch database | [Release guide: open operations items](../operations/release-guide.md#open-operations-items); a scratch round trip passed on 2026-10-05 (PL-11) | S |
+| OPS-4 | OPS | Copy `backups/` off the server | The dumps sit on the same disk as the database | S |
+| OPS-5 | OPS | Review `audit:vault-exploits`, then `audit:vault-exploits:apply`; then `refund-lore-tokens.ts`, then `db:refund-retired-store-items -- --apply` | 9 corrections, including −5,000 IxC. Retired-store refunds pay each purchase once at what was paid ([myvault.md](../systems/myvault.md#retired-store-items)) | S |
+| OPS-6 | OPS | Review `audit:forum-links` | 4 forum accounts linked without proof (WK-1) | S |
+| OPS-7 | OPS | Hand-set `Country.ownedSince` for 8 nations | The backfill could not date them | S |
+| OPS-8 | OPS | Link Carthinova to Kir | Admin → Users → Name claims | S |
+| OPS-9 | OPS | Re-run card compliance with `--fetch` | `scripts/cards/backfill-card-compliance.ts`; Wikimedia Commons rate-limited the first run | S |
+| OPS-10 | OPS | Enable the remaining cron jobs one per cycle | [Release guide A7](../operations/release-guide.md#a7-cron-jobs); none run until named in `CRON_ENABLED_JOBS`, and auctions and trades settle only through them (VT-15) | S |
+| OPS-11 | BUG | WikiOS weekly proof can't run against production | `src/server/cron/wikios-proof-cron.ts` pins `BASE_PATH: "/projects/ixstates"`; production is now at beta.ixwiki.com with no base path | S |
+| OPS-12 | DEBT | Remove WikiOS's unused site-editing rights (owner decision D21) | `editinterface`, `editsitecss`, `editsitejs`, `editsitejson` in `src/lib/wiki-os/rights.ts`; nothing reads them ([cutover runbook](../history/operations/wikios-v1-cutover.md)) | S |
+| OPS-13 | OPS | Confirm Clerk allowed origins include beta.ixwiki.com | Clerk dashboard | S |
+
+### Standing owner and ops actions
+
 | Item | Refs | Detail |
 |---|---|---|
-| Rotate the `ixstats_readonly` / MariaDB password | PF§1, PA §2 #8, ROADMAP M0 #16 | The old password is in git history; the scripts no longer contain it |
-| Check the IxWiki bot's grants on Special:BotPasswords | PA §2 #1 | WikiOS pushes every user's edit under one bot account; the namespace policy is in code |
-| Run `audit:vault-exploits:apply` on production and record the result | ROADMAP M0 #17 | — |
-| Restore a production `db:backup` dump into a scratch database | ROADMAP M0 #15, PL-11 | A scratch round trip passed on 2026-10-05 |
-| Run `db:mark-match-revenue-collected` at the next deploy | ROADMAP M0 #13, SL-14 | — |
-| Run `db:refund-retired-store-items -- --apply` after the exploit audit | Archetype Proposal Token retired 2026-10-05 | Refunds each purchase once at what was paid ([myvault.md](../systems/myvault.md#retired-store-items)) |
-| CSP: remove the nginx/Cloudflare override, check for violations, then drop `'unsafe-inline'` from `script-src` | PL-2, PF§1 | The nonce reaches the page (#46); `src/lib/security/csp.ts` |
-| Deploy rose-garden via the [runbook](../history/operations/deploy-rose-garden-2026-09.md) | ROADMAP M1 | Realms schema, backfill, Eurth |
-| WikiOS v1 cutover via its [runbook](../history/operations/wikios-v1-cutover.md) | D20 | Merged switched off: `WIKIOS_V1_ENABLED` stays unset (WikiOS read-only) until the runbook's step 6b |
-| Enable the 23 cron jobs one per cycle, in the runbook's order | VT-15, PF§5 | None run until named in `CRON_ENABLED_JOBS`. Auctions and trades settle only through these jobs |
-| Optional: configure notification email (`EMAIL_*`) and Web Push (`VAPID_*`), then enable `notification-email-digest` | SL-5 | Built and off until configured ([runbook step 2](../history/operations/deploy-rose-garden-2026-09.md#2-environment)); Settings shows the switches only then |
+| Check the IxWiki bot's grants on Special:BotPasswords | PA §2 #1 | WikiOS pushes every user's edit under one bot account; the namespace policy is in code. Re-check after OPS-1 |
+| CSP: check for violations, then drop `'unsafe-inline'` from production `script-src` | PL-2, PF§1 | On beta.ixwiki.com nothing replaces the app's header and it carries the nonce (checked 2026-10-27); `src/lib/security/csp.ts`; [release guide](../operations/release-guide.md#csp-the-apps-header-then-unsafe-inline) |
+| Optional: configure notification email (`EMAIL_*`) and Web Push (`VAPID_*`), then enable `notification-email-digest` | SL-5 | Built and off until configured; Settings shows the switches only then |
 | Redis in production | PF§5 | Required for realtime across processes and shared rate limits; `/api/health` reports it |
-| Run the web process under PM2 | PL-12 | The template (cron, ws, ixtwitter) is committed; the web app still runs from `start-production.sh` |
-| Promote rose-garden → development → master | PL-14, PL-15 | Dependabot and scheduled workflows read config from `master` only |
-| Gemini workflows: add `GEMINI_API_KEY` or delete them | PL-14, D15 | — |
+| Gemini workflows: add `GEMINI_API_KEY` or delete them | PL-14, D15 | Four `gemini-*.yml` workflows remain in `.github/workflows/` |
 
 ## 2. Code audit items
 
@@ -69,39 +84,29 @@ partly done item.
 |---|---|---|---|---|
 | AT-15 | DEAD | `SharedVertex` written, never read. The unused `Transport*` segment models, `ElevationZone` and `Territory` were dropped with D9 (2026-10-27); `WorldTemplate`, `ProceduralWorld` (38 rows on the local clone) and `Realm.templateId` were dropped by the Atlas and World Studio overhaul (`prisma/migrations/20261023120000_atlas_studio/migration.sql`, run before `db push`) | `maps.prisma` | S |
 
-### WikiOS, forum, help & admin (WK)
-
-| ID | Type | Item | Evidence | Size |
-|---|---|---|---|---|
-
 ### Vault, cards & achievements (VT)
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
 | VT-16 | UNFINISHED | Exchange (₷) leftovers. The MVP and phase 2 (share market, dividends, sector indices and funds, `EXPAND`/`ENTER_SECTOR` decisions, B2G tenders, contract expiry, notifications, relaxed out allowance) are built (2026-10-06); left: `RND`/`ACQUIRE`/`LOBBY`/`PRICE` decisions, admin- or sim-issued tenders (a ₷ faucet) and a nation ₷ treasury, an order book, an admin control for `SectorIndex.dmModifier` ([spec §8](../specs/2026-10-06-exchange-economy-design.md#still-not-built)) | `exchange.prisma`; `lib/exchange/` | M |
-| VT-19 | DEAD | `pdsConfig` is seeded on all 20 packs and never read | `prisma/seeds/data/card-packs.json`; `cards.prisma` | S |
-| VT-25 | DEAD | `NSImport`, `SyncCheckpoint` and `CardTrade` are unused | `cards.prisma` | S |
+| VT-19 | DEAD | Left: the `pdsConfig` key is still seeded on all 20 packs; the column is gone from `cards.prisma` | `prisma/seeds/data/card-packs.json` | S |
 
 **Crafting is deprecated (owner, 2026-10-05).** Every `crafting.*` call refuses and the workbench, its nav entries and
 admin switch are gone, so VT-14 (crafting fixes), its PF§2 row and the PF§4 crafting extensions are moot, as are
-decision D6 (the MYTHIC recipe) and "failed crafting rolls consume materials". `CraftingRecipe` / `CraftingHistory`
-stay until the schema-drop decision ([§5](#5-dead-schema)).
+decision D6 (the MYTHIC recipe) and "failed crafting rolls consume materials". The `CraftingRecipe` and
+`CraftingHistory` models are gone from the schema; the `crafting` router directory remains.
 
 ### Social, Halo & Labs (SL)
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| SL-27 | FLAGGED | The Discord mirror, sports LLM commentary and sports TTS are off by default. `/labs/*` is gated on the server (2026-10-05) | `narrator.ts` | S |
+| SL-27 | FLAGGED | The Discord mirror, sports LLM commentary and sports TTS are off by default. `/labs/*` is gated on the server (2026-10-05) | `SPORTS_LLM_*` in `src/env.ts`; `src/lib/sports/` (the narrator was removed with D10) | S |
 
 ### Platform & infrastructure (PL)
 
-| ID | Type | Item | Evidence | Size |
-|---|---|---|---|---|
-| PL-12 | DEBT | The web process isn't under PM2 (ops, see §1). `next.config.js` is tracked (since 2026-10-06); `next.config.example.js` points at it | — | S |
-
-**Router test gaps:** all 69 routers have a router-level test (2026-10-05). 63 sub-router files are still imported by
-no test; the largest are `wikios/templates`, `wikios/page-content`, `admin/worldEvents`, `admin/wiki` and
-`diplomaticScenarios/scenarios`.
+**Router test gaps:** all 69 top-level routers had a router-level test on 2026-10-05; `src/server/api/root.ts` now
+mounts 78, so the newer ones need a re-check. 63 sub-router files were imported by no test then; the largest were
+`wikios/templates`, `wikios/page-content`, `admin/worldEvents`, `admin/wiki` and `diplomaticScenarios/scenarios`.
 
 ## 3. Doc-audit items (PF§1–PF§7)
 
@@ -110,14 +115,12 @@ links point at the doc that describes the intended behaviour.
 
 ### PF§1 Security
 
-See §1 above (password rotation, CSP).
+See §1 above (OPS-1, OPS-2, CSP).
 
 ### PF§2 Broken or regressed features
 
 | Item | System | Detail |
 |---|---|---|
-| Vexel attach-to-country | Labs › Vexel | Attach now refuses a design with no image instead of blanking the coat of arms; no PNG render exists, so attach always refuses ([vexel.md](../systems/vexel.md)) |
-| `db.ts` runs `syncAchievements` on import | Platform | Fires whenever the module loads on the server outside tests and read-only mode, including in scripts |
 | Diplomatic missions and embassy upgrades removed | MyCountry › Diplomacy | `startMission`, `completeMission`, `upgradeEmbassy`, `allocateBudget` deleted (plan 312); playable missions are M4 |
 
 ### PF§3 Partly built — finish the documented scope
@@ -139,7 +142,7 @@ See §1 above (password rotation, CSP).
 - **Named rivers/lakes → trade modifiers:** `computeEconomicGeoModifiers` ignores named features.
 
 **WikiOS**
-- **Margin:** `toggleCommentReaction`, `deleteComment`, the Stash tab, and un-hiding the Inspect tab ([margin spec](../systems/wikios/wikios-margin-spec.md)).
+- **Margin:** `toggleCommentReaction`, the Stash tab, and un-hiding the Inspect tab ([margin spec](../systems/wikios/wikios-margin-spec.md)). `deleteComment` exists (`wikios/discussions.ts`, used by `MarginThreadsTab`).
 - **Stash share links:** `?stash=` is never read; stashes have no visibility field or public read path (M, schema change).
 - **Guardian:** mass-blanking and homoglyph abuse filter.
 
@@ -165,8 +168,8 @@ See §1 above (password rotation, CSP).
 
 **Realms Phases 2–4** ([realms-framework-spec.md](../architecture/realms-framework-spec.md))
 - Public founding application (decisions 6–7)
-- Founder tooling: settings, moderation, removing nations, succession using `lastSeenAt` (decisions 20–21)
-- Archived realms: read-only, excluded from crons and payouts (decision 21)
+- Founder tooling left: automatic succession using `lastSeenAt` and founder removal of a nation (decisions 20–21). Settings, officers, the inactivity release and Hand over shipped ([realms.md](../systems/realms.md))
+- Archived realms: excluded from crons and payouts (decision 21); read-only on the site already
 - Per-realm feed and a global-feed setting (decision 2): the dashboard feed and trending are not realm-scoped
 - WikiOS front page as a portal to every realm's lore; realm-tagged forum (decision 3)
 
@@ -190,7 +193,7 @@ See §1 above (password rotation, CSP).
 
 **Vault & cards**
 - Ribbons: Ribbons tab and community ribbons ([ribbons spec](../specs/2026-08-10-achievements-ribbons-design.md) §2, §3.2)
-- Lore-first schema cleanup: unique slug, `@@unique([wikiArticleTitle, wikiSource])`, drop stats/cardType, `CardRarity` enum ([ixcards spec](../history/specs/2026-08-13-ixcards-lore-first-rebuild.md) Part III); 40/25/20/10/4/1 rarity distribution (Part IV)
+- Lore-first schema cleanup: unique slug, `@@unique([wikiArticleTitle, wikiSource])`, drop stats (the `CardRarity` enum shipped with the cards refresh) ([ixcards spec](../history/specs/2026-08-13-ixcards-lore-first-rebuild.md) Part III); 40/25/20/10/4/1 rarity distribution (Part IV)
 - Category-themed and realm packs; seasons (cards refresh Phases 4 and 5; the Vault reorder shipped as the cards hub, whose Explore tab has the category filters)
 - Real-time card updates over WebSocket
 - Premium: payments/checkout (D4), tiered rate limits, export quotas, history limits, ThinkPages Pro tiers ([premium-features.md](../reference/premium-features.md))
@@ -214,10 +217,10 @@ See §1 above (password rotation, CSP).
 ### PF§5 Operations & infrastructure
 
 - Cron enablement and Redis: see §1.
-- **Drop unused Prisma models:** see §5. The `chore/drop-unused-prisma-models` branch is not on origin.
+- **Drop unused Prisma models:** applied (D9, see §5).
 - **Incident-response runbook:** missing ([monitoring.md](../operations/monitoring.md#incident-response)).
 - **Discord bot admin session:** the bot calls `admin.getSystemStatus` (admin-only); no doc covers how it authenticates.
-- **Leftovers:** `scripts/post-build.sh` prints `pm2 restart ixstats` (no such app); `scripts/start-production.js` and `scripts/verify-router-splits.ts` are unwired.
+- **Leftover:** `scripts/verify-router-splits.ts` is not wired into CI (it is a documented manual tool in `scripts/README.md`); wire it or leave it manual.
 
 ### PF§6 Code health & tech debt
 
@@ -227,16 +230,15 @@ See §1 above (password rotation, CSP).
 - **Arch guard coverage:** no pre-commit hook for `audit:arch`; the router-split parity check covers 5 routers.
 - **Logging:** a handful of `logger.*` calls against ~1,700 `console.*`; decide the framework's fate.
 - **Duplication:** atomic government/economy/tax triplicates; rarity palettes; sports simulate/persist and `season-cron.ts`; random-string id helpers; JSON deep copies.
-- **Size:** `lib/notifications/hooks.ts` (~1,300 lines); `wikios/templates.ts` holds static data.
+- **Size:** `lib/notifications/hooks.ts` (~611 lines); `wikios/templates.ts` holds static data.
 - **Design cleanup (plan 346 remainder):** hex colours, `dark:` variants, blurs, pulses, Sparkles icons ([HEX_COLOUR_INVENTORY](../history/audits/HEX_COLOUR_INVENTORY_2026-09-27.md), [Facet style audit](../history/audits/FACET_STYLE_AUDIT_2026-09-30.md)).
 - **Product calls:** deck.gl and tsparticles usage; `DATABASE_READONLY` replacement; IxTimeSyncManager / AccuracyVerifier; root provider nesting.
 - **Stale code comments** (as of 2026-09-29): `AdminRouter.tsx:3`, `routers/wikios/index.ts`, `cloudflare-guardian.ts`.
-- **Pack seed:** the `LIMITED` pack type isn't in the `PackType` constant (`prisma/seeds/data/card-packs.json`).
 
 ### PF§7 Documentation gaps
 
 - **Help center:** remove the "Not available yet" notes as features land ([help.md](../systems/help.md#known-gaps)). Every shipped system now has an article (Lorewards, ribbons and showcase, shop items and the activity feed added 2026-10-05); the crafting article was removed when crafting was deprecated.
-- **Specs to retire once implemented and confirmed:** the realms foundation, realms Eurth and route travel-time specs; [myleague-top5-features](../history/systems/myleague-top5-features.md), [sports-llm-commentary](../history/research/sports-llm-commentary.md), [myleague-lore-integration](../systems/myleague-lore-integration.md) (mostly obsolete); [deploy-rose-garden-2026-09](../history/operations/deploy-rose-garden-2026-09.md) after the 1.4 release. Move them to [docs/history/](../history/README.md).
+- **Docs to retire:** [myleague-lore-integration](../systems/myleague.md#lore-fidelity) (mostly obsolete); move it to [docs/history/](../history/README.md). The realms, route travel-time and MyLeague specs and the rose-garden deploy runbook already moved (2026-10-27).
 - **Trim:** [rate-limiting.md](../operations/rate-limiting.md) (~1,350 lines, mostly sketches); [refactoring.md](../processes/refactoring.md) (~1,000 lines of generic guidance).
 - **Phase 4 follow-ups** ([action plan](../history/roadmap/ACTION_PLAN_2026-10-05.md#phase-4--consolidate-the-documentation-set)): one MyLeague system doc; Onoma and Stash subfolders; add doc updates to the PR checklist.
 
@@ -260,15 +262,16 @@ items not already listed above:
 
 ## 5. Dead schema
 
-From code audit §8 (2026-09-30, 332 models then; 338 now). 57 models had no accessor at all (c15t consent 8,
+From code audit §8 (2026-09-30, 332 models then; 334 after the D9 drop). 57 models had no accessor at all (c15t consent 8,
 Exchange 11, diplomacy 7, economy modelling 7, social 5, media player 4, archetypes 3, security/logging 3, maps 5,
 cards 3, military 1), 7 are read but never written, and about 16 are written only by the old demo seed. Dropping
 them needs backups (done) and decisions D1, D2, D5 and D9. Don't drop the force-structure models (`MilitaryBranch`,
 `MilitaryUnit`, `MilitaryAsset`, live since MC-3 closed on 2026-10-06), or models that crisis events would use until
 that is decided. `ProceduralWorld`, `WorldTemplate` and `Realm.templateId` are already gone (Atlas and World Studio). **The 13 Exchange
 models are off the drop list (D5 decided "build", 2026-10-06):** 9 are in use since the Exchange MVP, and `SectorIndex`,
-`SectorIndexHistory`, `SectorPosition` and `CompanyDecision` are kept for its phase 2. `CraftingRecipe` and `CraftingHistory` join the
-list while crafting is deprecated (2026-10-05); drop them only after that backup decision. The full list is in the
+`SectorIndexHistory`, `SectorPosition` and `CompanyDecision` are kept for its phase 2. `CraftingRecipe` and
+`CraftingHistory` are gone. What is left: the read-never-written models (MC-19, AT-15's `SharedVertex`) and
+`VitalitySnapshot`, `IntelligenceBriefing` and `IntelligenceRecommendation` (PF§3). The full list is in the
 [history copy](../history/roadmap/code-audit-2026-09-30.md#8-dead-schema).
 
 **Drop applied in the schema (2026-10-27, D9):** the 49 models of the 2026-10-06 list still unused on the merged
@@ -278,3 +281,26 @@ already removed the other seven and `CardPack.pdsConfig`. Production drops the t
 [drop-unused-models.md](../history/operations/drop-unused-models.md). It keeps the Exchange models (D5), the military and
 defense models (D2) and every model still read through a relation (for example `Permission`, `GovernmentBranch`,
 `EconomicModel`, `ThinktankMessage`).
+
+## Done in 1.5 (2026-10-27)
+
+Removed from the lists above after a re-check against the code and git on 2026-10-27:
+
+- `db:mark-match-revenue-collected` ran after the 1.5 push (2026-10-27): 4,646 completed matches marked collected (SL-14).
+- **Deploy rose-garden via the runbook** and **promote rose-garden → development → master** (PL-14, PL-15): PRs #118
+  and #119; release 1.5 (public 1.0.0) in production 2026-10-26/27.
+- **WikiOS v1 cutover** (D20): launched with live two-way sync with classic MediaWiki.
+- **PL-12** the web process under PM2: `ixstats-web` in `ecosystem.config.example.cjs`; `deploy-production.sh`
+  reloads it.
+- **PF§2** `db.ts` ran `syncAchievements` on import: it now runs from `src/instrumentation-node.ts`.
+- **VT-25** `NSImport`, `SyncCheckpoint` and `CardTrade`: gone from the schema. **VT-19** partly: the `pdsConfig`
+  column is gone (the seed key remains, above).
+- **Crafting models:** `CraftingRecipe` / `CraftingHistory` gone (the "stay until the drop decision" note was stale).
+- **PF§5 leftovers:** `post-build.sh` no longer prints `pm2 restart ixstats`; `scripts/start-production.js` is
+  deleted (`verify-router-splits.ts` remains, above).
+- **PF§2 Vexel attach-to-country:** saving renders a PNG on the server and attach writes it ([vexel.md](../systems/vexel.md)).
+- **Margin `deleteComment`:** built and wired (`toggleCommentReaction` remains, above).
+- **PF§6 pack seed:** no pack uses the `LIMITED` type any more.
+- **D9:** 49 unused Prisma models dropped (§5).
+- **Beta feedback (PRs #112–#117):** MyCountry saves, ThinkPages composer/messages/accounts, ThinkTanks, Vault/Wiki
+  nav and Trending UI, polar ice caps. None was listed here.

@@ -9,7 +9,7 @@ This reference summarises realtime channels, notification payloads, and schedule
 ## WebSocket Channels
 
 Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
-- **`ws-backend.mjs`** — standalone PM2 app `ixstats-ws` (port `WS_BACKEND_PORT`, default `3551`; `GET /healthz`). nginx proxies the WS paths to it, because the ixworld standalone build (`server.js`) has no Socket.IO server attached.
+- **`ws-backend.mjs`** — standalone PM2 app `ixstats-ws` (port `WS_BACKEND_PORT`, default `3551`; `GET /healthz`). nginx proxies the WS paths to it on beta.ixwiki.com and maps.ixwiki.com, because production serves the web app with plain `next start` (`ixstats-web`), which attaches no WebSocket server.
 - **`server.mjs`** — the custom Next.js server; hosts ThinkPages WS in production only (disabled in dev) and Market WS always.
 
 ### ThinkPages — `/ws/thinkpages`
@@ -49,7 +49,7 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 
 ## Scheduled & Batch Jobs
 
-`cron-runner.mjs` (PM2 app `ixstats-cron`, Bun) is the **only** scheduler; the web app, `server.mjs` and `ws-backend.mjs` schedule nothing. Jobs are defined in `src/server/cron/jobs.ts` (35 jobs; five are not listed here: `wiki-mirror`, `wiki-render-stale`, `forum-render-stale`, `story-chain-wiki-sync` and `realm-inactivity`); only those named in `CRON_ENABLED_JOBS` (comma list or `*`) run, each under a lease row in `job_leases` (`withJobLock`, `src/lib/system/job-lock.ts`) that expires after the job's timeout, so a crashed run never blocks the next. Every run is recorded as a `CronRun` row (success, skipped or failed) and a failure alerts the Discord webhook; see [monitoring.md](../operations/monitoring.md#scheduled-jobs). Schedules with a `SystemConfig` override key are read once at startup.
+`cron-runner.mjs` (PM2 app `ixstats-cron`, Bun) is the **only** scheduler; the web app, `server.mjs` and `ws-backend.mjs` schedule nothing. Jobs are defined in `src/server/cron/jobs.ts` (36 jobs; five are not listed here: `wiki-mirror`, `wiki-render-stale`, `forum-render-stale`, `story-chain-wiki-sync` and `realm-inactivity`); only those named in `CRON_ENABLED_JOBS` (comma list or `*`) run, each under a lease row in `job_leases` (`withJobLock`, `src/lib/system/job-lock.ts`) that expires after the job's timeout, so a crashed run never blocks the next. Every run is recorded as a `CronRun` row (success, skipped or failed) and a failure alerts the Discord webhook; see [monitoring.md](../operations/monitoring.md#scheduled-jobs). Schedules with a `SystemConfig` override key are read once at startup.
 
 | Job | Default schedule | Override key |
 | --- | --- | --- |
@@ -83,6 +83,7 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 | `map-import` | `* * * * *` | — |
 | `geo-profiles` | `*/5 * * * *` | — |
 | `map-tiles` | `*/5 * * * *` | — |
+| `wikios-proof` | `30 5 * * 1` | `cronSchedule_wikiosProof` |
 
 - `auction-completion` settles ended auctions; `listing-expiry` ends fixed-price listings past their 14 days, unlocks their copies and refunds the listing refund share of the fee; `trade-expiry` ends trade offers past their 24 hours ([cards.md](../systems/cards.md#card-economy)).
 - `card-values` rebuilds the card market medians (`CardMarketPrice`) from recent priced sales, then writes every card's reference value (`Card.marketValue`) and a `CardValueHistory` row when it moved (`src/server/modules/cards/market-values.ts`); the Economy tab's Revalue runs the same work.
@@ -98,6 +99,7 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 - `map-import` runs queued realm map import analyses (PNG tracing in a worker thread) and any apply job the web process left queued for two minutes, one realm at a time under the lease `map-import:<realmId>`; without it the web process runs the queue in-process ([maps.md](../systems/maps.md#realm-map-import-engine)).
 - `geo-profiles` recomputes the geo profiles (and map-derived `GeographicResource` rows) that the map editor's Recalc action queued by marking them stale, plus any country with map geometry and no profile, one country at a time under the lease `geo-profiles` ([maps.md](../systems/maps.md)); without it Recalc queues work that never runs.
 - `map-tiles` pre-renders z0 to z3 of the vector tiles (altitudes, rivers, lakes) of Ixnay and every published realm whose current map version has no `.done` marker, so the first visitor after a map change finds them cached, and removes tile folders of versions a newer one outlived for a day (a run starts no tile after 15 minutes). It writes to `MAP_TILE_DIR`, which the web app and the IxWorld standalone must share ([maps.md](../systems/maps.md#map-delivery-atlas-release-0)); without it the web process renders tiles on first request and cleans up old folders itself.
+- `wikios-proof` runs the weekly WikiOS gold proof against the live site (render parity sample, full editor round trip, bench sample; [wikios-proof](../audits/wikios-proof/README.md)) under the lease the deploy's predeploy check also holds, so it never runs mid-deploy; the CLI is killed after 80 minutes inside the 90-minute lease. Not enabled on production yet ([WikiOS operations](../systems/wikios/operations.md#cron-jobs)).
 - `elections` also schedules first elections, and `diplomatic-drift` expires foreign-policy proposals and alliance invites after 14 days.
 
 ixtwitter sync is not a cron job; it runs as the separate `ixstats-ixtwitter` PM2 process.

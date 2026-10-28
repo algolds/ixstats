@@ -248,7 +248,8 @@ configuration object, never from a literal:
   forum phase 4b; the app neither previews nor redirects links to it, and the import tooling that pointed its links in imported
   posts at native pages was retired on 2026-10-21). Accounts (`accounts.ixwiki.com`, Clerk):
   `src/components/shell/AccountMenu.tsx`, `src/components/settings/IxnayIDCard.tsx`, `src/lib/security/csp.ts`. Maps
-  (`maps.ixwiki.com`): `src/app/maps/page.tsx`, `src/proxy.ts` (standalone root), `src/lib/system/standalone-detection.ts`, `src/lib/utils/slug-utils.ts`,
+  (`maps.ixwiki.com`, the main app's `/maps` page, not a separate build; IxWiki embeds its map, country and wiki pages, so the
+  proxy lets ixwiki.com frame them on that host): `src/app/maps/page.tsx`, `src/proxy.ts` (`isMapsHostRequest`), `src/lib/system/standalone-detection.ts`, `src/lib/utils/slug-utils.ts`,
   `src/lib/time/clock-context.ts` (the maps host's top-level routes, so a root-level country page greets by its realm's clock).
   An example document URL (`archives.ixwiki.com`) in template presets:
   `src/lib/wiki-os/templates/master-presets.ts`, `src/server/api/routers/wikios/templates.ts`.

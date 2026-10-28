@@ -1,10 +1,10 @@
 # 📖 The Complete Lore Lifecycle in IxStates: Ideation to Canon
 
-**Document Version:** 1.4.0  
+**Document Version:** platform 1.5.0 (internal; public 1.0)  
 **Last Updated:** September 2026  
 **Status:** Canonical System Guide  
 **Subsystems Involved:** ThinkTanks (`/thinktanks`), Stash System (`/stashes`), Sovereign Feed (`/dashboard`), WikiOS (`/wiki`), Margin (`/wiki/[slug]?margin=threads`), Image Repository (`/util/repository`), Lorewards (`/util/lorewards`), Vault (`/vault`)  
-**Design Foundations:** Apple Design (`/apple-design`), Emil Kowalski Design Engineering (`/emil-design-eng`), Facet Design System (`/facet-design-system`)  
+**Design Foundations:** Apple design and Emil Kowalski design-engineering principles (design review guides, not app routes), [Facet Design System](../reference/facet-design-system.md)  
 
 ---
 

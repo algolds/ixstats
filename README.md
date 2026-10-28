@@ -2,15 +2,17 @@
 
 ### The Operating System for Worldbuilding.
 
-[![Version](https://img.shields.io/badge/version-1.4.1%20%22Lobster%20Crosby%22-teal.svg?style=flat-square)](src/lib/buildVersion.ts)
-[![Release Channel](https://img.shields.io/badge/channel-Release%20Candidate-14b8a6.svg?style=flat-square)](src/lib/buildVersion.ts)
-[![Next.js](https://img.shields.io/badge/Next.js-16.3-black.svg?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![Version](https://img.shields.io/badge/version-1.0.0%20%22Lobster%20Crosby%22-teal.svg?style=flat-square)](src/lib/buildVersion.ts)
+[![Release Channel](https://img.shields.io/badge/channel-Stable-14b8a6.svg?style=flat-square)](src/lib/buildVersion.ts)
+[![Next.js](https://img.shields.io/badge/Next.js-16.4-black.svg?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-61dafb.svg?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0-blue.svg?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Bun](https://img.shields.io/badge/Bun-1.4-FBF0DF.svg?style=flat-square&logo=bun)](https://bun.sh/)
 [![tRPC](https://img.shields.io/badge/tRPC-11.18-blueviolet.svg?style=flat-square&logo=trpc)](https://trpc.io/)
 [![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748.svg?style=flat-square&logo=prisma)](https://www.prisma.io/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.3-38bdf8.svg?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
+
+**Live at [beta.ixwiki.com](https://beta.ixwiki.com)**, with the world map at [maps.ixwiki.com](https://maps.ixwiki.com). Public release **1.0.0 "Lobster Crosby" (Stable)**; internally the platform is at 1.5.0 ([versions](docs/reference/revision.md#5-public-and-internal-versions)).
 
 **IxStates** is a worldbuilding platform that allows your country (or world) to live, change, and grow. Where traditional worldbuilding traps your lore in static documents and spreadsheets, IxStates brings your world to life: every country’s economic output, policies, diplomatic initiatives, and military readiness are dynamically simulated based on your decisions and the actions of other nations.
 
@@ -99,7 +101,7 @@ The flagship executive desk (`systems.mycountry` v6, `engines.mycountry` v4 in `
 
 A complete cartography, spatial analytics, and procedural world generation suite powered by GPU-accelerated MapLibre GL (`apps.ixworld` v2, `engines.atlas` v5):
 
-- **The Interactive World Map**: High-performance WebGL vector globe and map rendering 7 distinct layers (rivers, lakes, icecaps, sovereign borders, altitudes, climate, and background) with deterministic hypsometry (hydrology rendering strictly above political borders). Features projection switching (Globe, Mercator, Equal Earth) and standalone deployment as **IxMaps** (`maps.ixwiki.com`).
+- **The Interactive World Map**: High-performance WebGL vector globe and map rendering 7 distinct layers (rivers, lakes, icecaps, sovereign borders, altitudes, climate, and background) with deterministic hypsometry (hydrology rendering strictly above political borders). Features projection switching (Globe, Mercator, Equal Earth) and its own address, [maps.ixwiki.com](https://maps.ixwiki.com) (the same app's `/maps`).
 - **Professional In-App Vector Map Editor**: Draw and edit sovereign borders with vertex snapping, paint provinces and administrative regions, place cities and Points of Interest (POIs), route trade networks, attach localized lore stories to territories, and import/export raw vector SVG and GeoJSON cartography.
 - **Procedural Realms Engine (Atlas / UPG v2)**: Procedural world generation from pure mathematics on a 66,626-cell Voronoi spatial mesh (100,000 seeds thinned by latitude) with 5 Lloyd iterations. Simulates tectonic plate collisions, crust types, plate velocity vectors, coastal hypsometric damping ($H_{\text{final}} = H_{\text{raw}} \cdot \min(1.0, 0.15 + 0.35 \cdot \text{coastDist})$), Coriolis wind precipitation, steepest-descent river networks, and 12 Trewartha climate biomes smoothed with Catmull-Rom spline subdivision (2 passes for polygons, 3 for rivers; tangent tension 0.35). Realm founders generate, preview and apply a world from the map editor's World tab (the generator runs in a Web Worker, never on a web request), with nation slots to claim and hillshade relief.
 - **Spatial Geographic Analyzer & Tier-0 Grounding**: Computes exact geographic metrics directly from terrain mesh geometry (highest peaks, longest rivers, surface areas, biomes) and serves as the single source of truth for all nation borders (`ST_Touches`), neighbor relations, and regional attribute rollups.
@@ -178,7 +180,7 @@ Specialized creative toolkits and simulation sandboxes:
 
 ## Version Registry & Architecture
 
-IxStates follows an OS-inspired release model where all components read from a central Version Registry ([`src/lib/buildVersion.ts`](src/lib/buildVersion.ts)). See [`docs/reference/revision.md`](docs/reference/revision.md) for full specifications.
+IxStates follows an OS-inspired release model where all components read from a central Version Registry ([`src/lib/buildVersion.ts`](src/lib/buildVersion.ts)). See [`docs/reference/revision.md`](docs/reference/revision.md) for full specifications. Players see the public registry (`VERSIONS`): **1.0.0 "Lobster Crosby", Stable**, every app and system at v1. The matrix below is generated from the internal registry (`INTERNAL_VERSIONS`, platform 1.5.0); the engines are the same in both.
 
 <!-- BEGIN_DOCS:VERSION_MATRIX -->
 | Capability Domain | Component / Layer | Version / Release | Channel / Granularity |

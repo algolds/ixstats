@@ -8,6 +8,11 @@ IxStates deploy. Edit 1 goes beside the IxWorld branch at the top of `resolveBas
 `scripts/setup/base-path.cjs` (next.config.js imports it). The PostCSS pass that puts the base path in front of the
 stylesheets' font URLs (`scripts/setup/postcss-base-path-urls.cjs`) calls the same function, so the edit covers it too.
 
+**Since 2026-10-27 IxStates itself runs with an empty base path** (`BASE_PATH=""` in `.env.production`, served at
+`https://beta.ixwiki.com`), and WikiOS lives inside it at `beta.ixwiki.com/wiki/…`. Where this page says IxStates is at
+`/projects/ixstates`, that is the fallback `resolveBasePath()` uses when `BASE_PATH` is unset, not production's value.
+The takeover framing below is unchanged and still deferred.
+
 `scripts/deploy-wikios.sh` builds with `NEXT_PUBLIC_WIKIOS_STANDALONE=true`, `BASE_PATH=` and
 `NEXT_PUBLIC_BASE_PATH=` (all empty base path). Without edit 1 the production build would fall through to
 `/projects/ixstates` whenever `BASE_PATH` is not exported, and WikiOS would serve its assets (and its stylesheets'
@@ -63,5 +68,6 @@ NODE_ENV=production NEXT_PUBLIC_WIKIOS_STANDALONE=true node --input-type=module 
 
 NODE_ENV=production node --input-type=module -e \
   'const { default: c } = await import("./next.config.js"); console.log(JSON.stringify(c.basePath), c.assetPrefix)'
-# IxStates build is unchanged, expect:  "/projects/ixstates" /projects/ixstates
+# IxStates build is unchanged. With BASE_PATH unset, expect:  "/projects/ixstates" /projects/ixstates
+# (production's .env.production sets BASE_PATH="", so the real IxStates build has "" there too)
 ```

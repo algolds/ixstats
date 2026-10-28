@@ -1,6 +1,7 @@
 # WikiOS launch runbook (launch without takeover)
 
-**Status:** nothing in this runbook has been run. Every command in it is for the launch deploy on the production server
+**Status:** Launch executed 2026-10-26/27 on production; living operations moved to
+[docs/systems/wikios/operations.md](../../systems/wikios/operations.md). Every command in it was for the launch deploy on the production server
 (`ssh ixwiki`), run step by step with the owner (the no-touch exception of 2026-10-24): read-only checks and dry runs
 first, and stop at anything unexpected. Plan 417 (September 30, 2026) wrote it as the takeover runbook, and the owner's
 launch shape of 2026-10-24 made it this one. It replaces the superseded

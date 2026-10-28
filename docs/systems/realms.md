@@ -232,13 +232,19 @@ it: `realms.claimNationPage` and `realms.claimCountry` take `acceptedRules` and 
 (`RULES_NOT_ACCEPTED`) when the realm has rules and it is missing; the filed claim records `rulesAcceptedAt`.
 (`/setup` claims Ixnay nations and shows that error if Ixnay ever gets rules.)
 
-**Realm clock and in-world date:** the founder (or site staff) switches on the realm's own clock in Manage → Time
-(`Realm.settings.clock`; math in `src/lib/realms/realm-clock.ts`, actions in `realms.clock.ts`; design:
-[2026-10-14-realm-clocks-design.md](../history/specs/2026-10-14-realm-clocks-design.md)). It starts equal to
-global IxTime, runs at the realm's speed (0 pauses, up to ×12, the founder changes it at most weekly) and reads in the
-realm's calendar (start date + era); the stats strip shows that date and the speed. Until a clock is switched on, the
-old display label (`Realm.settings.inWorldDate`, `formatInWorldDate`) still shows; switching on drops it. Ixnay runs on
-global IxTime. Phase 1 is display only; the simulation moves onto realm clocks in phase 2.
+**Realm clock and in-world date:** every realm has its own clock (`Realm.settings.clock`; math in
+`src/lib/realms/realm-clock.ts`, actions in `src/server/modules/realms/realms.clock.ts`, server reads in
+`src/server/shared/realm-time.ts`; designs: [2026-10-14-realm-clocks-design.md](../history/specs/2026-10-14-realm-clocks-design.md)
+(phase 1) and [2026-10-25-realm-time-design.md](../specs/2026-10-25-realm-time-design.md), which wins where they differ).
+A realm is founded with one (start date, era, speed; `realms.create-from-world.ts`), and older realms got one at the
+realm time migration, continuous with IxTime. Ixnay's clock is the bot-synced IxTime. In Manage → Time the founder (or
+site staff) changes the speed (0 pauses, up to ×12, at most once a week; staff exempt), the era and the calendar
+(custom month names and lengths, Gregorian by default), and jumps the date forward (at most 5 in-world years, once a
+week; time really passes). The stats strip shows the realm's date and speed. The simulation runs on it (phase 2,
+shipped): a nation's economy, budget year, issues, policies, elections, intents, diplomacy timers (cultural exchanges,
+embassy status and severance) and defense timers (operations, conflict windows, strikes) read its realm's clock through
+`clockForCountry`, and a paused realm's operations wait. Platform-wide systems (Vault, cards, achievements, forum and
+ThinkPages timestamps, sports) run on real time.
 
 **Claimed nation pages prefill their nation (AT-3):** approving a claim on a nation page (by a moderator, or at
 once for the page's verified creator) first reads the page's infobox (`fetchNationPagePrefill` in

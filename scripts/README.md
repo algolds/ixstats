@@ -40,10 +40,10 @@ scripts/
 | Script | Purpose & Usage |
 | :--- | :--- |
 | [`scripts/write-build-version.js`](write-build-version.js) | **Prebuild Hook**: Reads git short SHA and writes `src/lib/buildVersion.generated.ts`. |
-| [`scripts/with-base-path.sh`](with-base-path.sh) | Wraps Next.js build/start with the `/projects/ixstates` production basePath. |
+| [`scripts/with-base-path.sh`](with-base-path.sh) | Wraps Next.js build/start with the production basePath: `BASE_PATH` from the env (production sets it to `""`, beta.ixwiki.com at the root); falls back to `/projects/ixstates` only when unset. |
 | [`scripts/post-build.sh`](post-build.sh) | **Postbuild Hook**: Copies standalone public assets and ensures standalone directory parity. |
-| [`scripts/deploy-production.sh`](deploy-production.sh) | Full production deployment script (`db:backup` before the schema sync — aborts if the dump fails — then build, postbuild, PM2 reload, asset sync). |
-| [`scripts/deploy-ixworld.sh`](deploy-ixworld.sh) | Maps standalone build runner (`NEXT_PUBLIC_IXWORLD_STANDALONE=true`). |
+| [`scripts/deploy-production.sh`](deploy-production.sh) | Full production deployment script (`db:backup` before the schema sync — aborts if the dump fails — then build, postbuild, PM2 reload). It `git reset`s itself mid-run, so a change to it takes effect on the next deploy; the push stops on data-loss and unique-constraint warnings ([release guide A4](../docs/operations/release-guide.md#a4-build-and-deploy)). It builds no IxWorld. |
+| [`scripts/deploy-ixworld.sh`](deploy-ixworld.sh) | **Manual only:** a standalone IxWorld build (`NEXT_PUBLIC_IXWORLD_STANDALONE=true`). The normal deploy no longer runs it; maps.ixwiki.com is the main app's `/maps` behind nginx. |
 | [`scripts/dev-local.sh`](dev-local.sh) | WSL local dev (`bun run dev:local`): SSH tunnels, prod DB snapshot into the local `ixstats-postgres` container, asset rsync, then `start-development.sh`. |
 | [`scripts/deploy-local.sh`](deploy-local.sh) | `bun run deploy:local`: local format/lint/test checks, push the current branch, then run `deploy-production.sh` on the VPS over SSH. |
 | [`scripts/refresh-local-db.sh`](refresh-local-db.sh) | Refresh the local Postgres container from a production `pg_dump`. |
@@ -96,7 +96,7 @@ scripts/
 
 ## 🃏 Cards (`scripts/cards/`)
 
-Cards refresh one-offs. Each is a dry run that prints its plan and writes nothing unless given `--apply`, and each is idempotent (a second run plans nothing). Production order: the [Phase 2 deploy runbook](../docs/systems/cards.md#phase-2-deploy-runbook-owner) (Phase 1's is in its plan). Phases 3 and 4 have no one-off script: Phase 4's SQL marks imported copies for the import share from the import ledger ([Phase 4 deploy runbook](../docs/systems/cards.md#phase-4-deploy-runbook-owner)). The card categories phase has two, in the order of its [deploy runbook](../docs/systems/cards.md#card-categories-deploy-runbook-owner).
+Cards refresh one-offs. Each is a dry run that prints its plan and writes nothing unless given `--apply`, and each is idempotent (a second run plans nothing). Production order: the [Phase 2 deploy runbook](../docs/history/operations/cards-refresh-runbooks-1.5.md#phase-2-deploy-runbook-owner) (Phase 1's is in its plan). Phases 3 and 4 have no one-off script: Phase 4's SQL marks imported copies for the import share from the import ledger ([Phase 4 deploy runbook](../docs/history/operations/cards-refresh-runbooks-1.5.md#phase-4-deploy-runbook-owner)). The card categories phase has two, in the order of its [deploy runbook](../docs/history/operations/cards-refresh-runbooks-1.5.md#card-categories-deploy-runbook-owner).
 
 | Script | Purpose & Command |
 | :--- | :--- |

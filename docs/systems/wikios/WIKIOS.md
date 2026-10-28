@@ -1,36 +1,52 @@
 # WikiOS native architecture
 
-**Last updated:** 2026-10-26 (launch hardening: conflicts, classic authority, sister wikis, proof)
-**Launch shape:** WikiOS is the wiki inside IxStates (ixwiki.com/projects/ixstates); ixwiki.com stays classic MediaWiki,
-public and editable, and canonical and share URLs stay on classic. WikiOS v1 (PR #52, D20) is merged and ships switched
-off; the launch turns `WIKIOS_V1_ENABLED` on (step 6b of the [launch runbook](../../history/operations/wikios-v1-cutover.md)). The
-ixwiki.com takeover is deferred. See [Launch shape and modes](#launch-shape-and-modes).  
-**Status:** Release candidate, platform 1.5.0  
+**Last updated:** 2026-10-27 (WikiOS v1 live in production with release 1.5)
+**Launch shape:** WikiOS v1 is live. It is the wiki inside IxStates at https://beta.ixwiki.com (no base path), with
+`WIKIOS_V1_ENABLED=true`; classic MediaWiki stays at ixwiki.com/wiki, public and editable, and canonical and share URLs
+stay on classic. 23,518 pages were imported from classic, and the two wikis sync both ways (classic saves reach WikiOS
+through a MediaWiki save webhook and the `wiki-recentchanges` job; WikiOS edits mirror to classic through the
+`wiki-mirror` job). The ixwiki.com takeover is deferred. See [Launch shape and modes](#launch-shape-and-modes); for
+day-to-day operations see [WikiOS operations](operations.md).  
+**Status:** ✅ Live, platform 1.5.0 (internal; public 1.0 Stable)  
 **Package:** `src/lib/wiki-os/` (in-repo module, imported as `~/lib/wiki-os`; not a published package)  
 **Runtime:** TypeScript 7.0, Next.js 16 App Router  
-**Versions** (`src/lib/buildVersion.ts`): WikiOS app `WIKIOS_VERSION = 1`; Canvas editor `CANVAS_VERSION = 1`; Stash
-`STASH_VERSION = 1`; Image Repository `REPOSITORY_VERSION = 2`. Lorewards and article awards (`WikiArticleAward`) are
-versioned with Achievements. The launch hardening moves none of them (owner question: `WIKIOS_VERSION` at launch).  
+**Versions** (`src/lib/buildVersion.ts`): WikiOS app `INTERNAL_VERSIONS.apps.wikios` = 1 (public v1); Canvas editor `INTERNAL_VERSIONS.subSystems.canvas` = 1 (public v1); Stash
+`INTERNAL_VERSIONS.systems.stash` = 1 (public v1); Image Repository `INTERNAL_VERSIONS.systems.repository` = 2 (public v1). Lorewards and article awards (`WikiArticleAward`) are
+versioned with Achievements. The exported constants (`WIKIOS_VERSION` and the rest) read the public registry (`VERSIONS`), which shows v1.  
 **Routes:** `/wiki/*` (one catch-all route: the reader, `?action=edit`, `?action=history`, `Talk:` pages, `?source=` foreign-wiki pages), `/util/*` (utility pages, including
 `/util/repository` and `/util/lorewards`), `/stashes`  
 **Related:** [style guide](style-guide.md) · [Margin spec](wikios-margin-spec.md) ·
 [Stage 3 config plan](../../history/systems/wikios/wikios-stage3-config-plan.md) (superseded) · [Stash](../stash.md) · [Lore lifecycle](../lore-lifecycle.md) ·
 [gold proof reports](../../audits/wikios-proof/README.md) · [launch hardening spec](../../history/specs/2026-10-24-wikios-launch-hardening-design.md)
 
-WikiOS is the knowledge engine and structured worldbuilding platform for IxStates. PostgreSQL is the primary database for article content (4,685+ articles), append-only revisions, directed link graphs (48,200+ edges), taxonomies, and 7,555+ media assets (`wiki_assets`). Saves commit to PostgreSQL first (target under 10ms); rendering still goes through MediaWiki (see below).
+WikiOS is the knowledge engine and structured worldbuilding platform for IxStates. PostgreSQL is the primary database for article content (23,518 pages imported from classic at launch), append-only revisions, directed link graphs (48,200+ edges), taxonomies, and 7,555+ media assets (`wiki_assets`). Saves commit to PostgreSQL first (target under 10ms); rendering still goes through MediaWiki (see below).
 
 ---
 
 ## Launch shape and modes
 
-The owner chose the launch shape on 2026-10-24 ([launch hardening spec](../../history/specs/2026-10-24-wikios-launch-hardening-design.md)).
-IxStates stays at ixwiki.com/projects/ixstates (`BASE_PATH=/projects/ixstates`) and WikiOS is its wiki. ixwiki.com stays
-classic MediaWiki, public and editable. Canonical and share URLs point at classic, and IxStates' robots rules cover only
-its own paths and keep `?source=` pages out of the index. Bots move to WikiOS's `/w/api.php` with signed bot passwords
-(runbook step 6c), and their edits mirror out to classic. The takeover kit (the standalone `wikios` process,
-`wikios-takeover.conf`, the `/classic/` article path) is deferred: its MediaWiki parts apply only with
-`define( 'WIKIOS_TAKEOVER', true )`, which nothing in the launch sets, and its steps are the deferred section of the
-[launch runbook](../../history/operations/wikios-v1-cutover.md).
+The owner chose the launch shape on 2026-10-24 ([launch hardening spec](../../history/specs/2026-10-24-wikios-launch-hardening-design.md));
+it went live with release 1.5 (2026-10-26/27, [launch runbook](../../history/operations/wikios-v1-cutover.md)).
+IxStates is served at https://beta.ixwiki.com with no base path, and WikiOS is its wiki, with `WIKIOS_V1_ENABLED=true`
+(the "v1 on" mode below). 23,518 pages were imported from classic MediaWiki. ixwiki.com/wiki stays classic MediaWiki,
+public and editable. Canonical and share URLs point at classic, and IxStates' robots rules keep `?source=` pages out of
+the index.
+
+The two wikis sync both ways:
+
+- **Classic to WikiOS:** a classic save calls the MediaWiki save webhook (`POST /api/wiki/sync-webhook`,
+  `src/app/api/wiki/sync-webhook/route.ts`), and the `wiki-recentchanges` cron job (every 10 minutes,
+  `services/auto-sync-service.ts`) catches anything the webhook missed.
+- **WikiOS to classic:** WikiOS saves, moves, deletes and protections go into the outbox, which the `wiki-mirror` job
+  (every minute, `services/mirror-worker.ts`) applies to classic as the `WikiOSMirror` bot.
+
+WikiOS renders through a private MediaWiki engine on `127.0.0.1:8081` (`scripts/ops/nginx/wikios-render-internal.conf`,
+`WIKIOS_MEDIAWIKI_INTERNAL_URL`), which also carries the mirror's and the inbound sync's calls, so they do not go through
+the public vhost's rate limits or bot defences. Bots use WikiOS's `/w/api.php` with signed bot passwords, and their
+edits mirror out to classic. The takeover kit (the standalone `wikios` process, `wikios-takeover.conf`, the `/classic/`
+article path) is deferred: its MediaWiki parts apply only with `define( 'WIKIOS_TAKEOVER', true )`, which nothing sets,
+and its steps are the deferred section of the [launch runbook](../../history/operations/wikios-v1-cutover.md).
+Operations (sync health, the mirror queue, the render engine): [WikiOS operations](operations.md).
 
 Two switches decide what WikiOS does: `WIKIOS_V1_ENABLED` (`src/lib/wiki-os/v1-switch.ts`) and the admin editing switch
 (`src/lib/wiki-os/editing-switch.ts`, in `/admin/wikios-settings`). The inbound sync from classic and the conflict rule
@@ -38,9 +54,9 @@ below run in every mode.
 
 | Mode | Writes | Mirror to classic | v1 readers: background renders, indexed search, lore cards, the Lorewards sync |
 |---|---|---|---|
-| Off (`WIKIOS_V1_ENABLED` off, the default) | Reads only. Writes follow the editing switch, which is off by default: refused with `readonly`, and `/w/api.php` answers `readonly` | Idle once its queue drains | Off: renders do nothing, search uses the older query, and lore cards and Lorewards read IxWiki from MediaWiki |
+| Off (`WIKIOS_V1_ENABLED` off, the code default) | Reads only. Writes follow the editing switch, which is off by default: refused with `readonly`, and `/w/api.php` answers `readonly` | Idle once its queue drains | Off: renders do nothing, search uses the older query, and lore cards and Lorewards read IxWiki from MediaWiki |
 | Editing switch on, v1 off | On: edits, uploads, `/w/api.php` | On | Off, as above |
-| v1 on (the launch mode) | On | On | On, from WikiOS's tables. The admin switch is redundant in this mode |
+| v1 on (production since release 1.5) | On | On | On, from WikiOS's tables. The admin switch is redundant in this mode |
 
 Turning editing on in either way refuses writes until the protections import has run: the rights import of runbook
 step 1b writes the marker it waits for, after checking step 1's backfill.
@@ -139,7 +155,7 @@ ratchet rule:
   (not on revert or rollback). There is no CAPTCHA step (plan 416 removed the unused Turnstile check): editing needs a
   signed-in account and is rate-limited and rights-checked. There is no mass-blanking or homoglyph abuse filter; the
   editor client blocks saves that lost content.
-- **Canvas visual editor (`CANVAS_VERSION = 1`).** Plate-based block editor (Plan 206) with a WikiAST ↔ wikitext converter (Plans 205/208) and lossless template serialization (Plan 301).
+- **Canvas visual editor (`INTERNAL_VERSIONS.subSystems.canvas` = 1, public v1).** Plate-based block editor (Plan 206) with a WikiAST ↔ wikitext converter (Plans 205/208) and lossless template serialization (Plan 301).
 
 ---
 

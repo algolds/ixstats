@@ -421,7 +421,7 @@ fi
 # Display production configuration
 echo ""
 echo "🎯 Production Configuration:"
-echo "   Base URL: https://ixwiki.com$BASE_PATH"
+echo "   Base URL: ${NEXT_PUBLIC_APP_URL:-https://ixwiki.com$BASE_PATH}"
 echo "   Node Environment: $NODE_ENV"
 echo "   Database: Configured"
 if [ -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ] && [ -n "$CLERK_SECRET_KEY" ]; then
@@ -436,7 +436,7 @@ if [ "$WEB_UNDER_PM2" = "1" ]; then
     trap - EXIT
     if wait_for_web; then
         rm -rf "$NEXT_PREV"
-        echo "✅ ixstats-web is up under PM2: https://ixwiki.com$BASE_PATH (pm2 logs ixstats-web)"
+        echo "✅ ixstats-web is up under PM2: ${NEXT_PUBLIC_APP_URL:-https://ixwiki.com$BASE_PATH} (pm2 logs ixstats-web)"
         run_post_deploy_sql
         exit 0
     fi
@@ -450,7 +450,7 @@ stop_port "$PORT"
 
 # Start the production server
 echo "🚀 Starting production server..."
-echo "   The application will be available at: https://ixwiki.com$BASE_PATH"
+echo "   The application will be available at: ${NEXT_PUBLIC_APP_URL:-https://ixwiki.com$BASE_PATH}"
 echo "   Production server will run on port: $PORT"
 echo "   Press Ctrl+C to stop the server"
 echo ""

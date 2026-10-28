@@ -5,10 +5,16 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.5 "Lobster Crosby"**, channel Release Candidate), while Apps / Engines / Systems each carry a single
+**IxStates 1.0.0 "Lobster Crosby"**, channel Stable, to players; internally 1.5.0, see
+[public and internal versions](./docs/reference/revision.md#5-public-and-internal-versions)), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
-## [Unreleased] — `rose-garden` (1.5)
+## [Unreleased]
+
+## [1.5.0] — 2026-10-27 "Lobster Crosby" (public 1.0)
+
+Shipped to production on 2026-10-26/27 (beta.ixwiki.com); players see it as **1.0.0 "Lobster Crosby" (Stable)**, the
+public numbering that restarts at 1.0 (`VERSIONS` in `src/lib/buildVersion.ts`), while the internal registry stays at 1.5.0.
 
 Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the pre-production audit fixes, 2026-10-26) is listed
 first, then the WikiOS launch hardening (2026-10-24 → 10-26), then the Cards mark and trophy art (2026-10-24), then the ThinkPages forum refresh (2026-10-17), then realm nations (2026-10-15), then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
