@@ -273,7 +273,7 @@ export function StudioNameSets() {
                 </div>
 
                 {presetKey !== "custom" && (
-                  <div className="animate-in fade-in rounded-row border-indigo/20 bg-indigo/5 text-footnote flex items-start gap-2 border p-3 duration-200">
+                  <div className="rounded-row border-indigo/20 bg-indigo/5 text-footnote flex items-start gap-2 border p-3">
                     <HelpCircle className="text-indigo mt-0.5 h-4 w-4 flex-shrink-0" />
                     <div className="space-y-1">
                       <span className="text-label font-semibold">Convention Lore & Rules:</span>
@@ -528,11 +528,7 @@ export function StudioNameSets() {
       {/* Right: results */}
       <div className="space-y-4 lg:col-span-7">
         {names.length > 0 ? (
-          <Card
-            variant="well"
-            padding="none"
-            className="animate-in fade-in space-y-4 p-4 duration-300"
-          >
+          <Card variant="well" padding="none" className="space-y-4 p-4">
             <div className="border-separator border-b pb-3">
               <h3 className="text-label text-body font-semibold">Full names</h3>
               <p className="text-label-secondary text-caption mt-0.5">

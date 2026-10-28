@@ -480,7 +480,7 @@ export function WikiNarratorPlayer({
 
         {/* 4A. Inline Voice Picker Tray */}
         {activeTray === "voice" && engine !== "browser" && (
-          <div className="border-separator bg-surface-elevated text-label animate-in fade-in slide-in-from-top-1 rounded-row shadow-card mt-2 space-y-1 border p-2 duration-150">
+          <div className="border-separator bg-surface-elevated text-label rounded-row shadow-card mt-2 space-y-1 border p-2">
             <div className="border-separator text-label-secondary text-subhead flex items-center justify-between border-b px-1 pb-1">
               <span>Narrator voice</span>
               <span className="text-footnote font-normal opacity-70">Kokoro TTS</span>
@@ -534,7 +534,7 @@ export function WikiNarratorPlayer({
 
         {/* 4B. Inline Playback speed Tray */}
         {activeTray === "speed" && (
-          <div className="border-separator bg-surface-elevated text-label animate-in fade-in slide-in-from-top-1 rounded-row shadow-card mt-2 space-y-2 border p-3 duration-150">
+          <div className="border-separator bg-surface-elevated text-label rounded-row shadow-card mt-2 space-y-2 border p-3">
             <div className="text-label-secondary text-subhead flex items-center justify-between">
               <span>Playback speed</span>
               <span className="font-semibold tabular-nums" style={{ color: accentColor }}>
@@ -560,7 +560,7 @@ export function WikiNarratorPlayer({
 
         {/* 4C. Inline Volume Slider Tray (audio-ui Fader) */}
         {activeTray === "volume" && (
-          <div className="border-separator bg-surface-elevated text-label animate-in fade-in slide-in-from-top-1 rounded-row shadow-card mt-2 space-y-2 border p-3 duration-150">
+          <div className="border-separator bg-surface-elevated text-label rounded-row shadow-card mt-2 space-y-2 border p-3">
             <div className="text-label-secondary text-subhead flex items-center justify-between">
               <span>Volume gain</span>
               <span className="font-semibold tabular-nums" style={{ color: accentColor }}>

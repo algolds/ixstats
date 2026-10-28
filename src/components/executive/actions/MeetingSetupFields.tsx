@@ -86,7 +86,7 @@ export function IntentSelector({
           <RadioCardGroup
             aria-label="Meeting intent"
             columns={2}
-            className="animate-in fade-in slide-in-from-top-1 duration-200"
+            className=""
             value={selectedTemplateId}
             onValueChange={(id) => {
               const tpl = INTENT_TEMPLATES.find((t) => t.id === id);

@@ -545,10 +545,7 @@ export function EditorPanel(props: EditorPanelProps) {
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-            <div
-              key={activeTab}
-              className="animate-in fade-in flex h-full min-h-0 flex-col duration-150"
-            >
+            <div key={activeTab} className="flex h-full min-h-0 flex-col">
               <TabBody tab={activeTab} props={props} />
             </div>
           </div>

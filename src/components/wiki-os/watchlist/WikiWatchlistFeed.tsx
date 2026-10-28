@@ -261,7 +261,7 @@ export function WikiWatchlistFeed() {
 
                 {/* Inline Slide-Down Diff Viewer */}
                 {isExpanded && (
-                  <div className="border-separator bg-surface animate-in fade-in border-t p-4 duration-200">
+                  <div className="border-separator bg-surface border-t p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-label-secondary text-caption">
                         Revision <strong className="text-label">{item.id}</strong> preview

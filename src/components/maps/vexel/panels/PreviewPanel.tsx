@@ -83,7 +83,7 @@ export default function PreviewPanel() {
                   composition.externals.motto.position === "above" ? "-top-10" : "-bottom-4"
                 }`}
               >
-                <Eyebrow className="animate-in fade-in zoom-in-95 rounded-control-sm bg-surface-elevated text-label shadow-floating block px-4 py-2 whitespace-nowrap duration-200">
+                <Eyebrow className="rounded-control-sm bg-surface-elevated text-label shadow-floating block px-4 py-2 whitespace-nowrap">
                   {composition.externals.motto.text}
                 </Eyebrow>
               </div>

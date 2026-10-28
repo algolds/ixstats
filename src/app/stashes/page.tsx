@@ -357,7 +357,7 @@ export default function StashesPage() {
             {error && (
               <div
                 role="alert"
-                className="animate-in fade-in bg-destructive/10 rounded-row text-footnote text-destructive flex items-center justify-between p-3"
+                className="bg-destructive/10 rounded-row text-footnote text-destructive flex items-center justify-between p-3"
               >
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0" />

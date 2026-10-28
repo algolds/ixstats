@@ -96,7 +96,7 @@ export function StashSidebar({
             >
               {isEditing ? (
                 /* Inline Edit State */
-                <div className="animate-in fade-in zoom-in-95 rounded-card border-separator bg-surface shadow-floating space-y-2 border p-3 duration-150">
+                <div className="rounded-card border-separator bg-surface shadow-floating space-y-2 border p-3">
                   <Input
                     type="text"
                     value={editName}

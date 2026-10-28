@@ -195,9 +195,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
               ))}
             </PollWidget.Options>
 
-            {isSignedIn && !pollState.hasVoted && (
-              <PollWidget.Submit className="animate-in fade-in zoom-in-95 mt-4 duration-200" />
-            )}
+            {isSignedIn && !pollState.hasVoted && <PollWidget.Submit className="mt-4" />}
 
             {!isSignedIn && (
               <p className="text-muted-foreground/60 mt-3 text-center text-xs">

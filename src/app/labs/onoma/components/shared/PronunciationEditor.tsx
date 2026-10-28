@@ -54,7 +54,7 @@ export function PronunciationEditor({
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className="border-separator animate-in slide-in-from-top-1 bg-tint/5 rounded-row relative z-10 w-full space-y-2 border p-3 text-left duration-200"
+      className="border-separator bg-tint/5 rounded-row relative z-10 w-full space-y-2 border p-3 text-left"
     >
       <div className="flex items-center justify-between">
         <h4 className="text-label text-subhead">Customize pronunciation</h4>

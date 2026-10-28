@@ -678,3 +678,13 @@ describe("accent utilities as Tailwind compiles them", () => {
     ).toBe(true);
   });
 });
+
+/** tw-animate utilities: the package is not installed and nothing defines them, so they animate nothing. */
+export const TW_ANIMATE =
+  /(?<![\w-])(?:data-\[[^\]]+\]:)*(?:animate-in|animate-out|fade-(?:in|out)(?:-\d+)?|zoom-(?:in|out)(?:-\d+)?|slide-(?:in-from|out-to)-(?:top|bottom|left|right)(?:-\d+)?|spin-(?:in|out)(?:-\d+)?)(?![\w-])/g;
+
+describe("Facet kit guards", () => {
+  it("uses no tw-animate classes (not installed)", () => {
+    expect(hits(TW_ANIMATE)).toEqual([]);
+  });
+});

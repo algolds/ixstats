@@ -249,10 +249,7 @@ function SaveFeedback({
   }
   if (!savedAt) return null;
   return (
-    <div
-      role="status"
-      className="animate-in fade-in text-caption text-green flex items-center gap-2 duration-200"
-    >
+    <div role="status" className="text-caption text-green flex items-center gap-2">
       <CheckCircle2 className="h-3.5 w-3.5" />
       <span>{isEdit ? "Changes saved" : "Saved. Click map to place another"}</span>
     </div>

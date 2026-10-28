@@ -374,7 +374,7 @@ export function IxTimeVisualizer() {
         </div>
 
         {showAdvanced && (
-          <div className="animate-in fade-in slide-in-from-top-2 duration-fast space-y-6 pt-1">
+          <div className="space-y-6 pt-1">
             <Separator className="border-separator my-1" />
 
             <div className="space-y-4">
@@ -440,7 +440,7 @@ export function IxTimeVisualizer() {
                 </div>
 
                 {converterResult && (
-                  <div className="animate-in fade-in slide-in-from-top-1 rounded-control-sm border-blue/20 bg-blue/5 mt-3 border px-3 py-2 duration-150">
+                  <div className="rounded-control-sm border-blue/20 bg-blue/5 mt-3 border px-3 py-2">
                     <span className="text-label-secondary text-eyebrow">
                       {converterMode === "irl-to-ix" ? "IxTime Date:" : "IRL Date:"}
                     </span>
@@ -544,7 +544,7 @@ export function IxTimeVisualizer() {
               </Button>
 
               {showDiagnostics && (
-                <div className="animate-in fade-in slide-in-from-top-2 duration-fast mt-2 grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="mt-2 grid grid-cols-1 gap-6 md:grid-cols-3">
                   <div className="border-separator bg-surface rounded-control flex flex-col justify-between space-y-3 border p-4">
                     <div className="space-y-3">
                       <div className="text-label-secondary text-caption flex items-center gap-2">
@@ -666,7 +666,7 @@ export function IxTimeVisualizer() {
                       </div>
 
                       {simulationResults && (
-                        <div className="border-separator bg-surface animate-in fade-in slide-in-from-top-1 rounded-control border p-3 duration-150">
+                        <div className="border-separator bg-surface rounded-control border p-3">
                           <div className="text-caption grid grid-cols-4 gap-1 text-center">
                             <div>
                               <div className="text-headline text-green">

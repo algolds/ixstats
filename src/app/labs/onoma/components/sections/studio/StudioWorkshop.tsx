@@ -99,7 +99,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                     {trainingWords.length} words loaded
                   </span>
                   {classifiedCulture !== "any" && (
-                    <span className="animate-in fade-in border-tint/20 bg-tint/10 text-tint rounded-control-sm text-eyebrow border px-2 py-0.5 duration-200">
+                    <span className="border-tint/20 bg-tint/10 text-tint rounded-control-sm text-eyebrow border px-2 py-0.5">
                       Classified: {classifiedCulture}
                     </span>
                   )}
@@ -137,7 +137,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
             </div>
 
             {uploadStatus && (
-              <div className="animate-in fade-in slide-in-from-top-1 border-tint/20 bg-tint/10 text-tint rounded-control text-footnote flex items-center gap-2 border px-4 py-2 font-medium duration-200">
+              <div className="border-tint/20 bg-tint/10 text-tint rounded-control text-footnote flex items-center gap-2 border px-4 py-2 font-medium">
                 <Info className="h-3.5 w-3.5 shrink-0" />
                 <span>{uploadStatus}</span>
               </div>
@@ -146,7 +146,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
             {isEdited && (
               <form
                 onSubmit={handleSaveDictionary}
-                className="animate-in slide-in-from-top-2 border-tint/25 bg-tint/5 rounded-row flex items-center gap-2 border p-4 duration-300"
+                className="border-tint/25 bg-tint/5 rounded-row flex items-center gap-2 border p-4"
               >
                 <Input
                   type="text"
@@ -168,7 +168,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
             )}
 
             {successMsg && (
-              <div className="animate-in fade-in rounded-control border-green/20 bg-green/10 text-footnote text-green border px-4 py-2 duration-300">
+              <div className="rounded-control border-green/20 bg-green/10 text-footnote text-green border px-4 py-2">
                 {successMsg}
               </div>
             )}
@@ -286,7 +286,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   </Button>
 
                   {showAdvanced && (
-                    <div className="animate-in fade-in mt-4 space-y-4 duration-200">
+                    <div className="mt-4 space-y-4">
                       <SyllableFields ctx={ctx} />
                       <CvTemplateField ctx={ctx} />
                       <OptionSwitches
@@ -347,11 +347,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
         {/* Right Column (7/12): scrollable candidates grid */}
         <div className="space-y-4 lg:col-span-7">
           {generatedNames.length > 0 ? (
-            <Card
-              variant="well"
-              padding="none"
-              className="animate-in fade-in space-y-4 p-4 duration-300"
-            >
+            <Card variant="well" padding="none" className="space-y-4 p-4">
               <div className="border-separator border-b pb-3">
                 <h3 className="text-label text-body font-semibold">Custom model output</h3>
                 <p className="text-label-secondary text-caption mt-0.5">

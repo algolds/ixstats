@@ -303,7 +303,7 @@ export function MarginGutterPins({
           >
             {/* Elevated Flyout Tooltip (Floats above pin to avoid blocking article text) */}
             {isHovered && hasFlyout && (
-              <div className="animate-in fade-in zoom-in-95 rounded-row border-separator bg-surface text-footnote text-label shadow-floating pointer-events-none absolute right-0 bottom-full z-50 mb-2 flex max-w-xs origin-bottom-right flex-col gap-1 border px-3 py-2 whitespace-nowrap duration-150">
+              <div className="rounded-row border-separator bg-surface text-footnote text-label shadow-floating pointer-events-none absolute right-0 bottom-full z-50 mb-2 flex max-w-xs origin-bottom-right flex-col gap-1 border px-3 py-2 whitespace-nowrap">
                 {isCluster ? (
                   <>
                     <div className="border-separator text-caption text-label flex items-center gap-2 border-b pb-1 font-semibold">

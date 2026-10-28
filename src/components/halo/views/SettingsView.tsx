@@ -338,7 +338,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
         {/* Additive 2nd Column (Smoothly reveals alongside on More Preferences) */}
         {morePrefsExpanded && (
-          <div className="animate-in fade-in slide-in-from-right-4 border-separator min-w-0 space-y-1 border-t pt-2 duration-200 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
+          <div className="border-separator min-w-0 space-y-1 border-t pt-2 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
             <SectionLabel>Reader preferences</SectionLabel>
 
             {/* Citations */}

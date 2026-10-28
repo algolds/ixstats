@@ -334,7 +334,7 @@ export function MeetingRosterPanel({
   onAgendaChange,
 }: MeetingRosterPanelProps) {
   return (
-    <div className="bg-surface border-separator animate-in fade-in slide-in-from-right-2 rounded-row shadow-floating flex max-h-[85vh] w-full flex-col overflow-hidden duration-300 md:w-[350px]">
+    <div className="bg-surface border-separator rounded-row shadow-floating flex max-h-[85vh] w-full flex-col overflow-hidden md:w-[350px]">
       <div className="border-separator shrink-0 border-b px-5 pt-5 pb-3">
         <h3 className="text-label text-headline flex items-center gap-2">Roster and agenda</h3>
         <p className="text-label-secondary text-footnote mt-0.5">
