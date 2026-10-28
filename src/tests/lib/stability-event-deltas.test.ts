@@ -124,6 +124,7 @@ function makeDb(
         ]),
       })),
       update: jest.fn(async () => ({})),
+      updateMany: jest.fn(async () => ({ count: 1 })), // resolveIssue claims the issue first
     },
     nationalIssueConsequence: { create: jest.fn(async () => ({})) },
     countryChangeLog: { create: jest.fn(async () => ({})) },
