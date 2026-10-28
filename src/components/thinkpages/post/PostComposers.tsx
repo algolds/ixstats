@@ -15,6 +15,8 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Textarea } from "~/components/ui/textarea";
+import { Input } from "~/components/ui/input";
+import { CONTENT_WARNING_MAX_LENGTH } from "~/lib/thinkpages/content-warning";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { ComposerAccountSwitcher } from "../composer/ComposerAccountSwitcher";
 import { GifPicker } from "../GifPicker";
@@ -57,7 +59,15 @@ const getAccountAvatar = (acc: any) =>
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(acc?.displayName || "A")}&background=3B82F6&color=fff&size=128&bold=true`;
 
 function EditComposer({ post, state }: { post: any; state: PostState }) {
-  const { editText, setEditText, setShowEditComposer, handleSubmitEdit } = state;
+  const {
+    editText,
+    setEditText,
+    editContentWarning,
+    setEditContentWarning,
+    editChanged,
+    setShowEditComposer,
+    handleSubmitEdit,
+  } = state;
   const isPending = state.updatePostMutation.isPending;
   useEscapeToClose(() => setShowEditComposer(false));
 
@@ -92,6 +102,14 @@ function EditComposer({ post, state }: { post: any; state: PostState }) {
             rows={3}
             autoFocus
           />
+          <Input
+            value={editContentWarning}
+            onChange={(e) => setEditContentWarning(e.target.value)}
+            maxLength={CONTENT_WARNING_MAX_LENGTH}
+            placeholder="Content warning (optional)"
+            aria-label="Content warning"
+            className="bg-surface"
+          />
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="ghost" size="sm" onClick={() => setShowEditComposer(false)}>
               Cancel
@@ -99,7 +117,7 @@ function EditComposer({ post, state }: { post: any; state: PostState }) {
             <Button
               size="sm"
               onClick={handleSubmitEdit}
-              disabled={!editText.trim() || editText === post.content || isPending}
+              disabled={!editText.trim() || !editChanged || isPending}
             >
               {isPending ? "Saving..." : "Save changes"}
             </Button>

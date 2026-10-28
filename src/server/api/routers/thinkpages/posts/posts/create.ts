@@ -18,6 +18,7 @@ import { recipientsBlockingSender } from "~/server/shared/user-blocks";
 import { recipientsRefusing } from "~/server/shared/privacy-permissions";
 import { MENTION_MAX_PER_POST } from "~/lib/thinkpages-forum/mentions";
 import { extractMentions } from "~/lib/utils/text-formatter";
+import { contentWarningInput } from "~/lib/thinkpages/content-warning";
 
 /** Visibilities whose posts other people can open, so they may trigger notifications. */
 const NOTIFIABLE_VISIBILITIES = new Set(["public", "unlisted"]);
@@ -41,6 +42,7 @@ const CreatePostSchema = z.object({
       }
     )
     .transform(stripDiscordMarker),
+  contentWarning: contentWarningInput,
   hashtags: z.array(z.string()).optional(),
   // Only names written in the content count, at most MENTION_MAX_PER_POST of them (recordMentions).
   mentions: z.array(z.string().max(64)).max(1000).optional(),
@@ -365,6 +367,7 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
         data: {
           accountId: input.accountId,
           content: input.content,
+          contentWarning: input.contentWarning ?? null,
           // Board placement tags are server-set (createGroupPost); a plain post can't claim one.
           hashtags: input.hashtags ? JSON.stringify(ownHashtags(input.hashtags)) : null,
           visualizations: input.visualizations ? JSON.stringify(input.visualizations) : null,

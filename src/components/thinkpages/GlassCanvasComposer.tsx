@@ -11,6 +11,8 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Input } from "~/components/ui/input";
+import { CONTENT_WARNING_MAX_LENGTH } from "~/lib/thinkpages/content-warning";
 import { springSmooth } from "~/lib/design/motion";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { LiveDataCard } from "./LiveDataCard";
@@ -285,6 +287,17 @@ export function GlassCanvasComposer({
         {/* Right column: Editor + Previews + Actions */}
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           {repostData && <RepostPreview originalPost={repostData.originalPost} />}
+
+          {composer.showContentWarning && (
+            <Input
+              value={composer.contentWarning}
+              onChange={(e) => composer.setContentWarning(e.target.value)}
+              maxLength={CONTENT_WARNING_MAX_LENGTH}
+              placeholder="What readers should know first, such as war violence"
+              aria-label="Content warning"
+              autoFocus
+            />
+          )}
 
           <div className="space-y-2">
             <GlassPlateEditor

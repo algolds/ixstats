@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import { formatThinkpagesContentForDisplay } from "~/lib/utils";
-import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { PostMediaGrid } from "./PostMediaGrid";
+import { PostHtml } from "./PostHtml";
+import { ContentWarningGate } from "./ContentWarningGate";
 import { getInitials, proxyDiscordUrl } from "./ThinkpagesPostUtils";
 
 interface RepostCardProps {
@@ -35,13 +35,15 @@ export function RepostCard({
         <span className="text-headline text-label">{original.account?.displayName}</span>
         <span className="text-label-secondary text-footnote">@{original.account?.username}</span>
       </div>
-      <WikiHtmlContent html={formatThinkpagesContentForDisplay(cleanRepostContent)} />
-      <PostMediaGrid
-        variant="repost"
-        mediaAttachments={repostMediaAttachments}
-        postId={post.id}
-        onOpenLightbox={setLightboxMedia}
-      />
+      <ContentWarningGate reason={original.contentWarning}>
+        <PostHtml content={cleanRepostContent} />
+        <PostMediaGrid
+          variant="repost"
+          mediaAttachments={repostMediaAttachments}
+          postId={post.id}
+          onOpenLightbox={setLightboxMedia}
+        />
+      </ContentWarningGate>
     </div>
   );
 }
