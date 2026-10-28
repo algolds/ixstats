@@ -15,6 +15,7 @@ import {
   initialTotalBudget,
   maintenanceByYear,
   nudgeShare,
+  sharesForDepartments,
 } from "~/lib/government/budget-math";
 import { MAINTENANCE_DEBIT_EFFECT } from "~/lib/policies/lifecycle";
 import { inferFormId } from "~/server/shared/founding-snapshot";
@@ -37,7 +38,8 @@ async function editableBudgetYear(db: Db, countryId: string): Promise<number> {
 /**
  * Give a nation the default departments of its government form, each with its share of a yearly
  * budget. Creates the structure when there is none; a structure with no departments gets the
- * departments. A structure that already has departments is left alone (CONFLICT). `revenue` is
+ * departments. A structure that already has departments is left alone (CONFLICT), unless it never
+ * had a budget (no total, no allocations): its departments get one, split by the form's shares. `revenue` is
  * the nation's yearly revenue as the Economy tabs show it; a new budget starts at it (capped, see
  * `initialTotalBudget`), so it does not open in deficit.
  */
@@ -46,7 +48,7 @@ export async function createGovernmentStructure(
   countryId: string,
   revenue?: number | null
 ) {
-  const [country, departmentCount] = await Promise.all([
+  const [country, departments, allocationCount] = await Promise.all([
     db.country.findUnique({
       where: { id: countryId },
       select: {
@@ -58,10 +60,18 @@ export async function createGovernmentStructure(
         governmentStructure: { select: { id: true, totalBudget: true } },
       },
     }),
-    db.governmentDepartment.count({ where: { governmentStructure: { countryId } } }),
+    db.governmentDepartment.findMany({
+      where: { governmentStructure: { countryId } },
+      select: { id: true, category: true },
+      orderBy: { priority: "desc" },
+    }),
+    db.budgetAllocation.count({ where: { governmentStructure: { countryId } } }),
   ]);
   if (!country) notFound("Country not found");
-  if (departmentCount > 0) {
+  const existing = country.governmentStructure;
+  // Departments with no budget at all (older builders wrote departments without one) get one below.
+  const budgetless = !existing || (existing.totalBudget <= 0 && allocationCount === 0);
+  if (departments.length > 0 && !budgetless) {
     throw new TRPCError({
       code: "CONFLICT",
       message: "This nation already has a government structure",
@@ -69,12 +79,22 @@ export async function createGovernmentStructure(
   }
 
   const formId = inferFormId(country.governmentComponents.map((c) => c.componentType));
-  const existing = country.governmentStructure;
   const totalBudget =
     existing && existing.totalBudget > 0
       ? existing.totalBudget
       : initialTotalBudget(country, revenue);
   const budgetYear = await countryBudgetYear(db, countryId);
+  if (existing && departments.length > 0) {
+    return budgetExistingDepartments(db, {
+      structureId: existing.id,
+      countryId,
+      departments,
+      totalBudget,
+      budgetYear,
+      formId,
+      reviewedAt: country.createdAt,
+    });
+  }
 
   return db.$transaction(async (tx) => {
     const structure = existing
@@ -114,6 +134,48 @@ export async function createGovernmentStructure(
     }
     return { structureId: structure.id, departments: departments.length };
   });
+}
+
+/** A budget for a government's existing departments: `totalBudget`, split by its form's default shares. */
+async function budgetExistingDepartments(
+  db: Db,
+  input: {
+    structureId: string;
+    countryId: string;
+    departments: { id: string; category: string }[];
+    totalBudget: number;
+    budgetYear: number;
+    formId: string;
+    reviewedAt: Date;
+  }
+) {
+  const defaults = new Map(
+    departmentsForForm(input.formId).map((d) => [d.category, d.spendingShare])
+  );
+  const shares = sharesForDepartments(
+    input.departments.map((d) => d.category),
+    defaults
+  );
+  await db.$transaction(async (tx) => {
+    await tx.governmentStructure.update({
+      where: { countryId: input.countryId },
+      data: { totalBudget: input.totalBudget },
+    });
+    for (const [i, dept] of input.departments.entries()) {
+      const figures = allocationAt(input.totalBudget, round2(shares[i]!));
+      await tx.budgetAllocation.create({
+        data: {
+          governmentStructureId: input.structureId,
+          departmentId: dept.id,
+          budgetYear: input.budgetYear,
+          ...figures,
+          availableAmount: figures.allocatedAmount,
+          lastReviewed: input.reviewedAt,
+        },
+      });
+    }
+  });
+  return { structureId: input.structureId, departments: input.departments.length };
 }
 
 /** The department, when it belongs to the country's government. */

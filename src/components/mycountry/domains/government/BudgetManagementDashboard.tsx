@@ -143,18 +143,33 @@ function NewYearBanner({
   );
 }
 
-/** For a nation with no departments: the action that creates its form's government. */
-function NoGovernmentBanner({ createFor }: { createFor?: string }) {
+/**
+ * For a nation with no departments: the action that creates its form's government. For departments
+ * that never had a budget (older builders): the action that budgets them.
+ */
+function NoGovernmentBanner({
+  createFor,
+  budgetOnly,
+}: {
+  createFor?: string;
+  budgetOnly: boolean;
+}) {
   return (
     <div
       role="status"
       className="rounded-control border-separator flex flex-wrap items-center justify-between gap-3 border px-4 py-3"
     >
       <p className="text-label text-body">
-        This government has no departments yet. Create its structure to set a budget and appoint a
-        cabinet.
+        {budgetOnly
+          ? "This government's departments have no budget yet. Create one to fund them."
+          : "This government has no departments yet. Create its structure to set a budget and appoint a cabinet."}
       </p>
-      {createFor && <CreateGovernmentStructureButton countryId={createFor} />}
+      {createFor && (
+        <CreateGovernmentStructureButton
+          countryId={createFor}
+          label={budgetOnly ? "Create budget" : undefined}
+        />
+      )}
     </div>
   );
 }
@@ -269,6 +284,7 @@ function BudgetManagementBody({
 
   const yearAllocations = budgetAllocations.filter((a) => a.budgetYear === selectedYear);
   const totalBudget = governmentStructure?.totalBudget ?? 0;
+  const budgetless = totalBudget <= 0 && budgetAllocations.length === 0;
   const budgetSummary = summarizeBudget(yearAllocations, departments, totalBudget);
   // Owner edits go to the budget in effect, so they are offered only while it is shown.
   const editableCountry =
@@ -323,7 +339,9 @@ function BudgetManagementBody({
         </div>
       </div>
 
-      {ownerView && departments.length === 0 && <NoGovernmentBanner createFor={editableCountry} />}
+      {ownerView && (departments.length === 0 || budgetless) && (
+        <NoGovernmentBanner createFor={editableCountry} budgetOnly={departments.length > 0} />
+      )}
 
       {needsNewYearBudget && (
         <NewYearBanner

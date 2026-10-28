@@ -150,20 +150,26 @@ const governmentDb = (departments = 0) => ({
             totalGovernmentSpending: 1000,
             currentTotalGdp: 5000,
             governmentComponents: [],
-            governmentStructure: null,
+            // A staffed government has its budget (departments that never had one get one instead)
+            governmentStructure: departments > 0 ? { id: "gs_1", totalBudget: 1000 } : null,
           }
         : null
     ),
   },
   governmentStructure: { findUnique: jest.fn().mockResolvedValue({ id: "gs_1" }) },
   governmentDepartment: {
-    count: jest.fn().mockResolvedValue(departments),
+    findMany: jest
+      .fn()
+      .mockResolvedValue(
+        Array.from({ length: departments }, (_, i) => ({ id: `dept_${i}`, category: "Finance" }))
+      ),
     findFirst: jest.fn(ownDepartmentRow),
     create: jest.fn(writeReached),
     delete: jest.fn(writeReached),
   },
   budgetAllocation: {
     findFirst: jest.fn().mockResolvedValue({ budgetYear: 2040 }),
+    count: jest.fn().mockResolvedValue(departments),
     upsert: jest.fn(writeReached),
   },
   $transaction: jest.fn(writeReached),
@@ -619,7 +625,7 @@ describe("and the details each country mutation adds", () => {
     await expect(government(db).createStructure({ countryId: FOREIGN })).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
-    expect(db.governmentDepartment.count).not.toHaveBeenCalled();
+    expect(db.governmentDepartment.findMany).not.toHaveBeenCalled();
 
     const staffed = governmentDb(9);
     await expect(government(staffed).createStructure({ countryId: OWN })).rejects.toMatchObject({

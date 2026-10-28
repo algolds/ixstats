@@ -251,3 +251,31 @@ it("moves the yearly budget and the budget in effect with GDP, and starts the ne
     expect(a.allocatedAmount).toBeCloseTo((budget * a.allocatedPercent) / 100, 0);
   }
 });
+
+it("budgets departments an older builder left without a budget", async () => {
+  await addNation(db as never, { id: "kiravia", baselineDate: new Date(NOW - YEAR) });
+  const structure = await db.governmentStructure.update({
+    where: { countryId: "kiravia" },
+    data: { totalBudget: 0 },
+  });
+  await db.budgetAllocation.deleteMany({ where: { governmentStructureId: structure.id } });
+  await db.governmentDepartment.deleteMany({ where: { governmentStructureId: structure.id } });
+  for (const [name, category] of [
+    ["Defence Executive", "Defense"],
+    ["Territorial Executive", "executive"],
+  ]) {
+    await db.governmentDepartment.create({
+      data: { governmentStructureId: structure.id, name: name!, category: category! },
+    });
+  }
+  const lena = await addOwner(db as never, "lena", "kiravia");
+
+  await government(asOwner(db as never, lena)).createStructure({ countryId: "kiravia" });
+
+  const totalBudget = (await structureOf("kiravia")).totalBudget;
+  expect(totalBudget).toBeGreaterThan(0);
+  const created = await allocations("kiravia", 2043);
+  expect(created).toHaveLength(2);
+  expect(created.reduce((sum, a) => sum + a.allocatedPercent, 0)).toBeCloseTo(100, 1);
+  expect(created.reduce((sum, a) => sum + a.allocatedAmount, 0)).toBeCloseTo(totalBudget, -2);
+});

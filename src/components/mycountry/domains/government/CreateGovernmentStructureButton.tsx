@@ -13,7 +13,13 @@ import { nationalRevenue } from "~/components/mycountry/shell/fiscal/nationalRev
  * Cabinet's empty state. Sends the nation's revenue (the figure the Economy tabs show), so the
  * new budget starts balanced against it.
  */
-export function CreateGovernmentStructureButton({ countryId }: { countryId: string }) {
+export function CreateGovernmentStructureButton({
+  countryId,
+  label = "Create government structure",
+}: {
+  countryId: string;
+  label?: string;
+}) {
   const notify = useNotify();
   const utils = api.useUtils();
   const { data: country } = api.countries.getByIdWithEconomicData.useQuery({ id: countryId });
@@ -21,7 +27,7 @@ export function CreateGovernmentStructureButton({ countryId }: { countryId: stri
   const revenue = total != null && total > 0 ? total : undefined;
   const create = api.government.createStructure.useMutation({
     onSuccess: async (result) => {
-      notify.success(`Government structure created with ${result.departments} departments`);
+      notify.success(`Budget set for ${result.departments} departments`);
       await Promise.all([
         utils.government.getFullByCountryId.invalidate({ countryId }),
         utils.government.getByCountryId.invalidate({ countryId }),
@@ -38,7 +44,7 @@ export function CreateGovernmentStructureButton({ countryId }: { countryId: stri
       disabled={create.isPending}
     >
       <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-      {create.isPending ? "Creating…" : "Create government structure"}
+      {create.isPending ? "Creating…" : label}
     </Button>
   );
 }
