@@ -465,6 +465,41 @@ describe("MC-2 politics lifecycle", () => {
     expect(tables.legislativeSeat!.filter((seat) => seat.partyId != null)).toHaveLength(100);
   });
 
+  it.each([
+    [
+      "four 5,000-seat chambers (20,000 seats)",
+      "tetracameral|A:5000:proportional;B:5000:proportional;C:5000:fptp;D:5000:mixed",
+      10000,
+    ],
+    ["a chamber of 0 seats", "unicameral|Assembly:0:proportional", 10],
+  ])("refuses a legislature of %s", async (_label, chamberType, totalSeats) => {
+    await expect(
+      callers().elections.configureLegislature({
+        countryId: COUNTRY,
+        name: "Assembly",
+        chamberType,
+        totalSeats,
+        electoralSystem: "proportional",
+        termLength: 4,
+        electionCycle: "fixed",
+      })
+    ).rejects.toThrow(/seats/);
+    expect(tables.legislativeSeat).toHaveLength(0);
+  });
+
+  it("seats a one-seat legislature, as the editor offers", async () => {
+    await callers().elections.configureLegislature({
+      countryId: COUNTRY,
+      name: "Council",
+      chamberType: "unicameral|Council:1:fptp:elected",
+      totalSeats: 1,
+      electoralSystem: "fptp",
+      termLength: 4,
+      electionCycle: "fixed",
+    });
+    expect(tables.legislativeSeat).toHaveLength(1);
+  });
+
   it("a party formed while the votes are counted does not queue an early election", async () => {
     await setUpNation();
     const first = tables.election![0]!;

@@ -84,9 +84,10 @@ export function parseChambers(
       const parts = serialized.split(";").filter(Boolean);
       return parts.map((part) => {
         const [name, seatsStr, system, selection] = part.split(":");
+        const seats = Number(seatsStr);
         return {
           name: name || "Chamber",
-          seats: Number(seatsStr) || 100,
+          seats: seatsStr && Number.isFinite(seats) ? seats : 100,
           electoralSystem: toElectoralSystem(system || globalElectoralSystem),
           selectionMethod: (selection || "elected") as SelectionMethod,
         };
@@ -115,6 +116,23 @@ export function parseChambers(
       selectionMethod: "elected",
     },
   ];
+}
+
+/** Seat bounds the legislature editor offers: 1 to 5,000 per chamber, up to 10,000 in all. */
+export const MAX_CHAMBER_SEATS = 5000;
+export const MAX_LEGISLATURE_SEATS = 10000;
+
+/** Why these chambers cannot be seated (a chamber outside 1 to 5,000 seats, more than 10,000 in all), or null. */
+export function chamberSeatProblem(chambers: readonly ChamberConfig[]): string | null {
+  const bad = chambers.find(
+    (c) => !Number.isInteger(c.seats) || c.seats < 1 || c.seats > MAX_CHAMBER_SEATS
+  );
+  if (bad) return `${bad.name} needs a whole number of seats from 1 to ${MAX_CHAMBER_SEATS}.`;
+  const total = chambers.reduce((sum, c) => sum + c.seats, 0);
+  if (total > MAX_LEGISLATURE_SEATS) {
+    return `The chambers hold ${total} seats; a legislature has at most ${MAX_LEGISLATURE_SEATS}.`;
+  }
+  return null;
 }
 
 type SimulateElectionResult =
