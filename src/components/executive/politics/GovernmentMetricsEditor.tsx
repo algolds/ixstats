@@ -96,7 +96,7 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
           <div className="text-label-secondary text-body flex items-center justify-center py-6">
             Loading metrics
           </div>
-        ) : !govStructure ? (
+        ) : !govStructure?.departments.length ? (
           <p className="text-label-secondary text-body py-4 text-center">
             No government structure yet.
           </p>

@@ -59,7 +59,7 @@ export async function createGovernmentStructure(db: Db, countryId: string) {
         economicProfile: true,
         fiscalSystem: true,
         governmentComponents: { where: { isActive: true }, select: { componentType: true } },
-        governmentStructure: { select: { id: true, totalBudget: true } },
+        governmentStructure: { select: { id: true, totalBudget: true, governmentType: true } },
       },
     }),
     db.governmentDepartment.findMany({
@@ -99,8 +99,15 @@ export async function createGovernmentStructure(db: Db, countryId: string) {
   }
 
   return db.$transaction(async (tx) => {
+    // A bare structure (an issue's governance consequence created it) gets the form's type when it has none.
+    const formType = existing?.governmentType?.trim()
+      ? {}
+      : { governmentType: governmentTypeForForm(formId) ?? "Parliamentary Republic" };
     const structure = existing
-      ? await tx.governmentStructure.update({ where: { countryId }, data: { totalBudget } })
+      ? await tx.governmentStructure.update({
+          where: { countryId },
+          data: { totalBudget, ...formType },
+        })
       : await tx.governmentStructure.create({
           data: {
             countryId,

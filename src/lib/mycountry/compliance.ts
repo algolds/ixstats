@@ -61,7 +61,10 @@ function missingIdentity(input: ComplianceInput): string[] {
 }
 
 function missingGovernment(government: ComplianceInput["government"]): string[] {
-  if (!government) return [COMPLIANCE_NO_GOVERNMENT];
+  // A bare structure (no departments, no type: an issue's consequence created it) is no government yet.
+  if (!government || (!government.departments?.length && !filled(government.governmentType))) {
+    return [COMPLIANCE_NO_GOVERNMENT];
+  }
   const missing: string[] = [];
   if (!filled(government.governmentType)) missing.push(COMPLIANCE_GOVERNMENT_TYPE);
   if (!government.departments?.length) missing.push("Departments");

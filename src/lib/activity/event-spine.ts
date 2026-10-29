@@ -3,6 +3,7 @@ import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import type { NewsEventType } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "./hooks";
 import { ensureInternalStabilityMetrics } from "~/lib/statecraft/stability-store";
+import { ensureGovernmentStructure } from "~/lib/government/ensure-structure";
 import type { PrismaClient } from "@prisma/client";
 import { isBlankFigure, isEstimatedField } from "~/lib/economy/figure-estimates";
 import { isSoftScoreField, SOFT_SCORE_SEEDED_DEFAULTS } from "~/lib/government/soft-scores";
@@ -193,6 +194,19 @@ export class CountryEventSpine {
         await ensureInternalStabilityMetrics(db, countryId);
       } catch (err) {
         console.error(`[Spine] Failed to initialise stability metrics for ${countryId}:`, err);
+      }
+    }
+
+    // Nor do most have a government structure; create the bare row (no departments, no budget)
+    // so a governance delta lands as the score's lasting offset instead of being dropped.
+    if (consequences.some((c) => c.targetModel === "GovernmentStructure")) {
+      try {
+        await ensureGovernmentStructure(db, countryId);
+      } catch (err) {
+        console.error(
+          `[Spine] Failed to initialise the government structure for ${countryId}:`,
+          err
+        );
       }
     }
 
