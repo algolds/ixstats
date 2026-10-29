@@ -68,14 +68,18 @@ const score = (value: number) => Math.round(clamp(value, 0, 100) * 10) / 10;
 const finiteOr = (value: number | null | undefined, fallback: number) =>
   typeof value === "number" && Number.isFinite(value) ? value : fallback;
 
-/** Department categories behind each budget driver, and the share (percent) that is neutral. */
+/**
+ * Department categories behind each budget driver, and the share (percent) that is neutral: about
+ * what the government forms' starting budgets give (`form-departments`), so a default budget moves
+ * nothing.
+ */
 const SHARE_GROUPS = {
   infrastructure: {
     categories: ["Transportation", "Energy", "Communications", "Housing"],
-    neutral: 8,
+    neutral: 5,
   },
   policing: { categories: ["Interior", "Justice"], neutral: 12 },
-  welfare: { categories: ["Education", "Health", "Social Services"], neutral: 50 },
+  welfare: { categories: ["Education", "Health", "Social Services"], neutral: 55 },
 } as const;
 
 type ShareGroup = keyof typeof SHARE_GROUPS;

@@ -95,10 +95,10 @@ describe("stability formula boundary", () => {
         povertyRate: 12,
       },
       {
-        // The 5bn budget at the neutral shares: 12% policing, half on welfare (30/70).
+        // The 5bn budget at the neutral shares: 12% policing, 55% on welfare (30/70).
         policingBudget: 600e6,
-        educationBudget: 750e6,
-        socialServicesBudget: 1.75e9,
+        educationBudget: 825e6,
+        socialServicesBudget: 1.925e9,
         totalBudget: 5e9,
         corruptionIndex: governance.corruptionIndex,
       },

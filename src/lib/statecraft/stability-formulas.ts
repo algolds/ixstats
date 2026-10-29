@@ -272,14 +272,14 @@ function calculatePolicingEffectiveness(
 }
 
 /**
- * Education and social services spending against half the budget (the neutral welfare share), as
+ * Education and social services spending against 55% of the budget (the neutral welfare share), as
  * points: -7.5 to +7.5. Feeds social cohesion and trust in government.
  */
 export function welfareFactor(government: GovernmentData): number {
   if (!(government.totalBudget > 0)) return 0;
   const share =
     (government.educationBudget + government.socialServicesBudget) / government.totalBudget;
-  return Math.max(-0.3, Math.min(0.3, share - 0.5)) * 25;
+  return Math.max(-0.3, Math.min(0.3, share - 0.55)) * 25;
 }
 
 /**

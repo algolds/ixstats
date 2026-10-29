@@ -252,7 +252,7 @@ describe("stability budget lines", () => {
     });
     expect(budget.totalBudget).toBe(3_000_000);
     expect(budget.policingBudget).toBeCloseTo(360_000);
-    expect(budget.educationBudget + budget.socialServicesBudget).toBeCloseTo(1_500_000);
+    expect(budget.educationBudget + budget.socialServicesBudget).toBeCloseTo(1_650_000);
   });
 
   it("reads the set budget and its shares; empty shares count as none", () => {
