@@ -25,6 +25,7 @@ import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { DiffViewer } from "~/components/diff-viewer";
 import { MarginUserAvatar, type CommentAuthor } from "../shared/MarginUserAvatar";
+import type { ThreadItem } from "../shared/thread-types";
 import { useThreadComments } from "./useThreadComments";
 import { HoldToResolveButton } from "./HoldToResolveButton";
 import { MarginCategoryHelpModal } from "../modals/MarginCategoryHelpModal";
@@ -34,38 +35,52 @@ import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Textarea } from "~/components/ui/textarea";
-import { LORE_DIMENSIONS } from "../shared/lore-dimensions";
 
 /** The Margin's highlighter accent on a filled `Button` (its identity colour, not the app tint). */
 const MARGIN_FILLED = "bg-margin-accent text-(--margin-badge-text) hover:bg-margin-accent-hover";
 
-interface ThreadItem {
-  id: string;
-  articleTitle: string;
-  status: "OPEN" | "RESOLVED" | "ARCHIVED";
-  title: string;
-  sectionAnchor: string | null;
-  selectedText: string | null;
-  anchorOffset: number | null;
-  resolvedAt: Date | null;
-  resolvedBy: { username: string } | null;
-  createdBy: CommentAuthor;
-  teamId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  comments: Array<{
-    id: string;
-    threadId: string;
-    content: string;
-    suggestedEdit: string | null;
-    reactions: Record<string, number>;
-    createdAt: Date;
-    author: CommentAuthor;
-  }>;
-  /** All the thread's comments; `comments` holds the first page of them. */
-  commentCount: number;
-  hasMoreComments: boolean;
-}
+export const LORE_DIMENSIONS = [
+  {
+    id: "WHY",
+    label: "Why (National purpose)",
+    short: "WHY",
+    emoji: "🌟",
+    color: "#fef036",
+    desc: "Core concept, worldview, and national philosophy",
+  },
+  {
+    id: "WHEN",
+    label: "When (History and era)",
+    short: "WHEN",
+    emoji: "⏳",
+    color: "#38bdf8",
+    desc: "Historical events, founding dates, and turning points",
+  },
+  {
+    id: "WHERE",
+    label: "Where (Geography)",
+    short: "WHERE",
+    emoji: "🗺️",
+    color: "#4ade80",
+    desc: "Terrain, borders, provinces, and regions",
+  },
+  {
+    id: "WHO",
+    label: "Who (Key figure)",
+    short: "WHO",
+    emoji: "👤",
+    color: "#c084fc",
+    desc: "Leaders, monarchs, and notable people",
+  },
+  {
+    id: "WHAT",
+    label: "What (Custom or office)",
+    short: "WHAT",
+    emoji: "📦",
+    color: "#fb923c",
+    desc: "Traditions, artifacts, and government offices",
+  },
+];
 
 interface MarginThreadsTabProps {
   articleTitle: string;

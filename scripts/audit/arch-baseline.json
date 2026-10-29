@@ -9,7 +9,7 @@
   "src/lib/discord/ixtwitter-sync.ts": 967,
   "src/lib/sports/transition.ts": 955,
   "src/lib/diplomacy/npc-personality.ts": 927,
-  "src/components/wiki-os/margin/tabs/MarginThreadsTab.tsx": 870,
+  "src/components/wiki-os/margin/tabs/MarginThreadsTab.tsx": 885,
   "src/app/labs/onoma/components/sections/writing/GlyphForgeCanvas.tsx": 861,
   "src/hooks/useMapEditor.ts": 822,
   "src/server/api/routers/thinkpages/thinktanks/groups.ts": 816,
