@@ -39,11 +39,15 @@ export async function registerNode() {
 
       console.log("[Instrumentation] Production optimizations initialized successfully");
 
-      // Signal PM2 that we are ready (for zero-downtime cluster reloads)
+      // Signal PM2 that we are ready (for zero-downtime cluster reloads). Under `bash start-production.sh` the
+      // inherited IPC channel is not PM2's, so the write can fail: the callback takes that error, which without one
+      // is emitted on `process` as an uncaught `write EINVAL`.
       const p = process as any;
       if (p.send) {
-        p.send("ready");
-        console.log("[Instrumentation] Signal sent to PM2: ready");
+        p.send("ready", (error: Error | null) => {
+          if (error) console.warn("[Instrumentation] PM2 ready signal not sent:", error.message);
+          else console.log("[Instrumentation] Signal sent to PM2: ready");
+        });
       }
     } catch (error) {
       // Log but don't crash the server
