@@ -97,3 +97,11 @@ it("keeps an admin evaluation unpaced: every triggered template up to the sessio
   const result = await NationalIssuesEngine.evaluateCountry("n12", db as never, { now: NOW });
   expect(result.issuesGenerated).toBe(2);
 });
+
+it("falls back to a routine issue only for a nation nothing else triggers for", async () => {
+  await addTemplate("routine_census", { field: "currentPopulation", op: ">=", value: 0 });
+  await generateNationalIssues();
+
+  expect((await issuesOf("n1")).map((i) => i.templateId)).toEqual(["routine_census"]);
+  expect((await issuesOf("n12")).map((i) => i.templateId)).not.toContain("routine_census");
+});

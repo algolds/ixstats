@@ -5,13 +5,16 @@
  */
 import { describe, expect, it } from "@jest/globals";
 import {
+  balanceDomains,
   hashUnit,
+  isRoutineSlug,
   issueDue,
   issueGapMs,
   MEAN_ISSUE_GAP_IX_DAYS,
   MIN_ISSUE_GAP_IX_DAYS,
   pickWeighted,
   selectPacedCandidates,
+  withRoutineFallback,
 } from "~/lib/national-issues/evaluators/pacing";
 
 const HOUR = 3_600_000;
@@ -116,5 +119,58 @@ describe("the weighted pick", () => {
     );
     expect(picked).toHaveLength(2);
     expect(new Set(picked).size).toBe(2);
+  });
+});
+
+type Cand = { probability: number; template: { id: string; slug: string; domain: string; baseSeverity: string } };
+const cand = (slug: string, domain: string, probability = 0.5, baseSeverity = "medium"): Cand => ({
+  probability,
+  template: { id: slug, slug, domain, baseSeverity },
+});
+
+describe("routine fallback", () => {
+  it("offers routine issues only when nothing else qualifies", () => {
+    const routine = [cand("routine_census", "political"), cand("routine_festival", "social")];
+    const real = cand("inflation_spiral", "economic");
+    expect(withRoutineFallback([...routine, real])).toEqual([real]);
+    expect(withRoutineFallback(routine)).toEqual(routine);
+    expect(withRoutineFallback([])).toEqual([]);
+    expect(isRoutineSlug("routine_census")).toBe(true);
+    expect(isRoutineSlug("inflation_spiral")).toBe(false);
+  });
+});
+
+describe("soft domain balance", () => {
+  const templates = [
+    { id: "a", domain: "economic" },
+    { id: "b", domain: "economic" },
+    { id: "c", domain: "political" },
+  ];
+  const recent = [
+    { templateId: "a", createdIxTime: T0 },
+    { templateId: "b", createdIxTime: T0 - DAY },
+    { templateId: "c", createdIxTime: T0 - 20 * DAY },
+  ];
+
+  it("weighs down the domains the nation saw most recently, never to zero", () => {
+    const [econ, pol, env] = balanceDomains(
+      [cand("x", "economic"), cand("y", "political"), cand("z", "environmental")],
+      recent,
+      templates
+    );
+    expect(env!.probability).toBe(0.5);
+    expect(pol!.probability).toBeLessThan(0.5);
+    expect(econ!.probability).toBeLessThan(pol!.probability);
+    expect(econ!.probability).toBeGreaterThan(0);
+  });
+
+  it("never weighs down a crisis", () => {
+    const [crisis] = balanceDomains([cand("x", "economic", 0.9, "critical")], recent, templates);
+    expect(crisis!.probability).toBe(0.9);
+  });
+
+  it("changes nothing for a nation with no history", () => {
+    const cands = [cand("x", "economic"), cand("y", "social")];
+    expect(balanceDomains(cands, [], templates)).toEqual(cands);
   });
 });

@@ -43,7 +43,12 @@ import {
   scoreTemplateCandidates,
   usesRank,
 } from "./evaluators/candidate-selection";
-import { issueDue, selectPacedCandidates } from "./evaluators/pacing";
+import {
+  balanceDomains,
+  issueDue,
+  selectPacedCandidates,
+  withRoutineFallback,
+} from "./evaluators/pacing";
 import { createRankCache, type RankSource } from "./realm-rank-store";
 import {
   instantiateCandidate,
@@ -174,9 +179,17 @@ export class NationalIssuesEngine {
         result,
         ranks ?? undefined
       );
+      // Routine templates only when nothing else qualified; the paced pick favours domains not seen lately.
+      const pool = withRoutineFallback(candidates);
       const selected = options?.paced
-        ? selectPacedCandidates(candidates, recentIssues, countryId, snapshot.currentIxTime, maxIssues)
-        : candidates.slice(0, maxIssues);
+        ? selectPacedCandidates(
+            balanceDomains(pool, recentIssues, templates),
+            recentIssues,
+            countryId,
+            snapshot.currentIxTime,
+            maxIssues
+          )
+        : pool.slice(0, maxIssues);
 
       // Instantiate issues
       const targetCountryRecord = await resolveTargetCountryRecord(countryId, db, snapshot);

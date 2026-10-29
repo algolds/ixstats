@@ -13,6 +13,7 @@
  *
  * The week here is the caps' week: 7 IxDays (3.5 real days at IxTime's 2x).
  */
+import { bandForSeverity } from "./realm-rank";
 
 const IX_DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -80,4 +81,57 @@ export function selectPacedCandidates<T extends { probability: number }>(
 ): T[] {
   if (maxIssues < 1 || !issueDue(countryId, recentIssues, now)) return [];
   return pickWeighted(candidates, 1, random);
+}
+
+/**
+ * Routine templates (slug prefix `routine_`): everyday governing (budget priorities, public works, appointments, a
+ * census) that any nation qualifies for. They are only a fallback, so a nation whose state triggers nothing still gets
+ * its 2-3 issues a week; their cooldowns keep each one from coming round often.
+ */
+export const ROUTINE_SLUG_PREFIX = "routine_";
+
+export function isRoutineSlug(slug: string): boolean {
+  return slug.startsWith(ROUTINE_SLUG_PREFIX);
+}
+
+type Pooled = { template: { slug: string } };
+
+/** The triggered templates, or the routine ones when nothing else qualified. */
+export function withRoutineFallback<T extends Pooled>(candidates: readonly T[]): T[] {
+  const real = candidates.filter((c) => !isRoutineSlug(c.template.slug));
+  return real.length > 0 ? real : [...candidates];
+}
+
+/** How many of a nation's latest issues the domain balance remembers, and how fast an older one fades. */
+export const DOMAIN_MEMORY = 6;
+export const DOMAIN_DECAY = 0.6;
+/** Weight cut per unit of recent exposure: the last issue's domain alone weighs 1 / (1 + 2) = a third. */
+export const DOMAIN_BALANCE_STRENGTH = 2;
+
+type Balanced = { probability: number; template: { domain: string; baseSeverity: string } };
+
+/**
+ * Soft domain balance for the paced pick: a candidate whose domain the nation saw recently has its weight divided by
+ * 1 + strength x (exposure), exposure summing DOMAIN_DECAY^i over its last DOMAIN_MEMORY issues in that domain (i = 0
+ * for the latest). Never zero, and a crisis (critical) keeps its full weight.
+ */
+export function balanceDomains<T extends Balanced>(
+  candidates: readonly T[],
+  recentIssues: ReadonlyArray<{ templateId: string; createdIxTime: number }>,
+  templates: ReadonlyArray<{ id: string; domain: string }>
+): T[] {
+  const domainOf = new Map(templates.map((t) => [t.id, t.domain]));
+  const exposure = new Map<string, number>();
+  [...recentIssues]
+    .sort((a, b) => b.createdIxTime - a.createdIxTime)
+    .slice(0, DOMAIN_MEMORY)
+    .forEach((issue, i) => {
+      const domain = domainOf.get(issue.templateId);
+      if (domain) exposure.set(domain, (exposure.get(domain) ?? 0) + DOMAIN_DECAY ** i);
+    });
+  return candidates.map((c) => {
+    const seen = exposure.get(c.template.domain) ?? 0;
+    if (seen === 0 || bandForSeverity(c.template.baseSeverity) === "crisis") return c;
+    return { ...c, probability: c.probability / (1 + DOMAIN_BALANCE_STRENGTH * seen) };
+  });
 }

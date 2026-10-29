@@ -3,6 +3,7 @@ import { db } from "~/server/db";
 import { realmClocks, realmNowsOnce } from "~/server/shared/realm-time";
 import { NationalIssuesEngine } from "~/lib/national-issues/engine";
 import { getNationalIssuesConfig } from "~/lib/national-issues/config";
+import { ROUTINE_SLUG_PREFIX } from "~/lib/national-issues/evaluators/pacing";
 import { INTENT_CATEGORY_TO_TEMPLATE, spawnResistanceForIntent } from "~/lib/intent/resistance";
 import type { Category } from "~/lib/intent/assemble";
 import { debitCountryMaintenance, expireLapsedPolicies } from "./lifecycle";
@@ -119,6 +120,8 @@ async function spawnVolatileIssues(): Promise<SpawnVolatileIssuesResult> {
         where: {
           isActive: true,
           OR: [{ domain: { in: tokens } }, { category: { in: tokens } as any }],
+          // Routine templates are the paced cron's fallback, never a policy's backlash
+          NOT: { slug: { startsWith: ROUTINE_SLUG_PREFIX } },
         },
         select: { id: true },
       });
