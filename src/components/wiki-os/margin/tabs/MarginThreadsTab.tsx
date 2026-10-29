@@ -25,6 +25,7 @@ import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { DiffViewer } from "~/components/diff-viewer";
 import { MarginUserAvatar, type CommentAuthor } from "../shared/MarginUserAvatar";
+import type { ThreadItem } from "../shared/thread-types";
 import { useThreadComments } from "./useThreadComments";
 import { HoldToResolveButton } from "./HoldToResolveButton";
 import { MarginCategoryHelpModal } from "../modals/MarginCategoryHelpModal";
@@ -80,34 +81,6 @@ export const LORE_DIMENSIONS = [
     desc: "Traditions, artifacts, and government offices",
   },
 ];
-
-interface ThreadItem {
-  id: string;
-  articleTitle: string;
-  status: "OPEN" | "RESOLVED" | "ARCHIVED";
-  title: string;
-  sectionAnchor: string | null;
-  selectedText: string | null;
-  anchorOffset: number | null;
-  resolvedAt: Date | null;
-  resolvedBy: { username: string } | null;
-  createdBy: CommentAuthor;
-  teamId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  comments: Array<{
-    id: string;
-    threadId: string;
-    content: string;
-    suggestedEdit: string | null;
-    reactions: Record<string, number>;
-    createdAt: Date;
-    author: CommentAuthor;
-  }>;
-  /** All the thread's comments; `comments` holds the first page of them. */
-  commentCount: number;
-  hasMoreComments: boolean;
-}
 
 interface MarginThreadsTabProps {
   articleTitle: string;
