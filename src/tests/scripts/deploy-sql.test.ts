@@ -11,6 +11,8 @@
 import { existsSync, readFileSync } from "node:fs";
 
 const script = readFileSync("scripts/deploy-production.sh", "utf8");
+/** Data SQL that waits for the new server: the old build cannot read the triggers' `rank` conditions. */
+const ISSUE_TRIGGERS = "scripts/migrations/2026-10-stress/t-issue-template-triggers.sql";
 const runs = [
   ...script.matchAll(/prisma db execute --schema prisma\/schema --file (\S+\.sql)(.*)/g),
 ].map((m) => ({
@@ -166,6 +168,13 @@ describe.each(["start-development.sh", "scripts/refresh-local-db.sh"])("%s", (fi
     expect(beforePush(text)).toEqual(beforePush(script));
   });
 
+  it("updates the issue triggers after its db push (the deploy runs them once the new server answers)", () => {
+    const pushAt = text.indexOf("bun run db:push:force");
+    const at = text.indexOf(`--file ${ISSUE_TRIGGERS}`);
+    expect(at).toBeGreaterThan(pushAt);
+    expect(text.indexOf(`--file ${ISSUE_TRIGGERS}`, at + 1)).toBe(-1);
+  });
+
   it("does not go on to the push if a step fails", () => {
     const stepLines = text.split("\n").filter((line) => new RegExp(STEP.source).test(line));
     const stops = (line: string) =>
@@ -250,9 +259,11 @@ describe("the schema steps", () => {
 describe("the post-deploy data SQL", () => {
   const calls = [...script.matchAll(/^\s*run_post_deploy_sql$/gm)].map((m) => m.index);
 
-  it("rewrites the legacy notification links only after the new server answers, and only then", () => {
+  it("rewrites the legacy notification links and the issue triggers only after the new server answers", () => {
+    // The issue triggers use `rank` conditions the old build cannot read (its cron would fail until the reload)
     expect(postDeploy.map((run) => run.file)).toEqual([
       "prisma/migrations/20261028120000_rewrite_legacy_notification_links/migration.sql",
+      ISSUE_TRIGGERS,
     ]);
     // once in each server path, each right after the new server answered
     expect(calls).toHaveLength(2);
