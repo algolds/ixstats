@@ -9,7 +9,7 @@
  * duplicates, bulk operations and the city placement tools.
  */
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useRef } from "react";
 import { useMapHistory, type EditorAction, type HistoryData } from "./map-editor/useMapHistory";
 import { useMapEditorSync } from "./map-editor/useMapEditorSync";
 import { useMapEditorSelection } from "./map-editor/useMapEditorSelection";
@@ -70,22 +70,80 @@ export interface EditorDraft {
   savedAt: number;
 }
 
-/** Keeps the previous object when every value is identical, so consumers can memoize on it. */
-function useShallowStable<T extends Record<string, unknown>>(next: T): T {
-  const ref = useRef(next);
-  const prev = ref.current;
-  if (prev !== next) {
-    const keys = Object.keys(next);
-    const changed =
-      keys.length !== Object.keys(prev).length || keys.some((k) => !Object.is(prev[k], next[k]));
-    // oxlint-disable-next-line -- derived memo: identical inputs keep the previous identity
-    if (changed) ref.current = next;
-  }
-  return ref.current;
-}
-
 function errMsg(e: unknown, fallback: string): string {
   return e instanceof Error && e.message ? e.message : fallback;
+}
+
+/** Awaits an editor write; a failure goes to `onError` (the message it shows, any refetch) instead of being thrown. */
+async function attemptWrite(
+  write: () => Promise<void>,
+  onError: (e: unknown) => void
+): Promise<void> {
+  try {
+    await write();
+  } catch (e) {
+    onError(e);
+  }
+}
+
+interface HistoryStepHandlers {
+  onSuccess: () => void;
+  onError: (message: string) => void;
+  /** Runs last, whether the step succeeded or failed */
+  onSettled: () => void;
+}
+
+/** Runs one undo/redo/jump step: a success refreshes, a failure is reported, and the busy flags always clear. */
+async function runGuardedHistoryStep(
+  fn: () => Promise<void>,
+  label: string,
+  { onSuccess, onError, onSettled }: HistoryStepHandlers
+): Promise<void> {
+  try {
+    await fn();
+    onSuccess();
+  } catch (e) {
+    console.error(`${label} failed`, e);
+    onError(errMsg(e, `${label} failed`));
+  } finally {
+    onSettled();
+  }
+}
+
+type DraftSource = Omit<
+  EditorDraft,
+  "savedAt" | "cityForm" | "subdivisionForm" | "poiForm" | "peakForm" | "riverForm" | "lakeForm"
+> & {
+  cityForm: CityFormData;
+  subdivisionForm: SubdivisionFormData;
+  poiForm: POIFormData;
+  peakForm: PeakFormData;
+  riverForm: NamedRiverFormData;
+  lakeForm: NamedLakeFormData;
+};
+
+/** The in-progress placement or drawing worth keeping, stamped with when it was taken; null when there is none. */
+function buildDraft(source: DraftSource): EditorDraft | null {
+  const { mode, pendingCoordinates, pendingGeometry, routeWaypoints, riverPath } = source;
+  if (!mode.startsWith("add-")) return null;
+  const hasWork =
+    !!pendingCoordinates || !!pendingGeometry || routeWaypoints.length > 0 || riverPath.length > 0;
+  if (!hasWork) return null;
+  return {
+    mode,
+    pendingCoordinates,
+    pendingGeometry,
+    routeWaypoints,
+    riverPath,
+    routeType: source.routeType,
+    cityForm: mode === "add-city" ? source.cityForm : undefined,
+    subdivisionForm: mode === "add-subdivision" ? source.subdivisionForm : undefined,
+    poiForm: mode === "add-poi" ? source.poiForm : undefined,
+    peakForm: mode === "add-peak" ? source.peakForm : undefined,
+    riverForm: mode === "add-river" ? source.riverForm : undefined,
+    lakeForm: mode === "add-lake" ? source.lakeForm : undefined,
+    savedAt: Date.now(),
+  };
 }
 
 export function useMapEditor(countryId: string | undefined, options?: UseMapEditorOptions) {
@@ -120,11 +178,12 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [validationErrors] = useState<Record<string, string>>({});
 
-  /** Mode switch that also clears the per-mode scratch state (river/split lines). */
+  /**
+   * Mode switch that also clears the per-mode scratch state (river/split lines). The ref is the mode as of the last
+   * switch: setMode is the only writer of the mode, so it moves the ref with the state and handlers read it at once.
+   */
   const modeRef = useRef(mode);
-  // oxlint-disable-next-line -- latest-value ref read by the stable setMode below
-  modeRef.current = mode;
-  const setMode = useCallback((next: EditorMode | ((prev: EditorMode) => EditorMode)) => {
+  const setMode = (next: EditorMode | ((prev: EditorMode) => EditorMode)) => {
     const prev = modeRef.current;
     const resolved = typeof next === "function" ? next(prev) : next;
     if (resolved !== prev) {
@@ -133,7 +192,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     }
     modeRef.current = resolved;
     setModeState(resolved);
-  }, []);
+  };
 
   // Sub-Hooks
   const historyHook = useMapHistory();
@@ -144,6 +203,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     pushAction,
     stepUndo,
     stepRedo,
+    isUndoingRef,
   } = historyHook;
 
   const sync = useMapEditorSync({
@@ -189,18 +249,13 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setGuides,
   } = selection;
 
-  const selectAll = useCallback(
-    (predicate?: (f: EditorFeature) => boolean) => {
-      setSelectedIds(
-        new Set(
-          allFeatures
-            .filter((f) => f.type !== "gap" && (!predicate || predicate(f)))
-            .map((f) => f.id)
-        )
-      );
-    },
-    [allFeatures, setSelectedIds]
-  );
+  const selectAll = (predicate?: (f: EditorFeature) => boolean) => {
+    setSelectedIds(
+      new Set(
+        allFeatures.filter((f) => f.type !== "gap" && (!predicate || predicate(f))).map((f) => f.id)
+      )
+    );
+  };
 
   const transforms = useMapEditorTransforms({
     countryId,
@@ -215,7 +270,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   });
 
   // Reset & Start Editing
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
     setCityForm(DEFAULT_CITY);
     setSubdivisionForm(DEFAULT_SUBDIVISION);
     setPOIForm(DEFAULT_POI);
@@ -230,7 +285,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setMutationError(null);
     setRiverPath([]);
     setSplitLine([]);
-  }, []);
+  };
 
   // Mutations Sub-Hook
   const mutations = useMapFeatureMutations({
@@ -261,21 +316,18 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     debouncedRefetch,
   });
 
-  const afterWrite = useCallback(() => {
+  const afterWrite = () => {
     invalidateAllMapData();
     setLastSavedAt(new Date());
     setMutationError(null);
-  }, [invalidateAllMapData]);
+  };
 
   /** Applies an action forward against the server and records it on the undo stack. */
-  const commitAction = useCallback(
-    async (action: Omit<EditorAction, "timestamp">) => {
-      await historyExecutor.applyForwardAction({ ...action, timestamp: Date.now() });
-      pushAction(action);
-      afterWrite();
-    },
-    [historyExecutor, pushAction, afterWrite]
-  );
+  const commitAction = async (action: Omit<EditorAction, "timestamp">) => {
+    await historyExecutor.applyForwardAction({ ...action, timestamp: Date.now() });
+    pushAction(action);
+    afterWrite();
+  };
 
   const routes = useMapEditorRoutes({
     countryId,
@@ -302,112 +354,109 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const historyBusyRef = useRef(false);
   const [isHistoryBusy, setIsHistoryBusy] = useState(false);
 
-  const runHistoryStep = useCallback(
-    async (fn: () => Promise<void>, label: string) => {
-      if (historyBusyRef.current) return;
-      historyBusyRef.current = true;
-      setIsHistoryBusy(true);
-      // A shape open for vertex/path editing would show stale geometry after the
-      // server state changes underneath it, so undo/redo closes it first.
-      if (modeRef.current === "edit-subdivision" || modeRef.current === "edit-route") {
-        setSelectedFeature(null);
-        setMode("view");
-      }
-      historyHook.isUndoingRef.current = true;
-      try {
-        await fn();
-        afterWrite();
-      } catch (e) {
-        console.error(`${label} failed`, e);
-        setMutationError(errMsg(e, `${label} failed`));
+  const runHistoryStep = async (fn: () => Promise<void>, label: string) => {
+    if (historyBusyRef.current) return;
+    historyBusyRef.current = true;
+    setIsHistoryBusy(true);
+    // A shape open for vertex/path editing would show stale geometry after the
+    // server state changes underneath it, so undo/redo closes it first.
+    if (modeRef.current === "edit-subdivision" || modeRef.current === "edit-route") {
+      setSelectedFeature(null);
+      setMode("view");
+    }
+    isUndoingRef.current = true;
+    await runGuardedHistoryStep(fn, label, {
+      onSuccess: afterWrite,
+      onError: (message) => {
+        setMutationError(message);
         invalidateAllMapData();
-      } finally {
-        historyHook.isUndoingRef.current = false;
+      },
+      onSettled: () => {
+        isUndoingRef.current = false;
         historyBusyRef.current = false;
         setIsHistoryBusy(false);
-      }
-    },
-    [historyHook.isUndoingRef, afterWrite, invalidateAllMapData, setMode]
-  );
+      },
+    });
+  };
 
-  const handleUndo = useCallback(async () => {
+  const handleUndo = async () => {
     const action = historyHook.getUndoAction();
     if (!action) return;
     await runHistoryStep(async () => {
       await historyExecutor.applyInverseAction(action);
       stepUndo();
     }, "Undo");
-  }, [historyHook, historyExecutor, stepUndo, runHistoryStep]);
+  };
 
-  const handleRedo = useCallback(async () => {
+  const handleRedo = async () => {
     const action = historyHook.getRedoAction();
     if (!action) return;
     await runHistoryStep(async () => {
       await historyExecutor.applyForwardAction(action);
       stepRedo();
     }, "Redo");
-  }, [historyHook, historyExecutor, stepRedo, runHistoryStep]);
+  };
 
-  const jumpToHistoryPosition = useCallback(
-    async (targetPos: number) => {
-      if (!countryId || targetPos === history.position) return;
-      await runHistoryStep(async () => {
-        if (targetPos < history.position) {
-          for (let i = history.position; i > targetPos; i--) {
-            const action = history.actions[i];
-            if (action) await historyExecutor.applyInverseAction(action);
-            historyHook.setPosition(i - 1);
-          }
-        } else {
-          for (let i = history.position + 1; i <= targetPos; i++) {
-            const action = history.actions[i];
-            if (action) await historyExecutor.applyForwardAction(action);
-            historyHook.setPosition(i);
-          }
+  const jumpToHistoryPosition = async (targetPos: number) => {
+    if (!countryId || targetPos === history.position) return;
+    await runHistoryStep(async () => {
+      if (targetPos < history.position) {
+        for (let i = history.position; i > targetPos; i--) {
+          const action = history.actions[i];
+          if (action) await historyExecutor.applyInverseAction(action);
+          historyHook.setPosition(i - 1);
         }
-      }, "History jump");
-    },
-    [countryId, history, historyHook, historyExecutor, runHistoryStep]
-  );
+      } else {
+        for (let i = history.position + 1; i <= targetPos; i++) {
+          const action = history.actions[i];
+          if (action) await historyExecutor.applyForwardAction(action);
+          historyHook.setPosition(i);
+        }
+      }
+    }, "History jump");
+  };
 
   // Point moves (drag, nudge, typed coordinates, snap tools)
-  const updatePointCoordinates = useCallback(
-    async (type?: FeatureType, id?: string, coords?: [number, number]) => {
-      if (!countryId || !type || !id || !coords || type === "gap") return;
-      const target = allFeatures.find((f) => f.id === id);
-      try {
-        await commitAction({
+  const updatePointCoordinates = async (
+    type?: FeatureType,
+    id?: string,
+    coords?: [number, number]
+  ) => {
+    if (!countryId || !type || !id || !coords || type === "gap") return;
+    const target = allFeatures.find((f) => f.id === id);
+    await attemptWrite(
+      () =>
+        commitAction({
           type: "update",
           featureType: type,
           featureId: id,
           description: `Moved ${type === "mapLabel" ? "label" : type} "${target?.name ?? "feature"}"`,
           previousData: { coordinates: target?.coordinates },
           newData: { coordinates: coords },
-        });
-      } catch (e) {
+        }),
+      (e) => {
         setMutationError(errMsg(e, "Failed to update coordinates"));
         invalidateAllMapData();
       }
-    },
-    [countryId, allFeatures, commitAction, invalidateAllMapData]
-  );
+    );
+  };
 
   /**
    * Saves a reshaped region. `cascaded` carries neighbours whose shared vertices
    * moved with it (topology cascade); they are written in the same request and
    * undone together.
    */
-  const updateSubdivisionGeometry = useCallback(
-    async (
-      subdivisionId?: string,
-      geom?: object,
-      cascaded?: Array<{ id: string; geometry: object }>
-    ) => {
-      if (!countryId || !subdivisionId || !geom) return;
-      const target = allFeatures.find((f) => f.id === subdivisionId);
-      const byId = new Map(allFeatures.map((f) => [f.id, f]));
-      try {
-        await commitAction({
+  const updateSubdivisionGeometry = async (
+    subdivisionId?: string,
+    geom?: object,
+    cascaded?: Array<{ id: string; geometry: object }>
+  ) => {
+    if (!countryId || !subdivisionId || !geom) return;
+    const target = allFeatures.find((f) => f.id === subdivisionId);
+    const byId = new Map(allFeatures.map((f) => [f.id, f]));
+    await attemptWrite(
+      () =>
+        commitAction({
           type: "update",
           featureType: "subdivision",
           featureId: subdivisionId,
@@ -424,20 +473,19 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
             previousData: { geometry: byId.get(c.id)?.geometry },
             newData: { geometry: c.geometry },
           })),
-        });
-      } catch (e) {
+        }),
+      (e) => {
         setMutationError(errMsg(e, "Failed to save region shape"));
         invalidateAllMapData();
       }
-    },
-    [countryId, allFeatures, commitAction, invalidateAllMapData]
-  );
+    );
+  };
 
-  const duplicateFeature = useCallback(
-    async (featureToDup?: EditorFeature) => {
-      const target = featureToDup || selectedFeature;
-      if (!target || !countryId || target.type === "gap") return;
-      try {
+  const duplicateFeature = async (featureToDup?: EditorFeature) => {
+    const target = featureToDup || selectedFeature;
+    if (!target || !countryId || target.type === "gap") return;
+    await attemptWrite(
+      async () => {
         let data: HistoryData = buildDuplicateInput(target);
         if (target.type === "route") {
           const g = target.geometry as
@@ -465,12 +513,10 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           });
         }
         afterWrite();
-      } catch (e) {
-        setMutationError(errMsg(e, "Failed to duplicate feature"));
-      }
-    },
-    [selectedFeature, countryId, historyExecutor, pushAction, afterWrite]
-  );
+      },
+      (e) => setMutationError(errMsg(e, "Failed to duplicate feature"))
+    );
+  };
 
   const bulk = useMapEditorBulkOps({
     countryId,
@@ -515,137 +561,102 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   const isMutating = isFormMutating || isHistoryBusy || isBulkBusy || routes.isRouteMutating;
 
-  const startEditing = useCallback(
-    (feature: EditorFeature) => {
-      setSelectedFeature(feature);
-      const state = mapFeatureToEditState(feature);
-      if (state.cityForm) setCityForm(state.cityForm);
-      if (state.subdivisionForm) setSubdivisionForm(state.subdivisionForm);
-      if (state.poiForm) setPOIForm(state.poiForm);
-      if (state.peakForm) setPeakForm(state.peakForm);
-      if (state.riverForm) setRiverForm(state.riverForm);
-      if (state.lakeForm) setLakeForm(state.lakeForm);
-      if (state.editingRouteId) setEditingRouteId(state.editingRouteId);
-      setMode(state.mode);
-    },
-    [setMode]
-  );
+  const startEditing = (feature: EditorFeature) => {
+    setSelectedFeature(feature);
+    const state = mapFeatureToEditState(feature);
+    if (state.cityForm) setCityForm(state.cityForm);
+    if (state.subdivisionForm) setSubdivisionForm(state.subdivisionForm);
+    if (state.poiForm) setPOIForm(state.poiForm);
+    if (state.peakForm) setPeakForm(state.peakForm);
+    if (state.riverForm) setRiverForm(state.riverForm);
+    if (state.lakeForm) setLakeForm(state.lakeForm);
+    if (state.editingRouteId) setEditingRouteId(state.editingRouteId);
+    setMode(state.mode);
+  };
 
   // Map Events & Drawing
-  const handleMapClick = useCallback(
-    (coords: [number, number]) => {
-      if (mode === "split-subdivision") {
-        setSplitLine((prev) => [...prev, coords]);
-        return;
-      }
-      if (mode === "add-route") {
-        setRouteWaypoints((prev) => [...prev, coords]);
-        return;
-      }
-      if (mode === "add-river") {
-        setRiverPath((prev) => {
-          const next = [...prev, coords];
-          setPendingGeometry(next.length >= 2 ? { type: "LineString", coordinates: next } : null);
-          return next;
-        });
-        return;
-      }
-      if (mode.startsWith("add-")) {
-        setPendingCoordinates(coords);
-      }
-    },
-    [mode]
-  );
+  const handleMapClick = (coords: [number, number]) => {
+    if (mode === "split-subdivision") {
+      setSplitLine((prev) => [...prev, coords]);
+      return;
+    }
+    if (mode === "add-route") {
+      setRouteWaypoints((prev) => [...prev, coords]);
+      return;
+    }
+    if (mode === "add-river") {
+      setRiverPath((prev) => {
+        const next = [...prev, coords];
+        setPendingGeometry(next.length >= 2 ? { type: "LineString", coordinates: next } : null);
+        return next;
+      });
+      return;
+    }
+    if (mode.startsWith("add-")) {
+      setPendingCoordinates(coords);
+    }
+  };
 
-  const undoLastRiverPoint = useCallback(() => {
+  const undoLastRiverPoint = () => {
     setRiverPath((prev) => {
       const next = prev.slice(0, -1);
       setPendingGeometry(next.length >= 2 ? { type: "LineString", coordinates: next } : null);
       return next;
     });
-  }, []);
+  };
 
-  const undoLastSplitPoint = useCallback(() => {
+  const undoLastSplitPoint = () => {
     setSplitLine((prev) => prev.slice(0, -1));
-  }, []);
+  };
 
-  const handleDrawComplete = useCallback((geometry: object) => {
+  const handleDrawComplete = (geometry: object) => {
     setPendingGeometry(geometry);
-  }, []);
+  };
 
-  const promoteCapital = useCallback(
-    async (cityId?: string) => {
-      const targetId = cityId || (selectedFeature?.type === "city" ? selectedFeature.id : null);
-      if (!countryId || !targetId) return;
-      const target = allFeatures.find((f) => f.id === targetId && f.type === "city");
-      if (!target) return;
-      try {
-        await commitAction({
-          type: "update",
-          featureType: "city",
-          featureId: targetId,
-          description: `Made "${target.name}" the national capital`,
-          previousData: { isNationalCapital: !!target.properties.isNationalCapital },
-          newData: { isNationalCapital: true },
-        });
-      } catch (e) {
-        setMutationError(errMsg(e, "Failed to set capital"));
-      }
-    },
-    [countryId, selectedFeature, allFeatures, commitAction]
-  );
+  const promoteCapital = async (cityId?: string) => {
+    const targetId = cityId || (selectedFeature?.type === "city" ? selectedFeature.id : null);
+    if (!countryId || !targetId) return;
+    const target = allFeatures.find((f) => f.id === targetId && f.type === "city");
+    if (!target) return;
+    try {
+      await commitAction({
+        type: "update",
+        featureType: "city",
+        featureId: targetId,
+        description: `Made "${target.name}" the national capital`,
+        previousData: { isNationalCapital: !!target.properties.isNationalCapital },
+        newData: { isNationalCapital: true },
+      });
+    } catch (e) {
+      setMutationError(errMsg(e, "Failed to set capital"));
+    }
+  };
 
-  const createSubdivisionFromGap = useCallback(
-    async (geometry?: object | null) => {
-      if (!geometry || !isPolygonal(geometry)) return;
-      resetForm();
-      setMode("add-subdivision");
-      setPendingGeometry(geometry);
-    },
-    [resetForm, setMode]
-  );
+  const createSubdivisionFromGap = async (geometry?: object | null) => {
+    if (!geometry || !isPolygonal(geometry)) return;
+    resetForm();
+    setMode("add-subdivision");
+    setPendingGeometry(geometry);
+  };
 
   // Split-region tool
-  const executeSplitSubdivision = useCallback(
-    async (subdivisionId: string, lineCoords?: [number, number][]) => {
-      const line = lineCoords && lineCoords.length >= 2 ? lineCoords : splitLine;
-      const ok = await transforms.executeSplitSubdivision(subdivisionId, line);
-      if (ok) {
-        setSplitLine([]);
-        setSelectedFeature(null);
-        setMode("view");
-      }
-    },
-    [transforms, splitLine, setMode]
-  );
+  const executeSplitSubdivision = async (
+    subdivisionId: string,
+    lineCoords?: [number, number][]
+  ) => {
+    const line = lineCoords && lineCoords.length >= 2 ? lineCoords : splitLine;
+    const ok = await transforms.executeSplitSubdivision(subdivisionId, line);
+    if (ok) {
+      setSplitLine([]);
+      setSelectedFeature(null);
+      setMode("view");
+    }
+  };
 
-  const noopShowEmptyRegions = useCallback((v: boolean) => setShowGaps(v), []);
+  const noopShowEmptyRegions = (v: boolean) => setShowGaps(v);
 
   // Draft (in-progress, unsaved placement/drawing)
-  const draft = useMemo<EditorDraft | null>(() => {
-    if (!mode.startsWith("add-")) return null;
-    const hasWork =
-      !!pendingCoordinates ||
-      !!pendingGeometry ||
-      routeWaypoints.length > 0 ||
-      riverPath.length > 0;
-    if (!hasWork) return null;
-    return {
-      mode,
-      pendingCoordinates,
-      pendingGeometry,
-      routeWaypoints,
-      riverPath,
-      routeType,
-      cityForm: mode === "add-city" ? cityForm : undefined,
-      subdivisionForm: mode === "add-subdivision" ? subdivisionForm : undefined,
-      poiForm: mode === "add-poi" ? poiForm : undefined,
-      peakForm: mode === "add-peak" ? peakForm : undefined,
-      riverForm: mode === "add-river" ? riverForm : undefined,
-      lakeForm: mode === "add-lake" ? lakeForm : undefined,
-      savedAt: Date.now(),
-    };
-  }, [
+  const draft = buildDraft({
     mode,
     pendingCoordinates,
     pendingGeometry,
@@ -658,28 +669,25 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     peakForm,
     riverForm,
     lakeForm,
-  ]);
+  });
 
-  const restoreDraft = useCallback(
-    (d: EditorDraft) => {
-      resetForm();
-      setMode(d.mode);
-      setPendingCoordinates(d.pendingCoordinates);
-      setPendingGeometry(d.pendingGeometry);
-      setRouteWaypoints(d.routeWaypoints ?? []);
-      setRiverPath(d.riverPath ?? []);
-      if (d.routeType) setRouteType(d.routeType);
-      if (d.cityForm) setCityForm(d.cityForm);
-      if (d.subdivisionForm) setSubdivisionForm(d.subdivisionForm);
-      if (d.poiForm) setPOIForm(d.poiForm);
-      if (d.peakForm) setPeakForm(d.peakForm);
-      if (d.riverForm) setRiverForm(d.riverForm);
-      if (d.lakeForm) setLakeForm(d.lakeForm);
-    },
-    [resetForm, setMode]
-  );
+  const restoreDraft = (d: EditorDraft) => {
+    resetForm();
+    setMode(d.mode);
+    setPendingCoordinates(d.pendingCoordinates);
+    setPendingGeometry(d.pendingGeometry);
+    setRouteWaypoints(d.routeWaypoints ?? []);
+    setRiverPath(d.riverPath ?? []);
+    if (d.routeType) setRouteType(d.routeType);
+    if (d.cityForm) setCityForm(d.cityForm);
+    if (d.subdivisionForm) setSubdivisionForm(d.subdivisionForm);
+    if (d.poiForm) setPOIForm(d.poiForm);
+    if (d.peakForm) setPeakForm(d.peakForm);
+    if (d.riverForm) setRiverForm(d.riverForm);
+    if (d.lakeForm) setLakeForm(d.lakeForm);
+  };
 
-  return useShallowStable({
+  return {
     mode,
     setMode,
     selectedFeature,
@@ -818,5 +826,5 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     importGeoJSON: bulk.importGeoJSON,
     draft,
     restoreDraft,
-  });
+  };
 }

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { Polygon, MultiPolygon } from "geojson";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
@@ -96,7 +96,7 @@ function useCascadeVisuals(map: MapLibreMap | null) {
   const pendingRef = useRef<Map<string, RegionGeometry>>(new Map());
   const frameRef = useRef<number | null>(null);
 
-  const flush = useCallback(() => {
+  const flush = () => {
     frameRef.current = null;
     const pending = pendingRef.current;
     if (pending.size === 0) return;
@@ -105,19 +105,16 @@ function useCascadeVisuals(map: MapLibreMap | null) {
       update: [...pending].map(([id, newGeometry]) => ({ id, newGeometry })),
     });
     pending.clear();
-  }, [map]);
+  };
 
-  const queueCascadeVisual = useCallback(
-    (featureId: string, geometry: RegionGeometry) => {
-      pendingRef.current.set(featureId, geometry);
-      frameRef.current ??= requestAnimationFrame(flush);
-    },
-    [flush]
-  );
+  const queueCascadeVisual = (featureId: string, geometry: RegionGeometry) => {
+    pendingRef.current.set(featureId, geometry);
+    frameRef.current = frameRef.current ?? requestAnimationFrame(flush);
+  };
 
-  const cancelCascadeFrame = useCallback(() => {
+  const cancelCascadeFrame = () => {
     if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
-  }, []);
+  };
 
   return { queueCascadeVisual, cancelCascadeFrame };
 }
@@ -125,48 +122,51 @@ function useCascadeVisuals(map: MapLibreMap | null) {
 export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
   const { map, isLoaded, mode, selectedFeature } = props;
   const [isVertexEditing, setIsVertexEditing] = useState(false);
-  const st = useRef(createVertexEditState()).current;
+  // The edit session's mutable state; the map listeners, handlers and effects change it in place.
+  const stRef = useRef(createVertexEditState());
 
-  // Latest props for the stable event callbacks.
+  // Latest props for the event callbacks, committed before any effect or map event reads them.
   const latest = useRef(props);
-  // oxlint-disable-next-line
-  latest.current = props;
+  useLayoutEffect(() => {
+    latest.current = props;
+  });
 
   const lastUpdateRef = useRef(0);
 
   // Unsaved-change tracking: any visual update after entry marks the edit dirty.
   const dirtyRef = useRef(false);
   const suppressDirtyRef = useRef(false);
-  const markDirty = useCallback((dirty: boolean) => {
+  const markDirty = (dirty: boolean) => {
     if (dirtyRef.current === dirty) return;
     dirtyRef.current = dirty;
     latest.current.onDirtyChange?.(dirty);
-  }, []);
+  };
 
   const { queueCascadeVisual, cancelCascadeFrame } = useCascadeVisuals(map);
 
-  const changedNeighborsPayload = useCallback(
-    () =>
-      [...st.changedNeighborIds].flatMap((id) => {
-        const geometry = st.neighbors.get(id);
-        return geometry ? [{ id, geometry }] : [];
-      }),
-    [st]
-  );
+  const changedNeighborsPayload = () => {
+    const st = stRef.current;
+    return [...st.changedNeighborIds].flatMap((id) => {
+      const geometry = st.neighbors.get(id);
+      return geometry ? [{ id, geometry }] : [];
+    });
+  };
 
-  const updateMidpoints = useCallback(() => {
+  const updateMidpoints = () => {
+    const st = stRef.current;
     if (!map || !st.edit) return;
     getGeoJSONSource(map, "editor-vedit-midpoints")?.setData(
       collection(buildMidpointFeatures(st.edit.currentGeometry))
     );
-  }, [map, st]);
+  };
 
   /**
    * The overlap highlight, checked when the browser is idle (a check takes 40 to 110 ms on a big region, which the
    * release frame must not pay). It reads the region as it is then; a new drag, the end of the edit and an unmount
    * cancel it, so a stale highlight never lands.
    */
-  const scheduleOverlapCheck = useCallback(() => {
+  const scheduleOverlapCheck = () => {
+    const st = stRef.current;
     cancelOverlapCheck(st);
     st.overlapCancel = whenIdle(() => {
       st.overlapCancel = null;
@@ -179,35 +179,34 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
         )
       );
     });
-  }, [map, st]);
+  };
 
-  const updateVertexEditVis = useCallback(
-    (fastOnly = false) => {
-      if (!map || !st.edit) return;
-      if (!suppressDirtyRef.current) markDirty(true);
+  const updateVertexEditVis = (fastOnly = false) => {
+    const st = stRef.current;
+    if (!map || !st.edit) return;
+    if (!suppressDirtyRef.current) markDirty(true);
 
-      const { currentGeometry: geo } = st.edit;
-      const setSource = (id: string, features: Parameters<typeof collection>[0]) =>
-        getGeoJSONSource(map, id)?.setData(collection(features));
+    const { currentGeometry: geo } = st.edit;
+    const setSource = (id: string, features: Parameters<typeof collection>[0]) =>
+      getGeoJSONSource(map, id)?.setData(collection(features));
 
-      setSource("editor-vedit-polygon", [{ type: "Feature", geometry: geo, properties: {} }]);
-      setSource(
-        "editor-vedit-vertices",
-        getVertices(geo).map((v) =>
-          pointFeature(v.coord, { ringIndex: v.ringIndex, vertexIndex: v.vertexIndex })
-        )
-      );
-      if (fastOnly) return;
+    setSource("editor-vedit-polygon", [{ type: "Feature", geometry: geo, properties: {} }]);
+    setSource(
+      "editor-vedit-vertices",
+      getVertices(geo).map((v) =>
+        pointFeature(v.coord, { ringIndex: v.ringIndex, vertexIndex: v.vertexIndex })
+      )
+    );
+    if (fastOnly) return;
 
-      // Drag frames stop above; their midpoints follow on a throttle, the overlap check on the drop (when idle).
-      updateMidpoints();
-      scheduleOverlapCheck();
-    },
-    [map, st, markDirty, updateMidpoints, scheduleOverlapCheck]
-  );
+    // Drag frames stop above; their midpoints follow on a throttle, the overlap check on the drop (when idle).
+    updateMidpoints();
+    scheduleOverlapCheck();
+  };
 
   /** Add-vertex handles follow a drag at most every 100 ms; the overlap check waits for the drop. */
-  const scheduleThrottledUpdate = useCallback(() => {
+  const scheduleThrottledUpdate = () => {
+    const st = stRef.current;
     if (st.throttleTimer) clearTimeout(st.throttleTimer);
     const sinceLast = Date.now() - lastUpdateRef.current;
     if (sinceLast >= 100) {
@@ -219,39 +218,38 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
         lastUpdateRef.current = Date.now();
       }, 100 - sinceLast);
     }
-  }, [st, updateMidpoints]);
+  };
 
   useEffect(() => {
+    const st = stRef.current;
     return () => {
       if (st.throttleTimer) clearTimeout(st.throttleTimer);
       cancelOverlapCheck(st);
       cancelCascadeFrame();
     };
-  }, [st, cancelCascadeFrame]);
+  }, [cancelCascadeFrame]);
 
-  const clearVertexEditVis = useCallback(() => {
+  const clearVertexEditVis = () => {
     if (!map) return;
     for (const id of ["polygon", "vertices", "midpoints"]) {
       getGeoJSONSource(map, `editor-vedit-${id}`)?.setData(EMPTY_FC);
     }
     getGeoJSONSource(map, "editor-overlap-highlight")?.setData(EMPTY_FC);
-  }, [map]);
+  };
 
-  const setRegionLayerFilter = useCallback(
-    (hiddenFeatureId: string | null) => {
-      if (!map) return;
-      const filter: Parameters<MapLibreMap["setFilter"]>[1] = hiddenFeatureId
-        ? ["!=", ["get", "id"], hiddenFeatureId]
-        : null;
-      for (const layerId of REGION_LAYERS) {
-        if (map.getLayer(layerId)) map.setFilter(layerId, filter);
-      }
-    },
-    [map]
-  );
+  const setRegionLayerFilter = (hiddenFeatureId: string | null) => {
+    if (!map) return;
+    const filter: Parameters<MapLibreMap["setFilter"]>[1] = hiddenFeatureId
+      ? ["!=", ["get", "id"], hiddenFeatureId]
+      : null;
+    for (const layerId of REGION_LAYERS) {
+      if (map.getLayer(layerId)) map.setFilter(layerId, filter);
+    }
+  };
 
   /** Leaves vertex editing without saving. */
-  const endSession = useCallback(() => {
+  const endSession = () => {
+    const st = stRef.current;
     cancelOverlapCheck(st);
     st.edit = null;
     st.topology = null;
@@ -260,20 +258,18 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
     setIsVertexEditing(false);
     clearVertexEditVis();
     setRegionLayerFilter(null);
-  }, [st, markDirty, clearVertexEditVis, setRegionLayerFilter]);
+  };
 
   /** Hands the region (plus the neighbours the cascade actually moved) to the saver. */
-  const saveEdit = useCallback(
-    (featureId: string, geometry: RegionGeometry) => {
-      latest.current.onGeometryUpdate?.(featureId, geometry, changedNeighborsPayload());
-      st.changedNeighborIds = new Set();
-      markDirty(false);
-    },
-    [st, changedNeighborsPayload, markDirty]
-  );
+  const saveEdit = (featureId: string, geometry: RegionGeometry) => {
+    latest.current.onGeometryUpdate?.(featureId, geometry, changedNeighborsPayload());
+    stRef.current.changedNeighborIds = new Set();
+    markDirty(false);
+  };
 
   /** "Done": saves only when something changed, then leaves vertex editing. */
-  const finishVertexEdit = useCallback(() => {
+  const finishVertexEdit = () => {
+    const st = stRef.current;
     if (st.edit && dirtyRef.current && latest.current.onGeometryUpdate) {
       const border = latest.current.countryGeometry;
       const geometry = border
@@ -282,9 +278,10 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
       latest.current.onGeometryUpdate(st.edit.featureId, geometry, changedNeighborsPayload());
     }
     endSession();
-  }, [st, changedNeighborsPayload, endSession]);
+  };
 
-  const handleSimplifyAndSave = useCallback(() => {
+  const handleSimplifyAndSave = () => {
+    const st = stRef.current;
     const {
       countryGeometry: border,
       worldMapLayers,
@@ -310,10 +307,11 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
     updateVertexEditVis();
 
     if (latest.current.onGeometryUpdate) saveEdit(st.edit.featureId, st.edit.currentGeometry);
-  }, [st, updateVertexEditVis, saveEdit]);
+  };
 
   /** "Save": writes the region plus only the neighbours the cascade actually moved. */
-  const handleSave = useCallback(() => {
+  const handleSave = () => {
+    const st = stRef.current;
     if (!st.edit || !latest.current.onGeometryUpdate) return;
     const { countryGeometry: border, features } = latest.current;
     let geometry = st.edit.currentGeometry;
@@ -330,9 +328,10 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
       suppressDirtyRef.current = false;
     }
     saveEdit(st.edit.featureId, geometry);
-  }, [st, updateVertexEditVis, saveEdit]);
+  };
 
-  const cancelVertexEdit = useCallback(() => {
+  const cancelVertexEdit = () => {
+    const st = stRef.current;
     // Put cascaded neighbours back to their saved shapes.
     for (const id of st.changedNeighborIds) {
       const original = latest.current.features.find((f) => f.id === id)?.geometry;
@@ -340,10 +339,11 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
     }
     st.neighbors = new Map();
     endSession();
-  }, [st, queueCascadeVisual, endSession]);
+  };
 
   // Enter/exit vertex editing as the tool and selection change.
   useEffect(() => {
+    const st = stRef.current;
     if (!map || !isLoaded) return;
     if (mode !== "edit-subdivision" || !selectedFeature?.geometry) {
       if (st.edit) cancelVertexEdit();
@@ -390,7 +390,6 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
     isLoaded,
     mode,
     selectedFeature,
-    st,
     updateVertexEditVis,
     cancelVertexEdit,
     markDirty,
@@ -400,7 +399,7 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
   useVertexEditPointer({
     map,
     isLoaded,
-    st,
+    stRef,
     latest,
     updateVertexEditVis,
     scheduleThrottledUpdate,

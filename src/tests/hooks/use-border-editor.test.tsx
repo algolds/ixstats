@@ -227,7 +227,7 @@ describe("a vertex drag", () => {
         useVertexEditPointer({
           map,
           isLoaded: true,
-          st,
+          stRef: { current: st },
           latest,
           updateVertexEditVis: () => {},
           scheduleThrottledUpdate: () => {},
