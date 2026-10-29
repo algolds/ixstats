@@ -76,13 +76,17 @@ it("gives the realm's worst inflation one paced issue and its best none, ranking
 });
 
 it("hands the next issue only once the nation's gap since its last one is up", async () => {
+  await db.country.update({ where: { id: "n1" }, data: { ownerUserId: null } }); // n12 is the only player
   await generateNationalIssues();
   const [first] = await issuesOf("n12");
   const gap = issueGapMs("n12", first!.createdIxTime);
 
   IxTime.setTimeOverride(first!.createdIxTime + gap - 60_000);
+  jest.mocked(buildCountrySnapshot).mockClear();
   await generateNationalIssues();
   expect(await issuesOf("n12")).toHaveLength(1);
+  // not due: its own snapshot only, no scoring and no rank table
+  expect(buildCountrySnapshot).toHaveBeenCalledTimes(1);
 
   IxTime.setTimeOverride(first!.createdIxTime + gap + 60_000);
   await generateNationalIssues();

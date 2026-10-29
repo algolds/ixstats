@@ -43,7 +43,7 @@ import {
   scoreTemplateCandidates,
   usesRank,
 } from "./evaluators/candidate-selection";
-import { selectPacedCandidates } from "./evaluators/pacing";
+import { issueDue, selectPacedCandidates } from "./evaluators/pacing";
 import { createRankCache, type RankSource } from "./realm-rank-store";
 import {
   instantiateCandidate,
@@ -150,6 +150,9 @@ export class NationalIssuesEngine {
         orderBy: { createdAt: "desc" },
         take: 200,
       });
+
+      // Paced and not yet due: nothing to hand out, so skip the scoring and the realm's rank table.
+      if (options?.paced && !issueDue(countryId, recentIssues, snapshot.currentIxTime)) return result;
 
       // Get NPC personality for modifier calculations
       const personalityAssignment = await db.nPCPersonalityAssignment.findUnique({
