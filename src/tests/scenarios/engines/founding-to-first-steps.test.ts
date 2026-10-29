@@ -54,6 +54,7 @@ import { managementCreateProcedures } from "~/server/api/routers/countries/manag
 import { myCountryFirstStepsRouter } from "~/server/api/routers/mycountry/first-steps";
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
 import { addIxnay, asOwner } from "~/tests/helpers/nation-world";
+import { loadSoftScores } from "~/lib/government/soft-scores-store";
 
 const countries = createCallerFactory(createTRPCRouter(managementCreateProcedures));
 const firstSteps = createCallerFactory(myCountryFirstStepsRouter);
@@ -264,7 +265,17 @@ it.each([
     nominalGDP: preview.gdp,
   });
   const structure = await db.governmentStructure.findUniqueOrThrow({ where: { countryId: id } });
-  expect(structure.governmentEffectiveness).toBeCloseTo(preview.governmentEffectiveness, 2);
+  // MyCountry shows the effectiveness the preview showed: the component computation the save
+  // stores, or with no components the derived value over the seeded 50 the save stores
+  const components = await db.governmentComponent.count({ where: { countryId: id } });
+  expect(structure.governmentEffectiveness).toBeCloseTo(
+    components > 0 ? preview.governmentEffectiveness : 50,
+    2
+  );
+  expect((await loadSoftScores(db as never, id))!.effective.governmentEffectiveness).toBeCloseTo(
+    preview.governmentEffectiveness,
+    1
+  );
   // The government type comes from the form, never the archetype's name
   expect(written.governmentType).toBe(structure.governmentType);
   expect(written.governmentType).not.toBe(

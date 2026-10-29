@@ -18,7 +18,9 @@ import { ComponentType } from "@prisma/client";
 import { CountryEventSpine } from "~/lib/activity/event-spine";
 import { applyGovernmentComponentEffects } from "~/lib/government/component-effects";
 import { updatePoliticalMetrics } from "~/lib/government/election-simulation";
+import { syncGovernmentComponents } from "~/server/shared/country-mutation-helpers";
 import {
+  deriveSoftScores,
   effectiveSoftScores,
   type SoftScoreField,
   type SoftScoreInputs,
@@ -172,5 +174,28 @@ describe("writers keep moving the effective soft scores", () => {
     // RULE_OF_LAW in Control Mechanisms: +3 points of rule of law
     expect(rows.structure?.ruleOfLaw).toBe(53);
     expect(effective(rows, "ruleOfLaw")).toBeCloseTo(before + 3, 5);
+  });
+});
+
+describe("an empty component save", () => {
+  it("stores the seeded effectiveness, so the derived score shows with no offset", async () => {
+    const update = jest.fn(async () => ({}));
+    const tx = {
+      governmentComponent: {
+        findMany: jest.fn(async () => [{ id: "gc1", componentType: "RULE_OF_LAW" }]),
+        create: jest.fn(),
+        deleteMany: jest.fn(async () => ({ count: 1 })),
+      },
+      componentSynergy: { deleteMany: jest.fn(), createMany: jest.fn() },
+      governmentStructure: { update },
+    };
+    await syncGovernmentComponents(tx as never, "c1", []);
+    const written = (
+      update.mock.calls[0] as unknown as [{ data: { governmentEffectiveness: number } }]
+    )[0].data.governmentEffectiveness;
+    expect(written).toBe(50);
+    expect(
+      effectiveSoftScores(NATION, { governmentEffectiveness: written }).governmentEffectiveness
+    ).toBe(deriveSoftScores(NATION).governmentEffectiveness);
   });
 });

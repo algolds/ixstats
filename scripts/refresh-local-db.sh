@@ -99,6 +99,7 @@ bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-
 bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/b-political-party-drifted-at.sql
 bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/c-alliance-founders.sql
 bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/c-budget-balance-currency.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/s-empty-component-effectiveness.sql
 bun run db:push:force
 
 # Verify and auto-heal WikiOS articles and categories in PostgreSQL

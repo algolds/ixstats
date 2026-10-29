@@ -1185,12 +1185,16 @@ export function foundingBudgetShares(formId: string): Record<string, number> {
  * stored offsets yet); a new nation has no demographics diversity or recent policies, so those
  * take the store's fallbacks (diversity 50, election cycle 4).
  */
-export function foundingStability(
+/**
+ * A just-founded nation's governance scores: the soft-score model's for the founded government with
+ * no stored offsets yet. Effectiveness is the component computation the save writes, or the derived
+ * value when there are no components.
+ */
+export function foundingGovernance(
   country: FoundedCountryFigures,
   government: FoundingGovernment = { governmentType: null, components: [], budgetShares: null }
-): number {
-  const population = country.currentPopulation;
-  const governance = effectiveSoftScores(
+) {
+  return effectiveSoftScores(
     {
       gdpPerCapita: country.currentGdpPerCapita,
       growthPercent: country.adjustedGdpGrowth * 100,
@@ -1205,6 +1209,14 @@ export function foundingStability(
     },
     {}
   );
+}
+
+export function foundingStability(
+  country: FoundedCountryFigures,
+  government: FoundingGovernment = { governmentType: null, components: [], budgetShares: null }
+): number {
+  const population = country.currentPopulation;
+  const governance = foundingGovernance(country, government);
   return calculateStabilityMetrics(
     ...stabilityFormulaArgs({
       gdpGrowthDecimal: country.adjustedGdpGrowth,
@@ -1403,6 +1415,11 @@ export function computeFoundingSnapshot(input: FoundingSnapshotInput): FoundingS
     populationDensity: landArea ? base.population / landArea : undefined,
     maxGdpGrowthRate: FOUNDING_MAX_GDP_GROWTH,
   };
+  const foundingGovernment: FoundingGovernment = {
+    governmentType: governmentTypeForForm(governmentFormId) ?? null,
+    components: foundingComponentRecords(governmentComponents),
+    budgetShares: foundingBudgetShares(governmentFormId),
+  };
   const writtenBudget = Number(structureFields(governmentStructure).totalBudget) || 0;
   const spending = writtenBudget > 0 ? writtenBudget : numbers.totalGovernmentSpending;
   const balance = round2(((numbers.governmentRevenueTotal - spending) / base.nominalGDP) * 100);
@@ -1427,12 +1444,14 @@ export function computeFoundingSnapshot(input: FoundingSnapshotInput): FoundingS
       population: base.population,
       budgetBalancePercentOfGdp: balance,
       budgetBalanceLabel: budgetBalanceLabel(balance),
-      stability: foundingStability(figures, {
-        governmentType: governmentTypeForForm(governmentFormId) ?? null,
-        components: foundingComponentRecords(governmentComponents),
-        budgetShares: foundingBudgetShares(governmentFormId),
-      }),
-      governmentEffectiveness: round2(foundingGovernmentEffectiveness(governmentComponents)),
+      stability: foundingStability(figures, foundingGovernment),
+      // What the save stores (the component computation), or with no components the derived value
+      // MyCountry then shows (the save stores the seeded default, no offset)
+      governmentEffectiveness: round2(
+        foundingGovernment.components.length > 0
+          ? foundingGovernmentEffectiveness(governmentComponents)
+          : foundingGovernance(figures, foundingGovernment).governmentEffectiveness
+      ),
       expectedGrowth: foundingExpectedGrowth(
         figures,
         governmentComponents.filter((c) => c.isActive !== false).map((c) => c.componentType),

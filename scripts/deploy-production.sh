@@ -293,6 +293,7 @@ else
     bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/b-political-party-drifted-at.sql || exit 1
     bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/c-alliance-founders.sql || exit 1
     bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/c-budget-balance-currency.sql || exit 1
+    bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/s-empty-component-effectiveness.sql || exit 1
 
     # Sync production database with schema. Without --accept-data-loss it stops (non-zero) on any data-loss warning
     # rather than prompting; the live build is still untouched at this point.
