@@ -6,7 +6,7 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { clockForCountry } from "~/server/shared/realm-time";
+import { clockForCountry, clockForRealm } from "~/server/shared/realm-time";
 import { currentBudgetYear } from "./budget-year";
 import {
   ECONOMIC_FIGURE_SELECT,
@@ -210,4 +210,15 @@ export async function withEffectiveGovernance<T extends object>(
   const scores = {} as Record<GovernanceField, number>;
   for (const field of GOVERNANCE_FIELDS) scores[field] = state.effective[field];
   return { ...structure, ...scores };
+}
+
+/** Effective infrastructure rating per nation of one realm, at that realm's budget year. */
+export async function loadEffectiveInfrastructure(
+  db: SoftScoreDb,
+  realmId: string,
+  ids: string[]
+): Promise<Map<string, number>> {
+  const budgetYear = currentBudgetYear((await clockForRealm(db, realmId)).now());
+  const states = await loadSoftScoresMany(db, ids, budgetYear);
+  return new Map([...states].map(([id, s]) => [id, s.effective.infrastructureRating]));
 }

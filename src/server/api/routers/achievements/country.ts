@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { Prisma, PrismaClient, UserAchievement } from "@prisma/client";
 import { createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { loadEffectiveInfrastructure } from "~/lib/government/soft-scores-store";
 
 /** Clerk ids of the users who own the country. */
 async function ownerClerkIds(db: PrismaClient, countryId: string) {
@@ -275,9 +276,8 @@ export const achievementsCountryRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const whereClause: Record<string, unknown> = {
-          realmId: await viewerRealmId(ctx, input.realm),
-        };
+        const realmId = await viewerRealmId(ctx, input.realm);
+        const whereClause: Record<string, unknown> = { realmId };
         if (input.searchQuery && input.searchQuery.trim().length > 0) {
           whereClause.name = {
             contains: input.searchQuery.trim(),
@@ -290,8 +290,20 @@ export const achievementsCountryRouter = createTRPCRouter({
           select: LEADERBOARD_SELECT,
         });
 
+        // Infrastructure ranks by the effective rating (derived from the sim plus the stored offset)
+        const infrastructure =
+          input.metric === "infrastructure"
+            ? await loadEffectiveInfrastructure(
+                ctx.db,
+                realmId,
+                countries.map((c) => c.id)
+              )
+            : null;
+
         const mapped = countries.map((c) => {
-          const val = METRIC_VALUE[input.metric](c, headlineFigures(c));
+          const val = infrastructure
+            ? (infrastructure.get(c.id) ?? null)
+            : METRIC_VALUE[input.metric](c, headlineFigures(c));
           return {
             countryId: c.id,
             countryName: c.name,
