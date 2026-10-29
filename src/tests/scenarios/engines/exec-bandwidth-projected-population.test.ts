@@ -15,6 +15,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { policiesRouter } from "~/server/api/routers/policies";
 import { loadProjectedPopulation } from "~/server/shared/projected-population";
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
+import { loadSoftScores } from "~/lib/government/soft-scores-store";
 import { addIxnay, addNation, addOwner, asOwner } from "~/tests/helpers/nation-world";
 
 const NOW = Date.UTC(2043, 0, 15);
@@ -48,6 +49,11 @@ it("derives capacity from the projected population", async () => {
     asOwner(db as never, owner)
   ).getPolicyReconContext({ countryId: "testland" });
 
-  expect(context.capacity).toBe(calculateCivilServiceCapacity(projected!, 60));
-  expect(context.capacity).toBeGreaterThan(calculateCivilServiceCapacity(10_000_000, 60));
+  // Capacity reads the effective government effectiveness (derived from the sim plus the stored offset)
+  const effectiveness = (await loadSoftScores(db as never, "testland", NOW))!.effective
+    .governmentEffectiveness;
+  expect(context.capacity).toBe(calculateCivilServiceCapacity(projected!, effectiveness));
+  expect(context.capacity).toBeGreaterThan(
+    calculateCivilServiceCapacity(10_000_000, effectiveness)
+  );
 });
