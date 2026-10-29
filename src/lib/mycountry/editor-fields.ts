@@ -4,6 +4,8 @@
  * same checks on the server), so a value the page accepts is a value the server saves.
  */
 
+import { ZERO_IS_BLANK_FIELDS, type EstimatedField } from "~/lib/economy/figure-estimates";
+
 export const IDENTITY_SECTION_IDS = ["symbols", "language", "culture", "civic"] as const;
 export type IdentitySectionId = (typeof IDENTITY_SECTION_IDS)[number];
 
@@ -219,6 +221,7 @@ export const EDITOR_SECTION_TITLES = {
   form: "Form and institutions",
   institutions: "Institutions",
   population: "Population and wealth",
+  figures: "Economic figures",
 } as const;
 export type EditorSectionId = keyof typeof EDITOR_SECTION_TITLES;
 
@@ -246,3 +249,33 @@ export const MAX_DEFINED_COMPONENTS = 15;
 /** The exact figures the Size section accepts. */
 export const POPULATION_LIMITS = { min: 1_000, max: 5_000_000_000 } as const;
 export const GDP_PER_CAPITA_LIMITS = { min: 100, max: 500_000 } as const;
+
+export interface EconomicFigureSpec {
+  key: EstimatedField;
+  label: string;
+  /** Percent bounds, the same the event spine clamps consequences to. */
+  min: number;
+  max: number;
+}
+
+/** The Economic figures section: percents the nation records; an empty one is estimated from the economy. */
+export const ECONOMIC_FIGURE_FIELDS: readonly EconomicFigureSpec[] = [
+  { key: "inflationRate", label: "Inflation (% a year)", min: -5, max: 100 },
+  { key: "unemploymentRate", label: "Unemployment (% of the workforce)", min: 0, max: 50 },
+  { key: "totalDebtGDPRatio", label: "Public debt (% of GDP)", min: 0, max: 500 },
+];
+
+/**
+ * Why a figure cannot be saved, or null. Null (empty) always saves: it returns the figure to the estimate. An exact 0
+ * inflation or unemployment reads as blank (owner ruling), so it is refused rather than stored.
+ */
+export function economicFigureError(key: EstimatedField, value: number | null): string | null {
+  if (value === null) return null;
+  const spec = ECONOMIC_FIGURE_FIELDS.find((f) => f.key === key);
+  if (!spec || !Number.isFinite(value)) return "Enter a number.";
+  if (value < spec.min || value > spec.max) return `Use a figure from ${spec.min} to ${spec.max}.`;
+  if (value === 0 && ZERO_IS_BLANK_FIELDS.includes(key)) {
+    return "0 counts as no figure here. Leave it empty to use the estimate.";
+  }
+  return null;
+}

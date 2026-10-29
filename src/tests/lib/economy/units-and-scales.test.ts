@@ -5,6 +5,7 @@
  *   "inflation rises" consequence above 2% vanished), defaults to 2 and moves by component modifiers in points.
  * - The displayed GDP growth is the engine's rate (tier cap and diminishing returns included), not the static input.
  */
+import { nextIxDayStart } from "~/lib/ixtime/day";
 import { Prisma } from "@prisma/client";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
 import { calculateComponentEconomicModifiers } from "~/lib/government/atomic-utils";
@@ -13,7 +14,8 @@ import { historyPointData } from "~/server/cron/stat-progression";
 import type { BaseCountryData, CountryStats } from "~/types/ixstats";
 
 const BASELINE = Date.UTC(2040, 0, 1);
-const ONE_YEAR_LATER = BASELINE + 365.25 * 864e5;
+// Growth runs from the IxTime day after the baseline (owner ruling 2026-10-28).
+const ONE_YEAR_LATER = nextIxDayStart(BASELINE) + 365.25 * 864e5;
 
 function baseline(overrides: Partial<BaseCountryData> = {}) {
   const calc = new IxStatsCalculator(getDefaultEconomicConfig(), BASELINE);

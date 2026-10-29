@@ -22,6 +22,7 @@ import {
   type HtmlScan,
   type Tag,
 } from "./html-scan";
+import { SISTER_WIKI_HOSTS } from "~/lib/wiki-os/wiki-hosts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -496,7 +497,7 @@ export function transformImages(
   let proxyBase = withBasePath("/api/mediawiki/ixwiki");
 
   if (wikiSource === "iiwiki") {
-    origin = "https://iiwiki.com";
+    origin = SISTER_WIKI_HOSTS.iiwiki.origin;
     proxyBase = withBasePath("/api/mediawiki/iiwiki");
   } else if (wikiSource === "althistory") {
     origin = "https://althistory.fandom.com";

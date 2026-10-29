@@ -15,7 +15,7 @@
 import { isBlank } from "./blank";
 import { isTemplateOnlyLine, logicalLineEnd } from "./block-lines";
 import { forwardFinder } from "./forward-finder";
-import { isMagicWordLine, matchHeading, startsRedirect } from "./line-patterns";
+import { isIndentedLine, isMagicWordLine, matchHeading, startsRedirect } from "./line-patterns";
 import { parseInlineLinksAndFormatting } from "./link-parser";
 import { parseWikiList } from "./list-parser";
 import { matchBraces, type MatchIndex } from "./match-index";
@@ -111,7 +111,10 @@ export function parse(input: string, options?: { title?: string; slug?: string }
       continue;
     }
 
-    const start = pos + (firstLine.length - firstLine.trimStart().length);
+    // An indented line keeps its indent in the block (see isIndentedLine); any other block starts at its text.
+    const start = isIndentedLine(firstLine)
+      ? pos
+      : pos + (firstLine.length - firstLine.trimStart().length);
     const { node, lineEnd, resumeAt } = scanBlock(ctx, start, firstLineEnd, nodes.length === 0);
     const end = contentEnd(input, start, resumeAt ?? lineEnd);
     node.src = { start, end };
@@ -146,6 +149,7 @@ function scanBlock(
 ): Scanned {
   const line = ctx.input.slice(start, firstLineEnd).trimEnd();
   return (
+    scanIndented(ctx, start, firstLineEnd) ??
     scanRedirect(ctx, line, start, firstLineEnd, isFirst) ??
     scanCommentOrMagicWord(ctx, line, start, firstLineEnd) ??
     scanOpaqueTag(ctx, start, firstLineEnd) ??
@@ -180,6 +184,22 @@ function rawBlock(
 
 function warn(ctx: ScanContext, code: string, message: string, start: number, end: number): void {
   ctx.diagnostics.push({ severity: "warning", message, start, end, code });
+}
+
+/**
+ * Consecutive indented lines (see isIndentedLine): preformatted text, or list and heading markers MediaWiki does not
+ * read as such. One read-only block, saved as written.
+ */
+function scanIndented(ctx: ScanContext, start: number, firstLineEnd: number): Scanned | null {
+  const { input } = ctx;
+  if (!isIndentedLine(input.slice(start, firstLineEnd))) return null;
+  let lineEnd = firstLineEnd;
+  while (lineEnd < input.length) {
+    const nextEnd = logicalLineEnd(input, lineEnd + 1, ctx.braces, ctx.scanner);
+    if (!isIndentedLine(input.slice(lineEnd + 1, nextEnd))) break;
+    lineEnd = nextEnd;
+  }
+  return rawBlock(ctx, start, lineEnd, "preformatted");
 }
 
 /** `#REDIRECT [[Target]]` at the very start of a page: not a numbered list. */
@@ -392,7 +412,7 @@ function scanList(
     const nextEnd = logicalLineEnd(input, lineEnd + 1, ctx.braces, ctx.scanner);
     const next = input.slice(lineEnd + 1, nextEnd);
     const nextChar = next.trim()[0];
-    if (!nextChar || !LIST_LINE.test(nextChar)) break;
+    if (!nextChar || !LIST_LINE.test(nextChar) || isIndentedLine(next)) break;
     if ((firstChar === "*" && nextChar === "#") || (firstChar === "#" && nextChar === "*")) break;
     lines.push(next);
     lineEnd = nextEnd;
@@ -485,6 +505,7 @@ function startsNewBlock(ctx: ScanContext, start: number, lineEnd: number): boole
   const text = line.trim();
   return (
     text === "" ||
+    isIndentedLine(line) ||
     matchHeading(text) !== null ||
     DIVIDER.test(text) ||
     LIST_LINE.test(text) ||

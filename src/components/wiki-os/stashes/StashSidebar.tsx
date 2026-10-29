@@ -90,13 +90,13 @@ export function StashSidebar({
             <div
               key={s.id}
               className={cn(
-                "group rounded-card relative overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
+                "group rounded-card relative overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150",
                 isActive ? "bg-tint-fill border-transparent" : "hover:bg-fill-4 border-transparent"
               )}
             >
               {isEditing ? (
                 /* Inline Edit State */
-                <div className="animate-in fade-in zoom-in-95 rounded-card border-separator bg-surface shadow-floating space-y-2 border p-3 duration-150">
+                <div className="rounded-card border-separator bg-surface shadow-floating space-y-2 border p-3">
                   <Input
                     type="text"
                     value={editName}

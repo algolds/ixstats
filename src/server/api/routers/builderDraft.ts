@@ -6,6 +6,9 @@ import {
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 
+/** A founding draft is a few kilobytes; anything far larger is not a draft. */
+const MAX_DRAFT_JSON_LENGTH = 100_000;
+
 /**
  * Per-user server-side autosave for the country builder's create-mode draft.
  *
@@ -25,7 +28,13 @@ export const builderDraftRouter = createTRPCRouter({
   save: rateLimitedMutationProcedure
     .input(
       z.object({
-        data: z.custom<Prisma.InputJsonValue>((val) => typeof val === "object" && val !== null),
+        data: z.custom<Prisma.InputJsonValue>(
+          (val) =>
+            typeof val === "object" &&
+            val !== null &&
+            !Array.isArray(val) &&
+            JSON.stringify(val).length <= MAX_DRAFT_JSON_LENGTH
+        ),
       })
     )
     .mutation(async ({ ctx, input }) => {

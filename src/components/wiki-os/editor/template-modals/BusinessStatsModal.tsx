@@ -34,7 +34,12 @@ const BUSINESS_FIELDS = [
 
 type BusinessModalTab = "search" | "create";
 
-export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
+/** Mounted only while open, so every opening starts from a fresh form. */
+export function BusinessStatsModal(props: BaseModalProps) {
+  return props.isOpen ? <BusinessStatsModalContent {...props} /> : null;
+}
+
+function BusinessStatsModalContent({ isOpen, onClose, onInsert }: BaseModalProps) {
   const [activeTab, setActiveTab] = useState<BusinessModalTab>("search");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBusiness, setSelectedBusiness] = useState<{ name: string } | null>(null);
@@ -64,26 +69,11 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
   const createPoiMutation = api.geoFeatures.createPOI.useMutation();
 
   useEffect(() => {
-    if (isOpen) {
-      // oxlint-disable-next-line
-      setActiveTab("search");
-      setSearchQuery("");
-      setSelectedBusiness(null);
-      setSelectedField("revenue");
-      setNewName("");
-      setNewCategory("commercial");
-      setNewDesc("");
-      setNewLat("");
-      setNewLng("");
-      setCreateError(null);
-      setCreateSuccess(false);
-
-      // Focus search input on open
-      setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 50);
-    }
-  }, [isOpen]);
+    // Focus search input on open
+    setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 50);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -97,8 +87,6 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
       }, 50);
     }
   }, [activeTab, isOpen]);
-
-  if (!isOpen) return null;
 
   const handleInsertBusiness = () => {
     if (!selectedBusiness) return;

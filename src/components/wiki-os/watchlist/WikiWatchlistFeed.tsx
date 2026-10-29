@@ -167,7 +167,7 @@ export function WikiWatchlistFeed() {
             return (
               <div
                 key={item.id}
-                className="border-separator bg-surface hover:border-separator hover:bg-surface rounded-card overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160"
+                className="border-separator bg-surface hover:border-separator hover:bg-surface rounded-card overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-160"
               >
                 {/* Row Header */}
                 <div className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -261,7 +261,7 @@ export function WikiWatchlistFeed() {
 
                 {/* Inline Slide-Down Diff Viewer */}
                 {isExpanded && (
-                  <div className="border-separator bg-surface animate-in fade-in border-t p-4 duration-200">
+                  <div className="border-separator bg-surface border-t p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-label-secondary text-caption">
                         Revision <strong className="text-label">{item.id}</strong> preview

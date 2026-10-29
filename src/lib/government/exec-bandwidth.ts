@@ -1,8 +1,8 @@
 /**
  * Executive bandwidth — the one place the used/available sum is computed.
  *
- * Capacity comes from the projected population × government effectiveness
- * (`calculateCivilServiceCapacity`). It is consumed by:
+ * Capacity comes from the projected population (logarithmically) × government effectiveness, plus any civil
+ * service hiring (`calculateCivilServiceCapacity`). It is consumed by:
  * - government components' staff (15% relief when the Technocrats broker is satisfied);
  * - in-progress recon Meetings;
  * - active policies (`Policy.execBandwidthCost`);
@@ -22,6 +22,7 @@ import {
 } from "~/lib/government/atomic-utils";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
+import { loadSoftScores } from "~/lib/government/soft-scores-store";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -92,6 +93,7 @@ export async function loadExecBandwidthState(
     activePoliciesSum,
     executingDirectivesSum,
     dismissedIssuesCount,
+    soft,
   ] = await Promise.all([
     db.country.findUnique({
       where: { id: countryId },
@@ -101,6 +103,7 @@ export async function loadExecBandwidthState(
       where: { countryId },
       select: {
         governmentEffectiveness: true,
+        civilServiceExpansion: true,
         departments: { where: { isActive: true }, select: { category: true } },
       },
     }),
@@ -133,6 +136,7 @@ export async function loadExecBandwidthState(
         respondedIxTime: { gte: now - DELEGATION_WINDOW_MS },
       },
     }),
+    loadSoftScores(db, countryId, now),
   ]);
 
   const spendByCategory: Record<string, number> = {};
@@ -145,9 +149,18 @@ export async function loadExecBandwidthState(
   const activeBrokers = deriveBrokers(activeComponentTypes, spendByCategory);
   const isTechnocratsSatisfied = activeBrokers.some((b) => b.id === "technocrats" && b.satisfied);
 
-  const effectiveness = structure?.governmentEffectiveness ?? country?.governmentalEfficiency ?? 50;
+  // Effective (derived from the sim plus the stored offset), as the issue snapshot reads it
+  const effectiveness =
+    soft?.effective.governmentEffectiveness ??
+    structure?.governmentEffectiveness ??
+    country?.governmentalEfficiency ??
+    50;
   const population = options.population ?? country?.currentPopulation ?? 0;
-  const capacity = calculateCivilServiceCapacity(population, effectiveness);
+  const capacity = calculateCivilServiceCapacity(
+    population,
+    effectiveness,
+    structure?.civilServiceExpansion ?? 0
+  );
 
   const govStaff = calculateTotalConsumedStaff(
     activeComponentTypes.map((type) => type as any),

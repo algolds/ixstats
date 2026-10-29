@@ -8,7 +8,7 @@ nextLabel: MyLeague & MyClub
 
 ## What Labs is
 
-Labs holds experimental tools that sit alongside the main game. They work, but they change more often than the rest of IxStats and some parts are unfinished. **Labs** in the sidebar lists Onoma, Vexel, MyLeague, MyClub and the Exchange. You need to be signed in, and Labs must be switched on: admins can hide it for everyone, but admins and players with Labs access always see it. Every Labs page can also be opened directly by address, or found with `Ctrl`/`Cmd` + `K`.
+Labs holds experimental tools that sit alongside the main game. They work, but they change more often than the rest of IxStates and some parts are unfinished. **Labs** in the sidebar lists Onoma, Vexel, MyLeague, MyClub and the Exchange. You need to be signed in, and Labs must be switched on: admins can hide it for everyone, but admins and players with Labs access always see it. Every Labs page can also be opened directly by address, or found with `Ctrl`/`Cmd` + `K`.
 
 ## Onoma (languages and names)
 

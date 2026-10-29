@@ -110,7 +110,7 @@ async function warningPlace(
   const place = await targetPlace(db, input.target);
   assertModeratesCategory(actor, place.category);
   if (place.authorUserId === null) {
-    throw new ForumError("BAD_REQUEST", `This ${input.target.type} has no IxStats author.`);
+    throw new ForumError("BAD_REQUEST", `This ${input.target.type} has no IxStates author.`);
   }
   if (place.authorUserId !== input.userId) {
     throw new ForumError("BAD_REQUEST", "You can only warn the author of this content.");

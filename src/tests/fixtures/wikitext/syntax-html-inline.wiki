@@ -1,0 +1,15 @@
+Text with <span style="color:red">red</span>, <small>small</small>, <sup>sup</sup><sub>sub</sub>, line<br>break<br/>and<br />more, <s>struck</s>, <u>under</u>, <code>code</code>, <abbr title="x">abbr</abbr>.
+
+<div style="float:right">
+A floating box with '''bold''' text.
+</div>
+
+<center>Centered text</center>
+
+Inline nowiki: <nowiki>''not italic''</nowiki> and <nowiki/>'''bold'''<nowiki/> joined. A ref with a template inside.<ref name="t">{{Cite web|url=https://example.org|title=Example}}</ref>
+
+<blockquote>
+A quotation with a [[link]].
+</blockquote>
+
+<!-- comment at the end -->

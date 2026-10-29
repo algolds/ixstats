@@ -70,7 +70,10 @@ async function resolveAll(tasks: readonly ImageTask[]): Promise<Resolved> {
   const resolved: Resolved = new Map();
   for (const [source, names] of bySource) {
     try {
-      resolved.set(source, await resolveWikiImages((p, s) => wikiQuery(source, p, s), names));
+      resolved.set(
+        source,
+        await resolveWikiImages((p, s) => wikiQuery(source, p, s, "realms"), names)
+      );
     } catch (error) {
       resolved.set(source, error instanceof Error ? error.message : String(error));
     }

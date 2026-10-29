@@ -109,6 +109,30 @@ describe("Economy report", () => {
   });
 });
 
+describe("Economy report estimates", () => {
+  it("shows a blank figure as its estimate, marked, and a recorded one as recorded", () => {
+    mockState.country = {
+      ...COUNTRY,
+      inflationRate: 2,
+      totalDebtGDPRatio: 61,
+      effectiveFigures: {
+        unemploymentRate: { value: 7.3, estimated: true },
+        inflationRate: { value: 4.4, estimated: true },
+        totalDebtGDPRatio: { value: 61, estimated: false },
+      },
+    };
+    render(<EconomyDrillDown countryId="c1" onDeclare={jest.fn()} />);
+    expect(within(tile("Unemployment")).getByText("7.3%")).toBeInTheDocument();
+    expect(
+      within(tile("Unemployment")).getByText("Estimated from your economy")
+    ).toBeInTheDocument();
+    // The engine's 2% stand-in is never shown in place of the estimate.
+    expect(within(tile("Inflation")).getByText("4.4%")).toBeInTheDocument();
+    expect(within(tile("Debt to GDP")).getByText("61.0%")).toBeInTheDocument();
+    expect(within(tile("Debt to GDP")).getByText("Public debt")).toBeInTheDocument();
+  });
+});
+
 describe("Economy tabs", () => {
   it.each([
     ["fiscal", "budget-dashboard"],
@@ -123,12 +147,19 @@ describe("Economy tabs", () => {
     else expect(screen.getByRole("tab", { name: "Taxes", selected: true })).toBeInTheDocument();
   });
 
+  it("shows a trillion-dollar GDP compactly, not as thousands of billions", () => {
+    mockState.tab = "report";
+    mockState.country = { ...mockState.country, currentTotalGdp: 44_484.45e9 };
+    render(<EconomyDrillDown countryId="c1" />);
+    expect(within(tile("Total GDP")).getByText("$44.5T")).toBeInTheDocument();
+  });
+
   it("gives the budget the saved rates on today's GDP as revenue, not the founding total", () => {
     mockState.tab = "budget";
     render(<EconomyDrillDown countryId="c1" />);
     // 100B x 20% x 0.18 (fallback income weight)
     expect(screen.getByTestId("budget-dashboard").dataset.revenue).toBe(String(3.6e9));
-    expect(within(tile("Tax revenue yield")).getByText("$3.60B / yr")).toBeInTheDocument();
+    expect(within(tile("Tax revenue yield")).getByText("$3.6B / yr")).toBeInTheDocument();
   });
 });
 

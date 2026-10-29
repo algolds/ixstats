@@ -119,3 +119,14 @@ describe("Discord wiki embeds carry the source", () => {
     ).toContain(`[G](${APP}/wiki/Gallambria?source=iiwiki)`);
   });
 });
+
+describe("ThinkPages spoilers in the Discord mirror", () => {
+  it.each([
+    ["the XML path", ""],
+    ["the regex fallback", BROKEN],
+  ])("pass `||text||` through unchanged, as Discord's own spoiler (%s)", (_label, prefix) => {
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    expect(htmlToDiscordMarkdown(`${prefix}<p>a ||secret|| b</p>`)).toContain("a ||secret|| b");
+    jest.restoreAllMocks();
+  });
+});

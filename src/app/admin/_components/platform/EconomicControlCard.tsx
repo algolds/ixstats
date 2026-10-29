@@ -177,7 +177,7 @@ export function EconomicControlCard({
         </div>
 
         {showAdvanced && (
-          <div className="animate-in fade-in slide-in-from-top-2 duration-fast space-y-6 pt-1">
+          <div className="space-y-6 pt-1">
             <Separator className="border-separator my-1" />
 
             <div className="space-y-4">

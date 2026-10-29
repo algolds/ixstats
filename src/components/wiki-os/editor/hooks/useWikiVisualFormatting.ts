@@ -2,9 +2,10 @@
 // Visual editing via Plate/Slate transforms. Preserves the original hook's
 // public interface so toolbars and modal hosts need no changes.
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { api } from "~/trpc/react";
 import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images";
+import { getDomActiveFormats } from "./dom-active-formats";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Transforms,
@@ -55,46 +56,6 @@ const MARK_GROUPS: ReadonlyArray<{ marks: readonly string[]; formats: readonly s
   { marks: ["code", "codeMark"], formats: ["code"] },
 ];
 
-interface DomFormatRule {
-  formats: readonly string[];
-  tags: readonly string[];
-  /** Substring of the element's class attribute. */
-  className?: string;
-  style?: (style: CSSStyleDeclaration) => boolean;
-  /** Selector used to inspect a cloned selection fragment (defaults to the tags). */
-  selector?: string | false;
-}
-
-const DOM_FORMAT_RULES: readonly DomFormatRule[] = [
-  {
-    formats: ["bold"],
-    tags: ["strong", "b"],
-    style: (s) => s.fontWeight === "bold" || parseInt(s.fontWeight, 10) >= 600,
-  },
-  { formats: ["italic"], tags: ["em", "i"], style: (s) => s.fontStyle === "italic" },
-  { formats: ["underline"], tags: ["u"], style: (s) => !!s.textDecoration?.includes("underline") },
-  {
-    formats: ["strikethrough", "strike"],
-    tags: ["s", "strike", "del"],
-    style: (s) => !!s.textDecoration?.includes("line-through"),
-  },
-  { formats: ["superscript", "sup"], tags: ["sup"] },
-  { formats: ["subscript", "sub"], tags: ["sub"] },
-  { formats: ["code"], tags: ["code", "pre"], className: "font-mono" },
-  { formats: ["blockquote"], tags: ["blockquote"] },
-  { formats: ["ul"], tags: ["ul"] },
-  { formats: ["ol"], tags: ["ol"] },
-  { formats: ["table"], tags: ["table", "td", "th", "tr"], selector: "table" },
-  { formats: ["link"], tags: ["a"] },
-  ...["h1", "h2", "h3", "h4"].map((h) => ({
-    formats: [h],
-    tags: [h],
-    className: `wikios-ve-${h}`,
-    selector: `.wikios-ve-${h}, ${h}`,
-  })),
-  { formats: ["p", "paragraph"], tags: ["p"], className: "wikios-ve-p", selector: false },
-];
-
 /** Plate block types that light up a toolbar format when the selection is inside one. */
 const BLOCK_PROBES: ReadonlyArray<{ types: readonly string[]; format: (type: string) => string }> =
   [
@@ -135,57 +96,6 @@ const buildWikitext = (name: string, params: Record<string, string>) =>
 
 const transclusionHtml = (dataMw: string, html: string) =>
   `<div typeof="mw:Transclusion" data-mw='${dataMw.replace(/'/g, "&#39;")}' class="wikios-ve-template">${fixEditorImageUrls(html)}</div>`;
-
-function elementMatchesRule(el: HTMLElement, rule: DomFormatRule): boolean {
-  return (
-    rule.tags.includes(el.tagName.toLowerCase()) ||
-    !!(rule.className && (el.className || "").includes(rule.className)) ||
-    !!rule.style?.(el.style)
-  );
-}
-
-/**
- * Inspect the browser's live DOM selection inside the visual editor to instantly
- * detect active formatting tags (<strong>, <em>, <u>, <s>, <code>, <h2>, etc.)
- * with zero latency and complete framework independence.
- */
-function getDomActiveFormats(): Set<string> {
-  const fmt = new Set<string>();
-  if (typeof window === "undefined") return fmt;
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return fmt;
-
-  const editorEl =
-    document.querySelector(".wikios-ve-content") ||
-    document.querySelector("[contenteditable='true']");
-  const anchorNode = sel.anchorNode;
-  if (!editorEl || !anchorNode || !editorEl.contains(anchorNode)) return fmt;
-
-  let curr: HTMLElement | null =
-    anchorNode.nodeType === 1 ? (anchorNode as HTMLElement) : anchorNode.parentElement;
-
-  while (curr && curr !== editorEl && editorEl.contains(curr)) {
-    for (const rule of DOM_FORMAT_RULES) {
-      if (elementMatchesRule(curr, rule)) rule.formats.forEach((f) => fmt.add(f));
-    }
-    curr = curr.parentElement;
-  }
-
-  // If text is selected (expanded range), inspect the contents of the range
-  if (!sel.isCollapsed) {
-    try {
-      const fragment = sel.getRangeAt(0).cloneContents();
-      for (const rule of DOM_FORMAT_RULES) {
-        const selector = rule.selector ?? rule.tags.join(", ");
-        if (selector && fragment.querySelector(selector)) rule.formats.forEach((f) => fmt.add(f));
-      }
-    } catch {
-      /* best effort */
-    }
-  }
-
-  return fmt;
-}
 
 function isFormatMarkActive(editor: PlateEditorLike, mark: string): boolean {
   if (!editor.selection) return false;
@@ -324,6 +234,23 @@ export function useWikiVisualFormatting({
     [withEditor, setIsDirty]
   );
 
+  /** A preview that arrived for the template `id`, if it is still in the document (and still that template). */
+  const attachPreview = useCallback(
+    (id: string, dataMw: string, html: string) =>
+      withEditor((editor) => {
+        const entry = findNodeEntry(editor, id);
+        if (!entry || (entry[0] as { dataMw?: string }).dataMw !== dataMw) return;
+        Transforms.setNodes(
+          editor,
+          { html: transclusionHtml(dataMw, html) } as Partial<Descendant>,
+          {
+            at: entry[1],
+          }
+        );
+      }),
+    [withEditor]
+  );
+
   const insertNode = useCallback(
     (node: Record<string, unknown>) =>
       edit((editor) => Transforms.insertNodes(editor, node as unknown as Descendant)),
@@ -357,11 +284,10 @@ export function useWikiVisualFormatting({
     refreshActiveFormats();
   }, [editorRef, refreshActiveFormats]);
 
-  // Automatically listen to native selection changes anywhere in the document
-  useEffect(() => {
-    document.addEventListener("selectionchange", refreshActiveFormats);
-    return () => document.removeEventListener("selectionchange", refreshActiveFormats);
-  }, [refreshActiveFormats]);
+  // No DOM `selectionchange` listener: Slate reads a click's new caret a tick after that event (slate-react debounces
+  // it), and a toolbar update rendered from the event itself re-rendered the canvas first, so Slate put the caret back
+  // (a click into a list item, a table cell or bold text never moved it). The canvas calls refreshActiveFormats on
+  // Slate's own selection operations instead (PlateWikiEditor's apply hook).
 
   const toggleMark = useCallback(
     (mark: string) => {
@@ -566,16 +492,29 @@ export function useWikiVisualFormatting({
         return;
       }
 
-      // The server renders the preview (sanitized, cached in Redis): the browser never asks MediaWiki itself.
-      // The template is the wikitext either way: when the preview cannot be had (rate limit, refused
-      // parameters, signed out) it is inserted without one, and the author is told.
+      // The template is the wikitext: it goes in at once, and the server's preview (sanitized, cached in Redis; the
+      // browser never asks MediaWiki itself) is attached when it arrives. Waiting for the preview first dropped the
+      // template when the author switched modes or saved meanwhile. When the preview cannot be had (rate limit,
+      // refused parameters, signed out) the template stays without one, and the author is told.
       const wikitext = buildWikitext(templateName, params);
-      let preview = "";
+      const id = nanoid();
+      insertNode({
+        type: "raw-html",
+        id,
+        kind: /infobox/i.test(wikitext) ? "infobox" : "generic",
+        name: templateName,
+        params,
+        dataMw,
+        html: "",
+        wikitext,
+        children: [{ text: "" }],
+      });
       try {
-        preview = await utils.wikios.getTemplatePreview.fetch(
+        const preview = await utils.wikios.getTemplatePreview.fetch(
           { template: templateName, params },
           { staleTime: TEMPLATE_PREVIEW_STALE_MS }
         );
+        if (preview) attachPreview(id, dataMw, preview);
       } catch (err) {
         console.error("Failed to render template:", err);
         notify.warning(
@@ -583,19 +522,8 @@ export function useWikiVisualFormatting({
           `{{${templateName}}} is in the page as written. ${previewFailureReason(err)}`.trim()
         );
       }
-      insertNode({
-        type: "raw-html",
-        id: nanoid(),
-        kind: /infobox/i.test(wikitext) ? "infobox" : "generic",
-        name: templateName,
-        params,
-        dataMw,
-        html: preview ? transclusionHtml(dataMw, preview) : "",
-        wikitext,
-        children: [{ text: "" }],
-      });
     },
-    [insertNode, utils, notify]
+    [insertNode, attachPreview, utils, notify]
   );
 
   const handleInsertImage = useCallback(
@@ -628,32 +556,34 @@ export function useWikiVisualFormatting({
       if (!editingTemplate) return;
       const { id, name } = editingTemplate;
 
-      withEditor((editor) => {
+      // The new parameters apply at once; the preview follows. Applying them only with the preview lost the edit
+      // whenever the preview failed, and wrote to a path the document may have moved past.
+      const dataMw = buildDataMw(name, newParams);
+      const wikitext = buildWikitext(name, newParams);
+      const kind = withEditor((editor) => {
         const entry = findNodeEntry(editor, id);
-        if (!entry) return;
+        if (!entry) return null;
         const [node, path] = entry;
-        const dataMw = buildDataMw(name, newParams);
-        const wikitext = buildWikitext(name, newParams);
-        const update = (extra: Record<string, unknown>) =>
-          Transforms.setNodes(
-            editor,
-            { params: newParams, dataMw, wikitext, ...extra } as Partial<Descendant>,
-            { at: path }
-          );
-
-        if (nodeType(node) === "chip-engine") {
-          update({});
-        } else {
-          void previewMutation
-            .mutateAsync({ wikitext, title })
-            .then((result) => update({ html: transclusionHtml(dataMw, result.html) }))
-            .catch((err) => console.error("Failed to update template:", err));
-        }
+        Transforms.setNodes(
+          editor,
+          { params: newParams, dataMw, wikitext } as Partial<Descendant>,
+          {
+            at: path,
+          }
+        );
         setIsDirty(true);
+        return nodeType(node);
       });
       setEditingTemplate(null);
+      if (!kind || kind === "chip-engine") return;
+      try {
+        const result = await previewMutation.mutateAsync({ wikitext, title });
+        attachPreview(id, dataMw, result.html);
+      } catch (err) {
+        console.error("Failed to update template:", err);
+      }
     },
-    [editingTemplate, previewMutation, title, withEditor, setIsDirty]
+    [editingTemplate, previewMutation, title, withEditor, setIsDirty, attachPreview]
   );
 
   const removeEditingNode = useCallback(() => {

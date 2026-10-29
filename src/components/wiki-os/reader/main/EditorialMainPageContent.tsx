@@ -77,7 +77,7 @@ export function EditorialMainPageContent({
                     data-cuelume-hover="tick"
                     className={cn(
                       "rounded-row flex items-start gap-2 p-2 sm:p-3",
-                      "hover:bg-fill-4 group transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150"
+                      "hover:bg-fill-4 group transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150"
                     )}
                   >
                     <div

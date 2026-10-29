@@ -218,7 +218,7 @@ export function MarginMarkupTab({
                 }}
                 onClick={() => onSelectAnnotation?.(ann.id)}
                 className={cn(
-                  "group rounded-card bg-surface relative cursor-pointer space-y-2 overflow-hidden border p-3 transition-[border-color,box-shadow,background-color,transform] duration-150 active:scale-[0.985]",
+                  "group rounded-card bg-surface relative cursor-pointer space-y-2 overflow-hidden border p-3 transition-[border-color,box-shadow,background-color,scale,translate] duration-150 active:scale-[0.985]",
                   isSelected
                     ? "border-yellow/80 ring-yellow/50 ring-1"
                     : "border-separator hover:border-yellow/50"

@@ -320,10 +320,21 @@ export function getCategories(
  */
 export function calculateCivilServiceCapacity(
   population: number,
-  governmentEffectiveness: number
+  governmentEffectiveness: number,
+  expansion = 0
 ): number {
-  return Math.max(50, 100 + Math.floor((population / 100000) * (governmentEffectiveness / 100)));
+  // Logarithmic in size (owner ruling 2026-10-28): each tenfold rise in population past 100,000 adds
+  // CAPACITY_STEP_PER_TENFOLD at full effectiveness, so a 10M nation at 60 keeps its old 160 while a
+  // 750M one gets ~290 instead of ~7,000 (bandwidth that can bind). Hiring adds `expansion` on top.
+  const tenfolds = Math.max(0, Math.log10(Math.max(population, 1) / 100_000));
+  const effectiveness = Math.max(0, governmentEffectiveness) / 100;
+  return (
+    Math.max(50, 100 + Math.floor(CAPACITY_STEP_PER_TENFOLD * tenfolds * effectiveness)) + expansion
+  );
 }
+
+/** Executive bandwidth each tenfold rise in population adds at full government effectiveness. */
+export const CAPACITY_STEP_PER_TENFOLD = 50;
 
 /**
  * Calculate total staff consumed by active and implementing components

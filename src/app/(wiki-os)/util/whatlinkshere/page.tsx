@@ -73,7 +73,7 @@ export default function WhatLinksHereHubPage() {
               <Link
                 key={link.title}
                 href={wikiHref(link.title)}
-                className="group rounded-card border-separator bg-surface shadow-card hover:border-yellow/40 hover:bg-surface hover:shadow-card relative flex items-center gap-3 overflow-hidden border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
+                className="group rounded-card border-separator bg-surface shadow-card hover:border-yellow/40 hover:bg-surface hover:shadow-card relative flex items-center gap-3 overflow-hidden border p-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150 active:scale-[0.98]"
               >
                 <div className="rounded-row bg-yellow/10 text-yellow flex h-8 w-8 shrink-0 items-center justify-center transition-transform">
                   <FileText className="h-4 w-4" />

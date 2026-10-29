@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { extractHashtags, extractMentions } from "~/lib/utils";
@@ -61,7 +61,11 @@ export function useGlassCanvasComposer({
     staleTime: 5 * 60 * 1000,
   });
 
-  const [showDiscordTopic, setShowDiscordTopic] = useState(false);
+  // Surface the Discord channel topic as the placeholder in dev and for ~10% of sessions, drawn once
+  const [drewDiscordTopic] = useState(
+    () => process.env.NODE_ENV === "development" || Math.random() < 0.1
+  );
+  const showDiscordTopic = drewDiscordTopic && !!channelTopic;
   const editorRef = useRef<any>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const [content, setContent] = useState("");
@@ -76,14 +80,8 @@ export function useGlassCanvasComposer({
   const [isEditorFocused, setIsEditorFocused] = useState(false);
   const [pollDraft, setPollDraft] = useState<PollDraft | null>(null);
   const [showPollModal, setShowPollModal] = useState(false);
-
-  useEffect(() => {
-    // Surface the Discord channel topic as the placeholder in dev and for ~10% of sessions
-    if (channelTopic && (process.env.NODE_ENV === "development" || Math.random() < 0.1)) {
-      // oxlint-disable-next-line
-      setShowDiscordTopic(true);
-    }
-  }, [channelTopic]);
+  const [showContentWarning, setShowContentWarning] = useState(false);
+  const [contentWarning, setContentWarning] = useState("");
 
   const resolvedPlaceholder = showDiscordTopic && !isEditorFocused ? channelTopic : placeholder;
   const accountAvatarUrl = account
@@ -96,7 +94,8 @@ export function useGlassCanvasComposer({
     selectedImages.length > 0 ||
     selectedVisualizations.length > 0 ||
     !!pollDraft;
-  const showActionBar = isEditorFocused || hasContent || showVisualizationPanel;
+  const showActionBar =
+    isEditorFocused || hasContent || showVisualizationPanel || showContentWarning;
 
   const liveQuery = { enabled: !!countryId, refetchOnWindowFocus: false };
   const { data: economicData, isLoading: isLoadingEconomic } =
@@ -136,6 +135,8 @@ export function useGlassCanvasComposer({
       setSelectedVisualizations([]);
       setSelectedImages([]);
       setPollDraft(null);
+      setShowContentWarning(false);
+      setContentWarning("");
       setPostToDiscord(true);
       void utils.thinkpages.getFeed.invalidate();
       void utils.activities.getGlobalFeed.invalidate();
@@ -168,6 +169,8 @@ export function useGlassCanvasComposer({
     createPostMutation.mutate({
       accountId: account.id,
       content: [content.trim(), wikiRepostContent].filter(Boolean).join("\n\n"),
+      // The server trims it and stores an empty one as none.
+      contentWarning: showContentWarning ? contentWarning : undefined,
       hashtags: extractHashtags(plainText),
       mentions: extractMentions(plainText),
       visibility: "public" as const,
@@ -250,6 +253,10 @@ export function useGlassCanvasComposer({
     setPollDraft,
     showPollModal,
     setShowPollModal,
+    showContentWarning,
+    setShowContentWarning,
+    contentWarning,
+    setContentWarning,
     resolvedPlaceholder,
     accountAvatarUrl,
     getAccountAvatar,

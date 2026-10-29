@@ -378,7 +378,7 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
     );
     st.changedNeighborIds = new Set();
 
-    // oxlint-disable-next-line
+    // oxlint-disable-next-line react/set-state-in-effect -- the flag tracks the map session this effect opens
     setIsVertexEditing(true);
     suppressDirtyRef.current = true;
     updateVertexEditVis();

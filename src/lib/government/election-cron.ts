@@ -16,7 +16,7 @@
  */
 import { db } from "~/server/db";
 import { realmClocks, realmNowsOnce } from "~/server/shared/realm-time";
-import { ensureUpcomingElection, resolveElection } from "./election-lifecycle";
+import { ensureUpcomingElection, releaseStaleCounts, resolveElection } from "./election-lifecycle";
 
 interface ElectionCronResult {
   resolved: number;
@@ -27,6 +27,7 @@ interface ElectionCronResult {
 export async function processDueElections(): Promise<ElectionCronResult> {
   const result: ElectionCronResult = { resolved: 0, scheduled: 0, skipped: 0 };
   const nowOf = realmNowsOnce(await realmClocks(db));
+  await releaseStaleCounts(db);
 
   const upcoming = await db.election.findMany({
     where: { status: "upcoming" },

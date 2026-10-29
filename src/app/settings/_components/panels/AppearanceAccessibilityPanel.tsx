@@ -169,7 +169,7 @@ export function AppearanceAccessibilityPanel() {
                 <Eyebrow>Preview</Eyebrow>
                 <span className="text-title-3 text-label">Quarterly budget</span>
                 <span className="text-body text-label-secondary">
-                  Text across IxStats is shown at {textPercent}% of the default size.
+                  Text across IxStates is shown at {textPercent}% of the default size.
                 </span>
               </div>
             </div>
@@ -178,7 +178,7 @@ export function AppearanceAccessibilityPanel() {
 
         <FacetListSection
           header="Accessibility"
-          footer="When a switch is off, IxStats follows the matching setting on your device."
+          footer="When a switch is off, IxStates follows the matching setting on your device."
         >
           <FacetRow
             leading={<DropletHalf className="size-5" />}

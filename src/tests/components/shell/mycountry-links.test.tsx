@@ -1,7 +1,7 @@
-/** The MyCountry sidebar row carries the public profile and editor buttons once the user's country is known. */
+/** The MyCountry app lists Public profile and Editor rows once the user's country is known. */
 import { render, screen } from "@testing-library/react";
 import { SourceList } from "~/components/shell/SourceList";
-import { getApp } from "~/lib/navigation/app-sections";
+import { getApp, withCountryRows } from "~/lib/navigation/app-sections";
 import { stateLeaders } from "~/components/country-profile/derive";
 
 const list = {
@@ -14,8 +14,8 @@ const list = {
 };
 
 describe("MyCountry sidebar links", () => {
-  it("links the public profile and the editor", () => {
-    render(<SourceList {...list} countryHref="/countries/caphiria" />);
+  it("lists the public profile and the editor as MyCountry rows", () => {
+    render(<SourceList {...list} pathname="/mycountry" countryHref="/countries/caphiria" />);
     expect(screen.getByRole("link", { name: "Public profile" })).toHaveAttribute(
       "href",
       "/countries/caphiria"
@@ -26,16 +26,33 @@ describe("MyCountry sidebar links", () => {
     );
   });
 
-  it("takes the expand chevron's place outside MyCountry", () => {
-    render(<SourceList {...list} countryHref="/countries/caphiria" />);
-    expect(screen.queryByRole("button", { name: "Expand MyCountry" })).toBeNull();
+  it("lists them in the collapsed rail's popover too", () => {
+    render(
+      <SourceList
+        {...list}
+        variant="popover"
+        app={getApp("mycountry")}
+        countryHref="/countries/caphiria"
+      />
+    );
+    expect(screen.getByRole("link", { name: "Editor" })).toBeInTheDocument();
   });
 
-  it("shows neither without a country, and keeps the chevron", () => {
-    render(<SourceList {...list} />);
+  it("keeps the expand chevron outside MyCountry", () => {
+    render(<SourceList {...list} countryHref="/countries/caphiria" />);
+    expect(screen.getByRole("button", { name: "Expand MyCountry" })).toBeInTheDocument();
+  });
+
+  it.each([undefined, ""])("lists neither without a country (%p)", (countryHref) => {
+    render(<SourceList {...list} pathname="/mycountry" countryHref={countryHref} />);
     expect(screen.queryByRole("link", { name: "Public profile" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Editor" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Expand MyCountry" })).toBeInTheDocument();
+  });
+
+  it("withCountryRows leaves other apps alone", () => {
+    const apps = [getApp("vault"), getApp("mycountry")];
+    expect(withCountryRows(apps, undefined)).toBe(apps);
+    expect(withCountryRows(apps, "/countries/x")[0]).toBe(apps[0]);
   });
 });
 

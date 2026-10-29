@@ -112,4 +112,36 @@
   .table tr:hover {
     background-color: var(--color-bg-tertiary);
   }
+
+  /* ThinkPages `||spoiler||` (lib/thinkpages/spoilers.ts): the text and its fill are one colour until a reader reveals
+     it. Children are hidden rather than recoloured, so a link or code colour utility cannot show through, and a click
+     on a hidden link lands on the spoiler. */
+  [data-spoiler] {
+    border-radius: var(--radius-control-sm);
+    padding-inline: 0.125em;
+    box-decoration-break: clone;
+    transition:
+      background-color var(--duration-fast) var(--ease-out-facet),
+      color var(--duration-fast) var(--ease-out-facet);
+  }
+
+  [data-spoiler]:not([data-revealed]) {
+    background-color: var(--color-label-secondary);
+    color: var(--color-label-secondary);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  [data-spoiler]:not([data-revealed]) * {
+    visibility: hidden;
+  }
+
+  [data-spoiler][data-revealed] {
+    background-color: var(--color-fill-3);
+  }
+
+  [data-spoiler]:focus-visible {
+    outline: 2px solid var(--color-tint);
+    outline-offset: 2px;
+  }
 }

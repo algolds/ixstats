@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Settings,
   SunLight as Sun,
@@ -56,12 +56,6 @@ export function MapSettingsPopover({
   const isAdmin = useIsAdmin();
   const [snapEnabled, setSnapEnabledState] = useState(getSnapEnabled);
   const [snapTol, setSnapTolState] = useState(getSnapTolerance);
-
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setSnapEnabledState(getSnapEnabled());
-    setSnapTolState(getSnapTolerance());
-  }, []);
 
   return (
     <Popover>

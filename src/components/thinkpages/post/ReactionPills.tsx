@@ -37,7 +37,7 @@ export function ReactionPills({
           <div
             key={type}
             className={cn(
-              "bg-fill-4 border-separator text-label-secondary hover:bg-fill-3 hover:border-separator text-footnote flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-[1.03]"
+              "bg-fill-4 border-separator text-label-secondary hover:bg-fill-3 hover:border-separator text-footnote flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 hover:scale-[1.03]"
             )}
             onClick={onOpenReactionsDialog}
           >

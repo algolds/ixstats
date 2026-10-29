@@ -45,7 +45,7 @@ These are saved **in this browser**, so set them again on another device. When a
 
 ## Notifications
 
-IxStats shows notifications inside the site, in Halo; there are no email or push notifications.
+IxStates shows notifications inside the site, in Halo; there are no email or push notifications.
 
 - **Alert categories**: switch off Economic events, Crisis and security, Diplomacy or Platform notices to stop notifications of that kind reaching you.
 - **Priority threshold**: hide notifications below the urgency you choose.

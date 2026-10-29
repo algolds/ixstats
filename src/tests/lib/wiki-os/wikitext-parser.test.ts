@@ -162,7 +162,9 @@ describe("source ranges", () => {
         expect(src!.start).toBeGreaterThanOrEqual(cursor);
         expect(node.raw).toBe(input.slice(src!.start, src!.end));
         expect(node.sepBefore).toBe(input.slice(cursor, src!.start));
-        expect(node.raw!.trim()).toBe(node.raw);
+        // A block starts at its text, except preformatted lines, whose indent is part of them.
+        const indented = node.type === "raw" && node.construct === "preformatted";
+        expect(indented ? node.raw!.trimEnd() : node.raw!.trim()).toBe(node.raw);
         cursor = src!.end;
       }
       expect(ast.trailing).toBe(input.slice(cursor));

@@ -139,13 +139,13 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
       <SwipeableRow.Content>
         <div
           className={cn(
-            "rounded-row border-separator bg-fill-4 hover:border-separator hover:bg-fill-4 duration-fast relative flex cursor-grab items-center justify-between border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:cursor-grabbing",
+            "rounded-row border-separator bg-fill-4 hover:border-separator hover:bg-fill-4 duration-fast relative flex cursor-grab items-center justify-between border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] active:cursor-grabbing",
             !n.read && "border-blue/30 bg-blue/5"
           )}
         >
           <div
             className={cn(
-              "rounded-l-row duration-fast absolute top-0 bottom-0 left-0 w-[3px] transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+              "rounded-l-row duration-fast absolute top-0 bottom-0 left-0 w-[3px] transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
               colors.text.replace("text-", "bg-")
             )}
           />

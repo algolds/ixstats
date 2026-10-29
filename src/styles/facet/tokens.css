@@ -246,11 +246,13 @@
   --duration-drift: 1600ms; /* ambient drift on content art (the MyCountry flag) */
   --ease-out-facet: cubic-bezier(0.23, 1, 0.32, 1);
   --spring-snappy-stiffness: 520; /* controls */
-  --spring-snappy-damping: 38;
+  --spring-snappy-damping: 46;
   --spring-smooth-stiffness: 320; /* sheets, sidebar, navigation, layout */
-  --spring-smooth-damping: 32;
+  --spring-smooth-damping: 36;
   --spring-gentle-stiffness: 180; /* emphasis, reveals */
   --spring-gentle-damping: 24;
+  --spring-momentum-stiffness: 320; /* releases that carry fling velocity */
+  --spring-momentum-damping: 29;
 }
 
 @theme inline static {

@@ -54,6 +54,11 @@ function describeConstruct(el: PlateNode): ConstructInfo {
       };
     case "nested-table":
       return { label: "Nested table", description: `A table inside a table cell. ${READ_ONLY}` };
+    case "preformatted":
+      return {
+        label: "Preformatted text",
+        description: `Lines that start with a space, which MediaWiki shows as preformatted text. ${READ_ONLY}`,
+      };
     case "table-template":
     case "table-orphan-line":
       return {
@@ -116,7 +121,7 @@ export function PlateRawWikitextElement({
         aria-label={`${label} block, read-only source`}
         tabIndex={0}
         title={description}
-        className="group rounded-row border-separator bg-surface text-footnote shadow-card hover:border-tint/50 focus-visible:border-tint focus-visible:outline-tint relative border px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="group rounded-row border-separator bg-surface text-footnote shadow-card hover:border-tint/50 focus-visible:border-tint focus-visible:outline-tint relative border px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus-visible:outline-2 focus-visible:outline-offset-2"
       >
         <div className="mb-1.5 flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-2">
@@ -135,7 +140,7 @@ export function PlateRawWikitextElement({
               onClick={handleCopy}
               aria-label={`Copy the source of this ${label} block`}
               title="Copy the source"
-              className="text-muted-foreground hover:bg-secondary/60 hover:text-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
+              className="text-muted-foreground hover:bg-secondary/60 hover:text-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] active:scale-[0.97]"
             >
               <CopyIcon className="h-3.5 w-3.5" />
             </button>
@@ -146,7 +151,7 @@ export function PlateRawWikitextElement({
                 onClick={() => setConfirmOpen(true)}
                 aria-label={`Remove this ${label} block`}
                 title="Remove this block"
-                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
+                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] active:scale-[0.97]"
               >
                 <TrashIcon className="h-3.5 w-3.5" />
               </button>

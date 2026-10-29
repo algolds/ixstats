@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   NavArrowRight as ChevronRight,
   NavArrowLeft as ChevronLeft,
@@ -378,6 +378,55 @@ function CollapsedStrip({
   );
 }
 
+const isFeatureEdit = (mode: EditorMode) => mode.startsWith("add-") || mode.startsWith("edit-");
+
+/**
+ * The panel's open tab. When the props move it, it moves during render: to a new override, to the
+ * properties tab while a feature is added or edited (until the user picks a tab), and always to a
+ * tab this panel has.
+ */
+function usePanelTab({
+  activeTabOverride,
+  mode,
+  tabs,
+  placement,
+  isWorldMode,
+}: Pick<EditorPanelProps, "activeTabOverride" | "mode" | "tabs" | "placement"> & {
+  isWorldMode: boolean;
+}) {
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    if (activeTabOverride) return activeTabOverride;
+    if (tabs.length > 0) return tabs[0];
+    return placement === "left" ? (isWorldMode ? "linkages" : "features") : "properties";
+  });
+  const [userPicked, setUserPicked] = useState(false);
+  // The props the tab was last adjusted for; null until the first render adjusts it.
+  const [adjustedFor, setAdjustedFor] = useState<{
+    override: TabId | undefined;
+    mode: EditorMode;
+    tabs: TabId[];
+  } | null>(null);
+
+  const overrideChanged = adjustedFor?.override !== activeTabOverride;
+  const modeOrTabsChanged = adjustedFor?.mode !== mode || adjustedFor?.tabs !== tabs;
+  if (overrideChanged || modeOrTabsChanged) {
+    setAdjustedFor({ override: activeTabOverride, mode, tabs });
+    let next = overrideChanged && activeTabOverride ? activeTabOverride : activeTab;
+    if (modeOrTabsChanged && !userPicked && isFeatureEdit(mode) && tabs.includes("properties")) {
+      next = "properties";
+    }
+    if (tabs.length > 0 && !tabs.includes(next)) next = tabs[0];
+    if (next !== activeTab) setActiveTab(next);
+  }
+
+  const pickTab = (tab: TabId) => {
+    setUserPicked(true);
+    setActiveTab(tab);
+  };
+
+  return [activeTab, pickTab] as const;
+}
+
 export function EditorPanel(props: EditorPanelProps) {
   const {
     mode,
@@ -396,43 +445,18 @@ export function EditorPanel(props: EditorPanelProps) {
     panelsLocked = false,
   } = props;
 
-  const [activeTab, setActiveTab] = useState<TabId>(() => {
-    if (activeTabOverride) return activeTabOverride;
-    if (tabs.length > 0) return tabs[0];
-    return placement === "left" ? (isWorldMode ? "linkages" : "features") : "properties";
+  const [activeTab, pickTab] = usePanelTab({
+    activeTabOverride,
+    mode,
+    tabs,
+    placement,
+    isWorldMode,
   });
-
-  const userOverrideRef = useRef(false);
-
-  useEffect(() => {
-    if (activeTabOverride) {
-      // oxlint-disable-next-line
-      setActiveTab(activeTabOverride);
-    }
-  }, [activeTabOverride]);
-
-  // Keep activeTab in sync with available tabs in this panel
-  useEffect(() => {
-    if (tabs.length > 0 && !tabs.includes(activeTab)) {
-      // oxlint-disable-next-line
-      setActiveTab(tabs[0]);
-    }
-  }, [tabs, activeTab]);
 
   const { panelWidth, panelHeight, handleResizeStart } = usePanelResize(placement);
 
-  // Auto-switch to the properties tab when a feature is being added or edited
-  useEffect(() => {
-    if (userOverrideRef.current) return;
-    if ((mode.startsWith("add-") || mode.startsWith("edit-")) && tabs.includes("properties")) {
-      // oxlint-disable-next-line
-      setActiveTab("properties");
-    }
-  }, [mode, tabs]);
-
   const handleTabClick = (tab: TabId) => {
-    userOverrideRef.current = true;
-    setActiveTab(tab);
+    pickTab(tab);
     onTabChange?.(tab);
   };
 
@@ -545,10 +569,7 @@ export function EditorPanel(props: EditorPanelProps) {
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-            <div
-              key={activeTab}
-              className="animate-in fade-in flex h-full min-h-0 flex-col duration-150"
-            >
+            <div key={activeTab} className="flex h-full min-h-0 flex-col">
               <TabBody tab={activeTab} props={props} />
             </div>
           </div>

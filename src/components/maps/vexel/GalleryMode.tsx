@@ -4,7 +4,7 @@ import { Refresh } from "iconoir-react";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ShieldRenderer from "./renderer/ShieldRenderer";
 import { generateRandomComposition } from "~/lib/heraldry/generator";
@@ -82,12 +82,12 @@ export default function GalleryMode() {
     }
   );
 
-  useEffect(() => {
-    if (initialData) {
-      // oxlint-disable-next-line
-      setCompositions(initialData as unknown as HeraldryComposition[]);
-    }
-  }, [initialData]);
+  // Each generated batch replaces the cards (single re-rolls edit them locally), during render.
+  const [seededFrom, setSeededFrom] = useState<typeof initialData>(undefined);
+  if (initialData !== seededFrom) {
+    setSeededFrom(initialData);
+    if (initialData) setCompositions(initialData);
+  }
 
   const handleReRollSingle = (idx: number) => {
     const fresh = generateRandomComposition({

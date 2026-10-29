@@ -1,0 +1,16 @@
+* Bullet
+*# Numbered under bullet
+*#* Bullet under that
+*#: Continuation of the numbered item
+* Bullet with <ref>Source.</ref> and {{Citation needed|date=May 2026}}
+# One
+## One point one
+#: Indented note
+# Two {{Inline|x}}
+;Term: Definition on the same line
+;Term two
+:Definition two
+:; Nested term : nested definition
+:* indented bullet
+
+#REDIRECT [[Not a redirect when not first]]

@@ -35,8 +35,8 @@ import { RepostCard } from "./RepostCard";
 import { ReactionPills } from "./ReactionPills";
 import { ThreadReplies } from "./ThreadReplies";
 import { PersonaAuthorCard } from "../PersonaAuthorCard";
-import { formatThinkpagesContentForDisplay } from "~/lib/utils";
-import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
+import { PostHtml } from "./PostHtml";
+import { ContentWarningGate } from "./ContentWarningGate";
 import {
   AccountAvatar,
   AccountTypeIcon,
@@ -91,10 +91,12 @@ function PostContextBanners({ post, blurbMeta }: { post: any; blurbMeta: PostSta
                 @{parent.account?.username}
               </span>
             </div>
-            <WikiHtmlContent
-              html={formatThinkpagesContentForDisplay(parent.content)}
-              className="text-label-secondary text-body line-clamp-3"
-            />
+            <ContentWarningGate reason={parent.contentWarning}>
+              <PostHtml
+                content={parent.content}
+                className="text-label-secondary text-body line-clamp-3"
+              />
+            </ContentWarningGate>
           </div>
         </div>
       )}
@@ -243,33 +245,35 @@ export function StandardPostView({
                 {post.trending && <Badge variant="warning">Trending</Badge>}
               </div>
 
-              <div className="text-body mb-3">
-                {post.repostOf ? (
-                  <RepostCard
-                    post={post}
-                    cleanRepostContent={state.cleanRepostContent}
-                    repostMediaAttachments={state.repostMediaAttachments}
-                    setLightboxMedia={state.setLightboxMedia}
-                  />
-                ) : (
-                  <PostBody
-                    content={post.content}
-                    cleanContent={state.cleanPostContent}
-                    blurbMeta={state.blurbMeta}
-                    sportsBulletin={state.sportsBulletin}
-                    account={account}
-                    isHero={false}
-                  />
-                )}
-              </div>
+              <ContentWarningGate reason={post.contentWarning}>
+                <div className="text-body mb-3">
+                  {post.repostOf ? (
+                    <RepostCard
+                      post={post}
+                      cleanRepostContent={state.cleanRepostContent}
+                      repostMediaAttachments={state.repostMediaAttachments}
+                      setLightboxMedia={state.setLightboxMedia}
+                    />
+                  ) : (
+                    <PostBody
+                      content={post.content}
+                      cleanContent={state.cleanPostContent}
+                      blurbMeta={state.blurbMeta}
+                      sportsBulletin={state.sportsBulletin}
+                      account={account}
+                      isHero={false}
+                    />
+                  )}
+                </div>
 
-              <PostMediaGrid
-                mediaAttachments={state.mediaAttachments}
-                postId={post.id}
-                onOpenLightbox={state.setLightboxMedia}
-              />
+                <PostMediaGrid
+                  mediaAttachments={state.mediaAttachments}
+                  postId={post.id}
+                  onOpenLightbox={state.setLightboxMedia}
+                />
 
-              <PostEmbeds post={post} state={state} vizSpacing="mt-3 space-y-2" />
+                <PostEmbeds post={post} state={state} vizSpacing="mt-3 space-y-2" />
+              </ContentWarningGate>
 
               {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
                 <div className="mb-3 flex flex-wrap gap-1">

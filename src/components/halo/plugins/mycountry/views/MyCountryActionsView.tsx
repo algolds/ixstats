@@ -85,7 +85,7 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
         <div className="text-headline text-yellow flex items-center gap-2">
           <Crown className="h-4 w-4" />
           <PreText className="text-inherit" whiteSpace="nowrap">
-            MyCountry® Quick actions
+            MyCountry quick actions
           </PreText>
         </div>
         <Button

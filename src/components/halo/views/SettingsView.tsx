@@ -1,10 +1,9 @@
 import React, { useCallback, useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { createAbsoluteUrl } from "~/lib/utils";
-import { useTheme } from "~/context/theme-context";
+import { nextTheme, useTheme } from "~/context/theme-context";
 import { SignOutButton, useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { AnimatedThemeToggler } from "~/components/ui/magicui/animated-theme-toggler";
 import { useRouter } from "next/navigation";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { cn } from "~/lib/utils";
@@ -25,6 +24,8 @@ import {
   Search,
   HalfMoon as SunMoon,
   Square,
+  SoundHigh,
+  SoundOff,
 } from "iconoir-react";
 import type { SettingsViewProps } from "../types";
 import { useActiveDIPlugin } from "../plugin-context";
@@ -34,25 +35,20 @@ import { useSoundSettings } from "~/hooks/useSoundSettings";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Switch } from "~/components/ui/switch";
 import { useHaloSize, SIZE_PRESETS } from "../HaloPrimitives";
-import {
-  useLocalPref,
-  ToggleSwitch,
-  SectionLabel,
-  AnimatedVolumeIcon,
-} from "./settings/SettingsControls";
+import { useLocalPref, ToggleSwitch, SectionLabel } from "./settings/SettingsControls";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+
+const NEXT_THEME_NAME = { light: "light", dark: "dark", system: "automatic" } as const;
 
 function SettingsViewComponent({ onClose }: SettingsViewProps) {
   const router = useRouter();
   const { user, isLoaded, isSignedIn } = useUser();
-  const { theme, effectiveTheme, compactMode, toggleCompactMode } = useTheme();
+  const { theme, effectiveTheme, toggleTheme, compactMode, toggleCompactMode } = useTheme();
   const { enabled: soundEnabled, setEnabled: setSoundEnabled, previewSound } = useSoundSettings();
   const { mediaThemeMode, setMediaThemeMode } = useWikiMediaTheme();
   const activePlugin = useActiveDIPlugin();
   const isOnWikiPage = activePlugin?.id === "wiki";
   const isAdmin = useIsAdmin();
-
-  const [soundIconHovered, setSoundIconHovered] = useState(false);
 
   // Dynamic Island Popover Width Sizing via Apple HIG physics
   const { setSize } = useHaloSize();
@@ -131,7 +127,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
   }
 
   return (
-    <div className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
+    <div className="p-4">
       <SettingsHeader
         onClose={onClose}
         isOnWikiPage={isOnWikiPage}
@@ -141,7 +137,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
       <div
         className={cn(
-          "grid gap-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+          "grid gap-4",
           morePrefsExpanded ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
         )}
       >
@@ -151,7 +147,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
           <SectionLabel>Appearance</SectionLabel>
 
           {/* Theme */}
-          <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none">
+          <div className="rounded-control hover:bg-fill-3 duration-fast flex items-center gap-3 px-3 py-3 transition-colors select-none">
             <div className="bg-tint/15 rounded-control-sm shrink-0 p-2">
               {effectiveTheme === "dark" ? (
                 <Moon className="text-tint h-3.5 w-3.5" />
@@ -167,7 +163,14 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                 {theme === "system" ? "Auto" : theme === "dark" ? "Dark" : "Light"}
               </PreText>
             </div>
-            <AnimatedThemeToggler className="h-8 w-8" />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={toggleTheme}
+              aria-label={`Switch to ${NEXT_THEME_NAME[nextTheme(theme)]} theme`}
+            >
+              {effectiveTheme === "dark" ? <Sun /> : <Moon />}
+            </Button>
           </div>
 
           {/* Compact Mode */}
@@ -187,12 +190,17 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
           {/* Sound */}
           <SettingsRow
-            icon={<AnimatedVolumeIcon enabled={soundEnabled} isHovered={soundIconHovered} />}
+            icon={
+              soundEnabled ? (
+                <SoundHigh className="text-green h-3.5 w-3.5" />
+              ) : (
+                <SoundOff className="text-label-secondary h-3.5 w-3.5" />
+              )
+            }
             iconBg={soundEnabled ? "bg-green/15" : "bg-fill-4"}
             label="Sound"
             description={soundEnabled ? "Enabled" : "Muted"}
             onIconClick={soundEnabled ? () => previewSound("chime") : undefined}
-            onIconHover={soundEnabled ? setSoundIconHovered : undefined}
             iconTitle={soundEnabled ? "Tap to test sound chime" : undefined}
           >
             <ToggleSwitch
@@ -338,7 +346,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
         {/* Additive 2nd Column (Smoothly reveals alongside on More Preferences) */}
         {morePrefsExpanded && (
-          <div className="animate-in fade-in slide-in-from-right-4 border-separator min-w-0 space-y-1 border-t pt-2 duration-200 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
+          <div className="border-separator min-w-0 space-y-1 border-t pt-2 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
             <SectionLabel>Reader preferences</SectionLabel>
 
             {/* Citations */}
@@ -491,7 +499,6 @@ function SettingsRow({
   label,
   description,
   onIconClick,
-  onIconHover,
   iconTitle,
   children,
 }: {
@@ -500,12 +507,11 @@ function SettingsRow({
   label: string;
   description?: string;
   onIconClick?: () => void;
-  onIconHover?: (hovered: boolean) => void;
   iconTitle?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none">
+    <div className="rounded-control hover:bg-fill-3 duration-fast flex items-center gap-3 px-3 py-3 transition-colors select-none">
       {onIconClick ? (
         <button
           type="button"
@@ -513,8 +519,6 @@ function SettingsRow({
             e.stopPropagation();
             onIconClick();
           }}
-          onMouseEnter={() => onIconHover?.(true)}
-          onMouseLeave={() => onIconHover?.(false)}
           title={iconTitle}
           aria-label={iconTitle}
           className={cn(

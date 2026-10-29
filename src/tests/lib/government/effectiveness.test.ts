@@ -17,6 +17,7 @@ import {
   governmentEffectiveness,
   NEW_COMPONENT_EFFECTIVENESS,
   projectComponentRecords,
+  projectEffectiveness,
 } from "~/lib/government/effectiveness";
 import {
   GOVERNMENT_FORMS,
@@ -66,6 +67,17 @@ async function writtenEffectiveness(
   await syncGovernmentComponents(tx as never, "c1", components);
   return update.mock.calls[0]![0].data.governmentEffectiveness as number;
 }
+
+describe("the server's component cap", () => {
+  it("refuses a save of more than 15 defined components (every component scored 100% effective)", async () => {
+    await expect(
+      writtenEffectiveness(DEFINED.slice(0, 16).map((componentType) => ({ componentType })))
+    ).rejects.toThrow(/15/);
+    await expect(
+      writtenEffectiveness(DEFINED.slice(0, 15).map((componentType) => ({ componentType })))
+    ).resolves.toEqual(expect.any(Number));
+  });
+});
 
 describe("government forms", () => {
   it.each(GOVERNMENT_FORMS.map((form) => [form.id, form] as const))(
@@ -277,5 +289,16 @@ describe("component effects", () => {
     expect(new Set(data.map((effect) => effect.ixTimeTimestamp.getTime()))).toEqual(
       new Set([fixed])
     );
+  });
+});
+
+describe("projectEffectiveness", () => {
+  it("follows the economy's score when no institutions are kept, not the components formula's 0", () => {
+    expect(projectEffectiveness([], 58.4)).toBe(58);
+  });
+
+  it("uses the components formula when institutions are kept", () => {
+    const records = [{ componentType: ComponentType.RULE_OF_LAW, effectivenessScore: 80 }];
+    expect(projectEffectiveness(records, 58)).toBe(Math.round(governmentEffectiveness(records)));
   });
 });

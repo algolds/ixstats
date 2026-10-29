@@ -17,15 +17,13 @@
 import type { PrismaClient } from "@prisma/client";
 import { clockTimeAt } from "~/lib/realms/realm-time-convert";
 import { clockForCountry, type RealmClockReader } from "~/server/shared/realm-time";
+import { loadSoftScores } from "~/lib/government/soft-scores-store";
+import { stabilityBudget } from "~/lib/government/soft-scores";
 import {
   calculateStabilityMetrics,
-  type DemographicData,
-  type EconomicData,
-  type GovernmentData,
-  type PoliticalData,
   type RecentPolicy,
   type StabilityMetrics,
-  stabilityInputsFromStored,
+  stabilityFormulaArgs,
 } from "./stability-formulas";
 
 export const STABILITY_NUMERIC_FIELDS = [
@@ -136,101 +134,52 @@ async function loadRecentPolicies(
 }
 
 /**
- * The formula stability metrics for a country (inputs as security.getInternalStability has
- * always assembled them). Null when the country does not exist.
+ * The formula stability metrics for a country: its economy (recorded or estimated figures), its
+ * effective governance scores (`~/lib/government/soft-scores`), its budget lines and its recent
+ * policies. Null when the country does not exist.
  */
 async function computeFormulaStability(
   db: PrismaClient,
   countryId: string
 ): Promise<StabilityMetrics | null> {
-  const country = await db.country.findUnique({
-    where: { id: countryId },
-    select: {
-      realmId: true,
-      adjustedGdpGrowth: true,
-      unemploymentRate: true,
-      incomeInequalityGini: true,
-      inflationRate: true,
-      currentGdpPerCapita: true,
-      povertyRate: true,
-      currentPopulation: true,
-      urbanPopulationPercent: true,
-      populationDensity: true,
-    },
-  });
-  if (!country) return null;
+  const clock = await clockForCountry(db, countryId);
+  const state = await loadSoftScores(db, countryId, clock.now());
+  if (!state) return null;
+  const { country, effective, figures } = state;
 
-  const [economicProfile, demographics, government] = await Promise.all([
-    db.economicProfile.findUnique({
-      where: { countryId },
-      select: { corruptionIndex: true },
-    }),
+  const [demographics, recentPolicies] = await Promise.all([
     db.demographics.findUnique({
       where: { countryId },
       select: { ethnicDiversity: true, religiousDiversity: true },
     }),
-    db.governmentStructure.findUnique({
-      where: { countryId },
-      select: {
-        politicalStability: true,
-        politicalPolarization: true,
-        democracyIndex: true,
-        electionCycle: true,
-      },
-    }),
+    loadRecentPolicies(db, countryId, clock),
   ]);
 
-  const units = stabilityInputsFromStored({
-    gdpGrowthDecimal: country.adjustedGdpGrowth,
-    gini: country.incomeInequalityGini,
-    politicalStability: government?.politicalStability,
-  });
-  const economicData: EconomicData = {
-    gdpGrowth: units.gdpGrowth,
-    unemploymentRate: country.unemploymentRate ?? 5.0,
-    giniIndex: units.giniIndex,
-    inflationRate: country.inflationRate ?? 2.0,
-    gdpPerCapita: country.currentGdpPerCapita ?? 35000,
-    povertyRate: country.povertyRate ?? 12,
-  };
-
-  // TODO: integrate with government ministry when available
-  const governmentData: GovernmentData = {
-    policingBudget: country.currentPopulation * 200,
-    educationBudget: country.currentPopulation * 1500,
-    socialServicesBudget: country.currentPopulation * 800,
-    totalBudget: country.currentPopulation * 5000,
-    corruptionIndex: economicProfile?.corruptionIndex ?? 30,
-  };
-
-  const demographicData: DemographicData = {
-    population: country.currentPopulation,
-    ethnicDiversity: demographics?.ethnicDiversity ?? 50,
-    religiousDiversity: demographics?.religiousDiversity ?? 50,
-    urbanizationRate: country.urbanPopulationPercent ?? 75,
-    youthUnemployment: (country.unemploymentRate ?? 5) * 2, // Youth unemployment is typically 2x general
-    populationDensity: country.populationDensity ?? 100,
-  };
-
-  const politicalData: PoliticalData = {
-    politicalStability: units.politicalStability,
-    politicalPolarization: government?.politicalPolarization ?? 50,
-    electionCycle: government?.electionCycle ?? 4,
-    democracyIndex: government?.democracyIndex ?? 50,
-    protestFrequency: 8, // Will be overwritten by calculation
-  };
-
-  const recentPolicies = await loadRecentPolicies(
-    db,
-    countryId,
-    await clockForCountry(db, country)
-  );
-
+  const gs = country.governmentStructure;
   return calculateStabilityMetrics(
-    economicData,
-    governmentData,
-    demographicData,
-    politicalData,
+    ...stabilityFormulaArgs({
+      gdpGrowthDecimal: state.growthDecimal,
+      gini: country.incomeInequalityGini,
+      unemploymentRate: figures.unemploymentRate.value,
+      inflationRate: figures.inflationRate.value,
+      gdpPerCapita: country.currentGdpPerCapita,
+      povertyRate: country.povertyRate,
+      population: country.currentPopulation,
+      urbanPopulationPercent: country.urbanPopulationPercent,
+      populationDensity: country.populationDensity,
+      ethnicDiversity: demographics?.ethnicDiversity ?? null,
+      religiousDiversity: demographics?.religiousDiversity ?? null,
+      governance: effective,
+      electionCycle: gs?.electionCycle ?? null,
+      publicApproval: country.publicApproval,
+      budget: stabilityBudget({
+        population: country.currentPopulation,
+        gdpPerCapita: country.currentGdpPerCapita,
+        totalBudget: gs?.totalBudget ?? null,
+        taxRevenueGDPPercent: country.taxRevenueGDPPercent,
+        budgetShares: state.inputs.budgetShares,
+      }),
+    }),
     recentPolicies
   );
 }

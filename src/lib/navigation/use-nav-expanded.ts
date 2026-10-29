@@ -1,15 +1,52 @@
 "use client";
 /**
- * Which apps and admin groups are open in the source list. Read after mount, so the server and
+ * Which apps and admin groups are open in the source list. Read after hydration, so the server and
  * the first client render show only the current app open (the current app is always open and is
  * not stored). Synced across tabs.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { NAV_STORAGE_KEYS } from "~/lib/design/appearance";
 
-function readExpanded(): Set<string> {
+const listeners = new Set<() => void>();
+// Where the list lives once storage refuses a write: the toggles still hold for this session.
+let sessionRaw: string | null = null;
+let storageBlocked = false;
+
+function readRaw(): string | null {
+  if (storageBlocked) return sessionRaw;
   try {
-    const raw = window.localStorage.getItem(NAV_STORAGE_KEYS.expanded);
+    return window.localStorage.getItem(NAV_STORAGE_KEYS.expanded);
+  } catch {
+    return null;
+  }
+}
+
+function writeRaw(raw: string): void {
+  try {
+    window.localStorage.setItem(NAV_STORAGE_KEYS.expanded, raw);
+  } catch {
+    storageBlocked = true;
+    sessionRaw = raw;
+  }
+  listeners.forEach((notify) => notify());
+}
+
+function subscribe(onChange: () => void): () => void {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === NAV_STORAGE_KEYS.expanded) onChange();
+  };
+  listeners.add(onChange);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    listeners.delete(onChange);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+const serverRaw = () => null;
+
+function parseExpanded(raw: string | null): Set<string> {
+  try {
     const parsed: unknown = raw ? JSON.parse(raw) : [];
     return new Set(
       Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : []
@@ -20,39 +57,16 @@ function readExpanded(): Set<string> {
 }
 
 export function useNavExpanded(): { expanded: ReadonlySet<string>; toggle: (id: string) => void } {
-  const [expanded, setExpandedState] = useState<ReadonlySet<string>>(() => new Set());
-  // The latest set, so toggle can compute the next one (and write it) outside a state updater:
-  // updaters must stay pure, and React runs them twice in StrictMode.
-  const latest = useRef<ReadonlySet<string>>(expanded);
-  const setExpanded = useCallback((next: ReadonlySet<string>) => {
-    latest.current = next;
-    setExpandedState(next);
-  }, []);
+  // The stored string is the snapshot (a parsed Set would be a new object on every read)
+  const raw = useSyncExternalStore(subscribe, readRaw, serverRaw);
+  const expanded: ReadonlySet<string> = parseExpanded(raw);
 
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setExpanded(readExpanded());
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === NAV_STORAGE_KEYS.expanded) setExpanded(readExpanded());
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, [setExpanded]);
-
-  const toggle = useCallback(
-    (id: string) => {
-      const next = new Set(latest.current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      try {
-        window.localStorage.setItem(NAV_STORAGE_KEYS.expanded, JSON.stringify([...next]));
-      } catch {
-        // Storage blocked: the state still holds for this session.
-      }
-      setExpanded(next);
-    },
-    [setExpanded]
-  );
+  const toggle = (id: string) => {
+    const next = parseExpanded(readRaw());
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    writeRaw(JSON.stringify([...next]));
+  };
 
   return { expanded, toggle };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Send,
   Page as FileText,
@@ -40,6 +40,46 @@ interface ThinkPagesShareModalProps {
   status: string | null | undefined;
 }
 
+/** The post a directive's summation starts from: its goal, the measures taken and its hashtags. */
+function summationDraft({
+  goal,
+  tier,
+  category,
+  summary,
+  changesJson,
+  countryName,
+  countrySlug,
+  status,
+}: Pick<
+  ThinkPagesShareModalProps,
+  "goal" | "summary" | "changesJson" | "countryName" | "countrySlug" | "status"
+> & { tier: string; category: string }): string {
+  let changesSummary = summary || goal;
+  try {
+    if (changesJson) {
+      const parsed = JSON.parse(changesJson);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        changesSummary = parsed
+          .filter(
+            (c): c is { label: string } => typeof c === "object" && c !== null && "label" in c
+          )
+          .map((c) => c.label)
+          .join(", ");
+      }
+    }
+  } catch {
+    /* fallback */
+  }
+
+  return (
+    `**Executive summary: ${goal}**\n\n` +
+    `${countryName} ${status === "completed" ? "completed" : "declared"} a ${tier} Directive: "${goal}".\n\n` +
+    `**Measures taken:**\n` +
+    `• ${changesSummary}\n\n` +
+    `#${countrySlug.replace(/[^A-Za-z0-9]/g, "")} #ExecutiveDirective #${category}`
+  );
+}
+
 export function ThinkPagesShareModal({
   isOpen,
   onClose,
@@ -69,37 +109,27 @@ export function ThinkPagesShareModal({
     onError: (e) => notify.error("Could not share the directive", e.message),
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      // oxlint-disable-next-line
+  // Opening the modal, or new directive details while it is open, starts a fresh draft, during render.
+  const draft = isOpen
+    ? summationDraft({
+        goal,
+        tier,
+        category,
+        summary,
+        changesJson,
+        countryName,
+        countrySlug,
+        status,
+      })
+    : null;
+  const [draftedFrom, setDraftedFrom] = useState<string | null>(null);
+  if (draft !== draftedFrom) {
+    setDraftedFrom(draft);
+    if (draft !== null) {
       setPublishStatus("idle");
-      let changesSummary = summary || goal;
-      try {
-        if (changesJson) {
-          const parsed = JSON.parse(changesJson);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            changesSummary = parsed
-              .filter(
-                (c): c is { label: string } => typeof c === "object" && c !== null && "label" in c
-              )
-              .map((c) => c.label)
-              .join(", ");
-          }
-        }
-      } catch {
-        /* fallback */
-      }
-
-      const initialText =
-        `**Executive summary: ${goal}**\n\n` +
-        `${countryName} ${status === "completed" ? "completed" : "declared"} a ${tier} Directive: "${goal}".\n\n` +
-        `**Measures taken:**\n` +
-        `• ${changesSummary}\n\n` +
-        `#${countrySlug.replace(/[^A-Za-z0-9]/g, "")} #ExecutiveDirective #${category}`;
-
-      setContent(initialText);
+      setContent(draft);
     }
-  }, [isOpen, goal, tier, category, summary, changesJson, countryName, countrySlug, status]);
+  }
 
   const handlePublish = (visibility: "public" | "draft") => {
     generateM.mutate({

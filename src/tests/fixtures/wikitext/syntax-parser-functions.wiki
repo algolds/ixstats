@@ -1,0 +1,15 @@
+{{#if: {{{image|}}} | [[File:{{{image}}}|250px]] | <!-- no image -->}}
+{{#switch: {{{type|country}}}
+ | country = {{Infobox country/core|name={{{name|{{PAGENAME}}}}}}}
+ | city
+ | town = {{Infobox settlement|name={{{name}}}}}
+ | #default = <span class="error">Unknown type</span>
+}}
+'''{{PAGENAME}}''' is a {{#if:{{{adj|}}}|{{{adj}}} |}}nation with {{#expr: {{{pop|0}}} / 1000 round 0}} thousand people.
+
+{{#invoke:String|replace|{{{1|}}}|_| }}
+
+Written {{subst:CURRENTYEAR}} by {{subst:REVISIONUSER}}; see {{tl|Infobox country}} and {{Nested|a={{Inner|b={{Deep|c}}}}|d=[[Link|x]]}}.
+
+{{#ifeq: {{NAMESPACE}} | {{ns:0}} | [[Category:Articles]] }}
+{{{param|default with [[link]] and {{tmpl}}}}}

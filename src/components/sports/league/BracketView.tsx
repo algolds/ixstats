@@ -155,7 +155,7 @@ function BracketRounds({
                     <div
                       key={b.id}
                       className={cn(
-                        "rounded-card border-separator bg-surface-secondary shadow-card flex items-center justify-between gap-3 border px-4 py-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                        "rounded-card border-separator bg-surface-secondary shadow-card flex items-center justify-between gap-3 border px-4 py-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
                         isCompleted && "border-separator bg-surface-secondary"
                       )}
                     >

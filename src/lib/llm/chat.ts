@@ -54,6 +54,8 @@ export async function chatCompletion(opts: {
       temperature: opts.temperature,
       max_tokens: reasoning ? 16384 : opts.jsonMode ? 2048 : 1024,
       ...(opts.jsonMode && provider !== "nvidia" && { response_format: { type: "json_object" } }),
+      // Privacy Policy 2.1: route only to providers that neither store nor train on prompts.
+      ...(provider === "openrouter" && { provider: { data_collection: "deny" } }),
       ...(reasoning &&
         provider === "nvidia" && {
           top_p: 0.95,

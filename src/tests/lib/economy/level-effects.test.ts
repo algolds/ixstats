@@ -15,8 +15,10 @@ jest.mock("~/lib/activity/hooks", () => ({
   ActivityHooks: { Economic: { onTaxPolicyChange: jest.fn().mockResolvedValue(true) } },
 }));
 
+import { nextIxDayStart } from "~/lib/ixtime/day";
 import { CountryEventSpine } from "~/lib/activity";
-import { fiscalUpdateForRate } from "~/components/mycountry/shell/fiscal/taxChannels";
+import { fiscalUpdateForRate } from "~/lib/economy/tax-channels";
+import { estimateEconomicFigures } from "~/lib/economy/figure-estimates";
 import { growthModifierToLevelShift, IxStatsCalculator } from "~/lib/economy/calculations";
 import { IxTime } from "~/lib/ixtime";
 import type { BaseCountryData, EconomicConfig, StorytellerEffect } from "~/types/ixstats";
@@ -69,7 +71,8 @@ const effectStart = IxTime.addYears(baseline, 2);
 function statsAt(years: number, effects: StorytellerEffect[] = []) {
   return calc.calculateTimeProgression(
     calc.initializeCountryStats(base),
-    IxTime.addYears(baseline, years),
+    // Effects take hold from the IxTime day after they begin: read every point that much later.
+    IxTime.addYears(baseline, years) + (nextIxDayStart(effectStart) - effectStart),
     effects
   ).newStats;
 }
@@ -183,7 +186,7 @@ describe("the country event spine", () => {
     });
   });
 
-  it("skips a stat that has no stored value and no engine default, instead of treating it as 0", async () => {
+  it("skips a stat that has no stored value and no estimate, instead of treating it as 0", async () => {
     const db = spineDb({ publicApproval: null });
     const results = await CountryEventSpine.recordCountryEvent({
       db: db as never,
@@ -198,11 +201,17 @@ describe("the country event spine", () => {
     expect(db.country.update).not.toHaveBeenCalled();
   });
 
+  // A poor nation ($2k, 1% growth, no fiscal figures recorded): its estimate, not a flat default, is the base.
+  const economy = { currentGdpPerCapita: 2_000, actualGdpGrowth: 0.01, historicalData: [] };
+  const estimate = estimateEconomicFigures({ gdpPerCapita: 2_000, realGrowthPct: 1 });
+
   it.each([
-    ["inflationRate", 2, 1.4],
-    ["unemploymentRate", 5, 4.4],
-  ])("moves an unset %s from the engine default (%s%%)", async (field, base, expected) => {
-    const db = spineDb({ [field]: null });
+    ["inflationRate", estimate.inflationRate],
+    ["unemploymentRate", estimate.unemploymentRate],
+    ["totalDebtGDPRatio", estimate.totalDebtGDPRatio],
+  ])("moves an unset %s from the economy's estimate (%s%%)", async (field, base) => {
+    const expected = base - 0.6;
+    const db = spineDb({ ...economy, [field]: null });
     const results = await CountryEventSpine.recordCountryEvent({
       db: db as never,
       countryId,
@@ -219,6 +228,19 @@ describe("the country event spine", () => {
       where: { id: countryId },
       data: { [field]: expect.closeTo(expected, 9) },
     });
+  });
+  it("moves a stored 0% inflation from the estimate: an exact 0 counts as blank", async () => {
+    const db = spineDb({ ...economy, inflationRate: 0 });
+    const results = await CountryEventSpine.recordCountryEvent({
+      db: db as never,
+      countryId,
+      sourceType: "issue",
+      description: "Issue",
+      consequences: [
+        { targetModel: "Country", targetField: "inflationRate", operation: "add", value: 0.5 },
+      ],
+    });
+    expect(results).toEqual([expect.objectContaining({ previousValue: estimate.inflationRate })]);
   });
 });
 

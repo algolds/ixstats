@@ -81,7 +81,7 @@ function SearchViewComponent({
                 }
               }
             }}
-            className="text-label placeholder:text-label-tertiary rounded-row border-separator bg-fill-4 text-body focus-visible:outline-tint w-full border py-2 pr-14 pl-9 transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="text-label placeholder:text-label-tertiary rounded-row border-separator bg-fill-4 text-body focus-visible:outline-tint w-full border py-2 pr-14 pl-9 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
             data-command-palette-search="true"
           />
           {searchQuery && (

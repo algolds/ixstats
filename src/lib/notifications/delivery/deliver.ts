@@ -87,7 +87,7 @@ export function notificationEmail(
     html: [
       `<p><strong>${escapeHtml(n.title)}</strong></p>`,
       body ? `<p>${escapeHtml(body)}</p>` : "",
-      link ? `<p><a href="${escapeHtml(link)}">Open in IxStats</a></p>` : "",
+      link ? `<p><a href="${escapeHtml(link)}">Open in IxStates</a></p>` : "",
     ].join(""),
   };
 }

@@ -100,7 +100,6 @@ const config = {
       { protocol: "https", hostname: "upload.wikimedia.org" },
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "ixwiki.com" },
-      { protocol: "https", hostname: "iiwiki.com" },
       { protocol: "https", hostname: "cdn.discordapp.com" },
       { protocol: "https", hostname: "media.discordapp.net" },
       // NationStates images go through /api/proxy-ns-image, so no NS hosts here

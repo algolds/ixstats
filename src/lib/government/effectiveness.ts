@@ -77,3 +77,8 @@ export function projectComponentRecords(
   }
   return out;
 }
+
+/** Effectiveness after a save: with no institutions it follows the economy, not the components formula (0). */
+export function projectEffectiveness(records: ScoredComponent[], withoutInstitutions: number) {
+  return Math.round(records.length === 0 ? withoutInstitutions : governmentEffectiveness(records));
+}

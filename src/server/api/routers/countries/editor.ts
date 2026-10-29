@@ -17,7 +17,10 @@ import { globalCache, invalidateCache } from "~/lib/cache";
 import { rebaseNationalSize, SIZE_BEFORE_SELECT } from "~/lib/economy/national-size";
 import { getComponentGroup } from "~/lib/government/component-guide";
 import { isRealmImageUrl } from "~/lib/realms/realm-region";
+import { ESTIMATED_FIELDS, type EstimatedField } from "~/lib/economy/figure-estimates";
 import {
+  ECONOMIC_FIGURE_FIELDS,
+  economicFigureError,
   EDITOR_IDENTITY_KEYS,
   GDP_PER_CAPITA_LIMITS,
   IDENTITY_FIELDS,
@@ -38,6 +41,9 @@ import {
   renameCountryInTx,
 } from "~/server/shared/country-rename";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
+import { loadEconomicFigureEstimates } from "~/server/shared/economic-figures";
+import { deriveSoftScores } from "~/lib/government/soft-scores";
+import { loadSoftScores } from "~/lib/government/soft-scores-store";
 
 const countryInput = z.object({ countryId: z.string().min(1) });
 
@@ -98,6 +104,33 @@ type InstitutionKey = (typeof INSTITUTION_KEYS)[number];
 const blankToNull = (value: string | null | undefined) =>
   value == null ? null : value.trim() === "" ? null : value.trim();
 
+/** A figure the Economic figures section saves: a percent in its bounds, or null (back to the estimate). */
+const figureValue = z.number().finite().nullable();
+const figureRecord = z
+  .object(
+    Object.fromEntries(
+      ECONOMIC_FIGURE_FIELDS.map((f) => [f.key, figureValue.optional()])
+    ) as Record<EstimatedField, z.ZodOptional<typeof figureValue>>
+  )
+  .strict();
+
+const figuresInput = countryInput
+  .extend({ figures: figureRecord, expected: figureRecord })
+  .superRefine((input, ctx) => {
+    for (const key of ESTIMATED_FIELDS) {
+      const value = input.figures[key];
+      if (value === undefined) continue;
+      const error = economicFigureError(key, value);
+      if (error) ctx.addIssue({ code: "custom", path: ["figures", key], message: error });
+      if (input.expected[key] === undefined) {
+        ctx.addIssue({ code: "custom", path: ["expected", key], message: "Missing original" });
+      }
+    }
+  });
+
+const sameFigure = (a: number | null, b: number | null | undefined) =>
+  a === null || b == null ? a === (b ?? null) : sameNumber(a, b);
+
 const notFound = () => new TRPCError({ code: "NOT_FOUND", message: "Nation not found" });
 
 /** A capital placed on the map is renamed or moved there, so the text and the map never differ. */
@@ -126,6 +159,9 @@ export const editorProcedures = {
         currentGdpPerCapita: true,
         baselinePopulation: true,
         baselineGdpPerCapita: true,
+        inflationRate: true,
+        unemploymentRate: true,
+        totalDebtGDPRatio: true,
         nationalIdentity: {
           select: {
             ...(Object.fromEntries(EDITOR_IDENTITY_KEYS.map((key) => [key, true])) as Record<
@@ -154,7 +190,18 @@ export const editorProcedures = {
       },
     });
     if (!country) throw notFound();
-    return country;
+    // Each figure's estimate from the economy: the hint (and what an empty field returns to).
+    const [figureEstimates, softScores] = await Promise.all([
+      loadEconomicFigureEstimates(ctx.db, input.countryId),
+      loadSoftScores(ctx.db, input.countryId),
+    ]);
+    // Government effectiveness as MyCountry shows it, and what it falls back to with no institutions.
+    const effectiveness = softScores && {
+      current: softScores.effective.governmentEffectiveness,
+      withoutInstitutions: deriveSoftScores({ ...softScores.inputs, components: [] })
+        .governmentEffectiveness,
+    };
+    return { ...country, figureEstimates, effectiveness };
   }),
 
   /** Whether the nation can take a name: unique in its realm, not a lore nation, has a slug. */
@@ -268,9 +315,11 @@ export const editorProcedures = {
                   ...Object.fromEntries(keys.map((key) => [key, true])),
                   ...(movesCapital && { capitalCityId: true }),
                 },
-              })) as (Partial<Record<EditorIdentityKey, string | null>> & {
-                capitalCityId?: string | null;
-              }) | null)
+              })) as
+                | (Partial<Record<EditorIdentityKey, string | null>> & {
+                    capitalCityId?: string | null;
+                  })
+                | null)
             : null;
         refuseIfMapCapital(movesCapital && !!stored?.capitalCityId);
         const storedImages =
@@ -499,5 +548,34 @@ export const editorProcedures = {
         currentPopulation: population,
         currentGdpPerCapita: gdpPerCapita,
       };
+    }),
+
+  /**
+   * Economic figures: inflation, unemployment and debt as the nation records them. A number saves as real; null
+   * clears it, and the figure reads as its estimate from the economy again. Checked per field changed.
+   */
+  saveEconomicFigures: rateLimitedMutationProcedure
+    .input(figuresInput)
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      const { countryId, figures, expected } = input;
+      const keys = ESTIMATED_FIELDS.filter((key) => figures[key] !== undefined);
+      const data = Object.fromEntries(keys.map((key) => [key, figures[key] ?? null]));
+
+      await ctx.db.$transaction(async (tx) => {
+        const before = await tx.country.findUnique({
+          where: { id: countryId },
+          select: { inflationRate: true, unemploymentRate: true, totalDebtGDPRatio: true },
+        });
+        if (!before) throw notFound();
+        refuseIfChanged(
+          keys.some((key) => !sameFigure(before[key], expected[key])),
+          "figures"
+        );
+        await tx.country.update({ where: { id: countryId }, data });
+      });
+
+      await afterSave(ctx.auth?.userId);
+      return data as Partial<Record<EstimatedField, number | null>>;
     }),
 };

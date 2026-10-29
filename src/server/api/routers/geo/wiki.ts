@@ -6,6 +6,7 @@
  * searching wiki pages, and scanning wiki text for place names.
  */
 
+import { iiwikiFeatureMiddleware } from "~/server/api/trpc/middleware";
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, cachedPublicProcedure } from "~/server/api/trpc";
@@ -44,6 +45,7 @@ async function realmWikis(
 export const geoWikiRouter = createTRPCRouter({
   /** Fetch wiki article intro for a map feature (city/POI) by its linked wiki page title. */
   getFeatureWikiIntro: cachedPublicProcedure
+    .use(iiwikiFeatureMiddleware("country"))
     .input(realmScopeInput.extend({ wikiPageTitle: z.string() }))
     .query(async ({ ctx, input }) => {
       const name = input.wikiPageTitle.trim();
@@ -70,6 +72,7 @@ export const geoWikiRouter = createTRPCRouter({
    * Used by the map editor WikiLinkWizard for auto-filling city/POI data.
    */
   parseWikiInfobox: cachedPublicProcedure
+    .use(iiwikiFeatureMiddleware("country"))
     .input(realmScopeInput.extend({ pageTitle: z.string().min(1).max(200) }))
     .query(async ({ ctx, input }) => {
       const title = input.pageTitle.trim();
@@ -132,6 +135,7 @@ export const geoWikiRouter = createTRPCRouter({
    * type-ahead suggestions when linking a map feature to a wiki article.
    */
   searchWikiPages: cachedPublicProcedure
+    .use(iiwikiFeatureMiddleware("country"))
     .input(
       realmScopeInput.extend({
         query: z.string().min(1).max(100),

@@ -45,6 +45,24 @@ export function allocationAt(
 
 /** Most a budget may allocate in total, in percent of `totalBudget`. */
 const BUDGET_TOTAL_PERCENT = 100;
+/** Rounding slack on the 100% cap (generated shares can add up to 99.98% or 100.02%). */
+const BUDGET_TOTAL_TOLERANCE = 0.05;
+
+/**
+ * Why an owner may not set a line from `current` to `next` percent when the other lines hold `othersTotal`, or null.
+ * The budget may not allocate past 100% (owner ruling); a cut is always allowed, so an over-allocated budget can
+ * come down.
+ */
+export function allocationOverCap(input: {
+  current: number;
+  next: number;
+  othersTotal: number;
+}): string | null {
+  if (input.next <= input.current) return null;
+  if (input.othersTotal + input.next <= BUDGET_TOTAL_PERCENT + BUDGET_TOTAL_TOLERANCE) return null;
+  const left = Math.max(0, BUDGET_TOTAL_PERCENT - input.othersTotal);
+  return `The budget would allocate more than 100%. ${left.toFixed(1)}% is left for this department.`;
+}
 
 export interface ShareLine {
   id: string;
@@ -157,4 +175,27 @@ export function maintenanceByYear(
     byYear[year] = (byYear[year] ?? 0) + maintenanceCharge(row.actualEffect);
   }
   return byYear;
+}
+
+/**
+ * Shares (percent, adding up to 100) for departments a government already has but never budgeted:
+ * each department's default share for its category (`defaults`, the form's shares, 0 to 1), the
+ * first department of a category taking it; a department with no default share takes an equal
+ * share of the departments. Empty for no departments.
+ */
+export function sharesForDepartments(
+  categories: readonly string[],
+  defaults: ReadonlyMap<string, number>
+): number[] {
+  if (categories.length === 0) return [];
+  const used = new Set<string>();
+  const equal = 1 / categories.length;
+  const weights = categories.map((category) => {
+    const share = defaults.get(category);
+    if (share === undefined || used.has(category)) return equal;
+    used.add(category);
+    return share;
+  });
+  const total = weights.reduce((sum, w) => sum + w, 0);
+  return weights.map((w) => (total > 0 ? (w / total) * 100 : 100 / categories.length));
 }

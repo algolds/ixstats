@@ -117,3 +117,21 @@ export function startsRedirect(line: string): boolean {
   }
   return line.startsWith("[[", at);
 }
+
+/** What may be indented without changing its meaning: templates, tables and their cells, tags, comments, magic words. */
+const INDENT_TOLERANT = /^(?:\{\{|\{\||<|[|!]|__)/;
+/** What an indent changes: MediaWiki starts a list, a heading or a rule only at the very start of a line. */
+const LINE_START_MARKUP = /^(?:[*#:;=]|----)/;
+
+/**
+ * Whether `line` (a logical line, untrimmed) is preformatted text for MediaWiki or would change meaning without its
+ * indent: a line that starts with a space (MediaWiki shows it in a `<pre>` box), or any indented list, heading or rule
+ * marker. Such lines are kept as written; reading them as a paragraph or list would drop the indent on an edit.
+ */
+export function isIndentedLine(line: string): boolean {
+  const first = line.charCodeAt(0);
+  if (first !== 32 && first !== 9) return false;
+  const rest = line.trimStart();
+  if (rest === "" || INDENT_TOLERANT.test(rest) || isMagicWordLine(rest)) return false;
+  return first === 32 || LINE_START_MARKUP.test(rest);
+}

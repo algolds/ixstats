@@ -11,7 +11,8 @@ import React, {
 } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
-import { springSnappy } from "~/lib/design/motion";
+import { springSnappy, tweenExit } from "~/lib/design/motion";
+import { useHydrated } from "~/hooks/useHydrated";
 
 // The island morphs with the snappy spring: it answers a press directly, at the same settle
 // speed as the controls inside it.
@@ -250,12 +251,9 @@ const DynamicIslandContent = ({
 
 export const Halo = ({ children, id, ...props }: { children: ReactNode; id: string }) => {
   const [screenSize, setScreenSize] = useState("desktop");
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
 
   useEffect(() => {
-    // oxlint-disable-next-line
-    setMounted(true);
-
     // One measurement per frame; setScreenSize skips the re-render when the bucket is unchanged.
     let rafId: number | undefined;
     const handleResize = () => {
@@ -308,7 +306,7 @@ export const HaloContainer = ({ className, children }: DynamicContainerProps) =>
         y: 0,
         transition: springSnappy,
       }}
-      exit={{ opacity: 0, scale: 0.98, y: 10, transition: { duration: 0.15, ease: "easeOut" } }}
+      exit={{ opacity: 0, scale: 0.98, y: 10, transition: tweenExit }}
       className={className}
     >
       {children}

@@ -1,5 +1,5 @@
 import { MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -23,6 +23,7 @@ import {
   Map,
   Wallet,
   ScaleFrameEnlarge as Scale,
+  ProfileCircle,
 } from "iconoir-react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
@@ -36,6 +37,24 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Button } from "~/components/ui/button";
 import { tweenFast } from "~/lib/design/motion";
 
+// This view is loaded with `ssr: false` (WikiHalo), so its first render is already in the browser.
+function readScratchpad(): string {
+  try {
+    return localStorage.getItem("wikios:scratchpad") || "";
+  } catch {
+    return ""; // restricted storage
+  }
+}
+
+function readPausedSessions(): PausedSession[] {
+  try {
+    const savedSessions = localStorage.getItem("wikios:pausedSessions");
+    return savedSessions ? (JSON.parse(savedSessions) as PausedSession[]) : [];
+  } catch {
+    return []; // restricted storage or invalid JSON
+  }
+}
+
 interface WikiProfileViewProps {
   onClose: () => void;
 }
@@ -47,8 +66,8 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
   const [activeTab, setActiveTab] = useState<"workspace" | "profile">("profile");
   const [view, setView] = useState<"tabs" | "country-actions">("tabs");
-  const [scratchpad, setScratchpad] = useState("");
-  const [pausedSessions, setPausedSessions] = useState<PausedSession[]>([]);
+  const [scratchpad, setScratchpad] = useState(readScratchpad);
+  const [pausedSessions] = useState(readPausedSessions);
 
   // Active cosmetics
   const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
@@ -72,22 +91,6 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
     (user?.username
       ? user.username.charAt(0).toUpperCase() + user.username.slice(1)
       : (user?.firstName ?? ""));
-
-  // Load localStorage data
-  useEffect(() => {
-    try {
-      const savedNotes = localStorage.getItem("wikios:scratchpad") || "";
-      // oxlint-disable-next-line
-      setScratchpad(savedNotes);
-
-      const savedSessions = localStorage.getItem("wikios:pausedSessions");
-      if (savedSessions) {
-        setPausedSessions(JSON.parse(savedSessions));
-      }
-    } catch {
-      // ignore SSR or restricted storage
-    }
-  }, []);
 
   // Handle Scratchpad Change & Auto-Save
   const handleScratchpadChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -147,7 +150,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {/* Left Column: Paused/Saved Sessions */}
                 <div className="space-y-3">
-                  <div className="text-label-secondary text-eyebrow flex items-center gap-2">
+                  <div className="text-label-secondary text-footnote flex items-center gap-2">
                     <History className="h-3 w-3" />
                     <span>Saved and paused sessions</span>
                   </div>
@@ -202,7 +205,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
                 {/* Right Column: Quick Notes / Scratchpad */}
                 <div className="flex flex-col space-y-2">
-                  <div className="text-label-secondary text-eyebrow flex items-center gap-2">
+                  <div className="text-label-secondary text-footnote flex items-center gap-2">
                     <FileText className="h-3 w-3" />
                     <span>Wiki scratchpad</span>
                   </div>
@@ -211,7 +214,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                       value={scratchpad}
                       onChange={handleScratchpadChange}
                       placeholder="Jot down quick worldbuilding notes, drafts, task lists, or article revisions here... (auto-saves)"
-                      className="border-separator bg-fill-4 text-label placeholder:text-label-tertiary focus:border-separator focus:bg-fill-3 rounded-row text-footnote min-h-[140px] w-full resize-none border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
+                      className="border-separator bg-fill-4 text-label placeholder:text-label-tertiary focus:border-separator focus:bg-fill-3 rounded-row text-footnote min-h-[140px] w-full resize-none border p-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus:outline-none"
                       style={{ scrollbarWidth: "thin" }}
                     />
                   </div>
@@ -239,8 +242,8 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                           className="h-full w-full rounded-full object-cover"
                         />
                       ) : (
-                        <div className="bg-fill-4 text-body flex h-full w-full items-center justify-center rounded-full">
-                          👤
+                        <div className="bg-fill-4 flex h-full w-full items-center justify-center rounded-full">
+                          <ProfileCircle aria-hidden className="text-label-secondary size-6" />
                         </div>
                       )}
                     </AvatarGlow>
@@ -267,7 +270,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                             {lorewardStats.stats?.totalScore ?? 0}
                           </span>
                         </div>
-                        <span className="text-label-secondary text-eyebrow">Score</span>
+                        <span className="text-label-secondary text-footnote">Score</span>
                       </div>
                       <div className="flex flex-col items-center">
                         <div className="flex items-center gap-2">
@@ -276,7 +279,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                             {lorewardStats.stats?.currentStreak ?? 0}
                           </span>
                         </div>
-                        <span className="text-label-secondary text-eyebrow">Streak</span>
+                        <span className="text-label-secondary text-footnote">Streak</span>
                       </div>
                     </div>
                   )}

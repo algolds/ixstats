@@ -55,11 +55,7 @@ export function useNavBadges(signedIn: boolean): NavBadges {
     if (issues > 0) badges["issues-pending"] = { kind: "count", value: issues };
     if (unseenBuild) badges["whats-new"] = { kind: "action", label: "New" };
     if (balance?.canClaimDailyBonus) {
-      badges["daily-reward"] = {
-        kind: "action",
-        label: balance.loginStreak > 0 ? `${balance.loginStreak}d` : "New",
-        ...(balance.loginStreak > 0 && { streak: balance.loginStreak }),
-      };
+      badges["daily-reward"] = { kind: "action", label: "New" };
     }
     return badges;
   }, [signedIn, inbox.count, balance, folderCounts?.inbox, pendingIssues?.total, unseenBuild]);

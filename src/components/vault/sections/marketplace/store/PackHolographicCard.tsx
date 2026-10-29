@@ -137,7 +137,7 @@ export function PackHolographicCard({
               e.stopPropagation();
             }}
             className={cn(
-              "absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white/80 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/85",
+              "absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white/80 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] hover:bg-black/85",
               focusRing,
               hitSlop
             )}

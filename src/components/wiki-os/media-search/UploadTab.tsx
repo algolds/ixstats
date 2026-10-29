@@ -142,7 +142,7 @@ export function UploadTab({ onImageSelect, onClose, isUploading, setIsUploading 
           }}
           aria-disabled={isUploading}
           className={cn(
-            "rounded-row bg-fill-2 flex min-h-[200px] cursor-pointer flex-col items-center justify-center border-2 border-dashed p-10 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+            "rounded-row bg-fill-2 flex min-h-[200px] cursor-pointer flex-col items-center justify-center border-2 border-dashed p-10 text-center transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
             isUploading && "pointer-events-none opacity-60",
             isDragging
               ? "border-tint bg-tint/5"

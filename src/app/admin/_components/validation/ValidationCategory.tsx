@@ -26,7 +26,7 @@ export const ValidationCategory = React.memo(function ValidationCategory({
     <Card
       className={cn(
         "flex flex-col gap-6 py-6",
-        `border ${getStatusBgColor(overallStatus)} transition-[color,background-color,border-color,box-shadow,opacity,transform]`
+        `border ${getStatusBgColor(overallStatus)} transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]`
       )}
     >
       <CardHeader

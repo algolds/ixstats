@@ -15,7 +15,7 @@ const toggleVariants = cva(
     "relative inline-flex cursor-pointer items-center justify-center gap-2 font-medium whitespace-nowrap select-none",
     "text-label-secondary hover:bg-fill-4 hover:text-label",
     "data-[state=on]:bg-tint-fill data-[state=on]:text-tint data-[state=on]:hover:bg-tint/20",
-    "facet-press",
+    "transition-colors duration-fast ease-out-facet active:bg-fill-3",
     focusRing,
     hitSlop,
     "disabled:pointer-events-none disabled:opacity-50",

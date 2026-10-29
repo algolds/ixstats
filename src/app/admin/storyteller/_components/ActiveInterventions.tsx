@@ -91,7 +91,7 @@ function CountryInterventionRow({
     detail?.country?.storytellerEffects?.filter((d: { isActive: boolean }) => d.isActive) ?? [];
 
   return (
-    <div className="border-separator hover:border-separator rounded-row duration-fast border transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+    <div className="border-separator hover:border-separator rounded-row duration-fast border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]">
       <Button
         variant="ghost"
         aria-expanded={expanded}

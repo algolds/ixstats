@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { applyExchangeCancellation } from "~/lib/diplomacy/exchange-cancellation";
+
+/** Exchanges the host may still edit. */
+const EDITABLE_STATUSES = ["planning", "active"];
 
 export const diplomaticCulturalLifecycleManagementRouter = createTRPCRouter({
   // Update cultural exchange (only title and description)
@@ -26,10 +30,12 @@ export const diplomaticCulturalLifecycleManagementRouter = createTRPCRouter({
         });
       }
 
-      if (!ctx.user?.countryId || exchange.hostCountryId !== ctx.user.countryId) {
+      // The host nation's owner (any nation they own), as when creating it.
+      await assertCountryWriteAccess(ctx, exchange.hostCountryId);
+      if (!EDITABLE_STATUSES.includes(exchange.status)) {
         throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only the host country can edit this exchange",
+          code: "BAD_REQUEST",
+          message: "A cancelled or completed exchange can no longer be edited.",
         });
       }
 
@@ -65,12 +71,7 @@ export const diplomaticCulturalLifecycleManagementRouter = createTRPCRouter({
         });
       }
 
-      if (!ctx.user?.countryId || exchange.hostCountryId !== ctx.user.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only the host country can cancel this exchange",
-        });
-      }
+      await assertCountryWriteAccess(ctx, exchange.hostCountryId);
 
       if (exchange.status !== "planning") {
         throw new TRPCError({
@@ -79,10 +80,17 @@ export const diplomaticCulturalLifecycleManagementRouter = createTRPCRouter({
         });
       }
 
-      await ctx.db.culturalExchange.update({
-        where: { id: input.exchangeId },
+      // Conditional, so two concurrent cancels apply the penalties once.
+      const cancelled = await ctx.db.culturalExchange.updateMany({
+        where: { id: input.exchangeId, status: "planning" },
         data: { status: "cancelled", updatedAt: new Date() },
       });
+      if (cancelled.count !== 1) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only exchanges in planning status can be cancelled",
+        });
+      }
 
       const penalties = await applyExchangeCancellation(ctx.db, exchange);
       return { success: true, penalties };

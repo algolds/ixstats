@@ -41,7 +41,15 @@ import {
   buildTemplateWhere,
   resolveMaxIssues,
   scoreTemplateCandidates,
+  usesRank,
 } from "./evaluators/candidate-selection";
+import {
+  balanceDomains,
+  issueDue,
+  selectPacedCandidates,
+  withRoutineFallback,
+} from "./evaluators/pacing";
+import { createRankCache, type RankSource } from "./realm-rank-store";
 import {
   instantiateCandidate,
   logEvaluation,
@@ -82,7 +90,16 @@ export class NationalIssuesEngine {
   static async evaluateCountry(
     countryId: string,
     db: PrismaClient,
-    options?: { maxIssues?: number; forceDomain?: string; bypassLimits?: boolean; now?: number }
+    options?: {
+      maxIssues?: number;
+      forceDomain?: string;
+      bypassLimits?: boolean;
+      now?: number;
+      /** The run's realm rank tables (the cron shares one cache); built on demand when absent. */
+      ranks?: RankSource;
+      /** Cron cadence: one issue once the nation's gap since its last issue is up (./evaluators/pacing.ts). */
+      paced?: boolean;
+    }
   ): Promise<EvaluationResult> {
     const startTime = Date.now();
     const result: EvaluationResult = {
@@ -139,21 +156,40 @@ export class NationalIssuesEngine {
         take: 200,
       });
 
+      // Paced and not yet due: nothing to hand out, so skip the scoring and the realm's rank table.
+      if (options?.paced && !issueDue(countryId, recentIssues, snapshot.currentIxTime)) return result;
+
       // Get NPC personality for modifier calculations
       const personalityAssignment = await db.nPCPersonalityAssignment.findUnique({
         where: { countryId },
         include: { personality: true },
       });
 
-      // Evaluate each template, then select the top N issues by probability
+      // Rank conditions compare against the realm: load its table only when a template asks.
+      const ranks = templates.some(usesRank)
+        ? await (options?.ranks ?? createRankCache(db)).forCountry(countryId, snapshot.currentIxTime)
+        : null;
+
+      // Evaluate each template, then select the top N issues by probability (paced: one weighted pick when due)
       const candidates = scoreTemplateCandidates(
         templates,
         recentIssues,
         personalityAssignment?.personality ?? null,
         snapshot,
-        result
+        result,
+        ranks ?? undefined
       );
-      const selected = candidates.slice(0, maxIssues);
+      // Routine templates only when nothing else qualified; the paced pick favours domains not seen lately.
+      const pool = withRoutineFallback(candidates);
+      const selected = options?.paced
+        ? selectPacedCandidates(
+            balanceDomains(pool, recentIssues, templates),
+            recentIssues,
+            countryId,
+            snapshot.currentIxTime,
+            maxIssues
+          )
+        : pool.slice(0, maxIssues);
 
       // Instantiate issues
       const targetCountryRecord = await resolveTargetCountryRecord(countryId, db, snapshot);

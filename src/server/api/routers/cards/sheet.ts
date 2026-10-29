@@ -1,4 +1,5 @@
 /** The card sheet (spec §2.3 Detail sheet), and the wiki excerpt its About section reads. */
+import { iiwikiFeatureMiddleware } from "~/server/api/trpc/middleware";
 import { z } from "zod";
 import { cardArticleSourceSchema } from "~/lib/cards/card-sources";
 import { parseSheetFrom } from "~/lib/cards/face/sheet-link";
@@ -26,6 +27,7 @@ export const cardsSheetRouter = createTRPCRouter({
    * page (`unlessUnavailable`): the About section shows no excerpt.
    */
   getWikiArticleExcerpt: publicProcedure
+    .use(iiwikiFeatureMiddleware("cards"))
     .input(z.object({ articleTitle: z.string().min(1), wikiSource: cardArticleSourceSchema }))
     .query(async ({ input }) => {
       const { getArticleWikitext, getArticleIntro } =

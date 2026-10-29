@@ -3,8 +3,6 @@
 
 import type { WikiPageRef } from "~/lib/wiki-os/page-ref";
 
-export const NARRATOR_ACCENT = "#3b82f6";
-
 export const NARRATOR_SPEEDS = [0.8, 1.0, 1.25, 1.5, 2.0];
 
 export const NARRATOR_VOICE_LABELS: Record<string, string> = {

@@ -165,6 +165,7 @@ Recorded departures from a rule above. An exception is scoped to the surface nam
 1. **Country flags in forum author lines and lists (ThinkPages forum).** Identity art otherwise stays in `entity` cards. The forum's identity is the player's country, as on an RMB, so a flag beside an author name in a post header, thread row or list is allowed. Flags stay small and are never used as backdrops or watermarks.
 2. **Board chips on phones (ThinkPages realm landing).** On phones the realm landing shows its boards as a horizontal chip row under the realm header, although `navigation` is otherwise the sidebar and More sheet only. The boards are the realm's content list, not app navigation, and the rail is hidden on phones, so the chips are the only place they can sit.
 3. **Author flags and realm emblems in forum previews outside the forum.** Flags and emblems otherwise stay in `entity` cards. Three previews may show them: the Home feed forum card, the Home "Your realm" panel and the Realms overview board block. They show who wrote the post (avatar and country flag, never a flag for a persona) and the realm it sits in (emblem, else thumbnail). Identity art is limited to those three previews: it does not extend to other feed cards or surfaces, and flags and emblems stay small and are never backdrops or watermarks. Reason: the owner's concept ("Home feed items become real post previews", "a Your realm board panel"). Recorded for owner review.
+4. **WikiOS (`components/wiki-os/`, `app/(wiki-os)/`, `styles/wiki-os/`).** WikiOS keeps its own visual language: `font-brand`, the article and main-page hero headers, and `wikios-*` classes. Facet still applies inside it to copy (section 9), keyboard and touch access (44px targets, no clickable divs), the shared `ui` primitives it imports, and real bugs. Reason: owner ruling 2026-10-28.
 
 ## 5. Type
 
@@ -235,17 +236,19 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
 
 - `Sheet` for tasks, detail views and multi-step flows. It is a right side sheet at 768px and up and a bottom sheet with `medium`/`large` detents below. `size="wide"` is for two-column details.
 - `Dialog` and `AlertDialog` for short confirmations. Popovers, menus and tooltips use the `ui` wrappers.
+- Tooltips share the root `TooltipProvider`: the first opens after 500ms, and a neighbour within 300ms opens at once with no animation. Rich previews (formatted content, links) are a `HoverCard`, not a tooltip.
 - All of them paint `facet-overlay`. Do not restyle their surface.
+- Toasts sit bottom-right (bottom-centre on phones), above the TabBar and clear of the Inspector; Halo shows the title in the island.
 - `ContextMenu` (right-click, long-press, Shift+F10) is a shortcut, never the only way in. Put it on things with an identity (a post, a message, a map feature) and render the same items fragment as the thing's visible "More actions" dropdown: the `DropdownMenuItem` family works inside both. Never put it on prose, links, inputs, editors or empty canvas; the trigger already leaves the browser's menu to Shift+right-click, text fields, links, selections and dialogs the thing opens. A menu opened from a canvas point (the map editor) is a `DropdownMenu` on a 1px anchor at that point.
 
 ## 7. Layout
 
-- The sidebar is a macOS source list (`SourceList`, in `AppSidebar` at 1024px and up: 256px, collapsible to 64px icons, where rows become icons with popovers). It has two levels: every app is a top-level row and the current app discloses its sections. Admin and Settings use area mode: their sections are grouped under sub-headings and replace the app list while you are inside them. Rows carry badges (active country flag, diplomacy inbox count, Vault balance) and a Daily reward action row opens the reward dialog. Below 1024px the `TabBar` holds the primary apps and its More sheet reuses the same `SourceList`.
+- The sidebar is a macOS source list (`SourceList`, in `AppSidebar` at 1024px and up: 256px, 224px at its narrowest, collapsible to 64px icons, where rows become icons with popovers). It has two levels: every app is a top-level row and the current app discloses its sections. Admin and Settings use area mode: their sections are grouped under sub-headings and replace the app list while you are inside them. Rows carry badges (active country flag, diplomacy inbox count, Vault balance) and a Daily reward action row opens the reward dialog. App names never truncate at 224px: no icon buttons or streak pill sit beside a name (only its trailing badge or expand chevron), so MyCountry lists Public profile and Editor rows once your country is known, and the login streak shows in the Vault, not the sidebar. Below 1024px the `TabBar` holds the primary apps and its More sheet reuses the same `SourceList`.
 - The sidebar and the More sheet are the only navigation. A page renders no navigation of its own (no tab rail, pill bar or hidden sub-nav); in-page `Tabs` switch views of one thing, not destinations.
 - Both read the one section map in `src/lib/navigation/app-sections.ts`. Add a destination there, not in a page.
-- Halo is the floating island at the top, in Chrome glass. `PageHeader` keeps `--shell-halo-reserve` clear for it. Do not build a second top bar.
+- Halo is the floating island at the top, in Chrome glass. `PageHeader` keeps `--shell-halo-reserve` clear for it. Halo centres on the content column on every page, Inspector or not; PageHeader actions wrap within their half beside it. Do not build a second top bar.
 - `AccountMenu` is the account: `layout="sidebar"` is a popover from the sidebar footer, `layout="sheet"` is inline in the More sheet.
-- Layout variables (read, never redefine): `--shell-sidebar-width`, `--shell-tabbar-height`, `--shell-top-offset`, `--shell-header-top`, `--shell-halo-reserve`. Sticky rails use `top-(--shell-top-offset)`.
+- Layout variables (read, never redefine): `--shell-sidebar-width`, `--shell-tabbar-height`, `--shell-top-offset`, `--shell-page-top`, `--shell-header-top`, `--shell-halo-reserve`. Sticky rails use `top-(--shell-top-offset)`.
 - Chromeless routes (Maps, full-screen editors) set `data-chromeless` on the app shell.
 - Inspector: at most one trailing column per page. It replaces hand-rolled side rails.
 - Headers: `PageHeader` for pages, `EntityHeader` for entity pages. No hero card as a header.
@@ -253,13 +256,14 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
 ## 8. Motion and feedback
 
 - Use the named motion from `src/lib/design/motion.ts` and the matching CSS tokens. No ad hoc spring numbers.
-  - Springs: `springSnappy` (controls), `springSmooth` (sheets, sidebar, layout), `springGentle` (emphasis, reveals).
+  - Springs: `springSnappy` (controls) and `springSmooth` (sheets, sidebar, layout) are critically damped; `springGentle` (emphasis, reveals) and `springMomentum` (a release that carries fling velocity) overshoot slightly. The swipe presets map onto these.
   - Tweens: `tweenFast` 150ms for colour and opacity, `tweenExit` 120ms (exits are faster than entrances), `EASE_OUT_FACET`.
   - In CSS: `duration-fast`, `duration-exit`, `ease-out-facet`.
 - Press feedback:
-  - Controls change colour (Button, Switch, rows, segments).
+  - Controls change colour (Button, Switch, rows, segments, toggles, pills). There is no scale.
   - `facet-press` (scale 0.98; `facet-press-sm` 0.95; `facet-press-subtle` 0.99) and `facet-lift` are only for pressable cards and tiles. `Card interactive` applies both.
   - Never `transition-all`, never a `scale(0)` entrance.
+  - Arbitrary transition lists name `scale` and `translate` (the properties Tailwind v4 writes), never `transform`.
 - Sounds (Cuelume): play only the `soundCues` moments (present, dismiss, success, error, destructive, arrival, reveal, notify). No hover ticks and no per-control `data-cuelume-*` attributes in new code.
 - Preferences are written to `<html>` and must all keep working. Use the Tailwind variants, not raw media queries:
   - Reduce Motion: `motion-reduce:` (honours `data-motion="reduced"`). Springs fall back to `REDUCED_MOTION_FADE`.
@@ -272,7 +276,7 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
 
 ## 9. Copy
 
-- Sentence case everywhere: buttons, headings, labels, tabs. Capitalise product nouns: IxStats, MyCountry, Directive(s), ThinkPages, IxVault, Halo, IxTime, IxWorld, WikiOS.
+- Sentence case everywhere: buttons, headings, labels, tabs. Capitalise product nouns: IxStates, MyCountry, Directive(s), ThinkPages, IxVault, Halo, IxTime, IxWorld, WikiOS.
 - Say what the thing is and does. Empty states say what is missing and what to do next ("No drafts yet. Start one from the Builder."). Errors say what happened and how to recover.
 - No em dashes in UI strings. Use a full stop, comma, colon or "·" as a separator, and "–" for an empty value.
 - No subtitle that restates its title.
@@ -329,4 +333,9 @@ The tests under `src/tests/architecture/` enforce parts of this file. Run the re
 - `facet-ratchet.test.ts`: counts of eyebrows, uppercase stat labels, em dashes, `Sparks`, emoji, `hover:scale`, hex classes, raw palette classes and `animate-ping` may only fall. Lower the baseline with `UPDATE_FACET_RATCHET=1 bun run test -- facet-ratchet` after removing tells.
 - `token-contrast.test.ts`: CSS tokens match `src/lib/design/tokens.ts`; AA contrast for label, tint and ink pairs, and for labels on the Pane over the tinted canvas and on Chrome, in both themes; Reduce Transparency and Increase Contrast make every layer opaque.
 - `css-layering.test.ts`: every Facet sheet is layered (no top-level rules, no `!important`), and utilities set no position, z-index, radius, margin or letter-spacing.
+- `facet-guards.test.ts` (kit guards): no tw-animate classes (not installed), no `transform` in arbitrary transition lists, no `facet-press` on controls, and the removed decorative kit pieces stay deleted.
+- `motion-tokens.test.ts`: default springs critically damped, CSS mirrors match `motion.ts`, swipe presets are named springs. The ratchet's `adhocSpring` tell counts literal `stiffness:` values in feature code.
+- `halo-motion.test.ts` keeps Halo still. `facet-zero-dirs.test.ts` pins converted directories at zero for every ratchet tell; each app phase adds its directories.
+- `facet-touch-targets.test.ts`: 44px menu rows and sheet grabber on coarse pointers.
+- `product-name.test.ts`: page and component copy says IxStates.
 - `facet-guards.test.ts`: no `transition-all`, sub-12px text, arbitrary z-index, `dark:` or hex classes in converted apps, `@radix-ui` outside `src/components/ui`, `lucide-react`, removed decoration, or raw `backdrop-blur-*`; gradients and textures stay on sanctioned classes.

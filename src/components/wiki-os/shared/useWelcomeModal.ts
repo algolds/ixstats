@@ -15,18 +15,18 @@ export function useWelcomeModal({
   storageKey: string;
   version: string;
 }) {
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(open ?? false);
   const [activeTab, setActiveTab] = useState(0);
 
-  useEffect(() => {
+  // Controlled: follow `open`, back on the first tab each time it opens
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open !== undefined) {
-      // oxlint-disable-next-line
       setShow(open);
-      if (open) {
-        setActiveTab(0);
-      }
+      if (open) setActiveTab(0);
     }
-  }, [open]);
+  }
 
   useEffect(() => {
     if (open === undefined) {

@@ -35,7 +35,7 @@ export function DeclaredCard({
       role="region"
       aria-label="Directive declared"
       aria-live="polite"
-      className="animate-in fade-in rounded-card p-4 duration-200 sm:p-6"
+      className="rounded-card p-4 sm:p-6"
     >
       <div className="flex items-start gap-3">
         <CheckCircle className={cn("mt-0.5 h-6 w-6 shrink-0", TONE_CLASSES.positive.text)} />

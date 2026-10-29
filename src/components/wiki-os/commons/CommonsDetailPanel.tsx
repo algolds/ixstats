@@ -27,6 +27,7 @@ import {
 } from "~/components/wiki-os/media-search/CopyFormatSelector";
 import type { CommonsImage } from "~/components/wiki-os/media-search/types";
 import { attributionLine } from "~/components/wiki-os/editor/ImageSearchGrid";
+import { isIiwikiUrl } from "~/lib/wiki-os/wiki-hosts";
 
 interface CommonsDetailPanelProps {
   image: CommonsImage;
@@ -172,7 +173,7 @@ function DetailPanelBody({ image, onClose }: CommonsDetailPanelProps) {
 
   const handleStash = useCallback(() => {
     const isLocal = isMediaWikiUrl(image.descriptionUrl);
-    const isIiwiki = image.descriptionUrl.includes("iiwiki.com");
+    const isIiwiki = isIiwikiUrl(image.descriptionUrl);
     let title = `commons:${image.title}`;
     if (isLocal) {
       title = image.title;
@@ -197,7 +198,7 @@ function DetailPanelBody({ image, onClose }: CommonsDetailPanelProps) {
 
   const viewSourceLabel = isMediaWikiUrl(image.descriptionUrl)
     ? "View on the wiki"
-    : image.descriptionUrl.includes("iiwiki.com")
+    : isIiwikiUrl(image.descriptionUrl)
       ? "View on IIWiki"
       : "View on Commons";
 

@@ -88,6 +88,9 @@ function storedRows() {
       currentTotalGdp: 250_000_000_000,
       totalWorkforce: 6_000_000,
       landArea: 100_000,
+      inflationRate: null as number | null,
+      unemploymentRate: 6.1 as number | null,
+      totalDebtGDPRatio: null as number | null,
       updatedAt: new Date("2026-10-20T10:00:00.000Z"),
     },
     identity: {
@@ -211,6 +214,11 @@ const sizeInput = {
   gdpPerCapita: 30_000,
   expected: { baselinePopulation: 9_000_000, baselineGdpPerCapita: 25_000 },
 };
+const figuresInput = {
+  countryId,
+  figures: { inflationRate: 3.2, unemploymentRate: null },
+  expected: { inflationRate: null, unemploymentRate: 6.1 },
+};
 const renameInput = { countryId, name: "  New   Testland ", expected: { name: "Testland" } };
 
 type Caller = ReturnType<typeof setup>["caller"];
@@ -258,6 +266,14 @@ const SECTIONS: Array<{
       rows.country.baselinePopulation = 15_000_000;
     },
     stale: "Population and wealth changed since you opened it",
+  },
+  {
+    name: "saveEconomicFigures",
+    save: (c, target) => c.saveEconomicFigures({ ...figuresInput, countryId: target }),
+    anotherTab: (rows) => {
+      rows.country.unemploymentRate = 7;
+    },
+    stale: staleMessage("figures"),
   },
   {
     name: "rename",
@@ -331,6 +347,43 @@ describe("every section save", () => {
 });
 
 describe("what each save writes", () => {
+  it("saveEconomicFigures stores a typed figure, clears an emptied one to null and returns them", async () => {
+    const { db, caller } = setup();
+    const result = await caller.saveEconomicFigures(figuresInput);
+    expect(result).toEqual({ inflationRate: 3.2, unemploymentRate: null });
+    expect(db.country.update).toHaveBeenCalledWith({
+      where: { id: countryId },
+      data: { inflationRate: 3.2, unemploymentRate: null },
+    });
+    expect(written(db)).toEqual(["country"]);
+  });
+
+  it("saveEconomicFigures keeps a 0% debt but refuses 0% inflation or unemployment, bad bounds and missing originals", async () => {
+    const { db, caller } = setup();
+    const refuses = (input: Parameters<Caller["saveEconomicFigures"]>[0]) =>
+      expect(caller.saveEconomicFigures(input)).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await refuses({ countryId, figures: { inflationRate: 0 }, expected: { inflationRate: null } });
+    await refuses({
+      countryId,
+      figures: { unemploymentRate: 0 },
+      expected: { unemploymentRate: 6.1 },
+    });
+    await refuses({
+      countryId,
+      figures: { unemploymentRate: 80 },
+      expected: { unemploymentRate: 6.1 },
+    });
+    await refuses({ countryId, figures: { totalDebtGDPRatio: 40 }, expected: {} });
+    expect(written(db)).toEqual([]);
+    expect(
+      await caller.saveEconomicFigures({
+        countryId,
+        figures: { totalDebtGDPRatio: 0 },
+        expected: { totalDebtGDPRatio: null },
+      })
+    ).toEqual({ totalDebtGDPRatio: 0 });
+  });
+
   it("saveIdentity writes only the fields that changed and returns them", async () => {
     const { db, caller } = setup();
     expect(await caller.saveIdentity(saveCapital)).toEqual({

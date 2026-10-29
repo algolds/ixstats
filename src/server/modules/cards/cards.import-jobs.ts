@@ -111,7 +111,11 @@ const stageItem: StageItem = (db, source, input, context) =>
 /** The wiki's client for this run, and its stored rarity table. */
 async function runContext(db: PrismaClient, source: CardWikiSource): Promise<ImportContext> {
   // Its first request waits too: it may replace a client whose last request just failed, or follow the last run's.
-  const client = createDiscoveryClient(source, { maxRequests: RUN_REQUEST_CAP, pauseFirst: true });
+  const client = createDiscoveryClient(source, {
+    maxRequests: RUN_REQUEST_CAP,
+    pauseFirst: true,
+    feature: "cards",
+  });
   return {
     query: client.query,
     pace: client.pace,

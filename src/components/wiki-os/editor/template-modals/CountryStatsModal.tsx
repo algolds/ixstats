@@ -35,7 +35,12 @@ const STAT_FIELDS = [
   { value: "currencySymbol", label: "Currency symbol" },
 ];
 
-export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
+/** Mounted only while open, so every opening starts from a fresh form. */
+export function CountryStatsModal(props: BaseModalProps) {
+  return props.isOpen ? <CountryStatsModalContent {...props} /> : null;
+}
+
+function CountryStatsModalContent({ isOpen, onClose, onInsert }: BaseModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCountry, setSelectedCountry] = useState<{ id: string; name: string } | null>(null);
   const [selectedStat, setSelectedStat] = useState("population");
@@ -50,19 +55,11 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
   );
 
   useEffect(() => {
-    if (isOpen) {
-      // oxlint-disable-next-line
-      setSearchQuery("");
-      setSelectedCountry(null);
-      setSelectedStat("population");
-      // Focus search input on open
-      setTimeout(() => {
-        firstInputRef.current?.focus();
-      }, 50);
-    }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
+    // Focus search input on open
+    setTimeout(() => {
+      firstInputRef.current?.focus();
+    }, 50);
+  }, []);
 
   const handleInsertStat = () => {
     if (!selectedCountry) return;

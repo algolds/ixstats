@@ -59,7 +59,7 @@ function Slider({
           aria-labelledby={ariaLabelledBy}
           className={cn(
             "border-separator shadow-card relative block size-5 shrink-0 cursor-grab rounded-full border bg-white active:cursor-grabbing",
-            "ease-out-facet transition-[box-shadow,transform] duration-150 active:scale-[1.08] motion-reduce:active:scale-100",
+            "ease-out-facet transition-[box-shadow,scale,translate] duration-150 active:scale-[1.08] motion-reduce:active:scale-100",
             "focus-visible:outline-tint outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid",
             "disabled:pointer-events-none disabled:opacity-50",
             "pointer-coarse:after:absolute pointer-coarse:after:top-1/2 pointer-coarse:after:left-1/2 pointer-coarse:after:size-11 pointer-coarse:after:-translate-x-1/2 pointer-coarse:after:-translate-y-1/2"

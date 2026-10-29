@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect } from "react";
+import { useHydrated } from "~/hooks/useHydrated";
 import { api } from "~/trpc/react";
 import { type Actions, type AppAbility, type Subjects, defineAbilityFor } from "~/lib/auth";
 import { useUser } from "@clerk/nextjs";
@@ -48,20 +49,13 @@ export function AbilityProvider({ children }: AbilityProviderProps) {
     refetchOnWindowFocus: false,
   });
 
-  const [ability, setAbility] = useState<AppAbility>(defaultAbility);
-
-  // Re-build abilities when data changes
-  useEffect(() => {
-    if (user && data) {
-      // oxlint-disable-next-line
-      setAbility(
-        defineAbilityFor(data.role, data.permissions, data.membershipTier, data.unlockedTools)
-      );
-    } else if (isLoaded && !user) {
-      // Clear/Reset to guest abilities on logout
-      setAbility(defineAbilityFor("guest", [], "basic", []));
-    }
-  }, [data, user, isLoaded]);
+  // Guest abilities on the server and while hydrating (so server HTML always matches), and for
+  // signed-out visitors or until the signed-in user's abilities load; theirs after that
+  const hydrated = useHydrated();
+  const ability =
+    hydrated && user && data
+      ? defineAbilityFor(data.role, data.permissions, data.membershipTier, data.unlockedTools)
+      : defaultAbility;
 
   // Listen for custom event to refetch permissions when they are updated in the admin panel
   useEffect(() => {

@@ -79,7 +79,7 @@ export function NationStatesCardsPanel() {
           >
             NationStates API
           </a>
-          . IxStats is not affiliated with or endorsed by NationStates. Card artwork, flags and
+          . IxStates is not affiliated with or endorsed by NationStates. Card artwork, flags and
           emblems remain the copyright of their authors.
         </p>
       </div>

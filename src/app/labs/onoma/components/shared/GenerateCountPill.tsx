@@ -26,7 +26,7 @@ export function GenerateCountPill({
   setBatchCount,
 }: GenerateCountPillProps) {
   return (
-    <div className="bg-tint hover:bg-tint-hover active:bg-tint-hover group rounded-row border-separator shadow-card relative flex h-11 w-full items-center overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none">
+    <div className="bg-tint hover:bg-tint-hover active:bg-tint-hover group rounded-row border-separator shadow-card relative flex h-11 w-full items-center overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] select-none">
       <Button
         variant="ghost"
         onClick={onGenerate}

@@ -391,7 +391,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                         <div
                           key={rule.id}
                           className={cn(
-                            "border-separator bg-surface rounded-control flex flex-wrap items-center gap-2 border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] sm:flex-nowrap",
+                            "border-separator bg-surface rounded-control flex flex-wrap items-center gap-2 border p-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] sm:flex-nowrap",
                             !rule.enabled && "opacity-50"
                           )}
                         >
@@ -578,7 +578,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                       <div
                         key={`${res.original}-${idx}`}
                         className={cn(
-                          "border-separator bg-surface rounded-control border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                          "border-separator bg-surface rounded-control border p-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
                           hasChanged && "border-tint/30 bg-tint/5"
                         )}
                       >

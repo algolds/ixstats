@@ -8,6 +8,31 @@ import { navigateTo } from "~/lib/utils";
 import { usePermissions, ROLE_LEVELS } from "~/hooks/usePermissions";
 import { isSystemOwner } from "~/lib/auth";
 
+// Skip setup redirect for these paths
+const SKIP_SETUP_PATHS = [
+  "/setup",
+  "/sign-in",
+  "/sign-up",
+  "/api",
+  "/trpc",
+  "/_next",
+  "/favicon.ico",
+  "/admin", // Always skip setup redirect for admin page
+  "/countries", // Skip setup redirect for country pages
+  "/help", // Skip setup redirect for help center articles
+  "/wiki", // Skip setup redirect for wikiOS
+  "/thinkpages", // public forum, readable without a nation
+  "/dashboard/post/", // public feed posts (the Dashboard itself stays gated)
+  "/dashboard/profile/", // public persona profiles
+  "/builder", // founding a nation: /setup's own button leads here, and a reload must stay on the step
+  "/mycountry/welcome", // the page right after founding, while the profile still reads no nation
+];
+
+/** Whether a page is exempt from sending a nation-less player to /setup. */
+export function shouldSkipSetup(pathname: string | null): boolean {
+  return SKIP_SETUP_PATHS.some((path) => pathname?.startsWith(path) ?? false);
+}
+
 export function SetupRedirect() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
@@ -20,25 +45,7 @@ export function SetupRedirect() {
     ? permissionUser.role.level <= ROLE_LEVELS.ADMIN
     : false;
 
-  // Skip setup redirect for these paths
-  const skipSetupPaths = [
-    "/setup",
-    "/sign-in",
-    "/sign-up",
-    "/api",
-    "/trpc",
-    "/_next",
-    "/favicon.ico",
-    "/admin", // Always skip setup redirect for admin page
-    "/countries", // Skip setup redirect for country pages
-    "/help", // Skip setup redirect for help center articles
-    "/wiki", // Skip setup redirect for wikiOS
-    "/thinkpages", // public forum, readable without a nation
-    "/dashboard/post/", // public feed posts (the Dashboard itself stays gated)
-    "/dashboard/profile/", // public persona profiles
-  ];
-
-  const shouldSkipSetup = skipSetupPaths.some((path) => pathname?.startsWith(path) ?? false);
+  const skipSetup = shouldSkipSetup(pathname);
 
   // Query user profile to check if setup is needed
   const {
@@ -46,7 +53,7 @@ export function SetupRedirect() {
     isLoading: profileLoading,
     error: profileError,
   } = api.users.getProfile.useQuery(undefined, {
-    enabled: !!user?.id && !shouldSkipSetup && isLoaded,
+    enabled: !!user?.id && !skipSetup && isLoaded,
     retry: false,
     staleTime: 30000, // Cache for 30 seconds to prevent excessive queries
     refetchOnWindowFocus: false,
@@ -57,7 +64,7 @@ export function SetupRedirect() {
     if (hasRedirected.current) return;
 
     // Only proceed if user is loaded and we're not on a skip path
-    if (isLoaded && user && !shouldSkipSetup) {
+    if (isLoaded && user && !skipSetup) {
       console.log(
         "[SetupRedirect] User loaded:",
         user.id,
@@ -117,7 +124,7 @@ export function SetupRedirect() {
     userProfile,
     profileError,
     router,
-    shouldSkipSetup,
+    skipSetup,
     permissionsLoading,
     isSystemOwnerUser,
     isAdminOrHigher,

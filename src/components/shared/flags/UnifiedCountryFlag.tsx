@@ -2,7 +2,7 @@
 // Unified Country Flag Component - Uses the new unified flag system
 // This will replace the existing CountryFlag component
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { cn } from "~/lib/utils/cn";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -58,20 +58,14 @@ export function UnifiedCountryFlag({
   shadow = false,
   border = false,
 }: UnifiedCountryFlagProps) {
-  const [imageError, setImageError] = useState(false);
+  // The URL whose image failed to load; a new resolved flagUrl clears the error
+  const [failedFlagUrl, setFailedFlagUrl] = useState<string | null>(null);
 
   // Use external props if provided (for bulk loading scenarios)
   // Otherwise use individual flag hook — also falls back when flagUrl is null
   const hookResult = useFlag(
     !externalFlagUrl && externalIsLoading === undefined ? countryName : undefined
   );
-
-  // Reset imageError whenever the resolved flagUrl changes
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setImageError(false);
-    // oxlint-disable-next-line
-  }, [externalFlagUrl, hookResult.flagUrl]);
 
   // Determine which values to use (null flagUrl falls through to hook result)
   const rawFlagUrl = externalFlagUrl || hookResult.flagUrl;
@@ -86,6 +80,7 @@ export function UnifiedCountryFlag({
 
   const isLoading =
     externalLoading || (externalIsLoading !== undefined ? externalIsLoading : hookResult.isLoading);
+  const imageError = flagUrl !== null && flagUrl === failedFlagUrl;
   const error = (!isLoading && !flagUrl) || imageError;
   const isLocal = flagUrl ? hookResult.isLocal : false;
   const isPlaceholder = flagUrl ? hookResult.isPlaceholder : false;
@@ -96,7 +91,7 @@ export function UnifiedCountryFlag({
   const flagClasses = cn(
     dimensionsClass,
     objectFit === "cover" ? "object-cover" : "object-contain",
-    "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
+    "transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200",
     rounded && "rounded",
     shadow && "shadow-sm",
     border && "border border-gray-200",
@@ -110,7 +105,7 @@ export function UnifiedCountryFlag({
     "bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-900",
     "flex items-center justify-center",
     "text-gray-500 dark:text-gray-400 font-medium",
-    "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
+    "transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200",
     rounded && "rounded",
     shadow && "shadow-sm",
     border && "border border-gray-200 dark:border-gray-700",
@@ -157,7 +152,7 @@ export function UnifiedCountryFlag({
       alt={`Flag of ${countryName}`}
       className={flagClasses}
       onError={() => {
-        setImageError(true);
+        setFailedFlagUrl(flagUrl);
         console.warn(`[UnifiedCountryFlag] Failed to load flag image: ${flagUrl}`);
       }}
       loading="lazy" // Enable lazy loading for better performance

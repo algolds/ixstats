@@ -265,7 +265,7 @@ export function SynthesisResultsGrid({
           {showSaveDictForm && (
             <form
               onSubmit={handleSaveBatchAsDictionary}
-              className="animate-in slide-in-from-top-2 border-tint/30 bg-tint/5 rounded-row flex items-center gap-2 border p-3 duration-200"
+              className="border-tint/30 bg-tint/5 rounded-row flex items-center gap-2 border p-3"
             >
               <Input
                 type="text"

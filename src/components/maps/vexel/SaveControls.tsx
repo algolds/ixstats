@@ -2,7 +2,7 @@
 
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { notifyFromStore } from "~/hooks/useNotify";
 import { useVexelEditor } from "./VexelEditorProvider";
 import { api } from "~/trpc/react";
@@ -36,14 +36,16 @@ export default function SaveControls() {
     { enabled: !!achievementId }
   );
 
-  useEffect(() => {
+  // A loaded (or refetched) achievement fills the form, during render.
+  const [seededFrom, setSeededFrom] = useState<typeof currentAchievement>(undefined);
+  if (currentAchievement !== seededFrom) {
+    setSeededFrom(currentAchievement);
     if (currentAchievement) {
-      // oxlint-disable-next-line
       setTitle(currentAchievement.title);
-      setSubjectType(currentAchievement.subjectType as any);
+      setSubjectType(currentAchievement.subjectType as typeof subjectType);
       setSubjectId(currentAchievement.subjectId);
     }
-  }, [currentAchievement]);
+  }
 
   const saveMutation = api.heraldry.saveAchievement.useMutation({
     onSuccess: (data) => {
@@ -165,7 +167,7 @@ export default function SaveControls() {
           </div>
 
           {subjectType === "COUNTRY" && (
-            <div className="animate-in fade-in slide-in-from-left-2 flex min-w-[150px] flex-col gap-1 duration-150">
+            <div className="flex min-w-[150px] flex-col gap-1">
               <Eyebrow id="vexel-subject-country">Select country</Eyebrow>
               <OptionSelect
                 aria-labelledby="vexel-subject-country"

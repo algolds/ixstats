@@ -53,7 +53,7 @@ export function AtomicComponentCard({ component, domain }: AtomicComponentCardPr
         </div>
         <div className="bg-surface h-1.5 w-full overflow-hidden rounded-full">
           <div
-            className={`h-full transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+            className={`h-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ${
               component.effectiveness >= 75
                 ? "bg-green"
                 : component.effectiveness >= 50

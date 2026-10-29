@@ -177,7 +177,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
                     <Link
                       href={action.href}
                       onClick={(e) => handleActionClick(e, action.href, action.section)}
-                      className="bg-tint-fill border-separator hover:border-tint/30 hover:bg-tint-fill text-tint group rounded-row duration-fast block border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.95]"
+                      className="bg-tint-fill border-separator hover:border-tint/30 hover:bg-tint-fill text-tint group rounded-row duration-fast block border p-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] active:scale-[0.95]"
                     >
                       <action.icon className="h-4 w-4 transition-transform group-hover:scale-110" />
                     </Link>
@@ -198,7 +198,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
                   key={action.label}
                   href={action.href}
                   onClick={(e) => handleActionClick(e, action.href, action.section)}
-                  className="border-separator bg-surface hover:border-tint/40 group rounded-card shadow-card flex items-center justify-between border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                  className="border-separator bg-surface hover:border-tint/40 group rounded-card shadow-card flex items-center justify-between border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-3">
                     <div className="bg-tint-fill border-separator group-hover:bg-tint-fill text-tint rounded-row border p-2 transition-colors">

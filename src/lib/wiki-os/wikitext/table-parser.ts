@@ -85,7 +85,7 @@ function nameValueEnd(cell: string): number {
  * Parses table cell content and attributes, respecting balanced brackets and templates
  * so attributes like `style="..." |` are isolated and not confused with piped links `[[File:...|120px]]`.
  */
-export function extractTableCellContent(rawCell: string): { attributes: string; content: string } {
+function cellSeparatorIndex(rawCell: string): number {
   let inLink = 0;
   let inTmpl = 0;
   let inComment = false;
@@ -134,20 +134,104 @@ export function extractTableCellContent(rawCell: string): { attributes: string; 
     }
   }
 
+  return sepIdx;
+}
+
+export function extractTableCellContent(rawCell: string): { attributes: string; content: string } {
+  const sepIdx = cellSeparatorIndex(rawCell);
   if (sepIdx !== -1) {
     return {
       attributes: rawCell.slice(0, sepIdx).trim(),
       content: rawCell.slice(sepIdx + 1).trim(),
     };
   }
-
   return { attributes: "", content: rawCell.trim() };
+}
+
+/** Where the content of a cell's first line starts: after its attributes' `|` and the blanks that follow. */
+function contentStart(rawCell: string): number {
+  const from = cellSeparatorIndex(rawCell) + 1;
+  return from + (rawCell.length - from - rawCell.slice(from).trimStart().length);
+}
+
+/** One cell as found on its line: the text after its delimiter, and where it starts and ends in the table's text. */
+interface CellSpan {
+  text: string;
+  /** Where `text` starts. */
+  textAt: number;
+  start: number;
+  end: number;
+}
+
+/**
+ * The cells of a `|` or `!` line. `line` is the trimmed line, starting at `lineStart` in the table's text, whose
+ * logical line ends at `lineEnd`. A cell starts at its delimiter (the line's `|`/`!`, or the `||`/`!!` before it) and
+ * ends where the next one starts, the last at the end of the line.
+ */
+function cellSpans(line: string, lineStart: number, lineEnd: number, header: boolean): CellSpan[] {
+  const spans: CellSpan[] = [];
+  let outerAt = lineStart + 1;
+  for (const part of header ? splitBalancedDoubleTokens(line.slice(1), "!!") : [line.slice(1)]) {
+    let at = outerAt;
+    for (const text of splitBalancedDoubleTokens(part, "||")) {
+      spans.push({
+        text,
+        textAt: at,
+        start: spans.length === 0 ? lineStart : at - 2,
+        end: lineEnd,
+      });
+      at += text.length + 2;
+    }
+    outerAt += part.length + 2;
+  }
+  for (let i = 0; i + 1 < spans.length; i++) spans[i]!.end = spans[i + 1]!.start;
+  return spans;
+}
+
+function cellNode(
+  span: CellSpan,
+  isHeader: boolean
+): { node: TableCellNode; start: number; end: number; textStart: number; continued: boolean } {
+  const { attributes, content } = extractTableCellContent(span.text);
+  return {
+    node: {
+      type: "table-cell",
+      isHeader,
+      attributes: attributes || undefined,
+      children: parseInlineLinksAndFormatting(content),
+    },
+    start: span.start,
+    end: span.end,
+    // where the content starts in the table's text: after the delimiter, the attributes and the blanks
+    textStart: span.textAt + contentStart(span.text),
+    /** Continuation lines have been added to it. */
+    continued: false,
+  };
+}
+
+type OpenCell = ReturnType<typeof cellNode>;
+
+/** The row's cells with their sources; `rowStart` is where the row starts in the table's text `raw`. */
+function withCellSources(raw: string, rowStart: number, cells: OpenCell[]): TableCellNode[] {
+  return cells.map((cell, index) => {
+    const cellRaw = raw.slice(cell.start, cell.end);
+    const headLength = cell.textStart - cell.start;
+    const contentEnd = Math.max(headLength, cellRaw.trimEnd().length);
+    cell.node.source = {
+      raw: cellRaw,
+      start: cell.start - rowStart,
+      sepBefore: index === 0 ? "" : raw.slice(cells[index - 1]!.end, cell.start),
+      head: cellRaw.slice(0, headLength),
+      tail: cellRaw.slice(contentEnd),
+    };
+    return cell.node;
+  });
 }
 
 export function parseWikitable(raw: string): WikiTableBlock {
   const lines = splitLogicalLines(raw);
   const rows: TableRowNode[] = [];
-  let currentCells: TableCellNode[] = [];
+  let currentCells: OpenCell[] = [];
   let currentRowAttributes: string | undefined;
   let caption: string | undefined;
   let tableAttributes: string | undefined;
@@ -159,17 +243,19 @@ export function parseWikitable(raw: string): WikiTableBlock {
   let lastCellEnd = -1; // end of the last line that belongs to the row being read
 
   const pushRow = (): void => {
+    const rowStart = boundary + 1;
     rows.push({
       type: "table-row",
       attributes: currentRowAttributes,
-      raw: raw.slice(boundary + 1, lastCellEnd),
-      children: currentCells,
+      raw: raw.slice(rowStart, lastCellEnd),
+      headRaw: raw.slice(rowStart, currentCells[0]!.start),
+      children: withCellSources(raw, rowStart, currentCells),
     });
     boundary = lastCellEnd;
     currentCells = [];
   };
 
-  for (const { text: rawLine, end } of lines) {
+  for (const { text: rawLine, start, end } of lines) {
     const line = rawLine.trim();
     if (line.startsWith("{|")) {
       const attrs = line.slice(2).trim();
@@ -194,52 +280,32 @@ export function parseWikitable(raw: string): WikiTableBlock {
       continue;
     }
 
-    // Header cells: ! or !! (or || on header lines)
-    if (line.startsWith("!")) {
-      const headerParts = splitBalancedDoubleTokens(line.slice(1), "!!");
-      for (const part of headerParts) {
-        const subParts = splitBalancedDoubleTokens(part, "||");
-        for (const sub of subParts) {
-          const { attributes, content } = extractTableCellContent(sub);
-          const inlines = parseInlineLinksAndFormatting(content);
-          currentCells.push({
-            type: "table-cell",
-            isHeader: true,
-            attributes: attributes || undefined,
-            children: inlines,
-          });
-        }
-      }
-      lastCellEnd = end;
-      continue;
-    }
-
-    // Standard cells: | or ||
-    if (line.startsWith("|")) {
-      const cellParts = splitBalancedDoubleTokens(line.slice(1), "||");
-      for (const part of cellParts) {
-        const { attributes, content } = extractTableCellContent(part);
-        const inlines = parseInlineLinksAndFormatting(content);
-        currentCells.push({
-          type: "table-cell",
-          isHeader: false,
-          attributes: attributes || undefined,
-          children: inlines,
-        });
-      }
+    // Cells: `!` lines (split at !! and ||) are header cells, `|` lines (split at ||) data cells
+    if (line.startsWith("!") || line.startsWith("|")) {
+      const header = line.startsWith("!");
+      const lineStart = start + (rawLine.length - rawLine.trimStart().length);
+      for (const span of cellSpans(line, lineStart, end, header))
+        currentCells.push(cellNode(span, header));
       lastCellEnd = end;
       continue;
     }
 
     // Multiline continuation text inside the last active cell: every line, a blank one too, is
     // one line break plus its own text, so a blank line between paragraphs stays one blank line.
+    // The blanks that ended the cell's first line, and those of a blank line, are kept with the line break: an edit
+    // that writes the cell again writes them as they were.
     if (currentCells.length > 0) {
-      const lastCell = currentCells[currentCells.length - 1]!;
+      const open = currentCells[currentCells.length - 1]!;
+      const firstLine = open.continued ? "" : raw.slice(open.start, open.end);
+      const lineBreak = `${firstLine.slice(firstLine.trimEnd().length)}\n`;
+      open.continued = true;
+      open.end = end;
+      const lastCell = open.node;
       if (line.length === 0) {
-        lastCell.children.push({ type: "text", text: "\n" } as any);
+        lastCell.children.push({ type: "text", text: lineBreak + rawLine } as any);
       } else {
         const additionalInlines = parseInlineLinksAndFormatting(rawLine);
-        lastCell.children.push({ type: "text", text: "\n" } as any, ...additionalInlines);
+        lastCell.children.push({ type: "text", text: lineBreak } as any, ...additionalInlines);
       }
       lastCellEnd = end;
     }

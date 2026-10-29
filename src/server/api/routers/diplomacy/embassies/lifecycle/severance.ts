@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import {
+  assertCountryWriteAccess,
+  hasCountryWriteAccess,
+} from "~/server/shared/country-authorization";
 import { clockForCountry } from "~/server/shared/realm-time";
 import { notificationAPI } from "~/lib/notifications/api";
 import { applyRelationshipImpact } from "~/lib/diplomacy/relationship-impact";
@@ -16,13 +20,6 @@ export const diplomaticEmbassiesLifecycleSeveranceRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user?.countryId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be associated with a country to sever relations.",
-        });
-      }
-
       const embassy = await ctx.db.embassy.findUnique({
         where: { id: input.embassyId },
         include: {
@@ -35,20 +32,17 @@ export const diplomaticEmbassiesLifecycleSeveranceRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Embassy not found" });
       }
 
-      if (
-        embassy.guestCountryId !== ctx.user.countryId &&
-        embassy.hostCountryId !== ctx.user.countryId
-      ) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only sever relations for your own embassies.",
-        });
-      }
+      // Either side's owner may sever (any nation they own, as when establishing).
+      const severingCountryId = (await hasCountryWriteAccess(ctx, embassy.guestCountryId))
+        ? embassy.guestCountryId
+        : embassy.hostCountryId;
+      await assertCountryWriteAccess(ctx, severingCountryId);
 
-      // Delete the embassy
-      await ctx.db.embassy.delete({
-        where: { id: input.embassyId },
-      });
+      // Conditional, so two concurrent severs apply the relationship penalty once.
+      const deleted = await ctx.db.embassy.deleteMany({ where: { id: input.embassyId } });
+      if (deleted.count !== 1) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Embassy not found" });
+      }
 
       await applyRelationshipImpact(
         ctx.db,
@@ -66,7 +60,7 @@ export const diplomaticEmbassiesLifecycleSeveranceRouter = createTRPCRouter({
           title: "Diplomatic Relations Severed",
           description: `${embassy.name} has been permanently dismantled and diplomatic relations severed.`,
           // The severing nation's clock. Severing is not guarded, so an embassy from before the realm rule can go.
-          ixTimeTimestamp: (await clockForCountry(ctx.db, ctx.user.countryId)).now(),
+          ixTimeTimestamp: (await clockForCountry(ctx.db, severingCountryId)).now(),
           relationshipImpact: SEVER_RELATIONSHIP_IMPACT,
           severity: "critical",
         },
@@ -74,11 +68,11 @@ export const diplomaticEmbassiesLifecycleSeveranceRouter = createTRPCRouter({
 
       // Notify the other country
       const otherCountryId =
-        embassy.guestCountryId === ctx.user.countryId
+        embassy.guestCountryId === severingCountryId
           ? embassy.hostCountryId
           : embassy.guestCountryId;
       const myCountryName =
-        embassy.guestCountryId === ctx.user.countryId
+        embassy.guestCountryId === severingCountryId
           ? embassy.guestCountry?.name
           : embassy.hostCountry?.name;
 

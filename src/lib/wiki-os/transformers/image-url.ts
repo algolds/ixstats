@@ -4,6 +4,7 @@ import { createHash } from "crypto";
 import { getBasePath, withBasePath } from "~/lib/base-path";
 import { isMediaWikiUrl, mediaWikiImageUrl, type WikiSource } from "../config";
 import { forwardFinder } from "../wikitext/forward-finder";
+import { sisterMediaPath } from "../sister-media";
 import {
   blocks,
   hasClass,
@@ -207,6 +208,11 @@ export function normalizeWikiImageUrl(rawUrl: string | null | undefined): string
   if (isWikimediaCommonsUrl(url)) {
     return getCommonsProxyUrl(url);
   }
+
+  // IIWiki files load through its media proxy, never straight from iiwiki.com: one gate (the IIWiki switch, the
+  // media rate limit) for every IIWiki image, and readers' addresses stay ours.
+  const iiwikiPath = /^https?:\/\//i.test(url) ? sisterMediaPath(url, "iiwiki") : null;
+  if (iiwikiPath) return iiwikiPath;
 
   // Proxy ixwiki images to avoid direct hotlinking/CORS failures
   if (/^https?:\/\//i.test(url) && isMediaWikiUrl(url)) {

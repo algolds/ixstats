@@ -253,7 +253,6 @@ function PopulationTrends({
     <MetricModalLayout variant="social">
       <MetricModalLayout.MainArea>
         <MetricModalLayout.Panel
-          className=""
           contentClassName=""
           icon={Activity}
           title="Population Growth Trends"

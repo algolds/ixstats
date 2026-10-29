@@ -408,7 +408,7 @@ it("emails a digest user one summary per run, retrying a failed send and skippin
   expect(emails()).toEqual([
     expect.objectContaining({
       to: ["ben-clerk@example.com"],
-      subject: "Your IxStats summary: 2 new notifications",
+      subject: "Your IxStates summary: 2 new notifications",
       text: expect.stringContaining(`${APP}/vault/cards/market`),
     }),
   ]);

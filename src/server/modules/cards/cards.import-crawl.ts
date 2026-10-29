@@ -59,6 +59,7 @@ async function wikiTitles(input: CrawlInput): Promise<TitleList> {
   if (input.mode === "titles") return { titles: input.titles ?? [], truncated: false };
   // The budget, not the cap, ends a long read: each request waits its turn, so the cap is never reached first.
   const client = createDiscoveryClient(input.source, {
+    feature: "cards",
     maxRequests: Math.ceil(CRAWL_BUDGET_MS / DISCOVERY_DELAY_MS),
   });
   const reach = { limit: MAX_SCAN, deadline: Date.now() + CRAWL_BUDGET_MS, pace: client.pace };

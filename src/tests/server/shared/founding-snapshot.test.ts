@@ -31,11 +31,12 @@ import {
   type NationGrowthTable,
 } from "~/lib/realms/nation-growth-defaults";
 import { POPULATION_BAND_IDS, WEALTH_BAND_IDS } from "~/lib/builder/founding-bands";
-import { departmentsForForm } from "~/lib/government/form-departments";
+import { departmentsForForm, governmentTypeForForm } from "~/lib/government/form-departments";
 import { getGovernmentForm } from "~/lib/government/forms";
 import {
   computeFoundingSnapshot,
   estimateTaxRevenuePercent,
+  foundingBudgetShares,
   foundingGovernmentEffectiveness,
   normaliseTo100,
   type FoundingSnapshot,
@@ -325,19 +326,47 @@ describe("summary parity with the stored stability formula", () => {
       currentPopulation: base.population,
       populationDensity: base.population / 120_000,
     };
+    // The founded rows: the form's structure (seeded scores, effectiveness from the components),
+    // its components and its departments' budget shares.
+    const governmentType = governmentTypeForForm(snapshot.governmentFormId) ?? null;
+    const components = snapshot.governmentComponents.map((c) => ({
+      countryId: "c1",
+      componentType: c.componentType,
+      effectivenessScore: c.effectivenessScore ?? 50,
+    }));
+    const governmentStructure = {
+      id: "gs1",
+      governmentType,
+      totalBudget: numbers.totalGovernmentSpending,
+      electionCycle: 4,
+      politicalStability: 50,
+      democracyIndex: 50,
+      governmentEffectiveness: snapshot.summary.governmentEffectiveness,
+      ruleOfLaw: 50,
+      corruptionIndex: 50,
+      politicalPolarization: 50,
+    };
+    const allocations = Object.entries(foundingBudgetShares(snapshot.governmentFormId)).map(
+      ([category, allocatedPercent]) => ({
+        budgetYear: BUDGET_YEAR,
+        allocatedPercent,
+        department: { category },
+        governmentStructureId: "gs1",
+      })
+    );
     const db = {
-      country: { findUnique: jest.fn().mockResolvedValue(country) },
-      economicProfile: { findUnique: jest.fn().mockResolvedValue(null) },
+      country: {
+        findUnique: jest.fn().mockResolvedValue({ realmId: "default" }),
+        findMany: jest
+          .fn()
+          .mockResolvedValue([
+            { ...country, id: "c1", realmId: "default", governmentType, governmentStructure },
+          ]),
+      },
+      governmentComponent: { findMany: jest.fn().mockResolvedValue(components) },
+      budgetAllocation: { findMany: jest.fn().mockResolvedValue(allocations) },
       demographics: {
         findUnique: jest.fn().mockResolvedValue({ ethnicDiversity: 50, religiousDiversity: 50 }),
-      },
-      governmentStructure: {
-        findUnique: jest.fn().mockResolvedValue({
-          politicalStability: 50,
-          politicalPolarization: 50,
-          democracyIndex: 50,
-          electionCycle: 4,
-        }),
       },
       policy: { findMany: jest.fn().mockResolvedValue([]) },
       internalStabilityMetrics: { findUnique: jest.fn().mockResolvedValue(null) },

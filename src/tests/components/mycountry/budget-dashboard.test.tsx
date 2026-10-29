@@ -54,7 +54,7 @@ import { NationClockProvider } from "~/hooks/useNationClock";
 import { ixnayReader, sixTimesReader } from "~/tests/fixtures/realm-readers";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 import { BudgetManagementDashboard } from "~/components/mycountry/domains/government/BudgetManagementDashboard";
-import { nationalRevenue } from "~/components/mycountry/shell/fiscal/nationalRevenue";
+import { nationalRevenue } from "~/lib/economy/national-revenue";
 
 /** A nation with no tax rate saved: its founding revenue stands in. */
 const foundingRevenue = (total: number) => nationalRevenue({ governmentRevenueTotal: total });
@@ -196,17 +196,15 @@ describe("the National budget tab", () => {
     expect(document.body.textContent).not.toMatch(/Country Editor/);
   });
 
-  it("sends the nation's revenue with the create action, so the new budget starts balanced", () => {
+  it("sends only the nation with the create action; the server reads its revenue", () => {
     mockData.gov = null;
     mockData.country = { currentTotalGdp: 1.5e11, governmentRevenueTotal: 6e9 };
     renderInNation(
       <BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(6e9)} />
     );
     fireEvent.click(screen.getByRole("button", { name: "Create government structure" }));
-    expect(mockMutate.createStructure).toHaveBeenLastCalledWith({
-      countryId: "testland",
-      revenue: 6e9,
-    });
+    // The server reads the nation's revenue itself; the client sends none.
+    expect(mockMutate.createStructure).toHaveBeenLastCalledWith({ countryId: "testland" });
     mockData.country = undefined;
   });
 });
@@ -228,5 +226,25 @@ describe("budget years on the nation's calendar", () => {
     expect(screen.getByRole("combobox", { name: "Budget year" })).toHaveTextContent("812 AE");
     expect(screen.getByText(/812 AE FY/)).toBeInTheDocument();
     expect(document.body.textContent).not.toContain(String(year));
+  });
+});
+
+describe("a budget carried forward more than four years", () => {
+  it("shows its year in the year picker (it was blank, its year not among the offered ones)", () => {
+    const reader = ixnayReader();
+    const year = currentBudgetYear(reader.now());
+    const gov = government(10e9);
+    mockData.gov = {
+      ...gov,
+      budgetAllocations: gov.budgetAllocations.map((a) => ({ ...a, budgetYear: year - 8 })),
+    };
+    render(<BudgetManagementDashboard countryId="testland" revenue={foundingRevenue(10e9)} />, {
+      wrapper: ({ children }) => (
+        <NationClockProvider value={reader}>{children}</NationClockProvider>
+      ),
+    });
+    expect(screen.getByRole("combobox", { name: "Budget year" })).toHaveTextContent(
+      String(year - 8)
+    );
   });
 });

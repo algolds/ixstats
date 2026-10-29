@@ -210,7 +210,7 @@ export function DomainControlBar({
       />
 
       {showAdvanced && (
-        <div className="animate-in fade-in slide-in-from-top-1 border-separator border-t pt-4 duration-200">
+        <div className="border-separator border-t pt-4">
           <AdvancedConlangSettings gen={gen} category={category} />
         </div>
       )}

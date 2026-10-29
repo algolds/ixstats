@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button, buttonVariants } from "~/components/ui/button";
 import {
@@ -165,8 +165,9 @@ function DissolveConfirm({
         <AlertDialogHeader>
           <AlertDialogTitle>Dissolve the legislature?</AlertDialogTitle>
           <AlertDialogDescription>
-            Every seat becomes vacant and a snap election is called. Bills cannot go to a vote until
-            the election seats the parties again.
+            Every seat becomes vacant and a snap election is called for the elected chambers. Bills
+            cannot go to a vote until seats are held again. Appointed and other unelected chambers
+            are never put to a vote.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -288,6 +289,10 @@ function ChamberLayout({
   );
 }
 
+const defaultChambers = (): ChamberItem[] => [
+  { name: "National Assembly", seats: 100, electoralSystem: "proportional" },
+];
+
 interface LegislatureConfigProps {
   countryId: string;
 }
@@ -301,7 +306,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     termLength: 4,
     electionCycle: "fixed" as "fixed" | "variable",
   });
-  const [chambers, setChambers] = useState<ChamberItem[]>([]);
+  const [chambers, setChambers] = useState<ChamberItem[]>(defaultChambers);
   const [saved, setSaved] = useState(false);
 
   const { data: legislature, refetch } = api.elections.getLegislature.useQuery(
@@ -309,16 +314,11 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     { enabled: !!countryId }
   );
 
-  useEffect(() => {
+  // A loaded (or refetched) legislature fills the form, during render; none keeps one default chamber.
+  const [seededFrom, setSeededFrom] = useState<typeof legislature>(undefined);
+  if (legislature !== seededFrom) {
+    setSeededFrom(legislature);
     if (legislature) {
-      const parsed = parseChambersClient(
-        legislature.chamberType,
-        legislature.name,
-        legislature.totalSeats,
-        legislature.electoralSystem
-      );
-
-      // oxlint-disable-next-line
       setFormData({
         name: legislature.name,
         chamberType: legislature.chamberType.split("|")[0] as ChamberType,
@@ -327,11 +327,18 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
         termLength: legislature.termLength,
         electionCycle: (legislature.electionCycle as "fixed" | "variable") ?? "fixed",
       });
-      setChambers(parsed);
+      setChambers(
+        parseChambersClient(
+          legislature.chamberType,
+          legislature.name,
+          legislature.totalSeats,
+          legislature.electoralSystem
+        )
+      );
     } else {
-      setChambers([{ name: "National Assembly", seats: 100, electoralSystem: "proportional" }]);
+      setChambers(defaultChambers());
     }
-  }, [legislature]);
+  }
 
   const utils = api.useUtils();
   const notify = useNotify();

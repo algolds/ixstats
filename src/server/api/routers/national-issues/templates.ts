@@ -10,6 +10,24 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { triggerConditionErrors } from "~/lib/national-issues/evaluators/trigger-validation";
+
+/** Refuse trigger JSON that does not parse or that the evaluator cannot read (it would never fire). */
+function assertValidTrigger(triggerConditions: string): void {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(triggerConditions);
+  } catch {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid triggerConditions JSON" });
+  }
+  const errors = triggerConditionErrors(parsed);
+  if (errors.length > 0) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Invalid triggerConditions: ${errors.slice(0, 3).join("; ")}`,
+    });
+  }
+}
 
 // ==================== ZOD SCHEMAS ====================
 
@@ -124,14 +142,7 @@ export const nationalIssuesTemplatesRouter = createTRPCRouter({
    */
   createTemplate: adminProcedure.input(TemplateCreateSchema).mutation(async ({ ctx, input }) => {
     // Validate JSON fields
-    try {
-      JSON.parse(input.triggerConditions);
-    } catch {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Invalid triggerConditions JSON",
-      });
-    }
+    assertValidTrigger(input.triggerConditions);
     try {
       JSON.parse(input.responseOptions);
     } catch {
@@ -156,16 +167,7 @@ export const nationalIssuesTemplatesRouter = createTRPCRouter({
     const { id, ...data } = input;
 
     // Validate JSON fields if provided
-    if (data.triggerConditions) {
-      try {
-        JSON.parse(data.triggerConditions);
-      } catch {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Invalid triggerConditions JSON",
-        });
-      }
-    }
+    if (data.triggerConditions) assertValidTrigger(data.triggerConditions);
     if (data.responseOptions) {
       try {
         JSON.parse(data.responseOptions);

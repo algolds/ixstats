@@ -4,12 +4,14 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { useHydrated } from "~/hooks/useHydrated";
 import { cn } from "~/lib/utils";
 import { currentProfileHref } from "~/lib/wiki-os/legacy-profile-links";
 import { entityKinds, mentionQueries } from "~/lib/wiki-os/mention-target";
 import { WIKI_SOURCES, parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
 import { embedImageSrc } from "~/lib/wiki-os/embed-image";
 import { readerLinkPath } from "~/lib/wiki-os/wiki-link-target";
+import { SPOILER_PROPS } from "~/lib/thinkpages/spoilers";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -129,7 +131,7 @@ const renderChildren = (element: HTMLElement, missing: ReadonlySet<string>) =>
   Array.from(element.childNodes).map((child, childIdx) => domNodeToReact(child, childIdx, missing));
 
 const EMBED_CARD_CLASS =
-  "rounded-card border-separator bg-fill-4 hover:border-separator flex items-center gap-4 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200";
+  "rounded-card border-separator bg-fill-4 hover:border-separator flex items-center gap-4 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200";
 
 /**
  * Card for a `data-wikiembed` placeholder: the article on its wiki (`data-source`), in the reader. The title is user
@@ -179,7 +181,7 @@ function renderWikiEmbed(element: HTMLElement, index: number): React.ReactNode {
 }
 
 const BADGE_BASE =
-  "inline-flex items-center gap-2 px-3 py-0.5 rounded-full text-caption font-semibold select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:-translate-y-0.5 border";
+  "inline-flex items-center gap-2 px-3 py-0.5 rounded-full text-caption font-semibold select-none transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 hover:-translate-y-0.5 border";
 
 // Minimalist glass pills, joined to BADGE_BASE with cn().
 const BADGE_TONES = {
@@ -257,6 +259,8 @@ function elementProps(
   }
   const style = element.getAttribute("style");
   if (style) props.style = parseStyleString(style);
+  // A ThinkPages spoiler keeps its button semantics; the post's delegated handler reveals it in the DOM.
+  if (element.hasAttribute("data-spoiler")) Object.assign(props, SPOILER_PROPS);
   return props;
 }
 
@@ -575,14 +579,9 @@ function MentionPopover({
 }
 
 export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiHtmlContentProps) {
-  const [isMounted, setIsMounted] = useState(false);
+  const isMounted = useHydrated();
   // the server's and the first client render's HTML: one object per string, or React 19 writes it again
   const rawMarkup = useHtmlMarkup(html);
-
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setIsMounted(true);
-  }, []);
 
   const root = useMemo(() => {
     if (!isMounted || typeof window === "undefined" || !html) return null;

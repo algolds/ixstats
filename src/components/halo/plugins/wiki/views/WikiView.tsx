@@ -69,7 +69,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
         title: d.title,
         type: d.mode as "visual" | "source",
       }));
-      // oxlint-disable-next-line
+      // oxlint-disable-next-line react/set-state-in-effect -- listDrafts claims unowned drafts (writes storage), so it cannot run in render
       setLocalDrafts(drafts);
     } catch (e) {
       console.error("Failed to read drafts:", e);

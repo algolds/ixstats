@@ -111,7 +111,7 @@ export function SavedDictionaryCard({
     <Card
       variant="well"
       padding="none"
-      className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+      className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
     >
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-2">

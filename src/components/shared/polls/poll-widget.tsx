@@ -75,7 +75,7 @@ function usePollWidget() {
 
 const OPTION_CLASSES = [
   "group relative flex w-full cursor-pointer items-center gap-3 rounded-lg border p-3 text-left",
-  "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out",
+  "transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 ease-out",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
   "disabled:cursor-not-allowed disabled:opacity-50",
 ];
@@ -94,7 +94,7 @@ const optionVariants = cva(OPTION_CLASSES, {
 const indicatorVariants = cva(
   [
     "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
-    "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out",
+    "transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 ease-out",
   ],
   {
     variants: {
@@ -112,7 +112,7 @@ const indicatorVariants = cva(
 const progressVariants = cva(
   [
     "absolute inset-y-0 left-0 rounded-l-lg",
-    "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 ease-out",
+    "transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-500 ease-out",
   ],
   {
     variants: { state: { idle: "bg-transparent", selected: "bg-poll/15", voted: "bg-poll/10" } },
@@ -522,7 +522,7 @@ function PollWidgetSubmit({
   return (
     <Button
       className={cn(
-        "bg-poll hover:bg-poll/90 w-full overflow-hidden font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+        "bg-poll hover:bg-poll/90 w-full overflow-hidden font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
         className
       )}
       data-slot="poll-widget-submit"

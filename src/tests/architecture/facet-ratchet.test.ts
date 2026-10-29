@@ -1,41 +1,15 @@
 import fs from "fs";
 import path from "path";
+import { TELLS, isComment, walkTsx } from "./facet-tells";
 
 const ROOT = path.resolve(__dirname, "../../..");
 const BASELINE = path.join(__dirname, "facet-ratchet.baseline.json");
 const DIRS = ["src/components", "src/app"];
 const UPDATE_HINT = "run UPDATE_FACET_RATCHET=1 bun run test -- facet-ratchet";
 
-/** Each tell the sweep removes. Counts are matches on non-comment lines of .tsx files. */
-const TELLS: Record<string, RegExp> = {
-  eyebrow: /<Eyebrow\b|\btext-eyebrow\b/g,
-  statLabel: /\btext-stat-label\b/g,
-  emDash: /—/g,
-  // Also catches `Spark as Sparkles` import aliases, which hid decorative sparks from the bare name.
-  sparks: /\bSparks\b|\bSpark\s+as\s+\w+/g,
-  // Engines disagree on some code points: V8 (Node) counts U+2605 ★ as Extended_Pictographic,
-  // JavaScriptCore (Bun, which CI runs Jest under) does not. Excluding them keeps the count
-  // identical whichever runtime writes the baseline.
-  emoji: /(?![\u2605])\p{Extended_Pictographic}/gu,
-  hoverScale: /\bhover:scale-/g,
-  hexClass: /\[#[0-9a-fA-F]{3,8}\]/g,
-  rawPalette:
-    /\b(?:bg|text|border|from|via|to|ring|fill|stroke)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/g,
-  animatePing: /\banimate-ping\b/g,
-};
-
-function walk(dir: string): string[] {
-  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
-    const p = path.join(dir, e.name);
-    return e.isDirectory() ? walk(p) : e.name.endsWith(".tsx") ? [p] : [];
-  });
-}
-
-const isComment = (line: string) => /^\s*(\/\/|\*|\/\*|\{\s*\/\*)/.test(line);
-
 function count(): Record<string, number> {
   const totals = Object.fromEntries(Object.keys(TELLS).map((k) => [k, 0]));
-  for (const file of DIRS.flatMap((d) => walk(path.join(ROOT, d)))) {
+  for (const file of DIRS.flatMap((d) => walkTsx(path.join(ROOT, d)))) {
     for (const line of fs.readFileSync(file, "utf8").split("\n")) {
       if (isComment(line)) continue;
       for (const [name, re] of Object.entries(TELLS)) totals[name]! += line.match(re)?.length ?? 0;

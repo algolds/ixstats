@@ -176,7 +176,7 @@ export function WikiRepositoryTab({
                 size="sm"
                 onClick={() => setIsCategoryExpanded((prev) => !prev)}
                 className={cn(
-                  "text-caption rounded-control flex h-8 cursor-pointer items-center gap-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
+                  "text-caption rounded-control flex h-8 cursor-pointer items-center gap-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150",
                   isCategoryExpanded
                     ? "border-tint/40 bg-tint-fill text-tint hover:bg-tint-fill"
                     : "border-separator text-label-secondary hover:text-label hover:bg-fill-3"
@@ -205,7 +205,7 @@ export function WikiRepositoryTab({
 
             {/* Filters bar */}
             {isCategoryExpanded && (
-              <div className="text-footnote flex flex-wrap items-center justify-between gap-3 pt-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+              <div className="text-footnote flex flex-wrap items-center justify-between gap-3 pt-1 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]">
                 <div className="flex flex-wrap items-center gap-3">
                   {/* File Type Segmented Control */}
                   <div className="flex items-center gap-2">

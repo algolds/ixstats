@@ -303,7 +303,7 @@ export function MarginGutterPins({
           >
             {/* Elevated Flyout Tooltip (Floats above pin to avoid blocking article text) */}
             {isHovered && hasFlyout && (
-              <div className="animate-in fade-in zoom-in-95 rounded-row border-separator bg-surface text-footnote text-label shadow-floating pointer-events-none absolute right-0 bottom-full z-50 mb-2 flex max-w-xs origin-bottom-right flex-col gap-1 border px-3 py-2 whitespace-nowrap duration-150">
+              <div className="rounded-row border-separator bg-surface text-footnote text-label shadow-floating pointer-events-none absolute right-0 bottom-full z-50 mb-2 flex max-w-xs origin-bottom-right flex-col gap-1 border px-3 py-2 whitespace-nowrap">
                 {isCluster ? (
                   <>
                     <div className="border-separator text-caption text-label flex items-center gap-2 border-b pb-1 font-semibold">
@@ -342,7 +342,7 @@ export function MarginGutterPins({
                 onClick={() => handlePinClick(pin)}
                 aria-label={pin.title}
                 className={cn(
-                  "bg-margin-accent border-yellow/60 shadow-card flex cursor-pointer items-center justify-center rounded-full border font-semibold text-(--margin-badge-text) transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
+                  "bg-margin-accent border-yellow/60 shadow-card flex cursor-pointer items-center justify-center rounded-full border font-semibold text-(--margin-badge-text) transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150",
                   isHovered
                     ? "border-yellow/50 z-40 scale-110"
                     : isCluster

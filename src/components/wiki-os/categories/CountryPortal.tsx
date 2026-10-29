@@ -78,7 +78,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
               <div className="flex items-center gap-2">
                 <Link
                   href="/util/categories"
-                  className="border-green/20 bg-green/10 text-caption text-green hover:bg-green/15 inline-flex items-center gap-2 rounded-full border px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                  className="border-green/20 bg-green/10 text-caption text-green hover:bg-green/15 inline-flex items-center gap-2 rounded-full border px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
                 >
                   <span>Nations</span>
                 </Link>
@@ -98,7 +98,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Link
               href={`/wiki/${slug}`}
-              className="border-separator text-label rounded-row bg-surface text-caption shadow-card hover:border-tint/40 hover:bg-surface inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+              className="border-separator text-label rounded-row bg-surface text-caption shadow-card hover:border-tint/40 hover:bg-surface inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
             >
               <ExternalLink className="text-tint h-3.5 w-3.5" />
               <span>Wiki article</span>
@@ -106,7 +106,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
 
             <Link
               href={ixstatesLinkHref(`/countries/${country.slug ?? country.id}`)}
-              className="rounded-row bg-tint text-caption text-on-tint shadow-card hover:bg-tint inline-flex items-center gap-2 px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+              className="rounded-row bg-tint text-caption text-on-tint shadow-card hover:bg-tint inline-flex items-center gap-2 px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
             >
               <TrendingUp className="h-3.5 w-3.5" />
               <span>National dashboard</span>

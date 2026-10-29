@@ -7,6 +7,8 @@
  *
  * Rules: animate transform and opacity only; enter from `scale(0.96)` + opacity 0; press
  * `scale(0.98)`; keyboard-invoked UI appears in 0ms; exits are faster than entrances.
+ * Default springs are critically damped; only `springMomentum` (a release that carries velocity)
+ * and `springGentle` (reveals) overshoot.
  * Under Reduce Motion, use `REDUCED_MOTION_FADE` instead of a spring.
  */
 
@@ -16,14 +18,14 @@ import type { Transition } from "motion/react";
 export const springSnappy = {
   type: "spring",
   stiffness: 520,
-  damping: 38,
+  damping: 46,
 } as const satisfies Transition;
 
 /** Sheets, sidebar, navigation, layout changes. */
 export const springSmooth = {
   type: "spring",
   stiffness: 320,
-  damping: 32,
+  damping: 36,
 } as const satisfies Transition;
 
 /** Emphasis: success states, reveals. */
@@ -32,6 +34,14 @@ export const springGentle = {
   stiffness: 180,
   damping: 24,
 } as const satisfies Transition;
+
+/** A release that carries fling velocity: drag-to-dismiss, swipe commit. */
+export const springMomentum = {
+  type: "spring",
+  stiffness: 320,
+  damping: 29,
+} as const satisfies Transition;
+
 /** `cubic-bezier(.23, 1, .32, 1)` — colour and opacity changes. */
 export const EASE_OUT_FACET = [0.23, 1, 0.32, 1] as const;
 

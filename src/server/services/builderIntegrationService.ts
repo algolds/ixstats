@@ -14,6 +14,7 @@
  */
 
 import type { Prisma, PrismaClient } from "@prisma/client";
+import { TAX_RATE_LIMITS, type RateLimit } from "~/lib/economy/tax-rate-limits";
 import type { TaxBuilderState } from "~/types/builder";
 
 // Type for tax data without validation state
@@ -152,10 +153,13 @@ async function runIntegration(
 function extractFiscalRates(taxData: TaxBuilderState | TaxBuilderData) {
   const baseRate = (...types: string[]) =>
     taxData.categories.find((c) => types.includes(c.categoryType))?.baseRate;
+  // The Fiscal policy console's channel ranges bound these rates too, whichever way they are saved.
+  const within = (rate: number | undefined, { max }: RateLimit) =>
+    rate === undefined ? undefined : Math.min(rate, max);
   return {
-    personalIncomeTaxRates: baseRate("Income Tax")?.toString(),
-    corporateTaxRates: baseRate("Corporate Tax")?.toString(),
-    salesTaxRate: baseRate("Sales Tax", "Value-Added Tax (VAT)"),
+    personalIncomeTaxRates: within(baseRate("Income Tax"), TAX_RATE_LIMITS.income)?.toString(),
+    corporateTaxRates: within(baseRate("Corporate Tax"), TAX_RATE_LIMITS.corporate)?.toString(),
+    salesTaxRate: within(baseRate("Sales Tax", "Value-Added Tax (VAT)"), TAX_RATE_LIMITS.vat),
     propertyTaxRate: baseRate("Property Tax"),
     payrollTaxRate: baseRate("Payroll Tax"),
   };

@@ -125,8 +125,9 @@ export function BandwidthHelp({
         <div className="space-y-1">
           <h4 className="text-headline text-label">Executive bandwidth</h4>
           <p className="text-callout text-label-secondary">
-            How much work your government can carry at once. It grows with your population and
-            government effectiveness.
+            How much work your government can carry at once. It grows with government effectiveness
+            and, more slowly, with population: each tenfold rise adds the same amount. Hiring more
+            civil servants adds to it.
           </p>
         </div>
         {known && (

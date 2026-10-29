@@ -9,33 +9,49 @@ import {
   calculateStabilityMetrics,
   stabilityInputsFromStored,
 } from "~/lib/statecraft/stability-formulas";
+import { effectiveSoftScores } from "~/lib/government/soft-scores";
+
+const COUNTRY = {
+  id: "c1",
+  realmId: "default",
+  adjustedGdpGrowth: 0.03,
+  unemploymentRate: 5,
+  incomeInequalityGini: 0.35,
+  inflationRate: 2,
+  currentGdpPerCapita: 35_000,
+  povertyRate: 12,
+  currentPopulation: 1_000_000,
+  urbanPopulationPercent: 75,
+  populationDensity: 100,
+  publicApproval: 50,
+  governmentType: "Parliamentary Republic",
+};
+
+function structure(politicalStability: number) {
+  return {
+    politicalStability,
+    politicalPolarization: 50,
+    democracyIndex: 50,
+    governmentEffectiveness: 50,
+    ruleOfLaw: 50,
+    corruptionIndex: 50,
+    electionCycle: 4,
+    totalBudget: 5e9,
+  };
+}
 
 function db(politicalStability: number) {
   return {
     country: {
-      findUnique: jest.fn().mockResolvedValue({
-        adjustedGdpGrowth: 0.03,
-        unemploymentRate: 5,
-        incomeInequalityGini: 0.35,
-        inflationRate: 2,
-        currentGdpPerCapita: 35_000,
-        povertyRate: 12,
-        currentPopulation: 1_000_000,
-        urbanPopulationPercent: 75,
-        populationDensity: 100,
-      }),
+      findUnique: jest.fn().mockResolvedValue({ realmId: "default" }),
+      findMany: jest
+        .fn()
+        .mockResolvedValue([{ ...COUNTRY, governmentStructure: structure(politicalStability) }]),
     },
-    economicProfile: { findUnique: jest.fn().mockResolvedValue({ corruptionIndex: 30 }) },
+    governmentComponent: { findMany: jest.fn().mockResolvedValue([]) },
+    budgetAllocation: { findMany: jest.fn().mockResolvedValue([]) },
     demographics: {
       findUnique: jest.fn().mockResolvedValue({ ethnicDiversity: 50, religiousDiversity: 50 }),
-    },
-    governmentStructure: {
-      findUnique: jest.fn().mockResolvedValue({
-        politicalStability,
-        politicalPolarization: 50,
-        democracyIndex: 50,
-        electionCycle: 4,
-      }),
     },
     policy: { findMany: jest.fn().mockResolvedValue([]) },
     internalStabilityMetrics: { findUnique: jest.fn().mockResolvedValue(null) },
@@ -54,6 +70,21 @@ describe("stability formula boundary", () => {
 
   it("computes the stored country with the intended units", async () => {
     const stored = await computeInternalStability(db(60) as never, "c1");
+    // The formula reads the effective governance scores (derived plus the stored offset).
+    const governance = effectiveSoftScores(
+      {
+        gdpPerCapita: 35_000,
+        growthPercent: 3,
+        unemploymentRate: 5,
+        inflationRate: 2,
+        giniPoints: 35,
+        publicApproval: 50,
+        governmentType: "Parliamentary Republic",
+        components: [],
+        budgetShares: null,
+      },
+      structure(60)
+    );
     const intended = calculateStabilityMetrics(
       {
         gdpGrowth: 3,
@@ -64,11 +95,12 @@ describe("stability formula boundary", () => {
         povertyRate: 12,
       },
       {
-        policingBudget: 200e6,
-        educationBudget: 1.5e9,
-        socialServicesBudget: 0.8e9,
+        // The 5bn budget at the neutral shares: 12% policing, 55% on welfare (30/70).
+        policingBudget: 600e6,
+        educationBudget: 825e6,
+        socialServicesBudget: 1.925e9,
         totalBudget: 5e9,
-        corruptionIndex: 30,
+        corruptionIndex: governance.corruptionIndex,
       },
       {
         population: 1_000_000,
@@ -79,11 +111,12 @@ describe("stability formula boundary", () => {
         populationDensity: 100,
       },
       {
-        politicalStability: 0.5,
-        politicalPolarization: 50,
+        politicalStability: governance.politicalStability / 20 - 2.5,
+        politicalPolarization: governance.politicalPolarization,
         electionCycle: 4,
-        democracyIndex: 50,
+        democracyIndex: governance.democracyIndex,
         protestFrequency: 8,
+        publicApproval: 50,
       },
       []
     );

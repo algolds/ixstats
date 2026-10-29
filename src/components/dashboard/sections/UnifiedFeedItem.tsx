@@ -17,7 +17,7 @@ import {
 import { DiscussedInBadge } from "~/components/action-links/DiscussedIn";
 import { Skeleton } from "~/components/ui/skeleton";
 import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
-import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
+import { PostHtml } from "~/components/thinkpages/post/PostHtml";
 import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
 import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
 import { cn, formatThinkpagesContentForDisplay } from "~/lib/utils";
@@ -132,8 +132,8 @@ function ActivityBody({ activity, sportsBulletin }: { activity: any; sportsBulle
   return (
     <>
       {description && (
-        <WikiHtmlContent
-          html={formatThinkpagesContentForDisplay(description as string)}
+        <PostHtml
+          content={description as string}
           className="text-label-secondary text-callout pt-0.5 break-words whitespace-pre-wrap"
         />
       )}

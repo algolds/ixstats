@@ -16,7 +16,6 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "~/compone
 import { CardFace } from "~/components/cards/face/CardFace";
 import { CardBack } from "~/components/cards/face/CardBack";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
-import { StreakPill } from "~/components/vault/StreakPill";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import { cardSheetHref } from "~/lib/cards/face/sheet-link";
@@ -483,7 +482,6 @@ export function DailyRewardStatus() {
   if (isLoading) return <Skeleton className="h-8 w-full" />;
 
   const canClaim = balanceData?.canClaimDailyBonus ?? false;
-  const streak = balanceData?.loginStreak ?? 0;
 
   if (!canClaim && !isOpen) {
     return (
@@ -492,8 +490,7 @@ export function DailyRewardStatus() {
         className="bg-fill-4 text-label-secondary text-footnote rounded-control flex min-h-(--control-height-sm) w-full items-center gap-2 px-3 select-none"
       >
         <Trophy aria-hidden className="size-3.5 shrink-0" />
-        <span className="flex-1">Daily claimed</span>
-        {streak > 0 && <StreakPill streak={streak} />}
+        <span className="flex-1 whitespace-nowrap">Daily claimed</span>
       </div>
     );
   }
@@ -508,8 +505,7 @@ export function DailyRewardStatus() {
         className="bg-tint-fill text-tint-ink hover:bg-tint-fill hover:text-tint active:bg-tint-fill text-footnote w-full justify-start gap-2 px-3 font-semibold"
       >
         <Trophy aria-hidden className="size-3.5 shrink-0" />
-        <span className="min-w-0 flex-1 truncate text-left">Daily reward</span>
-        {streak > 0 && <StreakPill streak={streak} />}
+        <span className="flex-1 text-left whitespace-nowrap">Daily reward</span>
       </Button>
     </div>
   );

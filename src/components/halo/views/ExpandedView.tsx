@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useSyncExternalStore } from "react";
 import { AnimatePresence } from "motion/react";
 import { HaloContainer } from "../HaloPrimitives";
 import { SearchView } from "./SearchView";
@@ -7,6 +7,16 @@ import { SettingsView } from "./SettingsView";
 import { MyCountryView } from "../plugins/mycountry";
 import type { ExpandedViewProps, DIPlugin } from "../types";
 import { Button } from "~/components/ui/button";
+
+const subscribeNever = () => () => {};
+/** The admin "play as" target, re-read on every render (each mode switch re-renders this). */
+const readPlayAs = () => {
+  try {
+    return localStorage.getItem("ixstats.play_as_user") ?? "";
+  } catch {
+    return "";
+  }
+};
 
 function ExpandedViewComponent({
   mode,
@@ -20,18 +30,8 @@ function ExpandedViewComponent({
   searchResults,
   activePlugin,
 }: ExpandedViewProps & { activePlugin?: DIPlugin | null }) {
-  const [isImpersonating, setIsImpersonating] = useState(false);
-  const [targetUser, setTargetUser] = useState("");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const playAs = localStorage.getItem("ixstats.play_as_user");
-      // oxlint-disable-next-line
-      setIsImpersonating(!!playAs);
-      setTargetUser(playAs || "");
-    }
-    // oxlint-disable-next-line
-  }, [mode]);
+  const targetUser = useSyncExternalStore(subscribeNever, readPlayAs, () => "");
+  const isImpersonating = targetUser !== "";
 
   const handleStopImpersonating = () => {
     localStorage.removeItem("ixstats.play_as_user");
@@ -51,10 +51,7 @@ function ExpandedViewComponent({
       {isImpersonating && (
         <div className="border-red/20 bg-red/10 text-footnote text-red flex items-center justify-between border-b px-4 py-3">
           <div className="flex items-center gap-2 font-medium">
-            <span className="relative flex h-2 w-2">
-              <span className="bg-red absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
-              <span className="bg-red relative inline-flex h-2 w-2 rounded-full"></span>
-            </span>
+            <span className="bg-red size-2 rounded-full" />
             <span>
               Playing as: <span className="font-mono">{targetUser}</span>
             </span>

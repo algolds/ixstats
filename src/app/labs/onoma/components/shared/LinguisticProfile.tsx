@@ -106,7 +106,7 @@ export function LinguisticProfile({
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className="border-separator animate-in fade-in slide-in-from-top-1 relative z-10 mt-3 w-full space-y-3 border-t pt-3 text-left duration-200"
+      className="border-separator relative z-10 mt-3 w-full space-y-3 border-t pt-3 text-left"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">

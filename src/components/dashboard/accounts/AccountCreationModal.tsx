@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
@@ -13,6 +13,7 @@ import {
 
 import { api, type RouterOutputs } from "~/trpc/react";
 import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
+import { useHydrated } from "~/hooks/useHydrated";
 import { useNotify } from "~/hooks/useNotify";
 import { AccountTypeSelector } from "./form/AccountTypeSelector";
 import { AccountDetailsForm } from "./form/AccountDetailsForm";
@@ -131,16 +132,11 @@ export function AccountCreationModal({
   const utils = api.useContext();
   const notify = useNotify();
   const [step, setStep] = useState<"type" | "details">("type");
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const [formData, setFormData] = useState<ThinkpagesAccountInput>(INITIAL_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showUnsplashSearch, setShowUnsplashSearch] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setMounted(true);
-  }, []);
 
   const createAccountMutation = api.thinkpages.createAccount.useMutation({
     onError: (error) => {
@@ -158,18 +154,18 @@ export function AccountCreationModal({
     reset: resetUsernameAvailability,
   } = useUsernameAvailability(formData.username, countryId);
 
-  useEffect(() => {
+  // Reset the form when the modal closes (adjusted during render, not in an effect)
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
     if (!isOpen) {
-      // Reset state when modal is closed
-      // oxlint-disable-next-line
       setStep("type");
       setFormData(INITIAL_FORM);
       setErrors({});
       resetUsernameAvailability();
       setShowAdvanced(false);
     }
-    // oxlint-disable-next-line
-  }, [isOpen]);
+  }
 
   const accountsRemaining = Math.max(0, maxAccounts - existingAccountCount);
   const canCreateMoreAccounts = accountsRemaining > 0;

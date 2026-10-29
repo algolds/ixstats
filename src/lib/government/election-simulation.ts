@@ -8,7 +8,7 @@ import type { PrismaClient } from "@prisma/client";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { notificationAPI } from "~/lib/notifications";
 import { StorytellerEffectType } from "~/lib/economy/calculations";
-import { createStorytellerEffect } from "~/lib/economy/storyteller-effects";
+import { syncLevelEffects } from "~/lib/economy/storyteller-effects";
 
 // Seat-allocation helpers (single source of truth)
 
@@ -36,18 +36,28 @@ function dHondtAllocation(
   return seats;
 }
 
-/** FPTP allocation: winner takes all (single-district). */
-function fptpAllocation(
+/**
+ * FPTP allocation over single-member districts, by the cube law: seats in proportion to votes cubed (largest
+ * remainder), so the plurality party gets FPTP's winner's bonus without a national winner-take-all.
+ */
+export function fptpAllocation(
   partyVotes: { partyId: string; votes: number }[],
   totalSeats: number
 ): Map<string, number> {
   const seats = new Map<string, number>();
-  if (partyVotes.length === 0) return seats;
-  const sorted = [...partyVotes].sort((a, b) => b.votes - a.votes);
-  const winner = sorted[0]!;
-  seats.set(winner.partyId, totalSeats);
-  for (const p of partyVotes) {
-    if (p.partyId !== winner.partyId) seats.set(p.partyId, 0);
+  const weights = partyVotes.map((p) => Math.max(0, p.votes) ** 3);
+  const weightTotal = weights.reduce((sum, w) => sum + w, 0);
+  if (partyVotes.length === 0 || weightTotal <= 0) return seats;
+  const quotas = weights.map((w) => (w / weightTotal) * totalSeats);
+  partyVotes.forEach((p, i) => seats.set(p.partyId, Math.floor(quotas[i]!)));
+  let left = totalSeats - [...seats.values()].reduce((sum, n) => sum + n, 0);
+  const byRemainder = partyVotes
+    .map((p, i) => ({ id: p.partyId, rest: quotas[i]! - Math.floor(quotas[i]!) }))
+    .sort((a, b) => b.rest - a.rest);
+  for (const { id } of byRemainder) {
+    if (left <= 0) break;
+    seats.set(id, seats.get(id)! + 1);
+    left--;
   }
   return seats;
 }
@@ -84,9 +94,10 @@ export function parseChambers(
       const parts = serialized.split(";").filter(Boolean);
       return parts.map((part) => {
         const [name, seatsStr, system, selection] = part.split(":");
+        const seats = Number(seatsStr);
         return {
           name: name || "Chamber",
-          seats: Number(seatsStr) || 100,
+          seats: seatsStr && Number.isFinite(seats) ? seats : 100,
           electoralSystem: toElectoralSystem(system || globalElectoralSystem),
           selectionMethod: (selection || "elected") as SelectionMethod,
         };
@@ -117,8 +128,34 @@ export function parseChambers(
   ];
 }
 
+/**
+ * Chambers put to the vote (owner ruling B-12c): only elected ones. Appointed, hereditary and other chambers are never
+ * elected; their seats keep their parties until the owner changes the legislature.
+ */
+export function electedChambers(chambers: readonly ChamberConfig[]): ChamberConfig[] {
+  return chambers.filter((c) => c.selectionMethod === "elected");
+}
+
+/** Seat bounds the legislature editor offers: 1 to 5,000 per chamber, up to 10,000 in all. */
+export const MAX_CHAMBER_SEATS = 5000;
+export const MAX_LEGISLATURE_SEATS = 10000;
+
+/** Why these chambers cannot be seated (a chamber outside 1 to 5,000 seats, more than 10,000 in all), or null. */
+export function chamberSeatProblem(chambers: readonly ChamberConfig[]): string | null {
+  const bad = chambers.find(
+    (c) => !Number.isInteger(c.seats) || c.seats < 1 || c.seats > MAX_CHAMBER_SEATS
+  );
+  if (bad) return `${bad.name} needs a whole number of seats from 1 to ${MAX_CHAMBER_SEATS}.`;
+  const total = chambers.reduce((sum, c) => sum + c.seats, 0);
+  if (total > MAX_LEGISLATURE_SEATS) {
+    return `The chambers hold ${total} seats; a legislature has at most ${MAX_LEGISLATURE_SEATS}.`;
+  }
+  return null;
+}
+
 type SimulateElectionResult =
-  { ok: true; election: any } | { ok: false; reason: "not_found" | "insufficient_candidates" };
+  | { ok: true; election: any }
+  | { ok: false; reason: "not_found" | "insufficient_candidates" | "no_elected_chamber" };
 
 type PartyVote = { partyId: string; votes: number; candidateId: string };
 type ChamberAllocation = { chamberName: string; allocation: Map<string, number> };
@@ -246,7 +283,11 @@ async function reassignSeats(
     }
   }
 
-  for (const seat of allSeats.filter((s) => !updatedSeatIds.has(s.id))) {
+  // Seats outside the elected chambers' seats go vacant, except a non-elected chamber's, which keep their parties.
+  const kept = new Set(chambers.filter((c) => c.selectionMethod !== "elected").map((c) => c.name));
+  for (const seat of allSeats.filter(
+    (s) => !updatedSeatIds.has(s.id) && !kept.has(s.region ?? "")
+  )) {
     await db.legislativeSeat.update({ where: { id: seat.id }, data: { partyId: null } });
   }
 }
@@ -255,7 +296,7 @@ async function reassignSeats(
  * A comfortable win steadies the government; a razor-thin one shakes it (political stability is
  * 0-100: +5, +2, -5 or -10 points). Democracy index +2.
  */
-async function updatePoliticalMetrics(
+export async function updatePoliticalMetrics(
   db: PrismaClient,
   countryId: string,
   marginOfVictory: number
@@ -324,6 +365,45 @@ async function announceResults(
   }
 }
 
+/** The economy's response to an election result: +0.3% GDP level (decisive), +0.1% (clear), -0.3% (close). */
+export function electionGdpLevel(marginOfVictory: number): number {
+  return marginOfVictory > 10 ? 0.003 : marginOfVictory > 5 ? 0.001 : -0.003;
+}
+
+const ELECTION_EFFECT_KEY = "ELECTION_SYSTEM";
+
+/**
+ * Hold the nation's GDP level from elections at its latest result's (owner ruling B-12d: latest win only, never
+ * stacked), phased in over the term. Idempotent: an unchanged level writes nothing, so politics drift runs it every
+ * tick and so collapses levels stacked before the ruling. `now`: the nation's clock time (its realm's when omitted).
+ */
+export async function syncElectionGdpLevel(
+  db: PrismaClient,
+  countryId: string,
+  now?: number
+): Promise<number> {
+  const last = await db.election.findFirst({
+    where: { countryId, status: "completed" },
+    orderBy: { scheduledIxTime: "desc" },
+    select: { marginOfVictory: true, legislature: { select: { termLength: true } } },
+  });
+  const margin = last?.marginOfVictory;
+  const targets =
+    margin == null
+      ? []
+      : [
+          {
+            countryId,
+            inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
+            value: electionGdpLevel(margin),
+            duration: last?.legislature.termLength ?? 4,
+            description: `Election result: ${margin > 10 ? "Decisive victory" : margin > 5 ? "Clear win" : "Close election"} (margin ${margin.toFixed(1)} points)`,
+            createdBy: ELECTION_EFFECT_KEY,
+          },
+        ];
+  return syncLevelEffects(db, { countryId, createdBy: ELECTION_EFFECT_KEY }, targets, now);
+}
+
 /**
  * Run a full election simulation: vote shares → seat allocation → results, seat
  * reassignment, political-metric updates, storyteller effect, party support,
@@ -361,7 +441,9 @@ export async function simulateElectionCore(
     legislature.totalSeats,
     legislature.electoralSystem
   );
-  const allocations: ChamberAllocation[] = chambers.map((chamber) => ({
+  const elected = electedChambers(chambers);
+  if (elected.length === 0) return { ok: false, reason: "no_elected_chamber" };
+  const allocations: ChamberAllocation[] = elected.map((chamber) => ({
     chamberName: chamber.name,
     allocation: allocateChamber(chamber, partyVotes),
   }));
@@ -402,17 +484,7 @@ export async function simulateElectionCore(
 
   await updatePoliticalMetrics(db, election.countryId, marginOfVictory);
 
-  // Economic impact: a GDP level shift (+0.3% decisive, +0.1% clear, -0.3% close), phased in
-  // over the new term and kept.
-  const gdpLevelShift = marginOfVictory > 10 ? 0.003 : marginOfVictory > 5 ? 0.001 : -0.003;
-  await createStorytellerEffect(db, {
-    countryId: election.countryId,
-    inputType: StorytellerEffectType.GDP_LEVEL_ADJUSTMENT,
-    value: gdpLevelShift,
-    duration: legislature.termLength,
-    description: `Election result: ${marginOfVictory > 10 ? "Decisive victory" : marginOfVictory > 5 ? "Clear win" : "Close election"} - ${sortedResults[0]?.votePercentage.toFixed(1)}% to ${sortedResults[1]?.votePercentage.toFixed(1)}%`,
-    createdBy: "ELECTION_SYSTEM",
-  });
+  await syncElectionGdpLevel(db, election.countryId);
 
   // Party support reflects results
   for (const r of results) {

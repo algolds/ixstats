@@ -6,6 +6,11 @@
  * `wikiQuery` is exported for other read-only wiki queries (the realm lore import), and IxWiki's user list
  * (`fetchClassicWikiUsers`) feeds the admin's legacy name search.
  */
+import {
+  IIWIKI_DISABLED_MESSAGE,
+  iiwikiSourceAllowed,
+  type IiwikiFeature,
+} from "~/lib/wiki-os/iiwiki-switch";
 import { z } from "zod";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl, WIKI_SOURCES } from "~/lib/wiki-os/config";
 import { SISTER_READER_IDS } from "~/lib/wiki-os/wiki-hosts";
@@ -52,8 +57,10 @@ export function wikiUserPageUrl(source: ProofSource, username: string): string {
 export async function wikiQuery<T>(
   source: ProofSource,
   params: Record<string, string>,
-  schema: z.ZodType<T>
+  schema: z.ZodType<T>,
+  feature: IiwikiFeature = "identity"
 ): Promise<T> {
+  if (!iiwikiSourceAllowed(source, feature)) throw new WikiApiError(IIWIKI_DISABLED_MESSAGE);
   const url = new URL(apiUrl(source));
   for (const [key, value] of Object.entries({
     action: "query",

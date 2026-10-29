@@ -342,9 +342,9 @@ export function AwardsManagerSection() {
                   <span className="text-label-secondary text-eyebrow mb-2 select-none">
                     Live medal preview
                   </span>
-                  <div className="border-separator bg-surface duration-fast relative flex h-14 w-14 items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+                  <div className="border-separator bg-surface duration-fast relative flex h-14 w-14 items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]">
                     <div
-                      className="absolute inset-0 rounded-full opacity-20 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
+                      className="absolute inset-0 rounded-full opacity-20 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-500"
                       style={{
                         backgroundColor:
                           iconColor === "custom" ? customHex : getColorHex(iconColor),
@@ -358,7 +358,7 @@ export function AwardsManagerSection() {
                       return (
                         <IconComp
                           className={cn(
-                            "duration-fast relative z-10 h-7.5 w-7.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                            "duration-fast relative z-10 h-7.5 w-7.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
                             colorClass
                           )}
                           style={customStyle}

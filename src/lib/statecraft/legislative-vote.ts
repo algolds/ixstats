@@ -84,7 +84,10 @@ export function tallyVote(
 
   // Mandate whip: backing in (0,1] swings up to half the abstaining seats to yes.
   if (governmentBacking != null) {
-    const backing = Math.max(0, Math.min(1, governmentBacking));
+    // A non-finite standing (NaN approval) sways no one rather than turning every tally into NaN.
+    const backing = Number.isFinite(governmentBacking)
+      ? Math.max(0, Math.min(1, governmentBacking))
+      : 0;
     const whipped = Math.round(abstainSeats * backing * 0.5);
     yesSeats += whipped;
     abstainSeats -= whipped;

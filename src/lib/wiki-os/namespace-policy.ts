@@ -88,6 +88,7 @@ export const MEDIAWIKI_NAMESPACE_REASON = `MediaWiki: pages are edited on classi
 
 /** The `MediaWiki:` namespace: classic's alone (see `MEDIAWIKI_NAMESPACE_REASON`). */
 const MEDIAWIKI_NAMESPACE_ID = 8;
+const TEMPLATE_NAMESPACE_ID = 10;
 
 /** Unicode spaces MediaWiki folds into a plain space when normalising titles. */
 const TITLE_SPACES = /[\u00A0\u1680\u180E\u2000-\u200A\u2028\u2029\u202F\u205F\u3000_]+/g;
@@ -166,6 +167,14 @@ export function isOwnUserSpace(base: string, owners: readonly string[]): boolean
  */
 export function classicOwnsTitle(rawTitle: string): boolean {
   return parseWikiTitle(rawTitle)?.namespaceId === MEDIAWIKI_NAMESPACE_ID;
+}
+
+/**
+ * Whether `rawTitle` is a `Template:` page. Templates are code-like (parser functions, `<includeonly>`, line-end
+ * tricks that move once a template expands), so the visual editor warns that the source editor is safer for them.
+ */
+export function isTemplateTitle(rawTitle: string): boolean {
+  return parseWikiTitle(rawTitle)?.namespaceId === TEMPLATE_NAMESPACE_ID;
 }
 
 export interface EditPolicyIdentity {

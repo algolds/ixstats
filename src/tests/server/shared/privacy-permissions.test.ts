@@ -377,10 +377,24 @@ describe("users router", () => {
     ];
     db.wikiNameClaim.findMany.mockResolvedValue(claims);
     const out = await caller(db).exportUserData();
-    expect(out.user.wikiNames).toEqual(claims);
+    expect(out.linkedAccounts.wikiNames).toEqual(claims);
+    expect(out.account).not.toHaveProperty("clerkUserId");
     expect(db.wikiNameClaim.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { userId: "db_1" } })
     );
+  });
+  it("exportUserData refuses an admin playing as the user: their email and messages are theirs", async () => {
+    const db = createMockPrisma();
+    const ctx = createMockRouterContext({
+      db,
+      auth: { userId: "clerk_1" },
+      user: { id: "db_1", clerkUserId: "clerk_1", lastSeenAt: new Date() },
+      impersonatorId: "clerk_admin",
+    });
+    await expect(
+      createCallerFactory(usersPreferencesRouter)(ctx as never).exportUserData()
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(db.user.findUnique).not.toHaveBeenCalled();
   });
 });
 

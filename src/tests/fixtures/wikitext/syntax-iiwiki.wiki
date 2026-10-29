@@ -1,0 +1,22 @@
+{{Infobox country
+|conventional_long_name = Federal Republic of Example
+|common_name = Example
+|image_flag = Flag of Example.png
+|capital = [[Example City]]
+|population_estimate = 12,345,678 {{increase}}
+|population_estimate_year = {{CURRENTYEAR}}
+|GDP_PPP = $1.2 trillion<ref name="imf">{{cite web|title=IMF|url=https://example.org}}</ref>
+}}
+'''Example''', officially the '''Federal Republic of Example''', is a country on [[Iearth]].{{Ref|a}}
+
+{{Main|History of Example}}
+{{See also|Politics of Example|Economy of Example}}
+== History ==
+{{Expand section|date=January 2026}}
+Example was founded in 1801.<ref>{{Harvnb|Smith|2001|p=12}}</ref>
+
+{{Clear}}
+== References ==
+{{Reflist|30em}}
+{{Navbox Iearth}}
+[[Category:Countries on Iearth]]

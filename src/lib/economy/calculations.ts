@@ -9,6 +9,7 @@ import type {
   StorytellerEffect as StorytellerEffectRecord,
 } from "~/types/ixstats";
 import { calculateComponentEconomicModifiers } from "~/lib/government/atomic-utils";
+import { nextIxDayStart } from "~/lib/ixtime/day";
 
 // FIXED: Updated tier enums to match user specifications
 export enum EconomicTier {
@@ -51,21 +52,41 @@ export enum StorytellerEffectType {
   POPULATION_LEVEL_ADJUSTMENT = "population_level_adjustment",
 }
 
+const effectStartMs = (effect: Pick<StorytellerEffectRecord, "ixTimeTimestamp">) =>
+  effect.ixTimeTimestamp instanceof Date
+    ? effect.ixTimeTimestamp.getTime()
+    : effect.ixTimeTimestamp;
+
 /**
- * Share (0-1) of a level effect in force at `targetTimeMs`: 0 before it starts, rising linearly
- * over its `duration` (IxTime years), 1 afterwards. An effect with no duration applies at once.
+ * When an effect takes hold (owner ruling 2026-10-28, "growth effects are applied the next in-game day"): the start of
+ * the IxTime day after it begins, and never before the day after the nation's baseline, so a founding or a size save
+ * shows exactly its figures for the rest of that day.
+ */
+export function effectTakesHoldAt(
+  effect: Pick<StorytellerEffectRecord, "ixTimeTimestamp">,
+  baselineMs = -Infinity
+): number {
+  return nextIxDayStart(Math.max(effectStartMs(effect), baselineMs));
+}
+
+/**
+ * Share (0-1) of a level effect in force at `targetTimeMs`: 0 until it takes hold (`effectTakesHoldAt`), then rising
+ * linearly over its `duration` (IxTime years) from the day after its own start, 1 afterwards. An effect with no
+ * duration applies in full once it takes hold.
  */
 export function levelPhaseIn(
-  effect: Pick<StorytellerEffectRecord, "ixTimeTimestamp" | "duration">,
-  targetTimeMs: number
+  effect: Pick<StorytellerEffectRecord, "ixTimeTimestamp" | "duration"> & {
+    phaseYears?: number | null;
+  },
+  targetTimeMs: number,
+  baselineMs = -Infinity
 ): number {
-  const start =
-    effect.ixTimeTimestamp instanceof Date
-      ? effect.ixTimeTimestamp.getTime()
-      : effect.ixTimeTimestamp;
-  if (targetTimeMs < start) return 0;
-  if (!effect.duration || effect.duration <= 0) return 1;
-  return Math.min(1, IxTime.getYearsElapsed(start, targetTimeMs) / effect.duration);
+  if (targetTimeMs < effectTakesHoldAt(effect, baselineMs)) return 0;
+  // A fractional phase-in (a counter row stopping a ramp early) overrides the whole-year duration.
+  const years = effect.phaseYears ?? effect.duration;
+  if (!years || years <= 0) return 1;
+  const rampStart = nextIxDayStart(effectStartMs(effect));
+  return Math.min(1, IxTime.getYearsElapsed(rampStart, targetTimeMs) / years);
 }
 
 /** Growth rate a relative growth modifier is sized against when it becomes a level effect. */
@@ -252,25 +273,11 @@ export class IxStatsCalculator {
     const targetTimeMs = targetTime;
     const baselineTimeMs = this.baselineDate;
 
-    const yearsFromBaseline = IxTime.getYearsElapsed(baselineTimeMs, targetTimeMs);
-
-    if (Math.abs(yearsFromBaseline) < 0.001) {
-      return {
-        country: baselineStats.country,
-        oldStats: baselineStats,
-        newStats: {
-          ...baselineStats,
-          effectiveGdpGrowth: this.currentGdpGrowthRate(
-            baselineStats,
-            baselineStats.gdpPerCapita,
-            this.getActiveEffects(effects, baselineTimeMs, targetTimeMs)
-          ),
-          lastCalculated: new Date(targetTimeMs),
-        },
-        timeElapsed: 0,
-        calculationDate: targetTimeMs,
-      };
-    }
+    // Growth runs from the day after the baseline: the baseline's own day shows its figures exactly.
+    const yearsFromBaseline =
+      targetTimeMs < baselineTimeMs
+        ? IxTime.getYearsElapsed(baselineTimeMs, targetTimeMs)
+        : Math.max(0, IxTime.getYearsElapsed(nextIxDayStart(baselineTimeMs), targetTimeMs));
 
     const oldStats = { ...baselineStats };
     const activeEffects = this.getActiveEffects(effects, baselineTimeMs, targetTimeMs);
@@ -566,17 +573,21 @@ export class IxStatsCalculator {
     const modifiedStats = { ...stats };
 
     effects.forEach((input) => {
+      // Nothing lands mid-day: every effect here takes hold from the next IxTime day.
+      if (targetTimeMs < effectTakesHoldAt(input, this.baselineDate)) return;
       const inputValue = this.validateGrowthRate(input.value);
       switch (input.inputType?.toLowerCase()) {
         // Level effects: unlike the growth effects above they never rewrite the path before
         // their own start, and they persist after `duration`.
         case StorytellerEffectType.GDP_LEVEL_ADJUSTMENT:
         case StorytellerEffectType.TRADE_AGREEMENT:
-          modifiedStats.currentGdpPerCapita *= 1 + inputValue * levelPhaseIn(input, targetTimeMs);
+          modifiedStats.currentGdpPerCapita *=
+            1 + inputValue * levelPhaseIn(input, targetTimeMs, this.baselineDate);
           break;
 
         case StorytellerEffectType.POPULATION_LEVEL_ADJUSTMENT:
-          modifiedStats.currentPopulation *= 1 + inputValue * levelPhaseIn(input, targetTimeMs);
+          modifiedStats.currentPopulation *=
+            1 + inputValue * levelPhaseIn(input, targetTimeMs, this.baselineDate);
           break;
 
         // Total GDP falls 1.5x as far as population: GDP per capita carries the extra share,
