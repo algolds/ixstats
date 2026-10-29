@@ -32,7 +32,6 @@ const COUNTRY_SELECT = {
   id: true,
   realmId: true,
   currentPopulation: true,
-  currentGdpPerCapita: true,
   publicApproval: true,
   incomeInequalityGini: true,
   povertyRate: true,

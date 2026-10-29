@@ -94,7 +94,7 @@ describe("the seeded issue templates", () => {
       .filter((t) => bandForSeverity(t.baseSeverity) === "crisis")
       .flatMap((t) =>
         leaves(t.trigger)
-          .filter((l): l is { rank: { field: string; side?: string; share?: number } } => "rank" in l)
+          .filter((l): l is Extract<Leaf, { rank: unknown }> => "rank" in l)
           .filter((l) => l.rank.side !== "best" && l.rank.share === undefined)
           .filter((l) => !isRankedField(l.rank.field) || RANKED_FIELDS[l.rank.field].crisisFloor === null)
           .map((l) => `${t.slug}: ${l.rank.field}`)
