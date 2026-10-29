@@ -38,6 +38,7 @@ const SECTION_TITLES: Record<MyCountrySection, string> = {
 const isMyCountrySection = (s: string): s is MyCountrySection => s in SECTION_TITLES;
 
 interface ComplianceModalGateProps {
+  isOpen: boolean;
   storageKey: string;
   sections: ComplianceSectionStatus[];
   onReview: () => void;
@@ -47,23 +48,26 @@ interface ComplianceModalGateProps {
 /**
  * The compliance prompt, unless its 12 hour snooze is running. The snooze lives in localStorage,
  * so `use(browser())` keeps the server from rendering this: the nearest Suspense fallback goes
- * into the HTML and the client renders it once, already knowing the stored value.
+ * into the HTML and the client renders it once, already knowing the stored value. The snooze is
+ * read once at mount, so the prompt Remind me later just snoozed stays mounted and slides out.
  */
 export function ComplianceModalGate({
+  isOpen,
   storageKey,
   sections,
   onReview,
   onRemindLater,
 }: ComplianceModalGateProps) {
   use(browser());
-  // Read once: the snooze is 12 hours, so the mount time is "now" for this visit.
-  const [mountedAt] = useState(Date.now);
-  const snoozeUntil = Number(window.localStorage.getItem(storageKey) ?? 0);
-  if (snoozeUntil >= mountedAt) return null;
+  // The snooze is 12 hours, so the mount time is "now" for this visit.
+  const [snoozed] = useState(
+    () => Number(window.localStorage.getItem(storageKey) ?? 0) >= Date.now()
+  );
+  if (snoozed) return null;
 
   return (
     <MyCountryComplianceModal
-      isOpen
+      isOpen={isOpen}
       sections={sections}
       onReview={onReview}
       onRemindLater={onRemindLater}
@@ -99,7 +103,6 @@ function MyCountryRouterInner() {
 
   const showComplianceModal =
     complianceStorageKey !== null &&
-    !dismissed &&
     !complianceLoading &&
     complianceSections.length > 0 &&
     !isCompliant;
@@ -168,6 +171,7 @@ function MyCountryRouterInner() {
         activeSection === "overview" && (
           <Suspense fallback={null}>
             <ComplianceModalGate
+              isOpen={!dismissed}
               storageKey={complianceStorageKey}
               sections={complianceSections}
               onReview={handleReview}
